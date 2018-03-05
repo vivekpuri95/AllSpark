@@ -1,4 +1,4 @@
-const API = require("../utils/newApi");
+const API = require("../utils/api");
 
 exports.create = class extends API {
 
@@ -52,9 +52,9 @@ exports.delete = class extends API {
         const category = this.request.body.category_id;
 
         return await this.mysql.query(`
-                delete 
-                   from tb_user_privilege 
-                where 
+                delete
+                   from tb_user_privilege
+                where
                     user_id = ? and role = ? and category_id = ?
             `,
             [userId, role, category],
@@ -70,14 +70,14 @@ exports.list = class extends API {
     async list() {
 
         return await this.mysql.query(`
-            select 
-                up.* 
-            from 
-                tb_user_privilege up 
-            join 
+            select
+                up.*
+            from
+                tb_user_privilege up
+            join
                 tb_users u
-                using(user_id) 
-            where 
+                using(user_id)
+            where
                 account_id = ?
                 and u.status = 1`,
             [this.account.account_id]

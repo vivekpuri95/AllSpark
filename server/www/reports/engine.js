@@ -1,4 +1,4 @@
-const API = require("../../utils/newApi");
+const API = require("../../utils/api");
 const commonFun = require('../commonFunctions');
 const promisify = require('util').promisify;
 const moment = require('moment');

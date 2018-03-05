@@ -1,4 +1,4 @@
-const API = require('./utils/newApi');
+const API = require('./utils/api');
 const mysql = require('./www/mysql').MySQL;
 const bigquery = require('./www/bigquery').setup;
 

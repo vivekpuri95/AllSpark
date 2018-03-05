@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var newApi = require('../utils/newApi');
+var api = require('../utils/api');
 var account = require('../onServerStart');
 var engine = require('../www/reports/engine');
 //var bigquery = require("../www/bigquery").setup;
@@ -10,7 +10,7 @@ var engine = require('../www/reports/engine');
 
     await account.loadAccounts();
     await account.loadBigquery();
-    await newApi.setup();
+    await api.setup();
 
 })();
 
@@ -33,8 +33,8 @@ router.get('/hello', function(req, res, next) {
 });
 
 
-router.get('/v2/*', newApi.serve());
-router.post('/v2/*', newApi.serve());
+router.get('/v2/*', api.serve());
+router.post('/v2/*', api.serve());
 
 router.get("/test", report.test);
 module.exports = router;
