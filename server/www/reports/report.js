@@ -1,6 +1,6 @@
 "use strict";
 
-const API = require('../../utils/newApi');
+const API = require('../../utils/api');
 const commonFun = require('../commonFunctions');
 
 async function test(req, res) {

@@ -503,6 +503,7 @@ class DataSource {
 				<button class="description-toggle" title="Description">&nbsp;<i class="fa fa-info"></i>&nbsp;</button>
 				<button class="share-link" title="Share Report"><i class="fa fa-share-alt"></i></button>
 				<button class="download" title="Download CSV"><i class="fa fa-download"></i></button>
+				<button><i class="fa fa-pencil"></i></button>
 			</header>
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
@@ -519,14 +520,7 @@ class DataSource {
 
 		container.querySelector('header').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
 
-		// if(reportAuthors.includes(user.email)) {
-
-		// 	container.querySelector('header').insertAdjacentHTML('beforeend', `
-		// 		<button><i class="fa fa-pencil"></i></button>
-		// 	`);
-
-		// 	container.querySelector('header .fa-pencil').on('click', () => window.open(`/analytics-admin/#!/reports/${this.query_id}`))
-		// }
+		container.querySelector('header .fa-pencil').on('click', () => window.location = `/reports/${this.query_id}`);
 
 		this.filters.form = container.querySelector('form.toolbar');
 

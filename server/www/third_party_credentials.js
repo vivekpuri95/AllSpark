@@ -1,4 +1,4 @@
-const API = require("../utils/newApi");
+const API = require("../utils/api");
 
 exports.insert = class extends API {
 
@@ -17,7 +17,7 @@ exports.insert = class extends API {
 }
 
 exports.delete = class extends API {
-    
+
     async delete(){
 
         return await this.mysql.query(`update tb_third_party_credentials set status = 0 where account_id = ?`,[this.request.body.account_id],'allSparkWrite');
@@ -27,7 +27,7 @@ exports.delete = class extends API {
 }
 
 exports.update = class extends API {
-    
+
     async update(){
 
         var keys = Object.keys(this.request.body);
@@ -50,7 +50,7 @@ exports.update = class extends API {
 }
 
 exports.list = class extends API {
-    
+
     async list(){
 
         return await this.mysql.query(`select * from tb_third_party_credentials`,[],'allSparkRead');

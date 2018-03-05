@@ -1,4 +1,4 @@
-const API = require("../utils/newApi");
+const API = require("../utils/api");
 const commonFun = require("./commonFunctions");
 
 exports.insert = class extends API {
