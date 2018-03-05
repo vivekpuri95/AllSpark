@@ -15,7 +15,7 @@ class Account {
 
 		if(!account) {
 
-			window.account = {APIHost: `http://${window.location.host}:${window.location.port == '8080' ? '3002' : '3000'}/`}
+			window.account = {APIHost: `http://${window.location.host}:${window.location.hostname == 'localhost' ? '3002' : '3000'}/`}
 
 			const accounts = await API.call('v2/accounts/list');
 
@@ -35,7 +35,7 @@ class Account {
 		for(const key in account)
 			this[key] = account[key];
 
-		this.APIHost = `http://${this.url}:${window.location.port == '8080' ? '3002' : '3000'}/`;
+		this.APIHost = `http://${this.url}:${window.location.hostname == 'localhost' ? '3002' : '3000'}/`;
 	}
 }
 

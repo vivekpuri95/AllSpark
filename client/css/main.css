@@ -118,19 +118,22 @@ body {
 		background: var(--color-primary);
 		color: var(--color-primary-text);
 		display: flex;
-		min-height: 50px;
 		position: sticky;
 		top: 0;
 		z-index: 10;
+		height: 60px;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	}
 		body > header .logo {
 			width: 220px;
 			display: flex;
 			align-items: center;
+			padding: var(--gap);
 		}
 			body > header .logo img {
-				height: calc(100% - 25px);
+				width: 100%;
+				height: auto;
+				align-items: center;
 			}
 		body > header nav {
 			display: flex;
@@ -163,6 +166,8 @@ body {
 		body > header .logout {
 			padding: 15px 20px;
 			letter-spacing: 1px;
+			display: flex;
+			align-items: center;
 		}
 
 	main {
