@@ -8,10 +8,9 @@ var engine = require('../www/reports/engine');
 
 (async () => {
 
-    await account.loadAccoutns();
+    await account.loadAccounts();
     await account.loadBigquery();
     await newApi.setup();
-
 
 })();
 

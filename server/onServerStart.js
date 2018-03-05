@@ -17,5 +17,5 @@ async function loadBigquery() {
     // await bigquery();
 }
 
-exports.loadAccoutns = loadAccounts;
+exports.loadAccounts = loadAccounts;
 exports.loadBigquery = loadBigquery;

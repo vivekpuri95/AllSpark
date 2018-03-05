@@ -63,7 +63,7 @@ class API {
                 let host = request.headers.host.split(':')[0];
 
 				if(host.includes('localhost')) {
-					host = 'allspark.jugnoo.in';
+					host = 'jungleworks-allspark.jugnoo.in';
 				}
 
                 obj.account = global.account[host];
