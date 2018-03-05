@@ -387,14 +387,12 @@ class Dashboard {
 
 class DataSource {
 
-	static async load() {
+	static async load(force = false) {
 
-		if(DataSource.list)
+		if(DataSource.list && !force)
 			return;
+
 		const
-			options = {
-				method: 'POST',
-			},
 			responses = await Promise.all([
 				API.call('v2/reports/report/list'),
 				API.call('v2/dashboards/list'),
@@ -413,18 +411,6 @@ class DataSource {
 			if(dashboard.parent && DataSource.dashboards.has(dashboard.parent))
 				DataSource.dashboards.get(dashboard.parent).children.add(dashboard);
 		}
-
-		DataSource.datasets = new Map;
-
-		// for(const row of responses[1]) {
-
-		// 	if(!DataSource.datasets.has(row.dataset))
-		// 		DataSource.datasets.set(row.dataset, new Set);
-
-		// 	DataSource.datasets.get(row.dataset).add(row);
-		// }
-
-		DataSourceFilter.setup();
 	}
 
 	constructor(source) {
@@ -432,26 +418,23 @@ class DataSource {
 		for(const key in source)
 			this[key] = source[key];
 
+		this.tags = this.tags || '';
+		this.tags = this.tags.split(',').filter(a => a.trim());
+
 		this.filters = new Map;
 		this.columns = new DataSourceColumns(this);
 		this.visualizations = [];
-		this.selectedRows = new Set;
 
 		if(source.filters && source.filters.length)
 			this.filters = new Map(source.filters.map(filter => [filter.placeholder, new DataSourceFilter(filter, this)]));
 
-		if(!source.visualizations || !source.visualizations.length)
+		if(!source.visualizations)
 			source.visualizations = [];
 
-		if(!source.visualizations.filter(v => v.type == 'table').length) {
-			source.visualizations.push({
-				visualization_id: 0,
-				name: 'Table',
-				type: 'table',
-			});
-		}
+		if(!source.visualizations.filter(v => v.type == 'table').length)
+			source.visualizations.push({ name: 'Table', visualization_id: 0, type: 'table' });
 
-		this.visualizations = source.visualizations.map(v => Visualization.list.has(v.type) && new (Visualization.list.get(v.type))(v, this)).filter(a => a);
+		this.visualizations = source.visualizations.map(v => new (Visualization.list.get(v.type))(v, this));
 		this.postProcessors = new DataSourcePostProcessors(this);
 	}
 
@@ -465,23 +448,39 @@ class DataSource {
 				parameters[filter.placeholder] = this.filters.form.elements[filter.placeholder].value;
 		}
 
+		let response = null;
+
 		const options = {
 			method: 'POST',
 		};
 
-		const response = await API.call('v2/reports/engine/report', parameters, options);
+		if(this.container.querySelector('pre.warning'))
+			this.container.removeChild(this.container.querySelector('pre.warning'));
+
+		try {
+			response = await API.call('v2/reports/engine/report', parameters, options);
+		}
+
+		catch(e) {
+
+			this.container.insertAdjacentHTML('beforeend', `
+				<pre class="warning">${e.message}</pre>
+			`);
+
+			response = {};
+		}
 
 		if(parameters.download)
 			return response;
 
 		this.originalResponse = response;
 
-		const header = this.container.querySelector('header');
-
-		if(!('timing' in response[0]))
-			this.container.querySelector('.postprocessors').classList.add('hidden');
+		this.container.querySelector('.share-link input').value = this.link;
 
 		this.columns.update();
+		this.postProcessors.update();
+
+		this.columns.render();
 	}
 
 	get container() {
@@ -494,38 +493,28 @@ class DataSource {
 		const container = this.containerElement;
 
 		container.classList.add('data-source');
-		container.dataset.id = this.query_id;
 
 		container.innerHTML = `
 			<header>
-				<h2>${this.name}</h2>
-				<button class="filters-toggle right"><i class="fa fa-filter" aria-hidden="true"></i>&nbsp; Filters</button>
+				<h2 title="${this.name}"><i class="fa fa-chart-line"></i>&nbsp; ${this.name}</h2>
+				<button class="filters-toggle right"><i class="fa fa-filter"></i>&nbsp; Filters</button>
 				<button class="description-toggle" title="Description">&nbsp;<i class="fa fa-info"></i>&nbsp;</button>
-				<button class="share-link" title="Share Report"><i class="fa fa-share-alt"></i></button>
+				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i></button>
 				<button class="download" title="Download CSV"><i class="fa fa-download"></i></button>
-				<button><i class="fa fa-pencil"></i></button>
+				<button class="edit" title="Edit Report"><i class="fa fa-pencil-alt"></i></button>
 			</header>
-			<div class="description hidden">
-				<div class="body">${this.description}</div>
-				<div class="footer">
-					Report Role: <strong>${this.roles && this.roles[0] ? this.roles[0] : 'No Role'}</strong>
-					${this.users ? '<a>Visible to '+this.users.length+' people</a>' : ''}
-				</div>
-			</div>
+			<form class="filters toolbar hidden"></form>
+			<div class="columns"></div>
+			<div class="description hidden">${this.description}</div>
 			<div class="share-link hidden">
 				<input type="url" value="${this.link}" readonly>
 			</div>
-			<form class="toolbar hidden"></form>
 		`;
 
-		container.querySelector('header').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
-
-		container.querySelector('header .fa-pencil').on('click', () => window.location = `/reports/${this.query_id}`);
-
-		this.filters.form = container.querySelector('form.toolbar');
+		this.filters.form = container.querySelector('.filters');
 
 		container.querySelector('.filters-toggle').on('click', () => {
-			this.filters.form.classList.toggle('hidden');
+			container.querySelector('.filters').classList.toggle('hidden');
 			container.querySelector('.filters-toggle').classList.toggle('selected');
 		});
 
@@ -534,13 +523,14 @@ class DataSource {
 			container.querySelector('.description-toggle').classList.toggle('selected');
 		});
 
-		container.querySelector('.share-link').on('click', () => {
+		container.querySelector('.share-link-toggle').on('click', () => {
 			container.querySelector('.share-link').classList.toggle('hidden');
 			container.querySelector('.share-link').classList.toggle('selected');
 			container.querySelector('.share-link input').select();
 		});
 
 		container.querySelector('.download').on('click', () => this.download());
+		container.querySelector('.edit').on('click', () => window.location = `/queries/${this.query_id}`);
 
 		this.filters.form.on('submit', e => this.visualizations.selected.load(e));
 
@@ -549,8 +539,14 @@ class DataSource {
 
 		this.filters.form.insertAdjacentHTML('beforeend', `
 			<label class="right">
-				<br>
-				<input type="submit" value="Submit">
+				<button type="reset">
+					<i class="fa fa-undo"></i>&nbsp; Reset
+				</button>
+			</label>
+			<label>
+				<button type="submit">
+					<i class="fa fa-sync"></i>&nbsp; Submit
+				</button>
 			</label>
 		`);
 
@@ -558,52 +554,51 @@ class DataSource {
 
 			const select = document.createElement('select');
 
-			for(const v of this.visualizations) {
+			select.classList.add('change-visualization')
+
+			for(const v of this.visualizations)
 				select.insertAdjacentHTML('beforeend', `<option value="${v.visualization_id}">${v.name}</option>`);
-			}
 
 			select.on('change', async () => {
 
 				container.removeChild(container.querySelector('.visualization'));
 
-				this.visualizations.selected = this.visualizations.filter(v => v.visualization_id == select.value)[0];
-
-				this.visualizations.selected.load();
+				this.visualizations.selected = this.visualizations.filter(v => v.id == select.value)[0];
 
 				container.appendChild(this.visualizations.selected.container);
+
+				await this.visualizations.selected.load();
 			});
 
-			this.visualizations.selected = this.visualizations.filter(v => v.visualization_id == select.value)[0];
+			this.visualizations.selected = this.visualizations.filter(v => v.id == select.value)[0];
 
 			if(this.visualizations.length > 1)
 				container.querySelector('header').appendChild(select);
 
-			container.appendChild(this.visualizations.selected.container);
+			if(this.visualizations.selected)
+				container.appendChild(this.visualizations.selected.container);
 		}
+
+		if(!this.filters.size) {
+			container.querySelector('.filters-toggle').classList.add('hidden');
+			container.querySelector('.filters-toggle').nextElementSibling.classList.add('right');
+		}
+
+		container.querySelector('header').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
 
 		return container;
 	}
 
 	get response() {
 
-		let response = JSON.parse(JSON.stringify(this.originalResponse));
+		if(!this.originalResponse.data)
+			return [];
 
-		if(this.postProcessors.selected)
-			response = this.postProcessors.selected.processor(response);
+		let response = [];
 
-		return response;
-	}
+		this.originalResponse.groupedAnnotations = new Map;
 
-	get _response() {
-
-		let
-			originalResponse = this.originalResponse,
-			response = [];
-
-		if(this.postProcessors.selected)
-			originalResponse = this.postProcessors.selected.processor(originalResponse);
-
-		for(const _row of originalResponse) {
+		for(const _row of this.originalResponse.data) {
 
 			const row = new DataSourceRow(_row, this);
 
@@ -611,13 +606,15 @@ class DataSource {
 				response.push(row);
 		}
 
-		if(response.length && this.columns.sortBy && response[0].data.has(this.columns.sortBy.key)) {
+		if(this.postProcessors.selected)
+			response = this.postProcessors.selected.processor(response);
 
+		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key)) {
 			response.sort((a, b) => {
 
 				const
-					first = a.data.get(this.columns.sortBy.key).toString().toLowerCase(),
-					second = b.data.get(this.columns.sortBy.key).toString().toLowerCase();
+					first = a.get(this.columns.sortBy.key).toString().toLowerCase(),
+					second = b.get(this.columns.sortBy.key).toString().toLowerCase();
 
 				let result = 0;
 
@@ -656,7 +653,7 @@ class DataSource {
 			str.push(line.join());
 		}
 
-		str = Object.keys(response[0]).join() + '\r\n' + str.join('\r\n');
+		str = Object.keys(response.data[0]).join() + '\r\n' + str.join('\r\n');
 
 		const
 			a = document.createElement('a'),
@@ -681,7 +678,7 @@ class DataSource {
 
 	get link() {
 
-		let link = `/report/` + this.query_id;
+		const link = window.location.origin + '/dashboard/report/' + this.query_id;
 
 		const parameters = new URLSearchParams();
 
@@ -694,82 +691,136 @@ class DataSource {
 	}
 }
 
-class DataSourceRow {
+class DataSourceRow extends Map {
 
 	constructor(row, source) {
 
-		this.source = source;
-		this.data = new Map;
+		super();
 
-		if(!row)
+		for(const key in row)
+			this.set(key, row[key]);
+
+		this.source = source;
+
+		if(!row) {
+			this.annotations = new Set();
 			return;
+		}
+
+		this.clear();
 
 		const
-			columnsList = this.source.columns.filtered,
+			columnsList = this.source.columns.list,
 			columnKeys = [...columnsList.keys()];
 
 		for(const [key, column] of columnsList) {
 
-			const
-				query = column.search.querySelector('.query').value,
-				searchType = column.search.querySelector('.search-type').value;
+			if(column.formula) {
 
-			if(query) {
+				let formula = column.formula;
+
+				for(const column of columnsList.values()) {
+
+					if(!formula.includes(column.key))
+						continue;
+
+					let value = parseFloat(row[column.key]);
+
+					if(isNaN(value))
+						value = `'${row[column.key]}'` || '';
+
+					formula = formula.replace(new RegExp(column.key, 'gi'), value);
+				}
+
+				try {
+
+					row[key] = eval(formula);
+
+					if(!isNaN(parseFloat(row[key])))
+						row[key] = parseFloat(row[key]);
+
+				} catch(e) {
+					row[key] = null;
+				}
+			}
+
+			if(column.filtered) {
 
 				if(!row[key])
 					this.skip = true;
 
-				if(!DataSourceColumn.searchTypes[parseInt(searchType) || 0].apply(query, row[key]))
+				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.search, row[key]))
 					this.skip = true;
 			}
 
-			this.data.set(key, row[key] || '');
+			this.set(key, row[key] || '');
 		}
 
 		// Sort the row by position of their columns in the source's columns map
-		const values = [...this.data.entries()].sort((a, b) => columnKeys.indexOf(a[0]) - columnKeys.indexOf(b[0]));
+		const values = [...this.entries()].sort((a, b) => columnKeys.indexOf(a[0]) - columnKeys.indexOf(b[0]));
 
-		this.data.clear();
+		this.clear();
 
 		for(const [key, value] of values)
-			this.data.set(key, value);
-	}
+			this.set(key, value);
 
-	get simple() {
-
-		const result = {};
-
-		for(const [key, value] of this.data)
-			result[key] = value;
-
-		return result;
+		this.annotations = new Set();
 	}
 }
 
-class DataSourceColumns {
+class DataSourceColumns extends Map {
 
 	constructor(source) {
 
+		super();
+
 		this.source = source;
-		this.list = new Map;
 	}
 
 	update() {
 
-		if(!this.source.originalResponse || !this.source.originalResponse.length)
+		if(!this.source.originalResponse.data || !this.source.originalResponse.data.length)
 			return;
 
-		for(const column in this.source.originalResponse[0]) {
-			if(!this.list.has(column))
-				this.list.set(column, new DataSourceColumn(column, this.source));
+		for(const column in this.source.originalResponse.data[0]) {
+			if(!this.has(column))
+				this.set(column, new DataSourceColumn(column, this.source));
 		}
 	}
 
-	get filtered() {
+	render() {
+
+		const
+			container = this.source.container.querySelector('.columns'),
+			add = document.createElement('div');
+
+		container.textContent = null;
+
+		for(const column of this.values())
+			container.appendChild(column.container);
+
+		add.classList = 'column';
+		add.innerHTML = '<span><i class="fa fa-plus"></i></span>';
+
+		add.on('click', async () => {
+
+			const key = `column_${this.size + 1}`
+
+			this.set(key, new DataSourceColumn(key, this.source));
+
+			this.render();
+
+			await this.source.visualizations.selected.render();
+		});
+
+		container.appendChild(add);
+	}
+
+	get list() {
 
 		const result = new Map;
 
-		for(const [key, column] of this.list) {
+		for(const [key, column] of this) {
 
 			if(!column.disabled)
 				result.set(key, column);
@@ -836,31 +887,8 @@ class DataSourceColumn {
 				apply: (q, v) => v <= q,
 			},
 			{
-				name: 'RegExp',
+				name: 'Regular Expression',
 				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
-			},
-		];
-
-		DataSourceColumn.accumulationTypes = [
-			{
-				name: 'sum',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.data.get(column)), 0)),
-			},
-			{
-				name: 'average',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.data.get(column)), 0) / rows.length),
-			},
-			{
-				name: 'max',
-				apply: (rows, column) => Format.number(Math.max(...rows.map(r => r.data.get(column)))),
-			},
-			{
-				name: 'min',
-				apply: (rows, column) => Format.number(Math.min(...rows.map(r => r.data.get(column)))),
-			},
-			{
-				name: 'distinct',
-				apply: (rows, column) => Format.number(new Set(rows.map(r => r.data.get(column))).size),
 			},
 		];
 
@@ -871,109 +899,235 @@ class DataSourceColumn {
 		this.color = DataSourceColumn.colors[this.source.columns.size];
 	}
 
-	get search() {
+	get container() {
 
-		if(this.searchContainer)
-			return this.searchContainer;
+		if(this.containerElement)
+			return this.containerElement;
 
 		const
-			container = this.searchContainer = document.createElement('th'),
+			container = this.containerElement = document.createElement('div'),
 			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join('');
 
+		container.classList.add('column');
+
 		container.innerHTML = `
-			<div>
-				<select class="search-type">${searchTypes}</select>
-				<input type="search" class="query" placeholder="${this.name}">
+			<span class="color" style="background: ${this.color}"></span>
+			<span class="name">${this.name}</span>
+
+			<div class="blanket hidden">
+				<form class="block form">
+
+					<h3>Column Properties</h3>
+
+					<label>
+						<span>Name</span>
+						<input type="text" name="name">
+					</label>
+
+					<label>
+						<span>Key</span>
+						<input type="text" name="key" disabled readonly>
+					</label>
+
+					<label>
+						<span>Search</span>
+						<div class="search">
+							<select name="searchType">
+								${searchTypes}
+							</select>
+							<input type="search" name="search">
+						</div>
+					</label>
+
+					<label>
+						<span>Sort</span>
+						<select name="sort">
+							<option value="-1">None</option>
+							<option value="0">Descending</option>
+							<option value="1">Ascending</option>
+						</select>
+					</label>
+
+					<label>
+						<span>Disabled</span>
+						<select name="disabled">
+							<option value="0">No</option>
+							<option value="1">Yes</option>
+						</select>
+					</label>
+
+					<label>
+						<span>Formula</span>
+						<input type="text" name="formula">
+						<small></small>
+					</label>
+
+					<label>
+						<input type="Submit" value="Submit">
+					</label>
+				</form>
 			</div>
 		`;
 
-		const
-			select = container.querySelector('.search-type'),
-			query = container.querySelector('.query');
+		this.blanket = container.querySelector('.blanket');
+		this.form = container.querySelector('form');
 
-		select.on('change', () => {
-			this.accumulation.run();
-			this.source.visualizations.selected.render();
-			setTimeout(() => select.focus());
+		this.form.elements.formula.on('keyup', async () => {
+
+			if(this.formulaTimeout)
+				clearTimeout(this.formulaTimeout);
+
+			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		});
 
-		query.on('keyup', () => {
-			this.searchQuery = query.value;
-			this.accumulation.run();
-			this.source.visualizations.selected.render();
-			setTimeout(() => query.focus());
+		this.form.on('submit', async e => this.save(e));
+
+		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
+		this.form.on('click', e => e.stopPropagation());
+
+		container.querySelector('.name').on('click', async () => {
+
+			this.disabled = !this.disabled;
+
+			this.source.columns.render();
+
+			await this.update();
 		});
+
+		this.setDragAndDrop();
 
 		return container;
 	}
 
-	get accumulation() {
+	edit() {
 
-		if(this.accumulationContainer)
-			return this.accumulationContainer;
-
-		const
-			container = this.accumulationContainer = document.createElement('th'),
-			accumulationTypes = DataSourceColumn.accumulationTypes.map((type, i) => `
-				<option>${type.name}</option>
-			`).join('');
-
-		container.innerHTML = `
-			<div>
-				<select>
-					<option>&#402;</option>
-					${accumulationTypes}
-				</select>
-				<span class="result"></span>
-			</div>
-		`;
-
-		const
-			select = container.querySelector('select'),
-			result = container.querySelector('.result');
-
-		select.on('change', () => container.run());
-
-		container.run = () => {
-
-			const
-				data = this.source._response,
-				accumulation = DataSourceColumn.accumulationTypes.filter(a => a.name == select.value);
-
-			if(select.value && accumulation.length) {
-
-				const value = accumulation[0].apply(data, this.key);
-
-				result.textContent = value == 'NaN' ? '' : value;
-			}
-
-			else result.textContent = '';
+		for(const element of this.form.elements) {
+			if(this.hasOwnProperty(element.name))
+				element.value = this[element.name];
 		}
 
-		return container;
+		if(this.source.columns.sortBy != this)
+			this.form.elements.sort.value = -1;
+
+		this.blanket.classList.remove('hidden');
+		this.source.container.querySelector('.columns').classList.remove('hidden');
+
+		this.validateFormula();
+
+		this.form.elements.name.focus();
 	}
 
-	get heading() {
+	async save(e) {
 
-		if(this.headingContainer)
-			return this.headingContainer;
+		if(e)
+			e.preventDefault();
 
-		const container = this.headingContainer = document.createElement('th');
+		this.validateFormula();
 
-		container.classList.add('heading');
+		for(const element of this.form.elements)
+			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 
-		container.innerHTML = `
-			<span class="name">${this.name}</span>
-			<span class="sort"><i class="fa fa-sort"></i></span>
-		`;
+		this.filtered = this.search !== null;
 
-		container.on('click', () => {
+		if(this.form.elements.sort.value >= 0)
 			this.source.columns.sortBy = this;
-			this.sort = !this.sort;
-			this.source.visualizations.selected.render();
+
+		await this.update();
+	}
+
+	async update() {
+
+		this.container.querySelector('.name').textContent = this.name;
+
+		this.blanket.classList.add('hidden');
+
+		this.container.classList.toggle('disabled', this.disabled);
+		this.container.classList.toggle('filtered', this.filtered ? true : false);
+		this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
+
+		this.source.columns.render();
+		await this.source.visualizations.selected.render();
+	}
+
+	validateFormula() {
+
+		let formula = this.form.elements.formula.value;
+
+		for(const column of this.source.columns.values()) {
+
+			if(formula.includes(column.key))
+				formula = formula.replace(new RegExp(column.key, 'gi'), 1);
+		}
+
+		try {
+			eval(formula);
+		}
+
+		catch(e) {
+
+			this.form.elements.formula.classList.add('error');
+			this.form.elements.formula.parentElement.querySelector('small').textContent = e.message;
+
+			return;
+		}
+
+		this.form.elements.formula.classList.remove('error');
+		this.form.elements.formula.parentElement.querySelector('small').innerHTML = '&nbsp;';
+	}
+
+	setDragAndDrop() {
+
+		const container = this.container;
+
+		container.setAttribute('draggable', 'true');
+
+		container.on('dragstart', e => {
+			this.source.columns.beingDragged = this;
+			e.effectAllowed = 'move';
+			container.classList.add('being-dragged');
+			this.source.container.querySelector('.columns').classList.add('being-dragged');
 		});
 
-		return container;
+		container.on('dragend', () => {
+			container.classList.remove('being-dragged');
+			this.source.container.querySelector('.columns').classList.remove('being-dragged');
+		});
+
+		container.on('dragenter', e => {
+			container.classList.add('drag-enter');
+		});
+
+		container.on('dragleave', () =>  {
+			container.classList.remove('drag-enter');
+		});
+
+		// To make the targate droppable
+		container.on('dragover', e => e.preventDefault());
+
+		container.on('drop', e => {
+
+			container.classList.remove('drag-enter');
+
+			if(this.source.columns.beingDragged == this)
+				return;
+
+			this.source.columns.delete(this.source.columns.beingDragged.key);
+
+			const columns = [...this.source.columns.values()];
+
+			this.source.columns.clear();
+
+			for(const column of columns) {
+
+				if(column == this)
+					this.source.columns.set(this.source.columns.beingDragged.key, this.source.columns.beingDragged);
+
+				this.source.columns.set(column.key, column);
+			}
+
+			this.source.visualizations.selected.render();
+			this.source.columns.render();
+		});
 	}
 }
 
@@ -1021,6 +1175,10 @@ class DataSourcePostProcessors {
 
 
 		return container;
+	}
+
+	update() {
+		this.source.container.querySelector('.postprocessors').classList.toggle('hidden', !this.source.columns.has('timing'));
 	}
 }
 
@@ -1329,6 +1487,8 @@ class Visualization {
 		for(const key in visualization)
 			this[key] = visualization[key];
 
+		this.id = this.visualization_id;
+
 		this.source = source;
 	}
 }
@@ -1391,7 +1551,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		search.classList.add('search');
 		accumulation.classList.add('accumulation');
 
-		for(const column of this.source.columns.filtered.values()) {
+		for(const column of this.source.columns.list.values()) {
 
 			search.appendChild(column.search);
 			accumulation.appendChild(column.accumulation);
@@ -1415,7 +1575,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			if(this.source.selectedRows.has(row))
 				tr.classList.add('selected');
 
-			for(const [key, column] of this.source.columns.filtered) {
+			for(const [key, column] of this.source.columns.list) {
 
 				const td = document.createElement('td');
 
@@ -1436,7 +1596,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			tr.classList.add('show-rows');
 
 			tr.innerHTML = `
-				<td colspan="${this.source.columns.filtered.size}">
+				<td colspan="${this.source.columns.list.size}">
 					<i class="fa fa-angle-down"></i>
 					<span>Show ${parseInt(this.rowLimit * this.rowLimitMultiplier - this.rowLimit)} more rows</span>
 					<i class="fa fa-angle-down"></i>
@@ -1458,7 +1618,7 @@ Visualization.list.set('table', class Table extends Visualization {
 	}
 });
 
-Visualization.list.set('area', class Area extends Visualization {
+Visualization.list.set('line', class Line extends Visualization {
 
 	get container() {
 
@@ -1469,9 +1629,11 @@ Visualization.list.set('area', class Area extends Visualization {
 
 		const container = this.containerElement;
 
-		container.classList.add('visualization', 'area');
+		container.classList.add('visualization', 'line');
 		container.innerHTML = `
-			<div id="area-${this.source.query_id}" class="container"></div>
+			<div id="line-${this.source.query_id}" class="container">
+				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+			</div>
 		`;
 
 		return container;
@@ -1479,313 +1641,173 @@ Visualization.list.set('area', class Area extends Visualization {
 
 	async load(e) {
 
-		if(e)
-			e.preventDefault();
+		e && e.preventDefault && e.preventDefault();
 
-		this.container.querySelector('.container').innerHTML = `
-			<div class="loading">
-				<i class="fa fa-spinner fa-spin"></i>
-			</div>
-		`;
+		this.container.querySelector('.container').innerHTML = `<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>`;
 
 		await this.source.fetch();
 
 		this.render();
 	}
 
-	async render() {
+	render() {
 
-		await this.source.fetch();
+		const
+			series = {},
+			rows = this.source.response;
 
-		let data={};
+		for(const row of rows) {
 
-		for(const result of this.source.response) {
-			for(const key in result) {
+			row.date = Format.date(row.get('timing'));
+
+			for(const [key, value] of row) {
+
 				if(key == 'timing')
 					continue;
-				if(!data.hasOwnProperty(key))
-					data[key]=[];
 
-				data[key].push({date:result['timing'],x:null,y:result[key]})
+				if(!series[key]) {
+					series[key] = {
+						label: this.source.columns.get(key).name,
+						color: this.source.columns.get(key).color,
+						data: []
+					};
+				}
+
+				series[key].data.push({
+					date: row.date,
+					x: null,
+					y: value,
+				});
 			}
 		}
 
-		const series = [];
-		for(var i = 0; i < Object.values(data).length; i++) {
-			series.push({data:Object.values(data)[i],label:Object.keys(data)[i]})
-		}
-
-		this.D3Area({
-			series: series.reverse(),
-			divId: `#area-${this.source.query_id}`,
+		this.draw({
+			series: Object.values(series),
+			rows: rows,
+			divId: `#line-${this.source.query_id}`,
 			chart: {},
-			title: `${this.source.query_id}`,
-			tooltip: {
-				formatter: (data, legends, color) => {
-					var string = [];
-					if(!isNaN(data[0].date))
-						string.push('<b>' + data[0].date + ' Hours</b>');
-					else
-						string.push('<b>' + Format.date(data[0].date) + '</b>');
-					var max = 0;
-					for(const y in data)
-						max = Math.max(max,data[y].y)
-
-					for(const number in data) {
-						string.push('<span>' + '<span id="circ" style="background-color:' + color[number] + '"></span>' + legends[number] + ' : ' +
-						Format.number(data[number].y)+' ('+((data[number].y / max) * 100).toFixed(2)+'%)</span>');
-					}
-					return string.join('<br>');
-				}
-			},
 		});
 	}
 
-	D3Area(obj) {
+	draw(obj) {
 
-		d3.selectAll(obj.divId).on('mousemove', null)
+		const rows = obj.rows;
+
+		d3.selectAll(obj.divId)
+			.on('mousemove', null)
 			.on('mouseout', null)
-			.on('mousedown', null)
-			.on('click', null);
+			.on('mousedown', null);
 
 		var chart = {};
 
-		var downloadFlag = false;
 		var data = obj.series;
 
-		 var
-			margin = {top: 20, right: 30, bottom: 20, left: 50},
-			width = (document.querySelector(obj.divId).clientWidth==0?600:document.querySelector(obj.divId).clientWidth) - margin.left - margin.right,
-			height = obj.chart.height?obj.chart.height:460 - margin.top - margin.bottom,
-			tickNumber = 5;
+		var tickNumber = 5;
 
-		var legendToggleTextFlag = false;
+		// Setting margin and width and height
+		var margin = {top: 20, right: 50, bottom: 40, left: 50},
+			width = (this.container.clientWidth || 600) - margin.left - margin.right,
+			height = (obj.chart.height || 500) - margin.top - margin.bottom;
 
-		//x
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
 			.rangePoints([0, width], 0.1, 0);
 
-		//y
 		var y = d3.scale.linear().range([height, margin.top]);
-
-		var color = d3.scale.ordinal()
-			.range(['#dfb955',
-				'#edb28d',
-				'#5E95E1',
-				'#DD4949',
-				'#49C3DD',
-				'#849448',
-				'#7A5D4B',
-				'#A971D8',
-				'#bbcbdb',
-				'#9ebd9e',
-				'#dd855c',
-				'#f1e995',
-				'#7AE1AB'
-			]);
 
 		// Defining xAxis location at bottom the axes
 		var xAxis = d3.svg.axis()
 			.scale(x)
-			.orient("bottom")
+			.orient("bottom");
 
 		//Defining yAxis location at left the axes
 		var yAxis = d3.svg.axis()
 			.scale(y)
-			.tickFormat(d3.format("s"))
 			.innerTickSize(-width)
-
 			.orient("left");
 
 		//graph type line and
 		var line = d3.svg.line()
-			.x(function(d) {
-				return x(d.date);
-			})
-			.y(function(d) {
-				return y(d.y);
-			});
+			.x(d => x(d.date))
+			.y(d => y(d.y));
 
+		var disbleHover = false;
 
-		var count = 0;
-		var stack = d3.layout.stack()
-			.offset("zero")
-			.values(function(d) {
-				return d.data;
-			})
-			.x(function(d) {
-				return x(d.date)
-			})
-			.y(function(d) {
-				return d.y;
-			});
+		var rawData = JSON.parse(JSON.stringify(data));
+		var series = data,
+			zoom = true;
 
-		var area = d3.svg.area()
-			.x(function(d) {
-				return x(d.date)
-			})
-			.y0(function(d) {
-				return y(d.y0)
-			})
-			.y1(function(d) {
-				return y(d.y0 + d.y);
-			});
+		//chart function to create chart
+		chart.plot = (resize) => {
 
-		var mouseMoveHide = 'visible',
-			HoverFlag = true;
-
-		//calling legend and setting width,height,margin,color
-		var legend;
-
-
-		//Setting domain for the colors with te exceptioon of date column
-		color.domain(data.map(function(d) {
-			return d.label
-		}));
-
-		for (var i = 0; i < data.length; i++) {
-			data[i].hover = false;
-			data[i].disabled = true;
-		}
-		var cities = data;
-		var rawData = JSON.parse(JSON.stringify(cities));
-		var series, dataLength, zoom = true;
-
-		//HammerJs functionality added
-		var div = document.getElementById(obj.divId.indexOf("#") == -1 ? obj.divId : obj.divId.replace("#", ""));
-		if (div == null) {
-			return
-		}
-
-		//Update function to create chart
-		chart.plot = () => {
 			//Empty the container before loading
+			d3.selectAll(obj.divId+" > *").remove();
 
-			d3.selectAll(obj.divId + " > *").remove();
-
-			//Adding chart and placing chart at specific locaion using translate
+			//Adding chart and placing chart at specific location using translate
 			var svg = d3.select(obj.divId)
 				.append("svg")
-				.attr("width", width + margin.left + margin.right)
-				.attr("height", height + margin.top + margin.bottom)
 				.append("g")
 				.attr("class", "chart")
-				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+				.attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-			legend = d3Legend().height(height).width(width).margin(margin).color(color);
-
-			//Filtering data if the column is disable or not
-			series = cities.filter(function(d) {
-				return d.disabled;
-			});
-
-
-			//Appending legend box
-			svg.append('g')
-				.attr('class', 'legendWrap');
-
-			//legend location
-			svg.select('.legendWrap').datum(cities)
-				.attr('transform', 'translate(' + 0 + ',' + 0 + ')')
-				.call(legend);
-
-			if (svg.select('.legendWrap').node() && margin.bottom < (svg.select('.legendWrap').node().getBoundingClientRect().height + 30)) {
-				margin.bottom = svg.select('.legendWrap').node().getBoundingClientRect().height + 30;
-				chart.plot();
-			}
-
-
-			//on legend click toggle line
-			legend.dispatch.on('legendClick', function(d) {
-				d.disabled = !d.disabled;
-				chart.plot();
-			});
-
-			//Chart Title
-			// svg.append('g').attr('class','titleWrap').append('text')
-			//   .attr("x", (width / 2))
-			//   .attr("y",  (margin.top / 2))
-			//   .attr("text-anchor", "middle")
-			//   .style("font-size", "20px")
-			//   .text(obj.title.text);
-
-			//Reset Zoom Button
+			// Reset Zoom Button
 			svg.append('g').attr('class', 'resetZoom')
 				.classed("toggleReset", zoom)
-				.attr("x", (width / 2))
+				.attr("x", width / 2)
 				.attr("y", -10)
 				.style("z-index", 1000)
-				.append("rect")  //Appending rectangle styling
+				.append("rect")
 				.attr("width", 80)
 				.attr("height", 20)
-				.attr("x", ((width / 2) - 2))
-				.attr("y", -5)
+				.attr("x", (width / 2) - 2)
+				.attr("y", -10)
 				.attr("rx", 2)
 				.style("fill", "#f2f2f2")
 				.style("stroke", "#666666")
 				.style("stroke-width", "1px");
 
-			  d3.select(obj.divId + " > svg > g > g[class='resetZoom']") //Adding reset zoom text to the reset zoom rectangle
+			d3.select(obj.divId + " > svg > g > g[class='resetZoom']")
 				.append("text")
 				.attr("x", ((width / 2) + 40))
-				.attr("y", -5 + 12)
+				.attr("y", 4)
 				.attr("text-anchor", "middle")
 				.style("font-size", "12px")
 				.text("Reset Zoom");
 
 			//Click on reset zoom function
-			d3.select(obj.divId + " > svg > g > g[class='resetZoom']").on("mousedown", function() {
-				cities.forEach(function(d, i) {
-					d.data = rawData[i].data;
-				});
+			d3.select(obj.divId+" > svg > g > g[class='resetZoom']").on("mousedown", function () {
+				data.forEach((d, i) => d.data = rawData[i].data);
 				zoom = true;
 				chart.plot()
-
 			});
 
 			//check if the data is present or not
-			if (series.length == 0 || series[0].data.length == 0) {
-				//Chart Title
-				svg.append('g').attr('class', 'noDataWrap').append('text')
+			if(!rows.length) {
+
+				return svg.append('g').attr('class','noDataWrap').append('text')
 					.attr("x", (width / 2))
-					.attr("y", (height / 2))
+					.attr("y",  (height / 2))
 					.attr("text-anchor", "middle")
 					.style("font-size", "20px")
-					.text(obj.loading ? "Loading Data ..." : "No data to display");
-				return;
+					.text("Failed to load data :(");
 			}
 
-			stack(series);
-
-			//storing the length of data so that the check can
-			dataLength = series[0].data.length;
-
 			//setting the upper an d lower limit in x - axis
-			x.domain(series[0].data.map(function(d) {
-				return d.date;
-			}));
+			x.domain(series[0].data.map(d => d.date));
 
 			//var mult = Math.max(1, Math.floor(width / x.domain().length));
 			x.rangePoints([0, width], 0.1, 0);
-			//setting the upper an d lower limit in y - axis
+
 			y.domain([
-				d3.min(series, function(c) {
-					return d3.min(c.data, function(v) {
-						return Math.floor(v.y0);
-					});
-				}),
-				d3.max(series, function(c) {
-					return d3.max(c.data, function(v) {
-						return Math.ceil(v.y0 + v.y);
-					});
-				}) + 4
+				d3.min(series, c => d3.min(c.data, v => Math.floor(v.y))),
+				d3.max(series, c => d3.max(c.data, v => Math.ceil(v.y)))
 			]);
 
+			if(window.innerWidth <= 768)
+				tickNumber = 2;
+
 			var tickInterval = parseInt(x.domain().length / tickNumber);
-			var ticks = x.domain().filter(function(d, i) {
-				return !(i % tickInterval);
-			});
+			var ticks = x.domain().filter((d, i) => !(i % tickInterval));
 
 			xAxis.tickValues(ticks);
 			yAxis.innerTickSize(-width);
@@ -1794,26 +1816,12 @@ Visualization.list.set('area', class Area extends Visualization {
 			svg.append("g")
 				.attr("class", "x axis")
 				.attr("transform", "translate(0," + height + ")")
-				.call(xAxis)
-				.append("text")
-				.attr("x", (width / 2))
-				.attr("y", 35)
-				.style("text-anchor", "middle")
-				.attr("class", "axis-label")
-				.text(obj.xAxis && obj.xAxis.title.text ? obj.xAxis.title.text : "");
+				.call(xAxis);
 
 			//Appending y - axis
 			svg.append("g")
 				.attr("class", "y axis")
-				.call(yAxis)
-				.append("text")
-				.attr("transform", "rotate(-90)")
-				.attr("y", 6)
-				.attr("dy", "-3.71em")
-				.attr("dx", -((height) / 2) - margin.top)
-				.style("text-anchor", "middle")
-				.attr("class", "axis-label")
-				.text(obj.yAxis && obj.xAxis.title.text ? obj.xAxis.title.text : "");
+				.call(yAxis);
 
 			//Appending line in chart
 			svg.selectAll(".city")
@@ -1821,252 +1829,208 @@ Visualization.list.set('area', class Area extends Visualization {
 				.enter().append("g")
 				.attr("class", "city")
 				.append("path")
-				.attr("class", "streamPath")
-				.transition()
-				.duration(500)
-				.ease('linear')
-				.attr("d", function(d) {
-					return area(d.data);
-				})
-				.attr("data-legend", function(d) {
-					return d.label
-				})
-				.style("fill", function(d) {
-					return color(d.label);
-				})
-				.style("opacity", "0.8")
-				.style("stroke-width", "0px")
-				.style("stroke", "#333333");
+				.attr("class", "line")
+				.attr("d", d => line(d.data))
+				.style("stroke", d => d.color);
 
-			//selecting all the paths
+			// Selecting all the paths
 			var path = svg.selectAll("path");
 
-			//For each line appending the circle at each point
-			series.forEach(function(data) {
-				var visibility = "visible";
-				//                if the length of the
-				if (data.data.length > 270) {
-					visibility = "hidden";
-				}
+			if(!resize) {
+				path[0].forEach(path => {
+					var length = path.getTotalLength();
+
+					path.style.strokeDasharray = length + ' ' + length;
+					path.style.strokeDashoffset = length;
+					path.getBoundingClientRect();
+
+					path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+					path.style.strokeDashoffset = '0';
+				});
+			}
+
+			// For each line appending the circle at each point
+			for(const data of series) {
+
 				svg.selectAll("dot")
 					.data(data.data)
 					.enter().append("circle")
-					.attr('class', 'clips')
-					.attr('id', function(d) {
-						return parseInt(x(d.date))
-					})
-					.style('visibility', visibility)
-					.attr("r", 0)
-					.style('fill', color(data.label))
-					.attr("cx", function(d) {
-						return x(d.date);
-					})
-					.attr("cy", function(d) {
-						return y(d.y + d.y0);
-					});
-
-			});
-
-			var that = this;
-			//
-			//Hover functionality
-			d3.selectAll(obj.divId).on('mousemove', function() {
-					Tooltip.hide(that.container);
-					var cord = d3.mouse(this);
-
-
-					if (HoverFlag) {
-						mouseMoveHide = 'visible'
-					} else {
-						mouseMoveHide = 'hidden'
-
-					}
-
-					if (cord[1] < 2 * margin.top || cord[1] > (height + 2 * margin.top) || cord[0] < margin.left || cord[0] > (width + margin.left) || series.length == 0 || series[0].data.length == 0) {
-						return
-					}
-
-					d3.selectAll(obj.divId + ' > svg > g > circle[class="clips"]')
-						.attr('r', dataLength > 200 ? 0 : 0);
-					var flag = true;
-					var xpos = parseInt(cord[0] - margin.left);
-					while (d3.selectAll(obj.divId + " > svg > g > circle[id='" + (xpos) + "']")[0].length == 0) {
-						if (flag) {
-							xpos++
-						} else {
-							xpos--;
-							if (xpos < 0) {
-								break;
-							}
-						}
-						if (xpos >= width && flag) {
-							flag = false;
-						}
-					}
-
-					var hover = d3.selectAll(obj.divId + " > svg > g > circle[id='" + xpos + "']")
-						.attr('r', 6)
-						.style('visibility', mouseMoveHide);
-					var data = hover.data();
-					var legends = series.map(function(d) {
-						return d.label;
-					});
-					var colors = [];
-					data.forEach(function(a, i) {
-						colors[i] = color(legends[i]);
-					});
-					Tooltip.show(that.container, [cord[0], cord[1]], obj.tooltip.formatter(data, legends, colors), 'n');
-
-				})
-				.on('mouseout', function() {
-					Tooltip.hide(that.container);
-					var radius;
-					if (dataLength > 200) {
-						radius = 0
-					} else {
-						radius = 0
-					}
-					d3.selectAll(obj.divId + ' > svg > g > circle[class="clips"]')
-						.attr('r', radius)
-						.style('visibility', 'visible');
-				});
-
-
-			//zoming function
-			if (dataLength > 30) {
-				d3.selectAll(obj.divId)
-					.on("mousedown", function() {
-
-						//remove all the rectangele created before
-						d3.selectAll(obj.divId + " > rect[class='zoom']").remove();
-
-						//assign this toe,
-						var e = this,
-							origin = d3.mouse(e), // origin is the array containing the location of cursor from where the rectangle is created
-							rect = svg.append("rect").attr("class", "zoom"); //apending the rectangle to the chart
-						d3.select("body").classed("noselect", true); //disable select
-						//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-						origin[0] = Math.max(0, Math.min(width, (origin[0] - margin.left)));
-						HoverFlag = false;
-
-						if (origin[1] < 2 * margin.top || origin[1] > (height + 2 * margin.top) || origin[0] < margin.left || origin[0] > (width + margin.left) || series.length == 0) {
-							HoverFlag = true;
-							return
-						}
-						//if the mouse is down and mouse is moved than start creating the rectangle
-						d3.select(window)
-							.on("mousemove.zoomRect", function() {
-								//current location of mouse
-								var m = d3.mouse(e);
-								//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-								m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
-
-								//asign width and height to the rectangle
-								rect.attr("x", Math.min(origin[0], m[0]))
-									.attr("y", margin.top)
-									.attr("width", Math.abs(m[0] - origin[0]))
-									.attr("height", height - margin.top);
-							})
-							.on("mouseup.zoomRect", function() { //function to run mouse is released
-
-								//stop above event listner
-								d3.select(window).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
-
-								//allow selection
-								d3.select("body").classed("noselect", false);
-								var m = d3.mouse(e);
-
-								//the position where the mouse the released
-								m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
-								//check that the origin location on x axis of the mouse should not be eqaul to last
-								if (m[0] !== origin[0] && series.length != 0) {
-
-									//starting filtering data
-									cities.forEach(function(d) {
-
-										//slicing each line if and only if the length of data > 50 (minimum no of ticks should be present in the graph)
-										if (d.data.length > 50) {
-											d.data = d.data.filter(function(a) {
-												if (m[0] < origin[0]) {
-													return x(a.date) >= m[0] && x(a.date) <= origin[0];
-												} else {
-													return x(a.date) <= m[0] && x(a.date) >= origin[0];
-												}
-											});
-										}
-									});
-									zoom = false
-									//calling the update function to update the graph
-									chart.plot();
-								}
-								HoverFlag = true;
-								rect.remove();
-							}, true);
-						d3.event.stopPropagation();
-					});
+					.attr('class', (d, i) => rows[i].annotations.size ? 'clips annotations' : 'clips')
+					.attr('id', (d, i) => i)
+					.attr("r", (d, i) => rows[i].annotations.size ? 4 : 0)
+					.style('fill', (d, i) => rows[i].annotations.size ? '#666' : data.color)
+					.attr("cx", d => x(d.date))
+					.attr("cy", d => y(d.y))
 			}
 
+			var lastXpos;
+			var that = this;
+
+			d3.selectAll(obj.divId)
+			.on('mousemove', function() {
+
+				var cord = d3.mouse(this);
+				var rows = obj.rows;
+
+				if(disbleHover)
+					return Tooltip.hide(that.container);
+
+				d3.selectAll(obj.divId+' > svg > g > circle[class="clips"]').attr('r', 0);
+				d3.selectAll(obj.divId+' > svg > g > circle[class="clips annotations"]').attr('r', 4);
+
+				var xpos = parseInt((cord[0] - 50) / (width / series[0].data.length));
+
+				var row = rows[xpos];
+
+				if(!row)
+					return;
+
+				d3.selectAll(`${obj.divId} > svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+				d3.selectAll(`${obj.divId} > svg > g > circle[id='${xpos}'][class="clips annotations"]`).attr('r', 6);
+
+				const tooltip = [];
+
+				for(const [key, value] of row.entries()) {
+
+					if(key == 'timing')
+						continue;
+
+					tooltip.push(`
+						<li>
+							<span class="circle" style="background:${row.source.columns.get(key).color}"></span>
+							<span>${row.source.columns.get(key).name}</span>
+							<span class="value">${Format.number(value)}</span>
+						</li>
+					`);
+				}
+
+				const content = `
+					<header>${row.date}</header>
+					<ul class="body">
+						${tooltip.join('')}
+					</ul>
+				`;
+
+				Tooltip.show(that.container, [cord[0], cord[1]], content, row);
+			})
+			.on('mouseout', function () {
+
+				Tooltip.hide(that.container);
+
+				d3.selectAll(obj.divId+' > svg > g > circle[class="clips"]').attr('r', 0);
+			});
+
+			//zoming function
+			d3.selectAll(obj.divId)
+			.on("click", function () {
+
+				var cord = d3.mouse(this);
+				var rows = obj.rows;
+
+				var xpos = parseInt(Math.max(0, cord[0]) / (width / series[0].data.length)) - 2;
+
+				var row = rows[xpos];
+
+				row.annotations.show();
+
+				Tooltip.hide(that.container);
+			})
+			.on("mousedown", function () {
+
+				//remove all the rectangele created before
+				d3.selectAll(obj.divId + " > rect[class='zoom']").remove();
+
+				//assign this toe,
+				var e = this,
+					origin = d3.mouse(e),   // origin is the array containing the location of cursor from where the rectangle is created
+					rect = svg.append("rect").attr("class", "zoom"); //apending the rectangle to the chart
+				d3.select("body").classed("noselect", true);  //disable select
+				//find the min between the width and and cursor location to prevent the rectangle move out of the chart
+				origin[0] = Math.max(0, Math.min(width, (origin[0] - margin.left)));
+				disbleHover = true;
+
+				//if the mouse is down and mouse is moved than start creating the rectangle
+				d3.select(window)
+				.on("mousemove.zoomRect", function () {
+					//current location of mouse
+					var m = d3.mouse(e);
+					//find the min between the width and and cursor location to prevent the rectangle move out of the chart
+					m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
+
+					//asign width and height to the rectangle
+					rect.attr("x", Math.min(origin[0], m[0]))
+						.attr("y", margin.top)
+						.attr("width", Math.abs(m[0] - origin[0]))
+						.attr("height", height - margin.top);
+				})
+				.on("mouseup.zoomRect", function () {  //function to run mouse is released
+
+					d3.select(window).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
+
+					//allow selection
+					d3.select("body").classed("noselect", false);
+					var m = d3.mouse(e);
+
+					//the position where the mouse the released
+					m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
+					//check that the origin location on x axis of the mouse should not be eqaul to last
+					if (m[0] !== origin[0] && series.length != 0) {
+
+						//starting filtering data
+						data.forEach(function (d) {
+
+							//slicing each line if and only if the length of data > 50 (minimum no of ticks should be present in the graph)
+							if (d.data.length > 50) {
+								d.data = d.data.filter(function (a) {
+									if (m[0] < origin[0]) {
+										return x(a.date) >= m[0] && x(a.date) <= origin[0];
+									} else {
+										return x(a.date) <= m[0] && x(a.date) >= origin[0];
+									}
+								});
+							}
+						});
+						zoom = false;
+						//calling the chart function to update the graph
+						chart.plot();
+					}
+					disbleHover = false;
+					rect.remove();
+				}, true);
+
+				d3.event.stopPropagation();
+			});
+
 			//When in mouse is over the line than focus the line
-			path.on('mouseover', function(d) {
-				d.hover = true;
-				hover()
+			path.on('mouseover', function (d) {
+
+				if(disbleHover)
+					return;
+
+				if(d)
+					d.hover = true;
+
+				svg.selectAll("path").classed("line-hover", d => d.hover);
 			});
 
 			//When in mouse is put the line than focus the line
-			path.on('mouseout', function(d) {
-				d.hover = false;
-				hover()
+			path.on('mouseout', function (d) {
+
+				if(d)
+					d.hover = false;
+
+				svg.selectAll("path").classed("line-hover", d => d.hover);
 			});
-
-			//on legend mouse over highlight the respective line
-			legend.dispatch.on('legendMouseover', function(d) {
-				d.hover = true;
-				hover()
-			});
-
-			//on legend mouse out set the line to normal
-			legend.dispatch.on('legendMouseout', function(d) {
-				d.hover = false;
-				hover()
-			});
-
-
-			function hover() {
-				svg.selectAll("path").classed("line-hover", function(d) {
-					return d.hover
-				})
-			}
-		}
-
-		setTimeout(function() {
-			width = document.querySelector(obj.divId).clientWidth - margin.left - margin.right;
-			chart.plot();
-		});
-
-
-		window.addEventListener('resize', function() {
-			if (width == (document.querySelector(obj.divId).clientWidth - margin.left - margin.right)) {
-				console.log("width same")
-			} else {
-				width = document.querySelector(obj.divId).clientWidth - margin.left - margin.right;
-				chart.plot();
-
-			}
-		});
-
-		chart.height = function(newHeight) {
-			if (newHeight != height) {
-				height = newHeight;
-				chart.plot();
-			}
 		};
 
-		chart.margin = function(_) {
-			if (_) {
-				margin = _;
-				chart.plot();
+		chart.plot();
+
+		window.addEventListener('resize', () => {
+			if(width !== (this.container.clientWidth - margin.left - margin.right)) {
+				width = this.container.clientWidth - margin.left - margin.right;
+				chart.plot(true);
 			}
-		};
+		});
 
 		return chart;
 	}
@@ -2085,7 +2049,9 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 		container.classList.add('visualization', 'bar');
 		container.innerHTML = `
-			<div id="bar-${this.source.query_id}" class="container"></div>
+			<div id="bar-${this.source.query_id}" class="container">
+				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+			</div>
 		`;
 
 		return container;
@@ -2093,110 +2059,74 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 	async load(e) {
 
-		if(e)
-			e.preventDefault();
+		e && e.preventDefault && e.preventDefault();
 
-		this.container.querySelector('.container').innerHTML = `
-			<div class="loading">
-				<i class="fa fa-spinner fa-spin"></i>
-			</div>
-		`;
+		this.container.querySelector('.container').innerHTML = `<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>`;
 
 		await this.source.fetch();
 
 		this.render();
 	}
 
-	async render() {
+	render() {
+		const
+			series = {},
+			rows = this.source.response;
 
-		await this.source.fetch();
+		for(const row of rows) {
 
-		let data={};
+			row.date = Format.date(row.get('timing'));
 
-		for(const result of this.source.response) {
-			for(const key in result) {
+			for(const [key, value] of row) {
+
 				if(key == 'timing')
 					continue;
-				if(!data.hasOwnProperty(key))
-					data[key]=[];
 
-				data[key].push({date:result['timing'],x:null,y:result[key]})
+				if(!series[key]) {
+					series[key] = {
+						label: this.source.columns.get(key).name,
+						color: this.source.columns.get(key).color,
+						data: []
+					};
+				}
+
+				series[key].data.push({
+					date: row.date,
+					x: null,
+					y: parseFloat(value),
+				});
 			}
 		}
 
-		const series = [];
-		for(var i = 0; i < Object.values(data).length; i++) {
-			series.push({data:Object.values(data)[i],label:Object.keys(data)[i]})
-		}
-
-		this.D3GroupedBar({
-			series: series.reverse(),
+		this.draw({
+			series: Object.values(series),
+			rows: rows,
 			divId: `#bar-${this.source.query_id}`,
 			chart: {},
-			title: `${this.source.query_id}`,
-			tooltip: {
-				formatter: (data, legends, color) => {
-					var string = [];
-					if(!isNaN(data[0].date))
-						string.push('<b>' + data[0].date + ' Hours</b>');
-					else
-						string.push('<b>' + Format.date(data[0].date) + '</b>');
-					var max = 0;
-					for(const y in data)
-						max = Math.max(max,data[y].y)
-
-					for(const number in data) {
-						string.push('<span>' + '<span id="circ" style="background-color:' + color[number] + '"></span>' + legends[number] + ' : ' +
-						Format.number(data[number].y)+' ('+((data[number].y / max) * 100).toFixed(2)+'%)</span>');
-					}
-					return string.join('<br>');
-				}
-			},
 		});
 	}
 
-	D3GroupedBar(obj) {
+	draw(obj) {
 
-		d3.selectAll(obj.divId).on('mousemove', null)
+		const rows = obj.rows;
+
+		d3.selectAll(obj.divId)
+			.on('mousemove', null)
 			.on('mouseout', null)
-			.on('mousedown', null)
-			.on('click', null);
-
-		var tickNumber = 5;
+			.on('mousedown', null);
 
 		var chart = {};
 
 		var data = obj.series;
 
-		var downloadFlag = false;
+		var tickNumber = window.innerWidth < 300 ? 3 : 5;
 
-		//Setting margin and width and height
-		var margin = {top: 20, right: 30, bottom: 20, left: 50},
-		width = (document.querySelector(obj.divId).clientWidth==0?600:document.querySelector(obj.divId).clientWidth) - margin.left - margin.right,
-		height = obj.chart.height?obj.chart.height:460 - margin.top - margin.bottom;
+		// Setting margin and width and height
+		var margin = {top: 20, right: 50, bottom: 40, left: 50},
+			width = (this.container.clientWidth || 600) - margin.left - margin.right,
+			height = (obj.chart.height || 500) - margin.top - margin.bottom;
 
-		//Parse date function
-		var legendToggleTextFlag = false;
-
-		var color = d3.scale.ordinal()
-			.range(['#4acab4',
-				'#edb28d',
-				'#5E95E1',
-				'#DD4949',
-				'#49C3DD',
-				'#849448',
-				'#dfb955',
-				'#7A5D4B',
-				'#A971D8',
-				'#bbcbdb',
-				'#9ebd9e',
-				'#dd855c',
-				'#f1e995',
-				'#696267'
-			]);
-
-		var y = d3.scale.linear().range([height, margin.top]);
-
+		var y = d3.scale.linear().range([height,margin.top]);
 
 		var x0 = d3.scale.ordinal()
 			.rangeBands([0, width], .2);
@@ -2206,370 +2136,240 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 		var xAxis = d3.svg.axis()
 			.scale(x0)
-			.orient("bottom")
+			.orient('bottom');
 
 		var yAxis = d3.svg.axis()
 			.scale(y)
 			.innerTickSize(-width)
-			.tickFormat(d3.format("s"))
-			.orient("left");
+			.orient('left');
 
-		var mouseMoveHide = 'visible',
-			HoverFlag = true;
+		var disbleHover = false;
 
-		//calling legend and setting width,height,margin,color
-		var legend
+		var series = data,
+			zoom = true;
 
-		//Setting domain for the colors with te exceptioon of date column
-		color.domain(data.map(function(d) {
-			return d.label
-		}));
+		var rawData = JSON.parse(JSON.stringify(data))
 
-		var cities = data.map(function(d) {
-			return d.data.map(function(d) {
-				return {
-					date: d.date,
-					y: +d.y
-				}
-			})
-		})
+		chart.plot = (resize) => {
 
-		for (var i = 0; i < cities.length; i++) {
-			var cityCopyObj = {};
-			cityCopyObj.data = cities[i];
-			cityCopyObj.label = color.domain()[i];
-			cityCopyObj.hover = false;
-			cityCopyObj.disabled = true;
-			cities[i] = cityCopyObj
-		}
-
-		var rawData = JSON.parse(JSON.stringify(cities))
-		var series, dataLength, zoom = true;
-
-
-		//HammerJs functionality added
-		var div = document.getElementById(obj.divId.indexOf("#") == -1 ? obj.divId : obj.divId.replace("#", ""));
-		if (div == null) {
-			return
-		}
-
-		chart.plot = () => {
-
-			//Empty the container before loading
-			d3.selectAll(obj.divId + " > *").remove();
+			d3.selectAll(obj.divId+' > *').remove();
 
 			var svg = d3.select(obj.divId)
-				.append("svg")
-				.attr("width", width + margin.left + margin.right)
-				.attr("height", height + margin.top + margin.bottom)
-				.append("g")
-				.attr("class", "chart")
-				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+				.append('svg')
+				.append('g')
+				.attr('class', 'chart')
+				.attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-			legend = d3Legend().height(height).width(width).margin(margin).color(color);
+			// Reset Zoom Button
+			svg.append('g').attr('class', 'resetZoom')
+				.classed('toggleReset', zoom)
+				.attr('x', width / 2)
+				.attr('y', -10)
+				.style('z-index', 1000)
+				.append('rect')
+				.attr('width', 80)
+				.attr('height', 20)
+				.attr('x', (width / 2) - 2)
+				.attr('y', -10)
+				.attr('rx', 2)
+				.style('fill', '#f2f2f2')
+				.style('stroke', '#666666')
+				.style('stroke-width', '1px');
 
-			series = cities.filter(function(d) {
-				return d.disabled;
-			});
-
-			//Appending legend box
-			svg.append('g')
-				.attr('class', 'legendWrap');
-
-			//legend location
-			svg.select('.legendWrap').datum(cities)
-				.attr('transform', 'translate(' + 0 + ',' + 0 + ')')
-				.call(legend);
-
-			if (svg.select('.legendWrap').node() && margin.bottom < (svg.select('.legendWrap').node().getBoundingClientRect().height + 30)) {
-				margin.bottom = svg.select('.legendWrap').node().getBoundingClientRect().height + 30;
-				chart.plot();
-			}
-
-			//on legend click toggle line
-			legend.dispatch.on('legendClick', function(d) {
-				d.disabled = !d.disabled;
-				chart.plot();
-			});
-
-			//Chart Title
-			// svg.append('g').attr('class', 'titleWrap').append('text')
-			//   .attr("x", (width / 2))
-			//   .attr("y", (margin.top / 2))
-			//   .attr("text-anchor", "middle")
-			//   .style("font-size", "20px")
-			//   .text(obj.title.text);
-
-			//Reset Zoom Button
-			 svg.append('g').attr('class', 'resetZoom')
-				.classed("toggleReset", zoom)
-				.attr("x", (width / 2))
-				.attr("y", -10)
-				.style("z-index", 1000)
-				.append("rect")  //Appending rectangle styling
-				.attr("width", 80)
-				.attr("height", 20)
-				.attr("x", ((width / 2) - 2))
-				.attr("y", -5)
-				.attr("rx", 2)
-				.style("fill", "#f2f2f2")
-				.style("stroke", "#666666")
-				.style("stroke-width", "1px");
-
-			  d3.select(obj.divId + " > svg > g > g[class='resetZoom']") //Adding reset zoom text to the reset zoom rectangle
-				.append("text")
-				.attr("x", ((width / 2) + 40))
-				.attr("y", -5 + 12)
-				.attr("text-anchor", "middle")
-				.style("font-size", "12px")
-				.text("Reset Zoom");
-
-			var qkeyButton = {},
-				textLength = 0
+			d3.select(obj.divId + ' > svg > g > g[class="resetZoom"]')
+				.append('text')
+				.attr('x', ((width / 2) + 40))
+				.attr('y', 4)
+				.attr('text-anchor', 'middle')
+				.style('font-size', '12px')
+				.text('Reset Zoom');
 
 			//Click on reset zoom function
-			d3.select(obj.divId + " > svg > g > g[class='resetZoom']").on("mousedown", function() {
-				cities.forEach(function(d, i) {
+			d3.select(obj.divId+' > svg > g > g[class="resetZoom"]').on("mousedown", function () {
+				series.forEach(function (d, i) {
 					d.data = rawData[i].data;
 				});
 				zoom = true;
 				chart.plot()
-
 			});
 
 			//check if the data is present or not
-			if (series.length == 0 || series[0].data.length == 0) {
-				//Chart Title
-				svg.append('g').attr('class', 'noDataWrap').append('text')
+			if(!rows.length) {
+
+				return svg.append('g').attr('class', 'noDataWrap').append('text')
 					.attr("x", (width / 2))
 					.attr("y", (height / 2))
 					.attr("text-anchor", "middle")
 					.style("font-size", "20px")
-					.text(obj.loading ? "Loading Data ..." : "No data to display");
-				return;
+					.text("Failed to load data :(");
 			}
 
-			y.domain([0,
-				d3.max(series, function(c) {
-					return d3.max(c.data, function(v) {
-						return Math.ceil(v.y);
-					});
-				})
-			]).nice();
-
-			x0.domain(series[0].data.map(function(d) {
-				return d.date;
-			}));
-
+			y.domain([0, d3.max(series, c => d3.max(c.data, v => Math.ceil(v.y)))]).nice();
+			x0.domain(series[0].data.map(d => d.date));
 			x0.rangeBands([0, width], 0.1, 0);
+
 			var tickInterval = parseInt(x0.domain().length / tickNumber);
-
-
-			var ticks = x0.domain().filter(function(d, i) {
-				return !(i % tickInterval);
-			});
-
+			var ticks = x0.domain().filter((d, i) => !(i % tickInterval));
 			xAxis.tickValues(ticks);
 
-			x1.domain(color.domain()).rangeBands([0, x0.rangeBand()]);
-
+			x1.domain(data.map(d => d.label)).rangeBands([0, x0.rangeBand()]);
 
 			//Appending y - axis
 			svg.append("g")
 				.attr("class", "y axis")
 				.call(yAxis)
-				.append("text")
-				.attr("transform", "rotate(-90)")
-				.attr("y", 6)
-				.attr("dy", "-3.71em")
-				.attr("dx", -((height) / 2) - margin.top)
-				.style("text-anchor", "middle")
-				.attr("class", "axis-label")
-				.text(obj.yAxis && obj.xAxis.title.text ? obj.xAxis.title.text : "");
+				.append("text");
 
 			//Appending x - axis
 			svg.append("g")
 				.attr("class", "x axis")
 				.attr("transform", "translate(0," + height + ")")
-				.call(xAxis)
-				.append("text")
-				.attr("x", (width / 2))
-				.attr("y", 35)
-				.style("text-anchor", "middle")
-				.attr("class", "axis-label")
-				.text(obj.xAxis && obj.xAxis.title.text ? obj.xAxis.title.text : "");
+				.call(xAxis);
 
-
-			svg.append("g").selectAll("g")
+			let bars = svg.append("g").selectAll("g")
 				.data(series)
 				.enter().append("g")
-				.style("fill", function(d, i) {
-					return color(d.label);
-				})
-				.attr("transform", function(d, i) {
-					return "translate(" + x1(d.label) + ",0)";
-				})
+				.style("fill", d => d.color)
+				.attr("transform", d => `translate(${x1(d.label)}, 0)`)
 				.selectAll("rect")
-				.data(function(d) {
-					return d.data;
-				})
-				.enter().append("rect")
+				.data(d => d.data)
+				.enter()
+				.append("rect")
 				.attr("width", x1.rangeBand())
-				.attr("height", function(d) {
-					return y(d.y);
-				})
-				.attr("x", function(d, i) {
-					return x0(d.date);
-				})
-				.attr("y", function(d) {
-					return height - y(d.y);
-				})
-				.transition()
-				.duration(500)
-				.ease("linear")
-				.attr("height", function(d) {
-					return height - y(d.y);
-				})
-				.attr("y", function(d) {
-					return y(d.y);
-				});
+				.attr("x", d => x0(d.date));
 
-			var rectangle = svg.selectAll('rect')
+			if(!resize) {
+				bars = bars
+					.attr("height", d => 0)
+					.attr("y", d => height)
+					.transition()
+					.duration(Visualization.animationDuration)
+					.ease("quad-in");
+			}
+
+			bars
+				.attr("height", d => height - y(d.y))
+				.attr("y", d => y(d.y));
+
 			var that = this;
 
-			//mouse over function
-			rectangle
-				.on('mousemove', function(d) {
+			d3.selectAll(obj.divId)
+			.on('mousemove', function (d) {
 
-					Tooltip.hide(that.container);
+				var rows = obj.rows
 
-					if (!d || !d.date || !series.length || !series[0].data.length)
-						return;
+				var cord = d3.mouse(this);
 
-					const
-						cord = d3.mouse(this),
-						legends = series.map(d => d.label),
-						colors = []
+				if(disbleHover)
+					return Tooltip.hide(that.container);
 
-					var	xpos = parseInt(Math.max(0, cord[0]) / (width / series[0].data.length)),
-						tempData = series.map(d => d.data[xpos]);
+				var xpos = parseInt((cord[0] - 50) / (width / series[0].data.length));
 
-					xpos = Math.min(series[0].data.length - 1, xpos);
+				var row = rows[xpos];
 
-					data.forEach((a, i) => colors[i] = color(legends[i]));
+				if(!row)
+					return;
 
-					Tooltip.show(that.container, [x0(d.date) + margin.left + x0.rangeBand() / 2, cord[1]], obj.tooltip.formatter(tempData, legends, colors), 'n');
-				})
-				.on('mouseout', function(d) {
-					Tooltip.hide(that.container);
-				});
+				const tooltip = [];
+
+				for(const [key, value] of row) {
+
+					if(key == 'timing')
+						continue;
+
+					tooltip.push(`
+						<li>
+							<span class="circle" style="background:${row.source.columns.get(key).color}"></span>
+							<span>${row.source.columns.get(key).name}</span>
+							<span class="value">${Format.number(value)}</span>
+						</li>
+					`);
+				}
+
+				const content = `
+					<header>${row.date}</header>
+					<ul class="body">
+						${tooltip.join('')}
+					</ul>
+				`;
+
+				Tooltip.show(that.container, [cord[0], cord[1]], content, row);
+			})
+			.on('mouseout', () => Tooltip.hide(this.container));
 
 			//zoming function
 			d3.selectAll(obj.divId)
-				.on("mousedown", function(d) {
-					//remove all the rectangele created before
-					d3.selectAll(obj.divId + " > rect[class='zoom']").remove();
-					//assign this toe,
-					var e = this,
-						origin = d3.mouse(e), // origin is the array containing the location of cursor from where the rectangle is created
-						rectSelected = svg.append("rect").attr("class", "zoom"); //apending the rectangle to the chart
-					d3.select("body").classed("noselect", true); //disable select
-					//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-					origin[0] = Math.max(0, Math.min(width, (origin[0])));
-					HoverFlag = false;
+			.on("mousedown", function (d) {
+				//remove all the rectangele created before
+				d3.selectAll(obj.divId + " > rect[class='zoom']").remove();
+				//assign this toe,
+				var e = this,
+					origin = d3.mouse(e),   // origin is the array containing the location of cursor from where the rectangle is created
+					rectSelected = svg.append("rect").attr("class", "zoom"); //apending the rectangle to the chart
+				d3.select("body").classed("noselect", true);  //disable select
+				//find the min between the width and and cursor location to prevent the rectangle move out of the chart
+				origin[0] = Math.max(0, Math.min(width, (origin[0] - margin.left)));
+				disbleHover = true;
 
-					if (origin[1] < 2 * margin.top || origin[1] > (height + 2 * margin.top) || origin[0] < margin.left || origin[0] > (width + margin.left) || series.length == 0) {
-						HoverFlag = true;
-						return
-					}
-					//if the mouse is down and mouse is moved than start creating the rectangle
-					d3.selectAll(obj.divId)
-						.on("mousemove.zoomRect", function(d) {
-
-							//current location of mouse
-							var m = d3.mouse(e);
-							//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-							m[0] = Math.max(0, Math.max(margin.left, Math.min(width + margin.left, (m[0]))));
-
-							//asign width and height to the rectangle
-							rectSelected.attr("x", Math.min(origin[0], m[0]))
-								.attr("y", (margin.top))
-								.attr("width", Math.abs(m[0] - origin[0]))
-								.attr("height", height - margin.top);
-						})
-						.on("mouseup.zoomRect", function(d) { //function to run mouse is released
-
-							//stop above event listner
-							d3.select(obj.divId).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
-
-							//allow selection
-							d3.select("body").classed("noselect", false);
-							var m = d3.mouse(e);
-
-							//the position where the mouse the released
-							m[0] = Math.max(0, Math.min(width, (m[0])));
-
-							//check that the origin location on x axis of the mouse should not be eqaul to last
-							if (m[0] !== origin[0] && series[0].data.length > 20) {
-
-								cities.forEach(function(d) {
-
-									//slicing each line if and only if the length of data > 50 (minimum no of ticks should be present in the graph)
-									if (d.data.length > 10) {
-										d.data = d.data.filter(function(a) {
-											if (m[0] < origin[0]) {
-												return x0(a.date) >= m[0] && x0(a.date) <= origin[0];
-											} else {
-												return x0(a.date) <= m[0] && x0(a.date) >= origin[0];
-											}
-										});
-									}
-								});
-								zoom = false;
-								chart.plot();
-							}
-							HoverFlag = true;
-							rectSelected.remove();
-
-						}, true);
-					d3.event.stopPropagation();
-				});
+				//if the mouse is down and mouse is moved than start creating the rectangle
+				d3.selectAll(obj.divId)
+					.on("mousemove.zoomRect", function (d) {
+						//current location of mouse
+						var m = d3.mouse(e);
+						//find the min between the width and and cursor location to prevent the rectangle move out of the chart
+						m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
+						//asign width and height to the rectangle
+						rectSelected.attr("x", Math.min(origin[0], m[0]))
+							.attr("y", (margin.top))
+							.attr("width", Math.abs(m[0] - origin[0]))
+							.attr("height", height-margin.top);
+					})
+					.on("mouseup.zoomRect", function (d) {  //function to run mouse is released
+						//stop above event listner
+						d3.select(obj.divId).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
+						//allow selection
+						d3.select("body").classed("noselect", false);
+						var m = d3.mouse(e);
+						//the position where the mouse the released
+						m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
+						//check that the origin location on x axis of the mouse should not be eqaul to last
+						if (m[0] !== origin[0] && series[0].data.length > 20) {
+							series.forEach(function (d) {
+								//slicing each line if and only if the length of data > 50 (minimum no of ticks should be present in the graph)
+								if (d.data.length > 10) {
+									d.data = d.data.filter(function (a) {
+										if (m[0] < origin[0]) {
+											return x0(a.date) >= m[0] && x0(a.date) <= origin[0];
+										} else {
+											return x0(a.date) <= m[0] && x0(a.date) >= origin[0];
+										}
+									});
+								}
+							});
+							zoom = false;
+							chart.plot();
+						}
+						disbleHover = false;
+						rectSelected.remove();
+					}, true);
+				d3.event.stopPropagation();
+			});
 		};
 
-		setTimeout(function() {
-			width = document.querySelector(obj.divId).clientWidth - margin.left - margin.right;
-			chart.plot()
-		});
+		chart.plot();
 
-
-		window.addEventListener('resize', function() {
-			if (width == (document.querySelector(obj.divId).clientWidth - margin.left - margin.right)) {
-				console.log("width same")
-			} else {
-				width = document.querySelector(obj.divId).clientWidth - margin.left - margin.right;
-				chart.plot();
-
+		window.addEventListener('resize', () => {
+			if(width !== (this.container.clientWidth - margin.left - margin.right)) {
+				width = this.container.clientWidth - margin.left - margin.right;
+				chart.plot(true);
 			}
 		});
 
-		chart.height = function(newHeight) {
-			if (newHeight != height) {
-				height = newHeight;
-				chart.plot();
-			}
-		};
-
-		chart.margin = function(_) {
-			if (_) {
-				margin = _;
-				chart.plot();
-			}
-		};
 		return chart;
 	}
 });
 
-Visualization.list.set('stacked', class Stacked extends Visualization {
+Visualization.list.set('stacked', class Bar extends Visualization {
 
 	get container() {
 
@@ -2582,7 +2382,9 @@ Visualization.list.set('stacked', class Stacked extends Visualization {
 
 		container.classList.add('visualization', 'stacked');
 		container.innerHTML = `
-			<div id="stacked-${this.source.query_id}" class="container"></div>
+			<div id="stacked-${this.source.query_id}" class="container">
+				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+			</div>
 		`;
 
 		return container;
@@ -2590,119 +2392,80 @@ Visualization.list.set('stacked', class Stacked extends Visualization {
 
 	async load(e) {
 
-		if(e)
-			e.preventDefault();
+		e && e.preventDefault && e.preventDefault();
 
-		this.container.querySelector('.container').innerHTML = `
-			<div class="loading">
-				<i class="fa fa-spinner fa-spin"></i>
-			</div>
-		`;
+		this.container.querySelector('.container').innerHTML = `<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>`;
 
 		await this.source.fetch();
 
 		this.render();
 	}
 
-	async render() {
+	render() {
+		const
+			series = {},
+			rows = this.source.response;
 
-		await this.source.fetch();
+		for(const row of rows) {
 
-		let data={};
+			row.date = Format.date(row.get('timing'));
 
-		for(const result of this.source.response) {
-			for(const key in result) {
+			for(const [key, value] of row) {
+
 				if(key == 'timing')
 					continue;
-				if(!data.hasOwnProperty(key))
-					data[key]=[];
 
-				data[key].push({date:result['timing'],x:null,y:result[key]})
+				if(!series[key]) {
+					series[key] = {
+						label: this.source.columns.get(key).name,
+						color: this.source.columns.get(key).color,
+						data: []
+					};
+				}
+
+				series[key].data.push({
+					date: row.date,
+					x: null,
+					y: parseFloat(value),
+					label: this.source.columns.get(key).name,
+					color: this.source.columns.get(key).color,
+				});
 			}
 		}
 
-		const series = [];
-		for(var i = 0; i < Object.values(data).length; i++) {
-			series.push({data:Object.values(data)[i],label:Object.keys(data)[i]})
-		}
-
-		this.D3Stacked({
-			series: series.reverse(),
+		this.draw({
+			series: Object.values(series),
+			rows: rows,
 			divId: `#stacked-${this.source.query_id}`,
 			chart: {},
-			title: `${this.source.query_id}`,
-			tooltip: {
-				formatter: (data, legends, color) => {
-					var string = [];
-					if(!isNaN(data[0].date))
-						string.push('<b>' + data[0].date + ' Hours</b>');
-					else
-						string.push('<b>' + Format.date(data[0].date) + '</b>');
-					var max = 0;
-					for(const y in data)
-						max = Math.max(max,data[y].y)
-					var total = 0;
-					for(const number in data) {
-						string.push('<span>' + '<span id="circ" style="background-color:' + color[number] + '"></span>' + legends[number] + ' : ' +
-						Format.number(data[number].y)+' ('+((data[number].y / max) * 100).toFixed(2)+'%)</span>');
-						total = total + data[number].y;
-					}
-
-					string.push('<span>' + '<span id="circ" style="background-color:' + 'transparent' + '"></span> Total : ' +
-						Format.number(total) +'</span>');
-
-					return string.join('<br>');
-				}
-			},
 		});
 	}
 
-	D3Stacked(obj) {
+	draw(obj) {
 
-		d3.selectAll(obj.divId).on('mousemove', null)
+		const rows = obj.rows;
+
+		d3.selectAll(obj.divId)
+			.on('mousemove', null)
 			.on('mouseout', null)
-			.on('mousedown', null)
-			.on('click', null);
+			.on('mousedown', null);
 
 		var chart = {};
 
 		var data = obj.series;
 
-		var downloadFlag = false;
+		var tickNumber = 5;
 
-		//Setting margin and width and height
-		var margin = {top: 20, right: 30, bottom: 20, left: 50},
-			width = (document.querySelector(obj.divId).clientWidth==0?600:document.querySelector(obj.divId).clientWidth) - margin.left - margin.right,
-			height = obj.chart.height?obj.chart.height:460 - margin.top - margin.bottom,
-			tickNumber = 5;
+		// Setting margin and width and height
+		var margin = {top: 20, right: 50, bottom: 40, left: 50},
+			width = (this.container.clientWidth || 600) - margin.left - margin.right,
+			height = (obj.chart.height || 500) - margin.top - margin.bottom;
 
-		//Parse date function
-		var legendToggleTextFlag = false;
-
-		//x
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
-			.rangeBands([0, width], 0.1, 0);
+			.rangePoints([0, width], 0.1, 0);
 
-		//y
 		var y = d3.scale.linear().range([height, margin.top]);
-
-		var color = d3.scale.ordinal()
-			.range(['#4acab4',
-				'#edb28d',
-				'#5E95E1',
-				'#DD4949',
-				'#49C3DD',
-				'#849448',
-				'#dfb955',
-				'#7A5D4B',
-				'#A971D8',
-				'#bbcbdb',
-				'#9ebd9e',
-				'#dd855c',
-				'#f1e995',
-				'#696267'
-			]);
 
 		// Defining xAxis location at bottom the axes
 		var xAxis = d3.svg.axis()
@@ -2713,348 +2476,1100 @@ Visualization.list.set('stacked', class Stacked extends Visualization {
 		var yAxis = d3.svg.axis()
 			.scale(y)
 			.innerTickSize(-width)
-			.tickFormat(d3.format("s"))
 			.orient("left");
 
-		var mouseMoveHide = 'visible',
-			HoverFlag = true;
+		var disbleHover = false;
 
-		//calling legend and setting width,height,margin,color
-		var legend;
+		var series = data,
+			zoom = true;
 
-		//Setting domain for the colors with te exceptioon of date column
-		color.domain(data.map(function(d) {
-			return d.label
-		}));
+		series = d3.layout.stack()(series.map(d => d.data));
 
-		var cities = d3.layout.stack()(data.map(function(d) {
-			return d.data.map(function(d) {
-				return {
-					date: d.date,
-					y: +d.y
-				}
-			})
-		}));
+		var rawData = JSON.parse(JSON.stringify(series));
 
-		for (var i = 0; i < cities.length; i++) {
-			var cityCopyObj = {};
-			cityCopyObj.data = cities[i];
-			cityCopyObj.label = color.domain()[i];
-			cityCopyObj.hover = false;
-			cityCopyObj.disabled = true;
-			cities[i] = cityCopyObj
-		}
+		chart.plot = (resize) => {
 
-		var rawData = JSON.parse(JSON.stringify(cities));
-		var series, dataLength, zoom = true;
-
-		//HammerJs functionality added
-		var div = document.getElementById(obj.divId.indexOf("#") == -1 ? obj.divId : obj.divId.replace("#", ""));
-		if (div == null) {
-			return
-		}
-
-		chart.plot = () => {
-
-			//Empty the container before loading
 			d3.selectAll(obj.divId + " > *").remove();
-			//Adding chart and placing chart at specific locaion using translate
+
 			var svg = d3.select(obj.divId)
 				.append("svg")
-				.attr("width", width + margin.left + margin.right)
-				.attr("height", height + margin.top + margin.bottom)
 				.append("g")
 				.attr("class", "chart")
-				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+				.attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-			legend = d3Legend().height(height).width(width).margin(margin).color(color);
-
-			//Filtering data if the column is disable or not
-			var series = cities.filter(function(d) {
-				return d.disabled;
-			});
-
-			//Appending legend box
-			svg.append('g')
-				.attr('class', 'legendWrap');
-
-			//legend location
-			svg.select('.legendWrap').datum(cities)
-				.attr('transform', 'translate(' + 0 + ',' + 0 + ')')
-				.call(legend);
-
-			if (svg.select('.legendWrap').node() && margin.bottom < (svg.select('.legendWrap').node().getBoundingClientRect().height + 30)) {
-				margin.bottom = svg.select('.legendWrap').node().getBoundingClientRect().height + 30;
-				chart.plot();
-			}
-
-			//on legend click toggle line
-			legend.dispatch.on('legendClick', function(d) {
-				d.disabled = !d.disabled;
-				chart.plot();
-			});
-
-			//Reset Zoom Button
+			// Reset Zoom Button
 			svg.append('g').attr('class', 'resetZoom')
 				.classed("toggleReset", zoom)
-				.attr("x", (width / 2))
+				.attr("x", width / 2)
 				.attr("y", -10)
 				.style("z-index", 1000)
-				.append("rect")  //Appending rectangle styling
+				.append("rect")
 				.attr("width", 80)
 				.attr("height", 20)
-				.attr("x", ((width / 2) - 2))
-				.attr("y", -5)
+				.attr("x", (width / 2) - 2)
+				.attr("y", -10)
 				.attr("rx", 2)
 				.style("fill", "#f2f2f2")
 				.style("stroke", "#666666")
 				.style("stroke-width", "1px");
 
-			  d3.select(obj.divId + " > svg > g > g[class='resetZoom']") //Adding reset zoom text to the reset zoom rectangle
+			d3.select(obj.divId + " > svg > g > g[class='resetZoom']")
 				.append("text")
 				.attr("x", ((width / 2) + 40))
-				.attr("y", -5 + 12)
+				.attr("y", 4)
 				.attr("text-anchor", "middle")
 				.style("font-size", "12px")
 				.text("Reset Zoom");
 
 			//Click on reset zoom function
-			d3.select(obj.divId + " > svg > g > g[class='resetZoom']").on("mousedown", function() {
-				cities.forEach(function(d, i) {
-					d.data = rawData[i].data;
+			d3.select(obj.divId+" > svg > g > g[class='resetZoom']").on("mousedown", function () {
+				series.forEach(function (d, i) {
+					series[i] = rawData[i];
 				});
 				zoom = true;
 				chart.plot();
 			});
 
 			//check if the data is present or not
-			if (series.length == 0 || series[0].data.length == 0) {
-				//Chart Title
-				svg.append('g').attr('class', 'noDataWrap').append('text')
+			if(!rows.length) {
+
+				return svg.append('g').attr('class', 'noDataWrap').append('text')
 					.attr("x", (width / 2))
 					.attr("y", (height / 2))
 					.attr("text-anchor", "middle")
 					.style("font-size", "20px")
-					.text(obj.loading ? "Loading Data ..." : "No data to display");
-				return;
+					.text("Failed to load data :(");
 			}
 
-
-			var temp = d3.layout.stack()(series.map(function(c) {
-				return c.data.map(function(d) {
-					return {
-						date: d.date,
-						y: +d.y
-					};
-				})
-			}));
-			for (var i = 0; i < series.length; i++) {
-				series[i].data = temp[i]
-			}
-			x.domain(series[0].data.map(function(d) {
-				return d.date;
-			}));
+			x.domain(series[0].map(d => d.date));
 			x.rangeBands([0, width], 0.1, 0);
-			y.domain([
-				0,
-				d3.max(series, function(c) {
-					return d3.max(c.data, function(v) {
-						return Math.ceil(v.y0 + v.y);
-					});
-				}) + 4
-			]).nice();
+			y.domain([0, d3.max(series, c => d3.max(c, v => Math.ceil(v.y0 + v.y))) + 4]).nice();
 
 			var tickInterval = parseInt(x.domain().length / tickNumber);
-			var ticks = x.domain().filter(function(d, i) {
-				return !(i % tickInterval);
-			});
+			var ticks = x.domain().filter((d, i) => !(i % tickInterval));
 			xAxis.tickValues(ticks);
 
 			//Appending y - axis
 			svg.append("g")
 				.attr("class", "y axis")
-				.call(yAxis)
-				.append("text")
-				.attr("transform", "rotate(-90)")
-				.attr("y", 6)
-				.attr("dy", "-3.71em")
-				.attr("dx", -((height) / 2) - margin.top)
-				.style("text-anchor", "middle")
-				.attr("class", "axis-label")
-				.text(obj.yAxis && obj.xAxis.title.text ? obj.xAxis.title.text : "");
-
+				.call(yAxis);
 
 			//Appending x - axis
 			svg.append("g")
 				.attr("class", "x axis")
 				.attr("transform", "translate(0," + height + ")")
-				.call(xAxis)
-				.append("text")
-				.attr("x", (width / 2))
-				.attr("y", 35)
-				.style("text-anchor", "middle")
-				.attr("class", "axis-label")
-				.text(obj.xAxis && obj.xAxis.title.text ? obj.xAxis.title.text : "");
+				.call(xAxis);
 
 			var layer = svg.selectAll(".layer")
 				.data(series)
 				.enter().append("g")
 				.attr("class", "layer")
-				.style("fill", function(d, i) {
-					return color(d.label);
-				});
+				.style("fill", d => d[0].color);
 
-			layer.selectAll("rect")
-				.data(function(d) {
-					return d.data;
-				})
+			let bars = layer.selectAll("rect")
+				.data(d => d)
 				.enter().append("rect")
-				.attr("x", function(d) {
-					return x(d.date);
-				})
-				.attr("y", function(d) {
-					return y(d.y);
-					return y(d.y0) - y(d.y + d.y0);
-				})
-				.attr("width", x.rangeBand())
-				.transition()
-				.duration(400)
-				.ease('quad-in')
-				.attr("height", function(d) {
-					return y(d.y0) - y(d.y + d.y0);
-				})
-				.attr("y", function(d) {
-					return y(d.y + d.y0)
-				});
+				.attr("x",  d => x(d.date))
+				.attr("width", x.rangeBand());
 
-			//selecting all the paths
-			var path = svg.selectAll("rect");
+			if(!resize) {
+				bars = bars
+					.attr("height", d => 0)
+					.attr("y", d => height)
+					.transition()
+					.duration(Visualization.animationDuration)
+					.ease('quad-in')
+			}
+
+			bars
+				.attr("height", d => y(d.y0) - y(d.y + d.y0))
+				.attr("y", d => y(d.y + d.y0));
+
 			var that = this;
 
-			var rectangle = d3.selectAll('rect');
-			path.on('mouseover', null);
-			//mouse over function
-			path
-				.on('mousemove', function(d) {
+			d3.selectAll(obj.divId)
+			.on('mousemove', function (d) {
 
-					Tooltip.hide(that.container);
+				var rows = obj.rows;
 
-					if (!d || !d.date || !series.length || !series[0].data.length)
-						return;
+				var cord = d3.mouse(this);
 
-					const
-						cord = d3.mouse(this),
-						legends = series.map(d => d.label),
-						colors = [];
-					var xpos = parseInt(Math.max(0, cord[0]) / (width / series[0].data.length)),
-						tempData = series.map(d => d.data[xpos]);
+				if(disbleHover)
+					return Tooltip.hide(that.container);
 
-					xpos = Math.min(series[0].data.length - 1, xpos);
+				var xpos = parseInt((cord[0] - 50) / (width / series[0].length));
 
-					data.forEach((a, i) => colors[i] = color(legends[i]));
+				var row = rows[xpos];
 
-					Tooltip.show(that.container, [x(d.date) + margin.left + x.rangeBand() / 2 - 30, cord[1]], obj.tooltip.formatter(tempData, legends, colors), 'n');
-				})
-				.on('mouseout', function(d) {
-					Tooltip.hide(that.container);
-				});
+				if(!row)
+					return;
+
+				const tooltip = [];
+
+				for(const [key, value] of row) {
+
+					if(key == 'timing')
+						continue;
+
+					tooltip.push(`
+						<li>
+							<span class="circle" style="background:${row.source.columns.get(key).color}"></span>
+							<span>${row.source.columns.get(key).name}</span>
+							<span class="value">${Format.number(value)}</span>
+						</li>
+					`);
+				}
+
+				let total = 0;
+
+				for(const [key, value] of row) {
+					if(key != 'timing')
+						total += parseFloat(value);
+				}
+
+				const content = `
+					<header>${row.date}</header>
+					<ul class="body">
+						${tooltip.join('')}
+					</ul>
+					<footer>
+						<span>Total</span>
+						<span class="value">${Format.number(total)}</span>
+					</footer>
+				`;
+
+				Tooltip.show(that.container, [cord[0], cord[1]], content, row);
+			})
+			.on('mouseout', () => Tooltip.hide(this.container));
 
 
 			//zoming function
 			d3.selectAll(obj.divId)
-				.on("mousedown", function(d) {
+				.on("mousedown", function (d) {
 					//remove all the rectangele created before
 					d3.selectAll(obj.divId + " > rect[class='zoom']").remove();
 					//assign this toe,
 					var e = this,
-						origin = d3.mouse(e), // origin is the array containing the location of cursor from where the rectangle is created
+						origin = d3.mouse(e),   // origin is the array containing the location of cursor from where the rectangle is created
 						rectSelected = svg.append("rect").attr("class", "zoom"); //apending the rectangle to the chart
-					d3.select("body").classed("noselect", true); //disable select
+					d3.select("body").classed("noselect", true);  //disable select
 					//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-					origin[0] = Math.max(0, Math.min(width, (origin[0])));
-					HoverFlag = false;
-					if (origin[1] < 2 * margin.top || origin[1] > (height + 2 * margin.top) || origin[0] < margin.left || origin[0] > (width + margin.left) || series.length == 0) {
-						HoverFlag = true;
-						return
-					}
+					origin[0] = Math.max(0, Math.min(width, (origin[0] - margin.left)));
+					disbleHover = true;
+
 					//if the mouse is down and mouse is moved than start creating the rectangle
 					d3.selectAll(obj.divId)
-						.on("mousemove.zoomRect", function(d) {
-							//current location of mouse
-							var m = d3.mouse(e);
-							//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-							m[0] = Math.max(0, Math.max(margin.left, Math.min(width + margin.left, (m[0]))));
+					.on("mousemove.zoomRect", function (d) {
+						//current location of mouse
+						var m = d3.mouse(e);
+						//find the min between the width and and cursor location to prevent the rectangle move out of the chart
+						m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
 
-							//asign width and height to the rectangle
-							rectSelected.attr("x", Math.min(origin[0], m[0]))
-								.attr("y", margin.top)
-								.attr("width", Math.abs(m[0] - origin[0]))
-								.attr("height", height - margin.top);
-						})
-						.on("mouseup.zoomRect", function(d) { //function to run mouse is released
+						//asign width and height to the rectangle
+						rectSelected.attr("x", Math.min(origin[0], m[0]))
+							.attr("y", margin.top)
+							.attr("width", Math.abs(m[0] - origin[0]))
+							.attr("height", height - margin.top);
+					})
+					.on("mouseup.zoomRect", function (d) {  //function to run mouse is released
 
-							//stop above event listner
-							d3.select(obj.divId).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
+						//stop above event listner
+						d3.select(obj.divId).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
 
-							//allow selection
-							d3.select("body").classed("noselect", false);
-							var m = d3.mouse(e);
+						//allow selection
+						d3.select("body").classed("noselect", false);
+						var m = d3.mouse(e);
 
-							//the position where the mouse the released
-							m[0] = Math.max(0, Math.min(width, (m[0])));
+						//the position where the mouse the released
+						m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
 
-							//check that the origin location on x axis of the mouse should not be eqaul to last
-							if (m[0] !== origin[0] && series[0].data.length > 20) {
+						//check that the origin location on x axis of the mouse should not be eqaul to last
+						if (m[0] !== origin[0] && series[0].length > 20) {
 
-								cities.forEach(function(d) {
+							series.forEach(function (d, i) {
 
-									//slicing each line if and only if the length of data > 50 (minimum no of ticks should be present in the graph)
-									if (d.data.length > 10) {
-										d.data = d.data.filter(function(a) {
-											if (m[0] < origin[0]) {
-												return x(a.date) >= m[0] && x(a.date) <= origin[0];
-											} else {
-												return x(a.date) <= m[0] && x(a.date) >= origin[0];
-											}
-										});
-									}
-								});
-								zoom = false;
-								chart.plot();
-							}
-							HoverFlag = true;
-							rectSelected.remove();
-						}, true);
+								//slicing each line if and only if the length of data > 50 (minimum no of ticks should be present in the graph)
+								if (d.length > 10) {
+									series[i] = d.filter(function (a) {
+										if (m[0] < origin[0]) {
+											return x(a.date) >= m[0] && x(a.date) <= origin[0];
+										} else {
+											return x(a.date) <= m[0] && x(a.date) >= origin[0];
+										}
+									});
+								}
+							});
+							zoom = false;
+							chart.plot();
+						}
+						disbleHover = false;
+						rectSelected.remove();
+					}, true);
 					d3.event.stopPropagation();
 				});
-		} //END Chart Plot Function
-
-		setTimeout(function() {
-			width = document.querySelector(obj.divId).clientWidth - margin.left - margin.right;
-			chart.plot()
-		});
-
-		window.addEventListener('resize', function() {
-			width = document.querySelector(obj.divId).clientWidth - margin.left - margin.right;
-			chart.plot();
-		});
-
-		chart.height = function(newHeight) {
-			if (newHeight != height) {
-				height = newHeight;
-				chart.plot();
-			}
 		};
 
-		chart.margin = function(_) {
-			if (_) {
-				margin = _;
-				chart.plot();
+		chart.plot();
+
+		window.addEventListener('resize', () => {
+			if(width !== (this.container.clientWidth - margin.left - margin.right)) {
+				width = this.container.clientWidth - margin.left - margin.right;
+				chart.plot(true);
 			}
-		};
+		});
+
 		return chart;
 	}
 });
+
+Visualization.list.set('area', class Area extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'area');
+		container.innerHTML = `
+			<div id="area-${this.source.query_id}" class="container">
+				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		e && e.preventDefault && e.preventDefault();
+
+		this.container.querySelector('.container').innerHTML = `<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render();
+	}
+
+	render() {
+
+		const
+			series = {},
+			rows = this.source.response;
+
+		for(const row of rows) {
+
+			row.date = Format.date(row.get('timing'));
+
+			for(const [key, value] of row) {
+
+				if(key == 'timing')
+					continue;
+
+				if(!series[key]) {
+					series[key] = {
+						label: this.source.columns.get(key).name,
+						color: this.source.columns.get(key).color,
+						data: []
+					};
+				}
+
+				series[key].data.push({
+					date: Format.date(row.get('timing')),
+					x: null,
+					y: parseFloat(value),
+				});
+			}
+		}
+
+		this.draw({
+			series: Object.values(series),
+			rows: rows,
+			divId: `#area-${this.source.query_id}`,
+			chart: {},
+		});
+	}
+
+	draw(obj) {
+
+		const rows = obj.rows;
+
+		d3.selectAll(obj.divId)
+			.on('mousemove', null)
+			.on('mouseout', null)
+			.on('mousedown', null);
+
+		var chart = {};
+
+		var data = obj.series;
+
+		var tickNumber = window.innerWidth < 300 ? 3 : 5;
+
+		// Setting margin and width and height
+		var margin = {top: 20, right: 50, bottom: 40, left: 50},
+			width = (this.container.clientWidth || 600) - margin.left - margin.right,
+			height = (obj.chart.height || 500) - margin.top - margin.bottom;
+
+		var x = d3.scale.ordinal()
+			.domain([0, 1])
+			.rangePoints([0, width], 0.1, 0);
+
+		var y = d3.scale.linear().range([height, margin.top]);
+
+		// Defining xAxis location at bottom the axes
+		var xAxis = d3.svg.axis()
+			.scale(x)
+			.orient("bottom");
+
+		//Defining yAxis location at left the axes
+		var yAxis = d3.svg.axis()
+			.scale(y)
+			.innerTickSize(-width)
+			.orient("left");
+
+		//graph type line and
+		var line = d3.svg.line()
+			.x(d => x(d.date))
+			.y(d => y(d.y));
+
+		var disbleHover = false;
+
+		var stack = d3.layout.stack()
+			.offset("zero")
+			.values(d => d.data)
+			.x(d => x(d.date))
+			.y(d => d.y);
+
+		var area = d3.svg.area()
+			.x(d => x(d.date))
+			.y0(d => y(d.y0))
+			.y1(d => y(d.y0 + d.y));
+
+		var rawData = JSON.parse(JSON.stringify(data));
+		var series = data,
+			zoom = true;
+
+		//chart function to create chart
+		chart.plot = (resize) => {
+
+			//Empty the container before loading
+			d3.selectAll(obj.divId+" > *").remove();
+
+			//Adding chart and placing chart at specific location using translate
+			var svg = d3.select(obj.divId)
+				.append('svg')
+				.append('g')
+				.attr('class', 'chart')
+				.attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+			// Reset Zoom Button
+			svg.append('g').attr('class', 'resetZoom')
+				.classed('toggleReset', zoom)
+				.attr('x', width / 2)
+				.attr('y', -10)
+				.style('z-index', 1000)
+				.append('rect')
+				.attr('width', 80)
+				.attr('height', 20)
+				.attr('x', (width / 2) - 2)
+				.attr('y', -10)
+				.attr('rx', 2)
+				.style('fill', '#f2f2f2')
+				.style('stroke', '#666666')
+				.style('stroke-width', '1px');
+
+			d3.select(obj.divId + ' > svg > g > g[class="resetZoom"]')
+				.append('text')
+				.attr('x', ((width / 2) + 40))
+				.attr('y', 4)
+				.attr('text-anchor', 'middle')
+				.style('font-size', '12px')
+				.text('Reset Zoom');
+
+			//Click on reset zoom function
+			d3.select(obj.divId+" > svg > g > g[class='resetZoom']").on("mousedown", function () {
+				data.forEach((d, i) => d.data = rawData[i].data);
+				zoom = true;
+				chart.plot()
+			});
+
+			//check if the data is present or not
+			if(!rows.length) {
+
+				return svg.append('g').attr('class','noDataWrap').append('text')
+					.attr("x", (width / 2))
+					.attr("y",  (height / 2))
+					.attr("text-anchor", "middle")
+					.style("font-size", "20px")
+					.text("Failed to load data :(");
+			}
+
+			stack(series);
+
+			//setting the upper an d lower limit in x - axis
+			x.domain(series[0].data.map(d => d.date));
+
+			//var mult = Math.max(1, Math.floor(width / x.domain().length));
+			x.rangePoints([0, width], 0.1, 0);
+
+			//setting the upper an d lower limit in y - axis
+			y.domain([
+				d3.min(series, c => d3.min(c.data, v => Math.floor(v.y0))),
+				d3.max(series, c => d3.max(c.data, v => Math.ceil(v.y0+ v.y)))+4
+			]);
+
+			var tickInterval = parseInt(x.domain().length / tickNumber);
+			var ticks = x.domain().filter((d, i) => !(i % tickInterval));
+
+			xAxis.tickValues(ticks);
+			yAxis.innerTickSize(-width);
+
+			//Appending x - axis
+			svg.append('g')
+				.attr('class', 'x axis')
+				.attr('transform', 'translate(0,' + height + ')')
+				.call(xAxis);
+
+			//Appending y - axis
+			svg.append('g')
+				.attr('class', 'y axis')
+				.call(yAxis);
+
+			//Appending line in chart
+			let areas = svg.selectAll('.city')
+				.data(series)
+				.enter().append('g')
+				.attr('class', 'city')
+				.append('path')
+				.attr('d', d => area(d.data))
+				.style('fill', d => d.color);
+
+			if(!resize) {
+				areas = areas
+					.style('opacity', 0)
+					.transition()
+					.duration(Visualization.animationDuration)
+					.ease("quad-in");
+			}
+
+			areas
+				.style('opacity', 0.75);
+
+			//selecting all the paths
+			var path = svg.selectAll('path');
+			//For each line appending the circle at each point
+			series.forEach(function (data) {
+				svg.selectAll('dot')
+					.data(data.data)
+					.enter().append('circle')
+					.attr('class', (d, i) => rows[i].annotations.size ? 'clips annotations' : 'clips')
+					.attr('id', (d, i) => i)
+					.attr("r", (d, i) => rows[i].annotations.size ? 4 : 0)
+					.style('fill', (d, i) => rows[i].annotations.size ? '#666' : data.color)
+					.attr('cx', d => x(d.date))
+					.attr('cy', d => y(d.y + d.y0));
+			});
+
+			var that = this;
+
+			//Hover functionality
+			d3.selectAll(obj.divId)
+			.on('mousemove', function () {
+
+				const rows = obj.rows;
+
+				var cord = d3.mouse(this);
+
+				if(disbleHover)
+					return Tooltip.hide(that.container);
+
+				d3.selectAll(obj.divId+' > svg > g > circle[class="clips"]').attr('r', 0);
+				d3.selectAll(obj.divId+' > svg > g > circle[class="clips annotations"]').attr('r', 4);
+
+				var xpos = parseInt((cord[0] - 50) / (width / series[0].data.length));
+
+				var row = rows[xpos];
+
+				if(!row)
+					return;
+
+				d3.selectAll(`${obj.divId} > svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+				d3.selectAll(`${obj.divId} > svg > g > circle[id='${xpos}'][class="clips annotations"]`).attr('r', 6);
+
+				const tooltip = [];
+
+				for(const [key, value] of row) {
+
+					if(key == 'timing')
+						continue;
+
+					tooltip.push(`
+						<li>
+							<span class="circle" style="background:${row.source.columns.get(key).color}"></span>
+							<span>${row.source.columns.get(key).name}</span>
+							<span class="value">${Format.number(value)}</span>
+						</li>
+					`);
+				}
+
+				const content = `
+					<header>${row.date}</header>
+					<ul class="body">
+						${tooltip.join('')}
+					</ul>
+				`;
+
+				Tooltip.show(that.container, [cord[0], cord[1]], content, row);
+			})
+			.on('mouseout', function () {
+
+				Tooltip.hide(that.container);
+
+				d3.selectAll(obj.divId+' > svg > g > circle[class="clips"]').attr('r', 0);
+			});
+
+			//zoming function
+			d3.selectAll(obj.divId)
+			.on("click", function () {
+
+				var cord = d3.mouse(this);
+				var rows = obj.rows;
+
+				var xpos = parseInt(Math.max(0, cord[0]) / (width / series[0].data.length)) - 1;
+
+				var row = rows[xpos];
+
+				row.annotations.show();
+
+				Tooltip.hide(that.container);
+			})
+			.on("mousedown", function () {
+
+				//remove all the rectangele created before
+				d3.selectAll(obj.divId + " > rect[class='zoom']").remove();
+
+				//assign this toe,
+				var e = this,
+					origin = d3.mouse(e),   // origin is the array containing the location of cursor from where the rectangle is created
+					rect = svg.append("rect").attr("class", "zoom"); //apending the rectangle to the chart
+				d3.select("body").classed("noselect", true);  //disable select
+				//find the min between the width and and cursor location to prevent the rectangle move out of the chart
+				origin[0] = Math.max(0, Math.min(width, (origin[0] - margin.left)));
+				disbleHover = true;
+
+				//if the mouse is down and mouse is moved than start creating the rectangle
+				d3.select(window)
+					.on("mousemove.zoomRect", function () {
+						//current location of mouse
+						var m = d3.mouse(e);
+						//find the min between the width and and cursor location to prevent the rectangle move out of the chart
+						m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
+						//asign width and height to the rectangle
+						rect.attr("x", Math.min(origin[0], m[0]))
+							.attr("y", margin.top)
+							.attr("width", Math.abs(m[0] - origin[0]))
+							.attr("height", height - margin.top);
+					})
+					.on("mouseup.zoomRect", function () {  //function to run mouse is released
+						//stop above event listner
+						d3.select(window).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
+						//allow selection
+						d3.select("body").classed("noselect", false);
+						var m = d3.mouse(e);
+						//the position where the mouse the released
+						m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
+						//check that the origin location on x axis of the mouse should not be eqaul to last
+						if (m[0] !== origin[0] && series.length != 0) {
+							//starting filtering data
+							data.forEach(function (d) {
+								//slicing each line if and only if the length of data > 50 (minimum no of ticks should be present in the graph)
+								if (d.data.length > 10) {
+									d.data = d.data.filter(function (a) {
+										if (m[0] < origin[0]) {
+											return x(a.date) >= m[0] && x(a.date) <= origin[0];
+										} else {
+											return x(a.date) <= m[0] && x(a.date) >= origin[0];
+										}
+									});
+								}
+							});
+							zoom = false
+							//calling the update function to update the graph
+							chart.plot();
+						}
+						disbleHover = false;
+						rect.remove();
+					}, true);
+				d3.event.stopPropagation();
+			});
+
+			//When in mouse is over the line than focus the line
+			path.on('mouseover', function (d) {
+
+				if(disbleHover)
+					return;
+
+				if(d)
+					d.hover = true;
+
+				svg.selectAll("path").classed("line-hover", d => d.hover);
+			});
+
+			//When in mouse is put the line than focus the line
+			path.on('mouseout', function (d) {
+
+				if(d)
+					d.hover = false;
+
+				svg.selectAll("path").classed("line-hover", d => d.hover);
+			});
+		};
+
+		chart.plot();
+
+		window.addEventListener('resize', () => {
+			if(width !== (this.container.clientWidth - margin.left - margin.right)) {
+				width = this.container.clientWidth - margin.left - margin.right;
+				chart.plot(true);
+			}
+		});
+
+		return chart;
+	}
+});
+
+Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('section');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'spatial-map');
+
+		container.innerHTML = `
+			<div class="container">
+				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(parameters = {}) {
+
+		await this.source.fetch(parameters);
+
+		this.render();
+	}
+
+	render() {
+
+		const
+			markers = [],
+			response = this.source.response;
+
+		// If the maps object wasn't already initialized
+		if(!this.map)
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), { zoom: 12 });
+
+		// If the clustered object wasn't already initialized
+		if(!this.clusterer)
+			this.clusterer = new MarkerClusterer(this.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+
+		// Add the marker to the markers array
+		for(const row of response) {
+			markers.push(
+				new google.maps.Marker({
+					position: {
+						lat: parseFloat(row.get('lat')),
+						lng: parseFloat(row.get('lng')),
+					},
+				})
+			);
+		}
+
+		if(!this.markers || this.markers.length != markers.length) {
+
+			// Empty the map
+			this.clusterer.clearMarkers();
+
+			// Load the markers
+			this.clusterer.addMarkers(markers);
+
+			this.markers = markers;
+		}
+
+		// Point the map to location's center
+		this.map.panTo({
+			lat: parseFloat(response[0].get('lat')),
+			lng: parseFloat(response[0].get('lng')),
+		});
+	}
+});
+
+Visualization.list.set('funnel', class Funnel extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'funnel');
+		container.innerHTML = `
+			<div id="funnel-${this.source.query_id}" class="container">
+				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if(e)
+			e.preventDefault();
+
+		await this.source.fetch();
+
+		this.render();
+	}
+
+	render() {
+
+		const
+			series = [],
+			response = this.source.response;
+
+		for(const column of this.source.columns.list.values()) {
+
+			series.push([{
+				date: 0,
+				label: column.name,
+				color: column.color,
+				y: parseFloat(response[0].get(column.key)),
+			}]);
+		}
+
+		this.draw({
+			series: series.reverse(),
+			divId: `#funnel-${this.source.query_id}`,
+			chart: {},
+		});
+	}
+
+	draw(obj) {
+
+		d3.selectAll(obj.divId).on('mousemove', null)
+			.on('mouseout', null)
+			.on('mousedown', null)
+			.on('click', null);
+
+		var chart = {};
+
+		// Setting margin and width and height
+		var margin = {top: 0, right: 0, bottom: 40, left: 0},
+			width = this.container.clientWidth - margin.left - margin.right,
+			height = obj.chart.height || 500 - margin.top - margin.bottom;
+
+		var x = d3.scale.ordinal()
+			.domain([0, 1])
+			.rangeBands([0, width], 0.1, 0);
+
+		var y = d3.scale.linear().range([height, margin.top]);
+
+		// Defining xAxis location at bottom the axes
+		var xAxis = d3.svg.axis().scale(x).orient("bottom");
+
+		var diagonal = d3.svg.diagonal()
+			.source(d => {
+				return {x: d[0].y + 5, y: d[0].x};
+			})
+			.target(d => {
+				return {x: d[1].y + 5, y: d[1].x};
+			})
+			.projection(d => [d.y, d.x]);
+
+		var series = d3.layout.stack()(obj.series);
+
+		series.map(r => r.data = r);
+
+		chart.plot = (resize) => {
+
+			var funnelTop = width * 0.60,
+				funnelBottom = width * 0.2,
+				funnelBottonHeight = height * 0.2;
+
+			//Empty the container before loading
+			d3.selectAll(obj.divId + " > *").remove();
+			//Adding chart and placing chart at specific location using translate
+			var svg = d3.select(obj.divId)
+				.append("svg")
+				.append("g")
+				.attr("class", "chart")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+			//check if the data is present or not
+			if (series.length == 0 || series[0].data.length == 0)
+				return;
+
+			x.domain([0]);
+			x.rangeBands([0, width], 0.1, 0);
+			y.domain([
+				0,
+				d3.max(series, function (c) {
+					return d3.max(c.data, function (v) {
+						return Math.ceil(v.y0 + v.y);
+					});
+				}) + 4
+			]);
+
+			var layer = svg.selectAll(".layer")
+				.data(series)
+				.enter().append("g")
+				.attr("class", "layer")
+				.style("fill", d => d[0].color);
+
+			let rectangles = layer.selectAll("rect")
+				.data(function (d) {
+					return d.data;
+				})
+				.enter().append("rect")
+				.attr("x", d => x(d.date))
+				.attr("width", x.rangeBand())
+
+			if(!resize) {
+				rectangles = rectangles
+					.attr("height", d => 0)
+					.attr("y", d => 30)
+					.transition()
+					.duration(Visualization.animationDuration);
+			}
+
+			rectangles
+				.attr("height", d => y(d.y0) - y(d.y + d.y0))
+				.attr("y", d => y(d.y + d.y0));
+
+			var poly1 = [
+				{x: 0, y: margin.top},
+				{x: (width - funnelTop) / 2, y: margin.top},
+				{x: (width - funnelBottom) / 2, y: height - funnelBottonHeight},
+				{x: (width - funnelBottom) / 2, y: height},
+				{x: 0, y: height}
+			];
+
+			var poly2 = [
+				{x: width, y: margin.top},
+				{x: (width - funnelTop) / 2 + funnelTop + 5, y: margin.top},
+				{x: (width - funnelBottom) / 2 + funnelBottom + 5, y: height - funnelBottonHeight},
+				{x: (width - funnelBottom) / 2 + funnelBottom + 5, y: height},
+				{x: width, y: height}
+			];
+
+			var polygon = svg.selectAll("polygon")
+				.data([poly2, poly1])
+				.enter().append("polygon")
+				.attr('points', d =>  d.map(d => [d.x, d.y].join()).join(' '))
+				.attr('stroke', 'white')
+				.attr('stroke-width', 2)
+				.attr('fill', 'white');
+
+			//selecting all the paths
+			var path = svg.selectAll('rect'),
+				that = this;
+
+			//mouse over function
+			path .on('mousemove', function(d) {
+
+				var cord = d3.mouse(this);
+
+				if (cord[1] < 2 * margin.top || cord[1] > (height + 2 * margin.top) || cord[0] < margin.left || cord[0] > (width + margin.left) || series.length == 0 || series[0].data.length == 0)
+					return
+
+				const content = `
+					<header>${d.label}</header>
+					<div class="body">${d.y}</div>
+				`;
+
+				Tooltip.show(that.container, [cord[0], cord[1]], content);
+			});
+			polygon.on('mouseover', function () {
+				Tooltip.hide(that.container);
+			});
+
+			var labelConnectors = svg.append('g').attr('class', 'connectors');
+			var previousLabelHeight = 0, singPoint = height / d3.max(y.domain());
+			for (var i = 0; i < series.length; i++) {
+				var section = series[i].data[0];
+				var startLocation = section.y0 * singPoint,
+					sectionHeight = section.y * singPoint,
+					bottomLeft = funnelBottonHeight - startLocation,
+					x1, y1,  endingPintY, curveData;
+				var label = labelConnectors.append('g');
+				var text;
+
+				//for lower part of the funnel
+				if (sectionHeight / 2 < bottomLeft) {
+
+					x1 = (width + funnelBottom) / 2;
+					y1 = (startLocation + sectionHeight / 2);
+
+					endingPintY = y1;
+
+					if (endingPintY - previousLabelHeight <= 10)
+						endingPintY = previousLabelHeight + 5;
+
+					curveData = [
+						{x: x1, y: (height) - y1 - 5},
+						{x: x1 + (window.innerWidth < 768 ? 30 : 50), y: height - endingPintY}
+					];
+
+					text = label.append('text')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('y', height - (endingPintY))
+						.attr('text-anchor', 'left')
+						.style('font-size', '15px')
+
+					if (window.innerWidth < 768) {
+						text.style('font-size', '10px');
+					}
+					text.append('tspan')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('dx', '0')
+						.attr('dy', '1em')
+						.text(series[i].label);
+
+					text.append('tspan')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('dx', '0')
+						.attr('dy', '1.2em')
+						.style('font-size', '13px')
+						.text(`${series[i].data[0].y}  (${(series[i].data[0].y / series[series.length - 1].data[0].y * 100).toFixed(2)}%)`);
+
+				} else {
+
+					//for upper part of the funnel
+					var arr = findInterSection(
+						width / 2, height - (startLocation + sectionHeight / 2),
+						width, height - (startLocation + sectionHeight / 2),
+						(width + funnelTop) / 2, margin.top,
+						(width + funnelBottom) / 2, height - funnelBottonHeight);
+
+					x1 = arr[0];
+					y1 = arr[1];
+
+					endingPintY = y1;
+					if ((endingPintY - (endingPintY - previousLabelHeight)) <= 15)
+						endingPintY = previousLabelHeight + endingPintY + 15;
+
+					curveData = [
+						{x: x1, y: y1},
+						{x: x1 + (window.innerWidth < 768 ? 30 : 50), y: endingPintY-20}
+					];
+
+					text = label.append('text')
+						.attr('x', x1 + (window.innerWidth < 768 ? 40 : 70))
+						.attr('y', endingPintY-20)
+						.attr('text-anchor', 'left')
+						.style('font-size', '15px');
+
+					if (window.innerWidth < 768)
+						text.style('font-size', '10px');
+
+					text.append('tspan')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('dx', '0')
+						.attr('dy', '1em')
+						.text(series[i].label);
+
+					text.append('tspan')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('dx', '0')
+						.attr('dy', '1.2em')
+						.style('font-size', '13px')
+						.text(`${series[i].data[0].y} (${(series[i].data[0].y / series[series.length - 1].data[0].y * 100).toFixed(2)}%)`);
+				}
+
+				previousLabelHeight = endingPintY + 45;
+
+				label.datum(curveData)
+					.append('path')
+					.attr('class', 'link')
+					.attr('d', diagonal)
+					.attr('stroke', '#2a3f54')
+					.attr('stroke-width', 1)
+					.attr('fill', 'none');
+			}
+		};
+
+		chart.plot();
+
+		window.addEventListener('resize', () => {
+			width = this.container.clientWidth - margin.left - margin.right;
+			chart.plot(true);
+		});
+
+		function findInterSection(x1, y1, x2, y2, x3, y3, x4, y4) {
+			var m1 = (y2 - y1) / (x2 - x1), m2 = (y4 - y3) / (x4 - x3), b1 = (y1 - m1 * x1), b2 = (y3 - m2 * x3);
+			return [((b2 - b1) / (m1 - m2)), -1 * ((b1 * m2 - b2 * m1) / (m1 - m2))];
+		}
+
+		return chart;
+	}
+});
+
+class Tooltip {
+
+	static show(div, position, content, row) {
+
+		if(!div.querySelector('.tooltip'))
+			div.insertAdjacentHTML('beforeend', `<div class="tooltip"></div>`)
+
+		const
+			container = div.querySelector('.tooltip'),
+			distanceFromMouse = 40;
+
+		container.innerHTML = content;
+
+		if(row && row.annotations.size)
+			container.querySelector('header').appendChild(row.annotations.opener);
+
+		if(container.classList.contains('hidden'))
+			container.classList.remove('hidden');
+
+		let left = Math.max(position[0] - (container.clientWidth / 2) + distanceFromMouse, 5),
+			top = position[1] + distanceFromMouse;
+
+		if(left + container.clientWidth > div.clientWidth)
+			left = div.clientWidth - container.clientWidth - 5;
+
+		if(top + container.clientHeight > div.clientHeight)
+			top = position[1] - container.clientHeight - distanceFromMouse;
+
+		container.setAttribute('style', `left: ${left}px; top: ${top}px;`);
+	}
+
+	static hide(div) {
+
+		const container = div.querySelector('.tooltip');
+
+		if(!container)
+			return;
+
+		container.classList.add('hidden');
+	}
+}
 
 Visualization.list.set('cohort', class Cohort extends Visualization {
 
@@ -3169,1301 +3684,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 	}
 });
 
-Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
-
-	get container() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		this.containerElement = document.createElement('section');
-
-		const container = this.containerElement;
-
-		container.classList.add('visualization', 'spatial-map');
-
-		container.innerHTML = `
-			<div class="container"></div>
-		`;
-
-		return container;
-	}
-
-	async load(parameters = {}) {
-
-		await this.source.fetch(parameters);
-
-		this.render();
-	}
-
-	render() {
-
-		const
-			location = 0, //
-			center = [
-				(location.latitude_upper + location.latitude_lower) / 2,
-				(location.longitude_upper + location.longitude_lower) / 2
-			],
-			markers = [];
-
-		// If the maps object wasn't already initialized
-		if(!this.map)
-			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), { zoom: 12 });
-
-		// If the clustered object wasn't already initialized
-		if(!this.clusterer)
-			this.clusterer = new MarkerClusterer(this.map, null, { imagePath: 'app/images/m' });
-
-		// Add the marker to the markers array
-		for(var i = 0; i < this.source.response.length; i++) {
-			markers.push(
-				new google.maps.Marker({
-					position: {
-						lat: this.source.response[i].latitude,
-						lng: this.source.response[i].longitude,
-					}
-				})
-			);
-		}
-
-		if(!this.markers || this.markers.length != markers.length) {
-
-			// Empty the map
-			this.clusterer.clearMarkers();
-
-			// Load the markers
-			this.clusterer.addMarkers(markers);
-
-			this.markers = markers;
-		}
-
-		// Point the map to location's center
-		this.map.panTo({
-			lat: center[0],
-			lng: center[1],
-		});
-	}
-});
-
-Visualization.list.set('line', class Line extends Visualization {
-
-	get container() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
-
-		container.classList.add('visualization', 'line');
-		container.innerHTML = `
-			<div id="line-${this.source.query_id}" class="container"></div>
-		`;
-
-		return container;
-	}
-
-	async load(e) {
-
-		if(e)
-			e.preventDefault();
-
-		this.container.querySelector('.container').innerHTML = `
-			<div class="loading">
-				<i class="fa fa-spinner fa-spin"></i>
-			</div>
-		`;
-
-		await this.source.fetch();
-
-		this.render();
-	}
-
-	render() {
-
-		let data={};
-
-		for(const result of this.source.response) {
-			for(const key in result) {
-				if(key == 'timing')
-					continue;
-				if(!data.hasOwnProperty(key))
-					data[key]=[];
-
-				data[key].push({date:result['timing'],x:null,y:result[key]})
-			}
-		}
-
-		const series = [];
-		for(var i = 0; i < Object.values(data).length; i++) {
-			series.push({data:Object.values(data)[i],label:Object.keys(data)[i]})
-		}
-
-		this.D3Line({
-			series: series.reverse(),
-			divId: `#line-${this.source.query_id}`,
-			chart: {},
-			title: `${this.source.query_id}`,
-			tooltip: {
-				formatter: (data, legends, color) => {
-
-					const tooltip = [];
-
-					var max = 0;
-					for(const y in data)
-						max = Math.max(max,data[y].y)
-
-					for(const key in data) {
-
-						if(key == 'timing')
-							continue;
-
-						tooltip.push(`
-							<li>
-								<span class="circle" style="background:${color[key]}"></span>
-								<span>${legends[key]}</span>
-								<span class="value">${Format.number(data[key].y)+' ('+((data[key].y / max) * 100).toFixed(2)+'%)'}</span>
-							</li>
-						`);
-					}
-
-					return `
-						<header>${Format.date(data[0].date)}</header>
-						<ul class="body">
-							${tooltip.join('')}
-						</ul>
-					`;
-				}
-			},
-		});
-	}
-
-	D3Line(obj) {
-	  d3.selectAll(obj.divId).on('mousemove',null)
-		.on('mouseout',null)
-		.on('mousedown',null);
-
-	  var chart = {};
-
-	  var data = obj.series;
-
-	  var downloadFlag = false;
-
-	  //Setting margin and width and height
-	  var margin = {top: 20, right: 50, bottom: 20, left: 50},
-		width = (document.querySelector(obj.divId).clientWidth==0?600:document.querySelector(obj.divId).clientWidth) - margin.left - margin.right,
-		height = obj.chart.height?obj.chart.height:460 - margin.top - margin.bottom;
-
-
-		var disbleHover = false;
-	  var legendToggleTextFlag = false,tickNumber=5;
-
-	  //x
-	  var x = d3.scale.ordinal()
-		.domain([0, 1])
-		.rangePoints([0, width], 0.1, 0);
-	  //y
-	  var y = d3.scale.linear().range([height, margin.top]);
-
-	  var color = d3.scale.ordinal()
-		.range(["#ef6692",
-		  "#d6bcc0",
-		  "#ffca05",
-		  "#8595e1",
-		  "#8dd593",
-		  "#ff8b75",
-		  "#2a0f54",
-		  "#d33f6a",
-		  "#f0b98d",
-		  "#6c54b5",
-		  "#bb7784",
-		  "#b5bbe3",
-		  "#0c8765",
-		  "#ef9708",
-		  "#1abb9c",
-		  "#9da19c"]);
-
-	  // Defining xAxis location at bottom the axes
-	  var xAxis = d3.svg.axis()
-		.scale(x)
-		.orient("bottom");
-
-	  //Defining yAxis location at left the axes
-	  var yAxis = d3.svg.axis()
-		.scale(y)
-		.tickFormat(d3.format("s"))
-		.innerTickSize(-width)
-		.orient("left");
-
-	  //graph type line and
-	  var line = d3.svg.line()
-		.x(function (d) {
-		  return x(d.date);
-		})
-		.y(function (d) {
-		  return y(d.y);
-		});
-
-
-	  //calling legend and setting width,height,margin,color
-	  var legend;
-
-
-	  var mouseMoveHide = 'visible',
-		HoverFlag = true;
-
-	  //Setting domain for the colors with te exceptioon of date column
-	  color.domain(data.map(function (d) {
-		return d.label
-	  }));
-
-
-
-	  for(var i=0;i<data.length;i++){
-		data[i].hover = false;
-		data[i].disabled = true
-	  }
-
-
-	  var cities = data;
-	  var rawData = JSON.parse(JSON.stringify(cities));
-	  var series, dataLength,zoom = true;
-
-	  //HammerJs functionality added
-	  var div = document.getElementById(obj.divId.indexOf("#")==-1?obj.divId:obj.divId.replace("#",""));
-	  if(div==null){
-		return
-	  }
-		function dateHasAnnotations(date) {
-			return false;
-		}
-
-	  //chart function to create chart
-		chart.plot = () => {
-
-			//Empty the container before loading
-			d3.selectAll(obj.divId+" > *").remove();
-
-			//Adding chart and placing chart at specific locaion using translate
-			var svg = d3.select(obj.divId)
-			  .append("svg")
-			  .attr("width", width + margin.left + margin.right)
-			  .attr("height", height + margin.top + margin.bottom)
-			  .append("g")
-			  .attr("class", "chart")
-			  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-			//Filtering data if the column is disable or not
-			series = cities.filter(function (d) {
-			  return d.disabled;
-			});
-
-			legend = d3Legend().height(height).width(width+margin.left+margin.right).margin(margin).color(color);
-
-			//Appending legend box
-			svg.append('g')
-			  .attr('class', 'legendWrap');
-
-			//legend location
-			svg.select('.legendWrap').datum(cities)
-			  .attr('transform', 'translate(' + 0 + ',' + 0 + ')')
-			  .call(legend);
-
-
-			if(svg.select('.legendWrap').node()&&margin.bottom<(svg.select('.legendWrap').node().getBoundingClientRect().height+30)){
-			  margin.bottom = svg.select('.legendWrap').node().getBoundingClientRect().height+30;
-			  chart.plot();
-			}
-
-
-			//on legend click toggle line
-			legend.dispatch.on('legendClick', function (d) {
-			  d.disabled = !d.disabled;
-			  chart.plot();
-			});
-
-			//Chart Title
-			// svg.append('g').attr('class','titleWrap').append('text')
-			//   .attr("x", (margin.left-80))
-			//   .attr("y", (margin.top / 2))
-			//   .attr("text-anchor", "left")
-			//   .style("font-size", "25px")
-			//   .style("fill", "#2a3f54")
-			//   .text(obj.title.text);
-
-
-			//Reset Zoom Button
-			  svg.append('g').attr('class', 'resetZoom')
-				.classed("toggleReset", zoom)
-				.attr("x", (width / 2))
-				.attr("y", -10)
-				.style("z-index", 1000)
-				.append("rect")  //Appending rectangle styling
-				.attr("width", 80)
-				.attr("height", 20)
-				.attr("x", ((width / 2) - 2))
-				.attr("y", -5)
-				.attr("rx", 2)
-				.style("fill", "#f2f2f2")
-				.style("stroke", "#666666")
-				.style("stroke-width", "1px");
-
-			  d3.select(obj.divId + " > svg > g > g[class='resetZoom']") //Adding reset zoom text to the reset zoom rectangle
-				.append("text")
-				.attr("x", ((width / 2) + 40))
-				.attr("y", -5 + 12)
-				.attr("text-anchor", "middle")
-				.style("font-size", "12px")
-				.text("Reset Zoom");
-
-			//Click on reset zoom function
-			d3.select(obj.divId+" > svg > g > g[class='resetZoom']").on("mousedown",function () {
-			  cities.forEach(function (d,i) {
-				d.data = rawData[i].data;
-			  });
-			  zoom = true;
-			  chart.plot()
-			});
-
-			//check if the data is present or not
-			if(series.length==0 || series[0].data.length==0){
-			  //Chart Title
-			  svg.append('g').attr('class','noDataWrap').append('text')
-				.attr("x", (width / 2))
-				.attr("y",  (height / 2))
-				.attr("text-anchor", "middle")
-				.style("font-size", "20px")
-				.text((obj.loading && obj.series !== null)?"Loading Data ...":"No data to display");
-			  return;
-			}
-
-			//storing the length of data so that the check can
-			dataLength = series[0].data.length;
-
-			//setting the upper an d lower limit in x - axis
-			x.domain(series[0].data.map(function (d) {
-			  return d.date;
-			}));
-
-			//var mult = Math.max(1, Math.floor(width / x.domain().length));
-			  x.rangePoints([0, width], 0.1, 0);
-			y.domain([
-			  d3.min(series, function (c) {
-				return d3.min(c.data, function (v) {
-				  return Math.floor(v.y);
-				});
-			  }),
-			  d3.max(series, function (c) {
-				return d3.max(c.data, function (v) {
-				  return Math.ceil(v.y);
-				});
-			  })
-			]);
-
-
-			if(window.innerWidth<=768) {
-			  tickNumber = 2;
-			}
-			  var tickInterval = parseInt(x.domain().length / tickNumber);
-			var ticks = x.domain().filter(function (d, i) {
-			  return !(i % tickInterval);
-			});
-
-
-			xAxis.tickValues(ticks);
-			yAxis.innerTickSize(-width);
-
-
-
-
-			//Appending x - axis
-			svg.append("g")
-			  .attr("class", "x axis")
-			  .attr("transform", "translate(0," + height + ")")
-			  .call(xAxis)
-			  .append("text")
-			  .attr("x", (width / 2))
-			  .attr("y", 35)
-			  .style("text-anchor", "middle")
-			  .attr("class","axis-label")
-			  .text(obj.xAxis&&obj.xAxis.title.text?obj.xAxis.title.text:"");
-
-			//Appending y - axis
-			svg.append("g")
-			  .attr("class", "y axis")
-			  .call(yAxis)
-			  .append("text")
-			  .attr("transform", "rotate(-90)")
-			  .attr("y", 6)
-			  .attr("dy", "-3.71em")
-			  .attr("dx", -((height)/2)-margin.top)
-			  .style("text-anchor", "middle")
-			  .attr("class","axis-label")
-			  .text(obj.yAxis&&obj.yAxis.title.text?obj.yAxis.title.text:"");
-
-
-			//Appending line in chart
-			svg.selectAll(".city")
-			  .data(series)
-			  .enter().append("g")
-			  .attr("class", "city")
-			  .append("path")
-			  .attr("class", "line")
-			  .attr("d", function (d) {
-				return line(d.data);
-			  })
-			  .attr("data-legend", function (d) {
-				return d.label
-			  })
-			  .style("stroke", function (d) {
-				return color(d.label);
-			  })
-			  .classed("line-hover", false);
-
-
-			//selecting all the paths
-			var path = svg.selectAll("path");
-
-			//For each line appending the circle at each point
-			  series.forEach(function (data) {
-				var visibility = "visible";
-				//if the length of the
-				if (data.data.length > 270) {
-				  visibility = "hidden";
-				}
-				svg.selectAll("dot")
-				  .data(data.data)
-				  .enter().append("circle")
-				  .attr('class', function(d) {
-					return dateHasAnnotations(d.date) ? 'clips annotation-circle' : 'clips';
-				  })
-				  .attr('id', function (d) {
-					return parseInt(x(d.date))
-				  })
-				  .style('visibility', visibility)
-				  .attr("r", function(d) {
-					return dateHasAnnotations(d.date) ? 3 : 0;
-				  })
-				  .style('fill', function(d) {
-					return dateHasAnnotations(d.date) ? '#666' : color(data.label);
-				  })
-				  .attr("cx", function (d) {
-					return x(d.date);
-				  })
-				  .attr("cy", function (d) {
-					return y(d.y);
-				  })
-				  .on('click', function(d) {
-					if(dateHasAnnotations(d.date))
-					  annotate(d.date);
-				  })
-			});
-
-
-			var lastXpos;
-			var that = this;
-
-			d3.selectAll(obj.divId)
-			.on('mousemove', function() {
-
-			  var cord = d3.mouse(this);
-			  Tooltip.hide(that.container);
-
-			  if (HoverFlag) {
-				mouseMoveHide = 'visible'
-			  } else {
-				mouseMoveHide = 'hidden'
-
-			  }
-
-			  if (cord[1] < 2*margin.top || cord[1] > (height+2*margin.top) ||cord[0]<margin.left || cord[0] > (width+margin.left)|| series.length==0 || series[0].data.length==0) {
-				return
-			  }
-			  if(lastXpos) {
-				d3.selectAll(obj.divId + " > svg > g > circle[id='" + (lastXpos) + "']")
-				  .attr('r', function(d) {
-					return dateHasAnnotations(d.date) ? 3 : 0;
-				  });
-			  }
-
-			  var flag = true;
-			  var xpos = parseInt(cord[0] - margin.left);
-			  while (d3.select(obj.divId+" > svg > g > circle[id='" + (xpos) + "']")[0][0] == null) {
-				if (flag) {
-				  xpos++
-				} else {
-				  xpos--;
-				  if(xpos<0)
-				  {
-					break;
-				  }
-				}
-				if (xpos >= width && flag) {
-				  flag = false;
-				}
-			  }
-			  lastXpos = xpos;
-			  var hover = d3.selectAll(obj.divId+" > svg > g > circle[id='" + xpos + "']")
-				.attr('r', 6)
-				.style('visibility', mouseMoveHide);
-			  var data = hover.data();
-			  var legends = series.map(function (d) {
-				return d.label;
-			  });
-			  var colors =[];
-			  data.forEach(function(a,i) {
-				colors[i] = color(legends[i]);
-			  });
-			  Tooltip.show(that.container,[cord[0], cord[1]], obj.tooltip.formatter(data,legends,colors));
-			})
-			.on('mouseout', function () {
-
-				Tooltip.hide(that.container);
-
-				d3.selectAll(obj.divId+' > svg > g > circle[class="clips"]').attr('r', 0);
-			});
-
-			//zoming function
-			d3.selectAll(obj.divId)
-			.on("click", function () {
-
-				var cord = d3.mouse(this);
-				var rows = obj.rows;
-
-				var xpos = parseInt(Math.max(0, cord[0]) / (width / series[0].data.length)) - 2;
-
-				var row = rows[xpos];
-
-				row.annotations.show();
-
-				Tooltip.hide(that.container);
-			})
-			.on("mousedown", function () {
-
-				//remove all the rectangele created before
-				d3.selectAll(obj.divId + " > rect[class='zoom']").remove();
-
-				//assign this toe,
-				var e = this,
-					origin = d3.mouse(e),   // origin is the array containing the location of cursor from where the rectangle is created
-					rect = svg.append("rect").attr("class", "zoom"); //apending the rectangle to the chart
-				d3.select("body").classed("noselect", true);  //disable select
-				//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-				origin[0] = Math.max(0, Math.min(width, (origin[0] - margin.left)));
-				disbleHover = true;
-
-				//if the mouse is down and mouse is moved than start creating the rectangle
-				d3.select(window)
-				.on("mousemove.zoomRect", function () {
-					//current location of mouse
-					var m = d3.mouse(e);
-					//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-					m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
-
-					//asign width and height to the rectangle
-					rect.attr("x", Math.min(origin[0], m[0]))
-						.attr("y", margin.top)
-						.attr("width", Math.abs(m[0] - origin[0]))
-						.attr("height", height - margin.top);
-				})
-				.on("mouseup.zoomRect", function () {  //function to run mouse is released
-
-					d3.select(window).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
-
-					//allow selection
-					d3.select("body").classed("noselect", false);
-					var m = d3.mouse(e);
-
-					//the position where the mouse the released
-					m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
-					//check that the origin location on x axis of the mouse should not be eqaul to last
-					if (m[0] !== origin[0] && series.length != 0) {
-
-						//starting filtering data
-						data.forEach(function (d) {
-
-							//slicing each line if and only if the length of data > 50 (minimum no of ticks should be present in the graph)
-							if (d.data.length > 50) {
-								d.data = d.data.filter(function (a) {
-									if (m[0] < origin[0]) {
-										return x(a.date) >= m[0] && x(a.date) <= origin[0];
-									} else {
-										return x(a.date) <= m[0] && x(a.date) >= origin[0];
-									}
-								});
-							}
-						});
-						zoom = false;
-						//calling the chart function to update the graph
-						chart.plot();
-					}
-					disbleHover = false;
-					rect.remove();
-				}, true);
-
-				d3.event.stopPropagation();
-			});
-
-			//When in mouse is over the line than focus the line
-			path.on('mouseover', function (d) {
-
-				if(disbleHover)
-					return;
-
-				if(d)
-					d.hover = true;
-
-				svg.selectAll("path").classed("line-hover", d => d.hover);
-			});
-
-			//When in mouse is put the line than focus the line
-			path.on('mouseout', function (d) {
-
-				if(d)
-					d.hover = false;
-
-				svg.selectAll("path").classed("line-hover", d => d.hover);
-			});
-		};
-
-	  chart.plot();
-
-	  var initialWidth = document.querySelector(obj.divId).clientWidth;
-	  setTimeout(function () {
-		if (document.querySelector(obj.divId).clientWidth<(initialWidth-15)||document.querySelector(obj.divId).clientWidth> (initialWidth+15)) {
-		  width = document.querySelector(obj.divId).clientWidth -margin.left - margin.right;
-		  chart.plot()
-		}
-	  }, 2000);
-
-	  window.addEventListener('resize', function () {
-		if(width === (document.querySelector(obj.divId).clientWidth -margin.left - margin.right)) {
-		}
-		else {
-		  width = document.querySelector(obj.divId).clientWidth -margin.left - margin.right;
-		  chart.plot();
-		}
-	  });
-
-	  d3.select(obj.divId).on('click',function () {
-		chart.plot()
-	  });
-
-
-	  chart.height = function (newHeight) {
-		if(newHeight !== height) {
-		  height = newHeight;
-		  chart.plot();
-		}
-	  };
-
-	  chart.margin = function (_) {
-		if(_) {
-		  margin = _;
-		  chart.plot();
-		}
-	  };
-	  return chart;
-	}
-});
-
-Visualization.list.set('funnel', class Funnel extends Visualization {
-
-	get container() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
-
-		container.classList.add('visualization', 'funnel');
-		container.innerHTML = `
-			<div id="funnel-${this.source.query_id}" class="container"></div>
-		`;
-
-		return container;
-	}
-
-	async load(e) {
-
-		if(e)
-			e.preventDefault();
-
-		this.container.querySelector('.container').innerHTML = `
-			<div class="loading">
-				<i class="fa fa-spinner fa-spin"></i>
-			</div>
-		`;
-
-		await this.source.fetch();
-
-		if(this.source.response.filter(r => !r.value).length == this.source.response.length) {
-			this.container.querySelector('.container').innerHTML = '<div class="NA">No data found for given parameters! :(</div>';
-			return;
-		}
-
-		const series = [];
-
-		for(const level of this.source.response) {
-			series.push({
-				label: level.metric,
-				data: [{date: 0, label: level.metric, y: level.value}],
-			});
-		}
-
-		this.draw({
-			series: series.reverse(),
-			divId: `#funnel-${this.source.query_id}`,
-			chart: {},
-			tooltip: {
-				formatter: d => `${d.label}: ${Format.number(d.y)}`
-			},
-		});
-	}
-
-	draw(obj) {
-
-		d3.selectAll(obj.divId).on('mousemove', null)
-			.on('mouseout', null)
-			.on('mousedown', null)
-			.on('click', null);
-
-		var chart = {};
-
-		var data = obj.series;
-
-		var downloadFlag = false;
-
-		//Setting margin and width and height
-		var margin = {top: 30, right: 30, bottom: 60, left: window.innerWidth < 768 ? -50 : 20},
-				width = document.querySelector(obj.divId).clientWidth - margin.left - margin.right,
-				height = obj.chart.height?obj.chart.height:550 - margin.top - margin.bottom,
-				tickNumber = 5,
-				funnelTop,
-				funnelBottom,
-				funnelBottonHeight;
-
-		if (window.innerWidth < 768) {
-			funnelTop = width;
-			funnelBottom = width * 0.5;
-			funnelBottonHeight = height * 0.2;
-		}
-		else {
-			funnelTop = width * 0.60;
-			funnelBottom = width * 0.2;
-			funnelBottonHeight = height * 0.2
-		}
-		//Parse date function
-		var legendToggleTextFlag = false;
-		//x
-		var x = d3.scale.ordinal()
-			.domain([0, 1])
-			.rangeBands([0, width], 0.1, 0);
-
-		//y
-		var y = d3.scale.linear().range([height, margin.top]);
-
-		var color = d3.scale.ordinal()
-			.range(['#88a18c',
-				'#e09c5b',
-				'#5E95E1',
-				'#dd7478',
-				'#2a3f54',
-				'#1abb9c',
-				'#9dd440',
-				'#7A5D4B',
-				'#A971D8']);
-
-		// Defining xAxis location at bottom the axes
-		var xAxis = d3.svg.axis().scale(x)
-			.orient("bottom")
-			.tickFormat(function (d) { return moment(d).format("YYYY-MM-DD") });
-
-
-		var diagonal = d3.svg.diagonal()
-			.source(function (d) {
-				return {"x": d[0]['y']+5, "y": d[0]['x']};
-			})
-			.target(function (d) {
-				return {"x": d[1]['y']+5, "y": d[1]['x']};
-			})
-			.projection(function (d) {
-				return [d.y, d.x];
-			});
-
-
-		//Setting domain for the colors with te exceptioon of date column
-		color.domain(data.map(function (d) { return d.label }));
-
-		var cities = d3.layout.stack()(data.map(function (d) {
-				return d.data.map(function (d) {
-					return {date: d.date, y: +d.y, label: d.label}
-				})
-			})
-		);
-
-
-		for (var i = 0; i < cities.length; i++) {
-			var cityCopyObj = {};
-			cityCopyObj.data = cities[i];
-			cityCopyObj.label = color.domain()[i];
-			cityCopyObj.hover = false;
-			cityCopyObj.disabled = true;
-			cities[i] = cityCopyObj
-		}
-
-
-		var rawData = JSON.parse(JSON.stringify(cities));
-
-		chart.plot = () => {
-
-			funnelTop = width * 0.60;
-			funnelBottom = width * 0.2;
-			funnelBottonHeight = height * 0.2;
-
-			//Empty the container before loading
-			d3.selectAll(obj.divId + " > *").remove();
-			//Adding chart and placing chart at specific locaion using translate
-			var svg = d3.select(obj.divId)
-				.append("svg")
-				.attr("width", width + margin.left + margin.right)
-				.attr("height", height + margin.top + margin.bottom)
-				.append("g")
-				.attr("class", "chart")
-				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
-			//Filtering data if the column is disable or not
-			var series = cities.filter(function (d) {
-				return d.disabled;
-			});
-			var qkeyButton = {}, textLength = 0;
-
-
-			//check if the data is present or not
-			if (series.length == 0 || series[0].data.length == 0) {
-				//Chart Title
-				svg.append('g').attr('class', 'noDataWrap').append('text')
-					.attr("x", (width / 2))
-					.attr("y", (height / 2))
-					.attr("text-anchor", "middle")
-					.style("font-size", "20px")
-					.text(obj.loading ? "Loading Data ..." : "No data to display");
-				return;
-			}
-
-
-			var temp = d3.layout.stack()(series.map(function (c) {
-				return c.data.map(function (d) {
-					return {date: d.date, y: +d.y, label: d.label};
-				})
-			}));
-
-			for (var i = 0; i < series.length; i++) {
-				series[i].data = temp[i]
-			}
-
-			x.domain([0]);
-			x.rangeBands([0, width], 0.1, 0);
-			y.domain([
-				0,
-				d3.max(series, function (c) {
-					return d3.max(c.data, function (v) {
-						return Math.ceil(v.y0 + v.y);
-					});
-				}) + 4
-			]);
-
-			var tickInterval = parseInt(x.domain().length / tickNumber);
-			var ticks = x.domain().filter(function (d, i) {
-				return !(i % tickInterval);
-			});
-			xAxis.tickValues(ticks);
-
-			var layer = svg.selectAll(".layer")
-				.data(series)
-				.enter().append("g")
-				.attr("class", "layer")
-				.style("fill", function (d) {
-					return color(d.label);
-				});
-
-			layer.selectAll("rect")
-				.data(function (d) {
-					return d.data;
-				})
-				.enter().append("rect")
-				.attr("x", function (d) {
-					return x(d.date);
-				})
-				.attr("y", function (d) {
-					return 30;
-				})
-				.attr("height", function (d) {
-					return 0;
-				})
-				.attr("width", x.rangeBand())
-				.transition()
-				.duration(500)
-				.attr("x", function (d) {
-					return x(d.date);
-				})
-				.attr("width", x.rangeBand())
-				.attr("y", function (d) {
-					return y(d.y + d.y0);
-				})
-				.attr("height", function (d) {
-					return y(d.y0) - y(d.y + d.y0)});
-
-
-			var poly1 = [
-				{"x": 0, "y": margin.top},
-				{"x": (width - funnelTop) / 2, "y": margin.top},
-				{"x": (width - funnelBottom) / 2, "y": height - funnelBottonHeight},
-				{"x": (width - funnelBottom) / 2, "y": height},
-				{"x": 0, "y": height}
-
-			];
-
-			var poly2 = [
-				{"x": width, "y": margin.top},
-				{"x": (width - funnelTop) / 2 + funnelTop + 5, "y": margin.top},
-				{"x": (width - funnelBottom) / 2 + funnelBottom + 5, "y": height - funnelBottonHeight},
-				{"x": (width - funnelBottom) / 2 + funnelBottom + 5, "y": height},
-				{"x": width, "y": height}
-
-			];
-
-			var polygon = svg.selectAll("polygon")
-				.data([poly2, poly1])
-				.enter().append("polygon")
-				.attr("points", function (d) {
-					return d.map(function (d) {
-						return [(d.x), (d.y)].join(",");
-					}).join(" ");
-				})
-				.attr("stroke", "white")
-				.attr("stroke-width", 2)
-				.attr("fill", "white");
-
-			//selecting all the paths
-			var path = svg.selectAll("rect");
-
-			var that = this;
-
-			path.on('mousemove', null);
-			//mouse over function
-			path
-				.on('mousemove', function (d) {
-					Tooltip.hide(that.container);
-					var cord = d3.mouse(this);
-					if (cord[1] < 2 * margin.top || cord[1] > (height + 2 * margin.top) || cord[0] < margin.left || cord[0] > (width + margin.left) || series.length == 0 || series[0].data.length == 0) {
-						return
-					}
-					Tooltip.show(that.container, [cord[0], cord[1]], obj.tooltip.formatter(d), 'n');
-				});
-			polygon.on('mouseover', function () {
-				Tooltip.hide(that.container);
-			});
-
-			var labelConnectors = svg.append("g").attr('class', "connectors");
-			var previousLabelHeight = 0, singPoint = height / d3.max(y.domain());
-			for (i = 0; i < series.length; i++) {
-				var section = series[i].data[0];
-				var startLocation = section.y0 * singPoint,
-					sectionHeight = section.y * singPoint,
-					bottomLeft = funnelBottonHeight - (startLocation),
-					x1, y1,  endingPintY, curveData;
-				var label = labelConnectors.append("g");
-				var text;
-				//for lower part of the funnel
-				if ((sectionHeight) / 2 < (bottomLeft)) {
-					x1 = (width + funnelBottom) / 2;
-					y1 = (startLocation + sectionHeight / 2);
-
-					endingPintY = y1;
-
-					if ((endingPintY - previousLabelHeight) <= 10) {
-						endingPintY = previousLabelHeight + 5
-					}
-
-					curveData = [{x: x1, y: (height) - y1-5}, {
-						x: x1 + (window.innerWidth < 768 ? 30 : 50),
-						y: height - (endingPintY)
-					}];
-					text = label.append("text")
-						.attr("x", x1 + (window.innerWidth < 768 ? 35 : 60))
-						.attr("y", height - (endingPintY))
-						.attr("text-anchor", "left")
-						.style("font-size", "15px")
-						.style("fill","#2a3f54");
-
-					if (window.innerWidth < 768) {
-						text.style("font-size", "10px");
-					}
-					text.append("tspan")
-						.attr("x", x1 + (window.innerWidth < 768 ? 35 : 60))
-						.attr("dx", "0")
-						.attr("dy", "1em")
-						.text(series[i].label);
-
-					text.append("tspan")
-						.attr("x", x1 + (window.innerWidth < 768 ? 35 : 60))
-						.attr("dx", "0")
-						.attr("dy", "1.2em")
-						.style("font-size", "13px")
-						.text(`${Format.number(series[i].data[0].y)}  (${(series[i].data[0].y / series[series.length - 1].data[0].y * 100).toFixed(2)}%)`);
-
-				} else {
-
-					//for upper part of the funnel
-					var arr = findInterSection(
-						width / 2, height - (startLocation + sectionHeight / 2),
-						width, height - (startLocation + sectionHeight / 2),
-						(width + funnelTop) / 2, margin.top,
-						(width + funnelBottom) / 2, height - funnelBottonHeight);
-
-					x1 = arr[0];
-					y1 = arr[1];
-
-					endingPintY = y1;
-					if ((endingPintY - (endingPintY - previousLabelHeight)) <= 15) {
-						endingPintY = previousLabelHeight + endingPintY + 15
-					}
-
-					curveData = [{x: x1, y: y1}, {x: x1 + (window.innerWidth < 768 ? 30 : 50), y: endingPintY-20}];
-					text = label.append("text")
-						.attr("x", x1 + (window.innerWidth < 768 ? 40 : 70))
-						.attr("y", endingPintY-20)
-						.attr("text-anchor", "left")
-						.style("font-size", "15px");
-
-					if (window.innerWidth < 768) {
-						text.style("font-size", "10px");
-					}
-					text.append("tspan")
-						.attr("x", x1 + (window.innerWidth < 768 ? 35 : 60))
-						.attr("dx", "0")
-						.attr("dy", "1em")
-						.text(series[i].label);
-
-					text.append("tspan")
-						.attr("x", x1 + (window.innerWidth < 768 ? 35 : 60))
-						.attr("dx", "0")
-						.attr("dy", "1.2em")
-						.style("font-size", "13px")
-						.text(`${Format.number(series[i].data[0].y)} (${(series[i].data[0].y / series[series.length - 1].data[0].y * 100).toFixed(2)}%)`);
-
-				}
-
-				previousLabelHeight = endingPintY + 45;
-
-
-				label.datum(curveData)
-					.append("path")
-					.attr("class", "link")
-					.attr("d", diagonal)
-					.attr("stroke", "#2a3f54")
-					.attr("stroke-width", 1)
-					.attr("fill", "none");
-			}
-		};
-
-		chart.plot();
-
-		var initialWidth = document.querySelector(obj.divId).clientWidth;
-		setTimeout(function () {
-			if (document.querySelector(obj.divId).clientWidth != initialWidth) {
-				width = document.querySelector(obj.divId).clientWidth - margin.left - margin.right;
-				chart.plot()
-			}
-		}, 2000);
-
-		window.addEventListener('resize', function () {
-			width = document.querySelector(obj.divId).clientWidth - margin.left - margin.right;
-			chart.plot();
-		});
-
-		chart.height = function (newHeight) {
-			if (newHeight != height) {
-				height = newHeight;
-				chart.plot();
-			}
-		};
-
-		chart.margin = function (_) {
-			if (_) {
-				margin = _;
-				chart.plot();
-			}
-		};
-
-		function findInterSection(x1, y1, x2, y2, x3, y3, x4, y4) {
-			var m1 = (y2 - y1) / (x2 - x1), m2 = (y4 - y3) / (x4 - x3), b1 = (y1 - m1 * x1), b2 = (y3 - m2 * x3);
-			return [((b2 - b1) / (m1 - m2)), -1 * ((b1 * m2 - b2 * m1) / (m1 - m2))];
-		}
-
-		return chart;
-	}
-});
-
-class Tooltip {
-
-	static show(div, position, content, row) {
-
-		if(!div.querySelector('.tooltip'))
-			div.insertAdjacentHTML('beforeend', `<div class="tooltip"></div>`)
-
-		const
-			container = div.querySelector('.tooltip'),
-			distanceFromMouse = 40;
-
-		container.innerHTML = content;
-
-		if(container.classList.contains('hidden'))
-			container.classList.remove('hidden');
-
-		let left = Math.max(position[0] - (container.clientWidth / 2) + distanceFromMouse, 5),
-			top = position[1] + distanceFromMouse;
-
-		if(left + container.clientWidth > div.clientWidth)
-			left = div.clientWidth - container.clientWidth - 5;
-
-		if(top + container.clientHeight > div.clientHeight)
-			top = position[1] - container.clientHeight - distanceFromMouse;
-
-		container.setAttribute('style', `left: ${left}px; top: ${top}px;`);
-	}
-
-	static hide(div) {
-
-		const container = div.querySelector('.tooltip');
-
-		if(!container)
-			return;
-
-		container.classList.add('hidden');
-	}
-}
-
-function d3Legend() {
-  var margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom,
-    color = d3.scale.category10().range(),
-    dispatch = d3.dispatch('legendClick', 'legendMouseover', 'legendMouseout');
-
-
-  function chart(selection) {
-    selection.each(function(data) {
-
-      /**
-       *    Legend curently is setup to automaticaly expand vertically based on a max width.
-       *    Should implement legend where EITHER a maxWidth or a maxHeight is defined, then
-       *    the other dimension will automatically expand to fit, and anything that exceeds
-       *    that will automatically be clipped.
-       **/
-
-      var wrap = d3.select(this).selectAll('g.legend').data([data]);
-      var gEnter = wrap.enter().append('g').attr('class', 'legend').append('g');
-
-
-      var g = wrap.select('g')
-        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-
-
-      var series = g.selectAll('.series')
-        .data(function(d) { return d });
-      var seriesEnter = series.enter().append('g').attr('class', 'series')
-        .on('click', function(d, i) {
-          dispatch.legendClick(d, i);
-        })
-        .on('mouseover', function(d, i) {
-          dispatch.legendMouseover(d, i);
-        })
-        .on('mouseout', function(d, i) {
-          dispatch.legendMouseout(d, i);
-        });
-
-      //set the color of the circle before the legend name
-      seriesEnter.append('circle')
-        .style('fill', function(d, i){ return d.color || color(d.label)})
-        .style('stroke', function(d, i){ return d.color || color(d.label) })
-        .attr('r',5);
-
-      //setting text of the legend
-      seriesEnter.append('text')
-        .text(function(d) { return d.label + (d.percent&&d.percent!=""?'('+d.percent+'%)':"") })
-        .attr('text-anchor', 'start')
-        .attr('dy', '.32em')
-        .attr('dx', '12')
-        .attr('font-size','15');
-      series.classed('disabled', function(d) { return d.disabled });
-      series.exit().remove();
-
-      var ypos = 5,
-        newxpos = 5,
-        maxwidth = 0,
-        xpos;
-      series
-        .attr('transform', function(d, i) {
-          var length = d3.select(this).select('text').node().getComputedTextLength() + 28;
-          xpos = newxpos;
-
-          //TODO: 1) Make sure dot + text of every series fits horizontally, or clip text to fix
-          //TODO: 2) Consider making columns in line so dots line up
-          //         --all labels same width? or just all in the same column?
-          //         --optional, or forced always?
-          if (width < margin.left + margin.right + xpos + length) {
-            newxpos = xpos = 5;
-            ypos += 20;
-          }
-
-          newxpos += length;
-          if (newxpos > maxwidth) maxwidth = newxpos;
-
-          return 'translate(' + xpos + ',' + ypos + ')';
-        });
-
-      //position legend as far right as possible within the total width
-
-      g.attr('transform', 'translate(' + 0 + ',' + (height+margin.bottom/2+20) + ')');
-
-    });
-
-    return chart;
-  }
-
-  chart.dispatch = dispatch;
-
-  chart.margin = function(_) {
-    if (!arguments.length) return margin;
-    return chart;
-  };
-
-  chart.width = function(_) {
-    if (!arguments.length) return width;
-    width = _;
-    return chart;
-  };
-
-  chart.height = function(_) {
-    if (!arguments.length) return height;
-    height = _;
-    return chart;
-  };
-
-  chart.color = function(_) {
-    if (!arguments.length) return color;
-    color = _;
-    return chart;
-  };
-
-  return chart;
-}
+DataSourceFilter.setup();
 
 Node.prototype.on = window.on = function(name, fn) {
 	this.addEventListener(name, fn);

@@ -261,6 +261,11 @@ function listOfArrayToMatrix(l) {
 
 
 function authenticatePrivileges(userPrivileges, objectPrivileges) {
+
+    return {
+        error: false,
+        message: "privileged user!",
+    };
     //userPrivileges , objectPrivileges = [[1,2,3], [4,5,6]]
 
     // console.log(objectPrivileges);

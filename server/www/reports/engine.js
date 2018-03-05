@@ -36,15 +36,16 @@ class report extends API {
             return authentication;
         }
 
+        let result = null;
 
         if(this.query.source.toLowerCase() === 'query') {
 
-            return await new query(this.query, this.filters, this.request).execute();
+            result = await new query(this.query, this.filters, this.request).execute();
         }
 
         else if (this.query.source.toLowerCase() === 'api') {
 
-            return await new api(this.query, this.filters, this.request).execute();
+            result = await new api(this.query, this.filters, this.request).execute();
         }
 
         else if (this.query.source.toLowerCase() === 'big_query') {
@@ -58,6 +59,11 @@ class report extends API {
                 status: false,
                 message: "unknown source",
             }
+        }
+
+        return {
+            status: result ? true : false,
+            data: result,
         }
     }
 
@@ -217,7 +223,7 @@ class query extends report {
 
     async fetchAndStore () {
 
-        const redisData = await commonFun.redisGet(this.redisKey);
+        const redisData = 0//await commonFun.redisGet(this.redisKey);
 
         if(this.query.is_redis && redisData && !this.has_today) {
 
@@ -235,7 +241,7 @@ class query extends report {
 
         this.result = await this.mysql.query(this.query.query, [], this.query.connection_name);
 
-        await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
+        //await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
 
     }
 }
