@@ -1,0 +1,26 @@
+{
+  "port": 3002,
+  "bigquery_files_destination": "../../bigquery_files/",
+  "secret_key": "SECRET KEY HERE",
+  "sql_db": {
+    "allSparkRead": {
+      "connectionLimit": 10,
+      "host": "host address",
+      "user": "username",
+      "password": "password",
+      "database":"default db"
+    },
+    "allSparkWrite": {
+      "connectionLimit": 10,
+      "host": "host address",
+      "user": "username",
+      "password": "password",
+      "database":"default db"
+    }
+  },
+  "redisOptions": {
+    "host": "localhost",
+    "port": 6379,
+    "db": 0
+  }
+}

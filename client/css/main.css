@@ -1,0 +1,709 @@
+:root {
+	--color-primary: #2a3f54;
+	--color-primary-text: #fff;
+	--color-secondary: #4e6479;
+	--color-secondary-text: #fff;
+	--color-accent: #1abb9c;
+	--color-accent-text: #fff;
+	--color-row-hover: #ddf;
+	--transition-duration: 300ms;
+	--gap: 5px;
+}
+* {
+	box-sizing: border-box;
+}
+input:not([type=checkbox]):not([type=radio]),
+select,
+button {
+	padding: 5px 10px;
+	border: 0px solid #ccc;
+	background: var(--color-primary);
+	color: #fff;
+}
+input[type=button],
+input[type=reset],
+input[type=submit],
+button,
+select {
+	background: var(--color-primary);
+	transition: box-shadow var(--transition-duration);
+	box-shadow: 0 0 25px rgba(0, 0, 0, 0.05);
+	border: 0;
+}
+input[type=button]:hover,
+input[type=reset]:hover,
+input[type=submit]:hover,
+select:hover,
+button:hover {
+	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+}
+input[type=button]:active,
+input[type=reset]:active,
+input[type=submit]:active,
+select:active,
+button:active {
+	box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
+}
+
+input[type=submit] {
+	background: var(--color-accent);
+	color: var(--color-accent-text);
+	letter-spacing: 1px;
+}
+
+a {
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+	cursor: pointer;
+}
+a:active {
+	color: inherit;
+}
+
+.hidden {
+	display: none !important;
+}
+
+.notice, .warning {
+	padding: 16px;
+	box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+	margin: var(--gap) 0;
+	color: #666;
+}
+.notice {
+	background: #dfd;
+}
+.warning {
+	background: #fdd;
+}
+.NA {
+	color: #999;
+	font-size: 90%;
+}
+
+html, body {
+	height: 100%;
+}
+
+body {
+	display: flex;
+	font-family: Ariel, sans-serif;
+	margin: 0;
+	flex-direction: column;
+	background: #eee;
+}
+
+	body > #ajax-working {
+		position: fixed;
+		top: 60px;
+		left: 50%;
+		opacity: 0;
+		user-select: none;
+		padding: 3px 10px;
+		font-size: 12px;
+		letter-spacing: 1px;
+		transition: opacity var(--transition-duration);
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+		background: var(--color-accent);
+		color: var(--color-accent-text);
+		width: 74px;
+	}
+	body > #ajax-working.show {
+		opacity: 1;
+	}
+
+	body > header {
+		background: var(--color-primary);
+		color: var(--color-primary-text);
+		display: flex;
+		min-height: 50px;
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	}
+		body > header .logo {
+			width: 220px;
+			display: flex;
+			align-items: center;
+		}
+			body > header .logo img {
+				height: calc(100% - 25px);
+			}
+		body > header nav {
+			display: flex;
+		}
+		body > header .logout,
+		body > header nav a {
+			display: inline-block;
+			color: var(--color-primary-text);
+			padding: 15px 20px;
+			letter-spacing: 1px;
+			font-size: 90%;
+			transition: background var(--transition-duration);
+		}
+		body > header .logout:hover,
+		body > header a:hover {
+			text-decoration: none;
+			background: var(--color-accent);
+			color: var(--color-accent-text);
+			cursor: pointer;
+		}
+		body > header a.selected {
+			background: var(--color-accent);
+			color: var(--color-accent-text);
+		}
+		body > header .user-name {
+			margin-left: auto;
+			padding: 15px 20px;
+			letter-spacing: 1px;
+		}
+		body > header .logout {
+			padding: 15px 20px;
+			letter-spacing: 1px;
+		}
+
+	main {
+		height: 100%;
+		overflow: auto;
+	}
+
+	main .block {
+		background: #fff;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	}
+
+	main section.section {
+		display: none;
+		padding: calc(var(--gap) * 2);
+	}
+	main section.section.show {
+		display: block;
+	}
+		main section .toolbar {
+			display: flex;
+			flex-wrap: wrap;
+			background: #fff;
+    		margin: 10px 0;
+    		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+    		padding: 5px;
+		}
+			main section .toolbar .right {
+				margin-left: auto;
+			}
+			main section .toolbar > * {
+				margin: var(--gap);
+			}
+
+
+	main .loading {
+		margin-top: 100px;
+		height: 70px;
+		background-size: contain;
+	}
+
+
+	main .section > h1,
+	main .section > h2 {
+		border-bottom: 1px dashed #999;
+		margin: var(--gap) 0;
+		font-size: 130%;
+		text-transform: capitalize;
+	}
+
+	main table {
+		border-collapse: collapse;
+		width: 100%;
+	}
+		main table thead {
+			background: var(--color-primary);
+			color: var(--color-primary-text);
+			font-size: 90%;
+		}
+			main table thead th {
+				padding: 5px 8px;
+				position: sticky;
+				background: var(--color-primary);
+				color: var(--color-primary-text);
+				top: 0;
+				z-index: 2;
+				border-right: 1px solid var(--color-primary-text);
+			}
+			main table thead th:last-child {
+				border-right: 0;
+			}
+				main table thead svg {
+					float: right;
+					margin: 2px 0 0 var(--gap);
+					display: block;
+					font-size: 80% !important;
+					cursor: pointer;
+					opacity: 0;
+					transition: opacity var(--transition-duration);
+				}
+				main table thead th:hover svg {
+					opacity: 1;
+				}
+		main table tbody tr {
+			transition: var(--transition-duration);
+		}
+		main table tbody tr:nth-child(2n) {
+			background: #efefef;
+		}
+		main table tbody tr:hover,
+		main table tbody tr.selected {
+			background: #ddf;
+		}
+			main table td {
+				padding: 8px;
+				position: relative;
+			}
+				main table .action {
+					width: 80px;
+					text-align: center;
+				}
+				main table td.action {
+					cursor: pointer;
+					transition: background var(--transition-duration),
+								box-shadow var(--transition-duration);
+				}
+				main table td.action.green:hover {
+					background: #cfc;
+				}
+				main table td.action.red:hover {
+					background: #fcc;
+				}
+				main table td.action:active {
+					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
+				}
+				main table td.action:hover {
+					background: var(--color-accent);
+					color: var(--color-accent-text);
+					cursor: pointer;
+				}
+
+	main .form {
+		display: flex;
+		flex-direction: column;
+		padding: var(--gap);
+	}
+		main .form label {
+			margin: calc(var(--gap)*2) var(--gap);
+			font-weight: bold;
+			display: flex;
+			flex-direction: column;
+			max-width: 200px;
+		}
+			main .form label > span {
+				margin-bottom: var(--gap);
+				font-size: 90%;
+			}
+
+	main .data-source {
+		margin-bottom: 30px;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+	}
+		main .data-source > header {
+			border-bottom: 1px dashed #999;
+			display: flex;
+			margin-bottom:  var(--gap);
+		}
+			main .data-source > header > .right {
+				margin-left: auto;
+			}
+			main .data-source > header h2 {
+				font-size: 28px;
+				margin: 0;
+			}
+			main .data-source > header > * {
+				height: 26px;
+				padding: 0 15px;
+			    margin: 0 4px 5px 4px;
+			}
+			main .data-source > header h2 {
+				font-size: 22px;
+				margin: 0;
+				padding: 0;
+			}
+			main .data-source > header *:last-child {
+				margin-right: 0;
+			}
+		main .data-source form.toolbar {
+			background: #fff;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			padding: 5px;
+			margin: 10px 0;
+		}
+			main .data-source .description-toggle.selected,
+			main .data-source .filters-toggle.selected {
+				background: var(--color-accent);
+				color: var(--color-accent-text);
+			}
+		main .data-source > .description {
+			background: #fff;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			margin: 10px 0;
+		}
+			main .data-source > .description .body {
+				white-space: pre-wrap;
+				padding: 16px;
+			}
+			main .data-source > .description .footer {
+				border-top: 1px dashed #999;
+				padding: 5px 10px;
+				text-align: right;
+				font-size: 80%;
+			}
+			main .data-source > .description .footer a {
+				color: #333;
+				margin-left: 15px;
+				cursor: pointer;
+			}
+		main .data-source > .share-link {
+			background: #fff;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			padding: 10px;
+			margin: var(--gap) 0;
+		}
+			main .data-source > .share-link input {
+				width: 100%;
+			}
+		main .data-source > form.toolbar select {
+			max-width: 200px;
+		}
+		main .data-source .visualization {
+			margin-bottom: 16px;
+			margin: var(--gap) 0;
+		}
+			main .data-source .visualization .NA {
+				padding: 5px 16px;
+			}
+			main .data-source .visualization .container {
+				width: 100%;
+				background: #fff;
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+				position: relative;
+			}
+				.visualization > .container > .loading {
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					height: 500px;
+					font-size: 400%;
+					color: #999;
+					margin: 0;
+				}
+
+			main .data-source .visualization .tooltip {
+				background: var(--color-primary);
+				color: #fff;
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+				position: absolute;
+				font-size: 90%;
+				transition: left var(--transition-duration),
+							top var(--transition-duration);
+			}
+				main .data-source .visualization .tooltip header {
+					padding: var(--gap) calc(var(--gap) * 2);
+					border-bottom: 1px solid #fff;
+					display: flex;
+				}
+				main .data-source .visualization .tooltip footer {
+					padding: var(--gap) calc(var(--gap) * 2);
+					border-top: 1px dashed #999;
+					display: grid;
+					grid-template-columns: auto 1fr;
+					grid-column-gap: var(--gap);
+				}
+				main .data-source .visualization .tooltip .body {
+					list-style: none;
+					margin: 0;
+					padding: calc(var(--gap) * 2);
+					display: grid;
+					grid-template-columns: 100%;
+					grid-row-gap: var(--gap);
+					background: rgba(255, 255, 255, 0.1);
+				}
+					main .data-source .visualization .tooltip li {
+						display: grid;
+						grid-template-columns: 16px auto 1fr;
+						grid-column-gap: var(--gap);
+						align-items: center;
+					}
+						main .data-source .visualization .tooltip .circle {
+							width: 80%;
+							border-radius: 8px;
+							display: inline-block;
+							height: 80%;
+						}
+						main .data-source .visualization .tooltip .value {
+							text-align: right;
+							margin-left: 10px;
+						}
+				main .data-source .visualization .tooltip header {
+					padding: var(--gap) calc(var(--gap) * 2);
+					border-bottom: 1px solid #fff;
+					display: flex;
+				}
+
+
+			.visualization.table {
+				min-height: 500px;
+				max-height: 500px;
+				overflow: auto;
+			}
+
+				.visualization.table thead tr.search {
+					background: #fff;
+				}
+				.visualization.table thead tr.accumulation {
+					background-color: #fff;
+				}
+				.visualization.table thead tr.accumulation th {
+					top: 35px;
+				}
+				.visualization.table thead tr th.heading {
+					top: 70px;
+				}
+				.visualization.table thead tr.search th,
+				.visualization.table thead tr.accumulation th {
+					background-color: #eee;
+					padding: 0;
+				}
+				.visualization.table thead tr.search th:first-child,
+				.visualization.table thead tr.accumulation th:first-child {
+					border-left: 0;
+				}
+					.visualization.table thead tr th:first-child select {
+						border-left: 0;
+					}
+					.visualization.table thead tr.search div,
+					.visualization.table thead tr.accumulation div {
+						display: flex;
+						margin-bottom: 5px;
+						background: #fff;
+						align-items: initial;
+					}
+						.visualization.table thead tr.search select,
+						.visualization.table thead tr.accumulation select {
+							width: 90px;
+							z-index: 0;
+							margin-bottom: 0;
+							border-right: 1px dashed #ccc;
+							box-shadow: none;
+						}
+						.visualization.table thead tr.search input,
+						.visualization.table thead tr.accumulation input {
+							min-width: 100px;
+							margin-bottom: 0;
+							border: 0;
+							box-shadow: none;
+						}
+						.visualization.table thead tr.search span,
+						.visualization.table thead tr.accumulation span {
+							flex: 1;
+							color: #333;
+							z-index: 1;
+							font-weight: bold;
+							padding: 4px 10px;
+							margin: 0;
+						}
+				.visualization.table thead td {
+					padding: 0;
+					border: 0;
+				}
+					.visualization.table thead input,
+					.visualization.table thead select {
+						width: 100%;
+						background-color: white;
+						color: #333;
+						padding: 8px;
+						font-family: sans-serif;
+						text-align: center;
+						font-size: 12px;
+						border-left: 1px solid #999;
+						margin-bottom: 10px;
+					}
+					.visualization.table thead td:first-child input,
+					.visualization.table thead td:first-child select {
+						border-left: 0;
+					}
+				.visualization.table table thead th {
+					text-transform: capitalize;
+					position: sticky;
+					background: var(--theme-dark);
+					color: var(--theme-dark-text);
+					cursor: pointer;
+					white-space: nowrap;
+					padding: 3px 10px;
+					border: 0;
+					top: 0;
+				}
+					.visualization.table table thead th div {
+						display: flex;
+						align-items: center;
+					}
+						.visualization.table table thead th span {
+							flex: 1;
+							margin-right: 10px;
+						}
+						.visualization.table table thead th .fa {
+							opacity: 0;
+							transition: opacity var(--transition-duration);
+						}
+						.visualization.table table thead th:hover .fa {
+							opacity: 1;
+							margin-left: auto;
+						}
+			.visualization.table table tr.selected {
+				background: var(--theme-light);
+				color: var(--theme-light-text);
+			}
+			.visualization.table table tbody tr.show-rows {
+				color:  #666;
+				font-size: 90%;
+				background: #fff;
+				border-top: 1px solid #bbb;
+				cursor: pointer;
+				transition: box-shadow var(--transition-duration);
+			}
+			.visualization.table table tbody tr.show-rows:hover {
+				background: #ddd !important;
+			}
+			.visualization.table table tbody tr.show-rows:active {
+				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
+			}
+				.visualization.table table tbody tr.show-rows td {
+					padding: 5px 5px 5px 40vw;
+				}
+				.visualization.table table tbody tr.show-rows span {
+					margin: 0 15px;
+				}
+
+			.visualization.spatial-map .container {
+				height: 500px;
+			}
+			.visualization.cohort {
+				overflow: auto;
+				max-height: 500px
+			}
+				.visualization.cohort table {
+					width: 100%;
+				}
+					.visualization.cohort table td:first-child,
+					.visualization.cohort table th:first-child {
+						white-space: nowrap;
+						min-width: 100px;
+						border: 0;
+					}
+					.visualization.cohort table th.sticky,
+					.visualization.cohort table td.sticky {
+						position: sticky;
+						left: 0;
+						top: 0;
+					}
+					.visualization.cohort table th.sticky {
+						z-index: 2;
+						background: var(--color-primary);
+					}
+					.visualization.cohort table td.sticky {
+						background: #fff;
+					}
+					.visualization.cohort table td.sticky:nth-child(2n) {
+						background: #f1f1f9;
+					}
+					.visualization.cohort table .sticky:nth-child(2) {
+						left: 100px;
+					}
+					.visualization.cohort th {
+						white-space: nowrap;
+					}
+					.visualization.cohort td {
+						text-align: center;
+					}
+					.visualization.cohort td.href {
+						padding: 0;
+					}
+						.visualization.cohort td a {
+							color: #333;
+							display: block;
+							padding: 8px 15px;
+							transition: background var(--transition-duration),
+										box-shadow var(--transition-duration);
+						}
+						.visualization.cohort td a:focus,
+						.visualization.cohort td a:hover {
+							background: rgba(0, 0, 0, 0.3);
+							text-decoration: none;
+						}
+						.visualization.cohort td a:active {
+							box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.4);
+						}
+
+
+.visualization .container > svg {
+	width: 100%;
+	height: 500px;
+}
+.visualization .container > svg .axis path,
+.visualization .container > svg .axis line {
+	fill: none;
+	stroke: #ddd;
+	stroke-width: 1px;
+	fill: none;
+	shape-rendering: crispEdges;
+}
+
+.visualization .container > svg .y path {
+	display: none;
+}
+
+.visualization .container > svg .axis text {
+	font-size: 11px;
+}
+
+.visualization .container > svg .y > .tick line,
+.visualization .container > svg .x > .tick line,
+.visualization .container > svg .x > path {
+	z-index: -10;
+}
+
+.visualization .container > svg .y > .tick text {
+	margin-right: 5px;
+}
+
+.visualization .container > svg text {
+	fill: #333;
+}
+
+.visualization .container > svg .axis-label {
+	font-size: 12px;
+}
+
+.visualization .container > svg .line {
+	fill: none;
+	stroke: steelblue;
+	stroke-width: 1.5px;
+}
+
+.visualization .container > svg .line-hover {
+	stroke-width: 3px;
+}
+
+.visualization .container > svg .resetZoom {
+	background-color: grey;
+}
+
+.visualization .container > svg .toggleReset {
+	cursor: pointer;
+	display: none !important;
+}
+
+.visualization .container > svg rect.zoom {
+	fill: #8c97b4;
+	fill-opacity: 0.5;
+}

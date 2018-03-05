@@ -1,0 +1,33 @@
+main {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	margin: 0 auto;
+	width: 300px;
+}
+	main .logo {
+		width: 100%;
+		background: var(--color-secondary);
+		padding: 20px 50px;
+		margin: var(--gap) 0;
+		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+	}
+		main .logo img {
+			width: 100%;
+		}
+	form {
+		display: flex;
+		flex-direction: column;
+		background: #fff;
+		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+		padding: 8px;
+		margin: var(--gap) 0;
+		width: 100%;
+	}
+		input {
+			margin: var(--gap);
+			padding: 8px 10px !important;
+		}
+		input[type=submit] {
+			letter-spacing: 1px;
+		}

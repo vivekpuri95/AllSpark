@@ -1,0 +1,20 @@
+main #form .report {
+	display: flex;
+	transition: opacity var(--transition-duration);
+}
+	main #form .report label {
+		margin: 5px;
+		min-width: 125px;
+	}
+		main #form .report input {
+			margin: 0 !important;
+		}
+
+		main #form .save,
+		main #form .delete {
+			min-width: 60px !important;
+			max-width: 60px;
+		}
+		main #form .red {
+			box-shadow: inset -15px 0 #f66;
+		}

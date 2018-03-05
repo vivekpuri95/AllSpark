@@ -1,0 +1,24 @@
+_store
+logs/*
+Grunt*
+*.sh
+Makefile
+*.DS_Store
+.idea/
+*.idea/
+node_modules/*
+opt/
+dump.rdb
+~/*
+# specific files
+*.txt
+*.csv
+npm-debug.log
+package-lock.json
+
+# local configuration
+config/local.json
+config/production.json
+config/dev.json
+/config/Jugnoo-Analytics.json
+
