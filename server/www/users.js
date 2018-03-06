@@ -15,6 +15,8 @@ exports.insert = class extends API {
             result.password = await commonFun.makeBcryptHash(result.password);
         }
 
+        delete result.token;
+
         return await this.mysql.query(`insert into tb_users set ?`,result,'allSparkWrite');
 
     }
