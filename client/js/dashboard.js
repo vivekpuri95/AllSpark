@@ -3,6 +3,7 @@ window.on('DOMContentLoaded', async () => {
 	await Dashboards.setup();
 
 	const page = new Dashboards();
+
 	await page.load();
 
 	window.on('popstate', e => page.load(e.state));

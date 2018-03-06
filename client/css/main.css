@@ -316,24 +316,27 @@ body {
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
 			display: flex;
+			align-items: flex-end;
 			margin-bottom:  var(--gap);
+			overflow: auto;
+			white-space: nowrap;
+		}
+		main .data-source > header::-webkit-scrollbar {
+  			display: none;
 		}
 			main .data-source > header > .right {
 				margin-left: auto;
 			}
-			main .data-source > header h2 {
-				font-size: 28px;
-				margin: 0;
-			}
 			main .data-source > header > * {
 				height: 26px;
 				padding: 0 15px;
-			    margin: 0 4px 5px 4px;
+				margin: 0 4px 5px 4px;
 			}
 			main .data-source > header h2 {
-				font-size: 22px;
-				margin: 0;
+				font-size: 20px;
+				margin: 0 auto 0 0;
 				padding: 0;
+				white-space: nowrap;
 			}
 			main .data-source > header *:last-child {
 				margin-right: 0;
@@ -343,6 +346,9 @@ body {
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 			padding: 5px;
 			margin: 10px 0;
+			display: flex;
+			align-items: flex-end;
+			font-size: 90%;
 		}
 			main .data-source .description-toggle.selected,
 			main .data-source .filters-toggle.selected {
@@ -386,13 +392,14 @@ body {
 			display: flex;
 			flex-wrap: wrap;
 			margin: 0 calc(var(--gap) * -1);
+			order: 1;
 		}
 			main .data-source > .columns .column {
 				display: flex;
-				background: #fff;
 				position: relative;
 				margin: var(--gap);
-				box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+				align-items: center;
+				cursor: pointer;
 				transition: opacity var(
 				--transition-duration),
 							border var(--transition-duration),
@@ -422,10 +429,22 @@ body {
 			main .data-source > .columns .column.error {
 				background: #fcc;
 			}
+			main .data-source > .columns .column:hover {
+				background: #fff;
+			}
+			main .data-source > .columns .column:active {
+				box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+			}
 				main .data-source > .columns.being-dragged .column * {
 					pointer-events: none;
 				}
-				main .data-source > .columns .column > span {
+				main .data-source > .columns .column > .color {
+					border-radius: 15px;
+					width: 15px;
+					height: 15px;
+					margin-left: var(--gap);
+				}
+				main .data-source > .columns .column > .name {
 					padding: 5px 10px;
 					display: flex;
 					flex: 1;
@@ -433,12 +452,6 @@ body {
 					align-items: center;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
-				}
-				main .data-source > .columns .column > span:hover {
-					background: #eee;
-				}
-				main .data-source > .columns .column > span:active {
-					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
 				}
 				main .data-source > .columns .column > button {
 					font-size: 75%;
@@ -529,7 +542,7 @@ body {
 					justify-content: center;
 					align-items: center;
 					height: 500px;
-					font-size: 400%;
+					font-size: 300%;
 					color: #999;
 					margin: 0;
 				}
@@ -600,10 +613,12 @@ body {
 					background-color: #fff;
 				}
 				.visualization.table thead tr.accumulation th {
-					top: 35px;
+					top: 37px;
 				}
 				.visualization.table thead tr th.heading {
-					top: 70px;
+					top: 74px;
+					background: var(--color-primary);
+					color: var(--color-primary-text);
 				}
 				.visualization.table thead tr.search th,
 				.visualization.table thead tr.accumulation th {
@@ -675,7 +690,7 @@ body {
 					color: var(--theme-dark-text);
 					cursor: pointer;
 					white-space: nowrap;
-					padding: 3px 10px;
+					padding: 5px 10px;
 					border: 0;
 					top: 0;
 				}
@@ -685,7 +700,6 @@ body {
 					}
 						.visualization.table table thead th span {
 							flex: 1;
-							margin-right: 10px;
 						}
 						.visualization.table table thead th .fa {
 							opacity: 0;

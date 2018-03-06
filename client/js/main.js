@@ -497,11 +497,11 @@ class DataSource {
 		container.innerHTML = `
 			<header>
 				<h2 title="${this.name}"><i class="fa fa-chart-line"></i>&nbsp; ${this.name}</h2>
-				<button class="filters-toggle right"><i class="fa fa-filter"></i>&nbsp; Filters</button>
+				<button class="filters-toggle"><i class="fa fa-filter"></i>&nbsp; Filters</button>
 				<button class="description-toggle" title="Description">&nbsp;<i class="fa fa-info"></i>&nbsp;</button>
 				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i></button>
 				<button class="download" title="Download CSV"><i class="fa fa-download"></i></button>
-				<button class="edit" title="Edit Report"><i class="fa fa-pencil-alt"></i></button>
+				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i></button>
 			</header>
 			<form class="filters toolbar hidden"></form>
 			<div class="columns"></div>
@@ -579,10 +579,8 @@ class DataSource {
 				container.appendChild(this.visualizations.selected.container);
 		}
 
-		if(!this.filters.size) {
+		if(!this.filters.size)
 			container.querySelector('.filters-toggle').classList.add('hidden');
-			container.querySelector('.filters-toggle').nextElementSibling.classList.add('right');
-		}
 
 		container.querySelector('header').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
 
@@ -790,30 +788,12 @@ class DataSourceColumns extends Map {
 
 	render() {
 
-		const
-			container = this.source.container.querySelector('.columns'),
-			add = document.createElement('div');
+		const container = this.source.container.querySelector('.columns');
 
 		container.textContent = null;
 
 		for(const column of this.values())
 			container.appendChild(column.container);
-
-		add.classList = 'column';
-		add.innerHTML = '<span><i class="fa fa-plus"></i></span>';
-
-		add.on('click', async () => {
-
-			const key = `column_${this.size + 1}`
-
-			this.set(key, new DataSourceColumn(key, this.source));
-
-			this.render();
-
-			await this.source.visualizations.selected.render();
-		});
-
-		container.appendChild(add);
 	}
 
 	get list() {
@@ -889,6 +869,29 @@ class DataSourceColumn {
 			{
 				name: 'Regular Expression',
 				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
+			},
+		];
+
+		DataSourceColumn.accumulationTypes = [
+			{
+				name: 'sum',
+				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0)),
+			},
+			{
+				name: 'average',
+				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0) / rows.length),
+			},
+			{
+				name: 'max',
+				apply: (rows, column) => Format.number(Math.max(...rows.map(r => r.get(column)))),
+			},
+			{
+				name: 'min',
+				apply: (rows, column) => Format.number(Math.min(...rows.map(r => r.get(column)))),
+			},
+			{
+				name: 'distinct',
+				apply: (rows, column) => Format.number(new Set(rows.map(r => r.get(column))).size),
 			},
 		];
 
@@ -993,8 +996,6 @@ class DataSourceColumn {
 
 			await this.update();
 		});
-
-		this.setDragAndDrop();
 
 		return container;
 	}
@@ -1128,6 +1129,111 @@ class DataSourceColumn {
 			this.source.visualizations.selected.render();
 			this.source.columns.render();
 		});
+	}
+
+	get search() {
+
+		if(this.searchContainer)
+			return this.searchContainer;
+
+		const
+			container = this.searchContainer = document.createElement('th'),
+			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join('');
+
+		container.innerHTML = `
+			<div>
+				<select class="search-type">${searchTypes}</select>
+				<input type="search" class="query" placeholder="${this.name}">
+			</div>
+		`;
+
+		const
+			select = container.querySelector('.search-type'),
+			query = container.querySelector('.query');
+
+		select.on('change', () => {
+			this.accumulation.run();
+			this.source.visualizations.selected.render();
+			setTimeout(() => select.focus());
+		});
+
+		query.on('keyup', () => {
+			this.searchQuery = query.value;
+			this.accumulation.run();
+			this.source.visualizations.selected.render();
+			setTimeout(() => query.focus());
+		});
+
+		return container;
+	}
+
+	get accumulation() {
+
+		if(this.accumulationContainer)
+			return this.accumulationContainer;
+
+		const
+			container = this.accumulationContainer = document.createElement('th'),
+			accumulationTypes = DataSourceColumn.accumulationTypes.map((type, i) => `
+				<option>${type.name}</option>
+			`).join('');
+
+		container.innerHTML = `
+			<div>
+				<select>
+					<option>&#402;</option>
+					${accumulationTypes}
+				</select>
+				<span class="result"></span>
+			</div>
+		`;
+
+		const
+			select = container.querySelector('select'),
+			result = container.querySelector('.result');
+
+		select.on('change', () => container.run());
+
+		container.run = () => {
+
+			const
+				data = this.source.response,
+				accumulation = DataSourceColumn.accumulationTypes.filter(a => a.name == select.value);
+
+			if(select.value && accumulation.length) {
+
+				const value = accumulation[0].apply(data, this.key);
+
+				result.textContent = value == 'NaN' ? '' : value;
+			}
+
+			else result.textContent = '';
+		}
+
+		return container;
+	}
+
+	get heading() {
+
+		if(this.headingContainer)
+			return this.headingContainer;
+
+		const container = this.headingContainer = document.createElement('th');
+
+		container.classList.add('heading');
+
+		container.innerHTML = `
+			<span class="name">${this.name}</span>
+			<span class="sort"><i class="fa fa-sort"></i></span>
+		`;
+
+		container.on('click', () => {
+			this.source.columns.sortBy = this;
+			this.sort = !this.sort;
+			this.source.visualizations.selected.render();
+		});
+
+		return container;
 	}
 }
 
@@ -1461,7 +1567,7 @@ class DataSourceFilter {
 			}
 		}
 
-		if(this.dataset && DataSource.datasets.has(this.dataset)) {
+		if(this.dataset && DataSource.datasets && DataSource.datasets.has(this.dataset)) {
 
 			input = document.createElement('select');
 			input.name = this.placeholder;
@@ -1538,7 +1644,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		const
 			container = this.container.querySelector('.container'),
-			response = this.source._response;
+			response = this.source.response;
 
 		container.textContent = null;
 
@@ -1572,14 +1678,11 @@ Visualization.list.set('table', class Table extends Visualization {
 
 			const tr = document.createElement('tr');
 
-			if(this.source.selectedRows.has(row))
-				tr.classList.add('selected');
-
 			for(const [key, column] of this.source.columns.list) {
 
 				const td = document.createElement('td');
 
-				td.textContent = row.data.get(key);
+				td.textContent = row.get(key);
 
 				tr.appendChild(td);
 			}
@@ -1632,7 +1735,7 @@ Visualization.list.set('line', class Line extends Visualization {
 		container.classList.add('visualization', 'line');
 		container.innerHTML = `
 			<div id="line-${this.source.query_id}" class="container">
-				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
 
@@ -1643,8 +1746,8 @@ Visualization.list.set('line', class Line extends Visualization {
 
 		e && e.preventDefault && e.preventDefault();
 
-		this.container.querySelector('.container').innerHTML = `<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>`;
-
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+		return;
 		await this.source.fetch();
 
 		this.render();
@@ -2050,7 +2153,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 		container.classList.add('visualization', 'bar');
 		container.innerHTML = `
 			<div id="bar-${this.source.query_id}" class="container">
-				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
 
@@ -2061,7 +2164,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 		e && e.preventDefault && e.preventDefault();
 
-		this.container.querySelector('.container').innerHTML = `<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>`;
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
 		await this.source.fetch();
 
@@ -2383,7 +2486,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 		container.classList.add('visualization', 'stacked');
 		container.innerHTML = `
 			<div id="stacked-${this.source.query_id}" class="container">
-				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
 
@@ -2394,7 +2497,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 
 		e && e.preventDefault && e.preventDefault();
 
-		this.container.querySelector('.container').innerHTML = `<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>`;
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
 		await this.source.fetch();
 
@@ -2736,7 +2839,7 @@ Visualization.list.set('area', class Area extends Visualization {
 		container.classList.add('visualization', 'area');
 		container.innerHTML = `
 			<div id="area-${this.source.query_id}" class="container">
-				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
 
@@ -2747,7 +2850,7 @@ Visualization.list.set('area', class Area extends Visualization {
 
 		e && e.preventDefault && e.preventDefault();
 
-		this.container.querySelector('.container').innerHTML = `<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>`;
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
 		await this.source.fetch();
 
@@ -3156,7 +3259,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		container.innerHTML = `
 			<div class="container">
-				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
 
@@ -3229,7 +3332,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		container.classList.add('visualization', 'funnel');
 		container.innerHTML = `
 			<div id="funnel-${this.source.query_id}" class="container">
-				<div class="blanket"><i class="fa fa-circle-notch fa-spin"></i></div>
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
 
@@ -3614,7 +3717,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 		for(const row of this.source.response) {
 
-			for(const column of row.data || [])
+			for(const column of row.get('data') || [])
 				this.max = Math.max(this.max, column.count);
 		}
 	}
@@ -3634,7 +3737,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 					<th class="sticky">${type[0].toUpperCase() + type.substring(1)}</th>
 					<th class="sticky">Cohort Size</th>
 					<th class="sticky">
-						${this.source.response[0].data.map((v, i) => type[0].toUpperCase()+type.substring(1)+' '+(++i)).join('</th><th class="sticky">')}
+						${this.source.response[0].get('data').map((v, i) => type[0].toUpperCase()+type.substring(1)+' '+(++i)).join('</th><th class="sticky">')}
 					</th>
 				</tr>
 			</thead>
@@ -3644,7 +3747,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 			const cells = [];
 
-			for(const cell of row.data) {
+			for(const cell of row.get('data')) {
 
 				let contents = Format.number(cell.percentage) + '%';
 
@@ -3658,15 +3761,15 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 				`);
 			}
 
-			let size = Format.number(row.size);
+			let size = Format.number(row.get('size'));
 
-			if(row.baseHref)
-				size = `<a href="${row.baseHref}" target="_blank">${size}</a>`;
+			if(row.get('baseHref'))
+				size = `<a href="${row.get('baseHref')}" target="_blank">${size}</a>`;
 
 			tbody.insertAdjacentHTML('beforeend', `
 				<tr>
-					<td class="sticky">${Format.date(row.timing)}</td>
-					<td class="sticky ${row.baseHref ? 'href' : ''}">${size}</td>
+					<td class="sticky">${Format.date(row.get('timing'))}</td>
+					<td class="sticky ${row.get('baseHref') ? 'href' : ''}">${size}</td>
 					${cells.join('')}
 				</tr>
 			`);

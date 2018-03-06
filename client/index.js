@@ -596,7 +596,7 @@ class Template {
 
 		this.scripts = [
 			'/js/main.js',
-			'https://use.fontawesome.com/c0d8806dff.js" async defer f="',
+			'https://use.fontawesome.com/releases/v5.0.8/js/all.js" async defer f="',
 		];
 	}
 

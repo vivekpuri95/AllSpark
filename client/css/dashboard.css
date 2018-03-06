@@ -65,13 +65,13 @@ main > nav {
 				transition: transform var(--transition-duration);
 			}
 			main > nav .item .label .angle.down {
-				transform: rotate(90deg);
+				transform: rotate(-90deg);
 			}
 
 main #reports .list {
 	margin: 0;
 	display: grid;
-	grid-template-columns:  1fr 1fr 1fr 1fr;
+	grid-auto-columns: calc(25% - (var(--gap) / 2)) calc(25% - (var(--gap) / 2)) calc(25% - (var(--gap) / 2)) calc(25% - (var(--gap) / 2));
 	grid-gap: calc(var(--gap) * 2);
 }
 	main #reports .list .data-source {
