@@ -1,26 +1,13 @@
-table {
-	width: 100%;
-	cursor: default;
-}
-	table tbody tr {
-		transition: background var(--transition-duration),
-					color var(--transition-duration);
-	}
-	table tbody tr:hover {
-		background: var(--theme-light) !important;
-		color: var(--theme-light-text) !important;
-	}
-
 main {
 	display: grid;
-	grid-template-columns: 220px 1fr;
+	grid-template-columns: 220px calc(100% - 220px);
 }
 main > nav {
 	position: sticky;
 	top: 0;
 	background: var(--color-primary);
 	color: var(--color-primary-text);
-	height: calc(100vh - 50px);
+	height: calc(100vh - 58px);
 	font-size: 90%;
 }
 	main > nav .NA {
@@ -69,14 +56,20 @@ main > nav {
 			}
 
 main #reports .list {
-	margin: 0;
 	display: grid;
-	grid-auto-columns: calc(25% - (var(--gap) / 2)) calc(25% - (var(--gap) / 2)) calc(25% - (var(--gap) / 2)) calc(25% - (var(--gap) / 2));
+	grid-template-columns: repeat(4, 25%);
 	grid-gap: calc(var(--gap) * 2);
+	width: calc(100% - var(--gap) * 6);
+	align-items: start;
 }
-	main #reports .list .data-source {
-		grid-column: auto / span 4;
+	main #reports {
 	}
+		main #reports > .toolbar {
+			margin: 0 0 calc(var(--gap) * 2);
+		}
+		main #reports .list .data-source {
+			grid-column: auto / span 4;
+		}
 main #reports > .NA {
 	text-align: center;
 }

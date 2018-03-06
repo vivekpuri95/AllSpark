@@ -1,8 +1,5 @@
 "use strict";
 
-if(window.location.pathname == '/')
-	window.location = '/dashboard/7';
-
 class Account {
 
 	static async load() {
@@ -297,94 +294,6 @@ class Page {
 	}
 }
 
-class Dashboard {
-
-	constructor(dashboard) {
-
-		for(const key in dashboard)
-			this[key] = dashboard[key];
-
-		this.sources = new Set(DataSource.list.filter(s => s.dashboards && s.dashboards.filter(d => d.dashboard == this.id).length));
-
-		this.children = new Set;
-	}
-
-	render() {
-
-		if(!Dashboard.container)
-			return;
-
-		for(const selected of document.querySelectorAll('main nav .label.selected'))
-			selected.classList.remove('selected');
-
-		this.menuItem.querySelector('.label').classList.add('selected');
-
-		let parent = this.menuItem.parentElement.parentElement;
-
-		while(parent.classList && parent.classList.contains('item')) {
-			parent.querySelector('.label').classList.add('selected');
-			parent = parent.parentElement.parentElement;
-		}
-
-		Dashboard.container.textContent = null;
-
-		for(const source of this.sources) {
-
-			const dashboard = source.dashboards.filter(d => d.dashboard == this.id)[0];
-
-			source.container.setAttribute('style', `
-				order: ${dashboard.position || 0};
-				grid-column: auto / span ${dashboard.span || 4}
-			`);
-
-			Dashboard.container.appendChild(source.container);
-			source.visualizations.selected.load();
-		}
-
-		if(!this.sources.size)
-			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
-	}
-
-	get menuItem() {
-
-		if(this.container)
-			return this.container;
-
-		const container = this.container = document.createElement('div');
-
-		container.classList.add('item');
-
-		container.innerHTML = `
-			<div class="label">
-				<i class="fab fa-hubspot"></i>
-				<span class="name">${this.name}</span>
-				${this.children.size ? '<span class="angle"><i class="fa fa-angle-down"></i></span>' : ''}
-			</div>
-			${this.children.size ? '<div class="submenu"></div>' : ''}
-		`;
-
-		const submenu = container.querySelector('.submenu');
-
-		container.querySelector('.label').on('click', () => {
-
-			if(this.children.size) {
-				container.querySelector('.angle').classList.toggle('down');
-				submenu.classList.toggle('hidden');
-			}
-
-			else {
-				history.pushState({what: this.id, type: 'dashboard'}, '', `/dashboard/${this.id}`);
-				this.render();
-			}
-		});
-
-		for(const child of this.children)
-			submenu.appendChild(child.menuItem);
-
-		return container;
-	}
-}
-
 class DataSource {
 
 	static async load(force = false) {
@@ -392,25 +301,13 @@ class DataSource {
 		if(DataSource.list && !force)
 			return;
 
-		const
-			responses = await Promise.all([
-				API.call('v2/reports/report/list'),
-				API.call('v2/dashboards/list'),
-			]);
+		const response = await API.call('v2/reports/report/list');
 
 		DataSource.list = [];
 		DataSource.dashboards = new Map;
 
-		for(const report of responses[0] || [])
+		for(const report of response || [])
 			DataSource.list.push(new DataSource(report));
-
-		for(const dashboard of responses[1] || [])
-			DataSource.dashboards.set(dashboard.id, new Dashboard(dashboard));
-
-		for(const [id, dashboard] of DataSource.dashboards) {
-			if(dashboard.parent && DataSource.dashboards.has(dashboard.parent))
-				DataSource.dashboards.get(dashboard.parent).children.add(dashboard);
-		}
 	}
 
 	constructor(source) {
@@ -505,7 +402,27 @@ class DataSource {
 			</header>
 			<form class="filters toolbar hidden"></form>
 			<div class="columns"></div>
-			<div class="description hidden">${this.description}</div>
+			<div class="description hidden">
+				<div class="body">${this.description}</div>
+				<div class="footer">
+					<span>
+						<span class="NA">Role:</span>
+						<span>${this.roles || ''}</span>
+					</span>
+					<span>
+						<span class="NA">Added On:</span>
+						<span>${Format.date(this.created_at)}</span>
+					</span>
+					<span class="right">
+						<span class="NA">Added By:</span>
+						<span>${this.added_by || ''}</span>
+					</span>
+					<span>
+						<span class="NA">Requested By:</span>
+						<span>${this.requested_by || ''}</span>
+					</span>
+				</div>
+			</div>
 			<div class="share-link hidden">
 				<input type="url" value="${this.link}" readonly>
 			</div>
@@ -525,12 +442,12 @@ class DataSource {
 
 		container.querySelector('.share-link-toggle').on('click', () => {
 			container.querySelector('.share-link').classList.toggle('hidden');
-			container.querySelector('.share-link').classList.toggle('selected');
+			container.querySelector('.share-link-toggle').classList.toggle('selected');
 			container.querySelector('.share-link input').select();
 		});
 
 		container.querySelector('.download').on('click', () => this.download());
-		container.querySelector('.edit').on('click', () => window.location = `/queries/${this.query_id}`);
+		container.querySelector('.edit').on('click', () => window.location = `/reports/${this.query_id}`);
 
 		this.filters.form.on('submit', e => this.visualizations.selected.load(e));
 
@@ -747,7 +664,7 @@ class DataSourceRow extends Map {
 				if(!row[key])
 					this.skip = true;
 
-				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.search, row[key]))
+				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key]))
 					this.skip = true;
 			}
 
@@ -938,7 +855,7 @@ class DataSourceColumn {
 							<select name="searchType">
 								${searchTypes}
 							</select>
-							<input type="search" name="search">
+							<input type="search" name="searchQuery">
 						</div>
 					</label>
 
@@ -1028,7 +945,7 @@ class DataSourceColumn {
 		for(const element of this.form.elements)
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 
-		this.filtered = this.search !== null;
+		this.filtered = this.searchQuery !== null;
 
 		if(this.form.elements.sort.value >= 0)
 			this.source.columns.sortBy = this;
@@ -1152,13 +1069,18 @@ class DataSourceColumn {
 			query = container.querySelector('.query');
 
 		select.on('change', () => {
+			this.searchType = select.value;
+			this.searchQuery = query.value;
+			this.filtered = this.searchQuery !== null;
 			this.accumulation.run();
 			this.source.visualizations.selected.render();
 			setTimeout(() => select.focus());
 		});
 
 		query.on('keyup', () => {
+			this.searchType = select.value;
 			this.searchQuery = query.value;
+			this.filtered = this.searchQuery !== null;
 			this.accumulation.run();
 			this.source.visualizations.selected.render();
 			setTimeout(() => query.focus());
@@ -1237,6 +1159,74 @@ class DataSourceColumn {
 	}
 }
 
+class DataSourceFilter {
+
+	static setup() {
+
+		DataSourceFilter.types = {
+			1: 'text',
+			0: 'number',
+			2: 'date',
+			3: 'month',
+			4: 'city',
+		};
+	}
+
+	constructor(filter, source) {
+
+		for(const key in filter)
+			this[key] = filter[key];
+
+		this.source = source;
+	}
+
+	get label() {
+
+		if(this.labelContainer)
+			return this.labelContainer;
+
+		this.labelContainer = document.createElement('label');
+
+		let input = document.createElement('input');
+
+		input.type = DataSourceFilter.types[this.type];
+		input.name = this.placeholder;
+
+		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
+			input.max = new Date().toISOString().substring(0, 10);
+
+		input.value = this.default_value;
+
+		if(!isNaN(parseFloat(this.offset))) {
+
+			if(DataSourceFilter.types[this.type] == 'date')
+				input.value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			if(DataSourceFilter.types[this.type] == 'month') {
+				const date = new Date();
+				input.value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
+			}
+		}
+
+		if(this.dataset && DataSource.datasets && DataSource.datasets.has(this.dataset)) {
+
+			input = document.createElement('select');
+			input.name = this.placeholder;
+
+			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
+
+			for(const row of DataSource.datasets.get(this.dataset))
+				input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
+		}
+
+		this.labelContainer.innerHTML = `<span>${this.name}<span>`;
+
+		this.labelContainer.appendChild(input);
+
+		return this.labelContainer;
+	}
+}
+
 class DataSourcePostProcessors {
 
 	constructor(source) {
@@ -1258,7 +1248,7 @@ class DataSourcePostProcessors {
 			container = this.containerElement = document.createDocumentFragment(),
 			processors = document.createElement('select');
 
-		processors.classList.add('postprocessors');
+		processors.classList.add('postprocessors', 'hidden');
 
 		for(const [key, processor] of this.list) {
 
@@ -1348,7 +1338,7 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 	}
 
 	processor(response) {
-		return response.filter(r => new Date(r.timing).getDay() == this.container.value)
+		return response.filter(r => new Date(r.get('timing')).getDay() == this.container.value)
 	}
 });
 
@@ -1368,13 +1358,13 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 	processor(response) {
 
-		const result = {};
+		const result = new Map;
 
 		for(const row of response) {
 
 			let period;
 
-			const periodDate = new Date(row.timing);
+			const periodDate = new Date(row.get('timing'));
 
 			// Week starts from monday, not sunday
 			if(this.container.value == 'week')
@@ -1383,28 +1373,38 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 			else if(this.container.value == 'month')
 				period = periodDate.getDate() - 1;
 
-			const newDate = new Date(Date.parse(row.timing) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			const timing = new Date(Date.parse(row.get('timing')) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
-			if(!(newDate in result)) {
+			if(!result.has(timing)) {
 
-				result[newDate] = {};
+				result.set(timing, new DataSourceRow(null, this.source));
 
-				for(const key in row)
-					result[newDate][key] = 0;
+				let newRow = result.get(timing);
+
+				for(const key of row.keys())
+					newRow.set(key, 0);
 			}
 
-			for(const key in row) {
+			const newRow = result.get(timing);
 
-				if(!isNaN(row[key]))
-					result[newDate][key] += parseFloat(row[key]);
+			for(const [key, value] of row) {
 
-				else result[newDate][key] = row[key];
+				if(!isNaN(value))
+					newRow.set(key, newRow.get(key) + parseFloat(value));
+
+				else newRow.set(key, value);
 			}
 
-			result[newDate].timing = row.timing;
+			newRow.set('timing', row.get('timing'));
+
+			// Copy over any annotations from the old row
+			for(const annotation of row.annotations) {
+				annotation.row = newRow;
+				newRow.annotations.add(annotation);
+			}
 		}
 
-		return Object.values(result);
+		return Array.from(result.values());
 	}
 });
 
@@ -1426,21 +1426,25 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 	processor(response) {
 
 		const
-			result = {},
+			result = new Map,
 			copy = new Map;
 
 		for(const row of response)
-			copy.set(Date.parse(row.timing), row);
+			copy.set(Date.parse(row.get('timing')), row);
 
 		for(const [timing, row] of copy) {
 
-			if(!(timing in result)) {
+			if(!result.has(timing)) {
 
-				result[timing] = {};
+				result.set(timing, new DataSourceRow(null, this.source));
 
-				for(const key in row)
-					result[timing][key] = 0;
+				let newRow = result.get(timing);
+
+				for(const key of row.keys())
+					newRow.set(key, 0);
 			}
+
+			const newRow = result.get(timing);
 
 			for(let i = 0; i < this.container.value; i++) {
 
@@ -1449,17 +1453,20 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 				if(!element)
 					continue;
 
-				for(const key in result[timing])
-					result[timing][key] += element[key] / this.container.value;
+				for(const [key, value] of newRow)
+					newRow.set(key,  value + (element.get(key) / this.container.value));
 			}
 
-			for(const key in result[timing])
-				result[timing][key] = parseFloat(result[timing][key].toFixed(2));
+			newRow.set('timing', row.get('timing'));
 
-			result[timing].timing = row.timing;
+			// Copy over any annotations from the old row
+			for(const annotation of row.annotations) {
+				annotation.row = newRow;
+				newRow.annotations.add(annotation);
+			}
 		}
 
-		return Object.values(result);
+		return Array.from(result.values());
 	}
 });
 
@@ -1481,21 +1488,25 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 	processor(response) {
 
 		const
-			result = {},
+			result = new Map,
 			copy = new Map;
 
 		for(const row of response)
-			copy.set(Date.parse(row.timing), row);
+			copy.set(Date.parse(row.get('timing')), row);
 
 		for(const [timing, row] of copy) {
 
-			if(!(timing in result)) {
+			if(!result.has(timing)) {
 
-				result[timing] = {};
+				result.set(timing, new DataSourceRow(null, this.source));
 
-				for(const key in row)
-					result[timing][key] = 0;
+				let newRow = result.get(timing);
+
+				for(const key of row.keys())
+					newRow.set(key, 0);
 			}
+
+			const newRow = result.get(timing);
 
 			for(let i = 0; i < this.container.value; i++) {
 
@@ -1504,87 +1515,22 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 				if(!element)
 					continue;
 
-				for(const key in result[timing])
-					result[timing][key] += parseFloat(element[key]);
+				for(const [key, value] of newRow)
+					newRow.set(key,  value + element.get(key));
 			}
 
-			for(const key in result[timing])
-				result[timing][key] = parseFloat(result[timing][key].toFixed(2));
+			newRow.set('timing', row.get('timing'));
 
-			result[timing].timing = row.timing;
+			// Copy over any annotations from the old row
+			for(const annotation of row.annotations) {
+				annotation.row = newRow;
+				newRow.annotations.add(annotation);
+			}
 		}
 
-		return Object.values(result);
+		return Array.from(result.values());
 	}
 });
-
-class DataSourceFilter {
-
-	static setup() {
-
-		DataSourceFilter.types = {
-			1: 'text',
-			0: 'number',
-			2: 'date',
-			3: 'month',
-			4: 'city',
-		};
-	}
-
-	constructor(filter, source) {
-
-		for(const key in filter)
-			this[key] = filter[key];
-
-		this.source = source;
-	}
-
-	get label() {
-
-		if(this.labelContaienr)
-			return this.labelContaienr;
-
-		this.labelContaienr = document.createElement('label');
-
-		let input = document.createElement('input');
-
-		input.type = DataSourceFilter.types[this.type];
-		input.name = this.placeholder;
-
-		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
-			input.max = new Date().toISOString().substring(0, 10);
-
-		input.value = this.default_value;
-
-		if(!isNaN(parseFloat(this.offset))) {
-
-			if(DataSourceFilter.types[this.type] == 'date')
-				input.value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-
-			if(DataSourceFilter.types[this.type] == 'month') {
-				const date = new Date();
-				input.value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
-			}
-		}
-
-		if(this.dataset && DataSource.datasets && DataSource.datasets.has(this.dataset)) {
-
-			input = document.createElement('select');
-			input.name = this.placeholder;
-
-			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
-
-			for(const row of DataSource.datasets.get(this.dataset))
-				input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
-		}
-
-		this.labelContaienr.innerHTML = `${this.name}<br>`;
-
-		this.labelContaienr.appendChild(input);
-
-		return this.labelContaienr;
-	}
-}
 
 class Visualization {
 
@@ -1617,7 +1563,9 @@ Visualization.list.set('table', class Table extends Visualization {
 		if(e)
 			e.preventDefault();
 
-		this.container.querySelector('.container').innerHTML = `<caption class="loading"><i class="fa fa-spinner fa-spin"></i></caption>`;
+		this.container.querySelector('.container').innerHTML = `
+			<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+		`;
 
 		await this.source.fetch();
 
@@ -1634,7 +1582,10 @@ Visualization.list.set('table', class Table extends Visualization {
 		container.classList.add('visualization', 'table');
 
 		container.innerHTML = `
-			<table class="container"></table>
+			<div class="container overflow">
+				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+			<div class="NA" id="row-count"></div>
 		`;
 
 		return container;
@@ -1644,11 +1595,18 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		const
 			container = this.container.querySelector('.container'),
-			response = this.source.response;
+			rows = this.source.response;
 
 		container.textContent = null;
 
+		if(!rows || !rows.length) {
+			this.container.querySelector('#row-count').textContent = null;
+			container.innerHTML = '<tr class="NA"><td>No rows found! :(<td></tr>';
+			return;
+		}
+
 		const
+			table = document.createElement('table'),
 			thead = document.createElement('thead'),
 			search = document.createElement('tr'),
 			accumulation = document.createElement('tr'),
@@ -1667,11 +1625,11 @@ Visualization.list.set('table', class Table extends Visualization {
 		thead.appendChild(search);
 		thead.appendChild(accumulation);
 		thead.appendChild(headings);
-		container.appendChild(thead);
+		table.appendChild(thead);
 
 		const tbody = document.createElement('tbody');
 
-		for(const [position, row] of response.entries()) {
+		for(const [position, row] of rows.entries()) {
 
 			if(position > this.rowLimit)
 				break;
@@ -1692,7 +1650,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(response.length > this.rowLimit) {
+		if(rows.length > this.rowLimit) {
 
 			const tr = document.createElement('tr');
 
@@ -1714,10 +1672,29 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		container.appendChild(tbody);
+		table.appendChild(tbody);
+		container.appendChild(table);
 
-		if(!response || !response.length)
-			return tbody.innerHTML = '<tr class="NA"><td colspan="5">Now data found! :(</td></tr>';
+		this.container.querySelector('#row-count').innerHTML = `
+			<span>
+				Showing:
+				<strong title="Number of rows currently shown on screen">
+					${Format.number(Math.min(this.rowLimit, rows.length))}
+				</strong>
+			</span>
+			<span>
+				Filtered:
+				<strong title="Number of rows that match any search or grouping criterion">
+					${Format.number(rows.length)}
+				</strong>
+			</span>
+			<span>
+				Total:
+				<strong title="Total number of rows in the dataset">
+					${Format.number(this.source.originalResponse.data.length)}
+				</strong>
+			</span>
+		`;
 	}
 });
 
@@ -1747,7 +1724,7 @@ Visualization.list.set('line', class Line extends Visualization {
 		e && e.preventDefault && e.preventDefault();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
-		return;
+
 		await this.source.fetch();
 
 		this.render();
@@ -2014,7 +1991,7 @@ Visualization.list.set('line', class Line extends Visualization {
 					</ul>
 				`;
 
-				Tooltip.show(that.container, [cord[0], cord[1]], content, row);
+				Tooltip.show(that.container, cord, content, row);
 			})
 			.on('mouseout', function () {
 
@@ -2396,7 +2373,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 					</ul>
 				`;
 
-				Tooltip.show(that.container, [cord[0], cord[1]], content, row);
+				Tooltip.show(that.container, cord, content, row);
 			})
 			.on('mouseout', () => Tooltip.hide(this.container));
 
@@ -2741,7 +2718,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 					</footer>
 				`;
 
-				Tooltip.show(that.container, [cord[0], cord[1]], content, row);
+				Tooltip.show(that.container, cord, content, row);
 			})
 			.on('mouseout', () => Tooltip.hide(this.container));
 
@@ -3125,7 +3102,7 @@ Visualization.list.set('area', class Area extends Visualization {
 					</ul>
 				`;
 
-				Tooltip.show(that.container, [cord[0], cord[1]], content, row);
+				Tooltip.show(that.container, cord, content, row);
 			})
 			.on('mouseout', function () {
 
@@ -3505,7 +3482,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 					<div class="body">${d.y}</div>
 				`;
 
-				Tooltip.show(that.container, [cord[0], cord[1]], content);
+				Tooltip.show(that.container, cord, content);
 			});
 			polygon.on('mouseover', function () {
 				Tooltip.hide(that.container);
@@ -3632,48 +3609,6 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 	}
 });
 
-class Tooltip {
-
-	static show(div, position, content, row) {
-
-		if(!div.querySelector('.tooltip'))
-			div.insertAdjacentHTML('beforeend', `<div class="tooltip"></div>`)
-
-		const
-			container = div.querySelector('.tooltip'),
-			distanceFromMouse = 40;
-
-		container.innerHTML = content;
-
-		if(row && row.annotations.size)
-			container.querySelector('header').appendChild(row.annotations.opener);
-
-		if(container.classList.contains('hidden'))
-			container.classList.remove('hidden');
-
-		let left = Math.max(position[0] - (container.clientWidth / 2) + distanceFromMouse, 5),
-			top = position[1] + distanceFromMouse;
-
-		if(left + container.clientWidth > div.clientWidth)
-			left = div.clientWidth - container.clientWidth - 5;
-
-		if(top + container.clientHeight > div.clientHeight)
-			top = position[1] - container.clientHeight - distanceFromMouse;
-
-		container.setAttribute('style', `left: ${left}px; top: ${top}px;`);
-	}
-
-	static hide(div) {
-
-		const container = div.querySelector('.tooltip');
-
-		if(!container)
-			return;
-
-		container.classList.add('hidden');
-	}
-}
-
 Visualization.list.set('cohort', class Cohort extends Visualization {
 
 	get container() {
@@ -3786,6 +3721,48 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 		return `background: rgba(255, ${intensity}, ${intensity}, 0.8)`;
 	}
 });
+
+class Tooltip {
+
+	static show(div, position, content, row) {
+
+		if(!div.querySelector('.tooltip'))
+			div.insertAdjacentHTML('beforeend', `<div class="tooltip"></div>`)
+
+		const
+			container = div.querySelector('.tooltip'),
+			distanceFromMouse = 40;
+
+		container.innerHTML = content;
+
+		if(row && row.annotations.size)
+			container.querySelector('header').appendChild(row.annotations.opener);
+
+		if(container.classList.contains('hidden'))
+			container.classList.remove('hidden');
+
+		let left = Math.max(position[0] - (container.clientWidth / 2) + distanceFromMouse, 5),
+			top = position[1] + distanceFromMouse;
+
+		if(left + container.clientWidth > div.clientWidth)
+			left = div.clientWidth - container.clientWidth - 5;
+
+		if(top + container.clientHeight > div.clientHeight)
+			top = position[1] - container.clientHeight - distanceFromMouse;
+
+		container.setAttribute('style', `left: ${left}px; top: ${top}px;`);
+	}
+
+	static hide(div) {
+
+		const container = div.querySelector('.tooltip');
+
+		if(!container)
+			return;
+
+		container.classList.add('hidden');
+	}
+}
 
 DataSourceFilter.setup();
 
