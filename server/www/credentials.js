@@ -1,6 +1,6 @@
 const mysql = require('./mysql');
 const bigquery = require('./bigquery').BigQuery;
-const API = require('../utils/newApi');
+const API = require('../utils/api');
 
 exports.insert = class extends API {
 

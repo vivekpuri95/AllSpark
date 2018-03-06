@@ -1,4 +1,4 @@
-const API = require('../../utils/newApi');
+const API = require('../../utils/api');
 
 exports.list = class extends API {
 

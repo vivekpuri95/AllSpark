@@ -1,4 +1,4 @@
-const API = require("../utils/newApi");
+const API = require("../utils/api");
 const commonFun = require("./commonFunctions");
 
 exports.insert = class extends API {
@@ -14,6 +14,8 @@ exports.insert = class extends API {
         if(result.password) {
             result.password = await commonFun.makeBcryptHash(result.password);
         }
+
+        delete result.token;
 
         return await this.mysql.query(`insert into tb_users set ?`,result,'allSparkWrite');
 

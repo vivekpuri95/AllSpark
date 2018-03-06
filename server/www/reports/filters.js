@@ -1,4 +1,4 @@
-const API = require('../../utils/newApi');
+const API = require('../../utils/api');
 
 exports.insert = class extends API {
 
@@ -7,8 +7,8 @@ exports.insert = class extends API {
         let
             values = {}, filter_cols = [],
             table_cols = await this.mysql.query(`
-                SELECT 
-                    COLUMN_NAME 
+                SELECT
+                    COLUMN_NAME
                 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_filters'
             `);
 
@@ -32,8 +32,8 @@ exports.update = class extends API {
         let
             values = {}, filter_cols = [],
             table_cols = await this.mysql.query(`
-                SELECT 
-                    COLUMN_NAME 
+                SELECT
+                    COLUMN_NAME
                 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_filters'
             `);
 
