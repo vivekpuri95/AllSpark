@@ -436,7 +436,7 @@ class Report {
 			${this.name}
 			<a href="/report/${this.id}" target="_blank">
 				View
-				<i class="fa fa-external-link"></i>
+				<i class="fas fa-external-link-alt"></i>
 			</a>&nbsp;
 		`;
 
@@ -553,10 +553,12 @@ class Report {
 
 		try {
 
-			const response = await API.call('v2/reports/engine/report', parameters, options);
+			let response = await API.call('v2/reports/engine/report', parameters, options);
 
 			if(!response)
 				response = [];
+
+			else response = response.data;
 
 			Report.container.querySelector('#row-count').textContent = 'Rows: '+Format.number(response ? response.length : 0);
 

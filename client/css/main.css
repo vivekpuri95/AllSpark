@@ -93,6 +93,7 @@ body {
 	margin: 0;
 	flex-direction: column;
 	background: #eee;
+	user-select: none;
 }
 
 	body > #ajax-working {
@@ -192,9 +193,9 @@ body {
 			display: flex;
 			flex-wrap: wrap;
 			background: #fff;
-    		margin: 10px 0;
-    		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-    		padding: 5px;
+			margin: 10px 0;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			padding: 5px;
 		}
 			main section .toolbar .right {
 				margin-left: auto;
@@ -308,32 +309,33 @@ body {
 			}
 
 	main .data-source {
-		margin-bottom: 30px;
-		display: flex;
+		display: grid;
 		flex-direction: column;
-		position: relative;
+		grid-gap: calc(var(--gap) * 2);
 	}
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
 			display: flex;
-			margin-bottom:  var(--gap);
+			align-items: flex-end;
+			overflow: auto;
+			white-space: nowrap;
+		}
+		main .data-source > header::-webkit-scrollbar {
+  			display: none;
 		}
 			main .data-source > header > .right {
 				margin-left: auto;
 			}
-			main .data-source > header h2 {
-				font-size: 28px;
-				margin: 0;
-			}
 			main .data-source > header > * {
 				height: 26px;
 				padding: 0 15px;
-			    margin: 0 4px 5px 4px;
+				margin: 0 4px 5px 4px;
 			}
 			main .data-source > header h2 {
-				font-size: 22px;
-				margin: 0;
+				font-size: 20px;
+				margin: 0 auto 0 0;
 				padding: 0;
+				white-space: nowrap;
 			}
 			main .data-source > header *:last-child {
 				margin-right: 0;
@@ -342,9 +344,13 @@ body {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 			padding: 5px;
-			margin: 10px 0;
+			display: flex;
+			align-items: flex-end;
+			font-size: 90%;
+			margin: 0;
 		}
 			main .data-source .description-toggle.selected,
+			main .data-source .share-link-toggle.selected,
 			main .data-source .filters-toggle.selected {
 				background: var(--color-accent);
 				color: var(--color-accent-text);
@@ -352,38 +358,184 @@ body {
 		main .data-source > .description {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-			margin: 10px 0;
 		}
 			main .data-source > .description .body {
 				white-space: pre-wrap;
-				padding: 16px;
+				padding: calc(var(--gap) * 2);
 			}
 			main .data-source > .description .footer {
-				border-top: 1px dashed #999;
+				border-top: 1px dashed #ccc;
 				padding: 5px 10px;
-				text-align: right;
 				font-size: 80%;
+				display: flex;
 			}
-			main .data-source > .description .footer a {
-				color: #333;
-				margin-left: 15px;
-				cursor: pointer;
-			}
+				main .data-source > .description .footer > * {
+					margin-right: calc(var(--gap) * 2);
+				}
+				main .data-source > .description .footer > *:last-child {
+					margin-right: 0;
+				}
+				main .data-source > .description .footer .right {
+					margin-left: auto;
+				}
+				main .data-source > .description .footer a {
+					color: #333;
+					margin-left: 15px;
+					cursor: pointer;
+				}
 		main .data-source > .share-link {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 			padding: 10px;
-			margin: var(--gap) 0;
 		}
 			main .data-source > .share-link input {
 				width: 100%;
 			}
-		main .data-source > form.toolbar select {
-			max-width: 200px;
+		main .data-source > .filters label {
+			display: grid;
+			grid-gap: var(--gap);
 		}
+			main .data-source > .filters select {
+				max-width: 200px;
+			}
+
+		main .data-source > .columns {
+			display: flex;
+			flex-wrap: wrap;
+			order: 1;
+		}
+			main .data-source > .columns .column {
+				display: flex;
+				position: relative;
+				margin: 0 var(--gap);
+				align-items: center;
+				cursor: pointer;
+				transition: opacity var(--transition-duration),
+							border var(--transition-duration),
+							background var(--transition-duration),
+							box-shadow var(--transition-duration);
+			}
+			main .data-source > .columns .column.disabled > span,
+			main .data-source > .columns .column.disabled > button {
+				background: #eee;
+				opacity: 0.5;
+			}
+			main .data-source > .columns .column.being-dragged {
+				border: 1px blue dashed;
+				opacity: 0.5;
+			}
+			main .data-source > .columns .column.drag-enter:before {
+				content: "";
+				position: absolute;
+				left: -6.5px;
+				top: 0;
+				bottom: 0;
+				background: blue;
+				width: 2px;
+			}
+			main .data-source > .columns .column.filtered {
+				background: #ff9;
+			}
+			main .data-source > .columns .column.error {
+				background: #fcc;
+			}
+			main .data-source > .columns .column:hover {
+				background: #fff;
+			}
+			main .data-source > .columns .column:active {
+				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
+			}
+				main .data-source > .columns.being-dragged .column * {
+					pointer-events: none;
+				}
+				main .data-source > .columns .column > .color {
+					border-radius: 15px;
+					width: 15px;
+					height: 15px;
+					margin-left: var(--gap);
+				}
+				main .data-source > .columns .column > .name {
+					padding: 5px 10px;
+					display: flex;
+					flex: 1;
+					font-size: 85%;
+					align-items: center;
+					transition: background var(--transition-duration),
+								box-shadow var(--transition-duration);
+				}
+				main .data-source > .columns .column > button {
+					font-size: 75%;
+					padding: 3px 8px;
+					opacity: 0.8;
+				}
+
+				main .data-source > .columns .column .blanket {
+					position: fixed;
+					top: 0;
+					bottom: 0;
+					left: 0;
+					right: 0;
+					background: rgba(0, 0, 0, 0.25);
+					z-index: 6;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				}
+					main .data-source .column .blanket form {
+						box-shadow: 0 0 100px rgba(0, 0, 0, 0.25);
+						margin: 25px;
+						max-height: 90%;
+						max-width: 100%;
+						flex-basis: 400px;
+						overflow: auto;
+						padding-top: 0;
+					}
+						main .data-source .column form h3 {
+							margin: 0 calc(var(--gap) * -1) var(--gap) ;
+							padding: var(--gap) 10px;
+							background: var(--color-primary);
+							color: var(--color-primary-text);
+							border-bottom: 1px solid #999;
+							font-weight: normal;
+							letter-spacing: 1px;
+							position: sticky;
+							top: 0;
+							font-size: 90%;
+						}
+						main .data-source .column form label {
+							max-width: initial;
+							flex-shrink: 0;
+						}
+							main .data-source .column form .search {
+								display: flex;
+							}
+								main .data-source .column form .search select {
+									width: 40%;
+								}
+								main .data-source .column form .search input {
+									flex: 1;
+									border-left: 0;
+									width: calc(100% - 20px);
+								}
+							main .data-source .column form select {
+								border: 1px solid #ccc !important;
+							}
+							main .data-source .column form input {
+								transition: background var(--transition-duration);
+							}
+							main .data-source .column form input.error {
+								background: rgba(255, 0, 0, 0.25);
+							}
+							main .data-source .column form small {
+								margin-top: 5px;
+								color: #999;
+								font-weight: normal;
+							}
+							main .data-source .column form input[type=submit] {
+								padding: 8px;
+							}
 		main .data-source .visualization {
-			margin-bottom: 16px;
-			margin: var(--gap) 0;
+			position: relative;
 		}
 			main .data-source .visualization .NA {
 				padding: 5px 16px;
@@ -391,17 +543,18 @@ body {
 			main .data-source .visualization .container {
 				width: 100%;
 				background: #fff;
+				overflow: auto;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-				position: relative;
+				max-height: 500px;
 			}
 				.visualization > .container > .loading {
 					display: flex;
-					justify-content: center;
 					align-items: center;
 					height: 500px;
-					font-size: 400%;
+					font-size: 250%;
 					color: #999;
-					margin: 0;
+					margin:  0 auto;
+					justify-content: center;
 				}
 
 			main .data-source .visualization .tooltip {
@@ -450,19 +603,19 @@ body {
 							text-align: right;
 							margin-left: 10px;
 						}
-				main .data-source .visualization .tooltip header {
-					padding: var(--gap) calc(var(--gap) * 2);
-					border-bottom: 1px solid #fff;
-					display: flex;
+			main .data-source .visualization.table #row-count {
+				padding-left: 0;
+				margin-top: calc(var(--gap) * 2);
+				padding: 0;
+			}
+				main .data-source .visualization.table #row-count span {
+					margin-right: 15px;
 				}
 
 
 			.visualization.table {
-				min-height: 500px;
-				max-height: 500px;
 				overflow: auto;
 			}
-
 				.visualization.table thead tr.search {
 					background: #fff;
 				}
@@ -470,10 +623,12 @@ body {
 					background-color: #fff;
 				}
 				.visualization.table thead tr.accumulation th {
-					top: 35px;
+					top: 30px;
 				}
 				.visualization.table thead tr th.heading {
-					top: 70px;
+					top: 60px;
+					background: var(--color-primary);
+					color: var(--color-primary-text);
 				}
 				.visualization.table thead tr.search th,
 				.visualization.table thead tr.accumulation th {
@@ -527,7 +682,7 @@ body {
 						width: 100%;
 						background-color: white;
 						color: #333;
-						padding: 8px;
+						padding: 5px 8px;
 						font-family: sans-serif;
 						text-align: center;
 						font-size: 12px;
@@ -545,7 +700,7 @@ body {
 					color: var(--theme-dark-text);
 					cursor: pointer;
 					white-space: nowrap;
-					padding: 3px 10px;
+					padding: 5px 10px;
 					border: 0;
 					top: 0;
 				}
@@ -555,7 +710,6 @@ body {
 					}
 						.visualization.table table thead th span {
 							flex: 1;
-							margin-right: 10px;
 						}
 						.visualization.table table thead th .fa {
 							opacity: 0;
@@ -654,6 +808,7 @@ body {
 .visualization .container > svg {
 	width: 100%;
 	height: 500px;
+	display: flex;
 }
 .visualization .container > svg .axis path,
 .visualization .container > svg .axis line {
