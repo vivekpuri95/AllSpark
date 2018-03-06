@@ -15,6 +15,7 @@ dump.rdb
 *.csv
 npm-debug.log
 package-lock.json
+.idea/*
 
 # local configuration
 config/local.json
