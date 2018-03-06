@@ -13,44 +13,30 @@ class Mailer {
             }
         });
 
-        this.mailOptions = {};
+        this.to = new Set();
+        this.cc = new Set();
+        this.bcc = new Set();
     }
 
-    from(f){
-        this.mailOptions.from = f;
-    }
+    send(){
+        let mailOptions = {
+            from: this.from,
+            to: Array.from(this.to).join(),
+            cc: Array.from(this.cc).join(),
+            bcc : Array.from(this.bcc).join(),
+            subject: this.subject,
+            text: this.text,
+            html: this.html
+        };
 
-    to(...t){
-        this.mailOptions.to = t.toString();
-    }
-
-    cc(...c){
-        this.mailOptions.cc = c.toString();
-    }
-
-    bcc(...b){
-        this.mailOptions.bcc = b.toString();
-    }
-
-    subject(s){
-        this.mailOptions.subject = s;
-    }
-
-    text(t){
-        this.mailOptions.text = t;
-    }
-
-    html(h){
-        this.mailOptions.html = h;
-    }
-
-    sendMail(){
-        this.transporter.sendMail(this.mailOptions, function(error, info){
-            if (error) {
-                return (error);
-            } else {
-                return ('Email sent: ' + info);
-            }
+        return new Promise((resolve,reject)=>{
+            this.transporter.sendMail(mailOptions, function(error, info){
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(info);
+                }
+            });
         });
     }
 }
