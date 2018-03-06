@@ -76,7 +76,6 @@ exports.login = class extends API {
     async login() {
 
         const email = this.request.body.email;
-
         if(!email) {
             return {
                 status: false,
@@ -127,7 +126,8 @@ exports.login = class extends API {
             account_id: this.account.account_id,
             email: email,
             name: `${userDetails.first_name} ${userDetails.middle_name || ''} ${userDetails.last_name}`,
-            userPrivileges: userPrivileges
+            roles: userPrivileges,
+            privileges: userDetails.privileges ? userDetails.privileges.split(',') : []
         };
 
         return {
