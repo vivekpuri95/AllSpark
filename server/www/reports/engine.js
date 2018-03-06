@@ -36,7 +36,6 @@ class report extends API {
             return authentication;
         }
 
-        console.log(authentication)
 
         if(this.query.source.toLowerCase() === 'query') {
 
@@ -119,7 +118,7 @@ class report extends API {
             if(types[filter.type] == 'date') {
 
                 filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-                filter.value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+                filter.value = this.request.body[filter.placeholder] || filter.default_value;
 
                 if(filter.value === new Date().toISOString().slice(0,10)) {
                     this.has_today = true;
@@ -130,7 +129,7 @@ class report extends API {
             if(types[filter.type] == 'month') {
                 const date = new Date();
                 filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
-                filter.value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
+                filter.value = this.request.body[filter.placeholder] || filter.default_value;
 
                 if(filter.value === new Date().toISOString().slice(0,7)) {
                     this.has_today = true;
