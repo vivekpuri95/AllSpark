@@ -13,11 +13,19 @@ exports.list = class extends API {
     async list() {
 
         const results = await Promise.all([
-            this.mysql.query('SELECT * FROM tb_query WHERE is_deleted = 0 and account_id = ?', [this.account.account_id], 'allSparkWrite'),
+            this.mysql.query(`
+                SELECT
+                    q.*,
+                    CONCAT(u.first_name, ' ', u.last_name) AS added_by_name
+                FROM
+                    tb_query q JOIN tb_users u ON q.added_by = u.user_id
+                WHERE
+                    is_deleted = 0 and q.account_id = ?
+            `, [this.account.account_id], 'allSparkRead'),
             this.mysql.query('SELECT * FROM tb_filters'),
             this.mysql.query('SELECT * FROM tb_query_visualizations'),
             this.mysql.query('SELECT * FROM tb_query_dashboards where status = 1')
-        ])
+        ]);
 
         for(const row of results[0]) {
             row.filters = results[1].filter(filter => filter.query_id == row.query_id);
