@@ -276,3 +276,12 @@ main #form #report-form {
 .form-container {
 	overflow: auto;
 }
+main #form form label {
+	font-weight: bold;
+	display: flex;
+	margin: 16px;
+	flex-direction: column;
+	max-width: 200px;
+	justify-content: space-between;
+	flex: 1 0;
+}
