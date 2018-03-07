@@ -18,6 +18,11 @@
       "database":"default db"
     }
   },
+  "mailer": {
+    "service": "gmail",
+    "user": "your email",
+    "pass": "your password"
+  },
   "redisOptions": {
     "host": "localhost",
     "port": 6379,

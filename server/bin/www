@@ -89,4 +89,4 @@ function onListening() {
   debug('Listening on ' + bind);
 }
 
-console.log('SERVER LISTENING ON PORT: ', config.get("port"));
+console.log('Server Listening On Port: ', config.get("port"));

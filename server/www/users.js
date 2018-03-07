@@ -17,6 +17,8 @@ exports.insert = class extends API {
 
         delete result.token;
 
+        result.account_id = this.account.account_id;
+
         return await this.mysql.query(`insert into tb_users set ?`,result,'allSparkWrite');
 
     }
@@ -76,7 +78,6 @@ exports.login = class extends API {
     async login() {
 
         const email = this.request.body.email;
-
         if(!email) {
             return {
                 status: false,
@@ -127,7 +128,8 @@ exports.login = class extends API {
             account_id: this.account.account_id,
             email: email,
             name: `${userDetails.first_name} ${userDetails.middle_name || ''} ${userDetails.last_name}`,
-            userPrivileges: userPrivileges
+            roles: userPrivileges,
+            privileges: userDetails.privileges ? userDetails.privileges.split(',') : []
         };
 
         return {
