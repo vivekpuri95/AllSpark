@@ -514,11 +514,11 @@ app.get('/users/:id?', (req, res) => {
 				<label>
 					<span>privileges</span>
 					<select name="privileges" multiple>
-						<option value="admin">Administrator</option>
+						<option value="administrator">Administrator</option>
 						<option value="user">Users</option>
 						<option value="dashboards">Dashboards</option>
 						<option value="queries">Queries</option>
-						<option value="datasource">Data Sources</option>
+						<option value="datasources">Data Sources</option>
 					</select>
 				</label>
 			</form>
