@@ -291,6 +291,23 @@ class Page {
 
 		if(window.location.pathname.startsWith('/login'))
 			document.querySelector('body > header nav').classList.add('hidden');
+
+		Page.navList = [
+			{url: '/users', name: 'Users', id: 'user'},
+			{url: '/dashboards', name: 'Dashboards', id: 'dashboards'},
+			{url: '/reports', name: 'Reports', id: 'queries'},
+			{url: '/connections', name: 'Connections', id: 'datasource'},
+		];
+
+		if(window.location.pathname.startsWith('/dashboard')) {
+			if(user.privileges.includes('admin'))
+				Page.navList.map(l => document.querySelector('body > header nav').insertAdjacentHTML('beforeend',`<a href='${l.url}'>${l.name}</a>`))
+			else {
+				for(const prv of user.privileges) {
+					Page.navList.filter(l => l.id == prv).map(l => document.querySelector('body > header nav').insertAdjacentHTML('beforeend',`<a href='${l.url}'>${l.name}</a>`))
+				}
+			}
+		}
 	}
 }
 

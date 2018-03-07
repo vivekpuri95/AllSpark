@@ -514,10 +514,11 @@ app.get('/users/:id?', (req, res) => {
 				<label>
 					<span>privileges</span>
 					<select name="privileges" multiple>
-						<option value="administrator">Administrator</option>
-						<option value="users">Users</option>
+						<option value="admin">Administrator</option>
+						<option value="user">Users</option>
+						<option value="dashboards">Dashboards</option>
 						<option value="queries">Queries</option>
-						<option value="datasources">Data Sources</option>
+						<option value="datasource">Data Sources</option>
 					</select>
 				</label>
 			</form>
@@ -617,12 +618,7 @@ class Template {
 					<header>
 						<a class="logo" href="/"><img></a>
 
-						<nav>
-							<a href="/users">Users</a>
-							<a href="/dashboards">Dashboards</a>
-							<a href="/reports">Reports</a>
-							<a href="/connections">Connections</a>
-						</nav>
+						<nav></nav>
 
 						<span class="user-name"></span>
 						<span class="logout">
