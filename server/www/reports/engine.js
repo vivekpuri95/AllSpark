@@ -182,7 +182,7 @@ class report extends API {
 
         const userPrivileges = [];
 
-        userDetails.userPrivileges.map(x=> {
+        userDetails.roles.map(x=> {
             userPrivileges.push([this.account.account_id, x.category_id, x.role]);
 
         });
@@ -223,7 +223,7 @@ class query extends report {
 
     async fetchAndStore () {
 
-        const redisData = 0//await commonFun.redisGet(this.redisKey);
+        const redisData = await commonFun.redisGet(this.redisKey);
 
         if(this.query.is_redis && redisData && !this.has_today) {
 
