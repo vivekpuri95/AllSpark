@@ -17,6 +17,8 @@ exports.insert = class extends API {
 
         delete result.token;
 
+        result.account_id = this.account.account_id;
+
         return await this.mysql.query(`insert into tb_users set ?`,result,'allSparkWrite');
 
     }
