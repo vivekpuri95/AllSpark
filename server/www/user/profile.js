@@ -14,7 +14,7 @@ class User extends API {
 				email,
 				privileges
 			FROM
-				allspark.tb_users
+				tb_users
 			WHERE
 				user_id = ?
 				AND account_id = ?
@@ -23,11 +23,11 @@ class User extends API {
 
 	async changePassword() {
 
-		const abc = await this.mysql.query(`select password from allspark.tb_users where user_id = ? and account_id = ?`, [this.request.query.user_id, this.account.account_id], 'allSparkRead');
+		const abc = await this.mysql.query(`select password from tb_users where user_id = ? and account_id = ?`, [this.request.query.user_id, this.account.account_id], 'allSparkRead');
 		const check = await commFunc.verifyBcryptHash(this.request.query.oldPass, abc[0].password);
 		if(check) {
 			const newPass = await commFunc.makeBcryptHash(this.request.query.newPass);
-			return await this.mysql.query(`UPDATE allspark.tb_users SET password = ? where user_id = ? and account_id = ?`, [newPass, this.request.query.user_id, this.account.account_id]);
+			return await this.mysql.query(`UPDATE tb_users SET password = ? where user_id = ? and account_id = ?`, [newPass, this.request.query.user_id, this.account.account_id],'allSparkWrite');
 		}
 		else
 			throw("Password does not match!");
