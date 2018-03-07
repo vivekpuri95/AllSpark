@@ -79,7 +79,7 @@ a:active {
 	background: #fdd;
 }
 .NA {
-	color: #999;
+	color: #666;
 	font-size: 90%;
 }
 
@@ -94,6 +94,7 @@ body {
 	flex-direction: column;
 	background: #eee;
 	user-select: none;
+	font-size: 14px;
 }
 
 	body > #ajax-working {
@@ -110,6 +111,7 @@ body {
 		background: var(--color-accent);
 		color: var(--color-accent-text);
 		width: 74px;
+		z-index: 1;
 	}
 	body > #ajax-working.show {
 		opacity: 1;
@@ -122,7 +124,7 @@ body {
 		position: sticky;
 		top: 0;
 		z-index: 10;
-		height: 60px;
+		flex: 50px 0 0;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	}
 		body > header .logo {
@@ -607,15 +609,23 @@ body {
 				padding-left: 0;
 				margin-top: calc(var(--gap) * 2);
 				padding: 0;
+				font-size: 90%;
+				text-align: right;
 			}
-				main .data-source .visualization.table #row-count span {
+				main .data-source .visualization.table #row-count > span {
 					margin-right: 15px;
+				}
+				main .data-source .visualization.table #row-count .label {
+					color: #666;
 				}
 
 
 			.visualization.table {
 				overflow: auto;
 			}
+				.visualization.table table {
+					caption-side: bottom;
+				}
 				.visualization.table thead tr.search {
 					background: #fff;
 				}
@@ -720,7 +730,7 @@ body {
 							margin-left: auto;
 						}
 			.visualization.table table tr.selected {
-				background: var(--theme-light);
+				background: #ddf;
 				color: var(--theme-light-text);
 			}
 			.visualization.table table tbody tr.show-rows {
