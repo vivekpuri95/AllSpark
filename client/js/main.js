@@ -272,6 +272,11 @@ class Page {
 
 		await Account.load();
 		await User.load();
+		Page.render();
+
+	}
+
+	static render() {
 
 		if(account.icon)
 			document.getElementById('favicon').href = account.icon;
@@ -284,13 +289,31 @@ class Page {
 
 		document.querySelector('body > header .logout').on('click', () => User.logout());
 
+
+		Page.navList = [
+			{url: '/users', name: 'Users', id: 'user'},
+			{url: '/dashboards', name: 'Dashboards', id: 'dashboards'},
+			{url: '/reports', name: 'Reports', id: 'queries'},
+			{url: '/connections', name: 'Connections', id: 'datasources'},
+		];
+
+		const nav_container = document.querySelector('body > header nav');
+
+		for(const item of Page.navList) {
+
+			if(!window.user)
+				continue;
+
+			if(!user.privileges.includes(item.id) && !user.privileges.includes('administrator'))
+				continue;
+
+			nav_container.insertAdjacentHTML('beforeend',`<a href='${item.url}'>${item.name}</a>`);
+		}
+
 		for(const item of document.querySelectorAll('body > header nav a')) {
 			if(window.location.pathname.startsWith(new URL(item.href).pathname))
 				item.classList.add('selected');
 		}
-
-		if(window.location.pathname.startsWith('/login'))
-			document.querySelector('body > header nav').classList.add('hidden');
 	}
 }
 
@@ -428,6 +451,9 @@ class DataSource {
 			</div>
 		`;
 
+		if(!user.privileges.includes('queries') && !user.privileges.includes('administrator'))
+			container.querySelector('.edit').classList.add('hidden');
+
 		this.filters.form = container.querySelector('.filters');
 
 		container.querySelector('.filters-toggle').on('click', () => {
@@ -446,6 +472,7 @@ class DataSource {
 			container.querySelector('.share-link input').select();
 		});
 
+		container.querySelector('.edit')
 		container.querySelector('.download').on('click', () => this.download());
 		container.querySelector('.edit').on('click', () => window.location = `/reports/${this.query_id}`);
 
