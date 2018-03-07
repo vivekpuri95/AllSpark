@@ -593,7 +593,7 @@ class DataSource {
 
 	get link() {
 
-		const link = window.location.origin + '/dashboard/report/' + this.query_id;
+		const link = window.location.origin + '/report/' + this.query_id;
 
 		const parameters = new URLSearchParams();
 
@@ -664,7 +664,7 @@ class DataSourceRow extends Map {
 				if(!row[key])
 					this.skip = true;
 
-				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key]))
+				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key] === null ? '' : row[key]))
 					this.skip = true;
 			}
 
@@ -732,10 +732,10 @@ class DataSourceColumn {
 	constructor(column, source) {
 
 		DataSourceColumn.colors = [
+			'#8595e1',
 			'#ef6692',
 			'#d6bcc0',
 			'#ffca05',
-			'#8595e1',
 			'#8dd593',
 			'#ff8b75',
 			'#2a0f54',
@@ -1071,7 +1071,7 @@ class DataSourceColumn {
 		select.on('change', () => {
 			this.searchType = select.value;
 			this.searchQuery = query.value;
-			this.filtered = this.searchQuery !== null;
+			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
 			this.accumulation.run();
 			this.source.visualizations.selected.render();
 			setTimeout(() => select.focus());
@@ -1080,7 +1080,7 @@ class DataSourceColumn {
 		query.on('keyup', () => {
 			this.searchType = select.value;
 			this.searchQuery = query.value;
-			this.filtered = this.searchQuery !== null;
+			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
 			this.accumulation.run();
 			this.source.visualizations.selected.render();
 			setTimeout(() => query.focus());
@@ -1585,7 +1585,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			<div class="container overflow">
 				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
-			<div class="NA" id="row-count"></div>
+			<div id="row-count"></div>
 		`;
 
 		return container;
@@ -1598,12 +1598,6 @@ Visualization.list.set('table', class Table extends Visualization {
 			rows = this.source.response;
 
 		container.textContent = null;
-
-		if(!rows || !rows.length) {
-			this.container.querySelector('#row-count').textContent = null;
-			container.innerHTML = '<tr class="NA"><td>No rows found! :(<td></tr>';
-			return;
-		}
 
 		const
 			table = document.createElement('table'),
@@ -1672,27 +1666,32 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
+		if(!rows || !rows.length) {
+			this.container.querySelector('#row-count').textContent = null;
+			table.insertAdjacentHTML('beforeend', '<caption class="NA">No rows found! :(</caption>');
+		}
+
 		table.appendChild(tbody);
 		container.appendChild(table);
 
 		this.container.querySelector('#row-count').innerHTML = `
 			<span>
-				Showing:
-				<strong title="Number of rows currently shown on screen">
+				<span class="label">Showing:</span>
+				<span title="Number of rows currently shown on screen">
 					${Format.number(Math.min(this.rowLimit, rows.length))}
-				</strong>
+				</span>
 			</span>
 			<span>
-				Filtered:
-				<strong title="Number of rows that match any search or grouping criterion">
+				<span class="label">Filtered:</span>
+				<span title="Number of rows that match any search or grouping criterion">
 					${Format.number(rows.length)}
-				</strong>
+				</span>
 			</span>
 			<span>
-				Total:
-				<strong title="Total number of rows in the dataset">
+				<span class="label">Total:</span>
+				<span title="Total number of rows in the dataset">
 					${Format.number(this.source.originalResponse.data.length)}
-				</strong>
+				</span>
 			</span>
 		`;
 	}
@@ -3321,6 +3320,8 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		if(e)
 			e.preventDefault();
 
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
 		await this.source.fetch();
 
 		this.render();
@@ -3328,18 +3329,15 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 	render() {
 
-		const
-			series = [],
-			response = this.source.response;
+		const series = [];
 
-		for(const column of this.source.columns.list.values()) {
-
-			series.push([{
+		for(const [i, level] of this.source.response.entries()) {
+			series.push({
 				date: 0,
-				label: column.name,
-				color: column.color,
-				y: parseFloat(response[0].get(column.key)),
-			}]);
+				label: level.get('metric'),
+				color: Array.from(this.source.columns.values())[i].color,
+				y: parseFloat(level.get('value')),
+			});
 		}
 
 		this.draw({
@@ -3359,7 +3357,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		var chart = {};
 
 		// Setting margin and width and height
-		var margin = {top: 0, right: 0, bottom: 40, left: 0},
+		var margin = {top: 20, right: 0, bottom: 40, left: 0},
 			width = this.container.clientWidth - margin.left - margin.right,
 			height = obj.chart.height || 500 - margin.top - margin.bottom;
 
@@ -3381,7 +3379,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			})
 			.projection(d => [d.y, d.x]);
 
-		var series = d3.layout.stack()(obj.series);
+		var series = d3.layout.stack()(obj.series.map(s => [s]));
 
 		series.map(r => r.data = r);
 
