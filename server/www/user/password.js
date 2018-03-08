@@ -8,8 +8,8 @@ mailer = new mailer();
 exports.resetlink = class extends API {
     async resetlink() {
 
-        var exist = await this.mysql.query('select 1 from tb_users where email = ?', [this.request.body.email], 'allSparkRead');
-        if (exist.length == 0)
+        let exist = await this.mysql.query('select 1 from tb_users where email = ?', [this.request.body.email], 'allSparkRead');
+        if (!exist.length)
             return true;
 
         const token = await new Promise((resolve, reject) => {
@@ -48,7 +48,7 @@ exports.reset = class extends API {
             [this.request.body.token, new Date()],
             'allSparkRead');
 
-        if (email.length == 0)
+        if (!email.length)
             return false;
 
         email = email.map(element => element.email)[0];
