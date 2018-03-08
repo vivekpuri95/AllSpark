@@ -28,12 +28,25 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 	const template = new Template;
 
-	template.stylesheets.push('/css/dashboard.css');
+	template.stylesheets.push();
+
+	template.stylesheets = template.stylesheets.concat([
+		'/css/dashboard.css',
+
+		'//cdn.jsdelivr.net/bootstrap/3/css/bootstrap.css',
+		'//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css',
+	]);
 
 	template.scripts = template.scripts.concat([
 		'/js/dashboard.js',
-		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU',
-		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js',
+
+		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+
+		'//cdn.jsdelivr.net/jquery/1/jquery.min.js" defer f="',
+		'//cdn.jsdelivr.net/momentjs/latest/moment.min.js" defer f="',
+		'//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js" defer f="',
+
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
 
@@ -44,6 +57,19 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 		<section class="section" id="list">
 			<h2>${req.params.type}</h2>
 
+			<form class="form toolbar">
+
+				<label class="right">
+					<select name="category">
+						<option value="">All Categories</option>
+					</select>
+				</label>
+
+				<label>
+					<input type="search" name="search" placeholder="Search...">
+				</label>
+			</form>
+
 			<table class="block">
 				<thead></thead>
 				<tbody></tbody>
@@ -51,9 +77,21 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 		</section>
 
 		<section class="section" id="reports">
+
 			<div class="toolbar">
-				<input type="button" id="back" value="Back">
+
+				<label>
+					<button id="back">
+						<i class="fa fa-arrow-left"></i>&nbsp;
+						Back
+					</button>
+				</label>
+
+				<label class="right">
+					<input type="text" name="date-range">
+				</label>
 			</div>
+
 			<div class="list"></div>
 		</section>
 	`));

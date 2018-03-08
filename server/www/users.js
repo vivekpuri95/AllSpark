@@ -132,8 +132,11 @@ exports.login = class extends API {
             privileges: userDetails.privileges ? userDetails.privileges.split(',') : []
         };
 
+        const categories = await this.mysql.query('SELECT * FROM tb_categories WHERE account_id = ?', [this.account.account_id]);
+
         return {
             token: commonFun.makeJWT(obj, parseInt(userDetails.ttl || 7) * 86400),
+            metadata: {categories},
             status: true,
         }
     }

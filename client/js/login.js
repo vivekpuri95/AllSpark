@@ -12,7 +12,8 @@ class Login extends Page {
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
 
-		logo.src = account.logo;
+		if(account)
+			logo.src = account.logo;
 
 		Login.form.on('submit', Login.submit);
 	}
@@ -32,19 +33,20 @@ class Login extends Page {
 
 		try {
 
-			const resposne = await API.call('v2/users/login', {}, options);
+			const response = await API.call('v2/users/login', {}, options);
 
-			if(!resposne.status)
-				throw resposne;
+			if(!response.status)
+				throw response;
 
-			localStorage.token = resposne.token;
-			localStorage.user = JSON.stringify(JSON.parse(atob(resposne.token.split('.')[1])));
+			localStorage.token = response.token;
+			localStorage.user = JSON.stringify(JSON.parse(atob(response.token.split('.')[1])));
+			localStorage.metadata = JSON.stringify(response.metadata);
 
 		} catch(response) {
 
 			Login.message.classList.remove('notice');
 			Login.message.classList.add('warning');
-			Login.message.textContent = response.message;
+			Login.message.textContent = response.message || response;
 
 			return;
 		}
