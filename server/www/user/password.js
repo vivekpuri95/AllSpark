@@ -41,7 +41,7 @@ exports.resetlink = class extends API{
 
 exports.reset = class extends API{
     async reset(){
-        if(this.request.body.password==undefined || this.request.body.token==undefined)
+        if(!this.request.body.password || !this.request.body.token)
             return false;
 
         let email = await this.mysql.query('select email from allspark.tb_password_reset where reset_token = ? and expire_after > ?',
