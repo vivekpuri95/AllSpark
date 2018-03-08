@@ -5,12 +5,15 @@ const comFun = require('../commonFunctions');
 let mailer = require('../../utils/mailer');
 mailer = new mailer();
 
+const EXPIRE_AFTER = 1; //HOURS
+
 exports.resetlink = class extends API {
     async resetlink() {
 
-        let exist = await this.mysql.query('select 1 from tb_users where email = ?', [this.request.body.email], 'allSparkRead');
-        if (!exist.length)
-            return true;
+        let user = await this.mysql.query(`SELECT user_id FROM tb_users WHERE email = ? AND account_id = ?`,
+                                            [this.request.body.email,this.account.account_id]);
+        if (!user.length)
+            return user;
 
         const token = await new Promise((resolve, reject) => {
             crypto.randomBytes(80, function (err, buf) {
@@ -21,18 +24,14 @@ exports.resetlink = class extends API {
             });
         });
 
-
-        let expireTime = new Date();
-        expireTime.setMinutes((new Date()).getMinutes() + 60);
-
-        let query = 'insert into tb_password_reset(email,reset_token,expire_after) values ?'
-        await this.mysql.query(query, [[[this.request.body.email, token, expireTime]]], 'allSparkWrite');
+        user = user[0]['user_id']
+        const query = `INSERT INTO tb_password_reset(user_id, reset_token) values ?`
+        await this.mysql.query(query, [[[user, token]]], 'allSparkWrite');
 
         mailer.to.add(this.request.body.email);
-        mailer.subject = 'Password reset link for allspark'
-        const resetUrl = 'jungleworks-allspark.jugnoo.in/user/password/forgot?token=' + token
-        mailer.html = 'Click <a href=' + resetUrl + '><b>here</b></a> to reset your password for allspark'
-
+        mailer.subject = `Password reset link for allspark`
+        const resetUrl = `${this.account.account_id}/login/forgot?token=${token}`
+        mailer.html = `Click <a href='${resetUrl}'><b>here</b></a> to reset your password for AllSpark`
         await mailer.send();
 
         return true;
@@ -44,17 +43,31 @@ exports.reset = class extends API {
         if (!this.request.body.password || !this.request.body.token)
             return false;
 
-        let email = await this.mysql.query('select email from tb_password_reset where reset_token = ? and expire_after > ? order by expire_after DESC LIMIT 1',
-            [this.request.body.token, new Date()],
-            'allSparkRead');
+        const query = ` select 
+                            user_id 
+                        from 
+                            tb_password_reset 
+                        where 
+                            id in (
+                                select 
+                                    max(id) 
+                                from 
+                                    tb_password_reset 
+                                where user_id in (
+                                    select 
+                                        user_id 
+                                    from 
+                                        tb_password_reset
+                                    where reset_token = ? and created_at > now() - interval ? hour)) 
+                            and reset_token = ?`
 
-        if (!email.length)
+        let user = await this.mysql.query(query, [this.request.body.token, EXPIRE_AFTER, this.request.body.token]);
+        if (!user.length)
             return false;
 
-        email = email.map(element => element.email)[0];
-
+        user = user[0]['user_id']
         const newHashPass = await comFun.makeBcryptHash(this.request.body.password);
-        await this.mysql.query('update tb_users set password = ? where email = ?', [newHashPass, email], 'allSparkWrite');
+        await this.mysql.query('update tb_users set password = ? where user_id = ? and account_id = ?', [newHashPass, user, this.account.account_id], 'allSparkWrite');
 
         return true;
     }
