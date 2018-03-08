@@ -166,7 +166,6 @@ class report extends API {
 
     async authenticate() {
 
-        return {error: false}
         const token = this.request.body.token;
         if(!token) {
             return {
