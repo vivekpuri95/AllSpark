@@ -305,7 +305,7 @@ function authenticatePrivileges(userPrivileges, objectPrivileges) {
         if(!result) {
             return {
                 error: true,
-                message: "user not authorised",
+                message: "User not authorised! :(",
                 reason: "full house"
             };
         }

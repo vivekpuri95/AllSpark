@@ -1,6 +1,9 @@
 main {
-	display: grid;
+	display: grid !important;
 	grid-template-columns: 220px calc(100% - 220px);
+}
+main label {
+	font-weight: normal;
 }
 main > nav {
 	position: sticky;
@@ -21,6 +24,9 @@ main > nav {
 		align-items: center;
 		transition: background var(--transition-duration),
 					box-shadow var(--transition-duration);
+		border-radius: 0;
+		font: inherit;
+		vertical-align: inherit;
 	}
 	main > nav .label:hover {
 		background: var(--color-secondary);
@@ -57,18 +63,45 @@ main > nav {
 main #reports .list {
 	display: grid;
 	grid-template-columns: repeat(4, 25%);
-	grid-gap: calc(var(--gap) * 2);
+	grid-column-gap: calc(var(--gap) * 2);
+	grid-row-gap: calc(var(--gap) * 4);
 	width: calc(100% - var(--gap) * 6);
 	align-items: start;
 }
-	main #reports {
+	main #reports > .toolbar {
+		margin: 0 0 calc(var(--gap) * 2);
+		position: sticky;
+		top: 0;
+		z-index: 3;
 	}
-		main #reports > .toolbar {
-			margin: 0 0 calc(var(--gap) * 2);
+		main #reports > .toolbar input[name=date-range] {
+			width: 250px;
+			text-align: center;
+			letter-spacing: 0.5px;
 		}
-		main #reports .list .data-source {
-			grid-column: auto / span 4;
-		}
+	main #reports .list .data-source {
+		grid-column: auto / span 4;
+	}
 main #reports > .NA {
 	text-align: center;
 }
+
+.daterangepicker .range_inputs {
+	display: flex;
+}
+	.daterangepicker input {
+		border-radius: 0 !important;
+	}
+	.daterangepicker button {
+		color: #333 !important;
+		border-radius: 0;
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		letter-spacing: 1px;
+		font-size: 11px !important;
+	}
+	.daterangepicker .ranges li {
+		border-radius: 0;
+	}
