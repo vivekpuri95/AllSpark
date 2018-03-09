@@ -19,9 +19,7 @@
     }
   },
   "mailer": {
-    "service": "gmail",
-    "user": "your email",
-    "pass": "your password"
+    "api_key": "mandrill_api_key_here"
   },
   "redisOptions": {
     "host": "localhost",
