@@ -28,6 +28,8 @@ exports.resetlink = class extends API {
         const query = `INSERT INTO tb_password_reset(user_id, reset_token) values ?`
         await this.mysql.query(query, [[[user, token]]], 'allSparkWrite');
 
+        mailer.from_email = 'no-reply@'+this.account.url;
+        mailer.from_name = this.account.name;
         mailer.to.add(this.request.body.email);
         mailer.subject = `Password reset link for allspark`
         const resetUrl = `${this.account.account_id}/login/forgot?reset_token=${token}`
