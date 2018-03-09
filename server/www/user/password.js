@@ -83,12 +83,12 @@ exports.change = class extends API {
             'allSparkRead'
         );
 
-        const check = await comFun.verifyBcryptHash(this.request.body.oldPass, dbPass[0].password);
+        const check = await comFun.verifyBcryptHash(this.request.body.old_password, dbPass[0].password);
         if(check) {
-            const newPass = await comFun.makeBcryptHash(this.request.body.newPass);
+            const new_password = await comFun.makeBcryptHash(this.request.body.new_password);
             return await this.mysql.query(
                 `UPDATE tb_users SET password = ? WHERE user_id = ? and account_id = ?`,
-                [newPass, this.request.body.user_id, this.account.account_id],
+                [new_password, this.user.user_id, this.account.account_id],
                 'allSparkWrite'
             );
         }
