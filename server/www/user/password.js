@@ -77,11 +77,15 @@ exports.change = class extends API {
 
     async change() {
 
-        const dbPass = await this.mysql.query(`select password from tb_users where user_id = ? and account_id = ?`, [this.request.body.user_id, this.account.account_id], 'allSparkRead');
+        const dbPass = await this.mysql.query(`
+            select password from tb_users where user_id = ? and account_id = ?
+        `, [this.user.user_id, this.account.account_id], 'allSparkRead');
         const check = await comFun.verifyBcryptHash(this.request.body.oldPass, dbPass[0].password);
         if(check) {
             const newPass = await comFun.makeBcryptHash(this.request.body.newPass);
-            return await this.mysql.query(`UPDATE tb_users SET password = ? where user_id = ? and account_id = ?`, [newPass, this.request.body.user_id, this.account.account_id],'allSparkWrite');
+            return await this.mysql.query(`
+                UPDATE tb_users SET password = ? where user_id = ? and account_id = ?
+            `, [newPass, this.request.body.user_id, this.account.account_id],'allSparkWrite');
         }
         else
             throw("Password does not match!");
