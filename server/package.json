@@ -17,11 +17,11 @@
     "google-cloud": "^0.57.0",
     "jade": "~1.11.0",
     "jsonwebtoken": "^8.1.1",
+    "mailer": "^0.6.7",
     "moment": "^2.20.1",
     "moment-timezone": "^0.5.14",
     "morgan": "~1.9.0",
     "mysql": "^2.15.0",
-    "nodemailer": "^4.6.2",
     "redis": "^2.8.0",
     "request": "^2.83.0",
     "serve-favicon": "~2.4.5"

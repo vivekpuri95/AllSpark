@@ -67,8 +67,10 @@ exports.list = class extends API {
 
     async list(){
 
-        return await this.mysql.query(`select * from tb_users WHERE account_id = ?`, [this.account.account_id],'allSparkRead');
-
+        if(this.request.body.user_id)
+			return await this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id], 'allSparkRead');
+        else
+			return await this.mysql.query(`select * from tb_users WHERE account_id = ?`, [this.account.account_id],'allSparkRead');
     }
 
 };
@@ -132,8 +134,11 @@ exports.login = class extends API {
             privileges: userDetails.privileges ? userDetails.privileges.split(',') : []
         };
 
+        const categories = await this.mysql.query('SELECT * FROM tb_categories WHERE account_id = ?', [this.account.account_id]);
+
         return {
             token: commonFun.makeJWT(obj, parseInt(userDetails.ttl || 7) * 86400),
+            metadata: {categories},
             status: true,
         }
     }

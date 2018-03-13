@@ -165,6 +165,7 @@ class report extends API {
     }
 
     async authenticate() {
+
         const token = this.request.body.token;
         if(!token) {
             return {
@@ -182,9 +183,8 @@ class report extends API {
 
         const userPrivileges = [];
 
-        userDetails.roles.map(x=> {
+        userDetails.roles && userDetails.roles.map(x=> {
             userPrivileges.push([this.account.account_id, x.category_id, x.role]);
-
         });
 
         let objectPrivileges = [[this.query.account_id], [this.query.category_id]];

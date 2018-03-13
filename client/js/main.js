@@ -10,21 +10,27 @@ class Account {
 			account = JSON.parse(localStorage.account);
 		} catch(e) {}
 
-		if(!account) {
+		if(!account)
+			account = await Account.fetch();
 
-			window.account = {APIHost: `http://${window.location.host}:${window.location.hostname == 'localhost' ? '3002' : '3000'}/`}
+		localStorage.account = JSON.stringify(account);
+
+		window.account = account ? new Account(account) : null;
+	}
+
+	static async fetch() {
+
+		window.account = {APIHost: `http://${window.location.host}:${window.location.hostname == 'localhost' ? '3002' : '3000'}/`}
+
+		try {
 
 			const accounts = await API.call('v2/accounts/list');
 
-			account = accounts.filter(a => a.url == window.location.host)[0];
+			return accounts.filter(a => a.url == window.location.host)[0];
 
-			localStorage.account = JSON.stringify(account);
+		} catch(e) {
+			return null;
 		}
-
-		if(!account)
-			return;
-
-		window.account = new Account(account);
 	}
 
 	constructor(account) {
@@ -93,7 +99,15 @@ class AJAX {
 		else
 			url += '?' + parameters.toString();
 
-		const response = await fetch(url, options);
+		let response = null;
+
+		try {
+			response = await fetch(url, options);
+		}
+		catch(e) {
+			AJAXLoader.hide();
+			throw 'API Execution Failed';
+		}
 
 		AJAXLoader.hide();
 
@@ -115,6 +129,9 @@ class API extends AJAX {
 	 * @return Promise					That resolves when the request is completed.
 	 */
 	static call(endpoint, parameters = {}, options = {}) {
+
+		if(!account)
+			throw 'Account not found!'
 
 		endpoint = account.APIHost + endpoint;
 
@@ -264,6 +281,35 @@ class Sections {
 	}
 }
 
+class MetaData {
+
+	static load() {
+
+		MetaData.categories = new Map;
+
+		if(!localStorage.metadata)
+			return;
+
+		let metadata = null;
+
+		try {
+			metadata = JSON.parse(localStorage.metadata);
+		} catch(e) {
+			return;
+		}
+
+		for(const category of metadata.categories || []) {
+
+			category.id = category.category_id;
+
+			if(!user.roles.filter(r => r.category_id == category.id || r.category_id == 0).length)
+				continue;
+
+			MetaData.categories.set(category.id, category);
+		}
+	}
+}
+
 class Page {
 
 	static async setup() {
@@ -272,16 +318,17 @@ class Page {
 
 		await Account.load();
 		await User.load();
-		Page.render();
+		await MetaData.load();
 
+		Page.render();
 	}
 
 	static render() {
 
-		if(account.icon)
+		if(account && account.icon)
 			document.getElementById('favicon').href = account.icon;
 
-		if(account.logo)
+		if(account && account.logo)
 			document.querySelector('body > header .logo img').src = account.logo;
 
 		if(window.user)
@@ -423,7 +470,7 @@ class DataSource {
 				<button class="download" title="Download CSV"><i class="fa fa-download"></i></button>
 				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i></button>
 			</header>
-			<form class="filters toolbar hidden"></form>
+			<form class="filters form toolbar hidden"></form>
 			<div class="columns"></div>
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
@@ -1693,10 +1740,8 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(!rows || !rows.length) {
-			this.container.querySelector('#row-count').textContent = null;
-			table.insertAdjacentHTML('beforeend', '<caption class="NA">No rows found! :(</caption>');
-		}
+		if(!rows || !rows.length)
+			table.insertAdjacentHTML('beforeend', `<caption class="NA">${this.source.originalResponse.message || 'No rows found! :('}</caption>`);
 
 		table.appendChild(tbody);
 		container.appendChild(table);
@@ -1717,7 +1762,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			<span>
 				<span class="label">Total:</span>
 				<span title="Total number of rows in the dataset">
-					${Format.number(this.source.originalResponse.data.length)}
+					${Format.number(this.source.originalResponse.data ? this.source.originalResponse.data.length : 0)}
 				</span>
 			</span>
 		`;
@@ -1811,7 +1856,7 @@ Visualization.list.set('line', class Line extends Visualization {
 		var tickNumber = 5;
 
 		// Setting margin and width and height
-		var margin = {top: 20, right: 50, bottom: 40, left: 50},
+		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
 			height = (obj.chart.height || 500) - margin.top - margin.bottom;
 
@@ -1894,8 +1939,9 @@ Visualization.list.set('line', class Line extends Visualization {
 					.attr("x", (width / 2))
 					.attr("y",  (height / 2))
 					.attr("text-anchor", "middle")
-					.style("font-size", "20px")
-					.text("Failed to load data :(");
+					.attr("class", "NA")
+					.attr("fill", "#999")
+					.text(this.source.originalResponse.message || 'No data found! :(');
 			}
 
 			//setting the upper an d lower limit in x - axis
@@ -2228,7 +2274,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 		var tickNumber = window.innerWidth < 300 ? 3 : 5;
 
 		// Setting margin and width and height
-		var margin = {top: 20, right: 50, bottom: 40, left: 50},
+		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
 			height = (obj.chart.height || 500) - margin.top - margin.bottom;
 
@@ -2306,8 +2352,9 @@ Visualization.list.set('bar', class Bar extends Visualization {
 					.attr("x", (width / 2))
 					.attr("y", (height / 2))
 					.attr("text-anchor", "middle")
-					.style("font-size", "20px")
-					.text("Failed to load data :(");
+					.attr("class", "NA")
+					.attr("fill", "#999")
+					.text(this.source.originalResponse.message || 'No data found! :(');
 			}
 
 			y.domain([0, d3.max(series, c => d3.max(c.data, v => Math.ceil(v.y)))]).nice();
@@ -2563,7 +2610,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 		var tickNumber = 5;
 
 		// Setting margin and width and height
-		var margin = {top: 20, right: 50, bottom: 40, left: 50},
+		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
 			height = (obj.chart.height || 500) - margin.top - margin.bottom;
 
@@ -2643,8 +2690,9 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 					.attr("x", (width / 2))
 					.attr("y", (height / 2))
 					.attr("text-anchor", "middle")
-					.style("font-size", "20px")
-					.text("Failed to load data :(");
+					.attr("class", "NA")
+					.attr("fill", "#999")
+					.text(this.source.originalResponse.message || 'No data found! :(');
 			}
 
 			x.domain(series[0].map(d => d.date));
@@ -2915,7 +2963,7 @@ Visualization.list.set('area', class Area extends Visualization {
 		var tickNumber = window.innerWidth < 300 ? 3 : 5;
 
 		// Setting margin and width and height
-		var margin = {top: 20, right: 50, bottom: 40, left: 50},
+		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
 			height = (obj.chart.height || 500) - margin.top - margin.bottom;
 
@@ -3009,8 +3057,9 @@ Visualization.list.set('area', class Area extends Visualization {
 					.attr("x", (width / 2))
 					.attr("y",  (height / 2))
 					.attr("text-anchor", "middle")
-					.style("font-size", "20px")
-					.text("Failed to load data :(");
+					.attr("class", "NA")
+					.attr("fill", "#999")
+					.text(this.source.originalResponse.message || 'No data found! :(');
 			}
 
 			stack(series);
@@ -3684,12 +3733,14 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 	render() {
 
-		this.containerElement.textContent = null;
-
 		const
+			container = this.container.querySelector('.container'),
 			table = document.createElement('table'),
 			tbody = document.createElement('tbody'),
-			type = this.source.filters.get('type').label.querySelector('input').value;
+			type = this.source.filters.get('type').label.querySelector('input').value,
+			response = this.source.response;
+
+		container.textContent = null;
 
 		table.insertAdjacentHTML('beforeend', `
 			<thead>
@@ -3697,13 +3748,13 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 					<th class="sticky">${type[0].toUpperCase() + type.substring(1)}</th>
 					<th class="sticky">Cohort Size</th>
 					<th class="sticky">
-						${this.source.response[0].get('data').map((v, i) => type[0].toUpperCase()+type.substring(1)+' '+(++i)).join('</th><th class="sticky">')}
+						${response.length && response[0].get('data').map((v, i) => type[0].toUpperCase()+type.substring(1)+' '+(++i)).join('</th><th class="sticky">')}
 					</th>
 				</tr>
 			</thead>
 		`);
 
-		for(const row of this.source.response) {
+		for(const row of response) {
 
 			const cells = [];
 
@@ -3735,8 +3786,11 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 			`);
 		}
 
+		if(!response.length)
+			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No rows found! :('}</caption>`;
+
 		table.appendChild(tbody);
-		this.containerElement.appendChild(table);
+		container.appendChild(table);
 	}
 
 	getColor(count) {

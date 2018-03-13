@@ -18,7 +18,10 @@ button {
 	padding: 5px 10px;
 	border: 0px solid #ccc;
 	background: var(--color-primary);
-	color: #fff;
+	color: #fff !important;
+	height: 28px;
+	font-size: 90% !important;
+	line-height: 100% !important;
 }
 input[type=button],
 input[type=reset],
@@ -89,28 +92,29 @@ html, body {
 
 body {
 	display: flex;
-	font-family: Ariel, sans-serif;
-	margin: 0;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+	margin: 0 !important;
 	flex-direction: column;
-	background: #eee;
+	background: #eee !important;
 	user-select: none;
-	font-size: 14px;
+	font-size: 14px !important;
+	color: #222 !important;
 }
 
 	body > #ajax-working {
 		position: fixed;
 		top: 60px;
-		left: 50%;
-		opacity: 0;
+		left: calc(50% - 80px);
+		/* opacity: 0; */
 		user-select: none;
-		padding: 3px 10px;
+		padding: 5px 10px;
 		font-size: 12px;
 		letter-spacing: 1px;
 		transition: opacity var(--transition-duration);
-		box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 		background: var(--color-accent);
 		color: var(--color-accent-text);
-		width: 74px;
+		width: 80px;
 		z-index: 1;
 	}
 	body > #ajax-working.show {
@@ -298,16 +302,20 @@ body {
 		flex-direction: column;
 		padding: var(--gap);
 	}
+	main .form.toolbar {
+		flex-direction: row;
+	}
 		main .form label {
-			margin: calc(var(--gap)*2) var(--gap);
-			font-weight: bold;
-			display: flex;
+			margin: var(--gap);
+			display: grid;
+			grid-gap: var(--gap);
 			flex-direction: column;
 			max-width: 200px;
+			font-weight: normal;
 		}
 			main .form label > span {
-				margin-bottom: var(--gap);
 				font-size: 90%;
+				color: #666;
 			}
 
 	main .data-source {
@@ -334,10 +342,11 @@ body {
 				margin: 0 4px 5px 4px;
 			}
 			main .data-source > header h2 {
-				font-size: 20px;
+				font-size: 18px;
 				margin: 0 auto 0 0;
 				padding: 0;
 				white-space: nowrap;
+				line-height: inherit;
 			}
 			main .data-source > header *:last-child {
 				margin-right: 0;
@@ -367,8 +376,8 @@ body {
 			}
 			main .data-source > .description .footer {
 				border-top: 1px dashed #ccc;
-				padding: 5px 10px;
-				font-size: 80%;
+				padding: 10px;
+				font-size: 90%;
 				display: flex;
 			}
 				main .data-source > .description .footer > * {
@@ -393,13 +402,6 @@ body {
 			main .data-source > .share-link input {
 				width: 100%;
 			}
-		main .data-source > .filters label {
-			display: grid;
-			grid-gap: var(--gap);
-		}
-			main .data-source > .filters select {
-				max-width: 200px;
-			}
 
 		main .data-source > .columns {
 			display: flex;
@@ -412,10 +414,7 @@ body {
 				margin: 0 var(--gap);
 				align-items: center;
 				cursor: pointer;
-				transition: opacity var(--transition-duration),
-							border var(--transition-duration),
-							background var(--transition-duration),
-							box-shadow var(--transition-duration);
+				transition: opacity var(--transition-duration);
 			}
 			main .data-source > .columns .column.disabled > span,
 			main .data-source > .columns .column.disabled > button {
@@ -442,10 +441,7 @@ body {
 				background: #fcc;
 			}
 			main .data-source > .columns .column:hover {
-				background: #fff;
-			}
-			main .data-source > .columns .column:active {
-				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
+				opacity: 0.6;
 			}
 				main .data-source > .columns.being-dragged .column * {
 					pointer-events: none;
@@ -457,7 +453,7 @@ body {
 					margin-left: var(--gap);
 				}
 				main .data-source > .columns .column > .name {
-					padding: 5px 10px;
+					padding: 0px 10px;
 					display: flex;
 					flex: 1;
 					font-size: 85%;
@@ -538,16 +534,19 @@ body {
 							}
 		main .data-source .visualization {
 			position: relative;
+			margin-bottom: 0;
 		}
 			main .data-source .visualization .NA {
-				padding: 5px 16px;
+				padding: 8px 16px;
 			}
 			main .data-source .visualization .container {
 				width: 100%;
 				background: #fff;
 				overflow: auto;
-				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 				max-height: 500px;
+				margin: 0;
+				padding: 0;
 			}
 				.visualization > .container > .loading {
 					display: flex;
@@ -567,6 +566,7 @@ body {
 				font-size: 90%;
 				transition: left var(--transition-duration),
 							top var(--transition-duration);
+				opacity: 1;
 			}
 				main .data-source .visualization .tooltip header {
 					padding: var(--gap) calc(var(--gap) * 2);
@@ -617,6 +617,11 @@ body {
 				}
 				main .data-source .visualization.table #row-count .label {
 					color: #666;
+					font-weight: normal;
+					font-size: 100%;
+					padding: 0;
+					border-radius: 0;
+					vertical-align: initial;
 				}
 
 
@@ -662,7 +667,7 @@ body {
 						.visualization.table thead tr.search select,
 						.visualization.table thead tr.accumulation select {
 							width: 90px;
-							z-index: 0;
+							z-index: 1;
 							margin-bottom: 0;
 							border-right: 1px dashed #ccc;
 							box-shadow: none;
@@ -691,7 +696,7 @@ body {
 					.visualization.table thead select {
 						width: 100%;
 						background-color: white;
-						color: #333;
+						color: #333 !important;
 						padding: 5px 8px;
 						font-family: sans-serif;
 						text-align: center;
@@ -756,10 +761,6 @@ body {
 
 			.visualization.spatial-map .container {
 				height: 500px;
-			}
-			.visualization.cohort {
-				overflow: auto;
-				max-height: 500px
 			}
 				.visualization.cohort table {
 					width: 100%;
@@ -849,6 +850,9 @@ body {
 
 .visualization .container > svg text {
 	fill: #333;
+}
+.visualization .container > svg text.NA {
+	fill: #666;
 }
 
 .visualization .container > svg .axis-label {
