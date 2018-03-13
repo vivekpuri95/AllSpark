@@ -113,7 +113,23 @@ exports.login = class extends API {
         }
 
         let userPrivileges = await this.mysql.query(
-            'select up.* from tb_user_privilege up join tb_users u using(user_id) where user_id = ? and account_id = ?',
+            `
+            SELECT 
+                u.user_id,
+                IF(c.is_admin = 1, 0, up.category_id) AS category_id,
+                up.role
+            FROM 
+                tb_user_privilege up 
+            JOIN 
+                tb_users u 
+                USING(user_id) 
+            JOIN
+                tb_categories c
+                USING(category_id)
+            WHERE 
+                user_id = ? 
+                AND u.account_id = ?
+            `,
             [userDetails.user_id, this.account.account_id]
         );
 
