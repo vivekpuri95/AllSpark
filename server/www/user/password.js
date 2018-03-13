@@ -8,7 +8,7 @@ const EXPIRE_AFTER = 1; //HOURS
 exports.resetlink = class extends API {
     async resetlink() {
 
-        let user = await this.mysql.query(`SELECT user_id FROM tb_users WHERE email = ? AND account_id = ?`,
+        let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
                                             [this.request.body.email,this.account.account_id]);
         if (!user.length)
             return true;
@@ -22,9 +22,11 @@ exports.resetlink = class extends API {
             });
         });
 
-        user = user[0]['user_id']
+        const user_id = user[0]['user_id'];
+        const full_name = user[0]['first_name'] +' '+ user[0]['last_name'];
+
         const query = `INSERT INTO tb_password_reset(user_id, reset_token) values ?`
-        await this.mysql.query(query, [[[user, token]]], 'allSparkWrite');
+        await this.mysql.query(query, [[[user_id, token]]], 'allSparkWrite');
 
         mailer = new mailer();
         mailer.from_email = 'no-reply@'+this.account.url;
@@ -32,13 +34,14 @@ exports.resetlink = class extends API {
         mailer.to.add(this.request.body.email);
         mailer.subject = `Password reset for ${this.account.name}`
         mailer.html = `
-        <div style="height: 300px; width: 500px; margin: 0 auto;">
-            <div style=" text-align:center;height: 40px;background-image: url('${this.account.logo}');background-position:  center;border-bottom:  1px solid #999;background-repeat: no-repeat;margin-bottom: 50px;background-size: 250px">
-            </div>
-            <div style="text-align: center;">
-                <div style="font-size: 14px; color: #666">Please click on the link below to reset your password</div>
-                <a href="${this.account.url}/login/forgot?reset_token=${token}" style="margin: 20px; display: block;">${this.account.url}/login/forgot?reset_token=${token}</a>
-                <div style="font-size: 14px; color: #666">Thank you</div>
+        <div style="height:300px;width: 750px;margin:0 auto;border: 1px solid #ccc;padding: 20px 40px 0px;">
+            <div style="height:40px;background-image:url('${this.account.logo}');display: flex;background-position:center;border-bottom:1px solid #999;background-repeat:no-repeat;margin-bottom: 25px;background-size:250px;background-position:left;font-size: 125%;padding: 10px 0;"><div style="margin-left: auto; padding: 20px 0; font-size: 14px; color:#666;">JungleWorks</div></div>
+            <div>
+                <div style="font-size:14px;color:#666">Hi ${full_name}, Please click on the link below to reset your password.</div>
+                <a href="${this.account.url}/login/reset?reset_token=${token}" style="padding: 20px;display:block;background: #eee;border:  1px solid #ccc;margin: 20px 0;text-align: center; box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);" target="_blank">${this.account.url}/login/reset?reset_token=${token}</a>
+                <div style="font-size:14px;color:#666">Thank You</div>
+<div style="font-size:14px;margin-top: 50px;font-size: 90%;text-align: center;"><a style="color:#666;" href="https://github.com/Jungle-Works/allspark" target="_blank" >Powered By AllSpark</a></div>
+ 
             </div>
         </div>`
 
