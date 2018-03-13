@@ -45,22 +45,22 @@ exports.reset = class extends API {
         if (!this.request.body.password || !this.request.body.reset_token)
             return false;
 
-        const query = ` select 
+        const query = ` SELECT 
                             user_id 
-                        from 
+                        FROM 
                             tb_password_reset 
-                        where 
+                        WHERE 
                             id in (
-                                select 
+                                SELECT 
                                     max(id) 
-                                from 
+                                FROM 
                                     tb_password_reset 
-                                where user_id in (
-                                    select 
+                                WHERE user_id in (
+                                    SELECT 
                                         user_id 
-                                    from 
+                                    FROM 
                                         tb_password_reset
-                                    where reset_token = ? and created_at > now() - interval ? hour)) 
+                                    WHERE reset_token = ? and created_at > now() - interval ? hour)) 
                             and reset_token = ?`
 
         let user = await this.mysql.query(query, [this.request.body.reset_token, EXPIRE_AFTER, this.request.body.reset_token]);
@@ -69,8 +69,32 @@ exports.reset = class extends API {
 
         user = user[0]['user_id']
         const newHashPass = await comFun.makeBcryptHash(this.request.body.password);
-        await this.mysql.query('update tb_users set password = ? where user_id = ? and account_id = ?', [newHashPass, user, this.account.account_id], 'allSparkWrite');
+        await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user, this.account.account_id], 'allSparkWrite');
 
         return true;
+    }
+}
+
+exports.change = class extends API {
+
+    async change() {
+
+        const dbPass = await this.mysql.query(
+            `SELECT password FROM tb_users WHERE user_id = ? and account_id = ?`,
+            [this.user.user_id, this.account.account_id],
+            'allSparkRead'
+        );
+
+        const check = await comFun.verifyBcryptHash(this.request.body.old_password, dbPass[0].password);
+        if(check) {
+            const new_password = await comFun.makeBcryptHash(this.request.body.new_password);
+            return await this.mysql.query(
+                `UPDATE tb_users SET password = ? WHERE user_id = ? and account_id = ?`,
+                [new_password, this.user.user_id, this.account.account_id],
+                'allSparkWrite'
+            );
+        }
+        else
+            throw("Password does not match!");
     }
 }
