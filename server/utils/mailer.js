@@ -6,15 +6,19 @@ class Mailer {
 
     constructor() {
         this.to = new Set();
+        this.cc = new Set();
+        this.bcc = new Set();
     }
 
     send() {
+        let receiverList = Array.from(this.to).map((element) => {return {"email": element}});
+        receiverList = receiverList.concat(Array.from(this.cc).map((element) => {return {"email": element,"type": "cc"}}));
+        receiverList = receiverList.concat(Array.from(this.bcc).map((element) => {return {"email": element,"type": "bcc"}}));
+
         let mailOptions = {
             from_email: this.from_email,
             from_name: this.from_name,
-            to: Array.from(this.to).map((element) => {
-                return {"email": element}
-            }),
+            to: receiverList,
             subject: this.subject,
             text: this.text,
             html: this.html

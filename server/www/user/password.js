@@ -1,9 +1,7 @@
 const API = require('../../utils/api');
 const crypto = require('crypto');
 const comFun = require('../commonFunctions');
-
 let mailer = require('../../utils/mailer');
-mailer = new mailer();
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -28,14 +26,23 @@ exports.resetlink = class extends API {
         const query = `INSERT INTO tb_password_reset(user_id, reset_token) values ?`
         await this.mysql.query(query, [[[user, token]]], 'allSparkWrite');
 
+        mailer = new mailer();
         mailer.from_email = 'no-reply@'+this.account.url;
         mailer.from_name = this.account.name;
         mailer.to.add(this.request.body.email);
-        mailer.subject = `Password reset link for allspark`
-        const resetUrl = `${this.account.account_id}/login/forgot?reset_token=${token}`
-        mailer.html = `Click <a href='${resetUrl}'><b>here</b></a> to reset your password for AllSpark`
-        await mailer.send();
+        mailer.subject = `Password reset for ${this.account.name}`
+        mailer.html = `
+        <div style="height: 300px; width: 500px; margin: 0 auto;">
+            <div style=" text-align:center;height: 40px;background-image: url('${this.account.logo}');background-position:  center;border-bottom:  1px solid #999;background-repeat: no-repeat;margin-bottom: 50px;background-size: 250px">
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 14px; color: #666">Please click on the link below to reset your password</div>
+                <a href="${this.account.url}/login/forgot?reset_token=${token}" style="margin: 20px; display: block;">${this.account.url}/login/forgot?reset_token=${token}</a>
+                <div style="font-size: 14px; color: #666">Thank you</div>
+            </div>
+        </div>`
 
+        await mailer.send();
         return true;
     }
 }
