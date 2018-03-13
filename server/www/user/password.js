@@ -4,13 +4,12 @@ const crypto = require('crypto');
 const comFun = require('../../utils/commonFunctions');
 let mailer = require('../../utils/mailer');
 
-
 const EXPIRE_AFTER = 1; //HOURS
 
 exports.resetlink = class extends API {
     async resetlink() {
 
-        let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
+        let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM allspark.tb_users WHERE email = ? AND account_id = ?`,
                                             [this.request.body.email,this.account.account_id]);
         if (!user.length)
             return true;
