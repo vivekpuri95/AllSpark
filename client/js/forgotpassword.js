@@ -29,15 +29,8 @@ class ForgotPassword extends Page {
 			form: new FormData(ForgotPassword.form)
 		};
 
-		const resposne = await API.call('v2/user/password/resetlink', {}, options);
-		if(resposne)
-			ForgotPassword.message.innerHTML = 'reset link is been sent';
-		else {
-			ForgotPassword.message.classList.remove('notice');
-			ForgotPassword.message.classList.add('warning');
-			ForgotPassword.message.innerHTML = 'Tokan Expired';
-		}
-
+		const response = await API.call('v2/user/password/resetlink', {}, options);
+		ForgotPassword.message.innerHTML = 'reset link is been sent';
 	}
 
 }

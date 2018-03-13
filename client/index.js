@@ -23,7 +23,7 @@ app.get('/login', (req, res) => {
 				<input type="password" name="password" required>
 			</label>
 			<div>
-				<a href="/login/forgotpassword">Forgot password?</a>
+				<a href="/login/forgot">Forgot password?</a>
 				<input id="submit" type="submit" value="Sign In">
 			</div>
 		</form>
@@ -31,7 +31,7 @@ app.get('/login', (req, res) => {
 	`));
 });
 
-app.get('/login/forgotpassword', (req, res) => {
+app.get('/login/forgot', (req, res) => {
 	const template = new Template;
 
 	template.stylesheets.push('/css/login.css');

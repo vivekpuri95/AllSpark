@@ -31,10 +31,20 @@ class ResetPassword extends Page {
 			method: 'POST',
 			form: new FormData(ResetPassword.form)
 		};
-		const resposne = await API.call('v2/user/password/reset', {}, options);
+		const response = await API.call('v2/user/password/reset', {}, options);
 
-		ResetPassword.message.innerHTML = 'Pssword updated successfully';
-		setTimeout(() => window.location = '/login', 3000);
+		if(response) {
+
+			ResetPassword.message.innerHTML = 'Pssword updated successfully';
+			setTimeout(() => window.location = '/login', 3000);
+		}
+
+		else {
+			ResetPassword.message.classList.remove('notice');
+			ResetPassword.message.classList.add('warning');
+			ResetPassword.message.innerHTML = 'Tokan Expired';
+		}
+
 	}
 
 }
