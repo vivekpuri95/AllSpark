@@ -18,9 +18,14 @@ exports.list = class extends API {
                     q.*,
                     CONCAT(u.first_name, ' ', u.last_name) AS added_by_name
                 FROM
-                    tb_query q JOIN tb_users u ON q.added_by = u.user_id
+                    tb_query q 
+                LEFT JOIN 
+                    tb_users u 
+                ON 
+                    q.added_by = u.user_id
                 WHERE
-                    is_deleted = 0 and q.account_id = ?
+                    is_deleted = 0 
+                    and q.account_id = ?
             `, [this.account.account_id], 'allSparkRead'),
             this.mysql.query('SELECT * FROM tb_filters'),
             this.mysql.query('SELECT * FROM tb_query_visualizations'),
