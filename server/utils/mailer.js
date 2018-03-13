@@ -1,41 +1,30 @@
-"use strict"
-const nodemailer = require('nodemailer');
-const mailerConfig = require('config').get("mailer");
+const config = require('config').get('mailer')
+const mandrill = require('mandrill-api/mandrill');
+const mandrill_client = new mandrill.Mandrill(config.get('api_key'));
 
 class Mailer {
 
-    constructor(){
-        this.transporter = nodemailer.createTransport({
-            service: mailerConfig.get('service'),
-            auth: {
-                user: mailerConfig.get('user'),
-                pass: mailerConfig.get('pass')
-            }
-        });
-
+    constructor() {
         this.to = new Set();
-        this.cc = new Set();
-        this.bcc = new Set();
     }
 
-    send(){
+    send() {
         let mailOptions = {
-            from: this.from,
-            to: Array.from(this.to).join(),
-            cc: Array.from(this.cc).join(),
-            bcc : Array.from(this.bcc).join(),
+            from_email: this.from_email,
+            from_name: this.from_name,
+            to: Array.from(this.to).map((element) => {
+                return {"email": element}
+            }),
             subject: this.subject,
             text: this.text,
             html: this.html
         };
 
-        return new Promise((resolve,reject)=>{
-            this.transporter.sendMail(mailOptions, function(error, info){
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve(info);
-                }
+        return new Promise((resolve, reject) => {
+            mandrill_client.messages.send({"message": mailOptions, "async": "false"}, function (result) {
+                resolve(result);
+            }, function (e) {
+                reject(e);
             });
         });
     }

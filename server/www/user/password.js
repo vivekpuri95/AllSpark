@@ -13,7 +13,7 @@ exports.resetlink = class extends API {
         let user = await this.mysql.query(`SELECT user_id FROM tb_users WHERE email = ? AND account_id = ?`,
                                             [this.request.body.email,this.account.account_id]);
         if (!user.length)
-            return user;
+            return true;
 
         const token = await new Promise((resolve, reject) => {
             crypto.randomBytes(80, function (err, buf) {
@@ -28,9 +28,11 @@ exports.resetlink = class extends API {
         const query = `INSERT INTO tb_password_reset(user_id, reset_token) values ?`
         await this.mysql.query(query, [[[user, token]]], 'allSparkWrite');
 
+        mailer.from_email = 'no-reply@'+this.account.url;
+        mailer.from_name = this.account.name;
         mailer.to.add(this.request.body.email);
         mailer.subject = `Password reset link for allspark`
-        const resetUrl = `${this.account.account_id}/login/forgot?token=${token}`
+        const resetUrl = `${this.account.account_id}/login/forgot?reset_token=${token}`
         mailer.html = `Click <a href='${resetUrl}'><b>here</b></a> to reset your password for AllSpark`
         await mailer.send();
 
@@ -40,7 +42,7 @@ exports.resetlink = class extends API {
 
 exports.reset = class extends API {
     async reset() {
-        if (!this.request.body.password || !this.request.body.token)
+        if (!this.request.body.password || !this.request.body.reset_token)
             return false;
 
         const query = ` SELECT 
@@ -61,7 +63,7 @@ exports.reset = class extends API {
                                     WHERE reset_token = ? and created_at > now() - interval ? hour)) 
                             and reset_token = ?`
 
-        let user = await this.mysql.query(query, [this.request.body.token, EXPIRE_AFTER, this.request.body.token]);
+        let user = await this.mysql.query(query, [this.request.body.reset_token, EXPIRE_AFTER, this.request.body.reset_token]);
         if (!user.length)
             return false;
 
