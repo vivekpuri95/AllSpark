@@ -34,23 +34,24 @@ exports.resetlink = class extends API {
         mailer.to.add(this.request.body.email);
         mailer.subject = `Password reset for ${this.account.name}`
         mailer.html = `
-        <div style="height:300px;width: 750px;margin:0 auto;border: 1px solid #ccc;padding: 20px 40px; box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);">
-            <div style="height:40px;background-image:url('${this.account.logo}');display: flex;background-position:center;border-bottom:1px solid #999;background-repeat:no-repeat;margin-bottom: 25px;background-size:250px;background-position:left;font-size: 125%;padding: 10px 0;">
-                <div style="margin-left: auto; padding: 20px 0; font-size: 14px; color:#666;">JungleWorks</div>
-            </div>
-
-            <div>
-                <div style="font-size:14px;color:#666">Hi ${full_name}, <br/><br/>
-                    <span style="color: #666;"> Please click on the link below to reset your password.</span>
+            <div style="height:300px;width: 750px;margin:0 auto;border: 1px solid #ccc;padding: 20px 40px; box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);">
+                <div style="height:40px;background-image:url('${this.account.logo}');display: flex;background-position:center;border-bottom:1px solid #999;background-repeat:no-repeat;margin-bottom: 25px;background-size:250px;background-position:left;font-size: 125%;padding: 10px 0;">
+                    <div style="margin-left: auto; padding: 20px 0; font-size: 14px; color:#666;">JungleWorks</div>
                 </div>
-                <a href="${this.account.url}/login/reset?reset_token=${token}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">${this.account.url}/login/reset?reset_token=${token}</a>
 
-                <div style="font-size:14px;color:#666">Thank You.</div>
+                <div>
+                    <div style="font-size:14px;color:#666">Hi ${full_name}, <br/><br/>
+                        <span style="color: #666;"> Please click on the link below to reset your password.</span>
+                    </div>
+                    <a href="${this.account.url}/login/reset?reset_token=${token}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">${this.account.url}/login/reset?reset_token=${token}</a>
 
-                <div style="font-size:14px;margin-top: 50px;font-size: 90%;text-align: center;">Powered By <a style="color:#666;text-decoration: none;" href="https://github.com/Jungle-Works/kato" target="_blank" >Kato</a></div>
+                    <div style="font-size:14px;color:#666">Thank You.</div>
+
+                    <div style="font-size:14px;margin-top: 50px;font-size: 90%;text-align: center;">Powered By <a style="color:#666;text-decoration: none;" href="https://github.com/Jungle-Works/kato" target="_blank" >Kato</a></div>
+                </div>
+
             </div>
-
-        </div>`
+        `;
 
         await mailer.send();
         return true;
