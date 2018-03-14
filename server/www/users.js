@@ -89,7 +89,7 @@ exports.login = class extends API {
 
         let userPrivileges = await this.mysql.query(
                 `SELECT 
-                    u.*, 
+                    u.*,
                     IF(r.is_admin = 1, 0, privilege_id) privilege_id, 
                     IF(c.is_admin = 1, 0, category_id) AS category_id,
                     r.name as privilege_name
@@ -108,13 +108,7 @@ exports.login = class extends API {
             [email, this.account.account_id]
         );
 
-        if(!userPrivileges.length) {
 
-            return {
-                status: false,
-                message: "Invalid Email"
-            }
-        }
 
         const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userPrivileges[0].password);
 

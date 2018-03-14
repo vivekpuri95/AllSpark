@@ -2,7 +2,6 @@ const API = require("../../utils/api");
 const commonFun = require('../commonFunctions');
 const promisify = require('util').promisify;
 const moment = require('moment');
-const config = require('config');
 //const BigQuery = require('../../www/bigQuery').BigQuery;
 const crypto = require('crypto');
 const request = require("request");
