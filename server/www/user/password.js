@@ -24,7 +24,7 @@ exports.resetlink = class extends API {
 
         user = user[0];
         const user_id = user['user_id'];
-        const full_name = user['first_name'] +' '+ user['last_name'] ? user['last_name'] : '';
+        const full_name = user['first_name'] + (user['last_name'] ? ' '+user['last_name'] : '');
 
         await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?',[user_id],'allSparkWrite');
         const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`
