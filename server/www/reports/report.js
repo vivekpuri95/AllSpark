@@ -2,7 +2,7 @@
 
 const API = require('../../utils/api');
 const commonFun = require('../../utils/commonFunctions');
-
+const auth = require('../../utils/auth');
 
 exports.list = class extends API {
 
@@ -27,14 +27,21 @@ exports.list = class extends API {
             this.mysql.query('SELECT * FROM tb_query_visualizations'),
             this.mysql.query('SELECT * FROM tb_query_dashboards where status = 1')
         ]);
+        const response = [];
 
         for(const row of results[0]) {
-            row.filters = results[1].filter(filter => filter.query_id == row.query_id);
-            row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
-            row.dashboards = results[3].filter(dashboard => dashboard.query_id == row.query_id);
+
+            if(!auth.report(row, this.user))
+                continue;
+
+			row.filters = results[1].filter(filter => filter.query_id == row.query_id);
+			row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
+			row.dashboards = results[3].filter(dashboard => dashboard.query_id == row.query_id);
+			response.push(row);
+
         }
 
-        return results[0];
+        return response;
     }
 };
 
