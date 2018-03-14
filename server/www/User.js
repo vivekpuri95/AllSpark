@@ -22,7 +22,7 @@ function privilege(userObj) {
 
             for(const userPrivilege of userObj.privileges) {
 
-                if((userPrivilege.name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id)) {
+                if((userPrivilege.name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && (categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id))) {
 
                     return true;
                 }
@@ -57,7 +57,7 @@ function roles(userObj) {
 
             for(const role of userObj.roles) {
 
-                if((role.category_id === categoryId || constants.adminCategory.includes(role.category_id)) && roleId === role.role || constants.adminRole.includes(role.role)) {
+                if((role.category_id === categoryId || constants.adminCategory.includes(role.category_id)) && (roleId === role.role || constants.adminRole.includes(role.role))) {
 
                     return true;
                 }
