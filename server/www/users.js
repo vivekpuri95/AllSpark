@@ -125,7 +125,7 @@ exports.login = class extends API {
             SELECT 
                 u.user_id,
                 IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
-                IF(r.is_admin = 1, 0, ur.role) AS role
+                IF(r.is_admin = 1, 0, ur.role_id) AS role
             FROM 
                 tb_user_roles ur
             JOIN 
@@ -136,10 +136,10 @@ exports.login = class extends API {
                 USING(category_id)
             JOIN
             	tb_roles r
-            	ON r.role_id = ur.role
+            	USING(role_id)
             WHERE 
                 user_id = ?
-                AND u.account_id = ?;
+                AND u.account_id = ?
             `,
             [userPrivileges[0].user_id, this.account.account_id]
         );
