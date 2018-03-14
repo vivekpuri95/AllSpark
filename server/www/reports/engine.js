@@ -12,6 +12,8 @@ class report extends API {
 
     async report() {
 
+        console.log(this.user);
+
         this.queryId = this.request.body.query_id;
 
         if(!this.queryId) {

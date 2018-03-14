@@ -3,6 +3,12 @@ const constants = require("./constants");
 class User {
 
     constructor(userObj) {
+
+        for(const key in userObj) {
+
+            this[key] = userObj[key];
+        }
+
         this.privilege = privilege(userObj);
         this.role = roles(userObj);
     }
