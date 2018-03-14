@@ -13,7 +13,7 @@ function privilege(userObj) {
 
     return {
 
-        has: function(categoryId, privilegeName) {
+        has: function(privilegeName, categoryId=0) {
 
             if (userObj.error) {
 
@@ -31,7 +31,7 @@ function privilege(userObj) {
             return false;
         },
 
-        needs: function(categoryId, type) {
+        needs: function(privilegeName, categoryId=0) {
 
             if(this.has(...arguments)) {
 
@@ -67,7 +67,7 @@ function roles(userObj) {
 
         },
 
-        needs: function(categoryId, type) {
+        needs: function(roleId, categoryId) {
 
             if(this.has(...arguments)) {
 
