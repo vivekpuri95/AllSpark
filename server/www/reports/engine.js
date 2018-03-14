@@ -6,6 +6,7 @@ const config = require('config');
 //const BigQuery = require('../../www/bigQuery').BigQuery;
 const crypto = require('crypto');
 const request = require("request");
+const auth = require('../auth');
 const requestPromise = promisify(request);
 
 class report extends API {
@@ -29,7 +30,7 @@ class report extends API {
         }
 
 
-        const authentication = await this.authenticate();
+        const authentication = auth.report(this.query, this.user);
 
         if(authentication.error) {
 
@@ -70,7 +71,20 @@ class report extends API {
     async fetch() {
 
         let reportDetails  = [
-            this.mysql.query(`select * from tb_query where query_id = ?`, [this.queryId]),
+            this.mysql.query(`SELECT 
+              q.*, 
+              IF(user_id IS NULL, 0, 1) AS flag
+            FROM 
+                tb_query q
+            LEFT JOIN
+                 tb_user_query uq ON 
+                 uq.query_id = q.query_id
+                 AND user_id = ?
+            WHERE 
+                q.query_id = ?
+                AND is_enabled = 1 
+                AND is_deleted = 0
+                AND account_id = ?`, [this.user.user_id, this.queryId, this.account.account_id]),
 
             this.mysql.query(`select * from tb_filters where query_id = ?`, [this.queryId])
         ];
@@ -163,39 +177,6 @@ class report extends API {
         }
         return this.result;
     }
-
-    async authenticate() {
-
-        const token = this.request.body.token;
-        if(!token) {
-            return {
-                error: true,
-                message: "no token found",
-                data: []
-            }
-        }
-        const userDetails = await commonFun.verifyJWT(token);
-
-        if(userDetails.error) {
-
-            return userDetails;
-        }
-
-        const userPrivileges = [];
-
-        userDetails.roles && userDetails.roles.map(x=> {
-            userPrivileges.push([this.account.account_id, x.category_id, x.role]);
-        });
-
-        let objectPrivileges = [[this.query.account_id], [this.query.category_id]];
-
-        objectPrivileges[2] =  this.query.roles ? this.query.roles.split(',').map(parseInt) : [null];
-
-        objectPrivileges = commonFun.listOfArrayToMatrix(objectPrivileges);
-
-        return commonFun.authenticatePrivileges(userPrivileges, objectPrivileges);
-
-    }
 }
 
 class query extends report {
@@ -241,8 +222,7 @@ class query extends report {
 
         this.result = await this.mysql.query(this.query.query, [], this.query.connection_name);
 
-        //await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
-
+        await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
     }
 }
 

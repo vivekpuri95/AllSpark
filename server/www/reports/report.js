@@ -3,10 +3,6 @@
 const API = require('../../utils/api');
 const commonFun = require('../commonFunctions');
 
-async function test(req, res) {
-    return res.send(await mysql.query('select 1'));
-}
-
 
 exports.list = class extends API {
 
@@ -101,6 +97,3 @@ exports.insert = class extends API {
         return await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'allSparkWrite');
     }
 }
-
-
-exports.test = test;

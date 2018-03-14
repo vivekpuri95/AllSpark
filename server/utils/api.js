@@ -3,6 +3,8 @@ const mysql = require('../www/mysql').MySQL;
 const fs = require('fs');
 const pathSeparator = require('path').sep;
 const {resolve} = require('path');
+const commonFun = require('../www/commonFunctions');
+const user = require('../www/User');
 
 class API {
 
@@ -62,9 +64,23 @@ class API {
                 obj.request = request;
                 let host = request.headers.host.split(':')[0];
 
-				if(host.includes('localhost')) {
-					host = 'analytics.jungleworks.co';
-				}
+                let method, userDetails;
+
+                if(request.method === 'GET')
+                    method = 'query';
+
+                else if(request.method === 'POST')
+                    method = 'body';
+
+                if(request[method].token) {
+
+                    userDetails = await commonFun.verifyJWT(request[method].token);
+                    obj.user = new user(userDetails);
+                }
+                //
+				// if(host.includes('localhost')) {
+				// 	host = 'analytics.jungleworks.co';
+				// }
 
                 obj.account = global.account[host];
 
