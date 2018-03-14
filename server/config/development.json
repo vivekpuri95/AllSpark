@@ -3,14 +3,14 @@
   "bigquery_files_destination": "../../bigquery_files/",
   "secret_key": "SECRET KEY HERE",
   "sql_db": {
-    "allSparkRead": {
+    "read": {
       "connectionLimit": 10,
       "host": "host address",
       "user": "username",
       "password": "password",
       "database":"default db"
     },
-    "allSparkWrite": {
+    "write": {
       "connectionLimit": 10,
       "host": "host address",
       "user": "username",

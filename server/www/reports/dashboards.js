@@ -27,7 +27,7 @@ exports.insert = class extends API {
                 values[key] = this.request.body[key] || null;
         }
 
-        return await this.mysql.query('INSERT INTO tb_query_dashboards SET  ?', [values], 'allSparkWrite');
+        return await this.mysql.query('INSERT INTO tb_query_dashboards SET  ?', [values], 'write');
     }
 };
 
@@ -50,12 +50,12 @@ exports.update = class extends API {
                 values[key] = this.request.body[key] || null;
         }
 
-        return await this.mysql.query('UPDATE tb_query_dashboards SET ? WHERE id = ?', [values, this.request.body.id], 'allSparkWrite');
+        return await this.mysql.query('UPDATE tb_query_dashboards SET ? WHERE id = ?', [values, this.request.body.id], 'write');
     }
 };
 exports.delete = class extends API {
 
     async delete() {
-        return await this.mysql.query('UPDATE tb_query_dashboards SET status = 0 WHERE id = ?', [this.request.body.id], 'allSparkWrite');
+        return await this.mysql.query('UPDATE tb_query_dashboards SET status = 0 WHERE id = ?', [this.request.body.id], 'write');
     }
 };

@@ -19,7 +19,7 @@ exports.insert = class extends API {
                 values[key] = this.request.body[key] || null;
         }
 
-        return await this.mysql.query('INSERT INTO tb_query_visualizations SET  ?', [values], 'allSparkWrite');
+        return await this.mysql.query('INSERT INTO tb_query_visualizations SET  ?', [values], 'write');
     }
 };
 
@@ -42,12 +42,12 @@ exports.update = class extends API {
                 values[key] = this.request.body[key] || null;
         }
 
-        return await this.mysql.query('UPDATE tb_query_visualizations SET ? WHERE visualization_id = ?', [values, this.request.body.visualization_id], 'allSparkWrite');
+        return await this.mysql.query('UPDATE tb_query_visualizations SET ? WHERE visualization_id = ?', [values, this.request.body.visualization_id], 'write');
     }
 };
 exports.delete = class extends API {
 
     async delete() {
-        return await this.mysql.query('DELETE FROM tb_query_visualizations WHERE visualization_id = ?', [this.request.body.visualization_id], 'allSparkWrite');
+        return await this.mysql.query('DELETE FROM tb_query_visualizations WHERE visualization_id = ?', [this.request.body.visualization_id], 'write');
     }
 };

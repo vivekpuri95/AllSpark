@@ -20,9 +20,11 @@ function privilege(userObj) {
                 throw(userObj.message);
             }
 
+            const ignoreCategoryFlag = constants.privilege.ignore_category.includes(privilegeName);
+
             for(const userPrivilege of userObj.privileges) {
 
-                if((userPrivilege.name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && (categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id))) {
+                if((userPrivilege.name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && (categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id) || ignoreCategoryFlag)) {
 
                     return true;
                 }

@@ -1,10 +1,10 @@
 const zlib = require('zlib');
-const mysql = require('../www/mysql').MySQL;
+const mysql = require('./mysql').MySQL;
 const fs = require('fs');
 const pathSeparator = require('path').sep;
 const {resolve} = require('path');
-const commonFun = require('../www/commonFunctions');
-const user = require('../www/User');
+const commonFun = require('./commonFunctions');
+const user = require('./User');
 
 class API {
 

@@ -14,11 +14,11 @@ for(const connection in dbConfig) {
 
 
 class MySQL {
-    constructor(connectionName='allSparkRead') {
-        this.pool = poolObj[connectionName || 'allSparkRead'] || poolObj['allSparkRead'];
+    constructor(connectionName='read') {
+        this.pool = poolObj[connectionName || 'read'] || poolObj['read'];
     }
 
-    async query(sql, values=null, connectionName='allSparkRead') {
+    async query(sql, values=null, connectionName='read') {
         this.pool = poolObj[connectionName];
 
         return new Promise((resolve, reject) => {

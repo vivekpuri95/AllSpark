@@ -1,5 +1,5 @@
 const API = require("../utils/api");
-const commonFun = require("./commonFunctions");
+const commonFun = require("../utils/commonFunctions");
 
 exports.insert = class extends API {
 
@@ -19,7 +19,7 @@ exports.insert = class extends API {
 
         result.account_id = this.account.account_id;
 
-        return await this.mysql.query(`insert into tb_users set ?`,result,'allSparkWrite');
+        return await this.mysql.query(`insert into tb_users set ?`,result,'write');
 
     }
 
@@ -29,7 +29,7 @@ exports.delete = class extends API {
 
     async delete() {
 
-        return await this.mysql.query(`update tb_users set status = 0 where user_id = ?`,[this.request.body.user_id],'allSparkWrite');
+        return await this.mysql.query(`update tb_users set status = 0 where user_id = ?`,[this.request.body.user_id],'write');
 
     }
 
@@ -57,7 +57,7 @@ exports.update = class extends API {
 
         const values = [setParams, user_id];
 
-        return await this.mysql.query(`update tb_users set ? where user_id = ?`,values,'allSparkWrite');
+        return await this.mysql.query(`update tb_users set ? where user_id = ?`,values,'write');
 
     }
 
@@ -68,16 +68,17 @@ exports.list = class extends API {
     async list(){
 
         if(this.request.body.user_id)
-			return await this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id], 'allSparkRead');
+			return await this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id], 'read');
         else
-			return await this.mysql.query(`select * from tb_users WHERE account_id = ?`, [this.account.account_id],'allSparkRead');
+			return await this.mysql.query(`select * from tb_users WHERE account_id = ?`, [this.account.account_id],'read');
     }
 
 };
 
-exports.login = class extends API {
 
-    async login() {
+exports.refresh = class extends API {
+
+    async refresh() {
 
         const email = this.request.body.email;
         if(!email) {
