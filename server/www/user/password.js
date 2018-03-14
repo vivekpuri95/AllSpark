@@ -1,7 +1,7 @@
 const API = require('../../utils/api');
 const crypto = require('crypto');
 const comFun = require('../commonFunctions');
-let mailer = require('../../utils/mailer');
+const Mailer = require('../../utils/mailer');
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -22,13 +22,15 @@ exports.resetlink = class extends API {
             });
         });
 
-        const user_id = user[0]['user_id'];
-        const full_name = user[0]['first_name'] +' '+ user[0]['last_name'];
+        user = user[0];
+        const user_id = user['user_id'];
+        const full_name = user['first_name'] +' '+ user['last_name'] ? user['last_name'] : '';
 
-        const query = `INSERT INTO tb_password_reset(user_id, reset_token) values ?`
-        await this.mysql.query(query, [[[user_id, token]]], 'allSparkWrite');
+        await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?',[user_id],'allSparkWrite');
+        const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`
+        await this.mysql.query(query, [[[user_id, token, 1]]], 'allSparkWrite');
 
-        mailer = new mailer();
+        let mailer = new Mailer();
         mailer.from_email = 'no-reply@'+this.account.url;
         mailer.from_name = this.account.name;
         mailer.to.add(this.request.body.email);
@@ -63,32 +65,25 @@ exports.reset = class extends API {
         if (!this.request.body.password || !this.request.body.reset_token)
             return false;
 
-        const query = ` select
+        const query = `select
                             user_id
-                        from
+                       from
                             tb_password_reset
-                        where
-                            id in (
-                                select
-                                    max(id)
-                                from
-                                    tb_password_reset
-                                where user_id in (
-                                    select
-                                        user_id
-                                    from
-                                        tb_password_reset
-                                    where reset_token = ? and created_at > now() - interval ? hour))
-                            and reset_token = ?`
+                       where
+                            reset_token = ?
+                            and status = 1
+                            and (created_at > now() - interval ? hour)
+        `;
 
-        let user = await this.mysql.query(query, [this.request.body.reset_token, EXPIRE_AFTER, this.request.body.reset_token]);
-        if (!user.length)
+        let user_id = await this.mysql.query(query, [this.request.body.reset_token, EXPIRE_AFTER]);
+        if (!user_id.length)
             return false;
 
-        user = user[0]['user_id']
+        user_id = user_id[0]['user_id']
         const newHashPass = await comFun.makeBcryptHash(this.request.body.password);
-        await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user, this.account.account_id], 'allSparkWrite');
+        await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user_id, this.account.account_id], 'allSparkWrite');
 
+        await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'allSparkWrite');
         return true;
     }
 }
