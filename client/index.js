@@ -15,7 +15,7 @@ app.get('/login', (req, res) => {
 		<div class="logo hidden">
 			<img src="" />
 		</div>
-		<form>
+		<form class="form">
 			<label>Email
 				<input type="text" name="email" required>
 			</label>
@@ -41,7 +41,7 @@ app.get('/login/forgot', (req, res) => {
 		<div class="logo hidden">
 			<img src="" />
 		</div>
-		<form>
+		<form class="form">
 			<label>Email
 				<input type="email" name="email" required>
 			</label>
@@ -64,9 +64,9 @@ app.get('/login/reset', (req,res) => {
 		<div class="logo hidden">
 			<img src="" />
 		</div>
-		<form>
+		<form class="form">
 			<label>New Password
-				<input type="password" name="new_password" required>
+				<input type="password" name="password" required>
 			</label>
 
 			<label>

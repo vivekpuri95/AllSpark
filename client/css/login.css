@@ -24,7 +24,7 @@ main {
 		width: 100%;
 		grid-gap: calc(var(--gap) * 2);
 	}
-	input {
+		input {
 			width: 100%;
 			padding: 8px 10px !important;
 		}
@@ -33,10 +33,13 @@ main {
 			margin-left: auto;
 			letter-spacing: 1px;
 		}
-main form label{
+main form label {
 	display: grid;
 	grid-gap: var(--gap);
 	font-size: 90%;
+}
+main form label {
+	max-width: 100% !important;
 }
 main form div {
 	display: flex;
