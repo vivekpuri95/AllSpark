@@ -87,22 +87,30 @@ exports.login = class extends API {
             }
         }
 
-        let userDetails = await this.mysql.query(
-            'select * from tb_users where email = ? and account_id = ? and status = 1',
+        let userPrivileges = await this.mysql.query(
+                `SELECT 
+                    u.*,
+                    IF(r.is_admin = 1, 0, privilege_id) privilege_id, 
+                    IF(c.is_admin = 1, 0, category_id) AS category_id,
+                    r.name as privilege_name
+                FROM 
+                    tb_user_privilege up 
+                JOIN tb_privileges r 
+                    USING(privilege_id) 
+                JOIN tb_users u
+                    USING(user_id)
+                JOIN tb_categories c
+                		USING(category_id)
+                WHERE
+                    email = ?
+                    AND u.account_id = ?
+           `,
             [email, this.account.account_id]
         );
 
-        if(!userDetails.length) {
 
-            return {
-                status: false,
-                message: "Invalid Email"
-            }
-        }
 
-        userDetails = userDetails[0];
-
-        const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetails.password);
+        const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userPrivileges[0].password);
 
         if(!checkPassword) {
 
@@ -112,28 +120,31 @@ exports.login = class extends API {
             }
         }
 
-        let userPrivileges = await this.mysql.query(
+        let userRoles = await this.mysql.query(
             `
             SELECT 
                 u.user_id,
-                IF(c.is_admin = 1, 0, up.category_id) AS category_id,
-                up.role
+                IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
+                IF(r.is_admin = 1, 0, ur.role) AS role
             FROM 
-                tb_user_privilege up 
+                tb_user_roles ur
             JOIN 
                 tb_users u 
                 USING(user_id) 
             JOIN
                 tb_categories c
                 USING(category_id)
+            JOIN
+            	tb_roles r
+            	ON r.role_id = ur.role
             WHERE 
-                user_id = ? 
-                AND u.account_id = ?
+                user_id = ?
+                AND u.account_id = ?;
             `,
-            [userDetails.user_id, this.account.account_id]
+            [userPrivileges[0].user_id, this.account.account_id]
         );
 
-        userPrivileges = userPrivileges.map(x=> {
+        userRoles = userRoles.map(x=> {
 
             return {
                 category_id: x.category_id,
@@ -142,18 +153,25 @@ exports.login = class extends API {
         });
 
         const obj = {
-            user_id: userDetails.user_id,
+            user_id: userPrivileges[0].user_id,
             account_id: this.account.account_id,
             email: email,
-            name: `${userDetails.first_name} ${userDetails.middle_name || ''} ${userDetails.last_name}`,
-            roles: userPrivileges,
-            privileges: userDetails.privileges ? userDetails.privileges.split(',') : []
+            name: `${userPrivileges[0].first_name} ${userPrivileges[0].middle_name || ''} ${userPrivileges[0].last_name}`,
+            roles: userRoles,
+            privileges: userPrivileges.map(x => {
+
+                return {
+                    privilege_id: x.privilege_id,
+                    privilege_name: x.privilege_name,
+                    category_id: x.category_id,
+                }
+            })
         };
 
         const categories = await this.mysql.query('SELECT * FROM tb_categories WHERE account_id = ?', [this.account.account_id]);
 
         return {
-            token: commonFun.makeJWT(obj, parseInt(userDetails.ttl || 7) * 86400),
+            token: commonFun.makeJWT(obj, parseInt(userPrivileges[0].ttl || 7) * 86400),
             metadata: {categories},
             status: true,
         }

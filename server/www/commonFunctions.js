@@ -317,6 +317,7 @@ function authenticatePrivileges(userPrivileges, objectPrivileges) {
     };
 }
 
+
 exports.redisStore = redisStore;
 exports.redisGet = redisGet;
 exports.isJson = isJson;

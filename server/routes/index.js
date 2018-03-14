@@ -4,6 +4,7 @@ var router = express.Router();
 var api = require('../utils/api');
 var account = require('../onServerStart');
 var engine = require('../www/reports/engine');
+
 //var bigquery = require("../www/bigquery").setup;
 
 (async () => {
@@ -36,5 +37,4 @@ router.get('/hello', function(req, res, next) {
 router.get('/v2/*', api.serve());
 router.post('/v2/*', api.serve());
 
-router.get("/test", report.test);
 module.exports = router;
