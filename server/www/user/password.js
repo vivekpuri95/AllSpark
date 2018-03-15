@@ -9,7 +9,7 @@ const EXPIRE_AFTER = 1; //HOURS
 exports.resetlink = class extends API {
     async resetlink() {
 
-        let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM allspark.tb_users WHERE email = ? AND account_id = ?`,
+        let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
                                             [this.request.body.email,this.account.account_id]);
         if (!user.length)
             return true;
@@ -27,7 +27,7 @@ exports.resetlink = class extends API {
         const user_id = user['user_id'];
         const full_name = user['first_name'] + (user['last_name'] ? ' '+user['last_name'] : '');
 
-        await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?',[user_id],'allSparkWrite');
+        await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?',[user_id],'write');
         const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`
         await this.mysql.query(query, [[[user_id, token, 1]]], 'write');
 
@@ -86,7 +86,7 @@ exports.reset = class extends API {
         await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user_id, this.account.account_id], 'write');
 
 
-        await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'allSparkWrite');
+        await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'write');
         return true;
     }
 }
@@ -97,8 +97,7 @@ exports.change = class extends API {
 
         const dbPass = await this.mysql.query(
             `SELECT password FROM tb_users WHERE user_id = ? and account_id = ?`,
-            [this.user.user_id, this.account.account_id],
-            'read'
+            [this.user.user_id, this.account.account_id]
         );
 
         const check = await comFun.verifyBcryptHash(this.request.body.old_password, dbPass[0].password);
