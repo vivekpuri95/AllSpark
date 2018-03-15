@@ -3,7 +3,10 @@ const API = require('../../utils/api');
 exports.list = class extends API {
     async list() {
         this.user.privilege.needs('administrator');
-        return await this.mysql.query('SELECT * FROM tb_privileges WHERE account_id = ? ', [this.account.account_id]);
+        return await this.mysql.query(
+            'SELECT * FROM tb_user_privilege WHERE user_id IN (SELECT user_id FROM tb_users WHERE account_id = ?)',
+            [this.account.account_id]
+        );
     }
 }
 
@@ -11,16 +14,16 @@ exports.insert = class extends API {
     async insert() {
         this.user.privilege.needs('administrator');
 
-        if(!('name' in this.request.body) || !('is_admin' in this.request.body))
+        if (!('user_id' in this.request.body) || !('category_id' in this.request.body) || !('privilege_id' in this.request.body))
             return false;
 
         const params = {
-            account_id: this.account.account_id,
-            name: this.request.body.name,
-            is_admin: this.request.body.is_admin
+            user_id: this.request.body.user_id,
+            category_id: this.request.body.category_id,
+            privilege_id: this.request.body.privilege_id
         };
 
-        return await this.mysql.query('INSERT INTO tb_privileges SET ?', [params], 'write');
+        return await this.mysql.query('INSERT INTO tb_user_privilege SET ?', [params], 'write');
     }
 }
 
@@ -29,14 +32,14 @@ exports.update = class extends API {
         this.user.privilege.needs('administrator');
 
         const params = {
-            account_id: this.account.account_id,
-            name: this.request.body.name,
-            is_admin: this.request.body.is_admin
+            user_id: this.request.body.user_id,
+            category_id: this.request.body.category_id,
+            privilege_id: this.request.body.privilege_id
         };
 
         return await this.mysql.query(
-            'UPDATE tb_privileges SET ? WHERE privilege_id = ? AND account_id = ?',
-            [params, this.request.body.privilege_id, this.account.account_id],
+            'UPDATE tb_user_privilege SET ? WHERE id = ? AND user_id IN (SELECT user_id FROM tb_users WHERE account_id = ?)',
+            [params, this.request.body.id, this.account.account_id],
             'write'
         );
     }
@@ -47,8 +50,8 @@ exports.delete = class extends API {
         this.user.privilege.needs('administrator');
 
         return await this.mysql.query(
-            'DELETE FROM tb_privileges WHERE privilege_id = ? AND account_id = ?',
-            [this.request.body.privilege_id, this.account.account_id],
+            'DELETE FROM tb_user_privilege WHERE id = ? AND user_id IN (SELECT user_id FROM tb_users WHERE account_id = ?)',
+            [this.request.body.id, this.account.account_id],
             'write'
         );
     }
