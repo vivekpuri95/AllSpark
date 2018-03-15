@@ -11,7 +11,7 @@ exports.insert = class extends API {
     async insert() {
         this.user.privilege.needs('administrator');
 
-        if(!this.request.body.name || !this.request.body.is_admin)
+        if(!('name' in this.request.body) || !('is_admin' in this.request.body))
             return false;
 
         const params = {
@@ -28,13 +28,12 @@ exports.update = class extends API {
     async update() {
         this.user.privilege.needs('administrator');
 
-        let params = {
+        const params = {
             account_id: this.account.account_id,
             name: this.request.body.name,
             is_admin: this.request.body.is_admin
         };
 
-        this.request.body.account_id = this.account.account_id;
         return await this.mysql.query(
             'UPDATE tb_roles SET ? WHERE role_id = ? AND account_id = ?',
             [params, this.request.body.role_id, this.account.account_id],
