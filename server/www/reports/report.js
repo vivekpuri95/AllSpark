@@ -50,16 +50,34 @@ exports.update = class extends API {
     async update() {
 
         let
-            values = {}, query_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_query'
-            `);
+            values = {},
+            query_cols = [
+                'name',
+                'source',
+                'query',
+                'url',
+                'url_options',
+                'category_id',
+                'description',
+                'added_by',
+                'requested_by',
+                'tags',
+                'is_enabled',
+                'is_deleted',
+                'is_redis',
+                'refresh_rate',
+                'roles',
+                'connection_name'
+            ],
+			token = this.request.body.token;
 
-        table_cols.map(row => query_cols.push(row.COLUMN_NAME));
+		const userData = await commonFun.verifyJWT(token);
+		if(userData.error) {
 
-        for(const key in this.request.body) {
+			return userData
+		}
+
+		for(const key in this.request.body) {
             if(query_cols.includes(key))
                 values[key] = this.request.body[key] || null;
         }
