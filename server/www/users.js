@@ -68,9 +68,9 @@ exports.list = class extends API {
     async list(){
 
         if(this.request.body.user_id)
-			return await this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id], 'read');
+			return await this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id]);
         else
-			return await this.mysql.query(`select * from tb_users WHERE account_id = ?`, [this.account.account_id],'read');
+			return await this.mysql.query(`select * from tb_users WHERE account_id = ?`, [this.account.account_id]);
     }
 
 };

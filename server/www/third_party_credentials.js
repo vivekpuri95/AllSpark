@@ -53,7 +53,7 @@ exports.list = class extends API {
 
     async list(){
 
-        return await this.mysql.query(`select * from tb_third_party_credentials`,[],'read');
+        return await this.mysql.query(`select * from tb_third_party_credentials`);
 
     }
 
