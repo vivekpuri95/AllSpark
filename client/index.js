@@ -15,13 +15,67 @@ app.get('/login', (req, res) => {
 		<div class="logo hidden">
 			<img src="" />
 		</div>
-		<form>
-			<input type="text" name="email" placeholder="Username" required>
-			<input type="password" name="password" placeholder="Password" required>
-			<input type="submit" value="Sign In">
+		<form class="form">
+			<label>Email
+				<input type="text" name="email" required>
+			</label>
+			<label>Password
+				<input type="password" name="password" required>
+			</label>
+			<div>
+				<a href="/login/forgot">Forgot password?</a>
+				<input id="submit" type="submit" value="Sign In">
+			</div>
 		</form>
 		<div id="message" class="hidden"></div>
 	`));
+});
+
+app.get('/login/forgot', (req, res) => {
+	const template = new Template;
+
+	template.stylesheets.push('/css/login.css');
+	template.scripts.push('/js/forgotpassword.js');
+
+	res.send(template.body(`
+		<div class="logo hidden">
+			<img src="" />
+		</div>
+		<form class="form">
+			<label>Email
+				<input type="email" name="email" required>
+			</label>
+			<div>
+				<a href='/login'><i class="fa fa-arrow-left" aria-hidden="true"></i> &nbsp;Login</a>
+				<input id="submit" type="submit" value="Send Link">
+			</div>
+		</form>
+		<div id="message" class="hidden"></div>
+	`));
+});
+
+app.get('/login/reset', (req,res) => {
+	const template = new Template;
+
+	template.stylesheets.push('/css/login.css');
+	template.scripts.push('/js/resetpassword.js');
+
+	res.send(template.body(`
+		<div class="logo hidden">
+			<img src="" />
+		</div>
+		<form class="form">
+			<label>New Password
+				<input type="password" name="password" required>
+			</label>
+
+			<label>
+				<input id="submit" type="submit" value="Change Password">
+			</label>
+		</form>
+		<div id="message" class="hidden"></div>
+	`));
+
 });
 
 app.get('/:type(dashboard|report)/:id?', (req, res) => {
