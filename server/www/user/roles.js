@@ -23,7 +23,7 @@ exports.insert = class extends API {
 			`SELECT * FROM tb_roles WHERE role_id = ? AND account_id = ?`,
 			[this.request.body.role_id, this.account.account_id]
 
-		if(!user_check.length || !category_check.length || !role_check)
+		if(!user_check.length || !category_check.length || !role_check.length)
 			throw 'Unauthorised user';
 
         const params = {
@@ -52,7 +52,7 @@ exports.update = class extends API {
 			`SELECT * FROM tb_roles WHERE role_id = ? AND account_id = ?`,
 			[this.request.body.role_id, this.account.account_id]
 
-		if(!user_check.length || !category_check.length || !role_check)
+		if(!user_check.length || !category_check.length || !role_check.length)
 			throw 'Unauthorised user';
 
         const params = {
@@ -86,7 +86,7 @@ exports.delete = class extends API {
 			`SELECT * FROM tb_roles WHERE role_id = ? AND account_id = ?`,
 			[this.request.body.role_id, this.account.account_id]
 
-		if(!user_check.length || !category_check.length || !role_check)
+		if(!user_check.length || !category_check.length || !role_check.length)
 			throw 'Unauthorised user';
 
         return await this.mysql.query(
