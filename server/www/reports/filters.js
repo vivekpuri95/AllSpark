@@ -5,16 +5,7 @@ exports.insert = class extends API {
     async insert() {
 
         let
-            values = {}, filter_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_filters'
-            `);
-
-        table_cols.map(row => {
-            filter_cols.push(row.COLUMN_NAME);
-        } );
+            values = {}, filter_cols = ['name', 'query_id', 'placeholder', 'description', 'default_value', 'offset', 'max', 'min', 'type', 'dataset', 'is_enabled'];
 
         for(const key in this.request.body) {
             if(filter_cols.includes(key))
@@ -30,16 +21,7 @@ exports.update = class extends API {
     async update() {
 
         let
-            values = {}, filter_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_filters'
-            `);
-
-        table_cols.map(row => {
-            filter_cols.push(row.COLUMN_NAME);
-        } );
+            values = {}, filter_cols = ['name', 'query_id', 'placeholder', 'description', 'default_value', 'offset', 'max', 'min', 'type', 'dataset', 'is_enabled'];
 
         for(const key in this.request.body) {
             if(filter_cols.includes(key))
