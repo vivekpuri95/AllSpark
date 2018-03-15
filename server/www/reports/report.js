@@ -2,7 +2,7 @@
 
 const API = require('../../utils/api');
 const commonFun = require('../../utils/commonFunctions');
-
+const auth = require('../../utils/auth');
 
 exports.list = class extends API {
 
@@ -27,14 +27,21 @@ exports.list = class extends API {
             this.mysql.query('SELECT * FROM tb_query_visualizations'),
             this.mysql.query('SELECT * FROM tb_query_dashboards where status = 1')
         ]);
+        const response = [];
 
         for(const row of results[0]) {
-            row.filters = results[1].filter(filter => filter.query_id == row.query_id);
-            row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
-            row.dashboards = results[3].filter(dashboard => dashboard.query_id == row.query_id);
+
+            if((await auth.report(row, this.user)).error)
+                continue;
+
+			row.filters = results[1].filter(filter => filter.query_id == row.query_id);
+			row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
+			row.dashboards = results[3].filter(dashboard => dashboard.query_id == row.query_id);
+			response.push(row);
+
         }
 
-        return results[0];
+        return response;
     }
 };
 
@@ -42,17 +49,30 @@ exports.update = class extends API {
 
     async update() {
 
+        this.user.privilege.needs('report');
+
         let
-            values = {}, query_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_query'
-            `);
+            values = {},
+            query_cols = [
+                'name',
+                'source',
+                'query',
+                'url',
+                'url_options',
+                'category_id',
+                'description',
+                'added_by',
+                'requested_by',
+                'tags',
+                'is_enabled',
+                'is_deleted',
+                'is_redis',
+                'refresh_rate',
+                'roles',
+                'connection_name'
+            ];
 
-        table_cols.map(row => query_cols.push(row.COLUMN_NAME));
-
-        for(const key in this.request.body) {
+		for(const key in this.request.body) {
             if(query_cols.includes(key))
                 values[key] = this.request.body[key] || null;
         }
@@ -66,25 +86,28 @@ exports.insert = class extends API {
 
     async insert() {
 
+		this.user.privilege.needs('report');
+
         let
-            values = {}, query_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_query'
-            `),
-            token = this.request.body.token;
-
-
-        table_cols.map(row => query_cols.push(row.COLUMN_NAME));
-
-        const userData = await commonFun.verifyJWT(token);
-
-        if(userData.error) {
-
-            return userData
-        }
-
+            values = {}, query_cols = [
+                'account_id',
+                'name',
+                'source',
+                'query',
+                'url',
+                'url_options',
+                'category_id',
+                'description',
+                'added_by',
+                'requested_by',
+                'tags',
+                'is_enabled',
+                'is_deleted',
+                'is_redis',
+                'refresh_rate',
+                'roles',
+                'connection_name'
+            ];
 
         for(const key in this.request.body) {
             if(query_cols.includes(key))

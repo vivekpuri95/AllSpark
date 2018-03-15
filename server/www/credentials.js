@@ -6,6 +6,8 @@ exports.insert = class extends API {
 
     async insert() {
 
+		this.user.privilege.needs('connection');
+
         await this.mysql.query(
             'insert into tb_credentials(account_id, connection_name, host, user, password, db, `limit`, type, file, project_name) values (?)',
             [[
@@ -30,8 +32,6 @@ exports.insert = class extends API {
             status: true,
             message: "updated db"
         }
-
-
     }
 }
 
@@ -45,6 +45,8 @@ exports.list = class extends API {
 exports.delete = class extends API {
 
     async delete() {
+
+		this.user.privilege.needs('connection');
 
         await this.mysql.query(
             'update tb_credentials set status = 0 where id = ?',

@@ -29,14 +29,7 @@ exports.insert = class extends API {
     async insert() {
 
         let
-            values = {}, dataset_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_query_datasets'
-            `);
-
-        table_cols.map(row =>  dataset_cols.push(row.COLUMN_NAME) );
+            values = {}, dataset_cols = ['account_id', 'category_id', 'dataset', 'name', 'value'];
 
         for(const key in this.request.body) {
             if(dataset_cols.includes(key))
@@ -53,14 +46,7 @@ exports.update = class extends API {
     async update() {
 
         let
-            values = {}, dataset_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_query_datasets'
-            `);
-
-        table_cols.map(row =>  dataset_cols.push(row.COLUMN_NAME) );
+            values = {}, dataset_cols = ['category_id', 'dataset', 'name', 'value'];
 
         for(const key in this.request.body) {
             if(dataset_cols.includes(key))

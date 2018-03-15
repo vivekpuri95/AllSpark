@@ -5,14 +5,7 @@ exports.insert = class extends API {
     async insert() {
 
         let
-            values = {}, visual_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_query_visualizations'
-            `);
-
-        table_cols.map(row => visual_cols.push(row.COLUMN_NAME));
+            values = {}, visual_cols = ['query_id', 'name', 'type', 'options', 'is_enabled'];
 
         for(const key in this.request.body) {
             if(visual_cols.includes(key))
@@ -28,14 +21,7 @@ exports.update = class extends API {
     async update() {
 
         let
-            values = {}, visual_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_query_visualizations'
-            `);
-
-        table_cols.map(row => visual_cols.push(row.COLUMN_NAME));
+            values = {}, visual_cols = ['query_id', 'name', 'type', 'options', 'is_enabled'];
 
         for(const key in this.request.body) {
             if(visual_cols.includes(key))
