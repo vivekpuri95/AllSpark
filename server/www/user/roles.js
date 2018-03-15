@@ -2,7 +2,7 @@ const API = require('../../utils/api');
 
 exports.list = class extends API {
     async list() {
-        this.user.privilege.needs('user', this.request.body.category_id);
+
         return await this.mysql.query('SELECT * FROM tb_user_roles');
     }
 }
@@ -10,6 +10,21 @@ exports.list = class extends API {
 exports.insert = class extends API {
     async insert() {
         this.user.privilege.needs('user', this.request.body.category_id);
+
+		const user_check = await this.mysql.query(
+			`SELECT account_id FROM tb_users WHERE user_id = ? AND account_id = ?`,
+			[this.request.body.user_id, this.account.account_id]
+		);
+		const category_check = await this.mysql.query(
+			`SELECT * FROM tb_categories WHERE category_id = ? AND account_id = ?`,
+			[this.request.body.category_id, this.account.account_id]
+		);
+		const role_check = await this.mysql.query(
+			`SELECT * FROM tb_roles WHERE role_id = ? AND account_id = ?`,
+			[this.request.body.role_id, this.account.account_id]
+
+		if(!user_check.length || !category_check.length || !role_check)
+			throw 'Unauthorised user';
 
         const params = {
 			user_id: this.request.body.user_id,
@@ -24,6 +39,21 @@ exports.insert = class extends API {
 exports.update = class extends API {
     async update() {
         this.user.privilege.needs('user', this.request.body.category_id);
+
+		const user_check = await this.mysql.query(
+			`SELECT account_id FROM tb_users WHERE user_id = ? AND account_id = ?`,
+			[this.request.body.user_id, this.account.account_id]
+		);
+		const category_check = await this.mysql.query(
+			`SELECT * FROM tb_categories WHERE category_id = ? AND account_id = ?`,
+			[this.request.body.category_id, this.account.account_id]
+		);
+		const role_check = await this.mysql.query(
+			`SELECT * FROM tb_roles WHERE role_id = ? AND account_id = ?`,
+			[this.request.body.role_id, this.account.account_id]
+
+		if(!user_check.length || !category_check.length || !role_check)
+			throw 'Unauthorised user';
 
         const params = {
             user_id: this.request.body.user_id,
@@ -40,8 +70,24 @@ exports.update = class extends API {
 }
 
 exports.delete = class extends API {
+
     async delete() {
         this.user.privilege.needs('user', this.request.body.category_id);
+
+		const user_check = await this.mysql.query(
+			`SELECT account_id FROM tb_users WHERE user_id = ? AND account_id = ?`,
+			[this.request.body.user_id, this.account.account_id]
+		);
+		const category_check = await this.mysql.query(
+			`SELECT * FROM tb_categories WHERE category_id = ? AND account_id = ?`,
+			[this.request.body.category_id, this.account.account_id]
+		);
+		const role_check = await this.mysql.query(
+			`SELECT * FROM tb_roles WHERE role_id = ? AND account_id = ?`,
+			[this.request.body.role_id, this.account.account_id]
+
+		if(!user_check.length || !category_check.length || !role_check)
+			throw 'Unauthorised user';
 
         return await this.mysql.query(
             'DELETE FROM tb_user_roles WHERE id = ?',

@@ -29,7 +29,6 @@ exports.update = class extends API {
         this.user.privilege.needs('administrator');
 
         const params = {
-            account_id: this.account.account_id,
             name: this.request.body.name,
             is_admin: this.request.body.is_admin
         };

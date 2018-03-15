@@ -70,17 +70,17 @@ exports.list = class extends API {
         let results;
         if(this.request.body.user_id){
 			results = await Promise.all([
-				this.mysql.query(`select * from tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id]),
-				this.mysql.query(`select id, user_id, category_id, role_id from tb_user_roles`),
-				this.mysql.query(`select id, user_id, category_id, privilege_id from tb_user_privilege`)
+				this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id]),
+				this.mysql.query(`SELECT id, user_id, category_id, role_id FROM tb_user_roles WHERE user_id = ? `, [this.request.body.user_id]),
+				this.mysql.query(`SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege WHERE user_id = ? `, [this.request.body.user_id])
 			]);
 
         }
         else {
 			results = await Promise.all([
-				this.mysql.query(`select * from tb_users WHERE account_id = ?`, [this.account.account_id]),
-				this.mysql.query(`select id, user_id, category_id, role_id from tb_user_roles`),
-				this.mysql.query(`select id, user_id, category_id, privilege_id from tb_user_privilege`)
+				this.mysql.query(`SELECT * FROM tb_users WHERE account_id = ?`, [this.account.account_id]),
+				this.mysql.query(`SELECT id, user_id, category_id, role_id FROM tb_user_roles`),
+				this.mysql.query(`SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`)
 			]);
 		}
 
