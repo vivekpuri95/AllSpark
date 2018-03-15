@@ -1,4 +1,4 @@
-const mysql = require('./mysql');
+const mysql = require('../utils/mysql');
 const bigquery = require('./bigquery').BigQuery;
 const API = require('../utils/api');
 
@@ -21,7 +21,7 @@ exports.insert = class extends API {
                 this.request.body.project_name,
 
             ]],
-            'allSparkWrite'
+            'write'
         );
 
         await mysql.crateExternalPool(this.request.body.id);
@@ -49,7 +49,7 @@ exports.delete = class extends API {
         await this.mysql.query(
             'update tb_credentials set status = 0 where id = ?',
             [this.request.body['id']],
-            'allSparkWrite');
+            'write');
         await mysql.crateExternalPool(this.request.body.id);
         await bigquery.setup();
         return {
@@ -69,7 +69,7 @@ exports.update = class extends API {
         delete this.request.body.id;
         delete this.request.body.token;
 
-        await this.mysql.query('update tb_credentials set ? where id = ?',[this.request.body, id], 'allSparkWrite');
+        await this.mysql.query('update tb_credentials set ? where id = ?',[this.request.body, id], 'write');
         await mysql.crateExternalPool(this.request.body.id);
         await bigquery.setup();
         return {

@@ -1,7 +1,9 @@
 const API = require('../../utils/api');
 const crypto = require('crypto');
-const comFun = require('../commonFunctions');
-const Mailer = require('../../utils/mailer');
+
+const comFun = require('../../utils/commonFunctions');
+let mailer = require('../../utils/mailer');
+
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -28,7 +30,7 @@ exports.resetlink = class extends API {
 
         await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?',[user_id],'allSparkWrite');
         const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`
-        await this.mysql.query(query, [[[user_id, token, 1]]], 'allSparkWrite');
+        await this.mysql.query(query, [[[user_id, token, 1]]], 'write');
 
         let mailer = new Mailer();
         mailer.from_email = 'no-reply@'+this.account.url;
@@ -81,7 +83,9 @@ exports.reset = class extends API {
 
         user_id = user_id[0]['user_id']
         const newHashPass = await comFun.makeBcryptHash(this.request.body.password);
-        await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user_id, this.account.account_id], 'allSparkWrite');
+
+        await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user_id, this.account.account_id], 'write');
+
 
         await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'allSparkWrite');
         return true;
@@ -95,7 +99,7 @@ exports.change = class extends API {
         const dbPass = await this.mysql.query(
             `SELECT password FROM tb_users WHERE user_id = ? and account_id = ?`,
             [this.user.user_id, this.account.account_id],
-            'allSparkRead'
+            'read'
         );
 
         const check = await comFun.verifyBcryptHash(this.request.body.old_password, dbPass[0].password);
@@ -104,7 +108,7 @@ exports.change = class extends API {
             return await this.mysql.query(
                 `UPDATE tb_users SET password = ? WHERE user_id = ? and account_id = ?`,
                 [new_password, this.user.user_id, this.account.account_id],
-                'allSparkWrite'
+                'write'
             );
         }
         else

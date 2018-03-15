@@ -1,16 +1,18 @@
 const API = require("../../utils/api");
-const commonFun = require('../commonFunctions');
+const commonFun = require('../../utils/commonFunctions');
 const promisify = require('util').promisify;
 const moment = require('moment');
 //const BigQuery = require('../../www/bigQuery').BigQuery;
 const crypto = require('crypto');
 const request = require("request");
-const auth = require('../auth');
+const auth = require('../../utils/auth');
 const requestPromise = promisify(request);
 
 class report extends API {
 
     async report() {
+
+        console.log(this.user);
 
         this.queryId = this.request.body.query_id;
 

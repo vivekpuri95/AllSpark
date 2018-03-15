@@ -1,7 +1,7 @@
 "use strict";
 
 const API = require('../../utils/api');
-const commonFun = require('../commonFunctions');
+const commonFun = require('../../utils/commonFunctions');
 
 
 exports.list = class extends API {
@@ -22,7 +22,7 @@ exports.list = class extends API {
                 WHERE
                     is_deleted = 0 
                     and q.account_id = ?
-            `, [this.account.account_id], 'allSparkRead'),
+            `, [this.account.account_id], 'read'),
             this.mysql.query('SELECT * FROM tb_filters'),
             this.mysql.query('SELECT * FROM tb_query_visualizations'),
             this.mysql.query('SELECT * FROM tb_query_dashboards where status = 1')
@@ -57,7 +57,7 @@ exports.update = class extends API {
                 values[key] = this.request.body[key] || null;
         }
 
-        return await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'allSparkWrite');
+        return await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write');
 
     }
 }
@@ -94,6 +94,6 @@ exports.insert = class extends API {
         values["account_id"] = this.account.account_id;
         values.added_by = userData.email;
 
-        return await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'allSparkWrite');
+        return await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'write');
     }
 }
