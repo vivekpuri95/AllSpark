@@ -498,9 +498,6 @@ class DataSource {
 			</div>
 		`;
 
-		if(!user.privileges.includes('queries') && !user.privileges.includes('administrator'))
-			container.querySelector('.edit').classList.add('hidden');
-
 		this.filters.form = container.querySelector('.filters');
 
 		container.querySelector('.filters-toggle').on('click', () => {
