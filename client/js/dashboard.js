@@ -1,11 +1,12 @@
 window.on('DOMContentLoaded', async () => {
 
 	await Dashboards.setup();
-	await Dashboard.setup();
 
 	const page = new Dashboards();
 
+	await Dashboard.setup(page);
 	await page.load();
+
 
 	window.on('popstate', e => page.load(e.state));
 });
@@ -32,6 +33,7 @@ class Dashboards extends Page {
 		});
 
 		this.list = new Map;
+		this.selectedSources = new Set;
 
 		for(const category of MetaData.categories.values())
 			this.listContainer.form.category.insertAdjacentHTML('beforeend', `<option value="${category.id}">${category.name}</option>`);
@@ -48,7 +50,7 @@ class Dashboards extends Page {
 		]);
 
 		for(const dashboard of responses[0] || [])
-			this.list.set(dashboard.id, new Dashboard(dashboard));
+			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 
 		for(const [id, dashboard] of this.list) {
 			if(dashboard.parent && this.list.has(dashboard.parent))
@@ -157,6 +159,9 @@ class Dashboards extends Page {
 			report = DataSource.list.filter(s => s.query_id == id)[0],
 			container = this.reports.querySelector('.list');
 
+		this.selectedSources.clear();
+		this.selectedSources.add(report);
+
 		container.textContent = null;
 
 		report.container.removeAttribute('style');
@@ -171,7 +176,7 @@ class Dashboards extends Page {
 
 class Dashboard {
 
-	static setup() {
+	static setup(page) {
 
 		Dashboard.container = document.querySelector('section#reports .list');
 
@@ -191,10 +196,7 @@ class Dashboard {
 
 		$('#reports .toolbar input[name="date-range"]').on('apply.daterangepicker', (e, picker) => {
 
-			if(!Dashboard.selected)
-				return;
-
-			for(const source of Dashboard.selected.sources) {
+			for(const source of page.selectedSources) {
 
 				const
 					start = Array.from(source.filters.values()).filter(f => f.name == 'Start Date')[0],
@@ -211,7 +213,7 @@ class Dashboard {
 		});
 	}
 
-	constructor(dashboard) {
+	constructor(dashboard, page) {
 
 		for(const key in dashboard)
 			this[key] = dashboard[key];
@@ -219,14 +221,14 @@ class Dashboard {
 		this.sources = new Set(DataSource.list.filter(s => s.dashboards && s.dashboards.filter(d => d.dashboard == this.id).length));
 
 		this.children = new Set;
+
+		this.page = page;
 	}
 
 	render() {
 
 		if(!Dashboard.container)
 			return;
-
-		Dashboard.selected = this;
 
 		for(const selected of document.querySelectorAll('main nav .label.selected'))
 			selected.classList.remove('selected');
@@ -241,6 +243,8 @@ class Dashboard {
 		}
 
 		Dashboard.container.textContent = null;
+
+		this.page.selectedSources = this.sources;
 
 		for(const source of this.sources) {
 
