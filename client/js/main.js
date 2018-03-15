@@ -351,9 +351,6 @@ class Page {
 			if(!window.user)
 				continue;
 
-			if(!user.privileges.includes(item.id) && !user.privileges.includes('administrator'))
-				continue;
-
 			nav_container.insertAdjacentHTML('beforeend',`<a href='${item.url}'>${item.name}</a>`);
 		}
 
@@ -498,9 +495,6 @@ class DataSource {
 			</div>
 		`;
 
-		if(!user.privileges.includes('queries') && !user.privileges.includes('administrator'))
-			container.querySelector('.edit').classList.add('hidden');
-
 		this.filters.form = container.querySelector('.filters');
 
 		container.querySelector('.filters-toggle').on('click', () => {
@@ -519,7 +513,6 @@ class DataSource {
 			container.querySelector('.share-link input').select();
 		});
 
-		container.querySelector('.edit')
 		container.querySelector('.download').on('click', () => this.download());
 		container.querySelector('.edit').on('click', () => window.location = `/reports/${this.query_id}`);
 
