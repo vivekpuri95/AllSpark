@@ -3,9 +3,6 @@
 const mysql = require('mysql');
 const config = require('config');
 
-if(!config.has('sql_db'));
-    throw 'Configuration file not found!';
-
 const dbConfig = require('config').get("sql_db");
 
 console.log('INITIALIZE POOL###################################');
