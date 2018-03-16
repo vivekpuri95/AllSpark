@@ -11,21 +11,36 @@ exports.insert = class extends API {
     async insert() {
         this.user.privilege.needs('user', this.request.body.category_id);
 
-		const user_check = await this.mysql.query(
-			`SELECT account_id FROM tb_users WHERE user_id = ? AND account_id = ?`,
-			[this.request.body.user_id, this.account.account_id]
+		const check = await this.mysql.query(`
+		    SELECT
+		    	*
+		    FROM
+		    	tb_users u
+		    JOIN
+		    	tb_categories c
+		    JOIN
+		    	tb_roles r
+		    WHERE
+		    	user_id = ?
+		    	AND c.category_id = ?
+		    	AND r.role_id = ?
+		    	AND u.account_id = ?
+		    	AND c.account_id = ?
+		    	AND r.account_id = ?
+		    `,
+			[
+			    this.request.body.user_id,
+                this.request.body.category_id,
+                this.request.body.role_id,
+                this.account.account_id,
+                this.account.account_id,
+                this.account.account_id
+            ]
 		);
-		const category_check = await this.mysql.query(
-			`SELECT * FROM tb_categories WHERE category_id = ? AND account_id = ?`,
-			[this.request.body.category_id, this.account.account_id]
-		);
-		const role_check = await this.mysql.query(
-			`SELECT * FROM tb_roles WHERE role_id = ? AND account_id = ?`,
-			[this.request.body.role_id, this.account.account_id]
-        );
 
-		if(!user_check.length || !category_check.length || !role_check.length)
+		if(!check.length) {
 			throw 'Unauthorised user';
+		}
 
         const params = {
 			user_id: this.request.body.user_id,
@@ -59,32 +74,23 @@ exports.update = class extends API {
 		);
 		const update_check = await this.mysql.query(`
 		    SELECT
-		        a.account_id AS cat_acc,
-		        b.account_id AS role_acc
-		    FROM (
-		        SELECT
-		            account_id
-		        FROM
-		            tb_categories
-		        WHERE
-		            category_id = ?
-		            AND account_id = ?
-		    ) a
-		    JOIN (
-                SELECT
-                    account_id
-                FROM
-                    tb_roles
-                WHERE
-                    role_id = ?
-                    AND account_id = ?
-            ) b
+		            *
+            FROM
+                tb_categories c
+            JOIN
+                tb_roles r
+            WHERE
+                category_id = ?
+                AND role_id = ?
+                AND c.account_id = ?
+                AND r.account_id = ?
 		    `,
-			[this.request.body.category_id, this.account.account_id, this.request.body.role_id, this.account.account_id]
+			[this.request.body.category_id, this.request.body.role_id, this.account.account_id, this.account.account_id]
         );
 
-		if(!update_check.length || !existing_check.length)
+		if(!update_check.length || !existing_check.length) {
 			throw 'Unauthorised user';
+		}
 
         const params = {
             category_id: this.request.body.category_id,
@@ -118,8 +124,9 @@ exports.delete = class extends API {
             [this.request.body.id, this.account.account_id]
         );
 
-        if(!delete_check.length)
-            throw "Unauthorized User";
+        if(!delete_check.length) {
+			throw "Unauthorized User";
+		}
 
         return await this.mysql.query(
             'DELETE FROM tb_user_roles WHERE id = ?',

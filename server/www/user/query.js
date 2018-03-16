@@ -4,16 +4,21 @@ exports.list = class extends API {
 
 	async list() {
 
-		const data =  await this.mysql.query(
-			'SELECT user_id, GROUP_CONCAT(query_id) AS queries FROM tb_user_query WHERE user_id = ?',
+		const
+			data =  await this.mysql.query(
+			'SELECT user_id, query_id FROM tb_user_query WHERE user_id = ?',
 			[this.request.body.user_id]
-		);
+			),
+			queries = [];
 
 		for(const row of data) {
 
-			row["queries"] = row["queries"] ? row["queries"].split(",").map(Number) : [];
+			queries.push(row.query_id);
 		}
-		return data;
+		return {
+			user_id : this.request.body.query_id,
+			query : queries
+		};
 	}
 };
 
@@ -23,17 +28,25 @@ exports.insert = class extends API {
 
 		this.user.privilege.needs('report');
 
-		const user_check = await this.mysql.query(
-			`SELECT account_id FROM tb_users WHERE user_id = ? AND account_id = ?`,
-			[this.request.body.user_id, this.account.account_id]
-		);
-		const report_check = await this.mysql.query(
-			`SELECT * FROM tb_query WHERE query_id = ? AND account_id = ?`,
-			[this.request.body.query_id, this.account.account_id]
+		const check = await this.mysql.query(
+			`SELECT
+				*
+			FROM
+				tb_users u
+			JOIN
+				tb_query q
+			WHERE
+				user_id = ?
+				AND query_id = ?
+				AND u.account_id = ?
+				AND q.account_id = ?
+			`,
+			[this.request.body.user_id, this.request.body.query_id, this.account.account_id, this.account.account_id]
 		);
 
-		if(!user_check.length || !report_check.length)
+		if(!check.length) {
 			throw 'Unauthorised user';
+		}
 
 		return await this.mysql.query(
 			'INSERT INTO tb_user_query (user_id, query_id) values (?, ?) ',
@@ -66,33 +79,24 @@ exports.update = class extends API {
 			[this.request.body.id, this.account.account_id, this.account.account_id]
 		);
 		const update_check = await this.mysql.query(`
-		    SELECT
-		        a.account_id AS user_acc,
-		        b.account_id AS query_acc
-		    FROM (
 		        SELECT
-		            account_id
+		            *
 		        FROM
-		            tb_users
+		            tb_users u
+		        JOIN
+		        	tb_query q
 		        WHERE
 		            user_id = ?
-		            AND account_id = ?
-		    ) a
-		    JOIN (
-                SELECT
-                    account_id
-                FROM
-                    tb_query
-                WHERE
-                    query_id = ?
-                    AND account_id = ?
-            ) b
+		            AND q.account_id = ?
+		            AND u.account_id = ?
+		            AND q.query_id = ?
 		    `,
-			[this.request.body.user_id, this.account.account_id, this.request.body.query_id, this.account.account_id]
+			[this.request.body.user_id, this.account.account_id, this.account.account_id, this.request.body.query_id]
 		);
 
-		if(!update_check.length || !existing_check.length)
+		if(!update_check.length || !existing_check.length) {
 			throw 'Unauthorised user';
+		}
 
 		return await this.mysql.query(
 			`UPDATE tb_user_query SET user_id = ?, query_id = ? WHERE id = ?`,
@@ -124,8 +128,9 @@ exports.delete = class extends API {
 			[this.request.body.id, this.account.account_id, this.account.account_id]
 		);
 
-		if(!delete_check.length)
+		if(!delete_check.length){
 			throw "Unauthorised User";
+		}
 
 		return await this.mysql.query(
 			'DELETE FROM tb_user_query WHERE id = ?',
