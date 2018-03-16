@@ -32,8 +32,6 @@ exports.insert = class extends API {
 			[this.request.body.query_id, this.account.account_id]
 		);
 
-		console.log(user_check,'.........', report_check);
-
 		if(!user_check.length || !report_check.length)
 			throw 'Unauthorised user';
 
