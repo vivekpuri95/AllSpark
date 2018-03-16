@@ -15,7 +15,7 @@ class Account {
 
 		localStorage.account = JSON.stringify(account);
 
-		window.account = account ? new Account(account) : null;
+		return window.account = account ? new Account(account) : null;
 	}
 
 	static async fetch() {
@@ -49,17 +49,12 @@ class User {
 		let user = null;
 
 		try {
-			user = JSON.parse(localStorage.user);
+			user = JSON.parse(atob(localStorage.token.split('.')[1]));
 		} catch(e) {}
 
-		if(!user && window.location.pathname.startsWith('/login'))
-			return;
-
-		if(!user)
-			this.logout(true);
-
-		window.user = new User(user);
+		return window.user = new User(user);
 	}
+
 	static logout(next) {
 
 		localStorage.clear();
@@ -76,6 +71,29 @@ class User {
 
 		for(const key in user)
 			this[key] = user[key];
+
+		this.privileges = new UserPrivileges(this);
+		this.roles = new UserPrivileges(this);
+	}
+}
+
+class UserPrivileges extends Set {
+
+	constructor(context) {
+
+		super(context.privileges);
+
+		this.context = context;
+	}
+}
+
+class UserRoles extends Set {
+
+	constructor(context) {
+
+		super(context.roles);
+
+		this.context = context;
 	}
 }
 
@@ -106,13 +124,13 @@ class AJAX {
 		}
 		catch(e) {
 			AJAXLoader.hide();
-			throw 'API Execution Failed';
+			throw new API.Exception(e.status, 'API Execution Failed');
 		}
 
 		AJAXLoader.hide();
 
-		if(response.status == 401 && !this.location.pathname.startsWith('/login'))
-			return user.logout();
+		if(response.status == 401)
+			return User.logout();
 
 		return await response.json();
 	}
@@ -128,12 +146,13 @@ class API extends AJAX {
 	 * @param  object		options		The options object.
 	 * @return Promise					That resolves when the request is completed.
 	 */
-	static call(endpoint, parameters = {}, options = {}) {
+	static async call(endpoint, parameters = {}, options = {}) {
 
 		if(!account)
 			throw 'Account not found!'
 
-		endpoint = account.APIHost + endpoint;
+		if(!endpoint.startsWith('v2/authentication'))
+			await API.refreshToken();
 
 		if(localStorage.token)
 			parameters.token = localStorage.token;
@@ -142,7 +161,15 @@ class API extends AJAX {
 		if(options.form)
 			API.loadFormData(parameters, options.form);
 
-		return AJAX.call(endpoint, parameters, options);
+		endpoint = account.APIHost + endpoint;
+
+		const response = await AJAX.call(endpoint, parameters, options);
+
+		if(response.status)
+			return response.data;
+
+		else
+			throw new API.Exception(response);
 	}
 
 	/**
@@ -173,6 +200,41 @@ class API extends AJAX {
 
 			parameters[key] = value;
 		}
+	}
+
+	static async refreshToken() {
+
+		let getToken = true;
+
+		if(localStorage.token) {
+
+			try {
+
+				const user = JSON.parse(atob(localStorage.token.split('.')[1]));
+
+				if(user.exp && Date.parse(user.exp) > Date.now())
+					getToken = false;
+
+			} catch(e) {}
+		}
+
+		if(!localStorage.refresh_token || !getToken)
+			return;
+
+		const response = await API.call('v2/authentication/refresh', {refresh_token: localStorage.refresh_token});
+
+		localStorage.token = response.token;
+		localStorage.metadata = JSON.stringify(response.metadata);
+
+		Page.load();
+	}
+}
+
+API.Exception = class {
+
+	constructor(response) {
+		this.status = response.status;
+		this.message = response.message;
 	}
 }
 
@@ -285,6 +347,8 @@ class MetaData {
 
 	static load() {
 
+		MetaData.privileges = new Map;
+		MetaData.roles = new Map;
 		MetaData.categories = new Map;
 
 		if(!localStorage.metadata)
@@ -298,15 +362,28 @@ class MetaData {
 			return;
 		}
 
+		for(const privilege of metadata.privileges || []) {
+
+			privilege.id = privilege.privilege_id;
+
+			MetaData.privileges.set(privilege.id, privilege);
+		}
+
+		for(const role of metadata.roles || []) {
+
+			role.id = role.role_id;
+
+			MetaData.roles.set(role.id, role);
+		}
+
 		for(const category of metadata.categories || []) {
 
 			category.id = category.category_id;
 
-			if(!user.roles.filter(r => r.category_id == category.id || r.category_id == 0).length)
-				continue;
-
 			MetaData.categories.set(category.id, category);
 		}
+
+		return MetaData;
 	}
 }
 
@@ -316,11 +393,15 @@ class Page {
 
 		AJAXLoader.setup();
 
+		await Page.load();
+
+		Page.render();
+	}
+
+	static async load() {
 		await Account.load();
 		await User.load();
 		await MetaData.load();
-
-		Page.render();
 	}
 
 	static render() {

@@ -44,13 +44,12 @@ class Dashboards extends Page {
 
 	async load(state) {
 
-		const responses = await Promise.all([
-			API.call('v2/dashboards/list'),
-			DataSource.load(),
-		]);
+		await DataSource.load();
 
-		for(const dashboard of responses[0] || [])
-			this.list.set(dashboard.id, new Dashboard(dashboard, this));
+		const dashboards = await API.call('v2/dashboards/list');
+
+		for(const dashboard of dashboards || [])
+			this.list.set(dashboard.id, new Dashboard(dashboard));
 
 		for(const [id, dashboard] of this.list) {
 			if(dashboard.parent && this.list.has(dashboard.parent))

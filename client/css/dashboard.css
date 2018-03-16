@@ -11,6 +11,20 @@ main > nav {
 	background: var(--color-primary);
 	color: var(--color-primary-text);
 	height: calc(100vh - 50px);
+	overflow: hidden;
+}
+main > nav:hover {
+	overflow: auto;
+}
+main > nav::-webkit-scrollbar {
+	background: var(--color-secondary);
+	width: 8px;
+}
+main > nav::-webkit-scrollbar-thumb {
+	background: var(--color-accent);
+}
+main > nav::-webkit-scrollbar-track {
+	box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
 }
 	main > nav .NA {
 		text-align: center;

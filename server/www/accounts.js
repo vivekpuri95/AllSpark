@@ -3,7 +3,6 @@ const API = require('../utils/api.js');
 exports.list = class extends API {
 
 	async list() {
-
 		return await this.mysql.query(`SELECT * FROM tb_accounts WHERE status = 1`);
 	}
 }

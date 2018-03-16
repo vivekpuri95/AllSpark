@@ -107,3 +107,25 @@ exports.list = class extends API {
 
 };
 
+exports.changePassword = class extends API {
+
+    async changePassword() {
+
+        const dbPass = await this.mysql.query(
+            `SELECT password FROM tb_users WHERE user_id = ? and account_id = ?`,
+            [this.user.user_id, this.account.account_id]
+        );
+
+        const check = await commonFun.verifyBcryptHash(this.request.body.old_password, dbPass[0].password);
+        if(check) {
+            const new_password = await commonFun.makeBcryptHash(this.request.body.new_password);
+            return await this.mysql.query(
+                `UPDATE tb_users SET password = ? WHERE user_id = ? and account_id = ?`,
+                [new_password, this.user.user_id, this.account.account_id],
+                'write'
+            );
+        }
+        else
+            throw("Password does not match!");
+    }
+}

@@ -105,7 +105,7 @@ body {
 		position: fixed;
 		top: 60px;
 		left: calc(50% - 80px);
-		/* opacity: 0; */
+		opacity: 0;
 		user-select: none;
 		padding: 5px 10px;
 		font-size: 12px;
@@ -298,24 +298,21 @@ body {
 				}
 
 	main .form {
-		display: flex;
-		flex-direction: column;
+		display: grid;
 		padding: var(--gap);
+		grid-gap: calc(var(--gap) * 2);
 	}
 	main .form.toolbar {
 		flex-direction: row;
 	}
 		main .form label {
-			margin: var(--gap);
 			display: grid;
 			grid-gap: var(--gap);
-			flex-direction: column;
 			max-width: 200px;
-			font-weight: normal;
 		}
 			main .form label > span {
 				font-size: 90%;
-				color: #666;
+				color: #555;
 			}
 
 	main .data-source {

@@ -15,40 +15,24 @@ main {
 		main .logo img {
 			width: 100%;
 		}
-	main form {
-		display: grid;
+	main .form {
 		background: #fff;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-		padding: 16px;
+		padding: 10px;
 		margin: var(--gap) 0;
-		width: 100%;
-		grid-gap: calc(var(--gap) * 2);
 	}
-		input {
-			width: 100%;
-			padding: 8px 10px !important;
+		main .form label {
+			max-width: initial;
 		}
-		input[type=submit] {
-			width: auto;
-			margin-left: auto;
-			letter-spacing: 1px;
+		main form div {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
 		}
-main form label {
-	display: grid;
-	grid-gap: var(--gap);
-	font-size: 90%;
-}
-main form label {
-	max-width: 100% !important;
-}
-main form div {
-	display: flex;
-	align-items: center;
-}
-	main form a {
-		font-size: 12px;
-		padding: 0 5px;
-	}
-	main form div input {
-		margin-left: auto;
-	}
+			main form a {
+				font-size: 12px;
+				padding: 0 5px;
+			}
+			main form div input {
+				width: auto;
+			}
