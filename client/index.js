@@ -726,4 +726,7 @@ class Template {
 	}
 }
 
-app.listen(80, () => console.log('Client listening on port 80!'))
+if(!process.env.PORT)
+	return console.error('Port not provided!');
+
+app.listen(process.env.PORT, () => console.log(`Client listening on port ${process.env.PORT}!`));
