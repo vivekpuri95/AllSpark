@@ -708,6 +708,7 @@ class Template {
 
 					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'">').join('')}
 					${this.scripts.map(s => '<script src="'+s+'"></script>').join('')}
+					<script>PORT = ${process.env.PORT}</script>
 				</head>
 				<body>
 					<div id="ajax-working"></div>
