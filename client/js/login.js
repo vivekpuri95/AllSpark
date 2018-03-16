@@ -38,7 +38,7 @@ class Login extends Page {
 
 			Login.message.classList.remove('notice');
 			Login.message.classList.add('warning');
-			Login.message.textContent = response.message || response;
+			Login.message.textContent = response.description || response;
 
 			return;
 		}
