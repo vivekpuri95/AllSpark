@@ -116,9 +116,9 @@ class API {
 						status: false,
 						description: 'Internal Server Error',
 					});
-				}
 
-				else throw e;
+					throw e;
+				}
 			}
 		}
 	}
