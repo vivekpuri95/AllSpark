@@ -20,7 +20,7 @@ class Account {
 
 	static async fetch() {
 
-		window.account = {APIHost: `https://${window.location.host}:${window.location.hostname == 'localhost' ? '3002' : '3000'}/`}
+		window.account = {APIHost: `https://${window.location.host}:${PORT - 5080}/`}
 
 		try {
 
@@ -38,7 +38,7 @@ class Account {
 		for(const key in account)
 			this[key] = account[key];
 
-		this.APIHost = `https://${this.url}:${window.location.hostname == 'localhost' ? '3002' : '3000'}/`;
+		this.APIHost = `https://${this.url}:${PORT - 5080}/`;
 	}
 }
 
