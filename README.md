@@ -4,7 +4,7 @@
 
 ```
 cd ./client
-pm2 start 'index.js'  --name client
+PORT=8080 pm2 start 'index.js'  --name client
 ```
 
 ## Start Server
