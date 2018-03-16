@@ -8,8 +8,6 @@ async function loadAccounts() {
     const accountList = await mysql.query('select * from tb_accounts where status = 1');
     const accountObj = {};
 
-    console.log(accountList.map(a => a.name));
-
     accountList.map(x => accountObj[x.url] = x);
 
     global.account = accountObj;
