@@ -49,7 +49,7 @@ class Dashboards extends Page {
 		const dashboards = await API.call('v2/dashboards/list');
 
 		for(const dashboard of dashboards || [])
-			this.list.set(dashboard.id, new Dashboard(dashboard));
+			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 
 		for(const [id, dashboard] of this.list) {
 			if(dashboard.parent && this.list.has(dashboard.parent))
