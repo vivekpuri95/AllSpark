@@ -27,20 +27,12 @@ class Login extends Page {
 		Login.message.textContent = 'Logging you in!';
 
 		const options = {
-			method: 'POST',
 			form: new FormData(Login.form)
 		};
 
 		try {
 
-			const response = await API.call('v2/users/login', {}, options);
-
-			if(!response.status)
-				throw response;
-
-			localStorage.token = response.token;
-			localStorage.user = JSON.stringify(JSON.parse(atob(response.token.split('.')[1])));
-			localStorage.metadata = JSON.stringify(response.metadata);
+			localStorage.refresh_token = await API.call('v2/authentication/login', {}, options);
 
 		} catch(response) {
 

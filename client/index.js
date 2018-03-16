@@ -16,10 +16,12 @@ app.get('/login', (req, res) => {
 			<img src="" />
 		</div>
 		<form class="form">
-			<label>Email
+			<label>
+				<span>Email</span>
 				<input type="text" name="email" required>
 			</label>
-			<label>Password
+			<label>
+				<span>Password</span>
 				<input type="password" name="password" required>
 			</label>
 			<div>
@@ -42,7 +44,8 @@ app.get('/login/forgot', (req, res) => {
 			<img src="" />
 		</div>
 		<form class="form">
-			<label>Email
+			<label>
+				<span>Email</span>
 				<input type="email" name="email" required>
 			</label>
 			<div>
@@ -65,7 +68,8 @@ app.get('/login/reset', (req,res) => {
 			<img src="" />
 		</div>
 		<form class="form">
-			<label>New Password
+			<label>
+				<span>New Password</span>
 				<input type="password" name="password" required>
 			</label>
 

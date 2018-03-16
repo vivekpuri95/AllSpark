@@ -14,3 +14,11 @@ exports.privilege = {
 
     ignore_category: ['connection', 'dashboard']
 };
+
+exports.publicEndpoints = [
+	'/v2/accounts/list',
+	'/v2/authentication/login',
+	'/v2/authentication/refresh',
+	'/v2/authentication/password/reset',
+	'/v2/authentication/password/resetLink',
+];

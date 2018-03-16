@@ -4,7 +4,8 @@ const fs = require('fs');
 const pathSeparator = require('path').sep;
 const {resolve} = require('path');
 const commonFun = require('./commonFunctions');
-const user = require('./User');
+const User = require('./User');
+const constants = require('./constants');
 
 class API {
 
@@ -12,13 +13,13 @@ class API {
 
 		this.mysql = mysql;
 
-    }
+	}
 
 	static setup() {
 
 		API.endpoints = new Map;
 
-		async function walk(directory) {
+		function walk(directory) {
 
 			for(const file of fs.readdirSync(directory)) {
 
@@ -50,55 +51,71 @@ class API {
 
 		return async function(request, response) {
 
-            try {
+			try {
 
-                const
-                	url = request.url.replace(/\//g, pathSeparator),
-                	path = resolve(__dirname + '/../www') + pathSeparator + url.substring(4, url.indexOf('?') < 0 ? undefined : url.indexOf('?'));
+				const
+					url = request.url.replace(/\//g, pathSeparator),
+					path = resolve(__dirname + '/../www') + pathSeparator + url.substring(4, url.indexOf('?') < 0 ? undefined : url.indexOf('?'));
 
-                if (!API.endpoints.has(path))
-                    throw 'Endpoint not found! <br><br>'+path+' <br><br>' + Array.from(API.endpoints.keys()).join('<br>');
+				if (!API.endpoints.has(path))
+					throw 'Endpoint not found! <br><br>'+path+' <br><br>' + Array.from(API.endpoints.keys()).join('<br>');
 
-                const obj = new (API.endpoints.get(path))();
+				const obj = new (API.endpoints.get(path))();
 
-                obj.request = request;
-                let host = request.headers.host.split(':')[0];
+				obj.request = request;
+				let host = request.headers.host.split(':')[0];
 
-                let method, userDetails;
+				let method, userDetails;
 
-                if(request.method === 'GET')
-                    method = 'query';
+				if(request.method === 'GET')
+					method = 'query';
 
-                else if(request.method === 'POST')
-                    method = 'body';
+				else if(request.method === 'POST')
+					method = 'body';
 
-                if(request[method].token) {
+				if(request[method].token) {
+					userDetails = await commonFun.verifyJWT(request[method].token);
+					obj.user = new User(userDetails);
+				}
 
-                    userDetails = await commonFun.verifyJWT(request[method].token);
-                    obj.user = new user(userDetails);
-                }
-                //
+				if(!userDetails && !constants.publicEndpoints.filter(u => url.startsWith(u)).length)
+					throw new API.Exception(401, 'User Not Authenticated! :(');
+
 				// if(host.includes('localhost')) {
 				// 	host = 'analytics.jungleworks.co';
 				// }
 
-                obj.account = global.account[host];
+				obj.account = global.account[host];
 
-                obj.result = await obj[path.split(pathSeparator).pop()]();
+				const result = await obj[path.split(pathSeparator).pop()]();
 
-                await obj.gzip();
+				obj.result = {
+					status: result ? true : false,
+					data: result,
+				};
 
-                response.set({'Content-Encoding': 'gzip'});
-                response.set({'Content-Type': 'application/json'});
-                response.send(obj.result);
-            }
+				await obj.gzip();
 
-            catch (e) {
-                console.log('Error in endpoint execution', e);
-                response.send(e);
-            }
+				response.set({'Content-Encoding': 'gzip'});
+				response.set({'Content-Type': 'application/json'});
 
-        }
+				response.send(obj.result);
+			}
+
+			catch (e) {
+				console.log('Error in endpoint execution', e);
+
+				if(e instanceof API.Exception) {
+
+					response.status(e.status || 500).send({
+						status: false,
+						description: e.message,
+					});
+				}
+
+				else throw e;
+			}
+		}
 	}
 
 	async gzip() {
@@ -117,6 +134,14 @@ class API {
 		});
 	}
 
+}
+
+API.Exception = class {
+
+	constructor(status, message) {
+		this.status = status;
+		this.message = message;
+	}
 }
 
 module.exports = API;
