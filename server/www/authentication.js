@@ -236,13 +236,14 @@ exports.tookan = class extends API {
             select
                 u.*
             from
-                tookan.tb_users tu
+                jungleworks.tb_users tu
             join
                 tb_users u
                 using(user_id)
             where
                 access_token = ?
-            `);
+            `,
+            [this.request.query.access_token]);
 
         if(!userDetail.length) {
 

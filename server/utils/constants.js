@@ -19,6 +19,8 @@ exports.publicEndpoints = [
 	'/v2/accounts/list',
 	'/v2/authentication/login',
 	'/v2/authentication/refresh',
-	'/v2/authentication/password/reset',
-	'/v2/authentication/password/resetLink',
+	'/v2/authentication/reset',
+	'/v2/authentication/resetLink',
+    '/v2/authentication/tookan',
+
 ];
