@@ -48,16 +48,49 @@ exports.update = class extends API {
 
 		this.user.privilege.needs('report');
 
-		const user_check = await this.mysql.query(
-			`SELECT account_id FROM tb_users WHERE user_id = ? AND account_id = ?`,
-			[this.request.body.user_id, this.account.account_id]
+		const existing_check = await this.mysql.query(`
+		    SELECT
+			    u.account_id, q.account_id
+			FROM
+			    tb_user_query uq
+			JOIN
+			    tb_users u USING(user_id)
+			JOIN
+			    tb_query q USING(query_id)
+			WHERE
+			    id = ?
+			    AND u.account_id = ?
+			    AND q.account_id = ?
+	    `,
+			[this.request.body.id, this.account.account_id, this.account.account_id]
 		);
-		const report_check = await this.mysql.query(
-			`SELECT * FROM tb_query WHERE query_id = ? AND account_id = ?`,
-			[this.request.body.user_id, this.account.account_id]
+		const update_check = await this.mysql.query(`
+		    SELECT
+		        a.account_id AS user_acc,
+		        b.account_id AS query_acc
+		    FROM (
+		        SELECT
+		            account_id
+		        FROM
+		            tb_users
+		        WHERE
+		            user_id = ?
+		            AND account_id = ?
+		    ) a
+		    JOIN (
+                SELECT
+                    account_id
+                FROM
+                    tb_query
+                WHERE
+                    query_id = ?
+                    AND account_id = ?
+            ) b
+		    `,
+			[this.request.body.user_id, this.account.account_id, this.request.body.query_id, this.account.account_id]
 		);
 
-		if(!user_check.length || !report_check.length)
+		if(!update_check.length || !existing_check.length)
 			throw 'Unauthorised user';
 
 		return await this.mysql.query(
@@ -73,17 +106,25 @@ exports.delete = class extends API {
 
 		this.user.privilege.needs('report');
 
-		const user_check = await this.mysql.query(
-			`SELECT account_id FROM tb_users WHERE user_id = ? AND account_id = ?`,
-			[this.request.body.user_id, this.account.account_id]
-		);
-		const report_check = await this.mysql.query(
-			`SELECT * FROM tb_query WHERE query_id = ? AND account_id = ?`,
-			[this.request.body.user_id, this.account.account_id]
+		const delete_check =  await this.mysql.query(`
+		    SELECT
+			    u.account_id, q.account_id
+			FROM
+			    tb_user_query uq
+			JOIN
+			    tb_users u USING(user_id)
+			JOIN
+			    tb_query q USING(query_id)
+			WHERE
+			    id = ?
+			    AND u.account_id = ?
+			    AND q.account_id = ?
+	    `,
+			[this.request.body.id, this.account.account_id, this.account.account_id]
 		);
 
-		if(!user_check.length || !report_check.length)
-			throw 'Unauthorised user';
+		if(!delete_check.length)
+			throw "Unauthorised User";
 
 		return await this.mysql.query(
 			'DELETE FROM tb_user_query WHERE id = ?',
