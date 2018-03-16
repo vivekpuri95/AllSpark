@@ -111,6 +111,11 @@ class API {
 						status: false,
 						description: e.message,
 					});
+				} else {
+					response.status(500).send({
+						status: false,
+						description: 'Internal Server Error',
+					});
 				}
 
 				else throw e;
