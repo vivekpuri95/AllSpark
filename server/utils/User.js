@@ -1,4 +1,5 @@
 const constants = require("./constants");
+const config = require("config");
 
 class User {
 
@@ -21,9 +22,15 @@ function privilege(userObj) {
 
         has: function(privilegeName, categoryId=0) {
 
+            if(config.get("privilege_ignore")) {
+
+                return true;
+            }
+
             if (userObj.error) {
 
                 throw(userObj.message);
+
             }
 
             const ignoreCategoryFlag = constants.privilege.ignore_category.includes(privilegeName);
@@ -57,6 +64,11 @@ function roles(userObj) {
     return {
 
         has: function(roleId, categoryId) {
+
+            if(config.get("role_ignore")) {
+
+                return true;
+            }
 
             if (userObj.error) {
 

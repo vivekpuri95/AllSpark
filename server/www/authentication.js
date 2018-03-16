@@ -7,7 +7,7 @@ exports.login = class extends API {
 
         const email = this.request.query.email;
 
-        if(!email) {
+        if (!email) {
 
             return {
                 status: false,
@@ -16,7 +16,7 @@ exports.login = class extends API {
         }
         const userDetail = await this.mysql.query(`select * from tb_users where email = ?`, [email]);
 
-        if(!userDetail.length) {
+        if (!userDetail.length) {
 
             return {
                 status: false,
@@ -25,7 +25,7 @@ exports.login = class extends API {
         }
         const checkPassword = await commonFun.verifyBcryptHash(this.request.query.password, userDetail[0].password);
 
-        if(!checkPassword) {
+        if (!checkPassword) {
 
             return {
                 status: false,
@@ -51,8 +51,6 @@ exports.login = class extends API {
 exports.refresh = class extends API {
 
     async refresh() {
-
-        console.log(this.request.query.token, '@@@')
 
         const loginObj = await commonFun.verifyJWT(this.request.query.token);
 
@@ -102,7 +100,7 @@ exports.refresh = class extends API {
             [loginObj.user_id, this.account.account_id]
         );
 
-        userRoles = userRoles.map(x=> {
+        userRoles = userRoles.map(x => {
 
             return {
                 category_id: x.category_id,
@@ -134,4 +132,42 @@ exports.refresh = class extends API {
             status: true,
         }
     }
+
+};
+
+exports.tookan = class extends API {
+    async tookan() {
+
+        if(!this.request.query.access_token) {
+
+            throw("access token not found")
+        }
+
+        let userDetail = await this.mysql.query(`
+            select
+                u.* 
+            from
+                tookan.tb_users tu 
+            join 
+                tb_users u 
+                using(user_id) 
+            where 
+                access_token = ? 
+            `);
+
+        if(!userDetail.length) {
+
+            throw("user not found")
+        }
+
+        userDetail = userDetail[0];
+
+        const obj = {
+            user_id: userDetail.user_id,
+            email: userDetail.email,
+        };
+
+        return commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400);
+    }
+
 };
