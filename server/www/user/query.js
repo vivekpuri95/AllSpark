@@ -10,7 +10,8 @@ exports.list = class extends API {
 		);
 
 		for(const row of data) {
-			row["queries"] = row["queries"].split(",").map(Number);
+
+			row["queries"] = row["queries"] ? row["queries"].split(",").map(Number) : [];
 		}
 		return data;
 	}
@@ -28,8 +29,10 @@ exports.insert = class extends API {
 		);
 		const report_check = await this.mysql.query(
 			`SELECT * FROM tb_query WHERE query_id = ? AND account_id = ?`,
-			[this.request.body.user_id, this.account.account_id]
+			[this.request.body.query_id, this.account.account_id]
 		);
+
+		console.log(user_check,'.........', report_check);
 
 		if(!user_check.length || !report_check.length)
 			throw 'Unauthorised user';

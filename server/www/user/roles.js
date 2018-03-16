@@ -22,6 +22,7 @@ exports.insert = class extends API {
 		const role_check = await this.mysql.query(
 			`SELECT * FROM tb_roles WHERE role_id = ? AND account_id = ?`,
 			[this.request.body.role_id, this.account.account_id]
+        );
 
 		if(!user_check.length || !category_check.length || !role_check.length)
 			throw 'Unauthorised user';
@@ -118,7 +119,7 @@ exports.delete = class extends API {
         );
 
         if(!delete_check.length)
-            throw "Unauthorized User"
+            throw "Unauthorized User";
 
         return await this.mysql.query(
             'DELETE FROM tb_user_roles WHERE id = ?',
