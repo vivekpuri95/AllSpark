@@ -67,10 +67,28 @@ exports.list = class extends API {
 
     async list(){
 
-        if(this.request.body.user_id)
-			return await this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id]);
-        else
-			return await this.mysql.query(`select * from tb_users WHERE account_id = ?`, [this.account.account_id]);
+        let results;
+        if(this.request.body.user_id){
+			results = await Promise.all([
+				this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id]),
+				this.mysql.query(`SELECT id, user_id, category_id, role_id FROM tb_user_roles WHERE user_id = ? `, [this.request.body.user_id]),
+				this.mysql.query(`SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege WHERE user_id = ? `, [this.request.body.user_id])
+			]);
+
+        }
+        else {
+			results = await Promise.all([
+				this.mysql.query(`SELECT * FROM tb_users WHERE account_id = ?`, [this.account.account_id]),
+				this.mysql.query(`SELECT id, user_id, category_id, role_id FROM tb_user_roles`),
+				this.mysql.query(`SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`)
+			]);
+		}
+
+		for(const row of results[0]) {
+			row.roles = results[1].filter(roles => roles.user_id == row.user_id);
+			row.privileges = results[2].filter(privilege => privilege.user_id == row.user_id);
+		}
+		return results[0];
     }
 
 };
