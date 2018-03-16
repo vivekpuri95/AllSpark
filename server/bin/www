@@ -33,7 +33,7 @@ if(config.has('https')) {
     var options = {
         key: fs.readFileSync(httpsOptions.key),
         cert: fs.readFileSync(httpsOptions.cert),
-        ca: httpsOptions.map(x => fs.readFileSync(x, 'utf8'))
+        ca: httpsOptions.ca.map(x => fs.readFileSync(x, 'utf8'))
     };
 
     server = https.createServer(options, app);
