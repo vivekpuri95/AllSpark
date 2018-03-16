@@ -14,8 +14,8 @@ class LiveToTest extends API{
         const response = [];
 
         for(const table of tables) {
-            await this.mysql.query(`TRUNCATE TABLE allspark_test.${table}`,[], 'allSparkWrite');
-            const data = await this.mysql.query(`INSERT INTO allspark_test.${table} SELECT * FROM allspark.${table}`, [], 'allSparkWrite');
+            await this.mysql.query(`TRUNCATE TABLE allspark_test.${table}`,[], 'write');
+            const data = await this.mysql.query(`INSERT INTO allspark_test.${table} SELECT * FROM allspark.${table}`, [], 'write');
             response.push({table,...data});
         }
 

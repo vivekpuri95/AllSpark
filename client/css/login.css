@@ -15,19 +15,24 @@ main {
 		main .logo img {
 			width: 100%;
 		}
-	form {
-		display: flex;
-		flex-direction: column;
+	main .form {
 		background: #fff;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-		padding: 8px;
+		padding: 10px;
 		margin: var(--gap) 0;
-		width: 100%;
 	}
-		input {
-			margin: var(--gap);
-			padding: 8px 10px !important;
+		main .form label {
+			max-width: initial;
 		}
-		input[type=submit] {
-			letter-spacing: 1px;
+		main form div {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
 		}
+			main form a {
+				font-size: 12px;
+				padding: 0 5px;
+			}
+			main form div input {
+				width: auto;
+			}

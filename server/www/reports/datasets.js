@@ -29,14 +29,7 @@ exports.insert = class extends API {
     async insert() {
 
         let
-            values = {}, dataset_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_query_datasets'
-            `);
-
-        table_cols.map(row =>  dataset_cols.push(row.COLUMN_NAME) );
+            values = {}, dataset_cols = ['account_id', 'category_id', 'dataset', 'name', 'value'];
 
         for(const key in this.request.body) {
             if(dataset_cols.includes(key))
@@ -44,7 +37,7 @@ exports.insert = class extends API {
         }
 
         values["account_id"] = this.account.account_id;
-        return await this.mysql.query('INSERT INTO tb_query_datasets SET  ?', [values], 'allSparkWrite');
+        return await this.mysql.query('INSERT INTO tb_query_datasets SET  ?', [values], 'write');
     }
 };
 
@@ -53,27 +46,20 @@ exports.update = class extends API {
     async update() {
 
         let
-            values = {}, dataset_cols = [],
-            table_cols = await this.mysql.query(`
-                SELECT
-                    COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'allspark' AND TABLE_NAME = 'tb_query_datasets'
-            `);
-
-        table_cols.map(row =>  dataset_cols.push(row.COLUMN_NAME) );
+            values = {}, dataset_cols = ['category_id', 'dataset', 'name', 'value'];
 
         for(const key in this.request.body) {
             if(dataset_cols.includes(key))
                 values[key] = this.request.body[key] || null;
         }
 
-        return await this.mysql.query('UPDATE tb_query_datasets SET ? WHERE id = ? and account_id = ?', [values, this.request.body.id, this.account.account_id], 'allSparkWrite');
+        return await this.mysql.query('UPDATE tb_query_datasets SET ? WHERE id = ? and account_id = ?', [values, this.request.body.id, this.account.account_id], 'write');
     }
 };
 exports.delete = class extends API {
 
     async delete() {
 
-        return await this.mysql.query('DELETE FROM tb_query_datasets WHERE id = ? and account_id = ?', [this.request.body.id, this.account.account_id], 'allSparkWrite');
+        return await this.mysql.query('DELETE FROM tb_query_datasets WHERE id = ? and account_id = ?', [this.request.body.id, this.account.account_id], 'write');
     }
 };

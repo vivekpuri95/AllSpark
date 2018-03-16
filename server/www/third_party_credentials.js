@@ -10,7 +10,7 @@ exports.insert = class extends API {
             result[key] = this.request.body[key]
         }
 
-        return await this.mysql.query(`insert into tb_third_party_credentials set ?`,result,'allSparkWrite');
+        return await this.mysql.query(`insert into tb_third_party_credentials set ?`,result,'write');
 
     }
 
@@ -20,7 +20,7 @@ exports.delete = class extends API {
 
     async delete(){
 
-        return await this.mysql.query(`update tb_third_party_credentials set status = 0 where account_id = ?`,[this.request.body.account_id],'allSparkWrite');
+        return await this.mysql.query(`update tb_third_party_credentials set status = 0 where account_id = ?`,[this.request.body.account_id],'write');
 
     }
 
@@ -43,7 +43,7 @@ exports.update = class extends API {
 
         const values = [setParams, account_id];
 
-        return await this.mysql.query(`update tb_third_party_credentials set ? where account_id = ?`,values,'allSparkWrite');
+        return await this.mysql.query(`update tb_third_party_credentials set ? where account_id = ?`,values,'write');
 
     }
 
@@ -53,7 +53,7 @@ exports.list = class extends API {
 
     async list(){
 
-        return await this.mysql.query(`select * from tb_third_party_credentials`,[],'allSparkRead');
+        return await this.mysql.query(`select * from tb_third_party_credentials`);
 
     }
 

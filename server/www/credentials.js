@@ -1,10 +1,12 @@
-const mysql = require('./mysql');
+const mysql = require('../utils/mysql');
 const bigquery = require('./bigquery').BigQuery;
 const API = require('../utils/api');
 
 exports.insert = class extends API {
 
     async insert() {
+
+		this.user.privilege.needs('connection');
 
         await this.mysql.query(
             'insert into tb_credentials(account_id, connection_name, host, user, password, db, `limit`, type, file, project_name) values (?)',
@@ -21,7 +23,7 @@ exports.insert = class extends API {
                 this.request.body.project_name,
 
             ]],
-            'allSparkWrite'
+            'write'
         );
 
         await mysql.crateExternalPool(this.request.body.id);
@@ -30,8 +32,6 @@ exports.insert = class extends API {
             status: true,
             message: "updated db"
         }
-
-
     }
 }
 
@@ -46,10 +46,12 @@ exports.delete = class extends API {
 
     async delete() {
 
+		this.user.privilege.needs('connection');
+
         await this.mysql.query(
             'update tb_credentials set status = 0 where id = ?',
             [this.request.body['id']],
-            'allSparkWrite');
+            'write');
         await mysql.crateExternalPool(this.request.body.id);
         await bigquery.setup();
         return {
@@ -69,7 +71,7 @@ exports.update = class extends API {
         delete this.request.body.id;
         delete this.request.body.token;
 
-        await this.mysql.query('update tb_credentials set ? where id = ?',[this.request.body, id], 'allSparkWrite');
+        await this.mysql.query('update tb_credentials set ? where id = ?',[this.request.body, id], 'write');
         await mysql.crateExternalPool(this.request.body.id);
         await bigquery.setup();
         return {

@@ -1,5 +1,5 @@
 const API = require('./utils/api');
-const mysql = require('./www/mysql').MySQL;
+const mysql = require('./utils/mysql').MySQL;
 const bigquery = require('./www/bigquery').setup;
 
 

@@ -11,7 +11,7 @@ exports.create = class extends API {
             result[key] = this.request.body[key]
         }
 
-        return await this.mysql.query(`insert ignore into tb_user_privilege set ?`, result, 'allSparkWrite');
+        return await this.mysql.query(`insert ignore into tb_user_privilege set ?`, result, 'write');
     }
 
 };
@@ -38,7 +38,7 @@ exports.update = class extends API {
 
         delete result["user_id"];
 
-        return await this.mysql.query(`update tb_user_privilege set ? where user_id = ?`, [result, userId], 'allSparkWrite');
+        return await this.mysql.query(`update tb_user_privilege set ? where user_id = ?`, [result, userId], 'write');
     }
 
 };
@@ -58,7 +58,7 @@ exports.delete = class extends API {
                     user_id = ? and role = ? and category_id = ?
             `,
             [userId, role, category],
-            'allSparkWrite'
+            'write'
         );
     }
 

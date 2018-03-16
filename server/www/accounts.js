@@ -3,7 +3,6 @@ const API = require('../utils/api.js');
 exports.list = class extends API {
 
 	async list() {
-
 		return await this.mysql.query(`SELECT * FROM tb_accounts WHERE status = 1`);
 	}
 }
@@ -21,7 +20,7 @@ exports.insert = class extends API {
 		return await this.mysql.query(
 			`INSERT INTO tb_accounts SET ?`,
 			payload,
-			'allSparkWrite'
+			'write'
 		);
 	}
 }
@@ -46,7 +45,7 @@ exports.update = class extends API {
 		return await this.mysql.query(
 			`UPDATE tb_accounts SET ? WHERE account_id = ?`,
 			values,
-			'allSparkWrite'
+			'write'
 		);
 	}
 }
@@ -58,7 +57,7 @@ exports.delete = class extends API {
 		return await this.mysql.query(
 			`UPDATE tb_accounts SET status = 0 WHERE account_id = ?`,
 			this.request.body.account_id,
-			'allSparkWrite'
+			'write'
 		);
 	}
 }
