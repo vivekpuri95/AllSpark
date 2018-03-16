@@ -12,8 +12,6 @@ class report extends API {
 
     async report() {
 
-        console.log(this.user);
-
         this.queryId = this.request.body.query_id;
 
         if(!this.queryId) {
@@ -72,18 +70,18 @@ class report extends API {
     async fetch() {
 
         let reportDetails  = [
-            this.mysql.query(`SELECT 
-              q.*, 
+            this.mysql.query(`SELECT
+              q.*,
               IF(user_id IS NULL, 0, 1) AS flag
-            FROM 
+            FROM
                 tb_query q
             LEFT JOIN
-                 tb_user_query uq ON 
+                 tb_user_query uq ON
                  uq.query_id = q.query_id
                  AND user_id = ?
-            WHERE 
+            WHERE
                 q.query_id = ?
-                AND is_enabled = 1 
+                AND is_enabled = 1
                 AND is_deleted = 0
                 AND account_id = ?`, [this.user.user_id, this.queryId, this.account.account_id]),
 

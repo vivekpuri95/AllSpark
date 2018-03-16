@@ -105,17 +105,17 @@ exports.login = class extends API {
         const email = this.request.query.email;
 
         if(!email)
-            throw API.Exception(400, 'Email Required!');
+            throw new API.Exception(400, 'Email Required!');
 
         const userDetail = await this.mysql.query(`select * from tb_users where email = ?`, [email]);
 
         if(!userDetail.length)
-            throw API.Exception(400, 'Invalid Email');
+            throw new API.Exception(400, 'Invalid Email');
 
         const checkPassword = await commonFun.verifyBcryptHash(this.request.query.password, userDetail[0].password);
 
         if(!checkPassword)
-            throw API.Exception(400, 'Invalid Password!');
+            throw new API.Exception(400, 'Invalid Password!');
 
         const obj = {
             user_id: userDetail[0].user_id,

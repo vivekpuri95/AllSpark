@@ -3,13 +3,11 @@
 ## Start Client
 
 ```
-cd ./client
-PORT=8080 pm2 start 'index.js'  --name client
+PORT=80 pm2 start client/index.js --name client
 ```
 
 ## Start Server
 
 ```
-cd ./server
-NODE_ENV='development' pm2 start './bin/www'  --name server
+NODE_ENV='dev' pm2 start server/bin/www --name server
 ```
