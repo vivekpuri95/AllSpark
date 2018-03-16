@@ -67,7 +67,7 @@ exports.list = class extends API {
 
     async list(){
 
-        let results;
+        let results, roles = {}, privileges= {};
         if(this.request.body.user_id){
 			results = await Promise.all([
 				this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id]),
@@ -84,9 +84,23 @@ exports.list = class extends API {
 			]);
 		}
 
+		for (const role of results[1]){
+            if(!roles[role.user_id]) {
+                roles[role.user_id] = [];
+            }
+            roles[role.user_id].push(role);
+        }
+
+		for (const privilege of results[2]) {
+			if (!privileges[privilege.user_id]) {
+				privileges[privilege.user_id] = [];
+			}
+			privileges[privilege.user_id].push(privilege);
+		}
+
 		for(const row of results[0]) {
-			row.roles = results[1].filter(roles => roles.user_id == row.user_id);
-			row.privileges = results[2].filter(privilege => privilege.user_id == row.user_id);
+			row.roles = roles[row.user_id];
+            row.privileges = privileges[row.user_id];
 		}
 		return results[0];
     }
