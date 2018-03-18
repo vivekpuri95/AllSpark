@@ -7,36 +7,40 @@ const Mailer = require('../utils/mailer');
 const EXPIRE_AFTER = 1; //HOURS
 
 exports.resetlink = class extends API {
-    async resetlink() {
+	async resetlink() {
 
-        let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
-                                            [this.request.body.email,this.account.account_id]);
-        if (!user.length)
-            return true;
+		let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
+			[this.request.body.email, this.account.account_id]);
+		if (!user.length) {
 
-        const token = await new Promise((resolve, reject) => {
-            crypto.randomBytes(80, function (err, buf) {
-                if (err)
-                    reject(err);
-                else
-                    resolve(buf.toString('hex'));
-            });
-        });
+			return true;
+		}
 
-        user = user[0];
-        const user_id = user['user_id'];
-        const full_name = user['first_name'] + (user['last_name'] ? ' '+user['last_name'] : '');
+		const token = await new Promise((resolve, reject) => {
+			crypto.randomBytes(80, function (err, buf) {
+				if (err) {
+					reject(err);
+				}
+				else {
+					resolve(buf.toString('hex'));
+				}
+			});
+		});
 
-        await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?',[user_id],'write');
-        const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`
-        await this.mysql.query(query, [[[user_id, token, 1]]], 'write');
+		user = user[0];
+		const user_id = user['user_id'];
+		const full_name = user['first_name'] + (user['last_name'] ? ' ' + user['last_name'] : '');
 
-        let mailer = new Mailer();
-        mailer.from_email = 'no-reply@'+this.account.url;
-        mailer.from_name = this.account.name;
-        mailer.to.add(this.request.body.email);
-        mailer.subject = `Password reset for ${this.account.name}`
-        mailer.html = `
+		await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'write');
+		const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`
+		await this.mysql.query(query, [[[user_id, token, 1]]], 'write');
+
+		let mailer = new Mailer();
+		mailer.from_email = 'no-reply@' + this.account.url;
+		mailer.from_name = this.account.name;
+		mailer.to.add(this.request.body.email);
+		mailer.subject = `Password reset for ${this.account.name}`
+		mailer.html = `
             <div style="height:300px;width: 750px;margin:0 auto;border: 1px solid #ccc;padding: 20px 40px; box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);">
 
                 <div style="height:40px; background-image:url('${this.account.logo}'); display: flex; border-bottom:1px solid #999; background-repeat:no-repeat; margin-bottom: 25px; background-size:250px; background-position:left; font-size: 125%; padding: 10px 0;">
@@ -63,17 +67,17 @@ exports.resetlink = class extends API {
             </div>
         `;
 
-        await mailer.send();
-        return true;
-    }
+		await mailer.send();
+		return true;
+	}
 }
 
 exports.reset = class extends API {
-    async reset() {
-        if (!this.request.body.password || !this.request.body.reset_token)
-            return false;
+	async reset() {
+		if (!this.request.body.password || !this.request.body.reset_token)
+			return false;
 
-        const query = `select
+		const query = `select
                             user_id
                        from
                             tb_password_reset
@@ -83,72 +87,75 @@ exports.reset = class extends API {
                             and (created_at > now() - interval ? hour)
         `;
 
-        let user_id = await this.mysql.query(query, [this.request.body.reset_token, EXPIRE_AFTER]);
-        if (!user_id.length)
-            return false;
+		let user_id = await this.mysql.query(query, [this.request.body.reset_token, EXPIRE_AFTER]);
+		if (!user_id.length)
+			return false;
 
-        user_id = user_id[0]['user_id']
-        const newHashPass = await commonFun.makeBcryptHash(this.request.body.password);
+		user_id = user_id[0]['user_id'];
+		const newHashPass = await commonFun.makeBcryptHash(this.request.body.password);
 
-        await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user_id, this.account.account_id], 'write');
+		await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user_id, this.account.account_id], 'write');
 
 
-        await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'write');
-        return true;
-    }
-}
+		await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'write');
+		return true;
+	}
+};
 
 
 exports.login = class extends API {
-    async login() {
 
-        const email = this.request.query.email;
+	async login() {
 
-        if(!email)
-            throw new API.Exception(400, 'Email Required!');
+		const email = this.request.query.email;
 
-        const userDetail = await this.mysql.query(`select * from tb_users where email = ?`, [email]);
+		this.assert(email, "email required");
+		this.assert(this.request.query.password, "password required");
 
-        if(!userDetail.length)
-            throw new API.Exception(400, 'Invalid Email');
+		const [userDetail] = await this.mysql.query(`select * from tb_users where email = ?`, [email]);
 
-        const checkPassword = await commonFun.verifyBcryptHash(this.request.query.password, userDetail[0].password);
+		this.assert(userDetail, "Invalid Email");
 
-        if(!checkPassword)
-            throw new API.Exception(400, 'Invalid Password!');
+		const checkPassword = await commonFun.verifyBcryptHash(this.request.query.password, userDetail.password);
 
-        const obj = {
-            user_id: userDetail[0].user_id,
-            email: userDetail[0].email,
-        };
+		this.assert(checkPassword, "Invalid Password");
 
-        return commonFun.makeJWT(obj, parseInt(userDetail[0].ttl || 7) * 86400);
-    }
+		const obj = {
+			user_id: userDetail.user_id,
+			email: userDetail.email,
+		};
+
+		return commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400);
+	}
 };
 
 
 exports.refresh = class extends API {
 
-    async refresh() {
+	async refresh() {
 
-        const loginObj = await commonFun.verifyJWT(this.request.query.refresh_token);
+		this.assert(this.request.query.refresh_token, "Refresh Token Not Found");
 
-        const [[user], userPrivileges, userRoles] = await Promise.all([
+		const loginObj = await commonFun.verifyJWT(this.request.query.refresh_token);
 
-            this.mysql.query(
-                'SELECT * FROM tb_users WHERE user_id = ? AND account_id = ?',
-                [loginObj.user_id, this.account.account_id]
-            ),
+		const [[user], userPrivilegesRoles] = await Promise.all([
 
-            this.mysql.query(
-                `SELECT
-                    u.*,
-                    IF(r.is_admin = 1, 0, privilege_id) privilege_id,
+			this.mysql.query(
+				'SELECT * FROM tb_users WHERE user_id = ? AND account_id = ?',
+				[loginObj.user_id, this.account.account_id]
+			),
+
+			this.mysql.query(
+				`SELECT
+                    'privileges' AS 'owner',
+                    user_id,
+                    IF(p.is_admin = 1, 0, privilege_id) owner_id,
+                    p.name AS owner_name,
                     IF(c.is_admin = 1, 0, category_id) AS category_id,
-                    r.name as privilege_name
+                    c.name AS category_name
                 FROM
                     tb_user_privilege up
-                JOIN tb_privileges r
+                JOIN tb_privileges p
                     USING(privilege_id)
                 JOIN tb_users u
                     USING(user_id)
@@ -157,16 +164,17 @@ exports.refresh = class extends API {
                 WHERE
                     user_id = ?
                     AND u.account_id = ?
-               `,
-                [loginObj.user_id, this.account.account_id]
-            ),
-
-            this.mysql.query(
-                `
+                    
+                UNION ALL
+                
                 SELECT
+                    'roles' AS 'owner',
                     u.user_id,
+                    IF(r.is_admin = 1, 0, ur.role_id) AS owner_id,
+                    r.name AS role_name,
                     IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
-                    IF(r.is_admin = 1, 0, ur.role_id) AS role
+                    c.name AS category_name
+                    
                 FROM
                     tb_user_roles ur
                 JOIN
@@ -181,58 +189,98 @@ exports.refresh = class extends API {
                 WHERE
                     user_id = ?
                     AND u.account_id = ?
-                `,
-                [loginObj.user_id, this.account.account_id]
-            ),
-        ]);
 
-        const obj = {
-            user_id: user.user_id,
-            account_id: this.account.account_id,
-            email: loginObj.email,
-            name: `${user.first_name} ${user.middle_name || ''} ${user.last_name}`,
-            roles: userRoles.map(x => {
+               `,
+				[loginObj.user_id, this.account.account_id, loginObj.user_id, this.account.account_id]
+			),
+		]);
 
-                return {
-                    category_id: x.category_id,
-                    role: x.role,
-                }
-            }),
-            privileges: userPrivileges.map(x => {
+		const obj = {
+			user_id: user.user_id,
+			account_id: this.account.account_id,
+			email: loginObj.email,
+			name: `${user.first_name} ${user.middle_name || ''} ${user.last_name}`,
+			roles: userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "roles").map(x => {
 
-                return {
-                    privilege_id: x.privilege_id,
-                    privilege_name: x.privilege_name,
-                    category_id: x.category_id,
-                }
-            })
-        };
+				return {
+					category_id: x.category_id,
+					role: x.owner_id,
+				}
+			}),
+			privileges: userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {
 
-        const
-            categories = await this.mysql.query('SELECT category_id, name, is_admin FROM tb_categories WHERE account_id = ?', [this.account.account_id]),
-            privileges = await this.mysql.query('SELECT privilege_id, name, is_admin FROM tb_privileges'),
-            roles = await this.mysql.query('SELECT role_id, name, is_admin FROM tb_roles WHERE account_id = ?', [this.account.account_id]);
+				return {
+					privilege_id: x.owner_id,
+					privilege_name: x.owner_name,
+					category_id: x.category_id,
+				}
+			})
+		};
 
-        return {
-            token: commonFun.makeJWT(obj, parseInt(user.ttl || 7) * 86400),
-            metadata: {
-                categories,
-                privileges,
-                roles,
-            }
-        }
-    }
+		const categoriesPrivilegesRoles = await this.mysql.query(`
+                SELECT 
+                    'categories' AS 'type',
+                    category_id,
+                    \`name\`,
+                    is_admin
+                FROM
+                    tb_categories
+                WHERE
+                    account_id = ?
+                
+                UNION ALL
+                
+                SELECT
+                    'privileges' AS 'type',
+                    privilege_id, 
+                    \`name\`, 
+                    ifnull(is_admin, 0) AS is_admin 
+                FROM
+                    tb_privileges	
+                    
+                UNION ALL 
+                    
+                SELECT
+                    'roles', 
+                    role_id, 
+                    \`name\`, 
+                    ifnull(is_admin, 0) AS is_admin 
+                FROM 
+                    tb_roles 
+                WHERE
+                    account_id = ?
+            `,
+			[this.account.account_id, this.account.account_id]
+		);
+
+		const metadata = {};
+
+		for (const row of categoriesPrivilegesRoles) {
+
+			if (!metadata[row.type]) {
+
+				metadata[row.type] = [];
+			}
+
+			metadata[row.type].push(row);
+		}
+
+		return {
+			token: commonFun.makeJWT(obj, 10 * 60),
+			metadata
+		}
+	}
 };
 
 exports.tookan = class extends API {
-    async tookan() {
+	async tookan() {
 
-        if(!this.request.query.access_token) {
+		if (!this.request.query.access_token) {
 
-            throw("access token not found")
-        }
+			throw("access token not found")
+		}
 
-        let userDetail = await this.mysql.query(`
+		let userDetail = await this.mysql.query(`
             select
                 u.*
             from
@@ -243,21 +291,21 @@ exports.tookan = class extends API {
             where
                 access_token = ?
             `,
-            [this.request.query.access_token]);
+			[this.request.query.access_token]);
 
-        if(!userDetail.length) {
+		if (!userDetail.length) {
 
-            throw("user not found")
-        }
+			throw("user not found")
+		}
 
-        userDetail = userDetail[0];
+		userDetail = userDetail[0];
 
-        const obj = {
-            user_id: userDetail.user_id,
-            email: userDetail.email,
-        };
+		const obj = {
+			user_id: userDetail.user_id,
+			email: userDetail.email,
+		};
 
-        return commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400);
-    }
+		return commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400);
+	}
 
 };

@@ -3,64 +3,63 @@ const commonFun = require("./commonFunctions");
 
 class Authenticate {
 
-    static async report(reportObject, userJWTObject) {
+	static async report(reportObject, userJWTObject) {
 
-        const accountId = userJWTObject.account_id;
+		const accountId = userJWTObject.account_id;
 
-        if(parseInt(reportObject) || !reportObject) {
+		if (parseInt(reportObject) || !reportObject) {
 
-            reportObject = await mysql.query(`
-            SELECT 
-              q.*, 
-              IF(user_id IS NULL, 0, 1) AS flag
-            FROM 
-                tb_query q
-            LEFT JOIN
-                 tb_user_query uq ON 
-                 uq.query_id = q.query_id
-                 AND user_id = ?
-            WHERE 
-                q.query_id = ?
-                AND is_enabled = 1 
-                AND is_deleted = 0
-                AND account_id = ?
+			reportObject = await mysql.query(`
+                SELECT 
+                  q.*, 
+                  IF(user_id IS NULL, 0, 1) AS flag
+                FROM 
+                    tb_query q
+                LEFT JOIN
+                     tb_user_query uq ON 
+                     uq.query_id = q.query_id
+                     AND user_id = ?
+                WHERE 
+                    q.query_id = ?
+                    AND is_enabled = 1 
+                    AND is_deleted = 0
+                    AND account_id = ?
                 `,
-                [userJWTObject.user_id, reportObject, accountId]);
+				[userJWTObject.user_id, reportObject, accountId]);
 
-            if(!reportObject.length && reportObject.length > 1) {
+			if (!reportObject.length && reportObject.length > 1) {
 
-                return {
-                    error: true,
-                    message: "error in query details",
-                }
-            }
+				return {
+					error: true,
+					message: "error in query details",
+				}
+			}
 
-            reportObject = reportObject[0];
-        }
+			reportObject = reportObject[0];
+		}
 
-        if(reportObject.flag) {
+		if (reportObject.flag) {
 
-            return {
-                error: false,
-                message: "individual access",
-            }
-        }
+			return {
+				error: false,
+				message: "individual access",
+			}
+		}
 
-        const userPrivileges = [];
+		const userPrivileges = [];
 
-        userJWTObject.roles && userJWTObject.roles.map(x=> {
-            userPrivileges.push([accountId, x.category_id, x.role]);
-        });
+		userJWTObject.roles && userJWTObject.roles.map(x => {
+			userPrivileges.push([accountId, x.category_id, x.role]);
+		});
 
-        let objectPrivileges = [[reportObject.account_id], [reportObject.category_id]];
+		let objectPrivileges = [[reportObject.account_id], [reportObject.category_id]];
 
-        objectPrivileges[2] =  reportObject.roles ? reportObject.roles.split(',').map(x => parseInt(x)) : [null];
+		objectPrivileges[2] = reportObject.roles ? reportObject.roles.split(',').map(x => parseInt(x)) : [null];
 
-        objectPrivileges = commonFun.listOfArrayToMatrix(objectPrivileges);
+		objectPrivileges = commonFun.listOfArrayToMatrix(objectPrivileges);
 
-        return commonFun.authenticatePrivileges(userPrivileges, objectPrivileges);
-    }
-
+		return commonFun.authenticatePrivileges(userPrivileges, objectPrivileges);
+	}
 }
 
 module.exports = Authenticate;

@@ -23,18 +23,15 @@ class report extends API {
 
         const fetchedData = await this.fetch();
 
+        this.assert(!fetchedData.error, );
         if(fetchedData.error) {
 
             return fetchedData;
         }
 
+        const authentication = await auth.report(this.query, this.user);
 
-        const authentication = auth.report(this.query, this.user);
-
-        if(authentication.error) {
-
-            return authentication;
-        }
+        this.assert(!authentication.error, authentication.message, 401);
 
         let result = null;
 

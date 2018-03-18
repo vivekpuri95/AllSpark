@@ -6,147 +6,179 @@ const {resolve} = require('path');
 const commonFun = require('./commonFunctions');
 const User = require('./User');
 const constants = require('./constants');
+const assert = require("assert");
 
 class API {
 
-	constructor() {
+    constructor() {
 
-		this.mysql = mysql;
+        this.mysql = mysql;
 
-	}
+    }
 
-	static setup() {
+    static setup() {
 
-		API.endpoints = new Map;
+        API.endpoints = new Map;
 
-		function walk(directory) {
+        function walk(directory) {
 
-			for(const file of fs.readdirSync(directory)) {
+            for (const file of fs.readdirSync(directory)) {
 
-				const path = resolve(directory, file).replace(/\//g, pathSeparator);
+                const path = resolve(directory, file).replace(/\//g, pathSeparator);
 
-				if(fs.statSync(path).isDirectory()) {
-					walk(path);
-					continue;
-				}
+                if (fs.statSync(path).isDirectory()) {
+                    walk(path);
+                    continue;
+                }
 
-				if(!path.endsWith('.js'))
-					continue;
+                if (!path.endsWith('.js'))
+                    continue;
 
-				const module = require(path);
+                const module = require(path);
 
-				for(const key in module) {
+                for (const key in module) {
 
-					// Make sure the endpoint extends API class
-					if(module.hasOwnProperty(key) && module[key] && module[key].prototype && module[key].prototype.__proto__.constructor == API)
-						API.endpoints.set([path.slice(0, -3), key].join(pathSeparator), module[key]);
-				}
-			}
-		}
+                    // Make sure the endpoint extends API class
+                    if (module.hasOwnProperty(key) && module[key] && module[key].prototype && module[key].prototype.__proto__.constructor == API)
+                        API.endpoints.set([path.slice(0, -3), key].join(pathSeparator), module[key]);
+                }
+            }
+        }
 
-		walk(__dirname + '/../www');
-	}
+        walk(__dirname + '/../www');
+    }
 
-	static serve() {
+    static serve() {
 
-		return async function(request, response) {
+        return async function (request, response, next) {
 
-			try {
+            try {
 
-				const
-					url = request.url.replace(/\//g, pathSeparator),
-					path = resolve(__dirname + '/../www') + pathSeparator + url.substring(4, url.indexOf('?') < 0 ? undefined : url.indexOf('?'));
+                const
+                    url = request.url.replace(/\//g, pathSeparator),
+                    path = resolve(__dirname + '/../www') + pathSeparator + url.substring(4, url.indexOf('?') < 0 ? undefined : url.indexOf('?'));
+                //
+                if (!API.endpoints.has(path)) {
 
-				if (!API.endpoints.has(path))
-					throw 'Endpoint not found! <br><br>'+path+' <br><br>' + Array.from(API.endpoints.keys()).join('<br>');
+                    return next();
+                }
 
-				const obj = new (API.endpoints.get(path))();
+                const obj = new (API.endpoints.get(path))();
 
-				obj.request = request;
-				let host = request.headers.host.split(':')[0];
+                obj.request = request;
+                obj.assert = assertExpression;
 
-				let method, userDetails;
+                let host = request.headers.host.split(':')[0];
 
-				if(request.method === 'GET')
-					method = 'query';
+                let userDetails;
 
-				else if(request.method === 'POST')
-					method = 'body';
+                const token = request.query.token || request.body.token;
 
-				if(request[method].token) {
-					userDetails = await commonFun.verifyJWT(request[method].token);
-					obj.user = new User(userDetails);
-				}
+                if (token) {
 
-				if(!userDetails && !constants.publicEndpoints.filter(u => url.startsWith(u)).length)
-					throw new API.Exception(401, 'User Not Authenticated! :(');
+                    userDetails = await commonFun.verifyJWT(token);
+                    obj.user = new User(userDetails);
+                }
 
-				// if(host.includes('localhost')) {
-				// 	host = 'analytics.jungleworks.co';
-				// }
+                if(!userDetails && !constants.publicEndpoints.filter(u => url.startsWith(u)).length)
+                	throw new API.Exception(401, 'User Not Authenticated! :(');
 
-				obj.account = global.account[host];
+                if (host.includes('localhost')) {
+                    host = 'test-analytics.jungleworks.co';
+                }
 
-				const result = await obj[path.split(pathSeparator).pop()]();
+                obj.account = global.account[host];
 
-				obj.result = {
-					status: result ? true : false,
-					data: result,
-				};
+                const result = await obj[path.split(pathSeparator).pop()]();
 
-				await obj.gzip();
+                obj.result = {
+                    status: result ? true : false,
+                    data: result,
+                };
 
-				response.set({'Content-Encoding': 'gzip'});
-				response.set({'Content-Type': 'application/json'});
+                await obj.gzip();
 
-				response.send(obj.result);
-			}
+                response.set({'Content-Encoding': 'gzip'});
+                response.set({'Content-Type': 'application/json'});
 
-			catch (e) {
-				console.log('Error in endpoint execution', e);
+                response.send(obj.result);
+            }
 
-				if(e instanceof API.Exception) {
+            catch (e) {
 
-					response.status(e.status || 500).send({
-						status: false,
-						description: e.message,
-					});
-				} else {
-					response.status(500).send({
-						status: false,
-						description: 'Internal Server Error',
-					});
+                if (e instanceof API.Exception) {
 
-					throw e;
-				}
-			}
-		}
-	}
+                    return response.status(e.status || 500).send({
+                        status: false,
+                        description: e.message,
+                    });
+                }
 
-	async gzip() {
+                if (!(e instanceof Error)) {
 
-		return new Promise((resolve, reject) => {
-			zlib.gzip(JSON.stringify(this.result), (error, result) => {
+                    e = new Error(e);
+                    e.status = 401;
+                }
 
-				if(error)
-					reject(['API response gzip compression failed!', error]);
+                if (e instanceof assert.AssertionError) {
 
-				else  {
-					this.result = result;
-					resolve();
-				}
-			});
-		});
-	}
+                    if (commonFun.isJson(e.message)) {
 
+                        e.message = JSON.parse(e.message);
+                    }
+
+                    e.status = e.message.status || 400;
+                    e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "something went wrong");
+                }
+
+                else {
+
+                    e.status = e.status || 500;
+                }
+
+                return next(e);
+            }
+        }
+    }
+
+    async gzip() {
+
+        return new Promise((resolve, reject) => {
+            zlib.gzip(JSON.stringify(this.result), (error, result) => {
+
+                if (error)
+                    reject(['API response gzip compression failed!', error]);
+
+                else {
+                    this.result = result;
+                    resolve();
+                }
+            });
+        });
+    }
+
+}
+
+//if statement
+//new API.exception(user doesnt exist , 400)
+
+//this.assert(statement, user doesnt exist, 400)
+
+function assertExpression(expression, message, statusCode) {
+
+    return assert(expression,
+        JSON.stringify({
+            message: message,
+            status: statusCode,
+        }));
 }
 
 API.Exception = class {
 
-	constructor(status, message) {
-		this.status = status;
-		this.message = message;
-	}
+    constructor(status, message) {
+        this.status = status;
+        this.message = message;
+    }
 }
 
 module.exports = API;
