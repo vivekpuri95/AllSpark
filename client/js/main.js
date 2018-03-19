@@ -63,7 +63,9 @@ class User {
 
 	static logout(next) {
 
-		localStorage.token = localStorage.refresh_token = null;
+		localStorage.removeItem('token');
+		localStorage.removeItem('refresh_token');
+		localStorage.removeItem('account');
 
 		const parameters = new URLSearchParams();
 

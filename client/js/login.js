@@ -24,7 +24,7 @@ class Login extends Page {
 	static async whitelabel() {
 
 		Login.form.innerHTML = `
-			<div class="whitelabel">+
+			<div class="whitelabel">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
