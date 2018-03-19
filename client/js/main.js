@@ -63,7 +63,7 @@ class User {
 
 	static logout(next) {
 
-		localStorage.clear();
+		localStorage.token = localStorage.refresh_token = null;
 
 		const parameters = new URLSearchParams();
 
