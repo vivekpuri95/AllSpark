@@ -212,7 +212,7 @@ class API extends AJAX {
 
 				const user = JSON.parse(atob(localStorage.token.split('.')[1]));
 
-				if(user.exp && Date.parse(user.exp * 1000) > Date.now())
+				if(user.exp && user.exp * 1000 > Date.now())
 					getToken = false;
 
 			} catch(e) {}
