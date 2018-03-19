@@ -23,5 +23,3 @@ exports.publicEndpoints = [
 	'/v2/authentication/resetLink',
     '/v2/authentication/tookan',
 ];
-
-exports.unauthorizedMessage = "\x66\x75\x63\x6B\x20\x6F\x66\x66";

@@ -83,9 +83,9 @@ class API {
 				if (!userDetails && !constants.publicEndpoints.filter(u => url.startsWith(u)).length)
 					throw new API.Exception(401, 'User Not Authenticated! :(');
 
-				if (host.includes('localhost')) {
-					host = 'test-analytics.jungleworks.co';
-				}
+				// if (host.includes('localhost')) {
+				// 	host = 'test-analytics.jungleworks.co';
+				// }
 
 				obj.account = global.account[host];
 
