@@ -710,7 +710,7 @@ class Template {
 					${this.scripts.map(s => '<script src="'+s+'"></script>').join('')}
 					<script>
 						PORT = ${process.env.PORT}
-						HTTPS = ${process.env.HTTPS}
+						HTTP = ${process.env.HTTP}
 					</script>
 				</head>
 				<body>

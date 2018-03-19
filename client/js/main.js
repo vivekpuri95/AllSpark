@@ -20,7 +20,7 @@ class Account {
 
 	static async fetch() {
 
-		window.account = {APIHost: `http${HTTPS ? 's' : ''}://${window.location.hostname}:${PORT - 5080}/`}
+		window.account = {APIHost: `http${HTTP ? '' : 's'}://${window.location.hostname}:${PORT - 5080}/`}
 
 		try {
 
