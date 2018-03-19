@@ -416,7 +416,7 @@ class Page {
 
 		if(account.settings.get('whitelabel')) {
 
-			const parameters = new URLSearchParams(window.location.search);
+			const parameters = new URLSearchParams(window.location.search.slice(1));
 
 			if(parameters.has('access_token') && parameters.get('access_token'))
 				localStorage.access_token = parameters.get('access_token');
