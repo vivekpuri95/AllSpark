@@ -3,9 +3,92 @@ const API = require('../utils/api.js');
 exports.list = class extends API {
 
 	async list() {
-		return await this.mysql.query(`SELECT * FROM tb_accounts WHERE status = 1`);
+
+		this.user.privilege.needs('administrator');
+
+		const accountList = await this.mysql.query(`
+			SELECT 
+				a.*, 
+				s.profile,
+				s.value 
+			FROM 
+				tb_accounts a
+			LEFT JOIN
+				tb_settings s
+			ON
+				s.account_id = a.account_id 
+				AND s.owner = 'account' 
+			WHERE 
+				a.status = 1
+			`);
+
+		const accountObj = {};
+
+		accountList.map(x => {
+
+			accountObj[x.account_id] = JSON.parse(JSON.stringify(x));
+
+			delete accountObj[x.account_id]['profile'];
+			delete accountObj[x.account_id]['value'];
+
+			if (!accountObj[x.account_id].settings) {
+
+				accountObj[x.account_id].settings = [];
+			}
+
+			accountObj[x.account_id].settings.push({
+				profile: x.profile,
+				value: JSON.parse(x.value),
+			})
+		});
+
+		return Object.values(accountObj);
 	}
-}
+};
+
+exports.get = class extends API {
+
+	async get() {
+		const accountList = await this.mysql.query(`
+			SELECT 
+				a.*, 
+				s.profile,
+				s.value 
+			FROM 
+				tb_accounts a
+			LEFT JOIN
+				tb_settings s
+			ON
+				s.account_id = a.account_id 
+				AND s.owner = 'account' 
+			WHERE 
+				a.status = 1
+				and a.account_id = ?
+			`,
+			[this.account.account_id]);
+
+		this.assert(accountList.length, "account not found :(");
+
+		const accountObj = {
+			settings: [],
+		};
+
+		Object.assign(accountObj, accountList[0]);
+
+		accountList.map(x => {
+
+			accountObj.settings.push({
+				profile: x.profile,
+				value: JSON.parse(x.value),
+			})
+		});
+
+		delete accountObj['value'];
+		delete accountObj['profile'];
+
+		return accountObj;
+	}
+};
 
 exports.insert = class extends API {
 
@@ -13,7 +96,7 @@ exports.insert = class extends API {
 
 		let payload = {};
 
-		for(const values in this.request.body) {
+		for (const values in this.request.body) {
 			payload[values] = this.request.body[values];
 		}
 
@@ -31,16 +114,16 @@ exports.update = class extends API {
 
 		const keys = Object.keys(this.request.body);
 
-        const payload = this.request.body,
-        account_id = payload.account_id,
-        setParams = {};
+		const payload = this.request.body,
+			account_id = payload.account_id,
+			setParams = {};
 
-        for (const key in payload) {
-            if (~keys.indexOf(key) && key != 'account_id')
-                setParams[key] = payload[key] || null;
-        }
+		for (const key in payload) {
+			if (~keys.indexOf(key) && key != 'account_id')
+				setParams[key] = payload[key] || null;
+		}
 
-        const values = [setParams, account_id];
+		const values = [setParams, account_id];
 
 		return await this.mysql.query(
 			`UPDATE tb_accounts SET ? WHERE account_id = ?`,
