@@ -5,19 +5,19 @@ exports.list = class extends API {
 	async list() {
 
 		const
-			data =  await this.mysql.query(
-			'SELECT user_id, query_id FROM tb_user_query WHERE user_id = ?',
-			[this.request.body.user_id]
+			data = await this.mysql.query(
+				'SELECT user_id, query_id FROM tb_user_query WHERE user_id = ?',
+				[this.request.body.user_id]
 			),
 			queries = [];
 
-		for(const row of data) {
+		for (const row of data) {
 
 			queries.push(row.query_id);
 		}
 		return {
-			user_id : this.request.body.query_id,
-			query : queries
+			user_id: this.request.body.query_id,
+			query: queries
 		};
 	}
 };
@@ -44,7 +44,7 @@ exports.insert = class extends API {
 			[this.request.body.user_id, this.request.body.query_id, this.account.account_id, this.account.account_id]
 		);
 
-		if(!check.length) {
+		if (!check.length) {
 			throw 'Unauthorised user';
 		}
 
@@ -94,7 +94,7 @@ exports.update = class extends API {
 			[this.request.body.user_id, this.account.account_id, this.account.account_id, this.request.body.query_id]
 		);
 
-		if(!update_check.length || !existing_check.length) {
+		if (!update_check.length || !existing_check.length) {
 			throw 'Unauthorised user';
 		}
 
@@ -103,7 +103,7 @@ exports.update = class extends API {
 			[this.request.body.user_id, this.request.body.query_id, this.request.body.id],
 			'write');
 	}
-}
+};
 
 exports.delete = class extends API {
 
@@ -111,7 +111,7 @@ exports.delete = class extends API {
 
 		this.user.privilege.needs('report');
 
-		const delete_check =  await this.mysql.query(`
+		const delete_check = await this.mysql.query(`
 		    SELECT
 			    u.account_id, q.account_id
 			FROM
@@ -128,7 +128,7 @@ exports.delete = class extends API {
 			[this.request.body.id, this.account.account_id, this.account.account_id]
 		);
 
-		if(!delete_check.length){
+		if (!delete_check.length) {
 			throw "Unauthorised User";
 		}
 

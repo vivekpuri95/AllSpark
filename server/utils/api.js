@@ -6,6 +6,7 @@ const {resolve} = require('path');
 const commonFun = require('./commonFunctions');
 const User = require('./User');
 const constants = require('./constants');
+const assert = require("assert");
 
 class API {
 
@@ -21,24 +22,24 @@ class API {
 
 		function walk(directory) {
 
-			for(const file of fs.readdirSync(directory)) {
+			for (const file of fs.readdirSync(directory)) {
 
 				const path = resolve(directory, file).replace(/\//g, pathSeparator);
 
-				if(fs.statSync(path).isDirectory()) {
+				if (fs.statSync(path).isDirectory()) {
 					walk(path);
 					continue;
 				}
 
-				if(!path.endsWith('.js'))
+				if (!path.endsWith('.js'))
 					continue;
 
 				const module = require(path);
 
-				for(const key in module) {
+				for (const key in module) {
 
 					// Make sure the endpoint extends API class
-					if(module.hasOwnProperty(key) && module[key] && module[key].prototype && module[key].prototype.__proto__.constructor == API)
+					if (module.hasOwnProperty(key) && module[key] && module[key].prototype && module[key].prototype.__proto__.constructor == API)
 						API.endpoints.set([path.slice(0, -3), key].join(pathSeparator), module[key]);
 				}
 			}
@@ -49,41 +50,42 @@ class API {
 
 	static serve() {
 
-		return async function(request, response) {
+		return async function (request, response, next) {
 
 			try {
 
 				const
 					url = request.url.replace(/\//g, pathSeparator),
 					path = resolve(__dirname + '/../www') + pathSeparator + url.substring(4, url.indexOf('?') < 0 ? undefined : url.indexOf('?'));
+				//
+				if (!API.endpoints.has(path)) {
 
-				if (!API.endpoints.has(path))
-					throw 'Endpoint not found! <br><br>'+path+' <br><br>' + Array.from(API.endpoints.keys()).join('<br>');
+					return next();
+				}
 
 				const obj = new (API.endpoints.get(path))();
 
 				obj.request = request;
+				obj.assert = assertExpression;
+
 				let host = request.headers.host.split(':')[0];
 
-				let method, userDetails;
+				let userDetails;
 
-				if(request.method === 'GET')
-					method = 'query';
+				const token = request.query.token || request.body.token;
 
-				else if(request.method === 'POST')
-					method = 'body';
+				if (token) {
 
-				if(request[method].token) {
-					userDetails = await commonFun.verifyJWT(request[method].token);
+					userDetails = await commonFun.verifyJWT(token);
 					obj.user = new User(userDetails);
 				}
 
-				if(!userDetails && !constants.publicEndpoints.filter(u => url.startsWith(u)).length)
+				if (!userDetails && !constants.publicEndpoints.filter(u => url.startsWith(u)).length)
 					throw new API.Exception(401, 'User Not Authenticated! :(');
 
-				// if(host.includes('localhost')) {
-				// 	host = 'analytics.jungleworks.co';
-				// }
+				if (host.includes('localhost')) {
+					host = 'test-analytics.jungleworks.co';
+				}
 
 				obj.account = global.account[host];
 
@@ -103,22 +105,38 @@ class API {
 			}
 
 			catch (e) {
-				console.log('Error in endpoint execution', e);
 
-				if(e instanceof API.Exception) {
+				if (e instanceof API.Exception) {
 
-					response.status(e.status || 500).send({
+					return response.status(e.status || 500).send({
 						status: false,
 						description: e.message,
 					});
-				} else {
-					response.status(500).send({
-						status: false,
-						description: 'Internal Server Error',
-					});
-
-					throw e;
 				}
+
+				if (!(e instanceof Error)) {
+
+					e = new Error(e);
+					e.status = 401;
+				}
+
+				if (e instanceof assert.AssertionError) {
+
+					if (commonFun.isJson(e.message)) {
+
+						e.message = JSON.parse(e.message);
+					}
+
+					e.status = e.message.status || 400;
+					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "something went wrong");
+				}
+
+				else {
+
+					e.status = e.status || 500;
+				}
+
+				return next(e);
 			}
 		}
 	}
@@ -128,10 +146,10 @@ class API {
 		return new Promise((resolve, reject) => {
 			zlib.gzip(JSON.stringify(this.result), (error, result) => {
 
-				if(error)
+				if (error)
 					reject(['API response gzip compression failed!', error]);
 
-				else  {
+				else {
 					this.result = result;
 					resolve();
 				}
@@ -139,6 +157,20 @@ class API {
 		});
 	}
 
+}
+
+//if statement
+//new API.exception(user doesnt exist , 400)
+
+//this.assert(statement, user doesnt exist, 400)
+
+function assertExpression(expression, message, statusCode) {
+
+	return assert(expression,
+		JSON.stringify({
+			message: message,
+			status: statusCode,
+		}));
 }
 
 API.Exception = class {
