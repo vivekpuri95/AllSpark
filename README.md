@@ -4,7 +4,7 @@
 
 ```
 cd client
-PORT=8081 HTTPS=0 pm2 start index.js --name client
+PORT=8081 HTTP=1 pm2 start index.js --name client
 ```
 
 ## Start Server

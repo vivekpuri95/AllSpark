@@ -5,9 +5,15 @@ main {
 	margin: 0 auto;
 	width: 300px;
 }
+	main .whitelabel {
+		justify-content: center;
+		padding: 25px;
+		font-size: 200%;
+		justify-content: center;
+	}
 	main .logo {
 		width: 100%;
-		background: var(--color-secondary);
+		background: var(--color-primary);
 		padding: 20px 50px;
 		margin: var(--gap) 0;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
