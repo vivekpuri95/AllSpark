@@ -409,9 +409,18 @@ class Page {
 	}
 
 	static async load() {
+
 		await Account.load();
 		await User.load();
 		await MetaData.load();
+
+		if(account.settings.get('whitelabel')) {
+
+			const parameters = new URLSearchParams(window.location.search);
+
+			if(parameters.has('access_token') && parameters.get('access_token'))
+				localStorage.access_token = parameters.get('access_token');
+		}
 	}
 
 	static render() {

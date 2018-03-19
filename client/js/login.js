@@ -24,14 +24,13 @@ class Login extends Page {
 	static async whitelabel() {
 
 		Login.form.innerHTML = `
-			<div class="whitelabel">
+			<div class="whitelabel">+
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
-
 		const parameters = new URLSearchParams(window.location.search);
 
-		if(!parameters.has('access_token') || !parameters.get('access_token')) {
+		if(!localStorage.access_token && (!parameters.has('access_token') || !parameters.get('access_token'))) {
 			Login.form.innerHTML = '<div class="whitelabel"><i class="fas fa-exclamation-triangle"></i></div>';
 			Login.message.textContent = 'Cannot authenticate user, please reload the page :(';
 			Login.message.classList.remove('hidden');
@@ -41,7 +40,7 @@ class Login extends Page {
 		try {
 
 			const params = {
-				access_token: parameters.get('access_token'),
+				access_token: localStorage.access_token || parameters.get('access_token'),
 			};
 
 			localStorage.refresh_token = await API.call('v2/authentication/tookan', params);
