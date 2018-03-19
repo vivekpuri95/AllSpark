@@ -10,67 +10,64 @@ const requestPromise = promisify(request);
 
 class report extends API {
 
-    async report() {
+	async report() {
 
-        this.queryId = this.request.body.query_id;
+		this.queryId = this.request.body.query_id;
 
-        if(!this.queryId) {
-            return {
-                status: false,
-                message: "report Not found"
-            }
-        }
+		if (!this.queryId) {
+			return {
+				status: false,
+				message: "report Not found"
+			}
+		}
 
-        const fetchedData = await this.fetch();
+		const fetchedData = await this.fetch();
 
-        if(fetchedData.error) {
+		this.assert(!fetchedData.error,);
+		if (fetchedData.error) {
 
-            return fetchedData;
-        }
+			return fetchedData;
+		}
 
+		const authentication = await auth.report(this.query, this.user);
 
-        const authentication = auth.report(this.query, this.user);
+		this.assert(!authentication.error, authentication.message, 401);
 
-        if(authentication.error) {
+		let result = null;
 
-            return authentication;
-        }
+		if (this.query.source.toLowerCase() === 'query') {
 
-        let result = null;
+			result = await new query(this.query, this.filters, this.request).execute();
+		}
 
-        if(this.query.source.toLowerCase() === 'query') {
+		else if (this.query.source.toLowerCase() === 'api') {
 
-            result = await new query(this.query, this.filters, this.request).execute();
-        }
+			result = await new api(this.query, this.filters, this.request).execute();
+		}
 
-        else if (this.query.source.toLowerCase() === 'api') {
+		else if (this.query.source.toLowerCase() === 'big_query') {
 
-            result = await new api(this.query, this.filters, this.request).execute();
-        }
+			//return await new bigquery().execute();
+		}
 
-        else if (this.query.source.toLowerCase() === 'big_query') {
+		else {
 
-            //return await new bigquery().execute();
-        }
+			return {
+				status: false,
+				message: "unknown source",
+			}
+		}
 
-        else {
+		return {
+			status: result ? true : false,
+			data: result,
+		}
+	}
 
-            return {
-                status: false,
-                message: "unknown source",
-            }
-        }
+	async fetch() {
 
-        return {
-            status: result ? true : false,
-            data: result,
-        }
-    }
-
-    async fetch() {
-
-        let reportDetails  = [
-            this.mysql.query(`SELECT
+		let reportDetails = [
+			this.mysql.query(`SELECT
               q.*,
               IF(user_id IS NULL, 0, 1) AS flag
             FROM
@@ -85,238 +82,238 @@ class report extends API {
                 AND is_deleted = 0
                 AND account_id = ?`, [this.user.user_id, this.queryId, this.account.account_id]),
 
-            this.mysql.query(`select * from tb_filters where query_id = ?`, [this.queryId])
-        ];
+			this.mysql.query(`select * from tb_filters where query_id = ?`, [this.queryId])
+		];
 
-        reportDetails = await Promise.all(reportDetails);
-        for(const f of reportDetails[1]) {
+		reportDetails = await Promise.all(reportDetails);
+		for (const f of reportDetails[1]) {
 
-            f.value = this.request.body[f.placeholder] || f.default_value;
-            //
-            // if(f.placeholder.slice(-2) === '[]') {
-            //     f.is_list = true;
-            //     f.value = f.value.split(',').map(x => x.trim());
-            // }
+			f.value = this.request.body[f.placeholder] || f.default_value;
+			//
+			// if(f.placeholder.slice(-2) === '[]') {
+			//     f.is_list = true;
+			//     f.value = f.value.split(',').map(x => x.trim());
+			// }
 
-        }
+		}
 
-        this.query = reportDetails[0][0];
-        this.filters = reportDetails[1] || [];
+		this.query = reportDetails[0][0];
+		this.filters = reportDetails[1] || [];
 
 
-        if(!reportDetails[0][0]) {
-            return {
-                error: true,
-                message: "no report found"
-            }
-        }
+		if (!reportDetails[0][0]) {
+			return {
+				error: true,
+				message: "no report found"
+			}
+		}
 
-        return {
-            error: false,
-        }
+		return {
+			error: false,
+		}
 
-    }
+	}
 
-    applyFiltersCommon() {
+	applyFiltersCommon() {
 
-        const types = [
-            'string',
-            'number',
-            'date',
-            'month',
-        ];
+		const types = [
+			'string',
+			'number',
+			'date',
+			'month',
+		];
 
-        // console.log(this.filters)
-        for(const filter of this.filters) {
+		// console.log(this.filters)
+		for (const filter of this.filters) {
 
-            if(isNaN(parseFloat(filter.offset))) {
+			if (isNaN(parseFloat(filter.offset))) {
 
-                continue;
-            }
+				continue;
+			}
 
-            if(types[filter.type] == 'date') {
+			if (types[filter.type] == 'date') {
 
-                filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-                filter.value = this.request.body[filter.placeholder] || filter.default_value;
+				filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+				filter.value = this.request.body[filter.placeholder] || filter.default_value;
 
-                if(filter.value === new Date().toISOString().slice(0,10)) {
-                    this.has_today = true;
+				if (filter.value === new Date().toISOString().slice(0, 10)) {
+					this.has_today = true;
 
-                }
-            }
+				}
+			}
 
-            if(types[filter.type] == 'month') {
-                const date = new Date();
-                filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
-                filter.value = this.request.body[filter.placeholder] || filter.default_value;
+			if (types[filter.type] == 'month') {
+				const date = new Date();
+				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
+				filter.value = this.request.body[filter.placeholder] || filter.default_value;
 
-                if(filter.value === new Date().toISOString().slice(0,7)) {
-                    this.has_today = true;
+				if (filter.value === new Date().toISOString().slice(0, 7)) {
+					this.has_today = true;
 
-                }
-            }
-        }
-    }
+				}
+			}
+		}
+	}
 
-    createRedisKey() {
-        this.redisKey = `Reporting#Engine#query_id:${this.query.query_id}#md5:${this.hash}`;
-    }
+	createRedisKey() {
+		this.redisKey = `Reporting#Engine#query_id:${this.query.query_id}#md5:${this.hash}`;
+	}
 
-    async execute() {
+	async execute() {
 
-        await this.applyFiltersCommon();
+		await this.applyFiltersCommon();
 
-        this.applyFilters();
+		this.applyFilters();
 
-        await this.fetchAndStore();
+		await this.fetchAndStore();
 
-        if (!this.request.body.download && this.result && this.query.source.toLowerCase() === 'query') {
+		if (!this.request.body.download && this.result && this.query.source.toLowerCase() === 'query') {
 
-            this.result = this.result.slice(0, 10000);
-        }
-        return this.result;
-    }
+			this.result = this.result.slice(0, 10000);
+		}
+		return this.result;
+	}
 }
 
 class query extends report {
 
-    constructor(query, filters, request) {
-        super();
-        this.query = query;
-        this.filters = filters;
-        this.request = request
-    }
+	constructor(query, filters, request) {
+		super();
+		this.query = query;
+		this.filters = filters;
+		this.request = request
+	}
 
-    applyFilters() {
+	applyFilters() {
 
-        this.query.query = this.query.query
-            .replace(/--.*(\n|$)/g, "")
-            .replace(/\s+/g, ' ');
+		this.query.query = this.query.query
+			.replace(/--.*(\n|$)/g, "")
+			.replace(/\s+/g, ' ');
 
-        for(const filter of this.filters) {
+		for (const filter of this.filters) {
 
-            this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `'${filter.value}'`);
-        }
-        this.hash = crypto.createHash('md5').update(this.query.query).digest('hex');
-        this.createRedisKey();
-    }
+			this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `'${filter.value}'`);
+		}
+		this.hash = crypto.createHash('md5').update(this.query.query).digest('hex');
+		this.createRedisKey();
+	}
 
-    async fetchAndStore () {
+	async fetchAndStore() {
 
-        const redisData = await commonFun.redisGet(this.redisKey);
+		const redisData = await commonFun.redisGet(this.redisKey);
 
-        if(this.query.is_redis && redisData && !this.has_today) {
+		if (this.query.is_redis && redisData && !this.has_today) {
 
-            try {
+			try {
 
-                this.result = JSON.parse(redisData);
-                return;
-            }
+				this.result = JSON.parse(redisData);
+				return;
+			}
 
-            catch(e) {
+			catch (e) {
 
-                throw("redis data is not json, redisKey: " + this.redisKey);
-            }
-        }
+				throw("redis data is not json, redisKey: " + this.redisKey);
+			}
+		}
 
-        this.result = await this.mysql.query(this.query.query, [], this.query.connection_name);
+		this.result = await this.mysql.query(this.query.query, [], this.query.connection_name);
 
-        await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
-    }
+		await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
+	}
 }
 
 
 class api extends report {
 
-    constructor(query, filters, request) {
+	constructor(query, filters, request) {
 
-        super();
-        this.query = query;
-        this.filters = filters;
-        this.request = request
-    }
+		super();
+		this.query = query;
+		this.filters = filters;
+		this.request = request
+	}
 
-    applyFilters() {
+	applyFilters() {
 
-        const parameters = [];
+		const parameters = [];
 
-        for(const filter of this.filters) {
+		for (const filter of this.filters) {
 
-            parameters.push({
-                name: filter.placeholder,
-                value: filter.value
-            });
-        }
+			parameters.push({
+				name: filter.placeholder,
+				value: filter.value
+			});
+		}
 
-        this.har = JSON.parse(this.query.url_options);
-        this.har.queryString = [];
-        this.har.headers = [
-            {
-                name: 'content-type',
-                value: 'application/x-www-form-urlencoded'
-            }
-        ];
-        this.har.url = this.query.url;
+		this.har = JSON.parse(this.query.url_options);
+		this.har.queryString = [];
+		this.har.headers = [
+			{
+				name: 'content-type',
+				value: 'application/x-www-form-urlencoded'
+			}
+		];
+		this.har.url = this.query.url;
 
-        if(this.har.method == 'GET') {
+		if (this.har.method == 'GET') {
 
-            this.har.queryString = parameters;
-        }
+			this.har.queryString = parameters;
+		}
 
-        else {
+		else {
 
-            this.har.postData = {
-                mimeType: 'application/x-www-form-urlencoded',
-                params: parameters,
-            };
-        }
+			this.har.postData = {
+				mimeType: 'application/x-www-form-urlencoded',
+				params: parameters,
+			};
+		}
 
-        this.hash = crypto.createHash('md5').update(JSON.stringify(this.har)).digest('hex');
-        this.createRedisKey();
+		this.hash = crypto.createHash('md5').update(JSON.stringify(this.har)).digest('hex');
+		this.createRedisKey();
 
-        if(!this.filters.filter(f => f.placeholder == 'token').length) {
+		if (!this.filters.filter(f => f.placeholder == 'token').length) {
 
-            this.har.queryString.push({
-                name: 'token',
-                value: this.request.body.token,
-            });
-        }
-    }
+			this.har.queryString.push({
+				name: 'token',
+				value: this.request.body.token,
+			});
+		}
+	}
 
-    async fetchAndStore() {
+	async fetchAndStore() {
 
-        const redisData = await commonFun.redisGet(this.redisKey);
-        if(this.query.is_redis && redisData && !this.has_today) {
+		const redisData = await commonFun.redisGet(this.redisKey);
+		if (this.query.is_redis && redisData && !this.has_today) {
 
-            try {
+			try {
 
-                this.result = JSON.parse(redisData);
-                return;
-            }
+				this.result = JSON.parse(redisData);
+				return;
+			}
 
-            catch(e) {
+			catch (e) {
 
-                throw("redis data is not json, redisKey: " + this.redisKey);
-            }
-        }
+				throw("redis data is not json, redisKey: " + this.redisKey);
+			}
+		}
 
-        const result = await requestPromise({
-            har: this.har,
-            gzip: true,
-        });
+		const result = await requestPromise({
+			har: this.har,
+			gzip: true,
+		});
 
-        if(commonFun.isJson(result.body)) {
+		if (commonFun.isJson(result.body)) {
 
-            this.result = JSON.parse(result.body)
-        }
+			this.result = JSON.parse(result.body)
+		}
 
-        else {
+		else {
 
-            this.result = JSON.parse(result.body)
-        }
+			this.result = JSON.parse(result.body)
+		}
 
-        await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
-    }
+		await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
+	}
 }
 
 // class bigquery extends query {

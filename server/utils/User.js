@@ -5,10 +5,7 @@ class User {
 
     constructor(userObj) {
 
-        for(const key in userObj) {
-
-            this[key] = userObj[key];
-        }
+        Object.assign(this, userObj);
 
         this.privilege = privilege(userObj);
         this.role = roles(userObj);
