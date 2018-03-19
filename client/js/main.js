@@ -20,13 +20,13 @@ class Account {
 
 	static async fetch() {
 
-		window.account = {APIHost: `https://${window.location.host}:${PORT - 5080}/`}
+		window.account = {APIHost: `http${HTTP ? '' : 's'}://${window.location.hostname}:${PORT - 5080}/`}
 
 		try {
 
 			const accounts = await API.call('v2/accounts/list');
 
-			return accounts.filter(a => a.url == window.location.host)[0];
+			return accounts.filter(a => a.url == window.location.hostname)[0];
 
 		} catch(e) {
 			return null;
@@ -212,7 +212,7 @@ class API extends AJAX {
 
 				const user = JSON.parse(atob(localStorage.token.split('.')[1]));
 
-				if(user.exp && Date.parse(user.exp) > Date.now())
+				if(user.exp && user.exp * 1000 > Date.now())
 					getToken = false;
 
 			} catch(e) {}

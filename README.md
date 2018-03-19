@@ -3,11 +3,13 @@
 ## Start Client
 
 ```
-PORT=80 pm2 start client/index.js --name client
+cd client
+PORT=8081 HTTPS=0 pm2 start index.js --name client
 ```
 
 ## Start Server
 
 ```
-NODE_ENV='dev' pm2 start server/bin/www --name server
+cd server
+NODE_ENV='dev' pm2 start bin/www --name server
 ```
