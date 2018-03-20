@@ -99,8 +99,8 @@ exports.list = class extends API {
 		}
 
 		for (const row of results[0]) {
-			row.roles = roles[row.user_id];
-			row.privileges = privileges[row.user_id];
+			row.roles = roles[row.user_id] ? roles[row.user_id] : [];
+			row.privileges = privileges[row.user_id] ? privileges[row.user_id] : [];
 		}
 		return results[0];
 	}
