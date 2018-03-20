@@ -1,6 +1,7 @@
 const API = require("../utils/api");
 const commonFun = require('../utils/commonFunctions');
 const crypto = require('crypto');
+const report = require("./reports/engine").report;
 
 const Mailer = require('../utils/mailer');
 
@@ -153,10 +154,9 @@ exports.refresh = class extends API {
 			name: `${user.first_name} ${user.middle_name || ''} ${user.last_name}`,
 		};
 
-		return {
-			token: commonFun.makeJWT(obj, 10 * 60),
+		return commonFun.makeJWT(obj, 10 * 60);
 
-		}
+
 	}
 };
 
@@ -320,6 +320,40 @@ exports.metadata = class extends API {
 
 		metadata.privileges = privileges;
 		metadata.roles = roles;
+
+		const datasets = await this.mysql.query(`select * from tb_query_datasets`);
+		const promiseList = [];
+
+		const datasetList = [];
+
+		for (const dataset of datasets) {
+
+			const reportObj = new report;
+
+			Object.assign(reportObj, this);
+
+			reportObj.request = {
+				body: {
+					query_id: dataset.query_id,
+					user_id: this.user.user_id,
+					account_id: this.account.account_id,
+				}
+			};
+
+			promiseList.push(reportObj.report());
+		}
+
+		const datasetResult = await commonFun.promiseParallelLimit(5, promiseList);
+
+		for (const [index, value] of datasetResult.entries()) {
+
+			datasetList.push({
+				name: datasets[index].name,
+				values: value,
+			})
+		}
+
+		metadata.datasets = datasetList;
 
 		return metadata;
 	}
