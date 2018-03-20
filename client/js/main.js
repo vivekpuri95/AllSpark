@@ -24,9 +24,7 @@ class Account {
 
 		try {
 
-			const accounts = await API.call('v2/accounts/list');
-
-			return accounts.filter(a => a.url == window.location.hostname)[0];
+			return await API.call('v2/accounts/get');
 
 		} catch(e) {
 			return null;
@@ -38,7 +36,15 @@ class Account {
 		for(const key in account)
 			this[key] = account[key];
 
-		this.APIHost = `https://${this.url}:${PORT - 5080}/`;
+		this.APIHost = `http${HTTP ? '' : 's'}://${this.url}:${PORT - 5080}/`;
+
+		this.settings = new Map;
+
+		if(account.settings && account.settings[0]) {
+
+			for(const key in account.settings[0].value)
+				this.settings.set(key, account.settings[0].value[key]);
+		}
 	}
 }
 
@@ -57,7 +63,9 @@ class User {
 
 	static logout(next) {
 
-		localStorage.clear();
+		localStorage.removeItem('token');
+		localStorage.removeItem('refresh_token');
+		localStorage.removeItem('account');
 
 		const parameters = new URLSearchParams();
 
@@ -84,6 +92,10 @@ class UserPrivileges extends Set {
 		super(context.privileges);
 
 		this.context = context;
+	}
+
+	has(name) {
+		return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase() || p.privilege_id === 0).length;
 	}
 }
 
@@ -234,7 +246,7 @@ API.Exception = class {
 
 	constructor(response) {
 		this.status = response.status;
-		this.message = response.message;
+		this.description = response.description;
 	}
 }
 
@@ -399,12 +411,26 @@ class Page {
 	}
 
 	static async load() {
+
 		await Account.load();
 		await User.load();
 		await MetaData.load();
+
+		if(account.settings.get('whitelabel')) {
+
+			const parameters = new URLSearchParams(window.location.search.slice(1));
+
+			if(parameters.has('access_token') && parameters.get('access_token'))
+				localStorage.access_token = parameters.get('access_token');
+		}
 	}
 
 	static render() {
+
+		if(account.settings.get('hideHeader')) {
+			document.querySelector('body > header').classList.add('hidden');
+			return;
+		}
 
 		if(account && account.icon)
 			document.getElementById('favicon').href = account.icon;
@@ -417,19 +443,18 @@ class Page {
 
 		document.querySelector('body > header .logout').on('click', () => User.logout());
 
-
 		Page.navList = [
-			{url: '/users', name: 'Users', id: 'user'},
-			{url: '/dashboards', name: 'Dashboards', id: 'dashboards'},
-			{url: '/reports', name: 'Reports', id: 'queries'},
-			{url: '/connections', name: 'Connections', id: 'datasources'},
+			{url: '/users', name: 'Users', privilege: 'users'},
+			{url: '/dashboards', name: 'Dashboards', privilege: 'dashboards'},
+			{url: '/reports', name: 'Reports', privilege: 'queries'},
+			{url: '/connections', name: 'Connections', privilege: 'datasources'},
 		];
 
 		const nav_container = document.querySelector('body > header nav');
 
 		for(const item of Page.navList) {
 
-			if(!window.user)
+			if(!window.user || !user.privileges.has(item.privilege))
 				continue;
 
 			nav_container.insertAdjacentHTML('beforeend',`<a href='${item.url}'>${item.name}</a>`);

@@ -1,0 +1,26 @@
+:root {
+	--color-primary: #282828;
+	--color-primary-text: #eee;
+	--color-secondary: #666;
+	--color-secondary-text: #ddd;
+	--color-accent: #1984ff;
+	--color-accent-text: #fff;
+	--color-row-hover: #ddf;
+	--transition-duration: 300ms;
+	--gap: 5px;
+}
+body > main > nav {
+	background: #eee;
+	color: #333;
+}
+	body > main > nav .label {
+		color: #333;
+	}
+	body > main > nav .label:hover {
+		background: #ddd;
+		color: #222;
+	}
+	body > main > nav .label.selected {
+		background: #ccc;
+		color: #222;
+	}

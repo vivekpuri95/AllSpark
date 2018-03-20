@@ -7,18 +7,18 @@ exports.list = class extends API {
 		this.user.privilege.needs('administrator');
 
 		const accountList = await this.mysql.query(`
-			SELECT 
-				a.*, 
+			SELECT
+				a.*,
 				s.profile,
-				s.value 
-			FROM 
+				s.value
+			FROM
 				tb_accounts a
 			LEFT JOIN
 				tb_settings s
 			ON
-				s.account_id = a.account_id 
-				AND s.owner = 'account' 
-			WHERE 
+				s.account_id = a.account_id
+				AND s.owner = 'account'
+			WHERE
 				a.status = 1
 			`);
 
@@ -26,7 +26,7 @@ exports.list = class extends API {
 
 		accountList.map(x => {
 
-			accountObj[x.account_id] = JSON.parse(JSON.stringify(x));
+			accountObj[x.account_id] =  JSON.parse(JSON.stringify(x));
 
 			delete accountObj[x.account_id]['profile'];
 			delete accountObj[x.account_id]['value'];
@@ -49,19 +49,20 @@ exports.list = class extends API {
 exports.get = class extends API {
 
 	async get() {
+
 		const accountList = await this.mysql.query(`
-			SELECT 
-				a.*, 
+			SELECT
+				a.*,
 				s.profile,
-				s.value 
-			FROM 
+				s.value
+			FROM
 				tb_accounts a
 			LEFT JOIN
 				tb_settings s
 			ON
-				s.account_id = a.account_id 
-				AND s.owner = 'account' 
-			WHERE 
+				s.account_id = a.account_id
+				AND s.owner = 'account'
+			WHERE
 				a.status = 1
 				and a.account_id = ?
 			`,
@@ -77,10 +78,16 @@ exports.get = class extends API {
 
 		accountList.map(x => {
 
+			let settings = {};
+
+			try {
+				settings = JSON.parse(x.value);
+			} catch(e) {};
+
 			accountObj.settings.push({
 				profile: x.profile,
-				value: JSON.parse(x.value),
-			})
+				value: settings,
+			});
 		});
 
 		delete accountObj['value'];

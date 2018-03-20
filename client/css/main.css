@@ -18,7 +18,7 @@ button {
 	padding: 5px 10px;
 	border: 0px solid #ccc;
 	background: var(--color-primary);
-	color: #fff !important;
+	color: var(--color-primary-text) !important;
 	height: 28px;
 	font-size: 90% !important;
 	line-height: 100% !important;
@@ -103,7 +103,7 @@ body {
 
 	body > #ajax-working {
 		position: fixed;
-		top: 60px;
+		top: 10px;
 		left: calc(50% - 80px);
 		opacity: 0;
 		user-select: none;
@@ -557,7 +557,7 @@ body {
 
 			main .data-source .visualization .tooltip {
 				background: var(--color-primary);
-				color: #fff;
+				color: var(--color-primary-text);
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 				position: absolute;
 				font-size: 90%;

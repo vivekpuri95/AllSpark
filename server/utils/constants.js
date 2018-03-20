@@ -16,7 +16,7 @@ exports.privilege = {
 };
 
 exports.publicEndpoints = [
-	'/v2/accounts/list',
+	'/v2/accounts/get',
 	'/v2/authentication/login',
 	'/v2/authentication/refresh',
 	'/v2/authentication/reset',

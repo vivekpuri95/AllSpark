@@ -689,6 +689,7 @@ class Template {
 
 		this.stylesheets = [
 			'/css/main.css',
+			'/css/themes/light.css',
 		];
 
 		this.scripts = [

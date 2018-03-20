@@ -10,7 +10,7 @@ main > nav {
 	top: 0;
 	background: var(--color-primary);
 	color: var(--color-primary-text);
-	height: calc(100vh - 50px);
+	height: calc(100vh);
 	overflow: hidden;
 }
 main > nav:hover {
