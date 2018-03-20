@@ -326,3 +326,4 @@ exports.verifyJWT = verifyJWT;
 exports.clearDirectory = clearDirectory;
 exports.listOfArrayToMatrix = listOfArrayToMatrix;
 exports.authenticatePrivileges = authenticatePrivileges;
+exports.promiseParallelLimit = promiseParallelLimit;
