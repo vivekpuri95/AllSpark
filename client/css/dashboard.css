@@ -28,8 +28,10 @@ main > nav::-webkit-scrollbar-track {
 	main > nav .NA {
 		text-align: center;
 		padding: 20px;
-		font-size: 175%;
 	}
+		main > nav .NA svg {
+			font-size: 175%;
+		}
 	main > nav .label {
 		display: flex;
 		padding: 12px 16px;

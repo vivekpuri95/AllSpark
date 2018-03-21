@@ -75,13 +75,15 @@ class Dashboards extends Page {
 
 		const nav = document.querySelector('main > nav');
 
-		if(nav.querySelector('.NA'))
-			nav.removeChild(nav.querySelector('.NA'));
+		nav.textContent = null;
 
 		for(const dashboard of this.list.values()) {
 			if(!dashboard.parent)
 				nav.appendChild(dashboard.menuItem);
 		}
+
+		if(!nav.children.length)
+			nav.innerHTML = `<div class="NA">No dashboards found!</div>`;
 	}
 
 	renderList() {
