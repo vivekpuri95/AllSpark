@@ -12,6 +12,7 @@
 body > main > nav {
 	background: #eee;
 	color: #333;
+	border-right: 1px solid #ccc;
 }
 	body > main > nav .label {
 		color: #333;

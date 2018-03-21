@@ -15,13 +15,13 @@ class Login extends Page {
 		if(account)
 			logo.src = account.logo;
 
-		if(account.settings.get('whitelabel'))
-			return Login.whitelabel();
+		if(account.settings.get('skip_authentication'))
+			return Login.skip_authentication();
 
 		Login.form.on('submit', Login.submit);
 	}
 
-	static async whitelabel() {
+	static async skip_authentication() {
 
 		Login.form.innerHTML = `
 			<div class="whitelabel">
@@ -54,7 +54,7 @@ class Login extends Page {
 			return;
 		}
 
-		if(!account.settings.get('whitelabel'))
+		if(!account.settings.get('skip_authentication'))
 			Login.message.innerHTML = 'Login Successful! Redirecting&hellip;';
 
 		window.location = '../';

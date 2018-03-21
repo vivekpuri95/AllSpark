@@ -10,7 +10,6 @@ main > nav {
 	top: 0;
 	background: var(--color-primary);
 	color: var(--color-primary-text);
-	height: calc(100vh);
 	overflow: hidden;
 }
 main > nav:hover {
@@ -29,7 +28,7 @@ main > nav::-webkit-scrollbar-track {
 	main > nav .NA {
 		text-align: center;
 		padding: 20px;
-		font-size: 20px;
+		font-size: 175%;
 	}
 	main > nav .label {
 		display: flex;

@@ -9,19 +9,24 @@ class Authenticate {
 
 		if (parseInt(reportObject) || !reportObject) {
 
+			return {
+				error: false,
+				message: "individual access",
+			}
+
 			reportObject = await mysql.query(`
-                SELECT 
-                  q.*, 
+                SELECT
+                  q.*,
                   IF(user_id IS NULL, 0, 1) AS flag
-                FROM 
+                FROM
                     tb_query q
                 LEFT JOIN
-                     tb_user_query uq ON 
+                     tb_user_query uq ON
                      uq.query_id = q.query_id
                      AND user_id = ?
-                WHERE 
+                WHERE
                     q.query_id = ?
-                    AND is_enabled = 1 
+                    AND is_enabled = 1
                     AND is_deleted = 0
                     AND account_id = ?
                 `,

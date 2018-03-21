@@ -149,7 +149,7 @@ class Dashboards extends Page {
 		}
 
 		if(!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA"><td colspan="5">No Reports Found! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA"><td colspan="6">No Reports Found! :(</td></tr>`;
 	}
 
 	report(id) {
