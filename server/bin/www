@@ -14,7 +14,7 @@ const fs = require('fs');
 /**
  * Get port from environment and store in Express.
  */
-const port = normalizePort(process.env.PORT || config.get("port"));
+const port = normalizePort(process.env.PORT || config.get("port").get("server"));
 
 app.set('port', port);
 
@@ -111,4 +111,4 @@ function onListening() {
   debug('Listening on ' + bind);
 }
 
-console.log('Server Listening On Port: ', config.get("port"));
+console.log('Server Listening On Port: ', config.get("port").get("server"));

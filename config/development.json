@@ -1,5 +1,8 @@
 {
-  "port": 3002,
+  "port": {
+    "server": 3001,
+    "client": 8081
+  },
   "http": false,
   "bigquery_files_destination": "../../bigquery_files/",
   "secret_key": "SECRET KEY HERE",
