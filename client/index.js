@@ -1,6 +1,7 @@
 "use strict";
 const express = require('express')
 const app = express();
+const config = require('config');
 
 app.use(express.static('./'));
 
@@ -712,7 +713,7 @@ class Template {
 					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'">').join('')}
 					${this.scripts.map(s => '<script src="'+s+'"></script>').join('')}
 					<script>
-						PORT = ${process.env.PORT}
+						PORT = ${config.get("port").get("client")}
 					</script>
 				</head>
 				<body>
@@ -736,7 +737,7 @@ class Template {
 	}
 }
 
-if(!process.env.PORT)
+if(!config.get("port").get("client"))
 	return console.error('Port not provided!');
 
-app.listen(process.env.PORT, () => console.log(`Client listening on port ${process.env.PORT}!`));
+app.listen(config.get("port").get("client"), () => console.log(`Client listening on port ${config.get("port").get("client")}!`));
