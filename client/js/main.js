@@ -24,7 +24,7 @@ class Account {
 
 		try {
 
-			return await API.call('v2/accounts/get');
+			return await API.call('accounts/get');
 
 		} catch(e) {
 			return null;
@@ -63,11 +63,13 @@ class User {
 
 	static logout(next) {
 
-		localStorage.removeItem('token');
-		localStorage.removeItem('refresh_token');
-		localStorage.removeItem('account');
+		const
+			access_token = localStorage.access_token,
+			parameters = new URLSearchParams();
 
-		const parameters = new URLSearchParams();
+		localStorage.clear();
+
+		localStorage.access_token = access_token;
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
@@ -80,6 +82,7 @@ class User {
 		for(const key in user)
 			this[key] = user[key];
 
+		this.id = this.user_id;
 		this.privileges = new UserPrivileges(this);
 		this.roles = new UserPrivileges(this);
 	}
@@ -163,7 +166,7 @@ class API extends AJAX {
 		if(!account)
 			throw 'Account not found!'
 
-		if(!endpoint.startsWith('v2/authentication'))
+		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
 		if(localStorage.token)
@@ -173,7 +176,7 @@ class API extends AJAX {
 		if(options.form)
 			API.loadFormData(parameters, options.form);
 
-		endpoint = account.APIHost + endpoint;
+		endpoint = account.APIHost + 'v2/' + endpoint;
 
 		const response = await AJAX.call(endpoint, parameters, options);
 
@@ -233,7 +236,7 @@ class API extends AJAX {
 		if(!localStorage.refresh_token || !getToken)
 			return;
 
-		const response = await API.call('v2/authentication/refresh', {refresh_token: localStorage.refresh_token});
+		const response = await API.call('authentication/refresh', {refresh_token: localStorage.refresh_token});
 
 		localStorage.token = response;
 
@@ -362,6 +365,9 @@ class MetaData {
 		MetaData.roles = new Map;
 		MetaData.categories = new Map;
 
+		if(!user.id)
+			return;
+
 		if(!localStorage.metadata)
 			await MetaData.fetch();
 
@@ -397,11 +403,9 @@ class MetaData {
 		return MetaData;
 	}
 
-	async fetch() {
-
-		localStorage.metadata = JSON.stringify(await API.call('authentication/metadata'));
+	static async fetch() {
+		localStorage.metadata = JSON.stringify(await API.call('users/metadata'));
 	}
-
 }
 
 class Page {
@@ -479,7 +483,7 @@ class DataSource {
 		if(DataSource.list && !force)
 			return;
 
-		const response = await API.call('v2/reports/report/list');
+		const response = await API.call('reports/report/list');
 
 		DataSource.list = [];
 		DataSource.dashboards = new Map;
@@ -533,7 +537,7 @@ class DataSource {
 			this.container.removeChild(this.container.querySelector('pre.warning'));
 
 		try {
-			response = await API.call('v2/reports/engine/report', parameters, options);
+			response = await API.call('reports/engine/report', parameters, options);
 		}
 
 		catch(e) {

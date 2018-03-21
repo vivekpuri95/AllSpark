@@ -23,7 +23,7 @@ class Dashboards extends Page {
 
 	static async load() {
 
-		Dashboards.response = await API.call('v2/dashboards/list');
+		Dashboards.response = await API.call('dashboards/list');
 
 		await  DataSource.load();
 
@@ -92,7 +92,7 @@ class DashboardsDashboard {
 			form: new FormData(DashboardsDashboard.form),
 		};
 
-		const response = await API.call('v2/dashboards/insert', {}, options);
+		const response = await API.call('dashboards/insert', {}, options);
 
 		await Dashboards.load();
 
@@ -146,7 +146,7 @@ class DashboardsDashboard {
 		const parameter = {
 			id: this.id,
 		}
-		await API.call('v2/dashboards/update', parameter, options);
+		await API.call('dashboards/update', parameter, options);
 
 		await Dashboards.load();
 	}
@@ -156,7 +156,7 @@ class DashboardsDashboard {
 		if(!confirm('Are you sure?!'))
 			return;
 
-		await API.call('v2/dashboards/delete', {id: this.id}, {method: 'POST'});
+		await API.call('dashboards/delete', {id: this.id}, {method: 'POST'});
 
 		await Dashboards.load();
 	}
@@ -231,7 +231,7 @@ class DashboardReport {
 				form: new FormData(document.getElementById('add-report')),
 			};
 
-		await API.call('v2/reports/dashboards/insert', parameters, options);
+		await API.call('reports/dashboards/insert', parameters, options);
 
 		await Dashboards.load(true);
 
@@ -303,7 +303,7 @@ class DashboardReport {
 				form: new FormData(this.container),
 			};
 
-		await API.call('v2/reports/dashboards/update', parameters, options);
+		await API.call('reports/dashboards/update', parameters, options);
 
 		await Dashboards.load(true);
 
@@ -323,7 +323,7 @@ class DashboardReport {
 				method: 'POST',
 			};
 
-		await API.call('v2/reports/dashboards/delete', parameters, options);
+		await API.call('reports/dashboards/delete', parameters, options);
 
 		await Dashboards.load(true);
 

@@ -43,7 +43,7 @@ class Login extends Page {
 				access_token: localStorage.access_token || parameters.get('access_token'),
 			};
 
-			localStorage.refresh_token = await API.call('v2/authentication/tookan', params);
+			localStorage.refresh_token = await API.call('authentication/tookan', params);
 
 		} catch(response) {
 
@@ -74,7 +74,7 @@ class Login extends Page {
 
 		try {
 
-			localStorage.refresh_token = await API.call('v2/authentication/login', {}, options);
+			localStorage.refresh_token = await API.call('authentication/login', {}, options);
 
 		} catch(response) {
 

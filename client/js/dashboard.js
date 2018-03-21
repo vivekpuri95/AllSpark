@@ -46,7 +46,7 @@ class Dashboards extends Page {
 
 		await DataSource.load();
 
-		const dashboards = await API.call('v2/dashboards/list');
+		const dashboards = await API.call('dashboards/list');
 
 		for(const dashboard of dashboards || [])
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
