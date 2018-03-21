@@ -135,74 +135,11 @@ exports.refresh = class extends API {
 
 	async refresh() {
 
-		this.assert(this.request.query.refresh_token, "Refresh Token Not Found");
-
 		const loginObj = await commonFun.verifyJWT(this.request.query.refresh_token);
 
-		const [user] = await Promise.all([
+		const [user] = await this.mysql.query("select * from tb_users where user_id = ?", loginObj.user_id);
 
-			this.mysql.query(
-				'SELECT * FROM tb_users WHERE user_id = ? AND account_id = ?',
-				[loginObj.user_id, this.account.account_id]
-			),
-		]);
-
-		const obj = {
-			user_id: user.user_id,
-			account_id: this.account.account_id,
-			email: loginObj.email,
-			name: `${user.first_name} ${user.middle_name || ''} ${user.last_name}`,
-		};
-
-		return commonFun.makeJWT(obj, 10 * 60);
-
-
-	}
-};
-
-exports.tookan = class extends API {
-	async tookan() {
-
-		if (!this.request.query.access_token) {
-
-			throw("access token not found")
-		}
-
-		let userDetail = await this.mysql.query(`
-            select
-                u.*
-            from
-                jungleworks.tb_users tu
-            join
-                tb_users u
-                using(user_id)
-            where
-                access_token = ?
-            `,
-			[this.request.query.access_token]);
-
-		if (!userDetail.length) {
-
-			throw("user not found")
-		}
-
-		userDetail = userDetail[0];
-
-		const obj = {
-			user_id: userDetail.user_id,
-			email: userDetail.email,
-		};
-
-		return commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400);
-	}
-
-};
-
-
-exports.metadata = class extends API {
-	async metadata() {
-
-		const user_id = this.user.user_id;
+		this.assert(user, "user not found");
 
 		const userPrivilegesRoles = await this.mysql.query(
 			`SELECT
@@ -250,7 +187,7 @@ exports.metadata = class extends API {
                     AND u.account_id = ?
 
                `,
-			[user_id, this.account.account_id, user_id, this.account.account_id]
+			[loginObj.user_id, this.account.account_id, loginObj.user_id, this.account.account_id]
 		);
 
 		const privileges = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {
@@ -269,6 +206,64 @@ exports.metadata = class extends API {
 				role: x.owner_id,
 			}
 		});
+
+
+		const obj = {
+			user_id: user.user_id,
+			account_id: this.account.account_id,
+			email: loginObj.email,
+			name: [user.first_name, user.middle_name, user.last_name].filter(x => x).join(' '),
+			roles: roles,
+			privileges: privileges
+		};
+
+		return commonFun.makeJWT(obj, parseInt(user.ttl || 7) * 86400);
+	}
+}
+
+exports.tookan = class extends API {
+	async tookan() {
+
+		if (!this.request.query.access_token) {
+
+			throw("access token not found")
+		}
+
+		let userDetail = await this.mysql.query(`
+            select
+                u.*
+            from
+                jungleworks.tb_users tu
+            join
+                tb_users u
+                using(user_id)
+            where
+                access_token = ?
+            `,
+			[this.request.query.access_token]);
+
+		if (!userDetail.length) {
+
+			throw("user not found")
+		}
+
+		userDetail = userDetail[0];
+
+		const obj = {
+			user_id: userDetail.user_id,
+			email: userDetail.email,
+		};
+
+		return commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400);
+	}
+
+};
+
+
+exports.metadata = class extends API {
+	async metadata() {
+
+		const user_id = this.user.user_id;
 
 		const categoriesPrivilegesRoles = await this.mysql.query(`
                 SELECT 
@@ -318,8 +313,6 @@ exports.metadata = class extends API {
 			metadata[row.type].push(row);
 		}
 
-		metadata.privileges = privileges;
-		metadata.roles = roles;
 
 		const datasets = await this.mysql.query(`select * from tb_query_datasets`);
 		const promiseList = [];
