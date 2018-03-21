@@ -110,7 +110,9 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 	res.send(template.body(`
 
-		<nav></nav>
+		<nav>
+			<div class="NA"><i class="fa fa-spinner fa-spin"></i></div>
+		</nav>
 
 		<section class="section" id="list">
 			<h2>${req.params.type}</h2>
@@ -711,7 +713,6 @@ class Template {
 					${this.scripts.map(s => '<script src="'+s+'"></script>').join('')}
 					<script>
 						PORT = ${process.env.PORT}
-						HTTP = ${process.env.HTTP}
 					</script>
 				</head>
 				<body>

@@ -20,7 +20,7 @@ class Account {
 
 	static async fetch() {
 
-		window.account = {APIHost: `http${HTTP ? '' : 's'}://${window.location.hostname}:${PORT - 5080}/`}
+		window.account = {APIHost: `//${window.location.hostname}:${PORT - 5080}/`}
 
 		try {
 
@@ -36,7 +36,7 @@ class Account {
 		for(const key in account)
 			this[key] = account[key];
 
-		this.APIHost = `http${HTTP ? '' : 's'}://${this.url}:${PORT - 5080}/`;
+		this.APIHost = `//${this.url}:${PORT - 5080}/`;
 
 		this.settings = new Map;
 
@@ -235,8 +235,7 @@ class API extends AJAX {
 
 		const response = await API.call('v2/authentication/refresh', {refresh_token: localStorage.refresh_token});
 
-		localStorage.token = response.token;
-		localStorage.metadata = JSON.stringify(response.metadata);
+		localStorage.token = response;
 
 		Page.load();
 	}
@@ -357,14 +356,14 @@ class Sections {
 
 class MetaData {
 
-	static load() {
+	static async load() {
 
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
 		MetaData.categories = new Map;
 
 		if(!localStorage.metadata)
-			return;
+			await MetaData.fetch();
 
 		let metadata = null;
 
@@ -397,6 +396,12 @@ class MetaData {
 
 		return MetaData;
 	}
+
+	async fetch() {
+
+		localStorage.metadata = JSON.stringify(await API.call('authentication/metadata'));
+	}
+
 }
 
 class Page {
