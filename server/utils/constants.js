@@ -11,6 +11,7 @@ exports.privilege = {
     user: "user",
     connection: "connection",
     dashboard: "dashboard",
+    report: "report",
 
     ignore_category: ['connection', 'dashboard']
 };
