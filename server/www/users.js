@@ -1,5 +1,6 @@
 const API = require("../utils/api");
 const commonFun = require("../utils/commonFunctions");
+const report = require("./reports/engine").report;
 
 exports.insert = class extends API {
 
@@ -32,7 +33,6 @@ exports.delete = class extends API {
 		return await this.mysql.query(`update tb_users set status = 0 where user_id = ?`, [this.request.body.user_id], 'write');
 
 	}
-
 }
 
 exports.update = class extends API {
@@ -129,3 +129,95 @@ exports.changePassword = class extends API {
 			throw("Password does not match!");
 	}
 }
+
+exports.metadata = class extends API {
+	async metadata() {
+
+		const user_id = this.user.user_id;
+
+		const categoriesPrivilegesRoles = await this.mysql.query(`
+                SELECT
+                    'categories' AS 'type',
+                    category_id,
+                    \`name\`,
+                    is_admin
+                FROM
+                    tb_categories
+                WHERE
+                    account_id = ?
+
+                UNION ALL
+
+                SELECT
+                    'privileges' AS 'type',
+                    privilege_id,
+                    \`name\`,
+                    ifnull(is_admin, 0) AS is_admin
+                FROM
+                    tb_privileges
+
+                UNION ALL
+
+                SELECT
+                    'roles',
+                    role_id,
+                    \`name\`,
+                    ifnull(is_admin, 0) AS is_admin
+                FROM
+                    tb_roles
+                WHERE
+                    account_id = ?
+            `,
+			[this.account.account_id, this.account.account_id]
+		);
+
+		const metadata = {};
+
+		for (const row of categoriesPrivilegesRoles) {
+
+			if (!metadata[row.type]) {
+
+				metadata[row.type] = [];
+			}
+
+			metadata[row.type].push(row);
+		}
+
+
+		const datasets = await this.mysql.query(`select * from tb_query_datasets`);
+		const promiseList = [];
+
+		const datasetList = [];
+
+		for (const dataset of datasets) {
+
+			const reportObj = new report;
+
+			Object.assign(reportObj, this);
+
+			reportObj.request = {
+				body: {
+					query_id: dataset.query_id,
+					user_id: this.user.user_id,
+					account_id: this.account.account_id,
+				}
+			};
+
+			promiseList.push(reportObj.report());
+		}
+
+		const datasetResult = await commonFun.promiseParallelLimit(5, promiseList);
+
+		for (const [index, value] of datasetResult.entries()) {
+
+			datasetList.push({
+				name: datasets[index].name,
+				values: value,
+			})
+		}
+
+		metadata.datasets = datasetList;
+
+		return metadata;
+	}
+};

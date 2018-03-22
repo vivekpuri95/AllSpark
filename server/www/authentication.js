@@ -1,7 +1,6 @@
 const API = require("../utils/api");
 const commonFun = require('../utils/commonFunctions');
 const crypto = require('crypto');
-const report = require("./reports/engine").report;
 
 const Mailer = require('../utils/mailer');
 
@@ -160,9 +159,9 @@ exports.refresh = class extends API {
                 WHERE
                     user_id = ?
                     AND u.account_id = ?
-                    
+
                 UNION ALL
-                
+
                 SELECT
                     'roles' AS 'owner',
                     u.user_id,
@@ -170,7 +169,7 @@ exports.refresh = class extends API {
                     r.name AS role_name,
                     IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
                     c.name AS category_name
-                    
+
                 FROM
                     tb_user_roles ur
                 JOIN
@@ -257,97 +256,4 @@ exports.tookan = class extends API {
 		return commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400);
 	}
 
-};
-
-
-exports.metadata = class extends API {
-	async metadata() {
-
-		const user_id = this.user.user_id;
-
-		const categoriesPrivilegesRoles = await this.mysql.query(`
-                SELECT 
-                    'categories' AS 'type',
-                    category_id,
-                    \`name\`,
-                    is_admin
-                FROM
-                    tb_categories
-                WHERE
-                    account_id = ?
-                
-                UNION ALL
-                
-                SELECT
-                    'privileges' AS 'type',
-                    privilege_id, 
-                    \`name\`, 
-                    ifnull(is_admin, 0) AS is_admin 
-                FROM
-                    tb_privileges	
-                    
-                UNION ALL 
-                    
-                SELECT
-                    'roles', 
-                    role_id, 
-                    \`name\`, 
-                    ifnull(is_admin, 0) AS is_admin 
-                FROM 
-                    tb_roles 
-                WHERE
-                    account_id = ?
-            `,
-			[this.account.account_id, this.account.account_id]
-		);
-
-		const metadata = {};
-
-		for (const row of categoriesPrivilegesRoles) {
-
-			if (!metadata[row.type]) {
-
-				metadata[row.type] = [];
-			}
-
-			metadata[row.type].push(row);
-		}
-
-
-		const datasets = await this.mysql.query(`select * from tb_query_datasets`);
-		const promiseList = [];
-
-		const datasetList = [];
-
-		for (const dataset of datasets) {
-
-			const reportObj = new report;
-
-			Object.assign(reportObj, this);
-
-			reportObj.request = {
-				body: {
-					query_id: dataset.query_id,
-					user_id: this.user.user_id,
-					account_id: this.account.account_id,
-				}
-			};
-
-			promiseList.push(reportObj.report());
-		}
-
-		const datasetResult = await commonFun.promiseParallelLimit(5, promiseList);
-
-		for (const [index, value] of datasetResult.entries()) {
-
-			datasetList.push({
-				name: datasets[index].name,
-				values: value,
-			})
-		}
-
-		metadata.datasets = datasetList;
-
-		return metadata;
-	}
 };

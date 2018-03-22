@@ -31,7 +31,7 @@ class Credentials extends Page {
 
 	static async fetch() {
 
-		return API.call('v2/credentials/list');
+		return API.call('credentials/list');
 	}
 
 	static process(response) {
@@ -104,7 +104,7 @@ class Credential {
 				form: new FormData(Credential.form),
 			};
 
-		await API.call('v2/credentials/insert', parameters, options);
+		await API.call('credentials/insert', parameters, options);
 
 		await Credentials.load();
 
@@ -151,7 +151,7 @@ class Credential {
 				form: new FormData(Credential.form),
 			};
 
-		await API.call('v2/credentials/update', parameters, options);
+		await API.call('credentials/update', parameters, options);
 
 		await Credentials.load();
 
@@ -172,7 +172,7 @@ class Credential {
 				method: 'POST',
 			};
 
-		await API.call('v2/credentials/update', parameters, options);
+		await API.call('credentials/update', parameters, options);
 
 		await Credentials.load();
 	}

@@ -1,15 +1,8 @@
 # AllSpark
 
-## Start Client
+## Start Client & Server
 
 ```
-cd client
-PORT=8081 HTTP=1 pm2 start index.js --name client
-```
-
-## Start Server
-
-```
-cd server
-NODE_ENV='dev' pm2 start bin/www --name server
+NODE_ENV='dev' pm2 start client/index.js --name client
+NODE_ENV='dev' pm2 start server/bin/www --name server
 ```

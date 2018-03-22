@@ -79,9 +79,9 @@ class Reports extends Page {
 			return;
 
 		[ReportFilter.dataset, Reports.response, Reports.credentials] = await Promise.all([
-			API.call('v2/reports/datasets/names'),
-			API.call('v2/reports/report/list'),
-			API.call('v2/credentials/list'),
+			API.call('reports/datasets/names'),
+			API.call('reports/report/list'),
+			API.call('credentials/list'),
 		]);
 	}
 
@@ -142,6 +142,7 @@ class Report {
 		Report.container.querySelector('.toolbar #back').on('click', () => {
 			Reports.back();
 		});
+
 		Report.container.querySelector('.toolbar #test').on('click', () => Report.selected && Report.selected.test());
 		Report.container.querySelector('.toolbar #force-test').on('click', () => Report.selected && Report.selected.test(true));
 
@@ -153,6 +154,7 @@ class Report {
 				}
 			});
 		}
+
 		Report.schemas = new Map;
 
 		Report.container.querySelector('#test-container .close').on('click', function() {
@@ -236,7 +238,7 @@ class Report {
 				form: new FormData(document.getElementById('report-form')),
 			};
 
-		const response = await API.call('v2/reports/report/insert', parameters, options);
+		const response = await API.call('reports/report/insert', parameters, options);
 
 		await Reports.load(true);
 
@@ -258,7 +260,7 @@ class Report {
 
 				const
 					parameters = { id: Report.form.elements.connection_name.value },
-					response = await API.call('v2/credentials/schema', parameters),
+					response = await API.call('credentials/schema', parameters),
 					container = Report.form.querySelector('#query #schema');
 
 				const
@@ -403,11 +405,11 @@ class Report {
 			<td>${this.filters.list.size}</td>
 			<td>${this.visualizations.list.size}</td>
 			<td>${this.is_enabled ? 'Yes' : 'No'}</td>
-			<td class="action edit">Edit</td>
-			<td class="action delete">Delete</td>
+			<td class="action green">Edit</td>
+			<td class="action red">Delete</td>
 		`;
 
-		this.container.querySelector('.edit').on('click', () => {
+		this.container.querySelector('.green').on('click', () => {
 			Reports.search = Reports.filters.elements.search.value;
 			Reports.column_search = Reports.filters.elements.column_search.value;
 
@@ -415,7 +417,7 @@ class Report {
 			history.pushState({what: this.query_id}, '', `/reports/${this.query_id}`);
 		});
 
-		this.container.querySelector('.delete').on('click', () => this.delete());
+		this.container.querySelector('.red').on('click', () => this.delete());
 
 		for(const tag of this.container.querySelectorAll('.tags a') || []) {
 			tag.on('click', () => {
@@ -509,7 +511,7 @@ class Report {
 				form: new FormData(document.getElementById('report-form')),
 			};
 
-		await API.call('v2/reports/report/update', parameters, options);
+		await API.call('reports/report/update', parameters, options);
 
 		await Reports.load(true);
 
@@ -530,7 +532,7 @@ class Report {
 				method: 'POST',
 			};
 
-		await API.call('v2/reports/report/update', parameters, options);
+		await API.call('reports/report/update', parameters, options);
 
 		await Reports.load(true);
 	}
@@ -553,7 +555,7 @@ class Report {
 
 		try {
 
-			let response = await API.call('v2/reports/engine/report', parameters, options);
+			let response = await API.call('reports/engine/report', parameters, options);
 
 			if(!response)
 				response = [];
@@ -688,7 +690,7 @@ class ReportFilter {
 				form: new FormData(document.getElementById('add-filter')),
 			};
 
-		await API.call('v2/reports/filters/insert', parameters, options);
+		await API.call('reports/filters/insert', parameters, options);
 
 		await Reports.load(true);
 
@@ -802,7 +804,7 @@ class ReportFilter {
 				form: new FormData(this.container),
 			};
 
-		await API.call('v2/reports/filters/update', parameters, options);
+		await API.call('reports/filters/update', parameters, options);
 
 		await Reports.load(true);
 
@@ -822,7 +824,7 @@ class ReportFilter {
 				method: 'POST',
 			};
 
-		await API.call('v2/reports/filters/delete', parameters, options);
+		await API.call('reports/filters/delete', parameters, options);
 
 		await Reports.load(true);
 
@@ -876,7 +878,7 @@ class ReportVisualization {
 				form: new FormData(document.getElementById('add-visualization')),
 			};
 
-		await API.call('v2/reports/visualizations/insert', parameters, options);
+		await API.call('reports/visualizations/insert', parameters, options);
 
 		await Reports.load(true);
 
@@ -964,7 +966,7 @@ class ReportVisualization {
 				form: new FormData(this.container),
 			};
 
-		await API.call('v2/reports/visualizations/update', parameters, options);
+		await API.call('reports/visualizations/update', parameters, options);
 
 		await Reports.load(true);
 
@@ -984,7 +986,7 @@ class ReportVisualization {
 				method: 'POST',
 			};
 
-		await API.call('v2/reports/visualizations/delete', parameters, options);
+		await API.call('reports/visualizations/delete', parameters, options);
 
 		await Reports.load(true);
 

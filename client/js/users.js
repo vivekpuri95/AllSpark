@@ -21,7 +21,7 @@ class Users extends Page {
 
 	static async load() {
 
-		const users = await API.call('v2/users/list');
+		const users = await API.call('users/list');
 
 		Users.list = users.map(user => new UserManage(user));
 
@@ -104,7 +104,7 @@ class UserManage {
 		}
 
 		try {
-			await API.call('v2/users/insert', parameters, options);
+			await API.call('users/insert', parameters, options);
 		}
 
 		catch(e) {
@@ -168,7 +168,7 @@ class UserManage {
 
 		parameters.privileges = Array.from(UserManage.form.elements.privileges.querySelectorAll(':checked')).map(s => s.value).join();
 
-		await API.call('v2/users/update', parameters, options);
+		await API.call('users/update', parameters, options);
 
 		await Users.load();
 	}
@@ -187,7 +187,7 @@ class UserManage {
 				method: 'POST',
 			};
 
-		await API.call('v2/users/update', parameters, options);
+		await API.call('users/update', parameters, options);
 
 		await Users.load();
 		Sections.show('list');

@@ -3,7 +3,9 @@ const express = require('express')
 const app = express();
 const config = require('config');
 
-app.use(express.static('./'));
+const port = config.has('port') ? config.get('port').get('client') : 8081;
+
+app.use(express.static('./client'));
 
 app.get('/login', (req, res) => {
 
@@ -713,7 +715,7 @@ class Template {
 					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'">').join('')}
 					${this.scripts.map(s => '<script src="'+s+'"></script>').join('')}
 					<script>
-						PORT = ${config.get("port").get("client")}
+						PORT = ${port}
 					</script>
 				</head>
 				<body>
@@ -737,7 +739,7 @@ class Template {
 	}
 }
 
-if(!config.get("port").get("client"))
+if(!port)
 	return console.error('Port not provided!');
 
-app.listen(config.get("port").get("client"), () => console.log(`Client listening on port ${config.get("port").get("client")}!`));
+app.listen(port, () => console.log(`Client listening on port ${port}!`));
