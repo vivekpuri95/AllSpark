@@ -742,4 +742,11 @@ class Template {
 if(!port)
 	return console.error('Port not provided!');
 
-app.listen(port, () => console.log(`Client listening on port ${port}!`));
+app.listen(port, () => console.info(`
+	**********************
+	Server Started:
+		What: Client
+		Environment: ${app.get('env')}
+		Port: ${port}
+	**********************
+`));
