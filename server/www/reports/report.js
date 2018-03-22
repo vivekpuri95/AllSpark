@@ -184,6 +184,7 @@ exports.visibilityList = class extends API {
 
 				userObj[role.user_id] = {
 					user_id: role.user_id,
+					account_id: this.account.account_id,
 					name: [role.first_name, role.middle_name, role.last_name].filter(x => x).join(" "),
 					email: role.email,
 					privileges: [],
@@ -193,7 +194,7 @@ exports.visibilityList = class extends API {
 
 				userObj[role.user_id].roles.push({
 					category_id: role.category_id,
-					role: role.role,
+					role: role.role_id,
 				})
 			}
 		}
@@ -214,8 +215,10 @@ exports.visibilityList = class extends API {
 			if (userObj[userId].user_query) {
 
 				reason.push('User Query');
+
 			}
-			else {
+			if(authResponse.message === 'privileged user!') {
+
 				reason.push('User Role');
 			}
 
@@ -223,9 +226,8 @@ exports.visibilityList = class extends API {
 				user_id: userId,
 				name: userObj[userId].name,
 				email: userObj[userId].email,
-				reason: reason
+				reason: reason,
 			})
-
 		}
 
 		return finalList;
