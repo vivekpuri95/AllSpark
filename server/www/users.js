@@ -33,7 +33,6 @@ exports.delete = class extends API {
 		return await this.mysql.query(`update tb_users set status = 0 where user_id = ?`, [this.request.body.user_id], 'write');
 
 	}
-
 }
 
 exports.update = class extends API {
