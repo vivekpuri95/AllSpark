@@ -1,4 +1,4 @@
 .idea
 .DS_Store
-config/production.json
-config/dev.json
+config/*
+!config/sample.json
