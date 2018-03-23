@@ -543,7 +543,7 @@ class DataSource {
 		catch(e) {
 
 			this.container.insertAdjacentHTML('beforeend', `
-				<pre class="warning">${e.description}</pre>
+				<pre class="warning">${e.message}</pre>
 			`);
 
 			response = {};

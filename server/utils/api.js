@@ -110,7 +110,7 @@ class API {
 
 					return response.status(e.status || 500).send({
 						status: false,
-						description: e.message,
+						message: e.message,
 					});
 				}
 
