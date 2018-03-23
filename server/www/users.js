@@ -138,7 +138,7 @@ exports.metadata = class extends API {
 		const categoriesPrivilegesRoles = await this.mysql.query(`
                 SELECT
                     'categories' AS 'type',
-                    category_id,
+                    category_id as owner_id,
                     \`name\`,
                     is_admin
                 FROM
