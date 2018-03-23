@@ -35,7 +35,7 @@ class ResetPassword extends Page {
 
 		if(response) {
 
-			ResetPassword.message.innerHTML = 'Pssword updated successfully';
+			ResetPassword.message.innerHTML = 'Password updated successfully';
 			setTimeout(() => window.location = '/login', 3000);
 		}
 
