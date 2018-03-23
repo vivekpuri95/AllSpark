@@ -29,7 +29,7 @@ class ForgotPassword extends Page {
 			form: new FormData(ForgotPassword.form)
 		};
 
-		const response = await API.call('user/password/resetlink', {}, options);
+		const response = await API.call('authentication/resetlink', {}, options);
 		ForgotPassword.message.innerHTML = 'reset link is been sent';
 	}
 
