@@ -115,7 +115,7 @@ exports.insert = class extends API {
         }
 
         values["account_id"] = this.account.account_id;
-        values.added_by = userData.email;
+        values.added_by = this.user.email;
 
         return await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'write');
     }
