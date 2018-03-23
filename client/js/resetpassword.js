@@ -31,7 +31,7 @@ class ResetPassword extends Page {
 			method: 'POST',
 			form: new FormData(ResetPassword.form)
 		};
-		const response = await API.call('authentication/reset', {}, options);
+		const response = await API.call('authentication/reset', parameters, options);
 
 		if(response) {
 
