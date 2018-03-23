@@ -80,7 +80,7 @@ exports.update = class extends API {
 		return await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write');
 
 	}
-}
+};
 
 exports.insert = class extends API {
 
@@ -121,12 +121,11 @@ exports.insert = class extends API {
 	}
 };
 
+exports.userPrvList = class extends API {
 
-exports.visibilityList = class extends API {
+	async userPrvList() {
 
-	async visibilityList() {
-
-		//this.user.privileges.needs("administrator");
+		this.user.privilege.needs("administrator");
 
 		const reportId = this.request.query.report_id;
 
@@ -208,6 +207,7 @@ exports.visibilityList = class extends API {
 			const authResponse = await auth.report({...reportDetails, flag: userObj[userId].user_query}, user);
 
 			if (authResponse.error) {
+
 				continue;
 			}
 			const reason = [];
@@ -217,7 +217,7 @@ exports.visibilityList = class extends API {
 				reason.push('User Query');
 
 			}
-			if(authResponse.message === 'privileged user!') {
+			if (authResponse.message === 'privileged user!') {
 
 				reason.push('User Role');
 			}
