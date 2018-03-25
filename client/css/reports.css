@@ -121,7 +121,7 @@ main #form #report-form {
 				flex-basis: 100%;
 			}
 			main #form #source select {
-				max-width: 80px;
+				max-width: 100px;
 			}
 		main #form form #query {
 			max-width: 100%;
@@ -145,6 +145,7 @@ main #form #report-form {
 			font-weight: normal;
 			border: 1px solid #ccc;
 			border-right: 0;
+			max-height: 500px;
 		}
 			#form form #schema ul {
 				padding: 0;

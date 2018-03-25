@@ -23,11 +23,11 @@ exports.list = class extends API {
                     is_deleted = 0
                     and q.account_id = ?
             `, [this.account.account_id]),
-			this.mysql.query('SELECT * FROM tb_filters'),
-			this.mysql.query('SELECT * FROM tb_query_visualizations'),
-			this.mysql.query('SELECT * FROM tb_query_dashboards where status = 1')
-		]);
-		const response = [];
+            this.mysql.query('SELECT * FROM tb_filters'),
+            this.mysql.query('SELECT * FROM tb_query_visualizations'),
+        ]);
+
+        const response = [];
 
 		for (const row of results[0]) {
 
@@ -36,7 +36,6 @@ exports.list = class extends API {
 
 			row.filters = results[1].filter(filter => filter.query_id == row.query_id);
 			row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
-			row.dashboards = results[3].filter(dashboard => dashboard.query_id == row.query_id);
 			response.push(row);
 
 		}
@@ -130,8 +129,8 @@ exports.userPrvList = class extends API {
 		const reportId = this.request.query.report_id;
 
 		const [reportDetails] = await this.mysql.query(`
-			select 
-				* 
+			select
+				*
 			from
 				tb_query
 			where
@@ -145,7 +144,7 @@ exports.userPrvList = class extends API {
 
 
 		const userRoles = await this.mysql.query(`
-			
+
                 SELECT
                 	ur.user_id,
                 	email,

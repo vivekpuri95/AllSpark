@@ -8,8 +8,8 @@ exports.insert = class extends API {
 
 		this.user.privilege.needs('connection');
 
-        await this.mysql.query(
-            'insert into tb_credentials(account_id, connection_name, host, user, password, db, `limit`, type, file, project_name) values (?)',
+        const response = await this.mysql.query(
+            'INSERT INOT tb_credentials(account_id, connection_name, host, user, password, db, `limit`, type, file, project_name) VALUES (?)',
             [[
                 this.account.account_id,
                 this.request.body.connection_name,
@@ -27,18 +27,21 @@ exports.insert = class extends API {
         );
 
         await mysql.crateExternalPool(this.request.body.id);
-        await bigquery.setup();
-        return {
-            status: true,
-            message: "updated db"
-        }
+
+        if(bigquery)
+            await bigquery.setup();
+
+        return response;
     }
 }
 
 exports.list = class extends API {
 
     async list() {
-        return await this.mysql.query('select * from tb_credentials WHERE account_id = ?', [this.account.account_id]);
+        return await this.mysql.query(
+            'SELECT * FROM tb_credentials WHERE account_id = ? AND status = 1',
+            [this.account.account_id]
+        );
     }
 }
 
@@ -48,36 +51,42 @@ exports.delete = class extends API {
 
 		this.user.privilege.needs('connection');
 
-        await this.mysql.query(
-            'update tb_credentials set status = 0 where id = ?',
-            [this.request.body['id']],
-            'write');
+        const response = await this.mysql.query(
+            'UPDATE tb_credentials SET status = 0 WHERE id = ? account_id = ?',
+            [this.request.body.id, this.account.account_id],
+            'write'
+        );
+
         await mysql.crateExternalPool(this.request.body.id);
-        await bigquery.setup();
-        return {
-            status: true,
-            message: "updated db"
-        }
 
+        if(bigquery)
+            await bigquery.setup();
+
+        return response;
     }
-
 }
 
 exports.update = class extends API {
 
     async update() {
+
         let id = this.request.body['id'];
 
         delete this.request.body.id;
         delete this.request.body.token;
 
-        await this.mysql.query('update tb_credentials set ? where id = ?',[this.request.body, id], 'write');
+        const response = await this.mysql.query(
+            'UPDATE tb_credentials SET ? WHERE id = ?',
+            [this.request.body, id],
+            'write'
+        );
+
         await mysql.crateExternalPool(this.request.body.id);
-        await bigquery.setup();
-        return {
-            status: true,
-            message: "updated db"
-        }
+
+        if(bigquery)
+            await bigquery.setup();
+
+        return response;
     }
 }
 
@@ -86,7 +95,11 @@ exports.testConnections = class extends API {
 
     async testConnections() {
 
-        var conConfig = await this.mysql.query('select * from tb_credentials where id = ?',[this.request.body['id']]);
+        var conConfig = await this.mysql.query(
+            'SELECT * FROM tb_credentials WHERE id = ?',
+            [this.request.body['id']]
+        );
+
         conConfig = conConfig[0];
         conConfig['database'] = conConfig['db']
 
@@ -125,6 +138,9 @@ exports.schema = class extends API {
         const columns  = await this.mysql.query(`SELECT * FROM information_schema.columns `, [], this.request.query.id);
 
         for(const column of columns) {
+
+            if(column.TABLE_SCHEMA == 'information_schema')
+                continue;
 
             let foundDatabase = false;
 

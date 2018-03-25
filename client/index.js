@@ -82,7 +82,6 @@ app.get('/login/reset', (req,res) => {
 		</form>
 		<div id="message" class="hidden"></div>
 	`));
-
 });
 
 app.get('/:type(dashboard|report)/:id?', (req, res) => {
@@ -160,19 +159,24 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 	`));
 });
 
-app.get('/dashboards', (req, res) => {
+app.get('/dashboards/:id?', (req, res) => {
 
 	const template = new Template;
 
-	template.stylesheets.push('css/dashboards.css');
-	template.scripts.push('js/dashboards.js');
+	template.stylesheets.push('/css/dashboards.css');
+
+	template.scripts.push('/js/dashboards.js');
+	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js');
 
 	res.send(template.body(`
 
 		<section class="section show" id="list">
 			<h1>Dashboard Manager</h1>
 			<form class="toolbar">
-				<input type="button" value="Add New" id="add-dashboard">
+				<button type="button" id="add-dashboard">
+					<i class="fa fa-plus"></i>&nbsp;
+					Add New Dashboard
+				</button>
 			</form>
 
 			<table class="block">
@@ -195,58 +199,32 @@ app.get('/dashboards', (req, res) => {
 			<h1></h1>
 
 			<div class="toolbar">
-				<input type="button" value="Back" id="back">
-				<input type="submit" value="Submit" form="dashboard-form">
+				<button id="back"><i class="fa fa-arrow-left"></i>&nbsp; Back</button>
+				<button type="submit" form="dashboard-form"><i class="fa fa-save"></i>&nbsp; Save</button>
 			</div>
 
 			<form class="block form" id="dashboard-form">
+
 				<label>
 					<span>Name</span>
-					<input type="text" name="name">
+					<input type="text" name="name" required>
 				</label>
+
 				<label>
 					<span>Parent</span>
 					<input type="number" name="parent">
 				</label>
+
 				<label>
 					<span>Icon</span>
 					<input type="text" name="icon">
 				</label>
+
+				<label id="format">
+					<span>Format</span>
+					<textarea id="dashboard-format"></textarea>
+				</label>
 			</form>
-
-			<h3>Reports</h3>
-			<div class="form-container">
-				<form class="report">
-					<label><span>Report ID</span></label>
-					<label><span>Position</span></label>
-					<label><span>Span</span></label>
-					<label class="save"><span></span></label>
-					<label class="delete"><span></span></label>
-				</form>
-
-				<div id="reports-list"></div>
-
-				<form id="add-report" class="report">
-
-					<label>
-						<input type="number" name="query_id" placeholder="Report ID" required>
-					</label>
-
-					<label>
-						<input type="number" name="position" placeholder="Position" required>
-					</label>
-
-					<label>
-						<input type="number" name="span" placeholder="Span" min="1" max="4" required>
-					</label>
-
-					<label class="save">
-						<input type="submit" value="Add">
-					</label>
-
-					<label class="delete"></label>
-				</form>
-			</div>
 		</section>
 
 	`));
@@ -268,7 +246,10 @@ app.get('/reports/:id?', (req, res) => {
 			<h1>Reports Manager</h1>
 			<form class="toolbar filters filled">
 
-				<input type="button" value="Add New" id="add-report">
+				<button type="button" id="add-report">
+					<i class="fa fa-plus"></i>&nbsp;
+					Add New Dashboard
+				</button>
 
 				<select name="column_search" class="right">
 					<option value="">Search Everything</option>
@@ -308,11 +289,11 @@ app.get('/reports/:id?', (req, res) => {
 			<h1></h1>
 
 			<header class="toolbar filled">
-				<input type="button" value="Back" id="back">
-				<input type="submit" value="Submit" form="report-form">
+				<button id="back"><i class="fa fa-arrow-left"></i>&nbsp; Back</button>
+				<button type="submit" form="report-form"><i class="fa fa-save"></i>&nbsp; Save</button>
 
-				<input type="button" class="right" value="Run" id="test">
-				<input type="button" value="Force Run" id="force-test">
+				<button id="test" class="right"><i class="fas fa-sync"></i>&nbsp; Run</button>
+				<button id="force-test"><i class="fas fa-sign-in-alt""></i>&nbsp; Force Run</button>
 			</header>
 
 			<div class="hidden" id="test-container">
@@ -336,6 +317,11 @@ app.get('/reports/:id?', (req, res) => {
 				<label>
 					<span>Name</span>
 					<input type="text" name="name">
+				</label>
+
+				<label>
+					<span>Connection</span>
+					<select name="connection_name" required></select>
 				</label>
 
 				<label id="source">
@@ -412,11 +398,6 @@ app.get('/reports/:id?', (req, res) => {
 						<option value="1">Enabled</option>
 						<option value="0">Disabled</option>
 					</select>
-				</label>
-
-				<label>
-					<span>Connection</span>
-					<select name="connection_name" required></select>
 				</label>
 
 				<label style="max-width: 300px">
@@ -676,6 +657,7 @@ app.get('/connections/:id?', (req, res) => {
 	const template = new Template;
 
 	template.scripts.push('/js/credentials.js');
+	template.stylesheets.push('/css/credentials.css');
 
 	res.send(template.body(`
 		<section class="section" id="list">
@@ -738,7 +720,6 @@ class Template {
 
 		this.stylesheets = [
 			'/css/main.css',
-			'/css/themes/light.css',
 		];
 
 		this.scripts = [

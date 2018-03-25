@@ -107,18 +107,18 @@ exports.login = class extends API {
 
 	async login() {
 
-		const email = this.request.query.email;
+		const email = this.request.body.email;
 
 		this.assert(email, "email required");
-		this.assert(this.request.query.password, "password required");
+		this.assert(this.request.body.password, "password required");
 
 		const [userDetail] = await this.mysql.query(`select * from tb_users where email = ?`, [email]);
 
-		this.assert(userDetail, "Invalid Email");
+		this.assert(userDetail, "Invalid Email! :(");
 
-		const checkPassword = await commonFun.verifyBcryptHash(this.request.query.password, userDetail.password);
+		const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
 
-		this.assert(checkPassword, "Invalid Password");
+		this.assert(checkPassword, "Invalid Password! :(");
 
 		const obj = {
 			user_id: userDetail.user_id,
@@ -134,7 +134,7 @@ exports.refresh = class extends API {
 
 	async refresh() {
 
-		const loginObj = await commonFun.verifyJWT(this.request.query.refresh_token);
+		const loginObj = await commonFun.verifyJWT(this.request.body.refresh_token);
 
 		const [user] = await this.mysql.query("select * from tb_users where user_id = ?", loginObj.user_id);
 
