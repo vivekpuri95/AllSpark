@@ -25,8 +25,8 @@ exports.list = class extends API {
             `, [this.account.account_id]),
             this.mysql.query('SELECT * FROM tb_filters'),
             this.mysql.query('SELECT * FROM tb_query_visualizations'),
-            this.mysql.query('SELECT * FROM tb_query_dashboards where status = 1')
         ]);
+
         const response = [];
 
         for(const row of results[0]) {
@@ -36,7 +36,6 @@ exports.list = class extends API {
 
 			row.filters = results[1].filter(filter => filter.query_id == row.query_id);
 			row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
-			row.dashboards = results[3].filter(dashboard => dashboard.query_id == row.query_id);
 			response.push(row);
 
         }

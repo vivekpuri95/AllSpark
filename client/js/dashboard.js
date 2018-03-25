@@ -7,7 +7,6 @@ window.on('DOMContentLoaded', async () => {
 	await Dashboard.setup(page);
 	await page.load();
 
-
 	window.on('popstate', e => page.load(e.state));
 });
 
@@ -105,7 +104,7 @@ class Dashboards extends Page {
 			</tr>
 		`;
 
-		for(const report of DataSource.list) {
+		for(const report of DataSource.list.values()) {
 
 			if(!report.is_enabled)
 				continue;
@@ -157,7 +156,7 @@ class Dashboards extends Page {
 	report(id) {
 
 		const
-			report = DataSource.list.filter(s => s.query_id == id)[0],
+			report = new DataSource(DataSource.list.get(id)),
 			container = this.reports.querySelector('.list');
 
 		this.selectedSources.clear();
@@ -219,8 +218,6 @@ class Dashboard {
 		for(const key in dashboard)
 			this[key] = dashboard[key];
 
-		this.sources = new Set(DataSource.list.filter(s => s.dashboards && s.dashboards.filter(d => d.dashboard == this.id).length));
-
 		this.children = new Set;
 
 		this.page = page;
@@ -245,23 +242,36 @@ class Dashboard {
 
 		Dashboard.container.textContent = null;
 
-		this.page.selectedSources = this.sources;
+		this.page.selectedSources.clear();
 
-		for(const source of this.sources) {
+		if(this.format && this.format.reports && this.format.reports.length) {
 
-			const dashboard = source.dashboards.filter(d => d.dashboard == this.id)[0];
+			for(const [position, _report] of this.format.reports.entries()) {
 
-			source.container.setAttribute('style', `
-				order: ${dashboard.position || 0};
-				grid-column: auto / span ${dashboard.span || 4}
-			`);
+				if(!DataSource.list.has(_report.query_id))
+					continue;
 
-			Dashboard.container.appendChild(source.container);
-			source.visualizations.selected.load();
-		}
+				const source = JSON.parse(JSON.stringify(DataSource.list.get(_report.query_id)));
 
-		if(!this.sources.size)
+				source.visualizations = source.visualizations.concat(_report.visualizations);
+				source.postProcessor = _report.postProcessor;
+
+				const report = new DataSource(source);
+
+				report.container.setAttribute('style', `
+					order: ${position || 0};
+					grid-column: auto / span ${_report.span || 4}
+				`);
+
+				Dashboard.container.appendChild(report.container);
+
+				report.visualizations.selected.load();
+
+				this.page.selectedSources.add(report);
+			}
+		} else {
 			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
+		}
 
 		Sections.show('reports');
 	}

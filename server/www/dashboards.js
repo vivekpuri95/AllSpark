@@ -2,94 +2,94 @@ const API = require('../utils/api');
 
 exports.list = class extends API {
 
-    async list() {
+	async list() {
 
-        const result = await this.mysql.query(
-            'SELECT * FROM tb_dashboards where status = 1 AND account_id = ?',
-            [this.account.account_id]
-        );
+		const rows = await this.mysql.query(
+			'SELECT * FROM tb_dashboards where status = 1 AND account_id = ?',
+			[this.account.account_id]
+		);
 
-        const reports = await this.mysql.query('SELECT * FROM tb_query_dashboards WHERE status = 1');
+		for(const row of rows) {
 
-        for(const row of result) {
+			try {
+				row.format = JSON.parse(row.format);
+			} catch(e) {
+				row.format = {};
+			}
+		}
 
-            row.reports = reports.filter(r => r.dashboard == row.id);
-            row["roles"] = row["roles"] ? row["roles"].split(",").map(Number) : [];
-        }
-
-        return result;
-    }
+		return rows;
+	}
 };
 
 exports.insert = class extends API {
 
-    async insert() {
+	async insert() {
 
 		this.user.privilege.needs('dashboard');
 
-        let
-            values = {}, dashboard_cols = ['name', 'parent', 'icon', 'roles', 'details'];
+		let
+			values = {},
+			columns = ['name', 'parent', 'icon', 'roles', 'format'];
 
-        for(const key in this.request.body) {
-            if(dashboard_cols.includes(key))
-                values[key] = this.request.body[key] || null;
-        }
+		for(const key in this.request.body) {
+			if(columns.includes(key))
+				values[key] = this.request.body[key] || null;
+		}
 
-        values["account_id"] = this.account.account_id;
-        return await this.mysql.query('INSERT INTO tb_dashboards SET  ? ', [values], 'write');
-    }
+		// Make sure the format is valid JSON
+		try {
+			values.format = JSON.stringify(JSON.parse(values.format))
+		} catch(e) {
+			values.format = JSON.stringify({});
+		}
+
+		values.account_id = this.account.account_id;
+
+		return await this.mysql.query('INSERT INTO tb_dashboards SET ? ', [values], 'write');
+	}
 };
 
 exports.update = class extends API {
 
-    async update() {
+	async update() {
 
 		this.user.privilege.needs('dashboard');
 
-        let
-            values = {}, dashboard_cols = ['name', 'parent', 'icon', 'roles', 'details'];
+		const
+			values = {},
+			columns = ['name', 'parent', 'icon', 'roles', 'format'];
 
-        for(const key in this.request.body) {
-            if(dashboard_cols.includes(key))
-                values[key] = this.request.body[key] || null;
-        }
+		for(const key in this.request.body) {
+			if(columns.includes(key))
+				values[key] = this.request.body[key] || null;
+		}
 
+		// Make sure the format is valid JSON
+		try {
+			values.format = JSON.stringify(JSON.parse(values.format))
+		} catch(e) {
+			values.format = JSON.stringify({});
+		}
 
-        return await this.mysql.query('UPDATE tb_dashboards SET ? WHERE id = ? and account_id = ?', [values, this.request.body.id, this.account.account_id], 'write');
-    }
+		return await this.mysql.query(
+			'UPDATE tb_dashboards SET ? WHERE id = ? AND account_id = ?',
+			[values, this.request.body.id, this.account.account_id],
+			'write'
+		);
+	}
 };
+
 exports.delete = class extends API {
 
-    async delete() {
+	async delete() {
 
 		this.user.privilege.needs('dashboard');
 
-        return await this.mysql.query('UPDATE tb_dashboards SET status = 0 WHERE id = ? and account_id = ? ', [this.request.body.id, this.account.account_id], 'write');
-    }
+		return await this.mysql.query(
+			'UPDATE tb_dashboards SET status = 0 WHERE id = ? AND account_id = ?',
+			[this.request.body.id, this.account.account_id],
+			'write'
+		);
+	}
 };
-
-
-exports.getAllChildren = class extends API {
-
-    async getAllChildren(){
-        const response = await this.mysql.query(`
-            SELECT
-                a.id AS dashboards_id,
-                a.name AS parent,
-                GROUP_CONCAT(b.name) AS children
-            FROM
-                tb_dashboards a
-            JOIN
-                tb_dashboards b
-            ON
-                a.id = b.parent
-            GROUP BY
-                a.id
-        `);
-
-        for(const row of response){
-            row.children = row.children.split(',');
-        }
-        return response;
-    }
-}

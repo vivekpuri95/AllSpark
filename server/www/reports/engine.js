@@ -14,12 +14,8 @@ class report extends API {
 
 		this.queryId = this.request.body.query_id;
 
-		if (!this.queryId) {
-			return {
-				status: false,
-				message: "report Not found"
-			}
-		}
+		if(!this.queryId)
+			throw new API.Exception(404, 'Report not found! :(');
 
 		const fetchedData = await this.fetch();
 
@@ -33,35 +29,22 @@ class report extends API {
 
 		this.assert(!authentication.error, authentication.message, 401);
 
-		let result = null;
-
 		if (this.query.source.toLowerCase() === 'query') {
 
-			result = await new query(this.query, this.filters, this.request).execute();
+			return await new query(this.query, this.filters, this.request).execute();
 		}
 
 		else if (this.query.source.toLowerCase() === 'api') {
 
-			result = await new api(this.query, this.filters, this.request).execute();
+			return await new api(this.query, this.filters, this.request).execute();
 		}
 
 		else if (this.query.source.toLowerCase() === 'big_query') {
 
-			//return await new bigquery().execute();
+			return await new bigquery().execute();
 		}
 
-		else {
-
-			return {
-				status: false,
-				message: "unknown source",
-			}
-		}
-
-		return {
-			status: result ? true : false,
-			data: result,
-		}
+		throw new API.Exception(400, 'Unknown Data Source! :(');
 	}
 
 	async fetch() {
@@ -170,8 +153,9 @@ class report extends API {
 
 		if (!this.request.body.download && this.result && this.query.source.toLowerCase() === 'query') {
 
-			this.result = this.result.slice(0, 10000);
+			this.result.data = this.result.data.slice(0, 10000);
 		}
+
 		return this.result;
 	}
 }
@@ -212,7 +196,10 @@ class query extends report {
 
 			try {
 
-				this.result = JSON.parse(redisData);
+				this.result = {
+					data: JSON.parse(redisData),
+					query: null,
+				};
 				return;
 			}
 
@@ -222,7 +209,12 @@ class query extends report {
 			}
 		}
 
-		this.result = await this.mysql.query(this.query.query, [], this.query.connection_name);
+		const data = await this.mysql.query(this.query.query, [], this.query.connection_name);
+
+		this.result = {
+			data,
+			query: data.instance.formatted_sql,
+		};
 
 		await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
 	}

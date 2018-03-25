@@ -57,9 +57,8 @@ class API {
 				const
 					url = request.url.replace(/\//g, pathSeparator),
 					path = resolve(__dirname + '/../www') + pathSeparator + url.substring(4, url.indexOf('?') < 0 ? undefined : url.indexOf('?'));
-				//
-				if (!API.endpoints.has(path)) {
 
+				if (!API.endpoints.has(path)) {
 					return next();
 				}
 
@@ -80,12 +79,15 @@ class API {
 					obj.user = new User(userDetails);
 				}
 
-				if (!userDetails && !constants.publicEndpoints.filter(u => url.startsWith(u)).length)
+				if (!userDetails && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length)
 					throw new API.Exception(401, 'User Not Authenticated! :(');
 
 				// if (host.includes('localhost')) {
 				// 	host = 'test-analytics.jungleworks.co';
 				// }
+
+				if(!(host in global.account))
+					throw new API.Exception(400, 'Account not found!');
 
 				obj.account = global.account[host];
 
@@ -128,7 +130,7 @@ class API {
 					}
 
 					e.status = e.message.status || 400;
-					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "something went wrong");
+					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "Something went wrong! :(");
 				}
 
 				else {
@@ -158,11 +160,6 @@ class API {
 	}
 
 }
-
-//if statement
-//new API.exception(user doesnt exist , 400)
-
-//this.assert(statement, user doesnt exist, 400)
 
 function assertExpression(expression, message, statusCode) {
 

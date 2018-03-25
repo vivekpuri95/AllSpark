@@ -18,3 +18,11 @@ main #form .report {
 		main #form .red {
 			box-shadow: inset -15px 0 #f66;
 		}
+
+		main #form #format {
+			max-width: inherit;
+		}
+			main #form #format .ace_editor {
+				height: 500px;
+				margin: 0;
+			}

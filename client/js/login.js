@@ -8,17 +8,23 @@ class Login extends Page {
 		Login.form = Login.container.querySelector('form');
 		Login.message = Login.container.querySelector('#message');
 
+		Login.form.on('submit', Login.submit);
+
+		if(!account) {
+			Login.message.textContent = 'Account not found! :(';
+			Login.message.classList.remove('hidden');
+			Login.message.classList.add('warning');
+			return;
+		}
+
 		const logo = Login.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
 
-		if(account)
-			logo.src = account.logo;
+		logo.src = account.logo;
 
 		if(account.settings.get('skip_authentication'))
 			return Login.skip_authentication();
-
-		Login.form.on('submit', Login.submit);
 	}
 
 	static async skip_authentication() {
@@ -64,12 +70,16 @@ class Login extends Page {
 
 		e.preventDefault();
 
+		if(!account)
+			return;
+
 		Login.message.classList.add('notice');
 		Login.message.classList.remove('warning', 'hidden');
 		Login.message.textContent = 'Logging you in!';
 
 		const options = {
-			form: new FormData(Login.form)
+			method: 'POST',
+			form: new FormData(Login.form),
 		};
 
 		try {

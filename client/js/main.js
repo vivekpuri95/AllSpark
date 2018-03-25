@@ -236,7 +236,10 @@ class API extends AJAX {
 		if(!localStorage.refresh_token || !getToken)
 			return;
 
-		const response = await API.call('authentication/refresh', {refresh_token: localStorage.refresh_token});
+		const
+			parameters = {refresh_token: localStorage.refresh_token},
+			options = {method: 'POST'},
+			response = await API.call('authentication/refresh', {refresh_token: localStorage.refresh_token}, options);
 
 		localStorage.token = response;
 
@@ -248,7 +251,7 @@ API.Exception = class {
 
 	constructor(response) {
 		this.status = response.status;
-		this.description = response.description;
+		this.message = response.message;
 	}
 }
 
@@ -428,7 +431,7 @@ class Page {
 		await User.load();
 		await MetaData.load();
 
-		if(account.settings.get('whitelabel')) {
+		if(account && account.settings.get('whitelabel')) {
 
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
@@ -439,16 +442,19 @@ class Page {
 
 	static render() {
 
-		if(account.settings.get('hideHeader')) {
-			document.querySelector('body > header').classList.add('hidden');
-			return;
+		if(account) {
+
+			if(account.settings.get('hideHeader')) {
+				document.querySelector('body > header').classList.add('hidden');
+				return;
+			}
+
+			if(account.icon)
+				document.getElementById('favicon').href = account.icon;
+
+			if(account.logo)
+				document.querySelector('body > header .logo img').src = account.logo;
 		}
-
-		if(account && account.icon)
-			document.getElementById('favicon').href = account.icon;
-
-		if(account && account.logo)
-			document.querySelector('body > header .logo img').src = account.logo;
 
 		if(window.user)
 			document.querySelector('body > header .user-name').textContent = user.name;
@@ -479,6 +485,42 @@ class Page {
 	}
 }
 
+class Editor {
+
+	constructor(container) {
+
+		this.container = container;
+		this.editor = ace.edit(container);
+
+		this.editor.setTheme('ace/theme/monokai');
+		this.editor.getSession().setMode('ace/mode/sql');
+		this.editor.setFontSize(16);
+		this.editor.$blockScrolling = Infinity;
+	}
+
+	setAutoComplete(list) {
+
+		this.langTools = ace.require('ace/ext/language_tools');
+
+		this.langTools.setCompleters([{
+			getCompletions: (_, __, ___, ____, callback) => callback(null, list),
+		}]);
+
+		this.editor.setOptions({
+			enableBasicAutocompletion: true,
+			enableLiveAutocompletion: true,
+		});
+	}
+
+	get value() {
+		return this.editor.getValue();
+	}
+
+	set value(value) {
+		this.editor.setValue(value, 1);
+	}
+}
+
 class DataSource {
 
 	static async load(force = false) {
@@ -488,11 +530,7 @@ class DataSource {
 
 		const response = await API.call('reports/report/list');
 
-		DataSource.list = [];
-		DataSource.dashboards = new Map;
-
-		for(const report of response || [])
-			DataSource.list.push(new DataSource(report));
+		DataSource.list = new Map(response.map(report => [report.query_id, report]));
 	}
 
 	constructor(source) {
@@ -658,21 +696,27 @@ class DataSource {
 
 			select.classList.add('change-visualization')
 
-			for(const v of this.visualizations)
-				select.insertAdjacentHTML('beforeend', `<option value="${v.visualization_id}">${v.name}</option>`);
+			for(const [i, v] of this.visualizations.entries()) {
+
+				if(v.default)
+					this.visualizations.selected = v;
+
+				select.insertAdjacentHTML('beforeend', `<option value="${i}">${v.type}</option>`);
+			}
 
 			select.on('change', async () => {
 
 				container.removeChild(container.querySelector('.visualization'));
 
-				this.visualizations.selected = this.visualizations.filter(v => v.id == select.value)[0];
+				this.visualizations.selected = this.visualizations[select.value];
 
 				container.appendChild(this.visualizations.selected.container);
 
 				await this.visualizations.selected.load();
 			});
 
-			this.visualizations.selected = this.visualizations.filter(v => v.id == select.value)[0];
+			if(!this.visualizations.selected)
+				this.visualizations.selected = this.visualizations[select.value];
 
 			if(this.visualizations.length > 1)
 				container.querySelector('header').appendChild(select);
@@ -1420,8 +1464,11 @@ class DataSourcePostProcessors {
 
 		this.list = new Map;
 
-		for(const [name, processor] of DataSourcePostProcessors.processors)
-			this.list.set(name, new processor(this.source));
+		for(const [key, processor] of DataSourcePostProcessors.processors)
+			this.list.set(key, new processor(this.source, key));
+
+		if(source.postProcessor && this.list.has(source.postProcessor.name))
+			this.selected = this.list.get(source.postProcessor.name);
 	}
 
 	get container() {
@@ -1442,6 +1489,11 @@ class DataSourcePostProcessors {
 			container.appendChild(processor.container);
 		}
 
+		if(this.selected) {
+			processors.value = this.selected.key;
+			this.selected.container.classList.remove('hidden');
+		}
+
 		processors.on('change', () => {
 
 			this.selected = this.list.get(processors.value);
@@ -1454,7 +1506,6 @@ class DataSourcePostProcessors {
 
 		container.appendChild(processors);
 
-
 		return container;
 	}
 
@@ -1465,8 +1516,9 @@ class DataSourcePostProcessors {
 
 class DataSourcePostProcessor {
 
-	constructor(source) {
+	constructor(source, key) {
 		this.source = source;
+		this.key = key;
 	}
 
 	get container() {
@@ -1480,6 +1532,9 @@ class DataSourcePostProcessor {
 
 		for(const [value, name] of this.domain)
 			container.insertAdjacentHTML('beforeend', `<option value="${value}">${name}</option>`);
+
+		if(this.source.postProcessor && this.source.postProcessor.value && this.source.postProcessors.selected == this)
+			container.value = this.source.postProcessor.value;
 
 		container.on('change', () => this.source.visualizations.selected.render());
 
@@ -1724,7 +1779,7 @@ class Visualization {
 		for(const key in visualization)
 			this[key] = visualization[key];
 
-		this.id = this.visualization_id;
+		this.id = Math.floor(Math.random() * 100000);
 
 		this.source = source;
 	}
@@ -1893,7 +1948,7 @@ Visualization.list.set('line', class Line extends Visualization {
 
 		container.classList.add('visualization', 'line');
 		container.innerHTML = `
-			<div id="line-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -1946,7 +2001,7 @@ Visualization.list.set('line', class Line extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#line-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -2312,7 +2367,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 		container.classList.add('visualization', 'bar');
 		container.innerHTML = `
-			<div id="bar-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -2364,7 +2419,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#bar-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -2646,7 +2701,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 
 		container.classList.add('visualization', 'stacked');
 		container.innerHTML = `
-			<div id="stacked-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -2700,7 +2755,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#stacked-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -3000,7 +3055,7 @@ Visualization.list.set('area', class Area extends Visualization {
 
 		container.classList.add('visualization', 'area');
 		container.innerHTML = `
-			<div id="area-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -3053,7 +3108,7 @@ Visualization.list.set('area', class Area extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#area-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -3494,7 +3549,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		container.classList.add('visualization', 'funnel');
 		container.innerHTML = `
-			<div id="funnel-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -3529,7 +3584,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		this.draw({
 			series: series.reverse(),
-			divId: `#funnel-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}

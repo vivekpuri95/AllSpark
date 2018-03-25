@@ -16,29 +16,30 @@ input:not([type=checkbox]):not([type=radio]),
 select,
 button {
 	padding: 5px 10px;
-	border: 0px solid #ccc;
+	border: 0;
 	background: var(--color-primary);
 	color: var(--color-primary-text) !important;
 	height: 28px;
 	font-size: 90% !important;
 	line-height: 100% !important;
+	transition: background var(--transition-duration),
+				color var(--transition-duration),
+				box-shadow var(--transition-duration);
 }
 input[type=button],
 input[type=reset],
 input[type=submit],
 button,
 select {
-	background: var(--color-primary);
-	transition: box-shadow var(--transition-duration);
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.05);
-	border: 0;
+	 padding: 5px 15px !important;
 }
 input[type=button]:hover,
 input[type=reset]:hover,
 input[type=submit]:hover,
-select:hover,
 button:hover {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	background: var(--color-accent);
+	color: var(--color-accent-text) !important;
 }
 input[type=button]:active,
 input[type=reset]:active,
@@ -50,7 +51,7 @@ button:active {
 
 input[type=submit] {
 	background: var(--color-accent);
-	color: var(--color-accent-text);
+	color: var(--color-accent-text) !important;
 	letter-spacing: 1px;
 }
 
@@ -117,7 +118,7 @@ body {
 		background: var(--color-accent);
 		color: var(--color-accent-text);
 		width: 80px;
-		z-index: 1;
+		z-index: 11;
 	}
 	body > #ajax-working.show {
 		opacity: 1;
@@ -153,7 +154,6 @@ body {
 			color: var(--color-primary-text);
 			padding: 15px 20px;
 			letter-spacing: 1px;
-			font-size: 90%;
 			transition: background var(--transition-duration);
 			align-items: center;
 		}
@@ -324,6 +324,9 @@ body {
 		flex-direction: column;
 		grid-gap: calc(var(--gap) * 2);
 	}
+		main .data-source > .warning {
+			margin: 0;
+		}
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
 			display: flex;
