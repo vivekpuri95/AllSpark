@@ -550,6 +550,7 @@ app.get('/users/:id?', (req, res) => {
 
 	const template = new Template;
 
+	template.stylesheets.push('/css/users.css');
 	template.scripts.push('/js/users.js');
 
 	res.send(template.body(`
@@ -559,7 +560,7 @@ app.get('/users/:id?', (req, res) => {
 			<h1>Manage Users</h1>
 
 			<header class="toolbar">
-				<input type="button" value="Add User" id="add-user">
+				<button id="add-user"><i class="fa fa-plus"></i>&nbsp; Add New User</button>
 			</header>
 
 			<table class="block">
@@ -581,8 +582,8 @@ app.get('/users/:id?', (req, res) => {
 			<h1></h1>
 
 			<header class="toolbar">
-				<input type="button" value="Cancel" id="cancel-form">
-				<input type="submit" form="user-form" value="Submit">
+				<button id="cancel-form"><i class="fa fa-arrow-left"></i>&nbsp; Back</button>
+				<button type="submit" form="user-form"><i class="fa fa-save"></i>&nbsp; Save</button>
 			</header>
 
 			<form class="block form" id="user-form">
@@ -611,18 +612,61 @@ app.get('/users/:id?', (req, res) => {
 					<span>Password</span>
 					<input type="password" name="password">
 				</label>
-
-				<label>
-					<span>privileges</span>
-					<select name="privileges" multiple>
-						<option value="administrator">Administrator</option>
-						<option value="user">Users</option>
-						<option value="dashboards">Dashboards</option>
-						<option value="queries">Queries</option>
-						<option value="datasources">Data Sources</option>
-					</select>
-				</label>
 			</form>
+
+			<h3>Privileges</h3>
+			<div class="privileges form-container">
+				<form class="filter">
+					<label><span>Category</span></label>
+					<label><span>Privileges</span></label>
+					<label class="save"><span></span></label>
+				</form>
+
+				<div id="filters-list"></div>
+
+				<form id="add-filter" class="filter">
+
+					<label>
+						<select name="category_id"></select>
+					</label>
+
+					<label>
+						<select name="privilege_id"></select>
+					</label>
+
+					<label class="save">
+						<button type="submit" title="Add"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
+					</label>
+				</form>
+			</div>
+
+			<h3>Roles</h3>
+			<div class="roles form-container">
+				<form class="filter">
+					<label><span>Category</span></label>
+					<label><span>Roles</span></label>
+					<label class="save"><span></span></label>
+				</form>
+
+				<div id="roles-list"></div>
+
+				<form id="add-roles" class="filter">
+
+					<label>
+						<select name="category_id" required></select>
+					</label>
+
+					<label>
+						<select name="role_id" required></select>
+					</label>
+
+					<label class="save">
+						<button type="submit" title="Add"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
+					</label>
+				</form>
+			</div>
+
+
 		</section>
 	`));
 });
