@@ -89,12 +89,13 @@ class report extends API {
 		for (const f of reportDetails[1]) {
 
 			f.value = this.request.body[f.placeholder] || f.default_value;
-			//
-			// if(f.placeholder.slice(-2) === '[]') {
-			//     f.is_list = true;
-			//     f.value = f.value.split(',').map(x => x.trim());
-			// }
+			let str = '';
 
+			if(f.is_multiple == 1) {
+				f.value = f.value.split(',');
+				f.value.map(s => str = str.concat(`'${s}',`));
+				f.value = str.slice(0, -1);
+			}
 		}
 
 		this.query = reportDetails[0][0];
@@ -192,7 +193,12 @@ class query extends report {
 
 		for (const filter of this.filters) {
 
-			this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `'${filter.value}'`);
+			if(filter.is_multiple == 1){
+				this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `${filter.value}`);
+			}
+			else{
+				this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `'${filter.value}'`);
+			}
 		}
 		this.hash = crypto.createHash('md5').update(this.query.query).digest('hex');
 		this.createRedisKey();
