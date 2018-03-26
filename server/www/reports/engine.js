@@ -199,8 +199,6 @@ class query extends report {
 			else{
 				this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `'${filter.value}'`);
 			}
-
-			console.log(this.query.query);
 		}
 		this.hash = crypto.createHash('md5').update(this.query.query).digest('hex');
 		this.createRedisKey();
