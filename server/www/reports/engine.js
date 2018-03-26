@@ -190,7 +190,7 @@ class query extends report {
 
 	async fetchAndStore() {
 
-		const redisData = 0//await commonFun.redisGet(this.redisKey);
+		const redisData = await commonFun.redisGet(this.redisKey);
 
 		if (this.query.is_redis && redisData && !this.has_today) {
 
@@ -216,7 +216,7 @@ class query extends report {
 			query: data.instance.formatted_sql,
 		};
 
-		//await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
+		await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
 	}
 }
 
