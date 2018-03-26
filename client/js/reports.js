@@ -1,22 +1,27 @@
-window.on('DOMContentLoaded', async () => {
-
-	await Reports.setup(document.querySelector('section.section#list'));
-	Report.setup(document.querySelector('section.section#form'));
-
-	ReportFilters.setup(document.getElementById('filters-list'));
-	ReportVisualizations.setup(document.getElementById('visualizations-list'));
-
-	await Reports.load();
-
-	ReportFilter.setup();
-	ReportVisualization.setup();
-
-	Reports.loadState();
-});
-
-window.on('popstate', e => Reports.loadState(e.state));
-
 class Reports extends Page {
+
+	constructor() {
+
+		super();
+
+		(async () => {
+
+			await Reports.setup(this.container.querySelector('section#list'));
+			Report.setup(this.container.querySelector('section#form'));
+
+			ReportFilters.setup(this.container.querySelector('#filters-list'));
+			ReportVisualizations.setup(this.container.querySelector('#visualizations-list'));
+
+			await Reports.load();
+
+			ReportFilter.setup();
+			ReportVisualization.setup();
+
+			Reports.loadState();
+		})();
+
+		window.on('popstate', e => Reports.loadState(e.state));
+	}
 
 	static async loadState(state) {
 
@@ -28,7 +33,7 @@ class Reports extends Page {
 		if(Reports.list.has(parseInt(what)))
 			return Reports.list.get(parseInt(what)).edit();
 
-		Sections.show('list');
+		await Sections.show('list');
 	}
 
 	static back() {
@@ -41,8 +46,6 @@ class Reports extends Page {
 	}
 
 	static async setup(container) {
-
-		await Page.setup();
 
 		Reports.container = container;
 
@@ -130,6 +133,8 @@ class Reports extends Page {
 		}
 	}
 }
+
+Page.class = Reports;
 
 class Report {
 

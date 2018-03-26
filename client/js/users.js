@@ -1,25 +1,28 @@
-window.on('DOMContentLoaded', async () => {
-
-	await Users.setup();
-	await UserManage.setup();
-
-	Privileges.setup();
-	Roles.setup();
-
-	await Users.load();
-
-	Users.loadState();
-});
-
-window.on('popstate', e => Users.loadState(e.state));
-
 class Users extends Page {
 
-	static async setup(contaier) {
+	constructor() {
 
-		await Page.setup();
+		super();
 
-		Users.contaier = document.querySelector('section#list table tbody');
+		(async () => {
+
+			await Users.setup(this);
+			await UserManage.setup();
+
+			Privileges.setup();
+			Roles.setup();
+
+			await Users.load();
+
+			Users.loadState();
+		})();
+
+		window.on('popstate', e => Users.loadState(e.state));
+	}
+
+	static async setup(page) {
+
+		Users.contaier = page.container.querySelector('section#list table tbody');
 	}
 
 	static async load() {
@@ -55,6 +58,8 @@ class Users extends Page {
 	}
 }
 
+Page.class = Users;
+
 class UserManage {
 
 	static async setup() {
@@ -80,7 +85,7 @@ class UserManage {
 		history.pushState(null, '', `/users`);
 	}
 
-	static add() {
+	static async add() {
 
 		UserManage.form.removeEventListener('submit', UserManage.submitListener);
 		UserManage.form.reset();
@@ -94,7 +99,9 @@ class UserManage {
 		Privileges.container.querySelector('#add-filter').classList.add('hidden');
 		Roles.container.querySelector('#add-roles').classList.add('hidden');
 
-		Sections.show('form');
+		await Sections.show('form');
+
+		UserManage.form.first_name.focus();
 	}
 
 	static async insert(e) {
@@ -142,7 +149,7 @@ class UserManage {
 		UserManage.form.removeEventListener('submit', UserManage.submitListener);
 		UserManage.form.reset();
 
-		UserManage.heading.textContent = `Edit ${this.first_name} ${this.last_name || ''}`;
+		UserManage.heading.textContent = `Editing ${this.first_name} ${this.last_name || ''}`;
 		UserManage.form.on('submit', UserManage.submitListener = e => this.update(e));
 
 		for(const key in this) {
@@ -151,9 +158,6 @@ class UserManage {
 		}
 
 		UserManage.form.password.value = null;
-
-		// for(const option of UserManage.form.elements.privileges.children)
-		// 	option.selected = this.privileges.includes(option.value);
 
 		Privileges.container.querySelector('#add-filter').classList.remove('hidden');
 		Roles.container.querySelector('#add-roles').classList.remove('hidden');
@@ -177,7 +181,9 @@ class UserManage {
 		this.privileges.render();
 		this.roles.render();
 
-		Sections.show('form');
+		await Sections.show('form');
+
+		UserManage.form.first_name.focus();
 	}
 
 	async update(e) {
@@ -196,8 +202,6 @@ class UserManage {
 			if(element.name)
 				parameters[element.name] = element.value;
 		}
-
-		parameters.privileges = Array.from(UserManage.form.elements.privileges.querySelectorAll(':checked')).map(s => s.value).join();
 
 		await API.call('users/update', parameters, options);
 
@@ -221,7 +225,7 @@ class UserManage {
 		await API.call('users/update', parameters, options);
 
 		await Users.load();
-		Sections.show('list');
+		await Sections.show('list');
 	}
 
 	get row() {
@@ -332,11 +336,11 @@ class Privilege {
 		this.container.innerHTML = `
 
 			<label>
-				<input type="text" value="${MetaData.categories.get(this.category_id).name}" readonly>
+				<input type="text" value="${MetaData.categories.has(this.category_id) ? MetaData.categories.get(this.category_id).name : ''}" readonly>
 			</label>
 
 			<label>
-				<input type="text" value="${MetaData.privileges.get(this.privilege_id).name}" readonly>
+				<input type="text" value="${MetaData.privileges.has(this.privilege_id) ? MetaData.privileges.get(this.privilege_id).name : ''}" readonly>
 			</label>
 
 			<label class="delete">
@@ -452,11 +456,11 @@ class Role {
 		this.container.innerHTML = `
 
 			<label>
-				<input type="text" value="${MetaData.categories.get(this.category_id).name}" readonly>
+				<input type="text" value="${MetaData.categories.has(this.category_id) ? MetaData.categories.get(this.category_id).name : ''}" readonly>
 			</label>
 
 			<label>
-				<input type="text" value="${MetaData.roles.get(this.role_id).name}" readonly>
+				<input type="text" value="${MetaData.roles.has(this.role_id) ? MetaData.roles.get(this.role_id).name : ''}" readonly>
 			</label>
 
 			<label class="delete">

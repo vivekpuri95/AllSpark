@@ -9,6 +9,8 @@ const EXPIRE_AFTER = 1; //HOURS
 exports.resetlink = class extends API {
 	async resetlink() {
 
+		throw new API.Exception(400, 'asd');
+
 		let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
 			[this.request.body.email, this.account.account_id]);
 		if (!user.length) {
@@ -68,12 +70,14 @@ exports.resetlink = class extends API {
         `;
 
 		await mailer.send();
-		return true;
+
+		return 'Password reset email sent!';
 	}
 }
 
 exports.reset = class extends API {
 	async reset() {
+
 		if (!this.request.body.password || !this.request.body.reset_token)
 			return false;
 
@@ -88,17 +92,19 @@ exports.reset = class extends API {
         `;
 
 		let user_id = await this.mysql.query(query, [this.request.body.reset_token, EXPIRE_AFTER]);
+
 		if (!user_id.length)
-			return false;
+			throw new API.Exception(400, 'Invalid Token, Please reset the password again.');
 
 		user_id = user_id[0]['user_id'];
+
 		const newHashPass = await commonFun.makeBcryptHash(this.request.body.password);
 
-		await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user_id, this.account.account_id], 'write');
+		await this.mysql.query('UPDATE tb_users SET password = ? WHERE user_id = ? AND account_id = ?', [newHashPass, user_id, this.account.account_id], 'write');
 
+		await this.mysql.query('UPDATE tb_password_reset SET status = 0 WHERE status = 1 AND user_id = ?', [user_id], 'write');
 
-		await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'write');
-		return true;
+		return 'Password Reset Successfuly! You can log in now.';
 	}
 };
 
@@ -109,8 +115,8 @@ exports.login = class extends API {
 
 		const email = this.request.body.email;
 
-		this.assert(email, "email required");
-		this.assert(this.request.body.password, "password required");
+		this.assert(email, "Email Required");
+		this.assert(this.request.body.password, "Password Required");
 
 		const [userDetail] = await this.mysql.query(`select * from tb_users where email = ?`, [email]);
 

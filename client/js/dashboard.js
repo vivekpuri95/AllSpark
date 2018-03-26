@@ -1,33 +1,17 @@
-window.on('DOMContentLoaded', async () => {
-
-	await Dashboards.setup();
-
-	const page = new Dashboards();
-
-	await Dashboard.setup(page);
-	await page.load();
-
-	window.on('popstate', e => page.load(e.state));
-});
-
-class Dashboards extends Page {
-
-	static async setup() {
-
-		await Page.setup();
-	}
+Page.class = class Dashboards extends Page {
 
 	constructor() {
 
 		super();
 
-		this.container = document.querySelector('main');
+		Dashboard.setup(this);
+
 		this.listContainer = this.container.querySelector('section#list');
 		this.reports = this.container.querySelector('section#reports');
 		this.listContainer.form = this.listContainer.querySelector('.form.toolbar');
 
-		this.reports.querySelector('.toolbar #back').on('click', () => {
-			Sections.show('list');
+		this.reports.querySelector('.toolbar #back').on('click', async () => {
+			await Sections.show('list');
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
@@ -39,6 +23,10 @@ class Dashboards extends Page {
 
 		this.listContainer.form.category.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
+
+		this.load();
+
+		window.on('popstate', e => this.load(e.state));
 	}
 
 	async load(state) {
@@ -67,7 +55,7 @@ class Dashboards extends Page {
 			this.report(id);
 
 		else
-			Sections.show('list');
+			await ections.show('list');
 	}
 
 	render() {
@@ -153,7 +141,7 @@ class Dashboards extends Page {
 			tbody.innerHTML = `<tr class="NA"><td colspan="6">No Reports Found! :(</td></tr>`;
 	}
 
-	report(id) {
+	async report(id) {
 
 		const
 			report = new DataSource(DataSource.list.get(id)),
@@ -170,7 +158,7 @@ class Dashboards extends Page {
 
 		report.visualizations.selected.load();
 
-		Sections.show('reports');
+		await Sections.show('reports');
 	}
 }
 
@@ -178,7 +166,7 @@ class Dashboard {
 
 	static setup(page) {
 
-		Dashboard.container = document.querySelector('section#reports .list');
+		Dashboard.container = page.container.querySelector('section#reports .list');
 
 		$('#reports .toolbar input[name="date-range"]').daterangepicker({
 			opens: 'left',
