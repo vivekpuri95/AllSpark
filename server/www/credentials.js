@@ -9,7 +9,7 @@ exports.insert = class extends API {
 		this.user.privilege.needs('connection');
 
         const response = await this.mysql.query(
-            'INSERT INOT tb_credentials(account_id, connection_name, host, user, password, db, `limit`, type, file, project_name) VALUES (?)',
+            'INSERT INTO tb_credentials(account_id, connection_name, host, user, password, db, `limit`, type, file, project_name) VALUES (?)',
             [[
                 this.account.account_id,
                 this.request.body.connection_name,
@@ -52,7 +52,7 @@ exports.delete = class extends API {
 		this.user.privilege.needs('connection');
 
         const response = await this.mysql.query(
-            'UPDATE tb_credentials SET status = 0 WHERE id = ? account_id = ?',
+            'UPDATE tb_credentials SET status = 0 WHERE id = ? AND account_id = ?',
             [this.request.body.id, this.account.account_id],
             'write'
         );

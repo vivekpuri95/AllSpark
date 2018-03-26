@@ -20,7 +20,7 @@ exports.insert = class extends API {
 
 		result.account_id = this.account.account_id;
 
-		return await this.mysql.query(`insert into tb_users set ?`, result, 'write');
+		return await this.mysql.query(`INSERT INTO tb_users SET ?`, result, 'write');
 
 	}
 
@@ -30,7 +30,7 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		return await this.mysql.query(`update tb_users set status = 0 where user_id = ?`, [this.request.body.user_id], 'write');
+		return await this.mysql.query(`UPDATE tb_users SET status = 0 WHERE user_id = ?`, [this.request.body.user_id], 'write');
 
 	}
 }
@@ -57,7 +57,7 @@ exports.update = class extends API {
 
 		const values = [setParams, user_id];
 
-		return await this.mysql.query(`update tb_users set ? where user_id = ?`, values, 'write');
+		return await this.mysql.query(`UPDATE tb_users SET ? WHERE user_id = ?`, values, 'write');
 
 	}
 
@@ -70,7 +70,7 @@ exports.list = class extends API {
 		let results, roles = {}, privileges = {};
 		if (this.request.body.user_id) {
 			results = await Promise.all([
-				this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? `, [this.request.body.user_id, this.account.account_id]),
+				this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? AND status = 1`, [this.request.body.user_id, this.account.account_id]),
 				this.mysql.query(`SELECT id, user_id, category_id, role_id FROM tb_user_roles WHERE user_id = ? `, [this.request.body.user_id]),
 				this.mysql.query(`SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege WHERE user_id = ? `, [this.request.body.user_id])
 			]);
@@ -78,7 +78,7 @@ exports.list = class extends API {
 		}
 		else {
 			results = await Promise.all([
-				this.mysql.query(`SELECT * FROM tb_users WHERE account_id = ?`, [this.account.account_id]),
+				this.mysql.query(`SELECT * FROM tb_users WHERE account_id = ? AND status = 1`, [this.account.account_id]),
 				this.mysql.query(`SELECT id, user_id, category_id, role_id FROM tb_user_roles`),
 				this.mysql.query(`SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`)
 			]);
@@ -184,39 +184,39 @@ exports.metadata = class extends API {
 		}
 
 
-		const datasets = await this.mysql.query(`select * from tb_query_datasets`);
-		const promiseList = [];
+		// const datasets = await this.mysql.query(`select * from tb_query_datasets`);
+		// const promiseList = [];
 
-		const datasetList = [];
+		// const datasetList = [];
 
-		for (const dataset of datasets) {
+		// for (const dataset of datasets) {
 
-			const reportObj = new report;
+		// 	const reportObj = new report;
 
-			Object.assign(reportObj, this);
+		// 	Object.assign(reportObj, this);
 
-			reportObj.request = {
-				body: {
-					query_id: dataset.query_id,
-					user_id: this.user.user_id,
-					account_id: this.account.account_id,
-				}
-			};
+		// 	reportObj.request = {
+		// 		body: {
+		// 			query_id: dataset.query_id,
+		// 			user_id: this.user.user_id,
+		// 			account_id: this.account.account_id,
+		// 		}
+		// 	};
 
-			promiseList.push(reportObj.report());
-		}
+		// 	promiseList.push(reportObj.report());
+		// }
 
-		const datasetResult = await commonFun.promiseParallelLimit(5, promiseList);
+		// const datasetResult = await commonFun.promiseParallelLimit(5, promiseList);
 
-		for (const [index, value] of datasetResult.entries()) {
+		// for (const [index, value] of datasetResult.entries()) {
 
-			datasetList.push({
-				name: datasets[index].name,
-				values: value,
-			})
-		}
+		// 	datasetList.push({
+		// 		name: datasets[index].name,
+		// 		values: value,
+		// 	})
+		// }
 
-		metadata.datasets = datasetList;
+		// metadata.datasets = datasetList;
 
 		return metadata;
 	}

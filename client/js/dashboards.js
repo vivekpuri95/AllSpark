@@ -1,101 +1,102 @@
-window.on('DOMContentLoaded', async () => {
+Page.class = class Dashboards extends Page {
 
-	await Dashboards.setup();
-	DashboardsDashboard.setup();
+	constructor() {
 
-	await Dashboards.load();
+		super();
 
+		this.list = new Map;
 
-	Dashboards.loadState();
-});
+		this.listContainer = this.container.querySelector('section#list');
 
-window.on('popstate', e => Dashboards.loadState(e.state));
-
-class Dashboards extends Page {
-
-	static async setup() {
-
-		await Page.setup();
-
-		Dashboards.list = new Map;
-
-		Dashboards.container = document.querySelector('main > #list');
-
-		Dashboards.container.querySelector('#add-dashboard').on('click', () => {
+		this.listContainer.querySelector('#add-dashboard').on('click', () => {
 			DashboardsDashboard.add();
 			history.pushState({id: 'add'}, '', `/dashboards/add`);
 		});
+
+		DashboardsDashboard.setup(this);
+
+		(async () => {
+
+			await this.load();
+
+			this.loadState();
+		})();
+
+		window.on('popstate', e => this.loadState(e.state));
 	}
 
-	static async loadState(state) {
+	async loadState(state) {
 
 		const what = state ? state.what : location.pathname.split('/').pop();
 
 		if(what == 'add')
 			return DashboardsDashboard.add();
 
-		if(Dashboards.list.has(parseInt(what)))
-			return Dashboards.list.get(parseInt(what)).edit();
+		if(this.list.has(parseInt(what)))
+			return this.list.get(parseInt(what)).edit();
 
-		Sections.show('list');
+		await Sections.show('list');
 	}
 
-	static back() {
+	async back() {
 
 		if(history.state)
 			return history.back();
 
-		Sections.show('list');
+		await Sections.show('list');
+
 		history.pushState(null, '', `/dashboards`);
 	}
 
-	static async load() {
+	async load() {
 
-		Dashboards.response = await API.call('dashboards/list');
+		this.response = await API.call('dashboards/list');
 
-		await  DataSource.load();
+		await DataSource.load();
 
-		Dashboards.process();
-		Dashboards.render();
+		this.process();
+		this.render();
 	}
 
-	static process() {
+	process() {
 
-		Dashboards.list.clear();
+		this.list.clear();
 
-		for(const dashboard of Dashboards.response || [])
-			Dashboards.list.set(dashboard.id, new DashboardsDashboard(dashboard));
+		for(const dashboard of this.response || [])
+			this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this));
 	}
 
-	static render() {
+	render() {
 
-		const container = Dashboards.container.querySelector('table tbody');
+		const container = this.container.querySelector('table tbody');
 
 		container.textContent = null;
 
-		for(const dashboard of Dashboards.list.values())
+		for(const dashboard of this.list.values())
 			container.appendChild(dashboard.row);
 
-		if(!Dashboards.list.size)
+		if(!this.list.size)
 			container.innerHTML = `<tr class="NA"><td colspan="2">No dashboards found! :(</td></tr>`;
 	}
 }
 
 class DashboardsDashboard {
 
-	static setup() {
+	static setup(page) {
 
-		DashboardsDashboard.container = document.querySelector('#form');
+		DashboardsDashboard.page = page;
+
+		DashboardsDashboard.container = page.container.querySelector('section#form');
 		DashboardsDashboard.form = DashboardsDashboard.container.querySelector('form');
 
-		DashboardsDashboard.container.querySelector('#back').on('click', Dashboards.back);
+		DashboardsDashboard.container.querySelector('#back').on('click', page.back);
 
 		DashboardsDashboard.editor = new Editor(DashboardsDashboard.container.querySelector('#dashboard-format'));
 
 		DashboardsDashboard.editor.editor.getSession().setMode('ace/mode/json');
 	}
 
-	static add() {
+	static async add() {
 
 		DashboardsDashboard.container.querySelector('h1').textContent = 'Add New Dashboard';
 
@@ -108,7 +109,9 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.editor.value = '';
 
-		Sections.show('form');
+		await Sections.show('form');
+
+		DashboardsDashboard.form.name.focus();
 	}
 
 	static async insert(e) {
@@ -126,17 +129,19 @@ class DashboardsDashboard {
 
 		const response = await API.call('dashboards/insert', parameters, options);
 
-		await Dashboards.load();
+		await DashboardsDashboard.page.load();
 
-		Dashboards.list.get(response.insertId).edit();
+		DashboardsDashboard.page.list.get(response.insertId).edit();
 
 		history.pushState({what: response.insertId}, '', `/dashboards/${response.insertId}`);
 	}
 
-	constructor(data) {
+	constructor(data, page) {
 
 		for(const key in data)
 			this[key] = data[key];
+
+		this.page = page;
 	}
 
 	async edit() {
@@ -155,7 +160,9 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.form.on('submit', DashboardsDashboard.form_listener = async e => this.update(e));
 
-		Sections.show('form');
+		await Sections.show('form');
+
+		DashboardsDashboard.form.name.focus();
 	}
 
 	async update(e) {
@@ -181,9 +188,9 @@ class DashboardsDashboard {
 
 		await API.call('dashboards/update', parameters, options);
 
-		await Dashboards.load();
+		await this.page.load();
 
-		Dashboards.list.get(this.id).edit();
+		this.page.list.get(this.id).edit();
 	}
 
 	async delete() {
@@ -201,7 +208,7 @@ class DashboardsDashboard {
 
 		await API.call('dashboards/delete', parameters, options);
 
-		await Dashboards.load();
+		await this.page.load();
 	}
 
 	get row() {

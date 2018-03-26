@@ -1,5 +1,97 @@
 "use strict";
 
+window.addEventListener('DOMContentLoaded', async () => {
+
+	if(!Page.class)
+		return;
+
+	await Page.setup();
+
+	new (Page.class)();
+});
+
+class Page {
+
+	static async setup() {
+
+		AJAXLoader.setup();
+
+		await Page.load();
+
+		Page.render();
+	}
+
+	static async load() {
+
+		await Account.load();
+		await User.load();
+		await MetaData.load();
+
+		if(account && account.settings.get('whitelabel')) {
+
+			const parameters = new URLSearchParams(window.location.search.slice(1));
+
+			if(parameters.has('access_token') && parameters.get('access_token'))
+				localStorage.access_token = parameters.get('access_token');
+		}
+	}
+
+	static render() {
+
+		if(account) {
+
+			if(account.settings.get('hideHeader')) {
+				document.querySelector('body > header').classList.add('hidden');
+				return;
+			}
+
+			if(account.icon)
+				document.getElementById('favicon').href = account.icon;
+
+			if(account.logo)
+				document.querySelector('body > header .logo img').src = account.logo;
+		}
+
+		if(window.user)
+			document.querySelector('body > header .user-name').textContent = user.name;
+
+		document.querySelector('body > header .logout').on('click', () => User.logout());
+
+		Page.navList = [
+			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+			{url: '/dashboards', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
+			{url: '/reports', name: 'Reports', privilege: 'queries', icon: 'fa fa-database'},
+			{url: '/connections', name: 'Connections', privilege: 'datasources', icon: 'fa fa-server'},
+			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+		];
+
+		const nav_container = document.querySelector('body > header nav');
+
+		for(const item of Page.navList) {
+
+			if(!window.user || !user.privileges.has(item.privilege))
+				continue;
+
+			nav_container.insertAdjacentHTML('beforeend',`
+				<a href='${item.url}'>
+					<i class="${item.icon}"></i>&nbsp;
+					${item.name}
+				</a>
+			`);
+		}
+
+		for(const item of document.querySelectorAll('body > header nav a')) {
+			if(window.location.pathname.startsWith(new URL(item.href).pathname))
+				item.classList.add('selected');
+		}
+	}
+
+	constructor() {
+
+		this.container = document.querySelector('main');
+	}
+}
+
 class Account {
 
 	static async load() {
@@ -109,6 +201,60 @@ class UserRoles extends Set {
 		super(context.roles);
 
 		this.context = context;
+	}
+}
+
+class MetaData {
+
+	static async load() {
+
+		MetaData.categories = new Map;
+		MetaData.privileges = new Map;
+		MetaData.roles = new Map;
+
+		if(!user.id)
+			return;
+
+		if(!localStorage.metadata)
+			await MetaData.fetch();
+
+		let metadata = null;
+
+		try {
+			metadata = JSON.parse(localStorage.metadata);
+		} catch(e) {
+			return;
+		}
+
+		for(const privilege of metadata.privileges || []) {
+
+			privilege.privilege_id = privilege.owner_id;
+			delete privilege['owner_id'];
+
+			MetaData.privileges.set(privilege.privilege_id, privilege);
+		}
+
+		for(const role of metadata.roles || []) {
+
+			role.role_id = role.owner_id;
+			delete role['owner_id'];
+
+			MetaData.roles.set(role.role_id, role);
+		}
+
+		for(const category of metadata.categories || []) {
+
+			category.category_id = category.owner_id;
+			delete category['owner_id'];
+
+			MetaData.categories.set(category.category_id, category);
+		}
+
+		return MetaData;
+	}
+
+	static async fetch() {
+		localStorage.metadata = JSON.stringify(await API.call('users/metadata'));
 	}
 }
 
@@ -348,7 +494,7 @@ class Format {
 
 class Sections {
 
-	static show(id) {
+	static async show(id) {
 
 		for(const section of document.querySelectorAll('main section.section'))
 			section.classList.remove('show');
@@ -357,131 +503,6 @@ class Sections {
 
 		if(container)
 			container.classList.add('show');
-	}
-}
-
-class MetaData {
-
-	static async load() {
-
-		MetaData.categories = new Map;
-		MetaData.privileges = new Map;
-		MetaData.roles = new Map;
-
-		if(!user.id)
-			return;
-
-		if(!localStorage.metadata)
-			await MetaData.fetch();
-
-		let metadata = null;
-
-		try {
-			metadata = JSON.parse(localStorage.metadata);
-		} catch(e) {
-			return;
-		}
-
-		for(const privilege of metadata.privileges || []) {
-
-			privilege.privilege_id = privilege.owner_id;
-			delete privilege['owner_id'];
-
-			MetaData.privileges.set(privilege.privilege_id, privilege);
-		}
-
-		for(const role of metadata.roles || []) {
-
-			role.role_id = role.owner_id;
-			delete role['owner_id'];
-
-			MetaData.roles.set(role.role_id, role);
-		}
-
-		for(const category of metadata.categories || []) {
-
-			category.category_id = category.owner_id;
-			delete category['owner_id'];
-
-			MetaData.categories.set(category.category_id, category);
-		}
-
-		return MetaData;
-	}
-
-	static async fetch() {
-		localStorage.metadata = JSON.stringify(await API.call('users/metadata'));
-	}
-}
-
-class Page {
-
-	static async setup() {
-
-		AJAXLoader.setup();
-
-		await Page.load();
-
-		Page.render();
-	}
-
-	static async load() {
-
-		await Account.load();
-		await User.load();
-		await MetaData.load();
-
-		if(account && account.settings.get('whitelabel')) {
-
-			const parameters = new URLSearchParams(window.location.search.slice(1));
-
-			if(parameters.has('access_token') && parameters.get('access_token'))
-				localStorage.access_token = parameters.get('access_token');
-		}
-	}
-
-	static render() {
-
-		if(account) {
-
-			if(account.settings.get('hideHeader')) {
-				document.querySelector('body > header').classList.add('hidden');
-				return;
-			}
-
-			if(account.icon)
-				document.getElementById('favicon').href = account.icon;
-
-			if(account.logo)
-				document.querySelector('body > header .logo img').src = account.logo;
-		}
-
-		if(window.user)
-			document.querySelector('body > header .user-name').textContent = user.name;
-
-		document.querySelector('body > header .logout').on('click', () => User.logout());
-
-		Page.navList = [
-			{url: '/users', name: 'Users', privilege: 'users'},
-			{url: '/dashboards', name: 'Dashboards', privilege: 'dashboards'},
-			{url: '/reports', name: 'Reports', privilege: 'queries'},
-			{url: '/connections', name: 'Connections', privilege: 'datasources'},
-		];
-
-		const nav_container = document.querySelector('body > header nav');
-
-		for(const item of Page.navList) {
-
-			if(!window.user || !user.privileges.has(item.privilege))
-				continue;
-
-			nav_container.insertAdjacentHTML('beforeend',`<a href='${item.url}'>${item.name}</a>`);
-		}
-
-		for(const item of document.querySelectorAll('body > header nav a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname))
-				item.classList.add('selected');
-		}
 	}
 }
 
@@ -617,8 +638,8 @@ class DataSource {
 		container.innerHTML = `
 			<header>
 				<h2 title="${this.name}"><i class="fa fa-chart-line"></i>&nbsp; ${this.name}</h2>
-				<button class="filters-toggle"><i class="fa fa-filter"></i>&nbsp; Filters</button>
-				<button class="description-toggle" title="Description">&nbsp;<i class="fa fa-info"></i>&nbsp;</button>
+				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
+				<button class="description-toggle" title="Description">&nbsp;<i class="fa fa-info"></i></button>
 				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i></button>
 				<button class="download" title="Download CSV"><i class="fa fa-download"></i></button>
 				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i></button>
@@ -680,12 +701,12 @@ class DataSource {
 		this.filters.form.insertAdjacentHTML('beforeend', `
 			<label class="right">
 				<button type="reset">
-					<i class="fa fa-undo"></i>&nbsp; Reset
+					<i class="fa fa-undo"></i> Reset
 				</button>
 			</label>
 			<label>
 				<button type="submit">
-					<i class="fa fa-sync"></i>&nbsp; Submit
+					<i class="fa fa-sync"></i> Submit
 				</button>
 			</label>
 		`);
