@@ -617,7 +617,7 @@ app.get('/users/:id?', (req, res) => {
 			<h3>Privileges</h3>
 			<div class="privileges form-container">
 				<form class="filter">
-					<label><span>category</span></label>
+					<label><span>Category</span></label>
 					<label><span>Privileges</span></label>
 					<label class="save"><span></span></label>
 				</form>
@@ -635,7 +635,7 @@ app.get('/users/:id?', (req, res) => {
 					</label>
 
 					<label class="save">
-						<input type="submit" value="Add">
+						<button type="submit" title="Add"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
 					</label>
 				</form>
 			</div>
@@ -643,7 +643,7 @@ app.get('/users/:id?', (req, res) => {
 			<h3>Roles</h3>
 			<div class="roles form-container">
 				<form class="filter">
-					<label><span>category</span></label>
+					<label><span>Category</span></label>
 					<label><span>Roles</span></label>
 					<label class="save"><span></span></label>
 				</form>
@@ -661,7 +661,7 @@ app.get('/users/:id?', (req, res) => {
 					</label>
 
 					<label class="save">
-						<input type="submit" value="Add">
+						<button type="submit" title="Add"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
 					</label>
 				</form>
 			</div>

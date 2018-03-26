@@ -340,7 +340,7 @@ class Privilege {
 			</label>
 
 			<label class="delete">
-				<input type="button" value="Delete">
+				<button title="Delete"><i class="fa fa-trash-alt" aria-hidden="true"></i></button>
 			</label>
 		`;
 
@@ -460,7 +460,7 @@ class Role {
 			</label>
 
 			<label class="delete">
-				<input type="button" value="Delete">
+				<button title="Delete"><i class="fa fa-trash-alt" aria-hidden="true"></i></button>
 			</label>
 		`;
 
