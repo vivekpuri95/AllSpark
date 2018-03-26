@@ -361,9 +361,9 @@ class MetaData {
 
 	static async load() {
 
+		MetaData.categories = new Map;
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
-		MetaData.categories = new Map;
 
 		if(!user.id)
 			return;
@@ -381,23 +381,26 @@ class MetaData {
 
 		for(const privilege of metadata.privileges || []) {
 
-			privilege.id = privilege.privilege_id;
+			privilege.privilege_id = privilege.owner_id;
+			delete privilege['owner_id'];
 
-			MetaData.privileges.set(privilege.id, privilege);
+			MetaData.privileges.set(privilege.privilege_id, privilege);
 		}
 
 		for(const role of metadata.roles || []) {
 
-			role.id = role.role_id;
+			role.role_id = role.owner_id;
+			delete role['owner_id'];
 
-			MetaData.roles.set(role.id, role);
+			MetaData.roles.set(role.role_id, role);
 		}
 
 		for(const category of metadata.categories || []) {
 
-			category.id = category.category_id;
+			category.category_id = category.owner_id;
+			delete category['owner_id'];
 
-			MetaData.categories.set(category.id, category);
+			MetaData.categories.set(category.category_id, category);
 		}
 
 		return MetaData;
