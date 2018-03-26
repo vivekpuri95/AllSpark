@@ -88,8 +88,8 @@ class UserManage {
 		UserManage.heading.textContent = 'Add User';
 		UserManage.form.on('submit', UserManage.submitListener = e => UserManage.insert(e));
 
-		Privileges.privileges_container.innerHTML = `<div class="NA" style="margin:0 10px;">You can add privileges to this user once you add the user</div>`;
-		Roles.roles_container.innerHTML = `<div class="NA" style="margin:0 10px;">You can add roles to this user once you add the user</div>`;
+		Privileges.privileges_container.innerHTML = `<div class="NA">You can add privileges to this user once you add the user :(</div>`;
+		Roles.roles_container.innerHTML = `<div class="NA">You can add roles to this user once you add the user :(</div>`;
 
 		Privileges.container.querySelector('#add-filter').classList.add('hidden');
 		Roles.container.querySelector('#add-roles').classList.add('hidden');
@@ -235,8 +235,8 @@ class UserManage {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.email}</td>
-			<td class="action green">Edit</td>
-			<td class="action red">Delete</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
 		this.container.querySelector('.green').on('click', () => {
@@ -253,8 +253,11 @@ class UserManage {
 class Privileges {
 
 	static setup() {
+
 		Privileges.container = document.querySelector('.privileges.form-container');
+
 		Privileges.privileges_container = Privileges.container.querySelector('#filters-list');
+
 		for(const data of MetaData.categories.values()) {
 			Privileges.container.querySelector('form#add-filter').category_id.insertAdjacentHTML('beforeend',`
 				<option value="${data.category_id}">${data.name}</option>
@@ -301,7 +304,7 @@ class Privileges {
 		container.textContent = null;
 
 		if(!this.list.length)
-			Privileges.privileges_container.innerHTML = `<div class="NA" style="margin:0 10px;">No privilege assigned :(.</div>`;
+			Privileges.privileges_container.innerHTML = `<div class="NA">No privilege assigned :(</div>`;
 
 		for(const privilege of this.list) {
 			container.appendChild(privilege.row);
@@ -348,13 +351,16 @@ class Privilege {
 
 	async delete(id) {
 
+		if(!window.confirm('Are you sure?!'))
+			return;
+
 		const options = {
 			method: 'POST',
 		};
 
 		const parameters = {
 			id: id
-		}
+		};
 
 		await API.call('user/privileges/delete', parameters, options);
 
@@ -367,8 +373,11 @@ class Privilege {
 class Roles {
 
 	static setup() {
+
 		Roles.container = document.querySelector('.roles.form-container');
+
 		Roles.roles_container = Roles.container.querySelector('#roles-list');
+
 		for(const data of MetaData.categories.values()) {
 			Roles.container.querySelector('form#add-roles').category_id.insertAdjacentHTML('beforeend',`
 				<option value="${data.category_id}">${data.name}</option>
@@ -415,7 +424,7 @@ class Roles {
 		container.textContent = null;
 
 		if(!this.list.length)
-			Roles.roles_container.innerHTML = `<div class="NA" style="margin:0 10px;">No roles assigned :(.</div>`;
+			Roles.roles_container.innerHTML = `<div class="NA">No roles assigned :(</div>`;
 
 		for(const privilege of this.list) {
 			container.appendChild(privilege.row);
@@ -462,13 +471,16 @@ class Role {
 
 	async delete(id) {
 
+		if(!window.confirm('Are you sure?!'))
+			return;
+
 		const options = {
 			method: 'POST',
 		};
 
 		const parameters = {
 			id: id
-		}
+		};
 
 		await API.call('accounts/roles/delete', parameters, options);
 

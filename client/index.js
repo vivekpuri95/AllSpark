@@ -560,7 +560,7 @@ app.get('/users/:id?', (req, res) => {
 			<h1>Manage Users</h1>
 
 			<header class="toolbar">
-				<input type="button" value="Add User" id="add-user">
+				<button id="add-user"><i class="fa fa-plus"></i>&nbsp; Add New User</button>
 			</header>
 
 			<table class="block">
@@ -582,8 +582,8 @@ app.get('/users/:id?', (req, res) => {
 			<h1></h1>
 
 			<header class="toolbar">
-				<input type="button" value="Cancel" id="cancel-form">
-				<input type="submit" form="user-form" value="Submit">
+				<button id="cancel-form"><i class="fa fa-arrow-left"></i>&nbsp; Back</button>
+				<button type="submit" form="user-form"><i class="fa fa-save"></i>&nbsp; Save</button>
 			</header>
 
 			<form class="block form" id="user-form">
