@@ -76,11 +76,14 @@ class API {
 				if (token) {
 
 					userDetails = await commonFun.verifyJWT(token);
+
 					obj.user = new User(userDetails);
 				}
+				if ((userDetails && userDetails.error)  && !constants.publicEndpoints.filter(u => url.startsWith(u)).length) {
 
 				if (!userDetails && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length)
 					throw new API.Exception(401, 'User Not Authenticated! :(');
+				}
 
 				// if (host.includes('localhost')) {
 				// 	host = 'test-analytics.jungleworks.co';
