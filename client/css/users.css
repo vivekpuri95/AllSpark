@@ -6,6 +6,7 @@
 	max-width: 150px;
 	justify-content: space-between;
 	flex: 1 0;
+	margin: 16px;
 }
 .form-container {
 	overflow: auto;
@@ -32,8 +33,4 @@ main #form .filter {
 .privileges .NA,
 .roles .NA {
 	margin: 5px;
-}
-.privileges label,
-.roles label {
-	margin: 16px;
 }
