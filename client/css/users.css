@@ -1,0 +1,39 @@
+.privileges form label,
+.roles form label {
+	font-weight: bold;
+	display: flex;
+	flex-direction: column;
+	max-width: 150px;
+	justify-content: space-between;
+	flex: 1 0;
+}
+.form-container {
+	overflow: auto;
+}
+main #form h3 {
+	border-bottom: 1px dashed #999;
+}
+main #form .filter {
+	display: flex;
+	transition: opacity var(--transition-duration);
+}
+	main #form .filter label {
+		margin: 5px;
+		min-width: 125px;
+	}
+	main #form .filter input {
+		margin: 0 !important;
+	}
+.privileges .save, .privileges .delete,
+.roles .save, .roles .delete {
+	min-width: 50px !important;
+	max-width: 50px;
+}
+.privileges .NA,
+.roles .NA {
+	margin: 5px;
+}
+.privileges label,
+.roles label {
+	margin: 16px;
+}
