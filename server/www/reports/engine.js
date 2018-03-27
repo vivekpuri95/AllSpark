@@ -281,11 +281,16 @@ class api extends report {
 	async fetchAndStore() {
 
 		const redisData = await commonFun.redisGet(this.redisKey);
+
 		if (this.query.is_redis && redisData && !this.has_today) {
 
 			try {
 
-				this.result = JSON.parse(redisData);
+				this.result = {
+					data: JSON.parse(redisData),
+					query: JSON.stringify(this.har, 0, 1),
+				};
+
 				return;
 			}
 
@@ -300,15 +305,10 @@ class api extends report {
 			gzip: true,
 		});
 
-		if (commonFun.isJson(result.body)) {
-
-			this.result = JSON.parse(result.body)
-		}
-
-		else {
-
-			this.result = JSON.parse(result.body)
-		}
+		this.result = {
+			data: JSON.parse(result.body),
+			query: JSON.stringify(this.har, 0, 1),
+		};
 
 		await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
 	}

@@ -16,7 +16,7 @@ Page.class = class Dashboards extends Page {
 		});
 
 		this.list = new Map;
-		this.selectedSources = new Set;
+		this.list.selectedReports = new Set;
 
 		for(const category of MetaData.categories.values())
 			this.listContainer.form.category.insertAdjacentHTML('beforeend', `<option value="${category.id}">${category.name}</option>`);
@@ -30,6 +30,8 @@ Page.class = class Dashboards extends Page {
 	}
 
 	async load(state) {
+
+		this.list.clear();
 
 		await DataSource.load();
 
@@ -49,13 +51,13 @@ Page.class = class Dashboards extends Page {
 		this.renderList();
 
 		if(id && this.list.has(id) && window.location.pathname.includes('dashboard'))
-			this.list.get(id).render();
+			await this.list.get(id).load();
 
 		else if(id && window.location.pathname.includes('report'))
-			this.report(id);
+			await this.report(id);
 
 		else
-			await ections.show('list');
+			await Sections.show('list');
 	}
 
 	render() {
@@ -147,12 +149,13 @@ Page.class = class Dashboards extends Page {
 			report = new DataSource(DataSource.list.get(id)),
 			container = this.reports.querySelector('.list');
 
-		this.selectedSources.clear();
-		this.selectedSources.add(report);
+		this.list.selectedReports.clear();
+		this.list.selectedReports.add(report);
 
 		container.textContent = null;
 
 		report.container.removeAttribute('style');
+		report.container.classList.add('singleton');
 
 		container.appendChild(report.container);
 
@@ -166,7 +169,13 @@ class Dashboard {
 
 	static setup(page) {
 
+		Dashboard.gridColumns = 5;
+
+		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
+
+		if(page.user.privileges.has('reports'))
+			Dashboard.toolbar.insertAdjacentHTML('beforeend', `<button class="edit-dashboard hidden"></button>`);
 
 		$('#reports .toolbar input[name="date-range"]').daterangepicker({
 			opens: 'left',
@@ -184,7 +193,7 @@ class Dashboard {
 
 		$('#reports .toolbar input[name="date-range"]').on('apply.daterangepicker', (e, picker) => {
 
-			for(const source of page.selectedSources) {
+			for(const source of page.list.selectedReports) {
 
 				const
 					start = Array.from(source.filters.values()).filter(f => f.name == 'Start Date')[0],
@@ -211,7 +220,7 @@ class Dashboard {
 		this.page = page;
 	}
 
-	render() {
+	async load() {
 
 		if(!Dashboard.container)
 			return;
@@ -230,7 +239,7 @@ class Dashboard {
 
 		Dashboard.container.textContent = null;
 
-		this.page.selectedSources.clear();
+		this.page.list.selectedReports.clear();
 
 		if(this.format && this.format.reports && this.format.reports.length) {
 
@@ -241,27 +250,210 @@ class Dashboard {
 
 				const source = JSON.parse(JSON.stringify(DataSource.list.get(_report.query_id)));
 
-				source.visualizations = source.visualizations.concat(_report.visualizations);
 				source.postProcessor = _report.postProcessor;
 
 				const report = new DataSource(source);
 
+				report.dashboardPosition = position;
+
 				report.container.setAttribute('style', `
 					order: ${position || 0};
-					grid-column: auto / span ${_report.span || 4}
+					grid-column: auto / span ${_report.width || Dashboard.gridColumns}
 				`);
 
-				Dashboard.container.appendChild(report.container);
+				if(_report.visualization) {
+
+					const [visualization] = report.visualizations.filter(v => v.type == _report.visualization);
+
+					if(visualization)
+						report.visualizations.selected = visualization;
+				}
 
 				report.visualizations.selected.load();
 
-				this.page.selectedSources.add(report);
+				report.container.appendChild(report.visualizations.selected.container);
+
+				Dashboard.container.appendChild(report.container);
+
+				this.page.list.selectedReports.add(report);
 			}
 		} else {
 			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
 		}
 
-		Sections.show('reports');
+		if(this.page.user.privileges.has('reports')) {
+
+			const edit = Dashboard.toolbar.querySelector('.edit-dashboard');
+
+			edit.classList.remove('hidden');
+
+			edit.innerHTML = `<i class="fa fa-edit"></i> Edit`;
+
+			if(Dashboard.toolbar.editListener)
+				edit.removeEventListener('click', Dashboard.toolbar.editListener);
+
+			edit.on('click', Dashboard.toolbar.editListener = () => this.edit());
+
+			if(Dashboard.editing)
+				edit.click();
+		}
+
+		await Sections.show('reports');
+	}
+
+	async render() {
+
+		if(!Dashboard.container)
+			return;
+
+		for(const report of this.page.list.selectedReports) {
+
+			const
+				format = this.format.reports[report.dashboardPosition],
+				position = this.format.reports.indexOf(format);
+
+			report.container.setAttribute('style', `
+				order: ${position || 0};
+				grid-column: auto / span ${format.width || Dashboard.gridColumns}
+			`);
+
+			report.visualizations.selected.render();
+		}
+	}
+
+	edit() {
+
+		Dashboard.editing = true;
+
+		const edit = Dashboard.toolbar.querySelector('.edit-dashboard');
+
+		edit.innerHTML = `<i class="fa fa-save"></i> Save`;
+
+		if(Dashboard.toolbar.editListener)
+			edit.removeEventListener('click', Dashboard.toolbar.editListener);
+
+		edit.on('click', Dashboard.toolbar.editListener = () => this.save());
+
+		Dashboard.container.insertAdjacentHTML('beforeend', `
+			<section class="data-source add-new" style="order: ${this.page.list.selectedReports.size};">
+				Add New Report
+			</section>
+		`);
+
+		Dashboard.container.querySelector('.data-source.add-new').on('click', async () => {
+
+			const query_id = parseInt(window.prompt('Enter the report ID'));
+
+			if(!query_id || !DataSource.list.has(query_id))
+				return alert('Invalid report ID! :(');
+
+			this.format.reports.push({
+				query_id: parseInt(query_id),
+			});
+
+			this.load();
+		});
+
+		for(const report of this.page.list.selectedReports) {
+
+			const
+				header = report.container.querySelector('header'),
+				format = this.format.reports[report.dashboardPosition];
+
+			if(!format.width)
+				format.width = Dashboard.gridColumns;
+
+			header.insertAdjacentHTML('beforeend', `
+				<div class="edit">
+					<button class="width-shrink" title="Grow Width"><i class="fa fa-angle-left"></i></button>
+					<button class="width-grow" title="Shrink Width"><i class="fa fa-angle-right"></i></button>
+					<button class="remove" title="Remove Graph"><i class="fa fa-times"></i></button>
+				</div>
+			`);
+
+			header.querySelector('.width-grow').on('click', () => {
+				format.width = Math.min(Dashboard.gridColumns, format.width + 1);
+				this.render();
+			});
+
+			header.querySelector('.width-shrink').on('click', () => {
+				format.width = Math.max(1, format.width - 1);
+				this.render();
+			});
+
+			header.querySelector('.remove').on('click', () => {
+
+				this.format.reports.splice(report.dashboardPosition, 1);
+				this.page.list.selectedReports.delete(report);
+				report.dashboardPosition = undefined;
+
+				Dashboard.container.removeChild(report.container);
+
+				this.load();
+			});
+
+			report.container.setAttribute('draggable', 'true');
+
+			report.container.on('dragstart', e => {
+				this.page.list.selectedReports.beingDragged = report;
+				e.effectAllowed = 'move';
+				report.container.classList.add('being-dragged');
+			});
+
+			report.container.on('dragend', e => {
+				report.container.classList.remove('being-dragged');
+			});
+
+			report.container.on('dragenter', e => {
+				report.container.classList.add('drag-enter');
+			});
+
+			report.container.on('dragleave', () =>  {
+				report.container.classList.remove('drag-enter');
+			});
+
+			// To make the targate droppable
+			report.container.on('dragover', e => {
+				e.preventDefault();
+				report.container.classList.add('drag-enter');
+			});
+
+			report.container.on('drop', e => {
+
+				report.container.classList.remove('drag-enter');
+
+				if(this.page.list.selectedReports.beingDragged == report)
+					return;
+
+				const
+					beingDragged = this.page.list.selectedReports.beingDragged,
+					format = this.format.reports[beingDragged.dashboardPosition];
+
+				this.format.reports.splice(beingDragged.dashboardPosition, 1);
+
+				this.format.reports.splice(report.dashboardPosition, 0, format);
+
+				this.load();
+			});
+		}
+	}
+
+	async save() {
+
+		Dashboard.editing = false;
+
+		const
+			parameters = {
+				id: this.id,
+				format: JSON.stringify(this.format),
+			},
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('dashboards/updateFormat', parameters, options);
+
+		await this.page.list.get(this.id).load();
 	}
 
 	get menuItem() {
@@ -293,7 +485,7 @@ class Dashboard {
 
 			else {
 				history.pushState({what: this.id, type: 'dashboard'}, '', `/dashboard/${this.id}`);
-				this.render();
+				this.load();
 			}
 		});
 

@@ -89,6 +89,10 @@ class Page {
 	constructor() {
 
 		this.container = document.querySelector('main');
+
+		this.account = window.account;
+		this.user = window.user;
+		this.metadata = window.MetaData;
 	}
 }
 
@@ -636,16 +640,25 @@ class DataSource {
 		container.classList.add('data-source');
 
 		container.innerHTML = `
+
 			<header>
-				<h2 title="${this.name}"><i class="fa fa-chart-line"></i>&nbsp; ${this.name}</h2>
-				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
-				<button class="description-toggle" title="Description">&nbsp;<i class="fa fa-info"></i></button>
-				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i></button>
-				<button class="download" title="Download CSV"><i class="fa fa-download"></i></button>
-				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i></button>
+				<h2 title="${this.name}">${this.name}</h2>
+				<span class="right menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></span>
 			</header>
+
+			<div class="toolbar menu hidden">
+				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
+				<button class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
+				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i> Share</button>
+				<button class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
+				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i> Edit</button>
+				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
+			</div>
+
 			<form class="filters form toolbar hidden"></form>
+
 			<div class="columns"></div>
+
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
 				<div class="footer">
@@ -667,6 +680,7 @@ class DataSource {
 					</span>
 				</div>
 			</div>
+
 			<div class="share-link hidden">
 				<input type="url" value="${this.link}" readonly>
 			</div>
@@ -674,24 +688,31 @@ class DataSource {
 
 		this.filters.form = container.querySelector('.filters');
 
-		container.querySelector('.filters-toggle').on('click', () => {
+		container.querySelector('.menu-toggle').on('click', () => {
+			container.querySelector('.menu').classList.toggle('hidden');
+			container.querySelector('.menu-toggle').classList.toggle('selected');
+		});
+
+		container.querySelector('.menu .filters-toggle').on('click', () => {
 			container.querySelector('.filters').classList.toggle('hidden');
 			container.querySelector('.filters-toggle').classList.toggle('selected');
 		});
 
-		container.querySelector('.description-toggle').on('click', () => {
+		container.querySelector('.menu .description-toggle').on('click', () => {
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
 		});
 
-		container.querySelector('.share-link-toggle').on('click', () => {
+		container.querySelector('.menu .share-link-toggle').on('click', () => {
 			container.querySelector('.share-link').classList.toggle('hidden');
 			container.querySelector('.share-link-toggle').classList.toggle('selected');
 			container.querySelector('.share-link input').select();
 		});
 
-		container.querySelector('.download').on('click', () => this.download());
-		container.querySelector('.edit').on('click', () => window.location = `/reports/${this.query_id}`);
+		container.querySelector('.menu .download').on('click', () => this.download());
+
+		container.querySelector('.menu .edit').on('click', () => window.location = `/reports/${this.query_id}`);
+		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
 
 		this.filters.form.on('submit', e => this.visualizations.selected.load(e));
 
@@ -726,21 +747,14 @@ class DataSource {
 			}
 
 			select.on('change', async () => {
-
-				container.removeChild(container.querySelector('.visualization'));
-
-				this.visualizations.selected = this.visualizations[select.value];
-
-				container.appendChild(this.visualizations.selected.container);
-
-				await this.visualizations.selected.load();
+				this.visualizations[select.value].load();
 			});
 
 			if(!this.visualizations.selected)
 				this.visualizations.selected = this.visualizations[select.value];
 
 			if(this.visualizations.length > 1)
-				container.querySelector('header').appendChild(select);
+				container.querySelector('.menu').appendChild(select);
 
 			if(this.visualizations.selected)
 				container.appendChild(this.visualizations.selected.container);
@@ -749,7 +763,7 @@ class DataSource {
 		if(!this.filters.size)
 			container.querySelector('.filters-toggle').classList.add('hidden');
 
-		container.querySelector('header').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
+		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
 
 		return container;
 	}
@@ -1804,6 +1818,20 @@ class Visualization {
 
 		this.source = source;
 	}
+
+	render() {
+
+		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
+
+		if(visualizationToggle)
+			visualizationToggle.value = this.source.visualizations.indexOf(this);
+
+		this.source.container.removeChild(this.source.container.querySelector('.visualization'));
+
+		this.source.visualizations.selected = this;
+
+		this.source.container.appendChild(this.container);
+	}
 }
 
 Visualization.list = new Map;
@@ -1823,6 +1851,8 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		if(e)
 			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
@@ -1844,7 +1874,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		container.innerHTML = `
 			<div class="container overflow">
-				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 			<div id="row-count"></div>
 		`;
@@ -1970,7 +2000,7 @@ Visualization.list.set('line', class Line extends Visualization {
 		container.classList.add('visualization', 'line');
 		container.innerHTML = `
 			<div id="visualization-${this.id}" class="container">
-				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
 
@@ -1979,7 +2009,10 @@ Visualization.list.set('line', class Line extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -2398,7 +2431,10 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -2709,7 +2745,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 	}
 });
 
-Visualization.list.set('stacked', class Bar extends Visualization {
+Visualization.list.set('stacked', class Stacked extends Visualization {
 
 	get container() {
 
@@ -2732,7 +2768,10 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -3086,7 +3125,10 @@ Visualization.list.set('area', class Area extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -3507,6 +3549,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 	async load(parameters = {}) {
 
+		super.render();
+
 		await this.source.fetch(parameters);
 
 		this.render();
@@ -3580,8 +3624,10 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 	async load(e) {
 
-		if(e)
+		if(e && e.preventDefault)
 			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -3890,8 +3936,10 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 	async load(e) {
 
-		if(e)
+		if(e && e.preventDefault)
 			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">

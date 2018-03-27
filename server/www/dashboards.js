@@ -80,6 +80,27 @@ exports.update = class extends API {
 	}
 };
 
+exports.updateFormat = class extends API {
+
+	async updateFormat() {
+
+		this.user.privilege.needs('dashboard');
+
+		// Make sure the format is valid JSON
+		try {
+			JSON.stringify(JSON.parse(this.request.body.format))
+		} catch(e) {
+			throw new API.Exception(400, 'Bad dashboard format! :(');
+		}
+
+		return await this.mysql.query(
+			'UPDATE tb_dashboards SET format = ? WHERE id = ? AND account_id = ?',
+			[this.request.body.format, this.request.body.id, this.account.account_id],
+			'write'
+		);
+	}
+};
+
 exports.delete = class extends API {
 
 	async delete() {
