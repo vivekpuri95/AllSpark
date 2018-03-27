@@ -9,11 +9,6 @@ class Authenticate {
 
 		if (parseInt(reportObject) || !reportObject) {
 
-			return {
-				error: false,
-				message: "individual access",
-			}
-
 			reportObject = await mysql.query(`
                 SELECT
                   q.*,
