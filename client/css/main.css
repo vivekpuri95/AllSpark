@@ -650,6 +650,8 @@ body {
 
 			.visualization.table {
 				overflow: auto;
+				width: initial;
+				max-width: initial;
 			}
 				.visualization.table table {
 					caption-side: bottom;

@@ -218,6 +218,12 @@ class Dashboard {
 		this.children = new Set;
 
 		this.page = page;
+
+		if(!this.format)
+			this.format = {};
+
+		if(!this.format.reports)
+			this.format.reports = [];
 	}
 
 	async load() {
@@ -345,7 +351,7 @@ class Dashboard {
 			const query_id = parseInt(window.prompt('Enter the report ID'));
 
 			if(!query_id || !DataSource.list.has(query_id))
-				return alert('Invalid report ID! :(');
+				return;
 
 			this.format.reports.push({
 				query_id: parseInt(query_id),
