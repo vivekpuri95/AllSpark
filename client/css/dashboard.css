@@ -78,10 +78,10 @@ main > nav::-webkit-scrollbar-track {
 
 main #reports .list {
 	display: grid;
-	grid-template-columns: repeat(5, 20%);
+	grid-template-columns: repeat(8, 12.5%);
 	grid-column-gap: calc(var(--gap) * 2);
 	grid-row-gap: calc(var(--gap) * 4);
-	width: calc(100% - var(--gap) * 8);
+	width: calc(100% - var(--gap) * 14);
 	align-items: start;
 }
 	main #reports > .toolbar {
@@ -96,7 +96,7 @@ main #reports .list {
 			letter-spacing: 0.5px;
 		}
 	main #reports .list .data-source {
-		grid-column: auto / span 5;
+		grid-column: auto / span 8;
 		transition: box-shadow var(--transition-duration),
 					opacity var(--transition-duration),
 					border var(--transition-duration);

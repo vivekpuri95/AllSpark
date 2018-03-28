@@ -169,7 +169,7 @@ class Dashboard {
 
 	static setup(page) {
 
-		Dashboard.gridColumns = 5;
+		Dashboard.gridColumns = 8;
 
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');

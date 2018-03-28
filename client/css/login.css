@@ -1,8 +1,10 @@
 main {
-	margin: 200px auto;
+	margin: -100px auto 0;
 	width: 300px;
 	display: flex;
 	flex-direction: column;
+	overflow: visible;
+	justify-content: center;
 }
 main > * {
 	margin: var(--gap) 0;
