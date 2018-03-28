@@ -619,6 +619,7 @@ app.get('/users/:id?', (req, res) => {
 				<form class="filter">
 					<label><span>Category</span></label>
 					<label><span>Privileges</span></label>
+					<label class="edit"><span></span></label>
 					<label class="save"><span></span></label>
 				</form>
 
@@ -645,6 +646,7 @@ app.get('/users/:id?', (req, res) => {
 				<form class="filter">
 					<label><span>Category</span></label>
 					<label><span>Roles</span></label>
+					<label class="edit"><span></span></label>
 					<label class="save"><span></span></label>
 				</form>
 

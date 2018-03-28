@@ -25,12 +25,12 @@ main #form .filter {
 	main #form .filter input {
 		margin: 0 !important;
 	}
-.privileges .save, .privileges .delete,
-.roles .save, .roles .delete {
+.form-container .save,
+.form-container .delete,
+.form-container .edit {
 	min-width: 50px !important;
 	max-width: 50px;
 }
-.privileges .NA,
-.roles .NA {
+.form-container .NA {
 	margin: 5px;
 }
