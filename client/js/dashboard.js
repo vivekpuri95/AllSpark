@@ -169,7 +169,10 @@ class Dashboard {
 
 	static setup(page) {
 
-		Dashboard.gridColumns = 8;
+		Dashboard.grid = {
+			columns: 8,
+			rows: 2,
+		};
 
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
@@ -264,7 +267,8 @@ class Dashboard {
 
 				report.container.setAttribute('style', `
 					order: ${position || 0};
-					grid-column: auto / span ${_report.width || Dashboard.gridColumns}
+					grid-column: auto / span ${_report.width || Dashboard.grid.columns};
+					grid-row: auto / span ${_report.height || Dashboard.grid.rows};
 				`);
 
 				if(_report.visualization) {
@@ -304,6 +308,10 @@ class Dashboard {
 				edit.click();
 		}
 
+		Dashboard.resizeHint = document.createElement('div');
+		Dashboard.resizeHint.classList.add('resize-hint', 'hidden');
+		Dashboard.container.appendChild(Dashboard.resizeHint);
+
 		await Sections.show('reports');
 	}
 
@@ -320,7 +328,8 @@ class Dashboard {
 
 			report.container.setAttribute('style', `
 				order: ${position || 0};
-				grid-column: auto / span ${format.width || Dashboard.gridColumns}
+				grid-column: auto / span ${format.width || Dashboard.grid.columns};
+				grid-row: auto / span ${format.height || Dashboard.grid.rows};
 			`);
 
 			report.visualizations.selected.render();
@@ -367,25 +376,16 @@ class Dashboard {
 				format = this.format.reports[report.dashboardPosition];
 
 			if(!format.width)
-				format.width = Dashboard.gridColumns;
+				format.width = Dashboard.grid.columns;
+
+			if(!format.height)
+				format.height = Dashboard.grid.rows;
 
 			header.insertAdjacentHTML('beforeend', `
 				<div class="edit">
-					<button class="width-shrink" title="Grow Width"><i class="fa fa-angle-left"></i></button>
-					<button class="width-grow" title="Shrink Width"><i class="fa fa-angle-right"></i></button>
 					<button class="remove" title="Remove Graph"><i class="fa fa-times"></i></button>
 				</div>
 			`);
-
-			header.querySelector('.width-grow').on('click', () => {
-				format.width = Math.min(Dashboard.gridColumns, format.width + 1);
-				this.render();
-			});
-
-			header.querySelector('.width-shrink').on('click', () => {
-				format.width = Math.max(1, format.width - 1);
-				this.render();
-			});
 
 			header.querySelector('.remove').on('click', () => {
 
@@ -407,26 +407,49 @@ class Dashboard {
 			});
 
 			report.container.on('dragend', e => {
+
+				if(!this.page.list.selectedReports.beingDragged)
+					return;
+
 				report.container.classList.remove('being-dragged');
+				this.page.list.selectedReports.beingDragged = null;
 			});
 
 			report.container.on('dragenter', e => {
+
+				if(!this.page.list.selectedReports.beingDragged)
+					return;
+
 				report.container.classList.add('drag-enter');
 			});
 
 			report.container.on('dragleave', () =>  {
+
+				if(!this.page.list.selectedReports.beingDragged)
+					return;
+
 				report.container.classList.remove('drag-enter');
 			});
 
 			// To make the targate droppable
 			report.container.on('dragover', e => {
+
 				e.preventDefault();
+
+				if(!this.page.list.selectedReports.beingDragged)
+					return;
+
+				e.stopPropagation();
+
 				report.container.classList.add('drag-enter');
 			});
 
 			report.container.on('drop', e => {
 
 				report.container.classList.remove('drag-enter');
+
+				if(!this.page.list.selectedReports.beingDragged)
+					return;
 
 				if(this.page.list.selectedReports.beingDragged == report)
 					return;
@@ -441,6 +464,102 @@ class Dashboard {
 
 				this.load();
 			});
+
+			report.container.insertAdjacentHTML('beforeend', `
+				<div class="resize left" draggable="true"></div>
+				<div class="resize right" draggable="true"></div>
+			`);
+
+			const
+				left = report.container.querySelector('.resize.left'),
+				right = report.container.querySelector('.resize.right');
+
+			left.on('dragstart', e => {
+				e.stopPropagation();
+				report.draggingEdge = left;
+				this.page.list.selectedReports.beingResized = report;
+			});
+
+			right.on('dragstart', e => {
+				e.stopPropagation();
+				report.draggingEdge = right;
+				this.page.list.selectedReports.beingResized = report
+			});
+
+			left.on('dragend', e => {
+				e.stopPropagation();
+				this.page.list.selectedReports.beingResized = null;
+				Dashboard.resizeHint.classList.add('hidden');
+			});
+
+			right.on('dragend', e => {
+				e.stopPropagation();
+				this.page.list.selectedReports.beingResized = null;
+				Dashboard.resizeHint.classList.add('hidden');
+			});
+		}
+
+		Dashboard.container.on('dragover', e => {
+
+			e.preventDefault();
+
+			const report = this.page.list.selectedReports.beingResized;
+
+			if(!report)
+				return;
+
+			const
+				format = this.format.reports[report.dashboardPosition],
+				column = getColumn(e.clientX) + 1,
+				reportStart = getColumn(report.container.offsetLeft),
+				reportEnd = getColumn(report.container.offsetLeft + report.container.clientWidth);
+
+			Dashboard.resizeHint.classList.remove('hidden');
+			Dashboard.resizeHint.style.left = ((column * ((Dashboard.container.clientWidth / Dashboard.grid.columns) + 10)) + 8) + 'px';
+		});
+
+		Dashboard.container.on('drop', e => {
+
+			const report = this.page.list.selectedReports.beingResized;
+
+			if(!report)
+				return;
+
+			const
+				format = this.format.reports[report.dashboardPosition],
+				column = getColumn(e.clientX) + 1,
+				reportStart = getColumn(report.container.offsetLeft),
+				reportEnd = getColumn(report.container.offsetLeft + report.container.clientWidth);
+
+			if(report.draggingEdge.classList.contains('left')) {
+
+				if(column >= reportEnd)
+					return;
+
+				format.width = reportEnd - column;
+			}
+
+			if(report.draggingEdge.classList.contains('right')) {
+
+				if(column <= reportStart)
+					return;
+
+				format.width = column - reportStart;
+			}
+
+			if(Dashboard.resizeTimeout)
+				clearTimeout(Dashboard.resizeTimeout);
+
+			Dashboard.resizeHint.classList.add('hidden');
+
+			Dashboard.resizeTimeout = setTimeout(() => this.render(), 300);
+		});
+
+		function getColumn(position) {
+			return Math.floor(
+				(position - Dashboard.container.offsetLeft) /
+				((Dashboard.container.clientWidth / Dashboard.grid.columns) + 10)
+			) + 1;
 		}
 	}
 

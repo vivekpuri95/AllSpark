@@ -325,7 +325,6 @@ body {
 
 	main .data-source {
 		display: grid;
-		flex-direction: column;
 		grid-gap: calc(var(--gap) * 2);
 	}
 		main .data-source > .warning {
@@ -567,14 +566,15 @@ body {
 				background: #fff;
 				overflow: auto;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
-				max-height: 500px;
+				max-height: 456px;
+				height: 456px;
 				margin: 0;
 				padding: 0;
 			}
 				.visualization > .container > .loading {
 					display: flex;
 					align-items: center;
-					height: 500px;
+					height: 100%;
 					font-size: 250%;
 					color: #999;
 					margin:  0 auto;
@@ -587,9 +587,9 @@ body {
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 				position: absolute;
 				font-size: 90%;
+				opacity: 1;
 				transition: left var(--transition-duration),
 							top var(--transition-duration);
-				opacity: 1;
 			}
 				main .data-source .visualization .tooltip header {
 					padding: var(--gap) calc(var(--gap) * 2);
@@ -628,17 +628,23 @@ body {
 							text-align: right;
 							margin-left: 10px;
 						}
-			main .data-source .visualization.table #row-count {
-				padding-left: 0;
-				margin-top: calc(var(--gap) * 2);
-				padding: 0;
+			main .data-source .visualization.table .row-count {
 				font-size: 90%;
 				text-align: right;
+				position: sticky;
+				bottom: 0;
+				background: rgba(255, 255, 255, 0.9);
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+				padding: var(--gap);
+				transition: background var(--transition-duration);
 			}
-				main .data-source .visualization.table #row-count > span {
+			main .data-source .visualization.table .row-count:hover {
+				background: #fff;
+			}
+				main .data-source .visualization.table .row-count > span {
 					margin-right: 15px;
 				}
-				main .data-source .visualization.table #row-count .label {
+				main .data-source .visualization.table .row-count .label {
 					color: #666;
 					font-weight: normal;
 					font-size: 100%;
@@ -712,6 +718,7 @@ body {
 							font-weight: bold;
 							padding: 4px 10px;
 							margin: 0;
+							cursor: initial;
 						}
 				.visualization.table thead td {
 					padding: 0;
@@ -847,7 +854,7 @@ body {
 
 .visualization .container > svg {
 	width: 100%;
-	height: 500px;
+	height: 100%;
 	display: flex;
 }
 .visualization .container > svg .axis path,
