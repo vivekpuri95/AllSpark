@@ -68,7 +68,7 @@ exports.get = class extends API {
 			`,
 			[this.account.account_id]);
 
-		this.assert(accountList.length, "account not found :(");
+		this.assert(accountList.length, "Account not found :(");
 
 		const accountObj = {
 			settings: [],

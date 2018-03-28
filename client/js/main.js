@@ -1,5 +1,101 @@
 "use strict";
 
+window.addEventListener('DOMContentLoaded', async () => {
+
+	if(!Page.class)
+		return;
+
+	await Page.setup();
+
+	new (Page.class)();
+});
+
+class Page {
+
+	static async setup() {
+
+		AJAXLoader.setup();
+
+		await Page.load();
+
+		Page.render();
+	}
+
+	static async load() {
+
+		await Account.load();
+		await User.load();
+		await MetaData.load();
+
+		if(account && account.settings.get('whitelabel')) {
+
+			const parameters = new URLSearchParams(window.location.search.slice(1));
+
+			if(parameters.has('access_token') && parameters.get('access_token'))
+				localStorage.access_token = parameters.get('access_token');
+		}
+	}
+
+	static render() {
+
+		if(account) {
+
+			if(account.settings.get('hideHeader')) {
+				document.querySelector('body > header').classList.add('hidden');
+				return;
+			}
+
+			if(account.icon)
+				document.getElementById('favicon').href = account.icon;
+
+			if(account.logo)
+				document.querySelector('body > header .logo img').src = account.logo;
+		}
+
+		if(window.user)
+			document.querySelector('body > header .user-name').textContent = user.name;
+
+		document.querySelector('body > header .logout').on('click', () => User.logout());
+
+		Page.navList = [
+			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+			{url: '/dashboards', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
+			{url: '/reports', name: 'Reports', privilege: 'queries', icon: 'fa fa-database'},
+			{url: '/connections', name: 'Connections', privilege: 'datasources', icon: 'fa fa-server'},
+			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+		];
+
+		const nav_container = document.querySelector('body > header nav');
+
+		for(const item of Page.navList) {
+
+			if(!window.user || !user.privileges.has(item.privilege))
+				continue;
+
+			nav_container.insertAdjacentHTML('beforeend',`
+				<a href='${item.url}'>
+					<i class="${item.icon}"></i>&nbsp;
+					${item.name}
+				</a>
+			`);
+		}
+
+		for(const item of document.querySelectorAll('body > header nav a')) {
+			if(window.location.pathname.startsWith(new URL(item.href).pathname))
+				item.classList.add('selected');
+		}
+	}
+
+	constructor() {
+
+		this.container = document.querySelector('main');
+
+		this.account = window.account;
+		this.user = window.user;
+		this.metadata = window.MetaData;
+	}
+}
+
 class Account {
 
 	static async load() {
@@ -109,6 +205,60 @@ class UserRoles extends Set {
 		super(context.roles);
 
 		this.context = context;
+	}
+}
+
+class MetaData {
+
+	static async load() {
+
+		MetaData.categories = new Map;
+		MetaData.privileges = new Map;
+		MetaData.roles = new Map;
+
+		if(!user.id)
+			return;
+
+		if(!localStorage.metadata)
+			await MetaData.fetch();
+
+		let metadata = null;
+
+		try {
+			metadata = JSON.parse(localStorage.metadata);
+		} catch(e) {
+			return;
+		}
+
+		for(const privilege of metadata.privileges || []) {
+
+			privilege.privilege_id = privilege.owner_id;
+			delete privilege['owner_id'];
+
+			MetaData.privileges.set(privilege.privilege_id, privilege);
+		}
+
+		for(const role of metadata.roles || []) {
+
+			role.role_id = role.owner_id;
+			delete role['owner_id'];
+
+			MetaData.roles.set(role.role_id, role);
+		}
+
+		for(const category of metadata.categories || []) {
+
+			category.category_id = category.owner_id;
+			delete category['owner_id'];
+
+			MetaData.categories.set(category.category_id, category);
+		}
+
+		return MetaData;
+	}
+
+	static async fetch() {
+		localStorage.metadata = JSON.stringify(await API.call('users/metadata'));
 	}
 }
 
@@ -236,7 +386,10 @@ class API extends AJAX {
 		if(!localStorage.refresh_token || !getToken)
 			return;
 
-		const response = await API.call('authentication/refresh', {refresh_token: localStorage.refresh_token});
+		const
+			parameters = {refresh_token: localStorage.refresh_token},
+			options = {method: 'POST'},
+			response = await API.call('authentication/refresh', {refresh_token: localStorage.refresh_token}, options);
 
 		localStorage.token = response;
 
@@ -248,7 +401,7 @@ API.Exception = class {
 
 	constructor(response) {
 		this.status = response.status;
-		this.description = response.description;
+		this.message = response.message;
 	}
 }
 
@@ -345,7 +498,7 @@ class Format {
 
 class Sections {
 
-	static show(id) {
+	static async show(id) {
 
 		for(const section of document.querySelectorAll('main section.section'))
 			section.classList.remove('show');
@@ -357,125 +510,39 @@ class Sections {
 	}
 }
 
-class MetaData {
+class Editor {
 
-	static async load() {
+	constructor(container) {
 
-		MetaData.categories = new Map;
-		MetaData.privileges = new Map;
-		MetaData.roles = new Map;
+		this.container = container;
+		this.editor = ace.edit(container);
 
-		if(!user.id)
-			return;
-
-		if(!localStorage.metadata)
-			await MetaData.fetch();
-
-		let metadata = null;
-
-		try {
-			metadata = JSON.parse(localStorage.metadata);
-		} catch(e) {
-			return;
-		}
-
-		for(const privilege of metadata.privileges || []) {
-
-			privilege.privilege_id = privilege.owner_id;
-			delete privilege['owner_id'];
-
-			MetaData.privileges.set(privilege.privilege_id, privilege);
-		}
-
-		for(const role of metadata.roles || []) {
-
-			role.role_id = role.owner_id;
-			delete role['owner_id'];
-
-			MetaData.roles.set(role.role_id, role);
-		}
-
-		for(const category of metadata.categories || []) {
-
-			category.category_id = category.owner_id;
-			delete category['owner_id'];
-
-			MetaData.categories.set(category.category_id, category);
-		}
-
-		return MetaData;
+		this.editor.setTheme('ace/theme/monokai');
+		this.editor.getSession().setMode('ace/mode/sql');
+		this.editor.setFontSize(16);
+		this.editor.$blockScrolling = Infinity;
 	}
 
-	static async fetch() {
-		localStorage.metadata = JSON.stringify(await API.call('users/metadata'));
-	}
-}
+	setAutoComplete(list) {
 
-class Page {
+		this.langTools = ace.require('ace/ext/language_tools');
 
-	static async setup() {
+		this.langTools.setCompleters([{
+			getCompletions: (_, __, ___, ____, callback) => callback(null, list),
+		}]);
 
-		AJAXLoader.setup();
-
-		await Page.load();
-
-		Page.render();
+		this.editor.setOptions({
+			enableBasicAutocompletion: true,
+			enableLiveAutocompletion: true,
+		});
 	}
 
-	static async load() {
-
-		await Account.load();
-		await User.load();
-		await MetaData.load();
-
-		if(account.settings.get('whitelabel')) {
-
-			const parameters = new URLSearchParams(window.location.search.slice(1));
-
-			if(parameters.has('access_token') && parameters.get('access_token'))
-				localStorage.access_token = parameters.get('access_token');
-		}
+	get value() {
+		return this.editor.getValue();
 	}
 
-	static render() {
-
-		if(account.settings.get('hideHeader')) {
-			document.querySelector('body > header').classList.add('hidden');
-			return;
-		}
-
-		if(account && account.icon)
-			document.getElementById('favicon').href = account.icon;
-
-		if(account && account.logo)
-			document.querySelector('body > header .logo img').src = account.logo;
-
-		if(window.user)
-			document.querySelector('body > header .user-name').textContent = user.name;
-
-		document.querySelector('body > header .logout').on('click', () => User.logout());
-
-		Page.navList = [
-			{url: '/users', name: 'Users', privilege: 'users'},
-			{url: '/dashboards', name: 'Dashboards', privilege: 'dashboards'},
-			{url: '/reports', name: 'Reports', privilege: 'queries'},
-			{url: '/connections', name: 'Connections', privilege: 'datasources'},
-		];
-
-		const nav_container = document.querySelector('body > header nav');
-
-		for(const item of Page.navList) {
-
-			if(!window.user || !user.privileges.has(item.privilege))
-				continue;
-
-			nav_container.insertAdjacentHTML('beforeend',`<a href='${item.url}'>${item.name}</a>`);
-		}
-
-		for(const item of document.querySelectorAll('body > header nav a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname))
-				item.classList.add('selected');
-		}
+	set value(value) {
+		this.editor.setValue(value, 1);
 	}
 }
 
@@ -488,11 +555,7 @@ class DataSource {
 
 		const response = await API.call('reports/report/list');
 
-		DataSource.list = [];
-		DataSource.dashboards = new Map;
-
-		for(const report of response || [])
-			DataSource.list.push(new DataSource(report));
+		DataSource.list = new Map(response.map(report => [report.query_id, report]));
 	}
 
 	constructor(source) {
@@ -577,16 +640,25 @@ class DataSource {
 		container.classList.add('data-source');
 
 		container.innerHTML = `
+
 			<header>
-				<h2 title="${this.name}"><i class="fa fa-chart-line"></i>&nbsp; ${this.name}</h2>
-				<button class="filters-toggle"><i class="fa fa-filter"></i>&nbsp; Filters</button>
-				<button class="description-toggle" title="Description">&nbsp;<i class="fa fa-info"></i>&nbsp;</button>
-				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i></button>
-				<button class="download" title="Download CSV"><i class="fa fa-download"></i></button>
-				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i></button>
+				<h2 title="${this.name}">${this.name}</h2>
+				<span class="right menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></span>
 			</header>
+
+			<div class="toolbar menu hidden">
+				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
+				<button class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
+				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i> Share</button>
+				<button class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
+				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i> Edit</button>
+				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
+			</div>
+
 			<form class="filters form toolbar hidden"></form>
+
 			<div class="columns"></div>
+
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
 				<div class="footer">
@@ -608,6 +680,7 @@ class DataSource {
 					</span>
 				</div>
 			</div>
+
 			<div class="share-link hidden">
 				<input type="url" value="${this.link}" readonly>
 			</div>
@@ -615,24 +688,31 @@ class DataSource {
 
 		this.filters.form = container.querySelector('.filters');
 
-		container.querySelector('.filters-toggle').on('click', () => {
+		container.querySelector('.menu-toggle').on('click', () => {
+			container.querySelector('.menu').classList.toggle('hidden');
+			container.querySelector('.menu-toggle').classList.toggle('selected');
+		});
+
+		container.querySelector('.menu .filters-toggle').on('click', () => {
 			container.querySelector('.filters').classList.toggle('hidden');
 			container.querySelector('.filters-toggle').classList.toggle('selected');
 		});
 
-		container.querySelector('.description-toggle').on('click', () => {
+		container.querySelector('.menu .description-toggle').on('click', () => {
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
 		});
 
-		container.querySelector('.share-link-toggle').on('click', () => {
+		container.querySelector('.menu .share-link-toggle').on('click', () => {
 			container.querySelector('.share-link').classList.toggle('hidden');
 			container.querySelector('.share-link-toggle').classList.toggle('selected');
 			container.querySelector('.share-link input').select();
 		});
 
-		container.querySelector('.download').on('click', () => this.download());
-		container.querySelector('.edit').on('click', () => window.location = `/reports/${this.query_id}`);
+		container.querySelector('.menu .download').on('click', () => this.download());
+
+		container.querySelector('.menu .edit').on('click', () => window.location = `/reports/${this.query_id}`);
+		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
 
 		this.filters.form.on('submit', e => this.visualizations.selected.load(e));
 
@@ -642,12 +722,12 @@ class DataSource {
 		this.filters.form.insertAdjacentHTML('beforeend', `
 			<label class="right">
 				<button type="reset">
-					<i class="fa fa-undo"></i>&nbsp; Reset
+					<i class="fa fa-undo"></i> Reset
 				</button>
 			</label>
 			<label>
 				<button type="submit">
-					<i class="fa fa-sync"></i>&nbsp; Submit
+					<i class="fa fa-sync"></i> Submit
 				</button>
 			</label>
 		`);
@@ -658,24 +738,23 @@ class DataSource {
 
 			select.classList.add('change-visualization')
 
-			for(const v of this.visualizations)
-				select.insertAdjacentHTML('beforeend', `<option value="${v.visualization_id}">${v.name}</option>`);
+			for(const [i, v] of this.visualizations.entries()) {
+
+				if(v.default)
+					this.visualizations.selected = v;
+
+				select.insertAdjacentHTML('beforeend', `<option value="${i}">${v.type}</option>`);
+			}
 
 			select.on('change', async () => {
-
-				container.removeChild(container.querySelector('.visualization'));
-
-				this.visualizations.selected = this.visualizations.filter(v => v.id == select.value)[0];
-
-				container.appendChild(this.visualizations.selected.container);
-
-				await this.visualizations.selected.load();
+				this.visualizations[select.value].load();
 			});
 
-			this.visualizations.selected = this.visualizations.filter(v => v.id == select.value)[0];
+			if(!this.visualizations.selected)
+				this.visualizations.selected = this.visualizations[select.value];
 
 			if(this.visualizations.length > 1)
-				container.querySelector('header').appendChild(select);
+				container.querySelector('.menu').appendChild(select);
 
 			if(this.visualizations.selected)
 				container.appendChild(this.visualizations.selected.container);
@@ -684,7 +763,7 @@ class DataSource {
 		if(!this.filters.size)
 			container.querySelector('.filters-toggle').classList.add('hidden');
 
-		container.querySelector('header').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
+		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
 
 		return container;
 	}
@@ -1420,8 +1499,11 @@ class DataSourcePostProcessors {
 
 		this.list = new Map;
 
-		for(const [name, processor] of DataSourcePostProcessors.processors)
-			this.list.set(name, new processor(this.source));
+		for(const [key, processor] of DataSourcePostProcessors.processors)
+			this.list.set(key, new processor(this.source, key));
+
+		if(source.postProcessor && this.list.has(source.postProcessor.name))
+			this.selected = this.list.get(source.postProcessor.name);
 	}
 
 	get container() {
@@ -1442,6 +1524,11 @@ class DataSourcePostProcessors {
 			container.appendChild(processor.container);
 		}
 
+		if(this.selected) {
+			processors.value = this.selected.key;
+			this.selected.container.classList.remove('hidden');
+		}
+
 		processors.on('change', () => {
 
 			this.selected = this.list.get(processors.value);
@@ -1454,7 +1541,6 @@ class DataSourcePostProcessors {
 
 		container.appendChild(processors);
 
-
 		return container;
 	}
 
@@ -1465,8 +1551,9 @@ class DataSourcePostProcessors {
 
 class DataSourcePostProcessor {
 
-	constructor(source) {
+	constructor(source, key) {
 		this.source = source;
+		this.key = key;
 	}
 
 	get container() {
@@ -1480,6 +1567,9 @@ class DataSourcePostProcessor {
 
 		for(const [value, name] of this.domain)
 			container.insertAdjacentHTML('beforeend', `<option value="${value}">${name}</option>`);
+
+		if(this.source.postProcessor && this.source.postProcessor.value && this.source.postProcessors.selected == this)
+			container.value = this.source.postProcessor.value;
 
 		container.on('change', () => this.source.visualizations.selected.render());
 
@@ -1724,9 +1814,23 @@ class Visualization {
 		for(const key in visualization)
 			this[key] = visualization[key];
 
-		this.id = this.visualization_id;
+		this.id = Math.floor(Math.random() * 100000);
 
 		this.source = source;
+	}
+
+	render() {
+
+		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
+
+		if(visualizationToggle)
+			visualizationToggle.value = this.source.visualizations.indexOf(this);
+
+		this.source.container.removeChild(this.source.container.querySelector('.visualization'));
+
+		this.source.visualizations.selected = this;
+
+		this.source.container.appendChild(this.container);
 	}
 }
 
@@ -1748,6 +1852,8 @@ Visualization.list.set('table', class Table extends Visualization {
 		if(e)
 			e.preventDefault();
 
+		super.render();
+
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 		`;
@@ -1768,7 +1874,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		container.innerHTML = `
 			<div class="container overflow">
-				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 			<div id="row-count"></div>
 		`;
@@ -1893,8 +1999,8 @@ Visualization.list.set('line', class Line extends Visualization {
 
 		container.classList.add('visualization', 'line');
 		container.innerHTML = `
-			<div id="line-${this.source.query_id}" class="container">
-				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
 
@@ -1903,7 +2009,10 @@ Visualization.list.set('line', class Line extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -1946,7 +2055,7 @@ Visualization.list.set('line', class Line extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#line-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -2312,7 +2421,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 		container.classList.add('visualization', 'bar');
 		container.innerHTML = `
-			<div id="bar-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -2322,7 +2431,10 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -2364,7 +2476,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#bar-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -2633,7 +2745,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 	}
 });
 
-Visualization.list.set('stacked', class Bar extends Visualization {
+Visualization.list.set('stacked', class Stacked extends Visualization {
 
 	get container() {
 
@@ -2646,7 +2758,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 
 		container.classList.add('visualization', 'stacked');
 		container.innerHTML = `
-			<div id="stacked-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -2656,7 +2768,10 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -2700,7 +2815,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#stacked-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -3000,7 +3115,7 @@ Visualization.list.set('area', class Area extends Visualization {
 
 		container.classList.add('visualization', 'area');
 		container.innerHTML = `
-			<div id="area-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -3010,7 +3125,10 @@ Visualization.list.set('area', class Area extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -3053,7 +3171,7 @@ Visualization.list.set('area', class Area extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#area-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -3431,6 +3549,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 	async load(parameters = {}) {
 
+		super.render();
+
 		await this.source.fetch(parameters);
 
 		this.render();
@@ -3494,7 +3614,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		container.classList.add('visualization', 'funnel');
 		container.innerHTML = `
-			<div id="funnel-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -3504,8 +3624,10 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 	async load(e) {
 
-		if(e)
+		if(e && e.preventDefault)
 			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -3529,7 +3651,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		this.draw({
 			series: series.reverse(),
-			divId: `#funnel-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -3814,8 +3936,10 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 	async load(e) {
 
-		if(e)
+		if(e && e.preventDefault)
 			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">

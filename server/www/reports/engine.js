@@ -14,12 +14,8 @@ class report extends API {
 
 		this.queryId = this.request.body.query_id;
 
-		if (!this.queryId) {
-			return {
-				status: false,
-				message: "report Not found"
-			}
-		}
+		if(!this.queryId)
+			throw new API.Exception(404, 'Report not found! :(');
 
 		const fetchedData = await this.fetch();
 
@@ -33,35 +29,22 @@ class report extends API {
 
 		this.assert(!authentication.error, authentication.message, 401);
 
-		let result = null;
-
 		if (this.query.source.toLowerCase() === 'query') {
 
-			result = await new query(this.query, this.filters, this.request).execute();
+			return await new query(this.query, this.filters, this.request).execute();
 		}
 
 		else if (this.query.source.toLowerCase() === 'api') {
 
-			result = await new api(this.query, this.filters, this.request).execute();
+			return await new api(this.query, this.filters, this.request).execute();
 		}
 
 		else if (this.query.source.toLowerCase() === 'big_query') {
 
-			//return await new bigquery().execute();
+			return await new bigquery().execute();
 		}
 
-		else {
-
-			return {
-				status: false,
-				message: "unknown source",
-			}
-		}
-
-		return {
-			status: result ? true : false,
-			data: result,
-		}
+		throw new API.Exception(400, 'Unknown Data Source! :(');
 	}
 
 	async fetch() {
@@ -168,10 +151,9 @@ class report extends API {
 
 		await this.fetchAndStore();
 
-		if (!this.request.body.download && this.result && this.query.source.toLowerCase() === 'query') {
+		if (!this.request.body.download && this.result && this.query.source.toLowerCase() === 'query')
+			this.result.data = this.result.data.slice(0, 10000);
 
-			this.result = this.result.slice(0, 10000);
-		}
 		return this.result;
 	}
 }
@@ -217,12 +199,16 @@ class query extends report {
 			}
 
 			catch (e) {
-
-				throw("redis data is not json, redisKey: " + this.redisKey);
+				throw new API.Exception(500, "Invalid Redis Data! :(");
 			}
 		}
 
-		this.result = await this.mysql.query(this.query.query, [], this.query.connection_name);
+		const data = await this.mysql.query(this.query.query, [], this.query.connection_name);
+
+		this.result = {
+			data,
+			query: data.instance.formatted_sql,
+		};
 
 		await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
 	}
@@ -289,6 +275,7 @@ class api extends report {
 	async fetchAndStore() {
 
 		const redisData = await commonFun.redisGet(this.redisKey);
+
 		if (this.query.is_redis && redisData && !this.has_today) {
 
 			try {
@@ -298,8 +285,7 @@ class api extends report {
 			}
 
 			catch (e) {
-
-				throw("redis data is not json, redisKey: " + this.redisKey);
+				throw new API.Exception(500, "Invalid Redis Data! :(");
 			}
 		}
 
@@ -308,15 +294,10 @@ class api extends report {
 			gzip: true,
 		});
 
-		if (commonFun.isJson(result.body)) {
-
-			this.result = JSON.parse(result.body)
-		}
-
-		else {
-
-			this.result = JSON.parse(result.body)
-		}
+		this.result = {
+			data: JSON.parse(result.body),
+			query: JSON.stringify(this.har, 0, 1),
+		};
 
 		await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
 	}

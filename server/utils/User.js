@@ -19,8 +19,7 @@ function privilege(userObj) {
 
         has: function(privilegeName, categoryId=0) {
 
-            if(config.get("privilege_ignore")) {
-
+            if(config.has('privilege_ignore') && config.get('privilege_ignore')) {
                 return true;
             }
 
@@ -62,8 +61,7 @@ function roles(userObj) {
 
         has: function(roleId, categoryId) {
 
-            if(config.get("role_ignore")) {
-
+            if(config.has('role_ignore') && config.get('role_ignore')) {
                 return true;
             }
 

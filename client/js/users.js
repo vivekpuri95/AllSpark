@@ -1,25 +1,28 @@
-window.on('DOMContentLoaded', async () => {
-
-	await Users.setup();
-	await UserManage.setup();
-
-	Privileges.setup();
-	Roles.setup();
-
-	await Users.load();
-
-	Users.loadState();
-});
-
-window.on('popstate', e => Users.loadState(e.state));
-
 class Users extends Page {
 
-	static async setup(contaier) {
+	constructor() {
 
-		await Page.setup();
+		super();
 
-		Users.contaier = document.querySelector('section#list table tbody');
+		(async () => {
+
+			await Users.setup(this);
+			await UserManage.setup();
+
+			Privileges.setup();
+			Roles.setup();
+
+			await Users.load();
+
+			Users.loadState();
+		})();
+
+		window.on('popstate', e => Users.loadState(e.state));
+	}
+
+	static async setup(page) {
+
+		Users.contaier = page.container.querySelector('section#list table tbody');
 	}
 
 	static async load() {
@@ -55,6 +58,8 @@ class Users extends Page {
 	}
 }
 
+Page.class = Users;
+
 class UserManage {
 
 	static async setup() {
@@ -80,7 +85,7 @@ class UserManage {
 		history.pushState(null, '', `/users`);
 	}
 
-	static add() {
+	static async add() {
 
 		UserManage.form.removeEventListener('submit', UserManage.submitListener);
 		UserManage.form.reset();
@@ -94,7 +99,9 @@ class UserManage {
 		Privileges.add_filter.classList.add('hidden');
 		Roles.add_roles.classList.add('hidden');
 
-		Sections.show('form');
+		await Sections.show('form');
+
+		UserManage.form.first_name.focus();
 	}
 
 	static async insert(e) {
@@ -142,7 +149,7 @@ class UserManage {
 		UserManage.form.removeEventListener('submit', UserManage.submitListener);
 		UserManage.form.reset();
 
-		UserManage.heading.textContent = `Edit ${this.first_name} ${this.last_name || ''}`;
+		UserManage.heading.textContent = `Editing ${this.first_name} ${this.last_name || ''}`;
 		UserManage.form.on('submit', UserManage.submitListener = e => this.update(e));
 
 		for(const key in this) {
@@ -153,7 +160,7 @@ class UserManage {
 		UserManage.form.password.value = null;
 
 		Privileges.add_filter.classList.remove('hidden');
-		Roles.add_roles.classList.remove('hidden');
+		Roles.add_roles.classList.remove('hidden')
 
 		if(Privileges.submitListener)
 			Privileges.add_filter.removeEventListener('submit', Privileges.submitListener);
@@ -174,7 +181,9 @@ class UserManage {
 		this.privileges.render();
 		this.roles.render();
 
-		Sections.show('form');
+		await Sections.show('form');
+
+		UserManage.form.first_name.focus();
 	}
 
 	async update(e) {
@@ -193,8 +202,6 @@ class UserManage {
 			if(element.name)
 				parameters[element.name] = element.value;
 		}
-
-		parameters.privileges = Array.from(UserManage.form.elements.privileges.querySelectorAll(':checked')).map(s => s.value).join();
 
 		await API.call('users/update', parameters, options);
 
@@ -218,7 +225,7 @@ class UserManage {
 		await API.call('users/update', parameters, options);
 
 		await Users.load();
-		Sections.show('list');
+		await Sections.show('list');
 	}
 
 	get row() {

@@ -1,0 +1,4 @@
+#details {
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+}

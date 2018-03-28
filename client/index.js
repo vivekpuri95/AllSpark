@@ -5,6 +5,8 @@ const config = require('config');
 
 const port = config.has('port') ? config.get('port').get('client') : 8081;
 
+const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
+
 app.use(express.static('./client'));
 
 app.get('/login', (req, res) => {
@@ -15,74 +17,101 @@ app.get('/login', (req, res) => {
 	template.scripts.push('js/login.js');
 
 	res.send(template.body(`
+
 		<div class="logo hidden">
 			<img src="" />
 		</div>
+
 		<form class="form">
+
 			<label>
 				<span>Email</span>
 				<input type="text" name="email" required>
 			</label>
+
 			<label>
 				<span>Password</span>
 				<input type="password" name="password" required>
 			</label>
+
 			<div>
 				<a href="/login/forgot">Forgot password?</a>
-				<input id="submit" type="submit" value="Sign In">
+				<button class="submit">
+					<i class="fa fa-paper-plane"></i>
+					Sign In
+				</button>
 			</div>
 		</form>
+
 		<div id="message" class="hidden"></div>
 	`));
 });
 
 app.get('/login/forgot', (req, res) => {
+
 	const template = new Template;
 
 	template.stylesheets.push('/css/login.css');
 	template.scripts.push('/js/forgotpassword.js');
 
 	res.send(template.body(`
+
 		<div class="logo hidden">
 			<img src="" />
 		</div>
+
 		<form class="form">
+
 			<label>
 				<span>Email</span>
 				<input type="email" name="email" required>
 			</label>
+
 			<div>
-				<a href='/login'><i class="fa fa-arrow-left" aria-hidden="true"></i> &nbsp;Login</a>
-				<input id="submit" type="submit" value="Send Link">
+				<a href='/login'><i class="fa fa-arrow-left"></i> &nbsp;Login</a>
+				<button class="submit">
+					<i class="fa fa-paper-plane"></i>
+					Send Link
+				</button>
 			</div>
 		</form>
+
 		<div id="message" class="hidden"></div>
 	`));
 });
 
 app.get('/login/reset', (req,res) => {
+
 	const template = new Template;
 
 	template.stylesheets.push('/css/login.css');
+
 	template.scripts.push('/js/resetpassword.js');
 
 	res.send(template.body(`
+
 		<div class="logo hidden">
 			<img src="" />
 		</div>
+
 		<form class="form">
+
 			<label>
 				<span>New Password</span>
 				<input type="password" name="password" required>
 			</label>
 
-			<label>
-				<input id="submit" type="submit" value="Change Password">
-			</label>
+			<div>
+				<a href='/login'><i class="fa fa-arrow-left"></i> &nbsp;Login</a>
+				<button class="submit">
+					<i class="fa fa-paper-plane"></i>
+					Change Password
+				</button>
+			</div>
 		</form>
+
 		<div id="message" class="hidden"></div>
 	`));
-
 });
 
 app.get('/:type(dashboard|report)/:id?', (req, res) => {
@@ -145,7 +174,7 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 				<label>
 					<button id="back">
-						<i class="fa fa-arrow-left"></i>&nbsp;
+						<i class="fa fa-arrow-left"></i>
 						Back
 					</button>
 				</label>
@@ -160,19 +189,26 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 	`));
 });
 
-app.get('/dashboards', (req, res) => {
+app.get('/dashboards/:id?', (req, res) => {
 
 	const template = new Template;
 
-	template.stylesheets.push('css/dashboards.css');
-	template.scripts.push('js/dashboards.js');
+	template.stylesheets.push('/css/dashboards.css');
+
+	template.scripts.push('/js/dashboards.js');
+	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js');
 
 	res.send(template.body(`
 
 		<section class="section show" id="list">
+
 			<h1>Dashboard Manager</h1>
+
 			<form class="toolbar">
-				<input type="button" value="Add New" id="add-dashboard">
+				<button type="button" id="add-dashboard">
+					<i class="fa fa-plus"></i>
+					Add New Dashboard
+				</button>
 			</form>
 
 			<table class="block">
@@ -195,58 +231,32 @@ app.get('/dashboards', (req, res) => {
 			<h1></h1>
 
 			<div class="toolbar">
-				<input type="button" value="Back" id="back">
-				<input type="submit" value="Submit" form="dashboard-form">
+				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="dashboard-form"><i class="fa fa-save"></i> Save</button>
 			</div>
 
 			<form class="block form" id="dashboard-form">
+
 				<label>
 					<span>Name</span>
-					<input type="text" name="name">
+					<input type="text" name="name" required>
 				</label>
+
 				<label>
 					<span>Parent</span>
 					<input type="number" name="parent">
 				</label>
+
 				<label>
 					<span>Icon</span>
 					<input type="text" name="icon">
 				</label>
+
+				<label id="format">
+					<span>Format</span>
+					<textarea id="dashboard-format"></textarea>
+				</label>
 			</form>
-
-			<h3>Reports</h3>
-			<div class="form-container">
-				<form class="report">
-					<label><span>Report ID</span></label>
-					<label><span>Position</span></label>
-					<label><span>Span</span></label>
-					<label class="save"><span></span></label>
-					<label class="delete"><span></span></label>
-				</form>
-
-				<div id="reports-list"></div>
-
-				<form id="add-report" class="report">
-
-					<label>
-						<input type="number" name="query_id" placeholder="Report ID" required>
-					</label>
-
-					<label>
-						<input type="number" name="position" placeholder="Position" required>
-					</label>
-
-					<label>
-						<input type="number" name="span" placeholder="Span" min="1" max="4" required>
-					</label>
-
-					<label class="save">
-						<input type="submit" value="Add">
-					</label>
-
-					<label class="delete"></label>
-				</form>
-			</div>
 		</section>
 
 	`));
@@ -257,6 +267,7 @@ app.get('/reports/:id?', (req, res) => {
 	const template = new Template;
 
 	template.stylesheets.push('/css/reports.css');
+
 	template.scripts.push('/js/reports.js');
 	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js');
 	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ext-language_tools.js');
@@ -268,7 +279,10 @@ app.get('/reports/:id?', (req, res) => {
 			<h1>Reports Manager</h1>
 			<form class="toolbar filters filled">
 
-				<input type="button" value="Add New" id="add-report">
+				<button type="button" id="add-report">
+					<i class="fa fa-plus"></i>
+					Add New Report
+				</button>
 
 				<select name="column_search" class="right">
 					<option value="">Search Everything</option>
@@ -308,11 +322,11 @@ app.get('/reports/:id?', (req, res) => {
 			<h1></h1>
 
 			<header class="toolbar filled">
-				<input type="button" value="Back" id="back">
-				<input type="submit" value="Submit" form="report-form">
+				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="report-form"><i class="fa fa-save"></i> Save</button>
 
-				<input type="button" class="right" value="Run" id="test">
-				<input type="button" value="Force Run" id="force-test">
+				<button id="test" class="right"><i class="fas fa-sync"></i> Run</button>
+				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>
 			</header>
 
 			<div class="hidden" id="test-container">
@@ -336,6 +350,11 @@ app.get('/reports/:id?', (req, res) => {
 				<label>
 					<span>Name</span>
 					<input type="text" name="name">
+				</label>
+
+				<label>
+					<span>Connection</span>
+					<select name="connection_name" required></select>
 				</label>
 
 				<label id="source">
@@ -412,11 +431,6 @@ app.get('/reports/:id?', (req, res) => {
 						<option value="1">Enabled</option>
 						<option value="0">Disabled</option>
 					</select>
-				</label>
-
-				<label>
-					<span>Connection</span>
-					<select name="connection_name" required></select>
 				</label>
 
 				<label style="max-width: 300px">
@@ -560,7 +574,7 @@ app.get('/users/:id?', (req, res) => {
 			<h1>Manage Users</h1>
 
 			<header class="toolbar">
-				<button id="add-user"><i class="fa fa-plus"></i>&nbsp; Add New User</button>
+				<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
 			</header>
 
 			<table class="block">
@@ -582,8 +596,8 @@ app.get('/users/:id?', (req, res) => {
 			<h1></h1>
 
 			<header class="toolbar">
-				<button id="cancel-form"><i class="fa fa-arrow-left"></i>&nbsp; Back</button>
-				<button type="submit" form="user-form"><i class="fa fa-save"></i>&nbsp; Save</button>
+				<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
 			</header>
 
 			<form class="block form" id="user-form">
@@ -636,7 +650,7 @@ app.get('/users/:id?', (req, res) => {
 					</label>
 
 					<label class="save">
-						<button type="submit" title="Add"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
+						<button type="submit" title="Add"><i class="fa fa-paper-plane"></i></button>
 					</label>
 				</form>
 			</div>
@@ -663,7 +677,7 @@ app.get('/users/:id?', (req, res) => {
 					</label>
 
 					<label class="save">
-						<button type="submit" title="Add"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
+						<button type="submit" title="Add"><i class="fa fa-paper-plane"></i></button>
 					</label>
 				</form>
 			</div>
@@ -677,7 +691,8 @@ app.get('/connections/:id?', (req, res) => {
 
 	const template = new Template;
 
-	template.scripts.push('/js/credentials.js');
+	template.stylesheets.push('/css/connections.css');
+	template.scripts.push('/js/connections.js');
 
 	res.send(template.body(`
 		<section class="section" id="list">
@@ -685,7 +700,10 @@ app.get('/connections/:id?', (req, res) => {
 			<h1>Connection Manager</h1>
 
 			<form class="toolbar filters">
-				<input type="button" value="Add New" id="add-credentials">
+				<button type="button" id="add-connection">
+					<i class="fa fa-plus"></i>
+					Add New Connection
+				</button>
 			</form>
 
 			<div class="block overflow">
@@ -710,20 +728,18 @@ app.get('/connections/:id?', (req, res) => {
 			<h1></h1>
 
 			<header class="toolbar">
-				<input type="button" value="Back" id="back">
-				<input type="submit" value="Submit" form="credentials-form">
-
-				<input type="button" class="right" value="Test" id="test">
+				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="connections-form"><i class="fa fa-save"></i> Save</button>
 			</header>
 
-			<form class="block form" id="credentials-form">
+			<form class="block form" id="connections-form">
 
 				<label>
 					<span>Name</span>
 					<input type="text" name="connection_name">
 				</label>
 
-				<label id="credentials">
+				<label id="connections">
 					<span>Type</span>
 					<select name="type"></select>
 				</label>
@@ -734,13 +750,29 @@ app.get('/connections/:id?', (req, res) => {
 	`));
 });
 
+app.get('/settings/:tab?/:id?', (req, res) => {
+
+	const template = new Template;
+
+	template.stylesheets.push('/css/settings.css');
+	template.scripts.push('/js/settings.js');
+
+	res.send(template.body(`
+		<nav>
+			<a>Accounts</a>
+			<a>Privileges</a>
+			<a>Roles</a>
+			<a>DataSets</a>
+		</nav>
+	`));
+});
+
 class Template {
 
 	constructor() {
 
 		this.stylesheets = [
 			'/css/main.css',
-			'/css/themes/light.css',
 		];
 
 		this.scripts = [
@@ -758,8 +790,8 @@ class Template {
 					<title>Tookan Analytics</title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="https://lbxoezeogn43sov13789n8p9-wpengine.netdna-ssl.com/img/favicon.png" />
 
-					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'">').join('')}
-					${this.scripts.map(s => '<script src="'+s+'"></script>').join('')}
+					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'?'+checksum+'">').join('')}
+					${this.scripts.map(s => '<script src="'+s+'?'+checksum+'"></script>').join('')}
 					<script>
 						PORT = ${JSON.stringify(config.get('port'))}
 					</script>

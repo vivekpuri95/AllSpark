@@ -1,38 +1,52 @@
-class ForgotPassword extends Page {
+Page.class = class ForgotPassword extends Page {
 
-	static async setup() {
+	constructor() {
 
-		await Page.setup();
+		super();
 
-		ForgotPassword.container = document.querySelector('main');
-		ForgotPassword.form = ForgotPassword.container.querySelector('form');
-		ForgotPassword.message = ForgotPassword.container.querySelector('#message');
+		this.form = this.container.querySelector('form');
+		this.message = this.container.querySelector('#message');
 
-		const logo = ForgotPassword.container.querySelector('.logo img');
+		this.form.on('submit', e => this.submit(e));
+
+		if(!account) {
+			this.message.textContent = 'Account not found! :(';
+			this.message.classList.remove('hidden');
+			this.message.classList.add('warning');
+			return;
+		}
+
+		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
 
 		logo.src = account.logo;
-
-		ForgotPassword.form.on('submit', ForgotPassword.sendLink);
 	}
 
-	static async sendLink(e) {
+	async submit(e) {
 
 		e.preventDefault();
 
-		ForgotPassword.message.classList.add('notice');
-		ForgotPassword.message.classList.remove('warning', 'hidden');
+		this.message.classList.remove('warning', 'hidden', 'notice');
+		this.message.textContent = null;
 
 		const options = {
 			method: 'POST',
-			form: new FormData(ForgotPassword.form)
+			form: new FormData(this.form),
 		};
 
-		const response = await API.call('authentication/resetlink', {}, options);
-		ForgotPassword.message.innerHTML = 'reset link is been sent';
+		try {
+
+			const response = await API.call('authentication/resetlink', {}, options);
+
+			this.message.classList.add('notice');
+			this.message.textContent = response;
+		}
+
+		catch(error) {
+
+			this.message.classList.add('warning');
+			this.message.textContent = error.message || error || 'Something went wrong! :(';
+		}
 	}
-
 }
-
-window.on('DOMContentLoaded', ForgotPassword.setup);

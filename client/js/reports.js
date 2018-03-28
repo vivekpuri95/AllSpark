@@ -1,22 +1,27 @@
-window.on('DOMContentLoaded', async () => {
-
-	await Reports.setup(document.querySelector('section.section#list'));
-	Report.setup(document.querySelector('section.section#form'));
-
-	ReportFilters.setup(document.getElementById('filters-list'));
-	ReportVisualizations.setup(document.getElementById('visualizations-list'));
-
-	await Reports.load();
-
-	ReportFilter.setup();
-	ReportVisualization.setup();
-
-	Reports.loadState();
-});
-
-window.on('popstate', e => Reports.loadState(e.state));
-
 class Reports extends Page {
+
+	constructor() {
+
+		super();
+
+		(async () => {
+
+			await Reports.setup(this.container.querySelector('section#list'));
+			Report.setup(this.container.querySelector('section#form'));
+
+			ReportFilters.setup(this.container.querySelector('#filters-list'));
+			ReportVisualizations.setup(this.container.querySelector('#visualizations-list'));
+
+			await Reports.load();
+
+			ReportFilter.setup();
+			ReportVisualization.setup();
+
+			Reports.loadState();
+		})();
+
+		window.on('popstate', e => Reports.loadState(e.state));
+	}
 
 	static async loadState(state) {
 
@@ -28,7 +33,7 @@ class Reports extends Page {
 		if(Reports.list.has(parseInt(what)))
 			return Reports.list.get(parseInt(what)).edit();
 
-		Sections.show('list');
+		await Sections.show('list');
 	}
 
 	static back() {
@@ -41,8 +46,6 @@ class Reports extends Page {
 	}
 
 	static async setup(container) {
-
-		await Page.setup();
 
 		Reports.container = container;
 
@@ -79,7 +82,7 @@ class Reports extends Page {
 			return;
 
 		[ReportFilter.dataset, Reports.response, Reports.credentials] = await Promise.all([
-			API.call('reports/datasets/names'),
+			Promise.resolve([]),
 			API.call('reports/report/list'),
 			API.call('credentials/list'),
 		]);
@@ -131,6 +134,8 @@ class Reports extends Page {
 	}
 }
 
+Page.class = Reports;
+
 class Report {
 
 	static setup(container) {
@@ -160,27 +165,25 @@ class Report {
 		Report.container.querySelector('#test-container .close').on('click', function() {
 			this.parentElement.parentElement.classList.toggle('hidden');
 		});
+
 		Report.form.elements.connection_name.on('change', () => Report.renderSource());
 
 		// Initiate the editor. All this only needs to be done once on page load.
-		Report.editor = ace.edit('editor');
+		Report.editor = new Editor(Report.form.querySelector('#editor'));
 
-		Report.editor.setTheme("ace/theme/monokai");
-		Report.editor.getSession().setMode("ace/mode/sql");
-		Report.editor.setFontSize(16);
-		Report.editor.$blockScrolling = Infinity;
+		Report.editor.editor.getSession().on('change', () => Report.selected && Report.selected.filterSuggestions());
 
 		setTimeout(() => {
 
 			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			Report.editor.commands.addCommand({
+			Report.editor.editor.commands.addCommand({
 				name: 'save',
 				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
 				exec: () => Report.selected && Report.selected.update()
 			});
 
-			// The keyboard shortcut to test the report on Ctrl + E inside the editor.
-			Report.editor.commands.addCommand({
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			Report.editor.editor.commands.addCommand({
 				name: 'execute',
 				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
 				exec: () => Report.selected && Report.selected.test()
@@ -200,8 +203,8 @@ class Report {
 		Report.form.on('submit', Report.form.listener = e => Report.insert(e));
 
 		Report.form.reset();
-		Report.editor.setValue('', 1);
-		Report.editor.focus();
+		Report.editor.value = '';
+		Report.editor.editor.focus();
 
 		Report.form.querySelector('#added-by').textContent = user.email;
 
@@ -228,7 +231,7 @@ class Report {
 
 		const
 			parameters = {
-				query: Report.editor.getValue(),
+				query: Report.editor.value,
 				added_by: user.email,
 				url_options: JSON.stringify({method: Report.form.elements.method.value}),
 				roles: Array.from(Report.form.roles.selectedOptions).map(a => a.value).join(),
@@ -244,7 +247,7 @@ class Report {
 
 		Reports.list.get(response.insertId).edit();
 
-		history.pushState({what: this.response}, '', `/reports/${this.response}`);
+		history.pushState({what: response.insertId}, '', `/reports/${response.insertId}`);
 	}
 
 	static async renderSource() {
@@ -264,8 +267,23 @@ class Report {
 					container = Report.form.querySelector('#query #schema');
 
 				const
-					schema = [],
+					schema = mysqlKeywords.map(k => {return {
+						name: k,
+						value: k,
+						meta: 'MySQL Keyword',
+					}}),
 					databases = document.createElement('ul');
+
+				if(Report.selected) {
+
+					for(const filter of Report.selected.filters.list) {
+						schema.push({
+							name: filter.placeholder,
+							value: filter.placeholder,
+							meta: 'Report Filter',
+						});
+					}
+				}
 
 				container.textContent = null;
 
@@ -359,7 +377,7 @@ class Report {
 				container.appendChild(databases);
 			}
 
-			// Report.editor.setAutoComplete(Report.schemas.get(Report.form.elements.connection_name.value));
+			Report.editor.setAutoComplete(Report.schemas.get(Report.form.elements.connection_name.value));
 
 		}
 
@@ -405,8 +423,8 @@ class Report {
 			<td>${this.filters.list.size}</td>
 			<td>${this.visualizations.list.size}</td>
 			<td>${this.is_enabled ? 'Yes' : 'No'}</td>
-			<td class="action green">Edit</td>
-			<td class="action red">Delete</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
 		this.container.querySelector('.green').on('click', () => {
@@ -460,8 +478,6 @@ class Report {
 
 		Report.form.reset();
 
-		Report.selected.filterSuggestions();
-
 		for(const key in this) {
 			if(Report.form.elements[key])
 				Report.form.elements[key].value = this[key];
@@ -469,8 +485,8 @@ class Report {
 
 		Report.form.elements.method.value = this.url_options.method;
 
-		Report.editor.setValue(this.query, 1);
-		Report.editor.focus();
+		Report.editor.value = this.query;
+		Report.editor.editor.focus();
 		Report.form.querySelector('#added-by').textContent = this.added_by || 'Not Available';
 
 		Report.form.querySelector('#roles').value = '';
@@ -481,14 +497,14 @@ class Report {
 		ReportFilter.insert.form.reset();
 		ReportFilter.insert.form.classList.remove('hidden');
 
-		Report.editor.getSession().on('change', () => Report.selected && Report.selected.filterSuggestions());
-
 		ReportVisualization.insert.form.reset();
 		ReportVisualization.insert.form.classList.remove('hidden');
 
 		Report.renderSource();
 		this.filters.render();
 		this.visualizations.render();
+
+		Report.selected.filterSuggestions();
 
 		Report.container.querySelector('#test-container').classList.add('hidden');
 		Sections.show('form');
@@ -502,7 +518,7 @@ class Report {
 		const
 			parameters = {
 				query_id: this.query_id,
-				query: Report.editor.getValue(),
+				query: Report.editor.value,
 				url_options: JSON.stringify({method: Report.form.elements.method.value}),
 				roles: Array.from(Report.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
 			},
@@ -555,24 +571,19 @@ class Report {
 
 		try {
 
-			let response = await API.call('reports/engine/report', parameters, options);
+			const response = await API.call('reports/engine/report', parameters, options) || [];
 
-			if(!response)
-				response = [];
+			Report.container.querySelector('#row-count').textContent = 'Rows: '+Format.number(response ? response.data.length : 0);
 
-			else response = response.data;
-
-			Report.container.querySelector('#row-count').textContent = 'Rows: '+Format.number(response ? response.length : 0);
-
-			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${JSON.stringify(response, 0, 1)}</code>`;
+			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${JSON.stringify(response.data, 0, 1)}</code>`;
 
 			Report.testContainer.querySelector('#query-content').innerHTML = `<code>${response.query || ''}</code>`;
 
-			if(response.length) {
+			if(response.data.length) {
 
 				const
-					headings = Object.keys(response[0]).map(key => `<th>${key}</th>`),
-					rows = response.map(row => '<tr>'+Object.keys(row).map(key => `<td>${row[key]}</td>`).join('')+'</tr>');
+					headings = Object.keys(response.data[0]).map(key => `<th>${key}</th>`),
+					rows = response.data.map(row => '<tr>'+Object.keys(row).map(key => `<td>${row[key]}</td>`).join('')+'</tr>');
 
 				Report.testContainer.querySelector('#table-content').innerHTML = `
 					<table>
@@ -586,7 +597,7 @@ class Report {
 					</table>
 				`;
 
-				if(!Object.values(response[0]).filter(value => (typeof value == 'object')).length)
+				if(!Object.values(response.data[0]).filter(value => (typeof value == 'object')).length)
 					tab = 'table';
 			}
 
@@ -603,7 +614,7 @@ class Report {
 
 	filterSuggestions() {
 
-		let placeholders = Report.editor.getValue().match(/{{([a-zA-Z0-9_-]*)}}/g) || [];
+		let placeholders = Report.editor.value.match(/{{([a-zA-Z0-9_-]*)}}/g) || [];
 
 		placeholders = new Set(placeholders.map(a => a.match('{{(.*)}}')[1]));
 
@@ -993,3 +1004,31 @@ class ReportVisualization {
 		Reports.list.get(this.visualizations.report.id).edit();
 	}
 }
+
+const mysqlKeywords = [
+	'SELECT',
+	'FROM',
+	'WHERE',
+	'AS',
+	'AND',
+	'OR',
+	'IN',
+	'BETWEEN',
+	'DISTINCT',
+	'COUNT',
+	'GROUP BY',
+	'FORCE INDEX',
+	'DATE',
+	'MONTH',
+	'YEAR',
+	'YEARMONTH',
+	'UNIX_TIMESTAMP',
+	'CONCAT',
+	'CONCAT_WS',
+	'SUM',
+	'INTERVAL',
+	'DAY',
+	'MINUTE',
+	'SECOND',
+	'DATE_FORMAT',
+];

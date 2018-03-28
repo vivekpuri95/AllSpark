@@ -1,40 +1,48 @@
-class Login extends Page {
+Page.class = class Login extends Page {
 
-	static async setup(container) {
+	constructor() {
 
-		await Page.setup();
+		super();
 
-		Login.container = document.querySelector('main');
-		Login.form = Login.container.querySelector('form');
-		Login.message = Login.container.querySelector('#message');
+		this.form = this.container.querySelector('form');
+		this.message = this.container.querySelector('#message');
 
-		const logo = Login.container.querySelector('.logo img');
+		this.form.on('submit', e => this.submit(e));
+
+		if(!account) {
+			this.message.textContent = 'Account not found! :(';
+			this.message.classList.remove('hidden');
+			this.message.classList.add('warning');
+			return;
+		}
+
+		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
 
-		if(account)
-			logo.src = account.logo;
+		logo.src = account.logo;
 
 		if(account.settings.get('skip_authentication'))
-			return Login.skip_authentication();
-
-		Login.form.on('submit', Login.submit);
+			return this.skip_authentication();
 	}
 
-	static async skip_authentication() {
+	async skip_authentication() {
 
-		Login.form.innerHTML = `
+		this.form.innerHTML = `
 			<div class="whitelabel">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
+
 		const parameters = new URLSearchParams(window.location.search);
 
 		if(!localStorage.access_token && (!parameters.has('access_token') || !parameters.get('access_token'))) {
-			Login.form.innerHTML = '<div class="whitelabel"><i class="fas fa-exclamation-triangle"></i></div>';
-			Login.message.textContent = 'Cannot authenticate user, please reload the page :(';
-			Login.message.classList.remove('hidden');
-			Login.message.classList.add('warning');
+
+			this.form.innerHTML = '<div class="whitelabel"><i class="fas fa-exclamation-triangle"></i></div>';
+
+			this.message.textContent = 'Cannot authenticate user, please reload the page :(';
+			this.message.classList.remove('hidden');
+			this.message.classList.add('warning');
 		}
 
 		try {
@@ -45,50 +53,53 @@ class Login extends Page {
 
 			localStorage.refresh_token = await API.call('authentication/tookan', params);
 
-		} catch(response) {
+		} catch(error) {
 
-			Login.message.classList.remove('notice');
-			Login.message.classList.add('warning');
-			Login.message.textContent = response.description || response;
+			this.message.classList.remove('notice');
+			this.message.classList.add('warning');
+			this.message.textContent = error.message || error;
 
 			return;
 		}
 
-		if(!account.settings.get('skip_authentication'))
-			Login.message.innerHTML = 'Login Successful! Redirecting&hellip;';
+		this.message.innerHTML = 'Login Successful! Redirecting&hellip;';
 
 		window.location = '../';
 	}
 
-	static async submit(e) {
+	async submit(e) {
 
 		e.preventDefault();
 
-		Login.message.classList.add('notice');
-		Login.message.classList.remove('warning', 'hidden');
-		Login.message.textContent = 'Logging you in!';
+		console.log(this);
+
+		if(!account)
+			return;
+
+		this.message.classList.add('notice');
+		this.message.classList.remove('warning', 'hidden');
+		this.message.textContent = 'Logging you in!';
 
 		const options = {
-			form: new FormData(Login.form)
+			method: 'POST',
+			form: new FormData(this.form),
 		};
 
 		try {
 
 			localStorage.refresh_token = await API.call('authentication/login', {}, options);
 
-		} catch(response) {
+		} catch(error) {
 
-			Login.message.classList.remove('notice');
-			Login.message.classList.add('warning');
-			Login.message.textContent = response.description || response;
+			this.message.classList.remove('notice');
+			this.message.classList.add('warning');
+			this.message.textContent = error.message || error;
 
 			return;
 		}
 
-		Login.message.innerHTML = 'Login Successful! Redirecting&hellip;';
+		this.message.innerHTML = 'Login Successful! Redirecting&hellip;';
 
 		window.location = '../';
 	}
 }
-
-window.on('DOMContentLoaded', Login.setup);

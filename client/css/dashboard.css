@@ -11,7 +11,7 @@ main > nav {
 	background: var(--color-primary);
 	color: var(--color-primary-text);
 	overflow: hidden;
-	height: 100vh;
+	height: calc(100vh - 50px);
 }
 main > nav:hover {
 	overflow: auto;
@@ -78,10 +78,10 @@ main > nav::-webkit-scrollbar-track {
 
 main #reports .list {
 	display: grid;
-	grid-template-columns: repeat(4, 25%);
+	grid-template-columns: repeat(8, 12.5%);
 	grid-column-gap: calc(var(--gap) * 2);
 	grid-row-gap: calc(var(--gap) * 4);
-	width: calc(100% - var(--gap) * 6);
+	width: calc(100% - var(--gap) * 14);
 	align-items: start;
 }
 	main #reports > .toolbar {
@@ -96,7 +96,38 @@ main #reports .list {
 			letter-spacing: 0.5px;
 		}
 	main #reports .list .data-source {
-		grid-column: auto / span 4;
+		grid-column: auto / span 8;
+		transition: box-shadow var(--transition-duration),
+					opacity var(--transition-duration),
+					border var(--transition-duration);
+	}
+	main #reports .list .data-source.being-dragged {
+		opacity: 0.5;
+		box-shadow: 0 0 0 3px #999;
+	}
+	main #reports .list .data-source.drag-enter {
+		box-shadow: -6px 0px var(--color-accent);
+	}
+	main .data-source.add-new {
+		cursor: pointer;
+		border: 3px dashed #ccc;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: 500px;
+		font-size: 200%;
+		color: #999;
+		transition: background var(--transition-duration),
+					box-shadow var(--transition-duration);
+	}
+	main .data-source.add-new:hover {
+		background: #ddd;
+	}
+	main .data-source.add-new:active {
+		box-shadow: inset 0 0 250px rgba(0, 0, 0, 0.15);
+	}
+	main .data-source.singleton .visualization.table  > .container {
+		max-height: calc(100vh - 220px);
 	}
 main #reports > .NA {
 	text-align: center;
