@@ -9,14 +9,13 @@ const EXPIRE_AFTER = 1; //HOURS
 exports.resetlink = class extends API {
 	async resetlink() {
 
-		throw new API.Exception(400, 'asd');
+		let user = await this.mysql.query(
+			`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
+			[this.request.body.email, this.account.account_id]
+		);
 
-		let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
-			[this.request.body.email, this.account.account_id]);
-		if (!user.length) {
-
+		if (!user.length)
 			return true;
-		}
 
 		const token = await new Promise((resolve, reject) => {
 			crypto.randomBytes(80, function (err, buf) {
