@@ -788,6 +788,9 @@ body {
 			.visualization.spatial-map .container {
 				height: 500px;
 			}
+				.visualization.cohort {
+					overflow: auto;
+				}
 				.visualization.cohort table {
 					width: 100%;
 				}
