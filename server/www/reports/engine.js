@@ -151,10 +151,8 @@ class report extends API {
 
 		await this.fetchAndStore();
 
-		if (!this.request.body.download && this.result && this.query.source.toLowerCase() === 'query') {
-
+		if (!this.request.body.download && this.result && this.query.source.toLowerCase() === 'query')
 			this.result.data = this.result.data.slice(0, 10000);
-		}
 
 		return this.result;
 	}
@@ -196,16 +194,12 @@ class query extends report {
 
 			try {
 
-				this.result = {
-					data: JSON.parse(redisData),
-					query: null,
-				};
+				this.result = JSON.parse(redisData);
 				return;
 			}
 
 			catch (e) {
-
-				throw("redis data is not json, redisKey: " + this.redisKey);
+				throw new API.Exception(500, "Invalid Redis Data! :(");
 			}
 		}
 
@@ -286,17 +280,12 @@ class api extends report {
 
 			try {
 
-				this.result = {
-					data: JSON.parse(redisData),
-					query: JSON.stringify(this.har, 0, 1),
-				};
-
+				this.result = JSON.parse(redisData);
 				return;
 			}
 
 			catch (e) {
-
-				throw("redis data is not json, redisKey: " + this.redisKey);
+				throw new API.Exception(500, "Invalid Redis Data! :(");
 			}
 		}
 
