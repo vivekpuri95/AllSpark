@@ -96,8 +96,8 @@ class UserManage {
 		Privileges.privileges_container.innerHTML = `<div class="NA">You can add privileges to this user once you add the user :(</div>`;
 		Roles.roles_container.innerHTML = `<div class="NA">You can add roles to this user once you add the user :(</div>`;
 
-		Privileges.container.querySelector('#add-filter').classList.add('hidden');
-		Roles.container.querySelector('#add-roles').classList.add('hidden');
+		Privileges.add_filter.classList.add('hidden');
+		Roles.add_roles.classList.add('hidden');
 
 		await Sections.show('form');
 
@@ -159,21 +159,21 @@ class UserManage {
 
 		UserManage.form.password.value = null;
 
-		Privileges.container.querySelector('#add-filter').classList.remove('hidden');
-		Roles.container.querySelector('#add-roles').classList.remove('hidden');
+		Privileges.add_filter.classList.remove('hidden');
+		Roles.add_roles.classList.remove('hidden')
 
 		if(Privileges.submitListener)
-			Privileges.container.querySelector('form#add-filter').removeEventListener('submit', Privileges.submitListener);
+			Privileges.add_filter.removeEventListener('submit', Privileges.submitListener);
 
-		Privileges.container.querySelector('form#add-filter').on('submit', Privileges.submitListener = async (e) => {
+		Privileges.add_filter.on('submit', Privileges.submitListener = async (e) => {
 			e.preventDefault();
 			await this.privileges.add();
 		});
 
 		if(Roles.submitListener)
-			Roles.container.querySelector('form#add-roles').removeEventListener('submit', Roles.submitListener);
+			Roles.add_roles.removeEventListener('submit', Roles.submitListener);
 
-		Roles.container.querySelector('form#add-roles').on('submit', Roles.submitListener = async (e) => {
+		Roles.add_roles.on('submit', Roles.submitListener = async (e) => {
 			e.preventDefault();
 			await this.roles.add();
 		});
@@ -262,14 +262,16 @@ class Privileges {
 
 		Privileges.privileges_container = Privileges.container.querySelector('#filters-list');
 
+		Privileges.add_filter = Privileges.container.querySelector('#add-filter');
+
 		for(const data of MetaData.categories.values()) {
-			Privileges.container.querySelector('form#add-filter').category_id.insertAdjacentHTML('beforeend',`
+			Privileges.add_filter.category_id.insertAdjacentHTML('beforeend',`
 				<option value="${data.category_id}">${data.name}</option>
 			`);
 		}
 
 		for(const data of MetaData.privileges.values()) {
-			Privileges.container.querySelector('form#add-filter').privilege_id.insertAdjacentHTML('beforeend',`
+			Privileges.add_filter.privilege_id.insertAdjacentHTML('beforeend',`
 				<option value="${data.privilege_id}">${data.name}</option>
 			`);
 		}
@@ -280,7 +282,7 @@ class Privileges {
 		this.list = [];
 
 		for(const key of privileges)
-			this.list.push(new Privilege(key, user));
+			this.list.push(new Privilege(key, user, this));
 
 		this.user = user;
 	}
@@ -289,7 +291,7 @@ class Privileges {
 
 		const options= {
 			method: 'POST',
-			form: new FormData(Privileges.container.querySelector('form#add-filter'))
+			form: new FormData(Privileges.add_filter)
 		}
 
 		await API.call('user/privileges/insert', {user_id: this.user.user_id}, options);
@@ -318,12 +320,13 @@ class Privileges {
 
 class Privilege {
 
-	constructor(privilege, parent) {
+	constructor(privilege, user, parent) {
 
 		for(const key in privilege)
 			this[key] = privilege[key];
 
-		this.user = parent;
+		this.user = user;
+		this.parent = parent;
 	}
 
 	get row() {
@@ -336,11 +339,15 @@ class Privilege {
 		this.container.innerHTML = `
 
 			<label>
-				<input type="text" value="${MetaData.categories.has(this.category_id) ? MetaData.categories.get(this.category_id).name : ''}" readonly>
+				<select name="category_id"></select>
 			</label>
 
 			<label>
-				<input type="text" value="${MetaData.privileges.has(this.privilege_id) ? MetaData.privileges.get(this.privilege_id).name : ''}" readonly>
+				<select name="privilege_id"></select>
+			</label>
+
+			<label class="edit">
+				<button title="Edit"><i class="fa fa-save"></i></button>
 			</label>
 
 			<label class="delete">
@@ -348,9 +355,45 @@ class Privilege {
 			</label>
 		`;
 
-		this.container.querySelector('.delete').on('click', async (e) => this.delete(this.id));
+		Array.from(MetaData.categories.values()).map(c => this.container.category_id.insertAdjacentHTML('beforeend', `
+			<option value="${c.category_id}" ${c.category_id == this.category_id ? 'selected' : ''} >${c.name}</option>`));
+
+		Array.from(MetaData.privileges.values()).map(c => this.container.privilege_id.insertAdjacentHTML('beforeend', `
+			<option value="${c.privilege_id}" ${c.privilege_id == this.privilege_id ? 'selected' : ''} >${c.name}</option>`));
+
+		this.container.on('submit', async (e) => {
+			e.preventDefault();
+			this.edit(this.id);
+
+		});
+		this.container.querySelector('.delete').on('click', async (e) => {
+			e.preventDefault();
+			this.delete(this.id);
+
+		});
 
 		return this.container;
+	}
+
+	async edit(id) {
+
+		const options = {
+			method: 'POST',
+			form: new FormData(this.container),
+		}
+
+		const parameters = {
+			user_id: this.user.user_id,
+			id: id,
+		}
+
+		await API.call('user/privileges/update', parameters, options);
+
+		await Users.load();
+
+		this.parent.render();
+
+		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 	}
 
 	async delete(id) {
@@ -370,6 +413,8 @@ class Privilege {
 
 		await Users.load();
 
+		this.parent.render();
+
 		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 	}
 }
@@ -382,14 +427,16 @@ class Roles {
 
 		Roles.roles_container = Roles.container.querySelector('#roles-list');
 
+		Roles.add_roles = Roles.container.querySelector('#add-roles');
+
 		for(const data of MetaData.categories.values()) {
-			Roles.container.querySelector('form#add-roles').category_id.insertAdjacentHTML('beforeend',`
+			Roles.add_roles.category_id.insertAdjacentHTML('beforeend',`
 				<option value="${data.category_id}">${data.name}</option>
 			`);
 		}
 
 		for(const data of MetaData.roles.values()) {
-			Roles.container.querySelector('form#add-roles').role_id.insertAdjacentHTML('beforeend',`
+			Roles.add_roles.role_id.insertAdjacentHTML('beforeend',`
 				<option value="${data.role_id}">${data.name}</option>
 			`);
 		}
@@ -400,7 +447,7 @@ class Roles {
 		this.list = [];
 
 		for(const key of roles)
-			this.list.push(new Role(key, user));
+			this.list.push(new Role(key, user, this));
 
 		this.user = user;
 	}
@@ -409,7 +456,7 @@ class Roles {
 
 		const options= {
 			method: 'POST',
-			form: new FormData(Roles.container.querySelector('form#add-roles'))
+			form: new FormData(Roles.add_roles)
 		}
 
 		await API.call('accounts/roles/insert', {user_id: this.user.user_id}, options);
@@ -438,12 +485,13 @@ class Roles {
 
 class Role {
 
-	constructor(privilege, parent) {
+	constructor(roles, user, parent) {
 
-		for(const key in privilege)
-			this[key] = privilege[key];
+		for(const key in roles)
+			this[key] = roles[key];
 
-		this.user = parent;
+		this.user = user;
+		this.parent = parent;
 	}
 
 	get row() {
@@ -456,11 +504,15 @@ class Role {
 		this.container.innerHTML = `
 
 			<label>
-				<input type="text" value="${MetaData.categories.has(this.category_id) ? MetaData.categories.get(this.category_id).name : ''}" readonly>
+				<select name="category_id"></select>
 			</label>
 
 			<label>
-				<input type="text" value="${MetaData.roles.has(this.role_id) ? MetaData.roles.get(this.role_id).name : ''}" readonly>
+				<select name="role_id"></select>
+			</label>
+
+			<label class="edit">
+				<button title="Edit"><i class="fa fa-save"></i></button>
 			</label>
 
 			<label class="delete">
@@ -468,9 +520,44 @@ class Role {
 			</label>
 		`;
 
-		this.container.querySelector('.delete').on('click', async (e) => this.delete(this.id));
+		Array.from(MetaData.categories.values()).map(c => this.container.category_id.insertAdjacentHTML('beforeend', `
+			<option value="${c.category_id}" ${c.category_id == this.category_id ? 'selected' : ''} >${c.name}</option>`));
+
+		Array.from(MetaData.roles.values()).map(c => this.container.role_id.insertAdjacentHTML('beforeend', `
+			<option value="${c.role_id}" ${c.role_id == this.role_id ? 'selected' : ''} >${c.name}</option>`));
+
+		this.container.querySelector('.edit').on('click', async (e) => {
+			e.preventDefault();
+			this.edit(this.id);
+		});
+
+		this.container.querySelector('.delete').on('click', async (e) => {
+			e.preventDefault();
+			this.delete(this.id);}
+		);
 
 		return this.container;
+	}
+
+	async edit(id) {
+
+		const options = {
+			method: 'POST',
+			form: new FormData(this.container),
+		}
+
+		const parameters = {
+			id: id,
+		}
+
+		await API.call('accounts/roles/update', parameters, options);
+
+		await Users.load();
+
+		this.parent.render();
+
+		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+
 	}
 
 	async delete(id) {
@@ -489,6 +576,8 @@ class Role {
 		await API.call('accounts/roles/delete', parameters, options);
 
 		await Users.load();
+
+		this.parent.render();
 
 		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 	}
