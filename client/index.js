@@ -101,13 +101,13 @@ app.get('/login/reset', (req,res) => {
 				<input type="password" name="password" required>
 			</label>
 
-			<label>
+			<div>
 				<a href='/login'><i class="fa fa-arrow-left"></i> &nbsp;Login</a>
 				<button class="submit">
 					<i class="fa fa-paper-plane"></i>
 					Change Password
 				</button>
-			</label>
+			</div>
 		</form>
 
 		<div id="message" class="hidden"></div>

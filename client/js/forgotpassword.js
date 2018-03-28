@@ -27,7 +27,8 @@ Page.class = class ForgotPassword extends Page {
 
 		e.preventDefault();
 
-		this.message.classList.remove('warning', 'notice', 'hidden');
+		this.message.classList.remove('warning', 'hidden', 'notice');
+		this.message.textContent = null;
 
 		const options = {
 			method: 'POST',

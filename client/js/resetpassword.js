@@ -28,6 +28,7 @@ Page.class = class ResetPassword extends Page {
 		e.preventDefault();
 
 		this.message.classList.remove('warning', 'notice', 'hidden');
+		this.message.textContent = null;
 
 		const parameters = {
 			reset_token: new URLSearchParams(window.location.search).get('reset_token')
