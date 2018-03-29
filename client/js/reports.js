@@ -263,8 +263,9 @@ class Report {
 
 				const
 					parameters = { id: Report.form.elements.connection_name.value },
-					response = await API.call('credentials/schema', parameters),
 					container = Report.form.querySelector('#query #schema');
+
+				// response = await API.call('credentials/schema', parameters),
 
 				const
 					schema = mysqlKeywords.map(k => {return {
@@ -287,90 +288,90 @@ class Report {
 
 				container.textContent = null;
 
-				for(const database of response) {
+				// for(const database of response) {
 
-					schema.push({
-						name: database.name,
-						value: database.name,
-						meta: '(d)',
-					});
+				// 	schema.push({
+				// 		name: database.name,
+				// 		value: database.name,
+				// 		meta: '(d)',
+				// 	});
 
-					const tables = document.createElement('ul');
-					tables.classList.add('hidden');
+				// 	const tables = document.createElement('ul');
+				// 	tables.classList.add('hidden');
 
-					for(const table of database.tables) {
+				// 	for(const table of database.tables) {
 
-						const columns = document.createElement('ul');
-						columns.classList.add('hidden');
+				// 		const columns = document.createElement('ul');
+				// 		columns.classList.add('hidden');
 
-						schema.push({
-							name: table.name,
-							value: table.name,
-							meta: '(t) ' + database.name,
-						});
+				// 		schema.push({
+				// 			name: table.name,
+				// 			value: table.name,
+				// 			meta: '(t) ' + database.name,
+				// 		});
 
-						for(const column of table.columns) {
+				// 		for(const column of table.columns) {
 
-							schema.push({
-								name: column.name,
-								value: column.name,
-								meta: '(c) ' + table.name,
-							});
+				// 			schema.push({
+				// 				name: column.name,
+				// 				value: column.name,
+				// 				meta: '(c) ' + table.name,
+				// 			});
 
-							const li = document.createElement('li');
+				// 			const li = document.createElement('li');
 
-							li.innerHTML = `
-								<span class="name">
-									<i class="fa fa-columns"></i>
-									<span>${column.name}</span>
-									<small>${column.type}</small>
-								</span>
-							`;
+				// 			li.innerHTML = `
+				// 				<span class="name">
+				// 					<i class="fa fa-columns"></i>
+				// 					<span>${column.name}</span>
+				// 					<small>${column.type}</small>
+				// 				</span>
+				// 			`;
 
-							li.querySelector('span').on('click', () => {
-								Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
-							});
+				// 			li.querySelector('span').on('click', () => {
+				// 				Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
+				// 			});
 
-							columns.appendChild(li);
-						}
+				// 			columns.appendChild(li);
+				// 		}
 
-						const li = document.createElement('li');
+				// 		const li = document.createElement('li');
 
-						li.innerHTML = `
-							<span class="name" title="${table.columns.length} columns">
-								<i class="fa fa-table"></i>
-								<span>${table.name}</span>
-							</span>
-						`;
+				// 		li.innerHTML = `
+				// 			<span class="name" title="${table.columns.length} columns">
+				// 				<i class="fa fa-table"></i>
+				// 				<span>${table.name}</span>
+				// 			</span>
+				// 		`;
 
-						li.appendChild(columns)
+				// 		li.appendChild(columns)
 
-						li.querySelector('span').on('click', () => {
-							li.classList.toggle('opened');
-							columns.classList.toggle('hidden')
-						});
+				// 		li.querySelector('span').on('click', () => {
+				// 			li.classList.toggle('opened');
+				// 			columns.classList.toggle('hidden')
+				// 		});
 
-						tables.appendChild(li);
-					}
+				// 		tables.appendChild(li);
+				// 	}
 
-					const li = document.createElement('li');
+				// 	const li = document.createElement('li');
 
-					li.innerHTML = `
-						<span class="name" title="${database.tables.length} tables">
-							<i class="fa fa-database"></i>
-							<span>${database.name}</span>
-						</span>
-					`;
+				// 	li.innerHTML = `
+				// 		<span class="name" title="${database.tables.length} tables">
+				// 			<i class="fa fa-database"></i>
+				// 			<span>${database.name}</span>
+				// 		</span>
+				// 	`;
 
-					li.appendChild(tables)
+				// 	li.appendChild(tables)
 
-					li.querySelector('span').on('click', () => {
-						li.classList.toggle('opened');
-						tables.classList.toggle('hidden')
-					});
+				// 	li.querySelector('span').on('click', () => {
+				// 		li.classList.toggle('opened');
+				// 		tables.classList.toggle('hidden')
+				// 	});
 
-					databases.appendChild(li);
-				}
+				// 	databases.appendChild(li);
+				// }
 
 				Report.schemas.set(Report.form.elements.connection_name.value, schema);
 
