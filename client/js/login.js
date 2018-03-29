@@ -89,6 +89,8 @@ Page.class = class Login extends Page {
 
 			localStorage.refresh_token = await API.call('authentication/login', {}, options);
 
+			await API.refreshToken();
+
 		} catch(error) {
 
 			this.message.classList.remove('notice');

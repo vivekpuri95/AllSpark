@@ -3,6 +3,6 @@
 ## Start Client & Server
 
 ```
-NODE_ENV='environment' pm2 start client/index.js --name environment-client
-NODE_ENV='environment' pm2 start server/bin/www --name environment-server
+NODE_ENV='dev' pm2 start client/index.js --name dev-client
+NODE_ENV='dev' pm2 start server/bin/www --name dev-server
 ```
