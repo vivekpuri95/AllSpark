@@ -1,54 +1,52 @@
-window.on('DOMContentLoaded', async function() {
+Page.class = class Credentials extends Page {
 
-	Credentials.setup(document.querySelector('section#list'));
+	constructor() {
 
-	await Credentials.load();
+		super();
 
-	Credential.setup(document.querySelector('section#form'));
+		Credential.setup(this);
 
-	Sections.show('list');
-});
+		this.listContainer = this.container.querySelector('section#list');
 
-class Credentials extends Page {
+		this.container.querySelector('#add-connection').on('click', () => Credential.add());
 
-	static async setup(container) {
+		(async () => {
 
-		await Page.setup();
+			await this.load();
 
-		Credentials.container = container;
-
-		Credentials.container.querySelector('#add-credentials').on('click', () => Credential.add());
+			await Sections.show('list');
+		})();
 	}
 
-	static async load() {
+	async load() {
 
-		const responses = await Credentials.fetch();
+		const responses = await this.fetch();
 
-		Credentials.process(responses);
+		this.process(responses);
 
-		Credentials.render();
+		this.render();
 	}
 
-	static async fetch() {
+	async fetch() {
 
-		return API.call('v2/credentials/list');
+		return API.call('credentials/list');
 	}
 
-	static process(response) {
+	process(response) {
 
-		Credentials.list = new Map;
+		this.list = new Map;
 
 		for(const credential of response || [])
-			Credentials.list.set(credential.id, new Credential(credential));
+			this.list.set(credential.id, new Credential(credential, this));
 	}
 
-	static render() {
+	render() {
 
-		const container = Credentials.container.querySelector('table tbody');
+		const container = this.listContainer.querySelector('table tbody');
 
 		container.textContent = null;
 
-		for(const item of Credentials.list.values())
+		for(const item of this.list.values())
 			container.appendChild(item.row);
 
 		if(!container.textContent)
@@ -58,25 +56,27 @@ class Credentials extends Page {
 
 class Credential {
 
-	static setup(container) {
+	static setup(page) {
 
-		Credential.container = container;
+		Credential.page = page;
+		Credential.container = page.container.querySelector('section#form');
+
 		Credential.form = Credential.container.querySelector('form');
 
 		Credential.container.querySelector('.toolbar #back').on('click', () => Sections.show('list'));
 
-		Credential.form.elements.type.on('change', function() {
+		Credential.form.type.on('change', function() {
 			Credential.types.get(this.value).render();
 		});
 
 		for(const [type, _] of Credential.types) {
-			Credential.form.elements.type.insertAdjacentHTML('beforeend', `
+			Credential.form.type.insertAdjacentHTML('beforeend', `
 				<option value="${type}">${type}</option>
 			`);
 		}
 	}
 
-	static add() {
+	static async add() {
 
 		Credential.form.removeEventListener('submit', Credential.submitListener);
 		Credential.form.reset();
@@ -84,10 +84,12 @@ class Credential {
 		Credential.container.querySelector('h1').textContent = 'Add New Data Source';
 		Credential.form.on('submit', Credential.submitListener = e => Credential.insert(e));
 
-		Credential.form.elements.type.disabled = false;
-		Credential.types.get(Credential.form.elements.type.value).render();
+		Credential.form.type.disabled = false;
+		Credential.types.get(Credential.form.type.value).render();
 
-		Sections.show('form');
+		await Sections.show('form');
+
+		Credential.form.connection_name.focus();
 	}
 
 	static async insert(e) {
@@ -97,44 +99,48 @@ class Credential {
 
 		const
 			parameters = {
-				type: Credential.form.elements.type.value,
+				type: Credential.form.type.value,
 			},
 			options = {
 				method: 'POST',
 				form: new FormData(Credential.form),
 			};
 
-		await API.call('v2/credentials/insert', parameters, options);
+		await API.call('credentials/insert', parameters, options);
 
-		await Credentials.load();
+		await Credential.page.load();
 
-		Sections.show('list');
+		await Sections.show('list');
 	}
 
-	constructor(item) {
+	constructor(item, page) {
 
 		for(const key in item)
 			this[key] = item[key];
+
+		this.page = page;
 	}
 
-	edit() {
+	async edit() {
 
 		Credential.form.removeEventListener('submit', Credential.submitListener);
 		Credential.form.reset();
 
-		Credential.container.querySelector('h1').textContent = this.name;
+		Credential.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
 		Credential.form.on('submit', Credential.submitListener = e => this.update(e));
 
-		Credential.form.elements.type.disabled = true;
+		Credential.form.type.disabled = true;
 
 		for(const key in this) {
 			if(Credential.form.elements[key])
 				Credential.form.elements[key].value = this[key];
 		}
 
-		Credential.types.get(Credential.form.elements.type.value).render(this);
+		Credential.types.get(Credential.form.type.value).render(this);
 
-		Sections.show('form');
+		await Sections.show('form');
+
+		Credential.form.connection_name.focus();
 	}
 
 	async update(e) {
@@ -151,11 +157,11 @@ class Credential {
 				form: new FormData(Credential.form),
 			};
 
-		await API.call('v2/credentials/update', parameters, options);
+		await API.call('credentials/update', parameters, options);
 
-		await Credentials.load();
+		await this.page.load();
 
-		Credentials.list.get(this.id).edit();
+		this.page.list.get(this.id).edit();
 	}
 
 	async delete() {
@@ -165,16 +171,15 @@ class Credential {
 
 		const
 			parameters = {
-				status: 0,
 				id: this.id,
 			},
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('v2/credentials/update', parameters, options);
+		await API.call('credentials/delete', parameters, options);
 
-		await Credentials.load();
+		await this.page.load();
 	}
 
 	get row() {
@@ -188,8 +193,8 @@ class Credential {
 			<td>${this.id}</td>
 			<td>${this.connection_name}</td>
 			<td>${this.type}</td>
-			<td class="action green">Edit</td>
-			<td class="action red">Delete</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
 		container.querySelector('.green').on('click', () => this.edit());
@@ -203,28 +208,28 @@ Credential.types = new Map;
 
 Credential.types.set('mysql', class {
 
-	static render(credentials = {}) {
+	static render(connections = {}) {
 
 		Credential.container.querySelector('#details').innerHTML = `
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${credentials.user || ''}">
+				<input type="text" name="user" value="${connections.user || ''}">
 			</label>
 
 			<label>
 				<span>Password</span>
-				<input type="text" name="password" value="${credentials.password || ''}">
+				<input type="text" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Server</span>
-				<input type="text" name="host" value="${credentials.host || ''}">
+				<input type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Database</span>
-				<input type="text" name="db" value="${credentials.db || ''}">
+				<input type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
 	}
@@ -232,10 +237,10 @@ Credential.types.set('mysql', class {
 	static get details() {
 
 		return JSON.stringify({
-			user: Credential.form.elements.user.value,
-			password: Credential.form.elements.password.value,
-			host: Credential.form.elements.host.value,
-			db: Credential.form.elements.db.value,
+			user: Credential.form.user.value,
+			password: Credential.form.password.value,
+			host: Credential.form.host.value,
+			db: Credential.form.db.value,
 		});
 	}
 });

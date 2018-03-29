@@ -1,52 +1,56 @@
-class ResetPassword extends Page {
+Page.class = class ResetPassword extends Page {
 
-	static async setup() {
+	constructor() {
 
-		await Page.setup();
+		super();
 
-		ResetPassword.container = document.querySelector('main');
-		ResetPassword.form = ResetPassword.container.querySelector('form');
-		ResetPassword.message = ResetPassword.container.querySelector('#message');
+		this.form = this.container.querySelector('form');
+		this.message = this.container.querySelector('#message');
 
-		const logo = ResetPassword.container.querySelector('.logo img');
+		this.form.on('submit', e => this.submit(e));
+
+		if(!account) {
+			this.message.textContent = 'Account not found! :(';
+			this.message.classList.remove('hidden');
+			this.message.classList.add('warning');
+			return;
+		}
+
+		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
 
 		logo.src = account.logo;
-
-		ResetPassword.form.on('submit', ResetPassword.sendLink);
 	}
 
-	static async sendLink(e) {
+	async submit(e) {
+
 		e.preventDefault();
 
-		ResetPassword.message.classList.add('notice');
-		ResetPassword.message.classList.remove('warning', 'hidden');
+		this.message.classList.remove('warning', 'notice', 'hidden');
+		this.message.textContent = null;
 
 		const parameters = {
-			reset_token : new URLSearchParams(window.location.search).get('reset_token')
-		}
+			reset_token: new URLSearchParams(window.location.search).get('reset_token')
+		};
 
 		const options = {
 			method: 'POST',
-			form: new FormData(ResetPassword.form)
+			form: new FormData(this.form),
 		};
-		const response = await API.call('v2/user/password/reset', {}, options);
 
-		if(response) {
+		try {
 
-			ResetPassword.message.innerHTML = 'Pssword updated successfully';
-			setTimeout(() => window.location = '/login', 3000);
+			const response = await API.call('authentication/reset', parameters, options);
+
+			this.message.classList.add('notice');
+			this.message.textContent = response;
 		}
 
-		else {
-			ResetPassword.message.classList.remove('notice');
-			ResetPassword.message.classList.add('warning');
-			ResetPassword.message.innerHTML = 'Tokan Expired';
-		}
+		catch(error) {
 
+			this.message.classList.add('warning');
+			this.message.textContent = error.message || error || 'Something went wrong! :(';
+		}
 	}
-
 }
-
-window.on('DOMContentLoaded', ResetPassword.setup);

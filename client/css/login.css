@@ -1,15 +1,23 @@
 main {
+	margin: -100px auto 0;
+	width: 300px;
 	display: flex;
 	flex-direction: column;
+	overflow: visible;
 	justify-content: center;
-	margin: 0 auto;
-	width: 300px;
 }
+main > * {
+	margin: var(--gap) 0;
+}
+	main .whitelabel {
+		justify-content: center;
+		padding: 25px;
+		font-size: 200%;
+	}
 	main .logo {
 		width: 100%;
-		background: var(--color-secondary);
+		background: var(--color-primary);
 		padding: 20px 50px;
-		margin: var(--gap) 0;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 	}
 		main .logo img {
@@ -19,7 +27,6 @@ main {
 		background: #fff;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 		padding: 10px;
-		margin: var(--gap) 0;
 	}
 		main .form label {
 			max-width: initial;
@@ -35,4 +42,7 @@ main {
 			}
 			main form div input {
 				width: auto;
+			}
+			main form button {
+				letter-spacing: 1px;
 			}

@@ -57,7 +57,7 @@ app.use(function (err, req, res, next) {
 
     res.json({
         status: false,
-        description: err.status === 500 ? "something went wrong" : err.message,
+        message: err.status === 500 ? 'Something went wrong! :(' : err.message,
     });
 });
 

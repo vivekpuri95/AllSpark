@@ -1,52 +1,105 @@
-class Login extends Page {
+Page.class = class Login extends Page {
 
-	static async setup(container) {
+	constructor() {
 
-		await Page.setup();
+		super();
 
-		Login.container = document.querySelector('main');
-		Login.form = Login.container.querySelector('form');
-		Login.message = Login.container.querySelector('#message');
+		this.form = this.container.querySelector('form');
+		this.message = this.container.querySelector('#message');
 
-		const logo = Login.container.querySelector('.logo img');
+		this.form.on('submit', e => this.submit(e));
+
+		if(!account) {
+			this.message.textContent = 'Account not found! :(';
+			this.message.classList.remove('hidden');
+			this.message.classList.add('warning');
+			return;
+		}
+
+		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
 
-		if(account)
-			logo.src = account.logo;
+		logo.src = account.logo;
 
-		Login.form.on('submit', Login.submit);
+		if(account.settings.get('skip_authentication'))
+			return this.skip_authentication();
 	}
 
-	static async submit(e) {
+	async skip_authentication() {
 
-		e.preventDefault();
+		this.form.innerHTML = `
+			<div class="whitelabel">
+				<i class="fa fa-spinner fa-spin"></i>
+			</div>
+		`;
 
-		Login.message.classList.add('notice');
-		Login.message.classList.remove('warning', 'hidden');
-		Login.message.textContent = 'Logging you in!';
+		const parameters = new URLSearchParams(window.location.search);
 
-		const options = {
-			form: new FormData(Login.form)
-		};
+		if(!localStorage.access_token && (!parameters.has('access_token') || !parameters.get('access_token'))) {
+
+			this.form.innerHTML = '<div class="whitelabel"><i class="fas fa-exclamation-triangle"></i></div>';
+
+			this.message.textContent = 'Cannot authenticate user, please reload the page :(';
+			this.message.classList.remove('hidden');
+			this.message.classList.add('warning');
+		}
 
 		try {
 
-			localStorage.refresh_token = await API.call('v2/authentication/login', {}, options);
+			const params = {
+				access_token: localStorage.access_token || parameters.get('access_token'),
+			};
 
-		} catch(response) {
+			localStorage.refresh_token = await API.call('authentication/tookan', params);
 
-			Login.message.classList.remove('notice');
-			Login.message.classList.add('warning');
-			Login.message.textContent = response.description || response;
+		} catch(error) {
+
+			this.message.classList.remove('notice');
+			this.message.classList.add('warning');
+			this.message.textContent = error.message || error;
 
 			return;
 		}
 
-		Login.message.innerHTML = 'Login Successful! Redirecting&hellip;';
+		this.message.innerHTML = 'Login Successful! Redirecting&hellip;';
+
+		window.location = '../';
+	}
+
+	async submit(e) {
+
+		e.preventDefault();
+
+		console.log(this);
+
+		if(!account)
+			return;
+
+		this.message.classList.add('notice');
+		this.message.classList.remove('warning', 'hidden');
+		this.message.textContent = 'Logging you in!';
+
+		const options = {
+			method: 'POST',
+			form: new FormData(this.form),
+		};
+
+		try {
+
+			localStorage.refresh_token = await API.call('authentication/login', {}, options);
+
+		} catch(error) {
+
+			this.message.classList.remove('notice');
+			this.message.classList.add('warning');
+			this.message.textContent = error.message || error;
+
+			return;
+		}
+
+		this.message.innerHTML = 'Login Successful! Redirecting&hellip;';
 
 		window.location = '../';
 	}
 }
-
-window.on('DOMContentLoaded', Login.setup);

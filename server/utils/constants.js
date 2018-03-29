@@ -11,12 +11,13 @@ exports.privilege = {
     user: "user",
     connection: "connection",
     dashboard: "dashboard",
+    report: "report",
 
     ignore_category: ['connection', 'dashboard']
 };
 
 exports.publicEndpoints = [
-	'/v2/accounts/list',
+	'/v2/accounts/get',
 	'/v2/authentication/login',
 	'/v2/authentication/refresh',
 	'/v2/authentication/reset',

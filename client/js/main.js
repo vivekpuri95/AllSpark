@@ -1,5 +1,101 @@
 "use strict";
 
+window.addEventListener('DOMContentLoaded', async () => {
+
+	if(!Page.class)
+		return;
+
+	await Page.setup();
+
+	new (Page.class)();
+});
+
+class Page {
+
+	static async setup() {
+
+		AJAXLoader.setup();
+
+		await Page.load();
+
+		Page.render();
+	}
+
+	static async load() {
+
+		await Account.load();
+		await User.load();
+		await MetaData.load();
+
+		if(account && account.settings.get('whitelabel')) {
+
+			const parameters = new URLSearchParams(window.location.search.slice(1));
+
+			if(parameters.has('access_token') && parameters.get('access_token'))
+				localStorage.access_token = parameters.get('access_token');
+		}
+	}
+
+	static render() {
+
+		if(account) {
+
+			if(account.settings.get('hideHeader')) {
+				document.querySelector('body > header').classList.add('hidden');
+				return;
+			}
+
+			if(account.icon)
+				document.getElementById('favicon').href = account.icon;
+
+			if(account.logo)
+				document.querySelector('body > header .logo img').src = account.logo;
+		}
+
+		if(window.user)
+			document.querySelector('body > header .user-name').textContent = user.name;
+
+		document.querySelector('body > header .logout').on('click', () => User.logout());
+
+		Page.navList = [
+			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+			{url: '/dashboards', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
+			{url: '/reports', name: 'Reports', privilege: 'queries', icon: 'fa fa-database'},
+			{url: '/connections', name: 'Connections', privilege: 'datasources', icon: 'fa fa-server'},
+			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+		];
+
+		const nav_container = document.querySelector('body > header nav');
+
+		for(const item of Page.navList) {
+
+			if(!window.user || !user.privileges.has(item.privilege))
+				continue;
+
+			nav_container.insertAdjacentHTML('beforeend',`
+				<a href='${item.url}'>
+					<i class="${item.icon}"></i>&nbsp;
+					${item.name}
+				</a>
+			`);
+		}
+
+		for(const item of document.querySelectorAll('body > header nav a')) {
+			if(window.location.pathname.startsWith(new URL(item.href).pathname))
+				item.classList.add('selected');
+		}
+	}
+
+	constructor() {
+
+		this.container = document.querySelector('main');
+
+		this.account = window.account;
+		this.user = window.user;
+		this.metadata = window.MetaData;
+	}
+}
+
 class Account {
 
 	static async load() {
@@ -20,13 +116,11 @@ class Account {
 
 	static async fetch() {
 
-		window.account = {APIHost: `https://${window.location.host}:${PORT - 5080}/`}
+		window.account = {APIHost: `//${window.location.hostname}:${PORT.server}/`}
 
 		try {
 
-			const accounts = await API.call('v2/accounts/list');
-
-			return accounts.filter(a => a.url == window.location.host)[0];
+			return await API.call('accounts/get');
 
 		} catch(e) {
 			return null;
@@ -38,7 +132,15 @@ class Account {
 		for(const key in account)
 			this[key] = account[key];
 
-		this.APIHost = `https://${this.url}:${PORT - 5080}/`;
+		this.APIHost = `//${this.url}:${PORT.server}/`;
+
+		this.settings = new Map;
+
+		if(account.settings && account.settings[0]) {
+
+			for(const key in account.settings[0].value)
+				this.settings.set(key, account.settings[0].value[key]);
+		}
 	}
 }
 
@@ -57,9 +159,13 @@ class User {
 
 	static logout(next) {
 
+		const
+			access_token = localStorage.access_token,
+			parameters = new URLSearchParams();
+
 		localStorage.clear();
 
-		const parameters = new URLSearchParams();
+		localStorage.access_token = access_token;
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
@@ -72,6 +178,7 @@ class User {
 		for(const key in user)
 			this[key] = user[key];
 
+		this.id = this.user_id;
 		this.privileges = new UserPrivileges(this);
 		this.roles = new UserPrivileges(this);
 	}
@@ -85,6 +192,10 @@ class UserPrivileges extends Set {
 
 		this.context = context;
 	}
+
+	has(name) {
+		return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase() || p.privilege_id === 0).length;
+	}
 }
 
 class UserRoles extends Set {
@@ -94,6 +205,60 @@ class UserRoles extends Set {
 		super(context.roles);
 
 		this.context = context;
+	}
+}
+
+class MetaData {
+
+	static async load() {
+
+		MetaData.categories = new Map;
+		MetaData.privileges = new Map;
+		MetaData.roles = new Map;
+
+		if(!user.id)
+			return;
+
+		if(!localStorage.metadata)
+			await MetaData.fetch();
+
+		let metadata = null;
+
+		try {
+			metadata = JSON.parse(localStorage.metadata);
+		} catch(e) {
+			return;
+		}
+
+		for(const privilege of metadata.privileges || []) {
+
+			privilege.privilege_id = privilege.owner_id;
+			delete privilege['owner_id'];
+
+			MetaData.privileges.set(privilege.privilege_id, privilege);
+		}
+
+		for(const role of metadata.roles || []) {
+
+			role.role_id = role.owner_id;
+			delete role['owner_id'];
+
+			MetaData.roles.set(role.role_id, role);
+		}
+
+		for(const category of metadata.categories || []) {
+
+			category.category_id = category.owner_id;
+			delete category['owner_id'];
+
+			MetaData.categories.set(category.category_id, category);
+		}
+
+		return MetaData;
+	}
+
+	static async fetch() {
+		localStorage.metadata = JSON.stringify(await API.call('users/metadata'));
 	}
 }
 
@@ -151,7 +316,7 @@ class API extends AJAX {
 		if(!account)
 			throw 'Account not found!'
 
-		if(!endpoint.startsWith('v2/authentication'))
+		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
 		if(localStorage.token)
@@ -161,7 +326,7 @@ class API extends AJAX {
 		if(options.form)
 			API.loadFormData(parameters, options.form);
 
-		endpoint = account.APIHost + endpoint;
+		endpoint = account.APIHost + 'v2/' + endpoint;
 
 		const response = await AJAX.call(endpoint, parameters, options);
 
@@ -212,7 +377,7 @@ class API extends AJAX {
 
 				const user = JSON.parse(atob(localStorage.token.split('.')[1]));
 
-				if(user.exp && Date.parse(user.exp) > Date.now())
+				if(user.exp && user.exp * 1000 > Date.now())
 					getToken = false;
 
 			} catch(e) {}
@@ -221,10 +386,12 @@ class API extends AJAX {
 		if(!localStorage.refresh_token || !getToken)
 			return;
 
-		const response = await API.call('v2/authentication/refresh', {refresh_token: localStorage.refresh_token});
+		const
+			parameters = {refresh_token: localStorage.refresh_token},
+			options = {method: 'POST'},
+			response = await API.call('authentication/refresh', {refresh_token: localStorage.refresh_token}, options);
 
-		localStorage.token = response.token;
-		localStorage.metadata = JSON.stringify(response.metadata);
+		localStorage.token = response;
 
 		Page.load();
 	}
@@ -331,7 +498,7 @@ class Format {
 
 class Sections {
 
-	static show(id) {
+	static async show(id) {
 
 		for(const section of document.querySelectorAll('main section.section'))
 			section.classList.remove('show');
@@ -343,102 +510,39 @@ class Sections {
 	}
 }
 
-class MetaData {
+class Editor {
 
-	static load() {
+	constructor(container) {
 
-		MetaData.privileges = new Map;
-		MetaData.roles = new Map;
-		MetaData.categories = new Map;
+		this.container = container;
+		this.editor = ace.edit(container);
 
-		if(!localStorage.metadata)
-			return;
-
-		let metadata = null;
-
-		try {
-			metadata = JSON.parse(localStorage.metadata);
-		} catch(e) {
-			return;
-		}
-
-		for(const privilege of metadata.privileges || []) {
-
-			privilege.id = privilege.privilege_id;
-
-			MetaData.privileges.set(privilege.id, privilege);
-		}
-
-		for(const role of metadata.roles || []) {
-
-			role.id = role.role_id;
-
-			MetaData.roles.set(role.id, role);
-		}
-
-		for(const category of metadata.categories || []) {
-
-			category.id = category.category_id;
-
-			MetaData.categories.set(category.id, category);
-		}
-
-		return MetaData;
-	}
-}
-
-class Page {
-
-	static async setup() {
-
-		AJAXLoader.setup();
-
-		await Page.load();
-
-		Page.render();
+		this.editor.setTheme('ace/theme/monokai');
+		this.editor.getSession().setMode('ace/mode/sql');
+		this.editor.setFontSize(16);
+		this.editor.$blockScrolling = Infinity;
 	}
 
-	static async load() {
-		await Account.load();
-		await User.load();
-		await MetaData.load();
+	setAutoComplete(list) {
+
+		this.langTools = ace.require('ace/ext/language_tools');
+
+		this.langTools.setCompleters([{
+			getCompletions: (_, __, ___, ____, callback) => callback(null, list),
+		}]);
+
+		this.editor.setOptions({
+			enableBasicAutocompletion: true,
+			enableLiveAutocompletion: true,
+		});
 	}
 
-	static render() {
+	get value() {
+		return this.editor.getValue();
+	}
 
-		if(account && account.icon)
-			document.getElementById('favicon').href = account.icon;
-
-		if(account && account.logo)
-			document.querySelector('body > header .logo img').src = account.logo;
-
-		if(window.user)
-			document.querySelector('body > header .user-name').textContent = user.name;
-
-		document.querySelector('body > header .logout').on('click', () => User.logout());
-
-
-		Page.navList = [
-			{url: '/users', name: 'Users', id: 'user'},
-			{url: '/dashboards', name: 'Dashboards', id: 'dashboards'},
-			{url: '/reports', name: 'Reports', id: 'queries'},
-			{url: '/connections', name: 'Connections', id: 'datasources'},
-		];
-
-		const nav_container = document.querySelector('body > header nav');
-
-		for(const item of Page.navList) {
-
-			if(!window.user)
-				continue;
-
-			nav_container.insertAdjacentHTML('beforeend',`<a href='${item.url}'>${item.name}</a>`);
-		}
-
-		for(const item of document.querySelectorAll('body > header nav a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname))
-				item.classList.add('selected');
-		}
+	set value(value) {
+		this.editor.setValue(value, 1);
 	}
 }
 
@@ -449,13 +553,9 @@ class DataSource {
 		if(DataSource.list && !force)
 			return;
 
-		const response = await API.call('v2/reports/report/list');
+		const response = await API.call('reports/report/list');
 
-		DataSource.list = [];
-		DataSource.dashboards = new Map;
-
-		for(const report of response || [])
-			DataSource.list.push(new DataSource(report));
+		DataSource.list = new Map(response.map(report => [report.query_id, report]));
 	}
 
 	constructor(source) {
@@ -503,7 +603,7 @@ class DataSource {
 			this.container.removeChild(this.container.querySelector('pre.warning'));
 
 		try {
-			response = await API.call('v2/reports/engine/report', parameters, options);
+			response = await API.call('reports/engine/report', parameters, options);
 		}
 
 		catch(e) {
@@ -540,16 +640,25 @@ class DataSource {
 		container.classList.add('data-source');
 
 		container.innerHTML = `
+
 			<header>
-				<h2 title="${this.name}"><i class="fa fa-chart-line"></i>&nbsp; ${this.name}</h2>
-				<button class="filters-toggle"><i class="fa fa-filter"></i>&nbsp; Filters</button>
-				<button class="description-toggle" title="Description">&nbsp;<i class="fa fa-info"></i>&nbsp;</button>
-				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i></button>
-				<button class="download" title="Download CSV"><i class="fa fa-download"></i></button>
-				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i></button>
+				<h2 title="${this.name}">${this.name}</h2>
+				<span class="right menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></span>
 			</header>
+
+			<div class="toolbar menu hidden">
+				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
+				<button class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
+				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i> Share</button>
+				<button class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
+				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i> Edit</button>
+				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
+			</div>
+
 			<form class="filters form toolbar hidden"></form>
+
 			<div class="columns"></div>
+
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
 				<div class="footer">
@@ -571,6 +680,7 @@ class DataSource {
 					</span>
 				</div>
 			</div>
+
 			<div class="share-link hidden">
 				<input type="url" value="${this.link}" readonly>
 			</div>
@@ -578,24 +688,31 @@ class DataSource {
 
 		this.filters.form = container.querySelector('.filters');
 
-		container.querySelector('.filters-toggle').on('click', () => {
+		container.querySelector('.menu-toggle').on('click', () => {
+			container.querySelector('.menu').classList.toggle('hidden');
+			container.querySelector('.menu-toggle').classList.toggle('selected');
+		});
+
+		container.querySelector('.menu .filters-toggle').on('click', () => {
 			container.querySelector('.filters').classList.toggle('hidden');
 			container.querySelector('.filters-toggle').classList.toggle('selected');
 		});
 
-		container.querySelector('.description-toggle').on('click', () => {
+		container.querySelector('.menu .description-toggle').on('click', () => {
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
 		});
 
-		container.querySelector('.share-link-toggle').on('click', () => {
+		container.querySelector('.menu .share-link-toggle').on('click', () => {
 			container.querySelector('.share-link').classList.toggle('hidden');
 			container.querySelector('.share-link-toggle').classList.toggle('selected');
 			container.querySelector('.share-link input').select();
 		});
 
-		container.querySelector('.download').on('click', () => this.download());
-		container.querySelector('.edit').on('click', () => window.location = `/reports/${this.query_id}`);
+		container.querySelector('.menu .download').on('click', () => this.download());
+
+		container.querySelector('.menu .edit').on('click', () => window.location = `/reports/${this.query_id}`);
+		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
 
 		this.filters.form.on('submit', e => this.visualizations.selected.load(e));
 
@@ -605,12 +722,12 @@ class DataSource {
 		this.filters.form.insertAdjacentHTML('beforeend', `
 			<label class="right">
 				<button type="reset">
-					<i class="fa fa-undo"></i>&nbsp; Reset
+					<i class="fa fa-undo"></i> Reset
 				</button>
 			</label>
 			<label>
 				<button type="submit">
-					<i class="fa fa-sync"></i>&nbsp; Submit
+					<i class="fa fa-sync"></i> Submit
 				</button>
 			</label>
 		`);
@@ -621,24 +738,23 @@ class DataSource {
 
 			select.classList.add('change-visualization')
 
-			for(const v of this.visualizations)
-				select.insertAdjacentHTML('beforeend', `<option value="${v.visualization_id}">${v.name}</option>`);
+			for(const [i, v] of this.visualizations.entries()) {
+
+				if(v.default)
+					this.visualizations.selected = v;
+
+				select.insertAdjacentHTML('beforeend', `<option value="${i}">${v.type}</option>`);
+			}
 
 			select.on('change', async () => {
-
-				container.removeChild(container.querySelector('.visualization'));
-
-				this.visualizations.selected = this.visualizations.filter(v => v.id == select.value)[0];
-
-				container.appendChild(this.visualizations.selected.container);
-
-				await this.visualizations.selected.load();
+				this.visualizations[select.value].load();
 			});
 
-			this.visualizations.selected = this.visualizations.filter(v => v.id == select.value)[0];
+			if(!this.visualizations.selected)
+				this.visualizations.selected = this.visualizations[select.value];
 
 			if(this.visualizations.length > 1)
-				container.querySelector('header').appendChild(select);
+				container.querySelector('.menu').appendChild(select);
 
 			if(this.visualizations.selected)
 				container.appendChild(this.visualizations.selected.container);
@@ -647,7 +763,7 @@ class DataSource {
 		if(!this.filters.size)
 			container.querySelector('.filters-toggle').classList.add('hidden');
 
-		container.querySelector('header').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
+		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
 
 		return container;
 	}
@@ -1383,8 +1499,11 @@ class DataSourcePostProcessors {
 
 		this.list = new Map;
 
-		for(const [name, processor] of DataSourcePostProcessors.processors)
-			this.list.set(name, new processor(this.source));
+		for(const [key, processor] of DataSourcePostProcessors.processors)
+			this.list.set(key, new processor(this.source, key));
+
+		if(source.postProcessor && this.list.has(source.postProcessor.name))
+			this.selected = this.list.get(source.postProcessor.name);
 	}
 
 	get container() {
@@ -1405,6 +1524,11 @@ class DataSourcePostProcessors {
 			container.appendChild(processor.container);
 		}
 
+		if(this.selected) {
+			processors.value = this.selected.key;
+			this.selected.container.classList.remove('hidden');
+		}
+
 		processors.on('change', () => {
 
 			this.selected = this.list.get(processors.value);
@@ -1417,7 +1541,6 @@ class DataSourcePostProcessors {
 
 		container.appendChild(processors);
 
-
 		return container;
 	}
 
@@ -1428,8 +1551,9 @@ class DataSourcePostProcessors {
 
 class DataSourcePostProcessor {
 
-	constructor(source) {
+	constructor(source, key) {
 		this.source = source;
+		this.key = key;
 	}
 
 	get container() {
@@ -1443,6 +1567,9 @@ class DataSourcePostProcessor {
 
 		for(const [value, name] of this.domain)
 			container.insertAdjacentHTML('beforeend', `<option value="${value}">${name}</option>`);
+
+		if(this.source.postProcessor && this.source.postProcessor.value && this.source.postProcessors.selected == this)
+			container.value = this.source.postProcessor.value;
 
 		container.on('change', () => this.source.visualizations.selected.render());
 
@@ -1687,9 +1814,23 @@ class Visualization {
 		for(const key in visualization)
 			this[key] = visualization[key];
 
-		this.id = this.visualization_id;
+		this.id = Math.floor(Math.random() * 100000);
 
 		this.source = source;
+	}
+
+	render() {
+
+		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
+
+		if(visualizationToggle)
+			visualizationToggle.value = this.source.visualizations.indexOf(this);
+
+		this.source.container.removeChild(this.source.container.querySelector('.visualization'));
+
+		this.source.visualizations.selected = this;
+
+		this.source.container.appendChild(this.container);
 	}
 }
 
@@ -1711,6 +1852,8 @@ Visualization.list.set('table', class Table extends Visualization {
 		if(e)
 			e.preventDefault();
 
+		super.render();
+
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 		`;
@@ -1731,9 +1874,8 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		container.innerHTML = `
 			<div class="container overflow">
-				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
-			<div id="row-count"></div>
 		`;
 
 		return container;
@@ -1752,7 +1894,8 @@ Visualization.list.set('table', class Table extends Visualization {
 			thead = document.createElement('thead'),
 			search = document.createElement('tr'),
 			accumulation = document.createElement('tr'),
-			headings = document.createElement('tr');
+			headings = document.createElement('tr'),
+			rowCount = document.createElement('div');
 
 		search.classList.add('search');
 		accumulation.classList.add('accumulation');
@@ -1814,32 +1957,37 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(!rows || !rows.length)
+		if(!rows || !rows.length) {
 			table.insertAdjacentHTML('beforeend', `<caption class="NA">${this.source.originalResponse.message || 'No rows found! :('}</caption>`);
+			return;
+		}
 
-		table.appendChild(tbody);
-		container.appendChild(table);
+		rowCount.classList.add('row-count');
 
-		this.container.querySelector('#row-count').innerHTML = `
+		rowCount.innerHTML = `
 			<span>
 				<span class="label">Showing:</span>
-				<span title="Number of rows currently shown on screen">
+				<strong title="Number of rows currently shown on screen">
 					${Format.number(Math.min(this.rowLimit, rows.length))}
-				</span>
+				</strong>
 			</span>
 			<span>
 				<span class="label">Filtered:</span>
-				<span title="Number of rows that match any search or grouping criterion">
+				<strong title="Number of rows that match any search or grouping criterion">
 					${Format.number(rows.length)}
-				</span>
+				</strong>
 			</span>
 			<span>
 				<span class="label">Total:</span>
-				<span title="Total number of rows in the dataset">
+				<strong title="Total number of rows in the dataset">
 					${Format.number(this.source.originalResponse.data ? this.source.originalResponse.data.length : 0)}
-				</span>
+				</strong>
 			</span>
 		`;
+
+		table.appendChild(tbody);
+		container.appendChild(table);
+		container.appendChild(rowCount);
 	}
 });
 
@@ -1856,8 +2004,8 @@ Visualization.list.set('line', class Line extends Visualization {
 
 		container.classList.add('visualization', 'line');
 		container.innerHTML = `
-			<div id="line-${this.source.query_id}" class="container">
-				<div class="blanket"><i class="fa fa-spinner fa-spin"></i></div>
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
 
@@ -1866,7 +2014,10 @@ Visualization.list.set('line', class Line extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -1909,7 +2060,7 @@ Visualization.list.set('line', class Line extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#line-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -1932,7 +2083,7 @@ Visualization.list.set('line', class Line extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
-			height = (obj.chart.height || 500) - margin.top - margin.bottom;
+			height = (obj.chart.height || 456) - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
@@ -2157,8 +2308,6 @@ Visualization.list.set('line', class Line extends Visualization {
 
 				var row = rows[xpos];
 
-				row.annotations.show();
-
 				Tooltip.hide(that.container);
 			})
 			.on("mousedown", function () {
@@ -2275,7 +2424,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 		container.classList.add('visualization', 'bar');
 		container.innerHTML = `
-			<div id="bar-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -2285,7 +2434,10 @@ Visualization.list.set('bar', class Bar extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -2327,7 +2479,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#bar-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -2350,7 +2502,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
-			height = (obj.chart.height || 500) - margin.top - margin.bottom;
+			height = (obj.chart.height || 456) - margin.top - margin.bottom;
 
 		var y = d3.scale.linear().range([height,margin.top]);
 
@@ -2596,7 +2748,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 	}
 });
 
-Visualization.list.set('stacked', class Bar extends Visualization {
+Visualization.list.set('stacked', class Stacked extends Visualization {
 
 	get container() {
 
@@ -2609,7 +2761,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 
 		container.classList.add('visualization', 'stacked');
 		container.innerHTML = `
-			<div id="stacked-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -2619,7 +2771,10 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -2663,7 +2818,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#stacked-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -2686,7 +2841,7 @@ Visualization.list.set('stacked', class Bar extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
-			height = (obj.chart.height || 500) - margin.top - margin.bottom;
+			height = (obj.chart.height || 456) - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
@@ -2963,7 +3118,7 @@ Visualization.list.set('area', class Area extends Visualization {
 
 		container.classList.add('visualization', 'area');
 		container.innerHTML = `
-			<div id="area-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -2973,7 +3128,10 @@ Visualization.list.set('area', class Area extends Visualization {
 
 	async load(e) {
 
-		e && e.preventDefault && e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -3016,7 +3174,7 @@ Visualization.list.set('area', class Area extends Visualization {
 		this.draw({
 			series: Object.values(series),
 			rows: rows,
-			divId: `#area-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -3039,7 +3197,7 @@ Visualization.list.set('area', class Area extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
-			height = (obj.chart.height || 500) - margin.top - margin.bottom;
+			height = (obj.chart.height || 456) - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
@@ -3394,6 +3552,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 	async load(parameters = {}) {
 
+		super.render();
+
 		await this.source.fetch(parameters);
 
 		this.render();
@@ -3457,7 +3617,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		container.classList.add('visualization', 'funnel');
 		container.innerHTML = `
-			<div id="funnel-${this.source.query_id}" class="container">
+			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -3467,8 +3627,10 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 	async load(e) {
 
-		if(e)
+		if(e && e.preventDefault)
 			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
@@ -3492,7 +3654,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		this.draw({
 			series: series.reverse(),
-			divId: `#funnel-${this.source.query_id}`,
+			divId: `#visualization-${this.id}`,
 			chart: {},
 		});
 	}
@@ -3509,7 +3671,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 0, bottom: 40, left: 0},
 			width = this.container.clientWidth - margin.left - margin.right,
-			height = obj.chart.height || 500 - margin.top - margin.bottom;
+			height = obj.chart.height || 456 - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
@@ -3777,8 +3939,10 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 	async load(e) {
 
-		if(e)
+		if(e && e.preventDefault)
 			e.preventDefault();
+
+		super.render();
 
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">

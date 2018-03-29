@@ -9,12 +9,13 @@ const EXPIRE_AFTER = 1; //HOURS
 exports.resetlink = class extends API {
 	async resetlink() {
 
-		let user = await this.mysql.query(`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
-			[this.request.body.email, this.account.account_id]);
-		if (!user.length) {
+		let user = await this.mysql.query(
+			`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
+			[this.request.body.email, this.account.account_id]
+		);
 
+		if (!user.length)
 			return true;
-		}
 
 		const token = await new Promise((resolve, reject) => {
 			crypto.randomBytes(80, function (err, buf) {
@@ -52,8 +53,8 @@ exports.resetlink = class extends API {
                         Hi ${full_name}, <br/><br/>
                         <span style="color: #666;"> Please click on the link below to reset your password.</span>
                     </div>
-                    <a href="${this.account.url}/login/reset?reset_token=${token}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">
-                        ${this.account.url}/login/reset?reset_token=${token}
+                    <a href="https://${this.account.url}//login/reset?reset_token=${token}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">
+                        https://${this.account.url}/login/reset?reset_token=${token}
                     </a>
 
                     <div style="font-size:14px;color:#666">Thank You.</div>
@@ -68,12 +69,14 @@ exports.resetlink = class extends API {
         `;
 
 		await mailer.send();
-		return true;
+
+		return 'Password reset email sent!';
 	}
 }
 
 exports.reset = class extends API {
 	async reset() {
+
 		if (!this.request.body.password || !this.request.body.reset_token)
 			return false;
 
@@ -88,17 +91,19 @@ exports.reset = class extends API {
         `;
 
 		let user_id = await this.mysql.query(query, [this.request.body.reset_token, EXPIRE_AFTER]);
+
 		if (!user_id.length)
-			return false;
+			throw new API.Exception(400, 'Invalid Token, Please reset the password again.');
 
 		user_id = user_id[0]['user_id'];
+
 		const newHashPass = await commonFun.makeBcryptHash(this.request.body.password);
 
-		await this.mysql.query('update tb_users set password = ? WHERE user_id = ? and account_id = ?', [newHashPass, user_id, this.account.account_id], 'write');
+		await this.mysql.query('UPDATE tb_users SET password = ? WHERE user_id = ? AND account_id = ?', [newHashPass, user_id, this.account.account_id], 'write');
 
+		await this.mysql.query('UPDATE tb_password_reset SET status = 0 WHERE status = 1 AND user_id = ?', [user_id], 'write');
 
-		await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'write');
-		return true;
+		return 'Password Reset Successfuly! You can log in now.';
 	}
 };
 
@@ -107,18 +112,18 @@ exports.login = class extends API {
 
 	async login() {
 
-		const email = this.request.query.email;
+		const email = this.request.body.email;
 
-		this.assert(email, "email required");
-		this.assert(this.request.query.password, "password required");
+		this.assert(email, "Email Required");
+		this.assert(this.request.body.password, "Password Required");
 
 		const [userDetail] = await this.mysql.query(`select * from tb_users where email = ?`, [email]);
 
-		this.assert(userDetail, "Invalid Email");
+		this.assert(userDetail, "Invalid Email! :(");
 
-		const checkPassword = await commonFun.verifyBcryptHash(this.request.query.password, userDetail.password);
+		const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
 
-		this.assert(checkPassword, "Invalid Password");
+		this.assert(checkPassword, "Invalid Password! :(");
 
 		const obj = {
 			user_id: userDetail.user_id,
@@ -134,19 +139,14 @@ exports.refresh = class extends API {
 
 	async refresh() {
 
-		this.assert(this.request.query.refresh_token, "Refresh Token Not Found");
+		const loginObj = await commonFun.verifyJWT(this.request.body.refresh_token);
 
-		const loginObj = await commonFun.verifyJWT(this.request.query.refresh_token);
+		const [user] = await this.mysql.query("select * from tb_users where user_id = ?", loginObj.user_id);
 
-		const [[user], userPrivilegesRoles] = await Promise.all([
+		this.assert(user, "user not found");
 
-			this.mysql.query(
-				'SELECT * FROM tb_users WHERE user_id = ? AND account_id = ?',
-				[loginObj.user_id, this.account.account_id]
-			),
-
-			this.mysql.query(
-				`SELECT
+		const userPrivilegesRoles = await this.mysql.query(
+			`SELECT
                     'privileges' AS 'owner',
                     user_id,
                     IF(p.is_admin = 1, 0, privilege_id) owner_id,
@@ -164,9 +164,9 @@ exports.refresh = class extends API {
                 WHERE
                     user_id = ?
                     AND u.account_id = ?
-                    
+
                 UNION ALL
-                
+
                 SELECT
                     'roles' AS 'owner',
                     u.user_id,
@@ -174,7 +174,7 @@ exports.refresh = class extends API {
                     r.name AS role_name,
                     IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
                     c.name AS category_name
-                    
+
                 FROM
                     tb_user_roles ur
                 JOIN
@@ -191,86 +191,39 @@ exports.refresh = class extends API {
                     AND u.account_id = ?
 
                `,
-				[loginObj.user_id, this.account.account_id, loginObj.user_id, this.account.account_id]
-			),
-		]);
+			[loginObj.user_id, this.account.account_id, loginObj.user_id, this.account.account_id]
+		);
+
+		const privileges = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {
+
+			return {
+				privilege_id: x.owner_id,
+				privilege_name: x.owner_name,
+				category_id: x.category_id,
+			}
+		});
+
+		const roles = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "roles").map(x => {
+
+			return {
+				category_id: x.category_id,
+				role: x.owner_id,
+			}
+		});
+
 
 		const obj = {
 			user_id: user.user_id,
 			account_id: this.account.account_id,
 			email: loginObj.email,
-			name: `${user.first_name} ${user.middle_name || ''} ${user.last_name}`,
-			roles: userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "roles").map(x => {
-
-				return {
-					category_id: x.category_id,
-					role: x.owner_id,
-				}
-			}),
-			privileges: userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {
-
-				return {
-					privilege_id: x.owner_id,
-					privilege_name: x.owner_name,
-					category_id: x.category_id,
-				}
-			})
+			name: [user.first_name, user.middle_name, user.last_name].filter(x => x).join(' '),
+			roles: roles,
+			privileges: privileges
 		};
 
-		const categoriesPrivilegesRoles = await this.mysql.query(`
-                SELECT 
-                    'categories' AS 'type',
-                    category_id,
-                    \`name\`,
-                    is_admin
-                FROM
-                    tb_categories
-                WHERE
-                    account_id = ?
-                
-                UNION ALL
-                
-                SELECT
-                    'privileges' AS 'type',
-                    privilege_id, 
-                    \`name\`, 
-                    ifnull(is_admin, 0) AS is_admin 
-                FROM
-                    tb_privileges	
-                    
-                UNION ALL 
-                    
-                SELECT
-                    'roles', 
-                    role_id, 
-                    \`name\`, 
-                    ifnull(is_admin, 0) AS is_admin 
-                FROM 
-                    tb_roles 
-                WHERE
-                    account_id = ?
-            `,
-			[this.account.account_id, this.account.account_id]
-		);
-
-		const metadata = {};
-
-		for (const row of categoriesPrivilegesRoles) {
-
-			if (!metadata[row.type]) {
-
-				metadata[row.type] = [];
-			}
-
-			metadata[row.type].push(row);
-		}
-
-		return {
-			token: commonFun.makeJWT(obj, 10 * 60),
-			metadata
-		}
+		return commonFun.makeJWT(obj, parseInt(user.ttl || 7) * 86400);
 	}
-};
+}
 
 exports.tookan = class extends API {
 	async tookan() {

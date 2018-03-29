@@ -1,27 +1,33 @@
-window.on('DOMContentLoaded', async () => {
-
-	await Users.setup();
-	UserManage.setup();
-
-	await Users.load();
-
-	Users.loadState();
-});
-
-window.on('popstate', e => Users.loadState(e.state));
-
 class Users extends Page {
 
-	static async setup(contaier) {
+	constructor() {
 
-		await Page.setup();
+		super();
 
-		Users.contaier = document.querySelector('section#list table tbody');
+		(async () => {
+
+			await Users.setup(this);
+			await UserManage.setup();
+
+			Privileges.setup();
+			Roles.setup();
+
+			await Users.load();
+
+			Users.loadState();
+		})();
+
+		window.on('popstate', e => Users.loadState(e.state));
+	}
+
+	static async setup(page) {
+
+		Users.contaier = page.container.querySelector('section#list table tbody');
 	}
 
 	static async load() {
 
-		const users = await API.call('v2/users/list');
+		const users = await API.call('users/list');
 
 		Users.list = users.map(user => new UserManage(user));
 
@@ -52,9 +58,11 @@ class Users extends Page {
 	}
 }
 
+Page.class = Users;
+
 class UserManage {
 
-	static setup() {
+	static async setup() {
 
 		UserManage.contaier = document.querySelector('section#form');
 		UserManage.form = UserManage.contaier.querySelector('form');
@@ -77,7 +85,7 @@ class UserManage {
 		history.pushState(null, '', `/users`);
 	}
 
-	static add() {
+	static async add() {
 
 		UserManage.form.removeEventListener('submit', UserManage.submitListener);
 		UserManage.form.reset();
@@ -85,7 +93,15 @@ class UserManage {
 		UserManage.heading.textContent = 'Add User';
 		UserManage.form.on('submit', UserManage.submitListener = e => UserManage.insert(e));
 
-		Sections.show('form');
+		Privileges.privileges_container.innerHTML = `<div class="NA">You can add privileges to this user once you add the user :(</div>`;
+		Roles.roles_container.innerHTML = `<div class="NA">You can add roles to this user once you add the user :(</div>`;
+
+		Privileges.add_filter.classList.add('hidden');
+		Roles.add_roles.classList.add('hidden');
+
+		await Sections.show('form');
+
+		UserManage.form.first_name.focus();
 	}
 
 	static async insert(e) {
@@ -104,7 +120,7 @@ class UserManage {
 		}
 
 		try {
-			await API.call('v2/users/insert', parameters, options);
+			await API.call('users/insert', parameters, options);
 		}
 
 		catch(e) {
@@ -123,18 +139,18 @@ class UserManage {
 		this.id = this.user_id;
 		this.name = [this.first_name, this.middle_name, this.last_name].filter(a => a).join(' ');
 
-		this.privileges = this.privileges || [];
+		this.privileges = new Privileges(this.privileges, user);
+
+		this.roles = new Roles(this.roles, user);
 	}
 
-	edit() {
+	async edit() {
 
 		UserManage.form.removeEventListener('submit', UserManage.submitListener);
 		UserManage.form.reset();
 
-		UserManage.heading.textContent = `Edit ${this.first_name} ${this.last_name || ''}`;
+		UserManage.heading.textContent = `Editing ${this.first_name} ${this.last_name || ''}`;
 		UserManage.form.on('submit', UserManage.submitListener = e => this.update(e));
-
-		UserManage.form.reset();
 
 		for(const key in this) {
 			if(UserManage.form.elements[key])
@@ -143,10 +159,31 @@ class UserManage {
 
 		UserManage.form.password.value = null;
 
-		for(const option of UserManage.form.elements.privileges.children)
-			option.selected = this.privileges.includes(option.value);
+		Privileges.add_filter.classList.remove('hidden');
+		Roles.add_roles.classList.remove('hidden')
 
-		Sections.show('form');
+		if(Privileges.submitListener)
+			Privileges.add_filter.removeEventListener('submit', Privileges.submitListener);
+
+		Privileges.add_filter.on('submit', Privileges.submitListener = async (e) => {
+			e.preventDefault();
+			await this.privileges.add();
+		});
+
+		if(Roles.submitListener)
+			Roles.add_roles.removeEventListener('submit', Roles.submitListener);
+
+		Roles.add_roles.on('submit', Roles.submitListener = async (e) => {
+			e.preventDefault();
+			await this.roles.add();
+		});
+
+		this.privileges.render();
+		this.roles.render();
+
+		await Sections.show('form');
+
+		UserManage.form.first_name.focus();
 	}
 
 	async update(e) {
@@ -166,9 +203,7 @@ class UserManage {
 				parameters[element.name] = element.value;
 		}
 
-		parameters.privileges = Array.from(UserManage.form.elements.privileges.querySelectorAll(':checked')).map(s => s.value).join();
-
-		await API.call('v2/users/update', parameters, options);
+		await API.call('users/update', parameters, options);
 
 		await Users.load();
 	}
@@ -187,10 +222,10 @@ class UserManage {
 				method: 'POST',
 			};
 
-		await API.call('v2/users/update', parameters, options);
+		await API.call('users/update', parameters, options);
 
 		await Users.load();
-		Sections.show('list');
+		await Sections.show('list');
 	}
 
 	get row() {
@@ -204,8 +239,8 @@ class UserManage {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.email}</td>
-			<td class="action green">Edit</td>
-			<td class="action red">Delete</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
 		this.container.querySelector('.green').on('click', () => {
@@ -216,5 +251,334 @@ class UserManage {
 		this.container.querySelector('.red').on('click', () => this.delete());
 
 		return this.container;
+	}
+}
+
+class Privileges {
+
+	static setup() {
+
+		Privileges.container = document.querySelector('.privileges.form-container');
+
+		Privileges.privileges_container = Privileges.container.querySelector('#filters-list');
+
+		Privileges.add_filter = Privileges.container.querySelector('#add-filter');
+
+		for(const data of MetaData.categories.values()) {
+			Privileges.add_filter.category_id.insertAdjacentHTML('beforeend',`
+				<option value="${data.category_id}">${data.name}</option>
+			`);
+		}
+
+		for(const data of MetaData.privileges.values()) {
+			Privileges.add_filter.privilege_id.insertAdjacentHTML('beforeend',`
+				<option value="${data.privilege_id}">${data.name}</option>
+			`);
+		}
+	}
+
+	constructor(privileges, user) {
+
+		this.list = [];
+
+		for(const key of privileges)
+			this.list.push(new Privilege(key, user, this));
+
+		this.user = user;
+	}
+
+	async add(e) {
+
+		const options= {
+			method: 'POST',
+			form: new FormData(Privileges.add_filter)
+		}
+
+		await API.call('user/privileges/insert', {user_id: this.user.user_id}, options);
+
+		this.render();
+
+		await Users.load();
+
+		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+	}
+
+	render() {
+
+		const container = Privileges.privileges_container;
+
+		container.textContent = null;
+
+		if(!this.list.length)
+			Privileges.privileges_container.innerHTML = `<div class="NA">No privilege assigned :(</div>`;
+
+		for(const privilege of this.list) {
+			container.appendChild(privilege.row);
+		}
+	}
+}
+
+class Privilege {
+
+	constructor(privilege, user, parent) {
+
+		for(const key in privilege)
+			this[key] = privilege[key];
+
+		this.user = user;
+		this.parent = parent;
+	}
+
+	get row() {
+
+		this.container = document.createElement('form');
+
+		this.container.classList.add('filter');
+		this.container.id = 'filters-form-'+this.id;
+
+		this.container.innerHTML = `
+
+			<label>
+				<select name="category_id"></select>
+			</label>
+
+			<label>
+				<select name="privilege_id"></select>
+			</label>
+
+			<label class="edit">
+				<button title="Edit"><i class="fa fa-save"></i></button>
+			</label>
+
+			<label class="delete">
+				<button title="Delete"><i class="fa fa-trash-alt" aria-hidden="true"></i></button>
+			</label>
+		`;
+
+		Array.from(MetaData.categories.values()).map(c => this.container.category_id.insertAdjacentHTML('beforeend', `
+			<option value="${c.category_id}" ${c.category_id == this.category_id ? 'selected' : ''} >${c.name}</option>`));
+
+		Array.from(MetaData.privileges.values()).map(c => this.container.privilege_id.insertAdjacentHTML('beforeend', `
+			<option value="${c.privilege_id}" ${c.privilege_id == this.privilege_id ? 'selected' : ''} >${c.name}</option>`));
+
+		this.container.on('submit', async (e) => {
+			e.preventDefault();
+			this.edit(this.id);
+
+		});
+		this.container.querySelector('.delete').on('click', async (e) => {
+			e.preventDefault();
+			this.delete(this.id);
+
+		});
+
+		return this.container;
+	}
+
+	async edit(id) {
+
+		const options = {
+			method: 'POST',
+			form: new FormData(this.container),
+		}
+
+		const parameters = {
+			user_id: this.user.user_id,
+			id: id,
+		}
+
+		await API.call('user/privileges/update', parameters, options);
+
+		await Users.load();
+
+		this.parent.render();
+
+		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+	}
+
+	async delete(id) {
+
+		if(!window.confirm('Are you sure?!'))
+			return;
+
+		const options = {
+			method: 'POST',
+		};
+
+		const parameters = {
+			id: id
+		};
+
+		await API.call('user/privileges/delete', parameters, options);
+
+		await Users.load();
+
+		this.parent.render();
+
+		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+	}
+}
+
+class Roles {
+
+	static setup() {
+
+		Roles.container = document.querySelector('.roles.form-container');
+
+		Roles.roles_container = Roles.container.querySelector('#roles-list');
+
+		Roles.add_roles = Roles.container.querySelector('#add-roles');
+
+		for(const data of MetaData.categories.values()) {
+			Roles.add_roles.category_id.insertAdjacentHTML('beforeend',`
+				<option value="${data.category_id}">${data.name}</option>
+			`);
+		}
+
+		for(const data of MetaData.roles.values()) {
+			Roles.add_roles.role_id.insertAdjacentHTML('beforeend',`
+				<option value="${data.role_id}">${data.name}</option>
+			`);
+		}
+	}
+
+	constructor(roles, user) {
+
+		this.list = [];
+
+		for(const key of roles)
+			this.list.push(new Role(key, user, this));
+
+		this.user = user;
+	}
+
+	async add() {
+
+		const options= {
+			method: 'POST',
+			form: new FormData(Roles.add_roles)
+		}
+
+		await API.call('accounts/roles/insert', {user_id: this.user.user_id}, options);
+
+		this.render();
+
+		await Users.load();
+
+		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+	}
+
+	render() {
+
+		const container = Roles.roles_container;
+
+		container.textContent = null;
+
+		if(!this.list.length)
+			Roles.roles_container.innerHTML = `<div class="NA">No roles assigned :(</div>`;
+
+		for(const privilege of this.list) {
+			container.appendChild(privilege.row);
+		}
+	}
+}
+
+class Role {
+
+	constructor(roles, user, parent) {
+
+		for(const key in roles)
+			this[key] = roles[key];
+
+		this.user = user;
+		this.parent = parent;
+	}
+
+	get row() {
+
+		this.container = document.createElement('form');
+
+		this.container.classList.add('filter');
+		this.container.id = 'filters-form-'+this.id;
+
+		this.container.innerHTML = `
+
+			<label>
+				<select name="category_id"></select>
+			</label>
+
+			<label>
+				<select name="role_id"></select>
+			</label>
+
+			<label class="edit">
+				<button title="Edit"><i class="fa fa-save"></i></button>
+			</label>
+
+			<label class="delete">
+				<button title="Delete"><i class="fa fa-trash-alt" aria-hidden="true"></i></button>
+			</label>
+		`;
+
+		Array.from(MetaData.categories.values()).map(c => this.container.category_id.insertAdjacentHTML('beforeend', `
+			<option value="${c.category_id}" ${c.category_id == this.category_id ? 'selected' : ''} >${c.name}</option>`));
+
+		Array.from(MetaData.roles.values()).map(c => this.container.role_id.insertAdjacentHTML('beforeend', `
+			<option value="${c.role_id}" ${c.role_id == this.role_id ? 'selected' : ''} >${c.name}</option>`));
+
+		this.container.querySelector('.edit').on('click', async (e) => {
+			e.preventDefault();
+			this.edit(this.id);
+		});
+
+		this.container.querySelector('.delete').on('click', async (e) => {
+			e.preventDefault();
+			this.delete(this.id);}
+		);
+
+		return this.container;
+	}
+
+	async edit(id) {
+
+		const options = {
+			method: 'POST',
+			form: new FormData(this.container),
+		}
+
+		const parameters = {
+			id: id,
+		}
+
+		await API.call('accounts/roles/update', parameters, options);
+
+		await Users.load();
+
+		this.parent.render();
+
+		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+
+	}
+
+	async delete(id) {
+
+		if(!window.confirm('Are you sure?!'))
+			return;
+
+		const options = {
+			method: 'POST',
+		};
+
+		const parameters = {
+			id: id
+		};
+
+		await API.call('accounts/roles/delete', parameters, options);
+
+		await Users.load();
+
+		this.parent.render();
+
+		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 	}
 }

@@ -16,29 +16,30 @@ input:not([type=checkbox]):not([type=radio]),
 select,
 button {
 	padding: 5px 10px;
-	border: 0px solid #ccc;
+	border: 0;
 	background: var(--color-primary);
-	color: #fff !important;
+	color: var(--color-primary-text) !important;
 	height: 28px;
 	font-size: 90% !important;
 	line-height: 100% !important;
+	transition: background var(--transition-duration),
+				color var(--transition-duration),
+				box-shadow var(--transition-duration);
 }
 input[type=button],
 input[type=reset],
 input[type=submit],
 button,
 select {
-	background: var(--color-primary);
-	transition: box-shadow var(--transition-duration);
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.05);
-	border: 0;
+	 padding: 5px 12px !important;
 }
 input[type=button]:hover,
 input[type=reset]:hover,
 input[type=submit]:hover,
-select:hover,
 button:hover {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	background: var(--color-accent);
+	color: var(--color-accent-text) !important;
 }
 input[type=button]:active,
 input[type=reset]:active,
@@ -48,9 +49,13 @@ button:active {
 	box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
 }
 
+button > svg {
+	margin-right: calc(var(--gap) * 1);
+}
+
 input[type=submit] {
 	background: var(--color-accent);
-	color: var(--color-accent-text);
+	color: var(--color-accent-text) !important;
 	letter-spacing: 1px;
 }
 
@@ -74,6 +79,8 @@ a:active {
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 	margin: var(--gap) 0;
 	color: #666;
+	border-radius: 0;
+	border: 1px solid #ccc;
 }
 .notice {
 	background: #dfd;
@@ -103,7 +110,7 @@ body {
 
 	body > #ajax-working {
 		position: fixed;
-		top: 60px;
+		top: 10px;
 		left: calc(50% - 80px);
 		opacity: 0;
 		user-select: none;
@@ -115,7 +122,7 @@ body {
 		background: var(--color-accent);
 		color: var(--color-accent-text);
 		width: 80px;
-		z-index: 1;
+		z-index: 11;
 	}
 	body > #ajax-working.show {
 		opacity: 1;
@@ -151,7 +158,6 @@ body {
 			color: var(--color-primary-text);
 			padding: 15px 20px;
 			letter-spacing: 1px;
-			font-size: 90%;
 			transition: background var(--transition-duration);
 			align-items: center;
 		}
@@ -165,6 +171,7 @@ body {
 		body > header a.selected {
 			background: var(--color-accent);
 			color: var(--color-accent-text);
+			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 		}
 		body > header .user-name {
 			margin-left: auto;
@@ -283,10 +290,11 @@ body {
 								box-shadow var(--transition-duration);
 				}
 				main table td.action.green:hover {
-					background: #cfc;
+					background: #5b5;
 				}
 				main table td.action.red:hover {
-					background: #fcc;
+					background: #e77
+					;
 				}
 				main table td.action:active {
 					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
@@ -299,8 +307,8 @@ body {
 
 	main .form {
 		display: grid;
-		padding: var(--gap);
-		grid-gap: calc(var(--gap) * 2);
+		padding: calc(var(--gap) * 2);
+		grid-gap: calc(var(--gap) * 3);
 	}
 	main .form.toolbar {
 		flex-direction: row;
@@ -317,9 +325,11 @@ body {
 
 	main .data-source {
 		display: grid;
-		flex-direction: column;
 		grid-gap: calc(var(--gap) * 2);
 	}
+		main .data-source > .warning {
+			margin: 0;
+		}
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
 			display: flex;
@@ -333,11 +343,6 @@ body {
 			main .data-source > header > .right {
 				margin-left: auto;
 			}
-			main .data-source > header > * {
-				height: 26px;
-				padding: 0 15px;
-				margin: 0 4px 5px 4px;
-			}
 			main .data-source > header h2 {
 				font-size: 18px;
 				margin: 0 auto 0 0;
@@ -345,18 +350,38 @@ body {
 				white-space: nowrap;
 				line-height: inherit;
 			}
-			main .data-source > header *:last-child {
-				margin-right: 0;
+			main .data-source > header .edit {
+				display: flex;
+				align-items: center;
+				margin:0 4px 5px 4px;
 			}
-		main .data-source form.toolbar {
+				main .data-source > header .edit button {
+					height: 22px;
+					margin: 0 calc(var(--gap) / 2);
+				}
+				main .data-source > header .edit button svg {
+					margin: 0;
+				}
+			main .data-source > header .menu-toggle {
+				border: 1px solid transparent;
+				cursor: pointer;
+				padding: 0 10px;
+				margin: 0 4px 5px 4px;
+				transition: border var(--transition-duration);
+			}
+			main .data-source > header .menu-toggle:hover {
+				border-color: #ccc;
+			}
+		main .data-source .toolbar {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 			padding: 5px;
 			display: flex;
 			align-items: flex-end;
-			font-size: 90%;
+			font-size: 95%;
 			margin: 0;
 		}
+			main .data-source .menu-toggle.selected,
 			main .data-source .description-toggle.selected,
 			main .data-source .share-link-toggle.selected,
 			main .data-source .filters-toggle.selected {
@@ -541,14 +566,15 @@ body {
 				background: #fff;
 				overflow: auto;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
-				max-height: 500px;
+				max-height: 456px;
+				height: 456px;
 				margin: 0;
 				padding: 0;
 			}
 				.visualization > .container > .loading {
 					display: flex;
 					align-items: center;
-					height: 500px;
+					height: 100%;
 					font-size: 250%;
 					color: #999;
 					margin:  0 auto;
@@ -557,13 +583,13 @@ body {
 
 			main .data-source .visualization .tooltip {
 				background: var(--color-primary);
-				color: #fff;
+				color: var(--color-primary-text);
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 				position: absolute;
 				font-size: 90%;
+				opacity: 1;
 				transition: left var(--transition-duration),
 							top var(--transition-duration);
-				opacity: 1;
 			}
 				main .data-source .visualization .tooltip header {
 					padding: var(--gap) calc(var(--gap) * 2);
@@ -602,17 +628,23 @@ body {
 							text-align: right;
 							margin-left: 10px;
 						}
-			main .data-source .visualization.table #row-count {
-				padding-left: 0;
-				margin-top: calc(var(--gap) * 2);
-				padding: 0;
+			main .data-source .visualization.table .row-count {
 				font-size: 90%;
 				text-align: right;
+				position: sticky;
+				bottom: 0;
+				background: rgba(255, 255, 255, 0.9);
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+				padding: var(--gap);
+				transition: background var(--transition-duration);
 			}
-				main .data-source .visualization.table #row-count > span {
+			main .data-source .visualization.table .row-count:hover {
+				background: #fff;
+			}
+				main .data-source .visualization.table .row-count > span {
 					margin-right: 15px;
 				}
-				main .data-source .visualization.table #row-count .label {
+				main .data-source .visualization.table .row-count .label {
 					color: #666;
 					font-weight: normal;
 					font-size: 100%;
@@ -624,6 +656,8 @@ body {
 
 			.visualization.table {
 				overflow: auto;
+				width: initial;
+				max-width: initial;
 			}
 				.visualization.table table {
 					caption-side: bottom;
@@ -684,6 +718,7 @@ body {
 							font-weight: bold;
 							padding: 4px 10px;
 							margin: 0;
+							cursor: initial;
 						}
 				.visualization.table thead td {
 					padding: 0;
@@ -741,7 +776,8 @@ body {
 				background: #fff;
 				border-top: 1px solid #bbb;
 				cursor: pointer;
-				transition: box-shadow var(--transition-duration);
+				transition: box-shadow var(--transition-duration),
+							background var(--transition-duration);
 			}
 			.visualization.table table tbody tr.show-rows:hover {
 				background: #ddd !important;
@@ -750,7 +786,7 @@ body {
 				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
 			}
 				.visualization.table table tbody tr.show-rows td {
-					padding: 5px 5px 5px 40vw;
+					text-align: center;
 				}
 				.visualization.table table tbody tr.show-rows span {
 					margin: 0 15px;
@@ -759,6 +795,9 @@ body {
 			.visualization.spatial-map .container {
 				height: 500px;
 			}
+				.visualization.cohort {
+					overflow: auto;
+				}
 				.visualization.cohort table {
 					width: 100%;
 				}
@@ -815,7 +854,7 @@ body {
 
 .visualization .container > svg {
 	width: 100%;
-	height: 500px;
+	height: 100%;
 	display: flex;
 }
 .visualization .container > svg .axis path,

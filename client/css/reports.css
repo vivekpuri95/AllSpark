@@ -95,7 +95,6 @@ main #form #test-container #test-body {
 }
 main #form #report-form {
 	background: #fff;
-	padding: 5px;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 }
 		main #form form label > span {
@@ -122,14 +121,14 @@ main #form #report-form {
 				flex-basis: 100%;
 			}
 			main #form #source select {
-				max-width: 80px;
+				max-width: 100px;
 			}
 		main #form form #query {
 			max-width: 100%;
 			display: grid;
-			height: 500px;
 			grid-template-columns: 300px 1fr;
 			grid-template-rows: max-content 1fr;
+			grid-gap: 0;
 		}
 		#form form #query > span {
 			grid-row: 1;
@@ -146,6 +145,7 @@ main #form #report-form {
 			font-weight: normal;
 			border: 1px solid #ccc;
 			border-right: 0;
+			max-height: 500px;
 		}
 			#form form #schema ul {
 				padding: 0;
@@ -279,7 +279,7 @@ main #form #report-form {
 main #form form label {
 	font-weight: bold;
 	display: flex;
-	margin: 16px;
+	/* margin: 16px; */
 	flex-direction: column;
 	max-width: 200px;
 	justify-content: space-between;
