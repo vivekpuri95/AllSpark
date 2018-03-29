@@ -179,6 +179,8 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 					</button>
 				</label>
 
+				<div class="datasets"></div>
+
 				<label class="right">
 					<input type="text" name="date-range">
 				</label>
@@ -369,6 +371,7 @@ app.get('/reports/:id?', (req, res) => {
 					<span>Query</span>
 					<div id="schema"></div>
 					<div id="editor"></div>
+					<div id="missing-filters" class="hidden"></div>
 				</label>
 
 				<div id="api" class="hidden">
@@ -438,9 +441,8 @@ app.get('/reports/:id?', (req, res) => {
 					<span class="NA" id="added-by"></span>
 				</label>
 			</form>
-			<h3>Filters</h3>
 
-			<div id="missing-filters" class="hidden"></div>
+			<h3>Filters</h3>
 
 			<div class="form-container">
 				<form class="filter">
@@ -451,7 +453,7 @@ app.get('/reports/:id?', (req, res) => {
 					<label><span>Default Value</span></label>
 					<label><span>Offset</span></label>
 					<label><span>Dataset</span></label>
-					<label><span>Status</span></label>
+					<label><span>Multiple</span></label>
 					<label class="save"><span></span></label>
 					<label class="delete"><span></span></label>
 				</form>
@@ -497,9 +499,9 @@ app.get('/reports/:id?', (req, res) => {
 					</label>
 
 					<label>
-						<select name="is_enabled" required>
-							<option value="1">Enabled</option>
-							<option value="0">Disabled</option>
+						<select name="multiple" required>
+							<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
+							<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
 						</select>
 					</label>
 
@@ -516,7 +518,6 @@ app.get('/reports/:id?', (req, res) => {
 				<form class="visualization">
 					<label><span>Name</span></label>
 					<label><span>Type</span></label>
-					<label><span>Status</span></label>
 					<label class="save"><span></span></label>
 					<label class="delete"><span></span></label>
 				</form>
@@ -539,13 +540,6 @@ app.get('/reports/:id?', (req, res) => {
 							<option value="bar">Bar</option>
 							<option value="area">Area</option>
 							<option value="stacked">Stacked</option>
-						</select>
-					</label>
-
-					<label>
-						<select name="is_enabled" required>
-							<option value="1">Enabled</option>
-							<option value="0">Disabled</option>
 						</select>
 					</label>
 

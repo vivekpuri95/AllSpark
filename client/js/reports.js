@@ -80,9 +80,9 @@ class Reports extends Page {
 		if(Reports.response && !force)
 			return;
 
-		[ReportFilter.dataset, Reports.response, Reports.credentials] = await Promise.all([
-			Promise.resolve([]),
+		[Reports.response, Reports.datasets, Reports.credentials] = await Promise.all([
 			API.call('reports/report/list'),
+			API.call('datasets/list'),
 			API.call('credentials/list'),
 		]);
 	}
@@ -262,9 +262,8 @@ class Report {
 
 				const
 					parameters = { id: Report.form.elements.connection_name.value },
+					response = await API.call('credentials/schema', parameters),
 					container = Report.form.querySelector('#query #schema');
-
-				// response = await API.call('credentials/schema', parameters),
 
 				const
 					schema = mysqlKeywords.map(k => {return {
@@ -287,90 +286,92 @@ class Report {
 
 				container.textContent = null;
 
-				// for(const database of response) {
+				for(const database of response) {
 
-				// 	schema.push({
-				// 		name: database.name,
-				// 		value: database.name,
-				// 		meta: '(d)',
-				// 	});
+					schema.push({
+						name: database.name,
+						value: database.name,
+						meta: '(d)',
+					});
 
-				// 	const tables = document.createElement('ul');
-				// 	tables.classList.add('hidden');
+					const tables = document.createElement('ul');
+					tables.classList.add('hidden');
 
-				// 	for(const table of database.tables) {
+					for(const table of database.tables) {
 
-				// 		const columns = document.createElement('ul');
-				// 		columns.classList.add('hidden');
+						const columns = document.createElement('ul');
+						columns.classList.add('hidden');
 
-				// 		schema.push({
-				// 			name: table.name,
-				// 			value: table.name,
-				// 			meta: '(t) ' + database.name,
-				// 		});
+						schema.push({
+							name: table.name,
+							value: table.name,
+							meta: '(t) ' + database.name,
+						});
 
-				// 		for(const column of table.columns) {
+						for(const column of table.columns) {
 
-				// 			schema.push({
-				// 				name: column.name,
-				// 				value: column.name,
-				// 				meta: '(c) ' + table.name,
-				// 			});
+							schema.push({
+								name: column.name,
+								value: column.name,
+								meta: '(c) ' + table.name,
+							});
 
-				// 			const li = document.createElement('li');
+							const li = document.createElement('li');
 
-				// 			li.innerHTML = `
-				// 				<span class="name">
-				// 					<i class="fa fa-columns"></i>
-				// 					<span>${column.name}</span>
-				// 					<small>${column.type}</small>
-				// 				</span>
-				// 			`;
+							li.innerHTML = `
+								<span class="name">
+									<strong>C</strong>
+									<span>${column.name}</span>
+									<small>${column.type}</small>
+								</span>
+							`;
 
-				// 			li.querySelector('span').on('click', () => {
-				// 				Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
-				// 			});
+							li.querySelector('span').on('click', () => {
+								Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
+							});
 
-				// 			columns.appendChild(li);
-				// 		}
+							columns.appendChild(li);
+						}
 
-				// 		const li = document.createElement('li');
+						const li = document.createElement('li');
 
-				// 		li.innerHTML = `
-				// 			<span class="name" title="${table.columns.length} columns">
-				// 				<i class="fa fa-table"></i>
-				// 				<span>${table.name}</span>
-				// 			</span>
-				// 		`;
+						li.innerHTML = `
+							<span class="name">
+								<strong>T</strong>
+								<span>${table.name}</span>
+								<small>${table.columns.length} columns</small>
+							</span>
+						`;
 
-				// 		li.appendChild(columns)
+						li.appendChild(columns)
 
-				// 		li.querySelector('span').on('click', () => {
-				// 			li.classList.toggle('opened');
-				// 			columns.classList.toggle('hidden')
-				// 		});
+						li.querySelector('span').on('click', () => {
+							li.classList.toggle('opened');
+							columns.classList.toggle('hidden')
+						});
 
-				// 		tables.appendChild(li);
-				// 	}
+						tables.appendChild(li);
+					}
 
-				// 	const li = document.createElement('li');
+					const li = document.createElement('li');
 
-				// 	li.innerHTML = `
-				// 		<span class="name" title="${database.tables.length} tables">
-				// 			<i class="fa fa-database"></i>
-				// 			<span>${database.name}</span>
-				// 		</span>
-				// 	`;
+					li.innerHTML = `
+						<span class="name">
+							<strong>D</strong>
+							<span>${database.name}</span>
+							<small>${database.tables.length} tables</small>
+						</span>
+					`;
 
-				// 	li.appendChild(tables)
+					li.appendChild(tables)
 
-				// 	li.querySelector('span').on('click', () => {
-				// 		li.classList.toggle('opened');
-				// 		tables.classList.toggle('hidden')
-				// 	});
+					li.querySelector('span').on('click', () => {
+						li.classList.toggle('opened');
+						tables.classList.toggle('hidden')
+					});
 
-				// 	databases.appendChild(li);
-				// }
+					databases.appendChild(li);
+				}
 
 				Report.schemas.set(Report.form.elements.connection_name.value, schema);
 
@@ -634,7 +635,7 @@ class Report {
 
 			filter.container.elements.placeholder.classList.remove('red');
 
-			if(!placeholders.has(filter.placeholder) && filter.is_enabled)
+			if(!placeholders.has(filter.placeholder))
 				filter.container.elements.placeholder.classList.add('red');
 
 			missing.delete(filter.placeholder);
@@ -676,10 +677,10 @@ class ReportFilters {
 
 		ReportFilter.insert.form.elements.dataset.innerHTML = `<option value="">None</option>`;
 
-		for(const row of ReportFilter.dataset) {
+		for(const dataset of Reports.datasets) {
 
 			ReportFilter.insert.form.elements.dataset.insertAdjacentHTML('beforeend', `
-				<option>${row.dataset}</option>
+				<option value="${dataset.id}">${dataset.name}</option>
 			`);
 		}
 	}
@@ -768,9 +769,9 @@ class ReportFilter {
 			</label>
 
 			<label>
-				<select name="is_enabled" required>
-					<option value="1">Enabled</option>
-					<option value="0">Disabled</option>
+				<select name="multiple" required>
+					<option value="0">No</option>
+					<option value="1">Yes</option>
 				</select>
 			</label>
 
@@ -783,24 +784,26 @@ class ReportFilter {
 			</label>
 		`;
 
-		this.container.elements.dataset.innerHTML = `<option value="">None</option>`;
+		this.container.dataset.innerHTML = `<option value="">None</option>`;
 
-		for(const row of ReportFilter.dataset) {
+		for(const dataset of Reports.datasets) {
 
-			this.container.elements.dataset.insertAdjacentHTML('beforeend', `
-				<option>${row.dataset}</option>
+			this.container.dataset.insertAdjacentHTML('beforeend', `
+				<option value="${dataset.id}">${dataset.name}</option>
 			`);
 		}
 
 		this.container.on('submit', e => this.update(e));
 		this.container.querySelector('.delete').on('click', () => this.delete());
 
-		this.container.elements.type.value = this.type;
-		this.container.elements.dataset.value = this.dataset || '';
-		this.container.elements.is_enabled.value = this.is_enabled;
+		this.container.type.value = this.type;
+		this.container.dataset.value = this.dataset || '';
+		this.container.multiple.value = this.multiple;
 
-		if(!parseInt(this.is_enabled))
-			this.container.classList.add('disabled');
+		for(const element of this.container.elements) {
+			element.on('change', () => this.container.classList.add('unsaved'));
+			element.on('keyup', () => this.container.classList.add('unsaved'));
+		}
 
 		return this.container;
 	}
@@ -939,13 +942,6 @@ class ReportVisualization {
 				</select>
 			</label>
 
-			<label>
-				<select name="is_enabled" required>
-					<option value="1">Enabled</option>
-					<option value="0">Disabled</option>
-				</select>
-			</label>
-
 			<label class="save">
 				<input type="submit" value="Save">
 			</label>
@@ -959,10 +955,11 @@ class ReportVisualization {
 		this.container.querySelector('.delete').on('click', () => this.delete());
 
 		this.container.elements.type.value = this.type;
-		this.container.elements.is_enabled.value = this.is_enabled;
 
-		if(!parseInt(this.is_enabled))
-			this.container.classList.add('disabled');
+		for(const element of this.container.elements) {
+			element.on('change', () => this.container.classList.add('unsaved'));
+			element.on('keyup', () => this.container.classList.add('unsaved'));
+		}
 
 		return this.container;
 	}

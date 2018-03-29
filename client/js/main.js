@@ -556,6 +556,8 @@ class DataSource {
 		const response = await API.call('reports/report/list');
 
 		DataSource.list = new Map(response.map(report => [report.query_id, report]));
+
+		DataSource.datasets = new DataSourceDatasets();
 	}
 
 	constructor(source) {
@@ -867,6 +869,31 @@ class DataSource {
 		}
 
 		return link + '?' + parameters.toString();
+	}
+}
+
+class DataSourceDatasets extends Map {
+
+	constructor(source) {
+
+		super();
+
+		this.source = source;
+	}
+
+	async fetch(id) {
+
+		if(!id)
+			return Promise.resolve();
+
+		if(this.has(id))
+			return Promise.resolve(this.get(id));
+
+		const response = await API.call('datasets/values', {id});
+
+		this.set(id, response.data);
+
+		return response.data;
 	}
 }
 
@@ -1472,15 +1499,21 @@ class DataSourceFilter {
 			}
 		}
 
-		if(this.dataset && DataSource.datasets && DataSource.datasets.has(this.dataset)) {
+		if(this.dataset) {
 
 			input = document.createElement('select');
 			input.name = this.placeholder;
 
 			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
 
-			for(const row of DataSource.datasets.get(this.dataset))
-				input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
+			DataSource.datasets.fetch(this.dataset).then(data => {
+
+				if(!data.length)
+					return;
+
+				for(const row of data)
+					input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
+			});
 		}
 
 		this.labelContainer.innerHTML = `<span>${this.name}<span>`;

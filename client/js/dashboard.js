@@ -5,6 +5,7 @@ Page.class = class Dashboards extends Page {
 		super();
 
 		Dashboard.setup(this);
+		DashboardDatasets.setup(this);
 
 		this.listContainer = this.container.querySelector('section#list');
 		this.reports = this.container.querySelector('section#reports');
@@ -227,6 +228,8 @@ class Dashboard {
 
 		if(!this.format.reports)
 			this.format.reports = [];
+
+		this.datasets = new DashboardDatasets(this);
 	}
 
 	async load() {
@@ -251,6 +254,8 @@ class Dashboard {
 		this.page.list.selectedReports.clear();
 
 		if(this.format && this.format.reports && this.format.reports.length) {
+
+			await this.datasets.load();
 
 			for(const [position, _report] of this.format.reports.entries()) {
 
@@ -618,5 +623,83 @@ class Dashboard {
 			submenu.appendChild(child.menuItem);
 
 		return container;
+	}
+}
+
+class DashboardDatasets	extends Set {
+
+	static setup() {
+
+		DashboardDatasets.container = Dashboard.toolbar.querySelector('.datasets');
+	}
+
+	constructor(dashboard) {
+
+		super();
+
+		for(const report of dashboard.format.reports) {
+
+			if(!DataSource.list.has(report.query_id))
+				continue;
+
+			for(const filter of DataSource.list.get(report.query_id).filters || []) {
+				if(filter.dataset)
+					this.add(filter.dataset);
+			}
+		}
+
+		this.dashboard = dashboard;
+		this.page = this.dashboard.page;
+	}
+
+	async load() {
+
+		await this.fetch();
+
+		await this.render();
+	}
+
+	async fetch() {
+		await Promise.all(Array.from(this).map(d => DataSource.datasets.fetch(d)));
+	}
+
+	async render() {
+
+		DashboardDatasets.container.textContent = null;
+
+		for(const dataset of this) {
+
+			const input = document.createElement('select');
+
+			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
+
+			const data = await DataSource.datasets.fetch(dataset)
+
+			for(const row of data || [])
+				input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
+
+			input.on('change', () => {
+
+				for(const report of this.page.list.selectedReports) {
+
+					let found = false;
+
+					for(const filter of report.filters.values()) {
+
+						if(filter.dataset != dataset)
+							continue;
+
+						filter.label.querySelector('select').value = input.value;
+
+						found = true;
+					}
+
+					if(found)
+						report.visualizations.selected.load();
+				}
+			});
+
+			DashboardDatasets.container.appendChild(input);
+		}
 	}
 }

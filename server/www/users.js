@@ -1,6 +1,5 @@
 const API = require("../utils/api");
 const commonFun = require("../utils/commonFunctions");
-const report = require("./reports/engine").report;
 
 exports.insert = class extends API {
 
@@ -121,16 +120,19 @@ exports.changePassword = class extends API {
 		);
 
 		const check = await commonFun.verifyBcryptHash(this.request.body.old_password, dbPass[0].password);
+
 		if (check) {
+
 			const new_password = await commonFun.makeBcryptHash(this.request.body.new_password);
+
 			return await this.mysql.query(
 				`UPDATE tb_users SET password = ? WHERE user_id = ? and account_id = ?`,
 				[new_password, this.user.user_id, this.account.account_id],
 				'write'
 			);
 		}
-		else
-			throw("Password does not match!");
+
+		throw new API.Exception(400, 'Password does not match! :(');
 	}
 }
 
@@ -186,41 +188,6 @@ exports.metadata = class extends API {
 
 			metadata[row.type].push(row);
 		}
-
-
-		// const datasets = await this.mysql.query(`select * from tb_query_datasets`);
-		// const promiseList = [];
-
-		// const datasetList = [];
-
-		// for (const dataset of datasets) {
-
-		// 	const reportObj = new report;
-
-		// 	Object.assign(reportObj, this);
-
-		// 	reportObj.request = {
-		// 		body: {
-		// 			query_id: dataset.query_id,
-		// 			user_id: this.user.user_id,
-		// 			account_id: this.account.account_id,
-		// 		}
-		// 	};
-
-		// 	promiseList.push(reportObj.report());
-		// }
-
-		// const datasetResult = await commonFun.promiseParallelLimit(5, promiseList);
-
-		// for (const [index, value] of datasetResult.entries()) {
-
-		// 	datasetList.push({
-		// 		name: datasets[index].name,
-		// 		values: value,
-		// 	})
-		// }
-
-		// metadata.datasets = datasetList;
 
 		return metadata;
 	}
