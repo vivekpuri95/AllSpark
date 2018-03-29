@@ -67,6 +67,10 @@ exports.list = class extends API {
 
 	async list() {
 
+		if(!this.request.body.user_id) {
+			this.user.privilege.needs('user');
+		}
+
 		let results, roles = {}, privileges = {};
 		if (this.request.body.user_id) {
 			results = await Promise.all([
