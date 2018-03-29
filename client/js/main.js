@@ -1876,7 +1876,6 @@ Visualization.list.set('table', class Table extends Visualization {
 			<div class="container overflow">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
-			<div id="row-count"></div>
 		`;
 
 		return container;
@@ -1895,7 +1894,8 @@ Visualization.list.set('table', class Table extends Visualization {
 			thead = document.createElement('thead'),
 			search = document.createElement('tr'),
 			accumulation = document.createElement('tr'),
-			headings = document.createElement('tr');
+			headings = document.createElement('tr'),
+			rowCount = document.createElement('div');
 
 		search.classList.add('search');
 		accumulation.classList.add('accumulation');
@@ -1957,32 +1957,37 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(!rows || !rows.length)
+		if(!rows || !rows.length) {
 			table.insertAdjacentHTML('beforeend', `<caption class="NA">${this.source.originalResponse.message || 'No rows found! :('}</caption>`);
+			return;
+		}
 
-		table.appendChild(tbody);
-		container.appendChild(table);
+		rowCount.classList.add('row-count');
 
-		this.container.querySelector('#row-count').innerHTML = `
+		rowCount.innerHTML = `
 			<span>
 				<span class="label">Showing:</span>
-				<span title="Number of rows currently shown on screen">
+				<strong title="Number of rows currently shown on screen">
 					${Format.number(Math.min(this.rowLimit, rows.length))}
-				</span>
+				</strong>
 			</span>
 			<span>
 				<span class="label">Filtered:</span>
-				<span title="Number of rows that match any search or grouping criterion">
+				<strong title="Number of rows that match any search or grouping criterion">
 					${Format.number(rows.length)}
-				</span>
+				</strong>
 			</span>
 			<span>
 				<span class="label">Total:</span>
-				<span title="Total number of rows in the dataset">
+				<strong title="Total number of rows in the dataset">
 					${Format.number(this.source.originalResponse.data ? this.source.originalResponse.data.length : 0)}
-				</span>
+				</strong>
 			</span>
 		`;
+
+		table.appendChild(tbody);
+		container.appendChild(table);
+		container.appendChild(rowCount);
 	}
 });
 
@@ -2078,7 +2083,7 @@ Visualization.list.set('line', class Line extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
-			height = (obj.chart.height || 500) - margin.top - margin.bottom;
+			height = (obj.chart.height || 456) - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
@@ -2303,8 +2308,6 @@ Visualization.list.set('line', class Line extends Visualization {
 
 				var row = rows[xpos];
 
-				row.annotations.show();
-
 				Tooltip.hide(that.container);
 			})
 			.on("mousedown", function () {
@@ -2499,7 +2502,7 @@ Visualization.list.set('bar', class Bar extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
-			height = (obj.chart.height || 500) - margin.top - margin.bottom;
+			height = (obj.chart.height || 456) - margin.top - margin.bottom;
 
 		var y = d3.scale.linear().range([height,margin.top]);
 
@@ -2838,7 +2841,7 @@ Visualization.list.set('stacked', class Stacked extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
-			height = (obj.chart.height || 500) - margin.top - margin.bottom;
+			height = (obj.chart.height || 456) - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
@@ -3194,7 +3197,7 @@ Visualization.list.set('area', class Area extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 30, bottom: 40, left: 50},
 			width = (this.container.clientWidth || 600) - margin.left - margin.right,
-			height = (obj.chart.height || 500) - margin.top - margin.bottom;
+			height = (obj.chart.height || 456) - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
@@ -3668,7 +3671,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 0, bottom: 40, left: 0},
 			width = this.container.clientWidth - margin.left - margin.right,
-			height = obj.chart.height || 500 - margin.top - margin.bottom;
+			height = obj.chart.height || 456 - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])

@@ -79,6 +79,7 @@ main > nav::-webkit-scrollbar-track {
 main #reports .list {
 	display: grid;
 	grid-template-columns: repeat(8, 12.5%);
+	grid-auto-rows: 250px;
 	grid-column-gap: calc(var(--gap) * 2);
 	grid-row-gap: calc(var(--gap) * 4);
 	width: calc(100% - var(--gap) * 14);
@@ -97,16 +98,38 @@ main #reports .list {
 		}
 	main #reports .list .data-source {
 		grid-column: auto / span 8;
+		grid-row: auto / span 2;
 		transition: box-shadow var(--transition-duration),
 					opacity var(--transition-duration),
 					border var(--transition-duration);
+		position: relative;
 	}
 	main #reports .list .data-source.being-dragged {
 		opacity: 0.5;
-		box-shadow: 0 0 0 3px #999;
 	}
 	main #reports .list .data-source.drag-enter {
 		box-shadow: -6px 0px var(--color-accent);
+	}
+	main #reports .list .data-source .resize.left,
+	main #reports .list .data-source .resize.right {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		cursor: col-resize;
+		width: 5px;
+		z-index: 10;
+	}
+	main #reports .list .data-source .resize.right {
+		left: initial;
+		right: 0;
+	}
+	main #reports .list .resize-hint {
+		border-right: 2px dashed var(--color-accent);
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 3px;
 	}
 	main .data-source.add-new {
 		cursor: pointer;
