@@ -349,6 +349,7 @@ body {
 				padding: 0;
 				white-space: nowrap;
 				line-height: inherit;
+				user-select: text;
 			}
 			main .data-source > header .edit {
 				display: flex;
