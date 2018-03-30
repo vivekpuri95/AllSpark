@@ -65,25 +65,21 @@ class report extends API {
                 AND is_deleted = 0
                 AND account_id = ?`, [this.user.user_id, this.queryId, this.account.account_id]),
 
-			this.mysql.query(`select * from tb_filters where query_id = ?`, [this.queryId])
+			this.mysql.query(`select * from tb_query_filters where query_id = ?`, [this.queryId])
 		];
 
 		reportDetails = await Promise.all(reportDetails);
 		for (const f of reportDetails[1]) {
 
 			f.value = this.request.body[f.placeholder] || f.default_value;
-			let str = '';
 
 			if(f.is_multiple == 1) {
-				f.value = f.value.split(',');
-				f.value.map(s => str = str.concat(`'${s}',`));
-				f.value = str.slice(0, -1);
+				f.value = f.value.join(',');
 			}
 		}
 
 		this.query = reportDetails[0][0];
 		this.filters = reportDetails[1] || [];
-
 
 		if (!reportDetails[0][0]) {
 			return {
@@ -107,7 +103,6 @@ class report extends API {
 			'month',
 		];
 
-		// console.log(this.filters)
 		for (const filter of this.filters) {
 
 			if (isNaN(parseFloat(filter.offset))) {
@@ -204,7 +199,6 @@ class query extends report {
 		}
 
 		const data = await this.mysql.query(this.query.query, [], this.query.connection_name);
-
 		this.result = {
 			data,
 			query: data.instance.formatted_sql,

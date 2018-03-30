@@ -23,7 +23,7 @@ exports.list = class extends API {
                     is_deleted = 0
                     and q.account_id = ?
             `, [this.account.account_id]),
-            this.mysql.query('SELECT * FROM tb_filters'),
+            this.mysql.query('SELECT * FROM tb_query_filters'),
             this.mysql.query('SELECT * FROM tb_query_visualizations'),
         ]);
 
