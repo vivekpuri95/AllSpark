@@ -3734,8 +3734,6 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		var series = d3.layout.stack()(obj.series.map(s => [s]));
 
-		debugger;
-
 		series.map(r => r.data = r);
 
 		chart.plot = (resize) => {
