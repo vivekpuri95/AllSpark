@@ -167,6 +167,12 @@ class Report {
 
 		Report.form.elements.connection_name.on('change', () => Report.renderSource());
 
+		for(const category of MetaData.categories.values()) {
+			Report.form.category_id.insertAdjacentHTML('beforeend', `
+				<option value="${category.category_id}">${category.name}</option>
+			`);
+		}
+
 		// Initiate the editor. All this only needs to be done once on page load.
 		Report.editor = new Editor(Report.form.querySelector('#editor'));
 
@@ -473,7 +479,6 @@ class Report {
 			ReportFilter.insert.form.removeEventListener('submit', ReportFilter.insert.form.listener);
 
 		ReportFilter.insert.form.on('submit', ReportFilter.insert.form.listener = e => ReportFilter.insert(e, this));
-
 
 		if(ReportVisualization.insert.form.listener)
 			ReportVisualization.insert.form.removeEventListener('submit', ReportVisualization.insert.form.listener);

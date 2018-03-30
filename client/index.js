@@ -391,6 +391,11 @@ app.get('/reports/:id?', (req, res) => {
 				</div>
 
 				<label>
+					<span>Category</span>
+					<select name="category_id"></select>
+				</label>
+
+				<label>
 					<span>Description</span>
 					<textarea name="description" required></textarea>
 				</label>

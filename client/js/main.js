@@ -2,10 +2,10 @@
 
 window.addEventListener('DOMContentLoaded', async () => {
 
+	await Page.setup();
+
 	if(!Page.class)
 		return;
-
-	await Page.setup();
 
 	new (Page.class)();
 });
@@ -3676,15 +3676,21 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 	render() {
 
-		const series = [];
+		const
+			series = [],
+			rows = this.source.response;
 
-		for(const [i, level] of this.source.response.entries()) {
-			series.push({
+		for(const column of this.source.columns.values()) {
+
+			if(column.disabled)
+				continue;
+
+			series.push([{
 				date: 0,
-				label: level.get('metric'),
-				color: Array.from(this.source.columns.values())[i].color,
-				y: parseFloat(level.get('value')),
-			});
+				label: column.name,
+				color: column.color,
+				y: rows[0].get(column.key),
+			}]);
 		}
 
 		this.draw({
@@ -3727,6 +3733,8 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			.projection(d => [d.y, d.x]);
 
 		var series = d3.layout.stack()(obj.series.map(s => [s]));
+
+		debugger;
 
 		series.map(r => r.data = r);
 
