@@ -20,7 +20,7 @@ Page.class = class Dashboards extends Page {
 		this.list.selectedReports = new Set;
 
 		for(const category of MetaData.categories.values())
-			this.listContainer.form.category.insertAdjacentHTML('beforeend', `<option value="${category.id}">${category.name}</option>`);
+			this.listContainer.form.category.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
 
 		this.listContainer.form.category.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
@@ -253,48 +253,47 @@ class Dashboard {
 
 		this.page.list.selectedReports.clear();
 
-		if(this.format && this.format.reports && this.format.reports.length) {
+		if(this.format.list) {
 
-			await this.datasets.load();
+			this.page.listContainer.form.category.value = this.format.list.category_id;
 
-			for(const [position, _report] of this.format.reports.entries()) {
+			this.page.renderList();
+			await Sections.show('list');
 
-				if(!DataSource.list.has(_report.query_id))
-					continue;
-
-				const source = JSON.parse(JSON.stringify(DataSource.list.get(_report.query_id)));
-
-				source.postProcessor = _report.postProcessor;
-
-				const report = new DataSource(source);
-
-				report.dashboardPosition = position;
-
-				report.container.setAttribute('style', `
-					order: ${position || 0};
-					grid-column: auto / span ${_report.width || Dashboard.grid.columns};
-					grid-row: auto / span ${_report.height || Dashboard.grid.rows};
-				`);
-
-				if(_report.visualization) {
-
-					const [visualization] = report.visualizations.filter(v => v.type == _report.visualization);
-
-					if(visualization)
-						report.visualizations.selected = visualization;
-				}
-
-				report.visualizations.selected.load();
-
-				report.container.appendChild(report.visualizations.selected.container);
-
-				Dashboard.container.appendChild(report.container);
-
-				this.page.list.selectedReports.add(report);
-			}
-		} else {
-			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
+			return;
 		}
+
+		await this.datasets.load();
+
+		for(const _report of this.reports()) {
+
+			const report = new DataSource(_report);
+
+			report.container.setAttribute('style', `
+				order: ${report.dashboard.position || 0};
+				grid-column: auto / span ${report.dashboard.width || Dashboard.grid.columns};
+				grid-row: auto / span ${report.dashboard.height || Dashboard.grid.rows};
+			`);
+
+			if(report.dashboard.visualization) {
+
+				const [visualization] = report.visualizations.filter(v => v.type == report.dashboard.visualization);
+
+				if(visualization)
+					report.visualizations.selected = visualization;
+			}
+
+			report.visualizations.selected.load();
+
+			report.container.appendChild(report.visualizations.selected.container);
+
+			Dashboard.container.appendChild(report.container);
+
+			this.page.list.selectedReports.add(report);
+		}
+
+		if(!this.page.list.selectedReports.size)
+			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
 
 		if(this.page.user.privileges.has('reports')) {
 
@@ -327,14 +326,10 @@ class Dashboard {
 
 		for(const report of this.page.list.selectedReports) {
 
-			const
-				format = this.format.reports[report.dashboardPosition],
-				position = this.format.reports.indexOf(format);
-
 			report.container.setAttribute('style', `
-				order: ${position || 0};
-				grid-column: auto / span ${format.width || Dashboard.grid.columns};
-				grid-row: auto / span ${format.height || Dashboard.grid.rows};
+				order: ${report.dashboard.position || 0};
+				grid-column: auto / span ${report.dashboard.width || Dashboard.grid.columns};
+				grid-row: auto / span ${report.dashboard.height || Dashboard.grid.rows};
 			`);
 
 			report.visualizations.selected.render();
@@ -378,7 +373,7 @@ class Dashboard {
 
 			const
 				header = report.container.querySelector('header'),
-				format = this.format.reports[report.dashboardPosition];
+				format = this.format.reports[report.dashboard.position];
 
 			if(!format.width)
 				format.width = Dashboard.grid.columns;
@@ -394,9 +389,9 @@ class Dashboard {
 
 			header.querySelector('.remove').on('click', () => {
 
-				this.format.reports.splice(report.dashboardPosition, 1);
+				this.format.reports.splice(report.dashboard.position, 1);
 				this.page.list.selectedReports.delete(report);
-				report.dashboardPosition = undefined;
+				report.dashboard.position = undefined;
 
 				Dashboard.container.removeChild(report.container);
 
@@ -465,7 +460,7 @@ class Dashboard {
 
 				this.format.reports.splice(beingDragged.dashboardPosition, 1);
 
-				this.format.reports.splice(report.dashboardPosition, 0, format);
+				this.format.reports.splice(report.dashboard.position, 0, format);
 
 				this.load();
 			});
@@ -514,7 +509,7 @@ class Dashboard {
 				return;
 
 			const
-				format = this.format.reports[report.dashboardPosition],
+				format = this.format.reports[report.dashboard.position],
 				column = getColumn(e.clientX) + 1,
 				reportStart = getColumn(report.container.offsetLeft),
 				reportEnd = getColumn(report.container.offsetLeft + report.container.clientWidth);
@@ -531,7 +526,7 @@ class Dashboard {
 				return;
 
 			const
-				format = this.format.reports[report.dashboardPosition],
+				format = this.format.reports[report.dashboard.position],
 				column = getColumn(e.clientX) + 1,
 				reportStart = getColumn(report.container.offsetLeft),
 				reportEnd = getColumn(report.container.offsetLeft + report.container.clientWidth);
@@ -591,17 +586,29 @@ class Dashboard {
 		if(this.container)
 			return this.container;
 
-		const container = this.container = document.createElement('div');
+		function getReports(dashboard) {
+
+			const reports = Array.from(dashboard.reports());
+
+			for(const child of dashboard.children)
+				reports.concat(getReports(child));
+
+			return reports;
+		}
+
+		const
+			container = this.container = document.createElement('div'),
+			icon = this.icon ? `<img src="${this.icon}" height="20" width="20">` : '';
 
 		container.classList.add('item');
 
 		container.innerHTML = `
 			<div class="label">
-				<i class="fab fa-hubspot"></i>
+				${icon}
 				<span class="name">${this.name}</span>
-				${this.children.size ? '<span class="angle"><i class="fa fa-angle-down"></i></span>' : ''}
+				${this.children.size ? '<span class="angle down"><i class="fa fa-angle-down"></i></span>' : ''}
 			</div>
-			${this.children.size ? '<div class="submenu"></div>' : ''}
+			${this.children.size ? '<div class="submenu hidden"></div>' : ''}
 		`;
 
 		const submenu = container.querySelector('.submenu');
@@ -624,6 +631,25 @@ class Dashboard {
 
 		return container;
 	}
+
+	* reports() {
+
+		if(this.format && this.format.reports && this.format.reports.length) {
+
+			for(const [position, _report] of this.format.reports.entries()) {
+
+				if(!DataSource.list.has(_report.query_id))
+					continue;
+
+				const report = JSON.parse(JSON.stringify(DataSource.list.get(_report.query_id)));
+
+				report.dashboard = _report;
+				report.dashboard.position = position;
+
+				yield report;
+			}
+		}
+	}
 }
 
 class DashboardDatasets	extends Set {
@@ -637,19 +663,16 @@ class DashboardDatasets	extends Set {
 
 		super();
 
-		for(const report of dashboard.format.reports) {
+		this.dashboard = dashboard;
+		this.page = this.dashboard.page;
 
-			if(!DataSource.list.has(report.query_id))
-				continue;
+		for(const report of this.dashboard.reports()) {
 
-			for(const filter of DataSource.list.get(report.query_id).filters || []) {
+			for(const filter of report.filters || []) {
 				if(filter.dataset)
 					this.add(filter.dataset);
 			}
 		}
-
-		this.dashboard = dashboard;
-		this.page = this.dashboard.page;
 	}
 
 	async load() {

@@ -35,7 +35,7 @@ main > nav::-webkit-scrollbar-track {
 		}
 	main > nav .label {
 		display: flex;
-		padding: 12px 16px;
+		padding: 12px;
 		color: var(--color-primary-text);
 		align-items: center;
 		transition: background var(--transition-duration),
@@ -58,7 +58,7 @@ main > nav::-webkit-scrollbar-track {
 		box-shadow: inset 10px 0px 0 var(--color-accent);
 	}
 		main > nav .submenu .label {
-			padding-left: 30px;
+			padding-left: 40px;
 		}
 		main > nav .submenu .submenu .label {
 			padding-left: 60px;

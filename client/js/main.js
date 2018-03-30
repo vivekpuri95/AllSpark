@@ -3732,7 +3732,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			})
 			.projection(d => [d.y, d.x]);
 
-		var series = d3.layout.stack()(obj.series.map(s => [s]));
+		var series = d3.layout.stack()(obj.series);
 
 		series.map(r => r.data = r);
 
@@ -3744,7 +3744,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 			//Empty the container before loading
 			d3.selectAll(obj.divId + " > *").remove();
-			//Adding chart and placing chart at specific location using translate
+			//Adding chart and placing chart at specific locaion using translate
 			var svg = d3.select(obj.divId)
 				.append("svg")
 				.append("g")
@@ -3752,8 +3752,16 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 			//check if the data is present or not
-			if (series.length == 0 || series[0].data.length == 0)
+			if (series.length == 0 || series[0].data.length == 0) {
+				//Chart Title
+				svg.append('g').attr('class', 'noDataWrap').append('text')
+					.attr("x", (width / 2))
+					.attr("y", (height / 2))
+					.attr("text-anchor", "middle")
+					.style("font-size", "20px")
+					.text(obj.loading ? "Loading Data ..." : "No data to display");
 				return;
+			}
 
 			x.domain([0]);
 			x.rangeBands([0, width], 0.1, 0);
@@ -3833,7 +3841,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 					<div class="body">${d.y}</div>
 				`;
 
-				Tooltip.show(that.container, cord, content);
+				Tooltip.show(that.container, [cord[0], cord[1]], content);
 			});
 			polygon.on('mouseover', function () {
 				Tooltip.hide(that.container);
@@ -3879,7 +3887,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1em')
-						.text(series[i].label);
+						.text(series[i].data[0].label);
 
 					text.append('tspan')
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
@@ -3922,7 +3930,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1em')
-						.text(series[i].label);
+						.text(series[i].data[0].label);
 
 					text.append('tspan')
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
@@ -3958,6 +3966,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		return chart;
 	}
+
 });
 
 Visualization.list.set('cohort', class Cohort extends Visualization {
