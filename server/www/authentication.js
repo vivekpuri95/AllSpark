@@ -117,7 +117,7 @@ exports.login = class extends API {
 		this.assert(email, "Email Required");
 		this.assert(this.request.body.password, "Password Required");
 
-		const [userDetail] = await this.mysql.query(`select * from tb_users where email = ?`, [email]);
+		const [userDetail] = await this.mysql.query(`SELECT * FROM tb_users WHERE email = ? AND account_id = ?`, [email, this.account.account_id]);
 
 		this.assert(userDetail, "Invalid Email! :(");
 

@@ -781,7 +781,7 @@ class Template {
 			<html>
 				<head>
 					<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-					<title>Tookan Analytics</title>
+					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="https://lbxoezeogn43sov13789n8p9-wpengine.netdna-ssl.com/img/favicon.png" />
 
 					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'?'+checksum+'">').join('')}

@@ -50,6 +50,8 @@ class Page {
 
 			if(account.logo)
 				document.querySelector('body > header .logo img').src = account.logo;
+
+			document.title = account.name;
 		}
 
 		if(window.user)
