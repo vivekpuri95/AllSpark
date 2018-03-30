@@ -54,8 +54,14 @@ class Page {
 			document.title = account.name;
 		}
 
+		const user_name = document.querySelector('body > header .user-name');
+
 		if(window.user)
-			document.querySelector('body > header .user-name').textContent = user.name;
+			user_name.textContent = user.name;
+
+		user_name.on('click', () => {
+			window.location.href = `user/profile/${user.user_id}`;
+		});
 
 		document.querySelector('body > header .logout').on('click', () => User.logout());
 

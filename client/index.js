@@ -80,7 +80,7 @@ app.get('/login/forgot', (req, res) => {
 	`));
 });
 
-app.get('/login/reset', (req,res) => {
+app.get('/login/reset', (req, res) => {
 
 	const template = new Template;
 
@@ -112,6 +112,23 @@ app.get('/login/reset', (req,res) => {
 
 		<div id="message" class="hidden"></div>
 	`));
+});
+
+app.get('/user/profile/:id?', (req, res) => {
+
+	const template = new Template;
+
+	template.stylesheets.push('/css/profile.css');
+	template.scripts.push('/js/profile.js');
+
+	res.send(template.body(`
+		<section>
+			<h1>Profile details</h1>
+			<div>
+			</div>
+		</section>
+	`))
+
 });
 
 app.get('/:type(dashboard|report)/:id?', (req, res) => {
