@@ -74,7 +74,7 @@ class report extends API {
 			f.value = this.request.body[f.placeholder] || f.default_value;
 
 			if(f.is_multiple == 1) {
-				f.value = f.value.join(',');
+				f.value = `"${f.value.join('","')}"`;
 			}
 		}
 
