@@ -544,7 +544,7 @@ class Editor {
 	}
 
 	set value(value) {
-		this.editor.setValue(value, 1);
+		this.editor.setValue(value || '', 1);
 	}
 }
 
