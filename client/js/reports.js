@@ -231,7 +231,7 @@ class Report {
 		const
 			parameters = {
 				query: Report.editor.value,
-				added_by: user.email,
+				added_by: user.user_id,
 				url_options: JSON.stringify({method: Report.form.elements.method.value}),
 				roles: Array.from(Report.form.roles.selectedOptions).map(a => a.value).join(),
 			},
