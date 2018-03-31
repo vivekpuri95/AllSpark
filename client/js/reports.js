@@ -57,7 +57,6 @@ class Reports extends Page {
 		Reports.filters = Reports.container.querySelector('form.filters');
 
 		Reports.filters.elements.search.on('keyup', Reports.render);
-		Reports.filters.elements.search.on('search', Reports.render);
 		Reports.filters.elements.column_search.on('change', Reports.render);
 
 		if (Reports.search)
@@ -232,7 +231,7 @@ class Report {
 		const
 			parameters = {
 				query: Report.editor.value,
-				added_by: user.email,
+				added_by: user.user_id,
 				url_options: JSON.stringify({method: Report.form.elements.method.value}),
 				roles: Array.from(Report.form.roles.selectedOptions).map(a => a.value).join(),
 			},
@@ -406,6 +405,9 @@ class Report {
 
 	get row() {
 
+		if(this.container)
+			return this.container;
+
 		this.container = document.createElement('tr');
 
 		let tags = this.tags ? this.tags.split(',') : [];
@@ -424,8 +426,8 @@ class Report {
 			<td>${this.filters.list.size}</td>
 			<td>${this.visualizations.list.size}</td>
 			<td>${this.is_enabled ? 'Yes' : 'No'}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			<td class="action green" title="Edit">Edit</td>
+			<td class="action red" title="Delete">Delete</td>
 		`;
 
 		this.container.querySelector('.green').on('click', () => {

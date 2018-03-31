@@ -672,7 +672,7 @@ class DataSource {
 					</span>
 					<span class="right">
 						<span class="NA">Added By:</span>
-						<span>${this.added_by || ''}</span>
+						<span>${this.added_by_name || ''}</span>
 					</span>
 					<span>
 						<span class="NA">Requested By:</span>
