@@ -1,0 +1,29 @@
+main section#profile {
+	padding: calc(var(--gap) * 2);
+}
+main #profile h1 {
+	border-bottom: 1px dashed black;
+}
+main #profile-details {
+	background: #fff;
+	display: grid;
+	padding: calc(var(--gap) * 2);
+	grid-gap: calc(var(--gap) * 3);
+	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+}
+	#profile-details label {
+		display: grid;
+		font-size: 14px;
+		grid-template-columns: 100px 600px;
+	}
+		#profile-details label span {
+			font-weight: bold;
+			color: #708090;
+		}
+		#profile-details label div {
+
+		}
+main .privileges table,
+main .roles table {
+	width: 30%;
+}
