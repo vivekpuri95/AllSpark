@@ -137,6 +137,10 @@ body {
 		z-index: 10;
 		flex: 50px 0 0;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		overflow: auto;
+	}
+	body > header::-webkit-scrollbar {
+		display: none;
 	}
 		body > header .logo {
 			width: 220px;
@@ -147,6 +151,7 @@ body {
 			body > header .logo img {
 				width: 100%;
 				height: auto;
+				min-width: 150px;
 				align-items: center;
 			}
 		body > header nav {
@@ -160,6 +165,7 @@ body {
 			letter-spacing: 1px;
 			transition: background var(--transition-duration);
 			align-items: center;
+			white-space: nowrap;
 		}
 		body > header .logout:hover,
 		body > header a:hover {
@@ -176,7 +182,10 @@ body {
 		body > header .user-name {
 			margin-left: auto;
 			padding: 15px 20px;
+			white-space: nowrap;
 			letter-spacing: 1px;
+			align-items: center;
+			display: flex;
 		}
 		body > header .logout {
 			padding: 15px 20px;
@@ -333,7 +342,7 @@ body {
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
 			display: flex;
-			align-items: flex-end;
+			align-items: center;
 			overflow: auto;
 			white-space: nowrap;
 		}
@@ -351,26 +360,22 @@ body {
 				line-height: inherit;
 				user-select: text;
 			}
-			main .data-source > header .edit {
-				display: flex;
-				align-items: center;
-				margin:0 4px 5px 4px;
+			main .data-source > header .edit button {
+				height: 22px;
+				margin: 0 calc(var(--gap) / 2);
 			}
-				main .data-source > header .edit button {
-					height: 22px;
-					margin: 0 calc(var(--gap) / 2);
-				}
-				main .data-source > header .edit button svg {
-					margin: 0;
-				}
-			main .data-source > header .menu-toggle {
+			main .data-source > header .edit button svg {
+				margin: 0;
+			}
+			main .data-source > header span {
 				border: 1px solid transparent;
 				cursor: pointer;
-				padding: 0 10px;
-				margin: 0 4px 5px 4px;
+				padding: 4px 10px;
+				align-items: center;
 				transition: border var(--transition-duration);
+				display: flex;
 			}
-			main .data-source > header .menu-toggle:hover {
+			main .data-source > header span:not(.selected):hover {
 				border-color: #ccc;
 			}
 		main .data-source .toolbar {

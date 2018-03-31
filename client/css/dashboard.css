@@ -149,10 +149,7 @@ main #reports .list {
 	main .data-source.add-new:active {
 		box-shadow: inset 0 0 250px rgba(0, 0, 0, 0.15);
 	}
-	main .data-source.singleton .filters.toolbar {
-		display: flex !important;
-	}
-	main .data-source.singleton .visualization.table  > .container {
+	main .data-source.singleton .visualization.table > .container {
 		height: calc(100vh - 290px);
 		max-height: calc(100vh - 290px);
 	}

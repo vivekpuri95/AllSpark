@@ -200,12 +200,17 @@ class Report {
 
 		Report.selected = null;
 
-		Report.container.querySelector('h1').textContent = 'Add New Report';
+		const view = Report.container.querySelector('.toolbar #view');
+
+		Report.container.querySelector('h1').textContent = 'Adding New Report';
 
 		if(Report.form.listener)
 			Report.form.removeEventListener('submit', Report.form.listener);
 
 		Report.form.on('submit', Report.form.listener = e => Report.insert(e));
+
+		if(Report.container.viewListener)
+			view.removeEventListener('click', Report.container.viewListener);
 
 		Report.form.reset();
 		Report.editor.value = '';
@@ -462,17 +467,19 @@ class Report {
 
 		Report.selected = this;
 
-		Report.form.parentElement.querySelector('h1').innerHTML = `
-			${this.name}
-			<a href="/report/${this.id}" target="_blank">
-				View
-				<i class="fas fa-external-link-alt"></i>
-			</a>&nbsp;
-		`;
+		const view = Report.container.querySelector('.toolbar #view');
+
+		Report.form.parentElement.querySelector('h1').innerHTML = `${this.name} - ${this.query_id}`;
 
 		if(Report.form.listener)
 			Report.form.removeEventListener('submit', Report.form.listener);
 
+		if(Report.container.viewListener)
+			view.removeEventListener('click', Report.container.viewListener);
+
+		view.on('click', Report.container.viewListener = () => window.open(`/report/${this.query_id}`));
+
+		Report.form.on('submit', Report.form.listener = e => this.update(e));
 		Report.form.on('submit', Report.form.listener = e => this.update(e));
 
 		if(ReportFilter.insert.form.listener)
@@ -733,19 +740,22 @@ class ReportFilter {
 			return this.container;
 
 		this.container = document.createElement('form');
-		this.container.classList.add('filter');
+		this.container.classList.add('form', 'filter');
 		this.container.id = 'filters-form-'+this.id;
 
 		this.container.innerHTML = `
 			<label>
-				<input type="text" name="name" value="${this.name}" placeholder="Name" required>
+				<span>Name</span>
+				<input type="text" name="name" value="${this.name}" required>
 			</label>
 
 			<label>
-				<input type="text" name="placeholder" value="${this.placeholder}" placeholder="Placeholder" required>
+				<span>Placeholder</span>
+				<input type="text" name="placeholder" value="${this.placeholder}" required>
 			</label>
 
 			<label>
+				<span>Type</span>
 				<select name="type" required>
 					<option value="0">Integer</option>
 					<option value="1">String</option>
@@ -756,24 +766,29 @@ class ReportFilter {
 			</label>
 
 			<label>
-				<input type="text" name="description" value="${this.description || ''}" placeholder="Description">
+				<span>Description</span>
+				<input type="text" name="description" value="${this.description || ''}">
 			</label>
 
 			<label>
-				<input type="text" name="default_value" value="${this.default_value || ''}" placeholder="Default Value">
+				<span>Default Value</span>
+				<input type="text" name="default_value" value="${this.default_value || ''}">
 			</label>
 
 			<label>
-				<input type="text" name="offset" value="${this.offset === null ? '' : this.offset}" placeholder="Offset">
+				<span>Offset</span>
+				<input type="text" name="offset" value="${this.offset === null ? '' : this.offset}">
 			</label>
 
 			<label>
+				<span>Dataset</span>
 				<select name="dataset">
 					<option value="">None</option>
 				</select>
 			</label>
 
 			<label>
+				<span>Multiple</span>
 				<select name="multiple" required>
 					<option value="0">No</option>
 					<option value="1">Yes</option>
@@ -781,11 +796,13 @@ class ReportFilter {
 			</label>
 
 			<label class="save">
-				<input type="submit" value="Save">
+				<span>&nbsp;</span>
+				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</label>
 
 			<label class="delete">
-				<input type="button" value="Delete">
+				<span>&nbsp;</span>
+				<button type="button"><i class="far fa-trash-alt"></i> Delete</button>
 			</label>
 		`;
 
@@ -926,15 +943,17 @@ class ReportVisualization {
 			return this.container;
 
 		this.container = document.createElement('form');
-		this.container.classList.add('visualization');
+		this.container.classList.add('form', 'visualization');
 		this.container.id = 'visualizations-form-'+this.id;
 
 		this.container.innerHTML = `
 			<label>
+				<span>Name</span>
 				<input type="text" name="name" value="${this.name}" required>
 			</label>
 
 			<label>
+				<span>Type</span>
 				<select name="type" required>
 					<option value="table">Table</option>
 					<option value="spatialmap">Spatial Maps</option>
@@ -948,11 +967,13 @@ class ReportVisualization {
 			</label>
 
 			<label class="save">
-				<input type="submit" value="Save">
+				<span>&nbsp;</span>
+				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</label>
 
 			<label class="delete">
-				<input type="button" value="Delete">
+				<span>&nbsp;</span>
+				<button type="button"><i class="far fa-trash-alt"></i> Delete</button>
 			</label>
 		`;
 

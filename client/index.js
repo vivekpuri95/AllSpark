@@ -329,6 +329,7 @@ app.get('/reports/:id?', (req, res) => {
 
 				<button id="test" class="right"><i class="fas fa-sync"></i> Run</button>
 				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>
+				<button id="view"><i class="fas fa-external-link-alt""></i> View</button>
 			</header>
 
 			<div class="hidden" id="test-container">
@@ -449,112 +450,97 @@ app.get('/reports/:id?', (req, res) => {
 
 			<h3>Filters</h3>
 
-			<div class="form-container">
-				<form class="filter">
-					<label><span>Name</span></label>
-					<label><span>Placeholder</span></label>
-					<label><span>Type</span></label>
-					<label><span>Description</span></label>
-					<label><span>Default Value</span></label>
-					<label><span>Offset</span></label>
-					<label><span>Dataset</span></label>
-					<label><span>Multiple</span></label>
-					<label class="save"><span></span></label>
-					<label class="delete"><span></span></label>
-				</form>
+			<div id="filters-list"></div>
 
-				<div id="filters-list"></div>
+			<form id="add-filter" class="form filter">
 
-				<form id="add-filter" class="filter">
+				<label>
+					<span>Name</span>
+					<input type="text" name="name" required>
+				</label>
 
-					<label>
-						<input type="text" name="name" placeholder="Name" required>
-					</label>
+				<label>
+					<span>Placeholder</span>
+					<input type="text" name="placeholder" required>
+				</label>
 
-					<label>
-						<input type="text" name="placeholder" placeholder="Placeholder" required>
-					</label>
+				<label>
+					<span>Type</span>
+					<select name="type" required>
+						<option value="0">Integer</option>
+						<option value="1">String</option>
+						<option value="2">Date</option>
+						<option value="3">Month</option>
+						<option value="4">city</option>
+					</select>
+				</label>
 
-					<label>
-						<select name="type" required>
-							<option value="0">Integer</option>
-							<option value="1">String</option>
-							<option value="2">Date</option>
-							<option value="3">Month</option>
-							<option value="4">city</option>
-						</select>
-					</label>
+				<label>
+					<span>Description</span>
+					<input type="text" name="description">
+				</label>
 
-					<label>
-						<input type="text" name="description" placeholder="Description">
-					</label>
+				<label>
+					<span>Default Value</span>
+					<input type="text" name="default_value">
+				</label>
 
-					<label>
-						<input type="text" name="default_value" placeholder="Default Value">
-					</label>
+				<label>
+					<span>Offset</span>
+					<input type="text" name="offset">
+				</label>
 
-					<label>
-						<input type="text" name="offset" placeholder="Offset">
-					</label>
+				<label>
+					<span>Dataset</span>
+					<select name="dataset">
+						<option value="">None</option>
+					</select>
+				</label>
 
-					<label>
-						<select name="dataset">
-							<option value="">None</option>
-						</select>
-					</label>
+				<label>
+					<span>Multiple</span>
+					<select name="multiple" required>
+						<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
+						<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
+					</select>
+				</label>
 
-					<label>
-						<select name="multiple" required>
-							<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
-							<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
-						</select>
-					</label>
-
-					<label class="save">
-						<input type="submit" value="Add">
-					</label>
-
-					<label class="delete"></label>
-				</form>
-			</div>
+				<label class="save">
+					<span>&nbsp;</span>
+					<button type="submit"><i class="fa fa-plus"></i> Add</button>
+				</label>
+			</form>
 
 			<h3>Visualizations</h3>
-			<div class="form-container">
-				<form class="visualization">
-					<label><span>Name</span></label>
-					<label><span>Type</span></label>
-					<label class="save"><span></span></label>
-					<label class="delete"><span></span></label>
-				</form>
 
-				<div id="visualizations-list"></div>
+			<div id="visualizations-list"></div>
 
-				<form id="add-visualization" class="visualization">
+			<form id="add-visualization" class="form visualization">
 
-					<label>
-						<input type="text" name="name" placeholder="Name" required>
-					</label>
+				<label>
+					<span>Name</span>
+					<input type="text" name="name" placeholder="Name" required>
+				</label>
 
-					<label>
-						<select name="type" required>
-							<option value="table">Table</option>
-							<option value="spatialmap">Spatial Maps</option>
-							<option value="funnel">Funnel</option>
-							<option value="cohort">Cohort</option>
-							<option value="line">Line</option>
-							<option value="bar">Bar</option>
-							<option value="area">Area</option>
-							<option value="stacked">Stacked</option>
-						</select>
-					</label>
+				<label>
+					<span>Type</span>
+					<select name="type" required>
+						<option value="table">Table</option>
+						<option value="spatialmap">Spatial Maps</option>
+						<option value="funnel">Funnel</option>
+						<option value="cohort">Cohort</option>
+						<option value="line">Line</option>
+						<option value="bar">Bar</option>
+						<option value="area">Area</option>
+						<option value="stacked">Stacked</option>
+					</select>
+				</label>
 
-					<label class="save">
-						<input type="submit" value="Add">
-					</label>
-
-					<label class="delete"></label>
-				</form>
-			</div>
+				<label class="save">
+					<span>&nbsp;</span>
+					<button type="submit"><i class="fa fa-plus"></i> Add</button>
+				</label>
+			</form>
 		</section>
 	`));
 });
@@ -804,7 +790,8 @@ class Template {
 
 						<span class="user-name"></span>
 						<span class="logout">
-							<i class="fa fa-power-off"></i>
+							<i class="fa fa-power-off"></i>&nbsp;
+							Logout
 						</span>
 					</header>
 					<main>

@@ -125,12 +125,14 @@ Page.class = class Dashboards extends Page {
 
 			tr.innerHTML = `
 				<td>${report.query_id}</td>
-				<td><a href="#/app/reports-new/${report.query_id}" target="_blank">${report.name}</a></td>
+				<td><a href="/report/${report.query_id}" target="_blank" class="link">${report.name}</a></td>
 				<td>${description.join(' ') || ''}</td>
 				<td>${report.tags || ''}</td>
 				<td>${MetaData.categories.has(report.category_id) && MetaData.categories.get(report.category_id).name || ''}</td>
 				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
 			`;
+
+			tr.querySelector('.link').on('click', e => e.stopPropagation());
 
 			tr.on('click', async () => {
 				this.report(report.query_id);
@@ -157,6 +159,12 @@ Page.class = class Dashboards extends Page {
 
 		report.container.removeAttribute('style');
 		report.container.classList.add('singleton');
+
+		report.container.querySelector('.menu').classList.remove('hidden');
+		report.container.querySelector('.menu-toggle').classList.add('selected');
+
+		report.container.querySelector('.filters').classList.remove('hidden');
+		report.container.querySelector('.filters-toggle').classList.add('selected');
 
 		container.appendChild(report.container);
 
@@ -383,7 +391,7 @@ class Dashboard {
 
 			header.insertAdjacentHTML('beforeend', `
 				<div class="edit">
-					<button class="remove" title="Remove Graph"><i class="fa fa-times"></i></button>
+					<span class="remove" title="Remove Graph"><i class="fa fa-times"></i></span>
 				</div>
 			`);
 
@@ -456,9 +464,9 @@ class Dashboard {
 
 				const
 					beingDragged = this.page.list.selectedReports.beingDragged,
-					format = this.format.reports[beingDragged.dashboardPosition];
+					format = this.format.reports[beingDragged.dashboard.position];
 
-				this.format.reports.splice(beingDragged.dashboardPosition, 1);
+				this.format.reports.splice(beingDragged.dashboard.position, 1);
 
 				this.format.reports.splice(report.dashboard.position, 0, format);
 
@@ -641,9 +649,9 @@ class Dashboard {
 				if(!DataSource.list.has(_report.query_id))
 					continue;
 
-				const report = JSON.parse(JSON.stringify(DataSource.list.get(_report.query_id)));
+				const report = Object.assign({}, (DataSource.list.get(_report.query_id)));
 
-				report.dashboard = _report;
+				report.dashboard = Object.assign({}, _report);
 				report.dashboard.position = position;
 
 				yield report;
@@ -652,7 +660,7 @@ class Dashboard {
 	}
 }
 
-class DashboardDatasets	extends Set {
+class DashboardDatasets extends Set {
 
 	static setup() {
 
