@@ -2,10 +2,10 @@
 
 window.addEventListener('DOMContentLoaded', async () => {
 
+	await Page.setup();
+
 	if(!Page.class)
 		return;
-
-	await Page.setup();
 
 	new (Page.class)();
 });
@@ -50,6 +50,8 @@ class Page {
 
 			if(account.logo)
 				document.querySelector('body > header .logo img').src = account.logo;
+
+			document.title = account.name;
 		}
 
 		if(window.user)
@@ -542,7 +544,7 @@ class Editor {
 	}
 
 	set value(value) {
-		this.editor.setValue(value, 1);
+		this.editor.setValue(value || '', 1);
 	}
 }
 
@@ -556,6 +558,8 @@ class DataSource {
 		const response = await API.call('reports/report/list');
 
 		DataSource.list = new Map(response.map(report => [report.query_id, report]));
+
+		DataSource.datasets = new DataSourceDatasets();
 	}
 
 	constructor(source) {
@@ -867,6 +871,31 @@ class DataSource {
 		}
 
 		return link + '?' + parameters.toString();
+	}
+}
+
+class DataSourceDatasets extends Map {
+
+	constructor(source) {
+
+		super();
+
+		this.source = source;
+	}
+
+	async fetch(id) {
+
+		if(!id)
+			return Promise.resolve();
+
+		if(this.has(id))
+			return Promise.resolve(this.get(id));
+
+		const response = await API.call('datasets/values', {id});
+
+		this.set(id, response.data);
+
+		return response.data;
 	}
 }
 
@@ -1472,15 +1501,21 @@ class DataSourceFilter {
 			}
 		}
 
-		if(this.dataset && DataSource.datasets && DataSource.datasets.has(this.dataset)) {
+		if(this.dataset) {
 
 			input = document.createElement('select');
 			input.name = this.placeholder;
 
 			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
 
-			for(const row of DataSource.datasets.get(this.dataset))
-				input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
+			DataSource.datasets.fetch(this.dataset).then(data => {
+
+				if(!data.length)
+					return;
+
+				for(const row of data)
+					input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
+			});
 		}
 
 		this.labelContainer.innerHTML = `<span>${this.name}<span>`;
@@ -3641,15 +3676,21 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 	render() {
 
-		const series = [];
+		const
+			series = [],
+			rows = this.source.response;
 
-		for(const [i, level] of this.source.response.entries()) {
-			series.push({
+		for(const column of this.source.columns.values()) {
+
+			if(column.disabled)
+				continue;
+
+			series.push([{
 				date: 0,
-				label: level.get('metric'),
-				color: Array.from(this.source.columns.values())[i].color,
-				y: parseFloat(level.get('value')),
-			});
+				label: column.name,
+				color: column.color,
+				y: rows[0].get(column.key),
+			}]);
 		}
 
 		this.draw({
@@ -3691,7 +3732,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			})
 			.projection(d => [d.y, d.x]);
 
-		var series = d3.layout.stack()(obj.series.map(s => [s]));
+		var series = d3.layout.stack()(obj.series);
 
 		series.map(r => r.data = r);
 
@@ -3703,7 +3744,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 			//Empty the container before loading
 			d3.selectAll(obj.divId + " > *").remove();
-			//Adding chart and placing chart at specific location using translate
+			//Adding chart and placing chart at specific locaion using translate
 			var svg = d3.select(obj.divId)
 				.append("svg")
 				.append("g")
@@ -3711,8 +3752,16 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 			//check if the data is present or not
-			if (series.length == 0 || series[0].data.length == 0)
+			if (series.length == 0 || series[0].data.length == 0) {
+				//Chart Title
+				svg.append('g').attr('class', 'noDataWrap').append('text')
+					.attr("x", (width / 2))
+					.attr("y", (height / 2))
+					.attr("text-anchor", "middle")
+					.style("font-size", "20px")
+					.text(obj.loading ? "Loading Data ..." : "No data to display");
 				return;
+			}
 
 			x.domain([0]);
 			x.rangeBands([0, width], 0.1, 0);
@@ -3792,7 +3841,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 					<div class="body">${d.y}</div>
 				`;
 
-				Tooltip.show(that.container, cord, content);
+				Tooltip.show(that.container, [cord[0], cord[1]], content);
 			});
 			polygon.on('mouseover', function () {
 				Tooltip.hide(that.container);
@@ -3838,7 +3887,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1em')
-						.text(series[i].label);
+						.text(series[i].data[0].label);
 
 					text.append('tspan')
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
@@ -3881,7 +3930,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1em')
-						.text(series[i].label);
+						.text(series[i].data[0].label);
 
 					text.append('tspan')
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
@@ -3917,6 +3966,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		return chart;
 	}
+
 });
 
 Visualization.list.set('cohort', class Cohort extends Visualization {

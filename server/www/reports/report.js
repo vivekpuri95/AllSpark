@@ -142,7 +142,6 @@ exports.userPrvList = class extends API {
 
 		this.assert(reportDetails, `report ${reportId} not found`);
 
-
 		const userRoles = await this.mysql.query(`
 
                 SELECT

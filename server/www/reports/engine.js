@@ -73,8 +73,10 @@ class report extends API {
 
 			f.value = this.request.body[f.placeholder] || f.default_value;
 
-			if(f.is_multiple == 1) {
-				f.value = `"${f.value.join('","')}"`;
+			if(f.multiple == 1) {
+				f.value = f.value.split(',');
+				f.value.map(s => str = str.concat(`'${s}',`));
+				f.value = str.slice(0, -1);
 			}
 		}
 
@@ -170,7 +172,7 @@ class query extends report {
 
 		for (const filter of this.filters) {
 
-			if(filter.is_multiple == 1){
+			if(filter.multiple == 1){
 				this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `${filter.value}`);
 			}
 			else{

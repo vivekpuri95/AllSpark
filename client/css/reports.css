@@ -127,13 +127,11 @@ main #form #report-form {
 			max-width: 100%;
 			display: grid;
 			grid-template-columns: 300px 1fr;
-			grid-template-rows: max-content 1fr;
-			grid-gap: 0;
+			grid-row-gap: calc(var(--gap) );
+			grid-column-gap:  0;
 		}
 		#form form #query > span {
-			grid-row: 1;
 			grid-column: 1 / 3;
-			margin-bottom: var(--gap);
 		}
 
 			main #form form #editor {
@@ -173,7 +171,7 @@ main #form #report-form {
 						padding: 8px;
 						transition: background var(--transition-duration),
 									box-shadow var(--transition-duration);
-						grid-template-columns: max-content 1fr 1fr;
+						grid-template-columns: max-content 1fr max-content;
 						grid-gap: var(--gap);
 					}
 					#form form #schema li .name:hover {
@@ -198,9 +196,11 @@ main #form #report-form {
 	}
 	main #form #missing-filters {
 		background: #fcc;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 		padding: 16px;
 		margin-bottom: 16px;
+		grid-column: 1 / 3;
+		border:  1px solid #ccc;
+		font-weight: normal;
 	}
 	main #form .filter,
 	main #form .visualization {
@@ -215,29 +215,30 @@ main #form #report-form {
 	main #form .visualization.disabled:hover {
 		opacity: 1;
 	}
+	main #form .filter.unsaved input[type=submit],
+	main #form .visualization.unsaved input[type=submit] {
+		background: #c11;
+	}
 		main #form .NA {
 			margin: 5px;
 		}
 		main #form .filter label,
 		main #form .visualization label {
 			margin: 5px;
-			min-width: 125px;
+			width: 150px;
+			max-width: 150px;
 		}
 			main #form .filter input,
 			main #form .visualization input {
 				margin: 0 !important;
 			}
-		/*main select#roles {
-			padding: 5px !important;
-			height: 80px;
-		}*/
 		main #form .save,
 		main #form .delete {
 			min-width: 60px !important;
 			max-width: 60px;
 		}
 		main #form .red {
-			box-shadow: inset -15px 0 #f66;
+			box-shadow: inset -15px 0 #c11;
 		}
 		main h3 {
 			display: flex;
@@ -279,7 +280,6 @@ main #form #report-form {
 main #form form label {
 	font-weight: bold;
 	display: flex;
-	/* margin: 16px; */
 	flex-direction: column;
 	max-width: 200px;
 	justify-content: space-between;

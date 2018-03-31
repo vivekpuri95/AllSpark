@@ -5,7 +5,7 @@ exports.insert = class extends API {
     async insert() {
 
         let
-            values = {}, visual_cols = ['query_id', 'name', 'type', 'options', 'is_enabled'];
+            values = {}, visual_cols = ['query_id', 'name', 'type', 'options'];
 
         for(const key in this.request.body) {
             if(visual_cols.includes(key))
@@ -21,7 +21,7 @@ exports.update = class extends API {
     async update() {
 
         let
-            values = {}, visual_cols = ['query_id', 'name', 'type', 'options', 'is_enabled'];
+            values = {}, visual_cols = ['query_id', 'name', 'type', 'options'];
 
         for(const key in this.request.body) {
             if(visual_cols.includes(key))
@@ -31,6 +31,7 @@ exports.update = class extends API {
         return await this.mysql.query('UPDATE tb_query_visualizations SET ? WHERE visualization_id = ?', [values, this.request.body.visualization_id], 'write');
     }
 };
+
 exports.delete = class extends API {
 
     async delete() {
