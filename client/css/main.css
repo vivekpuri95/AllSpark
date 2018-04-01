@@ -12,6 +12,8 @@
 * {
 	box-sizing: border-box;
 }
+
+body {}
 input:not([type=checkbox]):not([type=radio]),
 select,
 button {
@@ -335,6 +337,10 @@ body {
 	main .data-source {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
+		grid-template-rows: min-content 1fr min-content;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
 	}
 		main .data-source > .warning {
 			margin: 0;
@@ -386,6 +392,7 @@ body {
 			align-items: flex-end;
 			font-size: 95%;
 			margin: 0;
+			margin-top:  calc(var(--gap) * 2);
 		}
 			main .data-source .menu-toggle.selected,
 			main .data-source .description-toggle.selected,
@@ -397,6 +404,7 @@ body {
 		main .data-source > .description {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			margin-top: calc(var(--gap) * 2);
 		}
 			main .data-source > .description .body {
 				white-space: pre-wrap;
@@ -426,6 +434,7 @@ body {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 			padding: 10px;
+			margin-top: calc(var(--gap) * 2);
 		}
 			main .data-source > .share-link input {
 				width: 100%;
@@ -435,6 +444,7 @@ body {
 			display: flex;
 			flex-wrap: wrap;
 			order: 1;
+			margin-top: calc(var(--gap) * 2);
 		}
 			main .data-source > .columns .column {
 				display: flex;
@@ -562,7 +572,8 @@ body {
 							}
 		main .data-source .visualization {
 			position: relative;
-			margin-bottom: 0;
+			margin-top: calc(var(--gap) * 2);
+			flex: 1;
 		}
 			main .data-source .visualization .NA {
 				padding: 8px 16px;
@@ -572,10 +583,9 @@ body {
 				background: #fff;
 				overflow: auto;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
-				max-height: 456px;
-				height: 456px;
 				margin: 0;
 				padding: 0;
+				height: 100%;
 			}
 				.visualization > .container > .loading {
 					display: flex;
@@ -862,14 +872,12 @@ body {
 	width: 100%;
 	height: 100%;
 	display: flex;
+	padding: 10px;
 }
 .visualization .container > svg .axis path,
 .visualization .container > svg .axis line {
 	fill: none;
-	stroke: #ddd;
-	stroke-width: 1px;
-	fill: none;
-	shape-rendering: crispEdges;
+	stroke: #ccc;
 }
 
 .visualization .container > svg .y path {
@@ -877,33 +885,22 @@ body {
 }
 
 .visualization .container > svg .axis text {
-	font-size: 11px;
 }
 
-.visualization .container > svg .y > .tick line,
-.visualization .container > svg .x > .tick line,
-.visualization .container > svg .x > path {
-	z-index: -10;
+.visualization .container > svg text.axis-label {
+	font-size: 130%;
+	letter-spacing: 2px;
+	fill: #999;
+	font-weight: bold;
 }
-
-.visualization .container > svg .y > .tick text {
-	margin-right: 5px;
-}
-
-.visualization .container > svg text {
-	fill: #333;
-}
-.visualization .container > svg text.NA {
-	fill: #666;
-}
-
-.visualization .container > svg .axis-label {
-	font-size: 12px;
+.visualization .container > svg text.axis-label.y {
+	writing-mode: vertical-lr;
 }
 
 .visualization .container > svg .line {
 	fill: none;
 	stroke: steelblue;
+	transition: stroke-width var(--transition-duration);
 	stroke-width: 1.5px;
 }
 
@@ -911,16 +908,26 @@ body {
 	stroke-width: 3px;
 }
 
-.visualization .container > svg .resetZoom {
-	background-color: grey;
-}
-
-.visualization .container > svg .toggleReset {
+.visualization .container > svg .reset-zoom {
+	fill: #ccc;
+	box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 	cursor: pointer;
-	display: none !important;
+	transition: fill var(--transition-duration);
 }
+.visualization .container > svg .reset-zoom:hover {
+	fill: #ddd;
+}
+	.visualization .container > svg .reset-zoom text {
+		fill: #555;
+	}
 
 .visualization .container > svg rect.zoom {
 	fill: #8c97b4;
 	fill-opacity: 0.5;
+}
+.visualization .container > svg .bar {
+	transition: opacity var(--transition-duration);
+}
+.visualization .container > svg .bar.hover {
+	opacity: 0.75;
 }

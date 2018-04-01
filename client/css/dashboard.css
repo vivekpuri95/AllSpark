@@ -149,10 +149,16 @@ main #reports .list {
 	main .data-source.add-new:active {
 		box-shadow: inset 0 0 250px rgba(0, 0, 0, 0.15);
 	}
-	main .data-source.singleton .visualization.table > .container {
-		height: calc(100vh - 290px);
-		max-height: calc(100vh - 290px);
-	}
+		main #reports .list.singleton {
+			display: initial;
+		}
+		main .singleton .data-source .visualization {
+			max-height: 50%;
+		}
+		main .singleton .data-source .visualization.table > .container {
+			height: calc(100vh - 348px);
+			max-height: calc(100vh - 348px);
+		}
 main #reports > .NA {
 	text-align: center;
 }

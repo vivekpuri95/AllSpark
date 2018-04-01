@@ -158,7 +158,7 @@ Page.class = class Dashboards extends Page {
 		container.textContent = null;
 
 		report.container.removeAttribute('style');
-		report.container.classList.add('singleton');
+		container.classList.add('singleton');
 
 		report.container.querySelector('.menu').classList.remove('hidden');
 		report.container.querySelector('.menu-toggle').classList.add('selected');
@@ -250,6 +250,8 @@ class Dashboard {
 
 		this.menuItem.querySelector('.label').classList.add('selected');
 
+		this.page.reports.querySelector('.list').classList.remove('singleton');
+
 		let parent = this.menuItem.parentElement.parentElement;
 
 		while(parent.classList && parent.classList.contains('item')) {
@@ -291,11 +293,11 @@ class Dashboard {
 					report.visualizations.selected = visualization;
 			}
 
-			report.visualizations.selected.load();
-
 			report.container.appendChild(report.visualizations.selected.container);
 
 			Dashboard.container.appendChild(report.container);
+
+			report.visualizations.selected.load();
 
 			this.page.list.selectedReports.add(report);
 		}
