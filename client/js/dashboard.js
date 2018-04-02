@@ -323,7 +323,6 @@ class Dashboard {
 				edit.click();
 		}
 
-
 		await Sections.show('reports');
 	}
 

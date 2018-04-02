@@ -270,9 +270,17 @@ app.get('/reports/:id?', (req, res) => {
 
 	template.stylesheets.push('/css/reports.css');
 
-	template.scripts.push('/js/reports.js');
-	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js');
-	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ext-language_tools.js');
+	template.scripts = template.scripts.concat([
+		'/js/reports.js',
+
+		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js',
+		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ext-language_tools.js',
+
+		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+
+		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+	]);
 
 	res.send(template.body(`
 
@@ -511,27 +519,41 @@ app.get('/reports/:id?', (req, res) => {
 				</label>
 			</form>
 
-			<h3>Visualizations</h3>
+			<div id="visualizations">
 
-			<div id="visualizations-list"></div>
+				<div>
+					<h3>Visualizations</h3>
 
-			<form id="add-visualization" class="form visualization">
+					<div id="visualizations-list"></div>
 
-				<label>
-					<span>Name</span>
-					<input type="text" name="name" placeholder="Name" required>
-				</label>
+					<form id="add-visualization" class="form visualization">
 
-				<label>
-					<span>Type</span>
-					<select name="type" required></select>
-				</label>
+						<label>
+							<span>Name</span>
+							<input type="text" name="name" placeholder="Name" required>
+						</label>
 
-				<label class="save">
-					<span>&nbsp;</span>
-					<button type="submit"><i class="fa fa-plus"></i> Add</button>
-				</label>
-			</form>
+						<label>
+							<span>Type</span>
+							<select name="type" required></select>
+						</label>
+
+						<label>
+							<span>X-Axis Column</span>
+							<input type="text" name="column" placeholder="X-Axis Column">
+						</label>
+
+						<label class="save">
+							<span>&nbsp;</span>
+							<button type="submit"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</form>
+				</div>
+
+				<div id="visualization-preview">
+					<div class="NA">No Preview loaded yet! :(</div>
+				</div>
+			</div>
 		</section>
 	`));
 });

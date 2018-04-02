@@ -99,11 +99,11 @@ main #reports .list {
 	main #reports .list .data-source {
 		grid-column: auto / span 8;
 		grid-row: auto / span 2;
+		position: relative;
+		transition: grid-column 300ms;
 		transition: box-shadow var(--transition-duration),
 					opacity var(--transition-duration),
 					border var(--transition-duration);
-		position: relative;
-		transition: grid-column 300ms;
 	}
 	main #reports .list .data-source.being-dragged {
 		opacity: 0.5;

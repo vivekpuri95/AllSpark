@@ -10,7 +10,7 @@ class Reports extends Page {
 			Report.setup(this.container.querySelector('section#form'));
 
 			ReportFilters.setup(this.container.querySelector('#filters-list'));
-			ReportVisualizations.setup(this.container.querySelector('#visualizations-list'));
+			ReportVisualizations.setup(this);
 
 			await Reports.load();
 
@@ -871,8 +871,10 @@ class ReportFilter {
 
 class ReportVisualizations {
 
-	static setup(container) {
-		ReportVisualizations.container = container;
+	static setup(page) {
+
+		ReportVisualizations.container = page.container.querySelector('#visualizations-list');
+		ReportVisualizations.preview = page.container.querySelector('#visualization-preview');
 	}
 
 	constructor(report) {
@@ -920,13 +922,24 @@ class ReportVisualization {
 		e.preventDefault();
 
 		const
+			form = document.getElementById('add-visualization'),
 			parameters = {
 				query_id: report.id
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(document.getElementById('add-visualization')),
+				form: new FormData(form),
 			};
+
+		if(['line', 'area', 'bar', 'stacked'].includes(form.type.value)) {
+			parameters.options = JSON.stringify({
+				axis: {
+					x: {
+						column: form.column.value,
+					}
+				}
+			});
+		}
 
 		await API.call('reports/visualizations/insert', parameters, options);
 
@@ -943,6 +956,12 @@ class ReportVisualization {
 			this[key] = visualization[key];
 
 		this.id = this.visualization_id;
+
+		try {
+			this.options = JSON.parse(this.options);
+		} catch(e) {
+			this.options = null;
+		}
 
 		// Generate the form
 		this.row;
@@ -968,6 +987,11 @@ class ReportVisualization {
 				<select name="type" required></select>
 			</label>
 
+			<label>
+				<span>X-Axis Column</span>
+				<input type="text" name="column" placeholder="X-Axis Column">
+			</label>
+
 			<label class="save">
 				<span>&nbsp;</span>
 				<button type="submit"><i class="far fa-save"></i> Save</button>
@@ -977,10 +1001,32 @@ class ReportVisualization {
 				<span>&nbsp;</span>
 				<button type="button"><i class="far fa-trash-alt"></i> Delete</button>
 			</label>
+
+			<label class="preview">
+				<span>&nbsp;</span>
+				<button type="button"><i class="fas fa-eye"></i> Preview</button>
+			</label>
 		`;
+
+		if(['line', 'area', 'bar', 'stacked'].includes(this.type))
+			this.container.column.value = this.options ? this.options.axis.x.column : '';
 
 		this.container.on('submit', e => this.update(e));
 		this.container.querySelector('.delete').on('click', () => this.delete());
+		this.container.querySelector('.preview').on('click', async () => {
+
+			await DataSource.load(true);
+
+			const report = new DataSource(DataSource.list.get(this.visualizations.report.query_id));
+
+			ReportVisualizations.preview.textContent = null;
+
+			ReportVisualizations.preview.appendChild(report.container);
+
+			[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
+
+			report.visualizations.selected.load();
+		});
 
 		for(const visualization of MetaData.visualizations) {
 			this.container.type.insertAdjacentHTML('beforeend', `
@@ -1004,12 +1050,23 @@ class ReportVisualization {
 
 		const
 			parameters = {
-				visualization_id: this.id
+				visualization_id: this.id,
 			},
 			options = {
 				method: 'POST',
 				form: new FormData(this.container),
 			};
+
+		if(['line', 'area', 'bar', 'stacked'].includes(this.type)) {
+			parameters.options = JSON.stringify({
+				axis: {
+					x: {
+						column: this.container.column.value,
+					},
+					y: {}
+				}
+			});
+		}
 
 		await API.call('reports/visualizations/update', parameters, options);
 

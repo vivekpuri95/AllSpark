@@ -775,6 +775,8 @@ class DataSource {
 
 		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
 
+		this.columns.render();
+
 		return container;
 	}
 
@@ -1010,6 +1012,9 @@ class DataSourceColumns extends Map {
 
 		for(const column of this.values())
 			container.appendChild(column.container);
+
+		if(!this.size)
+			container.innerHTML = '&nbsp;';
 	}
 
 	get list() {
@@ -1862,6 +1867,28 @@ class Visualization {
 		this.id = Math.floor(Math.random() * 100000);
 
 		this.source = source;
+
+		this.axis = {
+			x: {
+				column: 'timing',
+			},
+			y: {}
+		};
+
+		if(this.options) {
+
+			try {
+
+				const options = JSON.parse(this.options);
+
+				for(const key in options)
+					this[key] = options[key];
+
+			} catch(e) {}
+		}
+
+		if(!this.axis.x.column)
+			this.axis.x.column = 'timing';
 	}
 
 	render() {
@@ -2324,13 +2351,6 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 	render(resize) {
 
-		this.axis = {
-			x: {
-				column: 'name',
-			},
-			y: {}
-		};
-
 		this.draw();
 
 		this.plot(resize);
@@ -2519,13 +2539,6 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 	render(resize) {
 
-		this.axis = {
-			x: {
-				column: 'name',
-			},
-			y: {}
-		};
-
 		this.draw();
 		this.plot(resize);
 	}
@@ -2662,13 +2675,6 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 	}
 
 	render(resize) {
-
-		this.axis = {
-			x: {
-				column: 'name',
-			},
-			y: {}
-		};
 
 		this.draw();
 		this.plot(resize);
@@ -2811,13 +2817,6 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 	}
 
 	render(resize) {
-
-		this.axis = {
-			x: {
-				column: 'name',
-			},
-			y: {}
-		};
 
 		this.draw();
 		this.plot(resize);
@@ -3329,13 +3328,10 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 
 	process() {
 
-		this.label = 'name';
-		this.value = 'id';
-
 		const newResponse = {};
 
 		for(const row of this.source.originalResponse.data)
-			newResponse[row[this.label]] = row[this.value];
+			newResponse[row.label] = row.value;
 
 		this.source.originalResponse.data = [newResponse];
 
