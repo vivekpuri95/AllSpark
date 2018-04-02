@@ -85,8 +85,15 @@ class Page {
 		}
 
 		for(const item of document.querySelectorAll('body > header nav a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname))
+			if(window.location.pathname.startsWith(new URL(item.href).pathname)) {
+				user_name.classList.remove('selected');
 				item.classList.add('selected');
+			}
+		}
+
+		if(window.location.pathname.includes('/user/profile')) {
+			Array.from(document.querySelectorAll('body > header nav a')).map(items => items.classList.remove('selected'));
+			user_name.querySelector('a').classList.add('selected');
 		}
 	}
 

@@ -124,12 +124,9 @@ app.get('/user/profile/:id?', (req, res) => {
 	res.send(template.body(`
 		<section id="profile">
 			<h1>Profile details</h1>
-			<div id="profile-details">
-				<label><span>Name:&nbsp;</span><div id="name"></div></label>
-				<label><span>User_id:&nbsp;</span><div id="user_id"></div></label>
-				<label><span>Email:&nbsp;</span><div id="email"></div></label>
-				<label><span>Phone:&nbsp;</span><div id="phone"></div></label>
-				<label class="privileges"><span>Privileges:&nbsp;</span>
+			<div class="profile-details"></div>
+			<div class="privileges">
+				<label><span>Privileges:&nbsp;</span>
 					<table>
 						<thead>
 							<tr>
@@ -140,7 +137,9 @@ app.get('/user/profile/:id?', (req, res) => {
 						<tbody></tbody>
 					</table>
 				</label>
-				<label class="roles"><span>Roles:&nbsp;</span>
+			</div>
+			<div class="roles">
+				<label><span>Roles:&nbsp;</span>
 					<table>
 						<thead>
 							<tr>

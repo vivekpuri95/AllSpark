@@ -13,7 +13,7 @@ class Profile extends Page {
 
 	static setup() {
 
-		Profile.container = document.querySelector('main #profile-details');
+		Profile.container = document.querySelector('main section#profile');
 	}
 
 	static async load() {
@@ -31,11 +31,14 @@ class Profile extends Page {
 
 	static render() {
 
-		const response = Profile.response[0]
-		Profile.container.querySelector('#name').textContent = response.first_name + (" "+response.middle_name || "") +" "+response.last_name ;
-		Profile.container.querySelector('#user_id').textContent = response.user_id;
-		Profile.container.querySelector('#email').textContent = response.email;
-		Profile.container.querySelector('#phone').textContent = response.phone || 'NA';
+		const response = Profile.response[0];
+
+		Profile.container.querySelector('.profile-details').innerHTML = `
+			<label><span>Name:&nbsp;</span><div>${response.first_name + (" "+response.middle_name || "") +" "+response.last_name}</div></label>
+			<label><span>User_id:&nbsp;</span><div>${response.user_id}</div></label>
+			<label><span>Email:&nbsp;</span><div>${response.email}</div></label>
+			<label><span>Phone:&nbsp;</span><div>${response.phone || 'NA'}</div></label>
+		`;
 
 		const privileges_table = Profile.container.querySelector('.privileges table tbody');
 		for(const data of response.privileges) {
