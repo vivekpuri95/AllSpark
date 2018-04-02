@@ -604,8 +604,8 @@ body {
 				position: absolute;
 				font-size: 90%;
 				opacity: 1;
-				transition: left 200ms,
-							top 200ms;
+				transition: left 100ms,
+							top 100ms;
 			}
 				main .data-source .visualization .tooltip header {
 					padding: var(--gap) calc(var(--gap) * 2);
@@ -622,10 +622,9 @@ body {
 				main .data-source .visualization .tooltip .body {
 					list-style: none;
 					margin: 0;
-					padding: calc(var(--gap) * 2);
+					padding: var(--gap);
 					display: grid;
 					grid-template-columns: 100%;
-					grid-row-gap: var(--gap);
 					background: rgba(255, 255, 255, 0.1);
 				}
 					main .data-source .visualization .tooltip li {
@@ -633,6 +632,10 @@ body {
 						grid-template-columns: 16px auto 1fr;
 						grid-column-gap: var(--gap);
 						align-items: center;
+						padding: var(--gap);
+					}
+					main .data-source .visualization .tooltip li.hover {
+						background: rgba(255, 255, 255, 0.2);
 					}
 						main .data-source .visualization .tooltip .circle {
 							width: 80%;
@@ -929,5 +932,5 @@ body {
 	transition: fill var(--transition-duration);
 }
 .visualization .container > svg .bar.hover {
-	fill: #666;
+	fill: #666 !important;
 }

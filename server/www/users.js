@@ -189,6 +189,8 @@ exports.metadata = class extends API {
 			metadata[row.type].push(row);
 		}
 
+		metadata.visualizations = await this.mysql.query('SELECT * FROM tb_visualizations');
+
 		return metadata;
 	}
 };

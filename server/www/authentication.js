@@ -141,7 +141,7 @@ exports.refresh = class extends API {
 
 		const loginObj = await commonFun.verifyJWT(this.request.body.refresh_token);
 
-		const [user] = await this.mysql.query("select * from tb_users where user_id = ?", loginObj.user_id);
+		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ?", loginObj.user_id);
 
 		this.assert(user, "user not found");
 
@@ -211,17 +211,16 @@ exports.refresh = class extends API {
 			}
 		});
 
-
 		const obj = {
 			user_id: user.user_id,
 			account_id: this.account.account_id,
 			email: loginObj.email,
 			name: [user.first_name, user.middle_name, user.last_name].filter(x => x).join(' '),
-			roles: roles,
-			privileges: privileges
+			roles,
+			privileges,
 		};
 
-		return commonFun.makeJWT(obj, parseInt(user.ttl || 7) * 86400);
+		return commonFun.makeJWT(obj, 5 * 60);
 	}
 }
 
@@ -234,14 +233,14 @@ exports.tookan = class extends API {
 		}
 
 		let userDetail = await this.mysql.query(`
-            select
+            SELECT
                 u.*
-            from
+            FROM
                 jungleworks.tb_users tu
-            join
+            JOIN
                 tb_users u
                 using(user_id)
-            where
+            WHERE
                 access_token = ?
             `,
 			[this.request.query.access_token]);

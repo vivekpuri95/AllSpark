@@ -901,7 +901,14 @@ class ReportVisualizations {
 class ReportVisualization {
 
 	static setup() {
+
 		ReportVisualization.insert.form = document.getElementById('add-visualization');
+
+		for(const visualization of MetaData.visualizations) {
+			ReportVisualization.insert.form.type.insertAdjacentHTML('beforeend', `
+				<option value="${visualization.slug}">${visualization.name}</option>
+			`);
+		}
 	}
 
 	static async insert(e, report) {
@@ -954,16 +961,7 @@ class ReportVisualization {
 
 			<label>
 				<span>Type</span>
-				<select name="type" required>
-					<option value="table">Table</option>
-					<option value="spatialmap">Spatial Maps</option>
-					<option value="funnel">Funnel</option>
-					<option value="cohort">Cohort</option>
-					<option value="line">Line</option>
-					<option value="bar">Bar</option>
-					<option value="area">Area</option>
-					<option value="stacked">Stacked</option>
-				</select>
+				<select name="type" required></select>
 			</label>
 
 			<label class="save">
@@ -980,7 +978,13 @@ class ReportVisualization {
 		this.container.on('submit', e => this.update(e));
 		this.container.querySelector('.delete').on('click', () => this.delete());
 
-		this.container.elements.type.value = this.type;
+		for(const visualization of MetaData.visualizations) {
+			this.container.type.insertAdjacentHTML('beforeend', `
+				<option value="${visualization.slug}">${visualization.name}</option>
+			`);
+		}
+
+		this.container.type.value = this.type;
 
 		for(const element of this.container.elements) {
 			element.on('change', () => this.container.classList.add('unsaved'));

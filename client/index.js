@@ -524,16 +524,7 @@ app.get('/reports/:id?', (req, res) => {
 
 				<label>
 					<span>Type</span>
-					<select name="type" required>
-						<option value="table">Table</option>
-						<option value="spatialmap">Spatial Maps</option>
-						<option value="funnel">Funnel</option>
-						<option value="cohort">Cohort</option>
-						<option value="line">Line</option>
-						<option value="bar">Bar</option>
-						<option value="area">Area</option>
-						<option value="stacked">Stacked</option>
-					</select>
+					<select name="type" required></select>
 				</label>
 
 				<label class="save">
