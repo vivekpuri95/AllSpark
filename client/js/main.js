@@ -697,22 +697,26 @@ class DataSource {
 		container.querySelector('.menu-toggle').on('click', () => {
 			container.querySelector('.menu').classList.toggle('hidden');
 			container.querySelector('.menu-toggle').classList.toggle('selected');
+			this.visualizations.selected.render(true);
 		});
 
 		container.querySelector('.menu .filters-toggle').on('click', () => {
 			container.querySelector('.filters').classList.toggle('hidden');
 			container.querySelector('.filters-toggle').classList.toggle('selected');
+			this.visualizations.selected.render(true);
 		});
 
 		container.querySelector('.menu .description-toggle').on('click', () => {
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
+			this.visualizations.selected.render(true);
 		});
 
 		container.querySelector('.menu .share-link-toggle').on('click', () => {
 			container.querySelector('.share-link').classList.toggle('hidden');
 			container.querySelector('.share-link-toggle').classList.toggle('selected');
 			container.querySelector('.share-link input').select();
+			this.visualizations.selected.render(true);
 		});
 
 		container.querySelector('.menu .download').on('click', () => this.download());
@@ -1893,6 +1897,7 @@ class LinearVisualization extends Visualization {
 
 				this.width = width;
 				this.height = height;
+
 				this.plot(true);
 			}
 		});
@@ -2047,7 +2052,7 @@ class LinearVisualization extends Visualization {
 					continue;
 
 				tooltip.push(`
-					<li class="${that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
+					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
 						<span class="circle" style="background:${row.source.columns.get(key).color}"></span>
 						<span>${row.source.columns.get(key).name}</span>
 						<span class="value">${Format.number(value)}</span>
@@ -2058,7 +2063,7 @@ class LinearVisualization extends Visualization {
 			const content = `
 				<header>${row.get(that.axis.x.column)}</header>
 				<ul class="body">
-					${tooltip.join('')}
+					${tooltip.reverse().join('')}
 				</ul>
 			`;
 
@@ -2730,7 +2735,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		this.render();
 	}
 
-	render() {
+	render(resize) {
 
 		this.axis = {
 			x: {
@@ -2740,7 +2745,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		};
 
 		this.draw();
-		this.plot();
+		this.plot(resize);
 	}
 
 	plot(resize)  {
@@ -2874,7 +2879,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 		this.render();
 	}
 
-	render() {
+	render(resize) {
 
 		this.axis = {
 			x: {
@@ -2884,7 +2889,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 		};
 
 		this.draw();
-		this.plot();
+		this.plot(resize);
 	}
 
 	plot(resize) {
@@ -2915,8 +2920,10 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 			let total = 0;
 
-			for(const value of row.values())
-				total += parseFloat(value) || 0;
+			for(const [name, value] of row) {
+				if(name != this.axis.x.column)
+					total += parseFloat(value) || 0;
+			}
 
 			max = Math.max(max, Math.ceil(total) || 0);
 		}
@@ -3021,7 +3028,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		this.render();
 	}
 
-	render() {
+	render(resize) {
 
 		this.axis = {
 			x: {
@@ -3031,7 +3038,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		};
 
 		this.draw();
-		this.plot();
+		this.plot(resize);
 	}
 
 	plot(resize) {
@@ -3066,7 +3073,11 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 			let total = 0;
 
-			for(const value of row.values()) {
+			for(const [name, value] of row) {
+
+				if(name == this.axis.x.column)
+					continue;
+
 				total += parseFloat(value) || 0;
 				min = Math.min(min, Math.floor(value) || 0);
 			}
@@ -3165,82 +3176,6 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		})
 
 		.on('mouseout.area', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 0));
-	}
-});
-
-Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
-
-	get container() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		this.containerElement = document.createElement('section');
-
-		const container = this.containerElement;
-
-		container.classList.add('visualization', 'spatial-map');
-
-		container.innerHTML = `
-			<div class="container">
-				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
-			</div>
-		`;
-
-		return container;
-	}
-
-	async load(parameters = {}) {
-
-		super.render();
-
-		await this.source.fetch(parameters);
-
-		this.render();
-	}
-
-	render() {
-
-		const
-			markers = [],
-			response = this.source.response;
-
-		// If the maps object wasn't already initialized
-		if(!this.map)
-			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), { zoom: 12 });
-
-		// If the clustered object wasn't already initialized
-		if(!this.clusterer)
-			this.clusterer = new MarkerClusterer(this.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
-
-		// Add the marker to the markers array
-		for(const row of response) {
-			markers.push(
-				new google.maps.Marker({
-					position: {
-						lat: parseFloat(row.get('lat')),
-						lng: parseFloat(row.get('lng')),
-					},
-				})
-			);
-		}
-
-		if(!this.markers || this.markers.length != markers.length) {
-
-			// Empty the map
-			this.clusterer.clearMarkers();
-
-			// Load the markers
-			this.clusterer.addMarkers(markers);
-
-			this.markers = markers;
-		}
-
-		// Point the map to location's center
-		this.map.panTo({
-			lat: parseFloat(response[0].get('lat')),
-			lng: parseFloat(response[0].get('lng')),
-		});
 	}
 });
 
@@ -3573,6 +3508,277 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 	}
 });
 
+Visualization.list.set('pie', class Cohort extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'pie');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.process();
+
+		this.render();
+	}
+
+	process() {
+
+		this.label = 'name';
+		this.value = 'id';
+
+		const newResponse = {};
+
+		for(const row of this.source.originalResponse.data)
+			newResponse[row[this.label]] = row[this.value];
+
+		this.source.originalResponse.data = [newResponse];
+
+		const parent = this.source.container.parentElement;
+
+		parent.removeChild(this.source.container);
+
+		this.source.containerElement = null;
+
+		this.source.columns.clear();
+		this.source.columns.update();
+		this.source.columns.render();
+
+		parent.appendChild(this.source.container);
+	}
+
+	render(resize) {
+
+		this.rows = this.source.response;
+
+		this.height = this.container.clientHeight - 20;
+		this.width = this.container.clientWidth - 20;
+
+		window.addEventListener('resize', () => {
+
+			const
+				height = this.container.clientHeight - 20,
+				width = this.container.clientWidth - 20;
+
+			if(this.width != width || this.height != height)
+				this.render(true);
+		});
+
+		const
+			container = d3.selectAll(`#visualization-${this.id}`),
+			radius = Math.min(this.width - 50, this.height - 50) / 2,
+			that = this;
+
+		container.selectAll('*').remove();
+
+		const
+			[row] = this.source.response,
+			data = [],
+			sum = Array.from(row.values()).reduce((sum, value) => sum + value, 0);
+
+		for(const [name, value] of this.source.response[0])
+			data.push({name, value, percentage: Math.floor(value / sum * 1000) / 10});
+
+		const
+
+			pie = d3.layout
+				.pie()
+				.value(row => row.percentage),
+
+			arc = d3.svg.arc()
+				.outerRadius(radius)
+				.innerRadius(radius - 75),
+
+			arcHover = d3.svg.arc()
+				.outerRadius(radius + 10)
+				.innerRadius(radius - 75),
+
+			arcs = container
+				.append('svg')
+				.data([data])
+				.attr('width', this.width)
+				.attr('height', this.height)
+				.append('g')
+				.attr('transform', 'translate(' + (this.width / 2) + ',' + (this.height / 2) + ')')
+				.selectAll('g')
+				.data(pie)
+				.enter()
+				.append('g')
+				.attr('class', 'pie'),
+
+			slice = arcs.append('path')
+				.attr('fill', row => this.source.columns.get(row.data.name).color)
+				.classed('pie-slice', true);
+
+		slice
+			.on('mousemove', function(row) {
+
+				const mouse = d3.mouse(this);
+
+				mouse[0] += that.width / 2;
+				mouse[1] += that.height / 2;
+
+				const content = `
+					<header>${row.data.name}</header>
+					<ul class="body">${row.data.value}</ul>
+				`;
+
+				Tooltip.show(that.container, mouse, content, row);
+
+				d3.select(this).classed('hover', true);
+			})
+
+			.on('mouseenter', function(row) {
+
+				d3
+					.select(this)
+					.transition()
+					.duration(Visualization.animationDuration / 3)
+					.attr('d', row => arcHover(row));
+			})
+
+			.on('mouseleave', function() {
+
+				d3
+					.select(this)
+					.transition()
+					.duration(Visualization.animationDuration / 3)
+					.attr('d', row => arc(row));
+
+				Tooltip.hide(that.container);
+
+				d3.select(this).classed('hover', false);
+			});
+
+		if(!resize) {
+			slice
+				.transition()
+				.duration(Visualization.animationDuration / data.length * 2)
+				.delay((_, i) => i * Visualization.animationDuration / data.length)
+				.attrTween('d', function(d) {
+
+					const i = d3.interpolate(d.endAngle, d.startAngle);
+
+					return t => {
+						d.startAngle = i(t);
+						return arc(d)
+					}
+				});
+		} else {
+			slice.attr('d', row => arc(row));
+		}
+
+		// Add the text
+		arcs.append('text')
+			.attr('transform', row => {
+				row.innerRadius = radius - 50;
+				row.outerRadius = radius;
+				return `translate(${arc.centroid(row)})`;
+			})
+			.attr('text-anchor', 'middle')
+			.text(row => row.data.percentage + '%');
+	}
+});
+
+Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('section');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'spatial-map');
+
+		container.innerHTML = `
+			<div class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(parameters = {}) {
+
+		super.render();
+
+		await this.source.fetch(parameters);
+
+		this.render();
+	}
+
+	render() {
+
+		const
+			markers = [],
+			response = this.source.response;
+
+		// If the maps object wasn't already initialized
+		if(!this.map)
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), { zoom: 12 });
+
+		// If the clustered object wasn't already initialized
+		if(!this.clusterer)
+			this.clusterer = new MarkerClusterer(this.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+
+		// Add the marker to the markers array
+		for(const row of response) {
+			markers.push(
+				new google.maps.Marker({
+					position: {
+						lat: parseFloat(row.get('lat')),
+						lng: parseFloat(row.get('lng')),
+					},
+				})
+			);
+		}
+
+		if(!this.markers || this.markers.length != markers.length) {
+
+			// Empty the map
+			this.clusterer.clearMarkers();
+
+			// Load the markers
+			this.clusterer.addMarkers(markers);
+
+			this.markers = markers;
+		}
+
+		// Point the map to location's center
+		this.map.panTo({
+			lat: parseFloat(response[0].get('lat')),
+			lng: parseFloat(response[0].get('lng')),
+		});
+	}
+});
+
 Visualization.list.set('cohort', class Cohort extends Visualization {
 
 	get container() {
@@ -3695,7 +3901,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 class Tooltip {
 
-	static show(div, position, content, row) {
+	static show(div, position, content) {
 
 		if(!div.querySelector('.tooltip'))
 			div.insertAdjacentHTML('beforeend', `<div class="tooltip"></div>`)
@@ -3705,9 +3911,6 @@ class Tooltip {
 			distanceFromMouse = 40;
 
 		container.innerHTML = content;
-
-		if(row && row.annotations.size)
-			container.querySelector('header').appendChild(row.annotations.opener);
 
 		if(container.classList.contains('hidden'))
 			container.classList.remove('hidden');

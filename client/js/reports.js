@@ -904,11 +904,17 @@ class ReportVisualization {
 
 		ReportVisualization.insert.form = document.getElementById('add-visualization');
 
+		const type = ReportVisualization.insert.form.type;
+
 		for(const visualization of MetaData.visualizations) {
-			ReportVisualization.insert.form.type.insertAdjacentHTML('beforeend', `
+			type.insertAdjacentHTML('beforeend', `
 				<option value="${visualization.slug}">${visualization.name}</option>
 			`);
 		}
+
+		type.on('change', () => {
+			ReportVisualization.insert.form.name.value = type.options[type.selectedIndex].textContent;
+		});
 	}
 
 	static async insert(e, report) {

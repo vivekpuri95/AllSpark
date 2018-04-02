@@ -153,7 +153,7 @@ main #reports .list {
 			display: initial;
 		}
 		main .singleton .data-source .visualization {
-			max-height: 50%;
+			max-height: 60%;
 		}
 		main .singleton .data-source .visualization.table > .container {
 			height: calc(100vh - 348px);
