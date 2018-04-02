@@ -620,8 +620,7 @@ class Report {
 			Report.container.querySelector(`#${tab}`).click();
 
 		} catch(e) {
-
-			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${JSON.stringify(JSON.parse(e.response || '{}'), 0, 1)}</code>`;
+			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${e.message}</code>`;
 		}
 
 		Report.testContainer.parentElement.classList.remove('hidden');

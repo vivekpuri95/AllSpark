@@ -886,6 +886,10 @@ body {
 .visualization .container > svg .y path {
 	display: none;
 }
+.visualization .container > svg .x path {
+	stroke: #999;
+	stroke-width: 1px;
+}
 
 .visualization .container > svg text.axis-label {
 	font-size: 130%;
@@ -895,6 +899,9 @@ body {
 }
 .visualization .container > svg text.axis-label.y {
 	writing-mode: vertical-lr;
+}
+.visualization .container > svg .tick text {
+	font-size: 90%;
 }
 
 .visualization .container > svg .line {

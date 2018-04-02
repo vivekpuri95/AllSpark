@@ -996,10 +996,10 @@ class DataSourceColumns extends Map {
 		if(!this.source.originalResponse.data || !this.source.originalResponse.data.length)
 			return;
 
-		for(const column in this.source.originalResponse.data[0]) {
-			if(!this.has(column))
-				this.set(column, new DataSourceColumn(column, this.source));
-		}
+		this.clear();
+
+		for(const column in this.source.originalResponse.data[0])
+			this.set(column, new DataSourceColumn(column, this.source));
 	}
 
 	render() {
@@ -1115,7 +1115,7 @@ class DataSourceColumn {
 		this.source = source;
 		this.name = this.key.split('_').map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
 		this.disabled = 0;
-		this.color = DataSourceColumn.colors[this.source.columns.size];
+		this.color = DataSourceColumn.colors[this.source.columns.size % DataSourceColumn.colors.length];
 	}
 
 	get container() {
@@ -1586,7 +1586,11 @@ class DataSourcePostProcessors {
 	}
 
 	update() {
-		this.source.container.querySelector('.postprocessors').classList.toggle('hidden', !this.source.columns.has('timing'));
+
+		const container = this.source.container.querySelector('.postprocessors');
+
+		if(container)
+			container.classList.toggle('hidden', !this.source.columns.has('timing'));
 	}
 }
 
@@ -1885,13 +1889,13 @@ class LinearVisualization extends Visualization {
 		this.axis.y.width = 50;
 
 		this.height = this.container.clientHeight - this.axis.x.height - 20;
-		this.width = this.container.clientWidth - this.axis.y.width - 30;
+		this.width = this.container.clientWidth - this.axis.y.width - 40;
 
 		window.addEventListener('resize', () => {
 
 			const
 				height = this.container.clientHeight - this.axis.x.height - 20,
-				width = this.container.clientWidth - this.axis.y.width - 30;
+				width = this.container.clientWidth - this.axis.y.width - 40;
 
 			if(this.width != width || this.height != height) {
 
@@ -2280,7 +2284,7 @@ Visualization.list.set('table', class Table extends Visualization {
 	}
 });
 
-Visualization.list.set('line', class Line extends Visualization {
+Visualization.list.set('line', class Line extends LinearVisualization {
 
 	get container() {
 
@@ -2315,388 +2319,163 @@ Visualization.list.set('line', class Line extends Visualization {
 		this.render();
 	}
 
-	render() {
+	render(resize) {
+
+		this.axis = {
+			x: {
+				column: 'name',
+			},
+			y: {}
+		};
+
+		this.draw();
+
+		this.plot(resize);
+	}
+
+	plot(resize) {
+
+		super.plot(resize);
+
+		if(!this.rows.length)
+			return;
 
 		const
-			series = {},
-			rows = this.source.response;
+			container = d3.selectAll(`#visualization-${this.id}`),
+			that = this;
 
-		for(const row of rows) {
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
 
-			row.date = Format.date(row.get('timing'));
+		const
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
 
-			for(const [key, value] of row) {
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
 
-				if(key == 'timing')
+		let
+			max = null,
+			min = null;
+
+		for(const row of this.rows) {
+
+			for(const [name, value] of row) {
+
+				if(name == this.axis.x.column)
 					continue;
 
-				if(!series[key]) {
-					series[key] = {
-						label: this.source.columns.get(key).name,
-						color: this.source.columns.get(key).color,
-						data: []
-					};
-				}
+				if(max == null)
+					max = Math.floor(value);
 
-				series[key].data.push({
-					date: row.date,
-					x: null,
-					y: value,
-				});
+				if(min == null)
+					min = Math.floor(value);
+
+				max = Math.max(max, Math.floor(value) || 0);
+				min = Math.min(min, Math.floor(value) || 0);
 			}
 		}
 
-		this.draw({
-			series: Object.values(series),
-			rows: rows,
-			divId: `#visualization-${this.id}`,
-			chart: {},
-		});
-	}
+		this.y.domain([min, max]);
+		this.x.domain(this.rows.map(r => r.get(this.axis.x.column)));
+		this.x.rangePoints([0, this.width], 0.1, 0);
 
-	draw(obj) {
+		const
+			tickNumber = this.width < 400 ? 3 : 6,
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
-		const rows = obj.rows;
+		xAxis.tickValues(ticks);
 
-		d3.selectAll(obj.divId)
-			.on('mousemove', null)
-			.on('mouseout', null)
-			.on('mousedown', null);
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axis.y.width}, 0)`);
 
-		var chart = {};
-
-		var data = obj.series;
-
-		var tickNumber = 5;
-
-		// Setting margin and width and height
-		var margin = {top: 20, right: 30, bottom: 40, left: 50},
-			width = (this.container.clientWidth || 600) - margin.left - margin.right,
-			height = (obj.chart.height || 456) - margin.top - margin.bottom;
-
-		var x = d3.scale.ordinal()
-			.domain([0, 1])
-			.rangePoints([0, width], 0.1, 0);
-
-		var y = d3.scale.linear().range([height, margin.top]);
-
-		// Defining xAxis location at bottom the axes
-		var xAxis = d3.svg.axis()
-			.scale(x)
-			.orient("bottom");
-
-		//Defining yAxis location at left the axes
-		var yAxis = d3.svg.axis()
-			.scale(y)
-			.innerTickSize(-width)
-			.orient("left");
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axis.y.width}, ${this.height})`)
+			.call(xAxis);
 
 		//graph type line and
-		var line = d3.svg.line()
-			.x(d => x(d.date))
-			.y(d => y(d.y));
+		const
+			line = d3.svg
+				.line()
+				.x(d => this.x(d.x)  + this.axis.y.width)
+				.y(d => this.y(d.y));
 
-		var disbleHover = false;
+		//Appending line in chart
+		this.svg.selectAll('.city')
+			.data(this.columns)
+			.enter()
+			.append('g')
+			.attr('class', 'city')
+			.append('path')
+			.attr('class', 'line')
+			.attr('d', d => line(d))
+			.style('stroke', d => d.color);
 
-		var rawData = JSON.parse(JSON.stringify(data));
-		var series = data,
-			zoom = true;
+		// Selecting all the paths
+		const path = this.svg.selectAll('path');
 
-		//chart function to create chart
-		chart.plot = resize => {
+		if(!resize) {
+			path[0].forEach(path => {
+				var length = path.getTotalLength();
 
-			//Empty the container before loading
-			d3.selectAll(obj.divId+" > *").remove();
+				path.style.strokeDasharray = length + ' ' + length;
+				path.style.strokeDashoffset = length;
+				path.getBoundingClientRect();
 
-			//Adding chart and placing chart at specific location using translate
-			var svg = d3.select(obj.divId)
-				.append("svg")
-				.append("g")
-				.attr("class", "chart")
-				.attr("transform", `translate(${margin.left}, ${margin.top})`);
-
-			// Reset Zoom Button
-			svg.append('g').attr('class', 'resetZoom')
-				.classed("toggleReset", zoom)
-				.attr("x", width / 2)
-				.attr("y", -10)
-				.style("z-index", 1000)
-				.append("rect")
-				.attr("width", 80)
-				.attr("height", 20)
-				.attr("x", (width / 2) - 2)
-				.attr("y", -10)
-				.attr("rx", 2)
-				.style("fill", "#f2f2f2")
-				.style("stroke", "#666666")
-				.style("stroke-width", "1px");
-
-			d3.select(obj.divId + " > svg > g > g[class='resetZoom']")
-				.append("text")
-				.attr("x", ((width / 2) + 40))
-				.attr("y", 4)
-				.attr("text-anchor", "middle")
-				.style("font-size", "12px")
-				.text("Reset Zoom");
-
-			//Click on reset zoom function
-			d3.select(obj.divId+" > svg > g > g[class='resetZoom']").on("mousedown", function () {
-				data.forEach((d, i) => d.data = rawData[i].data);
-				zoom = true;
-				chart.plot()
+				path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+				path.style.strokeDashoffset = '0';
 			});
+		}
 
-			//check if the data is present or not
-			if(!rows.length) {
+		// For each line appending the circle at each point
+		for(const column of this.columns) {
 
-				return svg.append('g').attr('class','noDataWrap').append('text')
-					.attr("x", (width / 2))
-					.attr("y",  (height / 2))
-					.attr("text-anchor", "middle")
-					.attr("class", "NA")
-					.attr("fill", "#999")
-					.text(this.source.originalResponse.message || 'No data found! :(');
-			}
+			this.svg.selectAll('dot')
+				.data(column)
+				.enter()
+				.append('circle')
+				.attr('class', 'clips')
+				.attr('id', (_, i) => i)
+				.attr('r', 0)
+				.style('fill', column.color)
+				.attr('cx', d => this.x(d.x) + this.axis.y.width)
+				.attr('cy', d => this.y(d.y))
+		}
 
-			//setting the upper an d lower limit in x - axis
-			x.domain(series[0].data.map(d => d.date));
+		container
+		.on('mousemove.line', function() {
 
-			//var mult = Math.max(1, Math.floor(width / x.domain().length));
-			x.rangePoints([0, width], 0.1, 0);
+			container.selectAll('svg > g > circle[class="clips"]').attr('r', 0);
 
-			y.domain([
-				d3.min(series, c => d3.min(c.data, v => Math.floor(v.y))),
-				d3.max(series, c => d3.max(c.data, v => Math.ceil(v.y)))
-			]);
+			const
+				mouse = d3.mouse(this),
+				xpos = parseInt((mouse[0] - that.axis.y.width - 10) / (that.width / that.rows.length)),
+				row = that.rows[xpos];
 
-			if(window.innerWidth <= 768)
-				tickNumber = 2;
+			if(!row || that.zoomRectangle)
+				return;
 
-			var tickInterval = parseInt(x.domain().length / tickNumber);
-			var ticks = x.domain().filter((d, i) => !(i % tickInterval));
+			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+		})
 
-			xAxis.tickValues(ticks);
-			yAxis.innerTickSize(-width);
+		.on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 0));
 
-			//Appending x - axis
-			svg.append("g")
-				.attr("class", "x axis")
-				.attr("transform", "translate(0," + height + ")")
-				.call(xAxis);
-
-			//Appending y - axis
-			svg.append("g")
-				.attr("class", "y axis")
-				.call(yAxis);
-
-			//Appending line in chart
-			svg.selectAll(".city")
-				.data(series)
-				.enter().append("g")
-				.attr("class", "city")
-				.append("path")
-				.attr("class", "line")
-				.attr("d", d => line(d.data))
-				.style("stroke", d => d.color);
-
-			// Selecting all the paths
-			var path = svg.selectAll("path");
-
-			if(!resize) {
-				path[0].forEach(path => {
-					var length = path.getTotalLength();
-
-					path.style.strokeDasharray = length + ' ' + length;
-					path.style.strokeDashoffset = length;
-					path.getBoundingClientRect();
-
-					path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
-					path.style.strokeDashoffset = '0';
-				});
-			}
-
-			// For each line appending the circle at each point
-			for(const data of series) {
-
-				svg.selectAll("dot")
-					.data(data.data)
-					.enter().append("circle")
-					.attr('class', (d, i) => rows[i].annotations.size ? 'clips annotations' : 'clips')
-					.attr('id', (d, i) => i)
-					.attr("r", (d, i) => rows[i].annotations.size ? 4 : 0)
-					.style('fill', (d, i) => rows[i].annotations.size ? '#666' : data.color)
-					.attr("cx", d => x(d.date))
-					.attr("cy", d => y(d.y))
-			}
-
-			var lastXpos;
-			var that = this;
-
-			d3.selectAll(obj.divId)
-			.on('mousemove', function() {
-
-				var cord = d3.mouse(this);
-				var rows = obj.rows;
-
-				if(disbleHover)
-					return Tooltip.hide(that.container);
-
-				d3.selectAll(obj.divId+' > svg > g > circle[class="clips"]').attr('r', 0);
-				d3.selectAll(obj.divId+' > svg > g > circle[class="clips annotations"]').attr('r', 4);
-
-				var xpos = parseInt((cord[0] - 50) / (width / series[0].data.length));
-
-				var row = rows[xpos];
-
-				if(!row)
-					return;
-
-				d3.selectAll(`${obj.divId} > svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
-				d3.selectAll(`${obj.divId} > svg > g > circle[id='${xpos}'][class="clips annotations"]`).attr('r', 6);
-
-				const tooltip = [];
-
-				for(const [key, value] of row.entries()) {
-
-					if(key == 'timing')
-						continue;
-
-					tooltip.push(`
-						<li>
-							<span class="circle" style="background:${row.source.columns.get(key).color}"></span>
-							<span>${row.source.columns.get(key).name}</span>
-							<span class="value">${Format.number(value)}</span>
-						</li>
-					`);
-				}
-
-				const content = `
-					<header>${row.date}</header>
-					<ul class="body">
-						${tooltip.join('')}
-					</ul>
-				`;
-
-				Tooltip.show(that.container, cord, content, row);
-			})
-			.on('mouseout', function () {
-
-				Tooltip.hide(that.container);
-
-				d3.selectAll(obj.divId+' > svg > g > circle[class="clips"]').attr('r', 0);
-			});
-
-			//zoming function
-			d3.selectAll(obj.divId)
-			.on("click", function () {
-
-				var cord = d3.mouse(this);
-				var rows = obj.rows;
-
-				var xpos = parseInt(Math.max(0, cord[0]) / (width / series[0].data.length)) - 2;
-
-				var row = rows[xpos];
-
-				Tooltip.hide(that.container);
-			})
-			.on("mousedown", function () {
-
-				//remove all the rectangele created before
-				d3.selectAll(obj.divId + " > rect[class='zoom']").remove();
-
-				//assign this toe,
-				var e = this,
-					origin = d3.mouse(e),   // origin is the array containing the location of cursor from where the rectangle is created
-					rect = svg.append("rect").attr("class", "zoom"); //apending the rectangle to the chart
-				d3.select("body").classed("noselect", true);  //disable select
-				//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-				origin[0] = Math.max(0, Math.min(width, (origin[0] - margin.left)));
-				disbleHover = true;
-
-				//if the mouse is down and mouse is moved than start creating the rectangle
-				d3.select(window)
-				.on("mousemove.zoomRect", function () {
-					//current location of mouse
-					var m = d3.mouse(e);
-					//find the min between the width and and cursor location to prevent the rectangle move out of the chart
-					m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
-
-					//asign width and height to the rectangle
-					rect.attr("x", Math.min(origin[0], m[0]))
-						.attr("y", margin.top)
-						.attr("width", Math.abs(m[0] - origin[0]))
-						.attr("height", height - margin.top);
-				})
-				.on("mouseup.zoomRect", function () {  //function to run mouse is released
-
-					d3.select(window).on("mousemove.zoomRect", null).on("mouseup.zoomRect", null);
-
-					//allow selection
-					d3.select("body").classed("noselect", false);
-					var m = d3.mouse(e);
-
-					//the position where the mouse the released
-					m[0] = Math.max(0, Math.min(width, (m[0] - margin.left)));
-					//check that the origin location on x axis of the mouse should not be eqaul to last
-					if (m[0] !== origin[0] && series.length != 0) {
-
-						//starting filtering data
-						data.forEach(function (d) {
-
-							//slicing each line if and only if the length of data > 50 (minimum no of ticks should be present in the graph)
-							if (d.data.length > 50) {
-								d.data = d.data.filter(function (a) {
-									if (m[0] < origin[0]) {
-										return x(a.date) >= m[0] && x(a.date) <= origin[0];
-									} else {
-										return x(a.date) <= m[0] && x(a.date) >= origin[0];
-									}
-								});
-							}
-						});
-						zoom = false;
-						//calling the chart function to update the graph
-						chart.plot();
-					}
-					disbleHover = false;
-					rect.remove();
-				}, true);
-
-				d3.event.stopPropagation();
-			});
-
-			//When in mouse is over the line than focus the line
-			path.on('mouseover', function (d) {
-
-				if(disbleHover)
-					return;
-
-				if(d)
-					d.hover = true;
-
-				svg.selectAll("path").classed("line-hover", d => d.hover);
-			});
-
-			//When in mouse is put the line than focus the line
-			path.on('mouseout', function (d) {
-
-				if(d)
-					d.hover = false;
-
-				svg.selectAll("path").classed("line-hover", d => d.hover);
-			});
-		};
-
-		chart.plot();
-
-		window.addEventListener('resize', () => {
-			if(width !== (this.container.clientWidth - margin.left - margin.right)) {
-				width = this.container.clientWidth - margin.left - margin.right;
-				chart.plot(true);
-			}
+		path.on('mouseover', function (d) {
+			d3.select(this).classed('line-hover', true);
 		});
 
-		return chart;
+		path.on('mouseout', function (d) {
+			d3.select(this).classed('line-hover', false);
+		});
 	}
 });
 
@@ -3566,6 +3345,11 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 		this.source.columns.clear();
 		this.source.columns.update();
 		this.source.columns.render();
+
+		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
+
+		if(visualizationToggle)
+			visualizationToggle.value = this.source.visualizations.indexOf(this);
 
 		parent.appendChild(this.source.container);
 	}
