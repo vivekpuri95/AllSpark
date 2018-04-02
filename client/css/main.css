@@ -926,8 +926,8 @@ body {
 		font-size: 110%;
 	}
 .visualization .container > svg .bar {
-	transition: opacity var(--transition-duration);
+	transition: fill var(--transition-duration);
 }
 .visualization .container > svg .bar.hover {
-	opacity: 0.7;
+	fill: #666;
 }
