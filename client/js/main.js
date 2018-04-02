@@ -2101,6 +2101,9 @@ class LinearVisualization extends Visualization {
 
 		.on('mouseup', function() {
 
+			if(!that.zoomRectangle)
+				return;
+
 			that.zoomRectangle.remove();
 
 			const
@@ -2305,7 +2308,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(e, resize) {
 
 		if(e && e.preventDefault)
 			e.preventDefault();
@@ -2316,7 +2319,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		await this.source.fetch();
 
-		this.render();
+		this.render(resize);
 	}
 
 	render(resize) {
@@ -3336,12 +3339,6 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 
 		this.source.originalResponse.data = [newResponse];
 
-		const parent = this.source.container.parentElement;
-
-		parent.removeChild(this.source.container);
-
-		this.source.containerElement = null;
-
 		this.source.columns.clear();
 		this.source.columns.update();
 		this.source.columns.render();
@@ -3350,8 +3347,6 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 
 		if(visualizationToggle)
 			visualizationToggle.value = this.source.visualizations.indexOf(this);
-
-		parent.appendChild(this.source.container);
 	}
 
 	render(resize) {
@@ -3403,8 +3398,6 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 			arcs = container
 				.append('svg')
 				.data([data])
-				.attr('width', this.width)
-				.attr('height', this.height)
 				.append('g')
 				.attr('transform', 'translate(' + (this.width / 2) + ',' + (this.height / 2) + ')')
 				.selectAll('g')

@@ -480,7 +480,6 @@ class Report {
 		view.on('click', Report.container.viewListener = () => window.open(`/report/${this.query_id}`));
 
 		Report.form.on('submit', Report.form.listener = e => this.update(e));
-		Report.form.on('submit', Report.form.listener = e => this.update(e));
 
 		if(ReportFilter.insert.form.listener)
 			ReportFilter.insert.form.removeEventListener('submit', ReportFilter.insert.form.listener);
