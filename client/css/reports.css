@@ -48,12 +48,15 @@ main section.section.show {
 		main #list tr .tags a:active {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.35);
 		}
-main #form {
+main #form.show {
 	margin-bottom: 10px;
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
 }
 	main #form h1 {
 		display: flex;
-		align-items: center
+		align-items: center;
+		margin: 0;
 	}
 	main #form h1 a {
 		margin-left: auto;
@@ -97,20 +100,6 @@ main #form #report-form {
 	background: #fff;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 }
-		main #form form label > span {
-			font-size: 12px;
-			margin-bottom: 5px;
-		}
-		main #form form input,
-		main #form form textarea,
-		main #form form select {
-			padding: 6px 8px;
-			flex: 1;
-		}
-		main #form form textarea {
-			width: 300px;
-			height: 150px
-		}
 		main #form #source {
 			flex-wrap: wrap;
 			justify-content: left;
@@ -190,9 +179,10 @@ main #form #report-form {
 
 	main #form h3 {
 		border-bottom: 1px dashed #999;
+		margin: var(--gap) 0;
 	}
 	main #form .toolbar {
-		margin-bottom: 10px;
+		margin: 0;
 	}
 	main #form #missing-filters {
 		background: #fcc;
@@ -202,40 +192,29 @@ main #form #report-form {
 		border:  1px solid #ccc;
 		font-weight: normal;
 	}
-	main #form .filter,
-	main #form .visualization {
-		display: flex;
-		transition: opacity var(--transition-duration);
+	main .form.filter,
+	main .form.visualization {
+		padding: 0;
+		margin: calc(var(--gap) * 3) 0;
+		grid-template-columns: repeat(10, auto);
+		grid-gap: calc(var(--gap) * 2);
+		overflow: auto;
+		justify-content: flex-start;
 	}
-	main #form .filter.disabled,
-	main #form .visualization.disabled {
-		opacity: 0.6;
+	main .form.filter::-webkit-scrollbar,
+	main .form.visualization::-webkit-scrollbar {
+		display: none;
 	}
-	main #form .filter.disabled:hover,
-	main #form .visualization.disabled:hover {
-		opacity: 1;
-	}
-	main #form .filter.unsaved input[type=submit],
-	main #form .visualization.unsaved input[type=submit] {
+	main .form.filter.unsaved button[type=submit],
+	main .form.visualization.unsaved button[type=submit] {
 		background: #c11;
 	}
 		main #form .NA {
 			margin: 5px;
 		}
-		main #form .filter label,
-		main #form .visualization label {
-			margin: 5px;
-			width: 150px;
-			max-width: 150px;
-		}
-			main #form .filter input,
-			main #form .visualization input {
-				margin: 0 !important;
-			}
 		main #form .save,
 		main #form .delete {
-			min-width: 60px !important;
-			max-width: 60px;
+			white-space: nowrap;
 		}
 		main #form .red {
 			box-shadow: inset -15px 0 #c11;
@@ -274,14 +253,11 @@ main #form #report-form {
 		.tab:active {
 			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
 		}
-.form-container {
-	overflow: auto;
-}
-main #form form label {
-	font-weight: bold;
-	display: flex;
-	flex-direction: column;
-	max-width: 200px;
-	justify-content: space-between;
-	flex: 1 0;
-}
+	main #form #visualizations {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		grid-gap: calc(var(--gap) * 2);
+	}
+		main #form #visualization-preview {
+			height: 450px;
+		}

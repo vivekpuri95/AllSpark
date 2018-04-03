@@ -10,7 +10,7 @@ class Reports extends Page {
 			Report.setup(this.container.querySelector('section#form'));
 
 			ReportFilters.setup(this.container.querySelector('#filters-list'));
-			ReportVisualizations.setup(this.container.querySelector('#visualizations-list'));
+			ReportVisualizations.setup(this);
 
 			await Reports.load();
 
@@ -200,12 +200,17 @@ class Report {
 
 		Report.selected = null;
 
-		Report.container.querySelector('h1').textContent = 'Add New Report';
+		const view = Report.container.querySelector('.toolbar #view');
+
+		Report.container.querySelector('h1').textContent = 'Adding New Report';
 
 		if(Report.form.listener)
 			Report.form.removeEventListener('submit', Report.form.listener);
 
 		Report.form.on('submit', Report.form.listener = e => Report.insert(e));
+
+		if(Report.container.viewListener)
+			view.removeEventListener('click', Report.container.viewListener);
 
 		Report.form.reset();
 		Report.editor.value = '';
@@ -462,16 +467,17 @@ class Report {
 
 		Report.selected = this;
 
-		Report.form.parentElement.querySelector('h1').innerHTML = `
-			${this.name}
-			<a href="/report/${this.id}" target="_blank">
-				View
-				<i class="fas fa-external-link-alt"></i>
-			</a>&nbsp;
-		`;
+		const view = Report.container.querySelector('.toolbar #view');
+
+		Report.form.parentElement.querySelector('h1').innerHTML = `${this.name} - ${this.query_id}`;
 
 		if(Report.form.listener)
 			Report.form.removeEventListener('submit', Report.form.listener);
+
+		if(Report.container.viewListener)
+			view.removeEventListener('click', Report.container.viewListener);
+
+		view.on('click', Report.container.viewListener = () => window.open(`/report/${this.query_id}`));
 
 		Report.form.on('submit', Report.form.listener = e => this.update(e));
 
@@ -613,8 +619,7 @@ class Report {
 			Report.container.querySelector(`#${tab}`).click();
 
 		} catch(e) {
-
-			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${JSON.stringify(JSON.parse(e.response || '{}'), 0, 1)}</code>`;
+			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${e.message}</code>`;
 		}
 
 		Report.testContainer.parentElement.classList.remove('hidden');
@@ -733,19 +738,22 @@ class ReportFilter {
 			return this.container;
 
 		this.container = document.createElement('form');
-		this.container.classList.add('filter');
+		this.container.classList.add('form', 'filter');
 		this.container.id = 'filters-form-'+this.id;
 
 		this.container.innerHTML = `
 			<label>
-				<input type="text" name="name" value="${this.name}" placeholder="Name" required>
+				<span>Name</span>
+				<input type="text" name="name" value="${this.name}" required>
 			</label>
 
 			<label>
-				<input type="text" name="placeholder" value="${this.placeholder}" placeholder="Placeholder" required>
+				<span>Placeholder</span>
+				<input type="text" name="placeholder" value="${this.placeholder}" required>
 			</label>
 
 			<label>
+				<span>Type</span>
 				<select name="type" required>
 					<option value="0">Integer</option>
 					<option value="1">String</option>
@@ -756,24 +764,29 @@ class ReportFilter {
 			</label>
 
 			<label>
-				<input type="text" name="description" value="${this.description || ''}" placeholder="Description">
+				<span>Description</span>
+				<input type="text" name="description" value="${this.description || ''}">
 			</label>
 
 			<label>
-				<input type="text" name="default_value" value="${this.default_value || ''}" placeholder="Default Value">
+				<span>Default Value</span>
+				<input type="text" name="default_value" value="${this.default_value || ''}">
 			</label>
 
 			<label>
-				<input type="text" name="offset" value="${this.offset === null ? '' : this.offset}" placeholder="Offset">
+				<span>Offset</span>
+				<input type="text" name="offset" value="${this.offset === null ? '' : this.offset}">
 			</label>
 
 			<label>
+				<span>Dataset</span>
 				<select name="dataset">
 					<option value="">None</option>
 				</select>
 			</label>
 
 			<label>
+				<span>Multiple</span>
 				<select name="multiple" required>
 					<option value="0">No</option>
 					<option value="1">Yes</option>
@@ -781,11 +794,13 @@ class ReportFilter {
 			</label>
 
 			<label class="save">
-				<input type="submit" value="Save">
+				<span>&nbsp;</span>
+				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</label>
 
 			<label class="delete">
-				<input type="button" value="Delete">
+				<span>&nbsp;</span>
+				<button type="button"><i class="far fa-trash-alt"></i> Delete</button>
 			</label>
 		`;
 
@@ -856,8 +871,10 @@ class ReportFilter {
 
 class ReportVisualizations {
 
-	static setup(container) {
-		ReportVisualizations.container = container;
+	static setup(page) {
+
+		ReportVisualizations.container = page.container.querySelector('#visualizations-list');
+		ReportVisualizations.preview = page.container.querySelector('#visualization-preview');
 	}
 
 	constructor(report) {
@@ -884,7 +901,20 @@ class ReportVisualizations {
 class ReportVisualization {
 
 	static setup() {
+
 		ReportVisualization.insert.form = document.getElementById('add-visualization');
+
+		const type = ReportVisualization.insert.form.type;
+
+		for(const visualization of MetaData.visualizations) {
+			type.insertAdjacentHTML('beforeend', `
+				<option value="${visualization.slug}">${visualization.name}</option>
+			`);
+		}
+
+		type.on('change', () => {
+			ReportVisualization.insert.form.name.value = type.options[type.selectedIndex].textContent;
+		});
 	}
 
 	static async insert(e, report) {
@@ -892,13 +922,24 @@ class ReportVisualization {
 		e.preventDefault();
 
 		const
+			form = document.getElementById('add-visualization'),
 			parameters = {
 				query_id: report.id
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(document.getElementById('add-visualization')),
+				form: new FormData(form),
 			};
+
+		if(['line', 'area', 'bar', 'stacked'].includes(form.type.value)) {
+			parameters.options = JSON.stringify({
+				axis: {
+					x: {
+						column: form.column.value,
+					}
+				}
+			});
+		}
 
 		await API.call('reports/visualizations/insert', parameters, options);
 
@@ -916,6 +957,12 @@ class ReportVisualization {
 
 		this.id = this.visualization_id;
 
+		try {
+			this.options = JSON.parse(this.options);
+		} catch(e) {
+			this.options = null;
+		}
+
 		// Generate the form
 		this.row;
 	}
@@ -926,40 +973,68 @@ class ReportVisualization {
 			return this.container;
 
 		this.container = document.createElement('form');
-		this.container.classList.add('visualization');
+		this.container.classList.add('form', 'visualization');
 		this.container.id = 'visualizations-form-'+this.id;
 
 		this.container.innerHTML = `
 			<label>
+				<span>Name</span>
 				<input type="text" name="name" value="${this.name}" required>
 			</label>
 
 			<label>
-				<select name="type" required>
-					<option value="table">Table</option>
-					<option value="spatialmap">Spatial Maps</option>
-					<option value="funnel">Funnel</option>
-					<option value="cohort">Cohort</option>
-					<option value="line">Line</option>
-					<option value="bar">Bar</option>
-					<option value="area">Area</option>
-					<option value="stacked">Stacked</option>
-				</select>
+				<span>Type</span>
+				<select name="type" required></select>
+			</label>
+
+			<label>
+				<span>X-Axis Column</span>
+				<input type="text" name="column" placeholder="X-Axis Column">
 			</label>
 
 			<label class="save">
-				<input type="submit" value="Save">
+				<span>&nbsp;</span>
+				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</label>
 
 			<label class="delete">
-				<input type="button" value="Delete">
+				<span>&nbsp;</span>
+				<button type="button"><i class="far fa-trash-alt"></i> Delete</button>
+			</label>
+
+			<label class="preview">
+				<span>&nbsp;</span>
+				<button type="button"><i class="fas fa-eye"></i> Preview</button>
 			</label>
 		`;
 
+		if(['line', 'area', 'bar', 'stacked'].includes(this.type))
+			this.container.column.value = this.options ? this.options.axis.x.column : '';
+
 		this.container.on('submit', e => this.update(e));
 		this.container.querySelector('.delete').on('click', () => this.delete());
+		this.container.querySelector('.preview').on('click', async () => {
 
-		this.container.elements.type.value = this.type;
+			await DataSource.load(true);
+
+			const report = new DataSource(DataSource.list.get(this.visualizations.report.query_id));
+
+			ReportVisualizations.preview.textContent = null;
+
+			ReportVisualizations.preview.appendChild(report.container);
+
+			[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
+
+			report.visualizations.selected.load();
+		});
+
+		for(const visualization of MetaData.visualizations) {
+			this.container.type.insertAdjacentHTML('beforeend', `
+				<option value="${visualization.slug}">${visualization.name}</option>
+			`);
+		}
+
+		this.container.type.value = this.type;
 
 		for(const element of this.container.elements) {
 			element.on('change', () => this.container.classList.add('unsaved'));
@@ -975,12 +1050,23 @@ class ReportVisualization {
 
 		const
 			parameters = {
-				visualization_id: this.id
+				visualization_id: this.id,
 			},
 			options = {
 				method: 'POST',
 				form: new FormData(this.container),
 			};
+
+		if(['line', 'area', 'bar', 'stacked'].includes(this.type)) {
+			parameters.options = JSON.stringify({
+				axis: {
+					x: {
+						column: this.container.column.value,
+					},
+					y: {}
+				}
+			});
+		}
 
 		await API.call('reports/visualizations/update', parameters, options);
 

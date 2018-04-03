@@ -21,7 +21,6 @@ exports.insert = class extends API {
                 this.request.body.type.toLowerCase(),
                 this.request.body.file,
                 this.request.body.project_name,
-
             ]],
             'write'
         );

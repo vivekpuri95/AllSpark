@@ -244,3 +244,14 @@ Credential.types.set('mysql', class {
 		});
 	}
 });
+
+Credential.types.set('api', class {
+
+	static render(connections = {}) {
+		Credential.container.querySelector('#details').innerHTML = null;
+	}
+
+	static get details() {
+		return JSON.stringify({});
+	}
+});

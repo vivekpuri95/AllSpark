@@ -220,7 +220,7 @@ class DashboardsDashboard {
 
 		this.container.innerHTML = `
 			<td>${this.id}</td>
-			<td>${this.name}</td>
+			<td><a href="/dashboard/${this.id}" target="_blank">${this.name}</a></td>
 			<td>${this.parent || ''}</td>
 			<td>${this.icon || ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
