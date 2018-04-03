@@ -150,6 +150,9 @@ body {
 			align-items: center;
 			padding: calc(var(--gap)*2);
 		}
+		body > header .logo:hover {
+			background: none;
+		}
 			body > header .logo img {
 				width: 100%;
 				height: auto;

@@ -797,7 +797,7 @@ class Template {
 				<body>
 					<div id="ajax-working"></div>
 					<header>
-						<a class="logo" href="/"><img></a>
+						<a class="logo" href="/dashboards"><img></a>
 
 						<nav></nav>
 
