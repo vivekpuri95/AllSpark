@@ -70,7 +70,6 @@ main #form #test-container #test-body {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	max-height: 300px;
 	overflow: auto;
-	margin-bottom: 10px;
 	user-select: text;
 }
 	main #form #test-container #test-body code {
@@ -78,16 +77,19 @@ main #form #test-container #test-body {
 		display: block;
 		white-space: pre-wrap;
 	}
+		main #form #test-container #test-body code.warning {
+			margin: 0;
+			border: 0;
+		}
 	main #form #test-container #test-body table {
 		margin: 0;
 	}
 #test-container h3 {
 	position: relative;
-	margin: 10px 0;
+	margin: calc(var(--gap) * 2) 0 !important;
 }
-	#test-container .close:hover {
-		color: var(--theme-accent);
-		transition: background var(--transition-duration),
+	#test-container .close {
+		cursor: pointer;
 	}
 #list-container {
 	overflow: auto;
@@ -179,9 +181,9 @@ main #form #report-form {
 
 	main #form h3 {
 		border-bottom: 1px dashed #999;
-		margin: var(--gap) 0;
+		margin: var(--gap) 0 0 0;
 	}
-	main #form .toolbar {
+	main #form > .toolbar {
 		margin: 0;
 	}
 	main #form #missing-filters {
@@ -195,7 +197,7 @@ main #form #report-form {
 	main .form.filter,
 	main .form.visualization {
 		padding: 0;
-		margin: calc(var(--gap) * 3) 0;
+		margin: calc(var(--gap) * 2) 0;
 		grid-template-columns: repeat(10, auto);
 		grid-gap: calc(var(--gap) * 2);
 		overflow: auto;
@@ -229,7 +231,7 @@ main #form #report-form {
 			margin-left: auto;
 			font-size: 12px;
 			font-weight: normal;
-			margin-top: 5px;
+			margin-top: 2px;
 			color: #999;
 		}
 		.tab {
@@ -258,6 +260,16 @@ main #form #report-form {
 		grid-template-columns: auto 1fr;
 		grid-gap: calc(var(--gap) * 2);
 	}
+		main #form #visualizations-list {
+			display: flex;
+			flex-direction: column;
+		}
 		main #form #visualization-preview {
 			height: 450px;
 		}
+			main #form #visualization-preview .NA {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100%;
+			}

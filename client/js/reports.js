@@ -147,7 +147,15 @@ class Report {
 			Reports.back();
 		});
 
-		Report.container.querySelector('.toolbar #test').on('click', () => Report.selected && Report.selected.test());
+		Report.container.querySelector('.toolbar #test').on('click', async () => {
+
+			if(!Report.selected)
+				return;
+
+			await Report.selected.update();
+			await Report.selected.test();
+		});
+
 		Report.container.querySelector('.toolbar #force-test').on('click', () => Report.selected && Report.selected.test(true));
 
 		for(const tab of Report.container.querySelectorAll('.tab')) {
@@ -191,7 +199,14 @@ class Report {
 			Report.editor.editor.commands.addCommand({
 				name: 'execute',
 				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => Report.selected && Report.selected.test()
+				exec: async () => {
+
+					if(!Report.selected)
+						return;
+
+					await Report.selected.update();
+					await Report.selected.test();
+				}
 			});
 		});
 	}
@@ -584,15 +599,25 @@ class Report {
 		if(is_redis)
 			parameters.is_redis = 0;
 
+		const content = {
+			rowCount: Report.container.querySelector('#row-count'),
+			json: Report.container.querySelector('#json-content'),
+			query: Report.container.querySelector('#query-content'),
+			table: Report.container.querySelector('#table-content'),
+		};
+
 		try {
 
 			const response = await API.call('reports/engine/report', parameters, options) || [];
 
-			Report.container.querySelector('#row-count').textContent = 'Rows: '+Format.number(response ? response.data.length : 0);
+			content.rowCount.innerHTML = `
+				Rows: <strong>${Format.number(response ? response.data.length : 0)}</strong>,
+				Columns: <strong>${Format.number(response ? Object.keys(response.data[0]).length : 0)}</strong>
+			`;
 
-			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${JSON.stringify(response.data, 0, 1)}</code>`;
+			content.json.innerHTML = `<code>${JSON.stringify(response.data, 0, 1)}</code>`;
 
-			Report.testContainer.querySelector('#query-content').innerHTML = `<code>${response.query || ''}</code>`;
+			content.query.innerHTML = `<code>${response.query || ''}</code>`;
 
 			if(response.data.length) {
 
@@ -600,7 +625,7 @@ class Report {
 					headings = Object.keys(response.data[0]).map(key => `<th>${key}</th>`),
 					rows = response.data.map(row => '<tr>'+Object.keys(row).map(key => `<td>${row[key]}</td>`).join('')+'</tr>');
 
-				Report.testContainer.querySelector('#table-content').innerHTML = `
+				content.table.innerHTML = `
 					<table>
 						<thead>
 							<tr>${headings.join('')}</tr>
@@ -616,14 +641,14 @@ class Report {
 					tab = 'table';
 			}
 
-			Report.container.querySelector(`#${tab}`).click();
-
 		} catch(e) {
-			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${e.message}</code>`;
+			content.rowCount.textContent = null;
+			content.json.innerHTML = content.query.innerHTML = content.table.innerHTML = `<code class="warning">${e.message}</code>`;
 		}
 
+		Report.container.querySelector(`#${tab}`).click();
+
 		Report.testContainer.parentElement.classList.remove('hidden');
-		// document.getElementById('content').scrollTo(0, 0);
 	}
 
 	filterSuggestions() {
