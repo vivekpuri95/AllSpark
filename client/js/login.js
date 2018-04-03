@@ -24,6 +24,8 @@ Page.class = class Login extends Page {
 
 		if(account.settings.get('skip_authentication'))
 			return this.skip_authentication();
+
+		this.form.email.focus();
 	}
 
 	async skip_authentication() {

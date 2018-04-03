@@ -12,6 +12,8 @@
 * {
 	box-sizing: border-box;
 }
+
+body {}
 input:not([type=checkbox]):not([type=radio]),
 select,
 button {
@@ -137,6 +139,10 @@ body {
 		z-index: 10;
 		flex: 50px 0 0;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		overflow: auto;
+	}
+	body > header::-webkit-scrollbar {
+		display: none;
 	}
 		body > header .logo {
 			width: 220px;
@@ -144,9 +150,13 @@ body {
 			align-items: center;
 			padding: calc(var(--gap)*2);
 		}
+		body > header .logo:hover {
+			background: none;
+		}
 			body > header .logo img {
 				width: 100%;
 				height: auto;
+				min-width: 150px;
 				align-items: center;
 			}
 		body > header nav {
@@ -160,6 +170,7 @@ body {
 			letter-spacing: 1px;
 			transition: background var(--transition-duration);
 			align-items: center;
+			white-space: nowrap;
 		}
 		body > header .logout:hover,
 		body > header a:hover {
@@ -176,7 +187,10 @@ body {
 		body > header .user-name {
 			margin-left: auto;
 			padding: 15px 20px;
+			white-space: nowrap;
 			letter-spacing: 1px;
+			align-items: center;
+			display: flex;
 		}
 		body > header .logout {
 			padding: 15px 20px;
@@ -326,6 +340,10 @@ body {
 	main .data-source {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
+		grid-template-rows: min-content 1fr min-content;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
 	}
 		main .data-source > .warning {
 			margin: 0;
@@ -333,7 +351,7 @@ body {
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
 			display: flex;
-			align-items: flex-end;
+			align-items: center;
 			overflow: auto;
 			white-space: nowrap;
 		}
@@ -351,26 +369,22 @@ body {
 				line-height: inherit;
 				user-select: text;
 			}
-			main .data-source > header .edit {
-				display: flex;
-				align-items: center;
-				margin:0 4px 5px 4px;
+			main .data-source > header .edit button {
+				height: 22px;
+				margin: 0 calc(var(--gap) / 2);
 			}
-				main .data-source > header .edit button {
-					height: 22px;
-					margin: 0 calc(var(--gap) / 2);
-				}
-				main .data-source > header .edit button svg {
-					margin: 0;
-				}
-			main .data-source > header .menu-toggle {
+			main .data-source > header .edit button svg {
+				margin: 0;
+			}
+			main .data-source > header span {
 				border: 1px solid transparent;
 				cursor: pointer;
-				padding: 0 10px;
-				margin: 0 4px 5px 4px;
+				padding: 4px 10px;
+				align-items: center;
 				transition: border var(--transition-duration);
+				display: flex;
 			}
-			main .data-source > header .menu-toggle:hover {
+			main .data-source > header span:not(.selected):hover {
 				border-color: #ccc;
 			}
 		main .data-source .toolbar {
@@ -381,6 +395,7 @@ body {
 			align-items: flex-end;
 			font-size: 95%;
 			margin: 0;
+			margin-top:  calc(var(--gap) * 2);
 		}
 			main .data-source .menu-toggle.selected,
 			main .data-source .description-toggle.selected,
@@ -392,6 +407,7 @@ body {
 		main .data-source > .description {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			margin-top: calc(var(--gap) * 2);
 		}
 			main .data-source > .description .body {
 				white-space: pre-wrap;
@@ -421,6 +437,7 @@ body {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 			padding: 10px;
+			margin-top: calc(var(--gap) * 2);
 		}
 			main .data-source > .share-link input {
 				width: 100%;
@@ -430,6 +447,7 @@ body {
 			display: flex;
 			flex-wrap: wrap;
 			order: 1;
+			margin-top: calc(var(--gap) * 2);
 		}
 			main .data-source > .columns .column {
 				display: flex;
@@ -557,7 +575,8 @@ body {
 							}
 		main .data-source .visualization {
 			position: relative;
-			margin-bottom: 0;
+			margin-top: calc(var(--gap) * 2);
+			flex: 1;
 		}
 			main .data-source .visualization .NA {
 				padding: 8px 16px;
@@ -567,10 +586,9 @@ body {
 				background: #fff;
 				overflow: auto;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
-				max-height: 456px;
-				height: 456px;
 				margin: 0;
 				padding: 0;
+				height: 100%;
 			}
 				.visualization > .container > .loading {
 					display: flex;
@@ -585,12 +603,12 @@ body {
 			main .data-source .visualization .tooltip {
 				background: var(--color-primary);
 				color: var(--color-primary-text);
-				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
 				position: absolute;
 				font-size: 90%;
 				opacity: 1;
-				transition: left var(--transition-duration),
-							top var(--transition-duration);
+				transition: left 100ms,
+							top 100ms;
 			}
 				main .data-source .visualization .tooltip header {
 					padding: var(--gap) calc(var(--gap) * 2);
@@ -607,10 +625,9 @@ body {
 				main .data-source .visualization .tooltip .body {
 					list-style: none;
 					margin: 0;
-					padding: calc(var(--gap) * 2);
+					padding: var(--gap);
 					display: grid;
 					grid-template-columns: 100%;
-					grid-row-gap: var(--gap);
 					background: rgba(255, 255, 255, 0.1);
 				}
 					main .data-source .visualization .tooltip li {
@@ -618,6 +635,10 @@ body {
 						grid-template-columns: 16px auto 1fr;
 						grid-column-gap: var(--gap);
 						align-items: center;
+						padding: var(--gap);
+					}
+					main .data-source .visualization .tooltip li.hover {
+						background: rgba(255, 255, 255, 0.2);
 					}
 						main .data-source .visualization .tooltip .circle {
 							width: 80%;
@@ -857,48 +878,39 @@ body {
 	width: 100%;
 	height: 100%;
 	display: flex;
+	padding: 10px;
 }
 .visualization .container > svg .axis path,
 .visualization .container > svg .axis line {
 	fill: none;
-	stroke: #ddd;
-	stroke-width: 1px;
-	fill: none;
-	shape-rendering: crispEdges;
+	stroke: #ccc;
 }
 
 .visualization .container > svg .y path {
 	display: none;
 }
-
-.visualization .container > svg .axis text {
-	font-size: 11px;
+.visualization .container > svg .x path {
+	stroke: #999;
+	stroke-width: 1px;
 }
 
-.visualization .container > svg .y > .tick line,
-.visualization .container > svg .x > .tick line,
-.visualization .container > svg .x > path {
-	z-index: -10;
+.visualization .container > svg text.axis-label {
+	font-size: 130%;
+	letter-spacing: 2px;
+	fill: #999;
+	font-weight: bold;
 }
-
-.visualization .container > svg .y > .tick text {
-	margin-right: 5px;
+.visualization .container > svg text.axis-label.y {
+	writing-mode: vertical-lr;
 }
-
-.visualization .container > svg text {
-	fill: #333;
-}
-.visualization .container > svg text.NA {
-	fill: #666;
-}
-
-.visualization .container > svg .axis-label {
-	font-size: 12px;
+.visualization .container > svg .tick text {
+	font-size: 90%;
 }
 
 .visualization .container > svg .line {
 	fill: none;
 	stroke: steelblue;
+	transition: stroke-width var(--transition-duration);
 	stroke-width: 1.5px;
 }
 
@@ -906,16 +918,42 @@ body {
 	stroke-width: 3px;
 }
 
-.visualization .container > svg .resetZoom {
-	background-color: grey;
-}
-
-.visualization .container > svg .toggleReset {
+.visualization .container > svg .reset-zoom {
+	fill: #ccc;
+	box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 	cursor: pointer;
-	display: none !important;
+	transition: fill var(--transition-duration);
 }
+.visualization .container > svg .reset-zoom:hover {
+	fill: #ddd;
+}
+	.visualization .container > svg .reset-zoom text {
+		fill: #555;
+	}
 
-.visualization .container > svg rect.zoom {
-	fill: #8c97b4;
+.visualization .container > svg rect.zoom-rectangle {
+	fill: #89b;
 	fill-opacity: 0.5;
+}
+	.visualization .container > svg .zoom text {
+		font-size: 110%;
+		font-weight: bold;
+	}
+.visualization .container > svg .bar {
+	transition: fill var(--transition-duration);
+}
+.visualization .container > svg .bar.hover {
+	fill: #666 !important;
+}
+.visualization .container > svg .pie-slice {
+	transition: opacity var(--transition-duration);
+}
+.visualization .container > svg .pie-slice.hover {
+	opacity: 0.8;
+}
+.visualization .container > svg .pie text {
+	fill: #fff;
+	font-size: 110%;
+	font-weight: bold;
+	pointer-events: none;
 }

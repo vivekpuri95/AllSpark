@@ -179,6 +179,8 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 					</button>
 				</label>
 
+				<div class="datasets"></div>
+
 				<label class="right">
 					<input type="text" name="date-range">
 				</label>
@@ -268,9 +270,17 @@ app.get('/reports/:id?', (req, res) => {
 
 	template.stylesheets.push('/css/reports.css');
 
-	template.scripts.push('/js/reports.js');
-	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js');
-	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ext-language_tools.js');
+	template.scripts = template.scripts.concat([
+		'/js/reports.js',
+
+		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js',
+		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ext-language_tools.js',
+
+		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+
+		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+	]);
 
 	res.send(template.body(`
 
@@ -327,6 +337,7 @@ app.get('/reports/:id?', (req, res) => {
 
 				<button id="test" class="right"><i class="fas fa-sync"></i> Run</button>
 				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>
+				<button id="view"><i class="fas fa-external-link-alt""></i> View</button>
 			</header>
 
 			<div class="hidden" id="test-container">
@@ -369,6 +380,7 @@ app.get('/reports/:id?', (req, res) => {
 					<span>Query</span>
 					<div id="schema"></div>
 					<div id="editor"></div>
+					<div id="missing-filters" class="hidden"></div>
 				</label>
 
 				<div id="api" class="hidden">
@@ -386,6 +398,11 @@ app.get('/reports/:id?', (req, res) => {
 						</select>
 					</label>
 				</div>
+
+				<label>
+					<span>Category</span>
+					<select name="category_id"></select>
+				</label>
 
 				<label>
 					<span>Description</span>
@@ -438,123 +455,104 @@ app.get('/reports/:id?', (req, res) => {
 					<span class="NA" id="added-by"></span>
 				</label>
 			</form>
+
 			<h3>Filters</h3>
 
-			<div id="missing-filters" class="hidden"></div>
+			<div id="filters-list"></div>
 
-			<div class="form-container">
-				<form class="filter">
-					<label><span>Name</span></label>
-					<label><span>Placeholder</span></label>
-					<label><span>Type</span></label>
-					<label><span>Description</span></label>
-					<label><span>Default Value</span></label>
-					<label><span>Offset</span></label>
-					<label><span>Dataset</span></label>
-					<label><span>Status</span></label>
-					<label class="save"><span></span></label>
-					<label class="delete"><span></span></label>
-				</form>
+			<form id="add-filter" class="form filter">
 
-				<div id="filters-list"></div>
+				<label>
+					<span>Name</span>
+					<input type="text" name="name" required>
+				</label>
 
-				<form id="add-filter" class="filter">
+				<label>
+					<span>Placeholder</span>
+					<input type="text" name="placeholder" required>
+				</label>
 
-					<label>
-						<input type="text" name="name" placeholder="Name" required>
-					</label>
+				<label>
+					<span>Type</span>
+					<select name="type" required>
+						<option value="0">Integer</option>
+						<option value="1">String</option>
+						<option value="2">Date</option>
+						<option value="3">Month</option>
+						<option value="4">city</option>
+					</select>
+				</label>
 
-					<label>
-						<input type="text" name="placeholder" placeholder="Placeholder" required>
-					</label>
+				<label>
+					<span>Description</span>
+					<input type="text" name="description">
+				</label>
 
-					<label>
-						<select name="type" required>
-							<option value="0">Integer</option>
-							<option value="1">String</option>
-							<option value="2">Date</option>
-							<option value="3">Month</option>
-							<option value="4">city</option>
-						</select>
-					</label>
+				<label>
+					<span>Default Value</span>
+					<input type="text" name="default_value">
+				</label>
 
-					<label>
-						<input type="text" name="description" placeholder="Description">
-					</label>
+				<label>
+					<span>Offset</span>
+					<input type="text" name="offset">
+				</label>
 
-					<label>
-						<input type="text" name="default_value" placeholder="Default Value">
-					</label>
+				<label>
+					<span>Dataset</span>
+					<select name="dataset">
+						<option value="">None</option>
+					</select>
+				</label>
 
-					<label>
-						<input type="text" name="offset" placeholder="Offset">
-					</label>
+				<label>
+					<span>Multiple</span>
+					<select name="multiple" required>
+						<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
+						<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
+					</select>
+				</label>
 
-					<label>
-						<select name="dataset">
-							<option value="">None</option>
-						</select>
-					</label>
+				<label class="save">
+					<span>&nbsp;</span>
+					<button type="submit"><i class="fa fa-plus"></i> Add</button>
+				</label>
+			</form>
 
-					<label>
-						<select name="is_enabled" required>
-							<option value="1">Enabled</option>
-							<option value="0">Disabled</option>
-						</select>
-					</label>
+			<div id="visualizations">
 
-					<label class="save">
-						<input type="submit" value="Add">
-					</label>
+				<div>
+					<h3>Visualizations</h3>
 
-					<label class="delete"></label>
-				</form>
-			</div>
+					<div id="visualizations-list"></div>
 
-			<h3>Visualizations</h3>
-			<div class="form-container">
-				<form class="visualization">
-					<label><span>Name</span></label>
-					<label><span>Type</span></label>
-					<label><span>Status</span></label>
-					<label class="save"><span></span></label>
-					<label class="delete"><span></span></label>
-				</form>
+					<form id="add-visualization" class="form visualization">
 
-				<div id="visualizations-list"></div>
+						<label>
+							<span>Name</span>
+							<input type="text" name="name" placeholder="Name" required>
+						</label>
 
-				<form id="add-visualization" class="visualization">
+						<label>
+							<span>Type</span>
+							<select name="type" required></select>
+						</label>
 
-					<label>
-						<input type="text" name="name" placeholder="Name" required>
-					</label>
+						<label>
+							<span>X-Axis Column</span>
+							<input type="text" name="column" placeholder="X-Axis Column">
+						</label>
 
-					<label>
-						<select name="type" required>
-							<option value="table">Table</option>
-							<option value="spatialmap">Spatial Maps</option>
-							<option value="funnel">Funnel</option>
-							<option value="cohort">Cohort</option>
-							<option value="line">Line</option>
-							<option value="bar">Bar</option>
-							<option value="area">Area</option>
-							<option value="stacked">Stacked</option>
-						</select>
-					</label>
+						<label class="save">
+							<span>&nbsp;</span>
+							<button type="submit"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</form>
+				</div>
 
-					<label>
-						<select name="is_enabled" required>
-							<option value="1">Enabled</option>
-							<option value="0">Disabled</option>
-						</select>
-					</label>
-
-					<label class="save">
-						<input type="submit" value="Add">
-					</label>
-
-					<label class="delete"></label>
-				</form>
+				<div id="visualization-preview">
+					<div class="NA">No Preview loaded yet! :(</div>
+				</div>
 			</div>
 		</section>
 	`));
@@ -787,7 +785,7 @@ class Template {
 			<html>
 				<head>
 					<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-					<title>Tookan Analytics</title>
+					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="https://lbxoezeogn43sov13789n8p9-wpengine.netdna-ssl.com/img/favicon.png" />
 
 					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'?'+checksum+'">').join('')}
@@ -799,13 +797,14 @@ class Template {
 				<body>
 					<div id="ajax-working"></div>
 					<header>
-						<a class="logo" href="/"><img></a>
+						<a class="logo" href="/dashboards"><img></a>
 
 						<nav></nav>
 
 						<span class="user-name"></span>
 						<span class="logout">
-							<i class="fa fa-power-off"></i>
+							<i class="fa fa-power-off"></i>&nbsp;
+							Logout
 						</span>
 					</header>
 					<main>

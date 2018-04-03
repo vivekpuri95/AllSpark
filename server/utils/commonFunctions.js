@@ -12,6 +12,9 @@ const jwtVerifyAsync = promisify(jwt.verify, jwt);
 
 function redisStore(uni_key, value, expire_time = null) {
 
+	if(!config.has('redisOptions'))
+		return Promise.resolve(null);
+
 	return new Promise(function (resolve, reject) {
 
 		if (!expire_time)
@@ -34,6 +37,10 @@ function redisStore(uni_key, value, expire_time = null) {
 }
 
 function redisGet(key) {
+
+	if(!config.has('redisOptions'))
+		return Promise.resolve(null);
+
 	return new Promise((resolve, reject) => {
 
 		redis.get(key, function (err, result) {

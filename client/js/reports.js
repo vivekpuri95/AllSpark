@@ -10,7 +10,7 @@ class Reports extends Page {
 			Report.setup(this.container.querySelector('section#form'));
 
 			ReportFilters.setup(this.container.querySelector('#filters-list'));
-			ReportVisualizations.setup(this.container.querySelector('#visualizations-list'));
+			ReportVisualizations.setup(this);
 
 			await Reports.load();
 
@@ -80,9 +80,9 @@ class Reports extends Page {
 		if(Reports.response && !force)
 			return;
 
-		[ReportFilter.dataset, Reports.response, Reports.credentials] = await Promise.all([
-			Promise.resolve([]),
+		[Reports.response, Reports.datasets, Reports.credentials] = await Promise.all([
 			API.call('reports/report/list'),
+			API.call('datasets/list'),
 			API.call('credentials/list'),
 		]);
 	}
@@ -167,6 +167,12 @@ class Report {
 
 		Report.form.elements.connection_name.on('change', () => Report.renderSource());
 
+		for(const category of MetaData.categories.values()) {
+			Report.form.category_id.insertAdjacentHTML('beforeend', `
+				<option value="${category.category_id}">${category.name}</option>
+			`);
+		}
+
 		// Initiate the editor. All this only needs to be done once on page load.
 		Report.editor = new Editor(Report.form.querySelector('#editor'));
 
@@ -194,12 +200,17 @@ class Report {
 
 		Report.selected = null;
 
-		Report.container.querySelector('h1').textContent = 'Add New Report';
+		const view = Report.container.querySelector('.toolbar #view');
+
+		Report.container.querySelector('h1').textContent = 'Adding New Report';
 
 		if(Report.form.listener)
 			Report.form.removeEventListener('submit', Report.form.listener);
 
 		Report.form.on('submit', Report.form.listener = e => Report.insert(e));
+
+		if(Report.container.viewListener)
+			view.removeEventListener('click', Report.container.viewListener);
 
 		Report.form.reset();
 		Report.editor.value = '';
@@ -262,9 +273,8 @@ class Report {
 
 				const
 					parameters = { id: Report.form.elements.connection_name.value },
+					response = await API.call('credentials/schema', parameters),
 					container = Report.form.querySelector('#query #schema');
-
-				// response = await API.call('credentials/schema', parameters),
 
 				const
 					schema = mysqlKeywords.map(k => {return {
@@ -287,90 +297,92 @@ class Report {
 
 				container.textContent = null;
 
-				// for(const database of response) {
+				for(const database of response) {
 
-				// 	schema.push({
-				// 		name: database.name,
-				// 		value: database.name,
-				// 		meta: '(d)',
-				// 	});
+					schema.push({
+						name: database.name,
+						value: database.name,
+						meta: '(d)',
+					});
 
-				// 	const tables = document.createElement('ul');
-				// 	tables.classList.add('hidden');
+					const tables = document.createElement('ul');
+					tables.classList.add('hidden');
 
-				// 	for(const table of database.tables) {
+					for(const table of database.tables) {
 
-				// 		const columns = document.createElement('ul');
-				// 		columns.classList.add('hidden');
+						const columns = document.createElement('ul');
+						columns.classList.add('hidden');
 
-				// 		schema.push({
-				// 			name: table.name,
-				// 			value: table.name,
-				// 			meta: '(t) ' + database.name,
-				// 		});
+						schema.push({
+							name: table.name,
+							value: table.name,
+							meta: '(t) ' + database.name,
+						});
 
-				// 		for(const column of table.columns) {
+						for(const column of table.columns) {
 
-				// 			schema.push({
-				// 				name: column.name,
-				// 				value: column.name,
-				// 				meta: '(c) ' + table.name,
-				// 			});
+							schema.push({
+								name: column.name,
+								value: column.name,
+								meta: '(c) ' + table.name,
+							});
 
-				// 			const li = document.createElement('li');
+							const li = document.createElement('li');
 
-				// 			li.innerHTML = `
-				// 				<span class="name">
-				// 					<i class="fa fa-columns"></i>
-				// 					<span>${column.name}</span>
-				// 					<small>${column.type}</small>
-				// 				</span>
-				// 			`;
+							li.innerHTML = `
+								<span class="name">
+									<strong>C</strong>
+									<span>${column.name}</span>
+									<small>${column.type}</small>
+								</span>
+							`;
 
-				// 			li.querySelector('span').on('click', () => {
-				// 				Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
-				// 			});
+							li.querySelector('span').on('click', () => {
+								Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
+							});
 
-				// 			columns.appendChild(li);
-				// 		}
+							columns.appendChild(li);
+						}
 
-				// 		const li = document.createElement('li');
+						const li = document.createElement('li');
 
-				// 		li.innerHTML = `
-				// 			<span class="name" title="${table.columns.length} columns">
-				// 				<i class="fa fa-table"></i>
-				// 				<span>${table.name}</span>
-				// 			</span>
-				// 		`;
+						li.innerHTML = `
+							<span class="name">
+								<strong>T</strong>
+								<span>${table.name}</span>
+								<small>${table.columns.length} columns</small>
+							</span>
+						`;
 
-				// 		li.appendChild(columns)
+						li.appendChild(columns)
 
-				// 		li.querySelector('span').on('click', () => {
-				// 			li.classList.toggle('opened');
-				// 			columns.classList.toggle('hidden')
-				// 		});
+						li.querySelector('span').on('click', () => {
+							li.classList.toggle('opened');
+							columns.classList.toggle('hidden')
+						});
 
-				// 		tables.appendChild(li);
-				// 	}
+						tables.appendChild(li);
+					}
 
-				// 	const li = document.createElement('li');
+					const li = document.createElement('li');
 
-				// 	li.innerHTML = `
-				// 		<span class="name" title="${database.tables.length} tables">
-				// 			<i class="fa fa-database"></i>
-				// 			<span>${database.name}</span>
-				// 		</span>
-				// 	`;
+					li.innerHTML = `
+						<span class="name">
+							<strong>D</strong>
+							<span>${database.name}</span>
+							<small>${database.tables.length} tables</small>
+						</span>
+					`;
 
-				// 	li.appendChild(tables)
+					li.appendChild(tables)
 
-				// 	li.querySelector('span').on('click', () => {
-				// 		li.classList.toggle('opened');
-				// 		tables.classList.toggle('hidden')
-				// 	});
+					li.querySelector('span').on('click', () => {
+						li.classList.toggle('opened');
+						tables.classList.toggle('hidden')
+					});
 
-				// 	databases.appendChild(li);
-				// }
+					databases.appendChild(li);
+				}
 
 				Report.schemas.set(Report.form.elements.connection_name.value, schema);
 
@@ -455,16 +467,17 @@ class Report {
 
 		Report.selected = this;
 
-		Report.form.parentElement.querySelector('h1').innerHTML = `
-			${this.name}
-			<a href="/report/${this.id}" target="_blank">
-				View
-				<i class="fas fa-external-link-alt"></i>
-			</a>&nbsp;
-		`;
+		const view = Report.container.querySelector('.toolbar #view');
+
+		Report.form.parentElement.querySelector('h1').innerHTML = `${this.name} - ${this.query_id}`;
 
 		if(Report.form.listener)
 			Report.form.removeEventListener('submit', Report.form.listener);
+
+		if(Report.container.viewListener)
+			view.removeEventListener('click', Report.container.viewListener);
+
+		view.on('click', Report.container.viewListener = () => window.open(`/report/${this.query_id}`));
 
 		Report.form.on('submit', Report.form.listener = e => this.update(e));
 
@@ -472,7 +485,6 @@ class Report {
 			ReportFilter.insert.form.removeEventListener('submit', ReportFilter.insert.form.listener);
 
 		ReportFilter.insert.form.on('submit', ReportFilter.insert.form.listener = e => ReportFilter.insert(e, this));
-
 
 		if(ReportVisualization.insert.form.listener)
 			ReportVisualization.insert.form.removeEventListener('submit', ReportVisualization.insert.form.listener);
@@ -607,8 +619,7 @@ class Report {
 			Report.container.querySelector(`#${tab}`).click();
 
 		} catch(e) {
-
-			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${JSON.stringify(JSON.parse(e.response || '{}'), 0, 1)}</code>`;
+			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${e.message}</code>`;
 		}
 
 		Report.testContainer.parentElement.classList.remove('hidden');
@@ -634,7 +645,7 @@ class Report {
 
 			filter.container.elements.placeholder.classList.remove('red');
 
-			if(!placeholders.has(filter.placeholder) && filter.is_enabled)
+			if(!placeholders.has(filter.placeholder))
 				filter.container.elements.placeholder.classList.add('red');
 
 			missing.delete(filter.placeholder);
@@ -676,10 +687,10 @@ class ReportFilters {
 
 		ReportFilter.insert.form.elements.dataset.innerHTML = `<option value="">None</option>`;
 
-		for(const row of ReportFilter.dataset) {
+		for(const dataset of Reports.datasets) {
 
 			ReportFilter.insert.form.elements.dataset.insertAdjacentHTML('beforeend', `
-				<option>${row.dataset}</option>
+				<option value="${dataset.id}">${dataset.name}</option>
 			`);
 		}
 	}
@@ -727,19 +738,22 @@ class ReportFilter {
 			return this.container;
 
 		this.container = document.createElement('form');
-		this.container.classList.add('filter');
+		this.container.classList.add('form', 'filter');
 		this.container.id = 'filters-form-'+this.id;
 
 		this.container.innerHTML = `
 			<label>
-				<input type="text" name="name" value="${this.name}" placeholder="Name" required>
+				<span>Name</span>
+				<input type="text" name="name" value="${this.name}" required>
 			</label>
 
 			<label>
-				<input type="text" name="placeholder" value="${this.placeholder}" placeholder="Placeholder" required>
+				<span>Placeholder</span>
+				<input type="text" name="placeholder" value="${this.placeholder}" required>
 			</label>
 
 			<label>
+				<span>Type</span>
 				<select name="type" required>
 					<option value="0">Integer</option>
 					<option value="1">String</option>
@@ -750,57 +764,66 @@ class ReportFilter {
 			</label>
 
 			<label>
-				<input type="text" name="description" value="${this.description || ''}" placeholder="Description">
+				<span>Description</span>
+				<input type="text" name="description" value="${this.description || ''}">
 			</label>
 
 			<label>
-				<input type="text" name="default_value" value="${this.default_value || ''}" placeholder="Default Value">
+				<span>Default Value</span>
+				<input type="text" name="default_value" value="${this.default_value || ''}">
 			</label>
 
 			<label>
-				<input type="text" name="offset" value="${this.offset === null ? '' : this.offset}" placeholder="Offset">
+				<span>Offset</span>
+				<input type="text" name="offset" value="${this.offset === null ? '' : this.offset}">
 			</label>
 
 			<label>
+				<span>Dataset</span>
 				<select name="dataset">
 					<option value="">None</option>
 				</select>
 			</label>
 
 			<label>
-				<select name="is_enabled" required>
-					<option value="1">Enabled</option>
-					<option value="0">Disabled</option>
+				<span>Multiple</span>
+				<select name="multiple" required>
+					<option value="0">No</option>
+					<option value="1">Yes</option>
 				</select>
 			</label>
 
 			<label class="save">
-				<input type="submit" value="Save">
+				<span>&nbsp;</span>
+				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</label>
 
 			<label class="delete">
-				<input type="button" value="Delete">
+				<span>&nbsp;</span>
+				<button type="button"><i class="far fa-trash-alt"></i> Delete</button>
 			</label>
 		`;
 
-		this.container.elements.dataset.innerHTML = `<option value="">None</option>`;
+		this.container.dataset.innerHTML = `<option value="">None</option>`;
 
-		for(const row of ReportFilter.dataset) {
+		for(const dataset of Reports.datasets) {
 
-			this.container.elements.dataset.insertAdjacentHTML('beforeend', `
-				<option>${row.dataset}</option>
+			this.container.dataset.insertAdjacentHTML('beforeend', `
+				<option value="${dataset.id}">${dataset.name}</option>
 			`);
 		}
 
 		this.container.on('submit', e => this.update(e));
 		this.container.querySelector('.delete').on('click', () => this.delete());
 
-		this.container.elements.type.value = this.type;
-		this.container.elements.dataset.value = this.dataset || '';
-		this.container.elements.is_enabled.value = this.is_enabled;
+		this.container.type.value = this.type;
+		this.container.dataset.value = this.dataset || '';
+		this.container.multiple.value = this.multiple;
 
-		if(!parseInt(this.is_enabled))
-			this.container.classList.add('disabled');
+		for(const element of this.container.elements) {
+			element.on('change', () => this.container.classList.add('unsaved'));
+			element.on('keyup', () => this.container.classList.add('unsaved'));
+		}
 
 		return this.container;
 	}
@@ -848,8 +871,10 @@ class ReportFilter {
 
 class ReportVisualizations {
 
-	static setup(container) {
-		ReportVisualizations.container = container;
+	static setup(page) {
+
+		ReportVisualizations.container = page.container.querySelector('#visualizations-list');
+		ReportVisualizations.preview = page.container.querySelector('#visualization-preview');
 	}
 
 	constructor(report) {
@@ -876,7 +901,20 @@ class ReportVisualizations {
 class ReportVisualization {
 
 	static setup() {
+
 		ReportVisualization.insert.form = document.getElementById('add-visualization');
+
+		const type = ReportVisualization.insert.form.type;
+
+		for(const visualization of MetaData.visualizations) {
+			type.insertAdjacentHTML('beforeend', `
+				<option value="${visualization.slug}">${visualization.name}</option>
+			`);
+		}
+
+		type.on('change', () => {
+			ReportVisualization.insert.form.name.value = type.options[type.selectedIndex].textContent;
+		});
 	}
 
 	static async insert(e, report) {
@@ -884,13 +922,24 @@ class ReportVisualization {
 		e.preventDefault();
 
 		const
+			form = document.getElementById('add-visualization'),
 			parameters = {
 				query_id: report.id
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(document.getElementById('add-visualization')),
+				form: new FormData(form),
 			};
+
+		if(['line', 'area', 'bar', 'stacked'].includes(form.type.value)) {
+			parameters.options = JSON.stringify({
+				axis: {
+					x: {
+						column: form.column.value,
+					}
+				}
+			});
+		}
 
 		await API.call('reports/visualizations/insert', parameters, options);
 
@@ -908,6 +957,12 @@ class ReportVisualization {
 
 		this.id = this.visualization_id;
 
+		try {
+			this.options = JSON.parse(this.options);
+		} catch(e) {
+			this.options = null;
+		}
+
 		// Generate the form
 		this.row;
 	}
@@ -918,51 +973,73 @@ class ReportVisualization {
 			return this.container;
 
 		this.container = document.createElement('form');
-		this.container.classList.add('visualization');
+		this.container.classList.add('form', 'visualization');
 		this.container.id = 'visualizations-form-'+this.id;
 
 		this.container.innerHTML = `
 			<label>
+				<span>Name</span>
 				<input type="text" name="name" value="${this.name}" required>
 			</label>
 
 			<label>
-				<select name="type" required>
-					<option value="table">Table</option>
-					<option value="spatialmap">Spatial Maps</option>
-					<option value="funnel">Funnel</option>
-					<option value="cohort">Cohort</option>
-					<option value="line">Line</option>
-					<option value="bar">Bar</option>
-					<option value="area">Area</option>
-					<option value="stacked">Stacked</option>
-				</select>
+				<span>Type</span>
+				<select name="type" required></select>
 			</label>
 
 			<label>
-				<select name="is_enabled" required>
-					<option value="1">Enabled</option>
-					<option value="0">Disabled</option>
-				</select>
+				<span>X-Axis Column</span>
+				<input type="text" name="column" placeholder="X-Axis Column">
 			</label>
 
 			<label class="save">
-				<input type="submit" value="Save">
+				<span>&nbsp;</span>
+				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</label>
 
 			<label class="delete">
-				<input type="button" value="Delete">
+				<span>&nbsp;</span>
+				<button type="button"><i class="far fa-trash-alt"></i> Delete</button>
+			</label>
+
+			<label class="preview">
+				<span>&nbsp;</span>
+				<button type="button"><i class="fas fa-eye"></i> Preview</button>
 			</label>
 		`;
 
+		if(['line', 'area', 'bar', 'stacked'].includes(this.type))
+			this.container.column.value = this.options ? this.options.axis.x.column : '';
+
 		this.container.on('submit', e => this.update(e));
 		this.container.querySelector('.delete').on('click', () => this.delete());
+		this.container.querySelector('.preview').on('click', async () => {
 
-		this.container.elements.type.value = this.type;
-		this.container.elements.is_enabled.value = this.is_enabled;
+			await DataSource.load(true);
 
-		if(!parseInt(this.is_enabled))
-			this.container.classList.add('disabled');
+			const report = new DataSource(DataSource.list.get(this.visualizations.report.query_id));
+
+			ReportVisualizations.preview.textContent = null;
+
+			ReportVisualizations.preview.appendChild(report.container);
+
+			[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
+
+			report.visualizations.selected.load();
+		});
+
+		for(const visualization of MetaData.visualizations) {
+			this.container.type.insertAdjacentHTML('beforeend', `
+				<option value="${visualization.slug}">${visualization.name}</option>
+			`);
+		}
+
+		this.container.type.value = this.type;
+
+		for(const element of this.container.elements) {
+			element.on('change', () => this.container.classList.add('unsaved'));
+			element.on('keyup', () => this.container.classList.add('unsaved'));
+		}
 
 		return this.container;
 	}
@@ -973,12 +1050,23 @@ class ReportVisualization {
 
 		const
 			parameters = {
-				visualization_id: this.id
+				visualization_id: this.id,
 			},
 			options = {
 				method: 'POST',
 				form: new FormData(this.container),
 			};
+
+		if(['line', 'area', 'bar', 'stacked'].includes(this.type)) {
+			parameters.options = JSON.stringify({
+				axis: {
+					x: {
+						column: this.container.column.value,
+					},
+					y: {}
+				}
+			});
+		}
 
 		await API.call('reports/visualizations/update', parameters, options);
 

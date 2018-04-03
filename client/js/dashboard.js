@@ -5,6 +5,7 @@ Page.class = class Dashboards extends Page {
 		super();
 
 		Dashboard.setup(this);
+		DashboardDatasets.setup(this);
 
 		this.listContainer = this.container.querySelector('section#list');
 		this.reports = this.container.querySelector('section#reports');
@@ -19,7 +20,7 @@ Page.class = class Dashboards extends Page {
 		this.list.selectedReports = new Set;
 
 		for(const category of MetaData.categories.values())
-			this.listContainer.form.category.insertAdjacentHTML('beforeend', `<option value="${category.id}">${category.name}</option>`);
+			this.listContainer.form.category.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
 
 		this.listContainer.form.category.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
@@ -124,12 +125,14 @@ Page.class = class Dashboards extends Page {
 
 			tr.innerHTML = `
 				<td>${report.query_id}</td>
-				<td><a href="#/app/reports-new/${report.query_id}" target="_blank">${report.name}</a></td>
+				<td><a href="/report/${report.query_id}" target="_blank" class="link">${report.name}</a></td>
 				<td>${description.join(' ') || ''}</td>
 				<td>${report.tags || ''}</td>
 				<td>${MetaData.categories.has(report.category_id) && MetaData.categories.get(report.category_id).name || ''}</td>
 				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
 			`;
+
+			tr.querySelector('.link').on('click', e => e.stopPropagation());
 
 			tr.on('click', async () => {
 				this.report(report.query_id);
@@ -155,7 +158,13 @@ Page.class = class Dashboards extends Page {
 		container.textContent = null;
 
 		report.container.removeAttribute('style');
-		report.container.classList.add('singleton');
+		container.classList.add('singleton');
+
+		report.container.querySelector('.menu').classList.remove('hidden');
+		report.container.querySelector('.menu-toggle').classList.add('selected');
+
+		report.container.querySelector('.filters').classList.remove('hidden');
+		report.container.querySelector('.filters-toggle').classList.add('selected');
 
 		container.appendChild(report.container);
 
@@ -172,6 +181,7 @@ class Dashboard {
 		Dashboard.grid = {
 			columns: 8,
 			rows: 2,
+			rowHeight: 250,
 		};
 
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
@@ -227,9 +237,11 @@ class Dashboard {
 
 		if(!this.format.reports)
 			this.format.reports = [];
+
+		this.datasets = new DashboardDatasets(this);
 	}
 
-	async load() {
+	async load(resize) {
 
 		if(!Dashboard.container)
 			return;
@@ -238,6 +250,8 @@ class Dashboard {
 			selected.classList.remove('selected');
 
 		this.menuItem.querySelector('.label').classList.add('selected');
+
+		this.page.reports.querySelector('.list').classList.remove('singleton');
 
 		let parent = this.menuItem.parentElement.parentElement;
 
@@ -250,46 +264,47 @@ class Dashboard {
 
 		this.page.list.selectedReports.clear();
 
-		if(this.format && this.format.reports && this.format.reports.length) {
+		if(this.format.list) {
 
-			for(const [position, _report] of this.format.reports.entries()) {
+			this.page.listContainer.form.category.value = this.format.list.category_id;
 
-				if(!DataSource.list.has(_report.query_id))
-					continue;
+			this.page.renderList();
+			await Sections.show('list');
 
-				const source = JSON.parse(JSON.stringify(DataSource.list.get(_report.query_id)));
-
-				source.postProcessor = _report.postProcessor;
-
-				const report = new DataSource(source);
-
-				report.dashboardPosition = position;
-
-				report.container.setAttribute('style', `
-					order: ${position || 0};
-					grid-column: auto / span ${_report.width || Dashboard.grid.columns};
-					grid-row: auto / span ${_report.height || Dashboard.grid.rows};
-				`);
-
-				if(_report.visualization) {
-
-					const [visualization] = report.visualizations.filter(v => v.type == _report.visualization);
-
-					if(visualization)
-						report.visualizations.selected = visualization;
-				}
-
-				report.visualizations.selected.load();
-
-				report.container.appendChild(report.visualizations.selected.container);
-
-				Dashboard.container.appendChild(report.container);
-
-				this.page.list.selectedReports.add(report);
-			}
-		} else {
-			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
+			return;
 		}
+
+		await this.datasets.load();
+
+		for(const _report of this.reports()) {
+
+			const report = new DataSource(_report);
+
+			report.container.setAttribute('style', `
+				order: ${report.dashboard.position || 0};
+				grid-column: auto / span ${report.dashboard.width || Dashboard.grid.columns};
+				grid-row: auto / span ${report.dashboard.height || Dashboard.grid.rows};
+			`);
+
+			if(report.dashboard.visualization) {
+
+				const [visualization] = report.visualizations.filter(v => v.type == report.dashboard.visualization);
+
+				if(visualization)
+					report.visualizations.selected = visualization;
+			}
+
+			report.container.appendChild(report.visualizations.selected.container);
+
+			Dashboard.container.appendChild(report.container);
+
+			report.visualizations.selected.load(null, resize);
+
+			this.page.list.selectedReports.add(report);
+		}
+
+		if(!this.page.list.selectedReports.size)
+			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
 
 		if(this.page.user.privileges.has('reports')) {
 
@@ -308,32 +323,7 @@ class Dashboard {
 				edit.click();
 		}
 
-		Dashboard.resizeHint = document.createElement('div');
-		Dashboard.resizeHint.classList.add('resize-hint', 'hidden');
-		Dashboard.container.appendChild(Dashboard.resizeHint);
-
 		await Sections.show('reports');
-	}
-
-	async render() {
-
-		if(!Dashboard.container)
-			return;
-
-		for(const report of this.page.list.selectedReports) {
-
-			const
-				format = this.format.reports[report.dashboardPosition],
-				position = this.format.reports.indexOf(format);
-
-			report.container.setAttribute('style', `
-				order: ${position || 0};
-				grid-column: auto / span ${format.width || Dashboard.grid.columns};
-				grid-row: auto / span ${format.height || Dashboard.grid.rows};
-			`);
-
-			report.visualizations.selected.render();
-		}
 	}
 
 	edit() {
@@ -373,7 +363,7 @@ class Dashboard {
 
 			const
 				header = report.container.querySelector('header'),
-				format = this.format.reports[report.dashboardPosition];
+				format = this.format.reports[report.dashboard.position];
 
 			if(!format.width)
 				format.width = Dashboard.grid.columns;
@@ -383,19 +373,19 @@ class Dashboard {
 
 			header.insertAdjacentHTML('beforeend', `
 				<div class="edit">
-					<button class="remove" title="Remove Graph"><i class="fa fa-times"></i></button>
+					<span class="remove" title="Remove Graph"><i class="fa fa-times"></i></span>
 				</div>
 			`);
 
 			header.querySelector('.remove').on('click', () => {
 
-				this.format.reports.splice(report.dashboardPosition, 1);
+				this.format.reports.splice(report.dashboard.position, 1);
 				this.page.list.selectedReports.delete(report);
-				report.dashboardPosition = undefined;
+				report.dashboard.position = undefined;
 
 				Dashboard.container.removeChild(report.container);
 
-				this.load();
+				this.load(true);
 			});
 
 			report.container.setAttribute('draggable', 'true');
@@ -456,29 +446,23 @@ class Dashboard {
 
 				const
 					beingDragged = this.page.list.selectedReports.beingDragged,
-					format = this.format.reports[beingDragged.dashboardPosition];
+					format = this.format.reports[beingDragged.dashboard.position];
 
-				this.format.reports.splice(beingDragged.dashboardPosition, 1);
+				this.format.reports.splice(beingDragged.dashboard.position, 1);
 
-				this.format.reports.splice(report.dashboardPosition, 0, format);
+				this.format.reports.splice(report.dashboard.position, 0, format);
 
-				this.load();
+				this.load(true);
 			});
 
 			report.container.insertAdjacentHTML('beforeend', `
-				<div class="resize left" draggable="true"></div>
-				<div class="resize right" draggable="true"></div>
+				<div class="resize right" draggable="true" title="Resize Graph"></div>
+				<div class="resize bottom" draggable="true" title="Resize Graph"></div>
 			`);
 
 			const
-				left = report.container.querySelector('.resize.left'),
-				right = report.container.querySelector('.resize.right');
-
-			left.on('dragstart', e => {
-				e.stopPropagation();
-				report.draggingEdge = left;
-				this.page.list.selectedReports.beingResized = report;
-			});
+				right = report.container.querySelector('.resize.right'),
+				bottom = report.container.querySelector('.resize.bottom');
 
 			right.on('dragstart', e => {
 				e.stopPropagation();
@@ -486,80 +470,83 @@ class Dashboard {
 				this.page.list.selectedReports.beingResized = report
 			});
 
-			left.on('dragend', e => {
-				e.stopPropagation();
-				this.page.list.selectedReports.beingResized = null;
-				Dashboard.resizeHint.classList.add('hidden');
-			});
-
 			right.on('dragend', e => {
 				e.stopPropagation();
 				this.page.list.selectedReports.beingResized = null;
-				Dashboard.resizeHint.classList.add('hidden');
+			});
+
+			bottom.on('dragstart', e => {
+				e.stopPropagation();
+				report.draggingEdge = bottom;
+				this.page.list.selectedReports.beingResized = report
+			});
+
+			bottom.on('dragend', e => {
+				e.stopPropagation();
+				this.page.list.selectedReports.beingResized = null;
 			});
 		}
 
 		Dashboard.container.on('dragover', e => {
 
 			e.preventDefault();
+			e.stopPropagation();
 
 			const report = this.page.list.selectedReports.beingResized;
 
 			if(!report)
 				return;
 
-			const
-				format = this.format.reports[report.dashboardPosition],
-				column = getColumn(e.clientX) + 1,
-				reportStart = getColumn(report.container.offsetLeft),
-				reportEnd = getColumn(report.container.offsetLeft + report.container.clientWidth);
-
-			Dashboard.resizeHint.classList.remove('hidden');
-			Dashboard.resizeHint.style.left = ((column * ((Dashboard.container.clientWidth / Dashboard.grid.columns) + 10)) + 8) + 'px';
-		});
-
-		Dashboard.container.on('drop', e => {
-
-			const report = this.page.list.selectedReports.beingResized;
-
-			if(!report)
-				return;
-
-			const
-				format = this.format.reports[report.dashboardPosition],
-				column = getColumn(e.clientX) + 1,
-				reportStart = getColumn(report.container.offsetLeft),
-				reportEnd = getColumn(report.container.offsetLeft + report.container.clientWidth);
-
-			if(report.draggingEdge.classList.contains('left')) {
-
-				if(column >= reportEnd)
-					return;
-
-				format.width = reportEnd - column;
-			}
+			const format = this.format.reports[report.dashboard.position];
 
 			if(report.draggingEdge.classList.contains('right')) {
 
-				if(column <= reportStart)
+				const
+					column = getColumn(e.clientX) + 1,
+					columnStart = getColumn(report.container.offsetLeft);
+
+				if(column <= columnStart)
 					return;
 
-				format.width = column - reportStart;
+				format.width = column - columnStart;
 			}
 
-			if(Dashboard.resizeTimeout)
-				clearTimeout(Dashboard.resizeTimeout);
+			if(report.draggingEdge.classList.contains('bottom')) {
 
-			Dashboard.resizeHint.classList.add('hidden');
+				const
+					row = getRow(e.clientY) + 1,
+					rowStart = getRow(report.container.offsetTop);
 
-			Dashboard.resizeTimeout = setTimeout(() => this.render(), 300);
+				if(row <= rowStart)
+					return;
+
+				format.height = row - rowStart;
+			}
+
+			if(
+				format.width != report.container.style.gridColumnEnd.split(' ')[1] ||
+				format.height != report.container.style.gridRowEnd.split(' ')[1]
+			) {
+
+				report.container.setAttribute('style', `
+					order: ${report.dashboard.position || 0};
+					grid-column: auto / span ${format.width || Dashboard.grid.columns};
+					grid-row: auto / span ${format.height || Dashboard.grid.rows};
+				`);
+
+				report.visualizations.selected.render(true);
+			}
 		});
 
 		function getColumn(position) {
 			return Math.floor(
 				(position - Dashboard.container.offsetLeft) /
 				((Dashboard.container.clientWidth / Dashboard.grid.columns) + 10)
-			) + 1;
+			);
+		}
+
+		function getRow(position) {
+			return Math.floor((position - Dashboard.container.offsetTop) / Dashboard.grid.rowHeight);
 		}
 	}
 
@@ -586,17 +573,29 @@ class Dashboard {
 		if(this.container)
 			return this.container;
 
-		const container = this.container = document.createElement('div');
+		function getReports(dashboard) {
+
+			const reports = Array.from(dashboard.reports());
+
+			for(const child of dashboard.children)
+				reports.concat(getReports(child));
+
+			return reports;
+		}
+
+		const
+			container = this.container = document.createElement('div'),
+			icon = this.icon ? `<img src="${this.icon}" height="20" width="20">` : '';
 
 		container.classList.add('item');
 
 		container.innerHTML = `
 			<div class="label">
-				<i class="fab fa-hubspot"></i>
+				${icon}
 				<span class="name">${this.name}</span>
-				${this.children.size ? '<span class="angle"><i class="fa fa-angle-down"></i></span>' : ''}
+				${this.children.size ? '<span class="angle down"><i class="fa fa-angle-down"></i></span>' : ''}
 			</div>
-			${this.children.size ? '<div class="submenu"></div>' : ''}
+			${this.children.size ? '<div class="submenu hidden"></div>' : ''}
 		`;
 
 		const submenu = container.querySelector('.submenu');
@@ -618,5 +617,99 @@ class Dashboard {
 			submenu.appendChild(child.menuItem);
 
 		return container;
+	}
+
+	* reports() {
+
+		if(this.format && this.format.reports && this.format.reports.length) {
+
+			for(const [position, _report] of this.format.reports.entries()) {
+
+				if(!DataSource.list.has(_report.query_id))
+					continue;
+
+				const report = Object.assign({}, (DataSource.list.get(_report.query_id)));
+
+				report.dashboard = Object.assign({}, _report);
+				report.dashboard.position = position;
+
+				yield report;
+			}
+		}
+	}
+}
+
+class DashboardDatasets extends Set {
+
+	static setup() {
+
+		DashboardDatasets.container = Dashboard.toolbar.querySelector('.datasets');
+	}
+
+	constructor(dashboard) {
+
+		super();
+
+		this.dashboard = dashboard;
+		this.page = this.dashboard.page;
+
+		for(const report of this.dashboard.reports()) {
+
+			for(const filter of report.filters || []) {
+				if(filter.dataset)
+					this.add(filter.dataset);
+			}
+		}
+	}
+
+	async load() {
+
+		await this.fetch();
+
+		await this.render();
+	}
+
+	async fetch() {
+		await Promise.all(Array.from(this).map(d => DataSource.datasets.fetch(d)));
+	}
+
+	async render() {
+
+		DashboardDatasets.container.textContent = null;
+
+		for(const dataset of this) {
+
+			const input = document.createElement('select');
+
+			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
+
+			const data = await DataSource.datasets.fetch(dataset)
+
+			for(const row of data || [])
+				input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
+
+			input.on('change', () => {
+
+				for(const report of this.page.list.selectedReports) {
+
+					let found = false;
+
+					for(const filter of report.filters.values()) {
+
+						if(filter.dataset != dataset)
+							continue;
+
+						filter.label.querySelector('select').value = input.value;
+
+						found = true;
+					}
+
+					if(found)
+						report.visualizations.selected.load();
+				}
+			});
+
+			DashboardDatasets.container.appendChild(input);
+		}
 	}
 }
