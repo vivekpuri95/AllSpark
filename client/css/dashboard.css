@@ -90,11 +90,22 @@ main #reports .list {
 		position: sticky;
 		top: 0;
 		z-index: 3;
+		align-items: flex-end;
 	}
 		main #reports > .toolbar input[name=date-range] {
 			width: 250px;
 			text-align: center;
 			letter-spacing: 0.5px;
+		}
+		main #reports > .toolbar label select {
+			max-width: 200px;
+		}
+		main #reports > .toolbar .date-range {
+			order: 1;
+			max-width: initial;
+		}
+		main #reports > .toolbar .edit-dashboard {
+			order: 2;
 		}
 	main #reports .list .data-source {
 		grid-column: auto / span 8;

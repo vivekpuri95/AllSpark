@@ -45,6 +45,9 @@ exports.values = class DatasetValues extends API {
 			}
 		};
 
-		return await reportObj.report();
+		return {
+			values: await reportObj.report(),
+			dataset,
+		}
 	}
 }

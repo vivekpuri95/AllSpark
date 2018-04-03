@@ -901,9 +901,9 @@ class DataSourceDatasets extends Map {
 
 		const response = await API.call('datasets/values', {id});
 
-		this.set(id, response.data);
+		this.set(id, response);
 
-		return response.data;
+		return response;
 	}
 }
 
@@ -1519,12 +1519,12 @@ class DataSourceFilter {
 
 			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
 
-			DataSource.datasets.fetch(this.dataset).then(data => {
+			DataSource.datasets.fetch(this.dataset).then(response => {
 
-				if(!data.length)
+				if(!response.values.data.length)
 					return;
 
-				for(const row of data)
+				for(const row of response.values.data)
 					input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
 			});
 		}
@@ -2196,7 +2196,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		container.classList.add('visualization', 'table');
 
 		container.innerHTML = `
-			<div class="container overflow">
+			<div class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -2281,8 +2281,9 @@ Visualization.list.set('table', class Table extends Visualization {
 		}
 
 		if(!rows || !rows.length) {
-			table.insertAdjacentHTML('beforeend', `<caption class="NA">${this.source.originalResponse.message || 'No rows found! :('}</caption>`);
-			return;
+			table.insertAdjacentHTML('beforeend', `
+				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No rows found! :('}</td></tr>
+			`);
 		}
 
 		rowCount.classList.add('row-count');

@@ -170,7 +170,7 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 		<section class="section" id="reports">
 
-			<div class="toolbar">
+			<div class="toolbar form">
 
 				<label>
 					<button id="back">
@@ -179,9 +179,8 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 					</button>
 				</label>
 
-				<div class="datasets"></div>
-
-				<label class="right">
+				<label class="date-range right">
+					<span>Date Range</span>
 					<input type="text" name="date-range">
 				</label>
 			</div>
@@ -335,7 +334,7 @@ app.get('/reports/:id?', (req, res) => {
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="report-form"><i class="fa fa-save"></i> Save</button>
 
-				<button id="test" class="right"><i class="fas fa-sync"></i> Run</button>
+				<button id="test" class="right"><i class="fas fa-sync"></i> Save & Run</button>
 				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>
 				<button id="view"><i class="fas fa-external-link-alt""></i> View</button>
 			</header>
@@ -406,7 +405,7 @@ app.get('/reports/:id?', (req, res) => {
 
 				<label>
 					<span>Description</span>
-					<textarea name="description" required></textarea>
+					<textarea name="description"></textarea>
 				</label>
 
 				<label>

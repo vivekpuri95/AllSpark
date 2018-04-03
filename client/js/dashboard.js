@@ -5,7 +5,6 @@ Page.class = class Dashboards extends Page {
 		super();
 
 		Dashboard.setup(this);
-		DashboardDatasets.setup(this);
 
 		this.listContainer = this.container.querySelector('section#list');
 		this.reports = this.container.querySelector('section#reports');
@@ -212,8 +211,10 @@ class Dashboard {
 					start = Array.from(source.filters.values()).filter(f => f.name == 'Start Date')[0],
 					end = Array.from(source.filters.values()).filter(f => f.name == 'End Date')[0];
 
-				if(!start || !end)
+				if(!start || !end) {
+					source.container.style.opacity = 0.4;
 					continue;
+				}
 
 				start.label.querySelector('input').value = picker.startDate.format('YYYY-MM-DD');
 				end.label.querySelector('input').value = picker.endDate.format('YYYY-MM-DD');
@@ -641,11 +642,6 @@ class Dashboard {
 
 class DashboardDatasets extends Set {
 
-	static setup() {
-
-		DashboardDatasets.container = Dashboard.toolbar.querySelector('.datasets');
-	}
-
 	constructor(dashboard) {
 
 		super();
@@ -675,17 +671,24 @@ class DashboardDatasets extends Set {
 
 	async render() {
 
-		DashboardDatasets.container.textContent = null;
+		for(const dataset of Dashboard.toolbar.querySelectorAll('.dataset'))
+			Dashboard.toolbar.removeChild(dataset);
 
-		for(const dataset of this) {
+		const fragment = document.createDocumentFragment();
 
-			const input = document.createElement('select');
+		for(const datasetId of this) {
+
+			const
+				label = document.createElement('label'),
+				input = document.createElement('select');
+
+			label.classList.add('dataset');
 
 			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
 
-			const data = await DataSource.datasets.fetch(dataset)
+			const {values: {data: values}, dataset} = await DataSource.datasets.fetch(datasetId);
 
-			for(const row of data || [])
+			for(const row of values || [])
 				input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
 
 			input.on('change', () => {
@@ -696,7 +699,7 @@ class DashboardDatasets extends Set {
 
 					for(const filter of report.filters.values()) {
 
-						if(filter.dataset != dataset)
+						if(filter.dataset != dataset.id)
 							continue;
 
 						filter.label.querySelector('select').value = input.value;
@@ -706,10 +709,19 @@ class DashboardDatasets extends Set {
 
 					if(found)
 						report.visualizations.selected.load();
+
+					else
+						report.container.style.opacity = 0.4;
 				}
 			});
 
-			DashboardDatasets.container.appendChild(input);
+			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`)
+
+			label.appendChild(input);
+
+			fragment.appendChild(label);
 		}
+
+		Dashboard.toolbar.appendChild(fragment);
 	}
 }
