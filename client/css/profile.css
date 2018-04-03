@@ -5,6 +5,7 @@ main section#profile {
 }
 main #profile h1 {
 	border-bottom: 1px dashed black;
+	margin: 0;
 }
 main #profile .profile-details,
 main #profile .privileges,
