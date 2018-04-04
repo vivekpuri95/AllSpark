@@ -220,7 +220,6 @@ class query extends report {
 			}
 		}
 
-
 		const data = await this.mysql.query(this.query.query, await this.makeQueryParameters(), this.query.connection_name);
 
 		this.result = {

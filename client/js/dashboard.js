@@ -215,7 +215,7 @@ class Dashboard {
 					source.container.style.opacity = 0.4;
 					continue;
 				} else
-					report.container.style.opacity = 1;
+					source.container.style.opacity = 1;
 
 				start.label.querySelector('input').value = picker.startDate.format('YYYY-MM-DD');
 				end.label.querySelector('input').value = picker.endDate.format('YYYY-MM-DD');

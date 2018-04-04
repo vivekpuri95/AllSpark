@@ -443,6 +443,64 @@ body {
 				width: 100%;
 			}
 
+		main .data-source > .filters .dataset {
+			position: relative;
+			width: 200px;
+		}
+			main .data-source > .filters .dataset input[type=search] {
+				width: 200px;
+			}
+			main .data-source > .filters .dataset .options {
+				position: absolute;
+				background: #fff;
+				z-index: 1;
+				width: 100%;
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+				max-height: 200px;
+				overflow: auto;
+			}
+				main .data-source > .filters .dataset label {
+					display: grid;
+					grid-template-columns: auto 1fr;
+					align-items: center;
+					padding: var(--gap);
+					margin: 0;
+					transition: background var(--transition-duration),
+								box-shadow var(--transition-duration);
+				}
+				main .data-source > .filters .dataset label:hover {
+					background: #ddd;
+				}
+				main .data-source > .filters .dataset label:active {
+					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.2);
+				}
+				main .data-source > .filters .dataset .options label.selected,
+				main .data-source > .filters .dataset .options label.selected:hover {
+					background: #eda;
+				}
+					main .data-source > .filters .dataset label input {
+						margin: 0;
+					}
+				main .data-source > .filters .dataset .options header,
+				main .data-source > .filters .dataset .options footer {
+					font-size: 90%;
+					padding: var(--gap);
+					color: #999;
+					display: grid;
+					grid-template-columns: auto auto auto;
+					grid-gap: calc(var(--gap) * 2);
+					justify-content: flex-start;
+				}
+				main .data-source > .filters .dataset .options header {
+					border-bottom: 1px dashed #999;
+				}
+					main .data-source > .filters .dataset .options header a {
+						cursor: pointer;
+					}
+				main .data-source > .filters .dataset .options footer {
+					border-top: 1px dashed #999;
+				}
+
 		main .data-source > .columns {
 			display: flex;
 			flex-wrap: wrap;

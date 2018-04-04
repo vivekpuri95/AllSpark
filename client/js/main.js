@@ -323,8 +323,14 @@ class API extends AJAX {
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
-		if(localStorage.token)
-			parameters.token = localStorage.token;
+		if(localStorage.token) {
+
+			if(typeof parameters == 'string')
+				parameters += '&token='+localStorage.token;
+
+			else
+				parameters.token = localStorage.token;
+		}
 
 		// If a form id was supplied, then also load the data from that form
 		if(options.form)
@@ -591,12 +597,25 @@ class DataSource {
 
 	async fetch(parameters = {}) {
 
-		parameters.query_id = this.query_id;
-		parameters.email = user.email;
+		parameters = new URLSearchParams(parameters);
+
+		parameters.set('query_id', this.query_id);
+		parameters.set('email', user.email);
 
 		for(const filter of this.filters.values()) {
-			if(!parameters.hasOwnProperty(filter.placeholder))
-				parameters[filter.placeholder] = this.filters.form.elements[filter.placeholder].value;
+
+			if(parameters.has(filter.placeholder))
+				continue;
+
+			if(filter.dataset) {
+
+				for(const input of filter.label.querySelectorAll('input:checked'))
+					parameters.append(filter.placeholder, input.value);
+
+				continue;
+			}
+
+			parameters.set(filter.placeholder, this.filters.form.elements[filter.placeholder].value);
 		}
 
 		let response = null;
@@ -609,7 +628,7 @@ class DataSource {
 			this.container.removeChild(this.container.querySelector('pre.warning'));
 
 		try {
-			response = await API.call('reports/engine/report', parameters, options);
+			response = await API.call('reports/engine/report', parameters.toString(), options);
 		}
 
 		catch(e) {
@@ -874,7 +893,7 @@ class DataSource {
 		const parameters = new URLSearchParams();
 
 		for(const [_, filter] of this.filters) {
-			if(this.filters.form)
+			if(this.filters.form && filter.placeholder in this.filters.form.elements)
 				parameters.set(filter.placeholder, this.filters.form.elements[filter.placeholder].value);
 		}
 
@@ -1514,19 +1533,31 @@ class DataSourceFilter {
 
 		if(this.dataset) {
 
-			input = document.createElement('select');
-			input.name = this.placeholder;
+			input = document.createElement('div');
 
-			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
+			input.classList.add('dataset');
 
-			DataSource.datasets.fetch(this.dataset).then(response => {
+			input.innerHTML = `
+				<input type="search" placeholder="Search...">
+				<div class="options hidden"></div>
+			`;
 
-				if(!response.values.data.length)
-					return;
+			const
+				search = input.querySelector('input[type=search]'),
+				options = input.querySelector('.options');
 
-				for(const row of response.values.data)
-					input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
+			search.on('click', e => {
+				e.stopPropagation();
+				options.classList.remove('hidden');
 			});
+
+			search.on('keyup', () => this.renderDataSet());
+
+			options.on('click', e => e.stopPropagation());
+
+			document.body.on('click', () => options.classList.add('hidden'));
+
+			this.renderDataSet();
 		}
 
 		this.labelContainer.innerHTML = `<span>${this.name}<span>`;
@@ -1534,6 +1565,84 @@ class DataSourceFilter {
 		this.labelContainer.appendChild(input);
 
 		return this.labelContainer;
+	}
+
+	async renderDataSet() {
+
+		const
+			response = await DataSource.datasets.fetch(this.dataset),
+			search = this.label.querySelector('input[type=search]'),
+			options = this.label.querySelector('.options');
+
+		if(!response.values.data.length)
+			return options.innerHTML = `<div class="NA">No data found! :(</div>`;
+
+		options.innerHTML = `
+			<header>
+				<a class="all">All</a>
+				<a class="none">None</a>
+			</header>
+		`;
+
+		options.querySelector('header .all').on('click', () => {
+			for(const label of options.querySelectorAll('label')) {
+				if(!label.classList.contains('selected'))
+					label.click();
+			}
+		});
+
+		options.querySelector('header .none').on('click', () => {
+			for(const label of options.querySelectorAll('label')) {
+				if(label.classList.contains('selected'))
+					label.click();
+			}
+		});
+
+		for(const row of response.values.data) {
+
+			if(search.value && !row.name.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+				continue;
+
+			const label = document.createElement('label');
+
+			label.innerHTML = `<input name="${this.placeholder}" value="${row.value}" type="${this.multiple ? 'checkbox' : 'radio'}"> ${row.name}`;
+
+			label.querySelector('input').on('change', () => {
+
+				label.classList.toggle('selected');
+
+				const selected = options.querySelectorAll('input:checked');
+
+				if(!selected.length)
+					search.value = '';
+
+				if(selected.length == 1)
+					search.value = selected[0].parentElement.textContent;
+
+				if(selected.length > 1)
+					search.value = `${selected.length} selected`;
+
+				renderFooter();
+			});
+
+			options.appendChild(label);
+		}
+
+		if(!options.children.length)
+			return options.innerHTML = `<div class="NA">No matches found! :(</div>`;
+
+		options.insertAdjacentHTML('beforeend', `<footer></footer>`);
+
+		renderFooter();
+
+		function renderFooter() {
+
+			options.querySelector('footer').innerHTML = `
+				<span>Total: <strong>${response.values.data.length}</strong></span>
+				<span>Filtered: <strong>${options.querySelectorAll('label').length}</strong></span>
+				<span>Selected: <strong>${options.querySelectorAll('input:checked').length}</strong></span>
+			`;
+		}
 	}
 }
 
@@ -2282,7 +2391,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		if(!rows || !rows.length) {
 			table.insertAdjacentHTML('beforeend', `
-				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No rows found! :('}</td></tr>
+				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found! :('}</td></tr>
 			`);
 		}
 
@@ -3659,7 +3768,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 		}
 
 		if(!response.length)
-			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No rows found! :('}</caption>`;
+			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No data found! :('}</caption>`;
 
 		table.appendChild(tbody);
 		container.appendChild(table);
