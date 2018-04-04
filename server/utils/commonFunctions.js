@@ -323,6 +323,33 @@ function authenticatePrivileges(userPrivileges, objectPrivileges) {
 }
 
 
+function getIndicesOf(searchStr, str, caseSensitive=1) {
+
+	// searchStr = needle, str = haystack
+
+	let searchStrLen = searchStr.length;
+
+	if (searchStrLen === 0) {
+
+		return [];
+	}
+
+	let startIndex = 0, index, indices = [];
+	if (!caseSensitive) {
+
+		str = str.toLowerCase();
+		searchStr = searchStr.toLowerCase();
+	}
+
+	while ((index = str.indexOf(searchStr, startIndex)) > -1) {
+
+		indices.push(index);
+		startIndex = index + searchStrLen;
+	}
+
+	return indices;
+}
+
 exports.redisStore = redisStore;
 exports.redisGet = redisGet;
 exports.isJson = isJson;
@@ -334,3 +361,4 @@ exports.clearDirectory = clearDirectory;
 exports.listOfArrayToMatrix = listOfArrayToMatrix;
 exports.authenticatePrivileges = authenticatePrivileges;
 exports.promiseParallelLimit = promiseParallelLimit;
+exports.getIndicesOf = getIndicesOf;
