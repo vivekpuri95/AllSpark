@@ -214,7 +214,8 @@ class Dashboard {
 				if(!start || !end) {
 					source.container.style.opacity = 0.4;
 					continue;
-				}
+				} else
+					report.container.style.opacity = 1;
 
 				start.label.querySelector('input').value = picker.startDate.format('YYYY-MM-DD');
 				end.label.querySelector('input').value = picker.endDate.format('YYYY-MM-DD');
@@ -707,8 +708,10 @@ class DashboardDatasets extends Set {
 						found = true;
 					}
 
-					if(found)
+					if(found) {
 						report.visualizations.selected.load();
+						report.container.style.opacity = 1;
+					}
 
 					else
 						report.container.style.opacity = 0.4;
