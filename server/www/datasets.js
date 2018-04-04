@@ -4,6 +4,8 @@ const {report} = require('./reports/engine');
 exports.list = class extends API {
 
     async list() {
+        this.user.privilege.needs('report');
+
         return await this.mysql.query(`
 			SELECT
 				d.*,
@@ -23,7 +25,7 @@ exports.list = class extends API {
 
 exports.insert = class extends API {
     async insert() {
-        this.user.privilege.needs('administrator');
+        this.user.privilege.needs('report');
 
         const params = {
             account_id: this.account.account_id,
@@ -42,7 +44,7 @@ exports.insert = class extends API {
 
 exports.update = class extends API {
     async update() {
-        this.user.privilege.needs('administrator');
+        this.user.privilege.needs('report');
 
         const params = {
             account_id: this.account.account_id,
@@ -61,7 +63,7 @@ exports.update = class extends API {
 
 exports.delete = class extends API {
     async delete() {
-        this.user.privilege.needs('administrator');
+        this.user.privilege.needs('report');
 
         return await this.mysql.query(
             `UPDATE	tb_datasets SET status = 0 WHERE account_id = ? AND id = ?`,
