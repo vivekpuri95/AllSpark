@@ -14,7 +14,7 @@ class report extends API {
 
 		this.queryId = this.request.body.query_id;
 
-		if(!this.queryId)
+		if (!this.queryId)
 			throw new API.Exception(404, 'Report not found! :(');
 
 		const fetchedData = await this.fetch();
@@ -72,12 +72,6 @@ class report extends API {
 		for (const f of reportDetails[1]) {
 
 			f.value = this.request.body[f.placeholder] || f.default_value;
-
-			if(f.multiple == 1) {
-				f.value = f.value.split(',');
-				f.value.map(s => str = str.concat(`'${s}',`));
-				f.value = str.slice(0, -1);
-			}
 		}
 
 		this.query = reportDetails[0][0];
@@ -124,13 +118,15 @@ class report extends API {
 			}
 
 			if (types[filter.type] == 'month') {
+
 				const date = new Date();
+
 				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
 				filter.value = this.request.body[filter.placeholder] || filter.default_value;
 
 				if (filter.value === new Date().toISOString().slice(0, 7)) {
-					this.has_today = true;
 
+					this.has_today = true;
 				}
 			}
 		}
@@ -170,17 +166,41 @@ class query extends report {
 			.replace(/--.*(\n|$)/g, "")
 			.replace(/\s+/g, ' ');
 
+		this.filterIndices = {};
+
 		for (const filter of this.filters) {
 
-			if(filter.multiple == 1){
-				this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `${filter.value}`);
-			}
-			else{
-				this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `'${filter.value}'`);
-			}
+			this.filterIndices[filter.placeholder] = {
+
+				indices: (commonFun.getIndicesOf(`{{${filter.placeholder}}}`, this.query.query)),
+				value: filter.value,
+			};
+
+			this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "?");
+
 		}
-		this.hash = crypto.createHash('md5').update(this.query.query).digest('hex');
+
+		this.hash = crypto.createHash('md5').update(this.query.query + JSON.stringify(this.filterIndices)).digest('hex');
 		this.createRedisKey();
+	}
+
+	async makeQueryParameters() {
+
+		const filterIndexList = [];
+
+		for (const placeholder in this.filterIndices) {
+
+			this.filterIndices[placeholder].indices = this.filterIndices[placeholder].indices.map(x =>
+
+				filterIndexList.push({
+					value: this.filterIndices[placeholder].value,
+					index: x,
+				})
+			);
+		}
+
+		return (filterIndexList.sort((x, y) => x.index - y.index)).map(x => x.value) || [];
+
 	}
 
 	async fetchAndStore() {
@@ -200,7 +220,9 @@ class query extends report {
 			}
 		}
 
-		const data = await this.mysql.query(this.query.query, [], this.query.connection_name);
+
+		const data = await this.mysql.query(this.query.query, await this.makeQueryParameters(), this.query.connection_name);
+
 		this.result = {
 			data,
 			query: data.instance.formatted_sql,
