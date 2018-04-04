@@ -4,11 +4,10 @@ const {report} = require('./reports/engine');
 exports.list = class extends API {
 
     async list() {
-
         return await this.mysql.query(`
 			SELECT
 				d.*,
-				CONCAT_WS(first_name, middle_name, last_name) user_name
+				CONCAT_WS(' ',first_name, last_name) user_name
 			FROM
 				tb_datasets d
 			LEFT JOIN
