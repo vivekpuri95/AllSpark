@@ -808,6 +808,58 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 			<a>Roles</a>
 			<a>DataSets</a>
 		</nav>
+
+		<section class="section" id="list">
+
+			<h1>Datasets Manage</h1>
+
+			<header class="toolbar">
+				<button id="add-datset"><i class="fa fa-plus"></i> Add New Dataset</button>
+			</header>
+
+			<table class="block">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Name</th>
+						<th>Category</th>
+						<th>Query id</th>
+						<th class="action">Edit</th>
+						<th class="action">Delete</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		</section>
+
+		<section class="section" id="form">
+
+			<h1></h1>
+
+			<header class="toolbar">
+				<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
+			</header>
+
+			<form class="block form" id="user-form">
+
+				<label>
+					<span>Name</span>
+					<input type="text" name="name" required>
+				</label>
+
+				<label>
+					<span>Category</span>
+					<select name="category_id"></select>
+				</label>
+
+				<label>
+					<span>Query Id</span>
+					<input type="number" name="query_id">
+				</label>
+			</form>
+		</section>
+
 	`));
 });
 
