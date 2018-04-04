@@ -1291,21 +1291,48 @@ class DataSourceColumn {
 		this.form.on('submit', async e => this.save(e));
 
 		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
-		this.block.on('click', e => e.stopPropagation());
+
+		this.form.on('click', e => e.stopPropagation());
+		var timeout;
 
 		container.querySelector('.name').on('click', async () => {
 
-			this.disabled = !this.disabled;
+			if(timeout)
+				clearTimeout(timeout);
 
-			this.source.columns.render();
+			timeout = setTimeout( async ()=>{
 
-			await this.update();
+				this.disabled = !this.disabled;
+
+				this.source.columns.render();
+
+				await this.update();
+				},300);
 		});
 
 		container.querySelector('.menu-toggle').on('click', () => this.showBlanket());
 
 		this.form.querySelector(' #add_parameters').on('click', () => this.addParameterDiv());
 
+		container.querySelector('.name').on('dblclick', async (e) => {
+
+			if(timeout)
+				clearTimeout(timeout);
+
+			for(const column of this.source.columns.values()) {
+				if(column.key != this.key &&  column.key != this.source.visualizations.selected.axis.x.column) {
+					column.disabled = true;
+					column.source.columns.render();
+					await column.update();
+				};
+			}
+
+			this.disabled = false;
+
+			this.source.columns.render();
+
+			await this.update();
+		})
 		return container;
 	}
 
