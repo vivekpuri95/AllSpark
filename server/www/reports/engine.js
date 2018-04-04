@@ -72,11 +72,6 @@ class report extends API {
 		for (const f of reportDetails[1]) {
 
 			f.value = this.request.body[f.placeholder] || f.default_value;
-
-			if (f.multiple) {
-
-				f.value = f.value.split(',');
-			}
 		}
 
 		this.query = reportDetails[0][0];

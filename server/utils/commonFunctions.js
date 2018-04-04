@@ -12,7 +12,7 @@ const jwtVerifyAsync = promisify(jwt.verify, jwt);
 
 function redisStore(uni_key, value, expire_time = null) {
 
-	if(!config.has('redisOptions'))
+	if (!config.has('redisOptions'))
 		return Promise.resolve(null);
 
 	return new Promise(function (resolve, reject) {
@@ -38,7 +38,7 @@ function redisStore(uni_key, value, expire_time = null) {
 
 function redisGet(key) {
 
-	if(!config.has('redisOptions'))
+	if (!config.has('redisOptions'))
 		return Promise.resolve(null);
 
 	return new Promise((resolve, reject) => {
@@ -323,7 +323,7 @@ function authenticatePrivileges(userPrivileges, objectPrivileges) {
 }
 
 
-function getIndicesOf(searchStr, str, caseSensitive=1) {
+function getIndicesOf(searchStr, str, caseSensitive = 1) {
 
 	// searchStr = needle, str = haystack
 
@@ -334,17 +334,21 @@ function getIndicesOf(searchStr, str, caseSensitive=1) {
 		return [];
 	}
 
-	let startIndex = 0, index, indices = [];
+	let indices = [];
+
+
 	if (!caseSensitive) {
 
 		str = str.toLowerCase();
 		searchStr = searchStr.toLowerCase();
 	}
 
-	while ((index = str.indexOf(searchStr, startIndex)) > -1) {
+	let re = new RegExp(searchStr, "g");
+	let match;
 
-		indices.push(index);
-		startIndex = index + searchStrLen;
+	while (match = re.exec(str)) {
+
+		indices.push(match.index);
 	}
 
 	return indices;
