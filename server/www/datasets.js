@@ -4,7 +4,6 @@ const {report} = require('./reports/engine');
 exports.list = class extends API {
 
 	async list() {
-
 		return await this.mysql.query(`
 			SELECT
 				d.*,
@@ -21,6 +20,56 @@ exports.list = class extends API {
 		);
 	}
 };
+
+exports.insert = class extends API {
+	async insert(){
+        this.user.privilege.needs('administrator');
+
+        const params = {
+        	account_id: this.account.account_id,
+			name: this.request.body.name,
+			query_id: this.request.body.query_id,
+			category_id: this.request.body.category_id,
+			created_by: this.user.user_id
+		};
+        return await this.mysql.query(
+        	`INSERT INTO tb_datasets SET ?`,
+			[params],
+			'write'
+		);
+	}
+}
+
+exports.update = class extends API {
+    async update(){
+        this.user.privilege.needs('administrator');
+
+        const params = {
+            account_id: this.account.account_id,
+            name: this.request.body.name,
+            query_id: this.request.body.query_id,
+            category_id: this.request.body.category_id,
+            created_by: this.user.user_id
+        };
+        return await this.mysql.query(
+            `UPDATE tb_datasets SET ? WHERE account_id = ? AND id = ?`,
+            [params, this.account.account_id, this.request.body.id],
+            'write'
+        );
+    }
+}
+
+exports.delete = class extends API{
+	async delete(){
+        this.user.privilege.needs('administrator');
+
+        return await this.mysql.query(
+        	`UPDATE	tb_datasets SET status = 0 WHERE account_id = ? AND id = ?`,
+			[this.account.account_id, this.request.body.id],
+			'write'
+		);
+	}
+}
 
 exports.values = class DatasetValues extends API {
 
