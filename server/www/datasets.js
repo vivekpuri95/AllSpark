@@ -4,7 +4,6 @@ const {report} = require('./reports/engine');
 exports.list = class extends API {
 
     async list() {
-        this.user.privilege.needs('report');
 
         return await this.mysql.query(`
 			SELECT
