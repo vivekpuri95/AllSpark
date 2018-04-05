@@ -910,6 +910,84 @@ class DataSourceDatasets extends Map {
 		this.source = source;
 	}
 
+	async load(container) {
+
+		container.innerHTML = `
+			<input type="search" placeholder="Search...">
+			<div class="options hidden"></div>
+		`;
+
+		const
+			response = await this.fetch(this.dataset),
+			search = this.label.querySelector('input[type=search]'),
+			options = this.label.querySelector('.options');
+
+		if(!response.values.data.length)
+			return options.innerHTML = `<div class="NA">No data found! :(</div>`;
+
+		search.on('click', e => {
+
+			e.stopPropagation();
+
+			search.value = '';
+			options.classList.remove('hidden');
+
+			this.updateDataset();
+		});
+
+		search.on('keyup', () => this.updateDataset());
+
+		options.on('click', e => e.stopPropagation());
+
+		document.body.on('click', () => options.classList.add('hidden'));
+
+		options.innerHTML = `
+			<header>
+				<a class="all">All</a>
+				<a class="clear">Clear</a>
+			</header>
+		`;
+
+		options.querySelector('header .all').on('click', () => {
+
+			if(!this.multiple)
+				return;
+
+			for(const input of options.querySelectorAll('label input'))
+				input.checked = true;
+
+			this.updateDataset();
+		});
+
+		options.querySelector('header .clear').on('click', () => {
+
+			for(const input of options.querySelectorAll('label input'))
+				input.checked = false;
+
+			this.updateDataset();
+		});
+
+		for(const row of response.values.data) {
+
+			const label = document.createElement('label');
+
+			label.innerHTML = `
+				<input name="${this.placeholder}" value="${row.value}" type="${this.multiple ? 'checkbox' : 'radio'}">
+				${row.name}
+			`;
+
+			label.title = row.value;
+
+			label.querySelector('input').on('change', () => this.updateDataset());
+
+			options.appendChild(label);
+		}
+
+		options.insertAdjacentHTML('beforeend', `<footer></footer>`);
+
+		this.updateDataset();
+	}
+
 	async fetch(id) {
 
 		if(!id)
@@ -923,6 +1001,34 @@ class DataSourceDatasets extends Map {
 		this.set(id, response);
 
 		return response;
+	}
+
+	async update() {
+
+		const
+			response = await this.fetch(this.dataset),
+			search = this.label.querySelector('input[type=search]'),
+			options = this.label.querySelector('.options'),
+			selected = options.querySelectorAll('input:checked');
+
+		for(const input of options.querySelectorAll('label input')) {
+
+			let hide = false;
+
+			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+				hide = true;
+
+			input.parentElement.classList.toggle('hidden', hide);
+			input.parentElement.classList.toggle('selected', input.checked);
+		}
+
+		search.placeholder = `Search... (${selected.length} selected)`;
+
+		options.querySelector('footer').innerHTML = `
+			<span>Total: <strong>${response.values.data.length}</strong></span>
+			<span>Filtered: <strong>${options.querySelectorAll('label:not(.hidden)').length}</strong></span>
+			<span>Selected: <strong>${selected.length}</strong></span>
+		`;
 	}
 }
 
@@ -1537,27 +1643,7 @@ class DataSourceFilter {
 
 			input.classList.add('dataset');
 
-			input.innerHTML = `
-				<input type="search" placeholder="Search...">
-				<div class="options hidden"></div>
-			`;
-
-			const
-				search = input.querySelector('input[type=search]'),
-				options = input.querySelector('.options');
-
-			search.on('click', e => {
-				e.stopPropagation();
-				options.classList.remove('hidden');
-			});
-
-			search.on('keyup', () => this.renderDataSet());
-
-			options.on('click', e => e.stopPropagation());
-
-			document.body.on('click', () => options.classList.add('hidden'));
-
-			this.renderDataSet();
+			this.source.datasets.load(input);
 		}
 
 		this.labelContainer.innerHTML = `<span>${this.name}<span>`;
@@ -1565,84 +1651,6 @@ class DataSourceFilter {
 		this.labelContainer.appendChild(input);
 
 		return this.labelContainer;
-	}
-
-	async renderDataSet() {
-
-		const
-			response = await DataSource.datasets.fetch(this.dataset),
-			search = this.label.querySelector('input[type=search]'),
-			options = this.label.querySelector('.options');
-
-		if(!response.values.data.length)
-			return options.innerHTML = `<div class="NA">No data found! :(</div>`;
-
-		options.innerHTML = `
-			<header>
-				<a class="all">All</a>
-				<a class="none">None</a>
-			</header>
-		`;
-
-		options.querySelector('header .all').on('click', () => {
-			for(const label of options.querySelectorAll('label')) {
-				if(!label.classList.contains('selected'))
-					label.click();
-			}
-		});
-
-		options.querySelector('header .none').on('click', () => {
-			for(const label of options.querySelectorAll('label')) {
-				if(label.classList.contains('selected'))
-					label.click();
-			}
-		});
-
-		for(const row of response.values.data) {
-
-			if(search.value && !row.name.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
-				continue;
-
-			const label = document.createElement('label');
-
-			label.innerHTML = `<input name="${this.placeholder}" value="${row.value}" type="${this.multiple ? 'checkbox' : 'radio'}"> ${row.name}`;
-
-			label.querySelector('input').on('change', () => {
-
-				label.classList.toggle('selected');
-
-				const selected = options.querySelectorAll('input:checked');
-
-				if(!selected.length)
-					search.value = '';
-
-				if(selected.length == 1)
-					search.value = selected[0].parentElement.textContent;
-
-				if(selected.length > 1)
-					search.value = `${selected.length} selected`;
-
-				renderFooter();
-			});
-
-			options.appendChild(label);
-		}
-
-		if(!options.children.length)
-			return options.innerHTML = `<div class="NA">No matches found! :(</div>`;
-
-		options.insertAdjacentHTML('beforeend', `<footer></footer>`);
-
-		renderFooter();
-
-		function renderFooter() {
-
-			options.querySelector('footer').innerHTML = `
-				<span>Total: <strong>${response.values.data.length}</strong></span>
-				<span>Filtered: <strong>${options.querySelectorAll('label').length}</strong></span>
-				<span>Selected: <strong>${options.querySelectorAll('input:checked').length}</strong></span>
-			`;
-		}
 	}
 }
 

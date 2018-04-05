@@ -338,15 +338,12 @@ body {
 			}
 
 	main .data-source {
-		display: grid;
-		grid-gap: calc(var(--gap) * 2);
-		grid-template-rows: min-content 1fr min-content;
 		display: flex;
 		flex-direction: column;
 		height: 100%;
 	}
 		main .data-source > .warning {
-			margin: 0;
+			margin: calc(var(--gap) * 2) 0 0;
 		}
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
@@ -456,7 +453,7 @@ body {
 				z-index: 1;
 				width: 100%;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-				max-height: 200px;
+				max-height: 250px;
 				overflow: auto;
 			}
 				main .data-source > .filters .dataset label {
@@ -483,6 +480,8 @@ body {
 					}
 				main .data-source > .filters .dataset .options header,
 				main .data-source > .filters .dataset .options footer {
+					background: #fff;
+					position: sticky;
 					font-size: 90%;
 					padding: var(--gap);
 					color: #999;
@@ -490,15 +489,18 @@ body {
 					grid-template-columns: auto auto auto;
 					grid-gap: calc(var(--gap) * 2);
 					justify-content: flex-start;
+					box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
 				}
 				main .data-source > .filters .dataset .options header {
 					border-bottom: 1px dashed #999;
+					top: 0;
 				}
 					main .data-source > .filters .dataset .options header a {
 						cursor: pointer;
 					}
 				main .data-source > .filters .dataset .options footer {
 					border-top: 1px dashed #999;
+					bottom: 0;
 				}
 
 		main .data-source > .columns {
