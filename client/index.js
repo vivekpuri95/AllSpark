@@ -453,6 +453,11 @@ app.get('/reports/:id?', (req, res) => {
 					<span>Added By</span>
 					<span class="NA" id="added-by"></span>
 				</label>
+				
+				<label>
+					<span>Format</span>
+					<textarea rows="15" cols="200" name="format"></textarea>
+				</label>				
 			</form>
 
 			<h3>Filters</h3>
