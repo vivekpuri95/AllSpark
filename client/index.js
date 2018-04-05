@@ -803,10 +803,10 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 
 	res.send(template.body(`
 		<nav>
-			<a>Accounts</a>
-			<a>Privileges</a>
-			<a>Roles</a>
-			<a>DataSets</a>
+			<a href="/settings/accounts">Accounts</a>
+			<a href="/settings/privileges">Privileges</a>
+			<a href="/settings/roles">Roles</a>
+			<a href="/settings/datasets">DataSets</a>
 		</nav>
 
 		<section class="section" id="list">

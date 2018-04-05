@@ -2,14 +2,23 @@ Page.class = class Settings extends Page {
 
 	constructor() {
 		super();
-		Datasets.setup(this.container);
-		Datasets.load()
+		const loader = window.location.pathname.split('/');
+		let which_class = loader[loader.indexOf('settings')+1]
+		new window[which_class](this);
 	}
 }
 
-class Datasets {
+class SettingPage {
 
-	static setup(container) {
+	constructor(page) {
+		this.setup(page.container);
+		this.load();
+	}
+}
+
+window.datasets = class Datasets extends SettingPage {
+
+	setup(container) {
 
 		Datasets.container = container;
 		Dataset.form_container = Datasets.container.querySelector('section#form');
@@ -28,14 +37,14 @@ class Datasets {
 		});
 	}
 
-	static async load() {
+	async load() {
 
 		const response = await API.call('datasets/list');
 
 		Datasets.list = new Map;
 
 		for(const data of response)
-			Datasets.list.set(data.id, new Dataset(data));
+			Datasets.list.set(data.id, new Dataset(data, this));
 
 		Datasets.render();
 	}
@@ -43,7 +52,7 @@ class Datasets {
 	static render() {
 
 		const container = Datasets.container.querySelector('#list table tbody')
-
+		container.textContent = null;
 		for(const dataset of Datasets.list.values()){
 			container.appendChild(dataset.row);
 		}
@@ -54,9 +63,11 @@ class Datasets {
 
 class Dataset {
 
-	constructor(datset) {
+	constructor(datset, datsets) {
 		for(const key in datset)
 			this[key] = datset[key];
+
+		this.datasets = datasets;
 	}
 
 	static async insert(e) {
@@ -68,7 +79,11 @@ class Dataset {
 			form: new FormData(Dataset.form),
 		}
 
-		await API.call('datasets/insert', {}, options);
+		const response = await API.call('datasets/insert', {}, options);
+
+		await this.datasets.load();
+
+		await Datasets.list.get(response.insertIdi).edit();
 	}
 
 	static add() {
@@ -81,6 +96,8 @@ class Dataset {
 		Dataset.form.on('submit', Dataset.submitListener = e => Dataset.insert(e));
 
 		Sections.show('form');
+
+		Dataset.form.focus();
 	}
 
 	get row() {
@@ -93,7 +110,7 @@ class Dataset {
 		this.container.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.name}</td>
-			<td>${MetaData.categories.get(this.category_id+1).name}</td>
+			<td>${MetaData.categories.get(this.category_id).name}</td>
 			<td>${this.query_id}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
@@ -111,7 +128,7 @@ class Dataset {
 		Dataset.form_container.querySelector('h1').textContent = 'Edit ' + this.name;
 		Dataset.form.name.value = this.name;
 
-		Array.from(Dataset.form.category_id.querySelectorAll('option')).map(o => {if(o.value == this.category_id+1) o.selected = true});
+		Array.from(Dataset.form.category_id.querySelectorAll('option')).map(o => {if(o.value == this.category_id) o.selected = true});
 
 		Dataset.form.query_id.value = this.query_id;
 
@@ -135,6 +152,10 @@ class Dataset {
 		}
 
 		await API.call('datasets/update', parameter, options);
+
+		await this.datasets.load();
+
+		await Sections.show('form');
 	}
 
 	async delete() {
