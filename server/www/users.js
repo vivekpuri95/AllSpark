@@ -125,14 +125,12 @@ exports.changePassword = class extends API {
 
 			const new_password = await commonFun.makeBcryptHash(this.request.body.new_password);
 
-			const response =  await this.mysql.query(
+			return await this.mysql.query(
 				`UPDATE tb_users SET password = ? WHERE user_id = ? and account_id = ?`,
 				[new_password, this.user.user_id, this.account.account_id],
 				'write'
 			);
 
-			if(response.length)
-				return 'Password Changed!!!'
 		}
 
 		throw new API.Exception(400, 'Old Password does not match! :(');

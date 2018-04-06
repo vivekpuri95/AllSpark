@@ -766,7 +766,7 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 
 app.get('/user/profile/settings', (req, res)=>{
     const template = new Template;
-    template.scripts.push('/js/changePassword.js');
+    template.scripts.push('/js/user/profile/settings.js');
 
     res.send(template.body(`
 		<section class="section" id="form">

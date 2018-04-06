@@ -14,13 +14,13 @@ Page.class = class extends Page {
 
             try {
                 const response = await API.call('users/changePassword', {}, options);
-                this.message.classList.remove('hidden');
-                this.message.textContent = response.message;
+                this.message.textContent = 'Password Changed!';
             }
-            catch(e){
-                this.message.classList.remove('hidden');
+            catch (e) {
                 this.message.textContent = e.message;
             }
+
+            this.message.classList.remove('hidden');
         });
 
         Sections.show('form');
