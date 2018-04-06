@@ -665,6 +665,7 @@ class DashboardDatasets extends Map {
 					datasets[filter.dataset] = {
 						id: filter.dataset,
 						multiple: true,
+						placeholder: `dataset-${filter.dataset}`,
 					}
 				}
 
@@ -674,7 +675,7 @@ class DashboardDatasets extends Map {
 		}
 
 		for(const dataset of Object.values(datasets))
-			this.set(dataset.id, new Dataset(dataset.id, dataset.multiple));
+			this.set(dataset.id, new Dataset(dataset.id, dataset));
 	}
 
 	async load() {
