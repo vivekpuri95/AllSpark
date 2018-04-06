@@ -118,7 +118,7 @@ exports.changePassword = class extends API {
 			`SELECT password FROM tb_users WHERE user_id = ? and account_id = ?`,
 			[this.user.user_id, this.account.account_id]
 		);
-console.log([this.user.user_id, this.account.account_id])
+
 		const check = await commonFun.verifyBcryptHash(this.request.body.old_password, dbPass[0].password);
 
 		if (check) {

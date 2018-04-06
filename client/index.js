@@ -766,7 +766,6 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 
 app.get('/user/profile/settings', (req, res)=>{
     const template = new Template;
-    // template.stylesheets.push('/css/login.css');
     template.scripts.push('/js/changePassword.js');
 
     res.send(template.body(`
