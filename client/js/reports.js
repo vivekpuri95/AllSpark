@@ -605,7 +605,7 @@ class Report {
 
 			const response = await API.call('reports/engine/report', parameters, options) || [];
 
-            content.rowCount.innerHTML = `
+			content.rowCount.innerHTML = `
 				<span>Execution Time: <strong>${Format.number(response.execution_time / 1000)}s</strong></span>
 				<span>Cached: <strong>${response.redis.status ? 'Yes' : 'No'}</strong></span>
 				<span>Cache Age: <strong>${response.redis.status ? Format.number(response.redis.age / 1000 / 60 / 60) : '0'}h</strong></span>
