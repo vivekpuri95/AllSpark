@@ -130,9 +130,10 @@ exports.changePassword = class extends API {
 				[new_password, this.user.user_id, this.account.account_id],
 				'write'
 			);
+
 		}
 
-		throw new API.Exception(400, 'Password does not match! :(');
+		throw new API.Exception(400, 'Old Password does not match! :(');
 	}
 }
 
