@@ -1494,7 +1494,7 @@ class DataSourceFilter {
 		this.source = source;
 
 		if(this.dataset && MetaData.datasets.has(this.dataset))
-			this.dataset = new Dataset(this.dataset, this.multiple);
+			this.dataset = new Dataset(this.dataset, this);
 
 		else this.dataset = null;
 	}
@@ -3714,7 +3714,7 @@ class Tooltip {
 
 class Dataset {
 
-	constructor(id, multiple) {
+	constructor(id, filter) {
 
 		if(!MetaData.datasets.has(id))
 			throw new Page.exception('Invalid dataset id! :(');
@@ -3724,7 +3724,7 @@ class Dataset {
 		for(const key in dataset)
 			this[key] = dataset[key];
 
-		this.multiple = multiple;
+		this.filter = filter;
 	}
 
 	get container() {
@@ -3773,7 +3773,7 @@ class Dataset {
 
 		options.querySelector('header .all').on('click', () => {
 
-			if(!this.multiple)
+			if(!this.filter.multiple)
 				return;
 
 			for(const input of options.querySelectorAll('.list label input'))
@@ -3812,7 +3812,7 @@ class Dataset {
 			const label = document.createElement('label');
 
 			label.innerHTML = `
-				<input name="${this.placeholder}" value="${row.value}" type="${this.multiple ? 'checkbox' : 'radio'}">
+				<input name="${this.filter.placeholder}" value="${row.value}" type="${this.filter.multiple ? 'checkbox' : 'radio'}">
 				${row.name}
 			`;
 
