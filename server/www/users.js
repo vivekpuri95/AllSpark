@@ -118,21 +118,24 @@ exports.changePassword = class extends API {
 			`SELECT password FROM tb_users WHERE user_id = ? and account_id = ?`,
 			[this.user.user_id, this.account.account_id]
 		);
-
+console.log([this.user.user_id, this.account.account_id])
 		const check = await commonFun.verifyBcryptHash(this.request.body.old_password, dbPass[0].password);
 
 		if (check) {
 
 			const new_password = await commonFun.makeBcryptHash(this.request.body.new_password);
 
-			return await this.mysql.query(
+			const response =  await this.mysql.query(
 				`UPDATE tb_users SET password = ? WHERE user_id = ? and account_id = ?`,
 				[new_password, this.user.user_id, this.account.account_id],
 				'write'
 			);
+
+			if(response.length)
+				return 'Password Changed!!!'
 		}
 
-		throw new API.Exception(400, 'Password does not match! :(');
+		throw new API.Exception(400, 'Old Password does not match! :(');
 	}
 }
 

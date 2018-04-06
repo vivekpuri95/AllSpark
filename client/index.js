@@ -764,6 +764,41 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 	`));
 });
 
+app.get('/user/profile/settings', (req, res)=>{
+    const template = new Template;
+    // template.stylesheets.push('/css/login.css');
+    template.scripts.push('/js/changePassword.js');
+
+    res.send(template.body(`
+		<section class="section" id="form">
+			<form class="block form">
+	
+				<label>
+					<span>Old Password</span>
+					<input type="password" name="old_password" required>
+				</label>
+	
+				<label>
+					<span>New Password</span>
+					<input type="password" name="new_password" required>
+				</label>
+	
+				<label>
+					<span></span>
+					<button class="submit">
+						<i class="fa fa-save"></i>
+						Change
+					</button>
+				</label>
+				
+				<label>
+					<div class="notice hidden" id="message"></div>
+				</label>
+			</form>
+		</section>
+	`));
+});
+
 class Template {
 
 	constructor() {
