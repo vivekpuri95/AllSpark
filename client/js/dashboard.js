@@ -158,6 +158,7 @@ Page.class = class Dashboards extends Page {
 
 		report.container.removeAttribute('style');
 		container.classList.add('singleton');
+		this.reports.querySelector('.toolbar').classList.add('hidden');
 
 		report.container.querySelector('.menu').classList.remove('hidden');
 		report.container.querySelector('.menu-toggle').classList.add('selected');
@@ -215,7 +216,7 @@ class Dashboard {
 					source.container.style.opacity = 0.4;
 					continue;
 				} else
-					report.container.style.opacity = 1;
+					source.container.style.opacity = 1;
 
 				start.label.querySelector('input').value = picker.startDate.format('YYYY-MM-DD');
 				end.label.querySelector('input').value = picker.endDate.format('YYYY-MM-DD');
@@ -254,6 +255,7 @@ class Dashboard {
 		this.menuItem.querySelector('.label').classList.add('selected');
 
 		this.page.reports.querySelector('.list').classList.remove('singleton');
+		this.page.reports.querySelector('.toolbar').classList.remove('hidden');
 
 		let parent = this.menuItem.parentElement.parentElement;
 
@@ -630,9 +632,9 @@ class Dashboard {
 				if(!DataSource.list.has(_report.query_id))
 					continue;
 
-				const report = Object.assign({}, (DataSource.list.get(_report.query_id)));
+				const report = JSON.parse(JSON.stringify(DataSource.list.get(_report.query_id)));
 
-				report.dashboard = Object.assign({}, _report);
+				report.dashboard = JSON.parse(JSON.stringify(_report));
 				report.dashboard.position = position;
 
 				yield report;
@@ -641,7 +643,7 @@ class Dashboard {
 	}
 }
 
-class DashboardDatasets extends Set {
+class DashboardDatasets extends Map {
 
 	constructor(dashboard) {
 
@@ -650,13 +652,29 @@ class DashboardDatasets extends Set {
 		this.dashboard = dashboard;
 		this.page = this.dashboard.page;
 
+		const datasets = {};
+
 		for(const report of this.dashboard.reports()) {
 
 			for(const filter of report.filters || []) {
-				if(filter.dataset)
-					this.add(filter.dataset);
+
+				if(!filter.dataset)
+					continue;
+
+				if(!datasets[filter.dataset]) {
+					datasets[filter.dataset] = {
+						id: filter.dataset,
+						multiple: true,
+					}
+				}
+
+				if(!filter.multiple)
+					datasets[filter.dataset].multiple = false;
 			}
 		}
+
+		for(const dataset of Object.values(datasets))
+			this.set(dataset.id, new Dataset(dataset.id, dataset.multiple));
 	}
 
 	async load() {
@@ -667,63 +685,64 @@ class DashboardDatasets extends Set {
 	}
 
 	async fetch() {
-		await Promise.all(Array.from(this).map(d => DataSource.datasets.fetch(d)));
+
+		for(const dataset of this.values())
+			await dataset.load();
 	}
 
 	async render() {
 
-		for(const dataset of Dashboard.toolbar.querySelectorAll('.dataset'))
+		for(const dataset of Dashboard.toolbar.querySelectorAll('.dataset-container'))
 			Dashboard.toolbar.removeChild(dataset);
 
 		const fragment = document.createDocumentFragment();
 
-		for(const datasetId of this) {
+		for(const dataset of this.values()) {
 
 			const
 				label = document.createElement('label'),
 				input = document.createElement('select');
 
-			label.classList.add('dataset');
-
-			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
-
-			const {values: {data: values}, dataset} = await DataSource.datasets.fetch(datasetId);
-
-			for(const row of values || [])
-				input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
-
-			input.on('change', () => {
-
-				for(const report of this.page.list.selectedReports) {
-
-					let found = false;
-
-					for(const filter of report.filters.values()) {
-
-						if(filter.dataset != dataset.id)
-							continue;
-
-						filter.label.querySelector('select').value = input.value;
-
-						found = true;
-					}
-
-					if(found) {
-						report.visualizations.selected.load();
-						report.container.style.opacity = 1;
-					}
-
-					else
-						report.container.style.opacity = 0.4;
-				}
-			});
+			label.classList.add('dataset-container');
 
 			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`)
 
-			label.appendChild(input);
+			label.appendChild(dataset.container);
 
 			fragment.appendChild(label);
 		}
+
+		const apply = document.createElement('button');
+
+		apply.innerHTML = `<i class="fas fa-paper-plane"></i> Apply`;
+
+		apply.on('click', () => {
+
+			for(const report of this.page.list.selectedReports) {
+
+				let found = false;
+
+				for(const filter of report.filters.values()) {
+
+					if(!filter.dataset || !this.has(filter.dataset.id))
+						continue;
+
+					filter.dataset.value = this.get(filter.dataset.id);
+
+					found = true;
+				}
+
+				if(found) {
+					report.visualizations.selected.load();
+					report.container.style.opacity = 1;
+				}
+
+				else
+					report.container.style.opacity = 0.4;
+			}
+		});
+
+		fragment.appendChild(apply);
 
 		Dashboard.toolbar.appendChild(fragment);
 	}

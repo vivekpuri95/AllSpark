@@ -98,6 +98,14 @@ class Page {
 	}
 }
 
+Page.exception = class PageException extends Error {
+
+	constructor(message) {
+		super(message);
+		this.message = message;
+	}
+}
+
 class Account {
 
 	static async load() {
@@ -212,29 +220,40 @@ class UserRoles extends Set {
 
 class MetaData {
 
-	static async fetch() {
-		localStorage.metadata = JSON.stringify(await API.call('users/metadata'));
-	}
-
 	static async load() {
 
 		MetaData.categories = new Map;
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
+		MetaData.datasets = new Map;
 
 		if(!user.id)
 			return;
 
-		if(!localStorage.metadata)
-			await MetaData.fetch();
+		const metadata = await MetaData.fetch();
 
-		let metadata = null;
+		MetaData.save(metadata);
+	}
+
+	static async fetch() {
+
+		let
+			metadata,
+			timestamp;
 
 		try {
-			metadata = JSON.parse(localStorage.metadata);
-		} catch(e) {
-			return;
+			({metadata, timestamp} = JSON.parse(localStorage.metadata));
+		} catch(e) {}
+
+		if(!timestamp || Date.now() - timestamp > MetaData.timeout) {
+			metadata = await API.call('users/metadata');
+			localStorage.metadata = JSON.stringify({metadata, timestamp: Date.now()});
 		}
+
+		return metadata;
+	}
+
+	static save(metadata = {}) {
 
 		for(const privilege of metadata.privileges || []) {
 
@@ -261,8 +280,7 @@ class MetaData {
 		}
 
 		MetaData.visualizations = metadata.visualizations;
-
-		return MetaData;
+		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 	}
 }
 
@@ -323,8 +341,14 @@ class API extends AJAX {
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
-		if(localStorage.token)
-			parameters.token = localStorage.token;
+		if(localStorage.token) {
+
+			if(typeof parameters == 'string')
+				parameters += '&token='+localStorage.token;
+
+			else
+				parameters.token = localStorage.token;
+		}
 
 		// If a form id was supplied, then also load the data from that form
 		if(options.form)
@@ -560,8 +584,6 @@ class DataSource {
 		const response = await API.call('reports/report/list');
 
 		DataSource.list = new Map(response.map(report => [report.query_id, report]));
-
-		DataSource.datasets = new DataSourceDatasets();
 	}
 
 	constructor(source) {
@@ -591,12 +613,25 @@ class DataSource {
 
 	async fetch(parameters = {}) {
 
-		parameters.query_id = this.query_id;
-		parameters.email = user.email;
+		parameters = new URLSearchParams(parameters);
+
+		parameters.set('query_id', this.query_id);
+		parameters.set('email', user.email);
 
 		for(const filter of this.filters.values()) {
-			if(!parameters.hasOwnProperty(filter.placeholder))
-				parameters[filter.placeholder] = this.filters.form.elements[filter.placeholder].value;
+
+			if(parameters.has(filter.placeholder))
+				continue;
+
+			if(filter.dataset) {
+
+				for(const input of filter.label.querySelectorAll('input:checked'))
+					parameters.append(filter.placeholder, input.value);
+
+				continue;
+			}
+
+			parameters.set(filter.placeholder, this.filters.form.elements[filter.placeholder].value);
 		}
 
 		let response = null;
@@ -609,7 +644,7 @@ class DataSource {
 			this.container.removeChild(this.container.querySelector('pre.warning'));
 
 		try {
-			response = await API.call('reports/engine/report', parameters, options);
+			response = await API.call('reports/engine/report', parameters.toString(), options);
 		}
 
 		catch(e) {
@@ -874,36 +909,11 @@ class DataSource {
 		const parameters = new URLSearchParams();
 
 		for(const [_, filter] of this.filters) {
-			if(this.filters.form)
+			if(this.filters.form && filter.placeholder in this.filters.form.elements)
 				parameters.set(filter.placeholder, this.filters.form.elements[filter.placeholder].value);
 		}
 
 		return link + '?' + parameters.toString();
-	}
-}
-
-class DataSourceDatasets extends Map {
-
-	constructor(source) {
-
-		super();
-
-		this.source = source;
-	}
-
-	async fetch(id) {
-
-		if(!id)
-			return Promise.resolve();
-
-		if(this.has(id))
-			return Promise.resolve(this.get(id));
-
-		const response = await API.call('datasets/values', {id});
-
-		this.set(id, response);
-
-		return response;
 	}
 }
 
@@ -1482,6 +1492,11 @@ class DataSourceFilter {
 			this[key] = filter[key];
 
 		this.source = source;
+
+		if(this.dataset && MetaData.datasets.has(this.dataset))
+			this.dataset = new Dataset(this.dataset, this.multiple);
+
+		else this.dataset = null;
 	}
 
 	get label() {
@@ -1512,22 +1527,8 @@ class DataSourceFilter {
 			}
 		}
 
-		if(this.dataset) {
-
-			input = document.createElement('select');
-			input.name = this.placeholder;
-
-			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
-
-			DataSource.datasets.fetch(this.dataset).then(response => {
-
-				if(!response.values.data.length)
-					return;
-
-				for(const row of response.values.data)
-					input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
-			});
-		}
+		if(this.dataset)
+			input = this.dataset.container;
 
 		this.labelContainer.innerHTML = `<span>${this.name}<span>`;
 
@@ -2158,7 +2159,6 @@ class LinearVisualization extends Visualization {
 }
 
 Visualization.list = new Map;
-Visualization.animationDuration = 750;
 
 Visualization.list.set('table', class Table extends Visualization {
 
@@ -2282,7 +2282,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		if(!rows || !rows.length) {
 			table.insertAdjacentHTML('beforeend', `
-				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No rows found! :('}</td></tr>
+				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found! :('}</td></tr>
 			`);
 		}
 
@@ -3659,7 +3659,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 		}
 
 		if(!response.length)
-			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No rows found! :('}</caption>`;
+			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No data found! :('}</caption>`;
 
 		table.appendChild(tbody);
 		container.appendChild(table);
@@ -3712,8 +3712,192 @@ class Tooltip {
 	}
 }
 
+class Dataset {
+
+	constructor(id, multiple) {
+
+		if(!MetaData.datasets.has(id))
+			throw new Page.exception('Invalid dataset id! :(');
+
+		const dataset = MetaData.datasets.get(id);
+
+		for(const key in dataset)
+			this[key] = dataset[key];
+
+		this.multiple = multiple;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('dataset');
+
+		container.innerHTML = `
+			<input type="search" placeholder="Search...">
+			<div class="options hidden"></div>
+		`;
+
+		const
+			search = this.container.querySelector('input[type=search]'),
+			options = this.container.querySelector('.options');
+
+		search.on('click', e => {
+
+			e.stopPropagation();
+
+			search.value = '';
+			options.classList.remove('hidden');
+
+			this.update();
+		});
+
+		search.on('keyup', () => this.update());
+
+		options.on('click', e => e.stopPropagation());
+
+		document.body.on('click', () => options.classList.add('hidden'));
+
+		options.innerHTML = `
+			<header>
+				<a class="all">All</a>
+				<a class="clear">Clear</a>
+			</header>
+			<div class="list"></div>
+			<div class="no-matches NA hidden">No matches found! :(</div>
+			<footer></footer>
+		`;
+
+		options.querySelector('header .all').on('click', () => {
+
+			if(!this.multiple)
+				return;
+
+			for(const input of options.querySelectorAll('.list label input'))
+				input.checked = true;
+
+			this.update();
+		});
+
+		options.querySelector('header .clear').on('click', () => {
+
+			for(const input of options.querySelectorAll('.list label input'))
+				input.checked = false;
+
+			this.update();
+		});
+
+		this.load();
+
+		return container;
+	}
+
+	async load() {
+
+		const
+			values = await this.fetch(),
+			search = this.container.querySelector('input[type=search]'),
+			list = this.container.querySelector('.options .list');
+
+		if(!values.length)
+			return list.innerHTML = `<div class="NA">No data found! :(</div>`;
+
+		list.textContent = null;
+
+		for(const row of values) {
+
+			const label = document.createElement('label');
+
+			label.innerHTML = `
+				<input name="${this.placeholder}" value="${row.value}" type="${this.multiple ? 'checkbox' : 'radio'}">
+				${row.name}
+			`;
+
+			label.title = row.value;
+
+			label.querySelector('input').on('change', () => this.update());
+
+			list.appendChild(label);
+		}
+
+		this.update();
+	}
+
+	async fetch() {
+
+		let
+			values,
+			timestamp;
+
+		try {
+			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
+		} catch(e) {}
+
+		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
+
+			({data: values} = await API.call('datasets/values', {id: this.id}));
+
+			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
+		}
+
+		return values;
+	}
+
+	async update() {
+
+		const
+			search = this.container.querySelector('input[type=search]'),
+			options = this.container.querySelector('.options');
+
+		for(const input of options.querySelectorAll('.list label input')) {
+
+			let hide = false;
+
+			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+				hide = true;
+
+			input.parentElement.classList.toggle('hidden', hide);
+			input.parentElement.classList.toggle('selected', input.checked);
+		}
+
+		const
+			total = options.querySelectorAll('.list label').length,
+			hidden = options.querySelectorAll('.list label.hidden').length,
+			selected = options.querySelectorAll('.list input:checked').length;
+
+		search.placeholder = `Search... (${selected} selected)`;
+
+		options.querySelector('footer').innerHTML = `
+			<span>Total: <strong>${total}</strong></span>
+			<span>Showing: <strong>${total - hidden}</strong></span>
+			<span>Selected: <strong>${selected}</strong></span>
+		`;
+
+		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
+	}
+
+	set value(source) {
+
+		const
+			inputs = this.container.querySelectorAll('.options .list label input'),
+			sourceInputs = source.container.querySelectorAll('.options .list label input');
+
+		for(const [i, input] of sourceInputs.entries())
+			inputs[i].checked = input.checked;
+
+		this.update();
+	}
+}
+
 DataSourceFilter.setup();
 
 Node.prototype.on = window.on = function(name, fn) {
 	this.addEventListener(name, fn);
 }
+
+MetaData.timeout = 5 * 60 * 60 * 1000;
+Dataset.timeout = 5 * 60 * 60 * 1000;
+Visualization.animationDuration = 750;

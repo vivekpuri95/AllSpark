@@ -76,7 +76,7 @@ main > nav::-webkit-scrollbar-track {
 				transform: rotate(-90deg);
 			}
 
-main #reports .list {
+main #reports > .list {
 	display: grid;
 	grid-template-columns: repeat(8, 12.5%);
 	grid-auto-rows: 250px;

@@ -94,9 +94,6 @@ exports.values = class DatasetValues extends API {
             }
         };
 
-        return {
-            values: await reportObj.report(),
-            dataset,
-        }
+        return await reportObj.report();
     }
 }
