@@ -1,9 +1,9 @@
 :root {
 	--color-primary: #2a3f54;
 	--color-primary-text: #fff;
-	--color-secondary: #4e6479;
-	--color-secondary-text: #fff;
-	--color-accent: #1abb9c;
+	--color-secondary: #ddd;
+	--color-secondary-text: #333;
+	--color-accent: rgba(0, 0, 0, 0.15);
 	--color-accent-text: #fff;
 	--color-row-hover: #ddf;
 	--transition-duration: 300ms;
@@ -13,15 +13,14 @@
 	box-sizing: border-box;
 }
 
-body {}
 input:not([type=checkbox]):not([type=radio]),
 select,
 button {
 	padding: 5px 10px;
-	border: 0;
-	background: var(--color-primary);
-	color: var(--color-primary-text) !important;
+	border: 1px solid #283593;
+	color: #283593 !important;
 	height: 28px;
+	outline: 2px;
 	font-size: 90% !important;
 	line-height: 100% !important;
 	transition: background var(--transition-duration),
@@ -131,7 +130,7 @@ body {
 	}
 
 	body > header {
-		background: var(--color-primary);
+		background: linear-gradient(to right, #0a5ffc 0%, #3786fd 100%);;
 		color: var(--color-primary-text);
 		display: flex;
 		position: sticky;
@@ -221,9 +220,9 @@ body {
 		main section .toolbar {
 			display: flex;
 			flex-wrap: wrap;
-			background: #fff;
+			background: #eee;
 			margin: 10px 0;
-			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			/* box-shadow: 0 0 25px rgba(0, 0, 0, 0.15); */
 			padding: 5px;
 		}
 			main section .toolbar .right {
@@ -261,8 +260,8 @@ body {
 			main table thead th {
 				padding: 5px 8px;
 				position: sticky;
-				background: var(--color-primary);
-				color: var(--color-primary-text);
+				background:#efefef !important;
+				color: #888;
 				top: 0;
 				z-index: 2;
 				border-right: 1px solid var(--color-primary-text);
@@ -432,6 +431,8 @@ body {
 				font-size: 18px;
 				margin: 0 auto 0 0;
 				padding: 0;
+				color: #888;
+				font-weight: normal;
 				white-space: nowrap;
 				line-height: inherit;
 				user-select: text;
@@ -670,9 +671,9 @@ body {
 				}
 
 			main .data-source .visualization .tooltip {
-				background: var(--color-primary);
-				color: var(--color-primary-text);
-				box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
+				background: #fff;
+				color: var(--color-secondary-text);
+				box-shadow: 0 0 35px rgba(0, 0, 0, 0.25);
 				position: absolute;
 				font-size: 90%;
 				opacity: 1;
@@ -681,7 +682,7 @@ body {
 			}
 				main .data-source .visualization .tooltip header {
 					padding: var(--gap) calc(var(--gap) * 2);
-					border-bottom: 1px solid #fff;
+					border-bottom: 1px solid var(--color-accent);
 					display: flex;
 				}
 				main .data-source .visualization .tooltip footer {
@@ -794,6 +795,7 @@ body {
 							width: 90px;
 							z-index: 1;
 							margin-bottom: 0;
+							border: 0;
 							border-right: 1px dashed #ccc;
 							box-shadow: none;
 						}
