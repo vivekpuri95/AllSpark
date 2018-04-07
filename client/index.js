@@ -1,11 +1,15 @@
 "use strict";
-const express = require('express')
+
+const express = require('express');
+const compression = require('compression');
 const app = express();
 const config = require('config');
 
 const port = config.has('port') ? config.get('port').get('client') : 8081;
 
 const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
+
+app.use(compression());
 
 app.use(express.static('./client'));
 
@@ -494,11 +498,11 @@ app.get('/reports/:id?', (req, res) => {
 					<span>Added By</span>
 					<span class="NA" id="added-by"></span>
 				</label>
-				
+
 				<label>
 					<span>Format</span>
 					<textarea rows="15" cols="200" name="format"></textarea>
-				</label>				
+				</label>
 			</form>
 
 			<h3>Filters</h3>
@@ -817,17 +821,17 @@ app.get('/user/profile/settings', (req, res)=>{
     res.send(template.body(`
 		<section class="section" id="form">
 			<form class="block form">
-	
+
 				<label>
 					<span>Old Password</span>
 					<input type="password" name="old_password" required>
 				</label>
-	
+
 				<label>
 					<span>New Password</span>
 					<input type="password" name="new_password" required>
 				</label>
-	
+
 				<label>
 					<span></span>
 					<button class="submit">
@@ -835,7 +839,7 @@ app.get('/user/profile/settings', (req, res)=>{
 						Change
 					</button>
 				</label>
-				
+
 				<label>
 					<div class="notice hidden" id="message"></div>
 				</label>
