@@ -89,7 +89,7 @@ main #reports > .list {
 		margin: 0 0 calc(var(--gap) * 2);
 		position: sticky;
 		top: 0;
-		z-index: 3;
+		/* z-index: 3; */
 		align-items: flex-end;
 	}
 		main #reports > .toolbar input[name=date-range] {
@@ -110,7 +110,7 @@ main #reports > .list {
 	main #reports .list .data-source {
 		grid-column: auto / span 8;
 		grid-row: auto / span 2;
-		position: relative;
+		/*position: relative;*/
 		transition: grid-column 300ms;
 		transition: box-shadow var(--transition-duration),
 					opacity var(--transition-duration),

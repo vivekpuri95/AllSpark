@@ -1147,11 +1147,12 @@ class DataSourceColumn {
 		container.innerHTML = `
 			<span class="color" style="background: ${this.color}"></span>
 			<span class="name">${this.name}</span>
+			<span class="right menu-toggle" title="drilldown"><i class="fas fa-ellipsis-v"></i></span>
 
 			<div class="blanket hidden">
-				<form class="block form">
+				<form class="block form drill-down-form">
 
-					<h3>Column Properties</h3>
+					<!--<h3>Column Properties</h3>
 
 					<label>
 						<span>Name</span>
@@ -1191,33 +1192,68 @@ class DataSourceColumn {
 					</label>
 
 					<label>
-						<span>Formula</span>
+						<span>Formula</span> 
 						<input type="text" name="formula">
 						<small></small>
+					</label>-->
+					
+					<h3>Column Properties</h3>
+
+					<label>
+						<span>Key</span>
+						<input type="text" name="key" value="${this.key}" readonly>
 					</label>
 
 					<label>
-						<input type="Submit" value="Submit">
+						<span>Name</span>
+						<input type="text" name="name" >
 					</label>
-				</form>
+
+					<label>
+						<span>Type</span>
+						<select name="col_type">
+							<option value="date">Date</option>
+							<option value="number">Number</option>
+							<option value="currency">Currency</option>
+							<option value="string">String</option>
+						</select>
+					</label>
+					
+					<h3>Drilldown</h3>
+					
+					<label>
+						<span>Report Id</span>
+						<input type="number" name="query_id">
+					</label>
+					
+					<label>
+						<span>Parameters</span>
+						<div class="params-list"></div>
+					</label>	
+					
+					<button type="button" id="btn_add_param"><i class="fa fa-plus"></i> Add</button>	
+
+					<input type="Submit" value="Submit">				
+				</form>	
 			</div>
 		`;
 
 		this.blanket = container.querySelector('.blanket');
-		this.form = container.querySelector('form');
+		this.block = container.querySelector('.block');
+		this.form = container.querySelector('.drill-down-form');
 
-		this.form.elements.formula.on('keyup', async () => {
-
-			if(this.formulaTimeout)
-				clearTimeout(this.formulaTimeout);
-
-			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
-		});
+		// this.form.elements.formula.on('keyup', async () => {
+		//
+		// 	if(this.formulaTimeout)
+		// 		clearTimeout(this.formulaTimeout);
+		//
+		// 	this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
+		// });
 
 		this.form.on('submit', async e => this.save(e));
 
 		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
-		this.form.on('click', e => e.stopPropagation());
+		this.block.on('click', e => e.stopPropagation());
 
 		container.querySelector('.name').on('click', async () => {
 
@@ -1226,6 +1262,31 @@ class DataSourceColumn {
 			this.source.columns.render();
 
 			await this.update();
+		});
+		container.querySelector('.menu-toggle').on('click', () => {
+			this.blanket.classList.remove('hidden');
+		});
+
+		this.form.querySelector('#btn_add_param').on('click', () => {
+
+			var new_param = document.createElement('div');
+
+			new_param.innerHTML = `
+				<label>
+					<span>Placeholder</span>
+					<input type="text" name="placeholder">
+				</label>
+				<label>
+					<span>Type</span>
+					<input type="text" name="type">
+				</label>
+				<label>
+					<span>Value</span>
+					<input type="text" name="value">
+				</label>
+			`;
+			new_param.classList.add('parameters');
+			this.form.querySelector('.params-list').appendChild(new_param);
 		});
 
 		return container;
@@ -1254,17 +1315,51 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-		this.validateFormula();
+		let
+			json = JSON.parse(this.source.format),
+			json_param = [];
 
-		for(const element of this.form.elements)
+		for(const element of this.form.elements) {
+
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+		}
 
-		this.filtered = this.searchQuery !== null;
+		for(const row of this.form.querySelectorAll('.parameters')) {
+			let param_json = {};
+			for(const div of row.children){
+				console.log(div.children[1].name)
+				param_json[div.children[1].name] = div.children[1].value;
 
-		if(this.form.elements.sort.value >= 0)
-			this.source.columns.sortBy = this;
+			}
+			json_param.push(param_json);
+		}
 
-		await this.update();
+		json.data.push({
+			key : this.key,
+			name : this.name,
+			column_type : this.col_type,
+			drilldown : {
+				report_id : this.query_id,
+				parameters : json_param
+			}
+		});
+
+		const
+			parameters = {
+				query_id : this.source.query_id,
+				format : JSON.stringify(json)
+			},
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('reports/report/update', parameters, options);
+
+		//this.validateFormula();
+		//this.filtered = this.searchQuery !== null;
+		// if(this.form.elements.sort.value >= 0)
+		// 	this.source.columns.sortBy = this;
+		// await this.update();
 	}
 
 	async update() {
