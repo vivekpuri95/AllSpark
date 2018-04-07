@@ -482,7 +482,7 @@ body {
 				background: #fcc;
 			}
 			main .data-source > .columns .column:hover {
-				opacity: 0.6;
+				/*opacity: 0.6;*/
 			}
 				main .data-source > .columns.being-dragged .column * {
 					pointer-events: none;
@@ -515,66 +515,68 @@ body {
 					left: 0;
 					right: 0;
 					background: rgba(0, 0, 0, 0.25);
-					z-index: 6;
+					z-index: 11;
 					display: flex;
 					align-items: center;
 					justify-content: center;
 				}
-					main .data-source .column .blanket form {
+					main .data-source .column .blanket .block {
 						box-shadow: 0 0 100px rgba(0, 0, 0, 0.25);
 						margin: 25px;
 						max-height: 90%;
 						max-width: 100%;
-						flex-basis: 400px;
+						flex-basis: 750px;
 						overflow: auto;
-						padding-top: 0;
+						padding: calc(var(--gap) * 2);
 					}
-						main .data-source .column form h3 {
-							margin: 0 calc(var(--gap) * -1) var(--gap) ;
-							padding: var(--gap) 10px;
-							background: var(--color-primary);
-							color: var(--color-primary-text);
-							border-bottom: 1px solid #999;
-							font-weight: normal;
-							letter-spacing: 1px;
-							position: sticky;
-							top: 0;
-							font-size: 90%;
+						main .data-source .column .blanket form {
 						}
-						main .data-source .column form label {
-							max-width: initial;
-							flex-shrink: 0;
-						}
-							main .data-source .column form .search {
-								display: flex;
-							}
-								main .data-source .column form .search select {
-									width: 40%;
-								}
-								main .data-source .column form .search input {
-									flex: 1;
-									border-left: 0;
-									width: calc(100% - 20px);
-								}
-							main .data-source .column form select {
-								border: 1px solid #ccc !important;
-							}
-							main .data-source .column form input {
-								transition: background var(--transition-duration);
-							}
-							main .data-source .column form input.error {
-								background: rgba(255, 0, 0, 0.25);
-							}
-							main .data-source .column form small {
-								margin-top: 5px;
-								color: #999;
+							main .data-source .column form h3 {
+								margin: 0 calc(var(--gap) * -1) var(--gap);
+								padding: var(--gap) 10px;
+								background: var(--color-primary);
+								color: var(--color-primary-text);
+								border-bottom: 1px solid #999;
 								font-weight: normal;
+								letter-spacing: 1px;
+								position: sticky;
+								top: 0;
+								font-size: 90%;
 							}
-							main .data-source .column form input[type=submit] {
-								padding: 8px;
+							main .data-source .column form label {
+								max-width: initial;
+								flex-shrink: 0;
 							}
+								main .data-source .column form .search {
+									display: flex;
+								}
+									main .data-source .column form .search select {
+										width: 40%;
+									}
+									main .data-source .column form .search input {
+										flex: 1;
+										border-left: 0;
+										width: calc(100% - 20px);
+									}
+								main .data-source .column form select {
+									border: 1px solid #ccc !important;
+								}
+								main .data-source .column form input {
+									transition: background var(--transition-duration);
+								}
+								main .data-source .column form input.error {
+									background: rgba(255, 0, 0, 0.25);
+								}
+								main .data-source .column form small {
+									margin-top: 5px;
+									color: #999;
+									font-weight: normal;
+								}
+								main .data-source .column form input[type=submit] {
+									padding: 8px;
+								}
 		main .data-source .visualization {
-			position: relative;
+			/*position: relative;*/
 			margin-top: calc(var(--gap) * 2);
 			flex: 1;
 		}
@@ -962,4 +964,10 @@ body {
 	font-size: 110%;
 	font-weight: bold;
 	pointer-events: none;
+}
+.parameters {
+	display: grid;
+	grid-gap: 3px;
+	grid-template-columns: 180px 180px 180px 80px;
+	font-size: 90%;
 }
