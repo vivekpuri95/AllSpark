@@ -54,8 +54,10 @@ class Page {
 			document.title = account.name;
 		}
 
+		const user_name = document.querySelector('body > header .user-name');
+
 		if(window.user)
-			document.querySelector('body > header .user-name').textContent = user.name;
+			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
 
 		document.querySelector('body > header .logout').on('click', () => User.logout());
 
@@ -83,8 +85,15 @@ class Page {
 		}
 
 		for(const item of document.querySelectorAll('body > header nav a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname))
+			if(window.location.pathname.startsWith(new URL(item.href).pathname)) {
+				user_name.classList.remove('selected');
 				item.classList.add('selected');
+			}
+		}
+
+		if(window.location.pathname.includes('/user/profile')) {
+			Array.from(document.querySelectorAll('body > header nav a')).map(items => items.classList.remove('selected'));
+			user_name.querySelector('a').classList.add('selected');
 		}
 	}
 
