@@ -65,32 +65,6 @@ main #form.show {
 	main #form h1 a:hover {
 		text-decoration: none !important;
 	}
-main #form #test-container #test-body {
-	background: #fff;
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-	max-height: 300px;
-	overflow: auto;
-	user-select: text;
-}
-	main #form #test-container #test-body code {
-		padding: 10px;
-		display: block;
-		white-space: pre-wrap;
-	}
-		main #form #test-container #test-body code.warning {
-			margin: 0;
-			border: 0;
-		}
-	main #form #test-container #test-body table {
-		margin: 0;
-	}
-#test-container h3 {
-	position: relative;
-	margin: calc(var(--gap) * 2) 0 !important;
-}
-	#test-container .close {
-		cursor: pointer;
-	}
 #list-container {
 	overflow: auto;
 }
@@ -101,7 +75,11 @@ main #form #test-container #test-body {
 main #form #report-form {
 	background: #fff;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	grid-template-columns: 200px auto;
 }
+	main #form #report-form label {
+		grid-column: 1;
+	}
 		main #form #source {
 			flex-wrap: wrap;
 			justify-content: left;
@@ -114,12 +92,13 @@ main #form #report-form {
 			main #form #source select {
 				max-width: 100px;
 			}
-		main #form form #query {
+		main #form form > #query {
 			max-width: 100%;
 			display: grid;
 			grid-template-columns: 300px 1fr;
 			grid-row-gap: calc(var(--gap) );
 			grid-column-gap:  0;
+			grid-column: 1 / 3;
 		}
 		#form form #query > span {
 			grid-column: 1 / 3;
@@ -179,12 +158,44 @@ main #form #report-form {
 							color: #999;
 						}
 
+	main #form #test-container {
+		grid-row: 5 / span 10;
+		grid-column: 2;
+	}
+		main #form #test-container #test-body {
+			background: #fff;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			max-height: 400px;
+			overflow: auto;
+			user-select: text;
+		}
+			main #form #test-container #test-body code {
+				padding: 10px;
+				display: block;
+				white-space: pre-wrap;
+			}
+				main #form #test-container #test-body code.warning {
+					margin: 0;
+					border: 0;
+				}
+			main #form #test-container #test-body table {
+				margin: 0;
+			}
+		#test-container h3 {
+			position: relative;
+			margin: calc(var(--gap) * 2) 0 !important;
+		}
+			#test-container .close {
+				cursor: pointer;
+			}
+
 	main #form h3 {
 		border-bottom: 1px dashed #999;
 		margin: var(--gap) 0 0 0;
 	}
 	main #form > .toolbar {
-		margin: 0;
+		margin-top: 0;
+		margin-bottom: 0;
 	}
 	main #form #missing-filters {
 		background: #fcc;
