@@ -345,7 +345,7 @@ class API extends AJAX {
 	static async call(endpoint, parameters = {}, options = {}) {
 
 		if(!account)
-			throw 'Account not found!'
+			throw new Page.exception('Account not found!');
 
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
@@ -632,7 +632,7 @@ class DataSource {
 			if(parameters.has(filter.placeholder))
 				continue;
 
-			if(filter.dataset) {
+			if(filter.dataset && filter.dataset.query_id) {
 
 				for(const input of filter.label.querySelectorAll('input:checked'))
 					parameters.append(filter.placeholder, input.value);
@@ -708,6 +708,7 @@ class DataSource {
 			<form class="filters form toolbar hidden"></form>
 
 			<div class="columns"></div>
+			<div class="drilldown"></div>
 
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
@@ -818,6 +819,29 @@ class DataSource {
 			container.querySelector('.filters-toggle').classList.add('hidden');
 
 		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
+
+		if(this.drilldown) {
+
+			const
+				list = container.querySelector('.drilldown'),
+				link = document.createElement('a');
+
+			list.textContent = null;
+
+			link.innerHTML = `<i class="fa fa-angle-left"></i> ${this.drilldown.parent.name} (${this.drilldown.parameters.map(p => p.selectedValue).join()})`;
+
+			link.on('click', () => {
+
+				const parent = this.container.parentElement;
+
+				parent.removeChild(this.container);
+				parent.appendChild(this.drilldown.parent.container);
+			});
+
+			link.title = '';
+
+			list.appendChild(link);
+		}
 
 		this.columns.render();
 
@@ -1140,6 +1164,14 @@ class DataSourceColumn {
 		this.name = this.key.split('_').map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
 		this.disabled = 0;
 		this.color = DataSourceColumn.colors[this.source.columns.size % DataSourceColumn.colors.length];
+
+		if(this.source.format && this.source.format.columns) {
+
+			const [format] = this.source.format.columns.filter(column => column.key == this.key);
+
+			for(const key in format || {})
+				this[key] = format[key];
+		}
 	}
 
 	get container() {
@@ -1201,11 +1233,11 @@ class DataSourceColumn {
 					</label>
 
 					<label>
-						<span>Formula</span> 
+						<span>Formula</span>
 						<input type="text" name="formula">
 						<small></small>
 					</label>-->
-					
+
 					<h3>Column Properties</h3>
 
 					<label>
@@ -1227,23 +1259,23 @@ class DataSourceColumn {
 							<option value="string">String</option>
 						</select>
 					</label>
-					
+
 					<h3>Drilldown</h3>
-					
+
 					<label>
 						<span>Report Id</span>
 						<input type="number" name="query_id">
 					</label>
-					
+
 					<label>
 						<span>Parameters</span>
 						<div class="params-list"></div>
 					</label>	
 					
-					<button type="button" id="add_parameters"><i class="fa fa-plus"></i> Add</button>	
+					<button type="button" id="add_parameters"><i class="fa fa-plus"></i> Add</button>
 
-					<input type="Submit" value="Submit">				
-				</form>	
+					<input type="Submit" value="Submit">
+				</form>
 			</div>
 		`;
 
@@ -1412,7 +1444,7 @@ class DataSourceColumn {
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
-		this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
+		//this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
 
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
@@ -1497,6 +1529,55 @@ class DataSourceColumn {
 			this.source.visualizations.selected.render();
 			this.source.columns.render();
 		});
+	}
+
+	initiateDrilldown(row) {
+
+		if(!this.drilldown || !this.drilldown.query_id || !this.drilldown.parameters)
+			return;
+
+		const source = DataSource.list.get(this.drilldown.query_id);
+
+		if(!source)
+			return;
+
+		const report = new DataSource(source);
+
+		for(const parameter of this.drilldown.parameters) {
+
+			if(!report.filters.has(parameter.placeholder))
+				continue;
+
+			const filter = report.filters.get(parameter.placeholder);
+
+			let value;
+
+			if(parameter.type == 'column')
+				value = row.get(parameter.value);
+
+			else if(parameter.type == 'filter')
+				value = this.source.filters.get(parameter.value).value;
+
+			else if(parameter.type == 'static')
+				value = parameter.value;
+
+			filter.value = value;
+			parameter.selectedValue = value;
+		}
+
+		report.drilldown = {
+			...this.drilldown,
+			parent: this.source,
+		};
+
+		report.container.setAttribute('style', this.source.container.getAttribute('style'));
+
+		const parent = this.source.container.parentElement;
+
+		parent.removeChild(this.source.container);
+		parent.appendChild(report.container);
+
+		report.visualizations.selected.load();
 	}
 
 	get search() {
@@ -1672,6 +1753,18 @@ class DataSourceFilter {
 		this.labelContainer.appendChild(input);
 
 		return this.labelContainer;
+	}
+
+	get value() {
+
+		const input = this.label.querySelector('input');
+
+		return input ? input.value : this.default_value;
+	}
+
+	set value(value) {
+
+		this.label.querySelector('input').value = value;
 	}
 }
 
@@ -2100,6 +2193,7 @@ class LinearVisualization extends Visualization {
 				this.columns[key].push({
 					x: row.get(this.axis.x.column),
 					y: value,
+					key,
 				});
 			}
 		}
@@ -2386,6 +2480,14 @@ Visualization.list.set('table', class Table extends Visualization {
 				const td = document.createElement('td');
 
 				td.textContent = row.get(key);
+
+				if(column.drilldown) {
+
+					td.classList.add('drilldown');
+					td.on('click', () => column.initiateDrilldown(row));
+
+					td.title = `Drill down into ${DataSource.list.get(column.drilldown.query_id).name}!`;
+				}
 
 				tr.appendChild(td);
 			}
@@ -2752,6 +2854,10 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.classed('bar', true)
 			.attr('width', x1.rangeBand())
 			.attr('x', cell => this.x(cell.x) + this.axis.y.width)
+			.on('click', function(_, row, column) {
+				that.source.columns.get(that.columns[column].key).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
 			.on('mouseover', function(_, __, column) {
 				that.hoverColumn = that.columns[column];
 				d3.select(this).classed('hover', true);
@@ -2892,6 +2998,10 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			.enter()
 			.append('rect')
 			.classed('bar', true)
+			.on('click', function(_, row, column) {
+				that.source.columns.get(that.columns[column].key).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
 			.on('mouseover', function(_, __, column) {
 				that.hoverColumn = that.columns[column];
 				d3.select(this).classed('hover', true);
@@ -3139,18 +3249,33 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			series = [],
 			rows = this.source.response;
 
-		for(const column of this.source.columns.values()) {
+		if(rows.length > 1) {
 
-			if(column.disabled)
-				continue;
+			for(const [i, row] of rows.entries()) {
 
-			series.push([{
-				date: 0,
-				label: column.name,
-				color: column.color,
-				y: rows[0].get(column.key),
-			}]);
+				series.push([{
+					date: 0,
+					label: row.get('name'),
+					color: DataSourceColumn.colors[i],
+					y: row.get('value'),
+				}]);
+			}
+		} else {
+
+			for(const column of this.source.columns.values()) {
+
+				if(column.disabled)
+					continue;
+
+				series.push([{
+					date: 0,
+					label: column.name,
+					color: column.color,
+					y: rows[0].get(column.key),
+				}]);
+			}
 		}
+
 
 		this.draw({
 			series: series.reverse(),
@@ -3171,7 +3296,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 0, bottom: 40, left: 0},
 			width = this.container.clientWidth - margin.left - margin.right,
-			height = obj.chart.height || 456 - margin.top - margin.bottom;
+			height = this.container.clientHeight - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
@@ -3873,6 +3998,23 @@ class Dataset {
 
 		container.classList.add('dataset');
 
+		if(['Start Date', 'End Date'].includes(this.name)) {
+
+			let value = null;
+
+			if(this.name == 'Start Date')
+				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			else
+				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			container.innerHTML = `
+				<input type="date" name="${this.filter.placeholder}" value="${value}">
+			`;
+
+			return container;
+		}
+
 		container.innerHTML = `
 			<input type="search" placeholder="Search...">
 			<div class="options hidden"></div>
@@ -3934,6 +4076,9 @@ class Dataset {
 
 	async load() {
 
+		if(!this.query_id)
+			return [];
+
 		const
 			values = await this.fetch(),
 			search = this.container.querySelector('input[type=search]'),
@@ -3965,6 +4110,9 @@ class Dataset {
 
 	async fetch() {
 
+		if(!this.query_id)
+			return [];
+
 		let
 			values,
 			timestamp;
@@ -3984,6 +4132,9 @@ class Dataset {
 	}
 
 	async update() {
+
+		if(!this.query_id)
+			return [];
 
 		const
 			search = this.container.querySelector('input[type=search]'),
@@ -4018,12 +4169,24 @@ class Dataset {
 
 	set value(source) {
 
-		const
-			inputs = this.container.querySelectorAll('.options .list label input'),
-			sourceInputs = source.container.querySelectorAll('.options .list label input');
+		if(source.query_id) {
 
-		for(const [i, input] of sourceInputs.entries())
-			inputs[i].checked = input.checked;
+			const
+				inputs = this.container.querySelectorAll('.options .list label input'),
+				sourceInputs = source.container.querySelectorAll('.options .list label input');
+
+			for(const [i, input] of sourceInputs.entries())
+				inputs[i].checked = input.checked;
+		}
+
+		else {
+
+			const
+				input = this.container.querySelector('input'),
+				sourceInput = source.container.querySelector('input');
+
+			input.value = sourceInput.value;
+		}
 
 		this.update();
 	}

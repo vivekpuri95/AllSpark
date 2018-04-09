@@ -3,7 +3,7 @@
 	--color-primary-text: #fff;
 	--color-secondary: #ddd;
 	--color-secondary-text: #333;
-	--color-accent: rgba(0, 0, 0, 0.15);
+	--color-accent: #0366d6;
 	--color-accent-text: #fff;
 	--color-row-hover: #ddf;
 	--transition-duration: 300ms;
@@ -17,8 +17,8 @@ input:not([type=checkbox]):not([type=radio]),
 select,
 button {
 	padding: 5px 10px;
-	border: 1px solid #283593;
-	color: #283593 !important;
+	border: 1px solid #ccc;
+	background: transparent;
 	height: 28px;
 	outline: 2px;
 	font-size: 90% !important;
@@ -41,6 +41,7 @@ button:hover {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	background: var(--color-accent);
 	color: var(--color-accent-text) !important;
+	border-color: var(--color-accent);
 }
 input[type=button]:active,
 input[type=reset]:active,
@@ -147,19 +148,16 @@ body {
 			width: 220px;
 			display: flex;
 			align-items: center;
-			padding: calc(var(--gap)*2);
+			justify-content: center;
+			padding: calc(var(--gap) * 2);
 		}
 		body > header .logo:hover {
 			background: none;
 		}
 			body > header .logo img {
-				width: 100%;
-				height: auto;
-				min-width: 150px;
-				align-items: center;
+				width: 90%;
 			}
-		body > header nav,
-		body > header .user-name {
+		body > header nav {
 			display: flex;
 		}
 		body > header .logout,
@@ -174,23 +172,20 @@ body {
 			white-space: nowrap;
 		}
 		body > header .logout:hover,
-		body > header a:hover {
+		body > header a:hover,
+		body > header .logout:focus,
+		body > header a:focus {
 			text-decoration: none;
-			background: var(--color-accent);
-			color: var(--color-accent-text);
+			background: rgba(255, 255, 255, 0.3);
 			cursor: pointer;
 		}
 		body > header a.selected {
-			background: var(--color-accent);
-			color: var(--color-accent-text);
+			background: rgba(255, 255, 255, 0.3);
 			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 		}
 		body > header .user-name {
 			margin-left: auto;
-			padding: 20px;
 			white-space: nowrap;
-			letter-spacing: 1px;
-			align-items: center;
 			display: flex;
 		}
 		body > header .logout {
@@ -221,9 +216,7 @@ body {
 			display: flex;
 			flex-wrap: wrap;
 			background: #eee;
-			margin: 10px 0;
-			/* box-shadow: 0 0 25px rgba(0, 0, 0, 0.15); */
-			padding: 5px;
+			margin: 10px -5px;
 		}
 			main section .toolbar .right {
 				margin-left: auto;
@@ -260,11 +253,10 @@ body {
 			main table thead th {
 				padding: 5px 8px;
 				position: sticky;
-				background:#efefef !important;
-				color: #888;
 				top: 0;
 				z-index: 2;
-				border-right: 1px solid var(--color-primary-text);
+				background: var(--color-primary);
+				color: var(--color-primary-text);
 			}
 			main table thead th:last-child {
 				border-right: 0;
@@ -335,12 +327,12 @@ body {
 		}
 			main .form label > span {
 				font-size: 90%;
-				color: #555;
+				color: #666;
+				font-weight: bold;
 			}
 
 	main .dataset {
 			position: relative;
-			width: 200px;
 		}
 			main .dataset input[type=search] {
 				width: 200px;
@@ -358,7 +350,7 @@ body {
 					display: grid;
 					grid-template-columns: auto 1fr;
 					align-items: center;
-					padding: var(--gap);
+					padding: calc(var(--gap) * 1.5);
 					margin: 0;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
@@ -471,6 +463,7 @@ body {
 			main .data-source .filters-toggle.selected {
 				background: var(--color-accent);
 				color: var(--color-accent-text);
+				border-color: var(--color-accent);
 			}
 		main .data-source > .description {
 			background: #fff;
@@ -510,7 +503,10 @@ body {
 			main .data-source > .share-link input {
 				width: 100%;
 			}
-
+		
+		main .data-source > .drilldown {
+			margin-top: calc(var(--gap) * 2);
+		}
 		main .data-source > .columns {
 			display: flex;
 			flex-wrap: wrap;
@@ -644,7 +640,7 @@ body {
 									padding: 8px;
 								}
 		main .data-source .visualization {
-			/*position: relative;*/
+			position: relative;
 			margin-top: calc(var(--gap) * 2);
 			flex: 1;
 		}
@@ -839,8 +835,6 @@ body {
 				.visualization.table table thead th {
 					text-transform: capitalize;
 					position: sticky;
-					background: var(--theme-dark);
-					color: var(--theme-dark-text);
 					cursor: pointer;
 					white-space: nowrap;
 					padding: 5px 10px;
@@ -869,6 +863,13 @@ body {
 			.visualization.table table tr.NA {
 				text-align: center;
 			}
+				.visualization.table table tbody tr td.drilldown {
+					cursor: pointer;
+					transition: background var(--transition-duration);
+				}
+				.visualization.table table tbody tr td.drilldown:hover {
+					background: #fcc;
+				}
 			.visualization.table table tbody tr.show-rows {
 				color:  #666;
 				font-size: 90%;
