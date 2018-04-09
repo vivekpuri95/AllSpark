@@ -3561,7 +3561,7 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 		const newResponse = {};
 
 		for(const row of this.source.originalResponse.data)
-			newResponse[row.label] = row.value;
+			newResponse[row.name] = row.value;
 
 		this.source.originalResponse.data = [newResponse];
 

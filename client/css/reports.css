@@ -220,7 +220,8 @@ main #form #report-form {
 	}
 	main .form.filter.unsaved button[type=submit],
 	main .form.visualization.unsaved button[type=submit] {
-		background: #c11;
+		background: #c33;
+		color: #fff;
 	}
 		main #form .NA {
 			margin: 5px;

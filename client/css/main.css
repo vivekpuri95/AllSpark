@@ -20,7 +20,7 @@ button {
 	border: 1px solid #ccc;
 	background: transparent;
 	height: 28px;
-	outline: 2px;
+	outline-width: 2px;
 	font-size: 90% !important;
 	line-height: 100% !important;
 	transition: background var(--transition-duration),
