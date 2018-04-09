@@ -9,11 +9,12 @@ exports.insert = class extends API {
 		this.user.privilege.needs('connection');
 
         const response = await this.mysql.query(
-            'INSERT INTO tb_credentials(account_id, connection_name, host, user, password, db, `limit`, type, file, project_name) VALUES (?)',
+            'INSERT INTO tb_credentials(account_id, connection_name, host, port, user, password, db, `limit`, type, file, project_name) VALUES (?)',
             [[
                 this.account.account_id,
                 this.request.body.connection_name,
                 this.request.body.host,
+                this.request.body.port,
                 this.request.body.user,
                 this.request.body.password,
                 this.request.body.db,

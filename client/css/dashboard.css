@@ -90,8 +90,9 @@ main #reports > .list {
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 		position: sticky;
 		top: 0;
-		/* z-index: 3; */
+		z-index: 3;
 		align-items: flex-end;
+		padding: var(--gap);
 	}
 		main #reports > .toolbar input[name=date-range] {
 			width: 250px;
@@ -101,17 +102,18 @@ main #reports > .list {
 		main #reports > .toolbar label select {
 			max-width: 200px;
 		}
-		main #reports > .toolbar .date-range {
-			order: 1;
-			max-width: initial;
+		main #reports > .toolbar .datasets {
+			display: flex;
+			align-items: flex-end;
+			margin: 0 0 0 auto;
 		}
-		main #reports > .toolbar .edit-dashboard {
-			order: 2;
-		}
+			main #reports > .toolbar .datasets > * {
+				margin: var(--gap);
+			}
 	main #reports .list .data-source {
 		grid-column: auto / span 8;
 		grid-row: auto / span 2;
-		/*position: relative;*/
+		position: relative;
 		transition: grid-column 300ms;
 		transition: box-shadow var(--transition-duration),
 					opacity var(--transition-duration),

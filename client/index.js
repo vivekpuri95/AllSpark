@@ -1,11 +1,15 @@
 "use strict";
-const express = require('express')
+
+const express = require('express');
+const compression = require('compression');
 const app = express();
 const config = require('config');
 
 const port = config.has('port') ? config.get('port').get('client') : 8081;
 
 const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
+
+app.use(compression());
 
 app.use(express.static('./client'));
 
@@ -163,20 +167,13 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 	template.stylesheets = template.stylesheets.concat([
 		'/css/dashboard.css',
-
-		'//cdn.jsdelivr.net/bootstrap/3/css/bootstrap.css',
-		'//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css',
 	]);
 
 	template.scripts = template.scripts.concat([
 		'/js/dashboard.js',
 
-		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
-
-		'//cdn.jsdelivr.net/jquery/1/jquery.min.js" defer f="',
-		'//cdn.jsdelivr.net/momentjs/latest/moment.min.js" defer f="',
-		'//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js" defer f="',
+		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
@@ -220,10 +217,14 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 					</button>
 				</label>
 
-				<label class="date-range right">
-					<span>Date Range</span>
-					<input type="text" name="date-range">
+				<label>
+					<button id="edit-dashboard" class="hidden">
+						<i class="fa fa-edit"></i>
+						Edit
+					</button>
 				</label>
+
+				<div class="datasets right"></div>
 			</div>
 
 			<div class="list"></div>
@@ -238,7 +239,7 @@ app.get('/dashboards/:id?', (req, res) => {
 	template.stylesheets.push('/css/dashboards.css');
 
 	template.scripts.push('/js/dashboards.js');
-	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js');
+	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js');
 
 	res.send(template.body(`
 
@@ -313,11 +314,11 @@ app.get('/reports/:id?', (req, res) => {
 	template.scripts = template.scripts.concat([
 		'/js/reports.js',
 
-		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js',
-		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ext-language_tools.js',
+		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
+		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
-		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
@@ -379,22 +380,6 @@ app.get('/reports/:id?', (req, res) => {
 				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>
 				<button id="view"><i class="fas fa-external-link-alt""></i> View</button>
 			</header>
-
-			<div class="hidden" id="test-container">
-				<h3>Execution Response
-					<span id="row-count"></span>
-					<span id="json" class="tab">JSON</span>
-					<span id="table" class="tab">Table</span>
-					<span id="query" class="tab">Query</span>
-					<span title="Close" class="close">&times;</span>
-				</h3>
-
-				<div id="test-body">
-					<div id="json-content"></div>
-					<div id="table-content"></div>
-					<div id="query-content"></div>
-				</div>
-			</div>
 
 			<form class="form" id="report-form">
 
@@ -494,11 +479,27 @@ app.get('/reports/:id?', (req, res) => {
 					<span>Added By</span>
 					<span class="NA" id="added-by"></span>
 				</label>
-				
+
 				<label>
 					<span>Format</span>
-					<textarea rows="15" cols="200" name="format"></textarea>
-				</label>				
+					<textarea name="format"></textarea>
+				</label>
+
+				<div class="hidden" id="test-container">
+					<h3>Execution Response
+						<span id="row-count"></span>
+						<span id="json" class="tab">JSON</span>
+						<span id="table" class="tab">Table</span>
+						<span id="query" class="tab">Query</span>
+						<span title="Close" class="close">&times;</span>
+					</h3>
+
+					<div id="test-body">
+						<div id="json-content"></div>
+						<div id="table-content"></div>
+						<div id="query-content"></div>
+					</div>
+				</div>
 			</form>
 
 			<h3>Filters</h3>
@@ -817,17 +818,17 @@ app.get('/user/profile/settings', (req, res)=>{
     res.send(template.body(`
 		<section class="section" id="form">
 			<form class="block form">
-	
+
 				<label>
 					<span>Old Password</span>
 					<input type="password" name="old_password" required>
 				</label>
-	
+
 				<label>
 					<span>New Password</span>
 					<input type="password" name="new_password" required>
 				</label>
-	
+
 				<label>
 					<span></span>
 					<button class="submit">
@@ -835,7 +836,7 @@ app.get('/user/profile/settings', (req, res)=>{
 						Change
 					</button>
 				</label>
-				
+
 				<label>
 					<div class="notice hidden" id="message"></div>
 				</label>

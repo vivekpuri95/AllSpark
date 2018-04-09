@@ -223,8 +223,13 @@ Credential.types.set('mysql', class {
 			</label>
 
 			<label>
-				<span>Server</span>
+				<span>Host</span>
 				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
 			</label>
 
 			<label>
@@ -240,6 +245,52 @@ Credential.types.set('mysql', class {
 			user: Credential.form.user.value,
 			password: Credential.form.password.value,
 			host: Credential.form.host.value,
+			port: Credential.form.port.value,
+			db: Credential.form.db.value,
+		});
+	}
+});
+
+Credential.types.set('pgsql', class {
+
+	static render(connections = {}) {
+
+		Credential.container.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span>Password</span>
+				<input type="text" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+
+			<label>
+				<span>Database</span>
+				<input type="text" name="db" value="${connections.db || ''}">
+			</label>
+		`;
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: Credential.form.user.value,
+			password: Credential.form.password.value,
+			host: Credential.form.host.value,
+			port: Credential.form.port.value,
 			db: Credential.form.db.value,
 		});
 	}
