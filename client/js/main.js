@@ -1264,17 +1264,17 @@ class DataSourceColumn {
 
 					<label>
 						<span>Report Id</span>
-						<input type="number" name="query_id">
+						<input type="number" name="query_id" required>
 					</label>
 
 					<label>
-						<span>Parameters</span>
+						<span>Parameters <button id="add_parameters"><i class="fa fa-plus"></i> Add New</button></span>
 						<div class="params-list"></div>
 					</label>	
-					
-					<button type="button" id="add_parameters"><i class="fa fa-plus"></i> Add</button>
 
-					<input type="Submit" value="Submit">
+					<label>
+						<input type="Submit" value="Submit">
+					</label>
 				</form>
 			</div>
 		`;
@@ -1304,40 +1304,21 @@ class DataSourceColumn {
 
 			await this.update();
 		});
+
 		container.querySelector('.menu-toggle').on('click', () => {
 			this.blanket.classList.remove('hidden');
+			let values = this.source.format.data.filter( f => f.key == this.key);
+			values = values[0];
+
+			this.form.name.value = values.name;
+			this.form.col_type.value = values.column_type;
+			this.form.query_id.value = values.drilldown.report_id;
+			for( let i = 0; i < values.drilldown.parameters.length; i++){
+				this.addParameterDiv(values.drilldown.parameters[i]);
+			}
 		});
 
-		this.form.querySelector('#add_parameters').on('click', () => {
-
-			var new_param = document.createElement('div');
-
-			new_param.innerHTML = `
-				<label>
-					<span>Placeholder</span>
-					<input type="text" name="placeholder">
-				</label>
-				<label>
-					<span>Type</span>
-					<input type="text" name="type">
-				</label>
-				<label>
-					<span>Value</span>
-					<input type="text" name="value">
-				</label>
-				<label>
-					<span>&nbsp</span>
-					<button type="button" class="remove-parameters"><i class="fa fa-times"></i></button>
-				</label>
-			`;
-			new_param.classList.add('parameters');
-			this.form.querySelector('.params-list').appendChild(new_param);
-
-			new_param.querySelector('.remove-parameters').on('click', () => {
-				this.form.querySelector('.params-list').removeChild(new_param);
-			});
-
-		});
+		this.form.querySelector(' #add_parameters').on('click', () => this.addParameterDiv());
 
 		return container;
 	}
@@ -1360,6 +1341,36 @@ class DataSourceColumn {
 		this.form.elements.name.focus();
 	}
 
+	async addParameterDiv(params = null) {
+debugger;
+		var new_param = document.createElement('div');
+
+		new_param.innerHTML = `
+				<label>
+					<span>Placeholder</span>
+					<input type="text" name="placeholder" value="${params ? params.placeholder : ''}">
+				</label>
+				<label>
+					<span>Type</span>
+					<input type="text" name="type" value="${params ? params.type : ''}">
+				</label>
+				<label>
+					<span>Value</span>
+					<input type="text" name="value" value="${params ? params.value : ''}">
+				</label>
+				<label>
+					<span>&nbsp</span>
+					<button type="button" class="remove-parameters"><i class="far fa-trash-alt"></i></button>
+				</label>
+			`;
+		new_param.classList.add('parameters');
+		this.form.querySelector('.params-list').appendChild(new_param);
+
+		new_param.querySelector('.remove-parameters').on('click', () => {
+			this.form.querySelector('.params-list').removeChild(new_param);
+		});
+	}
+
 	async save(e) {
 
 		if(e)
@@ -1368,12 +1379,7 @@ class DataSourceColumn {
 		let	json, response, updated = 0,  json_param = [];
 
 		if(this.source.format) {
-			try {
-				json = JSON.parse(this.source.format);
-			}
-			catch (e) {
-				json = {data: []}
-			}
+			json = this.source.format;
 		}
 		else{
 			json ={data: []};
@@ -1405,10 +1411,10 @@ class DataSourceColumn {
 			}
 		};
 
-		for(let ele of json.data){
+		for(let i in json.data){
 
-			if(ele.key == this.key){
-				ele = response;
+			if(json.data[i].key == this.key){
+				json.data[i] = response;
 				updated = 1;
 				break;
 			}
@@ -1427,7 +1433,7 @@ class DataSourceColumn {
 			};
 
 		await API.call('reports/report/update', parameters, options);
-		this.source.format = JSON.stringify(json);
+		this.source.format = json;
 
 		//this.validateFormula();
 		//this.filtered = this.searchQuery !== null;
