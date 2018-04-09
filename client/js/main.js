@@ -1333,9 +1333,20 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-		let
-			json = JSON.parse(this.source.format),
-			json_param = [];
+		let	json, response, updated = 0,  json_param = [];
+
+		if(this.source.format) {
+			try {
+				json = JSON.parse(this.source.format);
+			}
+			catch (e) {
+				json = {data: []}
+			}
+		}
+		else{
+			json ={data: []};
+		}
+
 
 		for(const element of this.form.elements) {
 
@@ -1344,7 +1355,7 @@ class DataSourceColumn {
 
 		for(const row of this.form.querySelectorAll('.parameters')) {
 			let param_json = {};
-			for(const div of row.children){
+			for (const div of row.children) {
 				console.log(div.children[1].name)
 				param_json[div.children[1].name] = div.children[1].value;
 
@@ -1352,7 +1363,7 @@ class DataSourceColumn {
 			json_param.push(param_json);
 		}
 
-		json.data.push({
+		response = {
 			key : this.key,
 			name : this.name,
 			column_type : this.col_type,
@@ -1360,7 +1371,19 @@ class DataSourceColumn {
 				report_id : this.query_id,
 				parameters : json_param
 			}
-		});
+		};
+
+		for(let ele of json.data){
+
+			if(ele.key == this.key){
+				ele = response;
+				updated = 1;
+				break;
+			}
+		}
+
+		if(updated == 0)
+			json.data.push(response);
 
 		const
 			parameters = {
@@ -1372,6 +1395,7 @@ class DataSourceColumn {
 			};
 
 		await API.call('reports/report/update', parameters, options);
+		this.source.format = JSON.stringify(json);
 
 		//this.validateFormula();
 		//this.filtered = this.searchQuery !== null;
