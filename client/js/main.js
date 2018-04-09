@@ -1240,7 +1240,7 @@ class DataSourceColumn {
 						<div class="params-list"></div>
 					</label>	
 					
-					<button type="button" id="btn_add_param"><i class="fa fa-plus"></i> Add</button>	
+					<button type="button" id="add_parameters"><i class="fa fa-plus"></i> Add</button>	
 
 					<input type="Submit" value="Submit">				
 				</form>	
@@ -1276,7 +1276,7 @@ class DataSourceColumn {
 			this.blanket.classList.remove('hidden');
 		});
 
-		this.form.querySelector('#btn_add_param').on('click', () => {
+		this.form.querySelector('#add_parameters').on('click', () => {
 
 			var new_param = document.createElement('div');
 
@@ -1293,9 +1293,18 @@ class DataSourceColumn {
 					<span>Value</span>
 					<input type="text" name="value">
 				</label>
+				<label>
+					<span>&nbsp</span>
+					<button type="button" class="remove-parameters"><i class="fa fa-times"></i></button>
+				</label>
 			`;
 			new_param.classList.add('parameters');
 			this.form.querySelector('.params-list').appendChild(new_param);
+
+			new_param.querySelector('.remove-parameters').on('click', () => {
+				this.form.querySelector('.params-list').removeChild(new_param);
+			});
+
 		});
 
 		return container;
