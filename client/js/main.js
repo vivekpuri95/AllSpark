@@ -1252,7 +1252,7 @@ class DataSourceColumn {
 
 					<label>
 						<span>Type</span>
-						<select name="col_type">
+						<select name="column_type">
 							<option value="date">Date</option>
 							<option value="number">Number</option>
 							<option value="currency">Currency</option>
@@ -1268,9 +1268,13 @@ class DataSourceColumn {
 					</label>
 
 					<label>
-						<span>Parameters <button id="add_parameters"><i class="fa fa-plus"></i> Add New</button></span>
+						<span>Parameters</span>
+						<button id="add_parameters"><i class="fa fa-plus"></i> Add New</button>
+					</label>
+					
+					<label>
 						<div class="params-list"></div>
-					</label>	
+					</label>
 
 					<label>
 						<input type="Submit" value="Submit">
@@ -1307,14 +1311,13 @@ class DataSourceColumn {
 
 		container.querySelector('.menu-toggle').on('click', () => {
 			this.blanket.classList.remove('hidden');
-			let values = this.source.format.data.filter( f => f.key == this.key);
-			values = values[0];
+			const values = this.source.format.data.filter( f => f.key == this.key);
 
-			this.form.name.value = values.name;
-			this.form.col_type.value = values.column_type;
-			this.form.query_id.value = values.drilldown.report_id;
-			for( let i = 0; i < values.drilldown.parameters.length; i++){
-				this.addParameterDiv(values.drilldown.parameters[i]);
+			this.form.name.value = values[0].name;
+			this.form.column_type.value = values[0].column_type;
+			this.form.query_id.value = values[0].drilldown.report_id;
+			for(const param of values.drilldown.parameters){
+				this.addParameterDiv(param);
 			}
 		});
 
@@ -1341,33 +1344,33 @@ class DataSourceColumn {
 		this.form.elements.name.focus();
 	}
 
-	async addParameterDiv(params = null) {
-debugger;
-		var new_param = document.createElement('div');
+	addParameterDiv(params = {}) {
 
-		new_param.innerHTML = `
+		var parameter = document.createElement('div');
+
+		parameter.innerHTML = `
 				<label>
 					<span>Placeholder</span>
-					<input type="text" name="placeholder" value="${params ? params.placeholder : ''}">
+					<input type="text" name="placeholder" value="${params.placeholder || ''}">
 				</label>
 				<label>
 					<span>Type</span>
-					<input type="text" name="type" value="${params ? params.type : ''}">
+					<input type="text" name="type" value="${params.type || ''}">
 				</label>
 				<label>
 					<span>Value</span>
-					<input type="text" name="value" value="${params ? params.value : ''}">
+					<input type="text" name="value" value="${params.value || ''}">
 				</label>
 				<label>
 					<span>&nbsp</span>
-					<button type="button" class="remove-parameters"><i class="far fa-trash-alt"></i></button>
+					<button type="button" class="remove-parameters delete"><i class="far fa-trash-alt"></i></button>
 				</label>
 			`;
-		new_param.classList.add('parameters');
-		this.form.querySelector('.params-list').appendChild(new_param);
+		parameter.classList.add('parameters');
+		this.form.querySelector('.params-list').appendChild(parameter);
 
-		new_param.querySelector('.remove-parameters').on('click', () => {
-			this.form.querySelector('.params-list').removeChild(new_param);
+		parameter.querySelector('.remove-parameters').on('click', () => {
+			this.form.querySelector('.params-list').removeChild(parameter);
 		});
 	}
 
@@ -1376,15 +1379,11 @@ debugger;
 		if(e)
 			e.preventDefault();
 
-		let	json, response, updated = 0,  json_param = [];
-
-		if(this.source.format) {
-			json = this.source.format;
-		}
-		else{
-			json ={data: []};
-		}
-
+		let
+			json = this.source.format ? this.source.format : {data: []},
+			response,
+			updated = 0,
+			json_param = [];
 
 		for(const element of this.form.elements) {
 
@@ -1404,7 +1403,7 @@ debugger;
 		response = {
 			key : this.key,
 			name : this.name,
-			column_type : this.col_type,
+			column_type : this.column_type,
 			drilldown : {
 				report_id : this.query_id,
 				parameters : json_param

@@ -38,10 +38,10 @@ input[type=button]:hover,
 input[type=reset]:hover,
 input[type=submit]:hover,
 button:hover {
-	 box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-	 background: var(--color-accent);
-	 color: var(--color-accent-text) !important;
-	 border-color: var(--color-accent);
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	background: var(--color-accent);
+	color: var(--color-accent-text) !important;
+	border-color: var(--color-accent);
 }
 input[type=button]:active,
 input[type=reset]:active,
@@ -638,6 +638,7 @@ body {
 								}
 								main .data-source .column form input[type=submit] {
 									padding: 8px;
+									color: black !important;
 								}
 		main .data-source .visualization {
 			position: relative;
@@ -1040,4 +1041,8 @@ body {
 	grid-gap: 9px;
 	grid-template-columns: 180px 180px 180px 80px;
 	font-size: 90%;
+}
+.parameters .delete:hover {
+    background-color: red;
+    border: red;
 }
