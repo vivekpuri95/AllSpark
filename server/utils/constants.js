@@ -24,3 +24,5 @@ exports.publicEndpoints = [
 	'/v2/authentication/resetLink',
     '/v2/authentication/tookan',
 ];
+
+exports.filterPrefix = "param_";
