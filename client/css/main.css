@@ -595,6 +595,19 @@ body {
 					}
 						main .data-source .column .blanket form {
 						}
+
+                        main .data-source .column .blanket form .parameters {
+                            display: grid;
+                            grid-gap: 9px;
+                            grid-template-columns: 180px 180px 180px 80px;
+                            grid-template-rows: 50px 10px;
+                            font-size: 90%;
+                        }
+
+                        main .data-source .column .blanket form .parameters .delete:hover {
+                            background-color: red;
+                            border: red;
+                        }
 							main .data-source .column form h3 {
 								margin: 0 calc(var(--gap) * -1) var(--gap);
 								padding: var(--gap) 10px;
@@ -1035,14 +1048,4 @@ body {
 	font-size: 110%;
 	font-weight: bold;
 	pointer-events: none;
-}
-.parameters {
-	display: grid;
-	grid-gap: 9px;
-	grid-template-columns: 180px 180px 180px 80px;
-	font-size: 90%;
-}
-.parameters .delete:hover {
-    background-color: red;
-    border: red;
 }

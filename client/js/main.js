@@ -1247,7 +1247,7 @@ class DataSourceColumn {
 
 					<label>
 						<span>Name</span>
-						<input type="text" name="name" >
+						<input type="text" name="column_name" >
 					</label>
 
 					<label>
@@ -1257,6 +1257,7 @@ class DataSourceColumn {
 							<option value="number">Number</option>
 							<option value="currency">Currency</option>
 							<option value="string">String</option>
+							<option value="color">Color</option>
 						</select>
 					</label>
 
@@ -1269,7 +1270,7 @@ class DataSourceColumn {
 
 					<label>
 						<span>Parameters</span>
-						<button id="add_parameters"><i class="fa fa-plus"></i> Add New</button>
+						<button type="button" id="add_parameters"><i class="fa fa-plus"></i> Add New</button>
 					</label>
 					
 					<label>
@@ -1277,7 +1278,7 @@ class DataSourceColumn {
 					</label>
 
 					<label>
-						<input type="Submit" value="Submit">
+						<input type="submit" value="Submit">
 					</label>
 				</form>
 			</div>
@@ -1309,17 +1310,7 @@ class DataSourceColumn {
 			await this.update();
 		});
 
-		container.querySelector('.menu-toggle').on('click', () => {
-			this.blanket.classList.remove('hidden');
-			const values = this.source.format.data.filter( f => f.key == this.key);
-
-			this.form.name.value = values[0].name;
-			this.form.column_type.value = values[0].column_type;
-			this.form.query_id.value = values[0].drilldown.report_id;
-			for(const param of values.drilldown.parameters){
-				this.addParameterDiv(param);
-			}
-		});
+		container.querySelector('.menu-toggle').on('click', () => this.showBlanket());
 
 		this.form.querySelector(' #add_parameters').on('click', () => this.addParameterDiv());
 
@@ -1343,6 +1334,21 @@ class DataSourceColumn {
 
 		this.form.elements.name.focus();
 	}
+
+	showBlanket() {
+		this.blanket.classList.remove('hidden');
+		const [values] = this.source.format.columns.filter( f => f.key == this.key);
+
+		if(values) {
+			this.form.column_name.value = values.name;
+			this.form.column_type.value = values.column_type;
+			this.form.query_id.value = values.drilldown.report_id;
+			for (const param of values.drilldown.parameters) {
+				this.addParameterDiv(param);
+			}
+		}
+	}
+
 
 	addParameterDiv(params = {}) {
 
@@ -1380,7 +1386,7 @@ class DataSourceColumn {
 			e.preventDefault();
 
 		let
-			json = this.source.format ? this.source.format : {data: []},
+			json = this.source.format ? this.source.format : {columns: []},
 			response,
 			updated = 0,
 			json_param = [];
@@ -1402,7 +1408,7 @@ class DataSourceColumn {
 
 		response = {
 			key : this.key,
-			name : this.name,
+			name : this.column_name,
 			column_type : this.column_type,
 			drilldown : {
 				report_id : this.query_id,
@@ -1410,17 +1416,17 @@ class DataSourceColumn {
 			}
 		};
 
-		for(let i in json.data){
+		for(let i in json.columns){
 
-			if(json.data[i].key == this.key){
-				json.data[i] = response;
+			if(json.columns[i].key == this.key){
+				json.columns[i] = response;
 				updated = 1;
 				break;
 			}
 		}
 
 		if(updated == 0)
-			json.data.push(response);
+			json.columns.push(response);
 
 		const
 			parameters = {
@@ -1433,6 +1439,7 @@ class DataSourceColumn {
 
 		await API.call('reports/report/update', parameters, options);
 		this.source.format = json;
+		this.blanket.classList.add('hidden');
 
 		//this.validateFormula();
 		//this.filtered = this.searchQuery !== null;
