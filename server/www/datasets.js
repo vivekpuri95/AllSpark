@@ -83,6 +83,9 @@ exports.values = class DatasetValues extends API {
         if (!dataset)
             throw new API.Exception(404, 'Dataset not found! :(');
 
+        if(!dataset.query_id)
+            return [];
+
         const reportObj = new report;
 
         Object.assign(reportObj, this);

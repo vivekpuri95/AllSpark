@@ -186,44 +186,6 @@ class Dashboard {
 
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
-
-		if(page.user.privileges.has('reports'))
-			Dashboard.toolbar.insertAdjacentHTML('beforeend', `<button class="edit-dashboard hidden"></button>`);
-
-		$('#reports .toolbar input[name="date-range"]').daterangepicker({
-			opens: 'left',
-			ranges: {
-				'Last 7 Days': [new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date()],
-				'Last 15 Days': [new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), new Date()],
-				'Last 30 Days': [new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), new Date()],
-				'Last 90 Days': [new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), new Date()],
-				'Last 1 Year': [new Date(Date.now() - 365 * 24 * 60 * 60 * 1000), new Date()],
-			},
-			locale: {
-				format: 'MMMM D, YYYY'
-			}
-		});
-
-		$('#reports .toolbar input[name="date-range"]').on('apply.daterangepicker', (e, picker) => {
-
-			for(const source of page.list.selectedReports) {
-
-				const
-					start = Array.from(source.filters.values()).filter(f => f.name == 'Start Date')[0],
-					end = Array.from(source.filters.values()).filter(f => f.name == 'End Date')[0];
-
-				if(!start || !end) {
-					source.container.style.opacity = 0.4;
-					continue;
-				} else
-					source.container.style.opacity = 1;
-
-				start.label.querySelector('input').value = picker.startDate.format('YYYY-MM-DD');
-				end.label.querySelector('input').value = picker.endDate.format('YYYY-MM-DD');
-
-				source.visualizations.selected.load();
-			}
-		});
 	}
 
 	constructor(dashboard, page) {
@@ -312,14 +274,11 @@ class Dashboard {
 
 		if(this.page.user.privileges.has('reports')) {
 
-			const edit = Dashboard.toolbar.querySelector('.edit-dashboard');
+			const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
 
 			edit.classList.remove('hidden');
 
-			edit.innerHTML = `<i class="fa fa-edit"></i> Edit`;
-
-			if(Dashboard.toolbar.editListener)
-				edit.removeEventListener('click', Dashboard.toolbar.editListener);
+			edit.removeEventListener('click', Dashboard.toolbar.editListener);
 
 			edit.on('click', Dashboard.toolbar.editListener = () => this.edit());
 
@@ -334,7 +293,7 @@ class Dashboard {
 
 		Dashboard.editing = true;
 
-		const edit = Dashboard.toolbar.querySelector('.edit-dashboard');
+		const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
 
 		edit.innerHTML = `<i class="fa fa-save"></i> Save`;
 
@@ -574,15 +533,15 @@ class Dashboard {
 
 	get menuItem() {
 
-		if(this.container)
-			return this.container;
+        if (this.container)
+            return this.container;
 
 		function getReports(dashboard) {
 
-			const reports = Array.from(dashboard.reports());
+			let reports = Array.from(dashboard.reports());
 
 			for(const child of dashboard.children)
-				reports.concat(getReports(child));
+                reports = reports.concat(getReports(child));
 
 			return reports;
 		}
@@ -592,6 +551,9 @@ class Dashboard {
 			icon = this.icon ? `<img src="${this.icon}" height="20" width="20">` : '';
 
 		container.classList.add('item');
+
+        if(!getReports(this).length && !this.page.user.privileges.has('report'))
+            container.classList.add('hidden');
 
 		container.innerHTML = `
 			<div class="label">
@@ -616,6 +578,7 @@ class Dashboard {
 				this.load();
 			}
 		});
+
 
 		for(const child of this.children)
 			submenu.appendChild(child.menuItem);
@@ -693,10 +656,9 @@ class DashboardDatasets extends Map {
 
 	async render() {
 
-		for(const dataset of Dashboard.toolbar.querySelectorAll('.dataset-container'))
-			Dashboard.toolbar.removeChild(dataset);
+		const container = Dashboard.toolbar.querySelector('.datasets');
 
-		const fragment = document.createDocumentFragment();
+		container.textContent = null;
 
 		for(const dataset of this.values()) {
 
@@ -710,41 +672,43 @@ class DashboardDatasets extends Map {
 
 			label.appendChild(dataset.container);
 
-			fragment.appendChild(label);
+			container.appendChild(label);
 		}
 
 		const apply = document.createElement('button');
 
+		apply.classList.add('apply');
+
 		apply.innerHTML = `<i class="fas fa-paper-plane"></i> Apply`;
 
-		apply.on('click', () => {
+		apply.on('click', () => this.apply());
 
-			for(const report of this.page.list.selectedReports) {
+		container.appendChild(apply);
+	}
 
-				let found = false;
+	apply() {
 
-				for(const filter of report.filters.values()) {
+		for(const report of this.page.list.selectedReports) {
 
-					if(!filter.dataset || !this.has(filter.dataset.id))
-						continue;
+			let found = false;
 
-					filter.dataset.value = this.get(filter.dataset.id);
+			for(const filter of report.filters.values()) {
 
-					found = true;
-				}
+				if(!filter.dataset || !this.has(filter.dataset.id))
+					continue;
 
-				if(found) {
-					report.visualizations.selected.load();
-					report.container.style.opacity = 1;
-				}
+				filter.dataset.value = this.get(filter.dataset.id);
 
-				else
-					report.container.style.opacity = 0.4;
+				found = true;
 			}
-		});
 
-		fragment.appendChild(apply);
+			if(found) {
+				report.visualizations.selected.load();
+				report.container.style.opacity = 1;
+			}
 
-		Dashboard.toolbar.appendChild(fragment);
+			else
+				report.container.style.opacity = 0.4;
+		}
 	}
 }

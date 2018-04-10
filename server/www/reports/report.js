@@ -38,6 +38,11 @@ exports.list = class extends API {
 			row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
 			response.push(row);
 
+			try {
+				row.format = row.format ? JSON.parse(row.format) : null;
+			} catch(e) {
+				row.format = null;
+			}
 		}
 
 		return response;
@@ -78,7 +83,7 @@ exports.update = class extends API {
 		}
 
 		try {
-			values.format = JSON.stringify(JSON.parse(values.format))
+			values.format = values.format ? JSON.stringify(JSON.parse(values.format)) : null;
 		} catch(e) {
 			values.format = JSON.stringify({});
 		}

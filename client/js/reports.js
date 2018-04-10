@@ -279,7 +279,7 @@ class Report {
 
 		const source = Reports.credentials.filter(s => s.id == Report.form.elements.connection_name.value)[0];
 
-		if(source && source.type == 'mysql') {
+		if(source && ['mysql', 'pgsql'].includes(source.type)) {
 
 			Report.form.querySelector('#query').classList.remove('hidden');
 			Report.form.querySelector('#api').classList.add('hidden');
@@ -486,34 +486,29 @@ class Report {
 
 		Report.form.parentElement.querySelector('h1').innerHTML = `${this.name} - ${this.query_id}`;
 
-		if(Report.form.listener)
-			Report.form.removeEventListener('submit', Report.form.listener);
+		Report.form.removeEventListener('submit', Report.form.listener);
 
-		if(Report.container.viewListener)
-			view.removeEventListener('click', Report.container.viewListener);
+		view.removeEventListener('click', Report.container.viewListener);
 
 		view.on('click', Report.container.viewListener = () => window.open(`/report/${this.query_id}`));
 
 		Report.form.on('submit', Report.form.listener = e => this.update(e));
 
-		if(ReportFilter.insert.form.listener)
-			ReportFilter.insert.form.removeEventListener('submit', ReportFilter.insert.form.listener);
-
+		ReportFilter.insert.form.removeEventListener('submit', ReportFilter.insert.form.listener);
 		ReportFilter.insert.form.on('submit', ReportFilter.insert.form.listener = e => ReportFilter.insert(e, this));
 
-		if(ReportVisualization.insert.form.listener)
-			ReportVisualization.insert.form.removeEventListener('submit', ReportVisualization.insert.form.listener);
-
+		ReportVisualization.insert.form.removeEventListener('submit', ReportVisualization.insert.form.listener);
 		ReportVisualization.insert.form.on('submit', ReportVisualization.insert.form.listener = e => ReportVisualization.insert(e, this));
 
 		Report.form.reset();
 
 		for(const key in this) {
 			if(Report.form.elements[key])
-				Report.form.elements[key].value = this[key];
+				Report.form.elements[key].value = this[key] || '';
 		}
 
-		Report.form.elements.method.value = this.url_options.method;
+		Report.form.method.value = this.url_options.method;
+		Report.form.format.value = JSON.stringify(this.format, 0, 4);
 
 		Report.editor.value = this.query;
 		Report.editor.editor.focus();
@@ -961,7 +956,8 @@ class ReportVisualization {
 				axis: {
 					x: {
 						column: form.column.value,
-					}
+					},
+					y: {}
 				}
 			});
 		}
