@@ -1,4 +1,5 @@
 const API = require('../utils/api.js');
+var account = require('../onServerStart');
 
 exports.list = class extends API {
 
@@ -107,11 +108,14 @@ exports.insert = class extends API {
 			payload[values] = this.request.body[values];
 		}
 
-		return await this.mysql.query(
+		const result = await this.mysql.query(
 			`INSERT INTO tb_accounts SET ?`,
 			payload,
 			'write'
 		);
+
+        await account.loadAccounts();
+        return result;
 	}
 }
 
@@ -132,11 +136,14 @@ exports.update = class extends API {
 
 		const values = [setParams, account_id];
 
-		return await this.mysql.query(
+		const result = await this.mysql.query(
 			`UPDATE tb_accounts SET ? WHERE account_id = ?`,
 			values,
 			'write'
 		);
+
+        await account.loadAccounts();
+        return result;
 	}
 }
 
@@ -144,10 +151,13 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		return await this.mysql.query(
+		const result = await this.mysql.query(
 			`UPDATE tb_accounts SET status = 0 WHERE account_id = ?`,
 			this.request.body.account_id,
 			'write'
 		);
+
+        await account.loadAccounts();
+        return result;
 	}
 }
