@@ -1,35 +1,86 @@
-Page.class = class Settings extends Page {
+class Settings extends Page {
 
 	constructor() {
 		super();
-		const loader = window.location.pathname.split('/');
-		let which_class = loader[loader.indexOf('settings')+1];
 
-		Array.from(this.container.querySelectorAll('nav a')).map(a => a.href == window.location.href && a.classList.add('selected'));
+		const nav = this.container.querySelector('nav');
 
-		if(!which_class) {
-			window.location.href = this.container.querySelector('nav a').href;
+		for(const [key, settings] of Settings.list) {
+
+			const setting = new settings(this.container);
+
+			const a = document.createElement('a');
+		
+			a.textContent = setting.name;
+			
+			a.on('click', () => {
+				
+				for(const a of nav.querySelectorAll('a'))
+					a.classList.remove('selected');
+
+				for(const a of this.container.querySelectorAll('setting-page'))
+					a.classList.add('hidden');
+
+				a.classList.add('selected');
+				setting.setup();
+				setting.load();
+				setting.sub_container.classList.remove('hidden');
+			});
+
+			nav.appendChild(a);
 		}
-
-		new window[which_class](this);
 	}
 }
+
+Page.class = Settings;
 
 class SettingPage {
 
 	constructor(page) {
-		this.setup(page.container);
-		this.load();
+		this.container = page;
 	}
 }
 
-window.datasets = class Datasets extends SettingPage {
+Settings.list = new Map;
 
-	setup(container) {
+Settings.list.set('accounts', class Accounts extends SettingPage {
 
-		Datasets.container = container.querySelector('.datasets-ui');
-		Datasets.container.classList.remove('hidden');
-		SettingsDataset.form_container = Datasets.container.querySelector('section#form');
+	get name() {
+		return 'Accounts';
+	}
+	setup() {
+		Accounts.container = this.container.querySelector('.accounts-ui');
+	}
+	load() {
+
+	}
+});
+
+Settings.list.set('roles', class extends SettingPage {
+	
+	get name() {
+		return 'Roles';
+	}
+
+});
+
+Settings.list.set('privileges', class extends SettingPage {
+
+	get name() {
+		return 'Privileges';
+	}
+});
+
+Settings.list.set('datasets', class Datasets extends SettingPage {
+
+	get name() {
+		return 'Datasets';
+	}
+
+	setup() {
+
+		this.sub_container = this.container.querySelector('.datasets-ui');
+		SettingsDataset.form_container = this.sub_container.querySelector('section#form');
 		SettingsDataset.form = SettingsDataset.form_container.querySelector('form');
 
 		for(const data of MetaData.categories.values()) {
@@ -38,7 +89,7 @@ window.datasets = class Datasets extends SettingPage {
 			`);
 		}
 
-		Datasets.container.querySelector('section#list #add-datset').on('click', () => SettingsDataset.add(this));
+		this.sub_container.querySelector('section#list #add-datset').on('click', () => SettingsDataset.add(this));
 
 		SettingsDataset.form_container.querySelector('#cancel-form').on('click', () => {
 			Sections.show('list');
@@ -59,9 +110,9 @@ window.datasets = class Datasets extends SettingPage {
 
 	async render() {
 
-		const container = Datasets.container.querySelector('#list table tbody')
+		const container = this.sub_container.querySelector('#list table tbody')
 		container.textContent = null;
-		
+
 		if(!this.list.size)
 			container.innerHTML = '<div class="NA">No rows found :(</div>'
 
@@ -71,7 +122,9 @@ window.datasets = class Datasets extends SettingPage {
 
 		await Sections.show('list');
 	}
-}
+
+
+});
 
 class SettingsDataset {
 

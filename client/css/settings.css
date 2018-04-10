@@ -9,6 +9,7 @@ main {
 	}
 		main > nav a {
 			padding: 12px 16px;
+			color: #333;
 			transition: background var(--transition-duration),
 						color var(--transition-duration);
 		}

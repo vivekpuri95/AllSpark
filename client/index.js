@@ -802,14 +802,10 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 	template.scripts.push('/js/settings.js');
 
 	res.send(template.body(`
-		<nav>
-			<a href="/settings/accounts">Accounts</a>
-			<a href="/settings/privileges">Privileges</a>
-			<a href="/settings/roles">Roles</a>
-			<a href="/settings/datasets">DataSets</a>
-		</nav>
+		
+		<nav></nav>
 
-		<div class="datasets-ui hidden">
+		<div class="setting-page datasets-ui hidden"><div></div>
 			<section class="section" id="list">
 
 				<h1>Datasets Manage</h1>
