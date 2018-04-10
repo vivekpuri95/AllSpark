@@ -142,6 +142,8 @@ exports.refresh = class extends API {
 
 		const loginObj = await commonFun.verifyJWT(this.request.body.refresh_token);
 
+		this.assert(!loginObj.error, "Token not correct", 401);
+
 		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ?", loginObj.user_id);
 
 		this.assert(user, "user not found");
