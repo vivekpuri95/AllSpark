@@ -621,7 +621,7 @@ class DataSource {
 	}
 
 	async fetch(parameters = {}) {
-
+		const filterPrefix = "param_";
 		parameters = new URLSearchParams(parameters);
 
 		parameters.set('query_id', this.query_id);
@@ -629,18 +629,15 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
-			if(parameters.has(filter.placeholder))
-				continue;
-
 			if(filter.dataset && filter.dataset.query_id) {
 
 				for(const input of filter.label.querySelectorAll('input:checked'))
-					parameters.append(filter.placeholder, input.value);
+					parameters.append(filterPrefix + filter.placeholder, input.value);
 
 				continue;
 			}
 
-			parameters.set(filter.placeholder, this.filters.form.elements[filter.placeholder].value);
+			parameters.set(filterPrefix + filter.placeholder, this.filters.form.elements[filter.placeholder].value);
 		}
 
 		let response = null;
