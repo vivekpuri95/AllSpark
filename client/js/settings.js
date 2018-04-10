@@ -5,7 +5,7 @@ Page.class = class Settings extends Page {
 		const loader = window.location.pathname.split('/');
 		let which_class = loader[loader.indexOf('settings')+1];
 
-		Array.from(this.container.querySelectorAll('nav a')).map(a => {if(a.href == window.location.href){a.classList.add('selected')}})	
+		Array.from(this.container.querySelectorAll('nav a')).map(a => a.href == window.location.href && a.classList.add('selected'));
 
 		if(!which_class) {
 			window.location.href = this.container.querySelector('nav a').href;
@@ -29,18 +29,18 @@ window.datasets = class Datasets extends SettingPage {
 
 		Datasets.container = container.querySelector('.datasets-ui');
 		Datasets.container.classList.remove('hidden');
-		Setting_Dataset.form_container = Datasets.container.querySelector('section#form');
-		Setting_Dataset.form = Setting_Dataset.form_container.querySelector('form');
+		SettingsDataset.form_container = Datasets.container.querySelector('section#form');
+		SettingsDataset.form = SettingsDataset.form_container.querySelector('form');
 
 		for(const data of MetaData.categories.values()) {
-			Setting_Dataset.form.category_id.insertAdjacentHTML('beforeend',`
+			SettingsDataset.form.category_id.insertAdjacentHTML('beforeend',`
 				<option value="${data.category_id}">${data.name}</option>
 			`);
 		}
 
-		Datasets.container.querySelector('section#list #add-datset').on('click', () => Setting_Dataset.add());
+		Datasets.container.querySelector('section#list #add-datset').on('click', () => SettingsDataset.add(this));
 
-		Datasets.container.querySelector('section#form #cancel-form').on('click', () => {
+		SettingsDataset.form_container.querySelector('#cancel-form').on('click', () => {
 			Sections.show('list');
 		});
 	}
@@ -49,63 +49,68 @@ window.datasets = class Datasets extends SettingPage {
 
 		const response = await API.call('datasets/list');
 
-		Datasets.list = new Map;
+		this.list = new Map;
 
 		for(const data of response)
-			Datasets.list.set(data.id, new Setting_Dataset(data, this));
+			this.list.set(data.id, new SettingsDataset(data, this));
 
-		Datasets.render();
+		await this.render();
 	}
 
-	static render() {
+	async render() {
 
 		const container = Datasets.container.querySelector('#list table tbody')
 		container.textContent = null;
-		for(const dataset of Datasets.list.values()){
+		
+		if(!this.list.size)
+			container.innerHTML = '<div class="NA">No rows found :(</div>'
+
+		for(const dataset of this.list.values()){
 			container.appendChild(dataset.row);
 		}
 
-		Sections.show('list');
+		await Sections.show('list');
 	}
 }
 
-class Setting_Dataset {
+class SettingsDataset {
 
-	constructor(datset, datsets) {
-		for(const key in datset)
-			this[key] = datset[key];
+	constructor(dataset, datasets) {
+
+		for(const key in dataset)
+			this[key] = dataset[key];
 
 		this.datasets = datasets;
 	}
 
-	static async insert(e) {
+	static add(datasets) {
+
+		SettingsDataset.form_container.querySelector('h1').textContent = 'Add new Dataset';
+		SettingsDataset.form.reset();
+
+		SettingsDataset.form.removeEventListener('submit', SettingsDataset.submitListener);
+
+		SettingsDataset.form.on('submit', SettingsDataset.submitListener = e => SettingsDataset.insert(e, datasets));
+
+		Sections.show('form');
+
+		SettingsDataset.form.focus();
+	}
+
+	static async insert(e, datasets) {
 
 		e.preventDefault();
 
 		const options = {
 			method: 'POST',
-			form: new FormData(Setting_Dataset.form),
+			form: new FormData(SettingsDataset.form),
 		}
 
 		const response = await API.call('datasets/insert', {}, options);
 
-		await this.datasets.load();
+		await datasets.load();
 
-		await Datasets.list.get(response.insertIdi).edit();
-	}
-
-	static add() {
-
-		Setting_Dataset.form_container.querySelector('h1').textContent = 'Add new Setting_Dataset';
-		Setting_Dataset.form.reset();
-
-		Setting_Dataset.form.removeEventListener('submit', Setting_Dataset.submitListener);
-
-		Setting_Dataset.form.on('submit', Setting_Dataset.submitListener = e => Setting_Dataset.insert(e));
-
-		Sections.show('form');
-
-		Setting_Dataset.form.focus();
+		await datasets.list.get(response.insertId).edit();
 	}
 
 	get row() {
@@ -133,17 +138,17 @@ class Setting_Dataset {
 
 	async edit() {
 
-		Setting_Dataset.form_container.querySelector('h1').textContent = 'Edit ' + this.name;
-		Setting_Dataset.form.name.value = this.name;
+		SettingsDataset.form_container.querySelector('h1').textContent = 'Edit ' + this.name;
+		SettingsDataset.form.reset();
 
-		Array.from(Setting_Dataset.form.category_id.querySelectorAll('option')).map(o => {if(o.value == this.category_id) o.selected = true});
+		SettingsDataset.form.name.value = this.name;
+		SettingsDataset.form.category_id.value = this.category_id;
+		SettingsDataset.form.query_id.value = this.query_id;
 
-		Setting_Dataset.form.query_id.value = this.query_id;
+		SettingsDataset.form.removeEventListener('submit', SettingsDataset.submitListener);
+		SettingsDataset.form.on('submit', SettingsDataset.submitListener = e => this.update(e));
 
-		Setting_Dataset.form.removeEventListener('submit', Setting_Dataset.submitListener);
-		Setting_Dataset.form.on('submit', Setting_Dataset.submitListener = e => this.update(e));
-
-		Sections.show('form');
+		await Sections.show('form');
 	}
 
 	async update(e) {
@@ -156,7 +161,7 @@ class Setting_Dataset {
 
 		const options = {
 			method: 'POST',
-			form: new FormData(Setting_Dataset.form),
+			form: new FormData(SettingsDataset.form),
 		}
 
 		await API.call('datasets/update', parameter, options);
@@ -168,7 +173,7 @@ class Setting_Dataset {
 
 	async delete() {
 
-		if(!Confirm('Are you sure?'))
+		if(!confirm('Are you sure?'))
 			return;
 
 		const options = {
@@ -179,5 +184,6 @@ class Setting_Dataset {
 		}
 
 		await API.call('datasets/delete', parameter, options);
+		await this.datasets.load();
 	}
 }

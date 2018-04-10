@@ -18,7 +18,7 @@ main {
 			text-decoration: none;
 		}
 		main > nav a.selected {
-		background: var(--color-secondary);
-		color: var(--color-secondary-text);
-		box-shadow: inset 10px 0px 0 var(--color-accent);
-	}
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
+			box-shadow: inset 10px 0px 0 var(--color-accent);
+		}
