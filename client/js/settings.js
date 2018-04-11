@@ -112,6 +112,54 @@ Settings.list.set('datasets', class Datasets extends SettingPage {
 
 });
 
+Settings.list.set('privileges', class Datasets extends SettingPage {
+
+    get name() {
+        return 'Privileges';
+    }
+
+    setup() {
+
+        this.container = this.page.querySelector('.privilege-page');
+        this.form = this.container.querySelector('section#privilege-form form');
+
+        this.container.querySelector('section#privileges-list #add-privilege').on('click', () => SettingsPrivilege.add(this));
+
+        this.container.querySelector('#privileges-form #cancel-form').on('click', () => {
+            Sections.show('privileges-list');
+        });
+    }
+
+    async load() {
+
+        const response = await API.call('privileges/list');
+
+        this.list = new Map;
+
+        for(const data of response)
+            this.list.set(data.id, new SettingsPrivilege(data, this));
+
+        await this.render();
+    }
+
+    async render() {
+
+        const container = this.container.querySelector('#privileges-list table tbody')
+        container.textContent = null;
+
+        if(!this.list.size)
+            container.innerHTML = '<div class="NA">No rows found :(</div>'
+
+        for(const dataset of this.list.values()){
+            container.appendChild(dataset.row);
+        }
+
+        await Sections.show('privileges-list');
+    }
+
+
+});
+
 class SettingsDataset {
 
 	constructor(dataset, datasets) {
@@ -229,4 +277,122 @@ class SettingsDataset {
 		await API.call('datasets/delete', parameter, options);
 		await this.datasets.load();
 	}
+}
+
+
+class SettingsPrivilege {
+
+    constructor(privilege, privileges) {
+
+        for(const key in privilege)
+            this[key] = privilege[key];
+
+        this.privileges = privileges;
+    }
+
+    static add(privileges) {
+
+        privileges.container.querySelector('#privileges-form h1').textContent = 'Add new Privileges';
+        privileges.form.reset();
+
+        privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
+
+        privileges.form.on('submit', SettingsPrivilege.submitListener = e => SettingsPrivilege.insert(e, privileges));
+
+        Sections.show('privileges-form');
+
+        privileges.form.focus();
+    }
+
+    static async insert(e, privileges) {
+
+        e.preventDefault();
+
+        const options = {
+            method: 'POST',
+            form: new FormData(privileges.form),
+        }
+
+        const response = await API.call('privileges/insert', {}, options);
+
+        await privileges.load();
+
+        await privileges.list.get(response.insertId).edit();
+    }
+
+    get row() {
+
+        if(this.container)
+            return this.container;
+
+        this.container = document.createElement('tr');
+
+        this.container.innerHTML = `
+			<td>${this.id}</td>
+			<td>${this.name}</td>
+			<td>${this.is_admin}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+        this.container.querySelector('.green').on('click', () => this.edit());
+
+        this.container.querySelector('.red').on('click', () => this.delete());
+
+        return this.container;
+    }
+
+    async edit() {
+
+        this.privileges.container.querySelector('#privileges-form h1').textContent = 'Edit ' + this.name;
+        this.privileges.form.reset();
+
+        this.privileges.form.name.value = this.name;
+        this.privileges.form.is_admin.value = this.is_admin;
+
+        this.privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
+        this.privileges.form.on('submit', SettingsPrivilege.submitListener = e => this.update(e));
+
+        await Sections.show('privileges-form');
+    }
+
+    async update(e) {
+
+        e.preventDefault();
+
+        const parameter = {
+            id: this.id,
+        }
+
+        const options = {
+            method: 'POST',
+            form: new FormData(this.privileges.form),
+        }
+
+        await API.call('privileges/update', parameter, options);
+
+        await this.privileges.load();
+
+        this.privileges.list.get(this.id).edit();
+
+        await Sections.show('privileges-form');
+
+        this.privileges.list.get(this.id).edit();
+    }
+
+    async delete() {
+
+        if(!confirm('Are you sure?'))
+            return;
+
+        const options = {
+            method: 'POST',
+        }
+        const parameter = {
+            id: this.id,
+        }
+
+        await API.call('privileges/delete', parameter, options);
+        await this.privileges.load();
+    }
 }

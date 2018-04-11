@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "pm2 start ./bin/www --name allspark --watch; pm2 logs allspark;",
+    "start": "NODE_ENV='env' pm2 start ./bin/www --name allspark --watch; pm2 logs allspark;",
     "stop": "pm2 stop allspark"
   },
   "dependencies": {
