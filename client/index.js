@@ -805,8 +805,8 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 		
 		<nav></nav>
 
-		<div class="setting-page datasets-ui hidden"><div></div>
-			<section class="section" id="list">
+		<div class="setting-page datasets-page hidden">
+			<section class="section" id="datasets-list">
 
 				<h1>Datasets Manage</h1>
 
@@ -829,7 +829,7 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 				</table>
 			</section>
 
-			<section class="section" id="form">
+			<section class="section" id="datasets-form">
 
 				<h1></h1>
 
