@@ -157,7 +157,10 @@ class report extends API {
 			try {
 
 				result = JSON.parse(redisData);
-				result.cached = true;
+				result.cached = {
+					status: true,
+					age: Date.now() - result.cached.store_time
+				};
 				return result;
 			}
 			catch (e) {
@@ -172,12 +175,12 @@ class report extends API {
 			return e;
 		}
 
-		result.cached = false;
-
 		const EOD = new Date();
 		EOD.setHours(23, 59, 59, 999);
 
+		result.cached = {store_time: Date.now()};
 		await commonFun.redisStore(hash, JSON.stringify(result), Math.round(EOD.getTime() / 1000));
+		result.cached = {status: false};
 
 		return result;
 	}
