@@ -116,7 +116,7 @@ router.get('/login/reset', (req, res) => {
 	`));
 });
 
-app.get('/user/profile/edit', (req, res) => {
+router.get('/user/profile/edit', (req, res) => {
 	const template = new Template;
 	template.scripts.push('/js/user/profile/edit.js');
 
