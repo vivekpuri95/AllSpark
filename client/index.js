@@ -118,6 +118,40 @@ app.get('/login/reset', (req, res) => {
 	`));
 });
 
+app.get('/user/profile/edit', (req, res) => {
+	const template = new Template;
+	template.scripts.push('/js/user/profile/edit.js');
+
+	res.send(template.body(`
+		<section class="section" id="form">
+			<form class="block form">
+
+				<label>
+					<span>Old Password</span>
+					<input type="password" name="old_password" required>
+				</label>
+
+				<label>
+					<span>New Password</span>
+					<input type="password" name="new_password" required>
+				</label>
+
+				<label>
+					<span></span>
+					<button class="submit">
+						<i class="fa fa-save"></i>
+						Change
+					</button>
+				</label>
+
+				<label>
+					<div class="notice hidden" id="message"></div>
+				</label>
+			</form>
+		</section>
+	`));
+});
+
 app.get('/user/profile/:id?', (req, res) => {
 
 	const template = new Template;
@@ -127,7 +161,13 @@ app.get('/user/profile/:id?', (req, res) => {
 
 	res.send(template.body(`
 		<section id="profile">
-			<h1>Profile details</h1>
+			<h1>
+				Profile details
+				<a href="/user/profile/edit">
+					<i class="fa fa-edit"></i>
+					Edit
+				</a>
+			</h1>
 			<div class="profile-details"></div>
 			<div class="privileges">
 				<label><span>Privileges:&nbsp;</span>
@@ -861,39 +901,6 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 	`));
 });
 
-app.get('/user/profile/settings', (req, res)=>{
-    const template = new Template;
-    template.scripts.push('/js/user/profile/settings.js');
-
-    res.send(template.body(`
-		<section class="section" id="form">
-			<form class="block form">
-
-				<label>
-					<span>Old Password</span>
-					<input type="password" name="old_password" required>
-				</label>
-
-				<label>
-					<span>New Password</span>
-					<input type="password" name="new_password" required>
-				</label>
-
-				<label>
-					<span></span>
-					<button class="submit">
-						<i class="fa fa-save"></i>
-						Change
-					</button>
-				</label>
-
-				<label>
-					<div class="notice hidden" id="message"></div>
-				</label>
-			</form>
-		</section>
-	`));
-});
 
 class Template {
 
