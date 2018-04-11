@@ -1227,7 +1227,7 @@ class DataSourceColumn {
 					
 					<label>
 						<span>Color</span>
-						<input type="text" name="color" >
+						<input type="color" name="color" >
 					</label>
 					
 					<label>
@@ -1362,23 +1362,23 @@ class DataSourceColumn {
 		var parameter = document.createElement('div');
 
 		parameter.innerHTML = `
-				<label>
-					<span>Placeholder</span>
-					<input type="text" name="placeholder" value="${params.placeholder || ''}">
-				</label>
-				<label>
-					<span>Type</span>
-					<input type="text" name="type" value="${params.type || ''}">
-				</label>
-				<label>
-					<span>Value</span>
-					<input type="text" name="value" value="${params.value || ''}">
-				</label>
-				<label>
-					<span>&nbsp</span>
-					<button type="button" class="remove-parameters delete"><i class="far fa-trash-alt"></i></button>
-				</label>
-			`;
+			<label>
+				<span>Placeholder</span>
+				<input type="text" name="placeholder" value="${params.placeholder || ''}">
+			</label>
+			<label>
+				<span>Type</span>
+				<input type="text" name="type" value="${params.type || ''}">
+			</label>
+			<label>
+				<span>Value</span>
+				<input type="text" name="value" value="${params.value || ''}">
+			</label>
+			<label>
+				<span>&nbsp</span>
+				<button type="button" class="remove-parameters delete"><i class="far fa-trash-alt"></i></button>
+			</label>
+		`;
 		parameter.classList.add('parameters');
 		this.form.querySelector('.params-list').appendChild(parameter);
 
