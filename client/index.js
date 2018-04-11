@@ -1,19 +1,17 @@
 "use strict";
 
 const express = require('express');
+const router = express.Router();
 const compression = require('compression');
-const app = express();
 const config = require('config');
-
-const port = config.has('port') ? config.get('port').get('client') : 8081;
 
 const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
-app.use(compression());
+router.use(compression());
 
-app.use(express.static('./client'));
+router.use(express.static('./client'));
 
-app.get('/login', (req, res) => {
+router.get('/login', (req, res) => {
 
 	const template = new Template;
 
@@ -51,7 +49,7 @@ app.get('/login', (req, res) => {
 	`));
 });
 
-app.get('/login/forgot', (req, res) => {
+router.get('/login/forgot', (req, res) => {
 
 	const template = new Template;
 
@@ -84,7 +82,7 @@ app.get('/login/forgot', (req, res) => {
 	`));
 });
 
-app.get('/login/reset', (req, res) => {
+router.get('/login/reset', (req, res) => {
 
 	const template = new Template;
 
@@ -118,7 +116,41 @@ app.get('/login/reset', (req, res) => {
 	`));
 });
 
-app.get('/user/profile/:id?', (req, res) => {
+router.get('/user/profile/edit', (req, res) => {
+	const template = new Template;
+	template.scripts.push('/js/user/profile/edit.js');
+
+	res.send(template.body(`
+		<section class="section" id="form">
+			<form class="block form">
+
+				<label>
+					<span>Old Password</span>
+					<input type="password" name="old_password" required>
+				</label>
+
+				<label>
+					<span>New Password</span>
+					<input type="password" name="new_password" required>
+				</label>
+
+				<label>
+					<span></span>
+					<button class="submit">
+						<i class="fa fa-save"></i>
+						Change
+					</button>
+				</label>
+
+				<label>
+					<div class="notice hidden" id="message"></div>
+				</label>
+			</form>
+		</section>
+	`));
+});
+
+router.get('/user/profile/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -127,7 +159,13 @@ app.get('/user/profile/:id?', (req, res) => {
 
 	res.send(template.body(`
 		<section id="profile">
-			<h1>Profile details</h1>
+			<h1>
+				Profile details
+				<a href="/user/profile/edit">
+					<i class="fa fa-edit"></i>
+					Edit
+				</a>
+			</h1>
 			<div class="profile-details"></div>
 			<div class="privileges">
 				<label><span>Privileges:&nbsp;</span>
@@ -159,7 +197,7 @@ app.get('/user/profile/:id?', (req, res) => {
 	`))
 });
 
-app.get('/:type(dashboard|report)/:id?', (req, res) => {
+router.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -232,7 +270,7 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 	`));
 });
 
-app.get('/dashboards/:id?', (req, res) => {
+router.get('/dashboards/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -305,7 +343,7 @@ app.get('/dashboards/:id?', (req, res) => {
 	`));
 });
 
-app.get('/reports/:id?', (req, res) => {
+router.get('/reports/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -604,7 +642,7 @@ app.get('/reports/:id?', (req, res) => {
 	`));
 });
 
-app.get('/users/:id?', (req, res) => {
+router.get('/users/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -731,7 +769,7 @@ app.get('/users/:id?', (req, res) => {
 	`));
 });
 
-app.get('/connections/:id?', (req, res) => {
+router.get('/connections/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -794,7 +832,7 @@ app.get('/connections/:id?', (req, res) => {
 	`));
 });
 
-app.get('/settings/:tab?/:id?', (req, res) => {
+router.get('/settings/:tab?/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -802,48 +840,65 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 	template.scripts.push('/js/settings.js');
 
 	res.send(template.body(`
-		<nav>
-			<a>Accounts</a>
-			<a>Privileges</a>
-			<a>Roles</a>
-			<a>DataSets</a>
-		</nav>
+
+		<nav></nav>
+
+		<div class="setting-page datasets-page hidden">
+			<section class="section" id="datasets-list">
+
+				<h1>Datasets Manage</h1>
+
+				<header class="toolbar">
+					<button id="add-datset"><i class="fa fa-plus"></i> Add New Dataset</button>
+				</header>
+
+				<table class="block">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Category</th>
+							<th>Query id</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+
+			<section class="section" id="datasets-form">
+
+				<h1></h1>
+
+				<header class="toolbar">
+					<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+					<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
+				</header>
+
+				<form class="block form" id="user-form">
+
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" required>
+					</label>
+
+					<label>
+						<span>Category</span>
+						<select name="category_id"></select>
+					</label>
+
+					<label>
+						<span>Query Id</span>
+						<input type="number" name="query_id">
+					</label>
+				</form>
+			</section>
+		</div>
+
 	`));
 });
 
-app.get('/user/profile/settings', (req, res)=>{
-    const template = new Template;
-    template.scripts.push('/js/user/profile/settings.js');
-
-    res.send(template.body(`
-		<section class="section" id="form">
-			<form class="block form">
-
-				<label>
-					<span>Old Password</span>
-					<input type="password" name="old_password" required>
-				</label>
-
-				<label>
-					<span>New Password</span>
-					<input type="password" name="new_password" required>
-				</label>
-
-				<label>
-					<span></span>
-					<button class="submit">
-						<i class="fa fa-save"></i>
-						Change
-					</button>
-				</label>
-
-				<label>
-					<div class="notice hidden" id="message"></div>
-				</label>
-			</form>
-		</section>
-	`));
-});
 
 class Template {
 
@@ -868,11 +923,8 @@ class Template {
 					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="https://lbxoezeogn43sov13789n8p9-wpengine.netdna-ssl.com/img/favicon.png" />
 
-					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'?'+checksum+'">').join('')}
-					${this.scripts.map(s => '<script src="'+s+'?'+checksum+'"></script>').join('')}
-					<script>
-						PORT = ${JSON.stringify(config.get('port'))}
-					</script>
+					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + checksum + '">').join('')}
+					${this.scripts.map(s => '<script src="' + s + '?' + checksum + '"></script>').join('')}
 				</head>
 				<body>
 					<div id="ajax-working"></div>
@@ -896,14 +948,4 @@ class Template {
 	}
 }
 
-if(!port)
-	return console.error('Port not provided!');
-
-app.listen(port, () => console.info(`
-	**********************
-	Server Started:
-		What: Client
-		Environment: ${app.get('env')}
-		Port: ${port}
-	**********************
-`));
+module.exports = router;

@@ -56,7 +56,7 @@ class Page {
 
 		const user_name = document.querySelector('body > header .user-name');
 
-		if(window.user)
+		if(user.id)
 			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
 
 		document.querySelector('body > header .logout').on('click', () => User.logout());
@@ -135,8 +135,6 @@ class Account {
 
 	static async fetch() {
 
-		window.account = {APIHost: `//${window.location.hostname}:${PORT.server}/`}
-
 		try {
 
 			return await API.call('accounts/get');
@@ -150,8 +148,6 @@ class Account {
 
 		for(const key in account)
 			this[key] = account[key];
-
-		this.APIHost = `//${this.url}:${PORT.server}/`;
 
 		this.settings = new Map;
 
@@ -344,9 +340,6 @@ class API extends AJAX {
 	 */
 	static async call(endpoint, parameters = {}, options = {}) {
 
-		if(!account)
-			throw new Page.exception('Account not found!');
-
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
@@ -363,7 +356,7 @@ class API extends AJAX {
 		if(options.form)
 			API.loadFormData(parameters, options.form);
 
-		endpoint = account.APIHost + 'v2/' + endpoint;
+		endpoint = '/api/v2/' + endpoint;
 
 		const response = await AJAX.call(endpoint, parameters, options);
 
@@ -621,7 +614,7 @@ class DataSource {
 	}
 
 	async fetch(parameters = {}) {
-
+		const filterPrefix = "param_";
 		parameters = new URLSearchParams(parameters);
 
 		parameters.set('query_id', this.query_id);
@@ -629,18 +622,15 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
-			if(parameters.has(filter.placeholder))
-				continue;
-
 			if(filter.dataset && filter.dataset.query_id) {
 
 				for(const input of filter.label.querySelectorAll('input:checked'))
-					parameters.append(filter.placeholder, input.value);
+					parameters.append(filterPrefix + filter.placeholder, input.value);
 
 				continue;
 			}
 
-			parameters.set(filter.placeholder, this.filters.form.elements[filter.placeholder].value);
+			parameters.set(filterPrefix + filter.placeholder, this.filters.form.elements[filter.placeholder].value);
 		}
 
 		let response = null;
@@ -708,7 +698,7 @@ class DataSource {
 			<form class="filters form toolbar hidden"></form>
 
 			<div class="columns"></div>
-			<div class="drilldown"></div>
+			<div class="drilldown hidden"></div>
 
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
@@ -1012,7 +1002,7 @@ class DataSourceRow extends Map {
 					this.skip = true;
 			}
 
-			this.set(key, row[key] || '');
+			this.set(key, row[key] || 0);
 		}
 
 		// Sort the row by position of their columns in the source's columns map
@@ -1612,6 +1602,8 @@ class DataSourceColumn {
 
 		parent.removeChild(this.source.container);
 		parent.appendChild(report.container);
+
+		report.container.querySelector('.drilldown').classList.remove('hidden');
 
 		report.visualizations.selected.load();
 	}
@@ -2683,7 +2675,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		this.x.rangePoints([0, this.width], 0.1, 0);
 
 		const
-			tickNumber = this.width < 400 ? 3 : 6,
+			tickNumber = this.width < 400 ? 3 : 5,
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -2855,7 +2847,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
-			tickNumber = this.width < 400 ? 3 : 6,
+			tickNumber = this.width < 400 ? 3 : 5,
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3002,7 +2994,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
-			tickNumber = this.width < 400 ? 3 : 6,
+			tickNumber = this.width < 400 ? 3 : 5,
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3155,7 +3147,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		this.x.rangePoints([0, this.width], 0.1, 0);
 
 		const
-			tickNumber = this.width < 400 ? 3 : 6,
+			tickNumber = this.width < 400 ? 3 : 5,
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval)),
 
@@ -3630,7 +3622,7 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 		const newResponse = {};
 
 		for(const row of this.source.originalResponse.data)
-			newResponse[row.label] = row.value;
+			newResponse[row.name] = row.value;
 
 		this.source.originalResponse.data = [newResponse];
 

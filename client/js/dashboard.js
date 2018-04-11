@@ -533,15 +533,15 @@ class Dashboard {
 
 	get menuItem() {
 
-		if(this.container)
-			return this.container;
+        if (this.container)
+            return this.container;
 
 		function getReports(dashboard) {
 
-			const reports = Array.from(dashboard.reports());
+			let reports = Array.from(dashboard.reports());
 
 			for(const child of dashboard.children)
-				reports.concat(getReports(child));
+                reports = reports.concat(getReports(child));
 
 			return reports;
 		}
@@ -551,6 +551,9 @@ class Dashboard {
 			icon = this.icon ? `<img src="${this.icon}" height="20" width="20">` : '';
 
 		container.classList.add('item');
+
+        if(!getReports(this).length && !this.page.user.privileges.has('report'))
+            container.classList.add('hidden');
 
 		container.innerHTML = `
 			<div class="label">
@@ -575,6 +578,7 @@ class Dashboard {
 				this.load();
 			}
 		});
+
 
 		for(const child of this.children)
 			submenu.appendChild(child.menuItem);

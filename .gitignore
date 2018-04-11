@@ -3,3 +3,6 @@
 config/*
 !config/sample.json
 !config/db-schema.sql
+node_modules/*
+*.iml
+package-lock.json

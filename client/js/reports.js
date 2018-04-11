@@ -606,8 +606,11 @@ class Report {
 			const response = await API.call('reports/engine/report', parameters, options) || [];
 
 			content.rowCount.innerHTML = `
-				Rows: <strong>${Format.number(response ? response.data.length : 0)}</strong>,
-				Columns: <strong>${Format.number(response ? Object.keys(response.data[0]).length : 0)}</strong>
+				<span>Execution Time: <strong>${Format.number(response.runtime / 1000)}s</strong></span>
+				<span>Cached: <strong>${response.cached.status ? 'Yes' : 'No'}</strong></span>
+				<span>Cache Age: <strong>${response.cached.status ? Format.number(response.cached.age / 1000 / 60 / 60) : '0'}h</strong></span>
+				<span>Rows: <strong>${Format.number(response ? response.data.length : 0)}</strong></span>
+				<span>Columns: <strong>${Format.number(response ? Object.keys(response.data[0]).length : 0)}</strong></span>
 			`;
 
 			content.json.innerHTML = `<code>${JSON.stringify(response.data, 0, 1)}</code>`;

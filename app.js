@@ -7,7 +7,8 @@ const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 
-const index = require('./routes/index');
+const index = require('./server/routes/index');
+const client = require('./client/index');
 
 const app = express();
 
@@ -24,41 +25,41 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-app.use('/', index);
+app.use('/api/', index);
+app.use('/', client);
 
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-    const err = new Error('Not Found');
-    err.status = 404;
-    next(err);
+	const err = new Error('Not Found');
+	err.status = 404;
+	next(err);
 });
-
 
 // error handler
 app.use(function (err, req, res, next) {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
+	// set locals, only providing error in development
+	res.locals.message = err.message;
+	res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-    console.error('******error request****\n', {
-        url: req.originalUrl,
-        method: req.method,
-        message: err.message,
-        status: err.status,
-        body: JSON.stringify(req.body),
-        query: JSON.stringify(req.query),
-        params: JSON.stringify(req.params),
-    });
+	console.error('******error request****\n', {
+		url: req.originalUrl,
+		method: req.method,
+		message: err.message,
+		status: err.status,
+		body: JSON.stringify(req.body),
+		query: JSON.stringify(req.query),
+		params: JSON.stringify(req.params),
+	});
 
-    console.error("******error*****\n", err);
+	console.error("******error*****\n", err);
 
-    res.status(err.status || 500);
+	res.status(err.status || 500);
 
-    res.json({
-        status: false,
-        message: err.message,
-    });
+	res.json({
+		status: false,
+		message: err.message,
+	});
 });
 
 module.exports = app;

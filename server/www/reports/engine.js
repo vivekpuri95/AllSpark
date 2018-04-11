@@ -1,96 +1,73 @@
 const API = require("../../utils/api");
 const commonFun = require('../../utils/commonFunctions');
 const promisify = require('util').promisify;
-const moment = require('moment');
 //const BigQuery = require('../../www/bigQuery').BigQuery;
+const constants = require("../../utils/constants");
 const crypto = require('crypto');
 const request = require("request");
 const auth = require('../../utils/auth');
 const requestPromise = promisify(request);
 
+// prepare the raw data
 class report extends API {
 
-	async report() {
+	async load(reportObj, filterList) {
 
-		this.queryId = this.request.body.query_id;
+		if (reportObj && filterList) {
 
-		if (!this.queryId)
-			throw new API.Exception(404, 'Report not found! :(');
-
-		const fetchedData = await this.fetch();
-
-		this.assert(!fetchedData.error,);
-		if (fetchedData.error) {
-
-			return fetchedData;
+			this.reportObj = reportObj;
+			this.filterList = filterList;
+			this.reportId = reportObj.query_id;
 		}
-
-		const authentication = await auth.report(this.query, this.user);
-
-		this.assert(!authentication.error, authentication.message, 401);
-
-		if (this.query.source.toLowerCase() === 'query') {
-
-			return await new query(this.query, this.filters, this.request).execute();
-		}
-
-		else if (this.query.source.toLowerCase() === 'api') {
-
-			return await new api(this.query, this.filters, this.request).execute();
-		}
-
-		else if (this.query.source.toLowerCase() === 'big_query') {
-
-			return await new bigquery().execute();
-		}
-
-		throw new API.Exception(400, 'Unknown Data Source! :(');
-	}
-
-	async fetch() {
 
 		let reportDetails = [
-			this.mysql.query(`SELECT
-              q.*,
-              IF(user_id IS NULL, 0, 1) AS flag
-            FROM
-                tb_query q
-            LEFT JOIN
-                 tb_user_query uq ON
-                 uq.query_id = q.query_id
-                 AND user_id = ?
-            WHERE
-                q.query_id = ?
-                AND is_enabled = 1
-                AND is_deleted = 0
-                AND account_id = ?`, [this.user.user_id, this.queryId, this.account.account_id]),
 
-			this.mysql.query(`select * from tb_query_filters where query_id = ?`, [this.queryId])
+			this.mysql.query(`
+				SELECT
+				  q.*,
+				  IF(user_id IS NULL, 0, 1) AS flag,
+				  c.type
+				FROM
+					tb_query q
+				LEFT JOIN
+					 tb_user_query uq ON
+					 uq.query_id = q.query_id
+					 AND user_id = ?
+				JOIN
+					tb_credentials c
+					ON q.connection_name = c.id
+				WHERE
+					q.query_id = ?
+					AND is_enabled = 1
+					AND is_deleted = 0
+					AND q.account_id = ?
+					AND c.account_id = ?
+					AND c.status = 1`,
+
+				[this.user.user_id, this.reportId, this.account.account_id, this.account.account_id],
+			),
+
+			this.mysql.query(`select * from tb_query_filters where query_id = ?`, [this.reportId])
 		];
 
 		reportDetails = await Promise.all(reportDetails);
-		for (const f of reportDetails[1]) {
+		this.assert(reportDetails[0].length, "Report Id: " + this.reportId + " not found");
 
-			f.value = this.request.body[f.placeholder] || f.default_value;
-		}
-
-		this.query = reportDetails[0][0];
+		this.reportObj = reportDetails[0][0];
 		this.filters = reportDetails[1] || [];
 
-		if (!reportDetails[0][0]) {
-			return {
-				error: true,
-				message: "no report found"
-			}
-		}
-
-		return {
-			error: false,
-		}
-
+		this.reportObj.query = this.request.body.query || this.reportObj.query;
 	}
 
-	applyFiltersCommon() {
+	async authenticate() {
+
+		const authResponse = await auth.report(this.reportObj, this.user);
+		this.assert(!authResponse.error, "user not authorised to get the report");
+	}
+
+	prepareFiltersForOffset() {
+
+		//filter fields required = offset, placeholder, default_value
 
 		const types = [
 			'string',
@@ -109,7 +86,7 @@ class report extends API {
 			if (types[filter.type] == 'date') {
 
 				filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-				filter.value = this.request.body[filter.placeholder] || filter.default_value;
+				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
 				if (filter.value === new Date().toISOString().slice(0, 10)) {
 					this.has_today = true;
@@ -122,7 +99,7 @@ class report extends API {
 				const date = new Date();
 
 				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
-				filter.value = this.request.body[filter.placeholder] || filter.default_value;
+				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
 				if (filter.value === new Date().toISOString().slice(0, 7)) {
 
@@ -130,39 +107,120 @@ class report extends API {
 				}
 			}
 		}
+
+		for (const filter of this.filters) {
+
+			filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+		}
 	}
 
-	createRedisKey() {
-		this.redisKey = `Reporting#Engine#query_id:${this.query.query_id}#md5:${this.hash}`;
-	}
+	async report(queryId, reportObj, filterList) {
 
-	async execute() {
+		this.reportId = this.request.body.query_id || queryId;
+		this.reportObjStartTime = Date.now();
+		const forcedRun = this.request.body.cached;
 
-		await this.applyFiltersCommon();
 
-		this.applyFilters();
+		await this.load(reportObj, filterList);
 
-		await this.fetchAndStore();
+		await this.authenticate();
 
-		if (!this.request.body.download && this.result && this.query.source.toLowerCase() === 'query')
-			this.result.data = this.result.data.slice(0, 10000);
+		this.prepareFiltersForOffset();
 
-		return this.result;
+		let preparedRequest;
+
+		switch (this.reportObj.type.toLowerCase()) {
+			case "mysql":
+				preparedRequest = new MySQL(this.reportObj, this.filters, this.request.body.token);
+				break;
+			case "api":
+				preparedRequest = new APIRequest(this.reportObj, this.filters, this.request.body.token);
+				break;
+			case "pgsql":
+				preparedRequest = new Postgres(this.reportObj, this.filters, this.request.body.token);
+				break;
+			default:
+				this.assert(false, "Report Type " + this.reportObj.type.toLowerCase() + " does not exist", 404);
+		}
+
+		preparedRequest = preparedRequest.finalQuery;
+
+		const engine = new ReportEngine(preparedRequest);
+
+		const hash = "Report#report_id:" + this.reportObj.query_id + "#hash:" + engine.hash + "#";
+		const redisData = await commonFun.redisGet(hash);
+
+		let result;
+
+		if (!forcedRun && this.reportObj.is_redis && redisData && !this.has_today) {
+
+			try {
+
+				result = JSON.parse(redisData);
+
+				await engine.log(this.reportObj.query_id, result.query,
+					Date.now() - this.reportObjStartTime, this.reportObj.type,
+					this.user.user_id, 1, JSON.stringify({filters: this.filters})
+				);
+
+				result.cached = {
+					status: true,
+					age: Date.now() - result.cached.store_time
+				};
+				return result;
+			}
+			catch (e) {
+				throw new API.Exception(500, "Invalid Redis Data! :(");
+			}
+		}
+
+		try {
+
+			result = await engine.execute();
+		}
+		catch (e) {
+
+			throw new API.Exception(400, e);
+		}
+
+		await engine.log(this.reportObj.query_id, result.query, result.runtime,
+			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters})
+		);
+
+		const EOD = new Date();
+		EOD.setHours(23, 59, 59, 999);
+
+		result.cached = {store_time: Date.now()};
+		await commonFun.redisStore(hash, JSON.stringify(result), Math.round(EOD.getTime() / 1000));
+		result.cached = {status: false};
+
+		return result;
 	}
 }
 
-class query extends report {
 
-	constructor(query, filters, request) {
-		super();
-		this.query = query;
+class MySQL {
+
+	constructor(reportObj, filters = [], token = null) {
+
+		this.reportObj = reportObj;
 		this.filters = filters;
-		this.request = request
+		this.token = token;
 	}
 
-	applyFilters() {
+	get finalQuery() {
 
-		this.query.query = this.query.query
+		this.prepareQuery();
+
+		return {
+			request: [this.reportObj.query, this.filterList || [], this.reportObj.connection_name,],
+			type: "mysql"
+		};
+	}
+
+	prepareQuery() {
+
+		this.reportObj.query = this.reportObj.query
 			.replace(/--.*(\n|$)/g, "")
 			.replace(/\s+/g, ' ');
 
@@ -172,19 +230,17 @@ class query extends report {
 
 			this.filterIndices[filter.placeholder] = {
 
-				indices: (commonFun.getIndicesOf(`{{${filter.placeholder}}}`, this.query.query)),
+				indices: (commonFun.getIndicesOf(`{{${filter.placeholder}}}`, this.reportObj.query)),
 				value: filter.value,
 			};
 
-			this.query.query = this.query.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "?");
-
+			this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "?");
 		}
 
-		this.hash = crypto.createHash('md5').update(this.query.query + JSON.stringify(this.filterIndices)).digest('hex');
-		this.createRedisKey();
+		this.filterList = this.makeQueryParameters();
 	}
 
-	async makeQueryParameters() {
+	makeQueryParameters() {
 
 		const filterIndexList = [];
 
@@ -200,49 +256,32 @@ class query extends report {
 		}
 
 		return (filterIndexList.sort((x, y) => x.index - y.index)).map(x => x.value) || [];
-
-	}
-
-	async fetchAndStore() {
-
-		const redisData = await commonFun.redisGet(this.redisKey);
-
-		if (this.query.is_redis && redisData && !this.has_today) {
-
-			try {
-
-				this.result = JSON.parse(redisData);
-				return;
-			}
-
-			catch (e) {
-				throw new API.Exception(500, "Invalid Redis Data! :(");
-			}
-		}
-
-		const data = await this.mysql.query(this.query.query, await this.makeQueryParameters(), this.query.connection_name);
-
-		this.result = {
-			data,
-			query: data.instance.formatted_sql,
-		};
-
-		await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
 	}
 }
 
+class APIRequest {
 
-class api extends report {
+	constructor(reportObj, filters = [], token) {
 
-	constructor(query, filters, request) {
-
-		super();
-		this.query = query;
+		this.reportObj = reportObj;
 		this.filters = filters;
-		this.request = request
+		this.token = token;
 	}
 
-	applyFilters() {
+	get finalQuery() {
+
+		this.prepareQuery();
+
+		return {
+			request: [{
+				har: this.har,
+				gzip: true,
+			}],
+			type: "api",
+		}
+	}
+
+	prepareQuery() {
 
 		const parameters = [];
 
@@ -254,17 +293,30 @@ class api extends report {
 			});
 		}
 
-		this.har = JSON.parse(this.query.url_options);
+		try {
+
+			this.har = JSON.parse(this.reportObj.url_options);
+		}
+
+		catch (e) {
+
+			const err = Error("url options is not JSON");
+			err.status = 400;
+			return err;
+		}
+
 		this.har.queryString = [];
+
 		this.har.headers = [
 			{
 				name: 'content-type',
 				value: 'application/x-www-form-urlencoded'
 			}
 		];
-		this.har.url = this.query.url;
 
-		if (this.har.method == 'GET') {
+		this.har.url = this.reportObj.url;
+
+		if (this.har.method === 'GET') {
 
 			this.har.queryString = parameters;
 		}
@@ -277,90 +329,128 @@ class api extends report {
 			};
 		}
 
-		this.hash = crypto.createHash('md5').update(JSON.stringify(this.har)).digest('hex');
-		this.createRedisKey();
-
-		if (!this.filters.filter(f => f.placeholder == 'token').length) {
+		if (!this.filters.filter(f => f.placeholder === 'token').length) {
 
 			this.har.queryString.push({
 				name: 'token',
-				value: this.request.body.token,
+				value: this.token,
 			});
 		}
 	}
+}
 
-	async fetchAndStore() {
+class Postgres {
 
-		const redisData = await commonFun.redisGet(this.redisKey);
+	constructor(reportObj, filters = [], token) {
 
-		if (this.query.is_redis && redisData && !this.has_today) {
+		this.reportObj = reportObj;
+		this.filters = filters;
+		this.token = token;
 
-			try {
+	}
 
-				this.result = JSON.parse(redisData);
-				return;
-			}
+	get finalQuery() {
 
-			catch (e) {
-				throw new API.Exception(500, "Invalid Redis Data! :(");
-			}
-		}
+		this.applyFilters();
 
-		const result = await requestPromise({
-			har: this.har,
-			gzip: true,
-		});
-
-		this.result = {
-			data: JSON.parse(result.body),
-			query: JSON.stringify(this.har, 0, 1),
+		return {
+			request: [this.reportObj.query, [], this.reportObj.connection_name,],
+			type: "pgsql",
 		};
+	}
 
-		await commonFun.redisStore(this.redisKey, JSON.stringify(this.result), parseInt(moment().endOf('day').format('X')));
+	applyFilters() {
+
+		this.reportObj.query = this.reportObj.query
+			.replace(/--.*(\n|$)/g, "")
+			.replace(/\s+/g, ' ');
+
+		for (const filter of this.filters) {
+
+			this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `'${filter.value}'`);
+		}
 	}
 }
 
-// class bigquery extends query {
-//
-//     constructor(query, filters, request) {
-//
-//         super();
-//         this.query = query;
-//         this.filters = filters;
-//         this.request = request
-//     }
-//     async fetchAndStore () {
-//
-//         const redisData = await commonFun.redisGet(this.redisKey);
-//         if(this.query.is_redis && redisData && !this.has_today) {
-//
-//             try {
-//
-//                 this.result = JSON.parse(redisData);
-//                 return;
-//             }
-//
-//             catch(e) {
-//
-//                 throw("redis data is not json, redisKey: " + this.redisKey);
-//             }
-//         }
-//
-//         const connectionData =(await this.mysql.query('select * from tb_credentials where id = ?', [this.query.connection_name]))[0];
-//
-//         if(!connectionData) {
-//             throw {
-//                 status: false,
-//                 message: "",
-//             }
-//         }
-//
-//         const fileFath = `${config.get('bigquery_files_destination')}/${this.account.name}/${this.query.connection_name}`;
-//
-//         const bq = new BigQuery
-//         this.result = BigQuery.call(this.redisKey, this.query.query);
-//
-//     }
-// }
+class ReportEngine extends API {
+
+	constructor(parameters) {
+
+		super();
+
+		ReportEngine.engines = {
+			mysql: this.mysql.query,
+			pgsql: this.pgsql.query,
+			api: requestPromise,
+		};
+
+		this.parameters = parameters;
+	}
+
+	get hash() {
+
+		return crypto.createHash('md5').update(JSON.stringify(this.parameters)).digest('hex');
+	}
+
+	async execute() {
+
+		this.executionTimeStart = Date.now();
+
+		let data = await ReportEngine.engines[this.parameters.type](...this.parameters.request);
+
+		let query;
+
+		if (["mysql", "pgsql"].includes(this.parameters.type)) {
+
+			query = data.instance ? data.instance.sql : data;
+		}
+
+		else if (this.parameters.type === "api") {
+
+			query = this.parameters.request;
+
+			data = JSON.parse(data.body);
+		}
+
+		return {
+			data: data,
+			runtime: (Date.now() - this.executionTimeStart),
+			query: query,
+		};
+	}
+
+	async log(query_id, query, executionTime, type, userId, is_redis, rows) {
+
+		try {
+
+			if(typeof query === "object") {
+
+				query = JSON.stringify(query)
+			}
+			await this.mysql.query(`
+				INSERT INTO
+					tb_report_logs
+					(
+						query_id,
+						query,
+						response_time,
+						type,
+						user_id,
+						cache,
+						rows
+					)
+				VALUES
+					(?,?,?,?,?,?,?)`,
+				[query_id, query, executionTime, type, userId, is_redis, rows],
+				"write");
+		}
+
+		catch (e) {
+
+			console.log(e);
+		}
+	}
+}
 
 exports.report = report;
+exports.ReportEngine = ReportEngine;

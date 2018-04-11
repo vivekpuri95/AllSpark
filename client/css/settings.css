@@ -5,12 +5,11 @@ main {
 	main > nav {
 		display: flex;
 		flex-direction: column;
-		background: var(--color-primary);
 		color: var(--color-primary-text);
-		border-right: 1px solid #ccc;
 	}
 		main > nav a {
 			padding: 12px 16px;
+			color: #333;
 			transition: background var(--transition-duration),
 						color var(--transition-duration);
 		}
@@ -18,4 +17,9 @@ main {
 			background: var(--color-secondary);
 			color: var(--color-secondary-text);
 			text-decoration: none;
+		}
+		main > nav a.selected {
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
+			box-shadow: inset 10px 0px 0 var(--color-accent);
 		}
