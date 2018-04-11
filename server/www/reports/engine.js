@@ -178,9 +178,9 @@ class report extends API {
 		const EOD = new Date();
 		EOD.setHours(23, 59, 59, 999);
 
-        result.cached = {store_time: Date.now()};
-        await commonFun.redisStore(hash, JSON.stringify(result), Math.round(EOD.getTime() / 1000));
-        result.cached = {status: false};
+		result.cached = {store_time: Date.now()};
+		await commonFun.redisStore(hash, JSON.stringify(result), Math.round(EOD.getTime() / 1000));
+		result.cached = {status: false};
 
 		return result;
 	}
