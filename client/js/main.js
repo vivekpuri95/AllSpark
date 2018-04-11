@@ -1399,7 +1399,6 @@ class DataSourceColumn {
 		for(const row of this.form.querySelectorAll('.parameters')) {
 			let param_json = {};
 			for (const div of row.children) {
-				console.log(div.children[1].name)
 				param_json[div.children[1].name] = div.children[1].value;
 
 			}
