@@ -170,7 +170,7 @@ class SettingsDataset {
 
 		this.container.querySelector('.green').on('click', () => this.edit());
 
-		this.container.querySelector('.red').on('click', (e) => this.delete(e));
+		this.container.querySelector('.red').on('click', () => this.delete());
 
 		return this.container;
 	}
