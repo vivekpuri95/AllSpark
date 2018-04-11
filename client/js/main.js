@@ -1559,10 +1559,10 @@ class DataSourceColumn {
 
 	initiateDrilldown(row) {
 
-		if(!this.drilldown || !this.drilldown.query_id || !this.drilldown.parameters)
+		if(!this.drilldown || !parseInt(this.drilldown.query_id) || !this.drilldown.parameters)
 			return;
 
-		const source = DataSource.list.get(this.drilldown.query_id);
+		const source = DataSource.list.get(parseInt(this.drilldown.query_id));
 
 		if(!source)
 			return;
