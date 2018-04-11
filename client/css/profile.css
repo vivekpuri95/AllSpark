@@ -6,7 +6,14 @@ main section#profile {
 main #profile h1 {
 	border-bottom: 1px dashed black;
 	margin: 0;
+	display: flex;
 }
+main #profile h1 a {
+	margin-left: auto;
+	font-weight: normal;
+	font-size: 14px;
+}
+
 main #profile .profile-details,
 main #profile .privileges,
 main #profile .roles {
