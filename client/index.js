@@ -895,7 +895,53 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 				</form>
 			</section>
 		</div>
+			
+		<div class="setting-page privilege-page hidden">
+			<section class="section" id="privileges-list">
 
+				<h1>Privileges Manage</h1>
+
+				<header class="toolbar">
+					<button id="add-privilege"><i class="fa fa-plus"></i> Add New Privilege</button>
+				</header>
+
+				<table class="block">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Is Admin</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+
+			<section class="section" id="privileges-form">
+
+				<h1></h1>
+
+				<header class="toolbar">
+					<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+					<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
+				</header>
+
+				<form class="block form" id="user-form">
+
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" required>
+					</label>
+
+					<label>
+						<span>Is Admin</span>
+						<select name="category_id"></select>
+					</label>
+				</form>
+			</section>
+		</div>
 	`));
 });
 
