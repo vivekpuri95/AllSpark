@@ -169,10 +169,12 @@ class report extends API {
 		}
 
 		try {
+
 			result = await engine.execute();
 		}
 		catch (e) {
-			return e;
+
+			throw new API.Exception(400, e);
 		}
 
 		const EOD = new Date();
@@ -381,36 +383,23 @@ class ReportEngine extends API {
 	}
 
 	async execute() {
+
 		this.executionTimeStart = Date.now();
 
-		let data;
-
-		try {
-			data = await ReportEngine.engines[this.parameters.type](...this.parameters.request);
-		}
-
-		catch (e) {
-
-			data = e
-		}
+		let data = await ReportEngine.engines[this.parameters.type](...this.parameters.request);
 
 		let query;
 
 		if (["mysql", "pgsql"].includes(this.parameters.type)) {
 
-			query = data.instance.sql;
+			query = data.instance ? data.instance.sql : data;
 		}
 
 		else if (this.parameters.type === "api") {
 
 			query = this.parameters.request;
 
-			try {
-				data = JSON.parse(data.body);
-			}
-			catch (e) {
-				data = e
-			}
+			data = JSON.parse(data.body);
 		}
 
 		return {
