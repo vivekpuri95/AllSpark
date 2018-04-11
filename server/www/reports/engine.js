@@ -117,7 +117,7 @@ class report extends API {
 	async report(queryId, reportObj, filterList) {
 
 		this.reportId = this.request.body.query_id || queryId;
-		// this.reportObjStartTime = new Date();
+		this.reportObjStartTime = Date.now();
 		const forcedRun = this.request.body.cached;
 
 
@@ -157,6 +157,12 @@ class report extends API {
 			try {
 
 				result = JSON.parse(redisData);
+
+				await engine.log(this.reportObj.query_id, result.query,
+					Date.now() - this.reportObjStartTime, this.reportObj.type,
+					this.user.user_id, 1, JSON.stringify({filters: this.filters})
+				);
+
 				result.cached = {
 					status: true,
 					age: Date.now() - result.cached.store_time
@@ -176,6 +182,10 @@ class report extends API {
 
 			throw new API.Exception(400, e);
 		}
+
+		await engine.log(this.reportObj.query_id, result.query, result.runtime,
+			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters})
+		);
 
 		const EOD = new Date();
 		EOD.setHours(23, 59, 59, 999);
@@ -407,6 +417,38 @@ class ReportEngine extends API {
 			runtime: (Date.now() - this.executionTimeStart),
 			query: query,
 		};
+	}
+
+	async log(query_id, query, executionTime, type, userId, is_redis, rows) {
+
+		try {
+
+			if(typeof query === "object") {
+
+				query = JSON.stringify(query)
+			}
+			await this.mysql.query(`
+				INSERT INTO
+					tb_report_logs
+					(
+						query_id,
+						query,
+						response_time,
+						type,
+						user_id,
+						cache,
+						rows
+					)
+				VALUES
+					(?,?,?,?,?,?,?)`,
+				[query_id, query, executionTime, type, userId, is_redis, rows],
+				"write");
+		}
+
+		catch (e) {
+
+			console.log(e);
+		}
 	}
 }
 
