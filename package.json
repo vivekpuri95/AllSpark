@@ -1,0 +1,34 @@
+{
+  "name": "server",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "pm2 start ./bin/www --name allspark --watch; pm2 logs allspark;",
+    "stop": "pm2 stop allspark"
+  },
+  "dependencies": {
+    "compression": "^1.7.2",
+    "bcrypt": "^1.0.3",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "~1.18.2",
+    "config": "^1.29.4",
+    "cookie-parser": "~1.4.3",
+    "crypto": "^1.0.1",
+    "debug": "~2.6.9",
+    "express": "~4.15.5",
+    "google-cloud": "^0.57.0",
+    "jade": "~1.11.0",
+    "jsonwebtoken": "^8.1.1",
+    "mailer": "^0.6.7",
+    "mandrill-api": "^1.0.45",
+    "moment": "^2.20.1",
+    "moment-timezone": "^0.5.14",
+    "morgan": "~1.9.0",
+    "mysql": "^2.15.0",
+    "pg": "^7.4.1",
+    "python-shell": "^0.5.0",
+    "redis": "^2.8.0",
+    "request": "^2.83.0",
+    "serve-favicon": "~2.4.5"
+  }
+}
