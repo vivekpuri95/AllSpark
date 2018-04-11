@@ -1183,18 +1183,18 @@ class DataSourceColumn {
 			<div class="blanket hidden">
 				<form class="block form drill-down-form">
 
-					<!--<h3>Column Properties</h3>
-
-					<label>
-						<span>Name</span>
-						<input type="text" name="name">
-					</label>
+					<h3>Column Properties</h3>
 
 					<label>
 						<span>Key</span>
-						<input type="text" name="key" disabled readonly>
+						<input type="text" name="key" value="${this.key}" disabled readonly>
 					</label>
 
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" >
+					</label>
+					
 					<label>
 						<span>Search</span>
 						<div class="search">
@@ -1206,6 +1206,21 @@ class DataSourceColumn {
 					</label>
 
 					<label>
+						<span>Type</span>
+						<select name="column_type">
+							<option value="date">Date</option>
+							<option value="number">Number</option>
+							<option value="currency">Currency</option>
+							<option value="string">String</option>
+						</select>
+					</label>
+					
+					<label>
+						<span>Color</span>
+						<input type="color" name="color" >
+					</label>
+					
+					<label>
 						<span>Sort</span>
 						<select name="sort">
 							<option value="-1">None</option>
@@ -1213,7 +1228,23 @@ class DataSourceColumn {
 							<option value="1">Ascending</option>
 						</select>
 					</label>
-
+					
+					<label>
+						<span>Formula</span>
+						<input type="text" name="formula">
+						<small></small>
+					</label>
+					
+					<label>
+						<span>Prefix</span>
+						<input type="text" name="prefix">
+					</label>
+					
+					<label>
+						<span>Postfix</span>
+						<input type="text" name="postfix">
+					</label>
+					
 					<label>
 						<span>Disabled</span>
 						<select name="disabled">
@@ -1222,35 +1253,7 @@ class DataSourceColumn {
 						</select>
 					</label>
 
-					<label>
-						<span>Formula</span>
-						<input type="text" name="formula">
-						<small></small>
-					</label>-->
-
-					<h3>Column Properties</h3>
-
-					<label>
-						<span>Key</span>
-						<input type="text" name="key" value="${this.key}" readonly>
-					</label>
-
-					<label>
-						<span>Name</span>
-						<input type="text" name="name" >
-					</label>
-
-					<label>
-						<span>Type</span>
-						<select name="col_type">
-							<option value="date">Date</option>
-							<option value="number">Number</option>
-							<option value="currency">Currency</option>
-							<option value="string">String</option>
-						</select>
-					</label>
-
-					<h3>Drilldown</h3>
+					<h3>Drill down</h3>
 
 					<label>
 						<span>Report Id</span>
@@ -1259,12 +1262,16 @@ class DataSourceColumn {
 
 					<label>
 						<span>Parameters</span>
+						<button type="button" id="add_parameters"><i class="fa fa-plus"></i> Add New</button>
+					</label>
+					
+					<label>
 						<div class="params-list"></div>
 					</label>
 
-					<button type="button" id="btn_add_param"><i class="fa fa-plus"></i> Add</button>
-
-					<input type="Submit" value="Submit">
+					<label>
+						<input type="submit" value="Submit">
+					</label>
 				</form>
 			</div>
 		`;
@@ -1294,31 +1301,10 @@ class DataSourceColumn {
 
 			await this.update();
 		});
-		container.querySelector('.menu-toggle').on('click', () => {
-			this.blanket.classList.remove('hidden');
-		});
 
-		this.form.querySelector('#btn_add_param').on('click', () => {
+		container.querySelector('.menu-toggle').on('click', () => this.showBlanket());
 
-			var new_param = document.createElement('div');
-
-			new_param.innerHTML = `
-				<label>
-					<span>Placeholder</span>
-					<input type="text" name="placeholder">
-				</label>
-				<label>
-					<span>Type</span>
-					<input type="text" name="type">
-				</label>
-				<label>
-					<span>Value</span>
-					<input type="text" name="value">
-				</label>
-			`;
-			new_param.classList.add('parameters');
-			this.form.querySelector('.params-list').appendChild(new_param);
-		});
+		this.form.querySelector(' #add_parameters').on('click', () => this.addParameterDiv());
 
 		return container;
 	}
@@ -1341,52 +1327,135 @@ class DataSourceColumn {
 		this.form.elements.name.focus();
 	}
 
+	showBlanket() {
+		this.blanket.classList.remove('hidden');
+		const [values] = this.source.format.columns.filter( f => f.key == this.key);
+
+		if(!values)
+			return;
+
+		for(const key of Object.keys(values)){
+
+			if(key != 'drilldown')
+				this.form[key].value = values[key];
+		}
+
+		this.form.query_id.value = values.drilldown.report_id;
+		for (const param of values.drilldown.parameters) {
+			this.addParameterDiv(param);
+		}
+	}
+
+
+	addParameterDiv(params = {}) {
+
+		var parameter = document.createElement('div');
+
+		parameter.innerHTML = `
+			<label>
+				<span>Placeholder</span>
+				<input type="text" name="placeholder" value="${params.placeholder || ''}">
+			</label>
+			<label>
+				<span>Type</span>
+				<input type="text" name="type" value="${params.type || ''}">
+			</label>
+			<label>
+				<span>Value</span>
+				<input type="text" name="value" value="${params.value || ''}">
+			</label>
+			<label>
+				<span>&nbsp</span>
+				<button type="button" class="remove-parameters delete"><i class="far fa-trash-alt"></i></button>
+			</label>
+		`;
+		parameter.classList.add('parameters');
+		this.form.querySelector('.params-list').appendChild(parameter);
+
+		parameter.querySelector('.remove-parameters').on('click', () => {
+			this.form.querySelector('.params-list').removeChild(parameter);
+		});
+
+		this.blanket.on('click', () => {
+			this.blanket.classList.add('hidden');
+			this.form.querySelector('.params-list').removeChild(parameter);
+		});
+	}
+
 	async save(e) {
 
-		if(e)
+		if(e) {
 			e.preventDefault();
+		}
+
+		// this.validateFormula();
+		this.source.format = this.source.format ? this.source.format : {};
 
 		let
-			json = JSON.parse(this.source.format),
+			columns = this.source.format.columns ? this.source.format.columns : [],
+			response,
+			updated = 0,
 			json_param = [];
 
 		for(const element of this.form.elements) {
-
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
-		}
 
+		}
 		for(const row of this.form.querySelectorAll('.parameters')) {
 			let param_json = {};
-			for(const div of row.children){
-				console.log(div.children[1].name)
-				param_json[div.children[1].name] = div.children[1].value;
+			for (const div of row.children) {
 
+				param_json[div.children[1].name] = div.children[1].value;
 			}
 			json_param.push(param_json);
+
 		}
 
-		json.data.push({
+		response = {
 			key : this.key,
 			name : this.name,
-			column_type : this.col_type,
+			column_type : this.column_type,
+			disabled : this.disabled,
+			color : this.color,
+			searchType : this.searchType,
+			searchQuery : this.searchQuery,
+			sort : this.sort,
+			prefix : this.prefix,
+			postfix : this.postfix,
+			formula : this.formula,
 			drilldown : {
 				report_id : this.query_id,
 				parameters : json_param
 			}
-		});
+		};
+
+		for(const [i, column] of columns.entries()){
+			if(column.key == this.key){
+				columns[i] = response;
+				updated = 1;
+				break;
+			}
+
+		}
+		if(updated == 0) {
+			columns.push(response);
+		}
+
+		this.source.format["columns"] = columns;
 
 		const
 			parameters = {
 				query_id : this.source.query_id,
-				format : JSON.stringify(json)
+				format : JSON.stringify(this.source.format)
 			},
 			options = {
 				method: 'POST',
 			};
-
 		await API.call('reports/report/update', parameters, options);
+		this.container.querySelector('.name').textContent = this.name;
+		this.container.querySelector('.color').style.background = this.color;
 
-		//this.validateFormula();
+		this.blanket.classList.add('hidden');
 		//this.filtered = this.searchQuery !== null;
 		// if(this.form.elements.sort.value >= 0)
 		// 	this.source.columns.sortBy = this;

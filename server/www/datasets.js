@@ -15,7 +15,8 @@ exports.list = class extends API {
 			ON
 				d.created_by = u.user_id AND d.account_id = u.account_id
 			WHERE
-				d.account_id = ?`,
+				d.account_id = ?
+				AND d.status = 1`,
             [this.account.account_id],
         );
     }
