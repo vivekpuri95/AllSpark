@@ -4,3 +4,4 @@ config/*
 !config/sample.json
 !config/db-schema.sql
 node_modules/*
+server/server.iml
