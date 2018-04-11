@@ -3,10 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const compression = require('compression');
-const app = express();
 const config = require('config');
-
-// const port = config.has('port') ? config.get('port').get('client') : 8081;
 
 const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
@@ -273,7 +270,7 @@ router.get('/:type(dashboard|report)/:id?', (req, res) => {
 	`));
 });
 
-app.get('/dashboards/:id?', (req, res) => {
+router.get('/dashboards/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -772,7 +769,7 @@ router.get('/users/:id?', (req, res) => {
 	`));
 });
 
-app.get('/connections/:id?', (req, res) => {
+router.get('/connections/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -928,9 +925,6 @@ class Template {
 
 					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + checksum + '">').join('')}
 					${this.scripts.map(s => '<script src="' + s + '?' + checksum + '"></script>').join('')}
-					<script>
-						PORT = ${JSON.stringify(config.get('port'))}
-					</script>
 				</head>
 				<body>
 					<div id="ajax-working"></div>
@@ -953,18 +947,5 @@ class Template {
 		`;
 	}
 }
-
-//
-// if(!port)
-// 	return console.error('Port not provided!');
-
-// app.listen(port, () => console.info(`
-// 	**********************
-// 	Server Started:
-// 		What: Client
-// 		Environment: ${app.get('env')}
-// 		Port: ${port}
-// 	**********************
-// `));
 
 module.exports = router;

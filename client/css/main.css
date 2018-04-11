@@ -503,7 +503,7 @@ body {
 			main .data-source > .share-link input {
 				width: 100%;
 			}
-		
+
 		main .data-source > .drilldown {
 			margin-top: calc(var(--gap) * 2);
 		}
@@ -704,7 +704,7 @@ body {
 						padding: var(--gap);
 					}
 					main .data-source .visualization .tooltip li.hover {
-						background: rgba(255, 255, 255, 0.2);
+						background: rgba(0, 0, 0, 0.1);
 					}
 						main .data-source .visualization .tooltip .circle {
 							width: 80%;

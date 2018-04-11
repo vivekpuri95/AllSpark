@@ -47,7 +47,6 @@ else {
 server.listen(port, () => console.info(`
   **********************
   Server Started:
-		What: Server
 		Environment: ${app.get('env')}
 		Port: ${port}
   **********************
