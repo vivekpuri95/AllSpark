@@ -802,6 +802,11 @@ body {
 						margin-bottom: 5px;
 						background: #fff;
 						align-items: initial;
+						border-right: 1px solid #ccc;
+					}
+					.visualization.table thead tr.search div:last-child,
+					.visualization.table thead tr.accumulation div:last-child {
+						border-right: 0;
 					}
 						.visualization.table thead tr.search select,
 						.visualization.table thead tr.accumulation select {
