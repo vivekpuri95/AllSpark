@@ -164,7 +164,7 @@ app.get('/user/profile/:id?', (req, res) => {
 			<h1>
 				Profile details
 				<a id="edit-button" href="/user/profile/edit">
-                    <i class="fa fa-edit"></i>
+					<i class="fa fa-edit"></i>
 					Edit
 				</a>
 			</h1>
