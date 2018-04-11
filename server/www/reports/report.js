@@ -38,6 +38,11 @@ exports.list = class extends API {
 			row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
 			response.push(row);
 
+			try {
+				row.format = row.format ? JSON.parse(row.format) : null;
+			} catch(e) {
+				row.format = null;
+			}
 		}
 
 		return response;
@@ -68,12 +73,19 @@ exports.update = class extends API {
 				'is_redis',
 				'refresh_rate',
 				'roles',
+				'format',
 				'connection_name'
 			];
 
 		for (const key in this.request.body) {
 			if (query_cols.includes(key))
 				values[key] = this.request.body[key] || null;
+		}
+
+		try {
+			values.format = values.format ? JSON.stringify(JSON.parse(values.format)) : null;
+		} catch(e) {
+			values.format = JSON.stringify({});
 		}
 
 		return await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write');
@@ -105,6 +117,7 @@ exports.insert = class extends API {
 				'is_redis',
 				'refresh_rate',
 				'roles',
+				'format',
 				'connection_name'
 			];
 
@@ -114,7 +127,13 @@ exports.insert = class extends API {
 		}
 
         values["account_id"] = this.account.account_id;
-        values.added_by = this.user.email;
+        values.added_by = this.user.user_id;
+
+		try {
+			values.format = JSON.stringify(JSON.parse(values.format))
+		} catch(e) {
+			values.format = JSON.stringify({});
+		}
 
 		return await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'write');
 	}

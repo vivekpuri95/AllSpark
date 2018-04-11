@@ -12,7 +12,7 @@ const jwtVerifyAsync = promisify(jwt.verify, jwt);
 
 function redisStore(uni_key, value, expire_time = null) {
 
-	if(!config.has('redisOptions'))
+	if (!config.has('redisOptions'))
 		return Promise.resolve(null);
 
 	return new Promise(function (resolve, reject) {
@@ -38,7 +38,7 @@ function redisStore(uni_key, value, expire_time = null) {
 
 function redisGet(key) {
 
-	if(!config.has('redisOptions'))
+	if (!config.has('redisOptions'))
 		return Promise.resolve(null);
 
 	return new Promise((resolve, reject) => {
@@ -323,6 +323,37 @@ function authenticatePrivileges(userPrivileges, objectPrivileges) {
 }
 
 
+function getIndicesOf(searchStr, str, caseSensitive = 1) {
+
+	// searchStr = needle, str = haystack
+
+	let searchStrLen = searchStr.length;
+
+	if (searchStrLen === 0) {
+
+		return [];
+	}
+
+	let indices = [];
+
+
+	if (!caseSensitive) {
+
+		str = str.toLowerCase();
+		searchStr = searchStr.toLowerCase();
+	}
+
+	let re = new RegExp(searchStr, "g");
+	let match;
+
+	while (match = re.exec(str)) {
+
+		indices.push(match.index);
+	}
+
+	return indices;
+}
+
 exports.redisStore = redisStore;
 exports.redisGet = redisGet;
 exports.isJson = isJson;
@@ -334,3 +365,4 @@ exports.clearDirectory = clearDirectory;
 exports.listOfArrayToMatrix = listOfArrayToMatrix;
 exports.authenticatePrivileges = authenticatePrivileges;
 exports.promiseParallelLimit = promiseParallelLimit;
+exports.getIndicesOf = getIndicesOf;

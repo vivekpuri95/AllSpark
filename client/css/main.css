@@ -1,9 +1,9 @@
 :root {
 	--color-primary: #2a3f54;
 	--color-primary-text: #fff;
-	--color-secondary: #4e6479;
-	--color-secondary-text: #fff;
-	--color-accent: #1abb9c;
+	--color-secondary: #ddd;
+	--color-secondary-text: #333;
+	--color-accent: #0366d6;
 	--color-accent-text: #fff;
 	--color-row-hover: #ddf;
 	--transition-duration: 300ms;
@@ -13,15 +13,14 @@
 	box-sizing: border-box;
 }
 
-body {}
 input:not([type=checkbox]):not([type=radio]),
 select,
 button {
 	padding: 5px 10px;
-	border: 0;
-	background: var(--color-primary);
-	color: var(--color-primary-text) !important;
+	border: 1px solid #ccc;
+	background: transparent;
 	height: 28px;
+	outline: 2px;
 	font-size: 90% !important;
 	line-height: 100% !important;
 	transition: background var(--transition-duration),
@@ -39,9 +38,10 @@ input[type=button]:hover,
 input[type=reset]:hover,
 input[type=submit]:hover,
 button:hover {
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	background: var(--color-accent);
 	color: var(--color-accent-text) !important;
+	border-color: var(--color-accent);
 }
 input[type=button]:active,
 input[type=reset]:active,
@@ -131,7 +131,7 @@ body {
 	}
 
 	body > header {
-		background: var(--color-primary);
+		background: linear-gradient(to right, #0a5ffc 0%, #3786fd 100%);;
 		color: var(--color-primary-text);
 		display: flex;
 		position: sticky;
@@ -148,22 +148,21 @@ body {
 			width: 220px;
 			display: flex;
 			align-items: center;
-			padding: calc(var(--gap)*2);
+			justify-content: center;
+			padding: calc(var(--gap) * 2);
 		}
 		body > header .logo:hover {
 			background: none;
 		}
 			body > header .logo img {
-				width: 100%;
-				height: auto;
-				min-width: 150px;
-				align-items: center;
+				width: 90%;
 			}
 		body > header nav {
 			display: flex;
 		}
 		body > header .logout,
-		body > header nav a {
+		body > header nav a,
+		body > header .user-name a {
 			display: flex;
 			color: var(--color-primary-text);
 			padding: 15px 20px;
@@ -173,23 +172,20 @@ body {
 			white-space: nowrap;
 		}
 		body > header .logout:hover,
-		body > header a:hover {
+		body > header a:hover,
+		body > header .logout:focus,
+		body > header a:focus {
 			text-decoration: none;
-			background: var(--color-accent);
-			color: var(--color-accent-text);
+			background: rgba(255, 255, 255, 0.3);
 			cursor: pointer;
 		}
 		body > header a.selected {
-			background: var(--color-accent);
-			color: var(--color-accent-text);
+			background: rgba(255, 255, 255, 0.3);
 			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 		}
 		body > header .user-name {
 			margin-left: auto;
-			padding: 15px 20px;
 			white-space: nowrap;
-			letter-spacing: 1px;
-			align-items: center;
 			display: flex;
 		}
 		body > header .logout {
@@ -219,10 +215,8 @@ body {
 		main section .toolbar {
 			display: flex;
 			flex-wrap: wrap;
-			background: #fff;
-			margin: 10px 0;
-			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-			padding: 5px;
+			background: #eee;
+			margin: 10px -5px;
 		}
 			main section .toolbar .right {
 				margin-left: auto;
@@ -259,11 +253,10 @@ body {
 			main table thead th {
 				padding: 5px 8px;
 				position: sticky;
-				background: var(--color-primary);
-				color: var(--color-primary-text);
 				top: 0;
 				z-index: 2;
-				border-right: 1px solid var(--color-primary-text);
+				background: var(--color-primary);
+				color: var(--color-primary-text);
 			}
 			main table thead th:last-child {
 				border-right: 0;
@@ -334,19 +327,84 @@ body {
 		}
 			main .form label > span {
 				font-size: 90%;
-				color: #555;
+				color: #666;
+				font-weight: bold;
 			}
 
+	main .dataset {
+			position: relative;
+		}
+			main .dataset input[type=search] {
+				width: 200px;
+			}
+			main .dataset .options {
+				position: absolute;
+				background: #fff;
+				z-index: 1;
+				width: 100%;
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+				max-height: 250px;
+				overflow: auto;
+			}
+				main .dataset label {
+					display: grid;
+					grid-template-columns: auto 1fr;
+					align-items: center;
+					padding: calc(var(--gap) * 1.5);
+					margin: 0;
+					transition: background var(--transition-duration),
+								box-shadow var(--transition-duration);
+				}
+				main .dataset label:hover {
+					background: #ddd;
+				}
+				main .dataset label:active {
+					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.2);
+				}
+				main .dataset .options label.selected,
+				main .dataset .options label.selected:hover {
+					background: #eda;
+				}
+					main .dataset label input {
+						margin: 0;
+					}
+				main .dataset .options header,
+				main .dataset .options footer {
+					background: #fff;
+					position: sticky;
+					font-size: 90%;
+					padding: var(--gap);
+					color: #999;
+					display: grid;
+					grid-template-columns: auto auto auto;
+					grid-gap: calc(var(--gap) * 2);
+					justify-content: flex-start;
+					box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+				}
+				main .dataset .options header {
+					border-bottom: 1px dashed #999;
+					top: 0;
+				}
+					main .dataset .options header a {
+						cursor: pointer;
+					}
+				main .dataset .options footer {
+					border-top: 1px dashed #999;
+					bottom: 0;
+				}
+				main .dataset .options .NA {
+					padding: calc(var(--gap) * 2);
+					color: #999;
+					text-align: center;
+				}
+
 	main .data-source {
-		display: grid;
-		grid-gap: calc(var(--gap) * 2);
-		grid-template-rows: min-content 1fr min-content;
 		display: flex;
 		flex-direction: column;
 		height: 100%;
 	}
 		main .data-source > .warning {
-			margin: 0;
+			margin: calc(var(--gap) * 2) 0 0;
 		}
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
@@ -365,6 +423,8 @@ body {
 				font-size: 18px;
 				margin: 0 auto 0 0;
 				padding: 0;
+				color: #888;
+				font-weight: normal;
 				white-space: nowrap;
 				line-height: inherit;
 				user-select: text;
@@ -403,6 +463,7 @@ body {
 			main .data-source .filters-toggle.selected {
 				background: var(--color-accent);
 				color: var(--color-accent-text);
+				border-color: var(--color-accent);
 			}
 		main .data-source > .description {
 			background: #fff;
@@ -442,7 +503,12 @@ body {
 			main .data-source > .share-link input {
 				width: 100%;
 			}
-
+        main .data-source .column .blanket .block.drill-down-form{
+            padding-bottom: 10px;
+        }
+		main .data-source > .drilldown {
+			margin-top: calc(var(--gap) * 2);
+		}
 		main .data-source > .columns {
 			display: flex;
 			flex-wrap: wrap;
@@ -482,7 +548,7 @@ body {
 				background: #fcc;
 			}
 			main .data-source > .columns .column:hover {
-				opacity: 0.6;
+				/*opacity: 0.6;*/
 			}
 				main .data-source > .columns.being-dragged .column * {
 					pointer-events: none;
@@ -515,64 +581,81 @@ body {
 					left: 0;
 					right: 0;
 					background: rgba(0, 0, 0, 0.25);
-					z-index: 6;
+					z-index: 11;
 					display: flex;
 					align-items: center;
 					justify-content: center;
 				}
-					main .data-source .column .blanket form {
+					main .data-source .column .blanket .block {
 						box-shadow: 0 0 100px rgba(0, 0, 0, 0.25);
 						margin: 25px;
 						max-height: 90%;
 						max-width: 100%;
-						flex-basis: 400px;
+						flex-basis: 750px;
 						overflow: auto;
-						padding-top: 0;
+						padding: calc(var(--gap) * 2);
 					}
-						main .data-source .column form h3 {
-							margin: 0 calc(var(--gap) * -1) var(--gap) ;
-							padding: var(--gap) 10px;
-							background: var(--color-primary);
-							color: var(--color-primary-text);
-							border-bottom: 1px solid #999;
-							font-weight: normal;
-							letter-spacing: 1px;
-							position: sticky;
-							top: 0;
-							font-size: 90%;
+						main .data-source .column .blanket form {
 						}
-						main .data-source .column form label {
-							max-width: initial;
-							flex-shrink: 0;
-						}
-							main .data-source .column form .search {
-								display: flex;
-							}
-								main .data-source .column form .search select {
-									width: 40%;
-								}
-								main .data-source .column form .search input {
-									flex: 1;
-									border-left: 0;
-									width: calc(100% - 20px);
-								}
-							main .data-source .column form select {
-								border: 1px solid #ccc !important;
-							}
-							main .data-source .column form input {
-								transition: background var(--transition-duration);
-							}
-							main .data-source .column form input.error {
-								background: rgba(255, 0, 0, 0.25);
-							}
-							main .data-source .column form small {
-								margin-top: 5px;
-								color: #999;
+
+                        main .data-source .column .blanket form .parameters {
+                            display: grid;
+                            grid-gap: 9px;
+                            grid-template-columns: 180px 180px 180px 80px;
+                            grid-template-rows: 50px 0px;
+                            font-size: 90%;
+                        }
+
+                        main .data-source .column .blanket form .parameters .delete:hover {
+                            background-color: red;
+                            border: red;
+                        }
+							main .data-source .column form h3 {
+								margin: 0px calc(var(--gap) * -1) var(--gap);
+								padding: var(--gap) 10px;
+								background: var(--color-primary);
+								color: var(--color-primary-text);
+								border-bottom: 1px solid #999;
 								font-weight: normal;
+								letter-spacing: 1px;
+								position: sticky;
+								top: 0;
+								font-size: 90%;
 							}
-							main .data-source .column form input[type=submit] {
-								padding: 8px;
+							main .data-source .column form label {
+								max-width: initial;
+                                padding: 0 10px;
+								flex-shrink: 0;
 							}
+								main .data-source .column form .search {
+									display: flex;
+								}
+									main .data-source .column form .search select {
+										width: 40%;
+									}
+									main .data-source .column form .search input {
+										flex: 1;
+                                        margin-left: calc(var(--gap) * 2);
+										width: calc(100% - 20px);
+									}
+								main .data-source .column form select {
+									border: 1px solid #ccc !important;
+								}
+								main .data-source .column form input {
+									transition: background var(--transition-duration);
+								}
+								main .data-source .column form input.error {
+									background: rgba(255, 0, 0, 0.25);
+								}
+								main .data-source .column form small {
+									margin-top: 5px;
+									color: #999;
+									font-weight: normal;
+								}
+								main .data-source .column form input[type=submit] {
+									padding: 8px;
+									color: black !important;
+								}
 		main .data-source .visualization {
 			position: relative;
 			margin-top: calc(var(--gap) * 2);
@@ -601,9 +684,9 @@ body {
 				}
 
 			main .data-source .visualization .tooltip {
-				background: var(--color-primary);
-				color: var(--color-primary-text);
-				box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
+				background: #fff;
+				color: var(--color-secondary-text);
+				box-shadow: 0 0 35px rgba(0, 0, 0, 0.25);
 				position: absolute;
 				font-size: 90%;
 				opacity: 1;
@@ -612,7 +695,7 @@ body {
 			}
 				main .data-source .visualization .tooltip header {
 					padding: var(--gap) calc(var(--gap) * 2);
-					border-bottom: 1px solid #fff;
+					border-bottom: 1px solid var(--color-accent);
 					display: flex;
 				}
 				main .data-source .visualization .tooltip footer {
@@ -638,7 +721,7 @@ body {
 						padding: var(--gap);
 					}
 					main .data-source .visualization .tooltip li.hover {
-						background: rgba(255, 255, 255, 0.2);
+						background: rgba(0, 0, 0, 0.1);
 					}
 						main .data-source .visualization .tooltip .circle {
 							width: 80%;
@@ -653,12 +736,15 @@ body {
 			main .data-source .visualization.table .row-count {
 				font-size: 90%;
 				text-align: right;
+				position: absolute;
 				position: sticky;
 				bottom: 0;
 				background: rgba(255, 255, 255, 0.9);
 				box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 				padding: var(--gap);
 				transition: background var(--transition-duration);
+				right: 0;
+				left: 0;
 			}
 			main .data-source .visualization.table .row-count:hover {
 				background: #fff;
@@ -716,12 +802,18 @@ body {
 						margin-bottom: 5px;
 						background: #fff;
 						align-items: initial;
+						border-right: 1px solid #ccc;
+					}
+					.visualization.table thead tr.search div:last-child,
+					.visualization.table thead tr.accumulation div:last-child {
+						border-right: 0;
 					}
 						.visualization.table thead tr.search select,
 						.visualization.table thead tr.accumulation select {
 							width: 90px;
 							z-index: 1;
 							margin-bottom: 0;
+							border: 0;
 							border-right: 1px dashed #ccc;
 							box-shadow: none;
 						}
@@ -765,8 +857,6 @@ body {
 				.visualization.table table thead th {
 					text-transform: capitalize;
 					position: sticky;
-					background: var(--theme-dark);
-					color: var(--theme-dark-text);
 					cursor: pointer;
 					white-space: nowrap;
 					padding: 5px 10px;
@@ -792,6 +882,16 @@ body {
 				background: #ddf;
 				color: var(--theme-light-text);
 			}
+			.visualization.table table tr.NA {
+				text-align: center;
+			}
+				.visualization.table table tbody tr td.drilldown {
+					cursor: pointer;
+					transition: background var(--transition-duration);
+				}
+				.visualization.table table tbody tr td.drilldown:hover {
+					background: #fcc;
+				}
 			.visualization.table table tbody tr.show-rows {
 				color:  #666;
 				font-size: 90%;

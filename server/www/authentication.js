@@ -119,6 +119,7 @@ exports.login = class extends API {
 
 		const [userDetail] = await this.mysql.query(`SELECT * FROM tb_users WHERE email = ? AND account_id = ?`, [email, this.account.account_id]);
 
+
 		this.assert(userDetail, "Invalid Email! :(");
 
 		const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
@@ -140,6 +141,8 @@ exports.refresh = class extends API {
 	async refresh() {
 
 		const loginObj = await commonFun.verifyJWT(this.request.body.refresh_token);
+
+		this.assert(!loginObj.error, "Token not correct", 401);
 
 		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ?", loginObj.user_id);
 

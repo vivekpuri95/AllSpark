@@ -31,14 +31,10 @@ Fill in the necessery details in the json file and start your pm2 instances.
 
 ### Unix
 ```
-NODE_ENV='env'
-pm2 start client/index.js --name env-client
-pm2 start server/bin/www --name env-server
+NODE_ENV='env' pm2 start bin/www --name env
 ```
 
 ### Windows
 ```
-$env:NODE_ENV="env"
-pm2 start client/index.js --name env-client
-pm2 start server/bin/www --name env-server
+$env:NODE_ENV="env" pm2 start bin/www --name env
 ```

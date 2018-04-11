@@ -54,8 +54,10 @@ class Page {
 			document.title = account.name;
 		}
 
-		if(window.user)
-			document.querySelector('body > header .user-name').textContent = user.name;
+		const user_name = document.querySelector('body > header .user-name');
+
+		if(user.id)
+			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
 
 		document.querySelector('body > header .logout').on('click', () => User.logout());
 
@@ -83,8 +85,15 @@ class Page {
 		}
 
 		for(const item of document.querySelectorAll('body > header nav a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname))
+			if(window.location.pathname.startsWith(new URL(item.href).pathname)) {
+				user_name.classList.remove('selected');
 				item.classList.add('selected');
+			}
+		}
+
+		if(window.location.pathname.includes('/user/profile')) {
+			Array.from(document.querySelectorAll('body > header nav a')).map(items => items.classList.remove('selected'));
+			user_name.querySelector('a').classList.add('selected');
 		}
 	}
 
@@ -95,6 +104,14 @@ class Page {
 		this.account = window.account;
 		this.user = window.user;
 		this.metadata = window.MetaData;
+	}
+}
+
+Page.exception = class PageException extends Error {
+
+	constructor(message) {
+		super(message);
+		this.message = message;
 	}
 }
 
@@ -118,8 +135,6 @@ class Account {
 
 	static async fetch() {
 
-		window.account = {APIHost: `//${window.location.hostname}:${PORT.server}/`}
-
 		try {
 
 			return await API.call('accounts/get');
@@ -133,8 +148,6 @@ class Account {
 
 		for(const key in account)
 			this[key] = account[key];
-
-		this.APIHost = `//${this.url}:${PORT.server}/`;
 
 		this.settings = new Map;
 
@@ -212,29 +225,40 @@ class UserRoles extends Set {
 
 class MetaData {
 
-	static async fetch() {
-		localStorage.metadata = JSON.stringify(await API.call('users/metadata'));
-	}
-
 	static async load() {
 
 		MetaData.categories = new Map;
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
+		MetaData.datasets = new Map;
 
 		if(!user.id)
 			return;
 
-		if(!localStorage.metadata)
-			await MetaData.fetch();
+		const metadata = await MetaData.fetch();
 
-		let metadata = null;
+		MetaData.save(metadata);
+	}
+
+	static async fetch() {
+
+		let
+			metadata,
+			timestamp;
 
 		try {
-			metadata = JSON.parse(localStorage.metadata);
-		} catch(e) {
-			return;
+			({metadata, timestamp} = JSON.parse(localStorage.metadata));
+		} catch(e) {}
+
+		if(!timestamp || Date.now() - timestamp > MetaData.timeout) {
+			metadata = await API.call('users/metadata');
+			localStorage.metadata = JSON.stringify({metadata, timestamp: Date.now()});
 		}
+
+		return metadata;
+	}
+
+	static save(metadata = {}) {
 
 		for(const privilege of metadata.privileges || []) {
 
@@ -261,8 +285,7 @@ class MetaData {
 		}
 
 		MetaData.visualizations = metadata.visualizations;
-
-		return MetaData;
+		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 	}
 }
 
@@ -317,20 +340,23 @@ class API extends AJAX {
 	 */
 	static async call(endpoint, parameters = {}, options = {}) {
 
-		if(!account)
-			throw 'Account not found!'
-
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
-		if(localStorage.token)
-			parameters.token = localStorage.token;
+		if(localStorage.token) {
+
+			if(typeof parameters == 'string')
+				parameters += '&token='+localStorage.token;
+
+			else
+				parameters.token = localStorage.token;
+		}
 
 		// If a form id was supplied, then also load the data from that form
 		if(options.form)
 			API.loadFormData(parameters, options.form);
 
-		endpoint = account.APIHost + 'v2/' + endpoint;
+		endpoint = '/api/v2/' + endpoint;
 
 		const response = await AJAX.call(endpoint, parameters, options);
 
@@ -560,8 +586,6 @@ class DataSource {
 		const response = await API.call('reports/report/list');
 
 		DataSource.list = new Map(response.map(report => [report.query_id, report]));
-
-		DataSource.datasets = new DataSourceDatasets();
 	}
 
 	constructor(source) {
@@ -590,13 +614,23 @@ class DataSource {
 	}
 
 	async fetch(parameters = {}) {
+		const filterPrefix = "param_";
+		parameters = new URLSearchParams(parameters);
 
-		parameters.query_id = this.query_id;
-		parameters.email = user.email;
+		parameters.set('query_id', this.query_id);
+		parameters.set('email', user.email);
 
 		for(const filter of this.filters.values()) {
-			if(!parameters.hasOwnProperty(filter.placeholder))
-				parameters[filter.placeholder] = this.filters.form.elements[filter.placeholder].value;
+
+			if(filter.dataset && filter.dataset.query_id) {
+
+				for(const input of filter.label.querySelectorAll('input:checked'))
+					parameters.append(filterPrefix + filter.placeholder, input.value);
+
+				continue;
+			}
+
+			parameters.set(filterPrefix + filter.placeholder, this.filters.form.elements[filter.placeholder].value);
 		}
 
 		let response = null;
@@ -609,7 +643,7 @@ class DataSource {
 			this.container.removeChild(this.container.querySelector('pre.warning'));
 
 		try {
-			response = await API.call('reports/engine/report', parameters, options);
+			response = await API.call('reports/engine/report', parameters.toString(), options);
 		}
 
 		catch(e) {
@@ -664,6 +698,7 @@ class DataSource {
 			<form class="filters form toolbar hidden"></form>
 
 			<div class="columns"></div>
+			<div class="drilldown hidden"></div>
 
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
@@ -775,6 +810,29 @@ class DataSource {
 
 		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
 
+		if(this.drilldown) {
+
+			const
+				list = container.querySelector('.drilldown'),
+				link = document.createElement('a');
+
+			list.textContent = null;
+
+			link.innerHTML = `<i class="fa fa-angle-left"></i> ${this.drilldown.parent.name} (${this.drilldown.parameters.map(p => p.selectedValue).join()})`;
+
+			link.on('click', () => {
+
+				const parent = this.container.parentElement;
+
+				parent.removeChild(this.container);
+				parent.appendChild(this.drilldown.parent.container);
+			});
+
+			link.title = '';
+
+			list.appendChild(link);
+		}
+
 		this.columns.render();
 
 		return container;
@@ -874,36 +932,11 @@ class DataSource {
 		const parameters = new URLSearchParams();
 
 		for(const [_, filter] of this.filters) {
-			if(this.filters.form)
+			if(this.filters.form && filter.placeholder in this.filters.form.elements)
 				parameters.set(filter.placeholder, this.filters.form.elements[filter.placeholder].value);
 		}
 
 		return link + '?' + parameters.toString();
-	}
-}
-
-class DataSourceDatasets extends Map {
-
-	constructor(source) {
-
-		super();
-
-		this.source = source;
-	}
-
-	async fetch(id) {
-
-		if(!id)
-			return Promise.resolve();
-
-		if(this.has(id))
-			return Promise.resolve(this.get(id));
-
-		const response = await API.call('datasets/values', {id});
-
-		this.set(id, response.data);
-
-		return response.data;
 	}
 }
 
@@ -969,7 +1002,7 @@ class DataSourceRow extends Map {
 					this.skip = true;
 			}
 
-			this.set(key, row[key] || '');
+			this.set(key, row[key] || 0);
 		}
 
 		// Sort the row by position of their columns in the source's columns map
@@ -1121,6 +1154,14 @@ class DataSourceColumn {
 		this.name = this.key.split('_').map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
 		this.disabled = 0;
 		this.color = DataSourceColumn.colors[this.source.columns.size % DataSourceColumn.colors.length];
+
+		if(this.source.format && this.source.format.columns) {
+
+			const [format] = this.source.format.columns.filter(column => column.key == this.key);
+
+			for(const key in format || {})
+				this[key] = format[key];
+		}
 	}
 
 	get container() {
@@ -1137,22 +1178,23 @@ class DataSourceColumn {
 		container.innerHTML = `
 			<span class="color" style="background: ${this.color}"></span>
 			<span class="name">${this.name}</span>
+			<span class="right menu-toggle" title="drilldown"><i class="fas fa-ellipsis-v"></i></span>
 
 			<div class="blanket hidden">
-				<form class="block form">
+				<form class="block form drill-down-form">
 
 					<h3>Column Properties</h3>
 
 					<label>
-						<span>Name</span>
-						<input type="text" name="name">
+						<span>Key</span>
+						<input type="text" name="key" value="${this.key}" disabled readonly>
 					</label>
 
 					<label>
-						<span>Key</span>
-						<input type="text" name="key" disabled readonly>
+						<span>Name</span>
+						<input type="text" name="name" >
 					</label>
-
+					
 					<label>
 						<span>Search</span>
 						<div class="search">
@@ -1164,6 +1206,21 @@ class DataSourceColumn {
 					</label>
 
 					<label>
+						<span>Type</span>
+						<select name="column_type">
+							<option value="date">Date</option>
+							<option value="number">Number</option>
+							<option value="currency">Currency</option>
+							<option value="string">String</option>
+						</select>
+					</label>
+					
+					<label>
+						<span>Color</span>
+						<input type="color" name="color" >
+					</label>
+					
+					<label>
 						<span>Sort</span>
 						<select name="sort">
 							<option value="-1">None</option>
@@ -1171,7 +1228,23 @@ class DataSourceColumn {
 							<option value="1">Ascending</option>
 						</select>
 					</label>
-
+					
+					<label>
+						<span>Formula</span>
+						<input type="text" name="formula">
+						<small></small>
+					</label>
+					
+					<label>
+						<span>Prefix</span>
+						<input type="text" name="prefix">
+					</label>
+					
+					<label>
+						<span>Postfix</span>
+						<input type="text" name="postfix">
+					</label>
+					
 					<label>
 						<span>Disabled</span>
 						<select name="disabled">
@@ -1180,34 +1253,45 @@ class DataSourceColumn {
 						</select>
 					</label>
 
+					<h3>Drill down</h3>
+
 					<label>
-						<span>Formula</span>
-						<input type="text" name="formula">
-						<small></small>
+						<span>Report Id</span>
+						<input type="number" name="query_id">
 					</label>
 
 					<label>
-						<input type="Submit" value="Submit">
+						<span>Parameters</span>
+						<button type="button" id="add_parameters"><i class="fa fa-plus"></i> Add New</button>
+					</label>
+					
+					<label>
+						<div class="params-list"></div>
+					</label>
+
+					<label>
+						<input type="submit" value="Submit">
 					</label>
 				</form>
 			</div>
 		`;
 
 		this.blanket = container.querySelector('.blanket');
-		this.form = container.querySelector('form');
+		this.block = container.querySelector('.block');
+		this.form = container.querySelector('.drill-down-form');
 
-		this.form.elements.formula.on('keyup', async () => {
-
-			if(this.formulaTimeout)
-				clearTimeout(this.formulaTimeout);
-
-			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
-		});
+		// this.form.elements.formula.on('keyup', async () => {
+		//
+		// 	if(this.formulaTimeout)
+		// 		clearTimeout(this.formulaTimeout);
+		//
+		// 	this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
+		// });
 
 		this.form.on('submit', async e => this.save(e));
 
 		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
-		this.form.on('click', e => e.stopPropagation());
+		this.block.on('click', e => e.stopPropagation());
 
 		container.querySelector('.name').on('click', async () => {
 
@@ -1217,6 +1301,10 @@ class DataSourceColumn {
 
 			await this.update();
 		});
+
+		container.querySelector('.menu-toggle').on('click', () => this.showBlanket());
+
+		this.form.querySelector(' #add_parameters').on('click', () => this.addParameterDiv());
 
 		return container;
 	}
@@ -1239,22 +1327,139 @@ class DataSourceColumn {
 		this.form.elements.name.focus();
 	}
 
+	showBlanket() {
+		this.blanket.classList.remove('hidden');
+		const [values] = this.source.format.columns.filter( f => f.key == this.key);
+
+		if(!values)
+			return;
+
+		for(const key of Object.keys(values)){
+
+			if(key != 'drilldown')
+				this.form[key].value = values[key];
+		}
+
+		this.form.query_id.value = values.drilldown.report_id;
+		for (const param of values.drilldown.parameters) {
+			this.addParameterDiv(param);
+		}
+	}
+
+
+	addParameterDiv(params = {}) {
+
+		var parameter = document.createElement('div');
+
+		parameter.innerHTML = `
+			<label>
+				<span>Placeholder</span>
+				<input type="text" name="placeholder" value="${params.placeholder || ''}">
+			</label>
+			<label>
+				<span>Type</span>
+				<input type="text" name="type" value="${params.type || ''}">
+			</label>
+			<label>
+				<span>Value</span>
+				<input type="text" name="value" value="${params.value || ''}">
+			</label>
+			<label>
+				<span>&nbsp</span>
+				<button type="button" class="remove-parameters delete"><i class="far fa-trash-alt"></i></button>
+			</label>
+		`;
+		parameter.classList.add('parameters');
+		this.form.querySelector('.params-list').appendChild(parameter);
+
+		parameter.querySelector('.remove-parameters').on('click', () => {
+			this.form.querySelector('.params-list').removeChild(parameter);
+		});
+
+		this.blanket.on('click', () => {
+			this.blanket.classList.add('hidden');
+			this.form.querySelector('.params-list').removeChild(parameter);
+		});
+	}
+
 	async save(e) {
 
-		if(e)
+		if(e) {
 			e.preventDefault();
+		}
 
-		this.validateFormula();
+		// this.validateFormula();
+		this.source.format = this.source.format ? this.source.format : {};
 
-		for(const element of this.form.elements)
+		let
+			columns = this.source.format.columns ? this.source.format.columns : [],
+			response,
+			updated = 0,
+			json_param = [];
+
+		for(const element of this.form.elements) {
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 
-		this.filtered = this.searchQuery !== null;
+		}
+		for(const row of this.form.querySelectorAll('.parameters')) {
+			let param_json = {};
+			for (const div of row.children) {
 
-		if(this.form.elements.sort.value >= 0)
-			this.source.columns.sortBy = this;
+				param_json[div.children[1].name] = div.children[1].value;
+			}
+			json_param.push(param_json);
 
-		await this.update();
+		}
+
+		response = {
+			key : this.key,
+			name : this.name,
+			column_type : this.column_type,
+			disabled : this.disabled,
+			color : this.color,
+			searchType : this.searchType,
+			searchQuery : this.searchQuery,
+			sort : this.sort,
+			prefix : this.prefix,
+			postfix : this.postfix,
+			formula : this.formula,
+			drilldown : {
+				report_id : this.query_id,
+				parameters : json_param
+			}
+		};
+
+		for(const [i, column] of columns.entries()){
+			if(column.key == this.key){
+				columns[i] = response;
+				updated = 1;
+				break;
+			}
+
+		}
+		if(updated == 0) {
+			columns.push(response);
+		}
+
+		this.source.format["columns"] = columns;
+
+		const
+			parameters = {
+				query_id : this.source.query_id,
+				format : JSON.stringify(this.source.format)
+			},
+			options = {
+				method: 'POST',
+			};
+		await API.call('reports/report/update', parameters, options);
+		this.container.querySelector('.name').textContent = this.name;
+		this.container.querySelector('.color').style.background = this.color;
+
+		this.blanket.classList.add('hidden');
+		//this.filtered = this.searchQuery !== null;
+		// if(this.form.elements.sort.value >= 0)
+		// 	this.source.columns.sortBy = this;
+		// await this.update();
 	}
 
 	async update() {
@@ -1265,7 +1470,7 @@ class DataSourceColumn {
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
-		this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
+		//this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
 
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
@@ -1350,6 +1555,57 @@ class DataSourceColumn {
 			this.source.visualizations.selected.render();
 			this.source.columns.render();
 		});
+	}
+
+	initiateDrilldown(row) {
+
+		if(!this.drilldown || !this.drilldown.query_id || !this.drilldown.parameters)
+			return;
+
+		const source = DataSource.list.get(this.drilldown.query_id);
+
+		if(!source)
+			return;
+
+		const report = new DataSource(source);
+
+		for(const parameter of this.drilldown.parameters) {
+
+			if(!report.filters.has(parameter.placeholder))
+				continue;
+
+			const filter = report.filters.get(parameter.placeholder);
+
+			let value;
+
+			if(parameter.type == 'column')
+				value = row.get(parameter.value);
+
+			else if(parameter.type == 'filter')
+				value = this.source.filters.get(parameter.value).value;
+
+			else if(parameter.type == 'static')
+				value = parameter.value;
+
+			filter.value = value;
+			parameter.selectedValue = value;
+		}
+
+		report.drilldown = {
+			...this.drilldown,
+			parent: this.source,
+		};
+
+		report.container.setAttribute('style', this.source.container.getAttribute('style'));
+
+		const parent = this.source.container.parentElement;
+
+		parent.removeChild(this.source.container);
+		parent.appendChild(report.container);
+
+		report.container.querySelector('.drilldown').classList.remove('hidden');
+
+		report.visualizations.selected.load();
 	}
 
 	get search() {
@@ -1482,6 +1738,11 @@ class DataSourceFilter {
 			this[key] = filter[key];
 
 		this.source = source;
+
+		if(this.dataset && MetaData.datasets.has(this.dataset))
+			this.dataset = new Dataset(this.dataset, this);
+
+		else this.dataset = null;
 	}
 
 	get label() {
@@ -1512,28 +1773,26 @@ class DataSourceFilter {
 			}
 		}
 
-		if(this.dataset) {
-
-			input = document.createElement('select');
-			input.name = this.placeholder;
-
-			input.insertAdjacentHTML('beforeend', `<option value="">All</option>`);
-
-			DataSource.datasets.fetch(this.dataset).then(data => {
-
-				if(!data.length)
-					return;
-
-				for(const row of data)
-					input.insertAdjacentHTML('beforeend', `<option value="${row.value}">${row.name}</option>`);
-			});
-		}
+		if(this.dataset)
+			input = this.dataset.container;
 
 		this.labelContainer.innerHTML = `<span>${this.name}<span>`;
 
 		this.labelContainer.appendChild(input);
 
 		return this.labelContainer;
+	}
+
+	get value() {
+
+		const input = this.label.querySelector('input');
+
+		return input ? input.value : this.default_value;
+	}
+
+	set value(value) {
+
+		this.label.querySelector('input').value = value;
 	}
 }
 
@@ -1962,6 +2221,7 @@ class LinearVisualization extends Visualization {
 				this.columns[key].push({
 					x: row.get(this.axis.x.column),
 					y: value,
+					key,
 				});
 			}
 		}
@@ -2158,7 +2418,6 @@ class LinearVisualization extends Visualization {
 }
 
 Visualization.list = new Map;
-Visualization.animationDuration = 750;
 
 Visualization.list.set('table', class Table extends Visualization {
 
@@ -2196,7 +2455,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		container.classList.add('visualization', 'table');
 
 		container.innerHTML = `
-			<div class="container overflow">
+			<div class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
 		`;
@@ -2250,6 +2509,14 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				td.textContent = row.get(key);
 
+				if(column.drilldown) {
+
+					td.classList.add('drilldown');
+					td.on('click', () => column.initiateDrilldown(row));
+
+					td.title = `Drill down into ${DataSource.list.get(column.drilldown.query_id).name}!`;
+				}
+
 				tr.appendChild(td);
 			}
 
@@ -2281,8 +2548,9 @@ Visualization.list.set('table', class Table extends Visualization {
 		}
 
 		if(!rows || !rows.length) {
-			table.insertAdjacentHTML('beforeend', `<caption class="NA">${this.source.originalResponse.message || 'No rows found! :('}</caption>`);
-			return;
+			table.insertAdjacentHTML('beforeend', `
+				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found! :('}</td></tr>
+			`);
 		}
 
 		rowCount.classList.add('row-count');
@@ -2407,7 +2675,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		this.x.rangePoints([0, this.width], 0.1, 0);
 
 		const
-			tickNumber = this.width < 400 ? 3 : 6,
+			tickNumber = this.width < 400 ? 3 : 5,
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -2579,7 +2847,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
-			tickNumber = this.width < 400 ? 3 : 6,
+			tickNumber = this.width < 400 ? 3 : 5,
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -2614,6 +2882,10 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.classed('bar', true)
 			.attr('width', x1.rangeBand())
 			.attr('x', cell => this.x(cell.x) + this.axis.y.width)
+			.on('click', function(_, row, column) {
+				that.source.columns.get(that.columns[column].key).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
 			.on('mouseover', function(_, __, column) {
 				that.hoverColumn = that.columns[column];
 				d3.select(this).classed('hover', true);
@@ -2722,7 +2994,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
-			tickNumber = this.width < 400 ? 3 : 6,
+			tickNumber = this.width < 400 ? 3 : 5,
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -2754,6 +3026,10 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			.enter()
 			.append('rect')
 			.classed('bar', true)
+			.on('click', function(_, row, column) {
+				that.source.columns.get(that.columns[column].key).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
 			.on('mouseover', function(_, __, column) {
 				that.hoverColumn = that.columns[column];
 				d3.select(this).classed('hover', true);
@@ -2871,7 +3147,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		this.x.rangePoints([0, this.width], 0.1, 0);
 
 		const
-			tickNumber = this.width < 400 ? 3 : 6,
+			tickNumber = this.width < 400 ? 3 : 5,
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval)),
 
@@ -3001,18 +3277,33 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			series = [],
 			rows = this.source.response;
 
-		for(const column of this.source.columns.values()) {
+		if(rows.length > 1) {
 
-			if(column.disabled)
-				continue;
+			for(const [i, row] of rows.entries()) {
 
-			series.push([{
-				date: 0,
-				label: column.name,
-				color: column.color,
-				y: rows[0].get(column.key),
-			}]);
+				series.push([{
+					date: 0,
+					label: row.get('name'),
+					color: DataSourceColumn.colors[i],
+					y: row.get('value'),
+				}]);
+			}
+		} else {
+
+			for(const column of this.source.columns.values()) {
+
+				if(column.disabled)
+					continue;
+
+				series.push([{
+					date: 0,
+					label: column.name,
+					color: column.color,
+					y: rows[0].get(column.key),
+				}]);
+			}
 		}
+
 
 		this.draw({
 			series: series.reverse(),
@@ -3033,7 +3324,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		// Setting margin and width and height
 		var margin = {top: 20, right: 0, bottom: 40, left: 0},
 			width = this.container.clientWidth - margin.left - margin.right,
-			height = obj.chart.height || 456 - margin.top - margin.bottom;
+			height = this.container.clientHeight - margin.top - margin.bottom;
 
 		var x = d3.scale.ordinal()
 			.domain([0, 1])
@@ -3331,7 +3622,7 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 		const newResponse = {};
 
 		for(const row of this.source.originalResponse.data)
-			newResponse[row.label] = row.value;
+			newResponse[row.name] = row.value;
 
 		this.source.originalResponse.data = [newResponse];
 
@@ -3658,7 +3949,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 		}
 
 		if(!response.length)
-			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No rows found! :('}</caption>`;
+			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No data found! :('}</caption>`;
 
 		table.appendChild(tbody);
 		container.appendChild(table);
@@ -3711,8 +4002,230 @@ class Tooltip {
 	}
 }
 
+class Dataset {
+
+	constructor(id, filter) {
+
+		if(!MetaData.datasets.has(id))
+			throw new Page.exception('Invalid dataset id! :(');
+
+		const dataset = MetaData.datasets.get(id);
+
+		for(const key in dataset)
+			this[key] = dataset[key];
+
+		this.filter = filter;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('dataset');
+
+		if(['Start Date', 'End Date'].includes(this.name)) {
+
+			let value = null;
+
+			if(this.name == 'Start Date')
+				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			else
+				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			container.innerHTML = `
+				<input type="date" name="${this.filter.placeholder}" value="${value}">
+			`;
+
+			return container;
+		}
+
+		container.innerHTML = `
+			<input type="search" placeholder="Search...">
+			<div class="options hidden"></div>
+		`;
+
+		const
+			search = this.container.querySelector('input[type=search]'),
+			options = this.container.querySelector('.options');
+
+		search.on('click', e => {
+
+			e.stopPropagation();
+
+			search.value = '';
+			options.classList.remove('hidden');
+
+			this.update();
+		});
+
+		search.on('keyup', () => this.update());
+
+		options.on('click', e => e.stopPropagation());
+
+		document.body.on('click', () => options.classList.add('hidden'));
+
+		options.innerHTML = `
+			<header>
+				<a class="all">All</a>
+				<a class="clear">Clear</a>
+			</header>
+			<div class="list"></div>
+			<div class="no-matches NA hidden">No matches found! :(</div>
+			<footer></footer>
+		`;
+
+		options.querySelector('header .all').on('click', () => {
+
+			if(!this.filter.multiple)
+				return;
+
+			for(const input of options.querySelectorAll('.list label input'))
+				input.checked = true;
+
+			this.update();
+		});
+
+		options.querySelector('header .clear').on('click', () => {
+
+			for(const input of options.querySelectorAll('.list label input'))
+				input.checked = false;
+
+			this.update();
+		});
+
+		this.load();
+
+		return container;
+	}
+
+	async load() {
+
+		if(!this.query_id)
+			return [];
+
+		const
+			values = await this.fetch(),
+			search = this.container.querySelector('input[type=search]'),
+			list = this.container.querySelector('.options .list');
+
+		if(!values.length)
+			return list.innerHTML = `<div class="NA">No data found! :(</div>`;
+
+		list.textContent = null;
+
+		for(const row of values) {
+
+			const label = document.createElement('label');
+
+			label.innerHTML = `
+				<input name="${this.filter.placeholder}" value="${row.value}" type="${this.filter.multiple ? 'checkbox' : 'radio'}">
+				${row.name}
+			`;
+
+			label.title = row.value;
+
+			label.querySelector('input').on('change', () => this.update());
+
+			list.appendChild(label);
+		}
+
+		this.update();
+	}
+
+	async fetch() {
+
+		if(!this.query_id)
+			return [];
+
+		let
+			values,
+			timestamp;
+
+		try {
+			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
+		} catch(e) {}
+
+		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
+
+			({data: values} = await API.call('datasets/values', {id: this.id}));
+
+			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
+		}
+
+		return values;
+	}
+
+	async update() {
+
+		if(!this.query_id)
+			return [];
+
+		const
+			search = this.container.querySelector('input[type=search]'),
+			options = this.container.querySelector('.options');
+
+		for(const input of options.querySelectorAll('.list label input')) {
+
+			let hide = false;
+
+			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+				hide = true;
+
+			input.parentElement.classList.toggle('hidden', hide);
+			input.parentElement.classList.toggle('selected', input.checked);
+		}
+
+		const
+			total = options.querySelectorAll('.list label').length,
+			hidden = options.querySelectorAll('.list label.hidden').length,
+			selected = options.querySelectorAll('.list input:checked').length;
+
+		search.placeholder = `Search... (${selected} selected)`;
+
+		options.querySelector('footer').innerHTML = `
+			<span>Total: <strong>${total}</strong></span>
+			<span>Showing: <strong>${total - hidden}</strong></span>
+			<span>Selected: <strong>${selected}</strong></span>
+		`;
+
+		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
+	}
+
+	set value(source) {
+
+		if(source.query_id) {
+
+			const
+				inputs = this.container.querySelectorAll('.options .list label input'),
+				sourceInputs = source.container.querySelectorAll('.options .list label input');
+
+			for(const [i, input] of sourceInputs.entries())
+				inputs[i].checked = input.checked;
+		}
+
+		else {
+
+			const
+				input = this.container.querySelector('input'),
+				sourceInput = source.container.querySelector('input');
+
+			input.value = sourceInput.value;
+		}
+
+		this.update();
+	}
+}
+
 DataSourceFilter.setup();
 
 Node.prototype.on = window.on = function(name, fn) {
 	this.addEventListener(name, fn);
 }
+
+MetaData.timeout = 5 * 60 * 60 * 1000;
+Dataset.timeout = 5 * 60 * 60 * 1000;
+Visualization.animationDuration = 750;

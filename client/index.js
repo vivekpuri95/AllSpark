@@ -1,15 +1,17 @@
 "use strict";
-const express = require('express')
-const app = express();
-const config = require('config');
 
-const port = config.has('port') ? config.get('port').get('client') : 8081;
+const express = require('express');
+const router = express.Router();
+const compression = require('compression');
+const config = require('config');
 
 const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
-app.use(express.static('./client'));
+router.use(compression());
 
-app.get('/login', (req, res) => {
+router.use(express.static('./client'));
+
+router.get('/login', (req, res) => {
 
 	const template = new Template;
 
@@ -47,7 +49,7 @@ app.get('/login', (req, res) => {
 	`));
 });
 
-app.get('/login/forgot', (req, res) => {
+router.get('/login/forgot', (req, res) => {
 
 	const template = new Template;
 
@@ -80,7 +82,7 @@ app.get('/login/forgot', (req, res) => {
 	`));
 });
 
-app.get('/login/reset', (req,res) => {
+router.get('/login/reset', (req, res) => {
 
 	const template = new Template;
 
@@ -114,7 +116,88 @@ app.get('/login/reset', (req,res) => {
 	`));
 });
 
-app.get('/:type(dashboard|report)/:id?', (req, res) => {
+router.get('/user/profile/edit', (req, res) => {
+	const template = new Template;
+	template.scripts.push('/js/user/profile/edit.js');
+
+	res.send(template.body(`
+		<section class="section" id="form">
+			<form class="block form">
+
+				<label>
+					<span>Old Password</span>
+					<input type="password" name="old_password" required>
+				</label>
+
+				<label>
+					<span>New Password</span>
+					<input type="password" name="new_password" required>
+				</label>
+
+				<label>
+					<span></span>
+					<button class="submit">
+						<i class="fa fa-save"></i>
+						Change
+					</button>
+				</label>
+
+				<label>
+					<div class="notice hidden" id="message"></div>
+				</label>
+			</form>
+		</section>
+	`));
+});
+
+router.get('/user/profile/:id?', (req, res) => {
+
+	const template = new Template;
+
+	template.stylesheets.push('/css/profile.css');
+	template.scripts.push('/js/profile.js');
+
+	res.send(template.body(`
+		<section id="profile">
+			<h1>
+				Profile details
+				<a href="/user/profile/edit">
+					<i class="fa fa-edit"></i>
+					Edit
+				</a>
+			</h1>
+			<div class="profile-details"></div>
+			<div class="privileges">
+				<label><span>Privileges:&nbsp;</span>
+					<table>
+						<thead>
+							<tr>
+								<th>Category</th>
+								<th>Privileges</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</label>
+			</div>
+			<div class="roles">
+				<label><span>Roles:&nbsp;</span>
+					<table>
+						<thead>
+							<tr>
+								<th>Category</th>
+								<th>Roles</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</label>
+			</div>
+		</section>
+	`))
+});
+
+router.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -122,20 +205,13 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 	template.stylesheets = template.stylesheets.concat([
 		'/css/dashboard.css',
-
-		'//cdn.jsdelivr.net/bootstrap/3/css/bootstrap.css',
-		'//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css',
 	]);
 
 	template.scripts = template.scripts.concat([
 		'/js/dashboard.js',
 
-		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
-
-		'//cdn.jsdelivr.net/jquery/1/jquery.min.js" defer f="',
-		'//cdn.jsdelivr.net/momentjs/latest/moment.min.js" defer f="',
-		'//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js" defer f="',
+		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
@@ -170,7 +246,7 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 		<section class="section" id="reports">
 
-			<div class="toolbar">
+			<div class="toolbar form">
 
 				<label>
 					<button id="back">
@@ -179,11 +255,14 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 					</button>
 				</label>
 
-				<div class="datasets"></div>
-
-				<label class="right">
-					<input type="text" name="date-range">
+				<label>
+					<button id="edit-dashboard" class="hidden">
+						<i class="fa fa-edit"></i>
+						Edit
+					</button>
 				</label>
+
+				<div class="datasets right"></div>
 			</div>
 
 			<div class="list"></div>
@@ -191,14 +270,14 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 	`));
 });
 
-app.get('/dashboards/:id?', (req, res) => {
+router.get('/dashboards/:id?', (req, res) => {
 
 	const template = new Template;
 
 	template.stylesheets.push('/css/dashboards.css');
 
 	template.scripts.push('/js/dashboards.js');
-	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js');
+	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js');
 
 	res.send(template.body(`
 
@@ -264,7 +343,7 @@ app.get('/dashboards/:id?', (req, res) => {
 	`));
 });
 
-app.get('/reports/:id?', (req, res) => {
+router.get('/reports/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -273,11 +352,11 @@ app.get('/reports/:id?', (req, res) => {
 	template.scripts = template.scripts.concat([
 		'/js/reports.js',
 
-		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js',
-		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ext-language_tools.js',
+		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
+		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
-		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
@@ -335,26 +414,10 @@ app.get('/reports/:id?', (req, res) => {
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="report-form"><i class="fa fa-save"></i> Save</button>
 
-				<button id="test" class="right"><i class="fas fa-sync"></i> Run</button>
+				<button id="test" class="right"><i class="fas fa-sync"></i> Save & Run</button>
 				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>
 				<button id="view"><i class="fas fa-external-link-alt""></i> View</button>
 			</header>
-
-			<div class="hidden" id="test-container">
-				<h3>Execution Response
-					<span id="row-count"></span>
-					<span id="json" class="tab">JSON</span>
-					<span id="table" class="tab">Table</span>
-					<span id="query" class="tab">Query</span>
-					<span title="Close" class="close">&times;</span>
-				</h3>
-
-				<div id="test-body">
-					<div id="json-content"></div>
-					<div id="table-content"></div>
-					<div id="query-content"></div>
-				</div>
-			</div>
 
 			<form class="form" id="report-form">
 
@@ -406,7 +469,7 @@ app.get('/reports/:id?', (req, res) => {
 
 				<label>
 					<span>Description</span>
-					<textarea name="description" required></textarea>
+					<textarea name="description"></textarea>
 				</label>
 
 				<label>
@@ -454,6 +517,27 @@ app.get('/reports/:id?', (req, res) => {
 					<span>Added By</span>
 					<span class="NA" id="added-by"></span>
 				</label>
+
+				<label>
+					<span>Format</span>
+					<textarea name="format"></textarea>
+				</label>
+
+				<div class="hidden" id="test-container">
+					<h3>Execution Response
+						<span id="row-count"></span>
+						<span id="json" class="tab">JSON</span>
+						<span id="table" class="tab">Table</span>
+						<span id="query" class="tab">Query</span>
+						<span title="Close" class="close">&times;</span>
+					</h3>
+
+					<div id="test-body">
+						<div id="json-content"></div>
+						<div id="table-content"></div>
+						<div id="query-content"></div>
+					</div>
+				</div>
 			</form>
 
 			<h3>Filters</h3>
@@ -558,7 +642,7 @@ app.get('/reports/:id?', (req, res) => {
 	`));
 });
 
-app.get('/users/:id?', (req, res) => {
+router.get('/users/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -685,7 +769,7 @@ app.get('/users/:id?', (req, res) => {
 	`));
 });
 
-app.get('/connections/:id?', (req, res) => {
+router.get('/connections/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -748,7 +832,7 @@ app.get('/connections/:id?', (req, res) => {
 	`));
 });
 
-app.get('/settings/:tab?/:id?', (req, res) => {
+router.get('/settings/:tab?/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -756,14 +840,65 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 	template.scripts.push('/js/settings.js');
 
 	res.send(template.body(`
-		<nav>
-			<a>Accounts</a>
-			<a>Privileges</a>
-			<a>Roles</a>
-			<a>DataSets</a>
-		</nav>
+
+		<nav></nav>
+
+		<div class="setting-page datasets-page hidden">
+			<section class="section" id="datasets-list">
+
+				<h1>Datasets Manage</h1>
+
+				<header class="toolbar">
+					<button id="add-datset"><i class="fa fa-plus"></i> Add New Dataset</button>
+				</header>
+
+				<table class="block">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Category</th>
+							<th>Query id</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+
+			<section class="section" id="datasets-form">
+
+				<h1></h1>
+
+				<header class="toolbar">
+					<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+					<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
+				</header>
+
+				<form class="block form" id="user-form">
+
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" required>
+					</label>
+
+					<label>
+						<span>Category</span>
+						<select name="category_id"></select>
+					</label>
+
+					<label>
+						<span>Query Id</span>
+						<input type="number" name="query_id">
+					</label>
+				</form>
+			</section>
+		</div>
+
 	`));
 });
+
 
 class Template {
 
@@ -788,11 +923,8 @@ class Template {
 					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="https://lbxoezeogn43sov13789n8p9-wpengine.netdna-ssl.com/img/favicon.png" />
 
-					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'?'+checksum+'">').join('')}
-					${this.scripts.map(s => '<script src="'+s+'?'+checksum+'"></script>').join('')}
-					<script>
-						PORT = ${JSON.stringify(config.get('port'))}
-					</script>
+					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + checksum + '">').join('')}
+					${this.scripts.map(s => '<script src="' + s + '?' + checksum + '"></script>').join('')}
 				</head>
 				<body>
 					<div id="ajax-working"></div>
@@ -816,14 +948,4 @@ class Template {
 	}
 }
 
-if(!port)
-	return console.error('Port not provided!');
-
-app.listen(port, () => console.info(`
-	**********************
-	Server Started:
-		What: Client
-		Environment: ${app.get('env')}
-		Port: ${port}
-	**********************
-`));
+module.exports = router;

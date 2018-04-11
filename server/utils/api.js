@@ -7,13 +7,14 @@ const commonFun = require('./commonFunctions');
 const User = require('./User');
 const constants = require('./constants');
 const assert = require("assert");
+const pgsql = require("./pgsql").Postgres
 
 class API {
 
 	constructor() {
 
 		this.mysql = mysql;
-
+		this.pgsql = pgsql;
 	}
 
 	static setup() {
@@ -80,9 +81,9 @@ class API {
 					obj.user = new User(userDetails);
 				}
 
-				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length)
+				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
 					throw new API.Exception(401, 'User Not Authenticated! :(');
-
+				}
 				// if (host.includes('localhost')) {
 				// 	host = 'test-analytics.jungleworks.co';
 				// }

@@ -147,7 +147,15 @@ class Report {
 			Reports.back();
 		});
 
-		Report.container.querySelector('.toolbar #test').on('click', () => Report.selected && Report.selected.test());
+		Report.container.querySelector('.toolbar #test').on('click', async () => {
+
+			if(!Report.selected)
+				return;
+
+			await Report.selected.update();
+			await Report.selected.test();
+		});
+
 		Report.container.querySelector('.toolbar #force-test').on('click', () => Report.selected && Report.selected.test(true));
 
 		for(const tab of Report.container.querySelectorAll('.tab')) {
@@ -191,7 +199,14 @@ class Report {
 			Report.editor.editor.commands.addCommand({
 				name: 'execute',
 				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => Report.selected && Report.selected.test()
+				exec: async () => {
+
+					if(!Report.selected)
+						return;
+
+					await Report.selected.update();
+					await Report.selected.test();
+				}
 			});
 		});
 	}
@@ -264,7 +279,7 @@ class Report {
 
 		const source = Reports.credentials.filter(s => s.id == Report.form.elements.connection_name.value)[0];
 
-		if(source && source.type == 'mysql') {
+		if(source && ['mysql', 'pgsql'].includes(source.type)) {
 
 			Report.form.querySelector('#query').classList.remove('hidden');
 			Report.form.querySelector('#api').classList.add('hidden');
@@ -471,34 +486,29 @@ class Report {
 
 		Report.form.parentElement.querySelector('h1').innerHTML = `${this.name} - ${this.query_id}`;
 
-		if(Report.form.listener)
-			Report.form.removeEventListener('submit', Report.form.listener);
+		Report.form.removeEventListener('submit', Report.form.listener);
 
-		if(Report.container.viewListener)
-			view.removeEventListener('click', Report.container.viewListener);
+		view.removeEventListener('click', Report.container.viewListener);
 
 		view.on('click', Report.container.viewListener = () => window.open(`/report/${this.query_id}`));
 
 		Report.form.on('submit', Report.form.listener = e => this.update(e));
 
-		if(ReportFilter.insert.form.listener)
-			ReportFilter.insert.form.removeEventListener('submit', ReportFilter.insert.form.listener);
-
+		ReportFilter.insert.form.removeEventListener('submit', ReportFilter.insert.form.listener);
 		ReportFilter.insert.form.on('submit', ReportFilter.insert.form.listener = e => ReportFilter.insert(e, this));
 
-		if(ReportVisualization.insert.form.listener)
-			ReportVisualization.insert.form.removeEventListener('submit', ReportVisualization.insert.form.listener);
-
+		ReportVisualization.insert.form.removeEventListener('submit', ReportVisualization.insert.form.listener);
 		ReportVisualization.insert.form.on('submit', ReportVisualization.insert.form.listener = e => ReportVisualization.insert(e, this));
 
 		Report.form.reset();
 
 		for(const key in this) {
 			if(Report.form.elements[key])
-				Report.form.elements[key].value = this[key];
+				Report.form.elements[key].value = this[key] || '';
 		}
 
-		Report.form.elements.method.value = this.url_options.method;
+		Report.form.method.value = this.url_options.method;
+		Report.form.format.value = JSON.stringify(this.format, 0, 4);
 
 		Report.editor.value = this.query;
 		Report.editor.editor.focus();
@@ -584,15 +594,28 @@ class Report {
 		if(is_redis)
 			parameters.is_redis = 0;
 
+		const content = {
+			rowCount: Report.container.querySelector('#row-count'),
+			json: Report.container.querySelector('#json-content'),
+			query: Report.container.querySelector('#query-content'),
+			table: Report.container.querySelector('#table-content'),
+		};
+
 		try {
 
 			const response = await API.call('reports/engine/report', parameters, options) || [];
 
-			Report.container.querySelector('#row-count').textContent = 'Rows: '+Format.number(response ? response.data.length : 0);
+			content.rowCount.innerHTML = `
+				<span>Execution Time: <strong>${Format.number(response.runtime / 1000)}s</strong></span>
+				<span>Cached: <strong>${response.cached.status ? 'Yes' : 'No'}</strong></span>
+				<span>Cache Age: <strong>${response.cached.status ? Format.number(response.cached.age / 1000 / 60 / 60) : '0'}h</strong></span>
+				<span>Rows: <strong>${Format.number(response ? response.data.length : 0)}</strong></span>
+				<span>Columns: <strong>${Format.number(response ? Object.keys(response.data[0]).length : 0)}</strong></span>
+			`;
 
-			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${JSON.stringify(response.data, 0, 1)}</code>`;
+			content.json.innerHTML = `<code>${JSON.stringify(response.data, 0, 1)}</code>`;
 
-			Report.testContainer.querySelector('#query-content').innerHTML = `<code>${response.query || ''}</code>`;
+			content.query.innerHTML = `<code>${response.query || ''}</code>`;
 
 			if(response.data.length) {
 
@@ -600,7 +623,7 @@ class Report {
 					headings = Object.keys(response.data[0]).map(key => `<th>${key}</th>`),
 					rows = response.data.map(row => '<tr>'+Object.keys(row).map(key => `<td>${row[key]}</td>`).join('')+'</tr>');
 
-				Report.testContainer.querySelector('#table-content').innerHTML = `
+				content.table.innerHTML = `
 					<table>
 						<thead>
 							<tr>${headings.join('')}</tr>
@@ -616,14 +639,14 @@ class Report {
 					tab = 'table';
 			}
 
-			Report.container.querySelector(`#${tab}`).click();
-
 		} catch(e) {
-			Report.testContainer.querySelector('#json-content').innerHTML = `<code>${e.message}</code>`;
+			content.rowCount.textContent = null;
+			content.json.innerHTML = content.query.innerHTML = content.table.innerHTML = `<code class="warning">${e.message}</code>`;
 		}
 
+		Report.container.querySelector(`#${tab}`).click();
+
 		Report.testContainer.parentElement.classList.remove('hidden');
-		// document.getElementById('content').scrollTo(0, 0);
 	}
 
 	filterSuggestions() {
@@ -936,7 +959,8 @@ class ReportVisualization {
 				axis: {
 					x: {
 						column: form.column.value,
-					}
+					},
+					y: {}
 				}
 			});
 		}
