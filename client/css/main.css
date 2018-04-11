@@ -314,7 +314,7 @@ body {
 
 	main .form {
 		display: grid;
-		/*padding: calc(var(--gap) * 2);*/
+		padding: calc(var(--gap) * 2);
 		grid-gap: calc(var(--gap) * 3);
 	}
 	main .form.toolbar {
@@ -595,7 +595,7 @@ body {
 						max-width: 100%;
 						flex-basis: 750px;
 						overflow: auto;
-						/*padding: calc(var(--gap) * 2);*/
+						padding: calc(var(--gap) * 2);
 					}
 						main .data-source .column .blanket form {
 						}
@@ -613,7 +613,7 @@ body {
                             border: red;
                         }
 							main .data-source .column form h3 {
-								margin: 10 calc(var(--gap) * -1) var(--gap);
+								margin: 0px calc(var(--gap) * -1) var(--gap);
 								padding: var(--gap) 10px;
 								background: var(--color-primary);
 								color: var(--color-primary-text);

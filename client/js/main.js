@@ -1449,7 +1449,6 @@ class DataSourceColumn {
 		}
 		if(updated == 0) {
 			columns.push(response);
-
 		}
 
 		this.source.format["columns"] = columns;
