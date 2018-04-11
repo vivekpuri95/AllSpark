@@ -1,19 +1,17 @@
 "use strict";
 
 const express = require('express');
+const router = express.Router();
 const compression = require('compression');
-const app = express();
 const config = require('config');
-
-const port = config.has('port') ? config.get('port').get('client') : 8081;
 
 const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
-app.use(compression());
+router.use(compression());
 
-app.use(express.static('./client'));
+router.use(express.static('./client'));
 
-app.get('/login', (req, res) => {
+router.get('/login', (req, res) => {
 
 	const template = new Template;
 
@@ -51,7 +49,7 @@ app.get('/login', (req, res) => {
 	`));
 });
 
-app.get('/login/forgot', (req, res) => {
+router.get('/login/forgot', (req, res) => {
 
 	const template = new Template;
 
@@ -84,7 +82,7 @@ app.get('/login/forgot', (req, res) => {
 	`));
 });
 
-app.get('/login/reset', (req, res) => {
+router.get('/login/reset', (req, res) => {
 
 	const template = new Template;
 
@@ -152,7 +150,7 @@ app.get('/user/profile/edit', (req, res) => {
 	`));
 });
 
-app.get('/user/profile/:id?', (req, res) => {
+router.get('/user/profile/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -199,7 +197,7 @@ app.get('/user/profile/:id?', (req, res) => {
 	`))
 });
 
-app.get('/:type(dashboard|report)/:id?', (req, res) => {
+router.get('/:type(dashboard|report)/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -272,7 +270,7 @@ app.get('/:type(dashboard|report)/:id?', (req, res) => {
 	`));
 });
 
-app.get('/dashboards/:id?', (req, res) => {
+router.get('/dashboards/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -345,7 +343,7 @@ app.get('/dashboards/:id?', (req, res) => {
 	`));
 });
 
-app.get('/reports/:id?', (req, res) => {
+router.get('/reports/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -644,7 +642,7 @@ app.get('/reports/:id?', (req, res) => {
 	`));
 });
 
-app.get('/users/:id?', (req, res) => {
+router.get('/users/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -771,7 +769,7 @@ app.get('/users/:id?', (req, res) => {
 	`));
 });
 
-app.get('/connections/:id?', (req, res) => {
+router.get('/connections/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -834,7 +832,7 @@ app.get('/connections/:id?', (req, res) => {
 	`));
 });
 
-app.get('/settings/:tab?/:id?', (req, res) => {
+router.get('/settings/:tab?/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -842,7 +840,7 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 	template.scripts.push('/js/settings.js');
 
 	res.send(template.body(`
-		
+
 		<nav></nav>
 
 		<div class="setting-page datasets-page hidden">
@@ -896,7 +894,7 @@ app.get('/settings/:tab?/:id?', (req, res) => {
 					</label>
 				</form>
 			</section>
-		</div>	
+		</div>
 
 	`));
 });
@@ -925,11 +923,8 @@ class Template {
 					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="https://lbxoezeogn43sov13789n8p9-wpengine.netdna-ssl.com/img/favicon.png" />
 
-					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="'+s+'?'+checksum+'">').join('')}
-					${this.scripts.map(s => '<script src="'+s+'?'+checksum+'"></script>').join('')}
-					<script>
-						PORT = ${JSON.stringify(config.get('port'))}
-					</script>
+					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + checksum + '">').join('')}
+					${this.scripts.map(s => '<script src="' + s + '?' + checksum + '"></script>').join('')}
 				</head>
 				<body>
 					<div id="ajax-working"></div>
@@ -953,14 +948,4 @@ class Template {
 	}
 }
 
-if(!port)
-	return console.error('Port not provided!');
-
-app.listen(port, () => console.info(`
-	**********************
-	Server Started:
-		What: Client
-		Environment: ${app.get('env')}
-		Port: ${port}
-	**********************
-`));
+module.exports = router;

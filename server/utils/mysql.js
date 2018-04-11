@@ -10,60 +10,60 @@ console.log('INITIALIZE POOL###################################');
 
 const poolObj = {};
 
-for(const connection in dbConfig) {
-    poolObj[connection] = mysql.createPool(dbConfig[connection])
+for (const connection in dbConfig) {
+	poolObj[connection] = mysql.createPool(dbConfig[connection])
 }
 
 
 class MySQL {
-    constructor(connectionName='read') {
-        this.pool = poolObj[connectionName || 'read'] || poolObj['read'];
-    }
+	constructor(connectionName = 'read') {
+		this.pool = poolObj[connectionName || 'read'] || poolObj['read'];
+	}
 
-    async query(sql, values=null, connectionName='read') {
-        this.pool = poolObj[connectionName];
+	static async crateExternalPool(id = -1) {
+		const query = `select * from tb_credentials c where c.status = 1 and type = 'mysql'`;
 
-        return new Promise((resolve, reject) => {
+		const mysqlObj = new MySQL();
+		const credentials = await mysqlObj.query(query);
 
-            const q = this.pool.query(sql, values, function(err, result) {
+		for (const credential of credentials) {
 
-                if (err) {
-                    console.log(err);
-                    return reject(err);
-                }
+			poolObj[credential.id] = mysql.createPool({
+				connectionLimit: credential.limit || 10,
+				user: credential.user,
+				host: credential.host,
+				password: credential.password,
+				database: credential.db,
+			});
 
-                if(!result.hasOwnProperty('length')) {
-                    return resolve(result);
-                }
+		}
+		console.log("Connections Available: ", Object.keys(poolObj))
+	}
 
-                this.formatted_sql = q.sql;
-                this.sql = q.sql.replace(/\n/g, ' ');
-                this.result = result;
-                result.instance = this;
-                return resolve(result);
-            });
-        });
-    }
+	async query(sql, values = null, connectionName = 'read') {
+		this.pool = poolObj[connectionName];
 
-    static async crateExternalPool(id=-1) {
-        const query = `select * from tb_credentials c where c.status = 1 and type = 'mysql'`;
+		return new Promise((resolve, reject) => {
 
-        const mysqlObj = new MySQL();
-        const credentials = await mysqlObj.query(query);
+			const q = this.pool.query(sql, values, function (err, result) {
 
-        for(const credential of credentials) {
+				if (err) {
+					console.log(err);
+					return reject(err);
+				}
 
-            poolObj[credential.id] = mysql.createPool({
-                connectionLimit : credential.limit || 10,
-                user            : credential.user,
-                host            : credential.host,
-                password        : credential.password,
-                database        : credential.db,
-            });
+				if (!result.hasOwnProperty('length')) {
+					return resolve(result);
+				}
 
-        }
-        console.log("Connections Available: ", Object.keys(poolObj))
-    }
+				this.formatted_sql = q.sql;
+				this.sql = q.sql.replace(/\n/g, ' ');
+				this.result = result;
+				result.instance = this;
+				return resolve(result);
+			});
+		});
+	}
 
 }
 
