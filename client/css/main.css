@@ -763,7 +763,7 @@ body {
 
 
 			.visualization.table {
-				overflow: auto;
+				/* overflow: auto; */
 				width: initial;
 				max-width: initial;
 			}
@@ -1040,10 +1040,10 @@ body {
 		font-weight: bold;
 	}
 .visualization .container > svg .bar {
-	transition: fill var(--transition-duration);
+	transition: opacity var(--transition-duration);
 }
 .visualization .container > svg .bar.hover {
-	fill: #666 !important;
+	opacity: 0.6;
 }
 .visualization .container > svg .pie-slice {
 	transition: opacity var(--transition-duration);
