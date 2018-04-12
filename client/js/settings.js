@@ -5,20 +5,20 @@ class Settings extends Page {
 
 		const nav = this.container.querySelector('nav');
 
-		for(const [key, settings] of Settings.list) {
+		for (const [key, settings] of Settings.list) {
 
 			const setting = new settings(this.container);
 
 			const a = document.createElement('a');
-		
+
 			a.textContent = setting.name;
-			
+
 			a.on('click', () => {
-				
-				for(const a of nav.querySelectorAll('a.selected'))
+
+				for (const a of nav.querySelectorAll('a.selected'))
 					a.classList.remove('selected');
 
-				for(const a of this.container.querySelectorAll('.setting-page'))
+				for (const a of this.container.querySelectorAll('.setting-page'))
 					a.classList.add('hidden');
 
 				a.classList.add('selected');
@@ -28,17 +28,18 @@ class Settings extends Page {
 			});
 
 			nav.appendChild(a);
-		};
+		}
+		;
 
 		const byDefault = this.container.querySelector('nav a');
 
 		byDefault.classList.add('selected');
-		
-		for(const [key, settings] of Settings.list) {
+
+		for (const [key, settings] of Settings.list) {
 
 			const setting = new settings(this.container);
 
-			if(byDefault.textContent == setting.name) {
+			if (byDefault.textContent == setting.name) {
 				setting.setup();
 				setting.load();
 				setting.container.classList.remove('hidden');
@@ -69,8 +70,8 @@ Settings.list.set('datasets', class Datasets extends SettingPage {
 		this.container = this.page.querySelector('.datasets-page');
 		this.form = this.container.querySelector('section#datasets-form form');
 
-		for(const data of MetaData.categories.values()) {
-			this.form.category_id.insertAdjacentHTML('beforeend',`
+		for (const data of MetaData.categories.values()) {
+			this.form.category_id.insertAdjacentHTML('beforeend', `
 				<option value="${data.category_id}">${data.name}</option>
 			`);
 		}
@@ -88,7 +89,7 @@ Settings.list.set('datasets', class Datasets extends SettingPage {
 
 		this.list = new Map;
 
-		for(const data of response)
+		for (const data of response)
 			this.list.set(data.id, new SettingsDataset(data, this));
 
 		await this.render();
@@ -99,10 +100,10 @@ Settings.list.set('datasets', class Datasets extends SettingPage {
 		const container = this.container.querySelector('#datasets-list table tbody')
 		container.textContent = null;
 
-		if(!this.list.size)
+		if (!this.list.size)
 			container.innerHTML = '<div class="NA">No rows found :(</div>'
 
-		for(const dataset of this.list.values()){
+		for (const dataset of this.list.values()) {
 			container.appendChild(dataset.row);
 		}
 
@@ -112,11 +113,59 @@ Settings.list.set('datasets', class Datasets extends SettingPage {
 
 });
 
+Settings.list.set('privileges', class Privileges extends SettingPage {
+
+	get name() {
+		return 'Privileges';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.privilege-page');
+		this.form = this.container.querySelector('section#privileges-form form');
+
+		this.container.querySelector('section#privileges-list #add-privilege').on('click', () => SettingsPrivilege.add(this));
+
+		this.container.querySelector('#privileges-form #cancel-form').on('click', () => {
+			Sections.show('privileges-list');
+		});
+	}
+
+	async load() {
+
+		const response = await API.call('privileges/list');
+
+		this.list = new Map;
+
+		for (const data of response)
+			this.list.set(data.privilege_id, new SettingsPrivilege(data, this));
+
+		await this.render();
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#privileges-list table tbody')
+		container.textContent = null;
+
+		if (!this.list.size)
+			container.innerHTML = '<div class="NA">No rows found :(</div>'
+
+		for (const dataset of this.list.values()) {
+			container.appendChild(dataset.row);
+		}
+
+		await Sections.show('privileges-list');
+	}
+
+
+});
+
 class SettingsDataset {
 
 	constructor(dataset, datasets) {
 
-		for(const key in dataset)
+		for (const key in dataset)
 			this[key] = dataset[key];
 
 		this.datasets = datasets;
@@ -154,7 +203,7 @@ class SettingsDataset {
 
 	get row() {
 
-		if(this.container)
+		if (this.container)
 			return this.container;
 
 		this.container = document.createElement('tr');
@@ -208,15 +257,13 @@ class SettingsDataset {
 		await this.datasets.load();
 
 		this.datasets.list.get(this.id).edit();
-		
 		await Sections.show('datasets-form');
-		
 		this.datasets.list.get(this.id).edit();
 	}
 
 	async delete() {
 
-		if(!confirm('Are you sure?'))
+		if (!confirm('Are you sure?'))
 			return;
 
 		const options = {
@@ -228,5 +275,120 @@ class SettingsDataset {
 
 		await API.call('datasets/delete', parameter, options);
 		await this.datasets.load();
+	}
+}
+
+
+class SettingsPrivilege {
+
+	constructor(privilege, privileges) {
+
+		for (const key in privilege)
+			this[key] = privilege[key];
+
+		this.privileges = privileges;
+	}
+
+	static async add(privileges) {
+
+		privileges.container.querySelector('#privileges-form h1').textContent = 'Add new Privileges';
+		privileges.form.reset();
+
+		if (SettingsPrivilege.submitListener)
+			privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
+
+		privileges.form.on('submit', SettingsPrivilege.submitListener = e => SettingsPrivilege.insert(e, privileges));
+
+		await Sections.show('privileges-form');
+	}
+
+	static async insert(e, privileges) {
+
+		e.preventDefault();
+
+		const options = {
+			method: 'POST',
+			form: new FormData(privileges.form),
+		}
+
+		const response = await API.call('privileges/insert', {}, options);
+
+		await privileges.load();
+
+		await privileges.list.get(response.insertId).edit();
+	}
+
+	get row() {
+
+		if (this.container)
+			return this.container;
+
+		this.container = document.createElement('tr');
+
+		this.container.innerHTML = `
+			<td>${this.privilege_id}</td>
+			<td>${this.name}</td>
+			<td>${this.is_admin}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		this.container.querySelector('.green').on('click', () => this.edit());
+
+		this.container.querySelector('.red').on('click', () => this.delete());
+
+		return this.container;
+	}
+
+	async edit() {
+
+		this.privileges.container.querySelector('#privileges-form h1').textContent = 'Edit ' + this.name;
+		this.privileges.form.reset();
+
+		this.privileges.form.name.value = this.name;
+		this.privileges.form.is_admin.value = this.is_admin;
+
+		this.privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
+		this.privileges.form.on('submit', SettingsPrivilege.submitListener = e => this.update(e));
+
+		await Sections.show('privileges-form');
+	}
+
+	async update(e) {
+
+		e.preventDefault();
+
+		const parameter = {
+			privilege_id: this.privilege_id,
+		}
+
+		const options = {
+			method: 'POST',
+			form: new FormData(this.privileges.form),
+		}
+
+		await API.call('privileges/update', parameter, options);
+
+		await this.privileges.load();
+
+		this.privileges.list.get(this.privilege_id).edit();
+
+		await Sections.show('privileges-form');
+	}
+
+	async delete() {
+
+		if (!confirm('Are you sure?'))
+			return;
+
+		const options = {
+			method: 'POST',
+		}
+		const parameter = {
+			privilege_id: this.privilege_id,
+		}
+
+		await API.call('privileges/delete', parameter, options);
+		await this.privileges.load();
 	}
 }
