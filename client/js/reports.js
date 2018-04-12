@@ -247,7 +247,7 @@ class Report {
 		Report.form.querySelector('#added-by').textContent = user.email;
 
 		ReportFilters.container.innerHTML = '<div class="NA">You can add filters to this report once you add the query.</div>';
-		ReportVisualizations.container.innerHTML = '<div class="NA">You can add visualizations to this report once you add the query.</div>';
+		ReportVisualizations.container.classList.add('hidden');
 
 		ReportFilter.insert.form.reset();
 		ReportFilter.insert.form.classList.add('hidden');
@@ -597,6 +597,8 @@ class Report {
 		ReportVisualization.insert.form.removeEventListener('submit', ReportVisualization.insert.form.listener);
 		ReportVisualization.insert.form.on('submit', ReportVisualization.insert.form.listener = e => ReportVisualization.insert(e, this));
 
+		ReportVisualizations.container.classList.remove('hidden');
+
 		Report.form.reset();
 		Report.form.elements[0].classList.remove('unsaved');
 
@@ -739,7 +741,7 @@ class Report {
 
 		} catch(e) {
 			content.rowCount.textContent = null;
-			content.json.innerHTML = content.query.innerHTML = content.table.innerHTML = `<code class="warning">${e.message}</code>`;
+			content.json.innerHTML = content.query.innerHTML = content.table.innerHTML = `<code class="warning">${e.message ? e.message.sqlMessage : JSON.stringify(e.message, 0, 4)}</code>`;
 		}
 
 		Report.container.querySelector(`#${tab}`).click();
@@ -1009,13 +1011,15 @@ class ReportVisualizations {
 
 	render() {
 
-		ReportVisualizations.container.textContent = null;
+		const tbody = ReportVisualizations.container.querySelector('tbody');
+
+		tbody.textContent = null;
 
 		for(const visualization of this.list)
-			ReportVisualizations.container.appendChild(visualization.row);
+			tbody.appendChild(visualization.row);
 
 		if(!this.list.size)
-			ReportVisualizations.container.innerHTML = '<div class="NA">No visualizations found!</div>';
+			tbody.innerHTML = '<tr class="NA"><td>No visualizations found!</td></tr>';
 	}
 }
 
@@ -1023,14 +1027,30 @@ class ReportVisualization {
 
 	static setup() {
 
-		ReportVisualization.insert.form = document.getElementById('add-visualization');
+		ReportVisualization.form = ReportVisualizations.preview.querySelector('#visualization-form');
+		ReportVisualization.insert.form = ReportVisualizations.container.querySelector('#add-visualization');
+
+		ReportVisualizations.preview.querySelector('#visualization-back').on('click', () => {
+			ReportVisualizations.preview.classList.add('hidden');
+			ReportVisualizations.container.classList.remove('hidden');
+		});
 
 		const type = ReportVisualization.insert.form.type;
 
 		for(const visualization of MetaData.visualizations) {
+
+			ReportVisualization.form.type.insertAdjacentHTML('beforeend', `
+				<option value="${visualization.slug}">${visualization.name}</option>
+			`);
+
 			type.insertAdjacentHTML('beforeend', `
 				<option value="${visualization.slug}">${visualization.name}</option>
 			`);
+		}
+
+		for(const element of ReportVisualization.form.elements) {
+			element.on('change', () => ReportVisualization.form.classList.add('unsaved'));
+			element.on('keyup', () => ReportVisualization.form.classList.add('unsaved'));
 		}
 
 		type.on('change', () => {
@@ -1084,86 +1104,52 @@ class ReportVisualization {
 		} catch(e) {
 			this.options = null;
 		}
-
-		// Generate the form
-		this.row;
 	}
 
 	get row() {
 
-		if(this.container)
-			return this.container;
+		if(this.rowContainer)
+			return this.rowContainer;
 
-		this.container = document.createElement('form');
-		this.container.classList.add('form', 'visualization');
-		this.container.id = 'visualizations-form-'+this.id;
+		const row = this.rowContainer = document.createElement('tr');
 
-		this.container.innerHTML = `
-			<label>
-				<span>Name</span>
-				<input type="text" name="name" value="${this.name}" required>
-			</label>
-
-			<label>
-				<span>Type</span>
-				<select name="type" required></select>
-			</label>
-
-			<label>
-				<span>X-Axis Column</span>
-				<input type="text" name="column" placeholder="X-Axis Column">
-			</label>
-
-			<label class="save">
-				<span>&nbsp;</span>
-				<button type="submit"><i class="far fa-save"></i> Save</button>
-			</label>
-
-			<label class="delete">
-				<span>&nbsp;</span>
-				<button type="button"><i class="far fa-trash-alt"></i> Delete</button>
-			</label>
-
-			<label class="preview">
-				<span>&nbsp;</span>
-				<button type="button"><i class="fas fa-eye"></i> Preview</button>
-			</label>
+		row.innerHTML = `
+			<td>${this.id}</td>
+			<td>${this.name}</td>
+			<td>${this.type}</td>
+			<td class="action green"><i class="fa fa-edit"></i> Edit</td>
+			<td class="action red"><i class="far fa-trash-alt"></i> Delete</td>
 		`;
 
-		if(['line', 'area', 'bar', 'stacked'].includes(this.type))
-			this.container.column.value = this.options ? this.options.axis.x.column : '';
+		row.querySelector('.green').on('click', () => this.edit());
+		row.querySelector('.red').on('click', () => this.delete());
 
-		this.container.on('submit', e => this.update(e));
-		this.container.querySelector('.delete').on('click', () => this.delete());
-		this.container.querySelector('.preview').on('click', async () => {
+		return row;
+	}
 
-			await DataSource.load(true);
+	async edit() {
 
-			const report = new DataSource(DataSource.list.get(this.visualizations.report.query_id));
+		ReportVisualizations.container.classList.add('hidden');
+		ReportVisualizations.preview.classList.remove('hidden');
 
-			ReportVisualizations.preview.textContent = null;
+		ReportVisualization.form.name.value = this.name;
+		ReportVisualization.form.type.value = this.type;
 
-			ReportVisualizations.preview.appendChild(report.container);
+		ReportVisualization.form.removeEventListener('submit', ReportVisualization.submitListener);
+		ReportVisualization.form.on('submit', ReportVisualization.submitListener = e => this.update(e));
 
-			[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
+		await DataSource.load(true);
 
-			report.visualizations.selected.load();
-		});
+		const
+			report = new DataSource(DataSource.list.get(this.visualizations.report.query_id)),
+			preview = ReportVisualizations.preview.querySelector('.preview');
 
-		for(const visualization of MetaData.visualizations) {
-			this.container.type.insertAdjacentHTML('beforeend', `
-				<option value="${visualization.slug}">${visualization.name}</option>
-			`);
-		}
+		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
 
-		this.container.type.value = this.type;
+		preview.textContent = null;
+		preview.appendChild(report.container);
 
-		for(const element of this.container.elements) {
-			element.on('change', () => this.container.classList.add('unsaved'));
-			element.on('keyup', () => this.container.classList.add('unsaved'));
-		}
-
-		return this.container;
+		report.visualizations.selected.load();
 	}
 
 	async update(e) {
@@ -1176,7 +1162,7 @@ class ReportVisualization {
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(this.container),
+				form: new FormData(ReportVisualization.form),
 			};
 
 		if(['line', 'area', 'bar', 'stacked'].includes(this.type)) {

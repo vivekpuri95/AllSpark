@@ -595,40 +595,62 @@ router.get('/reports/:id?', (req, res) => {
 				</label>
 			</form>
 
-			<div id="visualizations">
+			<h3>Visualizations</h3>
 
-				<div>
-					<h3>Visualizations</h3>
+			<div id="visualizations-list" class="hidden">
+				<table>
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Type</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
 
-					<div id="visualizations-list"></div>
+				<form id="add-visualization" class="form visualization">
 
-					<form id="add-visualization" class="form visualization">
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" placeholder="Name" required>
+					</label>
 
-						<label>
-							<span>Name</span>
-							<input type="text" name="name" placeholder="Name" required>
-						</label>
+					<label>
+						<span>Type</span>
+						<select name="type" required></select>
+					</label>
 
-						<label>
-							<span>Type</span>
-							<select name="type" required></select>
-						</label>
+					<label class="save">
+						<span>&nbsp;</span>
+						<button type="submit"><i class="fa fa-plus"></i> Add</button>
+					</label>
+				</form>
+			</div>
 
-						<label>
-							<span>X-Axis Column</span>
-							<input type="text" name="column" placeholder="X-Axis Column">
-						</label>
+			<div id="visualization-preview" class="hidden">
 
-						<label class="save">
-							<span>&nbsp;</span>
-							<button type="submit"><i class="fa fa-plus"></i> Add</button>
-						</label>
-					</form>
+				<div class="toolbar">
+					<button id="visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
+					<button type="submit" form="visualization-form"><i class="fa fa-save"></i> Save</button>
 				</div>
 
-				<div id="visualization-preview">
-					<div class="NA">No Preview loaded yet! :(</div>
-				</div>
+				<form class="form" id="visualization-form">
+
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" value="${this.name}" required>
+					</label>
+
+					<label>
+						<span>Type</span>
+						<select name="type" required></select>
+					</label>
+				</form>
+
+				<div class="preview"></div>
 			</div>
 		</section>
 	`));
