@@ -804,8 +804,8 @@ body {
 						align-items: initial;
 						border-right: 1px solid #ccc;
 					}
-					.visualization.table thead tr.search div:last-child,
-					.visualization.table thead tr.accumulation div:last-child {
+					.visualization.table thead tr.search th:last-child div,
+					.visualization.table thead tr.accumulation th:last-child div {
 						border-right: 0;
 					}
 						.visualization.table thead tr.search select,
