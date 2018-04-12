@@ -112,7 +112,7 @@ Settings.list.set('datasets', class Datasets extends SettingPage {
 
 });
 
-Settings.list.set('privileges', class Datasets extends SettingPage {
+Settings.list.set('privileges', class Privileges extends SettingPage {
 
     get name() {
         return 'Privileges';
@@ -121,7 +121,7 @@ Settings.list.set('privileges', class Datasets extends SettingPage {
     setup() {
 
         this.container = this.page.querySelector('.privilege-page');
-        this.form = this.container.querySelector('section#privilege-form form');
+        this.form = this.container.querySelector('section#privileges-form form');
 
         this.container.querySelector('section#privileges-list #add-privilege').on('click', () => SettingsPrivilege.add(this));
 
@@ -137,7 +137,7 @@ Settings.list.set('privileges', class Datasets extends SettingPage {
         this.list = new Map;
 
         for(const data of response)
-            this.list.set(data.id, new SettingsPrivilege(data, this));
+            this.list.set(data.privilege_id, new SettingsPrivilege(data, this));
 
         await this.render();
     }
@@ -256,9 +256,9 @@ class SettingsDataset {
 		await this.datasets.load();
 
 		this.datasets.list.get(this.id).edit();
-		
+
 		await Sections.show('datasets-form');
-		
+
 		this.datasets.list.get(this.id).edit();
 	}
 
@@ -290,18 +290,17 @@ class SettingsPrivilege {
         this.privileges = privileges;
     }
 
-    static add(privileges) {
+    static async add(privileges) {
 
         privileges.container.querySelector('#privileges-form h1').textContent = 'Add new Privileges';
         privileges.form.reset();
 
-        privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
+        if(SettingsPrivilege.submitListener)
+        	privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
 
         privileges.form.on('submit', SettingsPrivilege.submitListener = e => SettingsPrivilege.insert(e, privileges));
 
-        Sections.show('privileges-form');
-
-        privileges.form.focus();
+        await Sections.show('privileges-form');
     }
 
     static async insert(e, privileges) {
@@ -328,7 +327,7 @@ class SettingsPrivilege {
         this.container = document.createElement('tr');
 
         this.container.innerHTML = `
-			<td>${this.id}</td>
+			<td>${this.privilege_id}</td>
 			<td>${this.name}</td>
 			<td>${this.is_admin}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
@@ -361,7 +360,7 @@ class SettingsPrivilege {
         e.preventDefault();
 
         const parameter = {
-            id: this.id,
+            privilege_id: this.privilege_id,
         }
 
         const options = {
@@ -373,11 +372,9 @@ class SettingsPrivilege {
 
         await this.privileges.load();
 
-        this.privileges.list.get(this.id).edit();
+        this.privileges.list.get(this.privilege_id).edit();
 
         await Sections.show('privileges-form');
-
-        this.privileges.list.get(this.id).edit();
     }
 
     async delete() {
@@ -389,7 +386,7 @@ class SettingsPrivilege {
             method: 'POST',
         }
         const parameter = {
-            id: this.id,
+            privilege_id: this.privilege_id,
         }
 
         await API.call('privileges/delete', parameter, options);

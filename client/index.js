@@ -925,10 +925,10 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 
 				<header class="toolbar">
 					<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
+					<button type="submit" form="user-form2"><i class="fa fa-save"></i> Save</button>
 				</header>
 
-				<form class="block form" id="user-form">
+				<form class="block form" id="user-form2">
 
 					<label>
 						<span>Name</span>
@@ -937,7 +937,7 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 
 					<label>
 						<span>Is Admin</span>
-						<select name="category_id"></select>
+						<input type="text" name="is_admin" required>
 					</label>
 				</form>
 			</section>
