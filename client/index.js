@@ -898,9 +898,7 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 			
 		<div class="setting-page privilege-page hidden">
 			<section class="section" id="privileges-list">
-
 				<h1>Privileges Manage</h1>
-
 				<header class="toolbar">
 					<button id="add-privilege"><i class="fa fa-plus"></i> Add New Privilege</button>
 				</header>
