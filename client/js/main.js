@@ -1192,7 +1192,7 @@ class DataSourceColumn {
 
 					<label>
 						<span>Name</span>
-						<input type="text" name="name" >
+						<input type="text" value="${this.name}" name="name" >
 					</label>
 					
 					<label>
@@ -1268,10 +1268,12 @@ class DataSourceColumn {
 					<label>
 						<div class="params-list"></div>
 					</label>
-
-					<label>
+					
+					<div class="submit-apply">
 						<input type="submit" value="Submit">
-					</label>
+						<button type="button" class="apply">Apply</button>
+					</div>
+
 				</form>
 			</div>
 		`;
@@ -1304,7 +1306,9 @@ class DataSourceColumn {
 
 		container.querySelector('.menu-toggle').on('click', () => this.showBlanket());
 
-		this.form.querySelector(' #add_parameters').on('click', () => this.addParameterDiv());
+		this.form.querySelector('#add_parameters').on('click', () => this.addParameterDiv());
+
+		this.form.querySelector('.apply').on('click', () => this.applyColumnChanges());
 
 		return container;
 	}
@@ -1380,6 +1384,18 @@ class DataSourceColumn {
 			this.blanket.classList.add('hidden');
 			this.form.querySelector('.params-list').removeChild(parameter);
 		});
+	}
+
+	applyColumnChanges() {
+
+		for(const element of this.form.elements) {
+			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+
+		}
+
+		this.container.querySelector('.name').textContent = this.name;
+		this.container.querySelector('.color').style.background = this.color;
+		this.blanket.classList.add('hidden');
 	}
 
 	async save(e) {
