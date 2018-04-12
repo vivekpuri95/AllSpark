@@ -15,6 +15,8 @@ class Settings extends Page {
 
 			a.on('click', () => {
 
+				localStorage.settingsCurrentTab = setting.name;
+
 				for (const a of nav.querySelectorAll('a.selected'))
 					a.classList.remove('selected');
 
@@ -31,7 +33,17 @@ class Settings extends Page {
 		}
 		;
 
-		const byDefault = this.container.querySelector('nav a');
+		let byDefault;
+		if(localStorage.settingsCurrentTab) {
+
+			for(const a of this.container.querySelectorAll('nav a')) {
+				if(a.textContent == localStorage.settingsCurrentTab)
+					byDefault = a;
+			}
+		}
+		else {
+			byDefault = this.container.querySelector('nav a');
+		}
 
 		byDefault.classList.add('selected');
 
@@ -159,6 +171,51 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 	}
 
 
+});
+
+Settings.list.set('roles', class Roles extends SettingPage {
+
+	get name() {
+
+		return 'Roles';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.roles-page');
+		this.form = this.page.querySelector('#role-form');
+
+		this.container.querySelector('#add-role').on('click', () => SettingsRole.add(this));
+		this.container.querySelector('#roles-form #back').on('click', () => Sections.show('roles-list'));
+	}
+
+	async load() {
+
+		const roles_list = await API.call('roles/list');
+		this.list = new Map();
+
+		for(const role of roles_list) {
+
+			this.list.set(role.role_id, new SettingsRole(role, this));
+		}
+
+		await this.render();
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#roles-list table tbody');
+		container.textContent = null;
+
+		if(!this.list.size)
+			container.innerHTML = '<div class="NA">No rows found :(</div>'
+
+		for(const role of this.list.values())
+			container.appendChild(role.row);
+
+		await Sections.show('roles-list');
+
+	}
 });
 
 class SettingsDataset {
@@ -390,5 +447,114 @@ class SettingsPrivilege {
 
 		await API.call('privileges/delete', parameter, options);
 		await this.privileges.load();
+	}
+}
+
+class SettingsRole {
+
+	constructor(role, roles) {
+
+		for(const key in role)
+			this[key] = role[key];
+
+		this.roles = roles;
+	}
+
+	static add(roles) {
+
+		roles.container.querySelector('#roles-form h1').textContent = 'Add new Role';
+		roles.form.reset();
+
+		roles.form.removeEventListener('submit', SettingsRole.submitListener);
+		roles.form.on('submit', SettingsRole.submitListener = e => SettingsRole.insert(e, roles));
+		Sections.show('roles-form');
+		roles.form.name.focus();
+	}
+
+	static async insert(e, roles) {
+
+		e.preventDefault();
+
+		const options = {
+			method: 'POST',
+			form: new FormData(roles.form),
+		}
+
+		await API.call('roles/insert', {}, options);
+		await roles.load();
+	}
+
+	async edit() {
+
+		this.roles.form.removeEventListener('submit', SettingsRole.submitListener);
+		this.roles.form.reset();
+
+		this.roles.form.on('submit', SettingsRole.submitListener = e => this.update(e));
+		this.roles.container.querySelector('#roles-form h1').textContent = `Editing ${this.name}`;
+		this.roles.form.name.value = this.name;
+		this.roles.form.is_admin.value = this.is_admin;
+
+		await Sections.show('roles-form');
+		this.roles.form.name.focus();
+	}
+
+	async update(e){
+
+		e.preventDefault();
+
+		const
+			parameter = {
+				role_id: this.role_id,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.roles.form),
+			};
+
+		await API.call('roles/update', parameter, options);
+
+		await this.roles.load();
+		this.roles.list.get(this.role_id).edit();
+
+		await Sections.show('roles-form');
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				role_id: this.role_id
+			}
+
+		await API.call('roles/delete', parameter, options);
+		await this.roles.load();
+
+	}
+
+	get row() {
+
+		if(this.container)
+			return this.container;
+
+		this.container = document.createElement('tr');
+
+		this.container.innerHTML = `
+			<td>${this.role_id}</td>
+			<td>${this.name}</td>
+			<td>${this.is_admin? 'Yes' : 'No'}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		this.container.querySelector('.green').on('click', () => this.edit());
+		this.container.querySelector('.red').on('click', () => this.delete());
+
+		return this.container;
 	}
 }
