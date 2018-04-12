@@ -942,6 +942,56 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 				</form>
 			</section>
 		</div>
+		
+		<div class="setting-page roles-page hidden">
+			
+			<section class="section" id="roles-list">
+			
+				<h1>Roles Manager</h1>
+				
+				<header class="toolbar">
+					<button id="add-role"><i class="fa fa-plus"></i> Add New Role</button>
+				</header>
+				
+				<table class="block">
+					<thead>
+						<tr>
+							<th class="thin">ID</th>
+							<th>Name</th>
+							<th>Admin</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>				
+			</section>
+			
+			<section class="section" id="roles-form">
+				
+				<h1></h1>
+				
+				<header class="toolbar">
+					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
+					<button type="submit" form="role-form"><i class="fa fa-save"></i> Save</button>
+				</header>
+				
+				<form class="block form" id="role-form">
+					<label>
+						<span>Name</span>
+						<input type="text" name="name">
+					</label>
+					
+					<label>
+						<span>Admin</span>
+						<select  name="is_admin">
+							<option value="1">Yes</option>
+							<option value="0">No</option>
+						</select>
+					</label>
+				</form>
+			</section>
+		</div>
 	`));
 });
 
