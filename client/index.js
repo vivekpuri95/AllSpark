@@ -902,7 +902,6 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 				<header class="toolbar">
 					<button id="add-privilege"><i class="fa fa-plus"></i> Add New Privilege</button>
 				</header>
-
 				<table class="block">
 					<thead>
 						<tr>
@@ -935,7 +934,10 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 
 					<label>
 						<span>Is Admin</span>
-						<input type="text" name="is_admin" required>
+						<select name="is_admin">
+							<option value="1">Yes</option>
+							<option value="0">No</option>
+						</select>
 					</label>
 				</form>
 			</section>
