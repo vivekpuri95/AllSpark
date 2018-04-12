@@ -79,7 +79,7 @@ exports.update = class extends API {
 
 		for (const key in this.request.body) {
 			if (query_cols.includes(key))
-				values[key] = this.request.body[key] || null;
+				values[key] = this.request.body[key];
 		}
 
 		try {

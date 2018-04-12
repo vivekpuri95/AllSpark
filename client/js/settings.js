@@ -268,7 +268,7 @@ class SettingsDataset {
 		this.container.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.name}</td>
-			<td>${MetaData.categories.get(this.category_id).name}</td>
+			<td>${this.category_id ? MetaData.categories.get(this.category_id).name : ''}</td>
 			<td>${this.query_id}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>

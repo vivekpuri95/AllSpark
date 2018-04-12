@@ -36,7 +36,8 @@ NODE_ENV='env' pm2 start bin/www --name env
 
 ### Windows
 ```
-$env:NODE_ENV="env" pm2 start bin/www --name env
+$env:NODE_ENV="env"
+pm2 start bin/www --name env
 ```
 
 ### Local Development

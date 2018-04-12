@@ -143,6 +143,8 @@ class Report {
 		Report.form = Report.container.querySelector('form');
 		Report.testContainer = Report.container.querySelector('#test-body');
 
+		window.onbeforeunload = () => Report.container.querySelector('.unsaved');
+
 		Report.container.querySelector('.toolbar #back').on('click', () => {
 			Reports.back();
 		});
@@ -172,6 +174,16 @@ class Report {
 		Report.container.querySelector('#test-container .close').on('click', function() {
 			this.parentElement.parentElement.classList.toggle('hidden');
 		});
+
+		for(const element of Report.form.elements) {
+			element.on('change', () => Report.form.elements[0].classList.add('unsaved'));
+			element.on('keyup', () => Report.form.elements[0].classList.add('unsaved'));
+		}
+
+		for(const key in this) {
+			if(Report.form.elements[key])
+				Report.form.elements[key].value = this[key];
+		}
 
 		Report.form.elements.connection_name.on('change', () => Report.renderSource());
 
@@ -230,6 +242,7 @@ class Report {
 		Report.form.reset();
 		Report.editor.value = '';
 		Report.editor.editor.focus();
+		Report.form.elements[0].classList.remove('unsaved');
 
 		Report.form.querySelector('#added-by').textContent = user.email;
 
@@ -286,10 +299,16 @@ class Report {
 
 			if(!Report.schemas.has(Report.form.elements.connection_name.value)) {
 
-				const
-					parameters = { id: Report.form.elements.connection_name.value },
-					response = await API.call('credentials/schema', parameters),
-					container = Report.form.querySelector('#query #schema');
+				let response = null;
+
+				const container = Report.form.querySelector('#query #schema');
+
+				try {
+					response = await API.call('credentials/schema', { id: Report.form.elements.connection_name.value });
+				} catch(e) {
+					container.innerHTML = `<div class="NA">Failed to load Schema! :(</div>`;
+					return;
+				}
 
 				const
 					schema = mysqlKeywords.map(k => {return {
@@ -312,6 +331,15 @@ class Report {
 
 				container.textContent = null;
 
+				const search = document.createElement('input');
+
+				search.type = 'search';
+				search.placeholder = 'Search...';
+
+				search.on('keyup', () => renderList());
+
+				container.appendChild(search);
+
 				for(const database of response) {
 
 					schema.push({
@@ -320,13 +348,7 @@ class Report {
 						meta: '(d)',
 					});
 
-					const tables = document.createElement('ul');
-					tables.classList.add('hidden');
-
 					for(const table of database.tables) {
-
-						const columns = document.createElement('ul');
-						columns.classList.add('hidden');
 
 						schema.push({
 							name: table.name,
@@ -341,71 +363,144 @@ class Report {
 								value: column.name,
 								meta: '(c) ' + table.name,
 							});
-
-							const li = document.createElement('li');
-
-							li.innerHTML = `
-								<span class="name">
-									<strong>C</strong>
-									<span>${column.name}</span>
-									<small>${column.type}</small>
-								</span>
-							`;
-
-							li.querySelector('span').on('click', () => {
-								Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
-							});
-
-							columns.appendChild(li);
 						}
-
-						const li = document.createElement('li');
-
-						li.innerHTML = `
-							<span class="name">
-								<strong>T</strong>
-								<span>${table.name}</span>
-								<small>${table.columns.length} columns</small>
-							</span>
-						`;
-
-						li.appendChild(columns)
-
-						li.querySelector('span').on('click', () => {
-							li.classList.toggle('opened');
-							columns.classList.toggle('hidden')
-						});
-
-						tables.appendChild(li);
 					}
-
-					const li = document.createElement('li');
-
-					li.innerHTML = `
-						<span class="name">
-							<strong>D</strong>
-							<span>${database.name}</span>
-							<small>${database.tables.length} tables</small>
-						</span>
-					`;
-
-					li.appendChild(tables)
-
-					li.querySelector('span').on('click', () => {
-						li.classList.toggle('opened');
-						tables.classList.toggle('hidden')
-					});
-
-					databases.appendChild(li);
 				}
 
 				Report.schemas.set(Report.form.elements.connection_name.value, schema);
 
 				container.appendChild(databases);
+
+				renderList();
+
+				function renderList() {
+
+					databases.textContent = null;
+
+					for(const database of response) {
+
+						const tables = document.createElement('ul');
+
+						if(!search.value)
+							tables.classList.add('hidden');
+
+						for(const table of database.tables) {
+
+							const columns = document.createElement('ul');
+
+							if(!search.value)
+								columns.classList.add('hidden');
+
+							for(const column of table.columns) {
+
+								if(search.value && !column.name.includes(search.value))
+									continue;
+
+								let name = column.name;
+
+								if(search.value) {
+									name = [
+										name.slice(0, name.indexOf(search.value)),
+										'<mark>',
+										search.value,
+										'</mark>',
+										name.slice(name.indexOf(search.value) + search.value.length)
+									].join('');
+								}
+
+								const li = document.createElement('li');
+
+								li.innerHTML = `
+									<span class="name">
+										<strong>C</strong>
+										<span>${name}</span>
+										<small>${column.type}</small>
+									</span>
+								`;
+
+								li.querySelector('span').on('click', () => {
+									Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
+								});
+
+								columns.appendChild(li);
+							}
+
+							const li = document.createElement('li');
+
+							if(!columns.children.length && !table.name.includes(search.value))
+								continue;
+
+							let name = table.name;
+
+							if(search.value && name.includes(search.value)) {
+								name = [
+									name.slice(0, name.indexOf(search.value)),
+									'<mark>',
+									search.value,
+									'</mark>',
+									name.slice(name.indexOf(search.value) + search.value.length)
+								].join('');
+							}
+
+							li.innerHTML = `
+								<span class="name">
+									<strong>T</strong>
+									<span>${name}</span>
+									<small>${table.columns.length} columns</small>
+								</span>
+							`;
+
+							li.appendChild(columns)
+
+							li.querySelector('span').on('click', () => {
+								li.classList.toggle('opened');
+								columns.classList.toggle('hidden')
+							});
+
+							tables.appendChild(li);
+						}
+
+						if(!tables.children.length && !database.name.includes(search.value))
+							continue;
+
+						const li = document.createElement('li');
+
+						let name = database.name;
+
+						if(search.value && name.includes(search.value)) {
+							name = [
+								name.slice(0, name.indexOf(search.value)),
+								'<mark>',
+								search.value,
+								'</mark>',
+								name.slice(name.indexOf(search.value) + search.value.length)
+							].join('');
+						}
+
+						li.innerHTML = `
+							<span class="name">
+								<strong>D</strong>
+								<span>${name}</span>
+								<small>${database.tables.length} tables</small>
+							</span>
+						`;
+
+						li.appendChild(tables)
+
+						li.querySelector('span').on('click', () => {
+							li.classList.toggle('opened');
+							tables.classList.toggle('hidden');
+						});
+
+						databases.appendChild(li);
+					}
+
+					if(!databases.children.length)
+						databases.innerHTML = `<div class="NA">No matches found! :(</div>`;
+				}
 			}
 
 			Report.editor.setAutoComplete(Report.schemas.get(Report.form.elements.connection_name.value));
-
 		}
 
 		else {
@@ -440,6 +535,8 @@ class Report {
 		let tags = this.tags ? this.tags.split(',') : [];
 		tags = tags.filter(t => t).map(tag => `<a>${tag.trim()}</a>`).join('');
 
+		const [connection] = this.connection_name ? Reports.credentials.filter(c => c.id == this.connection_name) : [];
+
 		this.container.innerHTML = `
 			<td>${this.query_id}</td>
 			<td>
@@ -448,7 +545,7 @@ class Report {
 				</a>
 			</td>
 			<td>${this.description || ''}</td>
-			<td class="source">${this.source}</td>
+			<td>${connection ? connection.connection_name + ' ('+connection.type+')' : ''}</td>
 			<td class="tags"><div>${tags}</div></td>
 			<td>${this.filters.list.size}</td>
 			<td>${this.visualizations.list.size}</td>
@@ -501,14 +598,15 @@ class Report {
 		ReportVisualization.insert.form.on('submit', ReportVisualization.insert.form.listener = e => ReportVisualization.insert(e, this));
 
 		Report.form.reset();
+		Report.form.elements[0].classList.remove('unsaved');
 
 		for(const key in this) {
 			if(Report.form.elements[key])
-				Report.form.elements[key].value = this[key] || '';
+				Report.form.elements[key].value = this[key];
 		}
 
 		Report.form.method.value = this.url_options.method;
-		Report.form.format.value = JSON.stringify(this.format, 0, 4);
+		Report.form.format.value = this.format ? JSON.stringify(this.format, 0, 4) : '';
 
 		Report.editor.value = this.query;
 		Report.editor.editor.focus();
@@ -1146,4 +1244,5 @@ const mysqlKeywords = [
 	'MINUTE',
 	'SECOND',
 	'DATE_FORMAT',
+	'USING',
 ];
