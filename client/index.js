@@ -529,6 +529,8 @@ router.get('/reports/:id?', (req, res) => {
 						<div id="table-content"></div>
 						<div id="query-content"></div>
 					</div>
+
+					<div id="test-executing" class="notice"></div>
 				</div>
 			</form>
 
@@ -648,6 +650,8 @@ router.get('/reports/:id?', (req, res) => {
 						<span>Type</span>
 						<select name="type" required></select>
 					</label>
+
+					<div class="options"></div>
 				</form>
 
 				<div class="preview"></div>

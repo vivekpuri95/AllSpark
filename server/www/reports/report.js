@@ -82,6 +82,8 @@ exports.update = class extends API {
 				values[key] = this.request.body[key];
 		}
 
+		values.refresh_rate = parseInt(values.refresh_rate) || null;
+
 		try {
 			values.format = values.format ? JSON.stringify(JSON.parse(values.format)) : null;
 		} catch(e) {

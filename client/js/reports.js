@@ -597,7 +597,8 @@ class Report {
 		ReportVisualization.insert.form.removeEventListener('submit', ReportVisualization.insert.form.listener);
 		ReportVisualization.insert.form.on('submit', ReportVisualization.insert.form.listener = e => ReportVisualization.insert(e, this));
 
-		ReportVisualizations.container.classList.remove('hidden');
+		if(ReportVisualizations.preview.classList.contains('hidden'))
+			ReportVisualizations.container.classList.remove('hidden');
 
 		Report.form.reset();
 		Report.form.elements[0].classList.remove('unsaved');
@@ -689,7 +690,9 @@ class Report {
 				method: 'POST',
 			};
 
-		let tab = 'json';
+		let
+			tab = 'json',
+			executing = Date.now();
 
 		if(is_redis)
 			parameters.is_redis = 0;
@@ -699,7 +702,22 @@ class Report {
 			json: Report.container.querySelector('#json-content'),
 			query: Report.container.querySelector('#query-content'),
 			table: Report.container.querySelector('#table-content'),
+			executing: Report.container.querySelector('#test-executing'),
 		};
+
+		Report.testContainer.parentElement.classList.remove('hidden');
+		content.executing.classList.remove('hidden');
+		Report.testContainer.classList.add('hidden');
+
+		(function showTime() {
+
+			if(!executing)
+				return;
+
+			content.executing.innerHTML = `Executing Query&hellip; ${Format.number((Date.now() - executing) / 1000)}s`
+
+			setTimeout(() => window.requestAnimationFrame(() => showTime()), 250);
+		})();
 
 		try {
 
@@ -710,7 +728,7 @@ class Report {
 				<span>Cached: <strong>${response.cached.status ? 'Yes' : 'No'}</strong></span>
 				<span>Cache Age: <strong>${response.cached.status ? Format.number(response.cached.age / 1000 / 60 / 60) : '0'}h</strong></span>
 				<span>Rows: <strong>${Format.number(response ? response.data.length : 0)}</strong></span>
-				<span>Columns: <strong>${Format.number(response ? Object.keys(response.data[0]).length : 0)}</strong></span>
+				<span>Columns: <strong>${Format.number(response && response.data.length ? Object.keys(response.data[0]).length : 0)}</strong></span>
 			`;
 
 			content.json.innerHTML = `<code>${JSON.stringify(response.data, 0, 1)}</code>`;
@@ -746,7 +764,10 @@ class Report {
 
 		Report.container.querySelector(`#${tab}`).click();
 
-		Report.testContainer.parentElement.classList.remove('hidden');
+		executing = false;
+
+		content.executing.classList.add('hidden');
+		Report.testContainer.classList.remove('hidden');
 	}
 
 	filterSuggestions() {
@@ -1104,6 +1125,8 @@ class ReportVisualization {
 		} catch(e) {
 			this.options = null;
 		}
+
+		this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
 	}
 
 	get row() {
@@ -1117,8 +1140,8 @@ class ReportVisualization {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.type}</td>
-			<td class="action green"><i class="fa fa-edit"></i> Edit</td>
-			<td class="action red"><i class="far fa-trash-alt"></i> Delete</td>
+			<td class="action green"><i class="fa fa-edit"></i></td>
+			<td class="action red"><i class="far fa-trash-alt"></i></td>
 		`;
 
 		row.querySelector('.green').on('click', () => this.edit());
@@ -1149,7 +1172,13 @@ class ReportVisualization {
 		preview.textContent = null;
 		preview.appendChild(report.container);
 
-		report.visualizations.selected.load();
+		await report.visualizations.selected.load();
+
+		const options = ReportVisualization.form.querySelector('.options');
+
+		options.textContent = null;
+		this.optionsForm.report = report;
+		options.appendChild(this.optionsForm.form);
 	}
 
 	async update(e) {
@@ -1166,10 +1195,13 @@ class ReportVisualization {
 			};
 
 		if(['line', 'area', 'bar', 'stacked'].includes(this.type)) {
+
+			const [axis] = this.optionsForm.json.axes.filter(a => a.position == 'bottom');
+
 			parameters.options = JSON.stringify({
 				axis: {
 					x: {
-						column: this.container.column.value,
+						column: axis && axis.columns ? axis.columns[0].key : null,
 					},
 					y: {}
 				}
@@ -1203,6 +1235,143 @@ class ReportVisualization {
 		Reports.list.get(this.visualizations.report.id).edit();
 	}
 }
+
+class ReportVisualizationOptions {
+
+	constructor(visualization) {
+
+		this.visualization = visualization;
+	}
+}
+
+class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<h4>Axes</h4>
+			<div class="axes"></div>
+			<button class="add-axis" type="button">
+				<i class="fa fa-plus"></i> Add New Axis
+			</button>
+		`;
+
+		const axes = container.querySelector('.axes');
+
+		for(const axis of this.visualization.options.axes || [])
+			axes.appendChild(this.axis(axis));
+
+		container.querySelector('.add-axis').on('click', () => {
+			axes.appendChild(this.axis());
+		});
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			axes: []
+		};
+
+		for(const axis of this.form.querySelectorAll('.axis')) {
+
+			const columns = [];
+
+			for(const option of axis.querySelectorAll('select[name=columns] option:checked'))
+				columns.push({key: option.value});
+
+			response.axes.push({
+				position: axis.querySelector('select[name=position]').value,
+				label: axis.querySelector('input[name=label]').value,
+				columns,
+			});
+		}
+
+		return response;
+	}
+
+	axis(axis = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('axis');
+
+		container.innerHTML = `
+			<label>
+				<span>Position</span>
+				<select name="position" value="${axis.position}">
+					<option value="top">Top</option>
+					<option value="right">Right</option>
+					<option value="bottom">Bottom</option>
+					<option value="left">Left</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Label</span>
+				<input type="text" name="label" value="${axis.label || ''}">
+			</label>
+
+			<label>
+				<span>Columns</span>
+				<select name="columns" multiple></select>
+			</label>
+
+			<label>
+				<button class="delete" type="button">
+					<i class="far fa-trash-alt"></i> Delete
+				</button>
+			</label>
+		`;
+
+		container.querySelector('.delete').on('click', () => container.parentElement && container.parentElement.removeChild(container));
+
+		if(this.report) {
+
+			const columns = container.querySelector('select[name=columns]');
+
+			let selected = false;
+
+			if(axis.columns && axis.columns.length)
+				selected = axis.columns.any(c => c.key == column.key);
+
+			for(const column of this.report.columns.values()) {
+				columns.insertAdjacentHTML(`beforeend`, `
+					<option value="${column.key}" ${selected ? 'selected' : ''}>${column.name}</option>
+				`);
+			}
+		}
+
+		return container;
+	}
+
+}
+
+ReportVisualization.types = new Map;
+
+ReportVisualization.types.set('table', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('line', class BarOptions extends ReportVisualizationLinearOptions {
+});
+
+ReportVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {
+});
+
+ReportVisualization.types.set('stacked', class BarOptions extends ReportVisualizationLinearOptions {
+});
+
+ReportVisualization.types.set('area', class BarOptions extends ReportVisualizationLinearOptions {
+});
+
+ReportVisualization.types.set('pie', class BarOptions extends ReportVisualizationOptions {
+});
 
 const mysqlKeywords = [
 	'SELECT',
