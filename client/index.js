@@ -366,7 +366,7 @@ router.get('/reports/:id?', (req, res) => {
 		<section class="section" id="list">
 
 			<h1>Reports Manager</h1>
-			<form class="toolbar filters filled">
+			<form class="toolbar filters">
 
 				<button type="button" id="add-report">
 					<i class="fa fa-plus"></i>
@@ -392,7 +392,7 @@ router.get('/reports/:id?', (req, res) => {
 							<th class="thin">ID</th>
 							<th>Name</th>
 							<th>Description</th>
-							<th>Source</th>
+							<th>Connection</th>
 							<th>Tags</th>
 							<th>Filters</th>
 							<th>Visualizations</th>
@@ -410,7 +410,7 @@ router.get('/reports/:id?', (req, res) => {
 
 			<h1></h1>
 
-			<header class="toolbar filled">
+			<header class="toolbar">
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="report-form"><i class="fa fa-save"></i> Save</button>
 
@@ -431,20 +431,12 @@ router.get('/reports/:id?', (req, res) => {
 					<select name="connection_name" required></select>
 				</label>
 
-				<label id="source">
-					<span>Type</span>
-					<select name="source">
-						<option value="query">Query</option>
-						<option value="api">API</option>
-					</select>
-				</label>
-
-				<label id="query" class="hidden">
+				<div id="query" class="hidden">
 					<span>Query</span>
 					<div id="schema"></div>
 					<div id="editor"></div>
 					<div id="missing-filters" class="hidden"></div>
-				</label>
+				</div>
 
 				<div id="api" class="hidden">
 
@@ -537,6 +529,8 @@ router.get('/reports/:id?', (req, res) => {
 						<div id="table-content"></div>
 						<div id="query-content"></div>
 					</div>
+
+					<div id="test-executing" class="notice"></div>
 				</div>
 			</form>
 
@@ -603,40 +597,65 @@ router.get('/reports/:id?', (req, res) => {
 				</label>
 			</form>
 
-			<div id="visualizations">
+			<h3>Visualizations</h3>
 
-				<div>
-					<h3>Visualizations</h3>
+			<div id="visualizations-list" class="hidden">
+				<table>
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Type</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
 
-					<div id="visualizations-list"></div>
+				<form id="add-visualization" class="form visualization">
 
-					<form id="add-visualization" class="form visualization">
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" placeholder="Name" required>
+					</label>
 
-						<label>
-							<span>Name</span>
-							<input type="text" name="name" placeholder="Name" required>
-						</label>
+					<label>
+						<span>Type</span>
+						<select name="type" required></select>
+					</label>
 
-						<label>
-							<span>Type</span>
-							<select name="type" required></select>
-						</label>
+					<label class="save">
+						<span>&nbsp;</span>
+						<button type="submit"><i class="fa fa-plus"></i> Add</button>
+					</label>
+				</form>
+			</div>
 
-						<label>
-							<span>X-Axis Column</span>
-							<input type="text" name="column" placeholder="X-Axis Column">
-						</label>
+			<div id="visualization-preview" class="hidden">
 
-						<label class="save">
-							<span>&nbsp;</span>
-							<button type="submit"><i class="fa fa-plus"></i> Add</button>
-						</label>
-					</form>
+				<div class="toolbar">
+					<button id="visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
+					<button type="submit" form="visualization-form"><i class="fa fa-save"></i> Save</button>
+					<button type="button" id="visualization-refresh"><i class="fa fa-sync"></i> Refresh</button>
 				</div>
 
-				<div id="visualization-preview">
-					<div class="NA">No Preview loaded yet! :(</div>
-				</div>
+				<form class="form" id="visualization-form">
+
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" value="${this.name}" required>
+					</label>
+
+					<label>
+						<span>Type</span>
+						<select name="type" required></select>
+					</label>
+
+					<div class="options"></div>
+				</form>
+
+				<div class="preview"></div>
 			</div>
 		</section>
 	`));
@@ -895,7 +914,7 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 				</form>
 			</section>
 		</div>
-			
+
 		<div class="setting-page privilege-page hidden">
 			<section class="section" id="privileges-list">
 				<h1>Privileges Manage</h1>
@@ -942,17 +961,17 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 				</form>
 			</section>
 		</div>
-		
+
 		<div class="setting-page roles-page hidden">
-			
+
 			<section class="section" id="roles-list">
-			
+
 				<h1>Roles Manager</h1>
-				
+
 				<header class="toolbar">
 					<button id="add-role"><i class="fa fa-plus"></i> Add New Role</button>
 				</header>
-				
+
 				<table class="block">
 					<thead>
 						<tr>
@@ -964,24 +983,24 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 						</tr>
 					</thead>
 					<tbody></tbody>
-				</table>				
+				</table>
 			</section>
-			
+
 			<section class="section" id="roles-form">
-				
+
 				<h1></h1>
-				
+
 				<header class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 					<button type="submit" form="role-form"><i class="fa fa-save"></i> Save</button>
 				</header>
-				
+
 				<form class="block form" id="role-form">
 					<label>
 						<span>Name</span>
 						<input type="text" name="name">
 					</label>
-					
+
 					<label>
 						<span>Admin</span>
 						<select  name="is_admin">

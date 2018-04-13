@@ -5,7 +5,6 @@
 	--color-secondary-text: #333;
 	--color-accent: #0366d6;
 	--color-accent-text: #fff;
-	--color-row-hover: #ddf;
 	--transition-duration: 300ms;
 	--gap: 5px;
 }
@@ -213,16 +212,15 @@ body {
 		display: block;
 	}
 		main section .toolbar {
-			display: flex;
-			flex-wrap: wrap;
 			background: #eee;
-			margin: 10px -5px;
+			display: grid;
+			grid-auto-flow:  column;
+			grid-gap: calc(var(--gap) * 2);
+			grid-auto-columns: max-content;
+			padding: calc(var(--gap) * 2) 0;
 		}
 			main section .toolbar .right {
-				margin-left: auto;
-			}
-			main section .toolbar > * {
-				margin: var(--gap);
+
 			}
 
 
@@ -236,7 +234,7 @@ body {
 	main .section > h1,
 	main .section > h2 {
 		border-bottom: 1px dashed #999;
-		margin: var(--gap) 0;
+		margin: 0;
 		font-size: 130%;
 		text-transform: capitalize;
 	}
@@ -316,9 +314,6 @@ body {
 		display: grid;
 		padding: calc(var(--gap) * 2);
 		grid-gap: calc(var(--gap) * 3);
-	}
-	main .form.toolbar {
-		flex-direction: row;
 	}
 		main .form label {
 			display: grid;
@@ -450,8 +445,7 @@ body {
 		main .data-source .toolbar {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-			padding: 5px;
-			display: flex;
+			padding: calc(var(--gap) * 2);
 			align-items: flex-end;
 			font-size: 95%;
 			margin: 0;
@@ -515,6 +509,9 @@ body {
 		main .data-source > .drilldown {
 			margin-top: calc(var(--gap) * 2);
 		}
+			main .data-source > .drilldown a:hover {
+				text-decoration: none;
+			}
 		main .data-source > .columns {
 			display: flex;
 			flex-wrap: wrap;
@@ -770,7 +767,7 @@ body {
 
 
 			.visualization.table {
-				/* overflow: auto; */
+				overflow: auto;
 				width: initial;
 				max-width: initial;
 			}
@@ -1050,7 +1047,7 @@ body {
 	transition: opacity var(--transition-duration);
 }
 .visualization .container > svg .bar.hover {
-	opacity: 0.6;
+	opacity: 0.7;
 }
 .visualization .container > svg .pie-slice {
 	transition: opacity var(--transition-duration);
