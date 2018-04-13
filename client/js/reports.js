@@ -1172,7 +1172,7 @@ class ReportVisualization {
 		preview.textContent = null;
 		preview.appendChild(report.container);
 
-		await report.visualizations.selected.load();
+		report.visualizations.selected.load();
 
 		const options = ReportVisualization.form.querySelector('.options');
 
@@ -1274,7 +1274,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			];
 		}
 
-
 		for(const axis of this.visualization.options.axes || []) {
 			axes.appendChild(this.axis(axis));
 		}
@@ -1296,8 +1295,13 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			const columns = [];
 
-			for(const option of axis.querySelectorAll('select[name=columns] option:checked'))
+			for(const option of axis.querySelectorAll('input[name=columns] option:checked'))
 				columns.push({key: option.value});
+
+			if(axis.querySelector('input[name=columns]').value) {
+				for(const column of axis.querySelector('input[name=columns]').value.split(','))
+					columns.push({key: column});
+			}
 
 			response.axes.push({
 				position: axis.querySelector('select[name=position]').value,
@@ -1333,7 +1337,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			<label>
 				<span>Columns</span>
-				<select name="columns" multiple></select>
+				<input type="text" name="columns" value="${axis.columns.map(c => c.key) || ''}">
 			</label>
 
 			<label>
@@ -1345,26 +1349,8 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		container.querySelector('.delete').on('click', () => container.parentElement && container.parentElement.removeChild(container));
 
-		if(this.report) {
-
-			const columns = container.querySelector('select[name=columns]');
-
-			let selected = false;
-
-			for(const column of this.report.columns.values()) {
-
-				if(axis.columns && axis.columns.length)
-					selected = axis.columns.some(c => c.key == column.key);
-
-				columns.insertAdjacentHTML(`beforeend`, `
-					<option value="${column.key}" ${selected ? 'selected' : ''}>${column.name}</option>
-				`);
-			}
-		}
-
 		return container;
 	}
-
 }
 
 ReportVisualization.types = new Map;
