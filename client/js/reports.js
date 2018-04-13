@@ -765,7 +765,11 @@ class Report {
 
 		} catch(e) {
 			content.rowCount.textContent = null;
-			content.json.innerHTML = content.query.innerHTML = content.table.innerHTML = `<code class="warning">${e.message ? e.message.sqlMessage : JSON.stringify(e.message, 0, 4)}</code>`;
+			content.json.innerHTML = content.query.innerHTML = content.table.innerHTML = `
+				<code class="warning">
+					${e.message && e.message.sqlMessage ? e.message.sqlMessage : JSON.stringify(e.message, 0, 4)}
+				</code>
+			`;
 		}
 
 		Report.container.querySelector(`#${tab}`).click();
