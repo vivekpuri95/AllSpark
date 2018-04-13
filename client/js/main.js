@@ -1162,12 +1162,6 @@ class DataSourceColumn {
 			for(const key in format || {})
 				this[key] = format[key];
 		}
-
-		DataSourceColumn.reportIds = [];
-
-		for( const query of DataSource.list.values()){
-			DataSourceColumn.reportIds.push(query);
-		}
 	}
 
 	get container() {
@@ -1177,8 +1171,14 @@ class DataSourceColumn {
 
 		const
 			container = this.containerElement = document.createElement('div'),
-			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join(''),
-			reportsList = DataSourceColumn.reportIds.map( row => `<option value="${row.query_id}">${row.name}</option>`).join('');
+			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join('');
+
+		let reportsList = '';
+
+		for(const report of DataSource.list.values()) {
+
+			reportsList = reportsList.concat(`<option value="${report.query_id}">${report.name}</option>`);
+		}
 
 		container.classList.add('column');
 
@@ -1199,7 +1199,7 @@ class DataSourceColumn {
 
 					<label>
 						<span>Name</span>
-						<input type="text" name="name" >
+						<input type="text" name="name" value="${this.name}" >
 					</label>
 					
 					<label>
@@ -1417,7 +1417,6 @@ class DataSourceColumn {
 			e.preventDefault();
 		}
 
-		// this.validateFormula();
 		this.source.format = this.source.format ? this.source.format : {};
 
 		let
@@ -1481,14 +1480,8 @@ class DataSourceColumn {
 				method: 'POST',
 			};
 		await API.call('reports/report/update', parameters, options);
-		this.container.querySelector('.name').textContent = this.name;
-		this.container.querySelector('.color').style.background = this.color;
-		await this.source.visualizations.selected.render();
+		await this.applyColumnChanges();
 		this.blanket.classList.add('hidden');
-		//this.filtered = this.searchQuery !== null;
-		// if(this.form.elements.sort.value >= 0)
-		// 	this.source.columns.sortBy = this;
-		// await this.update();
 	}
 
 	async update() {
