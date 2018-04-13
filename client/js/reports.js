@@ -1263,6 +1263,9 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const axes = container.querySelector('.axes');
 
+		if(!this.visualization.options || !this.visualization.options.axes)
+			this.visualization.options = {axes: []};
+
 		if(this.visualization.options && this.visualization.options.axis) {
 			this.visualization.options.axes = [
 				{
