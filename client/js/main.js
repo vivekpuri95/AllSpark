@@ -4445,6 +4445,7 @@ this.config = {column: 'created_at', value: 'user_id', history: true, invertValu
 				</div>
 				<div class="submenu ${this.config.history ? '' : 'hidden'}">
 					<div class="yesterday">
+						<div class="blur">DOD</div>
 						<h4 style="color:${
 								yesterdayPerc > 0 ? this.config.invertValue ? 'red' : 'green' : this.config.invertValue ? 'green' : 'red'
 								};">
@@ -4453,6 +4454,7 @@ this.config = {column: 'created_at', value: 'user_id', history: true, invertValu
 						${yesterday}
 					</div>
 					<div class="weekago">
+						<div class="blur">WoW</div>
 						<h4 style="color:${
 								yesterdayPerc > 0 ? this.config.invertValue ? 'red' : 'green' : this.config.invertValue ? 'green' : 'red'
 								};">
