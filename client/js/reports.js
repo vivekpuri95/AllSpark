@@ -1093,16 +1093,16 @@ class ReportVisualization {
 				form: new FormData(form),
 			};
 
-		if(['line', 'area', 'bar', 'stacked'].includes(form.type.value)) {
-			parameters.options = JSON.stringify({
-				axis: {
-					x: {
-						column: form.column.value,
-					},
-					y: {}
-				}
-			});
-		}
+		// if(['line', 'area', 'bar', 'stacked'].includes(form.type.value)) {
+		// 	parameters.options = JSON.stringify({
+		// 		axis: {
+		// 			x: {
+		// 				column: form.column.value,
+		// 			},
+		// 			y: {}
+		// 		}
+		// 	});
+		// }
 
 		await API.call('reports/visualizations/insert', parameters, options);
 
