@@ -1097,4 +1097,32 @@ body {
 	fill: #fff;
 	font-size: 110%;
 	font-weight: bold;
-	pointer-events: non
+	pointer-events: none;
+}
+.visualization .container .livenumber.box {
+	display: grid;
+    text-align: center;
+}
+	.livenumber header {
+		background: var(--color-primary);
+		height: 30px;
+		color: #fff;
+		padding: 5px;
+	}
+	.livenumber .today {
+		padding: 40px;
+		font-size: 60px;
+	}
+	.livenumber .submenu {
+		display: grid;
+		font-size: 20px;
+		grid-template-columns: 50% 50%;
+	}
+	.livenumber .yesterday,
+	.livenumber .weekago {
+		padding: 20px;
+		border: 1px solid #ccc;
+	}
+	.livenumber .weekago {
+		border-left: 0;
+	}

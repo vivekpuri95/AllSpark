@@ -4413,6 +4413,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	render() {
+this.config = {column: 'created_at', value: 'user_id', history: true, invertValue: false};
 		const container = this.container.querySelector('.container');
 		const response = this.source.response;
 
@@ -4437,38 +4438,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		container.textContent = null;
 		container.insertAdjacentHTML('beforeend', `
-			<style>
-				.box {
-					width: 100%;
-					height: 100%;
-				}
-				
-				.today {
-					text-align: center;
-					font-size: 500%;
-					height: 70%;
-				}
-				
-				.yesterday {
-					text-align: center;
-					font-size: 300%;
-					width: 50%;
-					float: left;
-					border: 1px solid black ;
-				}
-				.weekago {
-					text-align: center;
-					font-size: 300%;
-					width: 50%;
-					float: right;
-					border: 1px solid green ;
-				}
-			</style>
-			<div class="box">
+			<div class="livenumber box">
+				<header>xyz</header>
 				<div class="today">
 					${today}
 				</div>
-				<div class="${this.config.history ? '' : 'hidden'}">
+				<div class="submenu ${this.config.history ? '' : 'hidden'}">
 					<div class="yesterday">
 						<h4 style="color:${
 								yesterdayPerc > 0 ? this.config.invertValue ? 'red' : 'green' : this.config.invertValue ? 'green' : 'red'
