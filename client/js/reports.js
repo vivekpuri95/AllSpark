@@ -1340,7 +1340,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			<label>
 				<span>Columns</span>
-				<input type="text" name="columns" value="${axis.columns.map(c => c.key) || ''}">
+				<input type="text" name="columns" value="${axis.columns ? axis.columns.map(c => c.key) : ''}">
 			</label>
 
 			<label>
