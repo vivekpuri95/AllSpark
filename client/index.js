@@ -1012,6 +1012,8 @@ class Template {
 
 	body(main) {
 
+		this.stylesheets.push('/css/dark.css');
+
 		return `<!DOCTYPE html>
 			<html>
 				<head>
