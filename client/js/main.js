@@ -1173,6 +1173,13 @@ class DataSourceColumn {
 			container = this.containerElement = document.createElement('div'),
 			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join('');
 
+		let reportsList = '';
+
+		for(const report of DataSource.list.values()) {
+
+			reportsList = reportsList.concat(`<option value="${report.query_id}">${report.name}</option>`);
+		}
+
 		container.classList.add('column');
 
 		container.innerHTML = `
@@ -1192,7 +1199,7 @@ class DataSourceColumn {
 
 					<label>
 						<span>Name</span>
-						<input type="text" name="name" >
+						<input type="text" name="name" value="${this.name}" >
 					</label>
 					
 					<label>
@@ -1210,14 +1217,13 @@ class DataSourceColumn {
 						<select name="column_type">
 							<option value="date">Date</option>
 							<option value="number">Number</option>
-							<option value="currency">Currency</option>
 							<option value="string">String</option>
 						</select>
 					</label>
 					
 					<label>
 						<span>Color</span>
-						<input type="color" name="color" >
+						<input type="color" name="color">
 					</label>
 					
 					<label>
@@ -1257,7 +1263,9 @@ class DataSourceColumn {
 
 					<label>
 						<span>Report Id</span>
-						<input type="number" name="query_id">
+						<select name="query_id">
+							${reportsList}
+						</select>
 					</label>
 
 					<label>
@@ -1268,10 +1276,12 @@ class DataSourceColumn {
 					<label>
 						<div class="params-list"></div>
 					</label>
-
-					<label>
+					
+					<div class="submit-apply">
 						<input type="submit" value="Submit">
-					</label>
+						<button type="button" class="apply">Apply</button>
+					</div>
+
 				</form>
 			</div>
 		`;
@@ -1311,7 +1321,9 @@ class DataSourceColumn {
 
 		container.querySelector('.menu-toggle').on('click', () => this.showBlanket());
 
-		this.form.querySelector(' #add_parameters').on('click', () => this.addParameterDiv());
+		this.form.querySelector('#add_parameters').on('click', () => this.addParameterDiv());
+
+		this.form.querySelector('.apply').on('click', () => this.applyColumnChanges());
 
 		container.querySelector('.name').on('dblclick', async (e) => {
 
@@ -1385,7 +1397,11 @@ class DataSourceColumn {
 			</label>
 			<label>
 				<span>Type</span>
-				<input type="text" name="type" value="${params.type || ''}">
+				<select name="type" value="${params.type || 'column'}">
+					<option value="column">Column</option>
+					<option value="filter">Filter</option>
+					<option value="static">Static</option>
+				</select>
 			</label>
 			<label>
 				<span>Value</span>
@@ -1409,13 +1425,25 @@ class DataSourceColumn {
 		});
 	}
 
+	async applyColumnChanges() {
+
+		for(const element of this.form.elements) {
+			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+
+		}
+
+		this.container.querySelector('.name').textContent = this.name;
+		this.container.querySelector('.color').style.background = this.color;
+		await this.source.visualizations.selected.render();
+		this.blanket.classList.add('hidden');
+	}
+
 	async save(e) {
 
 		if(e) {
 			e.preventDefault();
 		}
 
-		// this.validateFormula();
 		this.source.format = this.source.format ? this.source.format : {};
 
 		let
@@ -1479,14 +1507,8 @@ class DataSourceColumn {
 				method: 'POST',
 			};
 		await API.call('reports/report/update', parameters, options);
-		this.container.querySelector('.name').textContent = this.name;
-		this.container.querySelector('.color').style.background = this.color;
-
+		await this.applyColumnChanges();
 		this.blanket.classList.add('hidden');
-		//this.filtered = this.searchQuery !== null;
-		// if(this.form.elements.sort.value >= 0)
-		// 	this.source.columns.sortBy = this;
-		// await this.update();
 	}
 
 	async update() {

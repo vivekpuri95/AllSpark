@@ -506,6 +506,12 @@ body {
         main .data-source .column .blanket .block.drill-down-form{
             padding-bottom: 10px;
         }
+
+		main .data-source .column .blanket .block.drill-down-form .submit-apply{
+			display: grid;
+			grid-template-columns: 49% 49%;
+			grid-gap: 2%;
+		}
 		main .data-source > .drilldown {
 			margin-top: calc(var(--gap) * 2);
 		}
@@ -623,15 +629,16 @@ body {
 								font-size: 90%;
 							}
 							main .data-source .column form label {
-								max-width: initial;
+								max-width: 350px;
                                 padding: 0 10px;
 								flex-shrink: 0;
 							}
 								main .data-source .column form .search {
-									display: flex;
+									grid-template-columns: 150px 190px;
+									display: grid
 								}
 									main .data-source .column form .search select {
-										width: 40%;
+
 									}
 									main .data-source .column form .search input {
 										flex: 1;
