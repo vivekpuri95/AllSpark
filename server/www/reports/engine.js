@@ -454,3 +454,4 @@ class ReportEngine extends API {
 
 exports.report = report;
 exports.ReportEngine = ReportEngine;
+exports.APIRequest = APIRequest;
