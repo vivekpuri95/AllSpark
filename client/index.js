@@ -1032,7 +1032,7 @@ class Template {
 						<nav></nav>
 
 						<span class="user-name"></span>
-						<span class="logout hidden">
+						<span class="logout">
 							<i class="fa fa-power-off"></i>&nbsp;
 							Logout
 						</span>
