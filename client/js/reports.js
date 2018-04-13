@@ -256,6 +256,9 @@ class Report {
 		ReportVisualization.insert.form.classList.add('hidden');
 
 		Report.container.querySelector('#test-container').classList.add('hidden');
+		Report.container.querySelector('.toolbar #test').classList.add('hidden');
+		Report.container.querySelector('.toolbar #force-test').classList.add('hidden');
+
 		Report.renderSource();
 		Sections.show('form');
 
@@ -625,6 +628,9 @@ class Report {
 
 		ReportVisualization.insert.form.reset();
 		ReportVisualization.insert.form.classList.remove('hidden');
+
+		Report.container.querySelector('.toolbar #test').classList.remove('hidden');
+		Report.container.querySelector('.toolbar #force-test').classList.remove('hidden');
 
 		Report.renderSource();
 		this.filters.render();
@@ -1161,6 +1167,15 @@ class ReportVisualization {
 		ReportVisualization.form.removeEventListener('submit', ReportVisualization.submitListener);
 		ReportVisualization.form.on('submit', ReportVisualization.submitListener = e => this.update(e));
 
+		const refresh = ReportVisualizations.preview.querySelector('#visualization-refresh');
+
+		refresh.removeEventListener('click', ReportVisualization.refreshListener);
+		refresh.on('click', ReportVisualization.refreshListener = () => {
+
+			if(this.optionsForm.report)
+				this.optionsForm.report.visualizations.selected.load();
+		});
+
 		await DataSource.load(true);
 
 		const
@@ -1263,23 +1278,23 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const axes = container.querySelector('.axes');
 
-		if(!this.visualization.options || !this.visualization.options.axes)
-			this.visualization.options = {axes: []};
-
 		if(this.visualization.options && this.visualization.options.axis) {
-			this.visualization.options.axes = [
-				{
-					position: 'bottom',
-					columns: [
-						{key: this.visualization.options.axis.x.column}
-					]
-				}
-			];
+			this.visualization.options = {
+				axes: [
+					{
+						position: 'bottom',
+						columns: [
+							{key: this.visualization.options.axis.x.column}
+						]
+					}
+				]
+			};
+		} else {
+			this.visualization.options = {axes: []};
 		}
 
-		for(const axis of this.visualization.options.axes || []) {
+		for(const axis of this.visualization.options.axes || [])
 			axes.appendChild(this.axis(axis));
-		}
 
 		container.querySelector('.add-axis').on('click', () => {
 			axes.appendChild(this.axis());

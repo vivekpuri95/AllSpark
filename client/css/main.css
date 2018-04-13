@@ -767,7 +767,7 @@ body {
 
 
 			.visualization.table {
-				/* overflow: auto; */
+				overflow: auto;
 				width: initial;
 				max-width: initial;
 			}

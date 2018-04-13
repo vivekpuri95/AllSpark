@@ -2474,7 +2474,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		super(visualization, source);
 
-		this.rowLimit = 40;
+		this.rowLimit = 15;
 		this.rowLimitMultiplier = 1.75;
 	}
 

@@ -637,6 +637,7 @@ router.get('/reports/:id?', (req, res) => {
 				<div class="toolbar">
 					<button id="visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
 					<button type="submit" form="visualization-form"><i class="fa fa-save"></i> Save</button>
+					<button type="button" id="visualization-refresh"><i class="fa fa-sync"></i> Refresh</button>
 				</div>
 
 				<form class="form" id="visualization-form">
