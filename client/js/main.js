@@ -4376,6 +4376,121 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 	}
 });
 
+Visualization.list.set('livenumber', class LiveNumber extends Visualization {
+
+	get container() {
+
+		if (this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('section');
+
+		container.classList.add('visualization', 'livenumber');
+
+		container.innerHTML = `
+			<div class="container"></div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if (e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `
+			<div class="loading">
+				<i class="fa fa-spinner fa-spin"></i>
+			</div>
+		`;
+
+		await this.source.fetch();
+
+		this.render();
+	}
+
+	render() {
+		const container = this.container.querySelector('.container');
+		const response = this.source.response;
+
+		let today = 0, yesterday = 0, weekago = 0;
+		for (let row of response) {
+			const responseDate = (new Date(row.get(this.config.column).substring(0, 10))).toDateString();
+			const todayDate = new Date();
+
+			if (responseDate == (new Date()).toDateString()) {
+				today = row.get(this.config.value);
+			}
+			else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 1))).toDateString()) {
+				yesterday = row.get(this.config.value);
+			}
+			else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 7))).toDateString()) {
+				weekago = row.get(this.config.value);
+			}
+		}
+
+		const yesterdayPerc = Math.round(((today - yesterday) / Math.abs(yesterday)) * 100);
+		const weekagoPerc = Math.round(((today - weekago) / weekago) * 100);
+
+		container.textContent = null;
+		container.insertAdjacentHTML('beforeend', `
+			<style>
+				.box {
+					width: 100%;
+					height: 100%;
+				}
+				
+				.today {
+					text-align: center;
+					font-size: 500%;
+					height: 70%;
+				}
+				
+				.yesterday {
+					text-align: center;
+					font-size: 300%;
+					width: 50%;
+					float: left;
+					border: 1px solid black ;
+				}
+				.weekago {
+					text-align: center;
+					font-size: 300%;
+					width: 50%;
+					float: right;
+					border: 1px solid green ;
+				}
+			</style>
+			<div class="box">
+				<div class="today">
+					${today}
+				</div>
+				<div class="${this.config.history ? '' : 'hidden'}">
+					<div class="yesterday">
+						<h4 style="color:${
+								yesterdayPerc > 0 ? this.config.invertValue ? 'red' : 'green' : this.config.invertValue ? 'green' : 'red'
+								};">
+							${yesterdayPerc}%
+						</h4>
+						${yesterday}
+					</div>
+					<div class="weekago">
+						<h4 style="color:${
+								yesterdayPerc > 0 ? this.config.invertValue ? 'red' : 'green' : this.config.invertValue ? 'green' : 'red'
+								};">
+							${weekagoPerc}%
+						</h4>
+					${weekago}
+					</div>
+				</div>
+			</div>
+		`);
+	}
+});
+
 class Tooltip {
 
 	static show(div, position, content) {
