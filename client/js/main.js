@@ -1293,12 +1293,11 @@ class DataSourceColumn {
 		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
 
 		this.form.on('click', e => e.stopPropagation());
-		var timeout;
+		let timeout;
 
 		container.querySelector('.name').on('click', async () => {
 
-			if(timeout)
-				clearTimeout(timeout);
+			clearTimeout(timeout);
 
 			timeout = setTimeout( async ()=>{
 
@@ -1307,7 +1306,7 @@ class DataSourceColumn {
 				this.source.columns.render();
 
 				await this.update();
-				},300);
+			},300);
 		});
 
 		container.querySelector('.menu-toggle').on('click', () => this.showBlanket());
@@ -1316,15 +1315,15 @@ class DataSourceColumn {
 
 		container.querySelector('.name').on('dblclick', async (e) => {
 
-			if(timeout)
-				clearTimeout(timeout);
+			clearTimeout(timeout);
 
 			for(const column of this.source.columns.values()) {
-				if(column.key != this.key &&  column.key != this.source.visualizations.selected.axis.x.column) {
-					column.disabled = true;
-					column.source.columns.render();
-					await column.update();
-				};
+				if(column.key == this.key ||  column.key == this.source.visualizations.selected.axis.x.column)
+					continue;
+
+				column.disabled = true;
+				column.source.columns.render();
+				await column.update();
 			}
 
 			this.disabled = false;
@@ -1333,6 +1332,7 @@ class DataSourceColumn {
 
 			await this.update();
 		})
+	
 		return container;
 	}
 
