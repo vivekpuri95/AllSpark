@@ -1162,6 +1162,12 @@ class DataSourceColumn {
 			for(const key in format || {})
 				this[key] = format[key];
 		}
+
+		DataSourceColumn.reportIds = [];
+
+		for( const query of DataSource.list.values()){
+			DataSourceColumn.reportIds.push(query);
+		}
 	}
 
 	get container() {
@@ -1171,7 +1177,8 @@ class DataSourceColumn {
 
 		const
 			container = this.containerElement = document.createElement('div'),
-			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join('');
+			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join(''),
+			reportsList = DataSourceColumn.reportIds.map( row => `<option value="${row.query_id}">${row.name}</option>`).join('');
 
 		container.classList.add('column');
 
@@ -1192,7 +1199,7 @@ class DataSourceColumn {
 
 					<label>
 						<span>Name</span>
-						<input type="text" value="${this.name}" name="name" >
+						<input type="text" name="name" >
 					</label>
 					
 					<label>
@@ -1210,14 +1217,13 @@ class DataSourceColumn {
 						<select name="column_type">
 							<option value="date">Date</option>
 							<option value="number">Number</option>
-							<option value="currency">Currency</option>
 							<option value="string">String</option>
 						</select>
 					</label>
 					
 					<label>
 						<span>Color</span>
-						<input type="color" name="color" >
+						<input type="color" name="color">
 					</label>
 					
 					<label>
@@ -1257,7 +1263,9 @@ class DataSourceColumn {
 
 					<label>
 						<span>Report Id</span>
-						<input type="number" name="query_id">
+						<select name="query_id">
+							${reportsList}
+						</select>
 					</label>
 
 					<label>
@@ -1362,7 +1370,11 @@ class DataSourceColumn {
 			</label>
 			<label>
 				<span>Type</span>
-				<input type="text" name="type" value="${params.type || ''}">
+				<select name="type" value="${params.type || 'column'}">
+					<option value="column">Column</option>
+					<option value="filter">Filter</option>
+					<option value="static">Static</option>
+				</select>
 			</label>
 			<label>
 				<span>Value</span>
@@ -1386,7 +1398,7 @@ class DataSourceColumn {
 		});
 	}
 
-	applyColumnChanges() {
+	async applyColumnChanges() {
 
 		for(const element of this.form.elements) {
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
@@ -1395,6 +1407,7 @@ class DataSourceColumn {
 
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
+		await this.source.visualizations.selected.render();
 		this.blanket.classList.add('hidden');
 	}
 
@@ -1470,7 +1483,7 @@ class DataSourceColumn {
 		await API.call('reports/report/update', parameters, options);
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
-
+		await this.source.visualizations.selected.render();
 		this.blanket.classList.add('hidden');
 		//this.filtered = this.searchQuery !== null;
 		// if(this.form.elements.sort.value >= 0)

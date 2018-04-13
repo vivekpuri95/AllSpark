@@ -629,15 +629,16 @@ body {
 								font-size: 90%;
 							}
 							main .data-source .column form label {
-								max-width: initial;
+								max-width: 350px;
                                 padding: 0 10px;
 								flex-shrink: 0;
 							}
 								main .data-source .column form .search {
-									display: flex;
+									grid-template-columns: 150px 190px;
+									display: grid
 								}
 									main .data-source .column form .search select {
-										width: 40%;
+
 									}
 									main .data-source .column form .search input {
 										flex: 1;
