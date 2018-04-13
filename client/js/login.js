@@ -15,7 +15,7 @@ Page.class = class Login extends Page {
 			this.message.classList.add('warning');
 			return;
 		}
-
+		document.querySelector('body > header .logout').classList.add('hidden');
 		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));

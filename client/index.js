@@ -1012,6 +1012,8 @@ class Template {
 
 	body(main) {
 
+		this.stylesheets.push('/css/dark.css');
+
 		return `<!DOCTYPE html>
 			<html>
 				<head>
@@ -1030,7 +1032,7 @@ class Template {
 						<nav></nav>
 
 						<span class="user-name"></span>
-						<span class="logout">
+						<span class="logout hidden">
 							<i class="fa fa-power-off"></i>&nbsp;
 							Logout
 						</span>

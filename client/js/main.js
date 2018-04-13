@@ -59,7 +59,11 @@ class Page {
 		if(user.id)
 			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
 
-		document.querySelector('body > header .logout').on('click', () => User.logout());
+		const logout = document.querySelector('body > header .logout');
+
+		logout.classList.remove('hidden');
+
+		logout.on('click', () => User.logout());
 
 		Page.navList = [
 			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
