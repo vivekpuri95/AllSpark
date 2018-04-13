@@ -146,10 +146,10 @@ exports.schema = class extends API {
 
 		let selectQuery = `
 			SELECT 
-				table_schema as TABLE_SCHEMA, 
-				table_name as TABLE_NAME,
-				column_name as COLUMN_NAME,
-				column_type as COLUMN_TYPE
+				table_schema as table_schema, 
+				table_name as table_name,
+				column_name as column_name,
+				column_type as column_type
 			FROM 
 				information_schema.columns `;
 
@@ -168,20 +168,20 @@ exports.schema = class extends API {
 
 		for (const column of columns) {
 
-			if (column.TABLE_SCHEMA == 'information_schema')
+			if (column.table_schema == 'information_schema')
 				continue;
 
 			let foundDatabase = false;
 
 			for (const database of databases) {
-				if (database.name == column.TABLE_SCHEMA)
+				if (database.name == column.table_schema)
 					foundDatabase = true;
 			}
 
 			if (!foundDatabase) {
 
 				const database = {
-					name: column.TABLE_SCHEMA,
+					name: column.table_schema,
 					tables: []
 				};
 
@@ -189,7 +189,7 @@ exports.schema = class extends API {
 			}
 
 			for (const database of databases) {
-				if (database.name == column.TABLE_SCHEMA) {
+				if (database.name == column.table_schema) {
 					foundDatabase = database;
 				}
 			}
@@ -198,14 +198,14 @@ exports.schema = class extends API {
 			let foundTable = false;
 
 			for (const table of foundDatabase.tables) {
-				if (table.name == column.TABLE_NAME)
+				if (table.name == column.table_name)
 					foundTable = true;
 			}
 
 			if (!foundTable) {
 
 				const table = {
-					name: column.TABLE_NAME,
+					name: column.table_name,
 					columns: []
 				};
 
@@ -213,7 +213,7 @@ exports.schema = class extends API {
 			}
 
 			for (const table of foundDatabase.tables) {
-				if (table.name == column.TABLE_NAME) {
+				if (table.name == column.table_name) {
 					foundTable = table;
 				}
 			}
@@ -221,22 +221,22 @@ exports.schema = class extends API {
 			let foundColumns = false;
 
 			for (const column of foundTable.columns) {
-				if (column.name == column.COLUMN_NAME)
+				if (column.name == column.column_name)
 					foundColumns = true;
 			}
 
 			if (!foundColumns) {
 
 				const columns = {
-					name: column.COLUMN_NAME,
-					type: column.COLUMN_TYPE,
+					name: column.column_name,
+					type: column.column_type || column.data_type,
 				};
 
 				foundTable.columns.push(columns);
 			}
 
 			for (const column of foundTable.columns) {
-				if (column.name == columns.COLUMN_NAME) {
+				if (column.name == columns.column_name) {
 					foundColumns = column;
 				}
 			}
