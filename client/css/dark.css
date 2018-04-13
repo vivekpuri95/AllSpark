@@ -18,8 +18,7 @@ button {
 body > header {
 	background: var(--color-primary);
 }
-body header a.selected,
-body header a:hover {
+body > header a.selected, body > header a:hover {
 	background: var(--color-accent);
 }
 body > header .logout.selected,
