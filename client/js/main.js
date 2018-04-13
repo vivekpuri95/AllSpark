@@ -1276,7 +1276,7 @@ class DataSourceColumn {
 					<label>
 						<div class="params-list"></div>
 					</label>
-					
+
 					<div class="submit-apply">
 						<input type="submit" value="Submit">
 						<button type="button" class="apply">Apply</button>
@@ -1344,7 +1344,7 @@ class DataSourceColumn {
 
 			await this.update();
 		})
-	
+
 		return container;
 	}
 
@@ -4275,6 +4275,6 @@ Node.prototype.on = window.on = function(name, fn) {
 	this.addEventListener(name, fn);
 }
 
-MetaData.timeout = 5 * 60 * 60 * 1000;
+MetaData.timeout = 0;// 5 * 60 * 60 * 1000;
 Dataset.timeout = 5 * 60 * 60 * 1000;
 Visualization.animationDuration = 750;
