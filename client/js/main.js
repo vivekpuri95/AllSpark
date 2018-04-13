@@ -1201,7 +1201,7 @@ class DataSourceColumn {
 						<span>Name</span>
 						<input type="text" name="name" value="${this.name}" >
 					</label>
-					
+
 					<label>
 						<span>Search</span>
 						<div class="search">
@@ -1220,12 +1220,12 @@ class DataSourceColumn {
 							<option value="string">String</option>
 						</select>
 					</label>
-					
+
 					<label>
 						<span>Color</span>
 						<input type="color" name="color">
 					</label>
-					
+
 					<label>
 						<span>Sort</span>
 						<select name="sort">
@@ -1234,23 +1234,23 @@ class DataSourceColumn {
 							<option value="1">Ascending</option>
 						</select>
 					</label>
-					
+
 					<label>
 						<span>Formula</span>
 						<input type="text" name="formula">
 						<small></small>
 					</label>
-					
+
 					<label>
 						<span>Prefix</span>
 						<input type="text" name="prefix">
 					</label>
-					
+
 					<label>
 						<span>Postfix</span>
 						<input type="text" name="postfix">
 					</label>
-					
+
 					<label>
 						<span>Disabled</span>
 						<select name="disabled">
@@ -1272,7 +1272,7 @@ class DataSourceColumn {
 						<span>Parameters</span>
 						<button type="button" id="add_parameters"><i class="fa fa-plus"></i> Add New</button>
 					</label>
-					
+
 					<label>
 						<div class="params-list"></div>
 					</label>
@@ -3671,7 +3671,7 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 		const newResponse = {};
 
 		for(const row of this.source.originalResponse.data)
-			newResponse[row.name] = row.value;
+			newResponse[row.name] = parseFloat(row.value) || 0;
 
 		this.source.originalResponse.data = [newResponse];
 

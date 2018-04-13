@@ -1263,8 +1263,21 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const axes = container.querySelector('.axes');
 
-		for(const axis of this.visualization.options.axes || [])
+		if(this.visualization.options.axis) {
+			this.visualization.options.axes = [
+				{
+					position: 'bottom',
+					columns: [
+						{key: this.visualization.options.axis.x.column}
+					]
+				}
+			];
+		}
+
+
+		for(const axis of this.visualization.options.axes || []) {
 			axes.appendChild(this.axis(axis));
+		}
 
 		container.querySelector('.add-axis').on('click', () => {
 			axes.appendChild(this.axis());
@@ -1338,10 +1351,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			let selected = false;
 
-			if(axis.columns && axis.columns.length)
-				selected = axis.columns.any(c => c.key == column.key);
-
 			for(const column of this.report.columns.values()) {
+
+				if(axis.columns && axis.columns.length)
+					selected = axis.columns.some(c => c.key == column.key);
+
 				columns.insertAdjacentHTML(`beforeend`, `
 					<option value="${column.key}" ${selected ? 'selected' : ''}>${column.name}</option>
 				`);
