@@ -1,5 +1,6 @@
 const API = require('../utils/api');
 const {report} = require('./reports/engine');
+const constants = require('../utils/constants');
 
 exports.list = class extends API {
 
@@ -97,6 +98,9 @@ exports.values = class DatasetValues extends API {
 				user_id: this.user.user_id,
 			}
 		};
+
+		if(this.account.auth_url)
+			reportObj.request.body[constants.filterPrefix + 'access_token'] = this.request.query[constants.filterPrefix + 'access_token'];
 
 		return await reportObj.report(dataset.query_id);
 	}

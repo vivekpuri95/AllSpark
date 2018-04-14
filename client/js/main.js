@@ -27,7 +27,7 @@ class Page {
 		await User.load();
 		await MetaData.load();
 
-		if(account && account.settings.get('whitelabel')) {
+		if(account && account.auth_url) {
 
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
@@ -614,7 +614,7 @@ class DataSource {
 	}
 
 	async fetch(parameters = {}) {
-		const filterPrefix = "param_";
+
 		parameters = new URLSearchParams(parameters);
 
 		parameters.set('query_id', this.query_id);
@@ -625,12 +625,12 @@ class DataSource {
 			if(filter.dataset && filter.dataset.query_id) {
 
 				for(const input of filter.label.querySelectorAll('input:checked'))
-					parameters.append(filterPrefix + filter.placeholder, input.value);
+					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, input.value);
 
 				continue;
 			}
 
-			parameters.set(filterPrefix + filter.placeholder, this.filters.form.elements[filter.placeholder].value);
+			parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, this.filters.form.elements[filter.placeholder].value);
 		}
 
 		let response = null;
@@ -1779,6 +1779,8 @@ class DataSourceFilter {
 			3: 'month',
 			4: 'city',
 		};
+
+		DataSourceFilter.placeholderPrefix = 'param_';
 	}
 
 	constructor(filter, source) {
@@ -4193,6 +4195,13 @@ class Dataset {
 		let
 			values,
 			timestamp;
+
+		const parameters = {
+			id: this.id,
+		};
+
+		if(account.auth_url)
+			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = localStorage.access_token;
 
 		try {
 			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
