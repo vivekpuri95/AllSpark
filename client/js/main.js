@@ -632,6 +632,8 @@ class DataSource {
 
 			if(filter.dataset && filter.dataset.query_id) {
 
+
+
 				for(const input of filter.label.querySelectorAll('input:checked'))
 					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, input.value);
 
@@ -1854,8 +1856,9 @@ class DataSourceFilter {
 			}
 		}
 
-		if(this.dataset)
+		if(this.dataset) {
 			input = this.dataset.container;
+		}
 
 		this.labelContainer.innerHTML = `<span>${this.name}<span>`;
 
@@ -4214,6 +4217,7 @@ class Dataset {
 			list.appendChild(label);
 		}
 
+
 		this.update();
 	}
 
@@ -4239,7 +4243,7 @@ class Dataset {
 
 		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
 
-			({data: values} = await API.call('datasets/values', {id: this.id}));
+			({data: values} = await API.call('datasets/values', parameters));
 
 			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
 		}
