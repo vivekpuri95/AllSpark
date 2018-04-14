@@ -175,12 +175,12 @@ class User {
 	static logout(next) {
 
 		const
-			access_token = localStorage.access_token,
+			access_token = localStorage.access_token || '',
 			parameters = new URLSearchParams();
 
 		localStorage.clear();
 
-		localStorage.access_token = access_token;
+		localStorage.access_token = access_token || '';
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
@@ -4299,6 +4299,6 @@ Node.prototype.on = window.on = function(name, fn) {
 	this.addEventListener(name, fn);
 }
 
-MetaData.timeout = 0;// 5 * 60 * 60 * 1000;
-Dataset.timeout = 0;//5 * 60 * 60 * 1000;
+MetaData.timeout = 0; // 5 * 60 * 1000;
+Dataset.timeout = 30 * 1000; // 5 * 60 * 1000;
 Visualization.animationDuration = 750;

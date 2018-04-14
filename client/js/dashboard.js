@@ -651,8 +651,12 @@ class DashboardDatasets extends Map {
 
 	async fetch() {
 
+		const promises = [];
+
 		for(const dataset of this.values())
-			await dataset.load();
+			promises.push(dataset.load());
+
+		await Promise.all(promises);
 	}
 
 	async render() {
