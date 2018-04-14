@@ -172,7 +172,7 @@ exports.refresh = class extends API {
 
 			const APIRequest = new engine.APIRequest(
 				{url: this.account.auth_api, method: "GET"},
-				{name: "access_token", value: accessToken},
+				[{name: "access_token", value: accessToken}],
 				null
 			);
 
