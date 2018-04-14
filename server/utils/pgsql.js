@@ -46,7 +46,7 @@ class Postgres {
 
 				if (parseInt(replacedSql.substring(match.index + 1, match.index + 10)) === valueIndex + 1) {
 
-					replacedSql = replacedSql.replace(re, `${values[valueIndex]}`);
+					replacedSql = replacedSql.replace(re, `${values[valueIndex + 1]}`);
 				}
 			}
 		}
