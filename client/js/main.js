@@ -175,12 +175,12 @@ class User {
 	static logout(next) {
 
 		const
-			access_token = localStorage.access_token,
+			access_token = localStorage.access_token || '',
 			parameters = new URLSearchParams();
 
 		localStorage.clear();
 
-		localStorage.access_token = access_token;
+		localStorage.access_token = access_token || '';
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
