@@ -25,7 +25,7 @@ class Postgres {
 		console.log("Postgres Connections Available: ", Object.keys(poolObj));
 	}
 
-	async query(sql, values = null, connectionName) {
+	async query(sql, values = [], connectionName) {
 
 		if (!poolObj[connectionName]) {
 			throw new Error("connection " + connectionName + "does not exist");
@@ -33,26 +33,29 @@ class Postgres {
 
 		this.pool = poolObj[connectionName];
 		let result;
+		let replacedSql = sql;
+
+		for (let valueIndex = 0; valueIndex < values.length ; valueIndex++) {
+
+			replacedSql = replacedSql.replace("$" + (valueIndex + 1), `'${values[valueIndex]}'`);
+		}
 
 		try {
 
-			result = await this.pool.query(sql, values);
+			result = await this.pool.query({
+				text: sql,
+				values: values,
+				rowMode: 'object',
+			});
 		}
 		catch (err) {
 
-			console.log(err.stack);
-			console.log(err.message)
-			return err;
+			console.log({...err, message: err.message, sql: replacedSql})
+			return {...err, message: err.message, sql: replacedSql};
 		}
 
-		// result = {
-		// 	rows: result.rows,
-		// 	instance: {
-		// 		sql: sql
-		// 	},
-		// };
-
-		this.sql = sql;
+		this.sql = replacedSql;
+		this.originalSql = sql;
 		result = result.rows;
 		result.instance = this;
 
