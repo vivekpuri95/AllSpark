@@ -401,11 +401,11 @@ class Postgres {
 		}
 
 		str = str.replace(exp, (() => {
-				let number = 0;
+			let number = 0;
 
-				return () => (containerArray[number++] || []).join(", ");
+			return () => (containerArray[number++] || []).join(", ");
 
-			})());
+		})());
 
 		return str;
 	}
@@ -435,7 +435,7 @@ class ReportEngine extends API {
 
 		this.executionTimeStart = Date.now();
 
-		if(!Object.keys(this.parameters).length) {
+		if (!Object.keys(this.parameters).length) {
 
 			this.parameters = {
 				request: [this.request.body.query, [], this.request.body.connection_id],
@@ -521,4 +521,5 @@ class query extends API {
 exports.query = query;
 exports.report = report;
 exports.ReportEngine = ReportEngine;
-exports.Postgres = Postgres;exports.APIRequest = APIRequest;
+exports.Postgres = Postgres;
+exports.APIRequest = APIRequest;
