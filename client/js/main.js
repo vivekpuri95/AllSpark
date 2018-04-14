@@ -27,7 +27,7 @@ class Page {
 		await User.load();
 		await MetaData.load();
 
-		if(account && account.auth_url) {
+		if(account && account.auth_api) {
 
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
@@ -417,9 +417,17 @@ class API extends AJAX {
 			return;
 
 		const
-			parameters = {refresh_token: localStorage.refresh_token},
-			options = {method: 'POST'},
-			response = await API.call('authentication/refresh', {refresh_token: localStorage.refresh_token}, options);
+			parameters = {
+				refresh_token: localStorage.refresh_token
+			},
+			options = {
+				method: 'POST',
+			};
+
+		if(account.auth_api)
+			parameters.access_token = localStorage.access_token;
+
+		const response = await API.call('authentication/refresh', parameters, options);
 
 		localStorage.token = response;
 
@@ -756,7 +764,14 @@ class DataSource {
 
 		container.querySelector('.menu .download').on('click', () => this.download());
 
-		container.querySelector('.menu .edit').on('click', () => window.location = `/reports/${this.query_id}`);
+		const edit = container.querySelector('.menu .edit');
+
+		if(!user.privileges.has('report'))
+			edit.classList.add('hidden');
+
+		else
+			edit.on('click', () => window.location = `/reports/${this.query_id}`);
+
 		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
 
 		this.filters.form.on('submit', e => this.visualizations.selected.load(e));
@@ -4173,7 +4188,7 @@ class Dataset {
 			const label = document.createElement('label');
 
 			label.innerHTML = `
-				<input name="${this.filter.placeholder}" value="${row.value}" type="${this.filter.multiple ? 'checkbox' : 'radio'}">
+				<input name="${this.filter.placeholder}" value="${row.value}" type="${this.filter.multiple ? 'checkbox' : 'radio'}" checked>
 				${row.name}
 			`;
 
@@ -4200,7 +4215,7 @@ class Dataset {
 			id: this.id,
 		};
 
-		if(account.auth_url)
+		if(account.auth_api)
 			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = localStorage.access_token;
 
 		try {
@@ -4285,5 +4300,5 @@ Node.prototype.on = window.on = function(name, fn) {
 }
 
 MetaData.timeout = 0;// 5 * 60 * 60 * 1000;
-Dataset.timeout = 5 * 60 * 60 * 1000;
+Dataset.timeout = 0;//5 * 60 * 60 * 1000;
 Visualization.animationDuration = 750;

@@ -115,48 +115,47 @@ exports.login = class extends API {
 
 	async login() {
 
-		const email = this.request.body.email;
-		const accessToken = this.request.body.access_token;
+		let userDetail;
 
-		if (this.account.auth_api) {
+		if (this.account.auth_api && this.request.body.access_token) {
 
-			const result = await requestPromise({
+			let result = await requestPromise({
 				har: {
 					url: this.account.auth_api,
 					method: 'GET',
-					headers: [
+					queryString: [
 						{
-							name: 'content-type',
-							value: 'application/x-www-form-urlencoded'
-						}
-					],
-					postData: {
-						mimeType: 'application/x-www-form-urlencoded',
-						params: [
-							{
-								name: 'access_token',
-								value: accessToken
-							},
-						]
-					}
+							name: 'access_token',
+							value: this.request.body.access_token,
+						},
+					]
 				},
 				gzip: true
 			});
 
-			this.assert(result.status, "User does not exist", 401);
+			try {
+				result = JSON.parse(result.body);
+			} catch(e) {}
+
+			userDetail = result.userDetails;
+		} else {
+
+			this.assert(this.request.body.email, "Email Required");
+			this.assert(this.request.body.password, "Password Required");
+
+			[userDetail] = await this.mysql.query(
+				`SELECT * FROM tb_users WHERE email = ? AND account_id = ?`,
+				[this.request.body.email, this.account.account_id]
+			);
+
+			this.assert(userDetail, "Invalid Email! :(");
+
+			const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
+
+			this.assert(checkPassword, "Invalid Password! :(");
 		}
 
-		this.assert(email, "Email Required");
-		this.assert(this.request.body.password, "Password Required");
-
-		const [userDetail] = await this.mysql.query(`SELECT * FROM tb_users WHERE email = ? AND account_id = ?`, [email, this.account.account_id]);
-
-
-		this.assert(userDetail, "Invalid Email! :(");
-
-		const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
-
-		this.assert(checkPassword, "Invalid Password! :(");
+		this.assert(userDetail && userDetail.user_id, 'User not found!')
 
 		const obj = {
 			user_id: userDetail.user_id,
@@ -172,42 +171,36 @@ exports.refresh = class extends API {
 
 	async refresh() {
 
-		const loginObj = await commonFun.verifyJWT(this.request.body.refresh_token);
+		let userDetail = await commonFun.verifyJWT(this.request.body.refresh_token);
 
-		this.assert(!loginObj.error, "Token not correct", 401);
+		this.assert(!userDetail.error, "Token not correct", 401);
 
-		const accessToken = this.request.body.access_token;
+		if (this.account.auth_api && this.request.body.access_token) {
 
-		if (this.account.auth_api) {
-
-			const result = await requestPromise({
+			let result = await requestPromise({
 				har: {
 					url: this.account.auth_api,
 					method: 'GET',
-					headers: [
+					queryString: [
 						{
-							name: 'content-type',
-							value: 'application/x-www-form-urlencoded'
-						}
-					],
-					postData: {
-						mimeType: 'application/x-www-form-urlencoded',
-						params: [
-							{
-								name: 'access_token',
-								value: accessToken
-							},
-						]
-					}
+							name: 'access_token',
+							value: this.request.body.access_token,
+						},
+					]
 				},
 				gzip: true
 			});
 
+			try {
+				result = JSON.parse(result.body);
+			} catch(e) {}
 
-			this.assert(result.status, "User does not exist", 401);
+			userDetail = result.userDetails;
 		}
 
-		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ?", loginObj.user_id);
+		this.assert(userDetail, "user not found");
+
+		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ?", userDetail.user_id);
 
 		this.assert(user, "user not found");
 
@@ -230,9 +223,9 @@ exports.refresh = class extends API {
                 WHERE
                     user_id = ?
                     AND u.account_id = ?
-                    
+
                 UNION ALL
-                
+
                 SELECT
                     'roles' AS 'owner',
                     u.user_id,
@@ -255,7 +248,7 @@ exports.refresh = class extends API {
                     user_id = ?
                     AND u.account_id = ?
                `,
-			[loginObj.user_id, this.account.account_id, loginObj.user_id, this.account.account_id]
+			[user.user_id, this.account.account_id, user.user_id, this.account.account_id]
 		);
 
 		const privileges = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {
@@ -278,7 +271,7 @@ exports.refresh = class extends API {
 		const obj = {
 			user_id: user.user_id,
 			account_id: this.account.account_id,
-			email: loginObj.email,
+			email: user.email,
 			name: [user.first_name, user.middle_name, user.last_name].filter(x => x).join(' '),
 			roles,
 			privileges,
