@@ -52,7 +52,7 @@ class Postgres {
 		catch (err) {
 
 			console.log({...err, message: err.message, sql: replacedSql});
-			return {...err, message: err.message, sql: replacedSql};
+			throw {...err, message: err.message, sql: replacedSql};
 		}
 
 		this.sql = replacedSql;
