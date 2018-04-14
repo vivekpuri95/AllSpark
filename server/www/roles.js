@@ -55,7 +55,17 @@ exports.delete = class extends API {
 
 exports.test = class extends API {
 
-	test() {
+	async test() {
+		//__proto__.constructor.name
+		// let q = "select * from public.tb_add_on_type where id in ({{addons}})";
+		// const values = ["asd",4, 1, 2 ,5];
+		// const Postgres = require("./reports/engine").Postgres;
+		//
+		// const pg = new Postgres({query: q, connection_name: 3}, [{placeholder: "addons", value: values}]);
+		//
+		// const engine = new (require("./reports/engine").ReportEngine)(pg.finalQuery);
+		//
+		// return engine.execute()
 
 		return this.request.body;
 	}

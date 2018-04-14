@@ -354,7 +354,7 @@ class Postgres {
 		this.applyFilters();
 
 		return {
-			request: [this.reportObj.query, [], this.reportObj.connection_name,],
+			request: [this.reportObj.query, this.values, this.reportObj.connection_name,],
 			type: "pgsql",
 		};
 	}
@@ -365,10 +365,49 @@ class Postgres {
 			.replace(/--.*(\n|$)/g, "")
 			.replace(/\s+/g, ' ');
 
+
+		this.values = [];
+		this.index = 1;
+
 		for (const filter of this.filters) {
 
-			this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), `'${filter.value}'`);
+			if (filter.value.__proto__.constructor.name === "Array") {
+
+				this.reportObj.query = this.replaceArray(new RegExp(`{{${filter.placeholder}}}`, 'g'), this.reportObj.query, filter.value);
+			}
+
+			else {
+
+				this.reportObj.query = this.replaceArray(new RegExp(`{{${filter.placeholder}}}`, 'g'), this.reportObj.query, [filter.value]);
+			}
 		}
+	}
+
+	replaceArray(exp, str, arr) {
+
+		const containerArray = [];
+
+		for (let occurrence = 0; occurrence < (str.match(exp) || []).length; occurrence++) {
+
+			const tempArr = [];
+
+			for (let arrIndex = 0; arrIndex < arr.length; arrIndex++) {
+
+				tempArr.push("$" + this.index++);
+			}
+
+			containerArray.push(tempArr);
+			this.values = this.values.concat(arr);
+		}
+
+		str = str.replace(exp, (() => {
+			let number = 0;
+
+			return () => (containerArray[number++] || []).join(", ");
+
+		})());
+
+		return str;
 	}
 }
 
@@ -384,7 +423,7 @@ class ReportEngine extends API {
 			api: requestPromise,
 		};
 
-		this.parameters = parameters;
+		this.parameters = parameters || {};
 	}
 
 	get hash() {
@@ -395,6 +434,14 @@ class ReportEngine extends API {
 	async execute() {
 
 		this.executionTimeStart = Date.now();
+
+		if (!Object.keys(this.parameters).length) {
+
+			this.parameters = {
+				request: [this.request.body.query, [], this.request.body.connection_id],
+				type: this.request.body.type
+			}
+		}
 
 		let data = await ReportEngine.engines[this.parameters.type](...this.parameters.request);
 
@@ -423,7 +470,7 @@ class ReportEngine extends API {
 
 		try {
 
-			if(typeof query === "object") {
+			if (typeof query === "object") {
 
 				query = JSON.stringify(query)
 			}
@@ -452,6 +499,27 @@ class ReportEngine extends API {
 	}
 }
 
+class query extends API {
+
+	async query() {
+
+		const [type] = await this.mysql.query("select type from tb_credentials where id = ?", [this.request.body.connection_id]);
+
+		this.assert(type, "credential id " + this.request.body.connection_id + " not found");
+
+		this.parameters = {
+			request: [this.request.body.query, [], this.request.body.connection_id],
+			type: this.request.body.type || type.type
+		};
+
+		const reportEngine = new ReportEngine(this.parameters);
+
+		return await reportEngine.execute();
+	}
+}
+
+exports.query = query;
 exports.report = report;
 exports.ReportEngine = ReportEngine;
+exports.Postgres = Postgres;
 exports.APIRequest = APIRequest;
