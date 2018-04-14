@@ -36,9 +36,19 @@ class Postgres {
 		let result;
 		let replacedSql = sql;
 
-		for (let valueIndex = 0; valueIndex < values.length ; valueIndex++) {
+		for (let valueIndex = 0; valueIndex < values.length; valueIndex++) {
 
-			replacedSql = replacedSql.replace("$" + (valueIndex + 1), `'${values[valueIndex]}'`);
+			let match;
+
+			const re = new RegExp("\\$" + (valueIndex + 1), "g");
+
+			while (match = re.exec(replacedSql)) {
+
+				if (parseInt(replacedSql.substring(match.index + 1, match.index + 10)) === valueIndex + 1) {
+
+					replacedSql = replacedSql.replace(re, `${values[valueIndex]}`);
+				}
+			}
 		}
 
 		try {
