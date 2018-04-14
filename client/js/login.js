@@ -15,14 +15,16 @@ Page.class = class Login extends Page {
 			this.message.classList.add('warning');
 			return;
 		}
+
 		document.querySelector('body > header .logout').classList.add('hidden');
+
 		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
 
 		logo.src = account.logo;
 
-		if(account.settings.get('skip_authentication'))
+		if(account.auth_api && localStorage.access_token)
 			return this.skip_authentication();
 
 		this.form.email.focus();
@@ -49,15 +51,19 @@ Page.class = class Login extends Page {
 
 		try {
 
-			const params = {
-				access_token: localStorage.access_token || parameters.get('access_token'),
-			};
+			const
+				params = {
+					access_token: localStorage.access_token || parameters.get('access_token'),
+				},
+				options = {
+					method: 'POST',
+				};
 
-			localStorage.refresh_token = await API.call('authentication/tookan', params);
+			localStorage.refresh_token = await API.call('authentication/login', params, options);
 
 		} catch(error) {
 
-			this.message.classList.remove('notice');
+			this.message.classList.remove('notice', 'hidden');
 			this.message.classList.add('warning');
 			this.message.textContent = error.message || error;
 
