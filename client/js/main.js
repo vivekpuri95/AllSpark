@@ -632,6 +632,8 @@ class DataSource {
 
 			if(filter.dataset && filter.dataset.query_id) {
 
+
+
 				for(const input of filter.label.querySelectorAll('input:checked'))
 					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, input.value);
 
@@ -669,6 +671,7 @@ class DataSource {
 		this.originalResponse = response;
 
 		this.container.querySelector('.share-link input').value = this.link;
+		this.container.querySelector('.query').innerHTML = response.query;
 
 		this.columns.update();
 		this.postProcessors.update();
@@ -701,12 +704,15 @@ class DataSource {
 				<button class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
 				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i> Edit</button>
 				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
+				<button class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
 			</div>
 
 			<form class="filters form toolbar hidden"></form>
 
 			<div class="columns"></div>
 			<div class="drilldown hidden"></div>
+
+			<div class="query hidden"></div>
 
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
@@ -764,13 +770,25 @@ class DataSource {
 
 		container.querySelector('.menu .download').on('click', () => this.download());
 
-		const edit = container.querySelector('.menu .edit');
+		const
+			edit = container.querySelector('.menu .edit'),
+			query = container.querySelector('.menu .query-toggle');
 
-		if(!user.privileges.has('report'))
+		if(!user.privileges.has('report')) {
 			edit.classList.add('hidden');
+			query.classList.add('hidden');
+		}
 
-		else
+		else {
+
 			edit.on('click', () => window.location = `/reports/${this.query_id}`);
+
+			query.on('click', () => {
+				container.querySelector('.query').classList.toggle('hidden');
+				query.classList.toggle('selected');
+				this.visualizations.selected.render(true);
+			});
+		}
 
 		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
 
@@ -1400,7 +1418,6 @@ class DataSourceColumn {
 		}
 	}
 
-
 	addParameterDiv(params = {}) {
 
 		var parameter = document.createElement('div');
@@ -1839,8 +1856,9 @@ class DataSourceFilter {
 			}
 		}
 
-		if(this.dataset)
+		if(this.dataset) {
 			input = this.dataset.container;
+		}
 
 		this.labelContainer.innerHTML = `<span>${this.name}<span>`;
 
@@ -4199,6 +4217,7 @@ class Dataset {
 			list.appendChild(label);
 		}
 
+
 		this.update();
 	}
 
@@ -4224,7 +4243,7 @@ class Dataset {
 
 		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
 
-			({data: values} = await API.call('datasets/values', {id: this.id}));
+			({data: values} = await API.call('datasets/values', parameters));
 
 			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
 		}
