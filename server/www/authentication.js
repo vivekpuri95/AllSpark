@@ -1,8 +1,10 @@
 const API = require("../utils/api");
 const commonFun = require('../utils/commonFunctions');
 const crypto = require('crypto');
-
+const request = require('request');
+const promisify = require('util').promisify;
 const Mailer = require('../utils/mailer');
+const requestPromise = promisify(request);
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -118,18 +120,28 @@ exports.login = class extends API {
 
 		if (this.account.auth_api) {
 
-			const engine = require("./reports/engine");
-
-			const APIRequest = new engine.APIRequest(
-				{url: this.account.auth_api, method: "GET"},
-				{name: "access_token", value: accessToken},
-				null
-			);
-
-			const preparedRequest = APIRequest.finalQuery;
-
-			const reportEngine = new engine.ReportEngine(preparedRequest);
-			const result = await reportEngine.execute();
+			const result = await requestPromise({
+				har: {
+					url: this.account.auth_api,
+					method: 'GET',
+					headers: [
+						{
+							name: 'content-type',
+							value: 'application/x-www-form-urlencoded'
+						}
+					],
+					postData: {
+						mimeType: 'application/x-www-form-urlencoded',
+						params: [
+							{
+								name: 'access_token',
+								value: accessToken
+							},
+						]
+					}
+				},
+				gzip: true
+			});
 
 			this.assert(result.status, "User does not exist", 401);
 		}
@@ -168,18 +180,29 @@ exports.refresh = class extends API {
 
 		if (this.account.auth_api) {
 
-			const engine = require("./reports/engine");
+			const result = await requestPromise({
+				har: {
+					url: this.account.auth_api,
+					method: 'GET',
+					headers: [
+						{
+							name: 'content-type',
+							value: 'application/x-www-form-urlencoded'
+						}
+					],
+					postData: {
+						mimeType: 'application/x-www-form-urlencoded',
+						params: [
+							{
+								name: 'access_token',
+								value: accessToken
+							},
+						]
+					}
+				},
+				gzip: true
+			});
 
-			const APIRequest = new engine.APIRequest(
-				{url: this.account.auth_api, method: "GET"},
-				[{name: "access_token", value: accessToken}],
-				null
-			);
-
-			const preparedRequest = APIRequest.finalQuery;
-
-			const reportEngine = new engine.ReportEngine(preparedRequest);
-			const result = await reportEngine.execute();
 
 			this.assert(result.status, "User does not exist", 401);
 		}
