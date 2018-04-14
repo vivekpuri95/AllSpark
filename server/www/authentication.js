@@ -74,6 +74,7 @@ exports.resetlink = class extends API {
 	}
 }
 
+
 exports.reset = class extends API {
 	async reset() {
 
@@ -113,6 +114,25 @@ exports.login = class extends API {
 	async login() {
 
 		const email = this.request.body.email;
+		const accessToken = this.request.body.access_token;
+
+		if (this.account.auth_api) {
+
+			const engine = require("./reports/engine");
+
+			const APIRequest = new engine.APIRequest(
+				{url: this.account.auth_api, method: "GET"},
+				{name: "access_token", value: accessToken},
+				null
+			);
+
+			const preparedRequest = APIRequest.finalQuery;
+
+			const reportEngine = new engine.ReportEngine(preparedRequest);
+			const result = await reportEngine.execute();
+
+			this.assert(result.status, "User does not exist", 401);
+		}
 
 		this.assert(email, "Email Required");
 		this.assert(this.request.body.password, "Password Required");
@@ -144,12 +164,32 @@ exports.refresh = class extends API {
 
 		this.assert(!loginObj.error, "Token not correct", 401);
 
+		const accessToken = this.request.body.access_token;
+
+		if (this.account.auth_api) {
+
+			const engine = require("./reports/engine");
+
+			const APIRequest = new engine.APIRequest(
+				{url: this.account.auth_api, method: "GET"},
+				{name: "access_token", value: accessToken},
+				null
+			);
+
+			const preparedRequest = APIRequest.finalQuery;
+
+			const reportEngine = new engine.ReportEngine(preparedRequest);
+			const result = await reportEngine.execute();
+
+			this.assert(result.status, "User does not exist", 401);
+		}
+
 		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ?", loginObj.user_id);
 
 		this.assert(user, "user not found");
 
-		const userPrivilegesRoles = await this.mysql.query(
-			`SELECT
+		const userPrivilegesRoles = await this.mysql.query(`
+				SELECT
                     'privileges' AS 'owner',
                     user_id,
                     IF(p.is_admin = 1, 0, privilege_id) owner_id,
@@ -167,9 +207,9 @@ exports.refresh = class extends API {
                 WHERE
                     user_id = ?
                     AND u.account_id = ?
-
+                    
                 UNION ALL
-
+                
                 SELECT
                     'roles' AS 'owner',
                     u.user_id,
@@ -177,7 +217,6 @@ exports.refresh = class extends API {
                     r.name AS role_name,
                     IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
                     c.name AS category_name
-
                 FROM
                     tb_user_roles ur
                 JOIN
@@ -192,7 +231,6 @@ exports.refresh = class extends API {
                 WHERE
                     user_id = ?
                     AND u.account_id = ?
-
                `,
 			[loginObj.user_id, this.account.account_id, loginObj.user_id, this.account.account_id]
 		);
