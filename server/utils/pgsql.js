@@ -28,6 +28,7 @@ class Postgres {
 	async query(sql, values = [], connectionName) {
 
 		if (!poolObj[connectionName]) {
+
 			throw new Error("connection " + connectionName + "does not exist");
 		}
 
@@ -50,7 +51,7 @@ class Postgres {
 		}
 		catch (err) {
 
-			console.log({...err, message: err.message, sql: replacedSql})
+			console.log({...err, message: err.message, sql: replacedSql});
 			return {...err, message: err.message, sql: replacedSql};
 		}
 

@@ -423,7 +423,7 @@ class ReportEngine extends API {
 			api: requestPromise,
 		};
 
-		this.parameters = parameters;
+		this.parameters = parameters || {};
 	}
 
 	get hash() {
@@ -434,6 +434,14 @@ class ReportEngine extends API {
 	async execute() {
 
 		this.executionTimeStart = Date.now();
+
+		if(!Object.keys(this.parameters).length) {
+
+			this.parameters = {
+				request: [this.request.body.query, [], this.request.body.connection_id],
+				type: this.request.body.type
+			}
+		}
 
 		let data = await ReportEngine.engines[this.parameters.type](...this.parameters.request);
 
@@ -491,7 +499,26 @@ class ReportEngine extends API {
 	}
 }
 
+class query extends API {
+
+	async query() {
+
+		const [type] = await this.mysql.query("select type from tb_credentials where id = ?", [this.request.body.connection_id]);
+
+		this.assert(type, "credential id " + this.request.body.connection_id + " not found");
+
+		this.parameters = {
+			request: [this.request.body.query, [], this.request.body.connection_id],
+			type: this.request.body.type || type.type
+		};
+
+		const reportEngine = new ReportEngine(this.parameters);
+
+		return await reportEngine.execute();
+	}
+}
+
+exports.query = query;
 exports.report = report;
 exports.ReportEngine = ReportEngine;
-exports.Postgres = Postgres;
-exports.APIRequest = APIRequest;
+exports.Postgres = Postgres;exports.APIRequest = APIRequest;
