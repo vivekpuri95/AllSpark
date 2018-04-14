@@ -365,7 +365,6 @@ class Postgres {
 			.replace(/--.*(\n|$)/g, "")
 			.replace(/\s+/g, ' ');
 
-
 		this.values = [];
 		this.index = 1;
 

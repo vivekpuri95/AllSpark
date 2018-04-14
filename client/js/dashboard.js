@@ -240,7 +240,12 @@ class Dashboard {
 			return;
 		}
 
-		await this.datasets.load();
+		await new Promise(r => {
+			setTimeout(async () => {
+				await this.datasets.load();
+				r();
+			});
+		})
 
 		for(const _report of this.reports()) {
 
