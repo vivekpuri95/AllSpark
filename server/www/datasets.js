@@ -99,7 +99,7 @@ exports.values = class DatasetValues extends API {
 			}
 		};
 
-		if(this.account.auth_url)
+		if(this.account.auth_api)
 			reportObj.request.body[constants.filterPrefix + 'access_token'] = this.request.query[constants.filterPrefix + 'access_token'];
 
 		return await reportObj.report(dataset.query_id);
