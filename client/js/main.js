@@ -903,6 +903,7 @@ class DataSource {
 
 					parent.removeChild(this.container);
 					parent.appendChild(copy.drilldown.parent.container);
+					copy.drilldown.parent.visualizations.selected.render();
 				});
 
 				fragment.appendChild(link);
@@ -2359,27 +2360,50 @@ class Visualization {
 
 		this.source = source;
 
-		this.axis = {
-			x: {
-				column: 'timing',
-			},
-			y: {}
-		};
+		try {
+			this.options = JSON.parse(this.options);
+		} catch(e) {}
 
-		if(this.options) {
+		if(!this.options || !this.options.axes) {
 
-			try {
-
-				const options = JSON.parse(this.options);
-
-				for(const key in options)
-					this[key] = options[key];
-
-			} catch(e) {}
+			this.options = {
+				axes: [
+					{
+						position: 'bottom',
+						columns: [
+							{
+								key: 'timing'
+							}
+						]
+					},
+					{
+						position: 'left',
+						columns: []
+					}
+				]
+			};
 		}
 
-		if(!this.axis.x.column)
-			this.axis.x.column = 'timing';
+		for(const axis of this.options.axes || []) {
+			this.options.axes[axis.position] = axis;
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+
+		if(!this.options.axes.bottom) {
+
+			this.options.axes.bottom = {
+				position: 'bottom',
+				columns: [
+					{
+						key: 'timing'
+					}
+				],
+				column: 'timing'
+			};
+		}
+
+		for(const key in this.options)
+			this[key] = this.options[key];
 	}
 
 	render() {
@@ -2403,17 +2427,17 @@ class LinearVisualization extends Visualization {
 
 		this.rows = this.source.response;
 
-		this.axis.x.height = 25;
-		this.axis.y.width = 50;
+		this.axes.bottom.height = 25;
+		this.axes.left.width = 50;
 
-		this.height = this.container.clientHeight - this.axis.x.height - 20;
-		this.width = this.container.clientWidth - this.axis.y.width - 40;
+		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
+		this.width = this.container.clientWidth - this.axes.left.width - 40;
 
 		window.addEventListener('resize', () => {
 
 			const
-				height = this.container.clientHeight - this.axis.x.height - 20,
-				width = this.container.clientWidth - this.axis.y.width - 40;
+				height = this.container.clientHeight - this.axes.bottom.height - 20,
+				width = this.container.clientWidth - this.axes.left.width - 40;
 
 			if(this.width != width || this.height != height) {
 
@@ -2437,7 +2461,7 @@ class LinearVisualization extends Visualization {
 
 			for(const [key, value] of row) {
 
-				if(key == this.axis.x.column)
+				if(key == this.axes.bottom.column)
 					continue;
 
 				const column = this.source.columns.get(key);
@@ -2451,7 +2475,7 @@ class LinearVisualization extends Visualization {
 				}
 
 				this.columns[key].push({
-					x: row.get(this.axis.x.column),
+					x: row.get(this.axes.bottom.column),
 					y: value,
 					key,
 				});
@@ -2521,7 +2545,7 @@ class LinearVisualization extends Visualization {
 				const
 					filteredRows = that.rows.filter(row => {
 
-						const item = that.x(row.get(that.axis.x.column)) + 100;
+						const item = that.x(row.get(that.axes.bottom.column)) + 100;
 
 						if(mouse[0] < that.zoomRectangle.origin[0])
 							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -2554,7 +2578,7 @@ class LinearVisualization extends Visualization {
 					that.zoomRectangle
 						.select('g')
 						.append('text')
-						.text(`${filteredRows[0].get(that.axis.x.column)} - ${filteredRows[filteredRows.length - 1].get(that.axis.x.column)}`)
+						.text(`${filteredRows[0].get(that.axes.bottom.column)} - ${filteredRows[filteredRows.length - 1].get(that.axes.bottom.column)}`)
 						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
 						.attr('y', (that.height / 2) + 20);
 				}
@@ -2562,7 +2586,7 @@ class LinearVisualization extends Visualization {
 				return;
 			}
 
-			const row = that.rows[parseInt((mouse[0] - that.axis.y.width - 10) / (that.width / that.rows.length))];
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
 
 			if(!row)
 				return;
@@ -2571,7 +2595,7 @@ class LinearVisualization extends Visualization {
 
 			for(const [key, value] of row) {
 
-				if(key == that.axis.x.column)
+				if(key == that.axes.bottom.column)
 					continue;
 
 				tooltip.push(`
@@ -2584,7 +2608,7 @@ class LinearVisualization extends Visualization {
 			}
 
 			const content = `
-				<header>${row.get(that.axis.x.column)}</header>
+				<header>${row.get(that.axes.bottom.column)}</header>
 				<ul class="body">
 					${tooltip.reverse().join('')}
 				</ul>
@@ -2629,7 +2653,7 @@ class LinearVisualization extends Visualization {
 				mouse = d3.mouse(this),
 				filteredRows = that.rows.filter(row => {
 
-					const item = that.x(row.get(that.axis.x.column)) + 100;
+					const item = that.x(row.get(that.axes.bottom.column)) + 100;
 
 					if(mouse[0] < that.zoomRectangle.origin[0])
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -2888,7 +2912,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 			for(const [name, value] of row) {
 
-				if(name == this.axis.x.column)
+				if(name == this.axes.bottom.column)
 					continue;
 
 				if(max == null)
@@ -2903,7 +2927,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		}
 
 		this.y.domain([min, max]);
-		this.x.domain(this.rows.map(r => r.get(this.axis.x.column)));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangePoints([0, this.width], 0.1, 0);
 
 		const
@@ -2917,19 +2941,19 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			.append('g')
 			.attr('class', 'y axis')
 			.call(yAxis)
-			.attr('transform', `translate(${this.axis.y.width}, 0)`);
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
 			.attr('class', 'x axis')
-			.attr('transform', `translate(${this.axis.y.width}, ${this.height})`)
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
 		//graph type line and
 		const
 			line = d3.svg
 				.line()
-				.x(d => this.x(d.x)  + this.axis.y.width)
+				.x(d => this.x(d.x)  + this.axes.left.width)
 				.y(d => this.y(d.y));
 
 		//Appending line in chart
@@ -2970,7 +2994,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.attr('id', (_, i) => i)
 				.attr('r', 0)
 				.style('fill', column.color)
-				.attr('cx', d => this.x(d.x) + this.axis.y.width)
+				.attr('cx', d => this.x(d.x) + this.axes.left.width)
 				.attr('cy', d => this.y(d.y))
 		}
 
@@ -2981,7 +3005,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 			const
 				mouse = d3.mouse(this),
-				xpos = parseInt((mouse[0] - that.axis.y.width - 10) / (that.width / that.rows.length)),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
 				row = that.rows[xpos];
 
 			if(!row || that.zoomRectangle)
@@ -3075,7 +3099,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		this.y.domain([0, max]);
 
-		this.x.domain(this.rows.map(r => r.get(this.axis.x.column)));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
@@ -3091,12 +3115,12 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.append('g')
 			.attr('class', 'y axis')
 			.call(yAxis)
-			.attr('transform', `translate(${this.axis.y.width}, 0)`);
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
 			.attr('class', 'x axis')
-			.attr('transform', `translate(${this.axis.y.width}, ${this.height})`)
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
 		let bars = this.svg
@@ -3113,7 +3137,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.append('rect')
 			.classed('bar', true)
 			.attr('width', x1.rangeBand())
-			.attr('x', cell => this.x(cell.x) + this.axis.y.width)
+			.attr('x', cell => this.x(cell.x) + this.axes.left.width)
 			.on('click', function(_, row, column) {
 				that.source.columns.get(that.columns[column].key).initiateDrilldown(that.rows[row]);
 				d3.select(this).classed('hover', false);
@@ -3213,7 +3237,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			let total = 0;
 
 			for(const [name, value] of row) {
-				if(name != this.axis.x.column)
+				if(name != this.axes.bottom.column)
 					total += parseFloat(value) || 0;
 			}
 
@@ -3222,7 +3246,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		this.y.domain([0, max]);
 
-		this.x.domain(this.rows.map(r => r.get(this.axis.x.column)));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
@@ -3236,12 +3260,12 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			.append('g')
 			.attr('class', 'y axis')
 			.call(yAxis)
-			.attr('transform', `translate(${this.axis.y.width}, 0)`);
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
 			.attr('class', 'x axis')
-			.attr('transform', `translate(${this.axis.y.width}, ${this.height})`)
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
 		const layer = this.svg
@@ -3271,7 +3295,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				d3.select(this).classed('hover', false);
 			})
 			.attr('width', this.x.rangeBand())
-			.attr('x',  cell => this.x(cell.x) + this.axis.y.width);
+			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
 
 		if(!resize) {
 
@@ -3364,7 +3388,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 			for(const [name, value] of row) {
 
-				if(name == this.axis.x.column)
+				if(name == this.axes.bottom.column)
 					continue;
 
 				total += parseFloat(value) || 0;
@@ -3375,7 +3399,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		}
 
 		this.y.domain([min, max]);
-		this.x.domain(this.rows.map(r => r.get(this.axis.x.column)));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangePoints([0, this.width], 0.1, 0);
 
 		const
@@ -3394,12 +3418,12 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			.append('g')
 			.attr('class', 'y axis')
 			.call(yAxis)
-			.attr('transform', `translate(${this.axis.y.width}, 0)`);
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
 			.attr('class', 'x axis')
-			.attr('transform', `translate(${this.axis.y.width}, ${this.height})`)
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
 		let areas = this.svg
@@ -3407,7 +3431,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			.data(d3.layout.stack()(this.columns))
 			.enter()
 			.append('g')
-			.attr('transform', `translate(${this.axis.y.width}, 0)`)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`)
 			.attr('class', 'path')
 			.append('path')
 			.classed('bar', true)
@@ -3444,7 +3468,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.attr('id', (d, i) => i)
 				.attr('r', 0)
 				.style('fill', column.color)
-				.attr('cx', cell => this.x(cell.x) + this.axis.y.width)
+				.attr('cx', cell => this.x(cell.x) + this.axes.left.width)
 				.attr('cy', cell => this.y(cell.y + cell.y0));
 		}
 
@@ -3455,7 +3479,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 			const
 				mouse = d3.mouse(this),
-				xpos = parseInt((mouse[0] - that.axis.y.width - 10) / (that.width / that.rows.length)),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
 				row = that.rows[xpos];
 
 			if(!row || that.zoomRectangle)

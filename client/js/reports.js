@@ -1103,17 +1103,6 @@ class ReportVisualization {
 				form: new FormData(form),
 			};
 
-		// if(['line', 'area', 'bar', 'stacked'].includes(form.type.value)) {
-		// 	parameters.options = JSON.stringify({
-		// 		axis: {
-		// 			x: {
-		// 				column: form.column.value,
-		// 			},
-		// 			y: {}
-		// 		}
-		// 	});
-		// }
-
 		await API.call('reports/visualizations/insert', parameters, options);
 
 		await Reports.load(true);
@@ -1174,11 +1163,19 @@ class ReportVisualization {
 		const refresh = ReportVisualizations.preview.querySelector('#visualization-refresh');
 
 		refresh.removeEventListener('click', ReportVisualization.refreshListener);
-		refresh.on('click', ReportVisualization.refreshListener = () => {
+		refresh.on('click', ReportVisualization.refreshListener = () => this.loadPreview());
 
-			if(this.optionsForm.report)
-				this.optionsForm.report.visualizations.selected.load();
-		});
+		try {
+			await this.loadPreview();
+		} catch(e) {}
+
+		const options = ReportVisualization.form.querySelector('.options');
+
+		options.textContent = null;
+		options.appendChild(this.optionsForm.form);
+	}
+
+	async loadPreview() {
 
 		await DataSource.load(true);
 
@@ -1191,13 +1188,9 @@ class ReportVisualization {
 		preview.textContent = null;
 		preview.appendChild(report.container);
 
-		report.visualizations.selected.load();
-
-		const options = ReportVisualization.form.querySelector('.options');
-
-		options.textContent = null;
 		this.optionsForm.report = report;
-		options.appendChild(this.optionsForm.form);
+
+		await report.visualizations.selected.load();
 	}
 
 	async update(e) {
@@ -1213,25 +1206,15 @@ class ReportVisualization {
 				form: new FormData(ReportVisualization.form),
 			};
 
-		if(['line', 'area', 'bar', 'stacked'].includes(this.type)) {
-
-			const [axis] = this.optionsForm.json.axes.filter(a => a.position == 'bottom');
-
-			parameters.options = JSON.stringify({
-				axis: {
-					x: {
-						column: axis && axis.columns ? axis.columns[0].key : null,
-					},
-					y: {}
-				}
-			});
-		}
+		parameters.options = JSON.stringify(this.optionsForm.json);
 
 		await API.call('reports/visualizations/update', parameters, options);
 
 		await Reports.load(true);
 
 		Reports.list.get(this.visualizations.report.id).edit();
+
+		this.loadPreview();
 	}
 
 	async delete() {
@@ -1282,21 +1265,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const axes = container.querySelector('.axes');
 
-		if(this.visualization.options && this.visualization.options.axis) {
-			this.visualization.options = {
-				axes: [
-					{
-						position: 'bottom',
-						columns: [
-							{key: this.visualization.options.axis.x.column}
-						]
-					}
-				]
-			};
-		} else {
-			this.visualization.options = {axes: []};
-		}
-
 		for(const axis of this.visualization.options.axes || [])
 			axes.appendChild(this.axis(axis));
 
@@ -1317,13 +1285,8 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			const columns = [];
 
-			for(const option of axis.querySelectorAll('input[name=columns] option:checked'))
+			for(const option of axis.querySelectorAll('select[name=columns] option:checked'))
 				columns.push({key: option.value});
-
-			if(axis.querySelector('input[name=columns]').value) {
-				for(const column of axis.querySelector('input[name=columns]').value.split(','))
-					columns.push({key: column});
-			}
 
 			response.axes.push({
 				position: axis.querySelector('select[name=position]').value,
@@ -1359,7 +1322,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			<label>
 				<span>Columns</span>
-				<input type="text" name="columns" value="${axis.columns ? axis.columns.map(c => c.key) : ''}">
+				<select name="columns" multiple></select>
 			</label>
 
 			<label>
@@ -1368,6 +1331,17 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				</button>
 			</label>
 		`;
+
+		const columns = container.querySelector('select[name=columns]');
+
+		for(const [key, column] of this.report.columns) {
+
+			columns.insertAdjacentHTML('beforeend', `
+				<option value="${key}" ${axis.columns && axis.columns.some(c => c.key == key) ? 'selected' : ''}>${column.name}</option>
+			`)
+		}
+
+		container.querySelector('select[name=position]').value = axis.position;
 
 		container.querySelector('.delete').on('click', () => container.parentElement && container.parentElement.removeChild(container));
 

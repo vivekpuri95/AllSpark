@@ -162,6 +162,9 @@ main #reports > .list {
 		main #reports .list.singleton {
 			display: initial;
 		}
+		main .singleton .data-source .visualization {
+			max-height: 480px;
+		}
 		main .singleton .data-source .visualization.table {
 			max-height: calc(100vh - 270px);
 		}
