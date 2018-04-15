@@ -21,7 +21,6 @@ button {
 	height: 28px;
 	outline-width: 2px;
 	font-size: 90% !important;
-	line-height: 100% !important;
 	transition: background var(--transition-duration),
 				color var(--transition-duration),
 				box-shadow var(--transition-duration);
@@ -31,7 +30,7 @@ input[type=reset],
 input[type=submit],
 button,
 select {
-	 padding: 5px 12px !important;
+	 padding: 5px 12px;
 }
 input[type=button]:hover,
 input[type=reset]:hover,
@@ -39,7 +38,7 @@ input[type=submit]:hover,
 button:hover {
     box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
     background: var(--color-accent);
-    color: var(--color-accent-text) !important;
+    color: var(--color-accent-text);
     border-color: var(--color-accent);
 }
 input[type=button]:active,
@@ -509,14 +508,18 @@ body {
 				width: 100%;
 			}
 
-		main .data-source .column .blanket .block.drill-down-form .submit-apply {
+		main .data-source .column .blanket .form footer {
 			display: grid;
-			grid-template-columns: 1fr 1fr;
+			grid-template-columns: 1fr 1fr 1fr;
 			grid-gap: 1px;
 			position: sticky;
 			bottom: 0;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		}
+			main .data-source .column .blanket .form footer button {
+				padding: calc(var(--gap) * 2);
+				height: auto;
+			}
 		main .data-source > .drilldown {
 			margin-top: calc(var(--gap) * 2);
 		}
@@ -538,7 +541,6 @@ body {
 				position: relative;
 				margin: 0 var(--gap);
 				align-items: center;
-				cursor: pointer;
 				transition: opacity var(--transition-duration);
 			}
 			main .data-source > .columns .column.disabled > span,
@@ -565,8 +567,8 @@ body {
 			main .data-source > .columns .column.error {
 				background: #fcc;
 			}
-			main .data-source > .columns .column:hover {
-				/*opacity: 0.6;*/
+			main .data-source > .columns .column .name:hover {
+				opacity: 0.6;
 			}
 				main .data-source > .columns.being-dragged .column * {
 					pointer-events: none;
@@ -582,6 +584,7 @@ body {
 					display: flex;
 					flex: 1;
 					font-size: 85%;
+					cursor: pointer;
 					align-items: center;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
@@ -589,6 +592,7 @@ body {
                 main .data-source .column .edit-column {
                 	opacity: 0;
                 	transition: opacity var(--transition-duration);
+                	padding: 0 var(--gap);
                 }
                 main .data-source .column:hover .edit-column {
                 	opacity: 1;
@@ -617,11 +621,11 @@ body {
                         main .data-source .column .blanket form .parameter-list {
                         	display: grid;
                         	grid-gap: calc(var(--gap) * 2);
+                        	padding-right: calc(var(--gap) * 2);
                         }
                         main .data-source .column .blanket form .parameter {
                             display: grid;
-                            grid-template-columns: repeat(4, auto);
-                            justify-content: flex-start;
+                            grid-template-columns: 1fr 1fr 1fr max-content;
                         }
                         main .data-source .column .blanket form .parameter .delete:hover {
                             background-color: red;
@@ -640,8 +644,8 @@ body {
 								margin-left: calc(var(--gap) * 2);
 							}
 								main .data-source .column form .search {
-									grid-template-columns: 150px 190px;
-									display: grid
+									grid-template-columns: auto 200px;
+									display: grid;
 								}
 									main .data-source .column form .search input {
 										flex: 1;
@@ -750,6 +754,7 @@ body {
 				text-align: right;
 				position: absolute;
 				position: sticky;
+				position: absolute;
 				bottom: 0;
 				background: rgba(255, 255, 255, 0.9);
 				box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -781,6 +786,7 @@ body {
 			}
 				.visualization.table table {
 					caption-side: bottom;
+					margin-bottom:  24px;
 				}
 				.visualization.table thead tr.search {
 					background: #fff;

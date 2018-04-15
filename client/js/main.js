@@ -1208,7 +1208,7 @@ class DataSourceColumn {
 			<span class="name">${this.name}</span>
 
 			<div class="blanket hidden">
-				<form class="block form drill-down-form">
+				<form class="block form">
 
 					<h3>Column Properties</h3>
 
@@ -1291,7 +1291,11 @@ class DataSourceColumn {
 
 					<div class="parameter-list"></div>
 
-					<div class="submit-apply">
+					<footer>
+
+						<button type="button" class="cancel">
+							<i class="far fa-times-circle"></i> Cancel
+						</button>
 
 						<button type="submit">
 							<i class="fa fa-save"></i> Save
@@ -1300,22 +1304,21 @@ class DataSourceColumn {
 						<button type="button" class="apply">
 							<i class="fas fa-check"></i> Apply
 						</button>
-					</div>
+					</footer>
 				</form>
 			</div>
 		`;
 
 		this.blanket = container.querySelector('.blanket');
-		this.block = container.querySelector('.block');
-		this.form = container.querySelector('.drill-down-form');
+		this.form = this.blanket.querySelector('.form');
 
-		// this.form.elements.formula.on('keyup', async () => {
-		//
-		// 	if(this.formulaTimeout)
-		// 		clearTimeout(this.formulaTimeout);
-		//
-		// 	this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
-		// });
+		this.form.elements.formula.on('keyup', async () => {
+
+			if(this.formulaTimeout)
+				clearTimeout(this.formulaTimeout);
+
+			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
+		});
 
 		if(user.privileges.has('report')) {
 
@@ -1375,6 +1378,7 @@ class DataSourceColumn {
 			this.updateDrilldownParamters();
 		});
 
+		this.form.querySelector('.cancel').on('click', () => this.blanket.classList.add('hidden'));
 		this.form.querySelector('.apply').on('click', () => this.apply());
 
 		container.querySelector('.name').on('dblclick', async (e) => {
@@ -1411,6 +1415,8 @@ class DataSourceColumn {
 
 		if(this.drilldown) {
 
+			this.form.querySelector('.parameter-list').textContent = null;
+
 			this.form.drilldown_query_id.value = this.drilldown ? this.drilldown.query_id : '';
 
 			for(const param of this.drilldown.parameters || [])
@@ -1422,7 +1428,54 @@ class DataSourceColumn {
 		this.blanket.classList.remove('hidden');
 	}
 
-	updateDrilldownParamters() {
+	addParameterDiv(parameter = {}) {
+
+		const container = document.createElement('div');
+
+		container.innerHTML = `
+			<label>
+				<span>Filter</span>
+				<select name="placeholder" value="${parameter.placeholder || ''}"></select>
+			</label>
+
+			<label>
+				<span>Type</span>
+				<select name="type" value="${parameter.type || ''}">
+					<option value="column">Column</option>
+					<option value="filter">Filter</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Value</span>
+				<select name="value" value="${parameter.value || ''}"></select>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button type="button" class="delete">
+					<i class="far fa-trash-alt"></i> Delete
+				</button>
+			</label>
+		`;
+
+		container.classList.add('parameter');
+
+		const
+			parameterList = this.form.querySelector('.parameter-list');
+
+		parameterList.appendChild(container);
+
+		container.querySelector('select[name=type]').on('change', () => this.updateDrilldownParamters(true));
+
+		container.querySelector('.delete').on('click', () => {
+			parameterList.removeChild(container);
+		});
+
+		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
+	}
+
+	updateDrilldownParamters(updatingType) {
 
 		const
 			parameterList = this.form.querySelector('.parameter-list'),
@@ -1446,6 +1499,9 @@ class DataSourceColumn {
 			if(placeholder.getAttribute('value'))
 				placeholder.value = placeholder.getAttribute('value');
 
+			if(!updatingType && type.getAttribute('value'))
+				type.value = type.getAttribute('value');
+
 			value.textContent = null;
 
 			if(type.value == 'column') {
@@ -1463,54 +1519,6 @@ class DataSourceColumn {
 			if(value.getAttribute('value'))
 				value.value = value.getAttribute('value');
 		}
-	}
-
-	addParameterDiv(parameter = {}) {
-
-		const container = document.createElement('div');
-
-		container.innerHTML = `
-			<label>
-				<span>Filter</span>
-				<select name="placeholder" value="${parameter.placeholder || ''}"></select>
-			</label>
-
-			<label>
-				<span>Type</span>
-				<select name="type" value="${parameter.type || 'column'}">
-					<option value="column">Column</option>
-					<option value="filter">Filter</option>
-				</select>
-			</label>
-
-			<label>
-				<span>Value</span>
-				<select name="value" value="${parameter.value || ''}"></select>
-			</label>
-
-			<label>
-				<span>&nbsp;</span>
-				<button type="button" class="delete">
-					<i class="far fa-trash-alt"></i> Delete
-				</button>
-			</label>
-		`;
-
-		container.classList.add('parameter');
-
-		const parameterList = this.form.querySelector('.parameter-list');
-
-		parameterList.appendChild(container);
-
-		container.querySelector('select[name=type]').on('change', () => {
-			this.updateDrilldownParamters();
-		});
-
-		container.querySelector('.delete').on('click', () => {
-			parameterList.removeChild(container);
-		});
-
-		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
 	}
 
 	async apply() {
@@ -2565,7 +2573,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		super(visualization, source);
 
-		this.rowLimit = 15;
+		this.rowLimit = 3;
 		this.rowLimitMultiplier = 1.75;
 	}
 
@@ -2638,7 +2646,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		for(const [position, row] of rows.entries()) {
 
-			if(position > this.rowLimit)
+			if(position >= this.rowLimit)
 				break;
 
 			const tr = document.createElement('tr');
@@ -2674,13 +2682,13 @@ Visualization.list.set('table', class Table extends Visualization {
 			tr.innerHTML = `
 				<td colspan="${this.source.columns.list.size}">
 					<i class="fa fa-angle-down"></i>
-					<span>Show ${parseInt(this.rowLimit * this.rowLimitMultiplier - this.rowLimit)} more rows</span>
+					<span>Show ${parseInt(Math.ceil(this.rowLimit * this.rowLimitMultiplier) - this.rowLimit)} more rows</span>
 					<i class="fa fa-angle-down"></i>
 				</td>
 			`;
 
 			tr.on('click', () => {
-				this.rowLimit *= this.rowLimitMultiplier;
+				this.rowLimit = Math.ceil(this.rowLimit * this.rowLimitMultiplier);
 				this.source.visualizations.selected.render();
 			});
 
