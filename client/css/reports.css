@@ -311,6 +311,7 @@ main #form #report-form {
 			grid-gap: calc(var(--gap) * 2);
 			padding: calc(var(--gap) * 2);
 			border: 1px solid #ccc;
+			background: #eef;
 		}
 			main #visualization-form .axis select[multiple] {
 				height: 75px;
