@@ -1395,6 +1395,9 @@ ReportVisualization.types.set('area', class BarOptions extends ReportVisualizati
 ReportVisualization.types.set('pie', class BarOptions extends ReportVisualizationOptions {
 });
 
+ReportVisualization.types.set('funnel', class BarOptions extends ReportVisualizationOptions {
+});
+
 const mysqlKeywords = [
 	'SELECT',
 	'FROM',
