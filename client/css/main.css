@@ -692,6 +692,7 @@ body {
 			position: relative;
 			margin-top: calc(var(--gap) * 2);
 			flex: 1;
+			max-height: 500px;
 		}
 			main .data-source .visualization .NA {
 				padding: 8px 16px;

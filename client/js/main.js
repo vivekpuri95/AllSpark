@@ -2657,7 +2657,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		super(visualization, source);
 
-		this.rowLimit = 3;
+		this.rowLimit = 15;
 		this.rowLimitMultiplier = 1.75;
 	}
 
@@ -3812,7 +3812,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 	}
 });
 
-Visualization.list.set('pie', class Cohort extends Visualization {
+Visualization.list.set('pie', class Pie extends Visualization {
 
 	get container() {
 
@@ -3930,6 +3930,10 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 				.classed('pie-slice', true);
 
 		slice
+			.on('click', function(column, _, row) {
+				that.source.columns.get(column.data.name).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
 			.on('mousemove', function(row) {
 
 				const mouse = d3.mouse(this);
