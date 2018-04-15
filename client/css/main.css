@@ -23,7 +23,8 @@ button {
 	font-size: 90% !important;
 	transition: background var(--transition-duration),
 				color var(--transition-duration),
-				box-shadow var(--transition-duration);
+				box-shadow var(--transition-duration),
+				border var(--transition-duration);
 }
 input[type=button],
 input[type=reset],
@@ -36,10 +37,10 @@ input[type=button]:hover,
 input[type=reset]:hover,
 input[type=submit]:hover,
 button:hover {
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-    background: var(--color-accent);
-    color: var(--color-accent-text);
-    border-color: var(--color-accent);
+	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	background: var(--color-accent);
+	color: var(--color-accent-text);
+	border-color: var(--color-accent);
 }
 input[type=button]:active,
 input[type=reset]:active,
@@ -218,8 +219,10 @@ body {
 			padding: calc(var(--gap) * 2) 0;
 			grid-template-columns: repeat(auto-fit, minmax(75px, max-content));
 		}
-			main section .toolbar .right {
-
+			main .toolbar button {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
 			}
 
 
@@ -327,9 +330,11 @@ body {
 
 	main .dataset {
 			position: relative;
+			width: 100%;
 		}
-			main .dataset input[type=search] {
-				width: 200px;
+			main .dataset input[type=search],
+			main .dataset input[type=date] {
+				width: 100%;
 			}
 			main .dataset .options {
 				position: absolute;
@@ -339,6 +344,8 @@ body {
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 				max-height: 250px;
 				overflow: auto;
+				border:  1px solid #ccc;
+				border-top: 0;
 			}
 				main .dataset label {
 					display: grid;
@@ -366,7 +373,7 @@ body {
 				main .dataset .options footer {
 					background: #fff;
 					position: sticky;
-					font-size: 90%;
+					font-size: 85%;
 					padding: var(--gap);
 					color: #999;
 					display: grid;
@@ -408,7 +415,7 @@ body {
 			white-space: nowrap;
 		}
 		main .data-source > header::-webkit-scrollbar {
-  			display: none;
+			display: none;
 		}
 			main .data-source > header > .right {
 				margin-left: auto;
@@ -511,14 +518,18 @@ body {
 		main .data-source .column .blanket .form footer {
 			display: grid;
 			grid-template-columns: 1fr 1fr 1fr;
-			grid-gap: 1px;
 			position: sticky;
+			font-size: 110%;
 			bottom: 0;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		}
 			main .data-source .column .blanket .form footer button {
 				padding: calc(var(--gap) * 2);
 				height: auto;
+				border-right: 0;
+			}
+			main .data-source .column .blanket .form footer button:first-child {
+				border-left: 0;
 			}
 		main .data-source > .drilldown {
 			margin-top: calc(var(--gap) * 2);
@@ -589,14 +600,14 @@ body {
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
-                main .data-source .column .edit-column {
-                	opacity: 0;
-                	transition: opacity var(--transition-duration);
-                	padding: 0 var(--gap);
-                }
-                main .data-source .column:hover .edit-column {
-                	opacity: 1;
-                }
+				main .data-source .column .edit-column {
+					opacity: 0;
+					transition: opacity var(--transition-duration);
+					padding: 0 var(--gap);
+				}
+				main .data-source .column:hover .edit-column {
+					opacity: 1;
+				}
 
 				main .data-source > .columns .column .blanket {
 					position: fixed;
@@ -618,24 +629,24 @@ body {
 						overflow: auto;
 						padding: 0;
 					}
-                        main .data-source .column .blanket form .parameter-list {
-                        	display: grid;
-                        	grid-gap: calc(var(--gap) * 2);
-                        	padding-right: calc(var(--gap) * 2);
-                        }
-                        main .data-source .column .blanket form .parameter {
-                            display: grid;
-                            grid-template-columns: 1fr 1fr 1fr max-content;
-                        }
-                        main .data-source .column .blanket form .parameter .delete:hover {
-                            background-color: red;
-                            border: red;
-                        }
+						main .data-source .column .blanket form .parameter-list {
+							display: grid;
+							grid-gap: calc(var(--gap) * 2);
+							padding-right: calc(var(--gap) * 2);
+						}
+						main .data-source .column .blanket form .parameter {
+							display: grid;
+							grid-template-columns: 1fr 1fr 1fr max-content;
+						}
+						main .data-source .column .blanket form .parameter .delete:hover {
+							background-color: #c11;
+							border-color: #c11;
+						}
 							main .data-source .column form h3 {
 								margin: 0;
 								padding: var(--gap) 10px;
-								background: #fff;
-								border-bottom: 1px solid #999;
+								background: var(--color-primary);
+								color: var(--color-primary-text);
 								position: sticky;
 								top: 0;
 								font-weight: normal;
@@ -649,7 +660,7 @@ body {
 								}
 									main .data-source .column form .search input {
 										flex: 1;
-                                        margin-left: calc(var(--gap) * 2);
+										margin-left: calc(var(--gap) * 2);
 										width: calc(100% - 20px);
 									}
 								main .data-source .column form input {
@@ -688,6 +699,7 @@ body {
 				margin: 0;
 				padding: 0;
 				height: 100%;
+				position: relative;
 			}
 				.visualization > .container > .loading {
 					display: flex;
@@ -1073,5 +1085,4 @@ body {
 	fill: #fff;
 	font-size: 110%;
 	font-weight: bold;
-	pointer-events: none;
-}
+	pointer-events: non

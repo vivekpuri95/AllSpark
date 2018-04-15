@@ -88,7 +88,7 @@ main #reports > .list {
 		position: sticky;
 		top: 0;
 		z-index: 3;
-		align-items: flex-end;
+		align-items: flex-start;
 		grid-template-columns: max-content max-content 1fr;
 	}
 		main #reports > .toolbar input[name=date-range] {
@@ -105,12 +105,7 @@ main #reports > .list {
 			align-items: flex-end;
 			grid-template-columns: repeat(auto-fit, minmax(100px, auto));
 			justify-content: flex-end;
-			display: flex;
-			flex-wrap: wrap;
 		}
-			main #reports > .toolbar .datasets > * {
-				margin-left: calc(var(--gap)* 2);
-			}
 	main #reports .list .data-source {
 		grid-column: auto / span 8;
 		grid-row: auto / span 2;

@@ -249,6 +249,7 @@ router.get('/:type(dashboard|report)/:id?', (req, res) => {
 			<div class="toolbar form">
 
 				<label>
+					<span>&nbsp;</span>
 					<button id="back">
 						<i class="fa fa-arrow-left"></i>
 						Back
@@ -256,6 +257,7 @@ router.get('/:type(dashboard|report)/:id?', (req, res) => {
 				</label>
 
 				<label>
+					<span>&nbsp;</span>
 					<button id="edit-dashboard" class="hidden">
 						<i class="fa fa-edit"></i>
 						Edit

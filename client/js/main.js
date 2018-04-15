@@ -1233,9 +1233,9 @@ class DataSourceColumn {
 					<label>
 						<span>Type</span>
 						<select name="column_type">
-							<option value="date">Date</option>
-							<option value="number">Number</option>
 							<option value="string">String</option>
+							<option value="number">Number</option>
+							<option value="date">Date</option>
 						</select>
 					</label>
 
@@ -1281,7 +1281,9 @@ class DataSourceColumn {
 
 					<label>
 						<span>Report</span>
-						<select name="drilldown_query_id"></select>
+						<select name="drilldown_query_id">
+							<option value=""></option>
+						</select>
 					</label>
 
 					<label>
@@ -1297,12 +1299,12 @@ class DataSourceColumn {
 							<i class="far fa-times-circle"></i> Cancel
 						</button>
 
-						<button type="submit">
-							<i class="fa fa-save"></i> Save
-						</button>
-
 						<button type="button" class="apply">
 							<i class="fas fa-check"></i> Apply
+						</button>
+
+						<button type="submit">
+							<i class="fa fa-save"></i> Save
 						</button>
 					</footer>
 				</form>
@@ -1355,7 +1357,6 @@ class DataSourceColumn {
 
 		this.form.drilldown_query_id.on('change', () => this.updateDrilldownParamters());
 		this.updateDrilldownParamters();
-
 
 		let timeout;
 
@@ -1479,46 +1480,52 @@ class DataSourceColumn {
 
 		const
 			parameterList = this.form.querySelector('.parameter-list'),
-			parameters = parameterList.querySelectorAll('.parameter');
+			parameters = parameterList.querySelectorAll('.parameter'),
+			report = DataSource.list.get(parseInt(this.form.drilldown_query_id.value));
 
-		if(!DataSource.list.has(parseInt(this.form.drilldown_query_id.value)))
-			return parameterList.textContent = null;
+		if(report && report.filters.length) {
 
-		for(const parameter of parameters) {
+			for(const parameter of parameters) {
 
-			const
-				placeholder = parameter.querySelector('select[name=placeholder]'),
-				type = parameter.querySelector('select[name=type]'),
-				value = parameter.querySelector('select[name=value]');
+				const
+					placeholder = parameter.querySelector('select[name=placeholder]'),
+					type = parameter.querySelector('select[name=type]'),
+					value = parameter.querySelector('select[name=value]');
 
-			placeholder.textContent = null;
+				placeholder.textContent = null;
 
-			for(const filter of DataSource.list.get(parseInt(this.form.drilldown_query_id.value)).filters)
-				placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+				for(const filter of report.filters)
+					placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
 
-			if(placeholder.getAttribute('value'))
-				placeholder.value = placeholder.getAttribute('value');
+				if(placeholder.getAttribute('value'))
+					placeholder.value = placeholder.getAttribute('value');
 
-			if(!updatingType && type.getAttribute('value'))
-				type.value = type.getAttribute('value');
+				if(!updatingType && type.getAttribute('value'))
+					type.value = type.getAttribute('value');
 
-			value.textContent = null;
+				value.textContent = null;
 
-			if(type.value == 'column') {
+				if(type.value == 'column') {
 
-				for(const column of this.source.columns.list.values())
-					value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+					for(const column of this.source.columns.list.values())
+						value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+				}
+
+				else if(type.value == 'filter') {
+
+					for(const filter of this.source.filters.values())
+						value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+				}
+
+				if(value.getAttribute('value'))
+					value.value = value.getAttribute('value');
 			}
-
-			else if(type.value == 'filter') {
-
-				for(const filter of this.source.filters.values())
-					value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
-			}
-
-			if(value.getAttribute('value'))
-				value.value = value.getAttribute('value');
 		}
+
+		else parameterList.textContent = null;
+
+		parameterList.classList.toggle('hidden', !parameters.length || !report || !report.filters.length);
+		this.form.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
 	}
 
 	async apply() {
@@ -4226,24 +4233,8 @@ class Dataset {
 			<footer></footer>
 		`;
 
-		options.querySelector('header .all').on('click', () => {
-
-			if(!this.filter.multiple)
-				return;
-
-			for(const input of options.querySelectorAll('.list label input'))
-				input.checked = true;
-
-			this.update();
-		});
-
-		options.querySelector('header .clear').on('click', () => {
-
-			for(const input of options.querySelectorAll('.list label input'))
-				input.checked = false;
-
-			this.update();
-		});
+		options.querySelector('header .all').on('click', () => this.all());
+		options.querySelector('header .clear').on('click', () => this.clear());
 
 		this.load();
 
@@ -4371,6 +4362,25 @@ class Dataset {
 
 			input.value = sourceInput.value;
 		}
+
+		this.update();
+	}
+
+	all() {
+
+		if(!this.filter.multiple)
+			return;
+
+		for(const input of this.container.querySelectorAll('.options .list label input'))
+			input.checked = true;
+
+		this.update();
+	}
+
+	clear() {
+
+		for(const input of this.container.querySelectorAll('.options .list label input'))
+			input.checked = false;
 
 		this.update();
 	}
