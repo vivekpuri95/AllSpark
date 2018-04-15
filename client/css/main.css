@@ -339,7 +339,7 @@ body {
 			main .dataset .options {
 				position: absolute;
 				background: #fff;
-				z-index: 1;
+				z-index: 3;
 				width: 100%;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 				max-height: 250px;
@@ -533,6 +533,11 @@ body {
 			}
 		main .data-source > .drilldown {
 			margin-top: calc(var(--gap) * 2);
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(0, auto));
+			justify-content: flex-start;
+			grid-gap: calc(var(--gap) * 2);
+			align-items: center;
 		}
 			main .data-source > .drilldown a:hover {
 				text-decoration: none;

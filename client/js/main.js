@@ -842,31 +842,61 @@ class DataSource {
 
 		if(this.drilldown) {
 
-			const
-				list = container.querySelector('.drilldown'),
-				link = document.createElement('a');
+			let source = this;
+
+			const list = container.querySelector('.drilldown');
 
 			list.textContent = null;
 
-			link.innerHTML = `<i class="fa fa-angle-left"></i> ${this.drilldown.parent.name} (${this.drilldown.parameters.map(p => p.selectedValue).join()})`;
+			while(source.drilldown) {
 
-			link.on('click', () => {
+				const
+					copy = source,
+					fragment = document.createDocumentFragment(),
+					link = document.createElement('a')
 
-				const parent = this.container.parentElement;
+				link.innerHTML = `${source.drilldown.parent.name}`;
 
-				parent.removeChild(this.container);
-				parent.appendChild(this.drilldown.parent.container);
-			});
+				const title = [];
 
-			link.title = '';
+				for(const p of source.drilldown.parameters)
+					title.push(`${p.value}: ${p.selectedValue instanceof Dataset ? p.selectedValue.value : p.selectedValue}`);
 
-			list.appendChild(link);
+				link.title = title.join('\n');
+
+				link.on('click', () => {
+
+					const parent = this.container.parentElement;
+
+					parent.removeChild(this.container);
+					parent.appendChild(copy.drilldown.parent.container);
+				});
+
+				fragment.appendChild(link);
+
+				if(list.children.length) {
+
+					const angle = document.createElement('i');
+
+					angle.classList.add('fas', 'fa-angle-right');
+
+					fragment.appendChild(angle);
+
+					list.insertBefore(fragment, list.children[0]);
+				}
+
+				else list.appendChild(fragment);
+
+				source = source.drilldown.parent;
+			}
 		}
 
 		this.columns.render();
 
 		return container;
 	}
+
+
 
 	get response() {
 
@@ -1403,6 +1433,8 @@ class DataSourceColumn {
 			await this.update();
 		})
 
+		this.setDragAndDrop();
+
 		return container;
 	}
 
@@ -1709,24 +1741,34 @@ class DataSourceColumn {
 		});
 	}
 
-	initiateDrilldown(row) {
+	async initiateDrilldown(row) {
 
 		if(!this.drilldown || !parseInt(this.drilldown.query_id) || !this.drilldown.parameters)
 			return;
 
-		const source = DataSource.list.get(parseInt(this.drilldown.query_id));
+		let destination = DataSource.list.get(parseInt(this.drilldown.query_id));
 
-		if(!source)
+		if(!destination)
 			return;
 
-		const report = new DataSource(source);
+		destination = new DataSource(destination);
+
+		const destinationDatasets = [];
+
+		for(const filter of destination.filters.values()) {
+
+			if(filter.dataset)
+				destinationDatasets.push(filter.dataset.load());
+		}
+
+		await Promise.all(destinationDatasets);
 
 		for(const parameter of this.drilldown.parameters) {
 
-			if(!report.filters.has(parameter.placeholder))
+			if(!destination.filters.has(parameter.placeholder))
 				continue;
 
-			const filter = report.filters.get(parameter.placeholder);
+			const filter = destination.filters.get(parameter.placeholder);
 
 			let value;
 
@@ -1743,21 +1785,21 @@ class DataSourceColumn {
 			parameter.selectedValue = value;
 		}
 
-		report.drilldown = {
+		destination.drilldown = {
 			...this.drilldown,
 			parent: this.source,
 		};
 
-		report.container.setAttribute('style', this.source.container.getAttribute('style'));
+		destination.container.setAttribute('style', this.source.container.getAttribute('style'));
 
 		const parent = this.source.container.parentElement;
 
 		parent.removeChild(this.source.container);
-		parent.appendChild(report.container);
+		parent.appendChild(destination.container);
 
-		report.container.querySelector('.drilldown').classList.remove('hidden');
+		destination.container.querySelector('.drilldown').classList.remove('hidden');
 
-		report.visualizations.selected.load();
+		destination.visualizations.selected.load();
 	}
 
 	get search() {
@@ -1940,12 +1982,16 @@ class DataSourceFilter {
 
 	get value() {
 
-		const input = this.label.querySelector('input');
+		if(this.dataset)
+			return this.dataset;
 
-		return input ? input.value : this.default_value;
+		return this.label.querySelector('input').value;
 	}
 
 	set value(value) {
+
+		if(this.dataset)
+			return this.dataset.value = value;
 
 		this.label.querySelector('input').value = value;
 	}
@@ -4364,6 +4410,10 @@ class Dataset {
 		}
 
 		this.update();
+	}
+
+	get value() {
+		return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
 	}
 
 	all() {
