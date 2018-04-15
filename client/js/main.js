@@ -671,6 +671,31 @@ class DataSource {
 		this.container.querySelector('.share-link input').value = this.link;
 		this.container.querySelector('.query').innerHTML = response.query;
 
+		let age = response.cached.age;
+
+		if(age < 1000)
+			age += 'ms';
+
+		if(age < 1000 * 60)
+			age = (age / 1000) + 's';
+
+		if(age < 1000 * 60 * 60)
+			age = (age / (1000 * 60)) + 'h';
+
+		let runtime = response.runtime;
+
+		if(runtime < 1000)
+			runtime += 'ms';
+
+		if(runtime < 1000 * 60)
+			runtime = (runtime / 1000) + 's';
+
+		if(runtime < 1000 * 60 * 60)
+			runtime = (runtime / (1000 * 60)) + 'h';
+
+		this.container.querySelector('.description .cached').textContent = response.cached.status ? age : 'No';
+		this.container.querySelector('.description .runtime').textContent = runtime;
+
 		this.columns.update();
 		this.postProcessors.update();
 
@@ -721,6 +746,14 @@ class DataSource {
 					<span>
 						<span class="NA">Added On:</span>
 						<span>${Format.date(this.created_at)}</span>
+					</span>
+					<span>
+						<span class="NA">Cached:</span>
+						<span class="cached"></span>
+					</span>
+					<span>
+						<span class="NA">Runtime:</span>
+						<span class="runtime"></span>
 					</span>
 					<span class="right">
 						<span class="NA">Added By:</span>
@@ -895,8 +928,6 @@ class DataSource {
 
 		return container;
 	}
-
-
 
 	get response() {
 

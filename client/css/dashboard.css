@@ -103,7 +103,7 @@ main #reports > .list {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 			align-items: flex-end;
-			grid-template-columns: repeat(auto-fit, minmax(100px, auto));
+			grid-template-columns: repeat(auto-fit, minmax(80px, auto));
 			justify-content: flex-end;
 		}
 	main #reports .list .data-source {
