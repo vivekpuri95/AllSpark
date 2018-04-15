@@ -632,8 +632,6 @@ class DataSource {
 
 			if(filter.dataset && filter.dataset.query_id) {
 
-
-
 				for(const input of filter.label.querySelectorAll('input:checked'))
 					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, input.value);
 
@@ -710,9 +708,8 @@ class DataSource {
 			<form class="filters form toolbar hidden"></form>
 
 			<div class="columns"></div>
-			<div class="drilldown hidden"></div>
-
 			<div class="query hidden"></div>
+			<div class="drilldown hidden"></div>
 
 			<div class="description hidden">
 				<div class="body">${this.description}</div>
@@ -1202,23 +1199,13 @@ class DataSourceColumn {
 		if(this.containerElement)
 			return this.containerElement;
 
-		const
-			container = this.containerElement = document.createElement('div'),
-			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join('');
-
-		let reportsList = '';
-
-		for(const report of DataSource.list.values()) {
-
-			reportsList = reportsList.concat(`<option value="${report.query_id}">${report.name}</option>`);
-		}
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('column');
 
 		container.innerHTML = `
 			<span class="color" style="background: ${this.color}"></span>
 			<span class="name">${this.name}</span>
-			<span class="right menu-toggle" title="drilldown"><i class="fas fa-ellipsis-v"></i></span>
 
 			<div class="blanket hidden">
 				<form class="block form drill-down-form">
@@ -1238,9 +1225,7 @@ class DataSourceColumn {
 					<label>
 						<span>Search</span>
 						<div class="search">
-							<select name="searchType">
-								${searchTypes}
-							</select>
+							<select name="searchType"></select>
 							<input type="search" name="searchQuery">
 						</div>
 					</label>
@@ -1295,26 +1280,27 @@ class DataSourceColumn {
 					<h3>Drill down</h3>
 
 					<label>
-						<span>Report Id</span>
-						<select name="query_id">
-							${reportsList}
-						</select>
+						<span>Report</span>
+						<select name="drilldown_query_id"></select>
 					</label>
 
 					<label>
 						<span>Parameters</span>
-						<button type="button" id="add_parameters"><i class="fa fa-plus"></i> Add New</button>
+						<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
 					</label>
 
-					<label>
-						<div class="params-list"></div>
-					</label>
+					<div class="parameter-list"></div>
 
 					<div class="submit-apply">
-						<input type="submit" value="Submit">
-						<button type="button" class="apply">Apply</button>
-					</div>
 
+						<button type="submit">
+							<i class="fa fa-save"></i> Save
+						</button>
+
+						<button type="button" class="apply">
+							<i class="fas fa-check"></i> Apply
+						</button>
+					</div>
 				</form>
 			</div>
 		`;
@@ -1331,38 +1317,72 @@ class DataSourceColumn {
 		// 	this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		// });
 
+		if(user.privileges.has('report')) {
+
+			const edit = document.createElement('a');
+
+			edit.classList.add('edit-column');
+			edit.title = 'Edit Column';
+			edit.on('click', () => this.edit());
+
+			edit.innerHTML = `<i class="fas fa-ellipsis-v"></i>`;
+
+			this.container.appendChild(edit);
+		}
+
 		this.form.on('submit', async e => this.save(e));
 
 		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
 
 		this.form.on('click', e => e.stopPropagation());
+
+		for(const [i, type] of DataSourceColumn.searchTypes.entries()) {
+
+			this.form.searchType.insertAdjacentHTML('beforeend', `
+				<option value="${i}">${type.name}</option>
+			`);
+		}
+
+		for(const report of DataSource.list.values()) {
+
+			this.form.drilldown_query_id.insertAdjacentHTML('beforeend', `
+				<option value="${report.query_id}">${report.name}</option>
+			`);
+		}
+
+		this.form.drilldown_query_id.on('change', () => this.updateDrilldownParamters());
+		this.updateDrilldownParamters();
+
+
 		let timeout;
 
 		container.querySelector('.name').on('click', async () => {
 
 			clearTimeout(timeout);
 
-			timeout = setTimeout( async ()=>{
+			timeout = setTimeout(async () => {
 
 				this.disabled = !this.disabled;
 
 				this.source.columns.render();
 
 				await this.update();
-			},300);
+			}, 300);
 		});
 
-		container.querySelector('.menu-toggle').on('click', () => this.showBlanket());
+		this.form.querySelector('.add-parameters').on('click', () => {
+			this.addParameterDiv();
+			this.updateDrilldownParamters();
+		});
 
-		this.form.querySelector('#add_parameters').on('click', () => this.addParameterDiv());
-
-		this.form.querySelector('.apply').on('click', () => this.applyColumnChanges());
+		this.form.querySelector('.apply').on('click', () => this.apply());
 
 		container.querySelector('.name').on('dblclick', async (e) => {
 
 			clearTimeout(timeout);
 
 			for(const column of this.source.columns.values()) {
+
 				if(column.key == this.key ||  column.key == this.source.visualizations.selected.axis.x.column)
 					continue;
 
@@ -1383,86 +1403,120 @@ class DataSourceColumn {
 
 	edit() {
 
-		for(const element of this.form.elements) {
-			if(this.hasOwnProperty(element.name))
-				element.value = this[element.name];
+		for(const key in this) {
+
+			if(key in this.form)
+				this.form[key].value = this[key];
 		}
 
-		if(this.source.columns.sortBy != this)
-			this.form.elements.sort.value = -1;
+		if(this.drilldown) {
+
+			this.form.drilldown_query_id.value = this.drilldown ? this.drilldown.query_id : '';
+
+			for(const param of this.drilldown.parameters || [])
+				this.addParameterDiv(param);
+
+			this.updateDrilldownParamters();
+		}
 
 		this.blanket.classList.remove('hidden');
-		this.source.container.querySelector('.columns').classList.remove('hidden');
-
-		this.validateFormula();
-
-		this.form.elements.name.focus();
 	}
 
-	showBlanket() {
-		this.blanket.classList.remove('hidden');
-		const [values] = this.source.format.columns.filter( f => f.key == this.key);
+	updateDrilldownParamters() {
 
-		if(!values)
-			return;
+		const
+			parameterList = this.form.querySelector('.parameter-list'),
+			parameters = parameterList.querySelectorAll('.parameter');
 
-		for(const key of Object.keys(values)){
+		if(!DataSource.list.has(parseInt(this.form.drilldown_query_id.value)))
+			return parameterList.textContent = null;
 
-			if(key != 'drilldown')
-				this.form[key].value = values[key];
-		}
+		for(const parameter of parameters) {
 
-		this.form.query_id.value = values.drilldown.report_id;
-		for (const param of values.drilldown.parameters) {
-			this.addParameterDiv(param);
+			const
+				placeholder = parameter.querySelector('select[name=placeholder]'),
+				type = parameter.querySelector('select[name=type]'),
+				value = parameter.querySelector('select[name=value]');
+
+			placeholder.textContent = null;
+
+			for(const filter of DataSource.list.get(parseInt(this.form.drilldown_query_id.value)).filters)
+				placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+
+			if(placeholder.getAttribute('value'))
+				placeholder.value = placeholder.getAttribute('value');
+
+			value.textContent = null;
+
+			if(type.value == 'column') {
+
+				for(const column of this.source.columns.list.values())
+					value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+			}
+
+			else if(type.value == 'filter') {
+
+				for(const filter of this.source.filters.values())
+					value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+			}
+
+			if(value.getAttribute('value'))
+				value.value = value.getAttribute('value');
 		}
 	}
 
-	addParameterDiv(params = {}) {
+	addParameterDiv(parameter = {}) {
 
-		var parameter = document.createElement('div');
+		const container = document.createElement('div');
 
-		parameter.innerHTML = `
+		container.innerHTML = `
 			<label>
-				<span>Placeholder</span>
-				<input type="text" name="placeholder" value="${params.placeholder || ''}">
+				<span>Filter</span>
+				<select name="placeholder" value="${parameter.placeholder || ''}"></select>
 			</label>
+
 			<label>
 				<span>Type</span>
-				<select name="type" value="${params.type || 'column'}">
+				<select name="type" value="${parameter.type || 'column'}">
 					<option value="column">Column</option>
 					<option value="filter">Filter</option>
-					<option value="static">Static</option>
 				</select>
 			</label>
+
 			<label>
 				<span>Value</span>
-				<input type="text" name="value" value="${params.value || ''}">
+				<select name="value" value="${parameter.value || ''}"></select>
 			</label>
+
 			<label>
-				<span>&nbsp</span>
-				<button type="button" class="remove-parameters delete"><i class="far fa-trash-alt"></i></button>
+				<span>&nbsp;</span>
+				<button type="button" class="delete">
+					<i class="far fa-trash-alt"></i> Delete
+				</button>
 			</label>
 		`;
-		parameter.classList.add('parameters');
-		this.form.querySelector('.params-list').appendChild(parameter);
 
-		parameter.querySelector('.remove-parameters').on('click', () => {
-			this.form.querySelector('.params-list').removeChild(parameter);
+		container.classList.add('parameter');
+
+		const parameterList = this.form.querySelector('.parameter-list');
+
+		parameterList.appendChild(container);
+
+		container.querySelector('select[name=type]').on('change', () => {
+			this.updateDrilldownParamters();
 		});
 
-		this.blanket.on('click', () => {
-			this.blanket.classList.add('hidden');
-			this.form.querySelector('.params-list').removeChild(parameter);
+		container.querySelector('.delete').on('click', () => {
+			parameterList.removeChild(container);
 		});
+
+		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
 	}
 
-	async applyColumnChanges() {
+	async apply() {
 
-		for(const element of this.form.elements) {
+		for(const element of this.form.elements)
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
-
-		}
 
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
@@ -1472,30 +1526,31 @@ class DataSourceColumn {
 
 	async save(e) {
 
-		if(e) {
+		if(e)
 			e.preventDefault();
-		}
 
-		this.source.format = this.source.format ? this.source.format : {};
+		if(!this.source.format)
+			this.source.format = {};
+
+		if(!this.source.format.columns)
+			this.source.format.columns = [];
 
 		let
-			columns = this.source.format.columns ? this.source.format.columns : [],
 			response,
 			updated = 0,
 			json_param = [];
 
-		for(const element of this.form.elements) {
+		for(const element of this.form.elements)
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 
-		}
-		for(const row of this.form.querySelectorAll('.parameters')) {
+		for(const row of this.form.querySelectorAll('.parameter')) {
+
 			let param_json = {};
-			for (const div of row.children) {
 
-				param_json[div.children[1].name] = div.children[1].value;
-			}
+			for(const select of row.querySelectorAll('select'))
+				param_json[select.name] = select.value;
+
 			json_param.push(param_json);
-
 		}
 
 		response = {
@@ -1511,35 +1566,36 @@ class DataSourceColumn {
 			postfix : this.postfix,
 			formula : this.formula,
 			drilldown : {
-				report_id : this.query_id,
+				query_id : this.drilldown_query_id,
 				parameters : json_param
 			}
 		};
 
-		for(const [i, column] of columns.entries()){
-			if(column.key == this.key){
-				columns[i] = response;
+		for(const [i, column] of this.source.format.columns.entries()) {
+
+			if(column.key == this.key) {
+				this.source.format.columns[i] = response;
 				updated = 1;
 				break;
 			}
-
 		}
+
 		if(updated == 0) {
-			columns.push(response);
+			this.source.format.columns.push(response);
 		}
-
-		this.source.format["columns"] = columns;
 
 		const
 			parameters = {
 				query_id : this.source.query_id,
-				format : JSON.stringify(this.source.format)
+				format : JSON.stringify(this.source.format),
 			},
 			options = {
 				method: 'POST',
 			};
+
 		await API.call('reports/report/update', parameters, options);
-		await this.applyColumnChanges();
+		await this.apply();
+
 		this.blanket.classList.add('hidden');
 	}
 
@@ -4196,6 +4252,7 @@ class Dataset {
 			search = this.container.querySelector('input[type=search]'),
 			list = this.container.querySelector('.options .list');
 
+
 		if(!values.length)
 			return list.innerHTML = `<div class="NA">No data found! :(</div>`;
 
@@ -4216,7 +4273,6 @@ class Dataset {
 
 			list.appendChild(label);
 		}
-
 
 		this.update();
 	}
@@ -4318,6 +4374,6 @@ Node.prototype.on = window.on = function(name, fn) {
 	this.addEventListener(name, fn);
 }
 
-MetaData.timeout = 0; // 5 * 60 * 1000;
+MetaData.timeout = 30 * 1000; // 5 * 60 * 1000;
 Dataset.timeout = 30 * 1000; // 5 * 60 * 1000;
 Visualization.animationDuration = 750;

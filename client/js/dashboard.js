@@ -156,6 +156,16 @@ Page.class = class Dashboards extends Page {
 
 		container.textContent = null;
 
+		const promises = [];
+
+		for(const filter of report.filters.values()) {
+
+			if(filter.dataset)
+				promises.push(filter.dataset.load());
+		}
+
+		await Promise.all(promises);
+
 		report.container.removeAttribute('style');
 		container.classList.add('singleton');
 		this.reports.querySelector('.toolbar').classList.add('hidden');
@@ -240,16 +250,17 @@ class Dashboard {
 			return;
 		}
 
-		await new Promise(r => {
-			setTimeout(async () => {
-				await this.datasets.load();
-				r();
-			});
-		})
+		await this.datasets.load();
 
 		for(const _report of this.reports()) {
 
 			const report = new DataSource(_report);
+
+			for(const filter of report.filters.values()) {
+
+				if(filter.dataset && this.datasets.has(filter.dataset.id))
+					await filter.dataset.load();
+			}
 
 			report.container.setAttribute('style', `
 				order: ${report.dashboard.position || 0};
@@ -658,9 +669,8 @@ class DashboardDatasets extends Map {
 
 		const promises = [];
 
-		for(const dataset of this.values()) {
+		for(const dataset of this.values())
 			promises.push(dataset.load());
-		}
 
 		await Promise.all(promises);
 	}
