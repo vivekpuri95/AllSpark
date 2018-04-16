@@ -806,7 +806,7 @@ class DataSource {
 
 		else {
 
-			edit.on('click', () => window.location = `/reports/${this.query_id}`);
+			edit.on('click', () => window.open(`/reports/${this.query_id}`,'_blank'));
 
 			query.on('click', () => {
 				container.querySelector('.query').classList.toggle('hidden');
@@ -4465,11 +4465,8 @@ class Dataset {
 
 		else {
 
-			const
-				input = this.container.querySelector('input'),
-				sourceInput = source.container.querySelector('input');
-
-			input.value = sourceInput.value;
+			for(const input of this.container.querySelectorAll('input'))
+				input.checked = source == input.value;
 		}
 
 		this.update();

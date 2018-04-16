@@ -320,7 +320,7 @@ class Dashboard {
 			const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
 
 			edit.classList.remove('hidden');
-			edit.innerHTML = `<i class="fa fa-edit"></i> Edit`;
+			edit.innerHTML = `<i class="fa fa-edit"></i>`;
 
 			edit.removeEventListener('click', Dashboard.toolbar.editListener);
 
