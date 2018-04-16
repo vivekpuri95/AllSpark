@@ -406,6 +406,8 @@ body {
 	}
 		main .data-source > .warning {
 			margin: calc(var(--gap) * 2) 0 0;
+			overflow: auto;
+			user-select: text;
 		}
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
@@ -456,6 +458,9 @@ body {
 			font-size: 95%;
 			margin: 0;
 			margin-top:  calc(var(--gap) * 2);
+		}
+		main .data-source .toolbar.filters {
+			grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
 		}
 			main .data-source .menu-toggle.selected,
 			main .data-source .query-toggle.selected,
