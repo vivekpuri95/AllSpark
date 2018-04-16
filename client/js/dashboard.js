@@ -71,6 +71,33 @@ Page.class = class Dashboards extends Page {
 				nav.appendChild(dashboard.menuItem);
 		}
 
+		nav.insertAdjacentHTML('beforeend', `
+			<div class="item collapse">
+				<div class="label">
+					<span class="name left"><i class="fa fa-angle-double-left" aria-hidden="true"></i><span>Collapse Sidebar</span></span>
+					<span class="name right hidden"><i class="fa fa-angle-double-right" aria-hidden="true"></i></span>
+				</div>
+			</div>
+		`);
+
+		nav.querySelector('.collapse').on('click', (e) => {
+
+			nav.classList.toggle('collapsed-nav');
+
+			e.currentTarget.querySelector('.left').classList.toggle('hidden');
+			e.currentTarget.querySelector('.right').classList.toggle('hidden');
+			e.currentTarget.querySelector('.name').classList.toggle('hidden');
+
+			document.querySelector('main').classList.toggle('collapsed-grid');
+
+			for(const item of nav.querySelectorAll('.item')) {
+				if(!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
+					item.querySelector('.label .name').classList.toggle('hidden');
+				item.querySelector('.submenu') ? item.querySelector('.submenu').classList.toggle('collapsed-submenu-bar') : '';
+			}
+
+		});
+
 		if(!nav.children.length)
 			nav.innerHTML = `<div class="NA">No dashboards found!</div>`;
 	}
@@ -155,6 +182,16 @@ Page.class = class Dashboards extends Page {
 		this.list.selectedReports.add(report);
 
 		container.textContent = null;
+
+		const promises = [];
+
+		for(const filter of report.filters.values()) {
+
+			if(filter.dataset)
+				promises.push(filter.dataset.load());
+		}
+
+		await Promise.all(promises);
 
 		report.container.removeAttribute('style');
 		container.classList.add('singleton');
@@ -246,6 +283,12 @@ class Dashboard {
 
 			const report = new DataSource(_report);
 
+			for(const filter of report.filters.values()) {
+
+				if(filter.dataset && this.datasets.has(filter.dataset.id))
+					await filter.dataset.load();
+			}
+
 			report.container.setAttribute('style', `
 				order: ${report.dashboard.position || 0};
 				grid-column: auto / span ${report.dashboard.width || Dashboard.grid.columns};
@@ -277,6 +320,7 @@ class Dashboard {
 			const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
 
 			edit.classList.remove('hidden');
+			edit.innerHTML = `<i class="fa fa-edit"></i>`;
 
 			edit.removeEventListener('click', Dashboard.toolbar.editListener);
 
@@ -650,8 +694,12 @@ class DashboardDatasets extends Map {
 
 	async fetch() {
 
+		const promises = [];
+
 		for(const dataset of this.values())
-			await dataset.load();
+			promises.push(dataset.fetch());
+
+		await Promise.all(promises);
 	}
 
 	async render() {
@@ -659,6 +707,9 @@ class DashboardDatasets extends Map {
 		const container = Dashboard.toolbar.querySelector('.datasets');
 
 		container.textContent = null;
+
+		if(!this.size)
+			return;
 
 		for(const dataset of this.values()) {
 
@@ -668,22 +719,37 @@ class DashboardDatasets extends Map {
 
 			label.classList.add('dataset-container');
 
-			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`)
+			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
+
+			if(!['Program','Region','Market','Bid Zone'].includes(dataset.name))
+				label.classList.add('hidden');
 
 			label.appendChild(dataset.container);
 
 			container.appendChild(label);
 		}
 
-		const apply = document.createElement('button');
+		container.insertAdjacentHTML('beforeend', `
+			<div class="actions">
+				<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
+				<button class="more icon" title="More Filters"><i class="fas fa-filter"></i></button>
+				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
+				<button class="reset icon" title="Check All Filters"><i class="far fa-check-square"></i></button>
+				<button class="clear icon" title="Clear All Filters"><i class="far fa-square"></i></button>
+			</div>
+		`);
 
-		apply.classList.add('apply');
+		container.querySelector('button.apply').on('click', () => this.apply());
+		container.querySelector('button.reload').on('click', () => this.apply());
+		container.querySelector('button.reset').on('click', () => this.all());
+		container.querySelector('button.clear').on('click', () => this.clear());
 
-		apply.innerHTML = `<i class="fas fa-paper-plane"></i> Apply`;
+		container.querySelector('button.more').on('click', () => {
 
-		apply.on('click', () => this.apply());
-
-		container.appendChild(apply);
+			container.querySelector('button.more').classList.add('hidden');
+			for(const dataset of container.querySelectorAll('label.hidden'))
+				dataset.classList.remove('hidden');
+		});
 	}
 
 	apply() {
@@ -710,5 +776,17 @@ class DashboardDatasets extends Map {
 			else
 				report.container.style.opacity = 0.4;
 		}
+	}
+
+	clear() {
+
+		for(const dataset of this.values())
+			dataset.clear();
+	}
+
+	all() {
+
+		for(const dataset of this.values())
+			dataset.all();
 	}
 }

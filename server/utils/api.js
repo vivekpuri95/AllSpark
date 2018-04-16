@@ -7,7 +7,7 @@ const commonFun = require('./commonFunctions');
 const User = require('./User');
 const constants = require('./constants');
 const assert = require("assert");
-const pgsql = require("./pgsql").Postgres
+const pgsql = require("./pgsql").Postgres;
 
 class API {
 

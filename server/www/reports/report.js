@@ -79,8 +79,10 @@ exports.update = class extends API {
 
 		for (const key in this.request.body) {
 			if (query_cols.includes(key))
-				values[key] = this.request.body[key] || null;
+				values[key] = this.request.body[key];
 		}
+
+		values.refresh_rate = parseInt(values.refresh_rate) || null;
 
 		try {
 			values.format = values.format ? JSON.stringify(JSON.parse(values.format)) : null;

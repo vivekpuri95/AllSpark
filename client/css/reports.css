@@ -48,30 +48,6 @@ main section.section.show {
 		main #list tr .tags a:active {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.35);
 		}
-main #form.show {
-	margin-bottom: 10px;
-	display: grid;
-	grid-gap: calc(var(--gap) * 2);
-}
-	main #form h1 {
-		display: flex;
-		align-items: center;
-		margin: 0;
-	}
-	main #form h1 a {
-		margin-left: auto;
-		font-size: 12px;
-	}
-	main #form h1 a:hover {
-		text-decoration: none !important;
-	}
-#list-container {
-	overflow: auto;
-}
-#list-container tbody tr:hover {
-	cursor: auto;
-	background-color: var(--color-row-hover) !important;
-}
 main #form #report-form {
 	background: #fff;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
@@ -92,33 +68,60 @@ main #form #report-form {
 			main #form #source select {
 				max-width: 100px;
 			}
+		main #form form > #api {
+			grid-column: 1 / 3;
+			display: grid;
+			grid-row-gap: calc(var(--gap) * 2);
+			padding: calc(var(--gap) * 2);
+			border: 1px solid #ccc;
+			background: #eef;
+		}
+			main #form form > #api label {
+				max-width: initial;
+			}
 		main #form form > #query {
 			max-width: 100%;
 			display: grid;
 			grid-template-columns: 300px 1fr;
-			grid-row-gap: calc(var(--gap) );
+			grid-row-gap: calc(var(--gap));
 			grid-column-gap:  0;
 			grid-column: 1 / 3;
 		}
-		#form form #query > span {
-			grid-column: 1 / 3;
-		}
-
+			#form form #query > span {
+				grid-column: 1 / 3;
+				font-size: 90%;
+				color: #666;
+				font-weight: bold;
+			}
 			main #form form #editor {
 				height: 500px;
 			}
 		#form form #schema {
 			grid-row: 2;
-			overflow: auto;
+			overflow: hidden;
 			font-weight: normal;
 			border: 1px solid #ccc;
 			border-right: 0;
 			max-height: 500px;
+			position: relative;
+			display: flex;
+			flex-direction: column;
 		}
+			#form form #schema .NA {
+				text-align: center;
+				padding: var(--gap);
+			}
+			#form form #schema input[type=search] {
+				width: 100%;
+				border: 0;
+				border-bottom: 1px solid #ccc;
+				background: #fff;
+			}
 			#form form #schema ul {
 				padding: 0;
 				list-style: none;
 				margin: 0;
+				overflow: auto;
 			}
 			#form form #schema ul ul {
 				border-left: 1px dashed #999;
@@ -159,7 +162,7 @@ main #form #report-form {
 						}
 
 	main #form #test-container {
-		grid-row: 5 / span 10;
+		grid-row: 4 / span 10;
 		grid-column: 2;
 	}
 		main #form #test-container #test-body {
@@ -193,10 +196,6 @@ main #form #report-form {
 		border-bottom: 1px dashed #999;
 		margin: var(--gap) 0 0 0;
 	}
-	main #form > .toolbar {
-		margin-top: 0;
-		margin-bottom: 0;
-	}
 	main #form #missing-filters {
 		background: #fcc;
 		padding: 16px;
@@ -218,9 +217,11 @@ main #form #report-form {
 	main .form.visualization::-webkit-scrollbar {
 		display: none;
 	}
+	main .toolbar button.unsaved[type=submit],
 	main .form.filter.unsaved button[type=submit],
 	main .form.visualization.unsaved button[type=submit] {
-		background: #c11;
+		background: #c33;
+		color: #fff;
 	}
 		main #form .NA {
 			margin: 5px;
@@ -229,7 +230,7 @@ main #form #report-form {
 		main #form .delete {
 			white-space: nowrap;
 		}
-		main #form .red {
+		main #form input.red {
 			box-shadow: inset -15px 0 #c11;
 		}
 		main h3 {
@@ -266,21 +267,52 @@ main #form #report-form {
 		.tab:active {
 			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
 		}
-	main #form #visualizations {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		grid-gap: calc(var(--gap) * 2);
-	}
 		main #form #visualizations-list {
-			display: flex;
-			flex-direction: column;
+			margin-top: calc(var(--gap) * 2);
 		}
-		main #form #visualization-preview {
-			height: 450px;
+			main #form #visualizations-list table {
+				background: #fff;
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			}
+		main #visualization-preview {
+			display: grid;
+			grid-template-columns: 250px 1fr;
+			grid-column-gap: calc(var(--gap) * 2);
+			align-items: flex-start;
 		}
-			main #form #visualization-preview .NA {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				height: 100%;
+			main #visualization-preview .toolbar {
+				grid-column: 1 / 3;
+			}
+			main #visualization-form {
+				background: #fff;
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+				margin-top: 35px;
+			}
+			main .preview {
+				min-height: 500px;
+			}
+				main .preview .data-source {
+					height: 500px;
+				}
+
+		main #visualization-form .options label {
+			display: grid;
+			grid-gap: calc(var(--gap) * 2);
+			max-width: 100%;
+		}
+		main #visualization-form .options h4 {
+			margin-top: 0;
+
+		}
+		main #visualization-form .axis {
+			border-bottom: 1px solid #ccc;
+			margin-bottom: 10px;
+			display: grid;
+			grid-gap: calc(var(--gap) * 2);
+			padding: calc(var(--gap) * 2);
+			border: 1px solid #ccc;
+			background: #eef;
+		}
+			main #visualization-form .axis select[multiple] {
+				height: 75px;
 			}

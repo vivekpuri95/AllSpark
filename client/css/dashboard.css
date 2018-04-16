@@ -2,19 +2,54 @@ main {
 	display: grid !important;
 	grid-template-columns: 220px calc(100% - 220px);
 }
+main.collapsed-grid {
+	grid-template-columns: 60px calc(100% - 60px) !important;
+}
 main label {
 	font-weight: normal;
 }
 main > nav {
+	display: flex;
+	flex-direction: column;
 	position: sticky;
 	top: 0;
+	overflow-y: scroll;
+	overflow-x: unset;
+	z-index: 4;
 	color: #777;
-	overflow: hidden;
 	height: calc(100vh - 50px);
+	border-right: 1px solid #ccc;
 }
-main > nav:hover {
-	overflow: auto;
+	main > nav .collapse {
+		margin-top: auto;
+		position: sticky;
+		bottom: 0;
+		background: var(--color-primary);
+	}
+	nav.collapsed-nav {
+		overflow: unset;
+	}
+main > nav.collapsed-nav .selected {
+	box-shadow: none !important;
+	background: var(--color-accent) !important;
 }
+	nav > .item > .collapsed-submenu-bar {
+		position: absolute;
+		left: 60px;
+		width: 180px;
+		margin-top: -40px;
+		background: var(--color-primary);
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
+	}
+		nav > .item > .collapsed-submenu-bar .label {
+			padding-left: 10px;
+		}
+		nav > .item > .collapsed-submenu-bar .submenu .label {
+			padding-left: 40px;
+		}
+		nav > .item .left span {
+			padding: 0 5px;
+		}
 main > nav::-webkit-scrollbar {
 	background: var(--color-secondary);
 	width: 8px;
@@ -85,14 +120,11 @@ main #reports > .list {
 	align-items: start;
 }
 	main #reports > .toolbar {
-		margin: 0 0 calc(var(--gap) * 2);
-		background: #fff;
-		box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 		position: sticky;
 		top: 0;
 		z-index: 3;
-		align-items: flex-end;
-		padding: var(--gap);
+		align-items: flex-start;
+		grid-template-columns: max-content max-content 1fr;
 	}
 		main #reports > .toolbar input[name=date-range] {
 			width: 250px;
@@ -103,13 +135,21 @@ main #reports > .list {
 			max-width: 200px;
 		}
 		main #reports > .toolbar .datasets {
-			display: flex;
+			display: grid;
+			grid-gap: calc(var(--gap) * 2);
 			align-items: flex-end;
-			margin: 0 0 0 auto;
+			justify-content: flex-end;
+			grid-template-columns: repeat(auto-fill, minmax(150px, auto));
 		}
-			main #reports > .toolbar .datasets > * {
-				margin: var(--gap);
+			main #reports > .toolbar .datasets .actions {
+				display: grid;
+				grid-auto-flow:  column;
+				grid-gap: calc(var(--gap) * 2);
+				grid-column: auto / span 2;
 			}
+				main #reports > .toolbar .datasets .actions .icon svg {
+					margin: 0;
+				}
 	main #reports .list .data-source {
 		grid-column: auto / span 8;
 		grid-row: auto / span 2;
@@ -167,11 +207,10 @@ main #reports > .list {
 			display: initial;
 		}
 		main .singleton .data-source .visualization {
-			max-height: 50%;
+			max-height: 480px;
 		}
-		main .singleton .data-source .visualization.table > .container {
-			height: calc(100vh - 348px);
-			max-height: calc(100vh - 348px);
+		main .singleton .data-source .visualization.table {
+			max-height: calc(100vh - 270px);
 		}
 main #reports > .NA {
 	text-align: center;
