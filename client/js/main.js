@@ -114,7 +114,7 @@ Page.exception = class PageException extends Error {
 		this.message = message;
 	}
 }
-
+1
 class Account {
 
 	static async load() {
@@ -286,6 +286,13 @@ class MetaData {
 
 		MetaData.visualizations = metadata.visualizations;
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
+	}
+}
+
+class ErrorLogs {
+
+	static async load() {
+
 	}
 }
 

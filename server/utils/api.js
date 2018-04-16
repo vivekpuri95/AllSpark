@@ -53,6 +53,8 @@ class API {
 
 		return async function (request, response, next) {
 
+			let obj;
+
 			try {
 
 				const
@@ -63,7 +65,7 @@ class API {
 					return next();
 				}
 
-				const obj = new (API.endpoints.get(path))();
+				obj = new (API.endpoints.get(path))();
 
 				obj.request = request;
 				obj.assert = assertExpression;
@@ -109,6 +111,8 @@ class API {
 			}
 
 			catch (e) {
+
+				await errorLogs(e, obj);
 
 				if (e instanceof API.Exception) {
 
@@ -170,6 +174,19 @@ function assertExpression(expression, message, statusCode) {
 			message: message,
 			status: statusCode,
 		}));
+}
+
+async function errorLogs(e, obj) {
+
+	const error = {
+		account_id : obj.account.account_id,
+		user_id : obj.user.user_id,
+		message : e.sqlMessage,
+		description : e,
+		type : "server"
+	};
+
+	await mysql.query('INSERT INTO tb_errors SET ?', error, 'write');
 }
 
 API.Exception = class {
