@@ -4465,11 +4465,8 @@ class Dataset {
 
 		else {
 
-			const
-				input = this.container.querySelector('input'),
-				sourceInput = source.container.querySelector('input');
-
-			input.value = sourceInput.value;
+			for(const input of this.container.querySelectorAll('input'))
+				input.checked = source == input.value;
 		}
 
 		this.update();
