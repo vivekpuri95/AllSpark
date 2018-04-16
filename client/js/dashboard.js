@@ -696,15 +696,15 @@ class DashboardDatasets extends Map {
 			container.appendChild(label);
 		}
 
-		const apply = document.createElement('button');
+		container.insertAdjacentHTML('beforeend', `
+			<button class="apply"><i class="fas fa-paper-plane"></i> Apply</button>
+			<button class="reset"><i class="far fa-check-square"></i> All</button>
+			<button class="clear"><i class="fas fa-eraser"></i> Clear</button>
+		`);
 
-		apply.classList.add('apply');
-
-		apply.innerHTML = `<i class="fas fa-paper-plane"></i> Apply`;
-
-		apply.on('click', () => this.apply());
-
-		container.appendChild(apply);
+		container.querySelector('button.apply').on('click', () => this.apply());
+		container.querySelector('button.reset').on('click', () => this.all());
+		container.querySelector('button.clear').on('click', () => this.clear());
 	}
 
 	apply() {
@@ -731,5 +731,17 @@ class DashboardDatasets extends Map {
 			else
 				report.container.style.opacity = 0.4;
 		}
+	}
+
+	clear() {
+
+		for(const dataset of this.values())
+			dataset.clear();
+	}
+
+	all() {
+
+		for(const dataset of this.values())
+			dataset.all();
 	}
 }

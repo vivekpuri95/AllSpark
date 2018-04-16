@@ -671,6 +671,31 @@ class DataSource {
 		this.container.querySelector('.share-link input').value = this.link;
 		this.container.querySelector('.query').innerHTML = response.query;
 
+		let age = response.cached.age;
+
+		if(age < 1000)
+			age += 'ms';
+
+		if(age < 1000 * 60)
+			age = (age / 1000) + 's';
+
+		if(age < 1000 * 60 * 60)
+			age = (age / (1000 * 60)) + 'h';
+
+		let runtime = response.runtime;
+
+		if(runtime < 1000)
+			runtime += 'ms';
+
+		if(runtime < 1000 * 60)
+			runtime = (runtime / 1000) + 's';
+
+		if(runtime < 1000 * 60 * 60)
+			runtime = (runtime / (1000 * 60)) + 'h';
+
+		this.container.querySelector('.description .cached').textContent = response.cached.status ? age : 'No';
+		this.container.querySelector('.description .runtime').textContent = runtime;
+
 		this.columns.update();
 		this.postProcessors.update();
 
@@ -721,6 +746,14 @@ class DataSource {
 					<span>
 						<span class="NA">Added On:</span>
 						<span>${Format.date(this.created_at)}</span>
+					</span>
+					<span>
+						<span class="NA">Cached:</span>
+						<span class="cached"></span>
+					</span>
+					<span>
+						<span class="NA">Runtime:</span>
+						<span class="runtime"></span>
 					</span>
 					<span class="right">
 						<span class="NA">Added By:</span>
@@ -842,25 +875,54 @@ class DataSource {
 
 		if(this.drilldown) {
 
-			const
-				list = container.querySelector('.drilldown'),
-				link = document.createElement('a');
+			let source = this;
+
+			const list = container.querySelector('.drilldown');
 
 			list.textContent = null;
 
-			link.innerHTML = `<i class="fa fa-angle-left"></i> ${this.drilldown.parent.name} (${this.drilldown.parameters.map(p => p.selectedValue).join()})`;
+			while(source.drilldown) {
 
-			link.on('click', () => {
+				const
+					copy = source,
+					fragment = document.createDocumentFragment(),
+					link = document.createElement('a')
 
-				const parent = this.container.parentElement;
+				link.innerHTML = `${source.drilldown.parent.name}`;
 
-				parent.removeChild(this.container);
-				parent.appendChild(this.drilldown.parent.container);
-			});
+				const title = [];
 
-			link.title = '';
+				for(const p of source.drilldown.parameters)
+					title.push(`${p.value}: ${p.selectedValue instanceof Dataset ? p.selectedValue.value : p.selectedValue}`);
 
-			list.appendChild(link);
+				link.title = title.join('\n');
+
+				link.on('click', () => {
+
+					const parent = this.container.parentElement;
+
+					parent.removeChild(this.container);
+					parent.appendChild(copy.drilldown.parent.container);
+					copy.drilldown.parent.visualizations.selected.render();
+				});
+
+				fragment.appendChild(link);
+
+				if(list.children.length) {
+
+					const angle = document.createElement('i');
+
+					angle.classList.add('fas', 'fa-angle-right');
+
+					fragment.appendChild(angle);
+
+					list.insertBefore(fragment, list.children[0]);
+				}
+
+				else list.appendChild(fragment);
+
+				source = source.drilldown.parent;
+			}
 		}
 
 		this.columns.render();
@@ -1208,7 +1270,7 @@ class DataSourceColumn {
 			<span class="name">${this.name}</span>
 
 			<div class="blanket hidden">
-				<form class="block form drill-down-form">
+				<form class="block form">
 
 					<h3>Column Properties</h3>
 
@@ -1233,9 +1295,9 @@ class DataSourceColumn {
 					<label>
 						<span>Type</span>
 						<select name="column_type">
-							<option value="date">Date</option>
-							<option value="number">Number</option>
 							<option value="string">String</option>
+							<option value="number">Number</option>
+							<option value="date">Date</option>
 						</select>
 					</label>
 
@@ -1281,7 +1343,9 @@ class DataSourceColumn {
 
 					<label>
 						<span>Report</span>
-						<select name="drilldown_query_id"></select>
+						<select name="drilldown_query_id">
+							<option value=""></option>
+						</select>
 					</label>
 
 					<label>
@@ -1291,31 +1355,34 @@ class DataSourceColumn {
 
 					<div class="parameter-list"></div>
 
-					<div class="submit-apply">
+					<footer>
 
-						<button type="submit">
-							<i class="fa fa-save"></i> Save
+						<button type="button" class="cancel">
+							<i class="far fa-times-circle"></i> Cancel
 						</button>
 
 						<button type="button" class="apply">
 							<i class="fas fa-check"></i> Apply
 						</button>
-					</div>
+
+						<button type="submit">
+							<i class="fa fa-save"></i> Save
+						</button>
+					</footer>
 				</form>
 			</div>
 		`;
 
 		this.blanket = container.querySelector('.blanket');
-		this.block = container.querySelector('.block');
-		this.form = container.querySelector('.drill-down-form');
+		this.form = this.blanket.querySelector('.form');
 
-		// this.form.elements.formula.on('keyup', async () => {
-		//
-		// 	if(this.formulaTimeout)
-		// 		clearTimeout(this.formulaTimeout);
-		//
-		// 	this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
-		// });
+		this.form.elements.formula.on('keyup', async () => {
+
+			if(this.formulaTimeout)
+				clearTimeout(this.formulaTimeout);
+
+			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
+		});
 
 		if(user.privileges.has('report')) {
 
@@ -1353,7 +1420,6 @@ class DataSourceColumn {
 		this.form.drilldown_query_id.on('change', () => this.updateDrilldownParamters());
 		this.updateDrilldownParamters();
 
-
 		let timeout;
 
 		container.querySelector('.name').on('click', async () => {
@@ -1375,6 +1441,7 @@ class DataSourceColumn {
 			this.updateDrilldownParamters();
 		});
 
+		this.form.querySelector('.cancel').on('click', () => this.blanket.classList.add('hidden'));
 		this.form.querySelector('.apply').on('click', () => this.apply());
 
 		container.querySelector('.name').on('dblclick', async (e) => {
@@ -1398,6 +1465,8 @@ class DataSourceColumn {
 			await this.update();
 		})
 
+		this.setDragAndDrop();
+
 		return container;
 	}
 
@@ -1411,6 +1480,8 @@ class DataSourceColumn {
 
 		if(this.drilldown) {
 
+			this.form.querySelector('.parameter-list').textContent = null;
+
 			this.form.drilldown_query_id.value = this.drilldown ? this.drilldown.query_id : '';
 
 			for(const param of this.drilldown.parameters || [])
@@ -1420,49 +1491,6 @@ class DataSourceColumn {
 		}
 
 		this.blanket.classList.remove('hidden');
-	}
-
-	updateDrilldownParamters() {
-
-		const
-			parameterList = this.form.querySelector('.parameter-list'),
-			parameters = parameterList.querySelectorAll('.parameter');
-
-		if(!DataSource.list.has(parseInt(this.form.drilldown_query_id.value)))
-			return parameterList.textContent = null;
-
-		for(const parameter of parameters) {
-
-			const
-				placeholder = parameter.querySelector('select[name=placeholder]'),
-				type = parameter.querySelector('select[name=type]'),
-				value = parameter.querySelector('select[name=value]');
-
-			placeholder.textContent = null;
-
-			for(const filter of DataSource.list.get(parseInt(this.form.drilldown_query_id.value)).filters)
-				placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
-
-			if(placeholder.getAttribute('value'))
-				placeholder.value = placeholder.getAttribute('value');
-
-			value.textContent = null;
-
-			if(type.value == 'column') {
-
-				for(const column of this.source.columns.list.values())
-					value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
-			}
-
-			else if(type.value == 'filter') {
-
-				for(const filter of this.source.filters.values())
-					value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
-			}
-
-			if(value.getAttribute('value'))
-				value.value = value.getAttribute('value');
-		}
 	}
 
 	addParameterDiv(parameter = {}) {
@@ -1477,7 +1505,7 @@ class DataSourceColumn {
 
 			<label>
 				<span>Type</span>
-				<select name="type" value="${parameter.type || 'column'}">
+				<select name="type" value="${parameter.type || ''}">
 					<option value="column">Column</option>
 					<option value="filter">Filter</option>
 				</select>
@@ -1498,19 +1526,70 @@ class DataSourceColumn {
 
 		container.classList.add('parameter');
 
-		const parameterList = this.form.querySelector('.parameter-list');
+		const
+			parameterList = this.form.querySelector('.parameter-list');
 
 		parameterList.appendChild(container);
 
-		container.querySelector('select[name=type]').on('change', () => {
-			this.updateDrilldownParamters();
-		});
+		container.querySelector('select[name=type]').on('change', () => this.updateDrilldownParamters(true));
 
 		container.querySelector('.delete').on('click', () => {
 			parameterList.removeChild(container);
 		});
 
 		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
+	}
+
+	updateDrilldownParamters(updatingType) {
+
+		const
+			parameterList = this.form.querySelector('.parameter-list'),
+			parameters = parameterList.querySelectorAll('.parameter'),
+			report = DataSource.list.get(parseInt(this.form.drilldown_query_id.value));
+
+		if(report && report.filters.length) {
+
+			for(const parameter of parameters) {
+
+				const
+					placeholder = parameter.querySelector('select[name=placeholder]'),
+					type = parameter.querySelector('select[name=type]'),
+					value = parameter.querySelector('select[name=value]');
+
+				placeholder.textContent = null;
+
+				for(const filter of report.filters)
+					placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+
+				if(placeholder.getAttribute('value'))
+					placeholder.value = placeholder.getAttribute('value');
+
+				if(!updatingType && type.getAttribute('value'))
+					type.value = type.getAttribute('value');
+
+				value.textContent = null;
+
+				if(type.value == 'column') {
+
+					for(const column of this.source.columns.list.values())
+						value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+				}
+
+				else if(type.value == 'filter') {
+
+					for(const filter of this.source.filters.values())
+						value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+				}
+
+				if(value.getAttribute('value'))
+					value.value = value.getAttribute('value');
+			}
+		}
+
+		else parameterList.textContent = null;
+
+		parameterList.classList.toggle('hidden', !parameters.length || !report || !report.filters.length);
+		this.form.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
 	}
 
 	async apply() {
@@ -1694,24 +1773,34 @@ class DataSourceColumn {
 		});
 	}
 
-	initiateDrilldown(row) {
+	async initiateDrilldown(row) {
 
 		if(!this.drilldown || !parseInt(this.drilldown.query_id) || !this.drilldown.parameters)
 			return;
 
-		const source = DataSource.list.get(parseInt(this.drilldown.query_id));
+		let destination = DataSource.list.get(parseInt(this.drilldown.query_id));
 
-		if(!source)
+		if(!destination)
 			return;
 
-		const report = new DataSource(source);
+		destination = new DataSource(destination);
+
+		const destinationDatasets = [];
+
+		for(const filter of destination.filters.values()) {
+
+			if(filter.dataset)
+				destinationDatasets.push(filter.dataset.load());
+		}
+
+		await Promise.all(destinationDatasets);
 
 		for(const parameter of this.drilldown.parameters) {
 
-			if(!report.filters.has(parameter.placeholder))
+			if(!destination.filters.has(parameter.placeholder))
 				continue;
 
-			const filter = report.filters.get(parameter.placeholder);
+			const filter = destination.filters.get(parameter.placeholder);
 
 			let value;
 
@@ -1728,21 +1817,21 @@ class DataSourceColumn {
 			parameter.selectedValue = value;
 		}
 
-		report.drilldown = {
+		destination.drilldown = {
 			...this.drilldown,
 			parent: this.source,
 		};
 
-		report.container.setAttribute('style', this.source.container.getAttribute('style'));
+		destination.container.setAttribute('style', this.source.container.getAttribute('style'));
 
 		const parent = this.source.container.parentElement;
 
 		parent.removeChild(this.source.container);
-		parent.appendChild(report.container);
+		parent.appendChild(destination.container);
 
-		report.container.querySelector('.drilldown').classList.remove('hidden');
+		destination.container.querySelector('.drilldown').classList.remove('hidden');
 
-		report.visualizations.selected.load();
+		destination.visualizations.selected.load();
 	}
 
 	get search() {
@@ -1925,12 +2014,16 @@ class DataSourceFilter {
 
 	get value() {
 
-		const input = this.label.querySelector('input');
+		if(this.dataset)
+			return this.dataset;
 
-		return input ? input.value : this.default_value;
+		return this.label.querySelector('input').value;
 	}
 
 	set value(value) {
+
+		if(this.dataset)
+			return this.dataset.value = value;
 
 		this.label.querySelector('input').value = value;
 	}
@@ -2267,27 +2360,50 @@ class Visualization {
 
 		this.source = source;
 
-		this.axis = {
-			x: {
-				column: 'timing',
-			},
-			y: {}
-		};
+		try {
+			this.options = JSON.parse(this.options);
+		} catch(e) {}
 
-		if(this.options) {
+		if(!this.options || !this.options.axes) {
 
-			try {
-
-				const options = JSON.parse(this.options);
-
-				for(const key in options)
-					this[key] = options[key];
-
-			} catch(e) {}
+			this.options = {
+				axes: [
+					{
+						position: 'bottom',
+						columns: [
+							{
+								key: 'timing'
+							}
+						]
+					},
+					{
+						position: 'left',
+						columns: []
+					}
+				]
+			};
 		}
 
-		if(!this.axis.x.column)
-			this.axis.x.column = 'timing';
+		for(const axis of this.options.axes || []) {
+			this.options.axes[axis.position] = axis;
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+
+		if(!this.options.axes.bottom) {
+
+			this.options.axes.bottom = {
+				position: 'bottom',
+				columns: [
+					{
+						key: 'timing'
+					}
+				],
+				column: 'timing'
+			};
+		}
+
+		for(const key in this.options)
+			this[key] = this.options[key];
 	}
 
 	render() {
@@ -2311,17 +2427,17 @@ class LinearVisualization extends Visualization {
 
 		this.rows = this.source.response;
 
-		this.axis.x.height = 25;
-		this.axis.y.width = 50;
+		this.axes.bottom.height = 25;
+		this.axes.left.width = 50;
 
-		this.height = this.container.clientHeight - this.axis.x.height - 20;
-		this.width = this.container.clientWidth - this.axis.y.width - 40;
+		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
+		this.width = this.container.clientWidth - this.axes.left.width - 40;
 
 		window.addEventListener('resize', () => {
 
 			const
-				height = this.container.clientHeight - this.axis.x.height - 20,
-				width = this.container.clientWidth - this.axis.y.width - 40;
+				height = this.container.clientHeight - this.axes.bottom.height - 20,
+				width = this.container.clientWidth - this.axes.left.width - 40;
 
 			if(this.width != width || this.height != height) {
 
@@ -2345,7 +2461,7 @@ class LinearVisualization extends Visualization {
 
 			for(const [key, value] of row) {
 
-				if(key == this.axis.x.column)
+				if(key == this.axes.bottom.column)
 					continue;
 
 				const column = this.source.columns.get(key);
@@ -2359,7 +2475,7 @@ class LinearVisualization extends Visualization {
 				}
 
 				this.columns[key].push({
-					x: row.get(this.axis.x.column),
+					x: row.get(this.axes.bottom.column),
 					y: value,
 					key,
 				});
@@ -2429,7 +2545,7 @@ class LinearVisualization extends Visualization {
 				const
 					filteredRows = that.rows.filter(row => {
 
-						const item = that.x(row.get(that.axis.x.column)) + 100;
+						const item = that.x(row.get(that.axes.bottom.column)) + 100;
 
 						if(mouse[0] < that.zoomRectangle.origin[0])
 							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -2462,7 +2578,7 @@ class LinearVisualization extends Visualization {
 					that.zoomRectangle
 						.select('g')
 						.append('text')
-						.text(`${filteredRows[0].get(that.axis.x.column)} - ${filteredRows[filteredRows.length - 1].get(that.axis.x.column)}`)
+						.text(`${filteredRows[0].get(that.axes.bottom.column)} - ${filteredRows[filteredRows.length - 1].get(that.axes.bottom.column)}`)
 						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
 						.attr('y', (that.height / 2) + 20);
 				}
@@ -2470,7 +2586,7 @@ class LinearVisualization extends Visualization {
 				return;
 			}
 
-			const row = that.rows[parseInt((mouse[0] - that.axis.y.width - 10) / (that.width / that.rows.length))];
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
 
 			if(!row)
 				return;
@@ -2479,7 +2595,7 @@ class LinearVisualization extends Visualization {
 
 			for(const [key, value] of row) {
 
-				if(key == that.axis.x.column)
+				if(key == that.axes.bottom.column)
 					continue;
 
 				tooltip.push(`
@@ -2492,7 +2608,7 @@ class LinearVisualization extends Visualization {
 			}
 
 			const content = `
-				<header>${row.get(that.axis.x.column)}</header>
+				<header>${row.get(that.axes.bottom.column)}</header>
 				<ul class="body">
 					${tooltip.reverse().join('')}
 				</ul>
@@ -2537,7 +2653,7 @@ class LinearVisualization extends Visualization {
 				mouse = d3.mouse(this),
 				filteredRows = that.rows.filter(row => {
 
-					const item = that.x(row.get(that.axis.x.column)) + 100;
+					const item = that.x(row.get(that.axes.bottom.column)) + 100;
 
 					if(mouse[0] < that.zoomRectangle.origin[0])
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -2638,7 +2754,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		for(const [position, row] of rows.entries()) {
 
-			if(position > this.rowLimit)
+			if(position >= this.rowLimit)
 				break;
 
 			const tr = document.createElement('tr');
@@ -2674,13 +2790,13 @@ Visualization.list.set('table', class Table extends Visualization {
 			tr.innerHTML = `
 				<td colspan="${this.source.columns.list.size}">
 					<i class="fa fa-angle-down"></i>
-					<span>Show ${parseInt(this.rowLimit * this.rowLimitMultiplier - this.rowLimit)} more rows</span>
+					<span>Show ${parseInt(Math.ceil(this.rowLimit * this.rowLimitMultiplier) - this.rowLimit)} more rows</span>
 					<i class="fa fa-angle-down"></i>
 				</td>
 			`;
 
 			tr.on('click', () => {
-				this.rowLimit *= this.rowLimitMultiplier;
+				this.rowLimit = Math.ceil(this.rowLimit * this.rowLimitMultiplier);
 				this.source.visualizations.selected.render();
 			});
 
@@ -2796,7 +2912,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 			for(const [name, value] of row) {
 
-				if(name == this.axis.x.column)
+				if(name == this.axes.bottom.column)
 					continue;
 
 				if(max == null)
@@ -2811,7 +2927,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		}
 
 		this.y.domain([min, max]);
-		this.x.domain(this.rows.map(r => r.get(this.axis.x.column)));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangePoints([0, this.width], 0.1, 0);
 
 		const
@@ -2825,19 +2941,19 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			.append('g')
 			.attr('class', 'y axis')
 			.call(yAxis)
-			.attr('transform', `translate(${this.axis.y.width}, 0)`);
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
 			.attr('class', 'x axis')
-			.attr('transform', `translate(${this.axis.y.width}, ${this.height})`)
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
 		//graph type line and
 		const
 			line = d3.svg
 				.line()
-				.x(d => this.x(d.x)  + this.axis.y.width)
+				.x(d => this.x(d.x)  + this.axes.left.width)
 				.y(d => this.y(d.y));
 
 		//Appending line in chart
@@ -2878,7 +2994,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.attr('id', (_, i) => i)
 				.attr('r', 0)
 				.style('fill', column.color)
-				.attr('cx', d => this.x(d.x) + this.axis.y.width)
+				.attr('cx', d => this.x(d.x) + this.axes.left.width)
 				.attr('cy', d => this.y(d.y))
 		}
 
@@ -2889,7 +3005,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 			const
 				mouse = d3.mouse(this),
-				xpos = parseInt((mouse[0] - that.axis.y.width - 10) / (that.width / that.rows.length)),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
 				row = that.rows[xpos];
 
 			if(!row || that.zoomRectangle)
@@ -2983,7 +3099,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		this.y.domain([0, max]);
 
-		this.x.domain(this.rows.map(r => r.get(this.axis.x.column)));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
@@ -2999,12 +3115,12 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.append('g')
 			.attr('class', 'y axis')
 			.call(yAxis)
-			.attr('transform', `translate(${this.axis.y.width}, 0)`);
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
 			.attr('class', 'x axis')
-			.attr('transform', `translate(${this.axis.y.width}, ${this.height})`)
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
 		let bars = this.svg
@@ -3021,7 +3137,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.append('rect')
 			.classed('bar', true)
 			.attr('width', x1.rangeBand())
-			.attr('x', cell => this.x(cell.x) + this.axis.y.width)
+			.attr('x', cell => this.x(cell.x) + this.axes.left.width)
 			.on('click', function(_, row, column) {
 				that.source.columns.get(that.columns[column].key).initiateDrilldown(that.rows[row]);
 				d3.select(this).classed('hover', false);
@@ -3121,7 +3237,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			let total = 0;
 
 			for(const [name, value] of row) {
-				if(name != this.axis.x.column)
+				if(name != this.axes.bottom.column)
 					total += parseFloat(value) || 0;
 			}
 
@@ -3130,7 +3246,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		this.y.domain([0, max]);
 
-		this.x.domain(this.rows.map(r => r.get(this.axis.x.column)));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
@@ -3144,12 +3260,12 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			.append('g')
 			.attr('class', 'y axis')
 			.call(yAxis)
-			.attr('transform', `translate(${this.axis.y.width}, 0)`);
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
 			.attr('class', 'x axis')
-			.attr('transform', `translate(${this.axis.y.width}, ${this.height})`)
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
 		const layer = this.svg
@@ -3179,7 +3295,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				d3.select(this).classed('hover', false);
 			})
 			.attr('width', this.x.rangeBand())
-			.attr('x',  cell => this.x(cell.x) + this.axis.y.width);
+			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
 
 		if(!resize) {
 
@@ -3272,7 +3388,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 			for(const [name, value] of row) {
 
-				if(name == this.axis.x.column)
+				if(name == this.axes.bottom.column)
 					continue;
 
 				total += parseFloat(value) || 0;
@@ -3283,7 +3399,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		}
 
 		this.y.domain([min, max]);
-		this.x.domain(this.rows.map(r => r.get(this.axis.x.column)));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangePoints([0, this.width], 0.1, 0);
 
 		const
@@ -3302,12 +3418,12 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			.append('g')
 			.attr('class', 'y axis')
 			.call(yAxis)
-			.attr('transform', `translate(${this.axis.y.width}, 0)`);
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
 			.attr('class', 'x axis')
-			.attr('transform', `translate(${this.axis.y.width}, ${this.height})`)
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
 		let areas = this.svg
@@ -3315,7 +3431,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			.data(d3.layout.stack()(this.columns))
 			.enter()
 			.append('g')
-			.attr('transform', `translate(${this.axis.y.width}, 0)`)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`)
 			.attr('class', 'path')
 			.append('path')
 			.classed('bar', true)
@@ -3352,7 +3468,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.attr('id', (d, i) => i)
 				.attr('r', 0)
 				.style('fill', column.color)
-				.attr('cx', cell => this.x(cell.x) + this.axis.y.width)
+				.attr('cx', cell => this.x(cell.x) + this.axes.left.width)
 				.attr('cy', cell => this.y(cell.y + cell.y0));
 		}
 
@@ -3363,7 +3479,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 			const
 				mouse = d3.mouse(this),
-				xpos = parseInt((mouse[0] - that.axis.y.width - 10) / (that.width / that.rows.length)),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
 				row = that.rows[xpos];
 
 			if(!row || that.zoomRectangle)
@@ -3720,7 +3836,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 	}
 });
 
-Visualization.list.set('pie', class Cohort extends Visualization {
+Visualization.list.set('pie', class Pie extends Visualization {
 
 	get container() {
 
@@ -3838,6 +3954,10 @@ Visualization.list.set('pie', class Cohort extends Visualization {
 				.classed('pie-slice', true);
 
 		slice
+			.on('click', function(column, _, row) {
+				that.source.columns.get(column.data.name).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
 			.on('mousemove', function(row) {
 
 				const mouse = d3.mouse(this);
@@ -4218,24 +4338,8 @@ class Dataset {
 			<footer></footer>
 		`;
 
-		options.querySelector('header .all').on('click', () => {
-
-			if(!this.filter.multiple)
-				return;
-
-			for(const input of options.querySelectorAll('.list label input'))
-				input.checked = true;
-
-			this.update();
-		});
-
-		options.querySelector('header .clear').on('click', () => {
-
-			for(const input of options.querySelectorAll('.list label input'))
-				input.checked = false;
-
-			this.update();
-		});
+		options.querySelector('header .all').on('click', () => this.all());
+		options.querySelector('header .clear').on('click', () => this.clear());
 
 		this.load();
 
@@ -4363,6 +4467,29 @@ class Dataset {
 
 			input.value = sourceInput.value;
 		}
+
+		this.update();
+	}
+
+	get value() {
+		return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
+	}
+
+	all() {
+
+		if(!this.filter.multiple)
+			return;
+
+		for(const input of this.container.querySelectorAll('.options .list label input'))
+			input.checked = true;
+
+		this.update();
+	}
+
+	clear() {
+
+		for(const input of this.container.querySelectorAll('.options .list label input'))
+			input.checked = false;
 
 		this.update();
 	}

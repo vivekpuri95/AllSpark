@@ -12,9 +12,8 @@
 input:not([type=checkbox]):not([type=radio]),
 select,
 button {
-	background: var(--color-primary);
-	color: var(--color-primary-text);
-	border: 0;
+	border: 1px solid #ccc;
+	background: #fff;
 }
 body > header {
 	background: var(--color-primary);
