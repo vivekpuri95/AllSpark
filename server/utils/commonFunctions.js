@@ -1,4 +1,4 @@
-const redis = require('./redis');
+const {redis} = require('./redis');
 const moment = require('moment-timezone').tz.setDefault("Asia/Kolkata");
 const bcrypt = require('bcryptjs');
 const constants = require('./constants');
@@ -6,14 +6,16 @@ const jwt = require('jsonwebtoken');
 const config = require('config');
 const fs = require('fs');
 const path = require('path');
-const promisify = require('util').promisify
+const promisify = require('util').promisify;
 const jwtVerifyAsync = promisify(jwt.verify, jwt);
 
 
 function redisStore(uni_key, value, expire_time = null) {
 
-	if (!config.has('redisOptions'))
-		return Promise.resolve(null);
+	if (!config.has('redisOptions')) {
+
+			return Promise.resolve(null);
+	}
 
 	return new Promise(function (resolve, reject) {
 
@@ -203,6 +205,13 @@ function makeJWT(obj, expiresAfterSeconds = 86400 * 7) {
 
 async function verifyJWT(token) {
 
+	if(config.has("role_ignore") && config.has("privilege_ignore")) {
+
+		if(config.get("role_ignore") && config.get("privilege_ignore")) {
+
+			return true;
+		}
+	}
 	try {
 		return await jwtVerifyAsync(token, config.get('secret_key'));
 

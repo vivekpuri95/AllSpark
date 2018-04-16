@@ -6,6 +6,7 @@ const constants = require("../../utils/constants");
 const crypto = require('crypto');
 const request = require("request");
 const auth = require('../../utils/auth');
+const redis = require("../../utils/redis").Redis;
 const requestPromise = promisify(request);
 
 // prepare the raw data
@@ -148,7 +149,7 @@ class report extends API {
 		const engine = new ReportEngine(preparedRequest);
 
 		const hash = "Report#report_id:" + this.reportObj.query_id + "#hash:" + engine.hash + "#";
-		const redisData = await commonFun.redisGet(hash);
+		const redisData = await redis.get(hash);
 
 		let result;
 
@@ -191,7 +192,9 @@ class report extends API {
 		EOD.setHours(23, 59, 59, 999);
 
 		result.cached = {store_time: Date.now()};
-		await commonFun.redisStore(hash, JSON.stringify(result), Math.round(EOD.getTime() / 1000));
+
+		await redis.set(hash, JSON.stringify(result));
+		await redis.expire(hash, this.reportObj.is_redis);
 		result.cached = {status: false};
 
 		return result;

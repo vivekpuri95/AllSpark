@@ -1,9 +1,18 @@
 const mysql = require('./mysql').MySQL;
 const commonFun = require("./commonFunctions");
+const config = require("config");
 
 class Authenticate {
 
 	static async report(reportObject, userJWTObject) {
+
+		if(config.has("role_ignore") && config.has("privilege_ignore")) {
+
+			if(config.get("role_ignore") && config.get("privilege_ignore")) {
+
+				return true;
+			}
+		}
 
 		const accountId = userJWTObject.account_id;
 
