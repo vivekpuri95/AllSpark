@@ -670,7 +670,7 @@ class DashboardDatasets extends Map {
 		const promises = [];
 
 		for(const dataset of this.values())
-			promises.push(dataset.load());
+			promises.push(dataset.fetch());
 
 		await Promise.all(promises);
 	}
@@ -681,6 +681,9 @@ class DashboardDatasets extends Map {
 
 		container.textContent = null;
 
+		if(!this.size)
+			return;
+
 		for(const dataset of this.values()) {
 
 			const
@@ -689,7 +692,10 @@ class DashboardDatasets extends Map {
 
 			label.classList.add('dataset-container');
 
-			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`)
+			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
+
+			if(!['Program','Region','Market','Bid Zone'].includes(dataset.name))
+				label.classList.add('hidden');
 
 			label.appendChild(dataset.container);
 
@@ -697,14 +703,26 @@ class DashboardDatasets extends Map {
 		}
 
 		container.insertAdjacentHTML('beforeend', `
-			<button class="apply"><i class="fas fa-paper-plane"></i> Apply</button>
-			<button class="reset"><i class="far fa-check-square"></i> All</button>
-			<button class="clear"><i class="fas fa-eraser"></i> Clear</button>
+			<div class="actions">
+				<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
+				<button class="more icon" title="More Filters"><i class="fas fa-filter"></i></button>
+				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
+				<button class="reset icon" title="Check All Filters"><i class="far fa-check-square"></i></button>
+				<button class="clear icon" title="Clear All Filters"><i class="far fa-square"></i></button>
+			</div>
 		`);
 
 		container.querySelector('button.apply').on('click', () => this.apply());
+		container.querySelector('button.reload').on('click', () => this.apply());
 		container.querySelector('button.reset').on('click', () => this.all());
 		container.querySelector('button.clear').on('click', () => this.clear());
+
+		container.querySelector('button.more').on('click', () => {
+
+			container.querySelector('button.more').classList.add('hidden');
+			for(const dataset of container.querySelectorAll('label.hidden'))
+				dataset.classList.remove('hidden');
+		});
 	}
 
 	apply() {

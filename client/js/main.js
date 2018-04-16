@@ -647,19 +647,14 @@ class DataSource {
 			method: 'POST',
 		};
 
-		if(this.container.querySelector('pre.warning'))
-			this.container.removeChild(this.container.querySelector('pre.warning'));
+		this.resetError();
 
 		try {
 			response = await API.call('reports/engine/report', parameters.toString(), options);
 		}
 
 		catch(e) {
-
-			this.container.insertAdjacentHTML('beforeend', `
-				<pre class="warning">${e.message}</pre>
-			`);
-
+			this.error(JSON.stringify(e.message, 0, 4));
 			response = {};
 		}
 
@@ -671,15 +666,15 @@ class DataSource {
 		this.container.querySelector('.share-link input').value = this.link;
 		this.container.querySelector('.query').innerHTML = response.query;
 
-		let age = response.cached.age;
+		let age = response.cached ? response.cached.age : 0;
 
 		if(age < 1000)
 			age += 'ms';
 
-		if(age < 1000 * 60)
+		else if(age < 1000 * 60)
 			age = (age / 1000) + 's';
 
-		if(age < 1000 * 60 * 60)
+		else if(age < 1000 * 60 * 60)
 			age = (age / (1000 * 60)) + 'h';
 
 		let runtime = response.runtime;
@@ -687,14 +682,14 @@ class DataSource {
 		if(runtime < 1000)
 			runtime += 'ms';
 
-		if(runtime < 1000 * 60)
+		else if(runtime < 1000 * 60)
 			runtime = (runtime / 1000) + 's';
 
-		if(runtime < 1000 * 60 * 60)
+		else if(runtime < 1000 * 60 * 60)
 			runtime = (runtime / (1000 * 60)) + 'h';
 
-		this.container.querySelector('.description .cached').textContent = response.cached.status ? age : 'No';
-		this.container.querySelector('.description .runtime').textContent = runtime;
+		this.container.querySelector('.description .cached').textContent = response.cached.status ? Math.floor(age * 100) / 100 : 'No';
+		this.container.querySelector('.description .runtime').textContent = Math.floor(runtime * 100) / 100;
 
 		this.columns.update();
 		this.postProcessors.update();
@@ -1029,6 +1024,25 @@ class DataSource {
 		}
 
 		return link + '?' + parameters.toString();
+	}
+
+	resetError() {
+
+		if(this.container.querySelector('pre.warning'))
+			this.container.removeChild(this.container.querySelector('pre.warning'));
+
+		this.visualizations.selected.container.classList.remove('hidden');
+	}
+
+	error(message) {
+
+		this.resetError();
+
+		this.container.insertAdjacentHTML('beforeend', `
+			<pre class="warning">${message}</pre>
+		`);
+
+		this.visualizations.selected.container.classList.add('hidden');
 	}
 }
 
@@ -2364,43 +2378,38 @@ class Visualization {
 			this.options = JSON.parse(this.options);
 		} catch(e) {}
 
-		if(!this.options || !this.options.axes) {
+		// if(!this.options || !this.options.axes) {
 
-			this.options = {
-				axes: [
-					{
-						position: 'bottom',
-						columns: [
-							{
-								key: 'timing'
-							}
-						]
-					},
-					{
-						position: 'left',
-						columns: []
-					}
-				]
-			};
-		}
+		// 	this.options = {
+		// 		axes: [
+		// 			{
+		// 				position: 'bottom',
+		// 				columns: [
+		// 					{
+		// 						key: 'timing'
+		// 					}
+		// 				]
+		// 			},
+		// 			{
+		// 				position: 'left',
+		// 				columns: []
+		// 			}
+		// 		]
+		// 	};
+		// }
 
-		for(const axis of this.options.axes || []) {
-			this.options.axes[axis.position] = axis;
-			axis.column = axis.columns.length ? axis.columns[0].key : '';
-		}
+		// if(!this.options.axes.bottom) {
 
-		if(!this.options.axes.bottom) {
-
-			this.options.axes.bottom = {
-				position: 'bottom',
-				columns: [
-					{
-						key: 'timing'
-					}
-				],
-				column: 'timing'
-			};
-		}
+		// 	this.options.axes.bottom = {
+		// 		position: 'bottom',
+		// 		columns: [
+		// 			{
+		// 				key: 'timing'
+		// 			}
+		// 		],
+		// 		column: 'timing'
+		// 	};
+		// }
 
 		for(const key in this.options)
 			this[key] = this.options[key];
@@ -2418,12 +2427,36 @@ class Visualization {
 		this.source.visualizations.selected = this;
 
 		this.source.container.appendChild(this.container);
+
+		this.source.resetError();
 	}
 }
 
 class LinearVisualization extends Visualization {
 
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		for(const axis of this.axes || []) {
+			this.axes[axis.position] = axis;
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+	}
+
 	draw() {
+
+		if(!this.axes)
+			return this.source.error('Axes not defined!');
+
+		if(!this.axes.bottom)
+			return this.source.error('Bottom axis not defined!');
+
+		if(!this.axes.bottom.columns.length > 1)
+			return this.source.error('Bottom has more than one columns!');
+
+		if(!this.axes.left)
+			return this.source.error('Left axis not defined!');
 
 		this.rows = this.source.response;
 
@@ -4352,10 +4385,14 @@ class Dataset {
 			return [];
 
 		const
-			values = await this.fetch(),
 			search = this.container.querySelector('input[type=search]'),
 			list = this.container.querySelector('.options .list');
 
+		let values = [];
+
+		try {
+			values = await this.fetch();
+		} catch(e) {}
 
 		if(!values.length)
 			return list.innerHTML = `<div class="NA">No data found! :(</div>`;
@@ -4501,6 +4538,6 @@ Node.prototype.on = window.on = function(name, fn) {
 	this.addEventListener(name, fn);
 }
 
-MetaData.timeout = 30 * 1000; // 5 * 60 * 1000;
-Dataset.timeout = 30 * 1000; // 5 * 60 * 1000;
+MetaData.timeout = 5 * 60 * 1000;
+Dataset.timeout = 5 * 60 * 1000;
 Visualization.animationDuration = 750;
