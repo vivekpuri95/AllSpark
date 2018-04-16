@@ -2378,6 +2378,44 @@ class Visualization {
 			this.options = JSON.parse(this.options);
 		} catch(e) {}
 
+		if(!this.options || !this.options.axes) {
+
+			this.options = {
+				axes: [
+					{
+						position: 'bottom',
+						columns: [
+							{
+								key: 'timing'
+							}
+						]
+					},
+					{
+						position: 'left',
+						columns: []
+					}
+				]
+			};
+		}
+
+		for(const axis of this.options.axes || []) {
+			this.options.axes[axis.position] = axis;
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+
+		if(!this.options.axes.bottom) {
+
+			this.options.axes.bottom = {
+				position: 'bottom',
+				columns: [
+					{
+						key: 'timing'
+					}
+				],
+				column: 'timing'
+			};
+		}
+
 		for(const key in this.options)
 			this[key] = this.options[key];
 	}
@@ -2394,8 +2432,6 @@ class Visualization {
 		this.source.visualizations.selected = this;
 
 		this.source.container.appendChild(this.container);
-
-		this.source.resetError();
 	}
 }
 
@@ -4413,50 +4449,52 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	render() {
-this.config = {column: 'created_at', value: 'user_id', history: true, invertValue: false};
 		const container = this.container.querySelector('.container');
 		const response = this.source.response;
 
 		let today = 0, yesterday = 0, weekago = 0;
-		for (let row of response) {
-			const responseDate = (new Date(row.get(this.config.column).substring(0, 10))).toDateString();
-			const todayDate = new Date();
+		if(response[0].has(this.options.timing) && response[0].has(this.options.value))
+			for (let row of response) {
+				const responseDate = (new Date(row.get(this.options.timing).substring(0, 10))).toDateString();
+				const todayDate = new Date();
 
-			if (responseDate == (new Date()).toDateString()) {
-				today = row.get(this.config.value);
+				if (responseDate == (new Date()).toDateString()) {
+					today = row.get(this.options.value);
+				}
+				else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 1))).toDateString()) {
+					yesterday = row.get(this.options.value);
+				}
+				else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 7))).toDateString()) {
+					weekago = row.get(this.options.value);
+				}
 			}
-			else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 1))).toDateString()) {
-				yesterday = row.get(this.config.value);
-			}
-			else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 7))).toDateString()) {
-				weekago = row.get(this.config.value);
-			}
+		else {
+			window.alert('Invalid response format for Visualization');
 		}
 
-		const yesterdayPerc = Math.round(((today - yesterday) / Math.abs(yesterday)) * 100);
-		const weekagoPerc = Math.round(((today - weekago) / weekago) * 100);
+		const yesterdayPerc = yesterday ? Math.round(((today - yesterday) / Math.abs(yesterday)) * 100) : 0;
+		const weekagoPerc = weekago ? Math.round(((today - weekago) / weekago) * 100) : 0;
 
 		container.textContent = null;
 		container.insertAdjacentHTML('beforeend', `
 			<div class="livenumber box">
-				<header>xyz</header>
 				<div class="today">
 					${today}
 				</div>
-				<div class="submenu ${this.config.history ? '' : 'hidden'}">
+				<div class="submenu ${this.options.history ? '' : 'hidden'}">
 					<div class="yesterday">
-						<div class="blur">DOD</div>
+						<!--<div class="blur">DOD</div>-->
 						<h4 style="color:${
-								yesterdayPerc > 0 ? this.config.invertValue ? 'red' : 'green' : this.config.invertValue ? 'green' : 'red'
+								yesterdayPerc > 0 ? this.options.invertColor ? 'red' : 'green' : this.options.invertColor ? 'green' : 'red'
 								};">
 							${yesterdayPerc}%
 						</h4>
 						${yesterday}
 					</div>
 					<div class="weekago">
-						<div class="blur">WoW</div>
+						<!--<div class="blur">WoW</div>-->
 						<h4 style="color:${
-								yesterdayPerc > 0 ? this.config.invertValue ? 'red' : 'green' : this.config.invertValue ? 'green' : 'red'
+								yesterdayPerc > 0 ? this.options.invertColor ? 'red' : 'green' : this.options.invertColor ? 'green' : 'red'
 								};">
 							${weekagoPerc}%
 						</h4>

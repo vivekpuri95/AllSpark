@@ -1218,7 +1218,6 @@ class ReportVisualization {
 				method: 'POST',
 				form: new FormData(ReportVisualization.form),
 			};
-
 		parameters.options = JSON.stringify(this.optionsForm.json);
 
 		await API.call('reports/visualizations/update', parameters, options);
@@ -1386,6 +1385,54 @@ ReportVisualization.types.set('pie', class BarOptions extends ReportVisualizatio
 });
 
 ReportVisualization.types.set('funnel', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('spatialmap', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('cohort', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('form');
+
+		container.innerHTML = `
+			<label>Column</label>
+			<input type="text" id="timing" required>
+			
+			<label>Value</label>
+			<input type="text" id="value" required>
+			
+			<label>Show History</label>
+			<select id="history" required>
+				<option value="true">Yes</option>
+				<option value="false">No</option>
+			</select>
+			
+			<label>Invert Values</label>
+			<select id="invertColor" required>
+				<option value="true">Yes</option>
+				<option value="false">No</option>
+			</select>
+		`;
+
+		return container;
+	}
+
+	get json() {
+		return {
+			timing: this.form.timing.value,
+			value: this.form.value.value,
+			history: this.form.history.value,
+			invertColor: this.form.invertColor.value
+		}
+	}
 });
 
 const mysqlKeywords = [
