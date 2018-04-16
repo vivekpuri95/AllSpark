@@ -71,6 +71,33 @@ Page.class = class Dashboards extends Page {
 				nav.appendChild(dashboard.menuItem);
 		}
 
+		nav.insertAdjacentHTML('beforeend', `
+			<div class="item collapse">
+				<div class="label">
+					<span class="name left"><i class="fa fa-angle-double-left" aria-hidden="true"></i><span>Collapse Sidebar</span></span>
+					<span class="name right hidden"><i class="fa fa-angle-double-right" aria-hidden="true"></i></span>
+				</div>
+			</div>
+		`);
+
+		nav.querySelector('.collapse').on('click', (e) => {
+
+			nav.classList.toggle('collapsed-nav');
+
+			e.currentTarget.querySelector('.left').classList.toggle('hidden');
+			e.currentTarget.querySelector('.right').classList.toggle('hidden');
+			e.currentTarget.querySelector('.name').classList.toggle('hidden');
+
+			document.querySelector('main').classList.toggle('collapsed-grid');
+
+			for(const item of nav.querySelectorAll('.item')) {
+				if(!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
+					item.querySelector('.label .name').classList.toggle('hidden');
+				item.querySelector('.submenu') ? item.querySelector('.submenu').classList.toggle('collapsed-submenu-bar') : '';
+			}
+
+		});
+
 		if(!nav.children.length)
 			nav.innerHTML = `<div class="NA">No dashboards found!</div>`;
 	}
