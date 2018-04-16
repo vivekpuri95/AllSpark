@@ -2,19 +2,54 @@ main {
 	display: grid !important;
 	grid-template-columns: 220px calc(100% - 220px);
 }
+main.collapsed-grid {
+	grid-template-columns: 60px calc(100% - 60px) !important;
+}
 main label {
 	font-weight: normal;
 }
 main > nav {
+	display: flex;
+	flex-direction: column;
 	position: sticky;
 	top: 0;
+	overflow-y: scroll;
+	overflow-x: unset;
+	z-index: 4;
 	color: #777;
-	overflow: hidden;
 	height: calc(100vh - 50px);
+	border-right: 1px solid #ccc;
 }
-main > nav:hover {
-	overflow: auto;
+	main > nav .collapse {
+		margin-top: auto;
+		position: sticky;
+		bottom: 0;
+		background: var(--color-primary);
+	}
+	nav.collapsed-nav {
+		overflow: unset;
+	}
+main > nav.collapsed-nav .selected {
+	box-shadow: none !important;
+	background: var(--color-accent) !important;
 }
+	nav > .item > .collapsed-submenu-bar {
+		position: absolute;
+		left: 60px;
+		width: 180px;
+		margin-top: -40px;
+		background: var(--color-primary);
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
+	}
+		nav > .item > .collapsed-submenu-bar .label {
+			padding-left: 10px;
+		}
+		nav > .item > .collapsed-submenu-bar .submenu .label {
+			padding-left: 40px;
+		}
+		nav > .item .left span {
+			padding: 0 5px;
+		}
 main > nav::-webkit-scrollbar {
 	background: var(--color-secondary);
 	width: 8px;
