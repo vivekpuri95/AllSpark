@@ -2377,45 +2377,6 @@ class Visualization {
 		try {
 			this.options = JSON.parse(this.options);
 		} catch(e) {}
-
-		if(!this.options || !this.options.axes) {
-
-			this.options = {
-				axes: [
-					{
-						position: 'bottom',
-						columns: [
-							{
-								key: 'timing'
-							}
-						]
-					},
-					{
-						position: 'left',
-						columns: []
-					}
-				]
-			};
-		}
-
-		for(const axis of this.options.axes || []) {
-			this.options.axes[axis.position] = axis;
-			axis.column = axis.columns.length ? axis.columns[0].key : '';
-		}
-
-		if(!this.options.axes.bottom) {
-
-			this.options.axes.bottom = {
-				position: 'bottom',
-				columns: [
-					{
-						key: 'timing'
-					}
-				],
-				column: 'timing'
-			};
-		}
-
 		for(const key in this.options)
 			this[key] = this.options[key];
 	}
@@ -2432,6 +2393,8 @@ class Visualization {
 		this.source.visualizations.selected = this;
 
 		this.source.container.appendChild(this.container);
+
+		this.source.resetError();
 	}
 }
 
