@@ -934,9 +934,12 @@ class ReportFilter {
 
 			<label>
 				<span>Dataset</span>
-				<select name="dataset">
-					<option value="">None</option>
-				</select>
+				<div>
+					<select name="dataset">
+						<option value="">None</option>
+					</select>
+					<a class="view-dashboard">View</a>
+				</div>
 			</label>
 
 			<label>
@@ -966,6 +969,16 @@ class ReportFilter {
 				<option value="${dataset.id}">${dataset.name}</option>
 			`);
 		}
+
+		this.container.querySelector('.view-dashboard').on('click', e => {
+
+			const [dataset] = Reports.datasets.filter(d => d.id == this.container.dataset.value);
+
+			if(!dataset)
+				return;
+
+			window.open(`/report/${dataset.query_id}`);
+		});
 
 		this.container.on('submit', e => this.update(e));
 		this.container.querySelector('.delete').on('click', () => this.delete());
