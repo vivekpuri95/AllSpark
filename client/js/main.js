@@ -2378,39 +2378,6 @@ class Visualization {
 			this.options = JSON.parse(this.options);
 		} catch(e) {}
 
-		// if(!this.options || !this.options.axes) {
-
-		// 	this.options = {
-		// 		axes: [
-		// 			{
-		// 				position: 'bottom',
-		// 				columns: [
-		// 					{
-		// 						key: 'timing'
-		// 					}
-		// 				]
-		// 			},
-		// 			{
-		// 				position: 'left',
-		// 				columns: []
-		// 			}
-		// 		]
-		// 	};
-		// }
-
-		// if(!this.options.axes.bottom) {
-
-		// 	this.options.axes.bottom = {
-		// 		position: 'bottom',
-		// 		columns: [
-		// 			{
-		// 				key: 'timing'
-		// 			}
-		// 		],
-		// 		column: 'timing'
-		// 	};
-		// }
-
 		for(const key in this.options)
 			this[key] = this.options[key];
 	}
