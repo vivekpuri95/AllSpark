@@ -3026,6 +3026,159 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 	}
 });
 
+Visualization.list.set('scatter', class Line extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'scatter');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e, resize) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render(resize);
+	}
+
+	render(resize) {
+
+		this.draw();
+
+		this.plot(resize);
+	}
+
+	plot(resize) {
+
+		super.plot(resize);
+
+		if(!this.rows.length)
+			return;
+
+		const
+			container = d3.selectAll(`#visualization-${this.id}`),
+			that = this;
+
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
+
+		const
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
+
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
+
+		let
+			max = null,
+			min = null;
+
+		for(const row of this.rows) {
+
+			for(const [name, value] of row) {
+
+				if(name == this.axes.bottom.column)
+					continue;
+
+				if(max == null)
+					max = Math.floor(value);
+
+				if(min == null)
+					min = Math.floor(value);
+
+				max = Math.max(max, Math.floor(value) || 0);
+				min = Math.min(min, Math.floor(value) || 0);
+			}
+		}
+
+		this.y.domain([min, max]);
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.rangePoints([0, this.width], 0.1, 0);
+
+		const
+			tickNumber = this.width < 400 ? 3 : 5,
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
+
+		xAxis.tickValues(ticks);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(xAxis);
+
+		//graph type line and
+		const
+			line = d3.svg
+				.line()
+				.x(d => this.x(d.x)  + this.axes.left.width)
+				.y(d => this.y(d.y));
+
+		// For each line appending the circle at each point
+		for(const column of this.columns) {
+
+			this.svg.selectAll('dot')
+				.data(column)
+				.enter()
+				.append('circle')
+				.attr('class', 'clips')
+				.attr('id', (_, i) => i)
+				.attr('r', 3)
+				.style('fill', column.color)
+				.attr('cx', d => this.x(d.x) + this.axes.left.width)
+				.attr('cy', d => this.y(d.y))
+		}
+
+		container
+		.on('mousemove.line', function() {
+
+			container.selectAll('svg > g > circle[class="clips"]').attr('r', 3);
+
+			const
+				mouse = d3.mouse(this),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
+				row = that.rows[xpos];
+
+			if(!row || that.zoomRectangle)
+				return;
+
+			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+		})
+
+		.on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 3));
+	}
+});
+
 Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 	get container() {
