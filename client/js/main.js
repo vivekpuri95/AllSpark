@@ -4457,7 +4457,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 					<div class="weekago">
 						<!--<div class="blur">WoW</div>-->
 						<h4 style="color:${
-								yesterdayPerc > 0 ? this.options.invertColor ? 'red' : 'green' : this.options.invertColor ? 'green' : 'red'
+								weekagoPerc > 0 ? this.options.invertColor ? 'red' : 'green' : this.options.invertColor ? 'green' : 'red'
 								};">
 							${weekagoPerc}%
 						</h4>
