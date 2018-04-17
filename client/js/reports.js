@@ -1403,23 +1403,31 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 		const container = this.formContainer = document.createElement('form');
 
 		container.innerHTML = `
-			<label>Column</label>
-			<input type="text" id="timing" required>
+			<label>
+				<span>Column</span>
+				<input type="text" id="timing" required>
+			</label>
 			
-			<label>Value</label>
-			<input type="text" id="value" required>
+			<label>
+				<span>Value</span>
+				<input type="text" id="value" required>
+			</label>
 			
-			<label>Show History</label>
-			<select id="history" required>
-				<option value="true">Yes</option>
-				<option value="false">No</option>
-			</select>
+			<label>
+				<span>Show History</span>
+				<select id="history" required>
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</label>
 			
-			<label>Invert Values</label>
-			<select id="invertColor" required>
-				<option value="true">Yes</option>
-				<option value="false">No</option>
-			</select>
+			<label>
+				<span>Invert Values</span>
+				<select id="invertColor" required>
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</label>
 		`;
 
 		return container;

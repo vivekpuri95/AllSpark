@@ -4431,12 +4431,32 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 					weekago = row.get(this.options.value);
 				}
 			}
-		else {
-			window.alert('Invalid response format for Visualization');
-		}
 
 		const yesterdayPerc = yesterday ? Math.round(((today - yesterday) / Math.abs(yesterday)) * 100) : 0;
 		const weekagoPerc = weekago ? Math.round(((today - weekago) / weekago) * 100) : 0;
+
+		let yesterdayColor, weekagoColor;
+		this.options.invertColor = parseInt(this.options.invertColor);
+
+		if (yesterdayPerc > 0)
+			if (this.options.invertColor)
+				yesterdayColor = 'red';
+			else
+				yesterdayColor = 'green';
+		else if (this.options.invertColor)
+				yesterdayColor = 'green';
+			else
+				yesterdayColor = 'red';
+
+		if (weekagoPerc > 0)
+			if (this.options.invertColor)
+				weekagoColor = 'red';
+			else
+				weekagoColor = 'green';
+		else if (this.options.invertColor)
+			weekagoColor = 'green';
+			else
+				weekagoColor = 'red';
 
 		container.textContent = null;
 		container.insertAdjacentHTML('beforeend', `
@@ -4444,21 +4464,15 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				<div class="today">
 					${today}
 				</div>
-				<div class="submenu ${this.options.history ? '' : 'hidden'}">
+				<div class="submenu ${parseInt(this.options.history) ? '' : 'hidden'}">
 					<div class="yesterday">
-						<!--<div class="blur">DOD</div>-->
-						<h4 style="color:${
-								yesterdayPerc > 0 ? this.options.invertColor ? 'red' : 'green' : this.options.invertColor ? 'green' : 'red'
-								};">
+						<h4 style="color:${yesterdayColor};">
 							${yesterdayPerc}%
 						</h4>
 						${yesterday}
 					</div>
 					<div class="weekago">
-						<!--<div class="blur">WoW</div>-->
-						<h4 style="color:${
-								weekagoPerc > 0 ? this.options.invertColor ? 'red' : 'green' : this.options.invertColor ? 'green' : 'red'
-								};">
+						<h4 style="color:${weekagoColor};">
 							${weekagoPerc}%
 						</h4>
 					${weekago}
