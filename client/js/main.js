@@ -4521,14 +4521,20 @@ class Dataset {
 
 		for(const row of values) {
 
-			const label = document.createElement('label');
+			const
+				label = document.createElement('label'),
+				input = document.createElement('input'),
+				text = document.createTextNode(row.name);
 
-			label.innerHTML = `
-				<input name="${this.filter.placeholder}" value="${row.value}" type="${this.filter.multiple ? 'checkbox' : 'radio'}" checked>
-				${row.name}
-			`;
+			input.name = this.filter.placeholder;
+			input.value = row.value;
+			input.type = this.filter.multiple ? 'checkbox' : 'radio';
+			input.checked = true;
 
-			label.title = row.value;
+			label.appendChild(input);
+			label.appendChild(text);
+
+			label.setAttribute('title', row.value);
 
 			label.querySelector('input').on('change', () => this.update());
 
