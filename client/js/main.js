@@ -4454,7 +4454,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			else
 				weekagoColor = 'green';
 		else if (this.options.invertColor)
-			weekagoColor = 'green';
+				weekagoColor = 'green';
 			else
 				weekagoColor = 'red';
 
