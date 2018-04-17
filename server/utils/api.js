@@ -8,6 +8,7 @@ const User = require('./User');
 const constants = require('./constants');
 const assert = require("assert");
 const pgsql = require("./pgsql").Postgres;
+const errorLogs = require('./errorLogs');
 
 class API {
 
@@ -112,7 +113,7 @@ class API {
 
 			catch (e) {
 
-				await errorLogs(e, obj);
+				await errorMsg(e, obj);
 
 				if (e instanceof API.Exception) {
 
@@ -176,7 +177,7 @@ function assertExpression(expression, message, statusCode) {
 		}));
 }
 
-async function errorLogs(e, obj) {
+async function errorMsg(e, obj) {
 
 	const error = {
 		account_id : obj.account.account_id,
@@ -187,7 +188,8 @@ async function errorLogs(e, obj) {
 		type : "server"
 	};
 
-	await mysql.query('INSERT INTO tb_errors SET ?', error, 'write');
+	await errorLogs.insert(error);
+
 }
 
 API.Exception = class {
