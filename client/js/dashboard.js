@@ -277,6 +277,8 @@ class Dashboard {
 			return;
 		}
 
+		Sections.show('reports');
+
 		await this.datasets.load();
 
 		for(const _report of this.reports()) {
@@ -329,8 +331,6 @@ class Dashboard {
 			if(Dashboard.editing)
 				edit.click();
 		}
-
-		await Sections.show('reports');
 	}
 
 	edit() {
@@ -735,7 +735,7 @@ class DashboardDatasets extends Map {
 				<button class="more icon" title="More Filters"><i class="fas fa-filter"></i></button>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
 				<button class="reset icon" title="Check All Filters"><i class="far fa-check-square"></i></button>
-				<button class="clear icon" title="Clear All Filters"><i class="far fa-square"></i></button>
+				<button class="clear icon" title="Clear All Filters"><i class="fas fa-ban"></i></button>
 			</div>
 		`);
 
