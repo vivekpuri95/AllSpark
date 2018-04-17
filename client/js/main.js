@@ -10,6 +10,16 @@ window.addEventListener('DOMContentLoaded', async () => {
 	new (Page.class)();
 });
 
+window.onerror = async function(message, path, line, column, stack) {
+
+	await ErrorLogs.send({
+		message : message,
+		description : stack && stack.stack,
+		url : path,
+		type : "client"
+	})
+};
+
 class Page {
 
 	static async setup() {
@@ -291,8 +301,13 @@ class MetaData {
 
 class ErrorLogs {
 
-	static async load() {
+	static async send(params) {
 
+		const options = {
+			method: 'POST'
+		}
+
+		await API.call('errors/log',params, options);
 	}
 }
 
