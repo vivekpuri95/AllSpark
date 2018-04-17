@@ -233,11 +233,16 @@ class MySQL {
 				indices: (commonFun.getIndicesOf(`{{${filter.placeholder}}}`, this.reportObj.query)),
 				value: filter.value,
 			};
+		}
+
+		for(const filter of this.filters) {
 
 			this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "?");
+
 		}
 
 		this.filterList = this.makeQueryParameters();
+
 	}
 
 	makeQueryParameters() {
