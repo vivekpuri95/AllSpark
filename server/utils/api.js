@@ -113,7 +113,10 @@ class API {
 
 			catch (e) {
 
-				await errorMsg(e, obj);
+				if(obj) {
+
+					await API.errorMessage(e, obj);
+				}
 
 				if (e instanceof API.Exception) {
 
@@ -166,6 +169,21 @@ class API {
 		});
 	}
 
+	static async errorMessage(e, obj) {
+
+		const error = {
+			account_id : obj.account.account_id,
+			user_id : obj.user.user_id,
+			message : e.message || e.sqlMessage,
+			url : obj.request.url,
+			description : JSON.stringify(e),
+			type : "server"
+		};
+
+		await errorLogs.insert(error);
+
+	}
+
 }
 
 function assertExpression(expression, message, statusCode) {
@@ -175,21 +193,6 @@ function assertExpression(expression, message, statusCode) {
 			message: message,
 			status: statusCode,
 		}));
-}
-
-async function errorMsg(e, obj) {
-
-	const error = {
-		account_id : obj.account.account_id,
-		user_id : obj.user.user_id,
-		message : e.message || e.sqlMessage,
-		url : obj.request.url,
-		description : e,
-		type : "server"
-	};
-
-	await errorLogs.insert(error);
-
 }
 
 API.Exception = class {
