@@ -1140,7 +1140,7 @@ body {
 		right: 0;
 		bottom: 0;
 		display: flex;
-		transition: opacity var(--transition-duration);
+		transition: opacity 1s;
 		justify-content: center;
 		align-items: center;
 		font-size: 20px;
