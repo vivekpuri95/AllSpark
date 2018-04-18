@@ -50,6 +50,9 @@ main > nav.collapsed-nav .selected {
 		nav > .item .left span {
 			padding: 0 5px;
 		}
+		nav > .item.list-open {
+			box-shadow: inset 10px 0px 0 var(--color-accent);
+		}
 main > nav::-webkit-scrollbar {
 	background: var(--color-secondary);
 	width: 8px;

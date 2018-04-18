@@ -612,6 +612,23 @@ class Dashboard {
 
 		container.querySelector('.label').on('click', () => {
 
+			if(container.querySelector('.collapsed-submenu-bar')) {
+
+				for(const item of container.parentElement.querySelectorAll('.item')) {
+
+					item.classList.remove('list-open');
+					if(item == container) {
+						container.classList.add('list-open');
+						continue;
+					}
+
+					if(item.querySelector('.submenu')) {
+						item.querySelector('.angle').classList.add('down');
+						item.querySelector('.submenu').classList.add('hidden');
+					}
+				}
+			}
+
 			if(this.children.size) {
 				container.querySelector('.angle').classList.toggle('down');
 				submenu.classList.toggle('hidden');
