@@ -1218,7 +1218,6 @@ class ReportVisualization {
 				method: 'POST',
 				form: new FormData(ReportVisualization.form),
 			};
-
 		parameters.options = JSON.stringify(this.optionsForm.json);
 
 		await API.call('reports/visualizations/update', parameters, options);
@@ -1386,6 +1385,75 @@ ReportVisualization.types.set('pie', class BarOptions extends ReportVisualizatio
 });
 
 ReportVisualization.types.set('funnel', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('spatialmap', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('cohort', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('form');
+
+		container.innerHTML = `
+			<label>
+				<span>Column</span>
+				<select id="timing"></select>
+			</label>
+			
+			<label>
+				<span>Value</span>
+				<select id="value"></select>
+			</label>
+			
+			<label>
+				<span>Show History</span>
+				<select id="history">
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</label>
+			
+			<label>
+				<span>Invert Values</span>
+				<select id="invertColor">
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</label>
+		`;
+
+		const columns = container.querySelector('select[id=timing]');
+		const values = container.querySelector('select[id=value]');
+
+		for(const [key, column] of this.report.columns) {
+			columns.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			values.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		return container;
+	}
+
+	get json() {
+		return {
+			timing: this.form.timing.value,
+			value: this.form.value.value,
+			history: this.form.history.value,
+			invertColor: this.form.invertColor.value
+		}
+	}
 });
 
 const mysqlKeywords = [
