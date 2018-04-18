@@ -4421,24 +4421,22 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		this.yesterday = 0;
 		this.weekago = 0;
 
-		if(response[0].has(this.options.timing) && response[0].has(this.options.value)) {
-			for (let row of response) {
-				const responseDate = (new Date(row.get(this.options.timing).substring(0, 10))).toDateString();
-				const todayDate = new Date();
-
-				if (responseDate == (new Date()).toDateString()) {
-					this.today = row.get(this.options.value);
-				}
-				else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 1))).toDateString()) {
-					this.yesterday = row.get(this.options.value);
-				}
-				else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 7))).toDateString()) {
-					this.weekago = row.get(this.options.value);
-				}
-			}
-		}
-		else {
+		if(!response[0].has(this.options.timing) || !response[0].has(this.options.value))
 			return this.source.error('Response do not have same columns as in config');
+
+		for (let row of response) {
+			const responseDate = (new Date(row.get(this.options.timing).substring(0, 10))).toDateString();
+			const todayDate = new Date();
+
+			if (responseDate == (new Date()).toDateString()) {
+				this.today = row.get(this.options.value);
+			}
+			else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 1))).toDateString()) {
+				this.yesterday = row.get(this.options.value);
+			}
+			else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 7))).toDateString()) {
+				this.weekago = row.get(this.options.value);
+			}
 		}
 
 		this.yesterdayPerc = this.yesterday ? Math.round(((this.today - this.yesterday) / Math.abs(this.yesterday)) * 100) : 0;
