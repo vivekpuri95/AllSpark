@@ -4425,14 +4425,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		return container;
 	}
-
 	async load(e) {
 
 		if (e && e.preventDefault)
 			e.preventDefault();
 
 		super.render();
-
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
@@ -4518,7 +4516,50 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				return 'green';
 			else
 				return 'red';
+	}
+});
 
+Visualization.list.set('json', class JsonEditor extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'line');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if (e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render(resize);
+	}
+
+	render(resize) {
+
+		this.editor = new Editor(this.container);
+
+		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
+
+		this.editor.editor.getSession().setMode('ace/mode/json');
 	}
 });
 

@@ -1407,12 +1407,12 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 				<span>Column</span>
 				<select id="timing"></select>
 			</label>
-			
+
 			<label>
 				<span>Value</span>
 				<select id="value"></select>
 			</label>
-			
+
 			<label>
 				<span>Show History</span>
 				<select id="history">
@@ -1420,7 +1420,7 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 					<option value="0">No</option>
 				</select>
 			</label>
-			
+
 			<label>
 				<span>Invert Values</span>
 				<select id="invertColor">

@@ -279,7 +279,6 @@ router.get('/dashboards/:id?', (req, res) => {
 	template.stylesheets.push('/css/dashboards.css');
 
 	template.scripts.push('/js/dashboards.js');
-	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js');
 
 	res.send(template.body(`
 
@@ -1028,6 +1027,7 @@ class Template {
 		this.scripts = [
 			'/js/main.js',
 			'https://use.fontawesome.com/releases/v5.0.8/js/all.js" async defer f="',
+			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
 		];
 	}
 
