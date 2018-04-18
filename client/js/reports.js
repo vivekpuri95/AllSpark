@@ -1405,17 +1405,17 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 		container.innerHTML = `
 			<label>
 				<span>Column</span>
-				<input type="text" id="timing" required>
+				<select id="timing"></select>
 			</label>
 			
 			<label>
 				<span>Value</span>
-				<input type="text" id="value" required>
+				<select id="value"></select>
 			</label>
 			
 			<label>
 				<span>Show History</span>
-				<select id="history" required>
+				<select id="history">
 					<option value="1">Yes</option>
 					<option value="0">No</option>
 				</select>
@@ -1423,12 +1423,25 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 			
 			<label>
 				<span>Invert Values</span>
-				<select id="invertColor" required>
+				<select id="invertColor">
 					<option value="1">Yes</option>
 					<option value="0">No</option>
 				</select>
 			</label>
 		`;
+
+		const columns = container.querySelector('select[id=timing]');
+		const values = container.querySelector('select[id=value]');
+
+		for(const [key, column] of this.report.columns) {
+			columns.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			values.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
 
 		return container;
 	}
