@@ -123,7 +123,7 @@ main #reports > .list {
 		position: sticky;
 		top: 0;
 		z-index: 3;
-		align-items: flex-start;
+		align-items: flex-end;
 		grid-template-columns: max-content max-content 1fr;
 	}
 		main #reports > .toolbar input[name=date-range] {

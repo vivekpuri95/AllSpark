@@ -699,7 +699,7 @@ class DataSource {
 		this.container.querySelector('.share-link input').value = this.link;
 		this.container.querySelector('.query').innerHTML = response.query;
 
-		let age = response.cached ? response.cached.age : 0;
+		let age = response.cached ? Math.floor(response.cached.age * 100) / 100 : 0;
 
 		if(age < 1000)
 			age += 'ms';
@@ -710,7 +710,7 @@ class DataSource {
 		else if(age < 1000 * 60 * 60)
 			age = (age / (1000 * 60)) + 'h';
 
-		let runtime = response.runtime;
+		let runtime = Math.floor(response.runtime * 100) / 100;
 
 		if(runtime < 1000)
 			runtime += 'ms';
@@ -721,8 +721,8 @@ class DataSource {
 		else if(runtime < 1000 * 60 * 60)
 			runtime = (runtime / (1000 * 60)) + 'h';
 
-		this.container.querySelector('.description .cached').textContent = response.cached.status ? Math.floor(age * 100) / 100 : 'No';
-		this.container.querySelector('.description .runtime').textContent = Math.floor(runtime * 100) / 100;
+		this.container.querySelector('.description .cached').textContent = response.cached.status ? age : 'No';
+		this.container.querySelector('.description .runtime').textContent = runtime;
 
 		this.columns.update();
 		this.postProcessors.update();
@@ -769,7 +769,7 @@ class DataSource {
 				<div class="footer">
 					<span>
 						<span class="NA">Role:</span>
-						<span>${this.roles || ''}</span>
+						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : 'Invalid'}</span>
 					</span>
 					<span>
 						<span class="NA">Added On:</span>
@@ -785,11 +785,11 @@ class DataSource {
 					</span>
 					<span class="right">
 						<span class="NA">Added By:</span>
-						<span>${this.added_by_name || ''}</span>
+						<span>${this.added_by_name || 'NA'}</span>
 					</span>
 					<span>
 						<span class="NA">Requested By:</span>
-						<span>${this.requested_by || ''}</span>
+						<span>${this.requested_by || 'NA'}</span>
 					</span>
 				</div>
 			</div>
@@ -1555,6 +1555,7 @@ class DataSourceColumn {
 				<select name="type" value="${parameter.type || ''}">
 					<option value="column">Column</option>
 					<option value="filter">Filter</option>
+					<option value="static">Custom</option>
 				</select>
 			</label>
 
@@ -1573,8 +1574,7 @@ class DataSourceColumn {
 
 		container.classList.add('parameter');
 
-		const
-			parameterList = this.form.querySelector('.parameter-list');
+		const parameterList = this.form.querySelector('.parameter-list');
 
 		parameterList.appendChild(container);
 
