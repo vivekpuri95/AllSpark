@@ -322,7 +322,7 @@ class Dashboard {
 			const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
 
 			edit.classList.remove('hidden');
-			edit.innerHTML = `<i class="fa fa-edit"></i>`;
+			edit.innerHTML = `<i class="fa fa-edit"></i> Edit`;
 
 			edit.removeEventListener('click', Dashboard.toolbar.editListener);
 
@@ -711,6 +711,8 @@ class DashboardDatasets extends Map {
 		if(!this.size)
 			return;
 
+		let counter = 1;
+
 		for(const dataset of this.values()) {
 
 			const
@@ -721,7 +723,7 @@ class DashboardDatasets extends Map {
 
 			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
 
-			if(!['Program','Region','Market','Bid Zone'].includes(dataset.name))
+			if(counter++ > 4)
 				label.classList.add('hidden');
 
 			label.appendChild(dataset.container);
@@ -734,19 +736,42 @@ class DashboardDatasets extends Map {
 				<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
 				<button class="more icon" title="More Filters"><i class="fas fa-filter"></i></button>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
-				<button class="reset icon" title="Check All Filters"><i class="far fa-check-square"></i></button>
-				<button class="clear icon" title="Clear All Filters"><i class="fas fa-ban"></i></button>
+				<button class="reset-toggle clear icon" title="Clear All Filters"><i class="far fa-check-square"></i></button>
 			</div>
 		`);
 
 		container.querySelector('button.apply').on('click', () => this.apply());
 		container.querySelector('button.reload').on('click', () => this.apply());
-		container.querySelector('button.reset').on('click', () => this.all());
-		container.querySelector('button.clear').on('click', () => this.clear());
+
+		const resetToggle = container.querySelector('button.reset-toggle');
+
+		resetToggle.on('click', () => {
+
+			if(resetToggle.classList.contains('check')) {
+
+				this.all();
+
+				resetToggle.classList.remove('check');
+				resetToggle.classList.add('clear');
+
+				resetToggle.title = 'Clear All Filters';
+				resetToggle.innerHTML = `<i class="far fa-check-square"></i>`;
+			} else {
+
+				this.clear();
+
+				resetToggle.classList.add('check');
+				resetToggle.classList.remove('clear');
+
+				resetToggle.title = 'Check All Filters';
+				resetToggle.innerHTML = `<i class="far fa-square"></i>`;
+			}
+		});
 
 		container.querySelector('button.more').on('click', () => {
 
 			container.querySelector('button.more').classList.add('hidden');
+
 			for(const dataset of container.querySelectorAll('label.hidden'))
 				dataset.classList.remove('hidden');
 		});

@@ -547,8 +547,19 @@ body {
 			grid-gap: calc(var(--gap) * 2);
 			align-items: center;
 		}
+			main .data-source > .drilldown a {
+				padding: var(--gap) calc(var(--gap) * 2);
+				border: 1px solid #ccc;
+				background: #fff;
+				transition: background var(--transition-duration),
+							box-shadow var(--transition-duration);
+			}
 			main .data-source > .drilldown a:hover {
 				text-decoration: none;
+				background: #eff;
+			}
+			main .data-source > .drilldown a:active {
+				box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
 			}
 		main .data-source > .columns {
 			display: flex;
