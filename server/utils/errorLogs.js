@@ -4,7 +4,7 @@ class ErrorLogs {
 
 	static async insert(params) {
 
-		return mysql.query('INSERT INTO tb_errors SET ?', params, 'write');
+		return await mysql.query('INSERT INTO tb_errors SET ?', params, 'write');
 	}
 
 }
