@@ -8,6 +8,7 @@ const User = require('./User');
 const constants = require('./constants');
 const assert = require("assert");
 const pgsql = require("./pgsql").Postgres;
+const errorLogs = require('./errorLogs');
 
 class API {
 
@@ -53,6 +54,8 @@ class API {
 
 		return async function (request, response, next) {
 
+			let obj;
+
 			try {
 
 				const
@@ -63,7 +66,7 @@ class API {
 					return next();
 				}
 
-				const obj = new (API.endpoints.get(path))();
+				obj = new (API.endpoints.get(path))();
 
 				obj.request = request;
 				obj.assert = assertExpression;
@@ -109,6 +112,11 @@ class API {
 			}
 
 			catch (e) {
+
+				if(obj) {
+
+					await API.errorMessage(e, obj);
+				}
 
 				if (e instanceof API.Exception) {
 
@@ -159,6 +167,21 @@ class API {
 				}
 			});
 		});
+	}
+
+	static async errorMessage(e, obj) {
+
+		const error = {
+			account_id : obj.account.account_id,
+			user_id : obj.user.user_id,
+			message : e.message || e.sqlMessage,
+			url : obj.request.url,
+			description : JSON.stringify(e),
+			type : "server"
+		};
+
+		await errorLogs.insert(error);
+
 	}
 
 }

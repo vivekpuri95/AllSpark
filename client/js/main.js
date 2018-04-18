@@ -10,6 +10,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 	new (Page.class)();
 });
 
+
 class Page {
 
 	static async setup() {
@@ -286,6 +287,38 @@ class MetaData {
 
 		MetaData.visualizations = metadata.visualizations;
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
+	}
+}
+
+class ErrorLogs {
+
+	static async send(message, path, line, column, stack) {
+
+		if(ErrorLogs.sending)
+			return;
+
+		ErrorLogs.sending = true;
+
+		const
+			options = {
+			method: 'POST'
+		},
+			params = {
+				message : message,
+				description : stack && stack.stack,
+				url : path,
+				type : 'client',
+			};
+
+		try {
+			await API.call('errors/log',params, options);
+		}
+		catch (e) {
+			console.log('Failed to log error', e);
+			return;
+		}
+
+		ErrorLogs.sending = false;
 	}
 }
 
@@ -4777,3 +4810,5 @@ Node.prototype.on = window.on = function(name, fn) {
 MetaData.timeout = 5 * 60 * 1000;
 Dataset.timeout = 5 * 60 * 1000;
 Visualization.animationDuration = 750;
+
+window.onerror = ErrorLogs.send;
