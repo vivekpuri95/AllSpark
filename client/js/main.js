@@ -124,7 +124,7 @@ Page.exception = class PageException extends Error {
 		this.message = message;
 	}
 }
-1
+
 class Account {
 
 	static async load() {
