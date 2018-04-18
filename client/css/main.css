@@ -1102,6 +1102,9 @@ body {
 .visualization .container .livenumber.box {
 	display: grid;
     text-align: center;
+    height: 80%;
+    width: 100%;
+    grid-template-rows: 80% 20%;
 }
 	.livenumber header {
 		background: var(--color-primary);
@@ -1112,6 +1115,7 @@ body {
 	.livenumber .today {
 		padding: 40px;
 		font-size: 60px;
+        line-height: 300%;
 	}
 	.livenumber .submenu {
 		display: grid;
@@ -1122,6 +1126,7 @@ body {
 	.livenumber .weekago {
 		padding: 20px;
 		border: 1px solid #ccc;
+        position: relative;
 	}
 	.livenumber .weekago {
 		border-left: 0;

@@ -4408,78 +4408,85 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		await this.source.fetch();
 
+		this.process();
+
 		this.render();
 	}
 
-	render() {
-		const container = this.container.querySelector('.container');
+	process() {
+		this.container_live = this.container.querySelector('.container');
 		const response = this.source.response;
 
-		let today = 0, yesterday = 0, weekago = 0;
-		if(response[0].has(this.options.timing) && response[0].has(this.options.value))
+		this.today = 0;
+		this.yesterday = 0;
+		this.weekago = 0;
+
+		if(response[0].has(this.options.timing) && response[0].has(this.options.value)) {
 			for (let row of response) {
 				const responseDate = (new Date(row.get(this.options.timing).substring(0, 10))).toDateString();
 				const todayDate = new Date();
 
 				if (responseDate == (new Date()).toDateString()) {
-					today = row.get(this.options.value);
+					this.today = row.get(this.options.value);
 				}
 				else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 1))).toDateString()) {
-					yesterday = row.get(this.options.value);
+					this.yesterday = row.get(this.options.value);
 				}
 				else if (responseDate == new Date((new Date().setDate(todayDate.getDate() - 7))).toDateString()) {
-					weekago = row.get(this.options.value);
+					this.weekago = row.get(this.options.value);
 				}
 			}
+		}
+		else {
+			return this.source.error('Response do not have same columns as in config');
+		}
 
-		const yesterdayPerc = yesterday ? Math.round(((today - yesterday) / Math.abs(yesterday)) * 100) : 0;
-		const weekagoPerc = weekago ? Math.round(((today - weekago) / weekago) * 100) : 0;
+		this.yesterdayPerc = this.yesterday ? Math.round(((this.today - this.yesterday) / Math.abs(this.yesterday)) * 100) : 0;
+		this.weekagoPerc = this.weekago ? Math.round(((this.today - this.weekago) / this.weekago) * 100) : 0;
+	}
 
-		let yesterdayColor, weekagoColor;
-		this.options.invertColor = parseInt(this.options.invertColor);
-
-		if (yesterdayPerc > 0)
-			if (this.options.invertColor)
-				yesterdayColor = 'red';
-			else
-				yesterdayColor = 'green';
-		else if (this.options.invertColor)
-				yesterdayColor = 'green';
-			else
-				yesterdayColor = 'red';
-
-		if (weekagoPerc > 0)
-			if (this.options.invertColor)
-				weekagoColor = 'red';
-			else
-				weekagoColor = 'green';
-		else if (this.options.invertColor)
-				weekagoColor = 'green';
-			else
-				weekagoColor = 'red';
-
-		container.textContent = null;
-		container.insertAdjacentHTML('beforeend', `
+	render() {
+		this.container_live.textContent = null;
+		this.container_live.insertAdjacentHTML('beforeend', `
 			<div class="livenumber box">
 				<div class="today">
-					${today}
+					${this.today}
 				</div>
 				<div class="submenu ${parseInt(this.options.history) ? '' : 'hidden'}">
 					<div class="yesterday">
-						<h4 style="color:${yesterdayColor};">
-							${yesterdayPerc}%
+						<div class="blur">DOD</div>
+						<h4 style="color:${this.getColor(this.yesterdayPerc)};">
+							${this.yesterdayPerc}%
 						</h4>
-						${yesterday}
+						${this.yesterday}
 					</div>
 					<div class="weekago">
-						<h4 style="color:${weekagoColor};">
-							${weekagoPerc}%
+						<div class="blur">WoW</div>
+						<h4 style="color:${this.getColor(this.weekagoPerc)};">
+							${this.weekagoPerc}%
 						</h4>
-					${weekago}
+					${this.weekago}
 					</div>
 				</div>
 			</div>
 		`);
+	}
+
+	getColor(percentage) {
+
+		this.options.invertColor = parseInt(this.options.invertColor);
+
+		if (percentage > 0)
+			if (this.options.invertColor)
+				return 'red';
+			else
+				return 'green';
+		else
+			if (this.options.invertColor)
+				return 'green';
+			else
+				return 'red';
+
 	}
 });
 
