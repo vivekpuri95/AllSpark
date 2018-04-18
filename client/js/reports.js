@@ -160,6 +160,14 @@ class Report {
 
 		Report.container.querySelector('.toolbar #force-test').on('click', () => Report.selected && Report.selected.test(true));
 
+		Report.form.querySelector('#full-screen-editor').on('click', () => {
+
+			if(document.webkitFullscreenElement)
+				document.webkitExitFullscreen();
+			else
+				Report.form.querySelector('#query').webkitRequestFullscreen();
+		});
+
 		for(const tab of Report.container.querySelectorAll('.tab')) {
 			tab.on('click', () => {
 				for(const _tab of Report.container.querySelectorAll('.tab')) {
@@ -216,7 +224,6 @@ class Report {
 					if(!Report.selected)
 						return;
 
-					await Report.selected.update();
 					await Report.selected.test();
 				}
 			});
@@ -578,13 +585,13 @@ class Report {
 		return this.container;
 	}
 
-	edit() {
+	async edit() {
 
 		Report.selected = this;
 
 		const view = Report.container.querySelector('.toolbar #view');
 
-		Report.form.parentElement.querySelector('h1').innerHTML = `${this.name} - ${this.query_id}`;
+		Report.form.parentElement.querySelector('h1').innerHTML = `${this.name} <span class="NA">#${this.query_id}</span>`;
 
 		Report.form.removeEventListener('submit', Report.form.listener);
 
@@ -639,7 +646,8 @@ class Report {
 		Report.selected.filterSuggestions();
 
 		Report.container.querySelector('#test-container').classList.add('hidden');
-		Sections.show('form');
+
+		await Sections.show('form');
 	}
 
 	async update(e) {
@@ -695,6 +703,9 @@ class Report {
 			options = {
 				method: 'POST',
 			};
+
+		if(Report.editor.editor.getSelectedText())
+			parameters.query = Report.editor.editor.getSelectedText();
 
 		let
 			tab = 'json',
@@ -1047,10 +1058,10 @@ class ReportVisualizations {
 	constructor(report) {
 
 		this.report = report;
-		this.list = new Set;
+		this.list = new Map;
 
 		for(const visualization of this.report.visualizations || [])
-			this.list.add(new ReportVisualization(visualization, this));
+			this.list.set(visualization.visualization_id, new ReportVisualization(visualization, this));
 	}
 
 	render() {
@@ -1059,7 +1070,7 @@ class ReportVisualizations {
 
 		tbody.textContent = null;
 
-		for(const visualization of this.list)
+		for(const visualization of this.list.values())
 			tbody.appendChild(visualization.row);
 
 		if(!this.list.size)
@@ -1074,10 +1085,7 @@ class ReportVisualization {
 		ReportVisualization.form = ReportVisualizations.preview.querySelector('#visualization-form');
 		ReportVisualization.insert.form = ReportVisualizations.container.querySelector('#add-visualization');
 
-		ReportVisualizations.preview.querySelector('#visualization-back').on('click', () => {
-			ReportVisualizations.preview.classList.add('hidden');
-			ReportVisualizations.container.classList.remove('hidden');
-		});
+		ReportVisualizations.preview.querySelector('#visualization-back').on('click', () => Sections.show('form'));
 
 		const type = ReportVisualization.insert.form.type;
 
@@ -1164,31 +1172,27 @@ class ReportVisualization {
 
 	async edit() {
 
-		ReportVisualizations.container.classList.add('hidden');
-		ReportVisualizations.preview.classList.remove('hidden');
+		const form = ReportVisualization.form;
 
-		ReportVisualization.form.name.value = this.name;
-		ReportVisualization.form.type.value = this.type;
+		form.name.value = this.name;
+		form.type.value = this.type;
 
-		ReportVisualization.form.removeEventListener('submit', ReportVisualization.submitListener);
-		ReportVisualization.form.on('submit', ReportVisualization.submitListener = e => this.update(e));
-
-		const refresh = ReportVisualizations.preview.querySelector('#visualization-refresh');
-
-		refresh.removeEventListener('click', ReportVisualization.refreshListener);
-		refresh.on('click', ReportVisualization.refreshListener = () => this.loadPreview());
+		form.removeEventListener('submit', ReportVisualization.submitListener);
+		form.on('submit', ReportVisualization.submitListener = e => this.update(e));
 
 		try {
 			await this.loadPreview();
 		} catch(e) {}
 
-		const options = ReportVisualization.form.querySelector('.options');
+		const options = form.querySelector('.options');
 
 		options.textContent = null;
 		options.appendChild(this.optionsForm.form);
 	}
 
 	async loadPreview() {
+
+		Sections.show('visualization-preview');
 
 		await DataSource.load(true);
 
@@ -1218,15 +1222,18 @@ class ReportVisualization {
 				method: 'POST',
 				form: new FormData(ReportVisualization.form),
 			};
+
 		parameters.options = JSON.stringify(this.optionsForm.json);
 
 		await API.call('reports/visualizations/update', parameters, options);
 
 		await Reports.load(true);
 
-		Reports.list.get(this.visualizations.report.id).edit();
+		const report = Reports.list.get(this.visualizations.report.id);
 
-		this.loadPreview();
+		report.edit();
+
+		await report.visualizations.list.get(this.visualization_id).edit();
 	}
 
 	async delete() {
@@ -1262,9 +1269,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	get form() {
 
-		if(this.formContainer)
-			return this.formContainer;
-
 		const container = this.formContainer = document.createElement('div');
 
 		container.innerHTML = `
@@ -1293,7 +1297,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			axes: []
 		};
 
-		for(const axis of this.form.querySelectorAll('.axis')) {
+		for(const axis of this.formContainer.querySelectorAll('.axis')) {
 
 			const columns = [];
 

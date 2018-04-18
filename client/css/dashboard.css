@@ -26,6 +26,10 @@ main > nav {
 		bottom: 0;
 		background: var(--color-primary);
 	}
+		main > nav .collapse .name {
+			color: #ccc;
+			margin: 0 auto !important;
+		}
 	nav.collapsed-nav {
 		overflow: unset;
 	}

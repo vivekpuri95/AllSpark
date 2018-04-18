@@ -743,7 +743,7 @@ class DataSource {
 		container.innerHTML = `
 
 			<header>
-				<h2 title="${this.name}">${this.name}</h2>
+				<h2 title="${this.name}">${this.name} <span>#${this.query_id}</span></h2>
 				<div class="actions right">
 					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
 					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
@@ -768,27 +768,27 @@ class DataSource {
 				<div class="body">${this.description}</div>
 				<div class="footer">
 					<span>
-						<span class="NA">Role:</span>
+						<span class="label">Role:</span>
 						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : 'Invalid'}</span>
 					</span>
 					<span>
-						<span class="NA">Added On:</span>
+						<span class="label">Added On:</span>
 						<span>${Format.date(this.created_at)}</span>
 					</span>
 					<span>
-						<span class="NA">Cached:</span>
+						<span class="label">Cached:</span>
 						<span class="cached"></span>
 					</span>
 					<span>
-						<span class="NA">Runtime:</span>
+						<span class="label">Runtime:</span>
 						<span class="runtime"></span>
 					</span>
 					<span class="right">
-						<span class="NA">Added By:</span>
+						<span class="label">Added By:</span>
 						<span>${this.added_by_name || 'NA'}</span>
 					</span>
 					<span>
-						<span class="NA">Requested By:</span>
+						<span class="label">Requested By:</span>
 						<span>${this.requested_by || 'NA'}</span>
 					</span>
 				</div>

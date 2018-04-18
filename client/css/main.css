@@ -432,6 +432,10 @@ body {
 				line-height: inherit;
 				user-select: text;
 			}
+				main .data-source > header h2 span {
+					color: #ccc;
+					font-size: 90%;
+				}
 			main .data-source > header .actions {
 			}
 				main .data-source > header a {
@@ -493,6 +497,10 @@ body {
 					color: #333;
 					margin-left: 15px;
 					cursor: pointer;
+				}
+				main .data-source > .description .footer .label {
+					font-size: 100%;
+					color: #999;
 				}
 		main .data-source > .query {
 			background: #fff;
