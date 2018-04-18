@@ -182,7 +182,7 @@ async function errorMsg(e, obj) {
 	const error = {
 		account_id : obj.account.account_id,
 		user_id : obj.user.user_id,
-		message : e.sqlMessage,
+		message : e.message || e.sqlMessage,
 		url : obj.request.url,
 		description : e,
 		type : "server"
