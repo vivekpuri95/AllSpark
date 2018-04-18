@@ -432,24 +432,18 @@ body {
 				line-height: inherit;
 				user-select: text;
 			}
-			main .data-source > header .edit button {
-				height: 22px;
-				margin: 0 calc(var(--gap) / 2);
+			main .data-source > header .actions {
 			}
-			main .data-source > header .edit button svg {
-				margin: 0;
-			}
-			main .data-source > header span {
-				border: 1px solid transparent;
-				cursor: pointer;
-				padding: 4px 10px;
-				align-items: center;
-				transition: border var(--transition-duration);
-				display: flex;
-			}
-			main .data-source > header span:not(.selected):hover {
-				border-color: #ccc;
-			}
+				main .data-source > header a {
+					font-size: 85%;
+					padding: 4px 6px;
+					width: 24px;
+					display: inline-block;
+					text-align: center;
+				}
+				main .data-source > header a:hover {
+					color: var(--color-accent);
+				}
 		main .data-source .toolbar {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
@@ -623,6 +617,7 @@ body {
 					align-items: center;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
+					white-space: nowrap;
 				}
 				main .data-source .column .edit-column {
 					opacity: 0;
