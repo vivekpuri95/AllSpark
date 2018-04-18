@@ -16,8 +16,8 @@ window.onerror = async function(message, path, line, column, stack) {
 		message : message,
 		description : stack && stack.stack,
 		url : path,
-		type : "client"
-	})
+		type : 'client',
+	});
 };
 
 class Page {
@@ -303,11 +303,24 @@ class ErrorLogs {
 
 	static async send(params) {
 
+		if(ErrorLogs.sending)
+			return;
+
+		ErrorLogs.sending = true;
+
 		const options = {
 			method: 'POST'
 		}
 
-		await API.call('errors/log',params, options);
+		try {
+			await API.call('errors/log',params, options);
+		}
+		catch (e) {
+			console.log('Failed to log error', e);
+			return;
+		}
+
+		ErrorLogs.sending = false;
 	}
 }
 
