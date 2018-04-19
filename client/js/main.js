@@ -660,6 +660,12 @@ class DataSource {
 		parameters.set('query_id', this.query_id);
 		parameters.set('email', user.email);
 
+		if(this.queryOverride)
+			parameters.set('query', this.query);
+
+		if(this.forceRefresh)
+			parameters.set('cached', '0');
+
 		for(const filter of this.filters.values()) {
 
 			if(filter.dataset && filter.dataset.query_id) {
@@ -719,7 +725,7 @@ class DataSource {
 		else if(runtime < 1000 * 60 * 60)
 			runtime = (runtime / (1000 * 60)) + 'h';
 
-		this.container.querySelector('.description .cached').textContent = response.cached.status ? age : 'No';
+		this.container.querySelector('.description .cached').textContent = response.cached && response.cached.status ? age : 'No';
 		this.container.querySelector('.description .runtime').textContent = runtime;
 
 		this.columns.update();

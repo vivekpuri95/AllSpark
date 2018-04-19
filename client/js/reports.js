@@ -219,7 +219,12 @@ class Report {
 		// Initiate the editor. All this only needs to be done once on page load.
 		Report.editor = new Editor(Report.form.querySelector('#editor'));
 
-		Report.editor.editor.getSession().on('change', () => Report.selected && Report.selected.filterSuggestions());
+		Report.editor.editor.getSession().on('change', () => {
+
+			Report.selected && Report.selected.filterSuggestions();
+
+			Report.form.elements[0].classList.toggle('unsaved', Report.editor.value != Report.selected.query);
+		});
 
 		setTimeout(() => {
 
@@ -705,7 +710,7 @@ class Report {
 		await Reports.load(true);
 	}
 
-	async test(is_redis) {
+	async test() {
 
 		await DataSource.load();
 
@@ -714,10 +719,14 @@ class Report {
 		if(!report)
 			return;
 
-		if(Report.editor.editor.getSelectedText())
-			report.query = Report.editor.editor.getSelectedText();
-
 		report = new DataSource(report);
+
+		if(Report.editor.editor.getSelectedText()) {
+			report.query = Report.editor.editor.getSelectedText();
+			report.queryOverride = true;
+		}
+
+		this.forceRefresh = true;
 
 		const oldContainer = Report.testContainer.querySelector('.data-source');
 
@@ -728,16 +737,16 @@ class Report {
 
 		const executing = Report.container.querySelector('#test-executing');
 
-		executing.time = Date.now();
+		let executingTime = Date.now();
 
 		executing.classList.remove('hidden');
 
 		(function showTime() {
 
-			if(!executing.time)
+			if(!executingTime)
 				return;
 
-			executing.innerHTML = `Executing Query&hellip; ${Format.number((Date.now() - executing.time) / 100)}s`
+			executing.innerHTML = `Executing Query&hellip; ${Format.number((Date.now() - executingTime) / 100)}s`
 
 			setTimeout(() => window.requestAnimationFrame(() => showTime()), 250);
 		})();
@@ -748,7 +757,7 @@ class Report {
 
 		Report.testContainer.appendChild(report.container);
 
-		executing.time = false;
+		executingTime = false;
 
 		executing.classList.add('hidden');
 	}
