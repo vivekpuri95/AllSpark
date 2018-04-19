@@ -84,13 +84,22 @@ Page.class = class Dashboards extends Page {
 
 			nav.classList.toggle('collapsed-nav');
 
+			const right = e.currentTarget.querySelector('.right')
+
 			e.currentTarget.querySelector('.left').classList.toggle('hidden');
-			e.currentTarget.querySelector('.right').classList.toggle('hidden');
+
+			right.classList.toggle('hidden');
+
 			e.currentTarget.querySelector('.name').classList.toggle('hidden');
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
 
 			for(const item of nav.querySelectorAll('.item')) {
+
+				if(!right.hidden) {
+					item.classList.remove('list-open');
+				}
+
 				if(!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
 					item.querySelector('.label .name').classList.toggle('hidden');
 				item.querySelector('.submenu') ? item.querySelector('.submenu').classList.toggle('collapsed-submenu-bar') : '';
@@ -621,6 +630,23 @@ class Dashboard {
 		const submenu = container.querySelector('.submenu');
 
 		container.querySelector('.label').on('click', () => {
+
+			if(container.querySelector('.collapsed-submenu-bar')) {
+
+				for(const item of container.parentElement.querySelectorAll('.item')) {
+
+					item.classList.remove('list-open');
+					if(item == container) {
+						container.classList.add('list-open');
+						continue;
+					}
+
+					if(item.querySelector('.submenu')) {
+						item.querySelector('.angle').classList.add('down');
+						item.querySelector('.submenu').classList.add('hidden');
+					}
+				}
+			}
 
 			if(this.children.size) {
 				container.querySelector('.angle').classList.toggle('down');
