@@ -73,6 +73,11 @@ class API {
 
 				let host = request.headers.host.split(':')[0];
 
+				if(!(host in global.account))
+					throw new API.Exception(400, 'Account not found!');
+
+				obj.account = global.account[host];
+
 				let userDetails;
 
 				const token = request.query.token || request.body.token;
@@ -90,11 +95,6 @@ class API {
 				// if (host.includes('localhost')) {
 				// 	host = 'test-analytics.jungleworks.co';
 				// }
-
-				if(!(host in global.account))
-					throw new API.Exception(400, 'Account not found!');
-
-				obj.account = global.account[host];
 
 				const result = await obj[path.split(pathSeparator).pop()]();
 
@@ -171,16 +171,21 @@ class API {
 
 	static async errorMessage(e, obj) {
 
-		const error = {
-			account_id : obj.account.account_id,
-			user_id : obj.user.user_id,
-			message : e.message || e.sqlMessage,
-			url : obj.request.url,
-			description : JSON.stringify(e),
-			type : "server"
-		};
+		try {
+			const error = {
+				account_id: obj.account.account_id,
+				user_id: obj.user.user_id,
+				message: e.message || e.sqlMessage,
+				url: obj.request.url,
+				description: JSON.stringify(e),
+				type: "server"
+			};
 
-		await errorLogs.insert(error);
+			await errorLogs.insert(error);
+		}
+		catch(e) {
+			return e;
+		}
 
 	}
 
