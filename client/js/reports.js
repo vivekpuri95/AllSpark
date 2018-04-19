@@ -25,13 +25,32 @@ class Reports extends Page {
 
 	static async loadState(state) {
 
-		const what = state ? state.what : location.pathname.split('/').pop();
+		let what = state ? state.what : location.pathname.split('/').pop();
 
 		if(what == 'add')
 			return Report.add();
 
-		if(Reports.list.has(parseInt(what)))
-			return Reports.list.get(parseInt(what)).edit();
+		what = parseInt(what);
+
+		if(location.pathname.includes('/reports/') && Reports.list.has(what))
+			return Reports.list.get(what).edit();
+
+		if(location.pathname.includes('/visualization/') && what) {
+
+			let visualization = null;
+
+			for(const report of Reports.list.values()) {
+
+				if(report.visualizations.list.has(what))
+					visualization = report.visualizations.list.get(what);
+			}
+
+			if(visualization) {
+				visualization.visualizations.report.edit();
+				visualization.edit();
+				return;
+			}
+		}
 
 		await Sections.show('list');
 	}
@@ -777,9 +796,7 @@ class Report {
 		} catch(e) {
 			content.rowCount.textContent = null;
 			content.json.innerHTML = content.query.innerHTML = content.table.innerHTML = `
-				<code class="warning">
-					${e.message && e.message.sqlMessage ? e.message.sqlMessage : JSON.stringify(e.message, 0, 4)}
-				</code>
+				<code class="warning">${e.message && e.message.sqlMessage ? e.message.sqlMessage : JSON.stringify(e.message, 0, 4)}</code>
 			`;
 		}
 
@@ -1085,7 +1102,15 @@ class ReportVisualization {
 		ReportVisualization.form = ReportVisualizations.preview.querySelector('#visualization-form');
 		ReportVisualization.insert.form = ReportVisualizations.container.querySelector('#add-visualization');
 
-		ReportVisualizations.preview.querySelector('#visualization-back').on('click', () => Sections.show('form'));
+		ReportVisualizations.preview.querySelector('#visualization-back').on('click', () => {
+
+			if(history.state)
+				return history.back();
+
+			Sections.show('form');
+
+			history.pushState(null, '', `/reports/${Report.selected ? Report.selected.id : ''}`);
+		});
 
 		const type = ReportVisualization.insert.form.type;
 
@@ -1164,7 +1189,11 @@ class ReportVisualization {
 			<td class="action red"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		row.querySelector('.green').on('click', () => this.edit());
+		row.querySelector('.green').on('click', () => {
+			this.edit();
+			history.pushState(null, '', `/visualization/${this.id}`);
+		});
+
 		row.querySelector('.red').on('click', () => this.delete());
 
 		return row;
@@ -1260,8 +1289,15 @@ class ReportVisualization {
 class ReportVisualizationOptions {
 
 	constructor(visualization) {
-
 		this.visualization = visualization;
+	}
+
+	get form() {
+		return document.createElement('form');
+	}
+
+	get json() {
+		return {};
 	}
 }
 
@@ -1307,6 +1343,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			response.axes.push({
 				position: axis.querySelector('select[name=position]').value,
 				label: axis.querySelector('input[name=label]').value,
+				margin: axis.querySelector('input[name=margin]').value,
 				columns,
 			});
 		}
@@ -1334,6 +1371,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			<label>
 				<span>Label</span>
 				<input type="text" name="label" value="${axis.label || ''}">
+			</label>
+
+			<label>
+				<span>Margin</span>
+				<input type="number" step="1" name="margin" value="${axis.margin || ''}">
 			</label>
 
 			<label>

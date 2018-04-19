@@ -342,7 +342,7 @@ router.get('/dashboards/:id?', (req, res) => {
 	`));
 });
 
-router.get('/reports/:id?', (req, res) => {
+router.get('/:type(reports|visualization)/:id?', (req, res) => {
 
 	const template = new Template;
 
