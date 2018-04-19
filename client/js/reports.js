@@ -1486,9 +1486,6 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 	}
 });
 
-ReportVisualization.types.set('cohort', class BarOptions extends ReportVisualizationOptions {
-});
-
 
 const mysqlKeywords = [
 	'SELECT',
