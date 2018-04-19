@@ -249,7 +249,6 @@ router.get('/:type(dashboard|report)/:id?', (req, res) => {
 			<div class="toolbar form">
 
 				<label>
-					<span>&nbsp;</span>
 					<button id="back">
 						<i class="fa fa-arrow-left"></i>
 						Back
@@ -257,7 +256,6 @@ router.get('/:type(dashboard|report)/:id?', (req, res) => {
 				</label>
 
 				<label>
-					<span>&nbsp;</span>
 					<button id="edit-dashboard" class="hidden">
 						<i class="fa fa-edit"></i>
 						Edit
@@ -279,7 +277,6 @@ router.get('/dashboards/:id?', (req, res) => {
 	template.stylesheets.push('/css/dashboards.css');
 
 	template.scripts.push('/js/dashboards.js');
-	template.scripts.push('https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js');
 
 	res.send(template.body(`
 
@@ -345,7 +342,7 @@ router.get('/dashboards/:id?', (req, res) => {
 	`));
 });
 
-router.get('/reports/:id?', (req, res) => {
+router.get('/:type(reports|visualization)/:id?', (req, res) => {
 
 	const template = new Template;
 
@@ -416,7 +413,7 @@ router.get('/reports/:id?', (req, res) => {
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="report-form"><i class="fa fa-save"></i> Save</button>
 
-				<button id="test" class="right"><i class="fas fa-sync"></i> Save & Run</button>
+				<button id="test" class="right"><i class="fas fa-sync"></i> Run</button>
 				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>
 				<button id="view"><i class="fas fa-external-link-alt""></i> View</button>
 			</header>
@@ -434,9 +431,14 @@ router.get('/reports/:id?', (req, res) => {
 				</label>
 
 				<div id="query" class="hidden">
-					<span>Query</span>
+					<span>Query <span id="full-screen-editor"><i class="fas fa-expand"></i></span></span>
 					<div id="schema"></div>
 					<div id="editor"></div>
+
+					<div id="test-container">
+						<div id="test-executing" class="hidden notice"></div>
+					</div>
+
 					<div id="missing-filters" class="hidden"></div>
 				</div>
 
@@ -474,7 +476,6 @@ router.get('/reports/:id?', (req, res) => {
 				<label>
 					<span>Requested By</span>
 					<input type="text" name="requested_by">
-				</label>
 				</label>
 
 				<label>
@@ -516,24 +517,6 @@ router.get('/reports/:id?', (req, res) => {
 					<span>Format</span>
 					<textarea name="format"></textarea>
 				</label>
-
-				<div class="hidden" id="test-container">
-					<h3>Execution Response
-						<span id="row-count"></span>
-						<span id="json" class="tab">JSON</span>
-						<span id="table" class="tab">Table</span>
-						<span id="query" class="tab">Query</span>
-						<span title="Close" class="close">&times;</span>
-					</h3>
-
-					<div id="test-body">
-						<div id="json-content"></div>
-						<div id="table-content"></div>
-						<div id="query-content"></div>
-					</div>
-
-					<div id="test-executing" class="notice"></div>
-				</div>
 			</form>
 
 			<h3>Filters</h3>
@@ -601,7 +584,7 @@ router.get('/reports/:id?', (req, res) => {
 
 			<h3>Visualizations</h3>
 
-			<div id="visualizations-list" class="hidden">
+			<div id="visualizations-list">
 				<table>
 					<thead>
 						<tr>
@@ -633,32 +616,31 @@ router.get('/reports/:id?', (req, res) => {
 					</label>
 				</form>
 			</div>
+		</section>
 
-			<div id="visualization-preview" class="hidden">
+		<section class="section" id="visualization-preview">
 
-				<div class="toolbar">
-					<button id="visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="submit" form="visualization-form"><i class="fa fa-save"></i> Save</button>
-					<button type="button" id="visualization-refresh"><i class="fa fa-sync"></i> Refresh</button>
-				</div>
-
-				<form class="form" id="visualization-form">
-
-					<label>
-						<span>Name</span>
-						<input type="text" name="name" value="${this.name}" required>
-					</label>
-
-					<label>
-						<span>Type</span>
-						<select name="type" required></select>
-					</label>
-
-					<div class="options"></div>
-				</form>
-
-				<div class="preview"></div>
+			<div class="toolbar">
+				<button id="visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
+				<button type="submit" form="visualization-form"><i class="fa fa-save"></i> Save</button>
 			</div>
+
+			<form class="form" id="visualization-form">
+
+				<label>
+					<span>Name</span>
+					<input type="text" name="name" value="${this.name}" required>
+				</label>
+
+				<label>
+					<span>Type</span>
+					<select name="type" required></select>
+				</label>
+
+				<div class="options"></div>
+			</form>
+
+			<div class="preview"></div>
 		</section>
 	`));
 });
@@ -1028,6 +1010,7 @@ class Template {
 		this.scripts = [
 			'/js/main.js',
 			'https://use.fontawesome.com/releases/v5.0.8/js/all.js" async defer f="',
+			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
 		];
 	}
 

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "pm2 start ./bin/www --name allspark --watch; pm2 logs allspark;",
+    "restart": "pm2 restart allspark && pm2 logs allspark",
     "stop": "pm2 stop allspark"
   },
   "dependencies": {

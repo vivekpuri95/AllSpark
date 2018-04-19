@@ -25,13 +25,32 @@ class Reports extends Page {
 
 	static async loadState(state) {
 
-		const what = state ? state.what : location.pathname.split('/').pop();
+		let what = state ? state.what : location.pathname.split('/').pop();
 
 		if(what == 'add')
 			return Report.add();
 
-		if(Reports.list.has(parseInt(what)))
-			return Reports.list.get(parseInt(what)).edit();
+		what = parseInt(what);
+
+		if(location.pathname.includes('/reports/') && Reports.list.has(what))
+			return Reports.list.get(what).edit();
+
+		if(location.pathname.includes('/visualization/') && what) {
+
+			let visualization = null;
+
+			for(const report of Reports.list.values()) {
+
+				if(report.visualizations.list.has(what))
+					visualization = report.visualizations.list.get(what);
+			}
+
+			if(visualization) {
+				visualization.visualizations.report.edit();
+				visualization.edit();
+				return;
+			}
+		}
 
 		await Sections.show('list');
 	}
@@ -141,7 +160,7 @@ class Report {
 
 		Report.container = container;
 		Report.form = Report.container.querySelector('form');
-		Report.testContainer = Report.container.querySelector('#test-body');
+		Report.testContainer = Report.container.querySelector('#test-container');
 
 		window.onbeforeunload = () => Report.container.querySelector('.unsaved');
 
@@ -160,6 +179,14 @@ class Report {
 
 		Report.container.querySelector('.toolbar #force-test').on('click', () => Report.selected && Report.selected.test(true));
 
+		Report.form.querySelector('#full-screen-editor').on('click', () => {
+
+			if(document.webkitFullscreenElement)
+				document.webkitExitFullscreen();
+			else
+				Report.form.querySelector('#query').webkitRequestFullscreen();
+		});
+
 		for(const tab of Report.container.querySelectorAll('.tab')) {
 			tab.on('click', () => {
 				for(const _tab of Report.container.querySelectorAll('.tab')) {
@@ -170,10 +197,6 @@ class Report {
 		}
 
 		Report.schemas = new Map;
-
-		Report.container.querySelector('#test-container .close').on('click', function() {
-			this.parentElement.parentElement.classList.toggle('hidden');
-		});
 
 		for(const element of Report.form.elements) {
 			element.on('change', () => Report.form.elements[0].classList.add('unsaved'));
@@ -196,7 +219,12 @@ class Report {
 		// Initiate the editor. All this only needs to be done once on page load.
 		Report.editor = new Editor(Report.form.querySelector('#editor'));
 
-		Report.editor.editor.getSession().on('change', () => Report.selected && Report.selected.filterSuggestions());
+		Report.editor.editor.getSession().on('change', () => {
+
+			Report.selected && Report.selected.filterSuggestions();
+
+			Report.form.elements[0].classList.toggle('unsaved', Report.editor.value != Report.selected.query);
+		});
 
 		setTimeout(() => {
 
@@ -216,7 +244,6 @@ class Report {
 					if(!Report.selected)
 						return;
 
-					await Report.selected.update();
 					await Report.selected.test();
 				}
 			});
@@ -255,7 +282,6 @@ class Report {
 		ReportVisualization.insert.form.reset();
 		ReportVisualization.insert.form.classList.add('hidden');
 
-		Report.container.querySelector('#test-container').classList.add('hidden');
 		Report.container.querySelector('.toolbar #test').classList.add('hidden');
 		Report.container.querySelector('.toolbar #force-test').classList.add('hidden');
 
@@ -578,13 +604,13 @@ class Report {
 		return this.container;
 	}
 
-	edit() {
+	async edit() {
 
 		Report.selected = this;
 
 		const view = Report.container.querySelector('.toolbar #view');
 
-		Report.form.parentElement.querySelector('h1').innerHTML = `${this.name} - ${this.query_id}`;
+		Report.form.parentElement.querySelector('h1').innerHTML = `${this.name} <span class="NA">#${this.query_id}</span>`;
 
 		Report.form.removeEventListener('submit', Report.form.listener);
 
@@ -638,8 +664,7 @@ class Report {
 
 		Report.selected.filterSuggestions();
 
-		Report.container.querySelector('#test-container').classList.add('hidden');
-		Sections.show('form');
+		await Sections.show('form');
 	}
 
 	async update(e) {
@@ -685,99 +710,56 @@ class Report {
 		await Reports.load(true);
 	}
 
-	async test(is_redis) {
+	async test() {
 
-		const
-			parameters = {
-				query_id: this.id,
-				email: user.email,
-			},
-			options = {
-				method: 'POST',
-			};
+		await DataSource.load();
 
-		let
-			tab = 'json',
-			executing = Date.now();
+		let report = DataSource.list.get(this.id);
 
-		if(is_redis)
-			parameters.is_redis = 0;
+		if(!report)
+			return;
 
-		const content = {
-			rowCount: Report.container.querySelector('#row-count'),
-			json: Report.container.querySelector('#json-content'),
-			query: Report.container.querySelector('#query-content'),
-			table: Report.container.querySelector('#table-content'),
-			executing: Report.container.querySelector('#test-executing'),
-		};
+		report = new DataSource(report);
 
-		Report.testContainer.parentElement.classList.remove('hidden');
-		content.executing.classList.remove('hidden');
-		Report.testContainer.classList.add('hidden');
+		if(Report.editor.editor.getSelectedText()) {
+			report.query = Report.editor.editor.getSelectedText();
+			report.queryOverride = true;
+		}
+
+		this.forceRefresh = true;
+
+		const oldContainer = Report.testContainer.querySelector('.data-source');
+
+		if(oldContainer)
+			Report.testContainer.removeChild(oldContainer);
+
+		report.container.querySelector('header').classList.add('hidden');
+
+		const executing = Report.container.querySelector('#test-executing');
+
+		let executingTime = Date.now();
+
+		executing.classList.remove('hidden');
 
 		(function showTime() {
 
-			if(!executing)
+			if(!executingTime)
 				return;
 
-			content.executing.innerHTML = `Executing Query&hellip; ${Format.number((Date.now() - executing) / 1000)}s`
+			executing.innerHTML = `Executing Query&hellip; ${Format.number((Date.now() - executingTime) / 100)}s`
 
 			setTimeout(() => window.requestAnimationFrame(() => showTime()), 250);
 		})();
 
-		try {
+		await report.visualizations.selected.load();
 
-			const response = await API.call('reports/engine/report', parameters, options) || [];
+		[report.visualizations.selected] = report.visualizations.filter(v => v.type == 'table');
 
-			content.rowCount.innerHTML = `
-				<span>Execution Time: <strong>${Format.number(response.runtime / 1000)}s</strong></span>
-				<span>Cached: <strong>${response.cached.status ? 'Yes' : 'No'}</strong></span>
-				<span>Cache Age: <strong>${response.cached.status ? Format.number(response.cached.age / 1000 / 60 / 60) : '0'}h</strong></span>
-				<span>Rows: <strong>${Format.number(response ? response.data.length : 0)}</strong></span>
-				<span>Columns: <strong>${Format.number(response && response.data.length ? Object.keys(response.data[0]).length : 0)}</strong></span>
-			`;
+		Report.testContainer.appendChild(report.container);
 
-			content.json.innerHTML = `<code>${JSON.stringify(response.data, 0, 1)}</code>`;
+		executingTime = false;
 
-			content.query.innerHTML = `<code>${response.query || ''}</code>`;
-
-			if(response.data.length) {
-
-				const
-					headings = Object.keys(response.data[0]).map(key => `<th>${key}</th>`),
-					rows = response.data.map(row => '<tr>'+Object.keys(row).map(key => `<td>${row[key]}</td>`).join('')+'</tr>');
-
-				content.table.innerHTML = `
-					<table>
-						<thead>
-							<tr>${headings.join('')}</tr>
-						</thead>
-
-						<tbody>
-							${rows.join('')}
-						</tbody>
-					</table>
-				`;
-
-				if(!Object.values(response.data[0]).filter(value => (typeof value == 'object')).length)
-					tab = 'table';
-			}
-
-		} catch(e) {
-			content.rowCount.textContent = null;
-			content.json.innerHTML = content.query.innerHTML = content.table.innerHTML = `
-				<code class="warning">
-					${e.message && e.message.sqlMessage ? e.message.sqlMessage : JSON.stringify(e.message, 0, 4)}
-				</code>
-			`;
-		}
-
-		Report.container.querySelector(`#${tab}`).click();
-
-		executing = false;
-
-		content.executing.classList.add('hidden');
-		Report.testContainer.classList.remove('hidden');
+		executing.classList.add('hidden');
 	}
 
 	filterSuggestions() {
@@ -1047,10 +1029,10 @@ class ReportVisualizations {
 	constructor(report) {
 
 		this.report = report;
-		this.list = new Set;
+		this.list = new Map;
 
 		for(const visualization of this.report.visualizations || [])
-			this.list.add(new ReportVisualization(visualization, this));
+			this.list.set(visualization.visualization_id, new ReportVisualization(visualization, this));
 	}
 
 	render() {
@@ -1059,7 +1041,7 @@ class ReportVisualizations {
 
 		tbody.textContent = null;
 
-		for(const visualization of this.list)
+		for(const visualization of this.list.values())
 			tbody.appendChild(visualization.row);
 
 		if(!this.list.size)
@@ -1075,8 +1057,13 @@ class ReportVisualization {
 		ReportVisualization.insert.form = ReportVisualizations.container.querySelector('#add-visualization');
 
 		ReportVisualizations.preview.querySelector('#visualization-back').on('click', () => {
-			ReportVisualizations.preview.classList.add('hidden');
-			ReportVisualizations.container.classList.remove('hidden');
+
+			if(history.state)
+				return history.back();
+
+			Sections.show('form');
+
+			history.pushState(null, '', `/reports/${Report.selected ? Report.selected.id : ''}`);
 		});
 
 		const type = ReportVisualization.insert.form.type;
@@ -1156,7 +1143,11 @@ class ReportVisualization {
 			<td class="action red"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		row.querySelector('.green').on('click', () => this.edit());
+		row.querySelector('.green').on('click', () => {
+			this.edit();
+			history.pushState(null, '', `/visualization/${this.id}`);
+		});
+
 		row.querySelector('.red').on('click', () => this.delete());
 
 		return row;
@@ -1164,31 +1155,27 @@ class ReportVisualization {
 
 	async edit() {
 
-		ReportVisualizations.container.classList.add('hidden');
-		ReportVisualizations.preview.classList.remove('hidden');
+		const form = ReportVisualization.form;
 
-		ReportVisualization.form.name.value = this.name;
-		ReportVisualization.form.type.value = this.type;
+		form.name.value = this.name;
+		form.type.value = this.type;
 
-		ReportVisualization.form.removeEventListener('submit', ReportVisualization.submitListener);
-		ReportVisualization.form.on('submit', ReportVisualization.submitListener = e => this.update(e));
-
-		const refresh = ReportVisualizations.preview.querySelector('#visualization-refresh');
-
-		refresh.removeEventListener('click', ReportVisualization.refreshListener);
-		refresh.on('click', ReportVisualization.refreshListener = () => this.loadPreview());
+		form.removeEventListener('submit', ReportVisualization.submitListener);
+		form.on('submit', ReportVisualization.submitListener = e => this.update(e));
 
 		try {
 			await this.loadPreview();
 		} catch(e) {}
 
-		const options = ReportVisualization.form.querySelector('.options');
+		const options = form.querySelector('.options');
 
 		options.textContent = null;
 		options.appendChild(this.optionsForm.form);
 	}
 
 	async loadPreview() {
+
+		Sections.show('visualization-preview');
 
 		await DataSource.load(true);
 
@@ -1225,9 +1212,11 @@ class ReportVisualization {
 
 		await Reports.load(true);
 
-		Reports.list.get(this.visualizations.report.id).edit();
+		const report = Reports.list.get(this.visualizations.report.id);
 
-		this.loadPreview();
+		report.edit();
+
+		await report.visualizations.list.get(this.visualization_id).edit();
 	}
 
 	async delete() {
@@ -1254,17 +1243,21 @@ class ReportVisualization {
 class ReportVisualizationOptions {
 
 	constructor(visualization) {
-
 		this.visualization = visualization;
+	}
+
+	get form() {
+		return document.createElement('form');
+	}
+
+	get json() {
+		return {};
 	}
 }
 
 class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	get form() {
-
-		if(this.formContainer)
-			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('div');
 
@@ -1278,7 +1271,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const axes = container.querySelector('.axes');
 
-		for(const axis of this.visualization.options.axes || [])
+		for(const axis of this.visualization.options ? this.visualization.options.axes : [])
 			axes.appendChild(this.axis(axis));
 
 		container.querySelector('.add-axis').on('click', () => {
@@ -1294,7 +1287,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			axes: []
 		};
 
-		for(const axis of this.form.querySelectorAll('.axis')) {
+		for(const axis of this.formContainer.querySelectorAll('.axis')) {
 
 			const columns = [];
 
@@ -1304,6 +1297,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			response.axes.push({
 				position: axis.querySelector('select[name=position]').value,
 				label: axis.querySelector('input[name=label]').value,
+				margin: axis.querySelector('input[name=margin]').value,
 				columns,
 			});
 		}
@@ -1331,6 +1325,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			<label>
 				<span>Label</span>
 				<input type="text" name="label" value="${axis.label || ''}">
+			</label>
+
+			<label>
+				<span>Margin</span>
+				<input type="number" step="1" name="margin" value="${axis.margin || ''}">
 			</label>
 
 			<label>
@@ -1370,6 +1369,9 @@ ReportVisualization.types.set('table', class BarOptions extends ReportVisualizat
 ReportVisualization.types.set('line', class BarOptions extends ReportVisualizationLinearOptions {
 });
 
+ReportVisualization.types.set('scatter', class BarOptions extends ReportVisualizationLinearOptions {
+});
+
 ReportVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {
 });
 
@@ -1383,6 +1385,75 @@ ReportVisualization.types.set('pie', class BarOptions extends ReportVisualizatio
 });
 
 ReportVisualization.types.set('funnel', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('spatialmap', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('cohort', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('form');
+
+		container.innerHTML = `
+			<label>
+				<span>Column</span>
+				<select id="timing"></select>
+			</label>
+
+			<label>
+				<span>Value</span>
+				<select id="value"></select>
+			</label>
+
+			<label>
+				<span>Show History</span>
+				<select id="history">
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Invert Values</span>
+				<select id="invertColor">
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</label>
+		`;
+
+		const columns = container.querySelector('select[id=timing]');
+		const values = container.querySelector('select[id=value]');
+
+		for(const [key, column] of this.report.columns) {
+			columns.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			values.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		return container;
+	}
+
+	get json() {
+		return {
+			timing: this.form.timing.value,
+			value: this.form.value.value,
+			history: this.form.history.value,
+			invertColor: this.form.invertColor.value
+		}
+	}
 });
 
 const mysqlKeywords = [

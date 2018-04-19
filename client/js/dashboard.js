@@ -84,13 +84,22 @@ Page.class = class Dashboards extends Page {
 
 			nav.classList.toggle('collapsed-nav');
 
+			const right = e.currentTarget.querySelector('.right')
+
 			e.currentTarget.querySelector('.left').classList.toggle('hidden');
-			e.currentTarget.querySelector('.right').classList.toggle('hidden');
+
+			right.classList.toggle('hidden');
+
 			e.currentTarget.querySelector('.name').classList.toggle('hidden');
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
 
 			for(const item of nav.querySelectorAll('.item')) {
+
+				if(!right.hidden) {
+					item.classList.remove('list-open');
+				}
+
 				if(!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
 					item.querySelector('.label .name').classList.toggle('hidden');
 				item.querySelector('.submenu') ? item.querySelector('.submenu').classList.toggle('collapsed-submenu-bar') : '';
@@ -277,6 +286,8 @@ class Dashboard {
 			return;
 		}
 
+		Sections.show('reports');
+
 		await this.datasets.load();
 
 		for(const _report of this.reports()) {
@@ -320,7 +331,7 @@ class Dashboard {
 			const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
 
 			edit.classList.remove('hidden');
-			edit.innerHTML = `<i class="fa fa-edit"></i>`;
+			edit.innerHTML = `<i class="fa fa-edit"></i> Edit`;
 
 			edit.removeEventListener('click', Dashboard.toolbar.editListener);
 
@@ -329,8 +340,6 @@ class Dashboard {
 			if(Dashboard.editing)
 				edit.click();
 		}
-
-		await Sections.show('reports');
 	}
 
 	edit() {
@@ -590,9 +599,19 @@ class Dashboard {
 			return reports;
 		}
 
-		const
-			container = this.container = document.createElement('div'),
-			icon = this.icon ? `<img src="${this.icon}" height="20" width="20">` : '';
+		const container = this.container = document.createElement('div');
+
+		let icon;
+
+		if(this.icon && this.icon.startsWith('http')) {
+			icon = `<img src="${this.icon}" height="20" width="20">`;
+		}
+
+		else if(this.icon && this.icon.startsWith('fa')){
+			icon = `<i class="${this.icon}"></i>`
+		}
+		else
+			icon = '';
 
 		container.classList.add('item');
 
@@ -611,6 +630,23 @@ class Dashboard {
 		const submenu = container.querySelector('.submenu');
 
 		container.querySelector('.label').on('click', () => {
+
+			if(container.querySelector('.collapsed-submenu-bar')) {
+
+				for(const item of container.parentElement.querySelectorAll('.item')) {
+
+					item.classList.remove('list-open');
+					if(item == container) {
+						container.classList.add('list-open');
+						continue;
+					}
+
+					if(item.querySelector('.submenu')) {
+						item.querySelector('.angle').classList.add('down');
+						item.querySelector('.submenu').classList.add('hidden');
+					}
+				}
+			}
 
 			if(this.children.size) {
 				container.querySelector('.angle').classList.toggle('down');
@@ -711,6 +747,8 @@ class DashboardDatasets extends Map {
 		if(!this.size)
 			return;
 
+		let counter = 1;
+
 		for(const dataset of this.values()) {
 
 			const
@@ -721,7 +759,7 @@ class DashboardDatasets extends Map {
 
 			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
 
-			if(!['Program','Region','Market','Bid Zone'].includes(dataset.name))
+			if(counter++ > 4)
 				label.classList.add('hidden');
 
 			label.appendChild(dataset.container);
@@ -734,19 +772,42 @@ class DashboardDatasets extends Map {
 				<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
 				<button class="more icon" title="More Filters"><i class="fas fa-filter"></i></button>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
-				<button class="reset icon" title="Check All Filters"><i class="far fa-check-square"></i></button>
-				<button class="clear icon" title="Clear All Filters"><i class="far fa-square"></i></button>
+				<button class="reset-toggle clear icon" title="Clear All Filters"><i class="far fa-check-square"></i></button>
 			</div>
 		`);
 
 		container.querySelector('button.apply').on('click', () => this.apply());
 		container.querySelector('button.reload').on('click', () => this.apply());
-		container.querySelector('button.reset').on('click', () => this.all());
-		container.querySelector('button.clear').on('click', () => this.clear());
+
+		const resetToggle = container.querySelector('button.reset-toggle');
+
+		resetToggle.on('click', () => {
+
+			if(resetToggle.classList.contains('check')) {
+
+				this.all();
+
+				resetToggle.classList.remove('check');
+				resetToggle.classList.add('clear');
+
+				resetToggle.title = 'Clear All Filters';
+				resetToggle.innerHTML = `<i class="far fa-check-square"></i>`;
+			} else {
+
+				this.clear();
+
+				resetToggle.classList.add('check');
+				resetToggle.classList.remove('clear');
+
+				resetToggle.title = 'Check All Filters';
+				resetToggle.innerHTML = `<i class="far fa-square"></i>`;
+			}
+		});
 
 		container.querySelector('button.more').on('click', () => {
 
 			container.querySelector('button.more').classList.add('hidden');
+
 			for(const dataset of container.querySelectorAll('label.hidden'))
 				dataset.classList.remove('hidden');
 		});

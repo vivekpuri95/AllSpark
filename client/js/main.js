@@ -289,6 +289,38 @@ class MetaData {
 	}
 }
 
+class ErrorLogs {
+
+	static async send(message, path, line, column, stack) {
+
+		if(ErrorLogs.sending)
+			return;
+
+		ErrorLogs.sending = true;
+
+		const
+			options = {
+			method: 'POST'
+		},
+			params = {
+				message : message,
+				description : stack && stack.stack,
+				url : path,
+				type : 'client',
+			};
+
+		try {
+			await API.call('errors/log',params, options);
+		}
+		catch (e) {
+			console.log('Failed to log error', e);
+			return;
+		}
+
+		ErrorLogs.sending = false;
+	}
+}
+
 class AJAX {
 
 	static async call(url, parameters, options = {}) {
@@ -628,6 +660,12 @@ class DataSource {
 		parameters.set('query_id', this.query_id);
 		parameters.set('email', user.email);
 
+		if(this.queryOverride)
+			parameters.set('query', this.query);
+
+		if(this.forceRefresh)
+			parameters.set('cached', '0');
+
 		for(const filter of this.filters.values()) {
 
 			if(filter.dataset && filter.dataset.query_id) {
@@ -663,10 +701,9 @@ class DataSource {
 
 		this.originalResponse = response;
 
-		this.container.querySelector('.share-link input').value = this.link;
 		this.container.querySelector('.query').innerHTML = response.query;
 
-		let age = response.cached ? response.cached.age : 0;
+		let age = response.cached ? Math.floor(response.cached.age * 100) / 100 : 0;
 
 		if(age < 1000)
 			age += 'ms';
@@ -677,7 +714,7 @@ class DataSource {
 		else if(age < 1000 * 60 * 60)
 			age = (age / (1000 * 60)) + 'h';
 
-		let runtime = response.runtime;
+		let runtime = Math.floor(response.runtime * 100) / 100;
 
 		if(runtime < 1000)
 			runtime += 'ms';
@@ -688,8 +725,8 @@ class DataSource {
 		else if(runtime < 1000 * 60 * 60)
 			runtime = (runtime / (1000 * 60)) + 'h';
 
-		this.container.querySelector('.description .cached').textContent = response.cached.status ? Math.floor(age * 100) / 100 : 'No';
-		this.container.querySelector('.description .runtime').textContent = Math.floor(runtime * 100) / 100;
+		this.container.querySelector('.description .cached').textContent = response.cached && response.cached.status ? age : 'No';
+		this.container.querySelector('.description .runtime').textContent = runtime;
 
 		this.columns.update();
 		this.postProcessors.update();
@@ -711,16 +748,17 @@ class DataSource {
 		container.innerHTML = `
 
 			<header>
-				<h2 title="${this.name}">${this.name}</h2>
-				<span class="right menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></span>
+				<h2 title="${this.name}">${this.name} <span>#${this.query_id}</span></h2>
+				<div class="actions right">
+					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
+					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
+				</div>
 			</header>
 
 			<div class="toolbar menu hidden">
 				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
 				<button class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
-				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i> Share</button>
 				<button class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
-				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i> Edit</button>
 				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
 				<button class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
 			</div>
@@ -735,85 +773,95 @@ class DataSource {
 				<div class="body">${this.description}</div>
 				<div class="footer">
 					<span>
-						<span class="NA">Role:</span>
-						<span>${this.roles || ''}</span>
+						<span class="label">Role:</span>
+						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : 'Invalid'}</span>
 					</span>
 					<span>
-						<span class="NA">Added On:</span>
+						<span class="label">Added On:</span>
 						<span>${Format.date(this.created_at)}</span>
 					</span>
 					<span>
-						<span class="NA">Cached:</span>
+						<span class="label">Cached:</span>
 						<span class="cached"></span>
 					</span>
 					<span>
-						<span class="NA">Runtime:</span>
+						<span class="label">Runtime:</span>
 						<span class="runtime"></span>
 					</span>
 					<span class="right">
-						<span class="NA">Added By:</span>
-						<span>${this.added_by_name || ''}</span>
+						<span class="label">Added By:</span>
+						<span>${this.added_by_name || 'NA'}</span>
 					</span>
 					<span>
-						<span class="NA">Requested By:</span>
-						<span>${this.requested_by || ''}</span>
+						<span class="label">Requested By:</span>
+						<span>${this.requested_by || 'NA'}</span>
 					</span>
 				</div>
-			</div>
-
-			<div class="share-link hidden">
-				<input type="url" value="${this.link}" readonly>
 			</div>
 		`;
 
 		this.filters.form = container.querySelector('.filters');
 
-		container.querySelector('.menu-toggle').on('click', () => {
+		container.querySelector('header .menu-toggle').on('click', () => {
+
 			container.querySelector('.menu').classList.toggle('hidden');
-			container.querySelector('.menu-toggle').classList.toggle('selected');
+			container.querySelector('header .menu-toggle').classList.toggle('selected');
+
 			this.visualizations.selected.render(true);
 		});
 
+		container.querySelector('header .reload').on('click', () => {
+			this.visualizations.selected.load(true);
+		});
+
 		container.querySelector('.menu .filters-toggle').on('click', () => {
+
 			container.querySelector('.filters').classList.toggle('hidden');
 			container.querySelector('.filters-toggle').classList.toggle('selected');
+
 			this.visualizations.selected.render(true);
 		});
 
 		container.querySelector('.menu .description-toggle').on('click', () => {
+
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
+
 			this.visualizations.selected.render(true);
 		});
 
-		container.querySelector('.menu .share-link-toggle').on('click', () => {
-			container.querySelector('.share-link').classList.toggle('hidden');
-			container.querySelector('.share-link-toggle').classList.toggle('selected');
-			container.querySelector('.share-link input').select();
+		container.querySelector('.menu .query-toggle').on('click', () => {
+
+			container.querySelector('.query').classList.toggle('hidden');
+			container.querySelector('.query-toggle').classList.toggle('selected');
+
 			this.visualizations.selected.render(true);
 		});
 
 		container.querySelector('.menu .download').on('click', () => this.download());
 
-		const
-			edit = container.querySelector('.menu .edit'),
-			query = container.querySelector('.menu .query-toggle');
+		if(user.privileges.has('report')) {
 
-		if(!user.privileges.has('report')) {
-			edit.classList.add('hidden');
-			query.classList.add('hidden');
+			const
+				configure = document.createElement('a'),
+				actions = container.querySelector('header .actions');
+
+			configure.title = 'Configure Visualization';
+			configure.classList.add('configure-visualization');
+			configure.innerHTML = '<i class="fas fa-cog"></i>';
+
+			actions.insertBefore(configure, actions.querySelector('.menu-toggle'));
+
+			const edit = document.createElement('a');
+
+			edit.title = 'Edit Report';
+			edit.href = `/reports/${this.query_id}`;
+			edit.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+
+			actions.insertBefore(edit, actions.querySelector('.menu-toggle'));
 		}
 
-		else {
-
-			edit.on('click', () => window.open(`/reports/${this.query_id}`,'_blank'));
-
-			query.on('click', () => {
-				container.querySelector('.query').classList.toggle('hidden');
-				query.classList.toggle('selected');
-				this.visualizations.selected.render(true);
-			});
-		}
+		else container.querySelector('.menu .query-toggle').classList.add('hidden');
 
 		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
 
@@ -1522,6 +1570,7 @@ class DataSourceColumn {
 				<select name="type" value="${parameter.type || ''}">
 					<option value="column">Column</option>
 					<option value="filter">Filter</option>
+					<option value="static">Custom</option>
 				</select>
 			</label>
 
@@ -1540,8 +1589,7 @@ class DataSourceColumn {
 
 		container.classList.add('parameter');
 
-		const
-			parameterList = this.form.querySelector('.parameter-list');
+		const parameterList = this.form.querySelector('.parameter-list');
 
 		parameterList.appendChild(container);
 
@@ -2395,6 +2443,16 @@ class Visualization {
 
 		this.source.container.appendChild(this.container);
 
+		const configure = this.source.container.querySelector('.configure-visualization');
+
+		if(configure) {
+
+			if(this.visualization_id)
+				configure.href = `/visualization/${this.visualization_id}`;
+
+			configure.classList.toggle('hidden', !this.visualization_id);
+		}
+
 		this.source.resetError();
 	}
 }
@@ -2687,7 +2745,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	async load(e) {
 
-		if(e)
+		if(e && e.preventDefault)
 			e.preventDefault();
 
 		super.render();
@@ -3023,6 +3081,159 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		path.on('mouseout', function (d) {
 			d3.select(this).classed('line-hover', false);
 		});
+	}
+});
+
+Visualization.list.set('scatter', class Line extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'scatter');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e, resize) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render(resize);
+	}
+
+	render(resize) {
+
+		this.draw();
+
+		this.plot(resize);
+	}
+
+	plot(resize) {
+
+		super.plot(resize);
+
+		if(!this.rows.length)
+			return;
+
+		const
+			container = d3.selectAll(`#visualization-${this.id}`),
+			that = this;
+
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
+
+		const
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
+
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
+
+		let
+			max = null,
+			min = null;
+
+		for(const row of this.rows) {
+
+			for(const [name, value] of row) {
+
+				if(name == this.axes.bottom.column)
+					continue;
+
+				if(max == null)
+					max = Math.floor(value);
+
+				if(min == null)
+					min = Math.floor(value);
+
+				max = Math.max(max, Math.floor(value) || 0);
+				min = Math.min(min, Math.floor(value) || 0);
+			}
+		}
+
+		this.y.domain([min, max]);
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.rangePoints([0, this.width], 0.1, 0);
+
+		const
+			tickNumber = this.width < 400 ? 3 : 5,
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
+
+		xAxis.tickValues(ticks);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(xAxis);
+
+		//graph type line and
+		const
+			line = d3.svg
+				.line()
+				.x(d => this.x(d.x)  + this.axes.left.width)
+				.y(d => this.y(d.y));
+
+		// For each line appending the circle at each point
+		for(const column of this.columns) {
+
+			this.svg.selectAll('dot')
+				.data(column)
+				.enter()
+				.append('circle')
+				.attr('class', 'clips')
+				.attr('id', (_, i) => i)
+				.attr('r', 3)
+				.style('fill', column.color)
+				.attr('cx', d => this.x(d.x) + this.axes.left.width)
+				.attr('cy', d => this.y(d.y))
+		}
+
+		container
+		.on('mousemove.line', function() {
+
+			container.selectAll('svg > g > circle[class="clips"]').attr('r', 3);
+
+			const
+				mouse = d3.mouse(this),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
+				row = that.rows[xpos];
+
+			if(!row || that.zoomRectangle)
+				return;
+
+			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+		})
+
+		.on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 3));
 	}
 });
 
@@ -4223,6 +4434,161 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 	}
 });
 
+Visualization.list.set('livenumber', class LiveNumber extends Visualization {
+
+	get container() {
+
+		if (this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('section');
+
+		container.classList.add('visualization', 'livenumber');
+
+		container.innerHTML = `
+			<div class="container"></div>
+		`;
+
+		return container;
+	}
+	async load(e) {
+
+		if (e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+		this.container.querySelector('.container').innerHTML = `
+			<div class="loading">
+				<i class="fa fa-spinner fa-spin"></i>
+			</div>
+		`;
+
+		await this.source.fetch();
+
+		this.process();
+
+		this.render();
+	}
+
+	process() {
+		const response = this.source.response;
+		this.options.invertColor = parseInt(this.options.invertColor);
+		this.today = {value: 0};
+		this.yesterday = {value: 0};
+		this.weekago = {value: 0};
+
+		if(!response[0].has(this.options.timing) || !response[0].has(this.options.value))
+			return this.source.error('Response do not have same columns as in config');
+
+		try {
+			for (let row of response) {
+				const responseDate = (new Date(row.get(this.options.timing).substring(0, 10))).toDateString();
+				const todayDate = new Date();
+
+				if (responseDate == (new Date()).toDateString()) {
+					this.today.value = row.get(this.options.value);
+				}
+				else if (responseDate == new Date(Date.now() - 1 * 86400000).toDateString()) {
+					this.yesterday.value = row.get(this.options.value);
+				}
+				else if (responseDate == new Date(Date.now() - 7 * 86400000).toDateString()) {
+					this.weekago.value = row.get(this.options.value);
+				}
+			}
+		}
+		catch(e) {
+			return this.source.error('Unable to parse response');
+		}
+
+		this.yesterday.percentage = this.yesterday.value ? Math.round(((this.today.value - this.yesterday.value) / Math.abs(this.yesterday.value)) * 100) : 0;
+		this.weekago.percentage = this.weekago.value ? Math.round(((this.today.value - this.weekago.value) / this.weekago.value) * 100) : 0;
+	}
+
+	render() {
+		this.container.querySelector('.container').innerHTML = `
+			<div class="livenumber box">
+				<div class="today">
+					${this.today.value}
+				</div>
+				<div class="submenu ${parseInt(this.options.history) ? '' : 'hidden'}">
+					<div class="yesterday">
+						<div class="blur">DOD</div>
+						<h4 style="color:${this.getColor(this.yesterday.percentage)};">
+							${this.yesterday.percentage}%
+						</h4>
+						${this.yesterday.value}
+					</div>
+					<div class="weekago">
+						<div class="blur">WoW</div>
+						<h4 style="color:${this.getColor(this.weekago.percentage)};">
+							${this.weekago.percentage}%
+						</h4>
+					${this.weekago.value}
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	getColor(percentage) {
+
+		if (percentage > 0)
+			if (this.options.invertColor)
+				return 'red';
+			else
+				return 'green';
+		else
+			if (this.options.invertColor)
+				return 'green';
+			else
+				return 'red';
+	}
+});
+
+Visualization.list.set('json', class JsonEditor extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'line');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if (e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render(resize);
+	}
+
+	render(resize) {
+
+		this.editor = new Editor(this.container);
+
+		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
+
+		this.editor.editor.getSession().setMode('ace/mode/json');
+	}
+});
+
 class Tooltip {
 
 	static show(div, position, content) {
@@ -4368,14 +4734,20 @@ class Dataset {
 
 		for(const row of values) {
 
-			const label = document.createElement('label');
+			const
+				label = document.createElement('label'),
+				input = document.createElement('input'),
+				text = document.createTextNode(row.name);
 
-			label.innerHTML = `
-				<input name="${this.filter.placeholder}" value="${row.value}" type="${this.filter.multiple ? 'checkbox' : 'radio'}" checked>
-				${row.name}
-			`;
+			input.name = this.filter.placeholder;
+			input.value = row.value;
+			input.type = this.filter.multiple ? 'checkbox' : 'radio';
+			input.checked = true;
 
-			label.title = row.value;
+			label.appendChild(input);
+			label.appendChild(text);
+
+			label.setAttribute('title', row.value);
 
 			label.querySelector('input').on('change', () => this.update());
 
@@ -4505,3 +4877,5 @@ Node.prototype.on = window.on = function(name, fn) {
 MetaData.timeout = 5 * 60 * 1000;
 Dataset.timeout = 5 * 60 * 1000;
 Visualization.animationDuration = 750;
+
+window.onerror = ErrorLogs.send;

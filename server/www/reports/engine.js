@@ -118,7 +118,7 @@ class report extends API {
 
 		this.reportId = this.request.body.query_id || queryId;
 		this.reportObjStartTime = Date.now();
-		const forcedRun = this.request.body.cached;
+		const forcedRun = parseInt(this.request.body.cached) === 0;
 
 
 		await this.load(reportObj, filterList);
@@ -233,11 +233,16 @@ class MySQL {
 				indices: (commonFun.getIndicesOf(`{{${filter.placeholder}}}`, this.reportObj.query)),
 				value: filter.value,
 			};
+		}
+
+		for(const filter of this.filters) {
 
 			this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "?");
+
 		}
 
 		this.filterList = this.makeQueryParameters();
+
 	}
 
 	makeQueryParameters() {
