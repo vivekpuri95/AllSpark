@@ -470,6 +470,21 @@ body {
 				color: var(--color-accent-text);
 				border-color: var(--color-accent);
 			}
+			main .data-source .download-btn {
+				position: relative;
+				display: flex;
+				flex-direction: column;
+			}
+			main .data-source .download-dropdown-content {
+				position: absolute;
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+				top: 25px;
+			}
+			main .data-source .download-dropdown-content > button {
+				border-bottom: 0;
+			}
 		main .data-source > .description {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);

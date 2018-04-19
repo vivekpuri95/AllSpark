@@ -758,9 +758,18 @@ class DataSource {
 			<div class="toolbar menu hidden">
 				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
 				<button class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
-				<button class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
+				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i> Share</button>
+				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i> Edit</button>
 				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
 				<button class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
+
+				<div class="download-btn" title="Download CSV">
+					<button class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
+					<div class="download-dropdown-content hidden">
+						<button class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
+						<button class="json-download"><i class="fas fa-code"></i> JSON</button>
+					</div>
+				</div>
 			</div>
 
 			<form class="filters form toolbar hidden"></form>
@@ -836,6 +845,10 @@ class DataSource {
 			container.querySelector('.query-toggle').classList.toggle('selected');
 
 			this.visualizations.selected.render(true);
+		});
+
+		container.querySelector('.menu .download-btn > button').on('click', (e) => {
+			container.querySelector('.menu .download-btn .download-dropdown-content').classList.toggle('hidden');
 		});
 
 		container.querySelector('.menu .download').on('click', () => this.download());

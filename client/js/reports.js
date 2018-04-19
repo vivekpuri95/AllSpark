@@ -1393,6 +1393,9 @@ ReportVisualization.types.set('spatialmap', class BarOptions extends ReportVisua
 ReportVisualization.types.set('cohort', class BarOptions extends ReportVisualizationOptions {
 });
 
+ReportVisualization.types.set('json', class BarOptions extends ReportVisualizationOptions {
+});
+
 ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisualizationOptions {
 
 	get form() {
