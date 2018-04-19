@@ -10,7 +10,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 	new (Page.class)();
 });
 
-
 class Page {
 
 	static async setup() {
@@ -838,8 +837,16 @@ class DataSource {
 		if(user.privileges.has('report')) {
 
 			const
-				edit = document.createElement('a'),
+				configure = document.createElement('a'),
 				actions = container.querySelector('header .actions');
+
+			configure.title = 'Configure Visualization';
+			configure.classList.add('configure-visualization');
+			configure.innerHTML = '<i class="fas fa-cog"></i>';
+
+			actions.insertBefore(configure, actions.querySelector('.menu-toggle'));
+
+			const edit = document.createElement('a');
 
 			edit.title = 'Edit Report';
 			edit.href = `/reports/${this.query_id}`;
@@ -2412,6 +2419,7 @@ class Visualization {
 		try {
 			this.options = JSON.parse(this.options);
 		} catch(e) {}
+
 		for(const key in this.options)
 			this[key] = this.options[key];
 	}
@@ -2428,6 +2436,16 @@ class Visualization {
 		this.source.visualizations.selected = this;
 
 		this.source.container.appendChild(this.container);
+
+		const configure = this.source.container.querySelector('.configure-visualization');
+
+		if(configure) {
+
+			if(this.visualization_id)
+				configure.href = `/visualization/${this.visualization_id}`;
+
+			configure.classList.toggle('hidden', !this.visualization_id);
+		}
 
 		this.source.resetError();
 	}

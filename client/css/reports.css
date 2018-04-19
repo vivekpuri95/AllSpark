@@ -315,9 +315,12 @@ main #form #report-form {
 				min-height: 500px;
 				position: sticky;
 				top: 50px;
+				display: flex;
+				width: calc(100vw - 250px - 45px);
 			}
 				main .preview .data-source {
 					height: 500px;
+					width: 100%;
 				}
 
 		main #visualization-form .options label {
