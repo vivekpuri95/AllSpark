@@ -186,37 +186,16 @@ main #form #report-form {
 	main #form #test-container {
 		grid-column: 1 / 3;
 	}
-	main #form form > #test-container {
-		height
-	}
-		main #form #test-container #test-body {
+		main #form #test-container .data-source {
 			background: #fff;
-			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-			max-height: 350px;
 			overflow: auto;
 			user-select: text;
 		}
-			main #form #test-container #test-body code {
-				padding: 10px;
-				display: block;
-				white-space: pre-wrap;
-			}
-				main #form #test-container #test-body code.warning {
-					margin: 0;
-					border: 0;
-				}
-			main #form #test-container #test-body table {
-				margin: 0;
-			}
-		#test-container h3 {
-			position: relative;
-			margin: calc(var(--gap) * 2) 0 !important;
-		}
-			#test-container .close {
-				cursor: pointer;
+			main #form #test-container .data-source .visualization .container {
+				max-height: 400px;
 			}
 
-	main #form h3 {
+	main #form > h3 {
 		border-bottom: 1px dashed #999;
 		margin: var(--gap) 0 0 0;
 	}

@@ -160,7 +160,7 @@ class Report {
 
 		Report.container = container;
 		Report.form = Report.container.querySelector('form');
-		Report.testContainer = Report.container.querySelector('#test-body');
+		Report.testContainer = Report.container.querySelector('#test-container');
 
 		window.onbeforeunload = () => Report.container.querySelector('.unsaved');
 
@@ -197,10 +197,6 @@ class Report {
 		}
 
 		Report.schemas = new Map;
-
-		Report.container.querySelector('#test-container .close').on('click', function() {
-			this.parentElement.parentElement.classList.toggle('hidden');
-		});
 
 		for(const element of Report.form.elements) {
 			element.on('change', () => Report.form.elements[0].classList.add('unsaved'));
@@ -281,7 +277,6 @@ class Report {
 		ReportVisualization.insert.form.reset();
 		ReportVisualization.insert.form.classList.add('hidden');
 
-		Report.container.querySelector('#test-container').classList.add('hidden');
 		Report.container.querySelector('.toolbar #test').classList.add('hidden');
 		Report.container.querySelector('.toolbar #force-test').classList.add('hidden');
 
@@ -664,8 +659,6 @@ class Report {
 
 		Report.selected.filterSuggestions();
 
-		Report.container.querySelector('#test-container').classList.add('hidden');
-
 		await Sections.show('form');
 	}
 
@@ -714,98 +707,50 @@ class Report {
 
 	async test(is_redis) {
 
-		const
-			parameters = {
-				query_id: this.id,
-				email: user.email,
-			},
-			options = {
-				method: 'POST',
-			};
+		await DataSource.load();
+
+		let report = DataSource.list.get(this.id);
+
+		if(!report)
+			return;
 
 		if(Report.editor.editor.getSelectedText())
-			parameters.query = Report.editor.editor.getSelectedText();
+			report.query = Report.editor.editor.getSelectedText();
 
-		let
-			tab = 'json',
-			executing = Date.now();
+		report = new DataSource(report);
 
-		if(is_redis)
-			parameters.is_redis = 0;
+		const oldContainer = Report.testContainer.querySelector('.data-source');
 
-		const content = {
-			rowCount: Report.container.querySelector('#row-count'),
-			json: Report.container.querySelector('#json-content'),
-			query: Report.container.querySelector('#query-content'),
-			table: Report.container.querySelector('#table-content'),
-			executing: Report.container.querySelector('#test-executing'),
-		};
+		if(oldContainer)
+			Report.testContainer.removeChild(oldContainer);
 
-		Report.testContainer.parentElement.classList.remove('hidden');
-		content.executing.classList.remove('hidden');
-		Report.testContainer.classList.add('hidden');
+		report.container.querySelector('header').classList.add('hidden');
+
+		const executing = Report.container.querySelector('#test-executing');
+
+		executing.time = Date.now();
+
+		executing.classList.remove('hidden');
 
 		(function showTime() {
 
-			if(!executing)
+			if(!executing.time)
 				return;
 
-			content.executing.innerHTML = `Executing Query&hellip; ${Format.number((Date.now() - executing) / 1000)}s`
+			executing.innerHTML = `Executing Query&hellip; ${Format.number((Date.now() - executing.time) / 100)}s`
 
 			setTimeout(() => window.requestAnimationFrame(() => showTime()), 250);
 		})();
 
-		try {
+		await report.visualizations.selected.load();
 
-			const response = await API.call('reports/engine/report', parameters, options) || [];
+		[report.visualizations.selected] = report.visualizations.filter(v => v.type == 'table');
 
-			content.rowCount.innerHTML = `
-				<span>Execution Time: <strong>${Format.number(response.runtime / 1000)}s</strong></span>
-				<span>Cached: <strong>${response.cached.status ? 'Yes' : 'No'}</strong></span>
-				<span>Cache Age: <strong>${response.cached.status ? Format.number(response.cached.age / 1000 / 60 / 60) : '0'}h</strong></span>
-				<span>Rows: <strong>${Format.number(response ? response.data.length : 0)}</strong></span>
-				<span>Columns: <strong>${Format.number(response && response.data.length ? Object.keys(response.data[0]).length : 0)}</strong></span>
-			`;
+		Report.testContainer.appendChild(report.container);
 
-			content.json.innerHTML = `<code>${JSON.stringify(response.data, 0, 1)}</code>`;
+		executing.time = false;
 
-			content.query.innerHTML = `<code>${response.query || ''}</code>`;
-
-			if(response.data.length) {
-
-				const
-					headings = Object.keys(response.data[0]).map(key => `<th>${key}</th>`),
-					rows = response.data.map(row => '<tr>'+Object.keys(row).map(key => `<td>${row[key]}</td>`).join('')+'</tr>');
-
-				content.table.innerHTML = `
-					<table>
-						<thead>
-							<tr>${headings.join('')}</tr>
-						</thead>
-
-						<tbody>
-							${rows.join('')}
-						</tbody>
-					</table>
-				`;
-
-				if(!Object.values(response.data[0]).filter(value => (typeof value == 'object')).length)
-					tab = 'table';
-			}
-
-		} catch(e) {
-			content.rowCount.textContent = null;
-			content.json.innerHTML = content.query.innerHTML = content.table.innerHTML = `
-				<code class="warning">${e.message && e.message.sqlMessage ? e.message.sqlMessage : JSON.stringify(e.message, 0, 4)}</code>
-			`;
-		}
-
-		Report.container.querySelector(`#${tab}`).click();
-
-		executing = false;
-
-		content.executing.classList.add('hidden');
-		Report.testContainer.classList.remove('hidden');
+		executing.classList.add('hidden');
 	}
 
 	filterSuggestions() {

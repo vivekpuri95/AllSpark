@@ -2739,7 +2739,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	async load(e) {
 
-		if(e)
+		if(e && e.preventDefault)
 			e.preventDefault();
 
 		super.render();

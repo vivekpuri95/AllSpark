@@ -435,22 +435,8 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 					<div id="schema"></div>
 					<div id="editor"></div>
 
-					<div class="hidden" id="test-container">
-						<h3>
-							<span id="row-count"></span>
-							<span id="json" class="tab">JSON</span>
-							<span id="table" class="tab">Table</span>
-							<span id="query" class="tab">Query</span>
-							<span title="Close" class="close">&times;</span>
-						</h3>
-
-						<div id="test-body">
-							<div id="json-content"></div>
-							<div id="table-content"></div>
-							<div id="query-content"></div>
-						</div>
-
-						<div id="test-executing" class="notice"></div>
+					<div id="test-container">
+						<div id="test-executing" class="hidden notice"></div>
 					</div>
 
 					<div id="missing-filters" class="hidden"></div>
