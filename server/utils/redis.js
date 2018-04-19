@@ -68,10 +68,6 @@ class Redis {
 
 }
 
-console.log('Connected to redis');
-(async () => {
-	console.log(await Redis.keys("*"))
-})();
 
 exports.redis = redis_client;
 exports.Redis = Redis;
