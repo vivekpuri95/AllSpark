@@ -5,8 +5,10 @@ exports.list = class extends API {
 	async list() {
 
 		const rows = await this.mysql.query(
-			'SELECT * FROM tb_dashboards where status = 1 AND account_id = ?',
-			[this.account.account_id]
+			`SELECT * FROM tb_dashboards where status = 1 AND account_id = ? and type = "public" 
+			union 
+			SELECT * FROM tb_dashboards where status = 1 AND account_id = ? and type = "private" and added_by = ?`,
+			[this.account.account_id, this.account.account_id, this.user.user_id]
 		);
 
 		for(const row of rows) {
@@ -30,12 +32,14 @@ exports.insert = class extends API {
 
 		let
 			values = {},
-			columns = ['name', 'parent', 'icon', 'roles', 'format'];
+			columns = ['name', 'parent', 'icon', 'roles', 'format', 'type'];
 
 		for(const key in this.request.body) {
 			if(columns.includes(key))
 				values[key] = this.request.body[key] || null;
 		}
+
+		values.added_by = this.user.user_id;
 
 		// Make sure the format is valid JSON
 		try {
@@ -58,7 +62,7 @@ exports.update = class extends API {
 
 		const
 			values = {},
-			columns = ['name', 'parent', 'icon', 'roles', 'format'];
+			columns = ['name', 'parent', 'icon', 'roles', 'format', 'type'];
 
 		for(const key in this.request.body) {
 			if(columns.includes(key))
