@@ -83,9 +83,13 @@ Page.class = class Dashboards extends Page {
 		nav.querySelector('.collapse').on('click', (e) => {
 
 			nav.classList.toggle('collapsed-nav');
+
 			const right = e.currentTarget.querySelector('.right')
+
 			e.currentTarget.querySelector('.left').classList.toggle('hidden');
+
 			right.classList.toggle('hidden');
+
 			e.currentTarget.querySelector('.name').classList.toggle('hidden');
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
