@@ -590,9 +590,19 @@ class Dashboard {
 			return reports;
 		}
 
-		const
-			container = this.container = document.createElement('div'),
-			icon = this.icon ? `<img src="${this.icon}" height="20" width="20">` : '';
+		const container = this.container = document.createElement('div');
+
+		let icon;
+
+		if(this.icon && this.icon.startsWith('http')) {
+			icon = `<img src="${this.icon}" height="20" width="20">`;
+		}
+
+		else if(this.icon && this.icon.startsWith('fa')){
+			icon = `<i class="${this.icon}"></i>`
+		}
+		else
+			icon = '';
 
 		container.classList.add('item');
 
