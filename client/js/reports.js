@@ -174,7 +174,7 @@ class Report {
 				return;
 
 			await Report.selected.update();
-			await Report.selected.test();
+			await Report.selected.run();
 		});
 
 		Report.container.querySelector('.toolbar #force-test').on('click', () => Report.selected && Report.selected.test(true));
@@ -244,7 +244,7 @@ class Report {
 					if(!Report.selected)
 						return;
 
-					await Report.selected.test();
+					await Report.selected.run();
 				}
 			});
 		});
@@ -710,7 +710,7 @@ class Report {
 		await Reports.load(true);
 	}
 
-	async test() {
+	async run() {
 
 		await DataSource.load();
 
@@ -726,14 +726,8 @@ class Report {
 			report.queryOverride = true;
 		}
 
-		this.forceRefresh = true;
-
-		const oldContainer = Report.testContainer.querySelector('.data-source');
-
-		if(oldContainer)
-			Report.testContainer.removeChild(oldContainer);
-
 		report.container.querySelector('header').classList.add('hidden');
+		report.container.querySelector('.menu-toggle').click();
 
 		const executing = Report.container.querySelector('#test-executing');
 
@@ -746,14 +740,19 @@ class Report {
 			if(!executingTime)
 				return;
 
-			executing.innerHTML = `Executing Query&hellip; ${Format.number((Date.now() - executingTime) / 100)}s`
+			executing.innerHTML = `Executing Query&hellip; ${Format.number((Date.now() - executingTime) / 1000)}s`
 
-			setTimeout(() => window.requestAnimationFrame(() => showTime()), 250);
+			setTimeout(() => window.requestAnimationFrame(() => showTime()), 100);
 		})();
+
+		[report.visualizations.selected] = report.visualizations.filter(v => v.type == 'table');
 
 		await report.visualizations.selected.load();
 
-		[report.visualizations.selected] = report.visualizations.filter(v => v.type == 'table');
+		const oldContainer = Report.testContainer.querySelector('.data-source');
+
+		if(oldContainer)
+			Report.testContainer.removeChild(oldContainer);
 
 		Report.testContainer.appendChild(report.container);
 
@@ -916,12 +915,9 @@ class ReportFilter {
 
 			<label>
 				<span>Dataset</span>
-				<div>
-					<select name="dataset">
-						<option value="">None</option>
-					</select>
-					<a class="view-dashboard">View</a>
-				</div>
+				<select name="dataset">
+					<option value="">None</option>
+				</select>
 			</label>
 
 			<label>
@@ -951,16 +947,6 @@ class ReportFilter {
 				<option value="${dataset.id}">${dataset.name}</option>
 			`);
 		}
-
-		this.container.querySelector('.view-dashboard').on('click', e => {
-
-			const [dataset] = Reports.datasets.filter(d => d.id == this.container.dataset.value);
-
-			if(!dataset)
-				return;
-
-			window.open(`/report/${dataset.query_id}`);
-		});
 
 		this.container.on('submit', e => this.update(e));
 		this.container.querySelector('.delete').on('click', () => this.delete());
@@ -1297,7 +1283,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			response.axes.push({
 				position: axis.querySelector('select[name=position]').value,
 				label: axis.querySelector('input[name=label]').value,
-				margin: axis.querySelector('input[name=margin]').value,
 				columns,
 			});
 		}
@@ -1325,11 +1310,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			<label>
 				<span>Label</span>
 				<input type="text" name="label" value="${axis.label || ''}">
-			</label>
-
-			<label>
-				<span>Margin</span>
-				<input type="number" step="1" name="margin" value="${axis.margin || ''}">
 			</label>
 
 			<label>

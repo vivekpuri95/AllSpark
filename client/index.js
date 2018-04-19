@@ -431,7 +431,7 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 				</label>
 
 				<div id="query" class="hidden">
-					<span>Query <span id="full-screen-editor"><i class="fas fa-expand"></i></span></span>
+					<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
 					<div id="schema"></div>
 					<div id="editor"></div>
 
