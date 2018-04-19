@@ -550,12 +550,28 @@ class Report {
 			<td>${this.description || ''}</td>
 			<td>${connection ? connection.connection_name + ' ('+connection.type+')' : ''}</td>
 			<td class="tags"><div>${tags}</div></td>
-			<td>${this.filters.list.size}</td>
-			<td>${this.visualizations.list.size}</td>
+			<td class="filter-hover">${this.filters.list.size}</td>
+			<td class="visualization-hover">${this.visualizations.list.size}</td>
 			<td>${this.is_enabled ? 'Yes' : 'No'}</td>
 			<td class="action green" title="Edit">Edit</td>
 			<td class="action red" title="Delete">Delete</td>
 		`;
+
+		let
+			query_filter = [],
+			query_visualization = [];
+
+		for(const filter of this.filters.list)
+			query_filter.push(filter.name);
+
+		for(const visual of this.visualizations.list)
+			query_visualization.push(visual.name);
+
+		this.query_visualization = query_visualization.join(', ');
+		this.query_filter = query_filter.join(', ');
+
+		this.container.querySelector('.visualization-hover').setAttribute('title', query_visualization);
+		this.container.querySelector('.filter-hover').setAttribute('title', query_filter);
 
 		this.container.querySelector('.green').on('click', () => {
 			Reports.search = Reports.filters.elements.search.value;
@@ -1391,6 +1407,9 @@ ReportVisualization.types.set('spatialmap', class BarOptions extends ReportVisua
 });
 
 ReportVisualization.types.set('cohort', class BarOptions extends ReportVisualizationOptions {
+});
+
+ReportVisualization.types.set('json', class BarOptions extends ReportVisualizationOptions {
 });
 
 ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisualizationOptions {
