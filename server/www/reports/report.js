@@ -85,11 +85,6 @@ exports.update = class extends API {
 				values[key] = this.request.body[key];
 			}
 
-			if (key === "is_redis") {
-
-				const keys = await redis.keys("Report#report_id:" + this.request.body.query_id + "#*");
-				keys.map(async (redisKey) => await redis.del(redisKey));
-			}
 		}
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;

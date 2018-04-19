@@ -494,10 +494,14 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 
 				<label>
 					<span>Redis</span>
-					<select name="is_redis" required>
-						<option value="1">Enabled</option>
+
+					<select id=redis>
 						<option value="0">Disabled</option>
+						<option value="EOD">EOD</option>
+						<option value="custom">Custom<custom>
 					</select>
+
+					<input name="is_redis" class= "hidden" value="0">
 				</label>
 
 				<label>

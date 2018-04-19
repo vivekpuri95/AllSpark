@@ -205,13 +205,13 @@ function makeJWT(obj, expiresAfterSeconds = 86400 * 7) {
 
 async function verifyJWT(token) {
 
-	if(config.has("role_ignore") && config.has("privilege_ignore")) {
-
-		if(config.get("role_ignore") && config.get("privilege_ignore")) {
-
-			return true;
-		}
-	}
+	// if(config.has("role_ignore") && config.has("privilege_ignore")) {
+	//
+	// 	if(config.get("role_ignore") && config.get("privilege_ignore")) {
+	//
+	// 		return true;
+	// 	}
+	// }
 	try {
 		return await jwtVerifyAsync(token, config.get('secret_key'));
 

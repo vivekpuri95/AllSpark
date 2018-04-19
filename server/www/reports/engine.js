@@ -97,7 +97,8 @@ class report extends API {
 
 			if (types[filter.type] == 'month') {
 
-				const date = new Date();
+				const date = new
+				Date();
 
 				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
@@ -148,7 +149,14 @@ class report extends API {
 
 		const engine = new ReportEngine(preparedRequest);
 
-		const hash = "Report#report_id:" + this.reportObj.query_id + "#hash:" + engine.hash + "#";
+		const hash = "Report#report_id:" + this.reportObj.query_id + "#hash:" + engine.hash + '#redis-timeout#' + this.reportObj.is_redis;
+
+		if (this.reportObj.is_redis === "EOD") {
+
+			const d = new Date();
+			this.reportObj.is_redis = (24 * 60 * 60) - (d.getHours() * 60 * 60) - (d.getMinutes() * 60) - d.getSeconds();
+		}
+
 		const redisData = await redis.get(hash);
 
 		let result;
@@ -194,7 +202,13 @@ class report extends API {
 		result.cached = {store_time: Date.now()};
 
 		await redis.set(hash, JSON.stringify(result));
-		await redis.expire(hash, this.reportObj.is_redis);
+
+		if (this.reportObj.is_redis) {
+
+			await redis.expire(hash, this.reportObj.is_redis);
+
+		}
+
 		result.cached = {status: false};
 
 		return result;
@@ -238,7 +252,7 @@ class MySQL {
 			};
 		}
 
-		for(const filter of this.filters) {
+		for (const filter of this.filters) {
 
 			this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "?");
 

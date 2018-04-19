@@ -229,6 +229,29 @@ class Report {
 			Report.form.elements[0].classList.toggle('unsaved', Report.editor.value != Report.selected.query);
 		});
 
+		Report.form.is_redis.classList.add('hidden');
+
+		Report.form.redis.removeEventListener('change', Report.handleRedisSelect);
+
+		Report.form.redis.on("change", Report.handleRedisSelect = () => {
+
+			Report.form.is_redis.type = Report.form.redis.value === "EOD" ? "text" : "number";
+
+			if(Report.form.redis.value === "custom") {
+
+				Report.form.is_redis.value = parseInt(Report.form.redis.value) || 0;
+				Report.form.is_redis.classList.remove('hidden');
+			}
+			else {
+
+				Report.form.is_redis.value = Report.form.redis.value;
+				Report.form.is_redis.classList.add('hidden');
+			}
+
+		});
+
+		Report.editor.editor.getSession().on('change', () => Report.selected && Report.selected.filterSuggestions());
+
 		setTimeout(() => {
 
 			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
@@ -632,13 +655,36 @@ class Report {
 		if(ReportVisualizations.preview.classList.contains('hidden'))
 			ReportVisualizations.container.classList.remove('hidden');
 
+		const previousReportValue = Report.form.is_redis.value;
+
 		Report.form.reset();
 		Report.form.elements[0].classList.remove('unsaved');
+
+		if(parseInt(Report.form.is_redis.value) > 0) {
+
+			Report.form.redis.value = "custom";
+			Report.form.is_redis.classList.remove('hidden')
+		}
+		else {
+
+			Report.form.redis.value = previousReportValue;
+		}
 
 		for(const key in this) {
 			if(Report.form.elements[key])
 				Report.form.elements[key].value = this[key];
 		}
+
+		if(parseInt(this.is_redis) > 0) {
+
+			Report.form.redis.value = "custom";
+			Report.form.is_redis.classList.remove('hidden')
+		}
+		else {
+
+			Report.form.redis.value = this.is_redis;
+		}
+
 
 		Report.form.method.value = this.url_options.method;
 		Report.form.format.value = this.format ? JSON.stringify(this.format, 0, 4) : '';
@@ -646,6 +692,7 @@ class Report {
 		Report.editor.value = this.query;
 		Report.editor.editor.focus();
 		Report.form.querySelector('#added-by').textContent = this.added_by || 'Not Available';
+		Report.form.redis.value = parseInt(Report.form.is_redis.value) > 0 ? "custom" : this.is_redis;
 
 		Report.form.querySelector('#roles').value = '';
 
@@ -1438,6 +1485,10 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 		}
 	}
 });
+
+ReportVisualization.types.set('cohort', class BarOptions extends ReportVisualizationOptions {
+});
+
 
 const mysqlKeywords = [
 	'SELECT',
