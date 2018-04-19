@@ -433,7 +433,7 @@ body {
 				user-select: text;
 			}
 				main .data-source > header h2 span {
-					color: #ccc;
+					color: #aaa;
 					font-size: 90%;
 				}
 			main .data-source > header .actions {
@@ -444,6 +444,7 @@ body {
 					width: 24px;
 					display: inline-block;
 					text-align: center;
+					color: inherit;
 				}
 				main .data-source > header a:hover {
 					color: var(--color-accent);
