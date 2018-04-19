@@ -696,10 +696,9 @@ class DataSource {
 
 		this.originalResponse = response;
 
-		this.container.querySelector('.share-link input').value = this.link;
 		this.container.querySelector('.query').innerHTML = response.query;
 
-		let age = response.cached ? response.cached.age : 0;
+		let age = response.cached ? Math.floor(response.cached.age * 100) / 100 : 0;
 
 		if(age < 1000)
 			age += 'ms';
@@ -710,7 +709,7 @@ class DataSource {
 		else if(age < 1000 * 60 * 60)
 			age = (age / (1000 * 60)) + 'h';
 
-		let runtime = response.runtime;
+		let runtime = Math.floor(response.runtime * 100) / 100;
 
 		if(runtime < 1000)
 			runtime += 'ms';
@@ -721,8 +720,8 @@ class DataSource {
 		else if(runtime < 1000 * 60 * 60)
 			runtime = (runtime / (1000 * 60)) + 'h';
 
-		this.container.querySelector('.description .cached').textContent = response.cached.status ? Math.floor(age * 100) / 100 : 'No';
-		this.container.querySelector('.description .runtime').textContent = Math.floor(runtime * 100) / 100;
+		this.container.querySelector('.description .cached').textContent = response.cached.status ? age : 'No';
+		this.container.querySelector('.description .runtime').textContent = runtime;
 
 		this.columns.update();
 		this.postProcessors.update();
@@ -744,16 +743,17 @@ class DataSource {
 		container.innerHTML = `
 
 			<header>
-				<h2 title="${this.name}">${this.name}</h2>
-				<span class="right menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></span>
+				<h2 title="${this.name}">${this.name} <span>#${this.query_id}</span></h2>
+				<div class="actions right">
+					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
+					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
+				</div>
 			</header>
 
 			<div class="toolbar menu hidden">
 				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
 				<button class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
-				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i> Share</button>
 				<button class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
-				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i> Edit</button>
 				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
 				<button class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
 			</div>
@@ -768,85 +768,87 @@ class DataSource {
 				<div class="body">${this.description}</div>
 				<div class="footer">
 					<span>
-						<span class="NA">Role:</span>
-						<span>${this.roles || ''}</span>
+						<span class="label">Role:</span>
+						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : 'Invalid'}</span>
 					</span>
 					<span>
-						<span class="NA">Added On:</span>
+						<span class="label">Added On:</span>
 						<span>${Format.date(this.created_at)}</span>
 					</span>
 					<span>
-						<span class="NA">Cached:</span>
+						<span class="label">Cached:</span>
 						<span class="cached"></span>
 					</span>
 					<span>
-						<span class="NA">Runtime:</span>
+						<span class="label">Runtime:</span>
 						<span class="runtime"></span>
 					</span>
 					<span class="right">
-						<span class="NA">Added By:</span>
-						<span>${this.added_by_name || ''}</span>
+						<span class="label">Added By:</span>
+						<span>${this.added_by_name || 'NA'}</span>
 					</span>
 					<span>
-						<span class="NA">Requested By:</span>
-						<span>${this.requested_by || ''}</span>
+						<span class="label">Requested By:</span>
+						<span>${this.requested_by || 'NA'}</span>
 					</span>
 				</div>
-			</div>
-
-			<div class="share-link hidden">
-				<input type="url" value="${this.link}" readonly>
 			</div>
 		`;
 
 		this.filters.form = container.querySelector('.filters');
 
-		container.querySelector('.menu-toggle').on('click', () => {
+		container.querySelector('header .menu-toggle').on('click', () => {
+
 			container.querySelector('.menu').classList.toggle('hidden');
-			container.querySelector('.menu-toggle').classList.toggle('selected');
+			container.querySelector('header .menu-toggle').classList.toggle('selected');
+
 			this.visualizations.selected.render(true);
 		});
 
+		container.querySelector('header .reload').on('click', () => {
+			this.visualizations.selected.load(true);
+		});
+
 		container.querySelector('.menu .filters-toggle').on('click', () => {
+
 			container.querySelector('.filters').classList.toggle('hidden');
 			container.querySelector('.filters-toggle').classList.toggle('selected');
+
 			this.visualizations.selected.render(true);
 		});
 
 		container.querySelector('.menu .description-toggle').on('click', () => {
+
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
+
 			this.visualizations.selected.render(true);
 		});
 
-		container.querySelector('.menu .share-link-toggle').on('click', () => {
-			container.querySelector('.share-link').classList.toggle('hidden');
-			container.querySelector('.share-link-toggle').classList.toggle('selected');
-			container.querySelector('.share-link input').select();
+		container.querySelector('.menu .query-toggle').on('click', () => {
+
+			container.querySelector('.query').classList.toggle('hidden');
+			container.querySelector('.query-toggle').classList.toggle('selected');
+
 			this.visualizations.selected.render(true);
 		});
 
 		container.querySelector('.menu .download').on('click', () => this.download());
 
-		const
-			edit = container.querySelector('.menu .edit'),
-			query = container.querySelector('.menu .query-toggle');
+		if(user.privileges.has('report')) {
 
-		if(!user.privileges.has('report')) {
-			edit.classList.add('hidden');
-			query.classList.add('hidden');
+			const
+				edit = document.createElement('a'),
+				actions = container.querySelector('header .actions');
+
+			edit.title = 'Edit Report';
+			edit.href = `/reports/${this.query_id}`;
+			edit.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+
+			actions.insertBefore(edit, actions.querySelector('.menu-toggle'));
 		}
 
-		else {
-
-			edit.on('click', () => window.open(`/reports/${this.query_id}`,'_blank'));
-
-			query.on('click', () => {
-				container.querySelector('.query').classList.toggle('hidden');
-				query.classList.toggle('selected');
-				this.visualizations.selected.render(true);
-			});
-		}
+		else container.querySelector('.menu .query-toggle').classList.add('hidden');
 
 		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
 
@@ -1555,6 +1557,7 @@ class DataSourceColumn {
 				<select name="type" value="${parameter.type || ''}">
 					<option value="column">Column</option>
 					<option value="filter">Filter</option>
+					<option value="static">Custom</option>
 				</select>
 			</label>
 
@@ -1573,8 +1576,7 @@ class DataSourceColumn {
 
 		container.classList.add('parameter');
 
-		const
-			parameterList = this.form.querySelector('.parameter-list');
+		const parameterList = this.form.querySelector('.parameter-list');
 
 		parameterList.appendChild(container);
 

@@ -87,14 +87,33 @@ main #form #report-form {
 			grid-column-gap:  0;
 			grid-column: 1 / 3;
 		}
+		main #form form > #query:-webkit-full-screen {
+			width: 100vw;
+			height: 100vh;
+			grid-template-rows: max-content 1fr;
+			padding: calc(var(--gap) * 2);
+			max-width: initial;
+		}
 			#form form #query > span {
 				grid-column: 1 / 3;
 				font-size: 90%;
 				color: #666;
 				font-weight: bold;
+				display: flex;
 			}
+				#form form #query > span #full-screen-editor {
+					margin-left: auto;
+					cursor: pointer;
+					transition: color var(--transition-duration);
+				}
+				#form form #query > span #full-screen-editor:hover {
+					color: var(--color-accent);
+				}
 			main #form form #editor {
 				height: 500px;
+			}
+			main #form form > #query:-webkit-full-screen #editor {
+				height: 100%;
 			}
 		#form form #schema {
 			grid-row: 2;
@@ -106,6 +125,9 @@ main #form #report-form {
 			position: relative;
 			display: flex;
 			flex-direction: column;
+		}
+		main #form form > #query:-webkit-full-screen #schema {
+			max-height: 100%;
 		}
 			#form form #schema .NA {
 				text-align: center;
@@ -162,13 +184,15 @@ main #form #report-form {
 						}
 
 	main #form #test-container {
-		grid-row: 4 / span 10;
-		grid-column: 2;
+		grid-column: 1 / 3;
+	}
+	main #form form > #test-container {
+		height
 	}
 		main #form #test-container #test-body {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-			max-height: 400px;
+			max-height: 350px;
 			overflow: auto;
 			user-select: text;
 		}
@@ -199,7 +223,6 @@ main #form #report-form {
 	main #form #missing-filters {
 		background: #fcc;
 		padding: 16px;
-		margin-bottom: 16px;
 		grid-column: 1 / 3;
 		border:  1px solid #ccc;
 		font-weight: normal;
@@ -274,7 +297,7 @@ main #form #report-form {
 				background: #fff;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 			}
-		main #visualization-preview {
+		main #visualization-preview.show {
 			display: grid;
 			grid-template-columns: 250px 1fr;
 			grid-column-gap: calc(var(--gap) * 2);
@@ -290,6 +313,8 @@ main #form #report-form {
 			}
 			main .preview {
 				min-height: 500px;
+				position: sticky;
+				top: 50px;
 			}
 				main .preview .data-source {
 					height: 500px;
@@ -315,4 +340,8 @@ main #form #report-form {
 		}
 			main #visualization-form .axis select[multiple] {
 				height: 75px;
+				padding: 0
 			}
+				main #visualization-form .axis select[multiple] option {
+					padding: 3px 5px;
+				}

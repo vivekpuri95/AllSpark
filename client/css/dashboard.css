@@ -26,6 +26,10 @@ main > nav {
 		bottom: 0;
 		background: var(--color-primary);
 	}
+		main > nav .collapse .name {
+			color: #ccc;
+			margin: 0 auto !important;
+		}
 	nav.collapsed-nav {
 		overflow: unset;
 	}
@@ -123,7 +127,7 @@ main #reports > .list {
 		position: sticky;
 		top: 0;
 		z-index: 3;
-		align-items: flex-start;
+		align-items: flex-end;
 		grid-template-columns: max-content max-content 1fr;
 	}
 		main #reports > .toolbar input[name=date-range] {
