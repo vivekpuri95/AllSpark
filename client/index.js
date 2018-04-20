@@ -261,9 +261,9 @@ router.get('/:type(dashboard|report)/:id?', (req, res) => {
 						Edit
 					</button>
 				</label>
-
-				<div class="datasets right"></div>
 			</div>
+
+			<div class="datasets form"></div>
 
 			<div class="list"></div>
 		</section>
