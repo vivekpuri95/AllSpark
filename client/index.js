@@ -381,6 +381,8 @@ router.get('/reports/:id?', (req, res) => {
 					<option value="description">Description</option>
 					<option value="source">Source</option>
 					<option value="tags">Tags</option>
+					<option value="query_filter">Filters</option>
+					<option value="query_visualization">Visualizations</option>
 				</select>
 
 				<input type="search" placeholder="Search&hellip;" name="search">
