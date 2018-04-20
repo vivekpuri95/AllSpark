@@ -670,19 +670,20 @@ class Report {
 			Report.form.redis.value = previousReportValue;
 		}
 
-		for(const key in this) {
-			if(Report.form.elements[key])
+		for (const key in this) {
+			if (Report.form.elements[key])
 				Report.form.elements[key].value = this[key];
 		}
 
-		if(parseInt(this.is_redis) > 0) {
+		if (parseInt(this.is_redis) > 0) {
 
 			Report.form.redis.value = "custom";
-			Report.form.is_redis.classList.remove('hidden')
+			Report.form.is_redis.classList.remove('hidden');
 		}
 		else {
 
 			Report.form.redis.value = this.is_redis;
+			Report.form.is_redis.classList.add('hidden');
 		}
 
 
@@ -1161,7 +1162,8 @@ class ReportVisualization {
 			this.options = null;
 		}
 
-		this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
+		if(ReportVisualization.types.has(this.type))
+			this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
 	}
 
 	get row() {

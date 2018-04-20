@@ -501,7 +501,7 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 						<option value="custom">Custom<custom>
 					</select>
 
-					<input name="is_redis" class= "hidden" value="0">
+					<input name="is_redis" class= "hidden" value="0" min="1">
 				</label>
 
 				<label>
