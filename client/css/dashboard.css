@@ -132,11 +132,14 @@ main #reports > .datasets {
 	width: 250px;
 	align-items: flex-start;
 	overflow: auto;
+	opacity: 0;
 	transform: translateX(240px);
-	transition: transform var(--transition-duration);
+	transition: transform var(--transition-duration),
+				opacity var(--transition-duration);
 }
 main #reports > .datasets:hover {
 	transform: translateX(0px);
+	opacity: 1;
 }
 	main #reports > .datasets h3 {
 		margin: 0 0 10px;
@@ -152,6 +155,7 @@ main #reports > .datasets:hover {
 	main #reports > .datasets .dataset-container {
 		grid-column: 1;
 		width: 100%;
+		max-width: 100%;
 		margin-bottom: calc(var(--gap) * 2);
 	}
 	main #reports > .datasets .dataset-container:last-of-type {
