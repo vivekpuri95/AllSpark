@@ -663,9 +663,6 @@ class DataSource {
 		if(this.queryOverride)
 			parameters.set('query', this.query);
 
-		if(this.forceRefresh)
-			parameters.set('cached', '0');
-
 		for(const filter of this.filters.values()) {
 
 			if(filter.dataset && filter.dataset.query_id) {
@@ -1356,7 +1353,7 @@ class DataSourceColumn {
 
 					<label>
 						<span>Type</span>
-						<select name="column_type">
+						<select name="type">
 							<option value="string">String</option>
 							<option value="number">Number</option>
 							<option value="date">Date</option>
@@ -1697,7 +1694,7 @@ class DataSourceColumn {
 		response = {
 			key : this.key,
 			name : this.name,
-			column_type : this.column_type,
+			type : this.type,
 			disabled : this.disabled,
 			color : this.color,
 			searchType : this.searchType,
@@ -1742,16 +1739,22 @@ class DataSourceColumn {
 
 	async update() {
 
-		this.container.querySelector('.name').textContent = this.name;
+		this.render();
 
 		this.blanket.classList.add('hidden');
 
-		this.container.classList.toggle('disabled', this.disabled);
-		this.container.classList.toggle('filtered', this.filtered ? true : false);
 		//this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
 
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
+	}
+
+	render() {
+
+		this.container.querySelector('.name').textContent = this.name;
+
+		this.container.classList.toggle('disabled', this.disabled);
+		this.container.classList.toggle('filtered', this.filtered ? true : false);
 	}
 
 	validateFormula() {
@@ -2472,21 +2475,60 @@ class LinearVisualization extends Visualization {
 	draw() {
 
 		if(!this.axes)
-			return this.source.error('Axes not defined!');
+			return this.source.error('Axes not defined! :(');
 
 		if(!this.axes.bottom)
-			return this.source.error('Bottom axis not defined!');
-
-		if(!this.axes.bottom.columns.length > 1)
-			return this.source.error('Bottom has more than one columns!');
+			return this.source.error('Bottom axis not defined! :(');
 
 		if(!this.axes.left)
-			return this.source.error('Left axis not defined!');
+			return this.source.error('Left axis not defined! :(');
+
+		if(!this.axes.bottom.columns.length)
+			return this.source.error('Bottom axis requires exactly one column! :(');
+
+		if(!this.axes.left.columns.length)
+			return this.source.error('Left axis requires atleast one column! :(');
+
+		if(this.axes.bottom.columns.length > 1)
+			return this.source.error('Bottom axis cannot has more than one column! :(');
+
+		for(const column of this.axes.bottom.columns) {
+			if(!this.source.columns.get(column.key))
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :()`);
+		}
+
+		for(const column of this.axes.left.columns) {
+			if(!this.source.columns.get(column.key))
+				return this.source.error(`Left axis column <em>${column.key}</em> not found! :(`);
+		}
+
+		for(const bottom of this.axes.bottom.columns) {
+			for(const left of this.axes.left.columns) {
+
+				if(bottom.key == left.key)
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on both axis! :(`);
+			}
+		}
+
+		for(const [key, column] of this.source.columns) {
+
+			if(this.axes.left.columns.some(c => c.key == key) || this.axes.bottom.columns.some(c => c.key == key))
+				continue;
+
+			column.disabled = true;
+			column.render();
+		}
 
 		this.rows = this.source.response;
 
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 50;
+
+		if(this.axes.bottom.label)
+			this.axes.bottom.height += 20;
+
+		if(this.axes.left.label)
+			this.axes.left.width += 20;
 
 		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
 		this.width = this.container.clientWidth - this.axes.left.width - 40;
@@ -3007,6 +3049,20 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
 		//graph type line and
 		const
 			line = d3.svg
@@ -3195,6 +3251,20 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
 		//graph type line and
 		const
 			line = d3.svg
@@ -3295,6 +3365,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			xAxis = d3.svg.axis()
 				.scale(this.x)
 				.orient('bottom'),
+
 			yAxis = d3.svg.axis()
 				.scale(this.y)
 				.innerTickSize(-this.width)
@@ -3333,6 +3404,20 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.attr('class', 'x axis')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
 
 		let bars = this.svg
 			.append('g')
@@ -3457,7 +3542,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		this.y.domain([0, max]);
 
-		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.domain(this.rows.map(r => Format.date(r.get(this.axes.bottom.column))));
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
@@ -3478,6 +3563,20 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			.attr('class', 'x axis')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
 
 		const layer = this.svg
 			.selectAll('.layer')
@@ -3505,7 +3604,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
 			})
-			.attr('width', this.x.rangeBand())
+			.attr('height', this.x.rangeBand())
 			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
 
 		if(!resize) {
@@ -3636,6 +3735,20 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			.attr('class', 'x axis')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
 
 		let areas = this.svg
 			.selectAll('.path')

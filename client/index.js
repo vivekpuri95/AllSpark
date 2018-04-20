@@ -210,8 +210,8 @@ router.get('/:type(dashboard|report)/:id?', (req, res) => {
 	template.scripts = template.scripts.concat([
 		'/js/dashboard.js',
 
-		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
@@ -431,7 +431,7 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 				</label>
 
 				<div id="query" class="hidden">
-					<span>Query <span id="full-screen-editor"><i class="fas fa-expand"></i></span></span>
+					<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
 					<div id="schema"></div>
 					<div id="editor"></div>
 

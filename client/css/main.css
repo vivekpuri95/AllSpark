@@ -408,6 +408,8 @@ body {
 			margin: calc(var(--gap) * 2) 0 0;
 			overflow: auto;
 			user-select: text;
+			font-family: inherit;
+			color: #999;
 		}
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
@@ -1052,7 +1054,7 @@ body {
 }
 
 .visualization .container > svg text.axis-label {
-	font-size: 130%;
+	font-size: 115%;
 	letter-spacing: 2px;
 	fill: #999;
 	font-weight: bold;
