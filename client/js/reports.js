@@ -751,7 +751,7 @@ class Report {
 
 		const promises = [];
 
-		for(const filter of report.filters) {
+		for(const filter of report.filters.values()) {
 			if(filter.dataset)
 				promises.push(filter.dataset.fetch());
 		}
@@ -1181,6 +1181,15 @@ class ReportVisualization {
 		const
 			report = new DataSource(DataSource.list.get(this.visualizations.report.query_id)),
 			preview = ReportVisualizations.preview.querySelector('.preview');
+
+		const promises = [];
+
+		for(const filter of report.filters.values()) {
+			if(filter.dataset)
+				promises.push(filter.dataset.load());
+		}
+
+		await Promise.all(promises);
 
 		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
 
