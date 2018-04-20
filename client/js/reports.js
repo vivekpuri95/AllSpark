@@ -17,6 +17,8 @@ class Reports extends Page {
 			ReportFilter.setup();
 			ReportVisualization.setup();
 
+			Reports.sortColumn();
+
 			Reports.loadState();
 		})();
 
@@ -87,12 +89,23 @@ class Reports extends Page {
 		]);
 	}
 
-	static process() {
+	static process(sortedColumn = null) {
 
-		Reports.list = new Map;
+		let response = Reports.response;
 
-		for(const report of Reports.response || [])
-			Reports.list.set(report.query_id, new Report(report));
+		if(sortedColumn) {
+			response = Reports.sort(sortedColumn, Reports.sortOrder);
+
+			Reports.list = new Map;
+			for(const report of response || [])
+				Reports.list.set(report.query_id, report);
+		}
+		else {
+			Reports.list = new Map;
+
+			for(const report of response || [])
+				Reports.list.set(report.query_id, new Report(report));
+		}
 	}
 
 	static render() {
@@ -130,6 +143,56 @@ class Reports extends Page {
 				`<option value="${credential.id}">${credential.connection_name} (${credential.type})</option>`
 			)
 		}
+	}
+
+	static sortColumn() {
+
+		const columns = Reports.container.querySelector('table thead tr.table-head');
+
+		for(const column of columns.children){
+
+			if(column.classList.value == 'sort'){
+				column.on('click', () => {
+					Reports.sortOrder = column.sort =  !column.sort;
+					Reports.process(column.title);
+					Reports.render();
+				});
+			}
+		}
+	}
+
+	static sort(sortCol, order) {
+
+		const sortedRes = Array.from(Reports.list.values()).sort(function(a, b) {
+
+			if( sortCol == 'name' || sortCol == 'description'){
+				a = a[`${sortCol}`] ? a[`${sortCol}`].toUpperCase() : '';
+				b = b[`${sortCol}`] ? b[`${sortCol}`].toUpperCase() : '';
+			}
+			else if( sortCol == 'visualizations' || sortCol == 'filters') {
+
+				a = a[`${sortCol}`].list.size;
+				b = b[`${sortCol}`].list.size;
+			}
+			else {
+				a = a[`${sortCol}`];
+				b = b[`${sortCol}`];
+			}
+
+			let result = 0;
+			if (a < b) {
+				result = -1;
+			}
+			if (a > b) {
+				result = 1;
+			}
+			if(!order){
+				result *= -1;}
+
+			return result;
+		});
+
+		return sortedRes;
 	}
 }
 

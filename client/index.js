@@ -389,14 +389,14 @@ router.get('/reports/:id?', (req, res) => {
 			<div id="list-container">
 				<table class="block">
 					<thead>
-						<tr>
-							<th class="thin">ID</th>
-							<th>Name</th>
-							<th>Description</th>
+						<tr class="table-head">
+							<th class="sort" title="query_id" >ID<i class="fa fa-sort"></th>
+							<th class="sort" title="name" >Name<i class="fa fa-sort"></th>
+							<th class="sort" title="description" >Description<i class="fa fa-sort"></th>
 							<th>Connection</th>
 							<th>Tags</th>
-							<th>Filters</th>
-							<th>Visualizations</th>
+							<th class="sort" title="filters" >Filters<i class="fa fa-sort"></th>
+							<th class="sort" title="visualizations" >Visualizations<i class="fa fa-sort"></th>
 							<th>Enabled</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
