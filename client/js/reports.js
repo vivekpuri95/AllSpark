@@ -111,6 +111,8 @@ class Reports extends Page {
 	static render() {
 
 		const container = Reports.container.querySelector('table tbody');
+		const column_name = Reports.ColumnValue ? Reports.ColumnValue :Reports.filters.elements.column_search.value;
+		const search_value = Reports.searchValue ? Reports.searchValue : Reports.filters.search.value.toLowerCase();
 
 		container.textContent = null;
 
@@ -119,11 +121,11 @@ class Reports extends Page {
 			let found = false,
 				columns = Object.keys(report);
 
-			if(Reports.filters.elements.column_search.value)
-				columns = columns.filter(key => key == Reports.filters.elements.column_search.value);
+			if(column_name)
+				columns = columns.filter(key => key == column_name);
 
 			for(const key of columns) {
-				if(report[key] && report[key].toString().toLowerCase().includes(Reports.filters.search.value.toLowerCase()))
+				if(report[key] && report[key].toString().toLowerCase().includes(search_value))
 					found = true;
 			}
 
@@ -147,9 +149,27 @@ class Reports extends Page {
 
 	static sortColumn() {
 
+		const searchRow = Reports.container.querySelector('table thead tr');
 		const columns = Reports.container.querySelector('table thead tr.table-head');
 
 		for(const column of columns.children){
+
+			const col = document.createElement('th');
+
+			if(
+				column.textContent.toLowerCase() != 'edit' &&
+				column.textContent.toLowerCase() != 'delete'
+			){
+				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
+				col.querySelector('.column-search').on('keyup', () => {
+
+					Reports.searchValue = col.querySelector('.column-search').value;
+					Reports.ColumnValue = column.title == 'filters' ? 'query_filter' : column.title == 'visualizations' ? 'query_visualization' : column.title;
+					Reports.render();
+				});
+			}
+
+			searchRow.appendChild(col);
 
 			if(column.classList.value == 'sort'){
 				column.on('click', () => {
