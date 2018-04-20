@@ -474,16 +474,28 @@ body {
 				position: relative;
 				display: flex;
 				flex-direction: column;
+				width: 60%;
+			}
+			main .data-source .download.selected {
+				background: var(--color-accent);
+				color: var(--color-accent-text);
 			}
 			main .data-source .download-dropdown-content {
 				position: absolute;
 				display: flex;
 				flex-direction: column;
-				width: 100%;
-				top: 25px;
+				width: 200%;
+				top: 27px;
+				right: 0;
+			}
+			main .data-source .download-dropdown-content .csv-download {
+				border-bottom: 0;
 			}
 			main .data-source .download-dropdown-content > button {
-				border-bottom: 0;
+				text-align: left;
+			}
+			main .data-source .download-dropdown-content svg {
+				width: 10px;
 			}
 		main .data-source > .description {
 			background: #fff;
