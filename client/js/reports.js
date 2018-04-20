@@ -655,7 +655,6 @@ class Report {
 		if(ReportVisualizations.preview.classList.contains('hidden'))
 			ReportVisualizations.container.classList.remove('hidden');
 
-		const previousReportValue = Report.form.is_redis.value;
 
 		Report.form.reset();
 		Report.form.elements[0].classList.remove('unsaved');
@@ -663,11 +662,12 @@ class Report {
 		if(parseInt(Report.form.is_redis.value) > 0) {
 
 			Report.form.redis.value = "custom";
-			Report.form.is_redis.classList.remove('hidden')
+			Report.form.is_redis.classList.remove('hidden');
 		}
 		else {
 
-			Report.form.redis.value = previousReportValue;
+			Report.form.redis.value = this.is_redis;
+			Report.form.is_redis.classList.add('hidden');
 		}
 
 		for (const key in this) {
