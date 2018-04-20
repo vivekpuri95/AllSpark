@@ -1739,16 +1739,22 @@ class DataSourceColumn {
 
 	async update() {
 
-		this.container.querySelector('.name').textContent = this.name;
+		this.render();
 
 		this.blanket.classList.add('hidden');
 
-		this.container.classList.toggle('disabled', this.disabled);
-		this.container.classList.toggle('filtered', this.filtered ? true : false);
 		//this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
 
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
+	}
+
+	render() {
+
+		this.container.querySelector('.name').textContent = this.name;
+
+		this.container.classList.toggle('disabled', this.disabled);
+		this.container.classList.toggle('filtered', this.filtered ? true : false);
 	}
 
 	validateFormula() {
@@ -2504,6 +2510,15 @@ class LinearVisualization extends Visualization {
 			}
 		}
 
+		for(const [key, column] of this.source.columns) {
+
+			if(this.axes.left.columns.some(c => c.key == key) || this.axes.bottom.columns.some(c => c.key == key))
+				continue;
+
+			column.disabled = true;
+			column.render();
+		}
+
 		this.rows = this.source.response;
 
 		this.axes.bottom.height = 25;
@@ -2544,30 +2559,25 @@ class LinearVisualization extends Visualization {
 
 		for(const row of this.rows) {
 
-			for(let column of this.axes.left.columns) {
+			for(const [key, value] of row) {
 
-				if(!row.has(column.key) || !this.source.columns.has(column.key))
+				if(key == this.axes.bottom.column)
 					continue;
 
-				const columns = {
-					bottom: this.source.columns.get(this.axes.bottom.column),
-					value: this.source.columns.get(column.key),
-				};
+				const column = this.source.columns.get(key);
 
-				if(!this.columns[column.key]) {
-					this.columns[column.key] = [];
-					Object.assign(this.columns[column.key], columns.value);
+				if(!column)
+					continue;
+
+				if(!this.columns[key]) {
+					this.columns[key] = [];
+					Object.assign(this.columns[key], column);
 				}
 
-				let value = row.get(this.axes.bottom.column);
-
-				if(columns.bottom.type == 'date')
-					value = Format.date(value);
-
-				this.columns[column.key].push({
-					x: value,
-					y: row.get(column.key),
-					key: column.key,
+				this.columns[key].push({
+					x: row.get(this.axes.bottom.column),
+					y: value,
+					key,
 				});
 			}
 		}
@@ -3017,7 +3027,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		}
 
 		this.y.domain([min, max]);
-		this.x.domain(this.rows.map(r => Format.date(r.get(this.axes.bottom.column))));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangePoints([0, this.width], 0.1, 0);
 
 		const
@@ -3038,6 +3048,20 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			.attr('class', 'x axis')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
 
 		//graph type line and
 		const
@@ -3227,6 +3251,20 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
 		//graph type line and
 		const
 			line = d3.svg
@@ -3366,6 +3404,20 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.attr('class', 'x axis')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
 
 		let bars = this.svg
 			.append('g')
@@ -3683,6 +3735,20 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			.attr('class', 'x axis')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
 
 		let areas = this.svg
 			.selectAll('.path')

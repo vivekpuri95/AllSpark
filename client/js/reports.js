@@ -221,7 +221,10 @@ class Report {
 
 		Report.editor.editor.getSession().on('change', () => {
 
-			Report.selected && Report.selected.filterSuggestions();
+			if(!Report.selected)
+				return;
+
+			Report.selected.filterSuggestions();
 
 			Report.form.elements[0].classList.toggle('unsaved', Report.editor.value != Report.selected.query);
 		});
