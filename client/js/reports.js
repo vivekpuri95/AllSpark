@@ -237,16 +237,9 @@ class Report {
 
 			Report.form.is_redis.type = Report.form.redis.value === "EOD" ? "text" : "number";
 
-			if(Report.form.redis.value === "custom") {
+			Report.form.is_redis.value = Report.form.redis.value;
+			Report.form.is_redis.classList.toggle('hidden', Report.form.redis.value !== "custom");
 
-				Report.form.is_redis.value = parseInt(Report.form.redis.value) || 0;
-				Report.form.is_redis.classList.remove('hidden');
-			}
-			else {
-
-				Report.form.is_redis.value = Report.form.redis.value;
-				Report.form.is_redis.classList.add('hidden');
-			}
 
 		});
 
