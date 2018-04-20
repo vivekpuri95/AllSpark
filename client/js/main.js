@@ -753,11 +753,11 @@ class DataSource {
 			</header>
 
 			<div class="toolbar menu hidden">
-				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
-				<button class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
-				<button class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
-				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
-				<button class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
+				<button type="button" class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
+				<button type="button" class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
+				<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
+				<button type="button" class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
+				<button type="button" class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
 			</div>
 
 			<form class="filters form toolbar hidden"></form>
