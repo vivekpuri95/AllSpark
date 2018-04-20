@@ -758,8 +758,6 @@ class DataSource {
 			<div class="toolbar menu hidden">
 				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
 				<button class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
-				<button class="share-link-toggle" title="Share Report"><i class="fa fa-share-alt"></i> Share</button>
-				<button class="edit" title="Edit Report"><i class="fas fa-pencil-alt"></i> Edit</button>
 				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
 				<button class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
 
