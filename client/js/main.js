@@ -766,7 +766,7 @@ class DataSource {
 					</div>
 				</div>
 				<select class="change-visualization hidden"></select>
-				<button id="export-btn"><i class="fa fa-download"></i>Export</button>
+				<button id="export"><i class="fa fa-download"></i>Export</button>
 			</div>
 
 			<form class="filters form toolbar hidden"></form>
@@ -812,7 +812,7 @@ class DataSource {
 
 		this.filters.form = container.querySelector('.filters');
 
-		container.querySelector('#export-btn').on('click', () => {
+		container.querySelector('#export').on('click', () => {
 			container.querySelector('.export-json').classList.toggle('hidden');
 		});
 

@@ -247,7 +247,7 @@ class Report {
 
 		window.onbeforeunload = () => Report.container.querySelector('.unsaved');
 
-		Report.container.querySelector('.toolbar #import-btn').on('click', () => {
+		Report.container.querySelector('.toolbar #import').on('click', () => {
 			Report.import();
 		});
 
@@ -344,16 +344,18 @@ class Report {
 
 	static import() {
 
-		Report.container.innerHTML = `
-			<div>
-				<form class="form" id="import-form" >
+		const form = document.createElement('form');
+		form.classList.add('form');
+		form.setAttribute("id", "import-form");
+		form.insertAdjacentHTML('beforeend', `
 					<textarea rows="10" cols="200" id="json"></textarea>
-					<button type="submit" form="import-form"><i class="fa fa-save"></i> Save</button>
-				</form>
-			</div>
-		`;
+					<label>
+						<button type="submit" form="import-form"><i class="fa fa-save"></i> Save</button>
+					</label>
+		`);
 
-		const form = Report.container.querySelector('#import-form');
+		Report.container.insertBefore(form, Report.form);
+
 		form.on('submit',async (e) => {
 			if(e)
 				e.preventDefault();
@@ -366,7 +368,7 @@ class Report {
 				method: 'POST'
 			};
 
-			const response = await API.call('report/jsonInsert', parameters, options);
+			const response = await API.call('import/json', parameters, options);
 
 			await Reports.load(true);
 
