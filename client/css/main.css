@@ -81,7 +81,6 @@ a:active {
 	margin: var(--gap) 0;
 	color: #666;
 	border-radius: 0;
-	border: 1px solid #ccc;
 }
 .notice {
 	background: #dfd;

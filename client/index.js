@@ -998,7 +998,6 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 	`));
 });
 
-
 class Template {
 
 	constructor() {

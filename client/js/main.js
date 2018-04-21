@@ -2527,7 +2527,7 @@ class LinearVisualization extends Visualization {
 
 		for(const column of this.axes.bottom.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :()`);
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :(`);
 		}
 
 		for(const column of this.axes.left.columns) {
@@ -2587,6 +2587,9 @@ class LinearVisualization extends Visualization {
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
 		container.selectAll('*').remove();
+
+		if(!this.rows)
+			return;
 
 		this.columns = {};
 
@@ -3017,7 +3020,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		super.plot(resize);
 
-		if(!this.rows.length)
+		if(!this.rows || !this.rows.length)
 			return;
 
 		const
@@ -3219,7 +3222,7 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 
 		super.plot(resize);
 
-		if(!this.rows.length)
+		if(!this.rows || !this.rows.length)
 			return;
 
 		const
@@ -3385,7 +3388,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		super.plot(resize);
 
-		if(!this.rows.length)
+		if(!this.rows || !this.rows.length)
 			return;
 
 		const that = this;
@@ -3541,7 +3544,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		super.plot(resize);
 
-		if(!this.rows.length)
+		if(!this.rows || !this.rows.length)
 			return;
 
 		const that = this;
@@ -3575,7 +3578,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		this.y.domain([0, max]);
 
-		this.x.domain(this.rows.map(r => Format.date(r.get(this.axes.bottom.column))));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
@@ -3701,7 +3704,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		super.plot(resize);
 
-		if(!this.rows.length)
+		if(!this.rows || !this.rows.length)
 			return;
 
 		const
