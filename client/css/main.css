@@ -472,6 +472,33 @@ body {
 				color: var(--color-accent-text);
 				border-color: var(--color-accent);
 			}
+			main .data-source .download-btn {
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				width: 60%;
+			}
+			main .data-source .download.selected {
+				background: var(--color-accent);
+				color: var(--color-accent-text);
+			}
+			main .data-source .download-dropdown-content {
+				position: absolute;
+				display: flex;
+				flex-direction: column;
+				width: 200%;
+				top: 27px;
+				right: 0;
+			}
+			main .data-source .download-dropdown-content .csv-download {
+				border-bottom: 0;
+			}
+			main .data-source .download-dropdown-content > button {
+				text-align: left;
+			}
+			main .data-source .download-dropdown-content svg {
+				width: 10px;
+			}
 		main .data-source > .description {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);

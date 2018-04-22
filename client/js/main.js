@@ -693,7 +693,7 @@ class DataSource {
 			response = {};
 		}
 
-		if(parameters.download)
+		if(parameters.get('download'))
 			return response;
 
 		this.originalResponse = response;
@@ -755,9 +755,16 @@ class DataSource {
 			<div class="toolbar menu hidden">
 				<button type="button" class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
 				<button type="button" class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
-				<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i> Download CSV</button>
 				<button type="button" class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
 				<button type="button" class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
+
+				<div class="download-btn" title="Download CSV">
+					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
+					<div class="download-dropdown-content hidden">
+						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
+						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
+					</div>
+				</div>
 			</div>
 
 			<form class="filters form toolbar hidden"></form>
@@ -835,7 +842,13 @@ class DataSource {
 			this.visualizations.selected.render(true);
 		});
 
-		container.querySelector('.menu .download').on('click', () => this.download());
+		container.querySelector('.menu .download-btn .download').on('click', (e) => {
+			container.querySelector('.menu .download-btn .download').classList.toggle('selected');
+			container.querySelector('.menu .download-btn .download-dropdown-content').classList.toggle('hidden');
+		});
+
+		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
+		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
 
 		if(user.privileges.has('report')) {
 
@@ -1018,23 +1031,41 @@ class DataSource {
 		return response;
 	}
 
-	async download() {
+	async download(e, what) {
+
+		this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
+		e.currentTarget.parentElement.classList.add('hidden');
 
 		const response = await this.fetch({download: 1});
 
 		let str = [];
 
-		for (let i = 0; i < response.length; i++) {
+		if(what.mode == 'json') {
 
-			const line = [];
+			for(const data of response.data) {
 
-			for(const index in response[i])
-				line.push(JSON.stringify(String(response[i][index])));
+				const line = [];
 
-			str.push(line.join());
+				line.push(JSON.stringify(data));
+
+				str.push(line);
+			}
 		}
 
-		str = Object.keys(response.data[0]).join() + '\r\n' + str.join('\r\n');
+		else {
+
+			for(const data of response.data) {
+
+				const line = [];
+
+				for(const index in data)
+					line.push(JSON.stringify(String(data[index])));
+
+				str.push(line.join());
+			}
+
+			str = Object.keys(response.data[0]).join() + '\r\n' + str.join('\r\n');
+		}
 
 		const
 			a = document.createElement('a'),
@@ -1053,7 +1084,9 @@ class DataSource {
 			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(new Date));
 
 		a.href = window.URL.createObjectURL(blob);
-		a.download = fileName.join(' - ') + '.csv';
+
+		a.download = fileName.join(' - ') + '.' + what.mode;
+
 		a.click();
 	}
 
