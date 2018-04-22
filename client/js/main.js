@@ -135,7 +135,8 @@ Page.serviceWorker = class PageServiceWorker {
 
 		this.worker = await navigator.serviceWorker.register('/service-worker.js');
 
-		navigator.serviceWorker.controller.addEventListener('statechange', e => this.statechange(e));
+		if(navigator.serviceWorker.controller)
+			navigator.serviceWorker.controller.addEventListener('statechange', e => this.statechange(e));
 	}
 
 	statechange(event) {
@@ -143,15 +144,19 @@ Page.serviceWorker = class PageServiceWorker {
 		if(event.target.state != 'redundant')
 			return;
 
-		const message = document.createElement('div');
+		setTimeout(() => {
 
-		message.classList.add('warning', 'site-outdated');
+			const message = document.createElement('div');
 
-		message.innerHTML = `The site has been updated in the background. Please <a href="">reload</a> the page.`;
+			message.classList.add('warning', 'site-outdated');
 
-		message.querySelector('a').on('click', () => window.location.reload());
+			message.innerHTML = `The site has been updated in the background. Please <a href="">reload</a> the page.`;
 
-		this.page.container.parentElement.insertBefore(message, this.page.container);
+			message.querySelector('a').on('click', () => window.location.reload());
+
+			this.page.container.parentElement.insertBefore(message, this.page.container);
+
+		}, 1000);
 	}
 }
 

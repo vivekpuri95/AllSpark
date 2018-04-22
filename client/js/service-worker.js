@@ -3,7 +3,7 @@ const now = Date.now();
 
 const offlineCaches = [
 	'/',
-	'/service-worker.js',
+	'/service-worker.js' ,
 ];
 
 self.addEventListener('install', event => {
