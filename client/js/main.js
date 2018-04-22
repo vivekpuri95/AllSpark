@@ -636,12 +636,9 @@ class DataSource {
 		this.tags = this.tags || '';
 		this.tags = this.tags.split(',').filter(a => a.trim());
 
-		this.filters = new Map;
+		this.filters = new DataSourceFilters(this);
 		this.columns = new DataSourceColumns(this);
 		this.visualizations = [];
-
-		if(source.filters && source.filters.length)
-			this.filters = new Map(source.filters.map(filter => [filter.placeholder, new DataSourceFilter(filter, this)]));
 
 		if(!source.visualizations)
 			source.visualizations = [];
@@ -667,13 +664,24 @@ class DataSource {
 
 			if(filter.dataset && filter.dataset.query_id) {
 
-				for(const input of filter.label.querySelectorAll('input:checked'))
-					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, input.value);
+				if(filter.dataset.containerElement) {
+
+					for(const input of filter.label.querySelectorAll('input:checked'))
+						parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, input.value);
+
+				} else {
+
+					for(const row of await filter.dataset.fetch())
+						parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, row.value);
+				}
 
 				continue;
 			}
 
-			parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, this.filters.form.elements[filter.placeholder].value);
+			if(this.filters.containerElement)
+				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, this.filters.container.elements[filter.placeholder].value);
+			else
+				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
 		}
 
 		let response = null;
@@ -767,8 +775,6 @@ class DataSource {
 				</div>
 			</div>
 
-			<form class="filters form toolbar hidden"></form>
-
 			<div class="columns"></div>
 			<div class="query hidden"></div>
 			<div class="drilldown hidden"></div>
@@ -804,8 +810,6 @@ class DataSource {
 			</div>
 		`;
 
-		this.filters.form = container.querySelector('.filters');
-
 		container.querySelector('header .menu-toggle').on('click', () => {
 
 			container.querySelector('.menu').classList.toggle('hidden');
@@ -820,8 +824,12 @@ class DataSource {
 
 		container.querySelector('.menu .filters-toggle').on('click', () => {
 
-			container.querySelector('.filters').classList.toggle('hidden');
 			container.querySelector('.filters-toggle').classList.toggle('selected');
+
+			if(container.contains(this.filters.container))
+				container.removeChild(this.filters.container);
+
+			else container.insertBefore(this.filters.container, container.querySelector('.columns'));
 
 			this.visualizations.selected.render(true);
 		});
@@ -874,24 +882,6 @@ class DataSource {
 		else container.querySelector('.menu .query-toggle').classList.add('hidden');
 
 		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
-
-		this.filters.form.on('submit', e => this.visualizations.selected.load(e));
-
-		for(const filter of this.filters.values())
-			this.filters.form.appendChild(filter.label);
-
-		this.filters.form.insertAdjacentHTML('beforeend', `
-			<label class="right">
-				<button type="reset">
-					<i class="fa fa-undo"></i> Reset
-				</button>
-			</label>
-			<label>
-				<button type="submit">
-					<i class="fa fa-sync"></i> Submit
-				</button>
-			</label>
-		`);
 
 		if(this.visualizations.length) {
 
@@ -1075,10 +1065,10 @@ class DataSource {
 			];
 
 		if(this.filters.has('Start Date'))
-			fileName.push(this.filters.form.elements[this.filters.get('Start Date').placeholder].value);
+			fileName.push(this.filters.container.elements[this.filters.get('Start Date').placeholder].value);
 
 		if(this.filters.has('End Date'))
-			fileName.push(this.filters.form.elements[this.filters.get('End Date').placeholder].value);
+			fileName.push(this.filters.container.elements[this.filters.get('End Date').placeholder].value);
 
 		if(fileName.length == 1)
 			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(new Date));
@@ -1097,8 +1087,8 @@ class DataSource {
 		const parameters = new URLSearchParams();
 
 		for(const [_, filter] of this.filters) {
-			if(this.filters.form && filter.placeholder in this.filters.form.elements)
-				parameters.set(filter.placeholder, this.filters.form.elements[filter.placeholder].value);
+			if(this.filters.container && filter.placeholder in this.filters.container.elements)
+				parameters.set(filter.placeholder, this.filters.container.elements[filter.placeholder].value);
 		}
 
 		return link + '?' + parameters.toString();
@@ -1121,6 +1111,141 @@ class DataSource {
 		`);
 
 		this.visualizations.selected.container.classList.add('hidden');
+	}
+}
+
+class DataSourceFilters extends Map {
+
+
+	constructor(source) {
+
+		super();
+
+		this.source = source;
+
+		if(!this.source.filters || !this.source.filters.length)
+			return;
+
+		for(const filter of this.source.filters)
+			this.set(filter.placeholder, new DataSourceFilter(filter, this.source));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('form');
+
+		container.classList.add('toolbar', 'form', 'filters');
+
+		for(const filter of this.values())
+			container.appendChild(filter.label);
+
+		container.on('submit', e => this.visualizations.selected.load(e));
+
+		container.insertAdjacentHTML('beforeend', `
+			<label class="right">
+				<button type="reset">
+					<i class="fa fa-undo"></i> Reset
+				</button>
+			</label>
+			<label>
+				<button type="submit">
+					<i class="fa fa-sync"></i> Submit
+				</button>
+			</label>
+		`);
+
+		return container;
+	}
+}
+
+class DataSourceFilter {
+
+	static setup() {
+
+		DataSourceFilter.types = {
+			1: 'text',
+			0: 'number',
+			2: 'date',
+			3: 'month',
+			4: 'city',
+		};
+
+		DataSourceFilter.placeholderPrefix = 'param_';
+	}
+
+	constructor(filter, source) {
+
+		for(const key in filter)
+			this[key] = filter[key];
+
+		this.source = source;
+
+		if(this.dataset && MetaData.datasets.has(this.dataset))
+			this.dataset = new Dataset(this.dataset, this);
+
+		else this.dataset = null;
+	}
+
+	get label() {
+
+		if(this.labelContainer)
+			return this.labelContainer;
+
+		const container = document.createElement('label');
+
+		let input = document.createElement('input');
+
+		input.type = DataSourceFilter.types[this.type];
+		input.name = this.placeholder;
+
+		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
+			input.max = new Date().toISOString().substring(0, 10);
+
+		input.value = this.value;
+
+		if(this.dataset)
+			input = this.dataset.container;
+
+		container.innerHTML = `<span>${this.name}<span>`;
+
+		container.appendChild(input);
+
+		return this.labelContainer = container;
+	}
+
+	get value() {
+
+		if(this.dataset && this.dataset.query_id)
+			return this.dataset;
+
+		if(this.labelContainer)
+			return this.label.querySelector('input').value;
+
+		let value = this.default_value;
+
+		if(!isNaN(parseFloat(this.offset))) {
+
+			if(DataSourceFilter.types[this.type] == 'date')
+				value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			if(DataSourceFilter.types[this.type] == 'month') {
+				const date = new Date();
+				value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
+			}
+		}
+
+		return value;
+	}
+
+	set value(value) {
+
+		if(this.dataset)
+			return this.dataset.value = value;
+
+		this.label.querySelector('input').value = value;
 	}
 }
 
@@ -2040,90 +2165,6 @@ class DataSourceColumn {
 		});
 
 		return container;
-	}
-}
-
-class DataSourceFilter {
-
-	static setup() {
-
-		DataSourceFilter.types = {
-			1: 'text',
-			0: 'number',
-			2: 'date',
-			3: 'month',
-			4: 'city',
-		};
-
-		DataSourceFilter.placeholderPrefix = 'param_';
-	}
-
-	constructor(filter, source) {
-
-		for(const key in filter)
-			this[key] = filter[key];
-
-		this.source = source;
-
-		if(this.dataset && MetaData.datasets.has(this.dataset))
-			this.dataset = new Dataset(this.dataset, this);
-
-		else this.dataset = null;
-	}
-
-	get label() {
-
-		if(this.labelContainer)
-			return this.labelContainer;
-
-		this.labelContainer = document.createElement('label');
-
-		let input = document.createElement('input');
-
-		input.type = DataSourceFilter.types[this.type];
-		input.name = this.placeholder;
-
-		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
-			input.max = new Date().toISOString().substring(0, 10);
-
-		input.value = this.default_value;
-
-		if(!isNaN(parseFloat(this.offset))) {
-
-			if(DataSourceFilter.types[this.type] == 'date')
-				input.value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-
-			if(DataSourceFilter.types[this.type] == 'month') {
-				const date = new Date();
-				input.value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
-			}
-		}
-
-		if(this.dataset) {
-			input = this.dataset.container;
-		}
-
-		this.labelContainer.innerHTML = `<span>${this.name}<span>`;
-
-		this.labelContainer.appendChild(input);
-
-		return this.labelContainer;
-	}
-
-	get value() {
-
-		if(this.dataset)
-			return this.dataset;
-
-		return this.label.querySelector('input').value;
-	}
-
-	set value(value) {
-
-		if(this.dataset)
-			return this.dataset.value = value;
-
-		this.label.querySelector('input').value = value;
 	}
 }
 
@@ -3575,7 +3616,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		this.y.domain([0, max]);
 
-		this.x.domain(this.rows.map(r => Format.date(r.get(this.axes.bottom.column))));
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangeBands([0, this.width], 0.1, 0);
 
 		const
