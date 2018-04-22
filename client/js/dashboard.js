@@ -740,12 +740,16 @@ class DashboardDatasets extends Map {
 
 	async render() {
 
-		const container = Dashboard.toolbar.querySelector('.datasets');
+		const container = this.page.container.querySelector('#reports .datasets');
 
 		container.textContent = null;
 
+		container.classList.toggle('hidden', !this.size);
+
 		if(!this.size)
 			return;
+
+		container.innerHTML = '<h3>Global Filters</h3>';
 
 		let counter = 1;
 

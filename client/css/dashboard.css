@@ -117,6 +117,66 @@ main > nav::-webkit-scrollbar-track {
 				transform: rotate(-90deg);
 			}
 
+main #reports > .datasets {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	position: fixed;
+	right: 0;
+	top: 50px;
+	bottom: 0;
+	background: #fff;
+	padding: 0 calc(var(--gap) * 2);
+	box-shadow:  0 0 25px rgba(0, 0, 0, 0.15);
+	z-index: 3;
+	width: 250px;
+	align-items: flex-start;
+	overflow: auto;
+	opacity: 0;
+	transform: translateX(240px);
+	transition: transform var(--transition-duration),
+				opacity var(--transition-duration);
+}
+main #reports > .datasets:hover {
+	transform: translateX(0px);
+	opacity: 1;
+}
+	main #reports > .datasets h3 {
+		margin: 0 0 10px;
+		border-bottom: 1px dashed #999;
+		font-size: 95%;
+		padding: var(--gap) 0;
+		background: #fff;
+		width: 100%;
+		position: sticky;
+		top: 0;
+		z-index: 1;
+	}
+	main #reports > .datasets .dataset-container {
+		grid-column: 1;
+		width: 100%;
+		max-width: 100%;
+		margin-bottom: calc(var(--gap) * 2);
+	}
+	main #reports > .datasets .dataset-container:last-of-type {
+		margin-bottom: 0;
+	}
+	main #reports > .datasets .actions {
+		display: grid;
+		grid-auto-flow:  column;
+		grid-gap: calc(var(--gap) * 2);
+		grid-column: auto / span 2;
+		margin-top: auto;
+		position: sticky;
+		background: #fff;
+		bottom: 0px;
+		width: 100%;
+		padding: calc(var(--gap) * 2) 0;
+	}
+		main #reports > .datasets .actions .icon svg {
+			margin: 0;
+		}
+
 main #reports > .list {
 	display: grid;
 	grid-template-columns: repeat(8, 12.5%);
@@ -141,22 +201,6 @@ main #reports > .list {
 		main #reports > .toolbar label select {
 			max-width: 200px;
 		}
-		main #reports > .toolbar .datasets {
-			display: grid;
-			grid-gap: calc(var(--gap) * 2);
-			align-items: flex-end;
-			justify-content: flex-end;
-			grid-template-columns: repeat(auto-fill, minmax(150px, auto));
-		}
-			main #reports > .toolbar .datasets .actions {
-				display: grid;
-				grid-auto-flow:  column;
-				grid-gap: calc(var(--gap) * 2);
-				grid-column: auto / span 2;
-			}
-				main #reports > .toolbar .datasets .actions .icon svg {
-					margin: 0;
-				}
 	main #reports .list .data-source {
 		grid-column: auto / span 8;
 		grid-row: auto / span 2;

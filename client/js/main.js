@@ -753,16 +753,16 @@ class DataSource {
 			</header>
 
 			<div class="toolbar menu hidden">
-				<button class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
-				<button class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
-				<button class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
-				<button class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
+				<button type="button" class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
+				<button type="button" class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
+				<button type="button" class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
+				<button type="button" class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
 
 				<div class="download-btn" title="Download CSV">
-					<button class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
+					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
 					<div class="download-dropdown-content hidden">
-						<button class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
-						<button class="json-download"><i class="fas fa-code"></i> JSON</button>
+						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
+						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
 					</div>
 				</div>
 			</div>

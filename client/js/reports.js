@@ -248,6 +248,8 @@ class Report {
 						return;
 
 					await Report.selected.run();
+
+					Report.editor.editor.resize();
 				}
 			});
 		});
@@ -724,13 +726,12 @@ class Report {
 
 		report = new DataSource(report);
 
-		if(Report.editor.editor.getSelectedText()) {
-			report.query = Report.editor.editor.getSelectedText();
-			report.queryOverride = true;
-		}
+		report.query = Report.editor.editor.getSelectedText() || Report.editor.value;
+		report.queryOverride = true;
+
+		report.visualizations = report.visualizations.filter(v => v.type == 'table');
 
 		report.container.querySelector('header').classList.add('hidden');
-		report.container.querySelector('.menu-toggle').click();
 
 		const executing = Report.container.querySelector('#test-executing');
 
@@ -748,9 +749,18 @@ class Report {
 			setTimeout(() => window.requestAnimationFrame(() => showTime()), 100);
 		})();
 
-		[report.visualizations.selected] = report.visualizations.filter(v => v.type == 'table');
+		const promises = [];
+
+		for(const filter of report.filters.values()) {
+			if(filter.dataset)
+				promises.push(filter.dataset.fetch());
+		}
+
+		await Promise.all(promises);
 
 		await report.visualizations.selected.load();
+
+		report.container.querySelector('.menu-toggle').click();
 
 		const oldContainer = Report.testContainer.querySelector('.data-source');
 
@@ -1171,6 +1181,15 @@ class ReportVisualization {
 		const
 			report = new DataSource(DataSource.list.get(this.visualizations.report.query_id)),
 			preview = ReportVisualizations.preview.querySelector('.preview');
+
+		const promises = [];
+
+		for(const filter of report.filters.values()) {
+			if(filter.dataset)
+				promises.push(filter.dataset.load());
+		}
+
+		await Promise.all(promises);
 
 		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id);
 
