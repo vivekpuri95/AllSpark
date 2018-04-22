@@ -7,7 +7,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 	if(!Page.class)
 		return;
 
-	new (Page.class)();
+	window.page = new (Page.class)();
 });
 
 class Page {
@@ -104,6 +104,8 @@ class Page {
 		this.account = window.account;
 		this.user = window.user;
 		this.metadata = window.MetaData;
+
+		this.serviceWorker = new Page.serviceWorker(this);
 	}
 }
 
@@ -112,6 +114,44 @@ Page.exception = class PageException extends Error {
 	constructor(message) {
 		super(message);
 		this.message = message;
+	}
+}
+
+Page.serviceWorker = class PageServiceWorker {
+
+	constructor(page) {
+
+		this.page = page;
+
+		this.setup();
+	}
+
+	async setup() {
+
+		if(!('serviceWorker' in navigator)) {
+			this.status = false;
+			return;
+		}
+
+		this.worker = await navigator.serviceWorker.register('/service-worker.js');
+
+		navigator.serviceWorker.controller.addEventListener('statechange', e => this.statechange(e));
+	}
+
+	statechange(event) {
+
+		if(event.target.state != 'redundant')
+			return;
+
+		const message = document.createElement('div');
+
+		message.classList.add('warning', 'site-outdated');
+
+		message.innerHTML = `The site has been updated in the background. Please <a href="">reload</a> the page.`;
+
+		message.querySelector('a').on('click', () => window.location.reload());
+
+		this.page.container.parentElement.insertBefore(message, this.page.container);
 	}
 }
 
@@ -4235,7 +4275,12 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 	process() {
 
-		const newResponse = {};
+		const
+			response = this.source.originalResponse,
+			newResponse = {};
+
+		if(!response || !response.data || !response.data.length)
+			return;
 
 		for(const row of this.source.originalResponse.data)
 			newResponse[row.name] = parseFloat(row.value) || 0;
@@ -4276,12 +4321,15 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		container.selectAll('*').remove();
 
+		if(!this.rows || !this.rows.length)
+			return;
+
 		const
-			[row] = this.source.response,
+			[row] = this.rows,
 			data = [],
 			sum = Array.from(row.values()).reduce((sum, value) => sum + value, 0);
 
-		for(const [name, value] of this.source.response[0])
+		for(const [name, value] of this.rows[0])
 			data.push({name, value, percentage: Math.floor(value / sum * 1000) / 10});
 
 		const

@@ -4,6 +4,8 @@ const express = require('express');
 const router = express.Router();
 const compression = require('compression');
 const config = require('config');
+const {promisify} = require('util');
+const fs = require('fs');
 
 const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
@@ -11,14 +13,23 @@ router.use(compression());
 
 router.use(express.static('./client'));
 
-router.get('/login', (req, res) => {
+router.get('/service-worker.js', async (request, response) => {
 
-	const template = new Template;
+	response.setHeader('Content-Type', 'application/javascript');
+	response.send([
+		await (promisify(fs.readFile))('client/js/service-worker.js', {encoding: 'utf8'}),
+		`'${checksum}'`
+	].join('\n'));
+});
+
+router.get('/login', (request, response) => {
+
+	const template = new Template(request, response);
 
 	template.stylesheets.push('css/login.css');
 	template.scripts.push('js/login.js');
 
-	res.send(template.body(`
+	response.send(template.body(`
 
 		<div class="logo hidden">
 			<img src="" />
@@ -49,14 +60,14 @@ router.get('/login', (req, res) => {
 	`));
 });
 
-router.get('/login/forgot', (req, res) => {
+router.get('/login/forgot', (request, response) => {
 
-	const template = new Template;
+	const template = new Template(request, response);
 
 	template.stylesheets.push('/css/login.css');
 	template.scripts.push('/js/forgotpassword.js');
 
-	res.send(template.body(`
+	response.send(template.body(`
 
 		<div class="logo hidden">
 			<img src="" />
@@ -82,15 +93,15 @@ router.get('/login/forgot', (req, res) => {
 	`));
 });
 
-router.get('/login/reset', (req, res) => {
+router.get('/login/reset', (request, response) => {
 
-	const template = new Template;
+	const template = new Template(request, response);
 
 	template.stylesheets.push('/css/login.css');
 
 	template.scripts.push('/js/resetpassword.js');
 
-	res.send(template.body(`
+	response.send(template.body(`
 
 		<div class="logo hidden">
 			<img src="" />
@@ -116,11 +127,11 @@ router.get('/login/reset', (req, res) => {
 	`));
 });
 
-router.get('/user/profile/edit', (req, res) => {
-	const template = new Template;
+router.get('/user/profile/edit', (request, response) => {
+	const template = new Template(request, response);
 	template.scripts.push('/js/user/profile/edit.js');
 
-	res.send(template.body(`
+	response.send(template.body(`
 		<section class="section" id="form">
 			<form class="block form">
 
@@ -150,14 +161,14 @@ router.get('/user/profile/edit', (req, res) => {
 	`));
 });
 
-router.get('/user/profile/:id?', (req, res) => {
+router.get('/user/profile/:id?', (request, response) => {
 
-	const template = new Template;
+	const template = new Template(request, response);
 
 	template.stylesheets.push('/css/profile.css');
 	template.scripts.push('/js/profile.js');
 
-	res.send(template.body(`
+	response.send(template.body(`
 		<section id="profile">
 			<h1>
 				Profile details
@@ -197,9 +208,9 @@ router.get('/user/profile/:id?', (req, res) => {
 	`))
 });
 
-router.get('/:type(dashboard|report)/:id?', (req, res) => {
+router.get('/:type(dashboard|report)/:id?', (request, response) => {
 
-	const template = new Template;
+	const template = new Template(request, response);
 
 	template.stylesheets.push();
 
@@ -210,20 +221,20 @@ router.get('/:type(dashboard|report)/:id?', (req, res) => {
 	template.scripts = template.scripts.concat([
 		'/js/dashboard.js',
 
-		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
 
-	res.send(template.body(`
+	response.send(template.body(`
 
 		<nav>
 			<div class="NA"><i class="fa fa-spinner fa-spin"></i></div>
 		</nav>
 
 		<section class="section" id="list">
-			<h2>${req.params.type}</h2>
+			<h2>${request.params.type}</h2>
 
 			<form class="form toolbar">
 
@@ -270,15 +281,15 @@ router.get('/:type(dashboard|report)/:id?', (req, res) => {
 	`));
 });
 
-router.get('/dashboards/:id?', (req, res) => {
+router.get('/dashboards/:id?', (request, response) => {
 
-	const template = new Template;
+	const template = new Template(request, response);
 
 	template.stylesheets.push('/css/dashboards.css');
 
 	template.scripts.push('/js/dashboards.js');
 
-	res.send(template.body(`
+	response.send(template.body(`
 
 		<section class="section show" id="list">
 
@@ -342,9 +353,9 @@ router.get('/dashboards/:id?', (req, res) => {
 	`));
 });
 
-router.get('/:type(reports|visualization)/:id?', (req, res) => {
+router.get('/:type(reports|visualization)/:id?', (request, response) => {
 
-	const template = new Template;
+	const template = new Template(request, response);
 
 	template.stylesheets.push('/css/reports.css');
 
@@ -360,7 +371,7 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
 
-	res.send(template.body(`
+	response.send(template.body(`
 
 		<section class="section" id="list">
 
@@ -645,14 +656,14 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 	`));
 });
 
-router.get('/users/:id?', (req, res) => {
+router.get('/users/:id?', (request, response) => {
 
-	const template = new Template;
+	const template = new Template(request, response);
 
 	template.stylesheets.push('/css/users.css');
 	template.scripts.push('/js/users.js');
 
-	res.send(template.body(`
+	response.send(template.body(`
 
 		<section class="section" id="list">
 
@@ -772,14 +783,14 @@ router.get('/users/:id?', (req, res) => {
 	`));
 });
 
-router.get('/connections/:id?', (req, res) => {
+router.get('/connections/:id?', (request, response) => {
 
-	const template = new Template;
+	const template = new Template(request, response);
 
 	template.stylesheets.push('/css/connections.css');
 	template.scripts.push('/js/connections.js');
 
-	res.send(template.body(`
+	response.send(template.body(`
 		<section class="section" id="list">
 
 			<h1>Connection Manager</h1>
@@ -835,14 +846,14 @@ router.get('/connections/:id?', (req, res) => {
 	`));
 });
 
-router.get('/settings/:tab?/:id?', (req, res) => {
+router.get('/settings/:tab?/:id?', (request, response) => {
 
-	const template = new Template;
+	const template = new Template(request, response);
 
 	template.stylesheets.push('/css/settings.css');
 	template.scripts.push('/js/settings.js');
 
-	res.send(template.body(`
+	response.send(template.body(`
 
 		<nav></nav>
 
@@ -927,7 +938,6 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 					<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
 					<button type="submit" form="user-form2"><i class="fa fa-save"></i> Save</button>
 				</header>
-
 				<form class="block form" id="user-form2">
 
 					<label>
@@ -1000,7 +1010,10 @@ router.get('/settings/:tab?/:id?', (req, res) => {
 
 class Template {
 
-	constructor() {
+	constructor(request, response) {
+
+		this.request = request;
+		this.response = response;
 
 		this.stylesheets = [
 			'/css/main.css',
