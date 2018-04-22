@@ -18,16 +18,12 @@ self.addEventListener('install', event => {
 		await cache.addAll(offlineCaches);
 
 		self.skipWaiting();
-
-		console.log('SERVICE WORKER: install');
 	})());
 });
 
 self.addEventListener('activate', async event => {
 
 	clients.claim();
-
-	console.log('SERVICE WORKER: activate');
 });
 
 self.addEventListener('fetch', async event => {
@@ -40,8 +36,6 @@ self.addEventListener('fetch', async event => {
 			return match;
 
 		const response = await fetch(event.request.clone());
-
-		console.log('SERVICE WORKER: fetch', event.request.url);
 
 		if(response && response.status == 200 && event.request.method == 'GET') {
 
