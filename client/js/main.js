@@ -3609,8 +3609,8 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		this.rows = this.source.response;
 
 		this.axes.bottom.height = 25;
-		this.axes.left.width = 50;
-		this.axes.right.width = 50;
+		this.axes.left.width = 40;
+		this.axes.right.width = 25;
 
 		if(this.axes.bottom.label)
 			this.axes.bottom.height += 20;
@@ -3619,7 +3619,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			this.axes.left.width += 20;
 
 		if(this.axes.right.label)
-			this.axes.right.width += 5;
+			this.axes.right.width += 10;
 
 		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
 		this.width = this.container.clientWidth - this.axes.left.width - this.axes.right.width - 40;
@@ -3742,8 +3742,6 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			});
 		}
 
-		this.zoomRectangle = null;
-
 		if(!this.rows.length)
 			return;
 
@@ -3762,11 +3760,13 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			leftAxis = d3.svg.axis()
 				.scale(this.left)
 				.innerTickSize(-this.width)
+			    .tickFormat(d3.format('s'))
 				.orient('left'),
 
 			rightAxis = d3.svg.axis()
 				.scale(this.right)
 				.innerTickSize(this.width)
+			    .tickFormat(d3.format('s'))
 				.orient('right');
 
 		this.left.max = 0;
@@ -3833,7 +3833,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		this.svg
 			.append('text')
-			.attr('transform', `rotate(90) translate(${(this.height / 2)}, ${(this.width + 125) * -1})`)
+			.attr('transform', `rotate(90) translate(${(this.height / 2)}, ${(this.axes.left.width + this.width + 40) * -1})`)
 			.attr('class', 'axis-label')
 			.style('text-anchor', 'middle')
 			.text(this.axes.right.label);
@@ -3929,6 +3929,145 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				.attr('cx', d => this.bottom(d.x) + this.axes.left.width + (this.bottom.rangeBand() / 2))
 				.attr('cy', d => this.right(d.y))
 		}
+
+		this.zoomRectangle = null;
+
+		container
+
+		.on('mousemove', function() {
+
+			const mouse = d3.mouse(this);
+
+			if(that.zoomRectangle) {
+
+				const
+					filteredRows = that.rows.filter(row => {
+
+						const item = that.bottom(row.get(that.axes.bottom.column)) + 100;
+
+						if(mouse[0] < that.zoomRectangle.origin[0])
+							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+						else
+							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+					}),
+					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+
+				// Assign width and height to the rectangle
+				that.zoomRectangle
+					.select('rect')
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]))
+					.attr('width', width)
+					.attr('height', that.height);
+
+				that.zoomRectangle
+					.select('g')
+					.selectAll('*')
+					.remove();
+
+				that.zoomRectangle
+					.select('g')
+					.append('text')
+					.text(`${Format.number(filteredRows.length)} Selected`)
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+					.attr('y', (that.height / 2) - 5);
+
+				if(filteredRows.length) {
+
+					that.zoomRectangle
+						.select('g')
+						.append('text')
+						.text(`${filteredRows[0].get(that.axes.bottom.column)} - ${filteredRows[filteredRows.length - 1].get(that.axes.bottom.column)}`)
+						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+						.attr('y', (that.height / 2) + 20);
+				}
+
+				return;
+			}
+
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
+
+			if(!row)
+				return;
+
+			const tooltip = [];
+
+			for(const [key, value] of row) {
+
+				if(key == that.axes.bottom.column)
+					continue;
+
+				tooltip.push(`
+					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
+						<span class="circle" style="background:${row.source.columns.get(key).color}"></span>
+						<span>${row.source.columns.get(key).name}</span>
+						<span class="value">${Format.number(value)}</span>
+					</li>
+				`);
+			}
+
+			const content = `
+				<header>${row.get(that.axes.bottom.column)}</header>
+				<ul class="body">
+					${tooltip.reverse().join('')}
+				</ul>
+			`;
+
+			Tooltip.show(that.container, mouse, content, row);
+		})
+
+		.on('mouseleave', function() {
+			Tooltip.hide(that.container);
+		})
+
+		.on('mousedown', function() {
+
+			Tooltip.hide(that.container);
+
+			if(that.zoomRectangle)
+				return;
+
+			that.zoomRectangle = container.select('svg').append('g');
+
+			that.zoomRectangle
+				.attr('class', 'zoom')
+				.style('text-anchor', 'middle')
+				.append('rect')
+				.attr('class', 'zoom-rectangle');
+
+			that.zoomRectangle
+				.append('g');
+
+			that.zoomRectangle.origin = d3.mouse(this);
+		})
+
+		.on('mouseup', function() {
+
+			if(!that.zoomRectangle)
+				return;
+
+			that.zoomRectangle.remove();
+
+			const
+				mouse = d3.mouse(this),
+				filteredRows = that.rows.filter(row => {
+
+					const item = that.bottom(row.get(that.axes.bottom.column)) + 100;
+
+					if(mouse[0] < that.zoomRectangle.origin[0])
+						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+					else
+						return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+				});
+
+			that.zoomRectangle = null;
+
+			if(!filteredRows.length)
+				return;
+
+			that.rows = filteredRows;
+
+			that.plot();
+		}, true);
 	}
 });
 
