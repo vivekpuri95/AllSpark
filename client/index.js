@@ -376,7 +376,7 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 			<div id="list-container">
 				<table class="block">
 					<thead>
-						<tr></tr>
+						<tr class="table-search"></tr>
 						<tr class="table-head">
 							<th class="sort" title="query_id" >ID<i class="fa fa-sort"></th>
 							<th class="sort" title="name" >Name<i class="fa fa-sort"></th>
