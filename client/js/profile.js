@@ -40,26 +40,35 @@ class Profile extends Page {
 			<label><span>Phone:&nbsp;</span><div>${response.phone || 'NA'}</div></label>
 		`;
 
-		const privileges_table = Profile.container.querySelector('.privileges table tbody');
-		for(const data of response.privileges) {
-			const tr = document.createElement('tr');
-			tr.innerHTML =`
-				<td>${MetaData.categories.get(data.category_id).name}</td>
-				<td>${MetaData.privileges.get(data.privilege_id).name}</td>
-			`;
-			privileges_table.appendChild(tr);
+		if(!response.privileges.length) {
+			Profile.container.querySelector('.privileges table').innerHTML = '<div class="NA">No privilege assigned :(';
+		}
+		else {
+			const privileges_table = Profile.container.querySelector('.privileges table tbody');
+			for(const data of response.privileges) {
+				const tr = document.createElement('tr');
+				tr.innerHTML =`
+					<td>${MetaData.categories.get(data.category_id).name}</td>
+					<td>${MetaData.privileges.get(data.privilege_id).name}</td>
+				`;
+				privileges_table.appendChild(tr);
+			}
 		}
 
-		const roles_table = Profile.container.querySelector('.roles table tbody');
-		for(const data of response.roles) {
-			const tr = document.createElement('tr');
-			tr.innerHTML =`
-				<td>${MetaData.categories.get(data.category_id).name}</td>
-				<td>${MetaData.roles.get(data.role_id).name}</td>
-			`;
-			roles_table.appendChild(tr);
+		if(!response.roles.length) {
+			Profile.container.querySelector('.roles table').innerHTML = '<div class="NA">No role assigned :(';
 		}
-
+		else {
+			const roles_table = Profile.container.querySelector('.roles table tbody');
+			for(const data of response.roles) {
+				const tr = document.createElement('tr');
+				tr.innerHTML =`
+					<td>${MetaData.categories.get(data.category_id).name}</td>
+					<td>${MetaData.roles.get(data.role_id).name}</td>
+				`;
+				roles_table.appendChild(tr);
+			}
+		}
 	}
 }
 
