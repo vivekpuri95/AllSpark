@@ -1270,7 +1270,12 @@ class ReportVisualization {
 			this.options = null;
 		}
 
-		this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
+		this.optionsForm = null;
+
+		if(ReportVisualization.types.has(this.type))
+			this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
+
+		else debugger;
 	}
 
 	get row() {
@@ -1315,7 +1320,9 @@ class ReportVisualization {
 		const options = form.querySelector('.options');
 
 		options.textContent = null;
-		options.appendChild(this.optionsForm.form);
+
+		if(this.optionsForm)
+			options.appendChild(this.optionsForm.form);
 	}
 
 	async loadPreview() {
@@ -1342,7 +1349,8 @@ class ReportVisualization {
 		preview.textContent = null;
 		preview.appendChild(report.container);
 
-		this.optionsForm.report = report;
+		if(this.optionsForm)
+			this.optionsForm.report = report;
 
 		await report.visualizations.selected.load();
 	}
@@ -1360,7 +1368,8 @@ class ReportVisualization {
 				form: new FormData(ReportVisualization.form),
 			};
 
-		parameters.options = JSON.stringify(this.optionsForm.json);
+		if(this.optionsForm)
+			parameters.options = JSON.stringify(this.optionsForm.json);
 
 		await API.call('reports/visualizations/update', parameters, options);
 
@@ -1521,6 +1530,9 @@ ReportVisualization.types.set('scatter', class BarOptions extends ReportVisualiz
 });
 
 ReportVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {
+});
+
+ReportVisualization.types.set('dualaxisbar', class DualAxisBarOptions extends ReportVisualizationLinearOptions {
 });
 
 ReportVisualization.types.set('stacked', class BarOptions extends ReportVisualizationLinearOptions {
