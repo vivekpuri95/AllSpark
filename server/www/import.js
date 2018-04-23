@@ -5,11 +5,11 @@ exports.json = class extends API {
 		this.user.privilege.needs('report');
 
 		let data;
-		try{
+		try {
 			data = JSON.parse(this.request.body.json);
 		}
-		catch(e){
-			return e;
+		catch(e) {
+			throw new API.Exception(400, 'Invalid JSON format!');
 		}
 
 		let query = {
