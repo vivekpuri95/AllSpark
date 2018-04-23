@@ -78,16 +78,17 @@ a:active {
 .notice, .warning {
 	padding: 16px;
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-	margin: var(--gap) 0;
 	color: #666;
 	border-radius: 0;
-	border: 1px solid #ccc;
 }
 .notice {
 	background: #dfd;
 }
 .warning {
 	background: #fdd;
+}
+.warning.site-outdated {
+	text-align: center;
 }
 .NA {
 	color: #666;
@@ -251,10 +252,11 @@ body {
 			font-size: 90%;
 		}
 			main table thead th {
-				padding: 5px 8px;
+				padding: 10px 8px;
 				position: sticky;
 				top: 0;
 				z-index: 2;
+				width: 60px;
 				background: var(--color-primary);
 				color: var(--color-primary-text);
 			}
@@ -408,6 +410,8 @@ body {
 			margin: calc(var(--gap) * 2) 0 0;
 			overflow: auto;
 			user-select: text;
+			font-family: inherit;
+			color: #999;
 		}
 		main .data-source > header {
 			border-bottom: 1px dashed #999;
@@ -465,10 +469,38 @@ body {
 			main .data-source .query-toggle.selected,
 			main .data-source .description-toggle.selected,
 			main .data-source .share-link-toggle.selected,
+			main .data-source .export-toggle.selected,
 			main .data-source .filters-toggle.selected {
 				background: var(--color-accent);
 				color: var(--color-accent-text);
 				border-color: var(--color-accent);
+			}
+			main .data-source .download-btn {
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				width: 60%;
+			}
+			main .data-source .download.selected {
+				background: var(--color-accent);
+				color: var(--color-accent-text);
+			}
+			main .data-source .download-dropdown-content {
+				position: absolute;
+				display: flex;
+				flex-direction: column;
+				width: 200%;
+				top: 27px;
+				right: 0;
+			}
+			main .data-source .download-dropdown-content .csv-download {
+				border-bottom: 0;
+			}
+			main .data-source .download-dropdown-content > button {
+				text-align: left;
+			}
+			main .data-source .download-dropdown-content svg {
+				width: 10px;
 			}
 		main .data-source > .description {
 			background: #fff;
@@ -513,6 +545,16 @@ body {
 			max-height: 150px;
 			overflow: auto;
 		}
+        main .data-source > .export-json {
+              background: #fff;
+              box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+              padding: 10px;
+              margin-top: calc(var(--gap) * 2);
+              user-select: text;
+              font-family: monospace;
+              max-height: 150px;
+              overflow: auto;
+        }
 		main .data-source > .share-link {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
@@ -522,7 +564,6 @@ body {
 			main .data-source > .share-link input {
 				width: 100%;
 			}
-
 		main .data-source .column .blanket .form footer {
 			display: grid;
 			grid-template-columns: 1fr 1fr 1fr;
@@ -1052,7 +1093,7 @@ body {
 }
 
 .visualization .container > svg text.axis-label {
-	font-size: 130%;
+	font-size: 115%;
 	letter-spacing: 2px;
 	fill: #999;
 	font-weight: bold;

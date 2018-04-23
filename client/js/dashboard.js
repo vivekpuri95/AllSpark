@@ -294,12 +294,6 @@ class Dashboard {
 
 			const report = new DataSource(_report);
 
-			for(const filter of report.filters.values()) {
-
-				if(filter.dataset && this.datasets.has(filter.dataset.id))
-					await filter.dataset.load();
-			}
-
 			report.container.setAttribute('style', `
 				order: ${report.dashboard.position || 0};
 				grid-column: auto / span ${report.dashboard.width || Dashboard.grid.columns};
@@ -740,12 +734,16 @@ class DashboardDatasets extends Map {
 
 	async render() {
 
-		const container = Dashboard.toolbar.querySelector('.datasets');
+		const container = this.page.container.querySelector('#reports .datasets');
 
 		container.textContent = null;
 
+		container.classList.toggle('hidden', !this.size);
+
 		if(!this.size)
 			return;
+
+		container.innerHTML = '<h3>Global Filters</h3>';
 
 		let counter = 1;
 
