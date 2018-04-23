@@ -468,7 +468,7 @@ body {
 			main .data-source .query-toggle.selected,
 			main .data-source .description-toggle.selected,
 			main .data-source .share-link-toggle.selected,
-            main .data-source .export-toggle.selected,
+			main .data-source .export-toggle.selected,
 			main .data-source .filters-toggle.selected {
 				background: var(--color-accent);
 				color: var(--color-accent-text);
