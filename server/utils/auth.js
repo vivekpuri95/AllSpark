@@ -12,7 +12,7 @@ class Authenticate {
 			reportObject = await mysql.query(`
                 SELECT
                   q.*,
-                  IF(user_id IS NULL, 0, 1) AS flag
+                  IF(user_id IS NULL, 0, 1) AS flag	
                 FROM
                     tb_query q
                 LEFT JOIN
@@ -59,6 +59,82 @@ class Authenticate {
 		objectPrivileges = commonFun.listOfArrayToMatrix(objectPrivileges);
 
 		return commonFun.authenticatePrivileges(userPrivileges, objectPrivileges);
+	}
+
+	static async dashboard(dashboardQueryList, userObj) {
+
+		if (parseInt(dashboardQueryList) || !dashboardQueryList) {
+
+			dashboardQueryList = await mysql.query(`
+				 SELECT
+					q.*,
+					coalesce(user_id, 0)  AS flag,
+					d.visibility as visibility
+                FROM
+                    tb_query q
+                join
+                	(
+                		select 
+                			*
+                		from 
+                			tb_dashboards d
+                		join
+                			tb_user_dashboard ud
+                		on
+                			d.id = ud.dashboard_id
+                		where
+                			ud.user_id = ? or d.added_by = ?
+                	) d
+                	
+                LEFT JOIN
+                     tb_user_query uq ON
+                     uq.query_id = q.query_id
+                     AND user_id = ?
+                WHERE
+                	d.id = ?
+                    and q.query_id IN (select query_id from tb_query_dashboard where dashboard_id = ?)
+                    AND is_enabled = 1
+                    AND is_deleted = 0
+                    AND account_id = ?
+			`,
+				[userObj.user_id, dashboardQueryList, userObj.account_id]
+			);
+
+			if (!dashboardQueryList.length && dashboardQueryList.length > 1) {
+
+				return {
+					error: true,
+					message: "error in dashboardQueryList details",
+				}
+			}
+		}
+
+
+		for (const query of dashboardQueryList) {
+
+			if (query.visibility === "private") {
+
+				return {
+					error: false,
+					message: "private dashboard to user"
+				}
+			}
+
+			const authResponse = await Authenticate.report(query, userObj);
+
+			if(authResponse.error) {
+
+				return {
+					error: true,
+					message: "not authenticated for Report id:" + query.query_id
+				}
+			}
+		}
+
+		return {
+			error: false,
+			message: "public dashboard and privileged user",
+		}
 	}
 }
 
