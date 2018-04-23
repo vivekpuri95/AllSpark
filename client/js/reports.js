@@ -173,7 +173,8 @@ class Reports extends Page {
 
 			if(
 				column.textContent.toLowerCase() != 'edit' &&
-				column.textContent.toLowerCase() != 'delete'
+				column.textContent.toLowerCase() != 'delete' &&
+				column.textContent.toLowerCase() != 'connection'
 			){
 				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
 				col.querySelector('.column-search').on('keyup', () => {

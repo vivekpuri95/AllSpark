@@ -381,7 +381,7 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 							<th class="sort" title="query_id" >ID<i class="fa fa-sort"></th>
 							<th class="sort" title="name" >Name<i class="fa fa-sort"></th>
 							<th class="sort" title="description" >Description<i class="fa fa-sort"></th>
-							<th title="connection_name">Connection</th>
+							<th>Connection</th>
 							<th title="tags">Tags</th>
 							<th class="sort" title="filters" >Filters<i class="fa fa-sort"></th>
 							<th class="sort" title="visualizations" >Visualizations<i class="fa fa-sort"></th>
