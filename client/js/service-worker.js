@@ -3,7 +3,7 @@ const now = Date.now();
 
 const offlineCaches = [
 	'/',
-	'/service-worker.js' ,
+	'/service-worker.js',
 ];
 
 self.addEventListener('install', event => {
@@ -32,7 +32,7 @@ self.addEventListener('fetch', async event => {
 
 		const match = await caches.match(event.request);
 
-		if(match)
+		if(match && !event.request.url.includes('/v2/'))
 			return match;
 
 		const response = await fetch(event.request.clone());
