@@ -78,16 +78,17 @@ a:active {
 .notice, .warning {
 	padding: 16px;
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-	margin: var(--gap) 0;
 	color: #666;
 	border-radius: 0;
-	border: 1px solid #ccc;
 }
 .notice {
 	background: #dfd;
 }
 .warning {
 	background: #fdd;
+}
+.warning.site-outdated {
+	text-align: center;
 }
 .NA {
 	color: #666;

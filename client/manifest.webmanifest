@@ -1,0 +1,14 @@
+{
+	"name": "AllSpark",
+	"short_name": "AllSpark",
+	"start_url": ".",
+	"display": "standalone",
+	"background_color": "#fff",
+	"theme_color": "#fff",
+	"description": "Analytics App",
+	"icons": [{
+		"src": "https://lbxoezeogn43sov13789n8p9-wpengine.netdna-ssl.com/img/favicon.png",
+		"sizes": "48x48",
+		"type": "image/png"
+	}]
+}
