@@ -173,8 +173,7 @@ class Reports extends Page {
 
 			if(
 				column.textContent.toLowerCase() != 'edit' &&
-				column.textContent.toLowerCase() != 'delete' &&
-				column.textContent.toLowerCase() != 'connection'
+				column.textContent.toLowerCase() != 'delete'
 			){
 				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
 				col.querySelector('.column-search').on('keyup', () => {
@@ -662,6 +661,7 @@ class Report {
 		tags = tags.filter(t => t).map(tag => `<a>${tag.trim()}</a>`).join('');
 
 		const [connection] = this.connection_name ? Reports.credentials.filter(c => c.id == this.connection_name) : [];
+		this.connection = connection ? connection.connection_name + ' ('+connection.type+')' : '';
 
 		this.container.innerHTML = `
 			<td>${this.query_id}</td>
@@ -671,7 +671,7 @@ class Report {
 				</a>
 			</td>
 			<td>${this.description || ''}</td>
-			<td>${connection ? connection.connection_name + ' ('+connection.type+')' : ''}</td>
+			<td>${this.connection}</td>
 			<td class="tags"><div>${tags}</div></td>
 			<td title="${this.query_filter}" >${this.filters.list.size}</td>
 			<td title="${this.query_visualization}" >${this.visualizations.list.size}</td>
