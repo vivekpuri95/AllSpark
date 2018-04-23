@@ -242,10 +242,14 @@ class Report {
 	static setup(container) {
 
 		Report.container = container;
-		Report.form = Report.container.querySelector('form');
+		Report.form = Report.container.querySelector('#report-form');
 		Report.testContainer = Report.container.querySelector('#test-container');
 
 		window.onbeforeunload = () => Report.container.querySelector('.unsaved');
+
+		Report.container.querySelector('.toolbar #import').on('click', () => {
+			Report.import();
+		});
 
 		Report.container.querySelector('.toolbar #back').on('click', () => {
 			Reports.back();
@@ -335,6 +339,49 @@ class Report {
 					Report.editor.editor.resize();
 				}
 			});
+		});
+	}
+
+	static import() {
+
+		const form = document.createElement('form');
+		form.classList.add('form');
+		form.insertAdjacentHTML('beforeend', `
+			<textarea rows="10" cols="200" id="json"></textarea>
+			<label>
+				<button type="submit"><i class="fa fa-save"></i> Save</button>
+			</label>
+		`);
+
+		Report.container.insertBefore(form, Report.form);
+
+		form.on('submit', async (e) => {
+			if(e)
+				e.preventDefault();
+
+			try {
+				JSON.parse(form.json.value);
+			}
+			catch(e) {
+				alert('Invalid Json Format');
+				return;
+			}
+
+			const parameters = {
+				json: form.json.value
+			};
+
+			const options = {
+				method: 'POST'
+			};
+
+			const response = await API.call('import/json', parameters, options);
+
+			await Reports.load(true);
+
+			Reports.list.get(response.insertId).edit();
+
+			history.pushState({what: response.insertId}, '', `/reports/${response.insertId}`);
 		});
 	}
 

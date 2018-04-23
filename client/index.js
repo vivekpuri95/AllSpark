@@ -415,6 +415,7 @@ router.get('/:type(reports|visualization)/:id?', (req, res) => {
 			<header class="toolbar">
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="report-form"><i class="fa fa-save"></i> Save</button>
+				<button id="import"><i class="fa fa-upload"></i> Import</button>
 
 				<button id="test" class="right"><i class="fas fa-sync"></i> Run</button>
 				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>

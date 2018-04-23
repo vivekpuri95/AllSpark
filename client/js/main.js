@@ -765,10 +765,11 @@ class DataSource {
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
 					</div>
 				</div>
+				<select class="change-visualization hidden"></select>
+				<button class="export-toggle"><i class="fa fa-download"></i> Export</button>
 			</div>
 
 			<form class="filters form toolbar hidden"></form>
-
 			<div class="columns"></div>
 			<div class="query hidden"></div>
 			<div class="drilldown hidden"></div>
@@ -802,12 +803,22 @@ class DataSource {
 					</span>
 				</div>
 			</div>
+
+			<div class="export-json hidden">
+				${JSON.stringify(DataSource.list.get(this.query_id))}
+			</div>
 		`;
 
 		this.filters.form = container.querySelector('.filters');
 
-		container.querySelector('header .menu-toggle').on('click', () => {
+		container.querySelector('.menu .export-toggle').on('click', () => {
+			container.querySelector('.export-json').classList.toggle('hidden');
+			container.querySelector('.export-toggle').classList.toggle('selected');
 
+			this.visualizations.selected.render(true);
+		});
+
+		container.querySelector('header .menu-toggle').on('click', () => {
 			container.querySelector('.menu').classList.toggle('hidden');
 			container.querySelector('header .menu-toggle').classList.toggle('selected');
 
@@ -895,9 +906,7 @@ class DataSource {
 
 		if(this.visualizations.length) {
 
-			const select = document.createElement('select');
-
-			select.classList.add('change-visualization')
+			const select = container.querySelector('.change-visualization');
 
 			for(const [i, v] of this.visualizations.entries()) {
 
@@ -915,7 +924,7 @@ class DataSource {
 				this.visualizations.selected = this.visualizations[select.value];
 
 			if(this.visualizations.length > 1)
-				container.querySelector('.menu').appendChild(select);
+				select.classList.remove('hidden');
 
 			if(this.visualizations.selected)
 				container.appendChild(this.visualizations.selected.container);
