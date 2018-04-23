@@ -347,15 +347,15 @@ class Report {
 		const form = document.createElement('form');
 		form.classList.add('form');
 		form.insertAdjacentHTML('beforeend', `
-					<textarea rows="10" cols="200" id="json"></textarea>
-					<label>
-						<button type="submit"><i class="fa fa-save"></i> Save</button>
-					</label>
+			<textarea rows="10" cols="200" id="json"></textarea>
+			<label>
+				<button type="submit"><i class="fa fa-save"></i> Save</button>
+			</label>
 		`);
 
 		Report.container.insertBefore(form, Report.form);
 
-		form.on('submit',async (e) => {
+		form.on('submit', async (e) => {
 			if(e)
 				e.preventDefault();
 
@@ -364,6 +364,7 @@ class Report {
 			}
 			catch(e) {
 				alert('Invalid Json Format');
+				return;
 			}
 
 			const parameters = {
