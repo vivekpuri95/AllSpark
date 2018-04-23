@@ -17,8 +17,6 @@ class Reports extends Page {
 			ReportFilter.setup();
 			ReportVisualization.setup();
 
-			Reports.sortColumn();
-
 			Reports.loadState();
 		})();
 
@@ -77,14 +75,6 @@ class Reports extends Page {
 
 		Reports.filters = Reports.container.querySelector('form.filters');
 
-		Reports.filters.elements.search.on('keyup', Reports.render);
-		Reports.filters.elements.column_search.on('change', Reports.render);
-
-		if (Reports.search)
-			Reports.filters.elements.search.value = Reports.search;
-
-		if (Reports.column_search)
-			Reports.filters.elements.column_search.value = Reports.column_search;
 	}
 
 	static async load(force) {
@@ -92,6 +82,8 @@ class Reports extends Page {
 		await Reports.fetch(force);
 
 		Reports.process();
+
+		Reports.sortColumn();
 
 		Reports.render();
 	}
@@ -108,12 +100,12 @@ class Reports extends Page {
 		]);
 	}
 
-	static process(sortedColumn = null) {
+	static process() {
 
 		let response = Reports.response;
 
-		if(sortedColumn) {
-			response = Reports.sort(sortedColumn, Reports.sortOrder);
+		if(Reports.columnSorted) {
+			response = Reports.sort(Reports.columnSorted, Reports.sortOrder);
 
 			Reports.list = new Map;
 			for(const report of response || [])
@@ -130,28 +122,32 @@ class Reports extends Page {
 	static render() {
 
 		const container = Reports.container.querySelector('table tbody');
-		const column_name = Reports.ColumnValue ? Reports.ColumnValue :Reports.filters.elements.column_search.value;
-		const search_value = Reports.searchValue ? Reports.searchValue : Reports.filters.search.value.toLowerCase();
+		const theadSearch = document.querySelectorAll('.column-search');
 
 		container.textContent = null;
 
 		for(const report of Reports.list.values()) {
 
-			let found = false,
-				columns = Object.keys(report);
+			let found = true;
 
-			if(column_name)
-				columns = columns.filter(key => key == column_name);
+			for(const inputs of theadSearch) {
 
-			for(const key of columns) {
-				if(report[key] && report[key].toString().toLowerCase().includes(search_value))
-					found = true;
+				const key = inputs.name == 'filters' ? 'query_filter' : inputs.name == 'visualizations' ? 'query_visualization' : inputs.name;
+
+				if(inputs.value == "") {
+					found = found && true;
+					continue;
+				}
+
+				const check = report[key] && report[key].toString().toLowerCase().includes(inputs.value) ? true : false;
+				found = found && check;
+
+				if(!found)
+					break;
 			}
 
-			if(!found)
-				continue;
-
-			container.appendChild(report.row);
+			if(found)
+				container.appendChild(report.row);
 		}
 
 		if(!container.textContent)
@@ -181,9 +177,7 @@ class Reports extends Page {
 			){
 				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
 				col.querySelector('.column-search').on('keyup', () => {
-
-					Reports.searchValue = col.querySelector('.column-search').value;
-					Reports.ColumnValue = column.title == 'filters' ? 'query_filter' : column.title == 'visualizations' ? 'query_visualization' : column.title;
+					Reports.columnValue = column.title;
 					Reports.render();
 				});
 			}
@@ -193,7 +187,8 @@ class Reports extends Page {
 			if(column.classList.value == 'sort'){
 				column.on('click', () => {
 					Reports.sortOrder = column.sort =  !column.sort;
-					Reports.process(column.title);
+					Reports.columnSorted = column.title;
+					Reports.process();
 					Reports.render();
 				});
 			}
@@ -205,17 +200,17 @@ class Reports extends Page {
 		const sortedRes = Array.from(Reports.list.values()).sort(function(a, b) {
 
 			if( sortCol == 'name' || sortCol == 'description'){
-				a = a[`${sortCol}`] ? a[`${sortCol}`].toUpperCase() : '';
-				b = b[`${sortCol}`] ? b[`${sortCol}`].toUpperCase() : '';
+				a = a[sortCol] ? a[sortCol].toUpperCase() : '';
+				b = b[sortCol] ? b[sortCol].toUpperCase() : '';
 			}
 			else if( sortCol == 'visualizations' || sortCol == 'filters') {
 
-				a = a[`${sortCol}`].list.size;
-				b = b[`${sortCol}`].list.size;
+				a = a[sortCol].list.size;
+				b = b[sortCol].list.size;
 			}
 			else {
-				a = a[`${sortCol}`];
-				b = b[`${sortCol}`];
+				a = a[sortCol];
+				b = b[sortCol];
 			}
 
 			let result = 0;
@@ -696,10 +691,24 @@ class Report {
 
 		this.container = document.createElement('tr');
 
+		let
+			query_filter = [],
+			query_visualization = [];
+
+		for(const filter of this.filters.list)
+			query_filter.push(filter.name);
+
+		for(const visual of this.visualizations.list.values())
+			query_visualization.push(visual.name);
+
+		this.query_visualization = query_visualization.join(', ');
+		this.query_filter = query_filter.join(', ');
+
 		let tags = this.tags ? this.tags.split(',') : [];
 		tags = tags.filter(t => t).map(tag => `<a>${tag.trim()}</a>`).join('');
 
 		const [connection] = this.connection_name ? Reports.credentials.filter(c => c.id == this.connection_name) : [];
+		this.connection = connection ? connection.connection_name + ' ('+connection.type+')' : '';
 
 		this.container.innerHTML = `
 			<td>${this.query_id}</td>
@@ -709,34 +718,16 @@ class Report {
 				</a>
 			</td>
 			<td>${this.description || ''}</td>
-			<td>${connection ? connection.connection_name + ' ('+connection.type+')' : ''}</td>
+			<td>${this.connection}</td>
 			<td class="tags"><div>${tags}</div></td>
-			<td class="filter-hover">${this.filters.list.size}</td>
-			<td class="visualization-hover">${this.visualizations.list.size}</td>
+			<td title="${this.query_filter}" >${this.filters.list.size}</td>
+			<td title="${this.query_visualization}" >${this.visualizations.list.size}</td>
 			<td>${this.is_enabled ? 'Yes' : 'No'}</td>
 			<td class="action green" title="Edit">Edit</td>
 			<td class="action red" title="Delete">Delete</td>
 		`;
 
-		let
-			query_filter = [],
-			query_visualization = [];
-
-		for(const filter of this.filters.list)
-			query_filter.push(filter.name);
-
-		for(const visual of this.visualizations.list)
-			query_visualization.push(visual.name);
-
-		this.query_visualization = query_visualization.join(', ');
-		this.query_filter = query_filter.join(', ');
-
-		this.container.querySelector('.visualization-hover').setAttribute('title', query_visualization);
-		this.container.querySelector('.filter-hover').setAttribute('title', query_filter);
-
 		this.container.querySelector('.green').on('click', () => {
-			Reports.search = Reports.filters.elements.search.value;
-			Reports.column_search = Reports.filters.elements.column_search.value;
 
 			this.edit();
 			history.pushState({what: this.query_id}, '', `/reports/${this.query_id}`);
@@ -744,13 +735,13 @@ class Report {
 
 		this.container.querySelector('.red').on('click', () => this.delete());
 
-		for(const tag of this.container.querySelectorAll('.tags a') || []) {
-			tag.on('click', () => {
-				Reports.filters.column_search.value = 'tags';
-				Reports.filters.search.value = tag.textContent;
-				Reports.render();
-			});
-		}
+		// for(const tag of this.container.querySelectorAll('.tags a') || []) {
+		// 	tag.on('click', () => {
+		// 		Reports.filters.column_search.value = 'tags';
+		// 		Reports.filters.search.value = tag.textContent;
+		// 		Reports.render();
+		// 	});
+		// }
 
 		return this.container;
 	}
