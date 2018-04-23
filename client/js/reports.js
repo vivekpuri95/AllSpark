@@ -346,11 +346,10 @@ class Report {
 
 		const form = document.createElement('form');
 		form.classList.add('form');
-		form.setAttribute("id", "import-form");
 		form.insertAdjacentHTML('beforeend', `
 					<textarea rows="10" cols="200" id="json"></textarea>
 					<label>
-						<button type="submit" form="import-form"><i class="fa fa-save"></i> Save</button>
+						<button type="submit"><i class="fa fa-save"></i> Save</button>
 					</label>
 		`);
 
@@ -359,6 +358,13 @@ class Report {
 		form.on('submit',async (e) => {
 			if(e)
 				e.preventDefault();
+
+			try {
+				JSON.parse(form.json.value);
+			}
+			catch(e) {
+				alert('Invalid Json Format');
+			}
 
 			const parameters = {
 				json: form.json.value

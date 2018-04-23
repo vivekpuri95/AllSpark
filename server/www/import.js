@@ -37,8 +37,7 @@ exports.json = class extends API {
 		if (query.affectedRows != 1)
 			return 'Invalid Query Entry';
 
-		let query_id = await this.mysql.query('SELECT query_id FROM tb_query ORDER BY created_at DESC LIMIT 1');
-		query_id = query_id[0].query_id;
+		const query_id = query.insertId;
 
 		let visualizations = data.visualizations;
 
@@ -82,6 +81,6 @@ exports.json = class extends API {
 			);
 		}
 
-		return true;
+		return query;
 	}
 }

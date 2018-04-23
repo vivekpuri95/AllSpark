@@ -766,11 +766,10 @@ class DataSource {
 					</div>
 				</div>
 				<select class="change-visualization hidden"></select>
-				<button id="export"><i class="fa fa-download"></i>Export</button>
+				<button class="export-toggle"><i class="fa fa-download"></i> Export</button>
 			</div>
 
 			<form class="filters form toolbar hidden"></form>
-			
 			<div class="columns"></div>
 			<div class="query hidden"></div>
 			<div class="drilldown hidden"></div>
@@ -812,8 +811,11 @@ class DataSource {
 
 		this.filters.form = container.querySelector('.filters');
 
-		container.querySelector('#export').on('click', () => {
+		container.querySelector('.menu .export-toggle').on('click', () => {
 			container.querySelector('.export-json').classList.toggle('hidden');
+			container.querySelector('.export-toggle').classList.toggle('selected');
+
+			this.visualizations.selected.render(true);
 		});
 
 		container.querySelector('header .menu-toggle').on('click', () => {
