@@ -390,6 +390,8 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 					<option value="description">Description</option>
 					<option value="source">Source</option>
 					<option value="tags">Tags</option>
+					<option value="query_filter">Filters</option>
+					<option value="query_visualization">Visualizations</option>
 				</select>
 
 				<input type="search" placeholder="Search&hellip;" name="search">
@@ -398,14 +400,15 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 			<div id="list-container">
 				<table class="block">
 					<thead>
-						<tr>
-							<th class="thin">ID</th>
-							<th>Name</th>
-							<th>Description</th>
-							<th>Connection</th>
+						<tr></tr>
+						<tr class="table-head">
+							<th class="sort" title="query_id" >ID<i class="fa fa-sort"></th>
+							<th class="sort" title="name" >Name<i class="fa fa-sort"></th>
+							<th class="sort" title="description" >Description<i class="fa fa-sort"></th>
+							<th title="connection_name">Connection</th>
 							<th>Tags</th>
-							<th>Filters</th>
-							<th>Visualizations</th>
+							<th class="sort" title="filters" >Filters<i class="fa fa-sort"></th>
+							<th class="sort" title="visualizations" >Visualizations<i class="fa fa-sort"></th>
 							<th>Enabled</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
@@ -423,6 +426,7 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 			<header class="toolbar">
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="report-form"><i class="fa fa-save"></i> Save</button>
+				<button id="import"><i class="fa fa-upload"></i> Import</button>
 
 				<button id="test" class="right"><i class="fas fa-sync"></i> Run</button>
 				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>
