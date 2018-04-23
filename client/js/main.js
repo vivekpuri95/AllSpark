@@ -688,8 +688,10 @@ class DataSource {
 		if(!source.visualizations)
 			source.visualizations = [];
 
-		if(!source.visualizations.filter(v => v.type == 'table').length)
+		if(!source.visualizations.filter(v => v.type == 'table').length) {
 			source.visualizations.push({ name: 'Table', visualization_id: 0, type: 'table' });
+			source.visualizations.push({ name: 'Json', visualization_id: 1, type: 'json' });
+		}
 
 		this.visualizations = source.visualizations.map(v => new (Visualization.list.get(v.type))(v, this));
 		this.postProcessors = new DataSourcePostProcessors(this);
@@ -3002,7 +3004,7 @@ Visualization.list.set('table', class Table extends Visualization {
 					td.classList.add('drilldown');
 					td.on('click', () => column.initiateDrilldown(row));
 
-					td.title = `Drill down into ${DataSource.list.get(column.drilldown.query_id).name}!`;
+					td.title = `Drill down into ${DataSource.list.get(column.drilldown.report_id).name}!`;
 				}
 
 				tr.appendChild(td);
@@ -5397,7 +5399,7 @@ Visualization.list.set('json', class JsonEditor extends Visualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(e, resize) {
 
 		if (e && e.preventDefault)
 			e.preventDefault();
