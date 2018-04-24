@@ -101,21 +101,13 @@ class Reports extends Page {
 
 	static process() {
 
-		let response = Reports.response;
 
-		if(Reports.columnSorted) {
-			response = Reports.sort(Reports.columnSorted, Reports.sortOrder);
+		Reports.sort();
 
-			Reports.list = new Map;
-			for(const report of response || [])
-				Reports.list.set(report.query_id, report);
-		}
-		else {
-			Reports.list = new Map;
+		Reports.list = new Map;
 
-			for(const report of response || [])
-				Reports.list.set(report.query_id, new Report(report));
-		}
+		for(const report of Reports.response || [])
+			Reports.list.set(report.query_id, new Report(report));
 	}
 
 	static render() {
@@ -194,22 +186,25 @@ class Reports extends Page {
 		}
 	}
 
-	static sort(sortCol, order) {
+	static sort() {
 
-		const sortedRes = Array.from(Reports.list.values()).sort(function(a, b) {
+		if(!Reports.columnSorted)
+			return;
 
-			if( sortCol == 'name' || sortCol == 'description'){
-				a = a[sortCol] ? a[sortCol].toUpperCase() : '';
-				b = b[sortCol] ? b[sortCol].toUpperCase() : '';
+		Reports.response = Reports.response.sort(function(a, b) {
+
+			if( Reports.columnSorted == 'name' || Reports.columnSorted == 'description'){
+				a = a[Reports.columnSorted] ? a[Reports.columnSorted].toUpperCase() : '';
+				b = b[Reports.columnSorted] ? b[Reports.columnSorted].toUpperCase() : '';
 			}
-			else if( sortCol == 'visualizations' || sortCol == 'filters') {
+			else if( Reports.columnSorted == 'visualizations' || Reports.columnSorted == 'filters') {
 
-				a = a[sortCol].list.size;
-				b = b[sortCol].list.size;
+				a = a[Reports.columnSorted].length;
+				b = b[Reports.columnSorted].length;
 			}
 			else {
-				a = a[sortCol];
-				b = b[sortCol];
+				a = a[Reports.columnSorted];
+				b = b[Reports.columnSorted];
 			}
 
 			let result = 0;
@@ -219,13 +214,14 @@ class Reports extends Page {
 			if (a > b) {
 				result = 1;
 			}
-			if(!order){
-				result *= -1;}
+			if(!Reports.sortOrder){
+				result *= -1;
+			}
 
 			return result;
 		});
 
-		return sortedRes;
+		return Reports.response;
 	}
 }
 
