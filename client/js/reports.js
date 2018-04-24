@@ -83,7 +83,7 @@ class Reports extends Page {
 
 		Reports.process();
 
-		Reports.sortColumn();
+		Reports.prepareColumns();
 
 		Reports.render();
 	}
@@ -162,7 +162,7 @@ class Reports extends Page {
 		}
 	}
 
-	static sortColumn() {
+	static prepareColumns() {
 
 		const searchRow = Reports.container.querySelector('table thead tr');
 		const columns = Reports.container.querySelector('table thead tr.table-head');
