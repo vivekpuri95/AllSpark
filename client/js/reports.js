@@ -74,6 +74,41 @@ class Reports extends Page {
 		});
 
 		Reports.filters = Reports.container.querySelector('form.filters');
+
+		Reports.prepareColumns();
+	}
+
+	static prepareColumns() {
+
+		const searchRow = Reports.container.querySelector('table thead tr');
+		const columns = Reports.container.querySelector('table thead tr.table-head');
+
+		for(const column of columns.children){
+
+			const col = document.createElement('th');
+
+			if(
+				column.textContent.toLowerCase() != 'edit' &&
+				column.textContent.toLowerCase() != 'delete'
+			){
+				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
+				col.querySelector('.column-search').on('keyup', () => {
+					Reports.columnValue = column.title;
+					Reports.render();
+				});
+			}
+
+			searchRow.appendChild(col);
+
+			if(column.classList.value == 'sort'){
+				column.on('click', () => {
+					Reports.sortOrder = column.sort =  !column.sort;
+					Reports.columnSorted = column.title;
+					Reports.process();
+					Reports.render();
+				});
+			}
+		}
 	}
 
 	static async load(force) {
@@ -81,8 +116,6 @@ class Reports extends Page {
 		await Reports.fetch(force);
 
 		Reports.process();
-
-		Reports.sortColumn();
 
 		Reports.render();
 	}
@@ -101,21 +134,49 @@ class Reports extends Page {
 
 	static process() {
 
-		let response = Reports.response;
 
-		if(Reports.columnSorted) {
-			response = Reports.sort(Reports.columnSorted, Reports.sortOrder);
+		Reports.sort();
 
-			Reports.list = new Map;
-			for(const report of response || [])
-				Reports.list.set(report.query_id, report);
-		}
-		else {
-			Reports.list = new Map;
+		Reports.list = new Map;
 
-			for(const report of response || [])
-				Reports.list.set(report.query_id, new Report(report));
-		}
+		for(const report of Reports.response || [])
+			Reports.list.set(report.query_id, new Report(report));
+	}
+
+	static sort() {
+
+		if(!Reports.columnSorted)
+			return;
+
+		Reports.response = Reports.response.sort(function(a, b) {
+
+			if( Reports.columnSorted == 'name' || Reports.columnSorted == 'description'){
+				a = a[Reports.columnSorted] ? a[Reports.columnSorted].toUpperCase() : '';
+				b = b[Reports.columnSorted] ? b[Reports.columnSorted].toUpperCase() : '';
+			}
+			else if( Reports.columnSorted == 'visualizations' || Reports.columnSorted == 'filters') {
+
+				a = a[Reports.columnSorted].length;
+				b = b[Reports.columnSorted].length;
+			}
+			else {
+				a = a[Reports.columnSorted];
+				b = b[Reports.columnSorted];
+			}
+
+			let result = 0;
+			if (a < b) {
+				result = -1;
+			}
+			if (a > b) {
+				result = 1;
+			}
+			if(!Reports.sortOrder){
+				result *= -1;
+			}
+
+			return result;
+		});
 	}
 
 	static render() {
@@ -159,73 +220,6 @@ class Reports extends Page {
 				`<option value="${credential.id}">${credential.connection_name} (${credential.type})</option>`
 			)
 		}
-	}
-
-	static sortColumn() {
-
-		const searchRow = Reports.container.querySelector('table thead tr');
-		const columns = Reports.container.querySelector('table thead tr.table-head');
-
-		for(const column of columns.children){
-
-			const col = document.createElement('th');
-
-			if(
-				column.textContent.toLowerCase() != 'edit' &&
-				column.textContent.toLowerCase() != 'delete'
-			){
-				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
-				col.querySelector('.column-search').on('keyup', () => {
-					Reports.columnValue = column.title;
-					Reports.render();
-				});
-			}
-
-			searchRow.appendChild(col);
-
-			if(column.classList.value == 'sort'){
-				column.on('click', () => {
-					Reports.sortOrder = column.sort =  !column.sort;
-					Reports.columnSorted = column.title;
-					Reports.process();
-					Reports.render();
-				});
-			}
-		}
-	}
-
-	static sort(sortCol, order) {
-
-		const sortedRes = Array.from(Reports.list.values()).sort(function(a, b) {
-
-			if( sortCol == 'name' || sortCol == 'description'){
-				a = a[sortCol] ? a[sortCol].toUpperCase() : '';
-				b = b[sortCol] ? b[sortCol].toUpperCase() : '';
-			}
-			else if( sortCol == 'visualizations' || sortCol == 'filters') {
-
-				a = a[sortCol].list.size;
-				b = b[sortCol].list.size;
-			}
-			else {
-				a = a[sortCol];
-				b = b[sortCol];
-			}
-
-			let result = 0;
-			if (a < b) {
-				result = -1;
-			}
-			if (a > b) {
-				result = 1;
-			}
-			if(!order){
-				result *= -1;}
-
-			return result;
-		});
-
-		return sortedRes;
 	}
 }
 
