@@ -86,7 +86,7 @@ class API {
 				if (!(host in global.account))
 					throw new API.Exception(400, 'Account not found!');
 
-				let [userAccount] = global.account.filter(x => x.account_id = userDetails.account_id);
+				let [userAccount] = Object.values(global.account).filter(x => userDetails && x.account_id == userDetails.account_id);
 
 				if (userAccount && userAccount.account_id) {
 					obj.account = global.account[userAccount.account_id];
