@@ -1008,7 +1008,6 @@ class Template {
 
 		this.stylesheets = [
 			'/css/main.css',
-			'/css/purple.css',
 		];
 
 		this.scripts = [
@@ -1020,7 +1019,7 @@ class Template {
 
 	body(main) {
 
-		this.stylesheets.push('/css/dark.css');
+		this.stylesheets.push('/css/purple.css');
 
 		return `<!DOCTYPE html>
 			<html lang="en">
