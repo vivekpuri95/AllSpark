@@ -61,7 +61,7 @@ main section.section.show {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.35);
 		}
 
-main table thead tr.table-head th{
+main table thead tr.table-head th {
 	padding: 5px 8px;
 	position: sticky;
 	top: 93px;
@@ -80,9 +80,9 @@ main table thead tr.table-search th {
 	color: var(--color-primary-text);
 }
 
-main table thead tr th input {
-	width : 100%;
-}
+	main table thead tr th input {
+		width : 100%;
+	}
 main #form #report-form {
 	background: #fff;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);

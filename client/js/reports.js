@@ -78,6 +78,39 @@ class Reports extends Page {
 		Reports.prepareColumns();
 	}
 
+	static prepareColumns() {
+
+		const searchRow = Reports.container.querySelector('table thead tr');
+		const columns = Reports.container.querySelector('table thead tr.table-head');
+
+		for(const column of columns.children){
+
+			const col = document.createElement('th');
+
+			if(
+				column.textContent.toLowerCase() != 'edit' &&
+				column.textContent.toLowerCase() != 'delete'
+			){
+				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
+				col.querySelector('.column-search').on('keyup', () => {
+					Reports.columnValue = column.title;
+					Reports.render();
+				});
+			}
+
+			searchRow.appendChild(col);
+
+			if(column.classList.value == 'sort'){
+				column.on('click', () => {
+					Reports.sortOrder = column.sort =  !column.sort;
+					Reports.columnSorted = column.title;
+					Reports.process();
+					Reports.render();
+				});
+			}
+		}
+	}
+
 	static async load(force) {
 
 		await Reports.fetch(force);
@@ -108,6 +141,42 @@ class Reports extends Page {
 
 		for(const report of Reports.response || [])
 			Reports.list.set(report.query_id, new Report(report));
+	}
+
+	static sort() {
+
+		if(!Reports.columnSorted)
+			return;
+
+		Reports.response = Reports.response.sort(function(a, b) {
+
+			if( Reports.columnSorted == 'name' || Reports.columnSorted == 'description'){
+				a = a[Reports.columnSorted] ? a[Reports.columnSorted].toUpperCase() : '';
+				b = b[Reports.columnSorted] ? b[Reports.columnSorted].toUpperCase() : '';
+			}
+			else if( Reports.columnSorted == 'visualizations' || Reports.columnSorted == 'filters') {
+
+				a = a[Reports.columnSorted].length;
+				b = b[Reports.columnSorted].length;
+			}
+			else {
+				a = a[Reports.columnSorted];
+				b = b[Reports.columnSorted];
+			}
+
+			let result = 0;
+			if (a < b) {
+				result = -1;
+			}
+			if (a > b) {
+				result = 1;
+			}
+			if(!Reports.sortOrder){
+				result *= -1;
+			}
+
+			return result;
+		});
 	}
 
 	static render() {
@@ -151,77 +220,6 @@ class Reports extends Page {
 				`<option value="${credential.id}">${credential.connection_name} (${credential.type})</option>`
 			)
 		}
-	}
-
-	static prepareColumns() {
-
-		const searchRow = Reports.container.querySelector('table thead tr');
-		const columns = Reports.container.querySelector('table thead tr.table-head');
-
-		for(const column of columns.children){
-
-			const col = document.createElement('th');
-
-			if(
-				column.textContent.toLowerCase() != 'edit' &&
-				column.textContent.toLowerCase() != 'delete'
-			){
-				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
-				col.querySelector('.column-search').on('keyup', () => {
-					Reports.columnValue = column.title;
-					Reports.render();
-				});
-			}
-
-			searchRow.appendChild(col);
-
-			if(column.classList.value == 'sort'){
-				column.on('click', () => {
-					Reports.sortOrder = column.sort =  !column.sort;
-					Reports.columnSorted = column.title;
-					Reports.process();
-					Reports.render();
-				});
-			}
-		}
-	}
-
-	static sort() {
-
-		if(!Reports.columnSorted)
-			return;
-
-		Reports.response = Reports.response.sort(function(a, b) {
-
-			if( Reports.columnSorted == 'name' || Reports.columnSorted == 'description'){
-				a = a[Reports.columnSorted] ? a[Reports.columnSorted].toUpperCase() : '';
-				b = b[Reports.columnSorted] ? b[Reports.columnSorted].toUpperCase() : '';
-			}
-			else if( Reports.columnSorted == 'visualizations' || Reports.columnSorted == 'filters') {
-
-				a = a[Reports.columnSorted].length;
-				b = b[Reports.columnSorted].length;
-			}
-			else {
-				a = a[Reports.columnSorted];
-				b = b[Reports.columnSorted];
-			}
-
-			let result = 0;
-			if (a < b) {
-				result = -1;
-			}
-			if (a > b) {
-				result = 1;
-			}
-			if(!Reports.sortOrder){
-				result *= -1;
-			}
-
-			return result;
-		});
-
-		return Reports.response;
 	}
 }
 
