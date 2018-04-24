@@ -74,7 +74,6 @@ class Reports extends Page {
 		});
 
 		Reports.filters = Reports.container.querySelector('form.filters');
-
 	}
 
 	static async load(force) {
@@ -1265,8 +1264,6 @@ class ReportVisualization {
 
 		if(ReportVisualization.types.has(this.type))
 			this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
-
-		else debugger;
 	}
 
 	get row() {
@@ -1462,7 +1459,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const container = document.createElement('div');
 
-		container.classList.add('axis');
+		container.classList.add('axis', 'subform');
 
 		container.innerHTML = `
 			<label>
@@ -1511,13 +1508,16 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 ReportVisualization.types = new Map;
 
-ReportVisualization.types.set('table', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('table', class TableOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('line', class BarOptions extends ReportVisualizationLinearOptions {
+ReportVisualization.types.set('line', class LineOptions extends ReportVisualizationLinearOptions {
 });
 
-ReportVisualization.types.set('scatter', class BarOptions extends ReportVisualizationLinearOptions {
+ReportVisualization.types.set('scatter', class ScatterOptions extends ReportVisualizationLinearOptions {
+});
+
+ReportVisualization.types.set('bubble', class BubbleOptions extends ReportVisualizationLinearOptions {
 });
 
 ReportVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {
@@ -1526,28 +1526,93 @@ ReportVisualization.types.set('bar', class BarOptions extends ReportVisualizatio
 ReportVisualization.types.set('dualaxisbar', class DualAxisBarOptions extends ReportVisualizationLinearOptions {
 });
 
-ReportVisualization.types.set('stacked', class BarOptions extends ReportVisualizationLinearOptions {
+ReportVisualization.types.set('stacked', class StackedOptions extends ReportVisualizationLinearOptions {
 });
 
-ReportVisualization.types.set('area', class BarOptions extends ReportVisualizationLinearOptions {
+ReportVisualization.types.set('area', class AreaOptions extends ReportVisualizationLinearOptions {
 });
 
-ReportVisualization.types.set('pie', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('pie', class PieOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('funnel', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('funnel', class FunnelOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('spatialmap', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('spatialmap', class SpatialMapOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('cohort', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('cohort', class CohortOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('json', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('json', class JSONOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('bigtext', class BigTextOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.classList.add('subform');
+
+		container.innerHTML = `
+			<label>
+				<span>Column</span>
+				<select name="column"></select>
+			</label>
+
+			<label>
+				<span>Type</span>
+				<select name="valueType">
+					<option value="text">Text</option>
+					<option value="number">Number</option>
+					<option value="date">Date</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Prefix</span>
+				<input type="text" name="prefix" value="${this.visualization.options.prefix}">
+			</label>
+
+			<label>
+				<span>Postfix</span>
+				<input type="text" name="postfix" value="${this.visualization.options.postfix}">
+			</label>
+		`;
+
+		const
+			columnSelect = container.querySelector('select[name=column]'),
+			valueType = container.querySelector('select[name=valueType]');
+
+		for(const [key, column] of this.report.columns) {
+
+			columnSelect.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		columnSelect.value = this.visualization.options.column || '';
+		valueType.value = this.visualization.options.valueType || '';
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			column: this.form.querySelector('select[name=column]').value,
+			valueType: this.form.querySelector('select[name=valueType]').value,
+			prefix: this.form.querySelector('input[name=prefix]').value,
+			postfix: this.form.querySelector('input[name=postfix]').value,
+		}
+	}
+});
+
+ReportVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationOptions {
 
 	get form() {
 
@@ -1556,20 +1621,22 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 
 		const container = this.formContainer = document.createElement('form');
 
+		container.classList.add('form');
+
 		container.innerHTML = `
 			<label>
 				<span>Column</span>
-				<select id="timing"></select>
+				<select name="timing"></select>
 			</label>
 
 			<label>
 				<span>Value</span>
-				<select id="value"></select>
+				<select name="value"></select>
 			</label>
 
 			<label>
 				<span>Show History</span>
-				<select id="history">
+				<select name="history">
 					<option value="1">Yes</option>
 					<option value="0">No</option>
 				</select>
@@ -1577,22 +1644,33 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 
 			<label>
 				<span>Invert Values</span>
-				<select id="invertColor">
+				<select name="invertColor">
 					<option value="1">Yes</option>
 					<option value="0">No</option>
 				</select>
 			</label>
+
+			<label>
+				<span>Prefix</span>
+				<input type="text" name="prefix">
+			</label>
+
+			<label>
+				<span>Postfix</span>
+				<input type="text" name="postfix">
+			</label>
 		`;
 
-		const columns = container.querySelector('select[id=timing]');
-		const values = container.querySelector('select[id=value]');
+		const timing = container.querySelector('select[name=timing]');
+		const value = container.querySelector('select[name=value]');
 
 		for(const [key, column] of this.report.columns) {
-			columns.insertAdjacentHTML('beforeend', `
+
+			timing.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 
-			values.insertAdjacentHTML('beforeend', `
+			value.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 		}
@@ -1601,11 +1679,14 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 	}
 
 	get json() {
+
 		return {
-			timing: this.form.timing.value,
-			value: this.form.value.value,
-			history: this.form.history.value,
-			invertColor: this.form.invertColor.value
+			timing: this.form.querySelector('select[name=timing]').value,
+			value: this.form.querySelector('select[name=value]').value,
+			history: this.form.querySelector('select[name=history]').value,
+			invertColor: this.form.querySelector('select[name=invertColor]').value,
+			prefix: this.form.querySelector('input[name=prefix]').value,
+			postfix: this.form.querySelector('input[name=postfix]').value,
 		}
 	}
 });

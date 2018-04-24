@@ -13,8 +13,7 @@ main > nav {
 	flex-direction: column;
 	position: sticky;
 	top: 0;
-	overflow-y: scroll;
-	overflow-x: unset;
+	overflow-y: auto;
 	z-index: 4;
 	color: #777;
 	height: calc(100vh - 50px);
