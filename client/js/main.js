@@ -2641,7 +2641,7 @@ class LinearVisualization extends Visualization {
 
 		for(const [key, column] of this.source.columns) {
 
-			if(this.axes.left.columns.some(c => c.key == key) || this.axes.bottom.columns.some(c => c.key == key))
+			if(this.axes.left.columns.some(c => c.key == key) || (this.axes.right && this.axes.right.columns.some(c => c.key == key)) || this.axes.bottom.columns.some(c => c.key == key))
 				continue;
 
 			column.disabled = true;
@@ -2709,6 +2709,7 @@ class LinearVisualization extends Visualization {
 				this.columns[key].push({
 					x: row.get(this.axes.bottom.column),
 					y: value,
+					y1: this.axes.right ? row.get(this.axes.right.column) : null,
 					key,
 				});
 			}
@@ -3272,6 +3273,176 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 	}
 });
 
+Visualization.list.set('bubble', class Line extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'bubble');
+
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e, resize) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render(resize);
+	}
+
+	render(resize) {
+
+		this.draw();
+
+		this.plot(resize);
+	}
+
+	plot(resize) {
+
+		super.plot(resize);
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		const
+			container = d3.selectAll(`#visualization-${this.id}`),
+			that = this;
+
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
+		this.bubble = d3.scale.linear().range([0, 50]);
+
+		const
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
+
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
+
+		this.y.max = 0;
+		this.y.min = 0;
+		this.bubble.max = 0;
+		this.bubble.min = 0;
+
+		for(const row of this.rows) {
+
+			for(const [key, value] of row) {
+
+				if(this.axes.left.columns.some(c => c.key == key)) {
+					this.y.max = Math.max(this.y.max, Math.ceil(value) || 0);
+					this.y.min = Math.min(this.y.min, Math.ceil(value) || 0);
+				}
+
+				if(this.axes.right.columns.some(c => c.key == key)) {
+					this.bubble.max = Math.max(this.bubble.max, Math.ceil(value) || 0);
+					this.bubble.min = Math.min(this.bubble.min, Math.ceil(value) || 0);
+				}
+			}
+		}
+
+		this.y.domain([this.y.min, this.y.max]);
+		this.bubble.domain([this.bubble.min, this.bubble.max]);
+
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.rangePoints([0, this.width], 0.1, 0);
+
+		const
+			tickNumber = this.width < 400 ? 3 : 5,
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
+
+		xAxis.tickValues(ticks);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
+		//graph type line and
+		const
+			line = d3.svg
+				.line()
+				.x(d => this.x(d.x)  + this.axes.left.width)
+				.y(d => this.y(d.y));
+
+		// For each line appending the circle at each point
+		for(const column of this.columns) {
+
+			this.svg.selectAll('dot')
+				.data(column)
+				.enter()
+				.append('circle')
+				.attr('class', 'clips')
+				.attr('id', (_, i) => i)
+				.attr('r', d => this.bubble(d.y1))
+				.style('fill', column.color)
+				.attr('cx', d => this.x(d.x) + this.axes.left.width)
+				.attr('cy', d => this.y(d.y))
+		}
+
+		container
+		.on('mousemove.line', function() {
+
+			// container.selectAll('svg > g > circle[class="clips"]').attr('r', 3);
+
+			const
+				mouse = d3.mouse(this),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
+				row = that.rows[xpos];
+
+			if(!row || that.zoomRectangle)
+				return;
+
+			// container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+		})
+
+		// .on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 3));
+	}
+});
+
 Visualization.list.set('scatter', class Line extends LinearVisualization {
 
 	get container() {
@@ -3706,7 +3877,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		}
 
 		this.rows = this.source.response;
-    
+
 		if(!this.rows || !this.rows.length)
 			return;
 
@@ -5265,6 +5436,82 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 	}
 });
 
+Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization {
+
+	get container() {
+
+		if (this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('section');
+
+		container.classList.add('visualization', 'bigtext');
+
+		container.innerHTML = `
+			<div class="container"></div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if (e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+		this.container.querySelector('.container').innerHTML = `
+			<div class="loading">
+				<i class="fa fa-spinner fa-spin"></i>
+			</div>
+		`;
+
+		await this.source.fetch();
+
+		this.process();
+
+		this.render();
+	}
+
+	process() {
+
+		const [response] = this.source.response;
+
+		if(!this.column)
+			return this.source.error('Value column not selected! :(');
+
+		const value = response.get(this.column);
+
+		if(!value)
+			return this.source.error(`<em>${this.column}</em> column not found! :(`);
+
+		if(this.valueType == 'number' && isNaN(value))
+			return this.source.error('Invalid Number! :(');
+
+		if(this.valueType == 'date' && !Date.parse(value))
+			return this.source.error('Invalid Date! :(');
+	}
+
+	render() {
+
+		const [response] = this.source.response;
+
+		let value = response.get(this.column);
+
+		if(this.valueType == 'number')
+			value = Format.number(value);
+
+		if(this.valueType == 'date')
+			value = Format.date(value);
+
+		this.container.querySelector('.container').innerHTML = `
+			<div class="value">
+				${this.prefix || ''}${value}${this.postfix || ''}
+			</div>
+		`;
+	}
+});
+
 Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	get container() {
@@ -5337,7 +5584,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	render() {
 		this.container.querySelector('.container').innerHTML = `
-			<div class="livenumber box">
+			<div class="livenumber">
 				<div class="today">
 					${this.today.value}
 				</div>
@@ -5376,7 +5623,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 });
 
-Visualization.list.set('json', class JsonEditor extends Visualization {
+Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 	get container() {
 

@@ -17,8 +17,6 @@ class Reports extends Page {
 			ReportFilter.setup();
 			ReportVisualization.setup();
 
-			Reports.sortColumn();
-
 			Reports.loadState();
 		})();
 
@@ -77,14 +75,40 @@ class Reports extends Page {
 
 		Reports.filters = Reports.container.querySelector('form.filters');
 
-		Reports.filters.elements.search.on('keyup', Reports.render);
-		Reports.filters.elements.column_search.on('change', Reports.render);
+		Reports.prepareColumns();
+	}
 
-		if (Reports.search)
-			Reports.filters.elements.search.value = Reports.search;
+	static prepareColumns() {
 
-		if (Reports.column_search)
-			Reports.filters.elements.column_search.value = Reports.column_search;
+		const searchRow = Reports.container.querySelector('table thead tr');
+		const columns = Reports.container.querySelector('table thead tr.table-head');
+
+		for(const column of columns.children){
+
+			const col = document.createElement('th');
+
+			if(
+				column.textContent.toLowerCase() != 'edit' &&
+				column.textContent.toLowerCase() != 'delete'
+			){
+				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
+				col.querySelector('.column-search').on('keyup', () => {
+					Reports.columnValue = column.title;
+					Reports.render();
+				});
+			}
+
+			searchRow.appendChild(col);
+
+			if(column.classList.value == 'sort'){
+				column.on('click', () => {
+					Reports.sortOrder = column.sort =  !column.sort;
+					Reports.columnSorted = column.title;
+					Reports.process();
+					Reports.render();
+				});
+			}
+		}
 	}
 
 	static async load(force) {
@@ -108,50 +132,82 @@ class Reports extends Page {
 		]);
 	}
 
-	static process(sortedColumn = null) {
+	static process() {
 
-		let response = Reports.response;
 
-		if(sortedColumn) {
-			response = Reports.sort(sortedColumn, Reports.sortOrder);
+		Reports.sort();
 
-			Reports.list = new Map;
-			for(const report of response || [])
-				Reports.list.set(report.query_id, report);
-		}
-		else {
-			Reports.list = new Map;
+		Reports.list = new Map;
 
-			for(const report of response || [])
-				Reports.list.set(report.query_id, new Report(report));
-		}
+		for(const report of Reports.response || [])
+			Reports.list.set(report.query_id, new Report(report));
+	}
+
+	static sort() {
+
+		if(!Reports.columnSorted)
+			return;
+
+		Reports.response = Reports.response.sort(function(a, b) {
+
+			if( Reports.columnSorted == 'name' || Reports.columnSorted == 'description'){
+				a = a[Reports.columnSorted] ? a[Reports.columnSorted].toUpperCase() : '';
+				b = b[Reports.columnSorted] ? b[Reports.columnSorted].toUpperCase() : '';
+			}
+			else if( Reports.columnSorted == 'visualizations' || Reports.columnSorted == 'filters') {
+
+				a = a[Reports.columnSorted].length;
+				b = b[Reports.columnSorted].length;
+			}
+			else {
+				a = a[Reports.columnSorted];
+				b = b[Reports.columnSorted];
+			}
+
+			let result = 0;
+			if (a < b) {
+				result = -1;
+			}
+			if (a > b) {
+				result = 1;
+			}
+			if(!Reports.sortOrder){
+				result *= -1;
+			}
+
+			return result;
+		});
 	}
 
 	static render() {
 
 		const container = Reports.container.querySelector('table tbody');
-		const column_name = Reports.ColumnValue ? Reports.ColumnValue :Reports.filters.elements.column_search.value;
-		const search_value = Reports.searchValue ? Reports.searchValue : Reports.filters.search.value.toLowerCase();
+		const theadSearch = document.querySelectorAll('.column-search');
 
 		container.textContent = null;
 
 		for(const report of Reports.list.values()) {
 
-			let found = false,
-				columns = Object.keys(report);
+			let found = true;
 
-			if(column_name)
-				columns = columns.filter(key => key == column_name);
+			for(const inputs of theadSearch) {
 
-			for(const key of columns) {
-				if(report[key] && report[key].toString().toLowerCase().includes(search_value))
-					found = true;
+				const key = inputs.name == 'filters' ? 'query_filter' : inputs.name == 'visualizations' ? 'query_visualization' : inputs.name;
+
+				if(inputs.value == "") {
+					found = found && true;
+					continue;
+				}
+
+				const check = report[key] && report[key].toString().toLowerCase().includes(inputs.value) ? true : false;
+				found = found && check;
+
+				if(!found)
+					break;
 			}
 
-			if(!found)
-				continue;
-
-			container.appendChild(report.row);
+			if(found)
+				container.appendChild(report.row);
 		}
 
 		if(!container.textContent)
@@ -164,74 +220,6 @@ class Reports extends Page {
 				`<option value="${credential.id}">${credential.connection_name} (${credential.type})</option>`
 			)
 		}
-	}
-
-	static sortColumn() {
-
-		const searchRow = Reports.container.querySelector('table thead tr');
-		const columns = Reports.container.querySelector('table thead tr.table-head');
-
-		for(const column of columns.children){
-
-			const col = document.createElement('th');
-
-			if(
-				column.textContent.toLowerCase() != 'edit' &&
-				column.textContent.toLowerCase() != 'delete'
-			){
-				col.innerHTML = `<input type="search" class="column-search" name="${column.title}" placeholder="${column.textContent}">`;
-				col.querySelector('.column-search').on('keyup', () => {
-
-					Reports.searchValue = col.querySelector('.column-search').value;
-					Reports.ColumnValue = column.title == 'filters' ? 'query_filter' : column.title == 'visualizations' ? 'query_visualization' : column.title;
-					Reports.render();
-				});
-			}
-
-			searchRow.appendChild(col);
-
-			if(column.classList.value == 'sort'){
-				column.on('click', () => {
-					Reports.sortOrder = column.sort =  !column.sort;
-					Reports.process(column.title);
-					Reports.render();
-				});
-			}
-		}
-	}
-
-	static sort(sortCol, order) {
-
-		const sortedRes = Array.from(Reports.list.values()).sort(function(a, b) {
-
-			if( sortCol == 'name' || sortCol == 'description'){
-				a = a[`${sortCol}`] ? a[`${sortCol}`].toUpperCase() : '';
-				b = b[`${sortCol}`] ? b[`${sortCol}`].toUpperCase() : '';
-			}
-			else if( sortCol == 'visualizations' || sortCol == 'filters') {
-
-				a = a[`${sortCol}`].list.size;
-				b = b[`${sortCol}`].list.size;
-			}
-			else {
-				a = a[`${sortCol}`];
-				b = b[`${sortCol}`];
-			}
-
-			let result = 0;
-			if (a < b) {
-				result = -1;
-			}
-			if (a > b) {
-				result = 1;
-			}
-			if(!order){
-				result *= -1;}
-
-			return result;
-		});
-
-		return sortedRes;
 	}
 }
 
@@ -696,10 +684,24 @@ class Report {
 
 		this.container = document.createElement('tr');
 
+		let
+			query_filter = [],
+			query_visualization = [];
+
+		for(const filter of this.filters.list)
+			query_filter.push(filter.name);
+
+		for(const visual of this.visualizations.list.values())
+			query_visualization.push(visual.name);
+
+		this.query_visualization = query_visualization.join(', ');
+		this.query_filter = query_filter.join(', ');
+
 		let tags = this.tags ? this.tags.split(',') : [];
 		tags = tags.filter(t => t).map(tag => `<a>${tag.trim()}</a>`).join('');
 
 		const [connection] = this.connection_name ? Reports.credentials.filter(c => c.id == this.connection_name) : [];
+		this.connection = connection ? connection.connection_name + ' ('+connection.type+')' : '';
 
 		this.container.innerHTML = `
 			<td>${this.query_id}</td>
@@ -709,34 +711,16 @@ class Report {
 				</a>
 			</td>
 			<td>${this.description || ''}</td>
-			<td>${connection ? connection.connection_name + ' ('+connection.type+')' : ''}</td>
+			<td>${this.connection}</td>
 			<td class="tags"><div>${tags}</div></td>
-			<td class="filter-hover">${this.filters.list.size}</td>
-			<td class="visualization-hover">${this.visualizations.list.size}</td>
+			<td title="${this.query_filter}" >${this.filters.list.size}</td>
+			<td title="${this.query_visualization}" >${this.visualizations.list.size}</td>
 			<td>${this.is_enabled ? 'Yes' : 'No'}</td>
 			<td class="action green" title="Edit">Edit</td>
 			<td class="action red" title="Delete">Delete</td>
 		`;
 
-		let
-			query_filter = [],
-			query_visualization = [];
-
-		for(const filter of this.filters.list)
-			query_filter.push(filter.name);
-
-		for(const visual of this.visualizations.list)
-			query_visualization.push(visual.name);
-
-		this.query_visualization = query_visualization.join(', ');
-		this.query_filter = query_filter.join(', ');
-
-		this.container.querySelector('.visualization-hover').setAttribute('title', query_visualization);
-		this.container.querySelector('.filter-hover').setAttribute('title', query_filter);
-
 		this.container.querySelector('.green').on('click', () => {
-			Reports.search = Reports.filters.elements.search.value;
-			Reports.column_search = Reports.filters.elements.column_search.value;
 
 			this.edit();
 			history.pushState({what: this.query_id}, '', `/reports/${this.query_id}`);
@@ -744,13 +728,13 @@ class Report {
 
 		this.container.querySelector('.red').on('click', () => this.delete());
 
-		for(const tag of this.container.querySelectorAll('.tags a') || []) {
-			tag.on('click', () => {
-				Reports.filters.column_search.value = 'tags';
-				Reports.filters.search.value = tag.textContent;
-				Reports.render();
-			});
-		}
+		// for(const tag of this.container.querySelectorAll('.tags a') || []) {
+		// 	tag.on('click', () => {
+		// 		Reports.filters.column_search.value = 'tags';
+		// 		Reports.filters.search.value = tag.textContent;
+		// 		Reports.render();
+		// 	});
+		// }
 
 		return this.container;
 	}
@@ -1274,8 +1258,6 @@ class ReportVisualization {
 
 		if(ReportVisualization.types.has(this.type))
 			this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
-
-		else debugger;
 	}
 
 	get row() {
@@ -1471,7 +1453,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const container = document.createElement('div');
 
-		container.classList.add('axis');
+		container.classList.add('axis', 'subform');
 
 		container.innerHTML = `
 			<label>
@@ -1520,13 +1502,16 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 ReportVisualization.types = new Map;
 
-ReportVisualization.types.set('table', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('table', class TableOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('line', class BarOptions extends ReportVisualizationLinearOptions {
+ReportVisualization.types.set('line', class LineOptions extends ReportVisualizationLinearOptions {
 });
 
-ReportVisualization.types.set('scatter', class BarOptions extends ReportVisualizationLinearOptions {
+ReportVisualization.types.set('scatter', class ScatterOptions extends ReportVisualizationLinearOptions {
+});
+
+ReportVisualization.types.set('bubble', class BubbleOptions extends ReportVisualizationLinearOptions {
 });
 
 ReportVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {
@@ -1535,28 +1520,93 @@ ReportVisualization.types.set('bar', class BarOptions extends ReportVisualizatio
 ReportVisualization.types.set('dualaxisbar', class DualAxisBarOptions extends ReportVisualizationLinearOptions {
 });
 
-ReportVisualization.types.set('stacked', class BarOptions extends ReportVisualizationLinearOptions {
+ReportVisualization.types.set('stacked', class StackedOptions extends ReportVisualizationLinearOptions {
 });
 
-ReportVisualization.types.set('area', class BarOptions extends ReportVisualizationLinearOptions {
+ReportVisualization.types.set('area', class AreaOptions extends ReportVisualizationLinearOptions {
 });
 
-ReportVisualization.types.set('pie', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('pie', class PieOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('funnel', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('funnel', class FunnelOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('spatialmap', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('spatialmap', class SpatialMapOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('cohort', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('cohort', class CohortOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('json', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('json', class JSONOptions extends ReportVisualizationOptions {
 });
 
-ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisualizationOptions {
+ReportVisualization.types.set('bigtext', class BigTextOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.classList.add('subform');
+
+		container.innerHTML = `
+			<label>
+				<span>Column</span>
+				<select name="column"></select>
+			</label>
+
+			<label>
+				<span>Type</span>
+				<select name="valueType">
+					<option value="text">Text</option>
+					<option value="number">Number</option>
+					<option value="date">Date</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Prefix</span>
+				<input type="text" name="prefix" value="${this.visualization.options.prefix}">
+			</label>
+
+			<label>
+				<span>Postfix</span>
+				<input type="text" name="postfix" value="${this.visualization.options.postfix}">
+			</label>
+		`;
+
+		const
+			columnSelect = container.querySelector('select[name=column]'),
+			valueType = container.querySelector('select[name=valueType]');
+
+		for(const [key, column] of this.report.columns) {
+
+			columnSelect.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		columnSelect.value = this.visualization.options.column || '';
+		valueType.value = this.visualization.options.valueType || '';
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			column: this.form.querySelector('select[name=column]').value,
+			valueType: this.form.querySelector('select[name=valueType]').value,
+			prefix: this.form.querySelector('input[name=prefix]').value,
+			postfix: this.form.querySelector('input[name=postfix]').value,
+		}
+	}
+});
+
+ReportVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationOptions {
 
 	get form() {
 
@@ -1565,20 +1615,22 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 
 		const container = this.formContainer = document.createElement('form');
 
+		container.classList.add('form');
+
 		container.innerHTML = `
 			<label>
 				<span>Column</span>
-				<select id="timing"></select>
+				<select name="timing"></select>
 			</label>
 
 			<label>
 				<span>Value</span>
-				<select id="value"></select>
+				<select name="value"></select>
 			</label>
 
 			<label>
 				<span>Show History</span>
-				<select id="history">
+				<select name="history">
 					<option value="1">Yes</option>
 					<option value="0">No</option>
 				</select>
@@ -1586,22 +1638,33 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 
 			<label>
 				<span>Invert Values</span>
-				<select id="invertColor">
+				<select name="invertColor">
 					<option value="1">Yes</option>
 					<option value="0">No</option>
 				</select>
 			</label>
+
+			<label>
+				<span>Prefix</span>
+				<input type="text" name="prefix">
+			</label>
+
+			<label>
+				<span>Postfix</span>
+				<input type="text" name="postfix">
+			</label>
 		`;
 
-		const columns = container.querySelector('select[id=timing]');
-		const values = container.querySelector('select[id=value]');
+		const timing = container.querySelector('select[name=timing]');
+		const value = container.querySelector('select[name=value]');
 
 		for(const [key, column] of this.report.columns) {
-			columns.insertAdjacentHTML('beforeend', `
+
+			timing.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 
-			values.insertAdjacentHTML('beforeend', `
+			value.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 		}
@@ -1610,11 +1673,14 @@ ReportVisualization.types.set('livenumber', class BarOptions extends ReportVisua
 	}
 
 	get json() {
+
 		return {
-			timing: this.form.timing.value,
-			value: this.form.value.value,
-			history: this.form.history.value,
-			invertColor: this.form.invertColor.value
+			timing: this.form.querySelector('select[name=timing]').value,
+			value: this.form.querySelector('select[name=value]').value,
+			history: this.form.querySelector('select[name=history]').value,
+			invertColor: this.form.querySelector('select[name=invertColor]').value,
+			prefix: this.form.querySelector('input[name=prefix]').value,
+			postfix: this.form.querySelector('input[name=postfix]').value,
 		}
 	}
 });

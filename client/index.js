@@ -382,34 +382,21 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 					<i class="fa fa-plus"></i>
 					Add New Report
 				</button>
-
-				<select name="column_search" class="right">
-					<option value="">Search Everything</option>
-					<option value="query_id">ID</option>
-					<option value="name">Name</option>
-					<option value="description">Description</option>
-					<option value="source">Source</option>
-					<option value="tags">Tags</option>
-					<option value="query_filter">Filters</option>
-					<option value="query_visualization">Visualizations</option>
-				</select>
-
-				<input type="search" placeholder="Search&hellip;" name="search">
 			</form>
 
 			<div id="list-container">
 				<table class="block">
 					<thead>
-						<tr></tr>
+						<tr class="table-search"></tr>
 						<tr class="table-head">
 							<th class="sort" title="query_id" >ID<i class="fa fa-sort"></th>
 							<th class="sort" title="name" >Name<i class="fa fa-sort"></th>
 							<th class="sort" title="description" >Description<i class="fa fa-sort"></th>
-							<th title="connection_name">Connection</th>
-							<th>Tags</th>
+							<th title="connection">Connection</th>
+							<th title="tags">Tags</th>
 							<th class="sort" title="filters" >Filters<i class="fa fa-sort"></th>
 							<th class="sort" title="visualizations" >Visualizations<i class="fa fa-sort"></th>
-							<th>Enabled</th>
+							<th title="is_enabled">Enabled</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>
