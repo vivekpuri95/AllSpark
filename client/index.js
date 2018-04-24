@@ -1008,6 +1008,7 @@ class Template {
 
 		this.stylesheets = [
 			'/css/main.css',
+			'/css/purple.css',
 		];
 
 		this.scripts = [
