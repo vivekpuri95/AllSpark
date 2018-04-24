@@ -19,7 +19,7 @@ body > header {
 	background: #5f42b5;
 }
 body > header a.selected, body > header a:hover {
-	background: var(--color-accent);
+	background: rgba(255, 255, 255, 0.2);
 }
 body > header .logout.selected,
 body > header .logout:hover {
