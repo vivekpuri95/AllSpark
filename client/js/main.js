@@ -5550,73 +5550,62 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	process() {
 		const response = this.source.response;
-		this.options.invertColor = parseInt(this.options.invertColor);
-		this.today = {value: 0};
-		this.yesterday = {value: 0};
-		this.weekago = {value: 0};
-
-		if(!response[0].has(this.options.timing) || !response[0].has(this.options.value))
-			return this.source.error('Response do not have same columns as in config');
+		this.options.invert = parseInt(this.options.invert);
 
 		try {
 			for (let row of response) {
-				const responseDate = (new Date(row.get(this.options.timing).substring(0, 10))).toDateString();
+				const responseDate = (new Date(row.get(this.options.timingColumn).substring(0, 10))).toDateString();
 				const todayDate = new Date();
 
-				if (responseDate == (new Date()).toDateString()) {
-					this.today.value = row.get(this.options.value);
+				for (let box in this.options.boxes) {
+					const configDate = new Date(Date.now() - this.options.boxes[box].offset * 86400000).toDateString();
+					if (responseDate == configDate) {
+						this.options.boxes[box].value = row.get(this.options.valueColumn);
+					}
 				}
-				else if (responseDate == new Date(Date.now() - 1 * 86400000).toDateString()) {
-					this.yesterday.value = row.get(this.options.value);
-				}
-				else if (responseDate == new Date(Date.now() - 7 * 86400000).toDateString()) {
-					this.weekago.value = row.get(this.options.value);
-				}
+			}
+
+			for (let box in this.options.boxes) {
+				const thisBox = this.options.boxes[box];
+				thisBox.percentage = Math.round(((this.options.boxes[thisBox.relativeValTo].value - thisBox.value) / thisBox.value) * 100);
 			}
 		}
 		catch(e) {
-			return this.source.error('Unable to parse response');
+			return this.source.error(e);
 		}
-
-		this.yesterday.percentage = this.yesterday.value ? Math.round(((this.today.value - this.yesterday.value) / Math.abs(this.yesterday.value)) * 100) : 0;
-		this.weekago.percentage = this.weekago.value ? Math.round(((this.today.value - this.weekago.value) / this.weekago.value) * 100) : 0;
 	}
 
 	render() {
-		this.container.querySelector('.container').innerHTML = `
-			<div class="livenumber">
-				<div class="today">
-					${this.today.value}
-				</div>
-				<div class="submenu ${parseInt(this.options.history) ? '' : 'hidden'}">
-					<div class="yesterday">
-						<div class="blur">DOD</div>
-						<h4 style="color:${this.getColor(this.yesterday.percentage)};">
-							${this.yesterday.percentage}%
-						</h4>
-						${this.yesterday.value}
-					</div>
-					<div class="weekago">
-						<div class="blur">WoW</div>
-						<h4 style="color:${this.getColor(this.weekago.percentage)};">
-							${this.weekago.percentage}%
-						</h4>
-					${this.weekago.value}
-					</div>
-				</div>
-			</div>
-		`;
+		this.container.querySelector('.container').textContent = null;
+
+		for (let box of this.options.boxes) {
+			const allboxes = document.createElement('div');
+
+			allboxes.innerHTML = `
+				<h4 style="color:${this.getColor(box.percentage)}; font-size: x-large">
+					${(this.options.prefix ? this.options.prefix:'')+' '+box.value+' '+(this.options.postfix ? this.options.postfix:'')}
+				</h4>
+				${box.percentage}%
+			`;
+
+			allboxes.style = `
+				grid-column: ${box.column} / span ${box.columnspan};
+				grid-row: ${box.row} / span ${box.rowspan};
+			`;
+
+			this.container.querySelector('.container').appendChild(allboxes);
+		}
 	}
 
 	getColor(percentage) {
 
 		if (percentage > 0)
-			if (this.options.invertColor)
+			if (this.options.invertValues)
 				return 'red';
 			else
 				return 'green';
 		else
-			if (this.options.invertColor)
+			if (this.options.invertValues)
 				return 'green';
 			else
 				return 'red';

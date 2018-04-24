@@ -1635,16 +1635,8 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			</label>
 
 			<label>
-				<span>Show History</span>
-				<select name="history">
-					<option value="1">Yes</option>
-					<option value="0">No</option>
-				</select>
-			</label>
-
-			<label>
 				<span>Invert Values</span>
-				<select name="invertColor">
+				<select name="invertValues">
 					<option value="1">Yes</option>
 					<option value="0">No</option>
 				</select>
@@ -1659,6 +1651,12 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 				<span>Postfix</span>
 				<input type="text" name="postfix">
 			</label>
+					
+			<h4>Boxes</h4>
+			<div id="config-boxes"></div>
+			<button class="add-box" type="button">
+				<i class="fa fa-plus"></i> Add New Box
+			</button>
 		`;
 
 		const timing = container.querySelector('select[name=timing]');
@@ -1675,19 +1673,74 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			`);
 		}
 
+		const configBoxes = container.querySelector('#config-boxes');
+
+		container.querySelector('.add-box').on('click', () => {
+			const boxConfig = document.createElement('div');
+			boxConfig.classList.add('subform', 'form');
+
+			boxConfig.innerHTML = `
+				<label>
+					<span>Offset</span>
+					<input type="text" name="offset">
+				</label>
+				
+				<label>
+					<span>Relative To(Index)</span>
+					<input type="text" name="relativeValTo">
+				</label>
+				
+				<label>
+					<span>Column</span>
+					<input type="text" name="column">
+				</label>
+				
+				<label>
+					<span>Row</span>
+					<input type="text" name="row">
+				</label>
+				
+				<label>
+					<span>Column Span</span>
+					<input type="text" name="columnspan">
+				</label>
+				
+				<label>
+					<span>Row Span</span>
+					<input type="text" name="rowspan">
+				</label>
+			`;
+
+			configBoxes.appendChild(boxConfig);
+		});
+
 		return container;
 	}
 
 	get json() {
 
-		return {
-			timing: this.form.querySelector('select[name=timing]').value,
-			value: this.form.querySelector('select[name=value]').value,
-			history: this.form.querySelector('select[name=history]').value,
-			invertColor: this.form.querySelector('select[name=invertColor]').value,
+		let config = {
+			timingColumn: this.form.querySelector('select[name=timing]').value,
+			valueColumn: this.form.querySelector('select[name=value]').value,
+			invertValues: this.form.querySelector('select[name=invertValues]').value,
 			prefix: this.form.querySelector('input[name=prefix]').value,
 			postfix: this.form.querySelector('input[name=postfix]').value,
+		};
+
+		config.boxes = [];
+
+		for(let box of this.form.querySelectorAll('.subform')){
+			config.boxes.push({
+				offset: box.querySelector('input[name=offset]').value,
+				relativeValTo: box.querySelector('input[name=relativeValTo]').value,
+				row: box.querySelector('input[name=row]').value,
+				column: box.querySelector('input[name=column]').value,
+				rowspan: box.querySelector('input[name=rowspan]').value,
+				columnspan: box.querySelector('input[name=columnspan]').value
+			});
 		}
+
+		return config;
 	}
 });
 
