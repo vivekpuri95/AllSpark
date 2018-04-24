@@ -75,6 +75,8 @@ class Reports extends Page {
 
 		Reports.filters = Reports.container.querySelector('form.filters');
 
+		Reports.prepareColumns();
+
 	}
 
 	static async load(force) {
@@ -82,8 +84,6 @@ class Reports extends Page {
 		await Reports.fetch(force);
 
 		Reports.process();
-
-		Reports.prepareColumns();
 
 		Reports.render();
 	}
