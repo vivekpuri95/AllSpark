@@ -1589,8 +1589,8 @@ ReportVisualization.types.set('bigtext', class BigTextOptions extends ReportVisu
 			`);
 		}
 
-		columnSelect.value = this.visualization.options.column || '';
-		valueType.value = this.visualization.options.valueType || '';
+		columnSelect.value = (this.visualization.options && this.visualization.options.column) || '';
+		valueType.value = (this.visualization.options && this.visualization.options.valueType) || '';
 
 		return container;
 	}
