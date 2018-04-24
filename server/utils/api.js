@@ -89,7 +89,7 @@ class API {
 
 				for (const host in global.account) {
 
-					if (global.account[host].account_id == userAccount.account_id) {
+					if (global.account[host].account_id == userDetails.account_id) {
 						obj.account = global.account[host];
 					}
 				}
