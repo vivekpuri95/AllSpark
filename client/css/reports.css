@@ -16,6 +16,18 @@ main section.section.show {
 	main section a:hover {
 		text-decoration: underline;
 	}
+
+	main #list thead tr.table-search th {
+		padding: 10px 8px;
+		position: sticky;
+		top: 45px;
+		z-index: 2;
+		background: white;
+		color: var(--color-primary-text);
+	}
+	main #list thead tr th input {
+		width : 100%;
+	}
 	main #list tr .source {
 		text-transform: capitalize;
 	}
@@ -311,7 +323,7 @@ main #form #report-form {
 			margin-top: 0;
 
 		}
-		main #visualization-form .axis {
+		main #visualization-form .subform {
 			border-bottom: 1px solid #ccc;
 			margin-bottom: 10px;
 			display: grid;
@@ -320,10 +332,10 @@ main #form #report-form {
 			border: 1px solid #ccc;
 			background: #eef;
 		}
-			main #visualization-form .axis select[multiple] {
+			main #visualization-form .subform select[multiple] {
 				height: 75px;
 				padding: 0
 			}
-				main #visualization-form .axis select[multiple] option {
+				main #visualization-form .subform select[multiple] option {
 					padding: 3px 5px;
 				}

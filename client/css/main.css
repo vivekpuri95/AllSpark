@@ -251,8 +251,7 @@ body {
 			color: var(--color-primary-text);
 			font-size: 90%;
 		}
-
-			main table thead tr th{
+      main table thead tr th{
 				padding: 10px 8px;
 				top: 0px;
 				z-index: 2;
@@ -284,8 +283,7 @@ body {
 				width : 100%;
 			}
 
-
-			main table thead th:last-child {
+      main table thead th:last-child {
 				border-right: 0;
 			}
 				main table thead svg {
@@ -517,6 +515,7 @@ body {
 				width: 200%;
 				top: 27px;
 				right: 0;
+				z-index: 1;
 			}
 			main .data-source .download-dropdown-content .csv-download {
 				border-bottom: 0;
@@ -1179,6 +1178,13 @@ body {
 	font-size: 110%;
 	font-weight: bold;
 	pointer-events: none;
+}
+.visualization.bigtext .container .value {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	font-size: calc(18px + 5vw);
 }
 .visualization .container .livenumber.box {
 	display: grid;
