@@ -5580,10 +5580,10 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			const configBox = document.createElement('div');
 
 			configBox.innerHTML = `
-				<h4 style="color:${this.getColor(box.percentage)}; font-size: xx-large;">
+				<h5 style="color:${this.getColor(box.percentage)}; font-size: xx-large;">
 					${(this.prefix ? this.prefix:'')+' '+box.value+' '+(this.postfix ? this.postfix:'')}
-				</h4>
-				${box.percentage}%
+				</h5>
+				<p id="percentage">${box.percentage}%</p>
 			`;
 
 			configBox.style = `
@@ -5594,6 +5594,8 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			this.container.querySelector('.container').appendChild(configBox);
 		}
+
+		this.container.querySelector('p').classList.add('hidden');
 	}
 
 	getColor(percentage) {
