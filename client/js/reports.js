@@ -1569,12 +1569,12 @@ ReportVisualization.types.set('bigtext', class BigTextOptions extends ReportVisu
 
 			<label>
 				<span>Prefix</span>
-				<input type="text" name="prefix" value="${this.visualization.options.prefix}">
+				<input type="text" name="prefix" value="${(this.visualization.options && this.visualization.options.prefix) || ''}">
 			</label>
 
 			<label>
 				<span>Postfix</span>
-				<input type="text" name="postfix" value="${this.visualization.options.postfix}">
+				<input type="text" name="postfix" value="${(this.visualization.options && this.visualization.options.postfix) || ''}">
 			</label>
 		`;
 
@@ -1589,8 +1589,8 @@ ReportVisualization.types.set('bigtext', class BigTextOptions extends ReportVisu
 			`);
 		}
 
-		columnSelect.value = this.visualization.options.column || '';
-		valueType.value = this.visualization.options.valueType || '';
+		columnSelect.value = (this.visualization.options && this.visualization.options.column) || '';
+		valueType.value = (this.visualization.options && this.visualization.options.valueType) || '';
 
 		return container;
 	}
