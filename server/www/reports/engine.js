@@ -481,8 +481,16 @@ class ReportEngine extends API {
 			}
 			await this.mysql.query(`
 				INSERT INTO
-					tb_report_logs
-					(query_id, query, result_query, response_time, type, user_id, cache, \`rows\`)
+					tb_report_logs (
+						query_id,
+						query,
+						result_query,
+						response_time,
+						type,
+						user_id,
+						cache,
+						\`rows\`
+					)
 				VALUES
 					(?,?,?,?,?,?,?,?)`,
 				[query_id, query, result_query, executionTime, type, userId, is_redis, rows],
