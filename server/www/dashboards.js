@@ -106,7 +106,7 @@ exports.delete = class extends API {
 
 		this.user.privilege.needs('dashboard');
 
-		const mandatoryData = ["dashboard_id", "user_id"];
+		const mandatoryData = ["id"];
 
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 

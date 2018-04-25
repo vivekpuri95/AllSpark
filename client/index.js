@@ -342,6 +342,14 @@ router.get('/dashboards/:id?', (request, response) => {
 					<span>Icon</span>
 					<input type="text" name="icon">
 				</label>
+				
+				<label>
+					<span>Type</span>
+					<select name="visibility">
+						<option value="public">Public</option>
+						<option value="private">Private</option>
+					</select>
+				</label>
 
 				<label id="format">
 					<span>Format</span>
