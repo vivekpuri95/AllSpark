@@ -7,8 +7,8 @@
 	--color-accent-text: #fff;
 	--transition-duration: 300ms;
 	--gap: 5px;
-    --color-red-text: #a94442;
-    --color-green-text: #1abb9c;
+	--color-red-text: #a94442;
+	--color-green-text: #1abb9c;
 }
 * {
 	box-sizing: border-box;
