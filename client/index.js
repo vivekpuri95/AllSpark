@@ -26,8 +26,8 @@ router.get('/login', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('css/login.css');
-	template.scripts.push('js/login.js');
+	template.stylesheets.push('/css/login.css');
+	template.scripts.push('/js/login.js');
 
 	response.send(template.body(`
 
