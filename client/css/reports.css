@@ -16,6 +16,18 @@ main section.section.show {
 	main section a:hover {
 		text-decoration: underline;
 	}
+
+	main #list thead tr.table-search th {
+		padding: 10px 8px;
+		position: sticky;
+		top: 45px;
+		z-index: 2;
+		background: white;
+		color: var(--color-primary-text);
+	}
+	main #list thead tr th input {
+		width : 100%;
+	}
 	main #list tr .source {
 		text-transform: capitalize;
 	}
@@ -48,6 +60,29 @@ main section.section.show {
 		main #list tr .tags a:active {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.35);
 		}
+
+main table thead tr.table-head th {
+	padding: 5px 8px;
+	position: sticky;
+	top: 93px;
+	z-index: 2;
+	background: var(--color-primary);
+	color: var(--color-primary-text);
+}
+
+main table thead tr.table-search th {
+	padding: 10px 8px;
+	position: sticky;
+	top: 45px;
+	z-index: 2;
+	width: 120px;
+	background: white;
+	color: var(--color-primary-text);
+}
+
+	main table thead tr th input {
+		width : 100%;
+	}
 main #form #report-form {
 	background: #fff;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
@@ -311,7 +346,7 @@ main #form #report-form {
 			margin-top: 0;
 
 		}
-		main #visualization-form .axis {
+		main #visualization-form .subform {
 			border-bottom: 1px solid #ccc;
 			margin-bottom: 10px;
 			display: grid;
@@ -320,10 +355,10 @@ main #form #report-form {
 			border: 1px solid #ccc;
 			background: #eef;
 		}
-			main #visualization-form .axis select[multiple] {
+			main #visualization-form .subform select[multiple] {
 				height: 75px;
 				padding: 0
 			}
-				main #visualization-form .axis select[multiple] option {
+				main #visualization-form .subform select[multiple] option {
 					padding: 3px 5px;
 				}

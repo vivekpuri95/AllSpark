@@ -1,5 +1,5 @@
 :root {
-	--color-primary: #2a313f;
+	--color-primary: #2a3f54;
 	--color-primary-text: #fff;
 	--color-secondary: #ddd;
 	--color-secondary-text: #333;
@@ -16,10 +16,10 @@ button {
 	background: #fff;
 }
 body > header {
-	background: var(--color-primary)
+	background: #5f42b5;
 }
 body > header a.selected, body > header a:hover {
-	background: rgba(255, 255, 255, 0.2);
+	background: rgba(255, 255, 255, 0.3);
 }
 body > header .logout.selected,
 body > header .logout:hover {

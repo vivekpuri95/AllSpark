@@ -5,11 +5,12 @@ exports.list = class extends API {
 	async list() {
 
 		const rows = await this.mysql.query(
-			`SELECT * FROM tb_dashboards where status = 1 AND account_id = ? and type = "public" 
-			union 
+			`SELECT * FROM tb_dashboards where status = 1 AND account_id = ? and type = "public"
+			union
 			SELECT * FROM tb_dashboards where status = 1 AND account_id = ? and type = "private" and added_by = ?`,
 			[this.account.account_id, this.account.account_id, this.user.user_id]
 		);
+
 
 		for(const row of rows) {
 

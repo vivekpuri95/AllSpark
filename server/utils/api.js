@@ -70,17 +70,9 @@ class API {
 
 				obj.request = request;
 				obj.assert = assertExpression;
-
-				let host = request.headers.host.split(':')[0];
-
-				if(!(host in global.account))
-					throw new API.Exception(400, 'Account not found!');
-
-				obj.account = global.account[host];
+				const token = request.query.token || request.body.token;
 
 				let userDetails;
-
-				const token = request.query.token || request.body.token;
 
 				if (token) {
 
@@ -89,12 +81,26 @@ class API {
 					obj.user = new User(userDetails);
 				}
 
+				let host = request.headers.host.split(':')[0];
+
+				if (!(host in global.account)) {
+					throw new API.Exception(400, 'Account not found!');
+				}
+
+				for (const host in global.account) {
+
+					if (userDetails && global.account[host].account_id == userDetails.account_id) {
+						obj.account = global.account[host];
+					}
+				}
+
+				if (!obj.account) {
+					obj.account = global.account[host];
+				}
+
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
 					throw new API.Exception(401, 'User Not Authenticated! :(');
 				}
-				// if (host.includes('localhost')) {
-				// 	host = 'test-analytics.jungleworks.co';
-				// }
 
 				const result = await obj[path.split(pathSeparator).pop()]();
 
@@ -113,7 +119,7 @@ class API {
 
 			catch (e) {
 
-				if(obj) {
+				if (obj) {
 
 					await API.errorMessage(e, obj);
 				}
@@ -153,22 +159,6 @@ class API {
 		}
 	}
 
-	async gzip() {
-
-		return new Promise((resolve, reject) => {
-			zlib.gzip(JSON.stringify(this.result), (error, result) => {
-
-				if (error)
-					reject(['API response gzip compression failed!', error]);
-
-				else {
-					this.result = result;
-					resolve();
-				}
-			});
-		});
-	}
-
 	static async errorMessage(e, obj) {
 
 		try {
@@ -183,10 +173,26 @@ class API {
 
 			await errorLogs.insert(error);
 		}
-		catch(e) {
+		catch (e) {
 			return e;
 		}
 
+	}
+
+	async gzip() {
+
+		return new Promise((resolve, reject) => {
+			zlib.gzip(JSON.stringify(this.result), (error, result) => {
+
+				if (error)
+					reject(['API response gzip compression failed!', error]);
+
+				else {
+					this.result = result;
+					resolve();
+				}
+			});
+		});
 	}
 
 }

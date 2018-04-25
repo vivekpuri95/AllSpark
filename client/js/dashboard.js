@@ -209,9 +209,6 @@ Page.class = class Dashboards extends Page {
 		report.container.querySelector('.menu').classList.remove('hidden');
 		report.container.querySelector('.menu-toggle').classList.add('selected');
 
-		report.container.querySelector('.filters').classList.remove('hidden');
-		report.container.querySelector('.filters-toggle').classList.add('selected');
-
 		container.appendChild(report.container);
 
 		report.visualizations.selected.load();
@@ -290,15 +287,7 @@ class Dashboard {
 
 		await this.datasets.load();
 
-		for(const _report of this.reports()) {
-
-			const report = new DataSource(_report);
-
-			for(const filter of report.filters.values()) {
-
-				if(filter.dataset && this.datasets.has(filter.dataset.id))
-					await filter.dataset.load();
-			}
+		for(const report of this.reports) {
 
 			report.container.setAttribute('style', `
 				order: ${report.dashboard.position || 0};
@@ -586,15 +575,15 @@ class Dashboard {
 
 	get menuItem() {
 
-        if (this.container)
-            return this.container;
+		if (this.container)
+			return this.container;
 
 		function getReports(dashboard) {
 
-			let reports = Array.from(dashboard.reports());
+			let reports = Array.from(dashboard.reports);
 
 			for(const child of dashboard.children)
-                reports = reports.concat(getReports(child));
+				reports = reports.concat(getReports(child));
 
 			return reports;
 		}
@@ -615,8 +604,8 @@ class Dashboard {
 
 		container.classList.add('item');
 
-        if(!getReports(this).length && !this.page.user.privileges.has('report'))
-            container.classList.add('hidden');
+		if(!getReports(this).length && !this.page.user.privileges.has('report'))
+			container.classList.add('hidden');
 
 		container.innerHTML = `
 			<div class="label">
@@ -659,14 +648,18 @@ class Dashboard {
 			}
 		});
 
-
 		for(const child of this.children)
 			submenu.appendChild(child.menuItem);
 
 		return container;
 	}
 
-	* reports() {
+	get reports() {
+
+		if(this.reportsList)
+			return this.reportsList;
+
+		this.reportsList = new Set;
 
 		if(this.format && this.format.reports && this.format.reports.length) {
 
@@ -680,9 +673,11 @@ class Dashboard {
 				report.dashboard = JSON.parse(JSON.stringify(_report));
 				report.dashboard.position = position;
 
-				yield report;
+				this.reportsList.add(new DataSource(report));
 			}
 		}
+
+		return this.reportsList;
 	}
 }
 
@@ -697,23 +692,23 @@ class DashboardDatasets extends Map {
 
 		const datasets = {};
 
-		for(const report of this.dashboard.reports()) {
+		for(const report of this.dashboard.reports) {
 
 			for(const filter of report.filters || []) {
 
 				if(!filter.dataset)
 					continue;
 
-				if(!datasets[filter.dataset]) {
-					datasets[filter.dataset] = {
+				if(!datasets[filter.dataset.id]) {
+					datasets[filter.dataset.id] = {
 						id: filter.dataset,
 						multiple: true,
-						placeholder: `dataset-${filter.dataset}`,
+						placeholder: `dataset-${filter.dataset.id}`,
 					}
 				}
 
 				if(!filter.multiple)
-					datasets[filter.dataset].multiple = false;
+					datasets[filter.dataset.id].multiple = false;
 			}
 		}
 
@@ -740,12 +735,16 @@ class DashboardDatasets extends Map {
 
 	async render() {
 
-		const container = Dashboard.toolbar.querySelector('.datasets');
+		const container = this.page.container.querySelector('#reports .datasets');
 
 		container.textContent = null;
 
+		container.classList.toggle('hidden', !this.size);
+
 		if(!this.size)
 			return;
+
+		container.innerHTML = '<h3>Global Filters</h3>';
 
 		let counter = 1;
 
