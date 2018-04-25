@@ -5553,7 +5553,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const response = this.source.response;
 
 		try {
-			for (let row of response) {
+			for (const row of response) {
 				const responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString();
 				const todayDate = new Date();
 
@@ -5583,7 +5583,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			configBox.innerHTML = `
 				<h7 class="${this.getColor(box.percentage)}">
-					${(this.prefix ? this.prefix : '') + ' ' + box.value + ' ' + (this.postfix ? this.postfix : '')}
+					${this.prefix || ''}${box.value}${this.postfix || ''}
 				</h7>
 				<p class="percentage">${box.percentage}%</p>
 			`;
