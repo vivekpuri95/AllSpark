@@ -3,6 +3,7 @@
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
 const User = require('../../utils/User');
+const redis = require('../../utils/redis').Redis;
 
 exports.list = class extends API {
 
@@ -23,11 +24,11 @@ exports.list = class extends API {
                     is_deleted = 0
                     and q.account_id = ?
             `, [this.account.account_id]),
-            this.mysql.query('SELECT * FROM tb_query_filters'),
-            this.mysql.query('SELECT * FROM tb_query_visualizations'),
-        ]);
+			this.mysql.query('SELECT * FROM tb_query_filters'),
+			this.mysql.query('SELECT * FROM tb_query_visualizations'),
+		]);
 
-        const response = [];
+		const response = [];
 
 		for (const row of results[0]) {
 
@@ -40,7 +41,7 @@ exports.list = class extends API {
 
 			try {
 				row.format = row.format ? JSON.parse(row.format) : null;
-			} catch(e) {
+			} catch (e) {
 				row.format = null;
 			}
 		}
@@ -78,15 +79,22 @@ exports.update = class extends API {
 			];
 
 		for (const key in this.request.body) {
-			if (query_cols.includes(key))
+
+			if (query_cols.includes(key)) {
+
 				values[key] = this.request.body[key];
+			}
+
 		}
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;
 
 		try {
+
 			values.format = values.format ? JSON.stringify(JSON.parse(values.format)) : null;
-		} catch(e) {
+		}
+		catch (e) {
+
 			values.format = JSON.stringify({});
 		}
 
@@ -128,12 +136,12 @@ exports.insert = class extends API {
 				values[key] = this.request.body[key] || null;
 		}
 
-        values["account_id"] = this.account.account_id;
-        values.added_by = this.user.user_id;
+		values["account_id"] = this.account.account_id;
+		values.added_by = this.user.user_id;
 
 		try {
 			values.format = JSON.stringify(JSON.parse(values.format))
-		} catch(e) {
+		} catch (e) {
 			values.format = JSON.stringify({});
 		}
 
