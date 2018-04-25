@@ -125,11 +125,16 @@ class Reports extends Page {
 		if(Reports.response && !force)
 			return;
 
+		if(Reports.dashboard_list)
+			return;
+
 		[Reports.response, Reports.datasets, Reports.credentials] = await Promise.all([
 			API.call('reports/report/list'),
 			API.call('datasets/list'),
 			API.call('credentials/list'),
 		]);
+
+		Reports.dashboard_list = await API.call('dashboards/list');
 	}
 
 	static process() {
@@ -1256,6 +1261,8 @@ class ReportVisualization {
 
 		this.optionsForm = null;
 
+		this.dashboardForm = new ReportVisualizationDashboard(this);
+
 		if(ReportVisualization.types.has(this.type))
 			this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
 	}
@@ -1305,6 +1312,9 @@ class ReportVisualization {
 
 		if(this.optionsForm)
 			options.appendChild(this.optionsForm.form);
+
+		if(this.dashboardForm)
+			options.appendChild(this.dashboardForm.form);
 	}
 
 	async loadPreview() {
@@ -1334,6 +1344,9 @@ class ReportVisualization {
 		if(this.optionsForm)
 			this.optionsForm.report = report;
 
+		if(this.dashboardForm)
+			this.dashboardForm.report = report;
+
 		await report.visualizations.selected.load();
 	}
 
@@ -1349,6 +1362,9 @@ class ReportVisualization {
 				method: 'POST',
 				form: new FormData(ReportVisualization.form),
 			};
+
+		if(this.optionsForm)
+			parameters.options = JSON.stringify(this.optionsForm.json);
 
 		if(this.optionsForm)
 			parameters.options = JSON.stringify(this.optionsForm.json);
@@ -1385,6 +1401,92 @@ class ReportVisualization {
 	}
 }
 
+class ReportVisualizationDashboard {
+
+	constructor(visualization) {
+		this.visualization = visualization;
+	}
+
+	get form() {
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<h4>Dashboard</h4>
+			<div class="dashboards"></div>
+			<button class="add-dashboard" type="button">
+				<i class="fa fa-plus"></i> Add New Dashboard
+			</button>
+		`;
+
+		const dashboard = container.querySelector('.dashboards');
+
+		for(const dashboard of this.visualization.options.dashboards ? this.visualization.options.dashboards : [])
+			dashboard.appendChild(this.axis(dashboard));
+
+		container.querySelector('.add-dashboard').on('click', () => {
+			dashboard.appendChild(this.dashboard());
+		});
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			dashboard: [],
+		};
+
+		for(const dashboard of this.formContainer.querySelectorAll('.dashboards')) {
+
+			response.dashboard.push({
+				position: dashboard.querySelector('input[name=position]').value,
+				dashboard: dashboard.querySelector('select[name=dashboard]').value,
+			});
+		}
+
+		return response;
+	}
+
+	dashboard(dashboard = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('dashboard', 'subform');
+
+		container.innerHTML = `
+			<label>
+				<span>Dashboard</span>
+				<select name="dashboard" value="${dashboard.dashboard}">
+				</select>
+			</abel>
+
+			<label>
+				<span>Position</span>
+				<input name="position" type="number" value="${dashboard.position}">
+			<label>
+				<button class="delete" type="button">
+					<i class="far fa-trash-alt"></i> Delete
+				</button>
+			</label>
+		`;
+
+		const options = [];
+
+		for(const dashboard of Reports.dashboard_list) {
+
+			options.push(`
+				<option value=${dashboard.id}>${dashboard.name} ${dashboard.parent? `(parent: ${Reports.dashboard_list.filter(a=> a.id == dashboard.parent)[0].name})` : ''}</option>
+			`);
+		}
+
+		container.querySelector('select[name=dashboard]').innerHTML = options.join('');
+
+		container.querySelector('.delete').on('click', () => container.parentElement && container.parentElement.removeChild(container));
+
+		return container;
+	}
+}
+
 class ReportVisualizationOptions {
 
 	constructor(visualization) {
@@ -1416,7 +1518,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const axes = container.querySelector('.axes');
 
-		for(const axis of this.visualization.options ? this.visualization.options.axes : [])
+		for(const axis of this.visualization.options.axes ? this.visualization.options.axes : [])
 			axes.appendChild(this.axis(axis));
 
 		container.querySelector('.add-axis').on('click', () => {
@@ -1429,7 +1531,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	get json() {
 
 		const response = {
-			axes: []
+			axes: [],
 		};
 
 		for(const axis of this.formContainer.querySelectorAll('.axis')) {

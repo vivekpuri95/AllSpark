@@ -16,7 +16,7 @@ exports.list = class extends API {
 		);
 
 		let visualizationDashboards = this.mysql.query(
-			"select vd* from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id where d.status = 1 and account_id = ?",
+			"select vd.* from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id where d.status = 1 and account_id = ?",
 			[this.account.account_id]
 		);
 
