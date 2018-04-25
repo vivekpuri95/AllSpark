@@ -64,10 +64,10 @@ exports.list = class extends API {
 
 			for(const queryVisualization of dashboardObject[d].visualizations) {
 
-				formatObject.push(queryVisualization)
+				formatObject.push({...queryVisualization, ...queryVisualization.format})
 			}
 
-			dashboardObject[d] = formatObject;
+			dashboardObject[d].format = formatObject;
 		}
 
 		return Object.values(dashboardObject);
