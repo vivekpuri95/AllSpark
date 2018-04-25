@@ -72,41 +72,49 @@ class Authenticate {
 					d.visibility as visibility
                 FROM
                     tb_query q
-                join
+                JOIN
                 	(
-                		select 
-                			*
-                		from 
+                		SELECT 
+                			d.id as dashboard, d.visibility
+                		FROM
                 			tb_dashboards d
-                		join
+                		JOIN
                 			tb_user_dashboard ud
-                		on
+                		ON
                 			d.id = ud.dashboard_id
-                		where
-                			ud.user_id = ? or d.added_by = ?
+                		WHERE
+                			(ud.user_id = ? OR d.added_by = ?)
+                			AND d.id = ?
+                		GROUP BY
+                			dashboard
                 	) d
                 	
                 LEFT JOIN
-                     tb_user_query uq ON
+                     tb_user_query uq 
+                ON
                      uq.query_id = q.query_id
                      AND user_id = ?
                 WHERE
                 	d.id = ?
-                    and q.query_id IN (select query_id from tb_query_dashboard where dashboard_id = ?)
+                    AND q.query_id IN (
+                    	SELECT
+                    		qv.query_id 
+                    	FROM
+                    		tb_visualization_dashboard vd
+                    	JOIN
+                    		tb_query_visualizations qv
+                    		using(visualization_id)
+                    	WHERE 
+                    		dashboard_id = ?
+                    )
                     AND is_enabled = 1
                     AND is_deleted = 0
                     AND account_id = ?
 			`,
-				[userObj.user_id, dashboardQueryList, userObj.account_id]
+				[userObj.user_id, userObj.user_id, dashboardQueryList, userObj.user_id,
+					dashboardQueryList, userObj.account_id
+				]
 			);
-
-			if (!dashboardQueryList.length && dashboardQueryList.length > 1) {
-
-				return {
-					error: true,
-					message: "error in dashboardQueryList details",
-				}
-			}
 		}
 
 
@@ -122,7 +130,7 @@ class Authenticate {
 
 			const authResponse = await Authenticate.report(query, userObj);
 
-			if(authResponse.error) {
+			if (authResponse.error) {
 
 				return {
 					error: true,
