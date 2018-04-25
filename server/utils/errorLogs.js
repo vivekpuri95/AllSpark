@@ -4,7 +4,9 @@ class ErrorLogs {
 
 	static async insert(params) {
 
-		return await mysql.query('INSERT INTO tb_errors SET ?', params, 'write');
+	    const db = mysql.pool.config.connectionConfig.database.concat('_logs');
+
+		return await mysql.query(`INSERT INTO ${db}.tb_errors SET ?`, params, 'write');
 	}
 
 }

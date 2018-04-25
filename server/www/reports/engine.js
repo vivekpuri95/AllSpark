@@ -479,9 +479,11 @@ class ReportEngine extends API {
 
 				query = JSON.stringify(query)
 			}
+
+			const db = this.mysql.pool.config.connectionConfig.database.concat('_logs');
 			await this.mysql.query(`
 				INSERT INTO
-					tb_report_logs (
+					${db}.tb_report_logs (
 						query_id,
 						query,
 						result_query,
