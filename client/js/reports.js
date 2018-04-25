@@ -1673,13 +1673,31 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			`);
 		}
 
-		const configBoxes = container.querySelector('#config-boxes');
+		if (timing.value = this.visualization.options){
+			timing.value = this.visualization.options.timingColumn;
+			value.value = this.visualization.options.valueColumn;
+			this.form.querySelector('select[name=invertValues]').value = this.visualization.options.invertValues;
+			this.form.querySelector('input[name=prefix]').value = this.visualization.options.prefix;
+			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
+
+			for(let box of this.visualization.options.boxes){
+				this.createConfig(box);
+			}
+		}
 
 		container.querySelector('.add-box').on('click', () => {
-			const boxConfig = document.createElement('div');
-			boxConfig.classList.add('subform', 'form');
+			this.createConfig();
+		});
 
-			boxConfig.innerHTML = `
+		return container;
+	}
+
+	createConfig (boxValues={}){
+		const boxConfig = document.createElement('div');
+
+		boxConfig.classList.add('subform', 'form');
+
+		boxConfig.innerHTML = `
 				<label>
 					<span>Offset</span>
 					<input type="text" name="offset">
@@ -1711,10 +1729,16 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 				</label>
 			`;
 
-			configBoxes.appendChild(boxConfig);
-		});
+		if (boxValues){
+			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
+			boxConfig.querySelector('input[name=relativeValTo]').value = boxValues.relativeValTo;
+			boxConfig.querySelector('input[name=row]').value = boxValues.row;
+			boxConfig.querySelector('input[name=column]').value = boxValues.column;
+			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan;
+			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan;
+		}
 
-		return container;
+		this.formContainer.querySelector('#config-boxes').appendChild(boxConfig);
 	}
 
 	get json() {
@@ -1722,7 +1746,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 		let config = {
 			timingColumn: this.form.querySelector('select[name=timing]').value,
 			valueColumn: this.form.querySelector('select[name=value]').value,
-			invertValues: this.form.querySelector('select[name=invertValues]').value,
+			invertValues: parseInt(this.form.querySelector('select[name=invertValues]').value),
 			prefix: this.form.querySelector('input[name=prefix]').value,
 			postfix: this.form.querySelector('input[name=postfix]').value,
 		};

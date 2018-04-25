@@ -5550,24 +5550,22 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	process() {
 		const response = this.source.response;
-		this.options.invert = parseInt(this.options.invert);
 
 		try {
 			for (let row of response) {
-				const responseDate = (new Date(row.get(this.options.timingColumn).substring(0, 10))).toDateString();
+				const responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString();
 				const todayDate = new Date();
 
-				for (let box in this.options.boxes) {
-					const configDate = new Date(Date.now() - this.options.boxes[box].offset * 86400000).toDateString();
+				for (let box in this.boxes) {
+					const configDate = new Date(Date.now() - this.boxes[box].offset * 86400000).toDateString();
 					if (responseDate == configDate) {
-						this.options.boxes[box].value = row.get(this.options.valueColumn);
+						this.boxes[box].value = row.get(this.valueColumn);
 					}
 				}
 			}
 
-			for (let box in this.options.boxes) {
-				const thisBox = this.options.boxes[box];
-				thisBox.percentage = Math.round(((this.options.boxes[thisBox.relativeValTo].value - thisBox.value) / thisBox.value) * 100);
+			for (let box of this.boxes) {
+				box.percentage = Math.round(((this.boxes[box.relativeValTo].value - box.value) / box.value) * 100);
 			}
 		}
 		catch(e) {
@@ -5578,34 +5576,35 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	render() {
 		this.container.querySelector('.container').textContent = null;
 
-		for (let box of this.options.boxes) {
-			const allboxes = document.createElement('div');
+		for (let box of this.boxes) {
+			const configBox = document.createElement('div');
 
-			allboxes.innerHTML = `
-				<h4 style="color:${this.getColor(box.percentage)}; font-size: x-large">
-					${(this.options.prefix ? this.options.prefix:'')+' '+box.value+' '+(this.options.postfix ? this.options.postfix:'')}
+			configBox.innerHTML = `
+				<h4 style="color:${this.getColor(box.percentage)}; font-size: xx-large;">
+					${(this.prefix ? this.prefix:'')+' '+box.value+' '+(this.postfix ? this.postfix:'')}
 				</h4>
 				${box.percentage}%
 			`;
 
-			allboxes.style = `
+			configBox.style = `
 				grid-column: ${box.column} / span ${box.columnspan};
 				grid-row: ${box.row} / span ${box.rowspan};
+				text-align: center;
 			`;
 
-			this.container.querySelector('.container').appendChild(allboxes);
+			this.container.querySelector('.container').appendChild(configBox);
 		}
 	}
 
 	getColor(percentage) {
 
 		if (percentage > 0)
-			if (this.options.invertValues)
+			if (this.invertValues)
 				return 'red';
 			else
 				return 'green';
 		else
-			if (this.options.invertValues)
+			if (this.invertValues)
 				return 'green';
 			else
 				return 'red';
