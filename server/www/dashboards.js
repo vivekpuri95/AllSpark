@@ -47,7 +47,15 @@ exports.list = class extends API {
 				continue;
 			}
 
-			dashboardObject[queryDashboard.dashboard_id].queries.push(queryDashboard);
+			try {
+				queryDashboard.format = JSON.parse(queryDashboard.format);
+			}
+
+			catch(e) {
+				queryDashboard.format = [];
+			}
+
+			dashboardObject[queryDashboard.dashboard_id].visualizations.push(queryDashboard);
 		}
 
 		return Object.values(dashboardObject);
