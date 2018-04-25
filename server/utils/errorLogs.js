@@ -1,11 +1,13 @@
 const mysql = require('./mysql').MySQL;
-const db = require('config').get("log_database");
+const dbConfig = require('config').get("sql_db");
 
 class ErrorLogs {
 
 	static async insert(params) {
 
-		return await mysql.query(`INSERT INTO ${db}.tb_errors SET ?`, params, 'write');
+	    const db = dbConfig.write.database.concat('_logs');
+
+	    return await mysql.query(`INSERT INTO ${db}.tb_errors SET ?`, params, 'write');
 	}
 
 }
