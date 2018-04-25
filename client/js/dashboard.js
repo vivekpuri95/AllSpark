@@ -329,6 +329,48 @@ class Dashboard {
 			if(Dashboard.editing)
 				edit.click();
 		}
+
+		const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
+		exportButton.classList.remove('hidden');
+
+		exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
+
+		exportButton.on('click', Dashboard.toolbar.exportListener = () => {
+			const container = document.querySelector('#reports');
+			const exportForm = container.querySelector('.export-form');
+			if (exportForm)
+				exportForm.classList.toggle('hidden');
+			else
+				container.insertBefore(this.export(), Dashboard.container);
+		});
+	}
+
+	export() {
+		const exportForm = document.createElement('div');
+		exportForm.classList.add('export-form');
+
+		const data = {
+			dashboard: {
+				name: this.name,
+				parent: this.parent,
+				type: this.type,
+				icon: this.icon,
+				status: this.status,
+				roles: this.roles,
+				format: this.format
+			},
+			query: []
+		};
+
+		for (const report of this.format.reports){
+			data.query.push(DataSource.list.get(report.query_id));
+		}
+
+		exportForm.innerHTML = `
+			${JSON.stringify({data})}
+		`;
+
+		return exportForm;
 	}
 
 	edit() {

@@ -235,6 +235,14 @@ class Report {
 
 		window.onbeforeunload = () => Report.container.querySelector('.unsaved');
 
+		Report.container.querySelector('.toolbar #import').on('click', () => {
+			const importForm = Report.container.querySelector('#import-form');
+			if (importForm)
+				importForm.classList.toggle('hidden');
+			else
+				Report.import();
+		});
+
 		Report.container.querySelector('.toolbar #back').on('click', () => {
 			Reports.back();
 		});
@@ -342,7 +350,7 @@ class Report {
 		});
 	}
 
-	import() {
+	static import() {
 		const form = document.createElement('form');
 		form.setAttribute('id', 'import-form');
 		form.classList.add('form');
@@ -766,14 +774,6 @@ class Report {
 		view.on('click', Report.container.viewListener = () => window.open(`/report/${this.query_id}`));
 
 		Report.form.on('submit', Report.form.listener = e => this.update(e));
-
-		Report.container.querySelector('.toolbar #import').on('click', () => {
-			const importForm = Report.container.querySelector('#import-form');
-			if (importForm)
-				importForm.classList.toggle('hidden');
-			else
-				this.import();
-		});
 
 		ReportFilter.insert.form.removeEventListener('submit', ReportFilter.insert.form.listener);
 		ReportFilter.insert.form.on('submit', ReportFilter.insert.form.listener = e => ReportFilter.insert(e, this));

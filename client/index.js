@@ -272,6 +272,13 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 						Edit
 					</button>
 				</label>
+				
+				<label>
+					<button id="export-dashboard" class="hidden">
+						<i class="fa fa-download"></i>
+						Export
+					</button>
+				</label>
 			</div>
 
 			<div class="datasets form"></div>
