@@ -5565,7 +5565,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			}
 
 			for (let box of this.boxes) {
-				box.percentage = Math.round(((this.boxes[box.relativeValTo].value - box.value) / box.value) * 100);
+				box.percentage = Math.round(((box.value - this.boxes[box.relativeValTo].value) / box.value) * 100);
 			}
 		}
 		catch(e) {
@@ -5597,17 +5597,19 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	getColor(percentage) {
-
-		if (percentage > 0)
-			if (this.invertValues)
-				return 'red';
-			else
-				return 'green';
+		if (percentage == 0)
+			return 'black'
 		else
-			if (this.invertValues)
-				return 'green';
+			if (percentage > 0)
+				if (this.invertValues)
+					return 'red';
+				else
+					return 'green';
 			else
-				return 'red';
+				if (this.invertValues)
+					return 'green';
+				else
+					return 'red';
 	}
 });
 
