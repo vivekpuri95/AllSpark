@@ -1616,7 +1616,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 
 	get form() {
 
-		if(this.formContainer)
+		if (this.formContainer)
 			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('form');
@@ -1662,7 +1662,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 		const timing = container.querySelector('select[name=timing]');
 		const value = container.querySelector('select[name=value]');
 
-		for(const [key, column] of this.report.columns) {
+		for (const [key, column] of this.report.columns) {
 
 			timing.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
@@ -1673,14 +1673,14 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			`);
 		}
 
-		if (timing.value = this.visualization.options){
+		if (timing.value = this.visualization.options) {
 			timing.value = this.visualization.options.timingColumn;
 			value.value = this.visualization.options.valueColumn;
 			this.form.querySelector('select[name=invertValues]').value = this.visualization.options.invertValues;
 			this.form.querySelector('input[name=prefix]').value = this.visualization.options.prefix;
 			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
 
-			for(let box of this.visualization.options.boxes){
+			for (let box of this.visualization.options.boxes) {
 				this.createConfig(box);
 			}
 		}
@@ -1692,7 +1692,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 		return container;
 	}
 
-	createConfig (boxValues={}){
+	createConfig(boxValues = {}) {
 		const boxConfig = document.createElement('div');
 
 		boxConfig.classList.add('subform', 'form');
@@ -1729,7 +1729,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 				</label>
 			`;
 
-		if (boxValues){
+		if (boxValues) {
 			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
 			boxConfig.querySelector('input[name=relativeValTo]').value = boxValues.relativeValTo;
 			boxConfig.querySelector('input[name=row]').value = boxValues.row;
@@ -1753,7 +1753,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 
 		config.boxes = [];
 
-		for(let box of this.form.querySelectorAll('.subform')){
+		for (let box of this.form.querySelectorAll('.subform')) {
 			config.boxes.push({
 				offset: box.querySelector('input[name=offset]').value,
 				relativeValTo: box.querySelector('input[name=relativeValTo]').value,

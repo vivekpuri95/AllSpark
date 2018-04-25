@@ -5529,6 +5529,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		return container;
 	}
+
 	async load(e) {
 
 		if (e && e.preventDefault)
@@ -5568,7 +5569,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				box.percentage = Math.round(((box.value - this.boxes[box.relativeValTo].value) / box.value) * 100);
 			}
 		}
-		catch(e) {
+		catch (e) {
 			return this.source.error(e);
 		}
 	}
@@ -5581,7 +5582,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			configBox.innerHTML = `
 				<h5 style="color:${this.getColor(box.percentage)}; font-size: xx-large;">
-					${(this.prefix ? this.prefix:'')+' '+box.value+' '+(this.postfix ? this.postfix:'')}
+					${(this.prefix ? this.prefix : '') + ' ' + box.value + ' ' + (this.postfix ? this.postfix : '')}
 				</h5>
 				<p id="percentage">${box.percentage}%</p>
 			`;
