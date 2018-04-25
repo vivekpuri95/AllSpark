@@ -7,6 +7,8 @@
 	--color-accent-text: #fff;
 	--transition-duration: 300ms;
 	--gap: 5px;
+    --color-red-text: #a94442;
+    --color-green-text: #1abb9c;
 }
 * {
 	box-sizing: border-box;
@@ -1167,3 +1169,18 @@ body {
     grid-template-columns: 1fr 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr 1fr;
 }
+    .visualization.livenumber .container div {
+        text-align: center;
+    }
+        .visualization.livenumber .container h7 {
+            font-size: 300%;
+        }
+        .visualization.livenumber .container .percentage {
+            font-size: 150%;
+        }
+        .visualization.livenumber .container .red {
+            color: var(--color-red-text);
+        }
+        .visualization.livenumber .container .green {
+            color: var(--color-green-text);
+        }

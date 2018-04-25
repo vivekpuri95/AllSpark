@@ -5575,25 +5575,25 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	render() {
-		this.container.querySelector('.container').textContent = null;
+		const container = this.container.querySelector('.container');
+		container.textContent = null;
 
 		for (let box of this.boxes) {
 			const configBox = document.createElement('div');
 
 			configBox.innerHTML = `
-				<h7 style="color:${this.getColor(box.percentage)}; font-size: 300%;">
+				<h7 class="${this.getColor(box.percentage)}">
 					${(this.prefix ? this.prefix : '') + ' ' + box.value + ' ' + (this.postfix ? this.postfix : '')}
 				</h7>
-				<p id="percentage" style="font-size: 150%">${box.percentage}%</p>
+				<p class="percentage">${box.percentage}%</p>
 			`;
 
 			configBox.style = `
 				grid-column: ${box.column} / span ${box.columnspan};
 				grid-row: ${box.row} / span ${box.rowspan};
-				text-align: center;
 			`;
 
-			this.container.querySelector('.container').appendChild(configBox);
+			container.appendChild(configBox);
 		}
 
 		this.container.querySelector('p').classList.add('hidden');
@@ -5601,7 +5601,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	getColor(percentage) {
 		if (percentage == 0)
-			return 'black'
+			return '';
 		else
 			if (percentage > 0)
 				if (this.invertValues)

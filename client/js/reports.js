@@ -1673,7 +1673,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			`);
 		}
 
-		if (timing.value = this.visualization.options) {
+		if (this.visualization.options) {
 			timing.value = this.visualization.options.timingColumn;
 			value.value = this.visualization.options.valueColumn;
 			this.form.querySelector('select[name=invertValues]').value = this.visualization.options.invertValues;
@@ -1681,18 +1681,18 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
 
 			for (let box of this.visualization.options.boxes) {
-				this.createConfig(box);
+				container.appendChild(this.box(box));
 			}
 		}
 
 		container.querySelector('.add-box').on('click', () => {
-			this.createConfig();
+			container.appendChild(this.box());
 		});
 
 		return container;
 	}
 
-	createConfig(boxValues = {}) {
+	box(boxValues = {}) {
 		const boxConfig = document.createElement('div');
 
 		boxConfig.classList.add('subform', 'form');
@@ -1738,7 +1738,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan;
 		}
 
-		this.formContainer.querySelector('#config-boxes').appendChild(boxConfig);
+		return boxConfig;
 	}
 
 	get json() {
