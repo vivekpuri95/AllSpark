@@ -1,5 +1,6 @@
 const API = require("../../utils/api");
 const commonFun = require('../../utils/commonFunctions');
+const dbConfig = require('config').get("sql_db");
 const promisify = require('util').promisify;
 //const BigQuery = require('../../www/bigQuery').BigQuery;
 const constants = require("../../utils/constants");
@@ -119,6 +120,7 @@ class report extends API {
 	async report(queryId, reportObj, filterList) {
 
 		this.reportId = this.request.body.query_id || queryId;
+		this.reportQuery = this.request.body.query || '';
 		this.reportObjStartTime = Date.now();
 		const forcedRun = parseInt(this.request.body.cached) === 0;
 
@@ -167,7 +169,7 @@ class report extends API {
 
 				result = JSON.parse(redisData);
 
-				await engine.log(this.reportObj.query_id, result.query,
+				await engine.log(this.reportObj.query_id, this.reportQuery, result.query,
 					Date.now() - this.reportObjStartTime, this.reportObj.type,
 					this.user.user_id, 1, JSON.stringify({filters: this.filters})
 				);
@@ -192,7 +194,7 @@ class report extends API {
 			throw new API.Exception(400, e);
 		}
 
-		await engine.log(this.reportObj.query_id, result.query, result.runtime,
+		await engine.log(this.reportObj.query_id, this.reportQuery, result.query, result.runtime,
 			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters})
 		);
 
@@ -487,30 +489,34 @@ class ReportEngine extends API {
 		};
 	}
 
-	async log(query_id, query, executionTime, type, userId, is_redis, rows) {
+	async log(query_id, query, result_query, executionTime, type, userId, is_redis, rows) {
 
 		try {
 
-			if (typeof query === "object") {
+			if (typeof result_query === "object") {
 
 				query = JSON.stringify(query)
 			}
+
+			const db = dbConfig.write.database.concat('_logs');
+
 			await this.mysql.query(`
 				INSERT INTO
-					tb_report_logs
-					(
+					${db}.tb_report_logs (
 						query_id,
 						query,
+						result_query,
 						response_time,
 						type,
 						user_id,
 						cache,
-						rows
+						\`rows\`
 					)
 				VALUES
-					(?,?,?,?,?,?,?)`,
-				[query_id, query, executionTime, type, userId, is_redis, rows],
-				"write");
+					(?,?,?,?,?,?,?,?)`,
+				[query_id, query, result_query, executionTime, type, userId, is_redis, rows],
+				"write"
+			);
 		}
 
 		catch (e) {
