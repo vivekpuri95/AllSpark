@@ -15,20 +15,20 @@ exports.list = class extends API {
 			[this.account.account_id]
 		);
 
-		let queryDashboards = this.mysql.query(
-			"select * from tb_query_dashboard qd join tb_dashboards d on d.id = qd.dashboard_id where d.status = 1 and account_id = ?",
+		let visualizationDashboards = this.mysql.query(
+			"select vd* from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id where d.status = 1 and account_id = ?",
 			[this.account.account_id]
 		);
 
-		const dashboardDetails = await Promise.all([dashboards, sharedDashboards, queryDashboards]);
+		const dashboardDetails = await Promise.all([dashboards, sharedDashboards, visualizationDashboards]);
 
 		dashboards = dashboardDetails[0];
 		sharedDashboards = dashboardDetails[1];
-		queryDashboards = dashboardDetails[2];
+		visualizationDashboards = dashboardDetails[2];
 
 		const dashboardObject = {};
 
-		dashboards.map(dashboard => dashboardObject[dashboard.id] = {...dashboard, shared_user: [], queries: []});
+		dashboards.map(dashboard => dashboardObject[dashboard.id] = {...dashboard, shared_user: [], visualizations: []});
 
 		for (const sharedDashboard of sharedDashboards) {
 
@@ -40,7 +40,7 @@ exports.list = class extends API {
 			dashboardObject[sharedDashboard.dashboard_id].shared_user.push(sharedDashboard);
 		}
 
-		for (const queryDashboard of queryDashboards) {
+		for (const queryDashboard of visualizationDashboards) {
 
 			if (!dashboardObject[queryDashboard.dashboard_id]) {
 
