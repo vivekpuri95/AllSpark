@@ -5531,6 +5531,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		return container;
 	}
+
 	async load(e) {
 
 		if (e && e.preventDefault)
@@ -5552,76 +5553,68 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	process() {
 		const response = this.source.response;
-		this.options.invertColor = parseInt(this.options.invertColor);
-		this.today = {value: 0};
-		this.yesterday = {value: 0};
-		this.weekago = {value: 0};
-
-		if(!response[0].has(this.options.timing) || !response[0].has(this.options.value))
-			return this.source.error('Response do not have same columns as in config');
 
 		try {
-			for (let row of response) {
-				const responseDate = (new Date(row.get(this.options.timing).substring(0, 10))).toDateString();
+			for (const row of response) {
+				const responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString();
 				const todayDate = new Date();
 
-				if (responseDate == (new Date()).toDateString()) {
-					this.today.value = row.get(this.options.value);
-				}
-				else if (responseDate == new Date(Date.now() - 1 * 86400000).toDateString()) {
-					this.yesterday.value = row.get(this.options.value);
-				}
-				else if (responseDate == new Date(Date.now() - 7 * 86400000).toDateString()) {
-					this.weekago.value = row.get(this.options.value);
+				for (let box in this.boxes) {
+					const configDate = new Date(Date.now() - this.boxes[box].offset * 86400000).toDateString();
+					if (responseDate == configDate) {
+						this.boxes[box].value = row.get(this.valueColumn);
+					}
 				}
 			}
-		}
-		catch(e) {
-			return this.source.error('Unable to parse response');
-		}
 
-		this.yesterday.percentage = this.yesterday.value ? Math.round(((this.today.value - this.yesterday.value) / Math.abs(this.yesterday.value)) * 100) : 0;
-		this.weekago.percentage = this.weekago.value ? Math.round(((this.today.value - this.weekago.value) / this.weekago.value) * 100) : 0;
+			for (let box of this.boxes) {
+				box.percentage = Math.round(((box.value - this.boxes[box.relativeValTo].value) / box.value) * 100);
+			}
+		}
+		catch (e) {
+			return this.source.error(e);
+		}
 	}
 
 	render() {
-		this.container.querySelector('.container').innerHTML = `
-			<div class="livenumber">
-				<div class="today">
-					${this.today.value}
-				</div>
-				<div class="submenu ${parseInt(this.options.history) ? '' : 'hidden'}">
-					<div class="yesterday">
-						<div class="blur">DOD</div>
-						<h4 style="color:${this.getColor(this.yesterday.percentage)};">
-							${this.yesterday.percentage}%
-						</h4>
-						${this.yesterday.value}
-					</div>
-					<div class="weekago">
-						<div class="blur">WoW</div>
-						<h4 style="color:${this.getColor(this.weekago.percentage)};">
-							${this.weekago.percentage}%
-						</h4>
-					${this.weekago.value}
-					</div>
-				</div>
-			</div>
-		`;
+		const container = this.container.querySelector('.container');
+		container.textContent = null;
+
+		for (let box of this.boxes) {
+			const configBox = document.createElement('div');
+
+			configBox.innerHTML = `
+				<h7 class="${this.getColor(box.percentage)}">
+					${this.prefix || ''}${box.value}${this.postfix || ''}
+				</h7>
+				<p class="percentage">${box.percentage}%</p>
+			`;
+
+			configBox.style = `
+				grid-column: ${box.column} / span ${box.columnspan};
+				grid-row: ${box.row} / span ${box.rowspan};
+			`;
+
+			container.appendChild(configBox);
+		}
+
+		this.container.querySelector('p').classList.add('hidden');
 	}
 
 	getColor(percentage) {
-
-		if (percentage > 0)
-			if (this.options.invertColor)
-				return 'red';
-			else
-				return 'green';
+		if (percentage == 0)
+			return '';
 		else
-			if (this.options.invertColor)
-				return 'green';
+			if (percentage > 0)
+				if (this.invertValues)
+					return 'red';
+				else
+					return 'green';
 			else
-				return 'red';
+				if (this.invertValues)
+					return 'green';
+				else
+					return 'red';
 	}
 });
 

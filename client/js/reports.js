@@ -1651,7 +1651,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 
 	get form() {
 
-		if(this.formContainer)
+		if (this.formContainer)
 			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('form');
@@ -1670,16 +1670,8 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			</label>
 
 			<label>
-				<span>Show History</span>
-				<select name="history">
-					<option value="1">Yes</option>
-					<option value="0">No</option>
-				</select>
-			</label>
-
-			<label>
 				<span>Invert Values</span>
-				<select name="invertColor">
+				<select name="invertValues">
 					<option value="1">Yes</option>
 					<option value="0">No</option>
 				</select>
@@ -1694,12 +1686,18 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 				<span>Postfix</span>
 				<input type="text" name="postfix">
 			</label>
+					
+			<h4>Boxes</h4>
+			<div id="config-boxes"></div>
+			<button class="add-box" type="button">
+				<i class="fa fa-plus"></i> Add New Box
+			</button>
 		`;
 
 		const timing = container.querySelector('select[name=timing]');
 		const value = container.querySelector('select[name=value]');
 
-		for(const [key, column] of this.report.columns) {
+		for (const [key, column] of this.report.columns) {
 
 			timing.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
@@ -1710,19 +1708,98 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			`);
 		}
 
+		if (this.visualization.options) {
+			timing.value = this.visualization.options.timingColumn;
+			value.value = this.visualization.options.valueColumn;
+			this.form.querySelector('select[name=invertValues]').value = this.visualization.options.invertValues;
+			this.form.querySelector('input[name=prefix]').value = this.visualization.options.prefix;
+			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
+
+			for (let box of this.visualization.options.boxes) {
+				container.appendChild(this.box(box));
+			}
+		}
+
+		container.querySelector('.add-box').on('click', () => {
+			container.appendChild(this.box());
+		});
+
 		return container;
+	}
+
+	box(boxValues = {}) {
+		const boxConfig = document.createElement('div');
+
+		boxConfig.classList.add('subform', 'form');
+
+		boxConfig.innerHTML = `
+				<label>
+					<span>Offset</span>
+					<input type="text" name="offset">
+				</label>
+				
+				<label>
+					<span>Relative To(Index)</span>
+					<input type="text" name="relativeValTo">
+				</label>
+				
+				<label>
+					<span>Column</span>
+					<input type="text" name="column">
+				</label>
+				
+				<label>
+					<span>Row</span>
+					<input type="text" name="row">
+				</label>
+				
+				<label>
+					<span>Column Span</span>
+					<input type="text" name="columnspan">
+				</label>
+				
+				<label>
+					<span>Row Span</span>
+					<input type="text" name="rowspan">
+				</label>
+			`;
+
+		if (boxValues) {
+			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
+			boxConfig.querySelector('input[name=relativeValTo]').value = boxValues.relativeValTo;
+			boxConfig.querySelector('input[name=row]').value = boxValues.row;
+			boxConfig.querySelector('input[name=column]').value = boxValues.column;
+			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan;
+			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan;
+		}
+
+		return boxConfig;
 	}
 
 	get json() {
 
-		return {
-			timing: this.form.querySelector('select[name=timing]').value,
-			value: this.form.querySelector('select[name=value]').value,
-			history: this.form.querySelector('select[name=history]').value,
-			invertColor: this.form.querySelector('select[name=invertColor]').value,
+		let config = {
+			timingColumn: this.form.querySelector('select[name=timing]').value,
+			valueColumn: this.form.querySelector('select[name=value]').value,
+			invertValues: parseInt(this.form.querySelector('select[name=invertValues]').value),
 			prefix: this.form.querySelector('input[name=prefix]').value,
 			postfix: this.form.querySelector('input[name=postfix]').value,
+		};
+
+		config.boxes = [];
+
+		for (let box of this.form.querySelectorAll('.subform')) {
+			config.boxes.push({
+				offset: box.querySelector('input[name=offset]').value,
+				relativeValTo: box.querySelector('input[name=relativeValTo]').value,
+				row: box.querySelector('input[name=row]').value,
+				column: box.querySelector('input[name=column]').value,
+				rowspan: box.querySelector('input[name=rowspan]').value,
+				columnspan: box.querySelector('input[name=columnspan]').value
+			});
 		}
+
+		return config;
 	}
 });
 
