@@ -1019,7 +1019,7 @@ class Template {
 
 	body(main) {
 
-		this.stylesheets.push('/css/purple.css');
+		this.stylesheets.push('/css/dark.css');
 
 		return `<!DOCTYPE html>
 			<html lang="en">
