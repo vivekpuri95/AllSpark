@@ -1,5 +1,6 @@
 const API = require("../../utils/api");
 const commonFun = require('../../utils/commonFunctions');
+const db = require('config').get("log_database");
 const promisify = require('util').promisify;
 //const BigQuery = require('../../www/bigQuery').BigQuery;
 const constants = require("../../utils/constants");
@@ -480,7 +481,6 @@ class ReportEngine extends API {
 				query = JSON.stringify(query)
 			}
 
-			const db = this.mysql.pool.config.connectionConfig.database.concat('_logs');
 			await this.mysql.query(`
 				INSERT INTO
 					${db}.tb_report_logs (
