@@ -67,7 +67,7 @@ exports.list = class extends API {
 				formatObject.push({...queryVisualization, ...queryVisualization.format})
 			}
 
-			dashboardObject[d].format = formatObject;
+			dashboardObject[d].format = {reports: formatObject};
 		}
 
 		return Object.values(dashboardObject);
