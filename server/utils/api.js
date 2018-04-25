@@ -83,25 +83,24 @@ class API {
 
 				let host = request.headers.host.split(':')[0];
 
-				if (!(host in global.account))
+				if (!(host in global.account)) {
 					throw new API.Exception(400, 'Account not found!');
-
-				let [userAccount] = (Object.values(global.account)).filter(x => x.account_id = userDetails.account_id);
-
-				if (userAccount && userAccount.account_id) {
-					obj.account = global.account[userAccount.account_id];
 				}
-				else {
-					obj.account = global.account[host];
 
+				for (const host in global.account) {
+
+					if (userDetails && global.account[host].account_id == userDetails.account_id) {
+						obj.account = global.account[host];
+					}
+				}
+
+				if (!obj.account) {
+					obj.account = global.account[host];
 				}
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
 					throw new API.Exception(401, 'User Not Authenticated! :(');
 				}
-				// if (host.includes('localhost')) {
-				// 	host = 'test-analytics.jungleworks.co';
-				// }
 
 				const result = await obj[path.split(pathSeparator).pop()]();
 
