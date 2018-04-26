@@ -47,7 +47,7 @@ Page.class = class Dashboards extends Page {
 		window.on('popstate', e => this.loadState(e.state));
 	}
 
-	async sendImported (loaded) {
+	async sendImported(loaded) {
 
 		try {
 			JSON.parse(loaded.target.result);
@@ -64,7 +64,12 @@ Page.class = class Dashboards extends Page {
 			method: 'POST'
 		};
 
-		await API.call('import/dashboard', parameters, options);
+		try {
+			await API.call('import/dashboard', parameters, options);
+		}
+		catch (e) {
+			return this.source.error(e);
+		}
 
 		await DashboardsDashboard.page.load();
 	}

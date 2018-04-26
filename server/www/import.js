@@ -8,7 +8,7 @@ exports.query = class extends API {
 		try {
 			data = JSON.parse(this.request.body.json);
 		}
-		catch(e) {
+		catch (e) {
 			throw new API.Exception(400, 'Invalid JSON format!');
 		}
 
@@ -86,13 +86,13 @@ exports.query = class extends API {
 }
 
 exports.dashboard = class extends API {
-	async dashboard () {
+	async dashboard() {
 
 		let data;
 		try {
 			data = JSON.parse(this.request.body.json);
 		}
-		catch(e){
+		catch (e) {
 			return e;
 		}
 
@@ -100,7 +100,7 @@ exports.dashboard = class extends API {
 		insertQuery = Object.assign(insertQuery, this);
 
 		let query_id = [];
-		for (const query of data.query){
+		for (const query of data.query) {
 			if (query) {
 				insertQuery.request.body.json = JSON.stringify(query);
 				query_id.push((await insertQuery.query()).insertId);
@@ -109,12 +109,12 @@ exports.dashboard = class extends API {
 
 		var queryItr = query_id[Symbol.iterator]();
 		try {
-			data.dashboard.format.reports =  data.dashboard.format.reports.map((report) => {
+			data.dashboard.format.reports = data.dashboard.format.reports.map((report) => {
 				report.query_id = queryItr.next().value;
 				return report;
 			});
 		}
-		catch (e){
+		catch (e) {
 			throw new API.Exception(400, 'Invalid Reports');
 		}
 
