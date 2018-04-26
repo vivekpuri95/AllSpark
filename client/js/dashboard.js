@@ -342,7 +342,6 @@ class Dashboard {
 			downloadAnchor.setAttribute('href', jsonFile);
 			downloadAnchor.setAttribute('download', 'dashboard.json');
 			downloadAnchor.click();
-			downloadAnchor.remove();
 		});
 	}
 
