@@ -107,15 +107,8 @@ exports.dashboard = class extends API {
 			}
 		}
 
-		var queryItr = query_id[Symbol.iterator]();
-		try {
-			data.dashboard.format.reports = data.dashboard.format.reports.map((report) => {
-				report.query_id = queryItr.next().value;
-				return report;
-			});
-		}
-		catch (e) {
-			throw new API.Exception(400, 'Invalid Reports');
+		for (const report in data.dashboard.format.reports) {
+			data.dashboard.format.reports[report].query_id = query_id[report];
 		}
 
 		data.dashboard.account_id = this.account.account_id;
