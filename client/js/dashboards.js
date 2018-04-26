@@ -302,7 +302,7 @@ class DashboardsShare {
 
 		DashboardsShare.select_list = [`<option value=""></option>`];
 
-		for(const user of this.userList){
+		for(const user of this.userList) {
 
 			DashboardsShare.select_list.push(`<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`);
 		}
