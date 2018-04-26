@@ -683,6 +683,7 @@ class DataSource {
 
 		this.filters = new DataSourceFilters(this);
 		this.columns = new DataSourceColumns(this);
+		this.transformations = new DataSourceTransformations(this);
 		this.visualizations = [];
 
 		if(!source.visualizations)
@@ -1039,7 +1040,9 @@ class DataSource {
 
 		this.originalResponse.groupedAnnotations = new Map;
 
-		for(const _row of this.originalResponse.data) {
+		const data = this.transformations.run(this.originalResponse.data);
+
+		for(const _row of data) {
 
 			const row = new DataSourceRow(_row, this);
 
@@ -2315,6 +2318,77 @@ class DataSourcePostProcessor {
 	}
 }
 
+class DataSourceTransformations extends Set {
+
+	constructor(source) {
+
+		super();
+
+		this.source = source;
+
+		const transformations = this.source.format && this.source.format.transformations ? this.source.format.transformations : [];
+
+		for(const transformation of transformations)
+			this.add(new DataSourceTransformation(transformation, this.source));
+	}
+
+	run(response) {
+
+		response = JSON.parse(JSON.stringify(response));
+
+		for(const transformation of this)
+			response = transformation.run(response);
+
+		return response;
+	}
+}
+
+class DataSourceTransformation {
+
+	constructor(transformation, source) {
+
+		this.source = source;
+
+		for(const key in transformation)
+			this[key] = transformation[key];
+	}
+
+	run(response = []) {
+
+		if(!response || !response.length || !this.columns || this.columns.length != 1)
+			return response;
+
+		const
+			[{key: groupColumn}] = this.columns,
+			[{key: groupRow}] = this.rows;
+
+		const
+			columns = new Set,
+			rows = new Map;
+
+		for(const row of response) {
+
+			if(!columns.get(row[groupColumn]))
+				columns.add(row[groupColumn]);
+		}
+
+		for(let row of response) {
+
+			if(!rows.get(row[groupRow]))
+				rows.set(row[groupRow], new Map);
+
+			row = rows.get(row[groupRow]);
+
+			for(const column of columns) {
+
+
+			}
+		}
+
+		return response;
+	}
+}
+
 DataSourcePostProcessors.processors = new Map;
 
 DataSourcePostProcessors.processors.set('Orignal', class extends DataSourcePostProcessor {
@@ -3000,7 +3074,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				td.textContent = row.get(key);
 
-				if(column.drilldown) {
+				if(column.drilldown && column.drilldown.report_id) {
 
 					td.classList.add('drilldown');
 					td.on('click', () => column.initiateDrilldown(row));

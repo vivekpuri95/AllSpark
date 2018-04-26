@@ -198,11 +198,11 @@ exports.refresh = class extends API {
 			userDetail = result.userDetails;
 		}
 
-		this.assert(userDetail, "user not found");
+		this.assert(userDetail, "User not found! :(", 401);
 
 		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ?", userDetail.user_id);
 
-		this.assert(user, "user not found");
+		this.assert(user, "User not found! :(", 401);
 
 		const userPrivilegesRoles = await this.mysql.query(`
 				SELECT
@@ -304,7 +304,7 @@ exports.tookan = class extends API {
 
 		if (!userDetail.length) {
 
-			throw("user not found")
+			throw("User not found! :(", 401)
 		}
 
 		userDetail = userDetail[0];
