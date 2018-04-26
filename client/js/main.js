@@ -785,6 +785,7 @@ class DataSource {
 		this.postProcessors.update();
 
 		this.columns.render();
+
 	}
 
 	get container() {
@@ -1395,14 +1396,14 @@ class DataSourceColumns extends Map {
 		this.source = source;
 	}
 
-	update() {
+	update(response) {
 
 		if(!this.source.originalResponse.data || !this.source.originalResponse.data.length)
 			return;
 
 		this.clear();
 
-		for(const column in this.source.originalResponse.data[0])
+		for(const column in response ? response[0] : this.source.originalResponse.data[0])
 			this.set(column, new DataSourceColumn(column, this.source));
 	}
 
@@ -2339,6 +2340,11 @@ class DataSourceTransformations extends Set {
 		for(const transformation of this)
 			response = transformation.run(response);
 
+		if(this.size) {
+			this.source.columns.update(response);
+			this.source.columns.render();
+		}
+
 		return response;
 	}
 }
@@ -2355,37 +2361,129 @@ class DataSourceTransformation {
 
 	run(response = []) {
 
-		if(!response || !response.length || !this.columns || this.columns.length != 1)
+		if(!response || !response.length || !this.rows || this.rows.length != 1)
 			return response;
 
 		const
-			[{key: groupColumn}] = this.columns,
-			[{key: groupRow}] = this.rows;
+			[{column: groupColumn}] = this.columns.length ? this.columns : [{}],
+			[{column: groupRow}] = this.rows;
 
 		const
 			columns = new Set,
 			rows = new Map;
 
-		for(const row of response) {
+		if(groupColumn) {
 
-			if(!columns.get(row[groupColumn]))
-				columns.add(row[groupColumn]);
-		}
-
-		for(let row of response) {
-
-			if(!rows.get(row[groupRow]))
-				rows.set(row[groupRow], new Map);
-
-			row = rows.get(row[groupRow]);
-
-			for(const column of columns) {
-
-
+			for(const row of response) {
+				if(!columns.has(row[groupColumn]))
+					columns.add(row[groupColumn]);
 			}
 		}
 
-		return response;
+		for(const responseRow of response) {
+
+			if(!rows.get(responseRow[groupRow]))
+				rows.set(responseRow[groupRow], new Map);
+
+			const row = rows.get(responseRow[groupRow]);
+
+			if(groupColumn) {
+
+				for(const column of columns) {
+
+					if(!row.has(column))
+						row.set(column, []);
+
+					if(responseRow[groupColumn] != column)
+						continue;
+
+					row.get(column).push(responseRow[this.values[0].column]);
+				}
+			} else {
+
+				for(const value of this.values) {
+
+					if(!(value.column in responseRow))
+						continue;
+
+					if(!row.has(value.column))
+						row.set(value.column, []);
+
+					row.get(value.column).push(responseRow[value.column])
+				}
+			}
+		}
+
+		const newResponse = [];
+
+		for(const [groupRowValue, row] of rows) {
+
+			const newRow = {};
+
+			newRow[groupRow] = groupRowValue;
+
+			for(const [groupColumnValue, values] of row) {
+
+				let
+					value = null,
+					function_ = null;
+
+				if(groupColumn)
+					function_ = this.values[0].function;
+
+				else {
+
+					for(const value of this.values) {
+						if(value.column == groupColumnValue)
+							function_ = value.function;
+					}
+				}
+
+				switch(function_) {
+
+					case 'sum':
+						value = values.reduce((sum, value) => sum += parseFloat(value), 0);
+						break;
+
+					case 'count':
+						value = values.length;
+						break;
+
+					case 'distinctcount':
+						value = new Set(values).size;
+						break;
+
+					case 'max':
+						value = Math.max(...values);
+						break;
+
+					case 'min':
+						value = Math.min(...values);
+						break;
+
+					case 'average':
+						value = Math.floor(values.reduce((sum, value) => sum += parseFloat(value), 0) / values.length * 100) / 100;
+						break;
+
+					case 'values':
+						value = values.join(', ');
+						break;
+
+					case 'distinctvalues':
+						value = Array.from(new Set(values)).join(', ');
+						break;
+
+					default:
+						value = values.length;
+				}
+
+				newRow[groupColumnValue] = value;
+			}
+
+			newResponse.push(newRow);
+		}
+
+		return newResponse;
 	}
 }
 
@@ -3717,6 +3815,8 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
 		await this.source.fetch();
+
+		this.source.response;
 
 		this.render();
 	}

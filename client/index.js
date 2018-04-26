@@ -460,6 +460,11 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 					</label>
 				</div>
 
+				<label id="transformations-container">
+					<span>Transformations</span>
+					<div id="transformations"></div>
+				</label>
+
 				<label>
 					<span>Category</span>
 					<select name="category_id"></select>

@@ -159,7 +159,11 @@ class report extends API {
 			this.reportObj.is_redis = (24 * 60 * 60) - (d.getHours() * 60 * 60) - (d.getMinutes() * 60) - d.getSeconds();
 		}
 
-		const redisData = await redis.get(hash);
+		let redisData = null;
+
+		if(redis) {
+			redisData = await redis.get(hash);
+		}
 
 		let result;
 
@@ -203,13 +207,15 @@ class report extends API {
 
 		result.cached = {store_time: Date.now()};
 
-		await redis.set(hash, JSON.stringify(result));
+		if(redis) {
 
-		if (this.reportObj.is_redis) {
+			await redis.set(hash, JSON.stringify(result));
 
-			await redis.expire(hash, this.reportObj.is_redis);
-
+			if (this.reportObj.is_redis) {
+				await redis.expire(hash, this.reportObj.is_redis);
+			}
 		}
+
 
 		result.cached = {status: false};
 
