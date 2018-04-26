@@ -336,7 +336,7 @@ class Dashboard {
 		exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
 
 		exportButton.on('click', Dashboard.toolbar.exportListener = () => {
-			const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(this.export);
+			const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.export));
 
 			const downloadAnchor = document.createElement('a');
 			downloadAnchor.setAttribute('href', jsonFile);
@@ -365,7 +365,7 @@ class Dashboard {
 			data.query.push(DataSource.list.get(report.query_id));
 		}
 
-		return JSON.stringify(data);
+		return data;
 	}
 
 	edit() {

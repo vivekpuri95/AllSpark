@@ -15,11 +15,6 @@ Page.class = class Dashboards extends Page {
 
 		this.listContainer.querySelector('#import-dashboard').on('click', () => {
 
-			if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
-				alert('The File APIs are not fully supported in this browser.');
-				return;
-			}
-
 			const importButton = document.createElement('input');
 			importButton.setAttribute('type', 'file');
 			importButton.click();
@@ -64,12 +59,7 @@ Page.class = class Dashboards extends Page {
 			method: 'POST'
 		};
 
-		try {
-			await API.call('import/dashboard', parameters, options);
-		}
-		catch (e) {
-			return this.source.error(e);
-		}
+		await API.call('import/dashboard', parameters, options);
 
 		await DashboardsDashboard.page.load();
 	}
