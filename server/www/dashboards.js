@@ -16,7 +16,7 @@ exports.list = class extends API {
 		);
 
 		let visualizationDashboards = this.mysql.query(
-			"select vd* from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id where d.status = 1 and account_id = ?",
+			"select vd.*, query_id from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id where d.status = 1 and account_id = ?",
 			[this.account.account_id]
 		);
 
@@ -47,7 +47,27 @@ exports.list = class extends API {
 				continue;
 			}
 
-			dashboardObject[queryDashboard.dashboard_id].queries.push(queryDashboard);
+			try {
+				queryDashboard.format = JSON.parse(queryDashboard.format);
+			}
+
+			catch(e) {
+				queryDashboard.format = [];
+			}
+
+			dashboardObject[queryDashboard.dashboard_id].visualizations.push(queryDashboard);
+		}
+
+		for(const d in dashboardObject) {
+
+			const formatObject = [];
+
+			for(const queryVisualization of dashboardObject[d].visualizations) {
+
+				formatObject.push({...queryVisualization, ...queryVisualization.format})
+			}
+
+			dashboardObject[d].format = {reports: formatObject};
 		}
 
 		return Object.values(dashboardObject);
