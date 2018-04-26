@@ -1,6 +1,31 @@
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
 
+exports.list = class extends API {
+
+	async list() {
+
+		this.user.privilege.needs("dashboard");
+
+		return await this.mysql.query(
+			`SELECT
+				id,
+				dashboard_id,
+				user_id,
+				phone,
+				first_name,
+				middle_name,
+				last_name,
+				email
+			FROM
+				tb_user_dashboard d JOIN tb_users u USING(user_id)
+			WHERE 
+				account_id = ?
+				AND dashboard_id = ?`,
+			[this.account.account_id, this.request.body.dashboard_id]);
+	}
+}
+
 exports.insert = class extends API {
 
 	//POST
@@ -32,7 +57,7 @@ exports.delete = class extends API {
 
 		this.user.privilege.needs("dashboard");
 
-		const mandatoryData = ["dashboard_id", "user_id"];
+		const mandatoryData = ["id"];
 
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 
@@ -41,8 +66,8 @@ exports.delete = class extends API {
 		this.assert(!authResponse.error, authResponse.message);
 
 		return await this.mysql.query(
-			"DELETE FROM tb_user_dashboard  WHERE user_id = ? and dashboard_id = ?",
-			[this.request.body.user_id, this.request.body.dashboard_id],
+			"DELETE FROM tb_user_dashboard  WHERE id = ?",
+			[this.request.body.id],
 			"write"
 		);
 	}

@@ -14,6 +14,7 @@ Page.class = class Dashboards extends Page {
 		});
 
 		DashboardsDashboard.setup(this);
+		DashboardsShare.setup(this);
 
 		(async () => {
 
@@ -142,6 +143,7 @@ class DashboardsDashboard {
 			this[key] = data[key];
 
 		this.page = page;
+		this.dashboardShare = new DashboardsShare(this);
 	}
 
 	async edit() {
@@ -211,6 +213,12 @@ class DashboardsDashboard {
 		await this.page.load();
 	}
 
+	async share() {
+
+		await this.dashboardShare.load();
+		await Sections.show("share");
+	}
+
 	get row() {
 
 		if(this.container)
@@ -225,7 +233,12 @@ class DashboardsDashboard {
 			<td>${this.icon || ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			<td class="action share" title="Share"><i class="fa fa-share-alt"></i></td>			
 		`;
+
+		this.container.querySelector('.share').on('click', () => {
+			this.share();
+		});
 
 		this.container.querySelector('.green').on('click', () => {
 			this.edit();
@@ -236,4 +249,148 @@ class DashboardsDashboard {
 
 		return this.container;
 	}
+}
+
+class DashboardsShare {
+
+	constructor(page) {
+
+		this.userDashboardList = new Map();
+
+		for(const key in page)
+			this[key] = page[key];
+
+	}
+
+	static setup(page) {
+
+		DashboardsShare.container = page.container.querySelector('section#share');
+
+		DashboardsShare.container.querySelector('#back').on('click', page.back);
+		DashboardsShare.form = DashboardsShare.container.querySelector('#db_share');
+
+	}
+
+	async load() {
+
+		const
+			parameters = {
+				dashboard_id : this.id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		this.userDashboardResponse = await API.call('user/dashboards/list', parameters, options);
+		this.userList = await API.call('users/list');
+
+		if(DashboardsShare.form_listener)
+			DashboardsDashboard.form.removeEventListener('submit', DashboardsDashboard.form_listener);
+
+		DashboardsShare.form.on('submit', DashboardsShare.form_listener = e => this.add(e));
+
+		this.process();
+		this.render();
+	}
+
+	process() {
+
+		this.userDashboardList.clear();
+
+		for(const ud of this.userDashboardResponse)
+			this.userDashboardList.set(ud.id, new UserDashboard(ud, this));
+
+		DashboardsShare.select_list = [`<option value=""></option>`];
+
+		for(const user of this.userList){
+
+			DashboardsShare.select_list.push(`<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`);
+		}
+
+		DashboardsShare.form.user_list.innerHTML = DashboardsShare.select_list.join("");
+
+	}
+
+	render() {
+
+		const container = DashboardsShare.container.querySelector('table tbody');
+
+		container.textContent = null;
+
+		for(const [index, ud] of this.userDashboardList)
+			container.appendChild(ud.row);
+
+		if(!this.userDashboardList.size)
+			container.insertAdjacentHTML('beforeend', `<tr class="NA"><td colspan="2">Not shared to any user! :(</td></tr>`);
+
+	}
+
+	async add(e) {
+
+		e.preventDefault();
+
+		const
+			parameters = {
+				dashboard_id : this.id,
+				user_id : DashboardsShare.form.user_list.value
+			},
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('user/dashboards/insert', parameters, options);
+		await this.load();
+
+	}
+
+}
+
+class UserDashboard {
+
+	constructor(data, page) {
+
+		for(const key in data)
+			this[key] = data[key];
+
+		this.page = page;
+
+	}
+
+	get row() {
+
+		if(this.container)
+			return this.container;
+
+		this.container = document.createElement('tr');
+
+		this.container.innerHTML = `
+			<td>${this.user_id}</td>
+			<td>${this.first_name.concat(' ', this.last_name)}</a></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		this.container.querySelector('.red').on('click', async() => this.delete());
+
+		return this.container;
+
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?!'))
+			return;
+
+		const
+			parameters = {
+				id: this.id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('user/dashboards/delete', parameters, options);
+		await this.page.load();
+
+	}
+
 }

@@ -26,3 +26,13 @@ main #form .report {
 				height: 500px;
 				margin: 0;
 			}
+
+main table tr td select {
+	width: 30%;
+	margin-left: 35%;
+}
+
+main table tfoot {
+
+	position: sticky;
+}
