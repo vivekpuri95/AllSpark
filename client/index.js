@@ -272,6 +272,13 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 						Edit
 					</button>
 				</label>
+				
+				<label>
+					<button id="export-dashboard" class="hidden">
+						<i class="fa fa-download"></i>
+						Export
+					</button>
+				</label>
 			</div>
 
 			<div class="datasets form"></div>
@@ -299,6 +306,11 @@ router.get('/dashboards/:id?', (request, response) => {
 				<button type="button" id="add-dashboard">
 					<i class="fa fa-plus"></i>
 					Add New Dashboard
+				</button>
+				
+				<button type="button" id="import-dashboard">
+					<i class="fa fa-upload"></i>
+					Import
 				</button>
 			</form>
 
