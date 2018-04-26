@@ -1,7 +1,7 @@
 const API = require('../utils/api.js');
 
-exports.json = class extends API {
-	async json() {
+exports.query = class extends API {
+	async query() {
 		this.user.privilege.needs('report');
 
 		let data;
@@ -84,3 +84,44 @@ exports.json = class extends API {
 		return query;
 	}
 }
+
+exports.dashboard = class extends API {
+	async dashboard () {
+
+		let data;
+		try {
+			data = JSON.parse(this.request.body.json);
+		}
+		catch(e){
+			return e;
+		}
+
+		let insertQuery = new exports.query();
+		insertQuery = Object.assign(insertQuery, this);
+
+		let query_id = [];
+		for (const query of data.query){
+			if (query) {
+				insertQuery.request.body.json = JSON.stringify(query);
+				query_id.push((await insertQuery.query()).insertId);
+			}
+		}
+
+		var queryItr = query_id[Symbol.iterator]();
+		try {
+			data.dashboard.format.reports =  data.dashboard.format.reports.map((report) => {
+				report.query_id = queryItr.next().value;
+				return report;
+			});
+		}
+		catch (e){
+			throw new API.Exception(400, 'Invalid Reports');
+		}
+
+		data.dashboard.account_id = this.account.account_id;
+		data.dashboard.added_by = this.user.user_id;
+		data = await this.mysql.query('INSERT INTO tb_dashboards SET ?', data.dashboard, 'write');
+
+		return data.insertId;
+	}
+};

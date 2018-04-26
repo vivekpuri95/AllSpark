@@ -383,7 +383,7 @@ class Report {
 				method: 'POST'
 			};
 
-			const response = await API.call('import/json', parameters, options);
+			const response = await API.call('import/query', parameters, options);
 
 			await Reports.load(true);
 

@@ -13,6 +13,28 @@ Page.class = class Dashboards extends Page {
 			history.pushState({id: 'add'}, '', `/dashboards/add`);
 		});
 
+		this.listContainer.querySelector('#import-dashboard').on('click', () => {
+
+			if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+				alert('The File APIs are not fully supported in this browser.');
+				return;
+			}
+
+			const importButton = document.createElement('input');
+			importButton.setAttribute('type', 'file');
+			importButton.click();
+
+			importButton.on('change', (selection) => {
+				if (!selection.target || !selection.target.files[0])
+					return;
+				const selectedFile = selection.target.files[0];
+
+				const reader = new FileReader();
+				reader.onload = this.sendImported;
+				reader.readAsText(selectedFile);
+			});
+		});
+
 		DashboardsDashboard.setup(this);
 
 		(async () => {
@@ -23,6 +45,28 @@ Page.class = class Dashboards extends Page {
 		})();
 
 		window.on('popstate', e => this.loadState(e.state));
+	}
+
+	async sendImported (loaded) {
+
+		try {
+			JSON.parse(loaded.target.result);
+		}
+		catch (e) {
+			alert('Invalid Json Format');
+			return;
+		}
+
+		const parameters = {
+			json: loaded.target.result
+		};
+		const options = {
+			method: 'POST'
+		};
+
+		await API.call('import/dashboard', parameters, options);
+
+		await DashboardsDashboard.page.load();
 	}
 
 	async loadState(state) {

@@ -307,6 +307,11 @@ router.get('/dashboards/:id?', (request, response) => {
 					<i class="fa fa-plus"></i>
 					Add New Dashboard
 				</button>
+				
+				<button type="button" id="import-dashboard">
+					<i class="fa fa-upload"></i>
+					Import
+				</button>
 			</form>
 
 			<table class="block">

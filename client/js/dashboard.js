@@ -336,18 +336,17 @@ class Dashboard {
 		exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
 
 		exportButton.on('click', Dashboard.toolbar.exportListener = () => {
-			const container = document.querySelector('#reports');
-			const exportForm = container.querySelector('.export-form');
-			if (exportForm)
-				exportForm.classList.toggle('hidden');
-			else
-				container.insertBefore(this.export(), Dashboard.container);
+			const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(this.export);
+
+			const downloadAnchor = document.createElement('a');
+			downloadAnchor.setAttribute('href', jsonFile);
+			downloadAnchor.setAttribute('download', 'dashboard.json');
+			downloadAnchor.click();
+			downloadAnchor.remove();
 		});
 	}
 
-	export() {
-		const exportForm = document.createElement('div');
-		exportForm.classList.add('export-form');
+	get export() {
 
 		const data = {
 			dashboard: {
@@ -366,11 +365,7 @@ class Dashboard {
 			data.query.push(DataSource.list.get(report.query_id));
 		}
 
-		exportForm.innerHTML = `
-			${JSON.stringify({data})}
-		`;
-
-		return exportForm;
+		return JSON.stringify(data);
 	}
 
 	edit() {
