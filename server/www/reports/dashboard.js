@@ -20,7 +20,7 @@ exports.insert = class extends API {
 
 		return await this.mysql.query(
 			"INSERT INTO tb_visualization_dashboard (dashboard_id, visualization_id, format) VALUES (?, ?, ?)",
-			[this.request.body.dashboard_id, this.request.body.query_id, this.request.body.format],
+			[this.request.body.dashboard_id, this.request.body.visualization_id, this.request.body.format],
 			"write"
 		);
 	}
@@ -42,7 +42,7 @@ exports.delete = class extends API {
 
 		return await this.mysql.query(
 			"DELETE FROM tb_visualization_dashboard WHERE visualization_id = ? AND dashboard_id = ?",
-			[this.request.body.query_id, this.request.body.dashboard_id],
+			[this.request.body.visualization_id, this.request.body.dashboard_id],
 			"write"
 		);
 	}
