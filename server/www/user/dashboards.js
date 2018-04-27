@@ -21,7 +21,8 @@ exports.list = class extends API {
 				tb_user_dashboard d JOIN tb_users u USING(user_id)
 			WHERE 
 				account_id = ?
-				AND dashboard_id = ?`,
+				AND dashboard_id = ?
+				and u.status = 1`,
 			[this.account.account_id, this.request.query.id]);
 	}
 }
