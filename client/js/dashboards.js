@@ -300,14 +300,14 @@ class DashboardsShare {
 		for(const ud of this.userDashboardResponse)
 			this.userDashboardList.set(ud.id, new UserDashboard(ud, this));
 
-		DashboardsShare.select_list = [`<option value=""></option>`];
+		const select_list = [`<option value=""></option>`];
 
 		for(const user of this.userList) {
 
-			DashboardsShare.select_list.push(`<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`);
+			select_list.push(`<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`);
 		}
 
-		DashboardsShare.form.user_list.innerHTML = DashboardsShare.select_list.join("");
+		DashboardsShare.form.user_list.innerHTML = select_list.join("");
 
 	}
 
