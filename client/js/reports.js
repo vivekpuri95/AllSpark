@@ -415,7 +415,7 @@ class Report {
 		ReportFilters.container.innerHTML = '<div class="NA">You can add filters to this report once you add the query.</div>';
 		ReportVisualizations.container.classList.add('hidden');
 
-		Report.transformations.innerHTML = '<div class="NA">You can add transformations once you have added the report.</div>';
+		Report.form.querySelector('#transformations').innerHTML = '<div class="NA">You can add transformations once you have added the report.</div>';
 
 		ReportFilter.insert.form.reset();
 		ReportFilter.insert.form.classList.add('hidden');
@@ -946,6 +946,9 @@ class Report {
 		executingTime = false;
 
 		executing.classList.add('hidden');
+
+		Report.runningReport = report;
+		this.transformations.load();
 	}
 
 	filterSuggestions() {
@@ -990,20 +993,25 @@ class ReportTransformations extends Set {
 
 		this.report = report;
 		this.container = Report.form.querySelector('#transformations');
-
-		if(!this.report.format || !this.report.format.transformations)
-			return;
-
-		for(const transformation of this.report.format.transformations)
-			this.add(new ReportTransformation(transformation, this.report));
 	}
 
 	load() {
 
 		this.container.textContent = null;
 
-		for(const transformation of this)
+		if(!this.report.format || !this.report.format.transformations)
+			return;
+
+		this.clear();
+
+		for(const transformation_ of this.report.format.transformations) {
+
+			const transformation = new ReportTransformation(transformation_, this.report);
+
 			this.container.appendChild(transformation.container);
+
+			this.add(transformation);
+		}
 
 		this.container.insertAdjacentHTML('beforeend', `
 			<button type="button" class="add-new-transformation">
@@ -1115,19 +1123,19 @@ class ReportTransformation {
 
 		for(const row of this.container.querySelectorAll('.row')) {
 			response.rows.push({
-				column: row.querySelector('input[name=column]').value,
+				column: row.querySelector('*[name=column]').value,
 			});
 		}
 
 		for(const column of this.container.querySelectorAll('.column')) {
 			response.columns.push({
-				column: column.querySelector('input[name=column]').value,
+				column: column.querySelector('*[name=column]').value,
 			});
 		}
 
 		for(const value of this.container.querySelectorAll('.value')) {
 			response.values.push({
-				column: value.querySelector('input[name=column]').value,
+				column: value.querySelector('*[name=column]').value,
 				function: value.querySelector('select[name=function]').value
 			});
 		}
@@ -1144,12 +1152,27 @@ class ReportTransformation {
 
 		container.classList.add('row');
 
-		container.innerHTML = `
-			<input type="text" name="column" value="${row.column || ''}">
-			<button type="button"><i class="far fa-trash-alt"></i></button>
-		`;
+		if(Report.runningReport && Report.runningReport.originalResponse) {
 
-		container.querySelector('button').on('click', () => container.remove());
+			container.innerHTML = `<select name="column"></select>`;
+
+			const select = container.querySelector('select');
+
+			for(const column in Report.runningReport.originalResponse.data[0])
+				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			select.value = row.column;
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${row.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
+
+		container.querySelector('button').on('click', e => {
+			e.stopPropagation();
+			container.remove();
+		});
 
 		return container;
 	}
@@ -1160,10 +1183,22 @@ class ReportTransformation {
 
 		container.classList.add('column');
 
-		container.innerHTML = `
-			<input type="text" name="column" value="${column.column || ''}">
-			<button type="button"><i class="far fa-trash-alt"></i></button>
-		`;
+		if(Report.runningReport && Report.runningReport.originalResponse) {
+
+			container.innerHTML = `<select name="column"></select>`;
+
+			const select = container.querySelector('select');
+
+			for(const column in Report.runningReport.originalResponse.data[0])
+				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			select.value = column.column;
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${column.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
 
 		container.querySelector('button').on('click', () => container.remove());
 
@@ -1176,8 +1211,23 @@ class ReportTransformation {
 
 		container.classList.add('value');
 
-		container.innerHTML = `
-			<input type="text" name="column" value="${value.column || ''}">
+
+		if(Report.runningReport && Report.runningReport.originalResponse) {
+
+			container.innerHTML = `<select name="column"></select>`;
+
+			const select = container.querySelector('select');
+
+			for(const column in Report.runningReport.originalResponse.data[0])
+				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			select.value = value.column;
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${value.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`
 			<select name="function">
 				<option value="sum">Sum</option>
 				<option value="count">Count</option>
@@ -1189,7 +1239,7 @@ class ReportTransformation {
 				<option value="average">Average</option>
 			</select>
 			<button type="button"><i class="far fa-trash-alt"></i></button>
-		`;
+		`);
 
 		if(value.function)
 			container.querySelector('select[name=function]').value = value.function;

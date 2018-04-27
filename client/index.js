@@ -460,10 +460,10 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 					</label>
 				</div>
 
-				<label id="transformations-container">
+				<div id="transformations-container">
 					<span>Transformations</span>
 					<div id="transformations"></div>
-				</label>
+				</div>
 
 				<label>
 					<span>Category</span>

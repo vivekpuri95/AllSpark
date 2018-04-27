@@ -242,8 +242,15 @@ main #form #report-form {
 		font-weight: normal;
 	}
 	main #form #transformations-container {
-		grid-column: 1 / 3;
+		display: grid;
+		grid-column: 1fr;
+		grid-gap: var(--gap);
 	}
+		main #form #transformations-container > span {
+			font-size: 90%;
+			font-weight: bold;
+			color: #666;
+		}
 	main #form #transformations {
 		display: grid;
 		grid-template-columns: 1fr;

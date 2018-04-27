@@ -2368,6 +2368,9 @@ class DataSourceTransformation {
 			[{column: groupColumn}] = this.columns.length ? this.columns : [{}],
 			[{column: groupRow}] = this.rows;
 
+		if(!groupRow)
+			return response;
+
 		const
 			columns = new Set,
 			rows = new Map;
@@ -2401,7 +2404,7 @@ class DataSourceTransformation {
 				}
 			} else {
 
-				for(const value of this.values) {
+				for(const value of this.values || []) {
 
 					if(!(value.column in responseRow))
 						continue;
