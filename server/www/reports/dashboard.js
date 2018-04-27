@@ -33,7 +33,7 @@ exports.delete = class extends API {
 
 		this.user.privilege.needs("dashboard");
 
-		const mandatoryData = ["dashboard_id", "visualization_id"];
+		const mandatoryData = ["id"];
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 
 		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
@@ -41,8 +41,8 @@ exports.delete = class extends API {
 		this.assert(!authResponse.error, authResponse.message);
 
 		return await this.mysql.query(
-			"DELETE FROM tb_visualization_dashboard WHERE visualization_id = ? AND dashboard_id = ?",
-			[this.request.body.visualization_id, this.request.body.dashboard_id],
+			"DELETE FROM tb_visualization_dashboard WHERE id = ?",
+			[this.request.body.id],
 			"write"
 		);
 	}
@@ -79,7 +79,7 @@ exports.update = class extends API {
 
 		const
 			values = {},
-			columns = ['dashboard_id', 'visualization_id', 'visibility'];
+			columns = ['format', 'dashboard_id', 'visualization_id'];
 
 		for(const key in this.request.body) {
 
@@ -97,8 +97,8 @@ exports.update = class extends API {
 		this.assert(commonFun.isJson(this.request.body.format), "format is invalid");
 
 		return await this.mysql.query(
-			'UPDATE tb_visualization_dashboard SET ? WHERE dashboard_id = ? and account_id = (select account_id from tb_dashboard where id = ?)',
-			[this.request.body.format, this.request.body.id, this.account.account_id],
+			'UPDATE tb_visualization_dashboard SET ? WHERE id = ?',
+			[values, this.request.body.id],
 			'write'
 		);
 	}
