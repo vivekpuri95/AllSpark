@@ -36,6 +36,7 @@ main table tr td button {
 
 	border: none;
 	margin-left: 15px;
+	background: var(--color-row-hover);
 }
 main table tr td button > svg {
 
