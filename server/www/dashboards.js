@@ -110,7 +110,7 @@ exports.delete = class extends API {
 
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 
-		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
+		const authResponse = auth.dashboard(this.request.body.id, this.user);
 
 		this.assert(!authResponse.error, authResponse.message);
 

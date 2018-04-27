@@ -32,7 +32,19 @@ main table tr td select {
 	margin-left: 35%;
 }
 
-main table tfoot {
+main table tr td button {
+
+	border: none;
+	margin-left: 15px;
+}
+main table tr td button > svg {
+
+	margin-right: 0px;
+}
+
+main table tfoot td{
 
 	position: sticky;
+	bottom: 0;
+	background: var(--color-row-hover)
 }

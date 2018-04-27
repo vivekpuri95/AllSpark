@@ -266,8 +266,8 @@ class DashboardsShare {
 
 		DashboardsShare.container = page.container.querySelector('section#share');
 
-		DashboardsShare.container.querySelector('#back').on('click', page.back);
-		DashboardsShare.form = DashboardsShare.container.querySelector('#db_share');
+		DashboardsShare.container.querySelector('#back').on('click', () => page.back());
+		DashboardsShare.form = DashboardsShare.container.querySelector('#dashboard_share');
 
 	}
 
@@ -275,10 +275,10 @@ class DashboardsShare {
 
 		const
 			parameters = {
-				dashboard_id : this.id,
+				id : this.id,
 			},
 			options = {
-				method: 'POST',
+				method : 'GET',
 			};
 
 		this.userDashboardResponse = await API.call('user/dashboards/list', parameters, options);
@@ -382,10 +382,10 @@ class UserDashboard {
 
 		const
 			parameters = {
-				id: this.id,
+				id : this.id,
 			},
 			options = {
-				method: 'POST',
+				method : 'POST',
 			};
 
 		await API.call('user/dashboards/delete', parameters, options);

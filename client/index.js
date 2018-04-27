@@ -379,12 +379,12 @@ router.get('/dashboards/:id?', (request, response) => {
 				<tfoot>
 					<tr>
 						<td colspan="2">
-							<form class="form" id="db_share">
+							<form class="form" id="dashboard_share">
 								<select name="user_list"></select>
 							</form>
 						</td>
 						<td>
-							<button type="submit" class="add_user" form="db_share"><i class="fa fa-plus"></i></button>
+							<button type="submit" class="add_user" form="dashboard_share"><i class="fa fa-plus"></i></button>
 						</td>
 					</tr>
 				</tfoot>
