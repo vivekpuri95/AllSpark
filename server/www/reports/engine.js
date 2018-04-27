@@ -9,6 +9,7 @@ const request = require("request");
 const auth = require('../../utils/auth');
 const redis = require("../../utils/redis").Redis;
 const requestPromise = promisify(request);
+const config = require("config");
 
 // prepare the raw data
 class report extends API {
@@ -551,8 +552,79 @@ class query extends API {
 	}
 }
 
+
+class download extends API {
+
+	async download() {
+
+		let queryData = this.request.body.data;
+
+		// this.assert(commonFun.isJson(queryData), "query format issue");
+		// this.assert(commonFun.isJson(this.request.body.x), "x format issue");
+		// this.assert(commonFun.isJson(this.request.body.y), "y format issue");
+		this.assert(this.request.body.visualization_id);
+
+		let [xl_visualization] = await this.mysql.query("select * from tb_visualizations where id = ?", [this.request.body.visualization_id]);
+
+		this.assert(xl_visualization, "visualization does not exist");
+
+		xl_visualization = xl_visualization.excel_format;
+
+		this.assert(commonFun.isJson(xl_visualization), "xl_visualization format issue");
+
+		// queryData = JSON.parse(queryData);
+
+		const requestObj = {
+			data_obj: [
+				{
+					series: queryData,
+					charts: {
+						1: {
+							x: this.request.body.x,
+							y: this.request.body.y,
+							cols: Object.keys(queryData[0]),
+							type: JSON.parse(xl_visualization),
+						}
+					},
+					sheet_name: this.request.body.sheet_name,
+					file_name: `${this.request.body.file_name}_${(new Date().toISOString()).substring(0,10)}_${(this.user || {}).user_id || ''}`
+				},
+			]
+		};
+
+		const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
+
+		this.response.download(data.body.response);
+
+		throw({pass: true})
+	}
+
+	static async jsonRequest(obj, url) {
+
+		return new Promise((resolve, reject) => {
+
+			request({
+					method: 'POST',
+					uri: url,
+					json: obj
+				},
+				function (error, response, body) {
+					if (error) {
+						return reject(error)
+					}
+					return resolve({
+						response,
+						body
+					})
+				})
+			}
+		)
+	}
+}
+
 exports.query = query;
 exports.report = report;
 exports.ReportEngine = ReportEngine;
 exports.Postgres = Postgres;
 exports.APIRequest = APIRequest;
+exports.download = download;

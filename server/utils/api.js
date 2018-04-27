@@ -69,6 +69,7 @@ class API {
 				obj = new (API.endpoints.get(path))();
 
 				obj.request = request;
+				obj.response = response;
 				obj.assert = assertExpression;
 				const token = request.query.token || request.body.token;
 
@@ -99,7 +100,7 @@ class API {
 				}
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
-					throw new API.Exception(401, 'User Not Authenticated! :(');
+					//throw new API.Exception(401, 'User Not Authenticated! :(');
 				}
 
 				const result = await obj[path.split(pathSeparator).pop()]();
@@ -119,6 +120,9 @@ class API {
 
 			catch (e) {
 
+				if(e.pass) {
+					return;
+				}
 				if (obj) {
 
 					await API.errorMessage(e, obj);
