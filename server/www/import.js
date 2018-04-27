@@ -111,6 +111,8 @@ exports.dashboard = class extends API {
 			data.dashboard.format.reports[report].query_id = query_id[report];
 		}
 
+		data.dashboard.format = JSON.stringify(data.dashboard.format);
+
 		data.dashboard.account_id = this.account.account_id;
 		data.dashboard.added_by = this.user.user_id;
 		data = await this.mysql.query('INSERT INTO tb_dashboards SET ?', data.dashboard, 'write');
