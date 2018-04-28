@@ -367,6 +367,7 @@ body {
 					margin: 0;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
+					max-width: 100%;
 				}
 				main .dataset label:hover {
 					background: #ddd;

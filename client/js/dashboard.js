@@ -849,6 +849,18 @@ class DashboardDatasets extends Map {
 			for(const dataset of container.querySelectorAll('label.hidden'))
 				dataset.classList.remove('hidden');
 		});
+
+		container.on('mouseenter', () => {
+			container.classList.add('show');
+		});
+
+		container.on('mouseleave', () => {
+
+			if(DashboardDatasets.timeout)
+				clearTimeout(DashboardDatasets.timeout);
+
+			DashboardDatasets.timeout = setTimeout(() => container.classList.remove('show'), 1000);
+		});
 	}
 
 	apply() {
