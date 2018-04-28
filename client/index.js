@@ -472,6 +472,11 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 					</label>
 				</div>
 
+				<div id="transformations-container">
+					<span>Transformations</span>
+					<div id="transformations"></div>
+				</div>
+
 				<label>
 					<span>Category</span>
 					<select name="category_id"></select>

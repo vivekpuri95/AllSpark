@@ -14,7 +14,7 @@ exports.insert = class extends API {
 				this.account.account_id,
 				this.request.body.connection_name,
 				this.request.body.host,
-				this.request.body.port,
+				this.request.body.port || null,
 				this.request.body.user,
 				this.request.body.password,
 				this.request.body.db,
@@ -74,6 +74,8 @@ exports.update = class extends API {
 
 		delete this.request.body.id;
 		delete this.request.body.token;
+
+		this.request.body.port = this.request.body.port || null;
 
 		const response = await this.mysql.query(
 			'UPDATE tb_credentials SET ? WHERE id = ?',
@@ -145,12 +147,12 @@ exports.schema = class extends API {
 		let columns;
 
 		let selectQuery = `
-			SELECT 
-				table_schema as table_schema, 
+			SELECT
+				table_schema as table_schema,
 				table_name as table_name,
 				column_name as column_name,
 				column_type as column_type
-			FROM 
+			FROM
 				information_schema.columns `;
 
 		switch (typeOfConnection) {

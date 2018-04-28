@@ -683,6 +683,7 @@ class DataSource {
 
 		this.filters = new DataSourceFilters(this);
 		this.columns = new DataSourceColumns(this);
+		this.transformations = new DataSourceTransformations(this);
 		this.visualizations = [];
 
 		if(!source.visualizations)
@@ -1039,7 +1040,9 @@ class DataSource {
 
 		this.originalResponse.groupedAnnotations = new Map;
 
-		for(const _row of this.originalResponse.data) {
+		const data = this.transformations.run(this.originalResponse.data);
+
+		for(const _row of data) {
 
 			const row = new DataSourceRow(_row, this);
 
@@ -1392,14 +1395,14 @@ class DataSourceColumns extends Map {
 		this.source = source;
 	}
 
-	update() {
+	update(response) {
 
 		if(!this.source.originalResponse.data || !this.source.originalResponse.data.length)
 			return;
 
 		this.clear();
 
-		for(const column in this.source.originalResponse.data[0])
+		for(const column in response ? response[0] : this.source.originalResponse.data[0])
 			this.set(column, new DataSourceColumn(column, this.source));
 	}
 
@@ -2315,6 +2318,177 @@ class DataSourcePostProcessor {
 	}
 }
 
+class DataSourceTransformations extends Set {
+
+	constructor(source) {
+
+		super();
+
+		this.source = source;
+
+		const transformations = this.source.format && this.source.format.transformations ? this.source.format.transformations : [];
+
+		for(const transformation of transformations)
+			this.add(new DataSourceTransformation(transformation, this.source));
+	}
+
+	run(response) {
+
+		response = JSON.parse(JSON.stringify(response));
+
+		for(const transformation of this)
+			response = transformation.run(response);
+
+		if(this.size) {
+			this.source.columns.update(response);
+			this.source.columns.render();
+		}
+
+		return response;
+	}
+}
+
+class DataSourceTransformation {
+
+	constructor(transformation, source) {
+
+		this.source = source;
+
+		for(const key in transformation)
+			this[key] = transformation[key];
+	}
+
+	run(response = []) {
+
+		if(!response || !response.length || !this.rows || this.rows.length != 1)
+			return response;
+
+		const
+			[{column: groupColumn}] = this.columns.length ? this.columns : [{}],
+			[{column: groupRow}] = this.rows;
+
+		if(!groupRow)
+			return response;
+
+		const
+			columns = new Set,
+			rows = new Map;
+
+		if(groupColumn) {
+
+			for(const row of response) {
+				if(!columns.has(row[groupColumn]))
+					columns.add(row[groupColumn]);
+			}
+		}
+
+		for(const responseRow of response) {
+
+			if(!rows.get(responseRow[groupRow]))
+				rows.set(responseRow[groupRow], new Map);
+
+			const row = rows.get(responseRow[groupRow]);
+
+			if(groupColumn) {
+
+				for(const column of columns) {
+
+					if(!row.has(column))
+						row.set(column, []);
+
+					if(responseRow[groupColumn] != column)
+						continue;
+
+					row.get(column).push(responseRow[this.values[0].column]);
+				}
+			} else {
+
+				for(const value of this.values || []) {
+
+					if(!(value.column in responseRow))
+						continue;
+
+					if(!row.has(value.column))
+						row.set(value.column, []);
+
+					row.get(value.column).push(responseRow[value.column])
+				}
+			}
+		}
+
+		const newResponse = [];
+
+		for(const [groupRowValue, row] of rows) {
+
+			const newRow = {};
+
+			newRow[groupRow] = groupRowValue;
+
+			for(const [groupColumnValue, values] of row) {
+
+				let
+					value = null,
+					function_ = null;
+
+				if(groupColumn)
+					function_ = this.values[0].function;
+
+				else {
+
+					for(const value of this.values) {
+						if(value.column == groupColumnValue)
+							function_ = value.function;
+					}
+				}
+
+				switch(function_) {
+
+					case 'sum':
+						value = values.reduce((sum, value) => sum += parseFloat(value), 0);
+						break;
+
+					case 'count':
+						value = values.length;
+						break;
+
+					case 'distinctcount':
+						value = new Set(values).size;
+						break;
+
+					case 'max':
+						value = Math.max(...values);
+						break;
+
+					case 'min':
+						value = Math.min(...values);
+						break;
+
+					case 'average':
+						value = Math.floor(values.reduce((sum, value) => sum += parseFloat(value), 0) / values.length * 100) / 100;
+						break;
+
+					case 'values':
+						value = values.join(', ');
+						break;
+
+					case 'distinctvalues':
+						value = Array.from(new Set(values)).join(', ');
+						break;
+
+					default:
+						value = values.length;
+				}
+
+				newRow[groupColumnValue] = value;
+			}
+
+			newResponse.push(newRow);
+		}
+
+		return newResponse;
+	}
+}
+
 DataSourcePostProcessors.processors = new Map;
 
 DataSourcePostProcessors.processors.set('Orignal', class extends DataSourcePostProcessor {
@@ -2604,6 +2778,8 @@ class LinearVisualization extends Visualization {
 	}
 
 	draw() {
+
+		this.source.response;
 
 		if(!this.axes)
 			return this.source.error('Axes not defined! :(');
@@ -3000,7 +3176,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				td.textContent = row.get(key);
 
-				if(column.drilldown) {
+				if(column.drilldown && column.drilldown.report_id) {
 
 					td.classList.add('drilldown');
 					td.on('click', () => column.initiateDrilldown(row));
@@ -3643,6 +3819,8 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
 		await this.source.fetch();
+
+		this.source.response;
 
 		this.render();
 	}
@@ -4487,7 +4665,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
 			})
-			.attr('height', this.x.rangeBand())
+			.attr('width', this.x.rangeBand())
 			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
 
 		if(!resize) {

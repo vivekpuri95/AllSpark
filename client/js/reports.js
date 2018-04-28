@@ -129,11 +129,11 @@ class Reports extends Page {
 			API.call('reports/report/list'),
 			API.call('datasets/list'),
 			API.call('credentials/list'),
+			DataSource.load(true),
 		]);
 	}
 
 	static process() {
-
 
 		Reports.sort();
 
@@ -419,6 +419,8 @@ class Report {
 		ReportFilters.container.innerHTML = '<div class="NA">You can add filters to this report once you add the query.</div>';
 		ReportVisualizations.container.classList.add('hidden');
 
+		Report.form.querySelector('#transformations').innerHTML = '<div class="NA">You can add transformations once you have added the report.</div>';
+
 		ReportFilter.insert.form.reset();
 		ReportFilter.insert.form.classList.add('hidden');
 
@@ -686,6 +688,7 @@ class Report {
 		for(const key in report)
 			this[key] = report[key];
 
+		this.transformations = new ReportTransformations(this);
 		this.filters = new ReportFilters(this);
 		this.visualizations = new ReportVisualizations(this);
 		this.id = this.query_id;
@@ -788,17 +791,6 @@ class Report {
 		Report.form.reset();
 		Report.form.elements[0].classList.remove('unsaved');
 
-		if(parseInt(Report.form.is_redis.value) > 0) {
-
-			Report.form.redis.value = "custom";
-			Report.form.is_redis.classList.remove('hidden');
-		}
-		else {
-
-			Report.form.redis.value = this.is_redis;
-			Report.form.is_redis.classList.add('hidden');
-		}
-
 		for (const key in this) {
 			if (Report.form.elements[key])
 				Report.form.elements[key].value = this[key];
@@ -814,7 +806,6 @@ class Report {
 			Report.form.redis.value = this.is_redis;
 			Report.form.is_redis.classList.add('hidden');
 		}
-
 
 		Report.form.method.value = this.url_options.method;
 		Report.form.format.value = this.format ? JSON.stringify(this.format, 0, 4) : '';
@@ -842,7 +833,8 @@ class Report {
 		this.filters.render();
 		this.visualizations.render();
 
-		Report.selected.filterSuggestions();
+		this.filterSuggestions();
+		this.transformations.load();
 
 		await Sections.show('form');
 	}
@@ -861,8 +853,21 @@ class Report {
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(document.getElementById('report-form')),
+				form: new FormData(Report.form),
 			};
+
+		let format = {};
+
+		try {
+			format = JSON.parse(Report.form.format.value || '{}');
+		} catch(e) {
+			alert('Invalid JSON in format! :(');
+			return;
+		};
+
+		format.transformations = this.transformations.json;
+
+		options.form.set('format', JSON.stringify(format));
 
 		await API.call('reports/report/update', parameters, options);
 
@@ -891,8 +896,6 @@ class Report {
 	}
 
 	async run() {
-
-		await DataSource.load();
 
 		let report = DataSource.list.get(this.id);
 
@@ -947,6 +950,9 @@ class Report {
 		executingTime = false;
 
 		executing.classList.add('hidden');
+
+		Report.runningReport = report;
+		this.transformations.load();
 	}
 
 	filterSuggestions() {
@@ -980,6 +986,271 @@ class Report {
 		}
 
 		else missingContainer.classList.add('hidden');
+	}
+}
+
+class ReportTransformations extends Set {
+
+	constructor(report) {
+
+		super();
+
+		this.report = report;
+		this.container = Report.form.querySelector('#transformations');
+	}
+
+	load() {
+
+		this.container.textContent = null;
+
+		if(!this.report.format || !this.report.format.transformations)
+			return;
+
+		this.clear();
+
+		for(const transformation_ of this.report.format.transformations) {
+
+			const transformation = new ReportTransformation(transformation_, this.report);
+
+			this.container.appendChild(transformation.container);
+
+			this.add(transformation);
+		}
+
+		this.container.insertAdjacentHTML('beforeend', `
+			<button type="button" class="add-new-transformation">
+				<i class="fa fa-plus"></i> Add New Transformation
+			</button>
+		`);
+
+		const addNew = this.container.querySelector('.add-new-transformation');
+
+		addNew.on('click', () => {
+
+			const transformation = new ReportTransformation({}, this.report);
+
+			this.add(transformation);
+			this.container.insertBefore(transformation.container, addNew);
+		});
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const transformation of this)
+			response.push(transformation.json);
+
+		return response.filter(a => a);
+	}
+}
+
+class ReportTransformation {
+
+	constructor(transformation, report) {
+
+		this.report = report;
+
+		for(const key in transformation)
+			this[key] = transformation[key];
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const
+			container = this.containerElement = document.createElement('div'),
+			rows = document.createElement('div'),
+			columns = document.createElement('div'),
+			values = document.createElement('div');
+
+		container.classList.add('transformation');
+
+		rows.classList.add('rows');
+		columns.classList.add('columns');
+		values.classList.add('values');
+
+		rows.innerHTML = `<h4>Rows</h4>`;
+		columns.innerHTML = `<h4>Columns</h4>`;
+		values.innerHTML = `<h4>Values</h4>`;
+
+		for(const row of this.rows || [])
+			rows.appendChild(ReportTransformation.row(row));
+
+		const addRow = document.createElement('button');
+
+		addRow.type = 'button';
+		addRow.innerHTML = `<i class="fa fa-plus"></i> Add New Row`;
+		addRow.on('click', () => rows.insertBefore(ReportTransformation.row(), addRow));
+
+		rows.appendChild(addRow);
+
+		for(const column of this.columns || [])
+			columns.appendChild(ReportTransformation.column(column));
+
+		const addColumn = document.createElement('button');
+
+		addColumn.type = 'button';
+		addColumn.innerHTML = `<i class="fa fa-plus"></i> Add New Column`;
+		addColumn.on('click', () => columns.insertBefore(ReportTransformation.column(), addColumn));
+
+		columns.appendChild(addColumn);
+
+		for(const value of this.values || [])
+			values.appendChild(ReportTransformation.value(value));
+
+		const addValue = document.createElement('button');
+
+		addValue.type = 'button';
+		addValue.innerHTML = `<i class="fa fa-plus"></i> Add New Value`;
+		addValue.on('click', () => values.insertBefore(ReportTransformation.value(), addValue));
+
+		values.appendChild(addValue);
+
+		container.appendChild(rows);
+		container.appendChild(columns);
+		container.appendChild(values);
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			type: 'pivot',
+			rows: [],
+			columns: [],
+			values: [],
+		};
+
+		for(const row of this.container.querySelectorAll('.row')) {
+			response.rows.push({
+				column: row.querySelector('*[name=column]').value,
+			});
+		}
+
+		for(const column of this.container.querySelectorAll('.column')) {
+			response.columns.push({
+				column: column.querySelector('*[name=column]').value,
+			});
+		}
+
+		for(const value of this.container.querySelectorAll('.value')) {
+			response.values.push({
+				column: value.querySelector('*[name=column]').value,
+				function: value.querySelector('select[name=function]').value
+			});
+		}
+
+		if(!response.rows.length && !response.columns.length && !response.values.length)
+			return null;
+
+		return response;
+	}
+
+	static row(row = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('row');
+
+		if(Report.runningReport && Report.runningReport.originalResponse) {
+
+			container.innerHTML = `<select name="column"></select>`;
+
+			const select = container.querySelector('select');
+
+			for(const column in Report.runningReport.originalResponse.data[0])
+				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			select.value = row.column;
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${row.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
+
+		container.querySelector('button').on('click', e => {
+			e.stopPropagation();
+			container.remove();
+		});
+
+		return container;
+	}
+
+	static column(column = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('column');
+
+		if(Report.runningReport && Report.runningReport.originalResponse) {
+
+			container.innerHTML = `<select name="column"></select>`;
+
+			const select = container.querySelector('select');
+
+			for(const column in Report.runningReport.originalResponse.data[0])
+				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			select.value = column.column;
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${column.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
+
+		container.querySelector('button').on('click', () => container.remove());
+
+		return container;
+	}
+
+	static value(value = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('value');
+
+
+		if(Report.runningReport && Report.runningReport.originalResponse) {
+
+			container.innerHTML = `<select name="column"></select>`;
+
+			const select = container.querySelector('select');
+
+			for(const column in Report.runningReport.originalResponse.data[0])
+				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			select.value = value.column;
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${value.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`
+			<select name="function">
+				<option value="sum">Sum</option>
+				<option value="count">Count</option>
+				<option value="distinctcount">Distinct Count</option>
+				<option value="values">Values</option>
+				<option value="distinctvalues">Distinct Values</option>
+				<option value="max">Max</option>
+				<option value="min">Min</option>
+				<option value="average">Average</option>
+			</select>
+			<button type="button"><i class="far fa-trash-alt"></i></button>
+		`);
+
+		if(value.function)
+			container.querySelector('select[name=function]').value = value.function;
+
+		container.querySelector('button').on('click', () => container.remove());
+
+		return container;
 	}
 }
 
@@ -1300,7 +1571,7 @@ class ReportVisualization {
 		}
 
 		this.optionsForm = null;
-    
+
 		if(ReportVisualization.types.has(this.type))
 			this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
 	}
@@ -1690,7 +1961,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 				<span>Postfix</span>
 				<input type="text" name="postfix">
 			</label>
-					
+
 			<h4>Boxes</h4>
 			<div id="config-boxes"></div>
 			<button class="add-box" type="button">
@@ -1731,55 +2002,6 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 		return container;
 	}
 
-	box(boxValues = {}) {
-		const boxConfig = document.createElement('div');
-
-		boxConfig.classList.add('subform', 'form');
-
-		boxConfig.innerHTML = `
-				<label>
-					<span>Offset</span>
-					<input type="text" name="offset">
-				</label>
-				
-				<label>
-					<span>Relative To(Index)</span>
-					<input type="text" name="relativeValTo">
-				</label>
-				
-				<label>
-					<span>Column</span>
-					<input type="text" name="column">
-				</label>
-				
-				<label>
-					<span>Row</span>
-					<input type="text" name="row">
-				</label>
-				
-				<label>
-					<span>Column Span</span>
-					<input type="text" name="columnspan">
-				</label>
-				
-				<label>
-					<span>Row Span</span>
-					<input type="text" name="rowspan">
-				</label>
-			`;
-
-		if (boxValues) {
-			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
-			boxConfig.querySelector('input[name=relativeValTo]').value = boxValues.relativeValTo;
-			boxConfig.querySelector('input[name=row]').value = boxValues.row;
-			boxConfig.querySelector('input[name=column]').value = boxValues.column;
-			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan;
-			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan;
-		}
-
-		return boxConfig;
-	}
-
 	get json() {
 
 		let config = {
@@ -1805,8 +2027,56 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 
 		return config;
 	}
-});
 
+	box(boxValues = {}) {
+		const boxConfig = document.createElement('div');
+
+		boxConfig.classList.add('subform', 'form');
+
+		boxConfig.innerHTML = `
+				<label>
+					<span>Offset</span>
+					<input type="text" name="offset">
+				</label>
+
+				<label>
+					<span>Relative To(Index)</span>
+					<input type="text" name="relativeValTo">
+				</label>
+
+				<label>
+					<span>Column</span>
+					<input type="text" name="column">
+				</label>
+
+				<label>
+					<span>Row</span>
+					<input type="text" name="row">
+				</label>
+
+				<label>
+					<span>Column Span</span>
+					<input type="text" name="columnspan">
+				</label>
+
+				<label>
+					<span>Row Span</span>
+					<input type="text" name="rowspan">
+				</label>
+			`;
+
+		if (boxValues) {
+			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
+			boxConfig.querySelector('input[name=relativeValTo]').value = boxValues.relativeValTo;
+			boxConfig.querySelector('input[name=row]').value = boxValues.row;
+			boxConfig.querySelector('input[name=column]').value = boxValues.column;
+			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan;
+			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan;
+		}
+
+		return boxConfig;
+	}
+});
 
 const mysqlKeywords = [
 	'SELECT',
