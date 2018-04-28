@@ -859,7 +859,7 @@ class DashboardDatasets extends Map {
 			if(DashboardDatasets.timeout)
 				clearTimeout(DashboardDatasets.timeout);
 
-			DashboardDatasets.timeout = setTimeout(() => container.classList.remove('show'), 1000);
+			DashboardDatasets.timeout = setTimeout(() => container.classList.remove('show'), 500);
 		});
 	}
 
