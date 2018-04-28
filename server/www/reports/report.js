@@ -138,6 +138,7 @@ exports.insert = class extends API {
 
 		values["account_id"] = this.account.account_id;
 		values.added_by = this.user.user_id;
+		values.refresh_rate = parseInt(values.refresh_rate) || null;
 
 		try {
 			values.format = JSON.stringify(JSON.parse(values.format))

@@ -273,7 +273,7 @@ body {
       		main table thead th:last-child {
 				border-right: 0;
 			}
-				main table thead svg {
+				main table thead .sort svg {
 					float: right;
 					margin: 2px 0 0 var(--gap);
 					display: block;
@@ -282,7 +282,7 @@ body {
 					opacity: 0;
 					transition: opacity var(--transition-duration);
 				}
-				main table thead th:hover svg {
+				main table thead th:hover .sort svg {
 					opacity: 1;
 				}
 		main table tbody tr {
@@ -367,6 +367,7 @@ body {
 					margin: 0;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
+					max-width: 100%;
 				}
 				main .dataset label:hover {
 					background: #ddd;
@@ -452,7 +453,7 @@ body {
 				}
 			main .data-source > header .actions {
 			}
-				main .data-source > header a {
+				main .data-source > header .actions > * {
 					font-size: 85%;
 					padding: 4px 6px;
 					width: 24px;
@@ -463,10 +464,13 @@ body {
 				main .data-source > header a:hover {
 					color: var(--color-accent);
 				}
+				main .data-source > header .grey {
+					color: #999;
+				}
 		main .data-source .toolbar {
 			background: #fff;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-			padding: calc(var(--gap) * 2);
+			padding: calc(var(--gap) * 2) var(--gap);
 			font-size: 95%;
 			margin: 0;
 			margin-top:  calc(var(--gap) * 2);
@@ -505,7 +509,7 @@ body {
 				width: 200%;
 				top: 27px;
 				right: 0;
-				z-index: 1;
+				z-index: 3;
 			}
 			main .data-source .download-dropdown-content .csv-download {
 				border-bottom: 0;
@@ -877,6 +881,7 @@ body {
 				overflow: auto;
 				width: initial;
 				max-width: initial;
+				user-select: text;
 			}
 				.visualization.table table {
 					caption-side: bottom;
@@ -981,6 +986,9 @@ body {
 					}
 						.visualization.table table thead th span {
 							flex: 1;
+						}
+						.visualization.table table thead th .drilldown {
+							margin-left: var(--gap);
 						}
 						.visualization.table table thead th .fa {
 							opacity: 0;
