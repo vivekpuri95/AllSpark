@@ -1202,15 +1202,17 @@ class DataSourceFilters extends Map {
 		for(const filter of this.values())
 			container.appendChild(filter.label);
 
-		container.on('submit', e => this.visualizations.selected.load(e));
+		container.on('submit', e => this.source.visualizations.selected.load(e));
 
 		container.insertAdjacentHTML('beforeend', `
 			<label class="right">
+				<span>&nbsp;</span>
 				<button type="reset">
 					<i class="fa fa-undo"></i> Reset
 				</button>
 			</label>
 			<label>
+				<span>&nbsp;</span>
 				<button type="submit">
 					<i class="fa fa-sync"></i> Submit
 				</button>
@@ -1408,15 +1410,36 @@ class DataSourceColumns extends Map {
 
 	render() {
 
-		const container = this.source.container.querySelector('.columns');
+		const
+			container = this.source.container.querySelector('.columns'),
+			drilldown = [];
 
 		container.textContent = null;
 
-		for(const column of this.values())
+		for(const column of this.values()) {
+
 			container.appendChild(column.container);
+
+			if(column.drilldown && column.drilldown.query_id)
+				drilldown.push(column.name);
+		}
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
+
+		if(!drilldown.length)
+			return;
+
+		const
+			actions = this.source.container.querySelector('header .actions'),
+			old = actions.querySelector('.drilldown');
+
+		if(old)
+			old.remove();
+
+		actions.insertAdjacentHTML('afterbegin', `
+			<span class="grey"><i class="fas fa-angle-double-down"></i></span>
+		`);
 	}
 
 	get list() {
@@ -2214,6 +2237,7 @@ class DataSourceColumn {
 		container.classList.add('heading');
 
 		container.innerHTML = `
+			${this.drilldown && this.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
 			<span class="name">${this.name}</span>
 			<span class="sort"><i class="fa fa-sort"></i></span>
 		`;
@@ -3009,10 +3033,15 @@ class LinearVisualization extends Visualization {
 				if(key == that.axes.bottom.column)
 					continue;
 
+				const column = row.source.columns.get(key);
+
 				tooltip.push(`
 					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
-						<span class="circle" style="background:${row.source.columns.get(key).color}"></span>
-						<span>${row.source.columns.get(key).name}</span>
+						<span class="circle" style="background:${column.color}"></span>
+						<span>
+							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
+							${column.name}
+						</span>
 						<span class="value">${Format.number(value)}</span>
 					</li>
 				`);
@@ -3176,12 +3205,12 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				td.textContent = row.get(key);
 
-				if(column.drilldown && column.drilldown.report_id) {
+				if(column.drilldown && column.drilldown.query_id) {
 
 					td.classList.add('drilldown');
 					td.on('click', () => column.initiateDrilldown(row));
 
-					td.title = `Drill down into ${DataSource.list.get(column.drilldown.report_id).name}!`;
+					td.title = `Drill down into ${DataSource.list.get(column.drilldown.query_id).name}!`;
 				}
 
 				tr.appendChild(td);
@@ -3858,8 +3887,11 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		for(const row of this.rows) {
 
-			for(const value of row.values())
-				max = Math.max(max, Math.ceil(value) || 0)
+			for(const [key, value] of row) {
+
+				if(this.axes.left.columns.some(c => c.key == key))
+					max = Math.max(max, Math.ceil(value) || 0)
+			}
 		}
 
 		this.y.domain([0, max]);
