@@ -1750,7 +1750,7 @@ class DataSourceColumn {
 
 			for(const column of this.source.columns.values()) {
 
-				if(column.key == this.key ||  column.key == this.source.visualizations.selected.axis.x.column)
+				if(column.key == this.key || (this.source.visualizations.selected.axes && column.key == this.source.visualizations.selected.axes.bottom.column))
 					continue;
 
 				column.disabled = true;
