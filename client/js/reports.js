@@ -2074,7 +2074,6 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 	}
 });
 
-
 const mysqlKeywords = [
 	'SELECT',
 	'FROM',

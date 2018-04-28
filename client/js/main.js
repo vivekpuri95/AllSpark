@@ -785,7 +785,6 @@ class DataSource {
 		this.postProcessors.update();
 
 		this.columns.render();
-
 	}
 
 	get container() {
@@ -2780,6 +2779,8 @@ class LinearVisualization extends Visualization {
 
 	draw() {
 
+		this.source.response;
+
 		if(!this.axes)
 			return this.source.error('Axes not defined! :(');
 
@@ -4664,7 +4665,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
 			})
-			.attr('height', this.x.rangeBand())
+			.attr('width', this.x.rangeBand())
 			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
 
 		if(!resize) {
