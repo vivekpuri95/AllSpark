@@ -877,6 +877,7 @@ body {
 				overflow: auto;
 				width: initial;
 				max-width: initial;
+				user-select: text;
 			}
 				.visualization.table table {
 					caption-side: bottom;
