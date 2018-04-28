@@ -121,7 +121,7 @@ main #reports > .datasets {
 	flex-direction: column;
 	justify-content: flex-start;
 	position: fixed;
-	right: 0;
+	right: 15px;
 	top: 50px;
 	bottom: 0;
 	background: #fff;
@@ -190,7 +190,7 @@ main #reports > .list {
 		top: 0;
 		z-index: 3;
 		align-items: flex-end;
-		grid-template-columns: max-content max-content 1fr;
+		grid-template-columns: max-content max-content max-content 1fr;
 	}
 		main #reports > .toolbar input[name=date-range] {
 			width: 250px;

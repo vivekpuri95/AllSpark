@@ -733,14 +733,14 @@ class DashboardDatasets extends Map {
 
 		for(const report of this.dashboard.reports) {
 
-			for(const filter of report.filters || []) {
+			for(const filter of report.filters.values()) {
 
 				if(!filter.dataset)
 					continue;
 
 				if(!datasets[filter.dataset.id]) {
 					datasets[filter.dataset.id] = {
-						id: filter.dataset,
+						id: filter.dataset.id,
 						multiple: true,
 						placeholder: `dataset-${filter.dataset.id}`,
 					}

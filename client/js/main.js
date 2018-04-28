@@ -5965,6 +5965,9 @@ class Dataset {
 
 			e.stopPropagation();
 
+			for(const options of document.querySelectorAll('.dataset .options'))
+				options.classList.add('hidden');
+
 			search.value = '';
 			options.classList.remove('hidden');
 
