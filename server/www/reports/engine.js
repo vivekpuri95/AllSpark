@@ -10,6 +10,7 @@ const auth = require('../../utils/auth');
 const redis = require("../../utils/redis").Redis;
 const requestPromise = promisify(request);
 const config = require("config");
+const fs = require("fs");
 
 // prepare the raw data
 class report extends API {
@@ -562,9 +563,9 @@ class download extends API {
 		// this.assert(commonFun.isJson(queryData), "query format issue");
 		// this.assert(commonFun.isJson(this.request.body.x), "x format issue");
 		// this.assert(commonFun.isJson(this.request.body.y), "y format issue");
-		this.assert(this.request.body.visualization_id);
+		this.assert(this.request.body.visualization);
 
-		let [xl_visualization] = await this.mysql.query("select * from tb_visualizations where id = ?", [this.request.body.visualization_id]);
+		let [xl_visualization] = await this.mysql.query("select * from tb_visualizations where slug = ?", [this.request.body.visualization]);
 
 		this.assert(xl_visualization, "visualization does not exist");
 
@@ -580,9 +581,11 @@ class download extends API {
 					series: queryData,
 					charts: {
 						1: {
-							x: this.request.body.x,
-							y: this.request.body.y,
-							cols: Object.keys(queryData[0]),
+							x: {name:this.request.body.bottom},
+							y: {name:this.request.body.left},
+							x1: {name:this.request.body.top},
+							y1: {name:this.request.body.right},
+							cols: this.request.body.columns,
 							type: JSON.parse(xl_visualization),
 						}
 					},
@@ -594,9 +597,9 @@ class download extends API {
 
 		const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
 
-		this.response.download(data.body.response);
+		//this.response.sendFile(data.body.response);
+		return fs.readFileSync(data.body.response, "utf8");
 
-		throw({pass: true})
 	}
 
 	static async jsonRequest(obj, url) {

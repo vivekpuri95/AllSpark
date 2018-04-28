@@ -818,6 +818,7 @@ class DataSource {
 					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
 					<div class="download-dropdown-content hidden">
 						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
+						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i>xlsx</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
 					</div>
 				</div>
@@ -917,6 +918,7 @@ class DataSource {
 
 		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
 		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
+		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
 
 		if(user.privileges.has('report')) {
 
@@ -1081,6 +1083,7 @@ class DataSource {
 		return response;
 	}
 
+
 	async download(e, what) {
 
 		this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
@@ -1100,6 +1103,20 @@ class DataSource {
 
 				str.push(line);
 			}
+		}
+
+		else if(what.mode == 'xlsx') {
+			debugger;
+			const obj = {};
+			obj.columns = [...this.columns.entries()].map(x => x[0]);
+			obj.left = ((this.visualizations.selected.options.axes || {}).left || {columns: [0]}).columns[0].key;
+			obj.right = ((this.visualizations.selected.options.axes || {}).right || {columns: [0]}).columns[0].key;
+			obj.top = ((this.visualizations.selected.options.axes || {}).top || {columns: [0]}).columns[0].key;
+			obj.bottom = ((this.visualizations.selected.options.axes || {}).bottom || {columns: [0]}).columns[0].key;
+			obj.visualization = this.visualizations.selected.type;
+			obj.sheet_name = this.name;
+			obj.file_name = this.name;
+			await this.excelSheetDownloader(this.originalResponse.data, obj);
 		}
 
 		else {
@@ -1139,6 +1156,37 @@ class DataSource {
 
 		a.click();
 	}
+
+	async excelSheetDownloader(data, obj) {
+
+		obj.data = data
+		const xlsxBlobOutput = await DataSource.postData("/api/v2/reports/engine/download", obj);
+
+		const link = document.createElement('a');
+		link.href = window.URL.createObjectURL(xlsxBlobOutput);
+		link.download = obj.file_name + "_" + new Date().getTime() + ".xlsx";
+		link.click();
+	}
+
+
+	static postData(url, data) {
+
+		return fetch(url, {
+			body: JSON.stringify(data),
+			cache: 'no-cache',
+			credentials: 'same-origin',
+			headers: {
+				'user-agent': 'Mozilla/4.0 MDN Example',
+				'content-type': 'application/json'
+			},
+			method: 'POST',
+			mode: 'cors',
+			redirect: 'follow',
+			referrer: 'no-referrer',
+		})
+			.then(response => response.blob());
+	}
+
 
 	get link() {
 
