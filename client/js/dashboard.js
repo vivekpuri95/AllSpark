@@ -50,7 +50,10 @@ Page.class = class Dashboards extends Page {
 		this.render();
 		this.renderList();
 
-		if(id && this.list.has(id) && window.location.pathname.includes('dashboard'))
+		if(window.location.pathname.endsWith('first') && this.list.size)
+			Array.from(this.list.values())[0].load();
+
+		else if(id && this.list.has(id) && window.location.pathname.includes('dashboard'))
 			await this.list.get(id).load();
 
 		else if(id && window.location.pathname.includes('report'))
