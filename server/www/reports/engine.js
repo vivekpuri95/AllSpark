@@ -1,11 +1,13 @@
 const API = require("../../utils/api");
 const commonFun = require('../../utils/commonFunctions');
+const dbConfig = require('config').get("sql_db");
 const promisify = require('util').promisify;
 //const BigQuery = require('../../www/bigQuery').BigQuery;
 const constants = require("../../utils/constants");
 const crypto = require('crypto');
 const request = require("request");
 const auth = require('../../utils/auth');
+const redis = require("../../utils/redis").Redis;
 const requestPromise = promisify(request);
 
 // prepare the raw data
@@ -96,7 +98,8 @@ class report extends API {
 
 			if (types[filter.type] == 'month') {
 
-				const date = new Date();
+				const date = new
+				Date();
 
 				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
@@ -117,6 +120,7 @@ class report extends API {
 	async report(queryId, reportObj, filterList) {
 
 		this.reportId = this.request.body.query_id || queryId;
+		this.reportQuery = this.request.body.query || '';
 		this.reportObjStartTime = Date.now();
 		const forcedRun = parseInt(this.request.body.cached) === 0;
 
@@ -147,8 +151,19 @@ class report extends API {
 
 		const engine = new ReportEngine(preparedRequest);
 
-		const hash = "Report#report_id:" + this.reportObj.query_id + "#hash:" + engine.hash + "#";
-		const redisData = await commonFun.redisGet(hash);
+		const hash = "Report#report_id:" + this.reportObj.query_id + "#hash:" + engine.hash + '#redis-timeout#' + this.reportObj.is_redis;
+
+		if (this.reportObj.is_redis === "EOD") {
+
+			const d = new Date();
+			this.reportObj.is_redis = (24 * 60 * 60) - (d.getHours() * 60 * 60) - (d.getMinutes() * 60) - d.getSeconds();
+		}
+
+		let redisData = null;
+
+		if(redis) {
+			redisData = await redis.get(hash);
+		}
 
 		let result;
 
@@ -158,7 +173,7 @@ class report extends API {
 
 				result = JSON.parse(redisData);
 
-				await engine.log(this.reportObj.query_id, result.query,
+				await engine.log(this.reportObj.query_id, this.reportQuery, result.query,
 					Date.now() - this.reportObjStartTime, this.reportObj.type,
 					this.user.user_id, 1, JSON.stringify({filters: this.filters})
 				);
@@ -183,7 +198,7 @@ class report extends API {
 			throw new API.Exception(400, e);
 		}
 
-		await engine.log(this.reportObj.query_id, result.query, result.runtime,
+		await engine.log(this.reportObj.query_id, this.reportQuery, result.query, result.runtime,
 			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters})
 		);
 
@@ -191,7 +206,17 @@ class report extends API {
 		EOD.setHours(23, 59, 59, 999);
 
 		result.cached = {store_time: Date.now()};
-		await commonFun.redisStore(hash, JSON.stringify(result), Math.round(EOD.getTime() / 1000));
+
+		if(redis) {
+
+			await redis.set(hash, JSON.stringify(result));
+
+			if (this.reportObj.is_redis) {
+				await redis.expire(hash, this.reportObj.is_redis);
+			}
+		}
+
+
 		result.cached = {status: false};
 
 		return result;
@@ -235,7 +260,7 @@ class MySQL {
 			};
 		}
 
-		for(const filter of this.filters) {
+		for (const filter of this.filters) {
 
 			this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "?");
 
@@ -470,30 +495,34 @@ class ReportEngine extends API {
 		};
 	}
 
-	async log(query_id, query, executionTime, type, userId, is_redis, rows) {
+	async log(query_id, query, result_query, executionTime, type, userId, is_redis, rows) {
 
 		try {
 
-			if (typeof query === "object") {
+			if (typeof result_query === "object") {
 
 				query = JSON.stringify(query)
 			}
+
+			const db = dbConfig.write.database.concat('_logs');
+
 			await this.mysql.query(`
 				INSERT INTO
-					tb_report_logs
-					(
+					${db}.tb_report_logs (
 						query_id,
 						query,
+						result_query,
 						response_time,
 						type,
 						user_id,
 						cache,
-						rows
+						\`rows\`
 					)
 				VALUES
-					(?,?,?,?,?,?,?)`,
-				[query_id, query, executionTime, type, userId, is_redis, rows],
-				"write");
+					(?,?,?,?,?,?,?,?)`,
+				[query_id, query, result_query, executionTime, type, userId, is_redis, rows],
+				"write"
+			);
 		}
 
 		catch (e) {

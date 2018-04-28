@@ -129,11 +129,11 @@ class Reports extends Page {
 			API.call('reports/report/list'),
 			API.call('datasets/list'),
 			API.call('credentials/list'),
+			DataSource.load(true),
 		]);
 	}
 
 	static process() {
-
 
 		Reports.sort();
 
@@ -236,7 +236,11 @@ class Report {
 		window.onbeforeunload = () => Report.container.querySelector('.unsaved');
 
 		Report.container.querySelector('.toolbar #import').on('click', () => {
-			Report.import();
+			const importForm = Report.container.querySelector('#import-form');
+			if (importForm)
+				importForm.classList.toggle('hidden');
+			else
+				Report.import();
 		});
 
 		Report.container.querySelector('.toolbar #back').on('click', () => {
@@ -304,6 +308,22 @@ class Report {
 			Report.form.elements[0].classList.toggle('unsaved', Report.editor.value != Report.selected.query);
 		});
 
+		Report.form.is_redis.classList.add('hidden');
+
+		Report.form.redis.removeEventListener('change', Report.handleRedisSelect);
+
+		Report.form.redis.on("change", Report.handleRedisSelect = () => {
+
+			Report.form.is_redis.type = Report.form.redis.value === "EOD" ? "text" : "number";
+
+			Report.form.is_redis.value = Report.form.redis.value;
+			Report.form.is_redis.classList.toggle('hidden', Report.form.redis.value !== "custom");
+
+
+		});
+
+		Report.editor.editor.getSession().on('change', () => Report.selected && Report.selected.filterSuggestions());
+
 		setTimeout(() => {
 
 			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
@@ -331,8 +351,8 @@ class Report {
 	}
 
 	static import() {
-
 		const form = document.createElement('form');
+		form.setAttribute('id', 'import-form');
 		form.classList.add('form');
 		form.insertAdjacentHTML('beforeend', `
 			<textarea rows="10" cols="200" id="json"></textarea>
@@ -363,7 +383,7 @@ class Report {
 				method: 'POST'
 			};
 
-			const response = await API.call('import/json', parameters, options);
+			const response = await API.call('import/query', parameters, options);
 
 			await Reports.load(true);
 
@@ -398,6 +418,8 @@ class Report {
 
 		ReportFilters.container.innerHTML = '<div class="NA">You can add filters to this report once you add the query.</div>';
 		ReportVisualizations.container.classList.add('hidden');
+
+		Report.form.querySelector('#transformations').innerHTML = '<div class="NA">You can add transformations once you have added the report.</div>';
 
 		ReportFilter.insert.form.reset();
 		ReportFilter.insert.form.classList.add('hidden');
@@ -666,6 +688,7 @@ class Report {
 		for(const key in report)
 			this[key] = report[key];
 
+		this.transformations = new ReportTransformations(this);
 		this.filters = new ReportFilters(this);
 		this.visualizations = new ReportVisualizations(this);
 		this.id = this.query_id;
@@ -764,12 +787,24 @@ class Report {
 		if(ReportVisualizations.preview.classList.contains('hidden'))
 			ReportVisualizations.container.classList.remove('hidden');
 
+
 		Report.form.reset();
 		Report.form.elements[0].classList.remove('unsaved');
 
-		for(const key in this) {
-			if(Report.form.elements[key])
+		for (const key in this) {
+			if (Report.form.elements[key])
 				Report.form.elements[key].value = this[key];
+		}
+
+		if (parseInt(this.is_redis) > 0) {
+
+			Report.form.redis.value = "custom";
+			Report.form.is_redis.classList.remove('hidden');
+		}
+		else {
+
+			Report.form.redis.value = this.is_redis;
+			Report.form.is_redis.classList.add('hidden');
 		}
 
 		Report.form.method.value = this.url_options.method;
@@ -778,6 +813,7 @@ class Report {
 		Report.editor.value = this.query;
 		Report.editor.editor.focus();
 		Report.form.querySelector('#added-by').textContent = this.added_by || 'Not Available';
+		Report.form.redis.value = parseInt(Report.form.is_redis.value) > 0 ? "custom" : this.is_redis;
 
 		Report.form.querySelector('#roles').value = '';
 
@@ -797,7 +833,8 @@ class Report {
 		this.filters.render();
 		this.visualizations.render();
 
-		Report.selected.filterSuggestions();
+		this.filterSuggestions();
+		this.transformations.load();
 
 		await Sections.show('form');
 	}
@@ -816,8 +853,21 @@ class Report {
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(document.getElementById('report-form')),
+				form: new FormData(Report.form),
 			};
+
+		let format = {};
+
+		try {
+			format = JSON.parse(Report.form.format.value || '{}');
+		} catch(e) {
+			alert('Invalid JSON in format! :(');
+			return;
+		};
+
+		format.transformations = this.transformations.json;
+
+		options.form.set('format', JSON.stringify(format));
 
 		await API.call('reports/report/update', parameters, options);
 
@@ -846,8 +896,6 @@ class Report {
 	}
 
 	async run() {
-
-		await DataSource.load();
 
 		let report = DataSource.list.get(this.id);
 
@@ -902,6 +950,9 @@ class Report {
 		executingTime = false;
 
 		executing.classList.add('hidden');
+
+		Report.runningReport = report;
+		this.transformations.load();
 	}
 
 	filterSuggestions() {
@@ -935,6 +986,271 @@ class Report {
 		}
 
 		else missingContainer.classList.add('hidden');
+	}
+}
+
+class ReportTransformations extends Set {
+
+	constructor(report) {
+
+		super();
+
+		this.report = report;
+		this.container = Report.form.querySelector('#transformations');
+	}
+
+	load() {
+
+		this.container.textContent = null;
+
+		if(!this.report.format || !this.report.format.transformations)
+			return;
+
+		this.clear();
+
+		for(const transformation_ of this.report.format.transformations) {
+
+			const transformation = new ReportTransformation(transformation_, this.report);
+
+			this.container.appendChild(transformation.container);
+
+			this.add(transformation);
+		}
+
+		this.container.insertAdjacentHTML('beforeend', `
+			<button type="button" class="add-new-transformation">
+				<i class="fa fa-plus"></i> Add New Transformation
+			</button>
+		`);
+
+		const addNew = this.container.querySelector('.add-new-transformation');
+
+		addNew.on('click', () => {
+
+			const transformation = new ReportTransformation({}, this.report);
+
+			this.add(transformation);
+			this.container.insertBefore(transformation.container, addNew);
+		});
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const transformation of this)
+			response.push(transformation.json);
+
+		return response.filter(a => a);
+	}
+}
+
+class ReportTransformation {
+
+	constructor(transformation, report) {
+
+		this.report = report;
+
+		for(const key in transformation)
+			this[key] = transformation[key];
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const
+			container = this.containerElement = document.createElement('div'),
+			rows = document.createElement('div'),
+			columns = document.createElement('div'),
+			values = document.createElement('div');
+
+		container.classList.add('transformation');
+
+		rows.classList.add('rows');
+		columns.classList.add('columns');
+		values.classList.add('values');
+
+		rows.innerHTML = `<h4>Rows</h4>`;
+		columns.innerHTML = `<h4>Columns</h4>`;
+		values.innerHTML = `<h4>Values</h4>`;
+
+		for(const row of this.rows || [])
+			rows.appendChild(ReportTransformation.row(row));
+
+		const addRow = document.createElement('button');
+
+		addRow.type = 'button';
+		addRow.innerHTML = `<i class="fa fa-plus"></i> Add New Row`;
+		addRow.on('click', () => rows.insertBefore(ReportTransformation.row(), addRow));
+
+		rows.appendChild(addRow);
+
+		for(const column of this.columns || [])
+			columns.appendChild(ReportTransformation.column(column));
+
+		const addColumn = document.createElement('button');
+
+		addColumn.type = 'button';
+		addColumn.innerHTML = `<i class="fa fa-plus"></i> Add New Column`;
+		addColumn.on('click', () => columns.insertBefore(ReportTransformation.column(), addColumn));
+
+		columns.appendChild(addColumn);
+
+		for(const value of this.values || [])
+			values.appendChild(ReportTransformation.value(value));
+
+		const addValue = document.createElement('button');
+
+		addValue.type = 'button';
+		addValue.innerHTML = `<i class="fa fa-plus"></i> Add New Value`;
+		addValue.on('click', () => values.insertBefore(ReportTransformation.value(), addValue));
+
+		values.appendChild(addValue);
+
+		container.appendChild(rows);
+		container.appendChild(columns);
+		container.appendChild(values);
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			type: 'pivot',
+			rows: [],
+			columns: [],
+			values: [],
+		};
+
+		for(const row of this.container.querySelectorAll('.row')) {
+			response.rows.push({
+				column: row.querySelector('*[name=column]').value,
+			});
+		}
+
+		for(const column of this.container.querySelectorAll('.column')) {
+			response.columns.push({
+				column: column.querySelector('*[name=column]').value,
+			});
+		}
+
+		for(const value of this.container.querySelectorAll('.value')) {
+			response.values.push({
+				column: value.querySelector('*[name=column]').value,
+				function: value.querySelector('select[name=function]').value
+			});
+		}
+
+		if(!response.rows.length && !response.columns.length && !response.values.length)
+			return null;
+
+		return response;
+	}
+
+	static row(row = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('row');
+
+		if(Report.runningReport && Report.runningReport.originalResponse) {
+
+			container.innerHTML = `<select name="column"></select>`;
+
+			const select = container.querySelector('select');
+
+			for(const column in Report.runningReport.originalResponse.data[0])
+				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			select.value = row.column;
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${row.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
+
+		container.querySelector('button').on('click', e => {
+			e.stopPropagation();
+			container.remove();
+		});
+
+		return container;
+	}
+
+	static column(column = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('column');
+
+		if(Report.runningReport && Report.runningReport.originalResponse) {
+
+			container.innerHTML = `<select name="column"></select>`;
+
+			const select = container.querySelector('select');
+
+			for(const column in Report.runningReport.originalResponse.data[0])
+				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			select.value = column.column;
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${column.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
+
+		container.querySelector('button').on('click', () => container.remove());
+
+		return container;
+	}
+
+	static value(value = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('value');
+
+
+		if(Report.runningReport && Report.runningReport.originalResponse) {
+
+			container.innerHTML = `<select name="column"></select>`;
+
+			const select = container.querySelector('select');
+
+			for(const column in Report.runningReport.originalResponse.data[0])
+				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			select.value = value.column;
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${value.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`
+			<select name="function">
+				<option value="sum">Sum</option>
+				<option value="count">Count</option>
+				<option value="distinctcount">Distinct Count</option>
+				<option value="values">Values</option>
+				<option value="distinctvalues">Distinct Values</option>
+				<option value="max">Max</option>
+				<option value="min">Min</option>
+				<option value="average">Average</option>
+			</select>
+			<button type="button"><i class="far fa-trash-alt"></i></button>
+		`);
+
+		if(value.function)
+			container.querySelector('select[name=function]').value = value.function;
+
+		container.querySelector('button').on('click', () => container.remove());
+
+		return container;
 	}
 }
 
@@ -1610,7 +1926,7 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 
 	get form() {
 
-		if(this.formContainer)
+		if (this.formContainer)
 			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('form');
@@ -1629,16 +1945,8 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			</label>
 
 			<label>
-				<span>Show History</span>
-				<select name="history">
-					<option value="1">Yes</option>
-					<option value="0">No</option>
-				</select>
-			</label>
-
-			<label>
 				<span>Invert Values</span>
-				<select name="invertColor">
+				<select name="invertValues">
 					<option value="1">Yes</option>
 					<option value="0">No</option>
 				</select>
@@ -1653,12 +1961,18 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 				<span>Postfix</span>
 				<input type="text" name="postfix">
 			</label>
+
+			<h4>Boxes</h4>
+			<div id="config-boxes"></div>
+			<button class="add-box" type="button">
+				<i class="fa fa-plus"></i> Add New Box
+			</button>
 		`;
 
 		const timing = container.querySelector('select[name=timing]');
 		const value = container.querySelector('select[name=value]');
 
-		for(const [key, column] of this.report.columns) {
+		for (const [key, column] of this.report.columns) {
 
 			timing.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
@@ -1669,19 +1983,98 @@ ReportVisualization.types.set('livenumber', class LiveNumberOptions extends Repo
 			`);
 		}
 
+		if (this.visualization.options) {
+			timing.value = this.visualization.options.timingColumn;
+			value.value = this.visualization.options.valueColumn;
+			this.form.querySelector('select[name=invertValues]').value = this.visualization.options.invertValues;
+			this.form.querySelector('input[name=prefix]').value = this.visualization.options.prefix;
+			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
+
+			for (let box of this.visualization.options.boxes) {
+				container.appendChild(this.box(box));
+			}
+		}
+
+		container.querySelector('.add-box').on('click', () => {
+			container.appendChild(this.box());
+		});
+
 		return container;
 	}
 
 	get json() {
 
-		return {
-			timing: this.form.querySelector('select[name=timing]').value,
-			value: this.form.querySelector('select[name=value]').value,
-			history: this.form.querySelector('select[name=history]').value,
-			invertColor: this.form.querySelector('select[name=invertColor]').value,
+		let config = {
+			timingColumn: this.form.querySelector('select[name=timing]').value,
+			valueColumn: this.form.querySelector('select[name=value]').value,
+			invertValues: parseInt(this.form.querySelector('select[name=invertValues]').value),
 			prefix: this.form.querySelector('input[name=prefix]').value,
 			postfix: this.form.querySelector('input[name=postfix]').value,
+		};
+
+		config.boxes = [];
+
+		for (let box of this.form.querySelectorAll('.subform')) {
+			config.boxes.push({
+				offset: box.querySelector('input[name=offset]').value,
+				relativeValTo: box.querySelector('input[name=relativeValTo]').value,
+				row: box.querySelector('input[name=row]').value,
+				column: box.querySelector('input[name=column]').value,
+				rowspan: box.querySelector('input[name=rowspan]').value,
+				columnspan: box.querySelector('input[name=columnspan]').value
+			});
 		}
+
+		return config;
+	}
+
+	box(boxValues = {}) {
+		const boxConfig = document.createElement('div');
+
+		boxConfig.classList.add('subform', 'form');
+
+		boxConfig.innerHTML = `
+				<label>
+					<span>Offset</span>
+					<input type="text" name="offset">
+				</label>
+
+				<label>
+					<span>Relative To(Index)</span>
+					<input type="text" name="relativeValTo">
+				</label>
+
+				<label>
+					<span>Column</span>
+					<input type="text" name="column">
+				</label>
+
+				<label>
+					<span>Row</span>
+					<input type="text" name="row">
+				</label>
+
+				<label>
+					<span>Column Span</span>
+					<input type="text" name="columnspan">
+				</label>
+
+				<label>
+					<span>Row Span</span>
+					<input type="text" name="rowspan">
+				</label>
+			`;
+
+		if (boxValues) {
+			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
+			boxConfig.querySelector('input[name=relativeValTo]').value = boxValues.relativeValTo;
+			boxConfig.querySelector('input[name=row]').value = boxValues.row;
+			boxConfig.querySelector('input[name=column]').value = boxValues.column;
+			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan;
+			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan;
+		}
+
+		return boxConfig;
 	}
 });
 

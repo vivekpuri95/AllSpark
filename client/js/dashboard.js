@@ -50,7 +50,10 @@ Page.class = class Dashboards extends Page {
 		this.render();
 		this.renderList();
 
-		if(id && this.list.has(id) && window.location.pathname.includes('dashboard'))
+		if(window.location.pathname.endsWith('first') && this.list.size)
+			Array.from(this.list.values())[0].load();
+
+		else if(id && this.list.has(id) && window.location.pathname.includes('dashboard'))
 			await this.list.get(id).load();
 
 		else if(id && window.location.pathname.includes('report'))
@@ -329,6 +332,42 @@ class Dashboard {
 			if(Dashboard.editing)
 				edit.click();
 		}
+
+		const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
+		exportButton.classList.remove('hidden');
+
+		exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
+
+		exportButton.on('click', Dashboard.toolbar.exportListener = () => {
+			const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.export));
+
+			const downloadAnchor = document.createElement('a');
+			downloadAnchor.setAttribute('href', jsonFile);
+			downloadAnchor.setAttribute('download', 'dashboard.json');
+			downloadAnchor.click();
+		});
+	}
+
+	get export() {
+
+		const data = {
+			dashboard: {
+				name: this.name,
+				parent: this.parent,
+				type: this.type,
+				icon: this.icon,
+				status: this.status,
+				roles: this.roles,
+				format: this.format
+			},
+			query: []
+		};
+
+		for (const report of this.format.reports){
+			data.query.push(DataSource.list.get(report.query_id));
+		}
+
+		return data;
 	}
 
 	edit() {
@@ -694,14 +733,14 @@ class DashboardDatasets extends Map {
 
 		for(const report of this.dashboard.reports) {
 
-			for(const filter of report.filters || []) {
+			for(const filter of report.filters.values()) {
 
 				if(!filter.dataset)
 					continue;
 
 				if(!datasets[filter.dataset.id]) {
 					datasets[filter.dataset.id] = {
-						id: filter.dataset,
+						id: filter.dataset.id,
 						multiple: true,
 						placeholder: `dataset-${filter.dataset.id}`,
 					}
@@ -809,6 +848,18 @@ class DashboardDatasets extends Map {
 
 			for(const dataset of container.querySelectorAll('label.hidden'))
 				dataset.classList.remove('hidden');
+		});
+
+		container.on('mouseenter', () => {
+			container.classList.add('show');
+		});
+
+		container.on('mouseleave', () => {
+
+			if(DashboardDatasets.timeout)
+				clearTimeout(DashboardDatasets.timeout);
+
+			DashboardDatasets.timeout = setTimeout(() => container.classList.remove('show'), 500);
 		});
 	}
 

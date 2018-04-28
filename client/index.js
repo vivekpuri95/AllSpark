@@ -26,8 +26,8 @@ router.get('/login', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('css/login.css');
-	template.scripts.push('js/login.js');
+	template.stylesheets.push('/css/login.css');
+	template.scripts.push('/js/login.js');
 
 	response.send(template.body(`
 
@@ -272,6 +272,13 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 						Edit
 					</button>
 				</label>
+
+				<label>
+					<button id="export-dashboard" class="hidden">
+						<i class="fa fa-download"></i>
+						Export
+					</button>
+				</label>
 			</div>
 
 			<div class="datasets form"></div>
@@ -299,6 +306,11 @@ router.get('/dashboards/:id?', (request, response) => {
 				<button type="button" id="add-dashboard">
 					<i class="fa fa-plus"></i>
 					Add New Dashboard
+				</button>
+
+				<button type="button" id="import-dashboard">
+					<i class="fa fa-upload"></i>
+					Import
 				</button>
 			</form>
 
@@ -365,8 +377,8 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
-		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
@@ -460,6 +472,11 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 					</label>
 				</div>
 
+				<div id="transformations-container">
+					<span>Transformations</span>
+					<div id="transformations"></div>
+				</div>
+
 				<label>
 					<span>Category</span>
 					<select name="category_id"></select>
@@ -496,10 +513,14 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 
 				<label>
 					<span>Redis</span>
-					<select name="is_redis" required>
-						<option value="1">Enabled</option>
+
+					<select id=redis>
 						<option value="0">Disabled</option>
+						<option value="EOD">EOD</option>
+						<option value="custom">Custom<custom>
 					</select>
+
+					<input name="is_redis" class= "hidden" value="0" min="1">
 				</label>
 
 				<label>
@@ -1019,7 +1040,7 @@ class Template {
 
 	body(main) {
 
-		this.stylesheets.push('/css/purple.css');
+		this.stylesheets.push('/css/dark.css');
 
 		return `<!DOCTYPE html>
 			<html lang="en">

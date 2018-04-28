@@ -113,7 +113,7 @@ Settings.list.set('datasets', class Datasets extends SettingPage {
 		container.textContent = null;
 
 		if (!this.list.size)
-			container.innerHTML = '<div class="NA">No rows found :(</div>'
+			container.innerHTML = '<tr class="NA"><td colspan="10">No rows found :(</td></tr>'
 
 		for (const dataset of this.list.values()) {
 			container.appendChild(dataset.row);
