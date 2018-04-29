@@ -784,7 +784,7 @@ class DataSource {
 		this.columns.update();
 		this.postProcessors.update();
 
-		this.columns.render();
+		this.render();
 	}
 
 	get container() {
@@ -1235,6 +1235,35 @@ class DataSource {
 
 		this.visualizations.selected.container.classList.add('hidden');
 	}
+
+	render() {
+
+		const drilldown = [];
+
+		for(const column of this.columns.values()) {
+
+			if(column.drilldown && column.drilldown.query_id)
+				drilldown.push(column.name);
+		}
+
+		if(drilldown.length) {
+
+			const
+				actions = this.container.querySelector('header .actions'),
+				old = actions.querySelector('.drilldown');
+
+			if(old)
+				old.remove();
+
+			actions.insertAdjacentHTML('afterbegin', `
+				<span class="grey drilldown" title="Drilldown available on: ${drilldown.join(', ')}">
+					<i class="fas fa-angle-double-down"></i>
+				</span>
+			`);
+		}
+
+		this.columns.render();
+	}
 }
 
 class DataSourceFilters extends Map {
@@ -1473,36 +1502,15 @@ class DataSourceColumns extends Map {
 
 	render() {
 
-		const
-			container = this.source.container.querySelector('.columns'),
-			drilldown = [];
+		const container = this.source.container.querySelector('.columns');
 
 		container.textContent = null;
 
-		for(const column of this.values()) {
-
+		for(const column of this.values())
 			container.appendChild(column.container);
-
-			if(column.drilldown && column.drilldown.query_id)
-				drilldown.push(column.name);
-		}
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
-
-		if(!drilldown.length)
-			return;
-
-		const
-			actions = this.source.container.querySelector('header .actions'),
-			old = actions.querySelector('.drilldown');
-
-		if(old)
-			old.remove();
-
-		actions.insertAdjacentHTML('afterbegin', `
-			<span class="grey"><i class="fas fa-angle-double-down"></i></span>
-		`);
 	}
 
 	get list() {
