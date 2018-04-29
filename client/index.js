@@ -424,6 +424,219 @@ router.get('/dashboards/:id?', (request, response) => {
 	`));
 });
 
+router.get('/reports-new/:stage/:id?', (request, response) => {
+
+	const template = new Template(request, response);
+
+	template.stylesheets.push('/css/reports-new.css');
+
+	template.scripts = template.scripts.concat([
+		'/js/reports-new.js',
+
+		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
+
+		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+
+		// 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+	]);
+
+	response.send(template.body(`
+
+		<div id="stage-switcher"></div>
+
+		<section class="section" id="stage-pick-report">
+
+			<form class="toolbar filters">
+
+				<button type="button" id="add-report">
+					<i class="fa fa-plus"></i>
+					Add New Report
+				</button>
+			</form>
+
+			<div id="list-container">
+				<table>
+					<thead>
+						<tr class="search"></tr>
+						<tr>
+							<th class="sort search" data-key="query_id">ID <i class="fa fa-sort"></th>
+							<th class="sort search" data-key="name" >Name <i class="fa fa-sort"></th>
+							<th class="sort search" data-key="description">Description <i class="fa fa-sort"></th>
+							<th class="sort search" data-key="connection">Connection  <i class="fa fa-sort"></th>
+							<th class="sort search" data-key="tags">Tags <i class="fa fa-sort"></th>
+							<th class="sort search" data-key="filters">Filters <i class="fa fa-sort"></th>
+							<th class="sort search" data-key="visualizations">Visualizations <i class="fa fa-sort"></th>
+							<th class="sort search" data-key="is_enabled">Enabled <i class="fa fa-sort"></th>
+							<th class="action">Configue</th>
+							<th class="action">Define</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="section" id="stage-configure-report">
+
+			<header class="toolbar">
+				<button type="submit" form="configure-report-form"><i class="fa fa-save"></i> Save</button>
+			</header>
+
+			<form class="form" id="configure-report-form">
+
+				<label>
+					<span>Name</span>
+					<input type="text" name="name">
+				</label>
+
+				<label>
+					<span>Connection</span>
+					<select name="connection_name" required></select>
+				</label>
+
+				<div id="query" class="hidden">
+					<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
+					<div id="schema"></div>
+					<div id="editor"></div>
+
+					<div id="test-container">
+						<div id="test-executing" class="hidden notice"></div>
+					</div>
+
+					<div id="missing-filters" class="hidden"></div>
+				</div>
+
+				<div id="api" class="hidden">
+
+					<label>
+						<span>URL</span>
+						<input type="url" name="url">
+					</label>
+
+					<label>
+						<span>Method</span>
+						<select name="method">
+							<option>GET</option>
+							<option>POST</option>
+						</select>
+					</label>
+				</div>
+
+				<div id="transformations-container">
+					<span>Transformations</span>
+					<div id="transformations"></div>
+				</div>
+
+				<label>
+					<span>Category</span>
+					<select name="category_id"></select>
+				</label>
+
+				<label>
+					<span>Description</span>
+					<textarea name="description"></textarea>
+				</label>
+
+				<label>
+					<span>Tags (Comma Separated)</span>
+					<input type="text" name="tags">
+				</label>
+
+				<label>
+					<span>Requested By</span>
+					<input type="text" name="requested_by">
+				</label>
+
+				<label>
+					<span>Roles</span>
+					<select required id="roles">
+						<option value="5">Core</option>
+						<option value="6">Core Ops</option>
+						<option value="7">City Ops</option>
+					</select>
+				</label>
+
+				<label>
+					<span>Refresh Rate (Seconds)</span>
+					<input type="number" name="refresh_rate" min="0" step="1">
+				</label>
+
+				<label>
+					<span>Redis</span>
+
+					<select id="redis">
+						<option value="0">Disabled</option>
+						<option value="EOD">EOD</option>
+						<option value="custom">Custom<custom>
+					</select>
+
+					<input name="is_redis" class="hidden" value="0" min="1">
+				</label>
+
+				<label>
+					<span>Status</span>
+					<select name="is_enabled" required>
+						<option value="1">Enabled</option>
+						<option value="0">Disabled</option>
+					</select>
+				</label>
+
+				<label style="max-width: 300px">
+					<span>Added By</span>
+					<span class="NA" id="added-by"></span>
+				</label>
+
+				<label>
+					<span>Format</span>
+					<textarea name="format"></textarea>
+				</label>
+			</form>
+		</section>
+
+		<section class="section" id="stage-define-report">
+
+			<header class="toolbar">
+				<button type="submit" form="configure-report-form"><i class="fa fa-save"></i> Save</button>
+			</header>
+
+			<form class="form" id="configure-report-form">
+
+				<div id="query" class="hidden">
+					<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
+					<div id="schema"></div>
+					<div id="editor"></div>
+					<div id="missing-filters" class="hidden"></div>
+				</div>
+
+				<div id="api" class="hidden">
+
+					<label>
+						<span>URL</span>
+						<input type="url" name="url">
+					</label>
+
+					<label>
+						<span>Method</span>
+						<select name="method">
+							<option>GET</option>
+							<option>POST</option>
+						</select>
+					</label>
+				</div>
+			</form>
+
+		</section>
+
+		<section class="section" id="stage-pick-visualization">pcik-visualization</section>
+
+		<section class="section" id="stage-visualization-transformations">visualization-transformations</section>
+
+		<section class="section" id="stage-configure-visualization">configure-visualization</section>
+	`));
+});
+
 router.get('/:type(reports|visualization)/:id?', (request, response) => {
 
 	const template = new Template(request, response);
@@ -443,6 +656,8 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 	]);
 
 	response.send(template.body(`
+
+		<div class="notice">Try out the <a href="/reports-new">new reports editor</a>!</div>
 
 		<section class="section" id="list">
 
