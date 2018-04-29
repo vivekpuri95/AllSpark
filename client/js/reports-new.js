@@ -491,6 +491,8 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 		this.form = this.container.querySelector('form');
 		this.form.save = this.container.querySelector('.toolbar button[type=submit]');
 
+		this.schemas = new Map;
+
 		this.editor = new Editor(this.form.querySelector('#editor'));
 
 		this.editor.editor.getSession().on('change', () => {
@@ -501,6 +503,28 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 			this.filterSuggestions();
 
 			this.form.save.classList.toggle('unsaved', this.editor.value != this.report.query);
+		});
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: () => this.update()
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: async () => {
+
+					await this.run();
+
+					this.editor.editor.resize();
+				}
+			});
 		});
 	}
 
@@ -519,12 +543,18 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
 		this.form.querySelector('#query').classList.toggle('hidden', connection.type == 'api');
 
+		this.form.reset();
+		this.form.save.classList.remove('unsaved');
+		this.editor.editor.focus();
+
 		for(const key in this.report) {
 			if(this.form.elements[key])
 				this.form.elements[key].value = this.report[key];
 		}
 
 		this.editor.value = this.report.query;
+
+		this.renderSource();
 	}
 
 	async update(e, report) {
@@ -579,6 +609,224 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 
 		else missingContainer.classList.add('hidden');
 	}
+
+	async renderSource() {
+
+		const source = this.page.connections.get(this.report.connection_name);
+
+		if(!source || !['mysql', 'pgsql'].includes(source.type)) {
+			this.form.querySelector('#query').classList.add('hidden');
+			this.form.querySelector('#api').classList.remove('hidden');
+		}
+
+		this.form.querySelector('#query').classList.remove('hidden');
+		this.form.querySelector('#api').classList.add('hidden');
+
+		if(this.schemas.has(this.report.connection_name))
+			return this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
+
+		let response = null;
+
+		const container = this.form.querySelector('#query #schema');
+
+		try {
+			response = await API.call('credentials/schema', { id: this.report.connection_name });
+		} catch(e) {
+			container.innerHTML = `<div class="NA">Failed to load Schema! :(</div>`;
+			return;
+		}
+
+		const
+			schema = mysqlKeywords.map(k => {return {
+				name: k,
+				value: k,
+				meta: 'MySQL Keyword',
+			}}),
+			databases = document.createElement('ul');
+
+		if(this.report) {
+
+			for(const filter of this.report.filters) {
+				schema.push({
+					name: filter.placeholder,
+					value: filter.placeholder,
+					meta: 'Report Filter',
+				});
+			}
+		}
+
+		container.textContent = null;
+
+		const search = document.createElement('input');
+
+		search.type = 'search';
+		search.placeholder = 'Search...';
+
+		search.on('keyup', () => renderList());
+
+		container.appendChild(search);
+
+		for(const database of response) {
+
+			schema.push({
+				name: database.name,
+				value: database.name,
+				meta: '(d)',
+			});
+
+			for(const table of database.tables) {
+
+				schema.push({
+					name: table.name,
+					value: table.name,
+					meta: '(t) ' + database.name,
+				});
+
+				for(const column of table.columns) {
+
+					schema.push({
+						name: column.name,
+						value: column.name,
+						meta: '(c) ' + table.name,
+					});
+				}
+			}
+		}
+
+		this.schemas.set(this.report.connection_name, schema);
+
+		container.appendChild(databases);
+
+		renderList();
+
+		function renderList() {
+
+			databases.textContent = null;
+
+			for(const database of response) {
+
+				const tables = document.createElement('ul');
+
+				if(!search.value)
+					tables.classList.add('hidden');
+
+				for(const table of database.tables) {
+
+					const columns = document.createElement('ul');
+
+					if(!search.value)
+						columns.classList.add('hidden');
+
+					for(const column of table.columns) {
+
+						if(search.value && !column.name.includes(search.value))
+							continue;
+
+						let name = column.name;
+
+						if(search.value) {
+							name = [
+								name.slice(0, name.indexOf(search.value)),
+								'<mark>',
+								search.value,
+								'</mark>',
+								name.slice(name.indexOf(search.value) + search.value.length)
+							].join('');
+						}
+
+						const li = document.createElement('li');
+
+						li.innerHTML = `
+							<span class="name">
+								<strong>C</strong>
+								<span>${name}</span>
+								<small>${column.type}</small>
+							</span>
+						`;
+
+						li.querySelector('span').on('click', () => {
+							Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
+						});
+
+						columns.appendChild(li);
+					}
+
+					const li = document.createElement('li');
+
+					if(!columns.children.length && !table.name.includes(search.value))
+						continue;
+
+					let name = table.name;
+
+					if(search.value && name.includes(search.value)) {
+						name = [
+							name.slice(0, name.indexOf(search.value)),
+							'<mark>',
+							search.value,
+							'</mark>',
+							name.slice(name.indexOf(search.value) + search.value.length)
+						].join('');
+					}
+
+					li.innerHTML = `
+						<span class="name">
+							<strong>T</strong>
+							<span>${name}</span>
+							<small>${table.columns.length} columns</small>
+						</span>
+					`;
+
+					li.appendChild(columns)
+
+					li.querySelector('span').on('click', () => {
+						li.classList.toggle('opened');
+						columns.classList.toggle('hidden')
+					});
+
+					tables.appendChild(li);
+				}
+
+				if(!tables.children.length && !database.name.includes(search.value))
+					continue;
+
+				const li = document.createElement('li');
+
+				let name = database.name;
+
+				if(search.value && name.includes(search.value)) {
+					name = [
+						name.slice(0, name.indexOf(search.value)),
+						'<mark>',
+						search.value,
+						'</mark>',
+						name.slice(name.indexOf(search.value) + search.value.length)
+					].join('');
+				}
+
+				li.innerHTML = `
+					<span class="name">
+						<strong>D</strong>
+						<span>${name}</span>
+						<small>${database.tables.length} tables</small>
+					</span>
+				`;
+
+				li.appendChild(tables)
+
+				li.querySelector('span').on('click', () => {
+					li.classList.toggle('opened');
+					tables.classList.toggle('hidden');
+				});
+
+				databases.appendChild(li);
+			}
+
+			if(!databases.children.length)
+				databases.innerHTML = `<div class="NA">No matches found! :(</div>`;
+		}
+
+		this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
+	}
 });
 
 ReportsManger.stages.set('pick-visualization', class PickReport extends ReportsMangerStage {
@@ -622,3 +870,32 @@ ReportsManger.stages.set('configure-visualization', class PickReport extends Rep
 
 	load() {}
 });
+
+const mysqlKeywords = [
+	'SELECT',
+	'FROM',
+	'WHERE',
+	'AS',
+	'AND',
+	'OR',
+	'IN',
+	'BETWEEN',
+	'DISTINCT',
+	'COUNT',
+	'GROUP BY',
+	'FORCE INDEX',
+	'DATE',
+	'MONTH',
+	'YEAR',
+	'YEARMONTH',
+	'UNIX_TIMESTAMP',
+	'CONCAT',
+	'CONCAT_WS',
+	'SUM',
+	'INTERVAL',
+	'DAY',
+	'MINUTE',
+	'SECOND',
+	'DATE_FORMAT',
+	'USING',
+];
