@@ -375,7 +375,7 @@ router.get('/dashboards/:id?', (request, response) => {
 			<h1>Share dashboards</h1>
 			
 			<div class="toolbar">
-				<button id="back"><i class="fa fa-arrow-left"></i>Back</button>
+				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 			</div>
 			
 			<table class="block">
