@@ -437,7 +437,7 @@ main #form #report-form {
 			background: #eef;
 		}
 			main .subform select[multiple] {
-				height:0 75px;
+				height: 75px;
 				padding: 0
 			}
 				main .subform select[multiple] option {
