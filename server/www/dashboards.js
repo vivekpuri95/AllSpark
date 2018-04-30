@@ -152,3 +152,29 @@ exports.update = class extends API {
 		);
 	}
 };
+
+exports.updateFormat = class extends API{
+
+	async updateFormat() {
+
+		let format;
+		try {
+
+			format =  JSON.parse(this.request.body.format);
+		}
+		catch (e) {
+			return
+		}
+
+		for(const report of format.reports){
+
+			await this.mysql.query(
+				`UPDATE tb_visualization_dashboard SET format = ? where id = ?`,
+				[report.format, report.id],
+				'write')
+		}
+
+		return 'format updated!';
+	}
+
+}
