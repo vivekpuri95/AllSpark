@@ -6,3 +6,6 @@ config/*
 node_modules/*
 *.iml
 package-lock.json
+env
+*.pyo
+*.pyc
