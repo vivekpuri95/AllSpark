@@ -31,7 +31,7 @@ class Authenticate {
                 		FROM
                 			tb_visualization_dashboard vd
                 		JOIN
-                			tb_user_dashboard ud 
+                			tb_user_dashboard ud
                 			USING(dashboard_id)
                 		JOIN
                 			tb_query_visualizations qv
@@ -103,7 +103,7 @@ class Authenticate {
                     tb_query q
                 JOIN
                 	(
-                		SELECT 
+                		SELECT
                 			d.id as dashboard, d.visibility
                 		FROM
                 			tb_dashboards d
@@ -117,23 +117,23 @@ class Authenticate {
                 		GROUP BY
                 			dashboard
                 	) d
-                	
+
                 LEFT JOIN
-                     tb_user_query uq 
+                     tb_user_query uq
                 ON
                      uq.query_id = q.query_id
                      AND user_id = ?
                 WHERE
-                	d.id = ?
+                	d.dashboard = ?
                     AND q.query_id IN (
                     	SELECT
-                    		qv.query_id 
+                    		qv.query_id
                     	FROM
                     		tb_visualization_dashboard vd
                     	JOIN
                     		tb_query_visualizations qv
                     		using(visualization_id)
-                    	WHERE 
+                    	WHERE
                     		dashboard_id = ?
                     )
                     AND is_enabled = 1
@@ -141,7 +141,7 @@ class Authenticate {
                     AND account_id = ?
 			`,
 				[userObj.user_id, userObj.user_id, dashboardQueryList, userObj.user_id,
-					dashboardQueryList, userObj.account_id
+					dashboardQueryList,dashboardQueryList, userObj.account_id
 				]
 			);
 		}

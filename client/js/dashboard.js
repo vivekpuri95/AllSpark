@@ -383,26 +383,6 @@ class Dashboard {
 
 		edit.on('click', Dashboard.toolbar.editListener = () => this.save());
 
-		Dashboard.container.insertAdjacentHTML('beforeend', `
-			<section class="data-source add-new" style="order: ${this.page.list.selectedReports.size};">
-				Add New Report
-			</section>
-		`);
-
-		Dashboard.container.querySelector('.data-source.add-new').on('click', async () => {
-
-			const query_id = parseInt(window.prompt('Enter the report ID'));
-
-			if(!query_id || !DataSource.list.has(query_id))
-				return;
-
-			this.format.reports.push({
-				query_id: parseInt(query_id),
-			});
-
-			this.load();
-		});
-
 		for(const report of this.page.list.selectedReports) {
 
 			const
@@ -607,7 +587,7 @@ class Dashboard {
 				method: 'POST',
 			};
 
-		await API.call('dashboards/updateFormat', parameters, options);
+		await API.call('dashboards/update', parameters, options);
 
 		await this.page.list.get(this.id).load();
 	}
@@ -848,18 +828,6 @@ class DashboardDatasets extends Map {
 
 			for(const dataset of container.querySelectorAll('label.hidden'))
 				dataset.classList.remove('hidden');
-		});
-
-		container.on('mouseenter', () => {
-			container.classList.add('show');
-		});
-
-		container.on('mouseleave', () => {
-
-			if(DashboardDatasets.timeout)
-				clearTimeout(DashboardDatasets.timeout);
-
-			DashboardDatasets.timeout = setTimeout(() => container.classList.remove('show'), 500);
 		});
 	}
 

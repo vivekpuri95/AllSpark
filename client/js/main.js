@@ -2803,7 +2803,8 @@ class LinearVisualization extends Visualization {
 
 	draw() {
 
-		this.source.response;
+		if(!this.source.response || !this.source.response.length)
+			return this.source.error('No data found! :(');
 
 		if(!this.axes)
 			return this.source.error('Axes not defined! :(');
@@ -3883,18 +3884,23 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.innerTickSize(-this.width)
 				.orient('left');
 
-		let max = 0;
+		let
+			max = 0,
+			min = 0;
 
 		for(const row of this.rows) {
 
 			for(const [key, value] of row) {
 
-				if(this.axes.left.columns.some(c => c.key == key))
-					max = Math.max(max, Math.ceil(value) || 0)
+				if(!this.axes.left.columns.some(c => c.key == key))
+					continue;
+
+				max = Math.max(max, Math.ceil(value) || 0);
+				min = Math.min(min, Math.ceil(value) || 0);
 			}
 		}
 
-		this.y.domain([0, max]);
+		this.y.domain([min, max]);
 
 		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangeBands([0, this.width], 0.1, 0);
@@ -3965,16 +3971,16 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		if(!resize) {
 
 			bars = bars
+				.attr('y', cell => this.y(0))
 				.attr('height', () => 0)
-				.attr('y', () => this.height)
 				.transition()
 				.duration(Visualization.animationDuration)
 				.ease('quad-in');
 		}
 
 		bars
-			.attr('height', cell => this.height - this.y(cell.y))
-			.attr('y', cell => this.y(cell.y));
+			.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0))
+			.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
 	}
 });
 

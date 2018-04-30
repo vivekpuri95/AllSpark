@@ -1820,7 +1820,7 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>Position</span>
-				<input name='position' value="${this.format.reports[0].format.position}">
+				<input type="number" name='position' value="${this.format.reports[0].format.position || ''}">
 			</label>
 
 			<label>
