@@ -597,8 +597,8 @@ class download extends API {
 
 		const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
 
-		//this.response.sendFile(data.body.response);
-		return fs.readFileSync(data.body.response, "utf8");
+		this.response.sendFile(data.body.response);
+		throw({"pass": true})
 
 	}
 

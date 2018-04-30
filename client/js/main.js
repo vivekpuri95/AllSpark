@@ -918,7 +918,7 @@ class DataSource {
 
 		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
 		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
-		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
+		container.querySelector('.menu .xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
 
 		if(user.privileges.has('report')) {
 
@@ -1106,17 +1106,17 @@ class DataSource {
 		}
 
 		else if(what.mode == 'xlsx') {
-			debugger;
-			const obj = {};
-			obj.columns = [...this.columns.entries()].map(x => x[0]);
-			obj.left = ((this.visualizations.selected.options.axes || {}).left || {columns: [0]}).columns[0].key;
-			obj.right = ((this.visualizations.selected.options.axes || {}).right || {columns: [0]}).columns[0].key;
-			obj.top = ((this.visualizations.selected.options.axes || {}).top || {columns: [0]}).columns[0].key;
-			obj.bottom = ((this.visualizations.selected.options.axes || {}).bottom || {columns: [0]}).columns[0].key;
-			obj.visualization = this.visualizations.selected.type;
-			obj.sheet_name = this.name;
-			obj.file_name = this.name;
-			await this.excelSheetDownloader(this.originalResponse.data, obj);
+			const obj = {
+				columns		 :[...this.columns.entries()].map(x => x[0]),
+				left		 :((this.visualizations.selected.options.axes || {}).left   || {columns: [0]}).columns[0].key,
+				right		 :((this.visualizations.selected.options.axes || {}).right  || {columns: [0]}).columns[0].key,
+				top			 :((this.visualizations.selected.options.axes || {}).top    || {columns: [0]}).columns[0].key,
+				bottom		 :((this.visualizations.selected.options.axes || {}).bottom || {columns: [0]}).columns[0].key,
+				visualization:this.visualizations.selected.type,
+				sheet_name	 :this.name.split(" ").join("_"),
+				file_name	 :this.name.split(" ").join("_"),
+			};
+			return await this.excelSheetDownloader(this.originalResponse.data, obj);
 		}
 
 		else {
@@ -1162,6 +1162,7 @@ class DataSource {
 		obj.data = data
 		const xlsxBlobOutput = await DataSource.postData("/api/v2/reports/engine/download", obj);
 
+
 		const link = document.createElement('a');
 		link.href = window.URL.createObjectURL(xlsxBlobOutput);
 		link.download = obj.file_name + "_" + new Date().getTime() + ".xlsx";
@@ -1169,9 +1170,9 @@ class DataSource {
 	}
 
 
-	static postData(url, data) {
+	static async postData(url, data) {
 
-		return fetch(url, {
+		return await (await (fetch(url, {
 			body: JSON.stringify(data),
 			cache: 'no-cache',
 			credentials: 'same-origin',
@@ -1183,8 +1184,8 @@ class DataSource {
 			mode: 'cors',
 			redirect: 'follow',
 			referrer: 'no-referrer',
-		})
-			.then(response => response.blob());
+		}))).blob();
+
 	}
 
 

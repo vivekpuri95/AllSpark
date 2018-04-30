@@ -1,9 +1,11 @@
-from ..utils.API import API
-from flask import Blueprint
-from ..utils.common_functions import guess_excel_col_name
-import pandas as pd
-from vincent.colors import brews
 import os
+
+import pandas as pd
+from flask import Blueprint
+from vincent.colors import brews
+
+from ..utils.API import API
+from ..utils.common_functions import guess_excel_col_name
 
 
 class XLSX(API, object):
@@ -80,8 +82,8 @@ class XLSX(API, object):
         start_row = 0
 
         for d in data_obj:
-            excel_file = d["file_name"]
-            writer = pd.ExcelWriter(excel_file, engine='xlsxwriter')
+            excel_file = os.getcwd() + "/excel_exports/" + d["file_name"] + '.xlsx'
+            writer = pd.ExcelWriter(excel_file, engine='xlsxwriter', )
             data = self.format_data(d["series"])
             col = data[1]
             data = data[0]
@@ -129,7 +131,8 @@ class XLSX(API, object):
                 refined_data = refined_data.set_index(c["x"].get("name", "x"))
 
                 if fuse_to_break_printing_same_data == 0 and c["type"].get("type", "") != "pie":
-                    data.set_index(c["x"].get("name", "x")).to_excel(writer, sheet_name=d["sheet_name"], startrow=start_row)
+                    data.set_index(c["x"].get("name", "x")).to_excel(writer, sheet_name=d["sheet_name"],
+                                                                     startrow=start_row)
 
                 elif fuse_to_break_printing_same_data == 0 and c["type"].get("type", "") == "pie":
                     refined_data.to_excel(writer, sheet_name=d["sheet_name"], startrow=start_row)
@@ -141,7 +144,7 @@ class XLSX(API, object):
                 start_row += len(refined_data) + 13
                 fuse_to_break_printing_same_data += 1
 
-        return os.getcwd() + "/" + excel_file
+        return excel_file
 
 
 xlsx = Blueprint("xlsx", __name__)
