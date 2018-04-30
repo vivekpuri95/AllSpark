@@ -125,16 +125,11 @@ class Reports extends Page {
 		if(Reports.response && !force)
 			return;
 
-		if(Reports.dashboard_list)
-			return;
-
 		[Reports.response, Reports.datasets, Reports.credentials] = await Promise.all([
 			API.call('reports/report/list'),
 			API.call('datasets/list'),
 			API.call('credentials/list'),
 		]);
-
-		Reports.dashboard_list = await API.call('dashboards/list');
 	}
 
 	static process() {
@@ -1316,9 +1311,6 @@ class ReportVisualization {
 
 		if(this.optionsForm)
 			options.appendChild(this.optionsForm.form);
-
-		if(this.dashboardForm)
-			options.appendChild(this.dashboardForm.form);
 	}
 
 	async loadPreview() {
@@ -1347,9 +1339,6 @@ class ReportVisualization {
 
 		if(this.optionsForm)
 			this.optionsForm.report = report;
-
-		if(this.dashboardForm)
-			this.dashboardForm.report = report;
 
 		await report.visualizations.selected.load();
 	}
