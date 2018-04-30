@@ -58,7 +58,7 @@ button > svg {
 
 input[type=submit] {
 	background: var(--color-accent);
-	color: var(--color-accent-text) !important;
+	color: var(--color-accent-text) ;
 	letter-spacing: 1px;
 }
 

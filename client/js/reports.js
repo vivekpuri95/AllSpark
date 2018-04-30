@@ -1572,7 +1572,9 @@ class ReportVisualization {
 
 		this.optionsForm = null;
 
-		if(ReportVisualization.types.has(this.type))
+		this.dashboards = new ReportVisualizationDashboards(this)
+
+    if(ReportVisualization.types.has(this.type))
 			this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
 	}
 
@@ -1618,6 +1620,10 @@ class ReportVisualization {
 		const options = form.querySelector('.options');
 
 		options.textContent = null;
+
+		await this.dashboards.load();
+
+		this.dashboards.render();
 
 		if(this.optionsForm)
 			options.appendChild(this.optionsForm.form);
@@ -1669,6 +1675,9 @@ class ReportVisualization {
 		if(this.optionsForm)
 			parameters.options = JSON.stringify(this.optionsForm.json);
 
+		if(this.optionsForm)
+			parameters.options = JSON.stringify(this.optionsForm.json);
+
 		await API.call('reports/visualizations/update', parameters, options);
 
 		await Reports.load(true);
@@ -1698,6 +1707,175 @@ class ReportVisualization {
 		await Reports.load(true);
 
 		Reports.list.get(this.visualizations.report.id).edit();
+	}
+}
+
+class ReportVisualizationDashboards {
+
+	constructor(visualization) {
+		this.visualization = visualization;
+		this.list = [];
+	}
+
+	async load() {
+
+		const response = await API.call('dashboards/list');
+
+		Reports.dashboards = new Set;
+
+
+		Reports.dashboards_options = [];
+
+		for(const dashboard of response) {
+			Reports.dashboards_options.push(`
+				<option value=${dashboard.id}>${dashboard.name} ${dashboard.parent? `(parent: ${response.filter(a=> a.id == dashboard.parent)[0].name})` : ''}</option>
+			`);
+		}
+
+		for(const dashboard of response) {
+			Reports.dashboards.add(new ReportVisualizationDashboard(dashboard, this.visualization))
+		}
+	}
+
+	render() {
+
+		if(!ReportVisualizations.preview.querySelector('.dashboard-present'))
+			ReportVisualizations.preview.insertAdjacentHTML('beforeend','<div class="dashboard-present"><h4>Dashboards</h4><div class="dashbpard_container"></div></div>');
+
+		ReportVisualizations.dashboard_container = ReportVisualizations.preview.querySelector('.dashboard-present .dashbpard_container');
+		ReportVisualizations.dashboard_container.textContent = null;
+		for(const dashboard of Reports.dashboards.values()) {
+			for(const report of dashboard.format.reports) {
+				if(this.visualization.visualization_id == report.visualization_id) {
+					this.list.push(report);
+					ReportVisualizations.dashboard_container.appendChild(dashboard.form);
+				}
+			}
+		}
+
+		const form = document.createElement('form');
+		form.classList.add('subform');
+		form.setAttribute('id', 'add-dashboard')
+		form.innerHTML = `
+			<label>
+				<span>Dashboard</span>
+				<select name="dashboard_id">
+				</select>
+			</label>
+
+			<label>
+				<span>Position</span>
+				<input name="position" type="number">
+			</label>
+
+			<label>
+				<button type='submit'><i class="fa fa-plus"></i>Add</button>
+			</label>
+		`;
+
+		form.dashboard_id.innerHTML = Reports.dashboards_options.join('');
+
+		form.on('submit', (e) => ReportVisualizationDashboards.insert(e,this));
+		ReportVisualizations.dashboard_container.appendChild(form);
+	}
+
+	static async insert(e, visualization) {
+		e.preventDefault();
+
+		const option = {
+			method: 'POST',
+		}
+
+		const parameters = {
+			dashboard_id: ReportVisualizations.dashboard_container.querySelector('#add-dashboard').dashboard_id.value,
+			visualization_id: visualization.visualization.visualization_id,
+			format: JSON.stringify({position: ReportVisualizations.dashboard_container.querySelector('#add-dashboard').position.value})
+		}
+
+		await API.call('reports/dashboard/insert', parameters, option);
+		await visualization.visualization.dashboards.load();
+		visualization.visualization.dashboards.render();
+	}
+}
+
+class ReportVisualizationDashboard {
+
+	constructor(dashboard, visualization) {
+
+		this.visualization = visualization;
+		for(const key in dashboard)
+			this[key] = dashboard[key];
+	}
+
+	get form() {
+
+		const form = document.createElement('form');
+		form.classList.add('subform');
+		form.innerHTML = `
+			<label>
+				<span>Dashboard</span>
+				<select name='dashboard_id'>
+				</select>
+			</label>
+
+			<label>
+				<span>Position</span>
+				<input name='position' value="${this.format.reports[0].format.position}">
+			</label>
+
+			<label>
+				<button type="submit"><i class="fa fa-save"></i>Save</button>
+			</label>
+
+			<label>
+				<button class="delete"><i class="far fa-trash-alt"></i>Delete</button>
+			</label>
+		`;
+
+		form.dashboard_id.innerHTML = Reports.dashboards_options.join('');
+
+		form.dashboard_id.value = this.format.reports[0].dashboard_id;
+
+		form.querySelector('.delete').on('click', async (e) => {
+
+			e.preventDefault();
+			if(!confirm('Are you sure?'))
+				return;
+
+			const option = {
+				method: 'POST',
+			}
+
+			const parameters = {
+				id: this.format.reports[0].id,
+			}
+
+			await API.call('reports/dashboard/delete', parameters, option);
+			await this.visualization.dashboards.load();
+			await this.visualization.dashboards.render();
+		});
+
+		form.on('submit', async (e) => {
+			e.preventDefault();
+			const option = {
+				method: 'POST',
+			}
+
+			this.format.reports[0].format.position = form.position.value;
+
+			const parameters = {
+				id: this.format.reports[0].id,
+				dashboard_id: form.dashboard_id.value,
+				visualization_id: this.visualization.visualization_id,
+				format: JSON.stringify(this.format.reports[0].format)
+			}
+
+			await API.call('reports/dashboard/update', parameters, option);
+			await this.visualization.dashboards.load();
+			await this.visualization.dashboards.render();
+
+		})
+		return form;
 	}
 }
 
@@ -1732,7 +1910,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const axes = container.querySelector('.axes');
 
-		for(const axis of this.visualization.options ? this.visualization.options.axes : [])
+		for(const axis of this.visualization.options.axes ? this.visualization.options.axes : [])
 			axes.appendChild(this.axis(axis));
 
 		container.querySelector('.add-axis').on('click', () => {
@@ -1745,7 +1923,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	get json() {
 
 		const response = {
-			axes: []
+			axes: [],
 		};
 
 		for(const axis of this.formContainer.querySelectorAll('.axis')) {

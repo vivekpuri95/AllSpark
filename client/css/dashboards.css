@@ -26,3 +26,26 @@ main #form .report {
 				height: 500px;
 				margin: 0;
 			}
+
+main table tr td select {
+	width: 30%;
+	margin-left: 35%;
+}
+
+main table tr td button {
+
+	border: none;
+	margin-left: 15px;
+	background: var(--color-row-hover);
+}
+main table tr td button > svg {
+
+	margin-right: 0px;
+}
+
+main table tfoot td{
+
+	position: sticky;
+	bottom: 0;
+	background: var(--color-row-hover)
+}
