@@ -12,9 +12,29 @@ class Authenticate {
 			reportObject = await mysql.query(`
                 SELECT
                   q.*,
-                  IF(user_id IS NULL, 0, 1) AS flag	
+                  IF(user_id IS NULL AND d.query_id is null, 0, 1) AS flag
                 FROM
                     tb_query q
+                JOIN
+          			(
+                		SELECT
+                			query_id
+                		FROM
+                			tb_visualization_dashboard vd
+                		JOIN
+                			tb_user_dashboard ud 
+                			USING(dashboard_id)
+                		JOIN
+                			tb_query_visualizations qv
+                			USING(visualization_id)
+                		WHERE
+                			user_id = ?
+                			AND query_id = ?
+                		UNION ALL
+                		SELECT
+                			NULL AS query_id
+                		LIMIT 1
+                	) d
                 LEFT JOIN
                      tb_user_query uq ON
                      uq.query_id = q.query_id
@@ -25,7 +45,7 @@ class Authenticate {
                     AND is_deleted = 0
                     AND account_id = ?
                 `,
-				[userJWTObject.user_id, reportObject, accountId]);
+				[userJWTObject.user_id, reportObject, userJWTObject.user_id, reportObject, accountId]);
 
 			if (!reportObject.length && reportObject.length > 1) {
 
