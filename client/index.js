@@ -438,7 +438,7 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
 		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
-		// 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
 
 	response.send(template.body(`
@@ -598,34 +598,125 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 		<section class="section" id="stage-define-report">
 
 			<header class="toolbar">
-				<button type="submit" form="configure-report-form"><i class="fa fa-save"></i> Save</button>
+				<button type="submit" form="define-report-form"><i class="fa fa-save"></i> Save</button>
+				<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
+				<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
 			</header>
 
-			<form class="form" id="configure-report-form">
+			<div id="define-report-parts">
+				<div id="schema" class="hidden"></div>
 
-				<div id="query" class="hidden">
-					<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
-					<div id="schema"></div>
-					<div id="editor"></div>
-					<div id="missing-filters" class="hidden"></div>
+				<form id="define-report-form">
+
+					<div id="query" class="hidden">
+						<div id="editor"></div>
+					</div>
+
+					<div id="api" class="hidden">
+
+						<label>
+							<span>URL</span>
+							<input type="url" name="url">
+						</label>
+
+						<label>
+							<span>Method</span>
+							<select name="method">
+								<option>GET</option>
+								<option>POST</option>
+							</select>
+						</label>
+					</div>
+				</form>
+
+				<div id="filters" class="hidden">
+
+					<div id="filter-list">
+
+						<div class="toolbar">
+							<button id="add-filter"><i class="fas fa-plus"></i> Add New Filter</button>
+						</div>
+
+						<div id="missing-filters" class="hidden"></div>
+
+						<table>
+							<thead>
+								<tr>
+									<th>Name</th>
+									<th>Placeholder</th>
+									<th>Type</th>
+									<th>Dataset</th>
+									<th class="action">Edit</th>
+									<th class="action">Delete</th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+
+					<div id="filter-form" class="hidden">
+
+						<div class="toolbar">
+							<button id="filter-back"><i class="fa fa-arrow-left"></i> Back</button>
+							<button type="submit" form="filter-form-f"><i class="fa fa-save"></i> Save</button>
+						</div>
+
+						<form id="filter-form-f" class="form">
+
+							<label>
+								<span>Name</span>
+								<input type="text" name="name" required>
+							</label>
+
+							<label>
+								<span>Placeholder</span>
+								<input type="text" name="placeholder" required>
+							</label>
+
+							<label>
+								<span>Type</span>
+								<select name="type" required>
+									<option value="0">Integer</option>
+									<option value="1">String</option>
+									<option value="2">Date</option>
+									<option value="3">Month</option>
+									<option value="4">city</option>
+								</select>
+							</label>
+
+							<label>
+								<span>Description</span>
+								<input type="text" name="description">
+							</label>
+
+							<label>
+								<span>Default Value</span>
+								<input type="text" name="default_value">
+							</label>
+
+							<label>
+								<span>Offset</span>
+								<input type="text" name="offset">
+							</label>
+
+							<label>
+								<span>Dataset</span>
+								<select name="dataset">
+									<option value="">None</option>
+								</select>
+							</label>
+
+							<label>
+								<span>Multiple</span>
+								<select name="multiple" required>
+									<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
+									<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
+								</select>
+							</label>
+						</form>
+					</div>
 				</div>
-
-				<div id="api" class="hidden">
-
-					<label>
-						<span>URL</span>
-						<input type="url" name="url">
-					</label>
-
-					<label>
-						<span>Method</span>
-						<select name="method">
-							<option>GET</option>
-							<option>POST</option>
-						</select>
-					</label>
-				</div>
-			</form>
+			</div>
 
 		</section>
 
@@ -634,6 +725,8 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 		<section class="section" id="stage-visualization-transformations">visualization-transformations</section>
 
 		<section class="section" id="stage-configure-visualization">configure-visualization</section>
+
+		<div id="preview"></div>
 	`));
 });
 

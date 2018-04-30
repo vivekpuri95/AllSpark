@@ -1574,7 +1574,7 @@ class ReportVisualization {
 
 		this.dashboards = new ReportVisualizationDashboards(this)
 
-    if(ReportVisualization.types.has(this.type))
+		if(ReportVisualization.types.has(this.type))
 			this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
 	}
 

@@ -5,6 +5,7 @@ class ReportsManger extends Page {
 		super(page, key);
 
 		this.stages = new Map;
+		this.preview = new ReportsMangerPreview(this);
 
 		this.setup();
 
@@ -57,6 +58,53 @@ class ReportsManger extends Page {
 
 		if(stage)
 			stage.select();
+
+		else {
+
+			stage = this.stages.get('pick-report');
+
+			history.replaceState({}, '', `/reports-new/${stage.url}`);
+
+			stage.select();
+		}
+	}
+}
+
+class ReportsMangerPreview {
+
+	constructor(page) {
+
+		this.page = page;
+		this.container = this.page.container.querySelector('#preview');
+	}
+
+	async load(options = {}) {
+
+		this.container.textContent = null;
+		this.container.classList.add('hidden');
+
+		this.report = parseInt(window.location.pathname.split('/').pop());
+
+		if(!this.report || !DataSource.list.has(this.report))
+			return this.report = false;
+
+		this.report = JSON.parse(JSON.stringify(DataSource.list.get(this.report)));
+
+		this.report.visualizations = this.report.visualizations.filter(f => f.type == 'table');
+
+		if(options.query) {
+			this.report.query = options.query;
+			this.report.queryOverride = true;
+		}
+
+		this.report = new DataSource(this.report);
+
+		this.report.container.querySelector('header').classList.add('hidden');
+
+		this.container.appendChild(this.report.container);
+		this.container.classList.remove('hidden');
+
+		await this.report.visualizations.selected.load();
 	}
 }
 
@@ -414,7 +462,7 @@ ReportsManger.stages.set('configure-report', class PickReport extends ReportsMan
 		this.report = DataSource.list.get(this.report);
 
 		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.update(e, this.report));
+		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
@@ -445,13 +493,13 @@ ReportsManger.stages.set('configure-report', class PickReport extends ReportsMan
 		}
 	}
 
-	async update(e, report) {
+	async update(e) {
 
 		e.preventDefault();
 
 		const
 			parameters = {
-				query_id: report.query_id,
+				query_id: this.report.query_id,
 				roles: Array.from(this.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
 			},
 			options = {
@@ -491,7 +539,30 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 		this.form = this.container.querySelector('form');
 		this.form.save = this.container.querySelector('.toolbar button[type=submit]');
 
+		this.filterForm = this.container.querySelector('#filters form');
+
 		this.schemas = new Map;
+
+		const schemaToggle = this.container.querySelector('#schema-toggle')
+
+		schemaToggle.on('click', () => {
+			schemaToggle.classList.toggle('selected');
+			this.container.querySelector('#schema').classList.toggle('hidden');
+		});
+
+		const filtersToggle = this.container.querySelector('#filters-toggle')
+
+		filtersToggle.on('click', () => {
+			filtersToggle.classList.toggle('selected');
+			this.container.querySelector('#filters').classList.toggle('hidden');
+		});
+
+		this.container.querySelector('#add-filter').on('click', () => this.addFilter());
+
+		this.container.querySelector('#filter-back').on('click', () => {
+			this.container.querySelector('#filter-form').classList.add('hidden');
+			this.container.querySelector('#filter-list').classList.remove('hidden');
+		});
 
 		this.editor = new Editor(this.form.querySelector('#editor'));
 
@@ -511,7 +582,14 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 			this.editor.editor.commands.addCommand({
 				name: 'save',
 				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: () => this.update()
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
 			});
 
 			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
@@ -520,10 +598,14 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
 				exec: async () => {
 
-					await this.run();
+					const options = {
+						query: this.editor.editor.getSelectedText() || this.editor.value,
+					};
+
+					await this.page.preview.load(options);
 
 					this.editor.editor.resize();
-				}
+				},
 			});
 		});
 	}
@@ -543,6 +625,9 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
 		this.form.querySelector('#query').classList.toggle('hidden', connection.type == 'api');
 
+		this.form.removeEventListener('submit', this.form.listener);
+		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
+
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
 		this.editor.editor.focus();
@@ -554,16 +639,22 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 
 		this.editor.value = this.report.query;
 
-		this.renderSource();
+		this.schema();
+		this.filters();
+		this.page.preview.load();
+
+		this.container.querySelector('#filter-form').classList.add('hidden');
+		this.container.querySelector('#filter-list').classList.remove('hidden');
 	}
 
-	async update(e, report) {
+	async update(e) {
 
-		e.preventDefault();
+		if(e && e.preventDefault)
+			e.preventDefault();
 
 		const
 			parameters = {
-				query_id: report.query_id,
+				query_id: this.report.query_id,
 				query: this.editor.value,
 				url_options: JSON.stringify({method: this.form.method.value}),
 				url: this.form.url.value,
@@ -610,7 +701,7 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 		else missingContainer.classList.add('hidden');
 	}
 
-	async renderSource() {
+	async schema() {
 
 		const source = this.page.connections.get(this.report.connection_name);
 
@@ -627,7 +718,7 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 
 		let response = null;
 
-		const container = this.form.querySelector('#query #schema');
+		const container = this.container.querySelector('#schema');
 
 		try {
 			response = await API.call('credentials/schema', { id: this.report.connection_name });
@@ -657,7 +748,9 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 
 		container.textContent = null;
 
-		const search = document.createElement('input');
+		const
+			search = document.createElement('input'),
+			that = this;
 
 		search.type = 'search';
 		search.placeholder = 'Search...';
@@ -745,7 +838,7 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 						`;
 
 						li.querySelector('span').on('click', () => {
-							Report.editor.editor.getSession().insert(Report.editor.editor.getCursorPosition(), column.name);
+							that.editor.editor.getSession().insert(that.editor.editor.getCursorPosition(), column.name);
 						});
 
 						columns.appendChild(li);
@@ -826,6 +919,128 @@ ReportsManger.stages.set('define-report', class PickReport extends ReportsManger
 		}
 
 		this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
+	}
+
+	filters() {
+
+		const tbody = this.container.querySelector('#filters table tbody');
+
+		tbody.textContent = null;
+
+		for(const filter of this.report.filters) {
+
+			const row = document.createElement('tr');
+
+			row.innerHTML = `
+				<td>${filter.name}</td>
+				<td>${filter.placeholder}</td>
+				<td>${filter.type}</td>
+				<td>${filter.dataset || ''}</td>
+				<td class="action green"><i class="far fa-edit"></i></td>
+				<td class="action red"><i class="far fa-trash-alt"></i></td>
+			`;
+
+			row.querySelector('.green').on('click', () => this.editFilter(filter));
+			row.querySelector('.red').on('click', () => this.deleteFilter(filter));
+
+			tbody.appendChild(row);
+		}
+
+		if(!this.report.filters.length)
+			tbody.innerHTML = `<tr class="NA"><td>No filters added yet! :(</td></tr>`
+	}
+
+	addFilter() {
+
+		this.container.querySelector('#filter-form').classList.remove('hidden');
+		this.container.querySelector('#filter-list').classList.add('hidden');
+
+		this.filterForm.removeEventListener('submit', this.filterForm.listener);
+		this.filterForm.on('submit', this.filterForm.listener = e => this.insertFilter(e));
+
+		this.filterForm.reset();
+
+		this.filterForm.name.focus();
+	}
+
+	async insertFilter(e) {
+
+		if(e)
+			e.preventDefault();
+
+		const
+			parameters = {
+				query_id: this.report.query_id
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.filterForm),
+			};
+
+		await API.call('reports/filters/insert', parameters, options);
+
+		await DataSource.load(true);
+
+		this.load();
+	}
+
+	editFilter(filter) {
+
+		this.container.querySelector('#filter-form').classList.remove('hidden');
+		this.container.querySelector('#filter-list').classList.add('hidden');
+
+		this.filterForm.removeEventListener('submit', this.filterForm.listener);
+		this.filterForm.on('submit', this.filterForm.listener = e => this.updateFilter(e, filter));
+
+		this.filterForm.reset();
+
+		for(const key in filter) {
+			if(key in this.filterForm)
+				this.filterForm[key].value = filter[key];
+		}
+
+		this.filterForm.name.focus();
+	}
+
+	async updateFilter(e, filter) {
+
+		if(e)
+			e.preventDefault();
+
+		const
+			parameters = {
+				filter_id: filter.filter_id
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.filterForm),
+			};
+
+		await API.call('reports/filters/update', parameters, options);
+
+		await DataSource.load(true);
+
+		this.load();
+	}
+
+	async deleteFilter(filter) {
+
+		if(!confirm('Are you sure?!'))
+			return;
+
+		const
+			parameters = {
+				filter_id: filter.filter_id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('reports/filters/delete', parameters, options);
+
+		await DataSource.load(true);
+
+		this.load();
 	}
 });
 
