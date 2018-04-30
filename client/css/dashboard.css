@@ -136,7 +136,7 @@ main #reports > .datasets {
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }
-main #reports > .datasets.show {
+main #reports > .datasets:hover {
 	transform: translateX(0px);
 	opacity: 1;
 }
