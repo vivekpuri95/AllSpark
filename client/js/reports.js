@@ -1434,7 +1434,9 @@ class ReportVisualizationDashboards {
 
 	render() {
 
-		ReportVisualizations.preview.insertAdjacentHTML('beforeend','<div class="dashboard-present"><h4>Dashboards</h4><div class="dashbpard_container"></div></div>');
+		if(!ReportVisualizations.preview.querySelector('.dashboard-present'))
+			ReportVisualizations.preview.insertAdjacentHTML('beforeend','<div class="dashboard-present"><h4>Dashboards</h4><div class="dashbpard_container"></div></div>');
+
 		ReportVisualizations.dashboard_container = ReportVisualizations.preview.querySelector('.dashboard-present .dashbpard_container');
 		ReportVisualizations.dashboard_container.textContent = null;
 		for(const dashboard of Reports.dashboards.values()) {
