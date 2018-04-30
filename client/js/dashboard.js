@@ -243,8 +243,8 @@ class Dashboard {
 		if(!this.format)
 			this.format = {};
 
-		if(!this.format.reports)
-			this.format.reports = [];
+		// if(!this.format.reports)
+		// 	this.format.reports = [];
 
 		this.datasets = new DashboardDatasets(this);
 	}

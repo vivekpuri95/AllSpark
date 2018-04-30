@@ -311,6 +311,7 @@ router.get('/dashboards/:id?', (request, response) => {
 						<th>Icon</th>
 						<th class="action">Edit</th>
 						<th class="action">Delete</th>
+						<th class="action">Share</th>
 					</tr>
 				</thead>
 
@@ -342,12 +343,52 @@ router.get('/dashboards/:id?', (request, response) => {
 					<span>Icon</span>
 					<input type="text" name="icon">
 				</label>
+				
+				<label>
+					<span>Type</span>
+					<select name="visibility">
+						<option value="public">Public</option>
+						<option value="private">Private</option>
+					</select>
+				</label>
 
 				<label id="format">
 					<span>Format</span>
 					<textarea id="dashboard-format"></textarea>
 				</label>
 			</form>
+		</section>
+		
+		<section class="section" id="share">
+			<h1>Share dashboards</h1>
+			
+			<div class="toolbar">
+				<button id="back"><i class="fa fa-arrow-left"></i>Back</button>
+			</div>
+			
+			<table class="block">
+				<thead>
+					<tr>
+						<th class="thin">User Id</th>
+						<th>Name</th>
+						<th class="action">Action</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+				<tfoot>
+					<tr>
+						<td colspan="2">
+							<form class="form" id="dashboard_share">
+								<select name="user_list"></select>
+							</form>
+						</td>
+						<td>
+							<button type="submit" class="add_user" form="dashboard_share"><i class="fa fa-plus"></i></button>
+						</td>
+					</tr>
+				</tfoot>
+			</table>
 		</section>
 
 	`));

@@ -125,11 +125,16 @@ class Reports extends Page {
 		if(Reports.response && !force)
 			return;
 
+		if(Reports.dashboard_list)
+			return;
+
 		[Reports.response, Reports.datasets, Reports.credentials] = await Promise.all([
 			API.call('reports/report/list'),
 			API.call('datasets/list'),
 			API.call('credentials/list'),
 		]);
+
+		Reports.dashboard_list = await API.call('dashboards/list');
 	}
 
 	static process() {
@@ -1258,7 +1263,7 @@ class ReportVisualization {
 
 		this.dashboards = new ReportVisualizationDashboards(this)
 
-		if(ReportVisualization.types.has(this.type))
+    if(ReportVisualization.types.has(this.type))
 			this.optionsForm = new (ReportVisualization.types.get(this.type))(this);
 	}
 
@@ -1311,6 +1316,9 @@ class ReportVisualization {
 
 		if(this.optionsForm)
 			options.appendChild(this.optionsForm.form);
+
+		if(this.dashboardForm)
+			options.appendChild(this.dashboardForm.form);
 	}
 
 	async loadPreview() {
@@ -1340,6 +1348,9 @@ class ReportVisualization {
 		if(this.optionsForm)
 			this.optionsForm.report = report;
 
+		if(this.dashboardForm)
+			this.dashboardForm.report = report;
+
 		await report.visualizations.selected.load();
 	}
 
@@ -1355,6 +1366,9 @@ class ReportVisualization {
 				method: 'POST',
 				form: new FormData(ReportVisualization.form),
 			};
+
+		if(this.optionsForm)
+			parameters.options = JSON.stringify(this.optionsForm.json);
 
 		if(this.optionsForm)
 			parameters.options = JSON.stringify(this.optionsForm.json);
@@ -1420,7 +1434,9 @@ class ReportVisualizationDashboards {
 
 	render() {
 
-		ReportVisualizations.preview.insertAdjacentHTML('beforeend','<div class="dashboard-present"><h4>Dashboards</h4><div class="dashbpard_container"></div></div>');
+		if(!ReportVisualizations.preview.querySelector('.dashboard-present'))
+			ReportVisualizations.preview.insertAdjacentHTML('beforeend','<div class="dashboard-present"><h4>Dashboards</h4><div class="dashbpard_container"></div></div>');
+
 		ReportVisualizations.dashboard_container = ReportVisualizations.preview.querySelector('.dashboard-present .dashbpard_container');
 		ReportVisualizations.dashboard_container.textContent = null;
 		for(const dashboard of Reports.dashboards.values()) {
@@ -1589,7 +1605,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const axes = container.querySelector('.axes');
 
-		for(const axis of this.visualization.options ? this.visualization.options.axes : [])
+		for(const axis of this.visualization.options.axes ? this.visualization.options.axes : [])
 			axes.appendChild(this.axis(axis));
 
 		container.querySelector('.add-axis').on('click', () => {
@@ -1602,7 +1618,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	get json() {
 
 		const response = {
-			axes: []
+			axes: [],
 		};
 
 		for(const axis of this.formContainer.querySelectorAll('.axis')) {

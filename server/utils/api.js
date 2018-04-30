@@ -99,7 +99,7 @@ class API {
 				}
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
-					//throw new API.Exception(401, 'User Not Authenticated! :(');
+					throw new API.Exception(401, 'User Not Authenticated! :(');
 				}
 
 				const result = await obj[path.split(pathSeparator).pop()]();
