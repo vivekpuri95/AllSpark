@@ -424,7 +424,7 @@ router.get('/dashboards/:id?', (request, response) => {
 	`));
 });
 
-router.get('/reports-new/:stage/:id?', (request, response) => {
+router.get('/reports-new/:stage?/:id?', (request, response) => {
 
 	const template = new Template(request, response);
 
