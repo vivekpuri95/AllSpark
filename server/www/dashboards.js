@@ -153,7 +153,7 @@ exports.update = class extends API {
 	}
 };
 
-exports.updateFormat = class extends API{
+exports.updateFormat = class extends API {
 
 	async updateFormat() {
 
@@ -166,12 +166,13 @@ exports.updateFormat = class extends API{
 			return
 		}
 
-		for(const report of format.reports){
+		for(const report of format.reports) {
 
 			await this.mysql.query(
 				`UPDATE tb_visualization_dashboard SET format = ? where id = ?`,
-				[report.format, report.id],
-				'write')
+				[JSON.stringify(report.format), report.id],
+				'write'
+			);
 		}
 
 		return 'format updated!';
