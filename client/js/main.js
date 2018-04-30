@@ -2803,7 +2803,8 @@ class LinearVisualization extends Visualization {
 
 	draw() {
 
-		this.source.response;
+		if(!this.source.response || !this.source.response.length)
+			return this.source.error('No data found! :(');
 
 		if(!this.axes)
 			return this.source.error('Axes not defined! :(');
