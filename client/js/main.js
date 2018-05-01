@@ -971,6 +971,16 @@ class DataSource {
 				container.appendChild(this.visualizations.selected.container);
 		}
 
+		this.xlsxDownloadable = ["line", "bar",].includes(this.visualizations.selected.type);
+
+		if(!this.xlsxDownloadable) {
+
+			const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
+			xlsxDownloadDropdown.classList.toggle('hidden', true)
+		}
+		else
+			xlsxDownloadDropdown.classList.toggle('hidden', false)
+
 		if(!this.filters.size)
 			container.querySelector('.filters-toggle').classList.add('hidden');
 
@@ -1105,18 +1115,33 @@ class DataSource {
 			}
 		}
 
-		else if(what.mode == 'xlsx') {
+		else if(what.mode == 'xlsx' && this.xlsxDownloadable) {
+
+			const response = [];
+
+			for(const row of this.response) {
+				const temp = {};
+				const arr = [...row];
+				for(const cell of arr) {
+					temp[cell[0]] = cell[1];
+				}
+				response.push(temp)
+			}
+
+
 			const obj = {
 				columns		 :[...this.columns.entries()].map(x => x[0]),
-				left		 :((this.visualizations.selected.options.axes || {}).left   || {columns: [0]}).columns[0].key,
-				right		 :((this.visualizations.selected.options.axes || {}).right  || {columns: [0]}).columns[0].key,
-				top			 :((this.visualizations.selected.options.axes || {}).top    || {columns: [0]}).columns[0].key,
-				bottom		 :((this.visualizations.selected.options.axes || {}).bottom || {columns: [0]}).columns[0].key,
+				left		 :((this.visualizations.selected.options.axes).left   || {columns: [{}]}).columns[0].key,
+				right		 :((this.visualizations.selected.options.axes).right  || {columns: [{}]}).columns[0].key,
+				top			 :((this.visualizations.selected.options.axes).top    || {columns: [{}]}).columns[0].key,
+				bottom		 :((this.visualizations.selected.options.axes).bottom || {columns: [{}]}).columns[0].key,
 				visualization:this.visualizations.selected.type,
 				sheet_name	 :this.name.split(" ").join("_"),
 				file_name	 :this.name.split(" ").join("_"),
+
 			};
-			return await this.excelSheetDownloader(this.originalResponse.data, obj);
+
+			return await this.excelSheetDownloader(response, obj);
 		}
 
 		else {
