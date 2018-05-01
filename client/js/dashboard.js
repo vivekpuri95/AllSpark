@@ -250,7 +250,6 @@ class Dashboard {
 			this.format.reports = [];
 
 		this.datasets = new DashboardDatasets(this);
-		this.datasets.container = this.page.container.querySelector('#reports .datasets');
 	}
 
 	async load(resize) {
@@ -361,12 +360,12 @@ class Dashboard {
 
 		side_button.on('click', () => {
 
-			container.classList.add('filter');
+			container.classList.remove('hidden');
 			this.datasets.container.classList.add('show');
 		});
 
 		container.on('click', () => {
-			container.classList.remove('filter');
+			container.classList.add('hidden');
 			this.datasets.container.classList.remove('show');
 		});
 	}
@@ -754,6 +753,7 @@ class DashboardDatasets extends Map {
 
 		this.dashboard = dashboard;
 		this.page = this.dashboard.page;
+		this.container = this.page.container.querySelector('#reports .datasets');
 
 		const datasets = {};
 

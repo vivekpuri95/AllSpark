@@ -138,7 +138,7 @@ main #reports > .datasets {
 	background: #fff;
 	padding: 0 calc(var(--gap) * 2);
 	box-shadow:  0 0 25px rgba(0, 0, 0, 0.15);
-	z-index: 9;
+	z-index: 5;
 	width: 250px;
 	align-items: flex-start;
 	overflow: auto;
@@ -149,8 +149,8 @@ main #reports > .datasets {
 }
 
 main #reports > .datasets.show {
-	transform: translateX(0px) !important;
-	opacity: 1 !important;
+	transform: translateX(0px);
+	opacity: 1;
 }
 
 	main #reports > .datasets h3 {
@@ -233,7 +233,7 @@ main #reports > .list {
 		position: absolute;
 		bottom: 10px;
 		right: 10px;
-		background: rgba(255,255,255, 0.8);
+		background: rgba(255, 255, 255, 0.8);
 		color: #333;
 		z-index: 4;
 	}
@@ -296,14 +296,15 @@ main #reports > .NA {
 	text-align: center;
 }
 
-main #reports #blanket.filter {
-	height: 100%;
-	width: 100%;
-	background: rgb(0,0,0,0.25);
+main #reports #blanket{
+
+	background: rgba(0, 0, 0, 0.25);
 	position: absolute;
 	bottom: 0;
 	right: 0;
-	z-index: 8;
+	top: 0;
+	left: 0;
+	z-index: 4;
 }
 
 .daterangepicker .range_inputs {
