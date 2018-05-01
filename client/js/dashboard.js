@@ -250,6 +250,7 @@ class Dashboard {
 			this.format.reports = [];
 
 		this.datasets = new DashboardDatasets(this);
+		this.datasets.container = this.page.container.querySelector('#reports .datasets');
 	}
 
 	async load(resize) {
@@ -355,16 +356,19 @@ class Dashboard {
 			this.mailto();
 		});
 
-		const side_button = this.page.container.querySelector('#reports .filter .side');
+		const side_button = this.page.container.querySelector('#reports .side');
+		const container = this.page.container.querySelector('#reports #blanket');
 
 		side_button.on('click', () => {
 
-			side_button.querySelector('.left-arrow').classList.toggle('hidden');
-			side_button.querySelector('.right-arrow').classList.toggle('hidden');
+			container.classList.add('filter');
+			this.datasets.container.classList.add('show');
+		});
 
-			this.page.container.querySelector('#reports .datasets').classList.toggle('global-filter');
-			side_button.classList.toggle('toggle');
-		})
+		container.on('click', () => {
+			container.classList.remove('filter');
+			this.datasets.container.classList.remove('show');
+		});
 	}
 
 	mailto() {
@@ -796,7 +800,7 @@ class DashboardDatasets extends Map {
 
 	async render() {
 
-		const container = this.page.container.querySelector('#reports .datasets');
+		const container = this.container;
 
 		container.textContent = null;
 

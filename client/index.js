@@ -298,13 +298,11 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 			<div class="datasets form"></div>
 
 			<div class="list"></div>
-			
-			<div class="filter">
-				<button type="button" class="side">
-					<span class="left-arrow"><i class="fas fa-angle-double-left"></i></span>
-					<span class="right-arrow hidden"><i class="fas fa-angle-double-right"></i></span>
-				</button>
+			<div id="blanket">
 			</div>
+			<button type="button" class="side">
+				<span class="left-arrow"><i class="fas fa-angle-double-left"></i></span>
+			</button>
 		</section>
 	`));
 });
