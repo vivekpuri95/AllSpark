@@ -361,8 +361,8 @@ class Dashboard {
 		const form = document.querySelector('.mailto-content');
 		form.classList.toggle('hidden');
 
-		form.subject.value = `${this.name}`;
-		form.body.value = `${location.href}`;
+		form.subject.value = this.name;
+		form.body.value = location.href;
 
 		form.on('submit', (e) => {
 
@@ -373,7 +373,7 @@ class Dashboard {
 			searchParams.set('body', form.body.value);
 
 			const a = document.createElement('a');
-			a.setAttribute('href',`mailto: ${form.email.value}?${searchParams.toString()}`);
+			a.setAttribute('href',`mailto: ${form.email.value}?${searchParams}`);
 
 			a.click();
 		})
