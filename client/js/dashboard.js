@@ -354,6 +354,17 @@ class Dashboard {
 			mailto.classList.toggle('selected');
 			this.mailto();
 		});
+
+		const side_button = this.page.container.querySelector('#reports .filter .side');
+
+		side_button.on('click', () => {
+
+			side_button.querySelector('.left-arrow').classList.toggle('hidden');
+			side_button.querySelector('.right-arrow').classList.toggle('hidden');
+
+			this.page.container.querySelector('#reports .datasets').classList.toggle('global-filter');
+			side_button.classList.toggle('toggle');
+		})
 	}
 
 	mailto() {

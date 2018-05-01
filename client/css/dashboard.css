@@ -147,10 +147,12 @@ main #reports > .datasets {
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }
-main #reports > .datasets:hover {
-	transform: translateX(0px);
-	opacity: 1;
+
+.global-filter{
+	transform: translateX(0px) !important;
+	opacity: 1 !important;
 }
+
 	main #reports > .datasets h3 {
 		margin: 0 0 10px;
 		border-bottom: 1px dashed #999;
@@ -226,6 +228,34 @@ main #reports > .list {
 	main #reports .list .data-source.drag-enter {
 		box-shadow: -6px 0px var(--color-accent);
 	}
+
+	main #reports .filter{
+		position: static;
+	}
+
+		main #reports .filter .side {
+			position: absolute;
+			bottom: 10px;
+			right: 10px;
+			background: rgba(255,255,255, 0.8);
+			color: #333;
+			z-index: 4;
+		}
+
+		main #reports .filter .side:hover {
+			border: 1px solid #999;
+		}
+
+		.toggle{
+			position: absolute;
+			bottom: 10px;
+			right: 275px !important;
+		}
+
+			main #reports .filter .side > svg {
+				margin-right: 0px;
+			}
+
 	main #reports .list .data-source .resize.right {
 		position: absolute;
 		cursor: col-resize;
