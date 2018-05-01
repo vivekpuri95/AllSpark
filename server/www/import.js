@@ -29,7 +29,7 @@ exports.query = class extends API {
 			is_redis: data.is_redis,
 			refresh_rate: data.refresh_rate,
 			roles: data.roles,
-			format: data.format,
+			format: JSON.stringify(data.format),
 			connection_name: data.connection_name
 		};
 
@@ -81,6 +81,13 @@ exports.query = class extends API {
 			);
 		}
 
+		query.visualizationIds = [];
+
+		for (const visualization of data.visualizations) {
+			const id = visualization.visualization_id;
+			query.visualizationIds.push({old_id: id, new_id: visualizations.insertId++});
+		}
+
 		return query;
 	}
 }
@@ -88,35 +95,51 @@ exports.query = class extends API {
 exports.dashboard = class extends API {
 	async dashboard() {
 
-		let data;
+		let visualizations, data;
 		try {
 			data = JSON.parse(this.request.body.json);
 		}
 		catch (e) {
-			return e;
+			throw e;
 		}
+
+		visualizations = data.dashboard.format.reports;
+		delete data.dashboard.format;
+
+		data.dashboard.account_id = this.account.account_id;
+		data.dashboard.added_by = this.user.user_id;
+		const dashboardId = (await this.mysql.query('INSERT INTO tb_dashboards SET ?', data.dashboard, 'write')).insertId;
+
 
 		let insertQuery = new exports.query();
 		insertQuery = Object.assign(insertQuery, this);
 
-		let query_id = [];
+		let visualizationsIds = [];
 		for (const query of data.query) {
 			if (query) {
 				insertQuery.request.body.json = JSON.stringify(query);
-				query_id.push((await insertQuery.query()).insertId);
+				visualizationsIds.push((await insertQuery.query()).visualizationIds);
 			}
 		}
 
-		for (const report in data.dashboard.format.reports) {
-			data.dashboard.format.reports[report].query_id = query_id[report];
+		const dashboardVisualization = [];
+
+		for (const visualization of visualizations) {
+			for (const idMap of visualizationsIds) {
+				for (const idObj of idMap) {
+					if (idObj.old_id == visualization.visualization_id) {
+						dashboardVisualization.push([dashboardId, idObj.new_id, JSON.stringify(visualization.format)]);
+					}
+				}
+			}
 		}
 
-		data.dashboard.format = JSON.stringify(data.dashboard.format);
+		await this.mysql.query(
+			'INSERT INTO tb_visualization_dashboard(dashboard_id, visualization_id, format) VALUES ?',
+			[dashboardVisualization],
+			'write'
+		);
 
-		data.dashboard.account_id = this.account.account_id;
-		data.dashboard.added_by = this.user.user_id;
-		data = await this.mysql.query('INSERT INTO tb_dashboards SET ?', data.dashboard, 'write');
-
-		return data.insertId;
+		return true;
 	}
 };
