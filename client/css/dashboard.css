@@ -148,7 +148,7 @@ main #reports > .datasets {
 				opacity var(--transition-duration);
 }
 
-.global-filter{
+.global-filter {
 	transform: translateX(0px) !important;
 	opacity: 1 !important;
 }
@@ -229,7 +229,7 @@ main #reports > .list {
 		box-shadow: -6px 0px var(--color-accent);
 	}
 
-	main #reports .filter{
+	main #reports .filter {
 		position: static;
 	}
 
@@ -246,7 +246,7 @@ main #reports > .list {
 			border: 1px solid #999;
 		}
 
-		.toggle{
+		.toggle {
 			position: absolute;
 			bottom: 10px;
 			right: 275px !important;
