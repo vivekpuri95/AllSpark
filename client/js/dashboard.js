@@ -346,6 +346,37 @@ class Dashboard {
 			downloadAnchor.setAttribute('download', 'dashboard.json');
 			downloadAnchor.click();
 		});
+
+		const mailto = Dashboard.toolbar.querySelector('#mailto');
+		mailto.classList.remove('hidden');
+
+		mailto.on('click', () => {
+			mailto.classList.toggle('selected');
+			this.mailto();
+		});
+	}
+
+	mailto() {
+
+		const form = document.querySelector('.mailto-content');
+		form.classList.toggle('hidden');
+
+		form.subject.value = this.name;
+		form.body.value = location.href;
+
+		form.on('submit', (e) => {
+
+			e.preventDefault();
+
+			const searchParams = new URLSearchParams();
+			searchParams.set('subject', form.subject.value);
+			searchParams.set('body', form.body.value);
+
+			const a = document.createElement('a');
+			a.setAttribute('href',`mailto: ${form.email.value}?${searchParams}`);
+
+			a.click();
+		})
 	}
 
 	get export() {

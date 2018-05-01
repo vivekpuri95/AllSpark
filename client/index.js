@@ -259,28 +259,42 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 
 			<div class="toolbar form">
 
-				<label>
-					<button id="back">
-						<i class="fa fa-arrow-left"></i>
-						Back
-					</button>
-				</label>
+				<button id="back">
+					<i class="fa fa-arrow-left"></i>
+					Back
+				</button>
 
-				<label>
-					<button id="edit-dashboard" class="hidden">
-						<i class="fa fa-edit"></i>
-						Edit
-					</button>
-				</label>
+				<button id="edit-dashboard" class="hidden">
+					<i class="fa fa-edit"></i>
+					Edit
+				</button>
 
-				<label>
-					<button id="export-dashboard" class="hidden">
-						<i class="fa fa-download"></i>
-						Export
-					</button>
-				</label>
+				<button id="export-dashboard" class="hidden">
+					<i class="fa fa-download"></i>
+					Export
+				</button>
+
+				<button id="mailto" class="hidden">
+					<i class="fas fa-envelope"></i>
+					Email
+				</button>
 			</div>
 
+			<form class="form mailto-content hidden">
+				<label>
+					<span>Send to</span>
+					<input type="email" name="email">
+				</label>
+				<label>
+					<span>Subject</span>
+					<input type="text" name="subject">
+				</label>
+				<label>
+					<span>Body</span>
+					<input type="text" name="body">
+				</label>
+				<button type="submit"><i class="fa fa-paper-plane"></i> Send</button>
+			</form>
 			<div class="datasets form"></div>
 
 			<div class="list"></div>
@@ -355,7 +369,7 @@ router.get('/dashboards/:id?', (request, response) => {
 					<span>Icon</span>
 					<input type="text" name="icon">
 				</label>
-				
+
 				<label>
 					<span>Type</span>
 					<select name="visibility">
@@ -370,14 +384,14 @@ router.get('/dashboards/:id?', (request, response) => {
 				</label>
 			</form>
 		</section>
-		
+
 		<section class="section" id="share">
 			<h1>Share dashboards</h1>
-			
+
 			<div class="toolbar">
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 			</div>
-			
+
 			<table class="block">
 				<thead>
 					<tr>

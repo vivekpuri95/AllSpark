@@ -115,7 +115,18 @@ main > nav::-webkit-scrollbar-track {
 			main > nav .item .label .angle.down {
 				transform: rotate(-90deg);
 			}
-
+main #mailto.selected {
+	background: var(--color-accent);
+	color: var(--color-accent-text);
+	border-color: var(--color-accent);
+}
+main .mailto-content {
+	background: #fff;
+	grid-auto-flow: column;
+	justify-content: baseline;
+	align-items: self-end;
+	margin-bottom: 5px;
+}
 main #reports > .datasets {
 	display: flex;
 	flex-direction: column;
@@ -190,7 +201,7 @@ main #reports > .list {
 		top: 0;
 		z-index: 3;
 		align-items: flex-end;
-		grid-template-columns: max-content max-content max-content 1fr;
+		grid-template-columns: max-content max-content max-content max-content 1fr;
 	}
 		main #reports > .toolbar input[name=date-range] {
 			width: 250px;
