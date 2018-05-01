@@ -10,3 +10,4 @@ env
 *.pyo
 *.pyc
 excel_exports/*
+config.py
