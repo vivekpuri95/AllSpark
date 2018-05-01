@@ -358,6 +358,20 @@ class Dashboard {
 			mailto.classList.toggle('selected');
 			this.mailto();
 		});
+
+		const side_button = this.page.container.querySelector('#reports .side');
+		const container = this.page.container.querySelector('#reports #blanket');
+
+		side_button.on('click', () => {
+
+			container.classList.remove('hidden');
+			this.datasets.container.classList.add('show');
+		});
+
+		container.on('click', () => {
+			container.classList.add('hidden');
+			this.datasets.container.classList.remove('show');
+		});
 	}
 
 	mailto() {
@@ -743,6 +757,7 @@ class DashboardDatasets extends Map {
 
 		this.dashboard = dashboard;
 		this.page = this.dashboard.page;
+		this.container = this.page.container.querySelector('#reports .datasets');
 
 		const datasets = {};
 
@@ -789,7 +804,7 @@ class DashboardDatasets extends Map {
 
 	async render() {
 
-		const container = this.page.container.querySelector('#reports .datasets');
+		const container = this.container;
 
 		container.textContent = null;
 
