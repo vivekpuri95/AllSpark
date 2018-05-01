@@ -1675,9 +1675,6 @@ class ReportVisualization {
 		if(this.optionsForm)
 			parameters.options = JSON.stringify(this.optionsForm.json);
 
-		if(this.optionsForm)
-			parameters.options = JSON.stringify(this.optionsForm.json);
-
 		await API.call('reports/visualizations/update', parameters, options);
 
 		await Reports.load(true);

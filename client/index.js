@@ -460,14 +460,14 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 					<thead>
 						<tr class="search"></tr>
 						<tr>
-							<th class="sort search" data-key="query_id">ID <i class="fa fa-sort"></th>
-							<th class="sort search" data-key="name" >Name <i class="fa fa-sort"></th>
-							<th class="sort search" data-key="description">Description <i class="fa fa-sort"></th>
-							<th class="sort search" data-key="connection">Connection  <i class="fa fa-sort"></th>
-							<th class="sort search" data-key="tags">Tags <i class="fa fa-sort"></th>
-							<th class="sort search" data-key="filters">Filters <i class="fa fa-sort"></th>
-							<th class="sort search" data-key="visualizations">Visualizations <i class="fa fa-sort"></th>
-							<th class="sort search" data-key="is_enabled">Enabled <i class="fa fa-sort"></th>
+							<th class="sort search" data-key="query_id">ID</th>
+							<th class="sort search" data-key="name" >Name</th>
+							<th class="sort search" data-key="description">Description</th>
+							<th class="sort search" data-key="connection">Connection </th>
+							<th class="sort search" data-key="tags">Tags</th>
+							<th class="sort search" data-key="filters">Filters</th>
+							<th class="sort search" data-key="visualizations">Visualizations</th>
+							<th class="sort search" data-key="is_enabled">Enabled</th>
 							<th class="action">Configue</th>
 							<th class="action">Define</th>
 							<th class="action">Delete</th>
@@ -522,11 +522,6 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 							<option>POST</option>
 						</select>
 					</label>
-				</div>
-
-				<div id="transformations-container">
-					<span>Transformations</span>
-					<div id="transformations"></div>
 				</div>
 
 				<label>
@@ -601,6 +596,7 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 				<button type="submit" form="define-report-form"><i class="fa fa-save"></i> Save</button>
 				<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
 				<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
+				<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
 			</header>
 
 			<div id="define-report-parts">
@@ -680,7 +676,6 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 									<option value="1">String</option>
 									<option value="2">Date</option>
 									<option value="3">Month</option>
-									<option value="4">city</option>
 								</select>
 							</label>
 
@@ -717,16 +712,68 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 					</div>
 				</div>
 			</div>
+		</section>
+
+		<section class="section" id="stage-pick-visualization">
+
+			<div id="visualization-list" class="hidden">
+
+				<div class="toolbar">
+					<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button>
+				</div>
+
+				<table>
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Type</th>
+							<th>Transformations</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+
+			<div id="add-visualization-picker" class="hidden">
+
+				<div class="toolbar">
+					<button id="visualization-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
+					<button type="submit" form="visualization-form"><i class="fas fa-save"></i> Save</button>
+				</div>
+
+				<form id="visualization-form"></form>
+			</div>
+		</section>
+
+		<section class="section" id="stage-configure-visualization">
+
+			<div class="toolbar">
+				<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save</button>
+			</div>
+
+			<form id="configure-visualization-form" class="form">
+
+				<label>
+					<span>Name</span>
+					<input type="text" name="name" required>
+				</label>
+
+				<label>
+					<span>Type</span>
+					<select name="type" required></select>
+				</label>
+
+				<div class="options"></div>
+			</form>
+
+			<div id="transformations"></div>
 
 		</section>
 
-		<section class="section" id="stage-pick-visualization">pcik-visualization</section>
-
-		<section class="section" id="stage-visualization-transformations">visualization-transformations</section>
-
-		<section class="section" id="stage-configure-visualization">configure-visualization</section>
-
-		<div id="preview"></div>
+		<div id="preview" class="hidden"></div>
 	`));
 });
 
@@ -1019,7 +1066,7 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 
 				<label>
 					<span>Name</span>
-					<input type="text" name="name" value="${this.name}" required>
+					<input type="text" name="name" required>
 				</label>
 
 				<label>

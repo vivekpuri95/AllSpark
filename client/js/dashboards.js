@@ -267,12 +267,12 @@ class DashboardsDashboard {
 
 		this.container.innerHTML = `
 			<td>${this.id}</td>
-			<td><a href="/dashboard/${this.id}" target="_blank">${this.name}</a></td>
+			<td><a href="/dashboard/${this.id}">${this.name}</a></td>
 			<td>${this.parent || ''}</td>
 			<td>${this.icon || ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
-			<td class="action share" title="Share"><i class="fa fa-share-alt"></i></td>			
+			<td class="action share" title="Share"><i class="fa fa-share-alt"></i></td>
 		`;
 
 		this.container.querySelector('.share').on('click', () => {

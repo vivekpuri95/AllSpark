@@ -276,6 +276,7 @@ class MetaData {
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
 		MetaData.datasets = new Map;
+		MetaData.visualizations = new Map;
 
 		if(!user.id)
 			return;
@@ -329,7 +330,7 @@ class MetaData {
 			MetaData.categories.set(category.category_id, category);
 		}
 
-		MetaData.visualizations = metadata.visualizations;
+		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 	}
 }
@@ -346,7 +347,7 @@ class ErrorLogs {
 		const
 			options = {
 			method: 'POST'
-		},
+			},
 			params = {
 				message : message,
 				description : stack && stack.stack,
@@ -1041,7 +1042,7 @@ class DataSource {
 
 	get response() {
 
-		if(!this.originalResponse.data)
+		if(!this.originalResponse || !this.originalResponse.data)
 			return [];
 
 		let response = [];
@@ -2420,14 +2421,18 @@ class DataSourceTransformations extends Set {
 		super();
 
 		this.source = source;
-
-		const transformations = this.source.format && this.source.format.transformations ? this.source.format.transformations : [];
-
-		for(const transformation of transformations)
-			this.add(new DataSourceTransformation(transformation, this.source));
 	}
 
 	run(response) {
+
+		this.clear();
+
+		const
+			visualization = this.source.visualizations.selected,
+			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
+
+		for(const transformation of transformations)
+			this.add(new DataSourceTransformation(transformation, this.source));
 
 		response = JSON.parse(JSON.stringify(response));
 
@@ -4102,6 +4107,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 	draw() {
 
+		if(!this.source.response || !this.source.response.length)
+			return this.source.error('No data found! :(');
+
 		if(!this.axes)
 			return this.source.error('Axes not defined! :(');
 
@@ -4213,6 +4221,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
 		container.selectAll('*').remove();
+
+		if(!this.rows || !this.rows.length)
+			return;
 
 		this.columns = {
 			left: {},
@@ -4678,7 +4689,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		super.plot(resize);
 
-		if(!this.rows.length)
+		if(!this.rows || !this.rows.length)
 			return;
 
 		const that = this;
