@@ -973,9 +973,9 @@ class DataSource {
 
 		this.xlsxDownloadable = ["line", "bar",].includes(this.visualizations.selected.type);
 
+		const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
 		if(!this.xlsxDownloadable) {
 
-			const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
 			xlsxDownloadDropdown.classList.toggle('hidden', true)
 		}
 		else
