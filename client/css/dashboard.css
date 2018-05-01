@@ -238,9 +238,9 @@ main #reports > .list {
 		z-index: 4;
 	}
 
-		main #reports .side:hover {
-			border: 1px solid #999;
-		}
+	main #reports .side:hover {
+		border: 1px solid #999;
+	}
 		main #reports .side > svg {
 			margin-right: 0px;
 		}
