@@ -42,20 +42,21 @@ exports.query = class extends API {
 		let visualizations = data.visualizations;
 
 		visualizations = visualizations.map((visualization) => {
-			return [
-				query_id,
-				visualization.name,
-				visualization.type,
-				visualization.options
-			]
+			return {
+				query_id: query_id,
+				name: visualization.name,
+				type:visualization.type,
+				options: visualization.options
+			}
 		});
 
-		if (visualizations.length) {
-			visualizations = await this.mysql.query(
-				`INSERT INTO tb_query_visualizations(query_id, name, type, options) VALUES ?`,
-				[visualizations],
+		const visualizationsIds = [];
+		for (const visualization of visualizations){
+			visualizationsIds.push((await this.mysql.query(
+				`INSERT INTO tb_query_visualizations SET ?`,
+				[visualization],
 				'write'
-			);
+			)).insertId);
 		}
 
 		let filters = data.filters;
@@ -83,9 +84,9 @@ exports.query = class extends API {
 
 		query.visualizationIds = [];
 
-		for (const visualization of data.visualizations) {
-			const id = visualization.visualization_id;
-			query.visualizationIds.push({old_id: id, new_id: visualizations.insertId++});
+		for (const index in data.visualizations) {
+			const id = data.visualizations[index].visualization_id;
+			query.visualizationIds.push({old_id: id, new_id: visualizationsIds[index]});
 		}
 
 		return query;
