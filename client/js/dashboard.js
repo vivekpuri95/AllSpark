@@ -37,6 +37,10 @@ Page.class = class Dashboards extends Page {
 
 		const dashboards = await API.call('dashboards/list');
 
+		for(const dashboard of dashboards) {
+			dashboard.format.reports.sort((a,b) => parseInt(a.position) - parseInt(b.position))
+		}
+
 		for(const dashboard of dashboards || [])
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 
