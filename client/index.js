@@ -1252,13 +1252,14 @@ router.get('/connections/:id?', (request, response) => {
 			<header class="toolbar">
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="connections-form"><i class="fa fa-save"></i> Save</button>
+				<button type="button" id="test-connection"><i class="fas fa-cogs"></i>Test</button>
 			</header>
-
+			<div class="test-result hidden"></div>
 			<form class="block form" id="connections-form">
 
 				<label>
 					<span>Name</span>
-					<input type="text" name="connection_name">
+					<input type="text" name="connection_name" required>
 				</label>
 
 				<label id="connections">
