@@ -560,18 +560,15 @@ class download extends API {
 
 		let queryData = this.request.body.data;
 
-		// this.assert(commonFun.isJson(queryData), "query format issue");
-		// this.assert(commonFun.isJson(this.request.body.x), "x format issue");
-		// this.assert(commonFun.isJson(this.request.body.y), "y format issue");
 		this.assert(this.request.body.visualization);
 
-		let [xl_visualization] = await this.mysql.query("select * from tb_visualizations where slug = ?", [this.request.body.visualization]);
+		let [excel_visualization] = await this.mysql.query("select * from tb_visualizations where slug = ?", [this.request.body.visualization]);
 
-		this.assert(xl_visualization, "visualization does not exist");
+		this.assert(excel_visualization, "visualization does not exist");
 
-		xl_visualization = xl_visualization.excel_format;
+		excel_visualization = excel_visualization.excel_format;
 
-		this.assert(commonFun.isJson(xl_visualization), "xl_visualization format issue");
+		this.assert(commonFun.isJson(excel_visualization), "excel_visualization format issue");
 
 		// queryData = JSON.parse(queryData);
 
@@ -586,7 +583,7 @@ class download extends API {
 							x1: {name:this.request.body.top},
 							y1: {name:this.request.body.right},
 							cols: this.request.body.columns,
-							type: JSON.parse(xl_visualization),
+							type: JSON.parse(excel_visualization),
 						}
 					},
 					sheet_name: this.request.body.sheet_name,
