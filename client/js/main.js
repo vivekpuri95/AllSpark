@@ -974,12 +974,8 @@ class DataSource {
 		this.xlsxDownloadable = ["line", "bar",].includes(this.visualizations.selected.type);
 
 		const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
-		if(!this.xlsxDownloadable) {
 
-			xlsxDownloadDropdown.classList.toggle('hidden', true)
-		}
-		else
-			xlsxDownloadDropdown.classList.toggle('hidden', false)
+		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
 
 		if(!this.filters.size)
 			container.querySelector('.filters-toggle').classList.add('hidden');
@@ -1120,26 +1116,27 @@ class DataSource {
 			const response = [];
 
 			for(const row of this.response) {
+
 				const temp = {};
 				const arr = [...row];
 				for(const cell of arr) {
 					temp[cell[0]] = cell[1];
 				}
+
 				response.push(temp)
 			}
 
-
 			const obj = {
-				columns		 :[...this.columns.entries()].map(x => x[0]),
-				left		 :((this.visualizations.selected.options.axes).left   || {columns: [{}]}).columns[0].key,
-				right		 :((this.visualizations.selected.options.axes).right  || {columns: [{}]}).columns[0].key,
-				top			 :((this.visualizations.selected.options.axes).top    || {columns: [{}]}).columns[0].key,
-				bottom		 :((this.visualizations.selected.options.axes).bottom || {columns: [{}]}).columns[0].key,
-				visualization:this.visualizations.selected.type,
-				sheet_name	 :this.name.split(" ").join("_"),
-				file_name	 :this.name.split(" ").join("_"),
-
+					columns		 :[...this.columns.entries()].map(x => x[0]),
+					visualization:this.visualizations.selected.type,
+					sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+					file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 			};
+
+			for(const axis in this.visualizations.selected.options.axes) {
+				if (isNaN(parseInt(axis)))
+					obj[axis] = (((this.visualizations.selected.options.axes)[axis]).columns)[0].key;
+			}
 
 			return await this.excelSheetDownloader(response, obj);
 		}
@@ -1184,21 +1181,10 @@ class DataSource {
 
 	async excelSheetDownloader(data, obj) {
 
-		obj.data = data
-		const xlsxBlobOutput = await DataSource.postData("/api/v2/reports/engine/download", obj);
+		obj.data = data;
 
-
-		const link = document.createElement('a');
-		link.href = window.URL.createObjectURL(xlsxBlobOutput);
-		link.download = obj.file_name + "_" + new Date().getTime() + ".xlsx";
-		link.click();
-	}
-
-
-	static async postData(url, data) {
-
-		return await (await (fetch(url, {
-			body: JSON.stringify(data),
+		const xlsxBlobOutput = await (await (fetch("/api/v2/reports/engine/download", {
+			body: JSON.stringify(obj),
 			cache: 'no-cache',
 			credentials: 'same-origin',
 			headers: {
@@ -1211,8 +1197,11 @@ class DataSource {
 			referrer: 'no-referrer',
 		}))).blob();
 
+		const link = document.createElement('a');
+		link.href = window.URL.createObjectURL(xlsxBlobOutput);
+		link.download = obj.file_name + "_" + new Date().toString().replace(/ /g, "_") + ".xlsx";
+		link.click();
 	}
-
 
 	get link() {
 
