@@ -850,6 +850,9 @@ class DataSource {
 						<span class="runtime"></span>
 					</span>
 					<span class="right">
+						<span class="label visible">Visible To</span>
+					</span>
+					<span>
 						<span class="label">Added By:</span>
 						<span>${this.added_by_name || 'NA'}</span>
 					</span>
@@ -871,7 +874,6 @@ class DataSource {
 
 			this.visualizations.selected.render(true);
 		});
-
 		container.querySelector('header .menu-toggle').on('click', () => {
 			container.querySelector('.menu').classList.toggle('hidden');
 			container.querySelector('header .menu-toggle').classList.toggle('selected');

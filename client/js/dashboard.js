@@ -236,6 +236,22 @@ class Dashboard {
 
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
+
+		const side_button = page.container.querySelector('#reports .side');
+		const container = page.container.querySelector('#reports #blanket');
+
+		side_button.on('click', () => {
+
+			container.classList.remove('hidden');
+			page.container.querySelector('#reports .datasets').classList.remove('hidden')
+			page.container.querySelector('#reports .datasets').classList.add('show');
+		});
+
+		container.on('click', () => {
+
+			container.classList.add('hidden');
+			page.container.querySelector('#reports .datasets').classList.add('hidden');
+		});
 	}
 
 	constructor(dashboard, page) {
@@ -260,6 +276,8 @@ class Dashboard {
 
 		if(!Dashboard.container)
 			return;
+
+		this.page.container.querySelector('#reports .side').classList.remove('hidden');
 
 		for(const selected of document.querySelectorAll('main nav .label.selected'))
 			selected.classList.remove('selected');
@@ -294,7 +312,13 @@ class Dashboard {
 
 		await this.datasets.load();
 
+		const options = {
+			method: 'POST',
+		};
+
 		for(const report of this.reports) {
+
+			report.visibleTo = await API.call('reports/report/visibleTo', {query_id : report.query_id}, options);
 
 			report.container.setAttribute('style', `
 				order: ${report.dashboard.position || 0};
@@ -359,19 +383,8 @@ class Dashboard {
 			this.mailto();
 		});
 
-		const side_button = this.page.container.querySelector('#reports .side');
-		const container = this.page.container.querySelector('#reports #blanket');
-
-		side_button.on('click', () => {
-
-			container.classList.remove('hidden');
-			this.datasets.container.classList.add('show');
-		});
-
-		container.on('click', () => {
-			container.classList.add('hidden');
-			this.datasets.container.classList.remove('show');
-		});
+		if(!this.datasets.size)
+			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
 	mailto() {
@@ -808,7 +821,7 @@ class DashboardDatasets extends Map {
 
 		container.textContent = null;
 
-		container.classList.toggle('hidden', !this.size);
+		container.classList.add('hidden');
 
 		if(!this.size)
 			return;
