@@ -276,6 +276,7 @@ class MetaData {
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
 		MetaData.datasets = new Map;
+		MetaData.visualizations = new Map;
 
 		if(!user.id)
 			return;
@@ -329,7 +330,7 @@ class MetaData {
 			MetaData.categories.set(category.category_id, category);
 		}
 
-		MetaData.visualizations = metadata.visualizations;
+		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 	}
 }
@@ -346,7 +347,7 @@ class ErrorLogs {
 		const
 			options = {
 			method: 'POST'
-		},
+			},
 			params = {
 				message : message,
 				description : stack && stack.stack,
@@ -784,7 +785,7 @@ class DataSource {
 		this.columns.update();
 		this.postProcessors.update();
 
-		this.columns.render();
+		this.render();
 	}
 
 	get container() {
@@ -818,6 +819,7 @@ class DataSource {
 					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
 					<div class="download-dropdown-content hidden">
 						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
+						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i>xlsx</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
 					</div>
 				</div>
@@ -849,6 +851,9 @@ class DataSource {
 						<span class="runtime"></span>
 					</span>
 					<span class="right">
+						<span class="label visible">Visible To</span>
+					</span>
+					<span>
 						<span class="label">Added By:</span>
 						<span>${this.added_by_name || 'NA'}</span>
 					</span>
@@ -870,7 +875,6 @@ class DataSource {
 
 			this.visualizations.selected.render(true);
 		});
-
 		container.querySelector('header .menu-toggle').on('click', () => {
 			container.querySelector('.menu').classList.toggle('hidden');
 			container.querySelector('header .menu-toggle').classList.toggle('selected');
@@ -917,6 +921,7 @@ class DataSource {
 
 		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
 		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
+		container.querySelector('.menu .xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
 
 		if(user.privileges.has('report')) {
 
@@ -968,6 +973,12 @@ class DataSource {
 			if(this.visualizations.selected)
 				container.appendChild(this.visualizations.selected.container);
 		}
+
+		this.xlsxDownloadable = ["line", "bar",].includes(this.visualizations.selected.type);
+
+		const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
+
+		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
 
 		if(!this.filters.size)
 			container.querySelector('.filters-toggle').classList.add('hidden');
@@ -1033,7 +1044,7 @@ class DataSource {
 
 	get response() {
 
-		if(!this.originalResponse.data)
+		if(!this.originalResponse || !this.originalResponse.data)
 			return [];
 
 		let response = [];
@@ -1081,6 +1092,7 @@ class DataSource {
 		return response;
 	}
 
+
 	async download(e, what) {
 
 		this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
@@ -1100,6 +1112,36 @@ class DataSource {
 
 				str.push(line);
 			}
+		}
+
+		else if(what.mode == 'xlsx' && this.xlsxDownloadable) {
+
+			const response = [];
+
+			for(const row of this.response) {
+
+				const temp = {};
+				const arr = [...row];
+				for(const cell of arr) {
+					temp[cell[0]] = cell[1];
+				}
+
+				response.push(temp)
+			}
+
+			const obj = {
+					columns		 :[...this.columns.entries()].map(x => x[0]),
+					visualization:this.visualizations.selected.type,
+					sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+					file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+			};
+
+			for(const axis in this.visualizations.selected.options.axes) {
+				if (isNaN(parseInt(axis)))
+					obj[axis] = (((this.visualizations.selected.options.axes)[axis]).columns)[0].key;
+			}
+
+			return await this.excelSheetDownloader(response, obj);
 		}
 
 		else {
@@ -1140,6 +1182,30 @@ class DataSource {
 		a.click();
 	}
 
+	async excelSheetDownloader(data, obj) {
+
+		obj.data = data;
+
+		const xlsxBlobOutput = await (await (fetch("/api/v2/reports/engine/download", {
+			body: JSON.stringify(obj),
+			cache: 'no-cache',
+			credentials: 'same-origin',
+			headers: {
+				'user-agent': 'Mozilla/4.0 MDN Example',
+				'content-type': 'application/json'
+			},
+			method: 'POST',
+			mode: 'cors',
+			redirect: 'follow',
+			referrer: 'no-referrer',
+		}))).blob();
+
+		const link = document.createElement('a');
+		link.href = window.URL.createObjectURL(xlsxBlobOutput);
+		link.download = obj.file_name + "_" + new Date().toString().replace(/ /g, "_") + ".xlsx";
+		link.click();
+	}
+
 	get link() {
 
 		const link = window.location.origin + '/report/' + this.query_id;
@@ -1171,6 +1237,35 @@ class DataSource {
 		`);
 
 		this.visualizations.selected.container.classList.add('hidden');
+	}
+
+	render() {
+
+		const drilldown = [];
+
+		for(const column of this.columns.values()) {
+
+			if(column.drilldown && column.drilldown.query_id)
+				drilldown.push(column.name);
+		}
+
+		if(drilldown.length) {
+
+			const
+				actions = this.container.querySelector('header .actions'),
+				old = actions.querySelector('.drilldown');
+
+			if(old)
+				old.remove();
+
+			actions.insertAdjacentHTML('afterbegin', `
+				<span class="grey drilldown" title="Drilldown available on: ${drilldown.join(', ')}">
+					<i class="fas fa-angle-double-down"></i>
+				</span>
+			`);
+		}
+
+		this.columns.render();
 	}
 }
 
@@ -1410,36 +1505,15 @@ class DataSourceColumns extends Map {
 
 	render() {
 
-		const
-			container = this.source.container.querySelector('.columns'),
-			drilldown = [];
+		const container = this.source.container.querySelector('.columns');
 
 		container.textContent = null;
 
-		for(const column of this.values()) {
-
+		for(const column of this.values())
 			container.appendChild(column.container);
-
-			if(column.drilldown && column.drilldown.query_id)
-				drilldown.push(column.name);
-		}
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
-
-		if(!drilldown.length)
-			return;
-
-		const
-			actions = this.source.container.querySelector('header .actions'),
-			old = actions.querySelector('.drilldown');
-
-		if(old)
-			old.remove();
-
-		actions.insertAdjacentHTML('afterbegin', `
-			<span class="grey"><i class="fas fa-angle-double-down"></i></span>
-		`);
 	}
 
 	get list() {
@@ -2349,14 +2423,18 @@ class DataSourceTransformations extends Set {
 		super();
 
 		this.source = source;
-
-		const transformations = this.source.format && this.source.format.transformations ? this.source.format.transformations : [];
-
-		for(const transformation of transformations)
-			this.add(new DataSourceTransformation(transformation, this.source));
 	}
 
 	run(response) {
+
+		this.clear();
+
+		const
+			visualization = this.source.visualizations.selected,
+			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
+
+		for(const transformation of transformations)
+			this.add(new DataSourceTransformation(transformation, this.source));
 
 		response = JSON.parse(JSON.stringify(response));
 
@@ -2803,7 +2881,8 @@ class LinearVisualization extends Visualization {
 
 	draw() {
 
-		this.source.response;
+		if(!this.source.response || !this.source.response.length)
+			return this.source.error('No data found! :(');
 
 		if(!this.axes)
 			return this.source.error('Axes not defined! :(');
@@ -3883,18 +3962,23 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.innerTickSize(-this.width)
 				.orient('left');
 
-		let max = 0;
+		let
+			max = 0,
+			min = 0;
 
 		for(const row of this.rows) {
 
 			for(const [key, value] of row) {
 
-				if(this.axes.left.columns.some(c => c.key == key))
-					max = Math.max(max, Math.ceil(value) || 0)
+				if(!this.axes.left.columns.some(c => c.key == key))
+					continue;
+
+				max = Math.max(max, Math.ceil(value) || 0);
+				min = Math.min(min, Math.ceil(value) || 0);
 			}
 		}
 
-		this.y.domain([0, max]);
+		this.y.domain([min, max]);
 
 		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
 		this.x.rangeBands([0, this.width], 0.1, 0);
@@ -3965,16 +4049,16 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		if(!resize) {
 
 			bars = bars
+				.attr('y', cell => this.y(0))
 				.attr('height', () => 0)
-				.attr('y', () => this.height)
 				.transition()
 				.duration(Visualization.animationDuration)
 				.ease('quad-in');
 		}
 
 		bars
-			.attr('height', cell => this.height - this.y(cell.y))
-			.attr('y', cell => this.y(cell.y));
+			.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0))
+			.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
 	}
 });
 
@@ -4024,6 +4108,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 	}
 
 	draw() {
+
+		if(!this.source.response || !this.source.response.length)
+			return this.source.error('No data found! :(');
 
 		if(!this.axes)
 			return this.source.error('Axes not defined! :(');
@@ -4136,6 +4223,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
 		container.selectAll('*').remove();
+
+		if(!this.rows || !this.rows.length)
+			return;
 
 		this.columns = {
 			left: {},
@@ -4601,7 +4691,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		super.plot(resize);
 
-		if(!this.rows.length)
+		if(!this.rows || !this.rows.length)
 			return;
 
 		const that = this;

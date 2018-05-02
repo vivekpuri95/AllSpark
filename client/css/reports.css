@@ -1,3 +1,7 @@
+main > .notice {
+	padding: 10px;
+	text-align: center;
+}
 main .toolbar {
 	position: sticky;
 	top: 0px;
@@ -388,7 +392,36 @@ main #form #report-form {
 					height: 500px;
 					width: 100%;
 				}
-
+		main #visualization-preview .dashboard-present {
+			background: #fff;
+			margin-top: 10px;
+			padding: 10px;
+		}
+			main #visualization-preview .dashboard-present label span {
+				font-size: 90%;
+				color: #666;
+				font-weight: bold;
+			}
+			main #visualization-preview .dashboard-present select {
+				max-width: 210px;
+			}
+			main #visualization-preview .dashboard-present input {
+				color: #333 !important;
+			}
+			main #visualization-preview .dashboard-present .subform {
+				padding: 10px;
+			}
+			main #visualization-preview .dashboard-present button,
+			main #visualization-preview .dashboard-present input,
+			main #visualization-preview .dashboard-present select {
+				min-width: 100%;
+			}
+			main #visualization-preview .dashboard-present button:hover {
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+				background: var(--color-accent);
+				color: var(--color-accent-text) !important;
+				border-color: var(--color-accent);
+			}
 		main #visualization-form .options label {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
@@ -398,7 +431,7 @@ main #form #report-form {
 			margin-top: 0;
 
 		}
-		main #visualization-form .subform {
+		main .subform {
 			border-bottom: 1px solid #ccc;
 			margin-bottom: 10px;
 			display: grid;
@@ -407,10 +440,10 @@ main #form #report-form {
 			border: 1px solid #ccc;
 			background: #eef;
 		}
-			main #visualization-form .subform select[multiple] {
+			main .subform select[multiple] {
 				height: 75px;
 				padding: 0
 			}
-				main #visualization-form .subform select[multiple] option {
+				main .subform select[multiple] option {
 					padding: 3px 5px;
 				}

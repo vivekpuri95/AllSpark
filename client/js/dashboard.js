@@ -37,6 +37,10 @@ Page.class = class Dashboards extends Page {
 
 		const dashboards = await API.call('dashboards/list');
 
+		for(const dashboard of dashboards) {
+			dashboard.format.reports.sort((a,b) => parseInt(a.position) - parseInt(b.position))
+		}
+
 		for(const dashboard of dashboards || [])
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 
@@ -232,6 +236,22 @@ class Dashboard {
 
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
+
+		const side_button = page.container.querySelector('#reports .side');
+		const container = page.container.querySelector('#reports #blanket');
+
+		side_button.on('click', () => {
+
+			container.classList.remove('hidden');
+			page.container.querySelector('#reports .datasets').classList.remove('hidden')
+			page.container.querySelector('#reports .datasets').classList.add('show');
+		});
+
+		container.on('click', () => {
+
+			container.classList.add('hidden');
+			page.container.querySelector('#reports .datasets').classList.add('hidden');
+		});
 	}
 
 	constructor(dashboard, page) {
@@ -256,6 +276,8 @@ class Dashboard {
 
 		if(!Dashboard.container)
 			return;
+
+		this.page.container.querySelector('#reports .side').classList.remove('hidden');
 
 		for(const selected of document.querySelectorAll('main nav .label.selected'))
 			selected.classList.remove('selected');
@@ -290,7 +312,13 @@ class Dashboard {
 
 		await this.datasets.load();
 
+		const options = {
+			method: 'POST',
+		};
+
 		for(const report of this.reports) {
+
+			report.visibleTo = await API.call('reports/report/visibleTo', {query_id : report.query_id}, options);
 
 			report.container.setAttribute('style', `
 				order: ${report.dashboard.position || 0};
@@ -346,6 +374,40 @@ class Dashboard {
 			downloadAnchor.setAttribute('download', 'dashboard.json');
 			downloadAnchor.click();
 		});
+
+		const mailto = Dashboard.toolbar.querySelector('#mailto');
+		mailto.classList.remove('hidden');
+
+		mailto.on('click', () => {
+			mailto.classList.toggle('selected');
+			this.mailto();
+		});
+
+		if(!this.datasets.size)
+			this.page.container.querySelector('#reports .side').classList.add('hidden');
+	}
+
+	mailto() {
+
+		const form = document.querySelector('.mailto-content');
+		form.classList.toggle('hidden');
+
+		form.subject.value = this.name;
+		form.body.value = location.href;
+
+		form.on('submit', (e) => {
+
+			e.preventDefault();
+
+			const searchParams = new URLSearchParams();
+			searchParams.set('subject', form.subject.value);
+			searchParams.set('body', form.body.value);
+
+			const a = document.createElement('a');
+			a.setAttribute('href',`mailto: ${form.email.value}?${searchParams}`);
+
+			a.click();
+		})
 	}
 
 	get export() {
@@ -382,26 +444,6 @@ class Dashboard {
 			edit.removeEventListener('click', Dashboard.toolbar.editListener);
 
 		edit.on('click', Dashboard.toolbar.editListener = () => this.save());
-
-		Dashboard.container.insertAdjacentHTML('beforeend', `
-			<section class="data-source add-new" style="order: ${this.page.list.selectedReports.size};">
-				Add New Report
-			</section>
-		`);
-
-		Dashboard.container.querySelector('.data-source.add-new').on('click', async () => {
-
-			const query_id = parseInt(window.prompt('Enter the report ID'));
-
-			if(!query_id || !DataSource.list.has(query_id))
-				return;
-
-			this.format.reports.push({
-				query_id: parseInt(query_id),
-			});
-
-			this.load();
-		});
 
 		for(const report of this.page.list.selectedReports) {
 
@@ -607,7 +649,7 @@ class Dashboard {
 				method: 'POST',
 			};
 
-		await API.call('dashboards/updateFormat', parameters, options);
+		await API.call('dashboards/update', parameters, options);
 
 		await this.page.list.get(this.id).load();
 	}
@@ -728,6 +770,7 @@ class DashboardDatasets extends Map {
 
 		this.dashboard = dashboard;
 		this.page = this.dashboard.page;
+		this.container = this.page.container.querySelector('#reports .datasets');
 
 		const datasets = {};
 
@@ -774,11 +817,11 @@ class DashboardDatasets extends Map {
 
 	async render() {
 
-		const container = this.page.container.querySelector('#reports .datasets');
+		const container = this.container;
 
 		container.textContent = null;
 
-		container.classList.toggle('hidden', !this.size);
+		container.classList.add('hidden');
 
 		if(!this.size)
 			return;
@@ -848,18 +891,6 @@ class DashboardDatasets extends Map {
 
 			for(const dataset of container.querySelectorAll('label.hidden'))
 				dataset.classList.remove('hidden');
-		});
-
-		container.on('mouseenter', () => {
-			container.classList.add('show');
-		});
-
-		container.on('mouseleave', () => {
-
-			if(DashboardDatasets.timeout)
-				clearTimeout(DashboardDatasets.timeout);
-
-			DashboardDatasets.timeout = setTimeout(() => container.classList.remove('show'), 500);
 		});
 	}
 

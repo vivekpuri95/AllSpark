@@ -58,7 +58,7 @@ button > svg {
 
 input[type=submit] {
 	background: var(--color-accent);
-	color: var(--color-accent-text) !important;
+	color: var(--color-accent-text) ;
 	letter-spacing: 1px;
 }
 
@@ -1103,7 +1103,7 @@ body {
 .visualization .container > svg .axis path,
 .visualization .container > svg .axis line {
 	fill: none;
-	stroke: #ccc;
+	stroke: #ddd;
 }
 
 .visualization .container > svg .y path {

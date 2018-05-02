@@ -8,7 +8,7 @@ Page.class = class Credentials extends Page {
 
 		this.listContainer = this.container.querySelector('section#list');
 
-		this.container.querySelector('#add-connection').on('click', () => Credential.add());
+		this.container.querySelector('#add-connection').on('click', () => Credential.add(this));
 
 		(async () => {
 
@@ -76,13 +76,15 @@ class Credential {
 		}
 	}
 
-	static async add() {
+	static async add(page) {
 
 		Credential.form.removeEventListener('submit', Credential.submitListener);
 		Credential.form.reset();
 
-		Credential.container.querySelector('h1').textContent = 'Add New Data Source';
-		Credential.form.on('submit', Credential.submitListener = e => Credential.insert(e));
+		Credential.container.querySelector('.toolbar #test-connection').classList.add('hidden');
+		Credential.container.querySelector('.test-result').classList.add('hidden');
+		Credential.container.querySelector('h1').textContent = 'Add New Connection';
+		Credential.form.on('submit', Credential.submitListener = e => Credential.insert(e, page));
 
 		Credential.form.type.disabled = false;
 		Credential.types.get(Credential.form.type.value).render();
@@ -92,10 +94,9 @@ class Credential {
 		Credential.form.connection_name.focus();
 	}
 
-	static async insert(e) {
+	static async insert(e, page) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
+		e.preventDefault();
 
 		const
 			parameters = {
@@ -106,11 +107,11 @@ class Credential {
 				form: new FormData(Credential.form),
 			};
 
-		await API.call('credentials/insert', parameters, options);
+		const response = await API.call('credentials/insert', parameters, options);
 
 		await Credential.page.load();
 
-		await Sections.show('list');
+		page.list.get(response.insertId).edit();
 	}
 
 	constructor(item, page) {
@@ -129,6 +130,10 @@ class Credential {
 		Credential.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
 		Credential.form.on('submit', Credential.submitListener = e => this.update(e));
 
+		Credential.container.querySelector('.test-result').classList.add('hidden');
+		Credential.container.querySelector('.toolbar #test-connection').classList.remove('hidden');
+		Credential.container.querySelector('.toolbar #test-connection').on('click', async () => this.testConnection());
+
 		Credential.form.type.disabled = true;
 
 		for(const key in this) {
@@ -141,6 +146,33 @@ class Credential {
 		await Sections.show('form');
 
 		Credential.form.connection_name.focus();
+	}
+
+	async testConnection() {
+
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				id: this.id,
+			},
+			container = Credential.container.querySelector('.test-result');
+
+		const response = await API.call('credentials/testConnections', parameter, options);
+
+		container.classList.remove('hidden');
+
+		if(response.result[0].status) {
+			container.classList.add('notice');
+			container.classList.remove('warning');
+			container.textContent = 'Connection Successful';
+		}
+		else {
+			container.classList.add('warning');
+			container.classList.remove('notice');
+			container.textContent= 'Connection Failed';
+		}
 	}
 
 	async update(e) {
