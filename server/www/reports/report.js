@@ -261,3 +261,45 @@ exports.userPrvList = class extends API {
 		return finalList;
 	}
 };
+
+exports.visibleTo = class extends API {
+
+	async visibleTo() {
+
+		const user_access = await this.mysql.query(`
+			SELECT 
+				user_id, first_name, middle_name, last_name, email, phone 
+			FROM
+				tb_user_query JOIN tb_users USING (user_id) 
+			WHERE 
+				query_id = ? 
+				AND account_id = ?
+			
+			UNION
+			
+			SELECT 
+				ud.user_id, first_name, middle_name, last_name, u.email, u.phone
+			FROM
+				tb_query_visualizations qv
+			JOIN
+				tb_visualization_dashboard vd
+			ON
+				qv.visualization_id = vd.visualization_id 
+			JOIN
+				tb_user_dashboard ud
+			ON
+				vd.dashboard_id = ud.dashboard_id
+			JOIN
+				tb_users u
+			ON
+				u.user_id = ud.user_id
+			WHERE 
+				query_id = ?
+				AND account_id = ? 
+			`,
+			[this.request.body.query_id, this.account.account_id, this.request.body.query_id, this.account.account_id]
+		);
+
+		return user_access;
+	}
+}

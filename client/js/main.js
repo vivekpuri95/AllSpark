@@ -741,6 +741,7 @@ class DataSource {
 		this.resetError();
 
 		try {
+			const visibleTo = await API.call('reports/report/visibleTo', {query_id : this.query_id}, options);
 			response = await API.call('reports/engine/report', parameters.toString(), options);
 		}
 
