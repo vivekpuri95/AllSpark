@@ -818,6 +818,7 @@ class DataSource {
 					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
 					<div class="download-dropdown-content hidden">
 						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
+						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i>xlsx</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
 					</div>
 				</div>
@@ -917,6 +918,7 @@ class DataSource {
 
 		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
 		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
+		container.querySelector('.menu .xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
 
 		if(user.privileges.has('report')) {
 
@@ -968,6 +970,12 @@ class DataSource {
 			if(this.visualizations.selected)
 				container.appendChild(this.visualizations.selected.container);
 		}
+
+		this.xlsxDownloadable = ["line", "bar",].includes(this.visualizations.selected.type);
+
+		const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
+
+		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
 
 		if(!this.filters.size)
 			container.querySelector('.filters-toggle').classList.add('hidden');
@@ -1081,6 +1089,7 @@ class DataSource {
 		return response;
 	}
 
+
 	async download(e, what) {
 
 		this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
@@ -1100,6 +1109,36 @@ class DataSource {
 
 				str.push(line);
 			}
+		}
+
+		else if(what.mode == 'xlsx' && this.xlsxDownloadable) {
+
+			const response = [];
+
+			for(const row of this.response) {
+
+				const temp = {};
+				const arr = [...row];
+				for(const cell of arr) {
+					temp[cell[0]] = cell[1];
+				}
+
+				response.push(temp)
+			}
+
+			const obj = {
+					columns		 :[...this.columns.entries()].map(x => x[0]),
+					visualization:this.visualizations.selected.type,
+					sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+					file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+			};
+
+			for(const axis in this.visualizations.selected.options.axes) {
+				if (isNaN(parseInt(axis)))
+					obj[axis] = (((this.visualizations.selected.options.axes)[axis]).columns)[0].key;
+			}
+
+			return await this.excelSheetDownloader(response, obj);
 		}
 
 		else {
@@ -1138,6 +1177,30 @@ class DataSource {
 		a.download = fileName.join(' - ') + '.' + what.mode;
 
 		a.click();
+	}
+
+	async excelSheetDownloader(data, obj) {
+
+		obj.data = data;
+
+		const xlsxBlobOutput = await (await (fetch("/api/v2/reports/engine/download", {
+			body: JSON.stringify(obj),
+			cache: 'no-cache',
+			credentials: 'same-origin',
+			headers: {
+				'user-agent': 'Mozilla/4.0 MDN Example',
+				'content-type': 'application/json'
+			},
+			method: 'POST',
+			mode: 'cors',
+			redirect: 'follow',
+			referrer: 'no-referrer',
+		}))).blob();
+
+		const link = document.createElement('a');
+		link.href = window.URL.createObjectURL(xlsxBlobOutput);
+		link.download = obj.file_name + "_" + new Date().toString().replace(/ /g, "_") + ".xlsx";
+		link.click();
 	}
 
 	get link() {

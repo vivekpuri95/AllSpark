@@ -9,6 +9,8 @@ const request = require("request");
 const auth = require('../../utils/auth');
 const redis = require("../../utils/redis").Redis;
 const requestPromise = promisify(request);
+const config = require("config");
+const fs = require("fs");
 
 // prepare the raw data
 class report extends API {
@@ -551,8 +553,78 @@ class query extends API {
 	}
 }
 
+
+class download extends API {
+
+	async download() {
+
+		let queryData = this.request.body.data;
+
+		this.assert(this.request.body.visualization);
+
+		let [excel_visualization] = await this.mysql.query("select * from tb_visualizations where slug = ?", [this.request.body.visualization]);
+
+		this.assert(excel_visualization, "visualization does not exist");
+
+		excel_visualization = excel_visualization.excel_format;
+
+		this.assert(commonFun.isJson(excel_visualization), "excel_visualization format issue");
+
+		// queryData = JSON.parse(queryData);
+
+		const requestObj = {
+			data_obj: [
+				{
+					series: queryData,
+					charts: {
+						1: {
+							x: {name:this.request.body.bottom},
+							y: {name:this.request.body.left},
+							x1: {name:this.request.body.top},
+							y1: {name:this.request.body.right},
+							cols: this.request.body.columns,
+							type: JSON.parse(excel_visualization),
+						}
+					},
+					sheet_name: this.request.body.sheet_name,
+					file_name: `${this.request.body.file_name}_${(new Date().toISOString()).substring(0,10)}_${(this.user || {}).user_id || ''}`
+				},
+			]
+		};
+
+		const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
+
+		this.response.sendFile(data.body.response);
+		throw({"pass": true})
+
+	}
+
+	static async jsonRequest(obj, url) {
+
+		return new Promise((resolve, reject) => {
+
+			request({
+					method: 'POST',
+					uri: url,
+					json: obj
+				},
+				function (error, response, body) {
+					if (error) {
+						return reject(error)
+					}
+					return resolve({
+						response,
+						body
+					})
+				})
+			}
+		)
+	}
+}
+
 exports.query = query;
 exports.report = report;
 exports.ReportEngine = ReportEngine;
 exports.Postgres = Postgres;
 exports.APIRequest = APIRequest;
+exports.download = download;

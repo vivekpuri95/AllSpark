@@ -6,9 +6,9 @@ class Authenticate {
 
 	static async report(reportObject, userJWTObject) {
 
-		if(config.has("role_ignore") && config.has("privilege_ignore")) {
+		if (config.has("role_ignore") && config.has("privilege_ignore")) {
 
-			if(config.get("role_ignore") && config.get("privilege_ignore")) {
+			if (config.get("role_ignore") && config.get("privilege_ignore")) {
 
 				return true;
 			}
@@ -101,10 +101,16 @@ class Authenticate {
 					d.visibility as visibility
                 FROM
                     tb_query q
+                LEFT JOIN
+                     tb_user_query uq
+                ON
+                     uq.query_id = q.query_id
+                     AND user_id = ?
                 JOIN
                 	(
                 		SELECT
-                			d.id as dashboard, d.visibility
+                			d.id AS dashboard,
+                			d.visibility
                 		FROM
                 			tb_dashboards d
                 		JOIN
@@ -112,20 +118,18 @@ class Authenticate {
                 		ON
                 			d.id = ud.dashboard_id
                 		WHERE
-                			(ud.user_id = ? OR d.added_by = ?)
+                			ud.user_id = ?
                 			AND d.id = ?
                 		GROUP BY
                 			dashboard
+                		UNION ALL
+                		SELECT
+                			NULL AS dashboard,
+                			NULL AS visibility
+                		LIMIT 1
                 	) d
-
-                LEFT JOIN
-                     tb_user_query uq
-                ON
-                     uq.query_id = q.query_id
-                     AND user_id = ?
                 WHERE
-                	d.dashboard = ?
-                    AND q.query_id IN (
+                	q.query_id IN (
                     	SELECT
                     		qv.query_id
                     	FROM
@@ -140,16 +144,14 @@ class Authenticate {
                     AND is_deleted = 0
                     AND account_id = ?
 			`,
-				[userObj.user_id, userObj.user_id, dashboardQueryList, userObj.user_id,
-					dashboardQueryList,dashboardQueryList, userObj.account_id
-				]
+				[userObj.user_id, userObj.user_id, dashboardQueryList, dashboardQueryList, userObj.account_id]
 			);
 		}
 
 
 		for (const query of dashboardQueryList) {
 
-			if (query.visibility === "private") {
+			if (query.visibility) {
 
 				return {
 					error: false,

@@ -69,6 +69,7 @@ class API {
 				obj = new (API.endpoints.get(path))();
 
 				obj.request = request;
+				obj.response = response;
 				obj.assert = assertExpression;
 				const token = request.query.token || request.body.token;
 
@@ -119,6 +120,9 @@ class API {
 
 			catch (e) {
 
+				if(e.pass) {
+					return;
+				}
 				if (obj) {
 
 					await API.errorMessage(e, obj);
