@@ -132,7 +132,7 @@ main #reports > .datasets {
 	flex-direction: column;
 	justify-content: flex-start;
 	position: fixed;
-	right: 15px;
+	right: 0px;
 	top: 50px;
 	bottom: 0;
 	background: #fff;
