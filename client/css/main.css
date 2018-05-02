@@ -1204,3 +1204,40 @@ body {
         .visualization.livenumber .container .green {
             color: var(--color-green-text);
         }
+
+.dialog-box-blanket {
+	background: rgba(0, 0, 0, 0.25);
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	top: 0;
+	left: 0;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+	.dialog-box {
+		background: var(--color-primary-text);
+		box-shadow: 0 0 100px rgba(0, 0, 0, 0.25);
+		position: fixed;
+		max-height: 80%;
+		width: 40%;
+		align-self: center;
+		justify-self: center;
+	}
+
+		.dialog-box .heading {
+			display: flex;
+			background: var(--color-primary);
+			color: var(--color-primary-text);
+		}
+			.dialog-box .heading h3 {
+				margin: 10px;
+			}
+
+			.dialog-box .heading span {
+				margin: auto 10px auto auto;
+				cursor: pointer;
+			}

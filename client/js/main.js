@@ -882,6 +882,14 @@ class DataSource {
 			this.visualizations.selected.render(true);
 		});
 
+		let visibleToDialog;
+
+		container.querySelector('.description .label.visible').on('click', () => {
+			visibleToDialog = new DialogBox(this);
+			visibleToDialog.classList.remove('hidden');
+			page.container.appendChild(visibleToDialog);
+		});
+
 		container.querySelector('header .reload').on('click', () => {
 			this.visualizations.selected.load(true);
 		});
@@ -1268,6 +1276,32 @@ class DataSource {
 		this.columns.render();
 	}
 }
+
+class DialogBox {
+
+	constructor(report) {
+
+		this.report = report;
+
+		const container = document.createElement('div');
+		container.classList.add('hidden');
+		container.classList.add('dialog-box-blanket');
+
+		container.innerHTML = `
+			<div class="dialog-box">
+				<div class="heading"><h3>heading</h3><span><i class="fa fa-times" aria-hidden="true"></i></span></div>
+				<div class="body"><button>hola</button></div>
+			</div>
+		`;
+
+		container.querySelector('.dialog-box .heading span').on('click', () => {
+			container.classList.add('hidden');
+		});
+
+		return container;
+	}
+}
+
 
 class DataSourceFilters extends Map {
 
