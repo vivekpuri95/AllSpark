@@ -354,7 +354,10 @@ class Dashboard {
 		const mailto = Dashboard.toolbar.querySelector('#mailto');
 		mailto.classList.remove('hidden');
 
-		mailto.on('click', () => {
+		if(Dashboard.mail_listener)
+			mailto.removeEventListener('click', Dashboard.mail_listener);
+
+		mailto.on('click', Dashboard.mail_listener = () => {
 			mailto.classList.toggle('selected');
 			this.mailto();
 		});
@@ -376,7 +379,7 @@ class Dashboard {
 
 	mailto() {
 
-		const form = document.querySelector('.mailto-content');
+		const form = this.page.reports.querySelector('.mailto-content');
 		form.classList.toggle('hidden');
 
 		form.subject.value = this.name;
@@ -688,6 +691,8 @@ class Dashboard {
 
 		container.querySelector('.label').on('click', () => {
 
+			Dashboard.toolbar.querySelector('#mailto').classList.remove('selected');
+			this.page.reports.querySelector('.mailto-content').classList.add('hidden');
 			if(container.querySelector('.collapsed-submenu-bar')) {
 
 				for(const item of container.parentElement.querySelectorAll('.item')) {
