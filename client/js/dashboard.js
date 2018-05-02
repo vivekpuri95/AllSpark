@@ -248,6 +248,7 @@ class Dashboard {
 		});
 
 		container.on('click', () => {
+
 			container.classList.add('hidden');
 			page.container.querySelector('#reports .datasets').classList.add('hidden');
 		});
