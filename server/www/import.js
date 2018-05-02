@@ -101,7 +101,7 @@ exports.dashboard = class extends API {
 			data = JSON.parse(this.request.body.json);
 		}
 		catch (e) {
-			return 'Parse Error!!';
+			throw new API.Exception(400, 'Invalid JSON format!');
 		}
 
 		visualizations = data.dashboard.format.reports;
