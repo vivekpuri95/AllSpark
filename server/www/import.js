@@ -93,7 +93,7 @@ exports.dashboard = class extends API {
 			data = JSON.parse(this.request.body.json);
 		}
 		catch (e) {
-			return e;
+			throw new API.Exception(400, 'Invalid JSON format!');
 		}
 
 		let insertQuery = new exports.query();
