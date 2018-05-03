@@ -379,7 +379,7 @@ main #form #report-form {
 			main #visualization-form {
 				background: #fff;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-				margin-top: 35px;
+				margin-top: 33px;
 			}
 			main .preview {
 				min-height: 500px;
@@ -387,16 +387,35 @@ main #form #report-form {
 				top: 50px;
 				display: flex;
 				width: calc(100vw - 250px - 45px);
+				grid-row: 2/4;
+				grid-column: 2;
 			}
 				main .preview .data-source {
 					height: 500px;
 					width: 100%;
 				}
-		main #visualization-preview .dashboard-present {
+		main #visualization-preview .dashboard-present h4 {
+				margin-bottom: 10px;
+				border-bottom: 1px dashed #999;
+		}
+		main #visualization-preview .dashboard-present .dashboard_container {
 			background: #fff;
 			margin-top: 10px;
 			padding: 10px;
 		}
+			main #visualization-preview .dashboard-present .NA {
+				margin-bottom: 10px;
+			}
+			main #visualization-form .options .delete:hover,
+			main #visualization-preview .dashboard-present .dashboard-action .delete:hover {
+				background: #c33;
+				border: 0;
+			}
+			main #visualization-preview .dashboard-present .dashboard-action {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				grid-gap: calc(var(--gap) * 2);
+			}
 			main #visualization-preview .dashboard-present label span {
 				font-size: 90%;
 				color: #666;
