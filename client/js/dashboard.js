@@ -320,9 +320,9 @@ class Dashboard {
 				grid-row: auto / span ${report.dashboard.height || Dashboard.grid.rows};
 			`);
 
-			if(report.dashboard.visualization) {
+			if(report.dashboard.visualization_id) {
 
-				const [visualization] = report.visualizations.filter(v => v.type == report.dashboard.visualization);
+				const [visualization] = report.visualizations.filter(v => v.visualization_id == report.dashboard.visualization_id);
 
 				if(visualization)
 					report.visualizations.selected = visualization;
