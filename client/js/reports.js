@@ -1513,7 +1513,7 @@ class ReportVisualization {
 
 		const type = ReportVisualization.insert.form.type;
 
-		for(const visualization of MetaData.visualizations) {
+		for(const visualization of MetaData.visualizations.values()) {
 
 			ReportVisualization.form.type.insertAdjacentHTML('beforeend', `
 				<option value="${visualization.slug}">${visualization.name}</option>
