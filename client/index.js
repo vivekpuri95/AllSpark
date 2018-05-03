@@ -721,36 +721,50 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 					<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save</button>
 				</div>
 
-				<form id="configure-visualization-form" class="form">
+				<form id="configure-visualization-form">
 
-					<label>
-						<span>Name</span>
-						<input type="text" name="name" required>
-					</label>
+					<div class="configuration-section">
+						<h3><i class="fas fa-angle-right"></i> General</h3>
 
-					<label>
-						<span>Type</span>
-						<select name="type" required></select>
-					</label>
+						<div class="form body">
+							<label>
+								<span>Name</span>
+								<input type="text" name="name" required>
+							</label>
 
-					<div class="options"></div>
-				</form>
-
-				<div id="transformations"></div>
-
-				<div id="add-visualization-picker" class="hidden">
-
-					<div class="toolbar">
-						<button id="visualization-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
-						<button type="submit" form="add-visualization-form"><i class="fas fa-save"></i> Save</button>
+							<label>
+								<span>Type</span>
+								<select name="type" required></select>
+							</label>
+						</div>
 					</div>
 
-					<form id="add-visualization-form"></form>
+					<div class="configuration-section">
+						<h3><i class="fas fa-angle-right"></i> Options</h3>
+						<div class="options form body"></div>
+					</div>
+				</form>
+
+				<div class="configuration-section">
+					<h3><i class="fas fa-angle-right"></i> Transformations</h3>
+					<div class="body" id="transformations"></div>
 				</div>
+
+			</section>
+
+			<section class="section" id="add-visualization-picker">
+
+				<div class="toolbar">
+					<button id="visualization-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
+					<button type="submit" form="add-visualization-form"><i class="fas fa-save"></i> Save</button>
+				</div>
+
+				<form id="add-visualization-form"></form>
+
 			</section>
 		</div>
 
-		<div id="preview" class="bottom hidden"></div>
+		<div id="preview" class="hidden"></div>
 	`));
 });
 

@@ -147,14 +147,17 @@ class ReportsMangerPreview {
 	}
 
 	move() {
-		this.container.classList.remove('top', 'right', 'bottom', 'left');
-		this.page.stages.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
 
-		if(this.hidden || !this.docks)
+		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
+
+		if(this.hidden)
 			return;
 
-		this.container.classList.add(this.docks.value);
-		this.page.stages.container.classList.add('preview-' + this.docks.value);
+		let position = this.docks ? this.docks.value : 'bottom';
+
+		this.page.container.classList.add('preview-' + position);
+
+		this.report.visualizations.selected.render();
 	}
 }
 
@@ -1218,7 +1221,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 					</tr>
 				</tfoot>
 			</table>
-
 		`);
 
 		this.switcher.querySelector('#visualization-list').on('click', e => {
@@ -1227,30 +1229,22 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.switcher.querySelector('#add-visualization').on('click', () => {
 
-			this.container.querySelector('.toolbar').classList.add('hidden');
-			this.container.querySelector('#transformations').classList.add('hidden');
-			this.container.querySelector('#configure-visualization-form').classList.add('hidden');
-			this.container.querySelector('#add-visualization-picker').classList.remove('hidden');
-
 			this.addForm.reset();
 
 			this.page.preview.hidden = true;
 			this.switcher.querySelector('#visualization-list').classList.add('hidden');
 
-			Sections.show('stage-configure-visualization');
+			Sections.show('add-visualization-picker');
 		});
 
-		this.container.querySelector('#visualization-picker-back').on('click', () => {
+		this.page.container.querySelector('#visualization-picker-back').on('click', () => {
 
-			this.container.querySelector('.toolbar').classList.remove('hidden');
-			this.container.querySelector('#transformations').classList.remove('hidden');
-			this.container.querySelector('#configure-visualization-form').classList.remove('hidden');
-			this.container.querySelector('#add-visualization-picker').classList.add('hidden');
+			Sections.show('stage-configure-visualization');
 
 			this.page.preview.hidden = false;
 		});
 
-		this.addForm = this.container.querySelector('#add-visualization-form');
+		this.addForm = this.page.container.querySelector('#add-visualization-form');
 
 		for(const visualization of MetaData.visualizations.values()) {
 
@@ -1265,19 +1259,35 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		}
 
 		this.addForm.on('submit', e => this.insertVisualization(e));
+
+		for(const section of this.container.querySelectorAll('.configuration-section')) {
+
+			const
+				body = section.querySelector('.body'),
+				h3 = section.querySelector('h3');
+
+			body.classList.add('hidden');
+
+			h3.on('click', () => {
+
+				body.classList.toggle('hidden');
+
+				if(h3.querySelector('svg'))
+					h3.querySelector('svg').remove();
+
+				h3.insertAdjacentHTML('afterbegin', body.classList.contains('hidden') ? '<i class="fas fa-angle-right"></i>' : '<i class="fas fa-angle-down"></i>');
+			});
+		}
 	}
 
 	select() {
 
 		if(!this.visualization)
-			return super.select();
+			super.select();
 
 		this.switcher.querySelector('#visualization-list').classList.toggle('hidden');
 
-		this.container.querySelector('.toolbar').classList.remove('hidden');
-		this.container.querySelector('#transformations').classList.remove('hidden');
-		this.container.querySelector('#configure-visualization-form').classList.remove('hidden');
-		this.container.querySelector('#add-visualization-picker').classList.add('hidden');
+		Sections.show('stage-configure-visualization');
 
 		this.setupVisualizations();
 	}
@@ -1344,11 +1354,18 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		else throw new Page.Exception(`Unknown visualization type ${this.visualization.type}`);
 
-		try {
-			this.visualization.options = JSON.parse(this.visualization.options) || {};
-		} catch(e) {
-			this.visualization.options = {};
+		if(typeof this.visualization.options == 'string') {
+
+			try {
+				this.visualization.options = JSON.parse(this.visualization.options) || {};
+			} catch(e) {}
 		}
+
+		if(!this.visualization.options)
+			this.visualization.options = {};
+
+		if(!this.visualization.options.transformations)
+			this.visualization.options.transformations = [];
 
 		this.transformations = new ReportTransformations(this.visualization, this.page);
 
@@ -1377,7 +1394,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			e.preventDefault();
 
 		const
-			form = document.getElementById('add-visualization'),
 			parameters = {
 				query_id: this.report.query_id,
 				name: this.addForm.type.value[0].toUpperCase() + this.addForm.type.value.slice(1),
@@ -1387,11 +1403,13 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 				method: 'POST',
 			};
 
-		await API.call('reports/visualizations/insert', parameters, options);
+		const response = await API.call('reports/visualizations/insert', parameters, options);
 
 		await DataSource.load(true);
 
 		this.select();
+
+		this.load();
 	}
 
 	async deleteVisualization(visualization) {
