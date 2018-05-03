@@ -832,7 +832,7 @@ class DataSource {
 			<div class="drilldown hidden"></div>
 
 			<div class="description hidden">
-				<div class="body">${this.description || 'NA'}</div>
+				<div class="body">${this.description || 'No description found.'}</div>
 				<div class="footer">
 					<span>
 						<span class="label">Role:</span>
@@ -850,15 +850,15 @@ class DataSource {
 						<span class="label">Runtime:</span>
 						<span class="runtime"></span>
 					</span>
-					<span class="right">
-						<span class="label visible">Visible To</span>
+					<span class="right visible-to">
+						<span class="label">Visible To</span>
 						<span class="visible-length"></span>
 					</span>
 					<span>
 						<span class="label">Added By:</span>
-						<span>${this.added_by_name || 'NA'}</span>
+						<span><a>${this.added_by_name || 'NA'}</a></span>
 					</span>
-					<span>
+					<span class="requested hidden">
 						<span class="label">Requested By:</span>
 						<span>${this.requested_by || 'NA'}</span>
 					</span>
@@ -883,7 +883,7 @@ class DataSource {
 			this.visualizations.selected.render(true);
 		});
 
-		container.querySelector('.description .label.visible').on('click', () => {
+		container.querySelector('.description .visible-to').on('click', () => {
 
 			const page_dialog = page.container;
 
@@ -893,7 +893,12 @@ class DataSource {
 			const user_element = [];
 
 			for(const user of this.visibleTo) {
-				user_element.push(`<li>${user.name}<span>${user.reason.join(",")}</span></li>`);
+				user_element.push(`
+					<li>
+						<a>${user.name}</a>
+						<span>${user.reason.join(",")}</span>
+					</li>
+				`);
 			}
 
 			page_dialog.querySelector('.dialog-box-blanket .dialog-box .body').innerHTML = `<ul>${user_element.join()}</ul>`;
@@ -919,7 +924,10 @@ class DataSource {
 		container.querySelector('.menu .description-toggle').on('click', async () => {
 
 			this.visibleTo = await this.userList();
-			container.querySelector('.description .visible-length').textContent = this.visibleTo.length;
+			container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
+
+			if(this.requested_by)
+				container.querySelector('.description .requested').classList.remove('hidden');
 
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
@@ -1311,12 +1319,20 @@ class DialogBox {
 
 		this.container.innerHTML = `
 			<section class="dialog-box">
-				<header><h3>heading</h3><span><i class="fa fa-times" aria-hidden="true"></i></span></header>
+				<header><h3>heading</h3><span class="close"><i class="fa fa-times" aria-hidden="true"></i></span></header>
 				<div class="body"></div>
 			</section>
 		`;
 
-		this.container.querySelector('.dialog-box header span').on('click', () => {
+		this.container.querySelector('.dialog-box header span.close').on('click', () => {
+			this.container.classList.add('hidden');
+		});
+
+		this.container.querySelector('.dialog-box').on('click', e => {
+			e.stopPropagation();
+		});
+
+		this.container.on('click', () => {
 			this.container.classList.add('hidden');
 		});
 
