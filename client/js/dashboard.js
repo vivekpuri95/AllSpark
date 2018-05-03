@@ -351,6 +351,9 @@ class Dashboard {
 			downloadAnchor.click();
 		});
 
+		Dashboard.toolbar.querySelector('#mailto').classList.remove('selected');
+		this.page.reports.querySelector('.mailto-content').classList.add('hidden');
+
 		const mailto = Dashboard.toolbar.querySelector('#mailto');
 		mailto.classList.remove('hidden');
 
@@ -691,8 +694,6 @@ class Dashboard {
 
 		container.querySelector('.label').on('click', () => {
 
-			Dashboard.toolbar.querySelector('#mailto').classList.remove('selected');
-			this.page.reports.querySelector('.mailto-content').classList.add('hidden');
 			if(container.querySelector('.collapsed-submenu-bar')) {
 
 				for(const item of container.parentElement.querySelectorAll('.item')) {
