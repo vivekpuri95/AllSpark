@@ -1271,7 +1271,6 @@ class DataSource {
 
 class DataSourceFilters extends Map {
 
-
 	constructor(source) {
 
 		super();
