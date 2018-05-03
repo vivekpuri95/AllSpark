@@ -154,7 +154,7 @@ exports.userPrvList = class extends API {
 
 	async userPrvList() {
 
-		//this.user.privilege.needs("administrator");
+		this.user.privilege.needs("administrator");
 
 		const reportId = this.request.query.report_id;
 		const privilegedUsers = [];
