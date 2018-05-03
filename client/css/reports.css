@@ -397,6 +397,19 @@ main #form #report-form {
 			margin-top: 10px;
 			padding: 10px;
 		}
+			main #visualization-preview .dashboard-present .NA {
+				margin-bottom: 10px;
+			}
+			main #visualization-form .options .delete:hover,
+			main #visualization-preview .dashboard-present .dashboard-action .delete:hover {
+				background: #c33;
+				border: 0;
+			}
+			main #visualization-preview .dashboard-present .dashboard-action {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				grid-gap: calc(var(--gap) * 2);
+			}
 			main #visualization-preview .dashboard-present label span {
 				font-size: 90%;
 				color: #666;

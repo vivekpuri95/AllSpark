@@ -1711,7 +1711,6 @@ class ReportVisualizationDashboards {
 
 	constructor(visualization) {
 		this.visualization = visualization;
-		this.list = [];
 	}
 
 	async load() {
@@ -1737,9 +1736,10 @@ class ReportVisualizationDashboards {
 	render() {
 
 		if(!ReportVisualizations.preview.querySelector('.dashboard-present'))
-			ReportVisualizations.preview.insertAdjacentHTML('beforeend','<div class="dashboard-present"><h4>Dashboards</h4><div class="dashbpard_container"></div></div>');
+			ReportVisualizations.preview.insertAdjacentHTML('beforeend','<div class="dashboard-present"><h4>Dashboards</h4><div class="dashboard_container"></div></div>');
 
-		ReportVisualizations.dashboard_container = ReportVisualizations.preview.querySelector('.dashboard-present .dashbpard_container');
+		this.list = [];
+		ReportVisualizations.dashboard_container = ReportVisualizations.preview.querySelector('.dashboard-present .dashboard_container');
 		ReportVisualizations.dashboard_container.textContent = null;
 		for(const dashboard of Reports.dashboards.values()) {
 			for(const report of dashboard.format.reports) {
@@ -1749,9 +1749,11 @@ class ReportVisualizationDashboards {
 				}
 			}
 		}
+		if(!this.list.length)
+			ReportVisualizations.dashboard_container.innerHTML = `<div class="NA">No dashboard found :'(</div>`
 
 		const form = document.createElement('form');
-		form.classList.add('subform');
+		form.classList.add('subform','form');
 		form.setAttribute('id', 'add-dashboard')
 		form.innerHTML = `
 			<label>
@@ -1817,21 +1819,23 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>Position</span>
-				<input type="number" name='position' value="${this.format.reports[0].format.position || ''}">
+				<input type="number" name='position' value="${this.format.reports.filter(v => v.visualization_id == this.visualization.visualization_id)[0].format.position || ''}">
 			</label>
 
-			<label>
-				<button type="submit"><i class="fa fa-save"></i>Save</button>
-			</label>
+			<div class="dashboard-action">
+				<label>
+					<button type="submit"><i class="fa fa-save"></i>Save</button>
+				</label>
 
-			<label>
-				<button class="delete"><i class="far fa-trash-alt"></i>Delete</button>
-			</label>
+				<label>
+					<button class="delete"><i class="far fa-trash-alt"></i>Delete</button>
+				</label>
+			</div>
 		`;
 
 		form.dashboard_id.innerHTML = Reports.dashboards_options.join('');
 
-		form.dashboard_id.value = this.format.reports[0].dashboard_id;
+		form.dashboard_id.value = this.format.reports.filter(v => v.visualization_id == this.visualization.visualization_id)[0].dashboard_id;
 
 		form.querySelector('.delete').on('click', async (e) => {
 
