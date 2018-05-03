@@ -6,7 +6,6 @@ class Settings extends Page {
 		const nav = this.container.querySelector('nav');
 
 		for (const [key, settings] of Settings.list) {
-
 			const setting = new settings(this.container);
 
 			const a = document.createElement('a');
@@ -31,7 +30,6 @@ class Settings extends Page {
 
 			nav.appendChild(a);
 		}
-		;
 
 		let byDefault;
 		if(localStorage.settingsCurrentTab) {
@@ -44,7 +42,6 @@ class Settings extends Page {
 		else {
 			byDefault = this.container.querySelector('nav a');
 		}
-
 		byDefault.classList.add('selected');
 
 		for (const [key, settings] of Settings.list) {
@@ -215,6 +212,61 @@ Settings.list.set('roles', class Roles extends SettingPage {
 
 		await Sections.show('roles-list');
 
+	}
+});
+
+
+Settings.list.set('accounts', class Accounts extends SettingPage {
+
+	get name() {
+
+		return 'Accounts';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.accounts-page');
+		this.form = this.container.querySelector('#accounts-form');
+
+		this.container.querySelector('section#accounts-list #add-account').on('click', () => SettingsAccount.add(this));
+
+		this.container.querySelector('#accounts-form #cancel-form').on('click', () => {
+			Sections.show('accounts-list');
+		});
+
+		SettingsAccount.editor = new Editor(this.form.querySelector("#settings-format"));
+		SettingsAccount.editor.editor.getSession().setMode('ace/mode/json');
+	}
+
+	async load() {
+
+		const list = await API.call("accounts/list");
+		this.list = new Map;
+
+		for(const account of list) {
+
+			this.list.set(account.account_id, new SettingsAccount(account, this));
+		}
+
+		return await this.render();
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#accounts-list table tbody');
+		container.innerHTML = "";
+
+		if(!this.list.size) {
+
+			container.innerHTML = '<div class="NA">No Account found :(</div>';
+		}
+
+		for(const account of this.list.values()) {
+
+			container.appendChild(account.row);
+		}
+
+		return await Sections.show('accounts-list');
 	}
 });
 
@@ -557,4 +609,174 @@ class SettingsRole {
 
 		return this.container;
 	}
+}
+
+class SettingsAccount {
+
+	constructor(account, page) {
+
+		Object.assign(this, account);
+		this.page = page;
+		this.form = this.page.form.querySelector("#account-form");
+	}
+
+	static async add(page) {
+
+		SettingsAccount.page = page;
+
+		const accountForm = page.form.querySelector("#account-form");
+
+		SettingsAccount.form = accountForm;
+
+		accountForm.reset();
+		SettingsAccount.editor.value = "";
+
+		const logo = accountForm.logo;
+		const icon = accountForm.icon;
+
+		logo.src = "";
+		accountForm.querySelector("#logo").classList.toggle("hidden", true);
+
+		icon.src = "";
+		accountForm.querySelector("#icon").classList.toggle("hidden", true);
+
+		page.form.querySelector("#cancel-form").on('click', () => {
+			accountForm.removeEventListener("submit", SettingsAccount.submitEventListener);
+			Sections.show('accounts-list')
+		});
+
+		await Sections.show("accounts-form");
+
+		page.form.querySelector('h1').textContent = "Adding new Account";
+		page.form.removeEventListener("submit", SettingsAccount.submitEventListener);
+
+		page.form.on("submit", SettingsAccount.submitEventListener =  async e => {
+			await SettingsAccount.insert(e);
+			await page.load();
+			await Sections.show("accounts-form");
+		});
+	}
+
+	static async insert(e) {
+
+		if (e && e.preventDefault) {
+			e.preventDefault();
+		}
+
+		const
+			options = {
+				method: 'POST',
+				form: new FormData(SettingsAccount.form),
+			};
+
+		options.form.set("settings", SettingsAccount.editor.value);
+
+		return await API.call('accounts/insert', {}, options);
+	}
+
+	async edit() {
+		this.page.form.removeEventListener("submit", SettingsAccount.submitEventListener);
+
+		this.form.querySelector("#icon").src = this.icon;
+		this.form.querySelector("#logo").src = this.logo;
+
+		const fields = ["name", "url", "icon", "logo",];
+
+		for(const field of fields) {
+			this.form[field].value = SettingsAccount.format(this[field]);
+		}
+
+		SettingsAccount.editor.value = JSON.stringify(this.settings, 0, 4) || "b";
+
+		await Sections.show('accounts-form');
+
+		this.page.form.on("submit", SettingsAccount.submitEventListener = async e => {
+			await this.update(e);
+			await this.page.load();
+			await Sections.show('accounts-form');
+		});
+	}
+
+	async update(e) {
+
+		if (e && e.preventDefault) {
+			e.preventDefault();
+		}
+
+		const
+			parameter = {
+				account_id: this.account_id,
+				settings: SettingsAccount.editor.value,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		return await API.call('accounts/update', parameter, options);
+	}
+
+	async delete() {
+
+		if(!confirm('Deleting ' + this.name + '\'s account, Are you sure?'))
+			return;
+
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				account_id: this.account_id
+			};
+
+		await API.call('accounts/delete', parameter, options);
+		await this.page.load();
+	}
+
+	get row() {
+
+		const tr = document.createElement("tr");
+
+		const whiteListElements = ["account_id", "name", "icon", "url", "logo",];
+
+		for (const element in this) {
+
+			if (!whiteListElements.includes(element)) {
+
+				continue;
+			}
+
+			const td = document.createElement('td');
+
+			td.innerHTML = SettingsAccount.format(this[element]);
+			tr.appendChild(td);
+
+			if (["icon", "logo"].includes(element)) {
+				td.innerHTML = `<img src=${this[element]} height="30">`
+			}
+		}
+
+		tr.innerHTML += `
+				<td class="action green" title="Edit"><i class="fa fa-edit"></i></td>
+				<td class="action red" title="Delete"><i class="fa fa-trash-alt"></i></td>
+			`;
+
+		tr.querySelector('.green').on('click', () => this.edit());
+		tr.querySelector('.red').on('click', () => this.delete());
+
+		return tr;
+	}
+
+	static format(obj) {
+
+		if (typeof obj === "object") {
+
+			obj = JSON.stringify(obj);
+		}
+
+		return obj;
+	}
+
+	static submitEventListener() {}
+
 }

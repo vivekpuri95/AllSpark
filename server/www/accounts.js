@@ -1,5 +1,7 @@
 const API = require('../utils/api.js');
-var account = require('../onServerStart');
+const account = require('../onServerStart');
+const commonFun = require("../utils/commonFunctions");
+
 
 exports.list = class extends API {
 
@@ -108,11 +110,43 @@ exports.insert = class extends API {
 			payload[values] = this.request.body[values];
 		}
 
+		delete payload.settings;
+		delete payload.token;
+		delete payload.access_token;
+
 		const result = await this.mysql.query(
 			`INSERT INTO tb_accounts SET ?`,
 			payload,
 			'write'
 		);
+
+		this.assert(result.insertId, "account not inserted");
+
+		let settings, insertList = [];
+
+		if(this.request.body.settings) {
+			this.assert(commonFun.isJson(this.request.body.settings), "settings is not in JSON format");
+			settings = JSON.parse(this.request.body.settings);
+
+			for(const setting of settings) {
+
+				insertList.push([result.insertId, "account", setting.profile, JSON.stringify(setting.value)]);
+			}
+		}
+
+		await this.mysql.query(`
+			INSERT INTO
+				tb_settings
+				(
+					account_id,
+					owner,
+					profile,
+					value
+				) 
+				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
+			`,
+			insertList,
+			"write");
 
         await account.loadAccounts();
         return result;
@@ -134,6 +168,10 @@ exports.update = class extends API {
 				setParams[key] = payload[key] || null;
 		}
 
+		delete setParams.settings;
+		delete setParams.token;
+		delete setParams.access_token;
+
 		const values = [setParams, account_id];
 
 		const result = await this.mysql.query(
@@ -141,6 +179,34 @@ exports.update = class extends API {
 			values,
 			'write'
 		);
+
+		let settings, insertList = [];
+
+		if(this.request.body.settings) {
+
+			this.assert(commonFun.isJson(this.request.body.settings), "settings is not in JSON format");
+
+			settings = JSON.parse(this.request.body.settings);
+
+			for(const setting of settings) {
+
+				insertList.push([account_id, "account", setting.profile, JSON.stringify(setting.value)]);
+			}
+		}
+
+		await this.mysql.query(`
+			INSERT INTO
+				tb_settings
+				(
+					account_id,
+					owner,
+					profile,
+					value
+				) 
+				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
+			`,
+			insertList,
+			"write");
 
         await account.loadAccounts();
         return result;

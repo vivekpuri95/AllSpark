@@ -1076,6 +1076,62 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 				</form>
 			</section>
 		</div>
+		
+		<div class="setting-page accounts-page hidden">
+			<section class="section" id="accounts-list">
+				<h1>Manage Accounts</h1>
+				<header class="toolbar">
+					<button id="add-account"><i class="fa fa-plus"></i> Add New Account</button>
+				</header>
+				
+				<table class="block">
+					<thead>
+						<th>Account Id</th>
+						<th>Name</th>
+						<th>URL</th>
+						<th>Icon</th>
+						<th>Logo</th>
+						<th>Edit</th>
+						<th>Delete</th>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+            
+            <section class="section" id="accounts-form">
+                <h1></h1>
+                <header class="toolbar">
+                    <button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+                    <button type="submit" form="account-form"><i class="fa fa-save"></i> Save</button>
+                </header>
+                <form class="block form" id="account-form">
+                    <label>
+                        <span>Name</span>
+                        <input type="text" name="name">
+                    </label>
+                    <label>
+                        <span>URL</span>
+                        <input type="text" name="url">
+                    </label>
+                    <label>
+                        <span>Icon</span>
+                        <img src="" alt="icon" id="icon" height="30">
+                        <input type="text" name="icon">
+                    </label>
+                    <label>
+                        <span>Logo</span>
+                        <img src="" alt="logo" id="logo" height="30">
+                        <input type="text" name="logo">
+                    </label>
+                    
+					<label id="format">
+						<span>Settings</span>
+						<textarea id="settings-format" name="settings"></textarea>
+					</label>
+				
+                </form>
+            </section>
+		</div>
 	`));
 });
 
