@@ -244,6 +244,22 @@ body {
 		background-size: contain;
 	}
 
+	main .dialog-box-blanket .dialog-box .body ul {
+		list-style-type: none;
+		padding: 0px;
+		display: grid;
+		grid-template-columns: auto auto auto;
+		margin: 10px 0px 0px 10px;
+	}
+
+	main .dialog-box-blanket .dialog-box .body ul li {
+		padding: 10px;
+		display: flex;
+		flex-direction: column;
+	}
+	main .dialog-box-blanket .dialog-box .body ul li span {
+		color: #999;
+	}
 
 	main .section > h1,
 	main .section > h2 {
@@ -1226,12 +1242,15 @@ body {
 		width: 40%;
 		align-self: center;
 		justify-self: center;
+		overflow: auto;
 	}
 
 		.dialog-box .heading {
 			display: flex;
 			background: var(--color-primary);
 			color: var(--color-primary-text);
+			position: sticky;
+			top: 0;
 		}
 			.dialog-box .heading h3 {
 				margin: 10px;
@@ -1241,3 +1260,15 @@ body {
 				margin: auto 10px auto auto;
 				cursor: pointer;
 			}
+
+		.dialog-box .body {
+
+		}
+
+		.dialog-box .footer {
+			background: var(--color-primary);
+			color: var(--color-primary-text);
+			position: sticky;
+			bottom: 0;
+			height: 40px;
+		}

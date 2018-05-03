@@ -882,12 +882,23 @@ class DataSource {
 			this.visualizations.selected.render(true);
 		});
 
-		let visibleToDialog;
-
 		container.querySelector('.description .label.visible').on('click', () => {
-			visibleToDialog = new DialogBox(this);
-			visibleToDialog.classList.remove('hidden');
-			page.container.appendChild(visibleToDialog);
+
+			const page_dialog = page.container;
+
+			page_dialog.appendChild(new DialogBox(this));
+			page_dialog.querySelector('.dialog-box-blanket .dialog-box h3').textContent = 'Users';
+
+			const user_element = [];
+
+			for(const user of this.visibleTo) {
+
+				user_element.push(`<li>${user.name}<span>(${user.reason.join(",")})</span></li>`);
+			}
+
+			page_dialog.querySelector('.dialog-box-blanket .dialog-box .footer').classList.add('hidden');
+			page_dialog.querySelector('.dialog-box-blanket .dialog-box .body').innerHTML = `<ul>${user_element.join()}</ul>`;
+			page_dialog.querySelector('.dialog-box-blanket').classList.remove('hidden');
 		});
 
 		container.querySelector('header .reload').on('click', () => {
@@ -1282,23 +1293,24 @@ class DialogBox {
 	constructor(report) {
 
 		this.report = report;
+		this.container = document.createElement('div');
 
-		const container = document.createElement('div');
-		container.classList.add('hidden');
-		container.classList.add('dialog-box-blanket');
+		this.container.classList.add('hidden');
+		this.container.classList.add('dialog-box-blanket');
 
-		container.innerHTML = `
+		this.container.innerHTML = `
 			<div class="dialog-box">
 				<div class="heading"><h3>heading</h3><span><i class="fa fa-times" aria-hidden="true"></i></span></div>
-				<div class="body"><button>hola</button></div>
+				<div class="body"></div>
+				<div class="footer"></div>
 			</div>
 		`;
 
-		container.querySelector('.dialog-box .heading span').on('click', () => {
-			container.classList.add('hidden');
+		this.container.querySelector('.dialog-box .heading span').on('click', () => {
+			this.container.classList.add('hidden');
 		});
 
-		return container;
+		return this.container;
 	}
 }
 
