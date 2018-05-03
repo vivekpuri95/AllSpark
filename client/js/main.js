@@ -832,7 +832,7 @@ class DataSource {
 			<div class="drilldown hidden"></div>
 
 			<div class="description hidden">
-				<div class="body">${this.description}</div>
+				<div class="body">${this.description || 'NA'}</div>
 				<div class="footer">
 					<span>
 						<span class="label">Role:</span>
@@ -852,6 +852,7 @@ class DataSource {
 					</span>
 					<span class="right">
 						<span class="label visible">Visible To</span>
+						<span class="visible-length"></span>
 					</span>
 					<span>
 						<span class="label">Added By:</span>
@@ -887,16 +888,14 @@ class DataSource {
 			const page_dialog = page.container;
 
 			page_dialog.appendChild(new DialogBox(this));
-			page_dialog.querySelector('.dialog-box-blanket .dialog-box h3').textContent = 'Users';
+			page_dialog.querySelector('.dialog-box-blanket .dialog-box header h3').textContent = 'Users';
 
 			const user_element = [];
 
 			for(const user of this.visibleTo) {
-
-				user_element.push(`<li>${user.name}<span>(${user.reason.join(",")})</span></li>`);
+				user_element.push(`<li>${user.name}<span>${user.reason.join(",")}</span></li>`);
 			}
 
-			page_dialog.querySelector('.dialog-box-blanket .dialog-box .footer').classList.add('hidden');
 			page_dialog.querySelector('.dialog-box-blanket .dialog-box .body').innerHTML = `<ul>${user_element.join()}</ul>`;
 			page_dialog.querySelector('.dialog-box-blanket').classList.remove('hidden');
 		});
@@ -917,7 +916,10 @@ class DataSource {
 			this.visualizations.selected.render(true);
 		});
 
-		container.querySelector('.menu .description-toggle').on('click', () => {
+		container.querySelector('.menu .description-toggle').on('click', async () => {
+
+			this.visibleTo = await this.userList();
+			container.querySelector('.description .visible-length').textContent = this.visibleTo.length;
 
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
@@ -1059,6 +1061,15 @@ class DataSource {
 		this.columns.render();
 
 		return container;
+	}
+
+
+	async userList() {
+
+		if(this.visibleTo)
+			return this.visibleTo;
+
+		return await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
 	get response() {
@@ -1299,14 +1310,13 @@ class DialogBox {
 		this.container.classList.add('dialog-box-blanket');
 
 		this.container.innerHTML = `
-			<div class="dialog-box">
-				<div class="heading"><h3>heading</h3><span><i class="fa fa-times" aria-hidden="true"></i></span></div>
+			<section class="dialog-box">
+				<header><h3>heading</h3><span><i class="fa fa-times" aria-hidden="true"></i></span></header>
 				<div class="body"></div>
-				<div class="footer"></div>
-			</div>
+			</section>
 		`;
 
-		this.container.querySelector('.dialog-box .heading span').on('click', () => {
+		this.container.querySelector('.dialog-box header span').on('click', () => {
 			this.container.classList.add('hidden');
 		});
 

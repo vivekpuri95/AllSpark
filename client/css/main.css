@@ -1245,29 +1245,25 @@ body {
 		overflow: auto;
 	}
 
-		.dialog-box .heading {
+		.dialog-box header {
 			display: flex;
 			background: var(--color-primary);
 			color: var(--color-primary-text);
 			position: sticky;
 			top: 0;
 		}
-			.dialog-box .heading h3 {
+			.dialog-box header h3 {
 				margin: 10px;
 			}
 
-			.dialog-box .heading span {
+			.dialog-box header span {
 				margin: auto 10px auto auto;
 				cursor: pointer;
 			}
 
-		.dialog-box .body {
-
-		}
-
-		.dialog-box .footer {
-			background: var(--color-primary);
-			color: var(--color-primary-text);
+		.dialog-box footer {
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
 			position: sticky;
 			bottom: 0;
 			height: 40px;
