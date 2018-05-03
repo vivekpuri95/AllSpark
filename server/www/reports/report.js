@@ -154,114 +154,165 @@ exports.userPrvList = class extends API {
 
 	async userPrvList() {
 
-		this.user.privilege.needs("administrator");
+		//this.user.privilege.needs("administrator");
 
 		const reportId = this.request.query.report_id;
+		const privilegedUsers = [];
 
-		const [reportDetails] = await this.mysql.query(`
-			select
-				*
-			from
-				tb_query
-			where
-				query_id = ?
-				and is_deleted = 0
-				and is_enabled = 1
-		`,
-			[reportId]);
+		const users = await this.mysql.query(`
+			SELECT
+				
+				user.*,
+				IF(dashboard_user.query_id_from_dashboards IS NULL AND user_query.query_id_from_user_query IS NULL, 0, 1) AS flag
+			FROM
+               (SELECT
+                    'privileges' AS 'owner',
+                    user_id,
+                    concat_ws(" ",first_name, middle_name, last_name) AS \`name\`,
+                    email,
+                    IF(p.is_admin = 1, 0, privilege_id) owner_id,
+                    p.name AS owner_name,
+                    IF(c.is_admin = 1, 0, category_id) AS category_id,
+                    c.name AS category_name
+               FROM
+                    tb_user_privilege up
+               JOIN tb_privileges p
+                    USING(privilege_id)
+               JOIN tb_users u
+                    USING(user_id)
+               JOIN tb_categories c
+                    USING(category_id)
+               WHERE
+                    u.account_id = ?
 
-		this.assert(reportDetails, `report ${reportId} not found`);
+                UNION ALL
 
-		const userRoles = await this.mysql.query(`
-
-                SELECT
-                	ur.user_id,
-                	email,
-                	first_name,
-					middle_name,
-					last_name,
-                    IF(r.is_admin = 1, 0, ur.role_id) AS role_id,
+               SELECT
+                    'roles' AS 'owner',
+                    u.user_id,
+                    concat_ws(" ",first_name, middle_name, last_name) AS \`name\`,
+                    email,
+                    IF(r.is_admin = 1, 0, ur.role_id) AS owner_id,
+                    r.name AS role_name,
                     IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
-                    CASE WHEN uq.id IS NULL THEN 0 ELSE 1 END AS user_query_flag
-                FROM
+                    c.name AS category_name
+               FROM
                     tb_user_roles ur
-                JOIN
+               JOIN
                     tb_users u
                     USING(user_id)
-                JOIN
+               JOIN
                     tb_categories c
                     USING(category_id)
-                JOIN
+               JOIN
                     tb_roles r
                     USING(role_id)
-                LEFT JOIN
-                	tb_user_query uq
-                	ON uq.user_id = ur.user_id
-                	AND query_id = ?
-                WHERE
-                     u.account_id = ?
+               WHERE
+                    u.account_id = ?
+               ) user
+               LEFT  JOIN
+                    (
+                		SELECT
+                			query_id AS query_id_from_dashboards,
+                			user_id
+                		FROM
+                			tb_visualization_dashboard vd
+                		JOIN
+                			tb_user_dashboard ud
+                			USING(dashboard_id)
+                		JOIN
+                			tb_query_visualizations qv
+                			USING(visualization_id)
+                		WHERE
+                			 query_id = ?
+                	) dashboard_user
+               USING(user_id)
+                	LEFT JOIN
+                   	(
+                   		SELECT 
+                   			query_id AS query_id_from_user_query, 
+                   			user_id  
+                   		FROM 
+                   			tb_user_query 
+                   		WHERE 
+                   			query_id = ?
+                   ) user_query
+               USING(user_id) 
 		`,
-			[reportId, this.account.account_id]);
+			[this.account.account_id, this.account.account_id, reportId, reportId]);
+
+
 
 		const userObj = {};
 
-		for (const role of userRoles) {
+		for(const row of users) {
 
-			if (!userObj[role.user_id]) {
+			if (!userObj[row.user_id]) {
 
-				userObj[role.user_id] = {
-					user_id: role.user_id,
+				userObj[row.user_id] = {
+
+					name: row.name,
+					email: row.email,
+					user_id: row.user_id,
 					account_id: this.account.account_id,
-					name: [role.first_name, role.middle_name, role.last_name].filter(x => x).join(" "),
-					email: role.email,
-					privileges: [],
 					roles: [],
-					user_query: role.user_query_flag,
-				};
+					privileges: [],
+					flag: row.flag,
+				}
+			}
 
-				userObj[role.user_id].roles.push({
-					category_id: role.category_id,
-					role: role.role_id,
+			if (row.owner === "privileges") {
+
+				userObj[row.user_id].privileges.push({
+					category_id: row.category_id,
+					privilege_id: row.owner_id,
+					privilege_name: row.owner_name
 				})
 			}
-		}
-		const finalList = [];
 
-		for (const userId in userObj) {
+			else if (row.owner === "roles") {
 
-
-			const user = new User(userObj[userId]);
-
-			const authResponse = await auth.report({...reportDetails, flag: userObj[userId].user_query}, user);
-
-			if (authResponse.error) {
-
-				continue;
+				userObj[row.user_id].roles.push({
+					category_id: row.category_id,
+					role: row.owner_id,
+					role_name: row.owner_name
+				})
 			}
-			const reason = [];
+		}// User Details
 
-			if (userObj[userId].user_query) {
 
-				reason.push('User Query');
+			const reportDetails = await this.mysql.query(`
+				SELECT
+                  q.*
+                FROM
+                    tb_query q
+                WHERE
+                    q.query_id = ?
+                    AND is_enabled = 1
+                    AND is_deleted = 0
+                    AND account_id = ?`,
+				[reportId, this.account.account_id]
+			);
 
+			//queryDetails
+
+
+			for(const user in userObj) {
+
+				const authResponse = await auth.report({...reportDetails[0], flag: userObj[user].flag}, userObj[user]);
+				if(!authResponse.error) {
+
+					delete userObj[user].roles;
+					delete userObj[user].privileges;
+					privilegedUsers.push({...userObj[user], reason: authResponse.message});
+				}
 			}
-			if (authResponse.message === 'privileged user!') {
+		return privilegedUsers;
 
-				reason.push('User Role');
-			}
-
-			finalList.push({
-				user_id: userId,
-				name: userObj[userId].name,
-				email: userObj[userId].email,
-				reason: reason,
-			})
-		}
-
-		return finalList;
 	}
-};
 
+
+};
 exports.visibleTo = class extends API {
 
 	async visibleTo() {
