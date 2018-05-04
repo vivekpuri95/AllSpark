@@ -832,7 +832,7 @@ class DataSource {
 			<div class="drilldown hidden"></div>
 
 			<div class="description hidden">
-				<div class="body">${this.description}</div>
+				<div class="body">${this.description || 'No description found.'}</div>
 				<div class="footer">
 					<span>
 						<span class="label">Role:</span>
@@ -850,14 +850,15 @@ class DataSource {
 						<span class="label">Runtime:</span>
 						<span class="runtime"></span>
 					</span>
-					<span class="right">
-						<span class="label visible">Visible To</span>
+					<span class="right visible-to">
+						<span class="label">Visible To</span>
+						<span class="visible-length"></span>
 					</span>
 					<span>
 						<span class="label">Added By:</span>
-						<span>${this.added_by_name || 'NA'}</span>
+						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
-					<span>
+					<span class="requested hidden">
 						<span class="label">Requested By:</span>
 						<span>${this.requested_by || 'NA'}</span>
 					</span>
@@ -882,6 +883,29 @@ class DataSource {
 			this.visualizations.selected.render(true);
 		});
 
+		container.querySelector('.description .visible-to').on('click', () => {
+
+			if(!this.dialog)
+				this.dialog = new DialogBox(this);
+
+			this.dialog.heading = 'Users';
+
+			const user_element = [];
+
+			for(const user of this.visibleTo) {
+				user_element.push(`
+					<li>
+						<a href="/user/profile/${user.user_id}">${user.name}</a>
+						<span>${user.reason.join(",")}</span>
+					</li>
+				`);
+			}
+
+			this.dialog.body = `<ul class="user-list">${user_element.join()}</ul>`;
+			this.dialog.show();
+
+		});
+
 		container.querySelector('header .reload').on('click', () => {
 			this.visualizations.selected.load(true);
 		});
@@ -898,12 +922,19 @@ class DataSource {
 			this.visualizations.selected.render(true);
 		});
 
-		container.querySelector('.menu .description-toggle').on('click', () => {
+		container.querySelector('.menu .description-toggle').on('click', async () => {
+
+
+			if(this.requested_by)
+				container.querySelector('.description .requested').classList.remove('hidden');
 
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
 
 			this.visualizations.selected.render(true);
+
+			await this.userList();
+			container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
 		});
 
 		container.querySelector('.menu .query-toggle').on('click', () => {
@@ -1040,6 +1071,15 @@ class DataSource {
 		this.columns.render();
 
 		return container;
+	}
+
+
+	async userList() {
+
+		if(this.visibleTo)
+			return this.visibleTo;
+
+		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
 	get response() {
@@ -6240,6 +6280,83 @@ class Dataset {
 			input.checked = false;
 
 		this.update();
+	}
+}
+
+class DialogBox {
+
+	constructor(report) {
+
+		this.report = report;
+
+		this.setContainer();
+
+		this.setEvents();
+		document.querySelector('main').appendChild(this.container);
+	}
+
+	setContainer() {
+
+		this.container = document.createElement('div');
+		this.container.classList.add('dialog-box-blanket');
+
+		this.container.innerHTML = `
+			<section class="dialog-box">
+				<header><h3></h3><span class="close"><i class="fa fa-times"></i></span></header>
+				<div class="body"></div>
+			</section>
+		`;
+
+		this.hide();
+	}
+
+	setEvents() {
+
+		this.container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
+
+		this.container.querySelector('.dialog-box').on('click', e => e.stopPropagation());
+
+		this.container.on('click', () => this.hide());
+	}
+
+	set heading(dialogHeading) {
+
+		const heading = this.container.querySelector('.dialog-box header h3');
+
+		if(typeof dialogHeading == 'object') {
+
+			heading.textContent = null;
+			heading.appendChild(dialogHeading);
+		}
+		else {
+
+			heading.innerHTML = dialogHeading;
+		}
+	}
+
+	set body(dialogBody) {
+
+		const body = this.container.querySelector('.dialog-box .body');
+
+		if(typeof dialogBody == 'object') {
+
+			body.textContent = null;
+			body.appendChild(dialogBody);
+		}
+		else {
+
+			body.innerHTML = dialogBody;
+		}
+	}
+
+	hide() {
+
+		this.container.classList.add('hidden');
+	}
+
+	show() {
+
+		this.container.classList.remove('hidden');
 	}
 }
 

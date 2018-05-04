@@ -243,14 +243,13 @@ class Dashboard {
 		side_button.on('click', () => {
 
 			container.classList.remove('hidden');
-			page.container.querySelector('#reports .datasets').classList.remove('hidden')
 			page.container.querySelector('#reports .datasets').classList.add('show');
 		});
 
 		container.on('click', () => {
 
 			container.classList.add('hidden');
-			page.container.querySelector('#reports .datasets').classList.add('hidden');
+			page.container.querySelector('#reports .datasets').classList.remove('show');
 		});
 	}
 
@@ -312,13 +311,7 @@ class Dashboard {
 
 		await this.datasets.load();
 
-		const options = {
-			method: 'POST',
-		};
-
 		for(const report of this.reports) {
-
-			report.visibleTo = await API.call('reports/report/visibleTo', {query_id : report.query_id}, options);
 
 			report.container.setAttribute('style', `
 				order: ${report.dashboard.position || 0};
@@ -326,9 +319,9 @@ class Dashboard {
 				grid-row: auto / span ${report.dashboard.height || Dashboard.grid.rows};
 			`);
 
-			if(report.dashboard.visualization) {
+			if(report.dashboard.visualization_id) {
 
-				const [visualization] = report.visualizations.filter(v => v.type == report.dashboard.visualization);
+				const [visualization] = report.visualizations.filter(v => v.visualization_id == report.dashboard.visualization_id);
 
 				if(visualization)
 					report.visualizations.selected = visualization;
@@ -827,7 +820,7 @@ class DashboardDatasets extends Map {
 
 		container.textContent = null;
 
-		container.classList.add('hidden');
+		container.classList.remove('show');
 
 		if(!this.size)
 			return;
