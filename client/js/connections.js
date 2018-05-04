@@ -160,17 +160,18 @@ class Credential {
 			container = Credential.container.querySelector('.test-result');
 
 		let response;
-		container.classList.remove('hidden');
-
 		try {
 			response = await API.call('credentials/testConnections', parameter, options);
 		}
 		catch (e) {
+			container.classList.remove('hidden');
 			container.classList.add('warning');
 			container.classList.remove('notice');
 			container.textContent = e;
 			return;
 		}
+
+		container.classList.remove('hidden');
 
 		if(response.status) {
 			container.classList.add('notice');
