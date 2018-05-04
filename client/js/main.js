@@ -6246,8 +6246,10 @@ class Dataset {
 				inputs = this.container.querySelectorAll('.options .list label input'),
 				sourceInputs = source.container.querySelectorAll('.options .list label input');
 
-			for(const [i, input] of sourceInputs.entries())
-				inputs[i].checked = input.checked;
+			if (inputs.length) {
+				for (const [i, input] of sourceInputs.entries())
+					inputs[i].checked = input.checked;
+			}
 		}
 
 		else {
