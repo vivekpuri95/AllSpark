@@ -95,7 +95,7 @@ main > nav::-webkit-scrollbar-track {
 	main > nav .label.selected {
 		background: var(--color-secondary);
 		color: var(--color-secondary-text);
-		box-shadow: inset 10px 0px 0 var(--color-accent);
+		box-shadow: inset 5px 0px 0 var(--color-accent);
 	}
 		main > nav .submenu .label {
 			padding-left: 40px;
