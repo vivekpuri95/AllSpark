@@ -1252,7 +1252,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 				<label>
 					<figure>
 						<img src="${visualization.image}"></img>
-						<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp;&nbsp;${visualization.name}</figcaption>
+						<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp; ${visualization.name}</figcaption>
 					</figure>
 				</label>
 			`);
