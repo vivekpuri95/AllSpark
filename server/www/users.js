@@ -190,7 +190,7 @@ exports.metadata = class extends API {
 			metadata[row.type].push(row);
 		}
 
-		metadata.visualizations = await this.mysql.query('SELECT id, name, slug FROM tb_visualizations');
+		metadata.visualizations = await this.mysql.query('SELECT * FROM tb_visualizations');
 
 		metadata.datasets = await this.mysql.query(
 			'SELECT id, name, query_id, category_id FROM tb_datasets WHERE account_id = ?',

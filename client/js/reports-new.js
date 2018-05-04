@@ -1251,8 +1251,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.addForm.insertAdjacentHTML('beforeend', `
 				<label>
 					<figure>
-						<img src="data:text/png,asd"></img>
-						<figcaption><input type="radio" name="type" value="${visualization.slug}"> ${visualization.name}</figcaption>
+						<img src="${visualization.image}"></img>
+						<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp; ${visualization.name}</figcaption>
 					</figure>
 				</label>
 			`);
