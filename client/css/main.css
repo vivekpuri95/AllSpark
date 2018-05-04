@@ -475,6 +475,7 @@ body {
 			margin: 0;
 			margin-top:  calc(var(--gap) * 2);
 			display: flex;
+			flex-wrap: wrap;
 		}
 			main .data-source .toolbar > * {
 				margin: 0 5px;

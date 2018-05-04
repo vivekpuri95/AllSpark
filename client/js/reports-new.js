@@ -16,6 +16,8 @@ class ReportsManger extends Page {
 
 		this.stages.clear();
 
+		this.stages.container = this.container.querySelector('#stages');
+
 		const switcher = this.container.querySelector('#stage-switcher');
 
 		for(const [key, stageClass] of ReportsManger.stages) {
@@ -109,14 +111,53 @@ class ReportsMangerPreview {
 		await this.report.visualizations.selected.load();
 
 		this.report.container.querySelector('header .menu-toggle').click();
+
+		this.renderDocks();
 	}
 
 	set hidden(hidden) {
 		this.container.classList.toggle('hidden', hidden);
+		this.move();
 	}
 
 	get hidden() {
 		return this.container.classList.contains('hidden');
+	}
+
+	renderDocks() {
+
+		this.docks = document.createElement('select');
+
+		this.docks.insertAdjacentHTML('beforeend', `
+			<option value="right">Right</option>
+			<option value="bottom">Bottom</option>
+			<option value="left">Left</option>
+		`);
+
+		this.docks.value = localStorage.reportsPreviewDock || 'bottom';
+
+		this.docks.on('change', () => {
+			localStorage.reportsPreviewDock = this.docks.value;
+			this.move();
+		});
+
+		this.move();
+
+		this.report.container.querySelector('.menu').appendChild(this.docks);
+	}
+
+	move() {
+
+		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
+
+		if(this.hidden)
+			return;
+
+		let position = this.docks ? this.docks.value : 'bottom';
+
+		this.page.container.classList.add('preview-' + position);
+
+		this.report.visualizations.selected.render();
 	}
 }
 
@@ -147,9 +188,12 @@ class ReportsMangerStage {
 
 		container.on('click', () => {
 
+			if(this.disabled)
+				return;
+
 			this.select();
 
-			if(!this.disabled)
+			if(this.key != 'configure-visualization')
 				history.pushState({}, '', `/reports-new/${this.url}`);
 		});
 
@@ -157,9 +201,6 @@ class ReportsMangerStage {
 	}
 
 	select() {
-
-		if(this.disabled)
-			return;
 
 		if(this.page.stages.selected)
 			this.page.stages.selected.switcher.classList.remove('selected');
@@ -234,6 +275,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		for(const stage of this.page.stages.values())
 			stage.disabled = stage != this;
+
+		this.page.preview.hidden = true;
 	}
 
 	prepareSearch() {
@@ -299,7 +342,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 			row.innerHTML = `
 				<td>${report.query_id}</td>
 				<td>
-					<a href="/report/${report.id}" target="_blank">
+					<a href="/report/${report.query_id}" target="_blank">
 						${report.name}
 					</a>
 				</td>
@@ -324,7 +367,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('pick-visualization').disabled = false;
+				this.page.stages.get('configure-visualization').disabled = false;
 
 				this.page.load();
 			});
@@ -335,7 +378,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('pick-visualization').disabled = false;
+				this.page.stages.get('configure-visualization').disabled = false;
 
 				this.page.load();
 			});
@@ -346,7 +389,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('pick-visualization').disabled = false;
+				this.page.stages.get('configure-visualization').disabled = false;
 
 				this.page.load();
 			});
@@ -492,16 +535,14 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		});
 	}
 
-	get url() {
-		return `${this.key}/${this.report.query_id}`;
+	select() {
+		super.select();
+
+		this.page.stages.get('configure-visualization').setupVisualizations();
 	}
 
-	select() {
-
-		for(const [key, stage] of this.page.stages)
-			stage.disabled = key == 'configure-visualization';
-
-		super.select();
+	get url() {
+		return `${this.key}/${this.report.query_id}`;
 	}
 
 	load() {
@@ -670,16 +711,14 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		});
 	}
 
-	get url() {
-		return `${this.key}/${this.report.query_id}`;
+	select() {
+		super.select();
+
+		this.page.stages.get('configure-visualization').setupVisualizations();
 	}
 
-	select() {
-
-		for(const [key, stage] of this.page.stages)
-			stage.disabled = ['visualization-transformations', 'configure-visualization'].includes(key);
-
-		super.select();
+	get url() {
+		return `${this.key}/${this.report.query_id}`;
 	}
 
 	async preview() {
@@ -764,6 +803,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		for(const filter of this.report.filters) {
 
+			missing.delete(filter.placeholder);
+
 			if(!filter.container)
 				continue;
 
@@ -771,8 +812,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			if(!placeholders.has(filter.placeholder))
 				filter.container.elements.placeholder.classList.add('red');
-
-			missing.delete(filter.placeholder);
 		}
 
 		if(missing.size) {
@@ -1145,159 +1184,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 	}
 });
 
-ReportsManger.stages.set('pick-visualization', class PickVisualization extends ReportsMangerStage {
-
-	constructor(page, key) {
-
-		super(page, key);
-
-		this.order = '4';
-		this.title = 'Pick Visualization';
-		this.description = 'Pick a visualization for your report';
-
-		this.container.querySelector('#add-visualization').on('click', () => {
-
-			this.container.querySelector('#visualization-list').classList.add('hidden');
-			this.container.querySelector('#add-visualization-picker').classList.remove('hidden');
-
-			this.form.reset();
-		});
-		this.container.querySelector('#visualization-picker-back').on('click', () => {
-
-			this.container.querySelector('#visualization-list').classList.remove('hidden');
-			this.container.querySelector('#add-visualization-picker').classList.add('hidden');
-		});
-
-		this.form = this.container.querySelector('#visualization-form');
-
-		for(const visualization of MetaData.visualizations.values()) {
-
-			this.form.insertAdjacentHTML('beforeend', `
-				<label>
-					<figure>
-						<img src="data:text/png,asd"></img>
-						<figcaption><input type="radio" name="type" value="${visualization.slug}"> ${visualization.name}</figcaption>
-					</figure>
-				</label>
-			`);
-		}
-
-		this.form.on('submit', e => this.insertVisualization(e));
-	}
-
-	select() {
-
-		for(const [key, stage] of this.page.stages)
-			stage.disabled = ['visualization-transformations', 'configure-visualization'].includes(key);
-
-		super.select();
-
-		this.page.preview.hidden = true;
-	}
-
-	get url() {
-		return `${this.key}/${this.report.query_id}`;
-	}
-
-	load() {
-
-		this.report = this.selectedReport;
-
-		if(!this.report)
-			throw new Page.exception('Invalid Report ID');
-
-		const tbody = this.container.querySelector('table tbody');
-
-		tbody.textContent = null;
-
-		for(const visualization of this.report.visualizations) {
-
-			const row = document.createElement('tr');
-
-			let type = MetaData.visualizations.get(visualization.type);
-
-			row.innerHTML = `
-				<td>${visualization.visualization_id}</td>
-				<td>${visualization.name}</td>
-				<td>${type ? type.name : ''}</td>
-				<td>${visualization.format ? visualization.format.transformations : 0}</td>
-				<td class="action configure"><i class="fas fa-cog"></i></td>
-				<td class="action red delete"><i class="far fa-trash-alt"></i></td>
-			`;
-
-			row.querySelector('.configure').on('click', () => {
-
-				history.pushState({}, '', `/reports-new/configure-visualization/${visualization.visualization_id}`);
-
-				for(const stage of this.page.stages.values())
-					stage.disabled = false;
-
-				this.page.load();
-			});
-
-			row.querySelector('.delete').on('click', () => this.deleteVisualization(visualization));
-
-			tbody.appendChild(row);
-		}
-
-		if(!this.report.visualizations.length)
-			tbody.innerHTML = '<tr class="NA"><td>No Visualization Found! :(</td></tr>';
-
-		this.container.querySelector('#visualization-list').classList.remove('hidden');
-		this.container.querySelector('#add-visualization-picker').classList.add('hidden');
-	}
-
-	async insertVisualization(e) {
-
-		if(e)
-			e.preventDefault();
-
-		const
-			form = document.getElementById('add-visualization'),
-			parameters = {
-				query_id: this.report.query_id,
-				name: this.form.type.value[0].toUpperCase() + this.form.type.value.slice(1),
-				type: this.form.type.value,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		await API.call('reports/visualizations/insert', parameters, options);
-
-		await DataSource.load(true);
-
-		this.load();
-	}
-
-	async deleteVisualization(visualization) {
-
-		if(!confirm('Are you sure?'))
-			return;
-
-		const
-			parameters = {
-				visualization_id: visualization.visualization_id,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		await API.call('reports/visualizations/delete', parameters, options);
-
-		await DataSource.load(true);
-
-		this.load();
-	}
-});
-
 ReportsManger.stages.set('configure-visualization', class ConfigureVisualization extends ReportsMangerStage {
 
 	constructor(page, key) {
 
 		super(page, key);
 
-		this.order = '5';
+		this.order = '4';
 		this.title = 'Configure Visualization';
 		this.description = 'Define how the report is visualized';
 
@@ -1310,10 +1203,138 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		}
 
 		this.form.on('submit', e => this.updateVisualization(e));
+
+		this.switcher.insertAdjacentHTML('beforeend', `
+			<table id="visualization-list" class="hidden">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Type</th>
+						<th>Edit</th>
+						<th>Delete</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+				<tfoot>
+					<tr>
+						<td colspan="4"><button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></td>
+					</tr>
+				</tfoot>
+			</table>
+		`);
+
+		this.switcher.querySelector('#visualization-list').on('click', e => {
+			e.stopPropagation();
+		});
+
+		this.switcher.querySelector('#add-visualization').on('click', () => {
+
+			this.addForm.reset();
+
+			this.page.preview.hidden = true;
+			this.switcher.querySelector('#visualization-list').classList.add('hidden');
+
+			Sections.show('add-visualization-picker');
+		});
+
+		this.page.container.querySelector('#visualization-picker-back').on('click', () => {
+
+			Sections.show('stage-configure-visualization');
+
+			this.page.preview.hidden = false;
+		});
+
+		this.addForm = this.page.container.querySelector('#add-visualization-form');
+
+		for(const visualization of MetaData.visualizations.values()) {
+
+			this.addForm.insertAdjacentHTML('beforeend', `
+				<label>
+					<figure>
+						<img src="data:text/png,asd"></img>
+						<figcaption><input type="radio" name="type" value="${visualization.slug}"> ${visualization.name}</figcaption>
+					</figure>
+				</label>
+			`);
+		}
+
+		this.addForm.on('submit', e => this.insertVisualization(e));
+
+		for(const section of this.container.querySelectorAll('.configuration-section')) {
+
+			const
+				body = section.querySelector('.body'),
+				h3 = section.querySelector('h3');
+
+			body.classList.add('hidden');
+
+			h3.on('click', () => {
+
+				body.classList.toggle('hidden');
+
+				if(h3.querySelector('svg'))
+					h3.querySelector('svg').remove();
+
+				h3.insertAdjacentHTML('afterbegin', body.classList.contains('hidden') ? '<i class="fas fa-angle-right"></i>' : '<i class="fas fa-angle-down"></i>');
+			});
+		}
+	}
+
+	select() {
+
+		if(!this.visualization)
+			super.select();
+
+		this.switcher.querySelector('#visualization-list').classList.toggle('hidden');
+
+		Sections.show('stage-configure-visualization');
+
+		this.setupVisualizations();
 	}
 
 	get url() {
-		return `${this.key}/${this.visualization.visualization_id}`;
+		return `${this.key}/${this.visualization ? this.visualization.visualization_id : ''}`;
+	}
+
+	setupVisualizations() {
+
+		this.report = this.selectedReport;
+
+		if(!this.report)
+			throw new Page.exception('Invalid Report ID');
+
+		const tbody = this.switcher.querySelector('table tbody');
+
+		tbody.textContent = null;
+
+		for(const visualization of this.report.visualizations) {
+
+			const row = document.createElement('tr');
+
+			let type = MetaData.visualizations.get(visualization.type);
+
+			row.innerHTML = `
+				<td>${visualization.name}</td>
+				<td>${type ? type.name : ''}</td>
+				<td class="action configure"><i class="fas fa-cog"></i></td>
+				<td class="action red delete"><i class="far fa-trash-alt"></i></td>
+			`;
+
+			row.querySelector('.configure').on('click', async () => {
+
+				history.pushState({}, '', `/reports-new/configure-visualization/${visualization.visualization_id}`);
+
+				await this.page.load();
+				this.load();
+			});
+
+			row.querySelector('.delete').on('click', () => this.deleteVisualization(visualization));
+
+			tbody.appendChild(row);
+		}
+
+		if(!this.report.visualizations.length)
+			tbody.innerHTML = '<tr class="NA"><td colspan="4">No Visualization Found! :(</td></tr>';
 	}
 
 	async load() {
@@ -1325,16 +1346,26 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
 
+		if(!this.visualization)
+			return;
+
 		if(ConfigureVisualization.types.has(this.visualization.type))
 			this.optionsForm = new (ConfigureVisualization.types.get(this.visualization.type))(this.visualization, this.page);
 
 		else throw new Page.Exception(`Unknown visualization type ${this.visualization.type}`);
 
-		try {
-			this.visualization.options = JSON.parse(this.visualization.options);
-		} catch(e) {
-			this.visualization.options = {};
+		if(typeof this.visualization.options == 'string') {
+
+			try {
+				this.visualization.options = JSON.parse(this.visualization.options) || {};
+			} catch(e) {}
 		}
+
+		if(!this.visualization.options)
+			this.visualization.options = {};
+
+		if(!this.visualization.options.transformations)
+			this.visualization.options.transformations = [];
 
 		this.transformations = new ReportTransformations(this.visualization, this.page);
 
@@ -1357,6 +1388,52 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		options.appendChild(this.optionsForm.form);
 	}
 
+	async insertVisualization(e) {
+
+		if(e)
+			e.preventDefault();
+
+		const
+			parameters = {
+				query_id: this.report.query_id,
+				name: this.addForm.type.value[0].toUpperCase() + this.addForm.type.value.slice(1),
+				type: this.addForm.type.value,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		const response = await API.call('reports/visualizations/insert', parameters, options);
+
+		await DataSource.load(true);
+
+		this.select();
+
+		this.load();
+	}
+
+	async deleteVisualization(visualization) {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const
+			parameters = {
+				visualization_id: visualization.visualization_id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		const response = await API.call('reports/visualizations/delete', parameters, options);
+
+		await DataSource.load(true);
+
+		history.pushState({}, '', `/reports-new/configure-visualization/${response.insertId}`);
+
+		this.select();
+	}
+
 	async updateVisualization(e) {
 
 		if(e)
@@ -1372,7 +1449,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			};
 
 		if(this.optionsForm)
-			parameters.options = JSON.stringify(this.optionsForm.json);
+			this.visualization.options = this.optionsForm.json;
 
 		this.visualization.options.transformations = this.transformations.json;
 
@@ -1684,7 +1761,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const axes = container.querySelector('.axes');
 
-		for(const axis of this.visualization.options.axes || [])
+		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : [])
 			axes.appendChild(this.axis(axis));
 
 		container.querySelector('.add-axis').on('click', () => {
