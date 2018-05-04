@@ -1354,6 +1354,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		else throw new Page.Exception(`Unknown visualization type ${this.visualization.type}`);
 
+		this.dashboards = new ReportVisualizationDashboards(this);
+
 		if(typeof this.visualization.options == 'string') {
 
 			try {
@@ -1386,6 +1388,9 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		options.textContent = null;
 
 		options.appendChild(this.optionsForm.form);
+
+		await this.dashboards.load();
+		this.dashboards.render();
 	}
 
 	async insertVisualization(e) {
@@ -1462,6 +1467,162 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.load();
 	}
 });
+
+class ReportVisualizationDashboards {
+
+	constructor(stage) {
+		this.stage = stage;
+	}
+
+	async load() {
+
+		this.response = await API.call('dashboards/list');
+
+		this.list = [];
+
+		for(const dashboard of this.response) {
+			for(const report of dashboard.format.reports) {
+				if(this.stage.visualization.visualization_id == report.visualization_id) {
+					this.list.push(new ReportVisualizationDashboard(dashboard, this.stage));
+				}
+			}
+		}
+	}
+
+	render() {
+
+		const container = this.stage.container.querySelector('#dashboardssss');
+
+		const list = [];
+
+		this.container = container.querySelector('.dashboard-present .dashboard_container');
+		this.container.textContent = null;
+
+		this.form = container.querySelector('.dashboard-present form#add-dashboard')
+		this.form.reset();
+
+		this.form.dashboard_id.textContent = null;
+		for(const dashboard of this.response) {
+			this.form.dashboard_id.insertAdjacentHTML('beforeend',`
+				<option value=${dashboard.id}>${dashboard.name} ${dashboard.parent? `(parent: ${response.filter(a=> a.id == dashboard.parent)[0].name})` : ''}</option>
+			`);
+		}
+
+		this.form.on('submit', (e) => ReportVisualizationDashboards.insert(e,this));
+
+		for(const dashboard of this.list)
+			this.container.appendChild(dashboard.form);
+
+		if(!this.list.length)
+			this.container.innerHTML = `<div class="NA">No dashboard found :'(</div>`;
+	}
+
+	static async insert(e, visualization) {
+		e.preventDefault();
+
+		const option = {
+			method: 'POST',
+		}
+
+		const parameters = {
+			dashboard_id: visualization.form.dashboard_id.value,
+			visualization_id: visualization.visualization.visualization.visualization_id,
+			format: JSON.stringify({position: visualization.form.position.value})
+		}
+
+		await API.call('reports/dashboard/insert', parameters, option);
+		await visualization.visualization.dashboards.load();
+		visualization.visualization.dashboards.render();
+	}
+}
+
+class ReportVisualizationDashboard {
+
+	constructor(dashboard, stage) {
+
+		this.stage = stage;
+		for(const key in dashboard)
+			this[key] = dashboard[key];
+	}
+
+	get form() {
+
+		const form = document.createElement('form');
+		const current_visualization = this.format.reports.filter(v => v.visualization_id == this.stage.visualization.visualization_id)[0]
+		form.classList.add('subform', 'form');
+		form.innerHTML = `
+			<label>
+				<span>Dashboard</span>
+				<select name='dashboard_id'>
+				</select>
+			</label>
+
+			<label>
+				<span>Position</span>
+				<input type="number" name='position' value="${current_visualization.format.position || ''}">
+			</label>
+
+			<div class="dashboard-action">
+				<label>
+					<button type="submit"><i class="fa fa-save"></i>Save</button>
+				</label>
+
+				<label>
+					<button class="delete"><i class="far fa-trash-alt"></i>Delete</button>
+				</label>
+			</div>
+		`;
+
+		for(const dashboard of this.stage.dashboards.response) {
+			form.dashboard_id.insertAdjacentHTML('beforeend',`
+				<option value=${dashboard.id}>${dashboard.name} ${dashboard.parent? `(parent: ${response.filter(a=> a.id == dashboard.parent)[0].name})` : ''}</option>
+			`);
+		}
+
+		form.dashboard_id.value = current_visualization.dashboard_id;
+
+		form.querySelector('.delete').on('click', async (e) => {
+
+			e.preventDefault();
+			if(!confirm('Are you sure?'))
+				return;
+
+			const option = {
+				method: 'POST',
+			}
+
+			const parameters = {
+				id: this.format.reports[0].id,
+			}
+
+			await API.call('reports/dashboard/delete', parameters, option);
+			await this.stage.dashboards.load();
+			await this.stage.dashboards.render();
+		});
+
+		form.on('submit', async (e) => {
+			e.preventDefault();
+			const option = {
+				method: 'POST',
+			}
+
+			this.format.reports[0].format.position = form.position.value;
+
+			const parameters = {
+				id: this.format.reports[0].id,
+				dashboard_id: form.dashboard_id.value,
+				visualization_id: this.stage.visualization.visualization_id,
+				format: JSON.stringify(this.format.reports[0].format)
+			}
+
+			await API.call('reports/dashboard/update', parameters, option);
+			await this.stage.dashboards.load();
+			await this.stage.dashboards.render();
+
+		})
+		return form;
+	}
+}
 
 class ReportTransformations extends Set {
 

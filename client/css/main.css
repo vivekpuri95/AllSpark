@@ -333,6 +333,7 @@ body {
 			display: grid;
 			grid-gap: var(--gap);
 			max-width: 200px;
+			white-space: nowrap;
 		}
 			main .form label > span {
 				font-size: 90%;

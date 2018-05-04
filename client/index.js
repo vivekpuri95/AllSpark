@@ -750,6 +750,31 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 					<div class="body" id="transformations"></div>
 				</div>
 
+				<div class="configuration-section">
+					<h3><i class="fas fa-angle-right"></i> Dashboards</h3>
+					<div class="body" id="dashboardssss">
+						<div class="dashboard-present">
+							<div class="dashboard_container"></div>
+							<form id="add-dashboard" class="subform form">
+								<label>
+									<span>Dashboard</span>
+									<select name="dashboard_id">
+									</select>
+								</label>
+
+								<label>
+									<span>Position</span>
+									<input name="position" placeholder="Position" type="number">
+								</label>
+
+								<label>
+									<button type='submit'><i class="fa fa-plus"></i>Add</button>
+								</label>
+							</form>
+						</div>
+					</div>
+				</div>
+
 			</section>
 
 			<section class="section" id="add-visualization-picker">
@@ -1423,14 +1448,14 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 				</form>
 			</section>
 		</div>
-		
+
 		<div class="setting-page accounts-page hidden">
 			<section class="section" id="accounts-list">
 				<h1>Manage Accounts</h1>
 				<header class="toolbar">
 					<button id="add-account"><i class="fa fa-plus"></i> Add New Account</button>
 				</header>
-				
+
 				<table class="block">
 					<thead>
 						<th>Account Id</th>
@@ -1444,7 +1469,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 					<tbody></tbody>
 				</table>
 			</section>
-            
+
             <section class="section" id="accounts-form">
                 <h1></h1>
                 <header class="toolbar">
@@ -1470,12 +1495,12 @@ router.get('/settings/:tab?/:id?', (request, response) => {
                         <img src="" alt="logo" id="logo" height="30">
                         <input type="text" name="logo">
                     </label>
-                    
+
 					<label id="format">
 						<span>Settings</span>
 						<textarea id="settings-format" name="settings"></textarea>
 					</label>
-				
+
                 </form>
             </section>
 		</div>
