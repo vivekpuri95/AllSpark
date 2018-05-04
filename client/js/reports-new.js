@@ -1390,7 +1390,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		options.appendChild(this.optionsForm.form);
 
 		await this.dashboards.load();
-		this.dashboards.render();
 	}
 
 	async insertVisualization(e) {
@@ -1476,7 +1475,18 @@ class ReportVisualizationDashboards {
 
 	async load() {
 
-		this.response = await API.call('dashboards/list');
+		await this.fetch();
+
+		this.process();
+
+		this.render();
+	}
+
+	async fetch() {
+		this.response = await API.call('dashboards/list')
+	}
+
+	process() {
 
 		this.list = [];
 
@@ -1532,7 +1542,6 @@ class ReportVisualizationDashboards {
 
 		await API.call('reports/dashboard/insert', parameters, option);
 		await visualization.visualization.dashboards.load();
-		visualization.visualization.dashboards.render();
 	}
 }
 
@@ -1553,13 +1562,13 @@ class ReportVisualizationDashboard {
 		form.innerHTML = `
 			<label>
 				<span>Dashboard</span>
-				<select name='dashboard_id'>
+				<select name="dashboard_id">
 				</select>
 			</label>
 
 			<label>
 				<span>Position</span>
-				<input type="number" name='position' value="${current_visualization.format.position || ''}">
+				<input type="number" name="position" value="${current_visualization.format.position || ''}">
 			</label>
 
 			<div class="dashboard-action">
@@ -1581,46 +1590,51 @@ class ReportVisualizationDashboard {
 
 		form.dashboard_id.value = current_visualization.dashboard_id;
 
-		form.querySelector('.delete').on('click', async (e) => {
+		form.querySelector('.delete').on('click', async (e) => this.delete(e));
 
-			e.preventDefault();
-			if(!confirm('Are you sure?'))
-				return;
+		form.on('submit', async (e) => this.update(e))
 
-			const option = {
-				method: 'POST',
-			}
-
-			const parameters = {
-				id: this.format.reports[0].id,
-			}
-
-			await API.call('reports/dashboard/delete', parameters, option);
-			await this.stage.dashboards.load();
-			await this.stage.dashboards.render();
-		});
-
-		form.on('submit', async (e) => {
-			e.preventDefault();
-			const option = {
-				method: 'POST',
-			}
-
-			this.format.reports[0].format.position = form.position.value;
-
-			const parameters = {
-				id: this.format.reports[0].id,
-				dashboard_id: form.dashboard_id.value,
-				visualization_id: this.stage.visualization.visualization_id,
-				format: JSON.stringify(this.format.reports[0].format)
-			}
-
-			await API.call('reports/dashboard/update', parameters, option);
-			await this.stage.dashboards.load();
-			await this.stage.dashboards.render();
-
-		})
 		return form;
+	}
+
+	async delete(e) {
+
+		e.preventDefault();
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const option = {
+			method: 'POST',
+		}
+
+		const parameters = {
+			id: this.format.reports[0].id,
+		}
+
+		await API.call('reports/dashboard/delete', parameters, option);
+		await this.stage.dashboards.load();
+	}
+
+	async update(e) {
+
+		e.preventDefault();
+
+		const option = {
+			method: 'POST',
+		}
+
+		this.format.reports[0].format.position = form.position.value;
+
+		const parameters = {
+			id: this.format.reports[0].id,
+			dashboard_id: form.dashboard_id.value,
+			visualization_id: this.stage.visualization.visualization_id,
+			format: JSON.stringify(this.format.reports[0].format)
+		}
+
+		await API.call('reports/dashboard/update', parameters, option);
+		await this.stage.dashboards.load();
 	}
 }
 
