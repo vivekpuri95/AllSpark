@@ -243,14 +243,13 @@ class Dashboard {
 		side_button.on('click', () => {
 
 			container.classList.remove('hidden');
-			page.container.querySelector('#reports .datasets').classList.remove('hidden')
 			page.container.querySelector('#reports .datasets').classList.add('show');
 		});
 
 		container.on('click', () => {
 
 			container.classList.add('hidden');
-			page.container.querySelector('#reports .datasets').classList.add('hidden');
+			page.container.querySelector('#reports .datasets').classList.remove('show');
 		});
 	}
 
@@ -821,7 +820,7 @@ class DashboardDatasets extends Map {
 
 		container.textContent = null;
 
-		container.classList.add('hidden');
+		container.classList.remove('show');
 
 		if(!this.size)
 			return;

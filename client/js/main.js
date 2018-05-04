@@ -856,7 +856,7 @@ class DataSource {
 					</span>
 					<span>
 						<span class="label">Added By:</span>
-						<span><a>${this.added_by_name || 'NA'}</a></span>
+						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
 					<span class="requested hidden">
 						<span class="label">Requested By:</span>
@@ -895,7 +895,7 @@ class DataSource {
 			for(const user of this.visibleTo) {
 				user_element.push(`
 					<li>
-						<a>${user.name}</a>
+						<a href="/user/profile/${user.user_id}">${user.name}</a>
 						<span>${user.reason.join(",")}</span>
 					</li>
 				`);
@@ -924,8 +924,6 @@ class DataSource {
 
 		container.querySelector('.menu .description-toggle').on('click', async () => {
 
-			this.visibleTo = await this.userList();
-			container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
 
 			if(this.requested_by)
 				container.querySelector('.description .requested').classList.remove('hidden');
@@ -934,6 +932,9 @@ class DataSource {
 			container.querySelector('.description-toggle').classList.toggle('selected');
 
 			this.visualizations.selected.render(true);
+
+			await this.userList();
+			container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
 		});
 
 		container.querySelector('.menu .query-toggle').on('click', () => {
@@ -1078,7 +1079,7 @@ class DataSource {
 		if(this.visibleTo)
 			return this.visibleTo;
 
-		return await API.call('reports/report/userPrvList', {report_id : this.query_id});
+		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
 	get response() {
@@ -1307,76 +1308,6 @@ class DataSource {
 		this.columns.render();
 	}
 }
-
-class DialogBox {
-
-	constructor(report) {
-
-		this.report = report;
-
-		this.setContainer();
-
-		this.events();
-		document.querySelector('main').appendChild(this.container);
-	}
-
-	setContainer() {
-
-		this.container = document.createElement('div');
-		this.container.classList.add('dialog-box-blanket');
-
-		this.container.innerHTML = `
-			<section class="dialog-box">
-				<header><h3></h3><span class="close"><i class="fa fa-times" aria-hidden="true"></i></span></header>
-				<div class="body"></div>
-			</section>
-		`;
-
-		this.hide();
-	}
-
-	events() {
-
-		this.container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
-
-		this.container.querySelector('.dialog-box').on('click', e => e.stopPropagation());
-
-		this.container.on('click', () => this.hide());
-	}
-
-	set heading(heading) {
-
-		if(typeof heading == 'object'){
-
-			this.container.querySelector('.dialog-box header h3').textContent = null;
-			this.container.querySelector('.dialog-box header h3').appendChild(heading);
-		}
-		else{
-			this.container.querySelector('.dialog-box header h3').innerHTML = heading;
-		}
-	}
-
-	set body(body) {
-
-		if(typeof body == 'object'){
-
-			this.container.querySelector('.dialog-box .body').textContent = null;
-			this.container.querySelector('.dialog-box .body').appendChild(body);
-		}
-		else{
-			this.container.querySelector('.dialog-box .body').innerHTML = body;
-		}
-	}
-
-	hide() {
-		this.container.classList.add('hidden');
-	}
-
-	show() {
-		this.container.classList.remove('hidden');
-	}
-}
-
 
 class DataSourceFilters extends Map {
 
@@ -6350,6 +6281,83 @@ class Dataset {
 			input.checked = false;
 
 		this.update();
+	}
+}
+
+class DialogBox {
+
+	constructor(report) {
+
+		this.report = report;
+
+		this.setContainer();
+
+		this.setEvents();
+		document.querySelector('main').appendChild(this.container);
+	}
+
+	setContainer() {
+
+		this.container = document.createElement('div');
+		this.container.classList.add('dialog-box-blanket');
+
+		this.container.innerHTML = `
+			<section class="dialog-box">
+				<header><h3></h3><span class="close"><i class="fa fa-times"></i></span></header>
+				<div class="body"></div>
+			</section>
+		`;
+
+		this.hide();
+	}
+
+	setEvents() {
+
+		this.container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
+
+		this.container.querySelector('.dialog-box').on('click', e => e.stopPropagation());
+
+		this.container.on('click', () => this.hide());
+	}
+
+	set heading(dialogHeading) {
+
+		const heading = this.container.querySelector('.dialog-box header h3');
+
+		if(typeof dialogHeading == 'object') {
+
+			heading.textContent = null;
+			heading.appendChild(dialogHeading);
+		}
+		else {
+
+			heading.innerHTML = dialogHeading;
+		}
+	}
+
+	set body(dialogBody) {
+
+		const body = this.container.querySelector('.dialog-box .body');
+
+		if(typeof dialogBody == 'object') {
+
+			body.textContent = null;
+			body.appendChild(dialogBody);
+		}
+		else {
+
+			body.innerHTML = dialogBody;
+		}
+	}
+
+	hide() {
+
+		this.container.classList.add('hidden');
+	}
+
+	show() {
+
+		this.container.classList.remove('hidden');
 	}
 }
 
