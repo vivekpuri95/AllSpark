@@ -159,11 +159,19 @@ class Credential {
 			},
 			container = Credential.container.querySelector('.test-result');
 
-		const response = await API.call('credentials/testConnections', parameter, options);
+		let response;
+		try {
+			response = await API.call('credentials/testConnections', parameter, options);
+		}
+		catch (e) {
+			container.classList.add('warning');
+			container.classList.remove('notice');
+			container.textContent = e;
+		}
 
 		container.classList.remove('hidden');
 
-		if(response.result[0].status) {
+		if(response.status) {
 			container.classList.add('notice');
 			container.classList.remove('warning');
 			container.textContent = 'Connection Successful';
@@ -171,7 +179,7 @@ class Credential {
 		else {
 			container.classList.add('warning');
 			container.classList.remove('notice');
-			container.textContent= 'Connection Failed';
+			container.textContent = 'Connection Failed';
 		}
 	}
 

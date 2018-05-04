@@ -2,6 +2,7 @@ const mysql = require('../utils/mysql');
 const bigquery = require('./bigquery').BigQuery;
 const API = require('../utils/api');
 const sql = require('mysql');
+const { Client } = require('pg');
 
 exports.insert = class extends API {
 
@@ -98,38 +99,94 @@ exports.testConnections = class extends API {
 
 	async testConnections() {
 
-		var conConfig = await this.mysql.query(
+		let conConfig = await this.mysql.query(
 			'SELECT * FROM tb_credentials WHERE id = ?',
 			[this.request.body['id']]
 		);
 
+		if (!conConfig.length) {
+			throw new API.Exception(400, 'Connection Not Found');
+		}
+
 		conConfig = conConfig[0];
-		conConfig['database'] = conConfig['db']
+		conConfig['database'] = conConfig['db'];
 
-		var con = sql.createConnection(conConfig);
-		var result = await this.checkPulse(con);
-		con.end();
+		const conClass = testClasses.get(conConfig.type);
 
-		return {conConfig, result};
+		if (!conClass) {
+			throw new API.Exception(400, 'Connection Type Not Yet Supported');
+		}
+
+		const obj = new conClass(conConfig);
+
+		const startTime = Date.now();
+		const result = await obj.checkPulse();
+		return {
+			'time' : Date.now() - startTime,
+			'status': result
+		};
 	}
+};
 
-	checkPulse(con) {
-		return new Promise((resolve, reject) => {
-			con.connect(function (err) {
-				if (err) resolve([{'status': 0}]);
+const testClasses = new Map();
+testClasses.set ("mysql",
+	class {
 
-				var startTime = Date.now();
-				return con.query('select 1 as "status"', function (err, result) {
-					if (err) return resolve([{'status': 0}]);
+		constructor (config) {
+			this.host = config.host;
+			this.user = config.user;
+			this.password = config.password;
+			if (config.port)
+				this.port = config.port;
+		}
 
-					var endTime = Date.now();
-					result[0]['time'] = endTime - startTime;
-					return resolve(result);
+		checkPulse () {
+			const con = sql.createConnection(this);
+
+			return new Promise((resolve, reject) => {
+
+				con.connect(function (err) {
+					if (err) resolve(0);
+
+					return con.query('select 1 as "status"', (err, result) => {
+						if (err) return resolve([{'status': 0}]);
+
+						con.end();
+						return resolve(result[0].status);
+					});
 				});
 			});
-		});
+		}
 	}
-}
+);
+
+testClasses.set("pgsql",
+	class {
+		constructor (config) {
+			this.host = config.host;
+			this.user = config.user;
+			this.password = config.password;
+			this.database = config.database;
+			if (config.port)
+				this.port = config.port;
+		}
+
+		checkPulse () {
+			const client = new Client(this);
+			client.connect();
+
+			return new Promise((resolve, reject) => {
+
+				return client.query('select 1 as "status"', (err, result) => {
+					if (err) return resolve(0);
+
+					client.end();
+					return resolve(result.rows[0].status);
+				});
+			});
+		}
+	}
+);
 
 exports.schema = class extends API {
 
