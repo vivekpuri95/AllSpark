@@ -244,7 +244,7 @@ body {
 		background-size: contain;
 	}
 
-	main .dialog-box-blanket .dialog-box .body ul {
+	main .dialog-box-blanket .dialog-box .body ul.user-list {
 		list-style-type: none;
 		padding: 0px;
 		display: grid;
@@ -253,20 +253,20 @@ body {
 		margin: calc(var(--gap) * 2);
 	}
 
-	main .dialog-box-blanket .dialog-box .body ul li {
-		display: flex;
-		flex-direction: column;
-	}
+		main .dialog-box-blanket .dialog-box .body ul.user-list li {
+			display: flex;
+			flex-direction: column;
+		}
 
-	main .dialog-box-blanket .dialog-box .body ul li a {
-		color: #333;
-		font-size: 110%;
-	}
-	main .dialog-box-blanket .dialog-box .body ul li span {
-		color: #999;
-		font-size: 90%;
-		margin-top: var(--gap);
-	}
+			main .dialog-box-blanket .dialog-box .body ul.user-list li a {
+				color: #333;
+				font-size: 110%;
+			}
+			main .dialog-box-blanket .dialog-box .body ul.user-list li span {
+				color: #999;
+				font-size: 90%;
+				margin-top: var(--gap);
+			}
 
 	main .section > h1,
 	main .section > h2 {

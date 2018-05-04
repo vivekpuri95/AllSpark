@@ -885,10 +885,10 @@ class DataSource {
 
 		container.querySelector('.description .visible-to').on('click', () => {
 
-			const page_dialog = page.container;
+			if(!this.dialog)
+				this.dialog = new DialogBox(this);
 
-			page_dialog.appendChild(new DialogBox(this));
-			page_dialog.querySelector('.dialog-box-blanket .dialog-box header h3').textContent = 'Users';
+			this.dialog.heading = 'Users';
 
 			const user_element = [];
 
@@ -901,8 +901,9 @@ class DataSource {
 				`);
 			}
 
-			page_dialog.querySelector('.dialog-box-blanket .dialog-box .body').innerHTML = `<ul>${user_element.join()}</ul>`;
-			page_dialog.querySelector('.dialog-box-blanket').classList.remove('hidden');
+			this.dialog.body = `<ul class="user-list">${user_element.join()}</ul>`;
+			this.dialog.show();
+
 		});
 
 		container.querySelector('header .reload').on('click', () => {
@@ -1312,31 +1313,67 @@ class DialogBox {
 	constructor(report) {
 
 		this.report = report;
-		this.container = document.createElement('div');
 
-		this.container.classList.add('hidden');
+		this.setContainer();
+
+		this.events();
+		document.querySelector('main').appendChild(this.container);
+	}
+
+	setContainer() {
+
+		this.container = document.createElement('div');
 		this.container.classList.add('dialog-box-blanket');
 
 		this.container.innerHTML = `
 			<section class="dialog-box">
-				<header><h3>heading</h3><span class="close"><i class="fa fa-times" aria-hidden="true"></i></span></header>
+				<header><h3></h3><span class="close"><i class="fa fa-times" aria-hidden="true"></i></span></header>
 				<div class="body"></div>
 			</section>
 		`;
 
-		this.container.querySelector('.dialog-box header span.close').on('click', () => {
-			this.container.classList.add('hidden');
-		});
+		this.hide();
+	}
 
-		this.container.querySelector('.dialog-box').on('click', e => {
-			e.stopPropagation();
-		});
+	events() {
 
-		this.container.on('click', () => {
-			this.container.classList.add('hidden');
-		});
+		this.container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
 
-		return this.container;
+		this.container.querySelector('.dialog-box').on('click', e => e.stopPropagation());
+
+		this.container.on('click', () => this.hide());
+	}
+
+	set heading(heading) {
+
+		if(typeof heading == 'object'){
+
+			this.container.querySelector('.dialog-box header h3').textContent = null;
+			this.container.querySelector('.dialog-box header h3').appendChild(heading);
+		}
+		else{
+			this.container.querySelector('.dialog-box header h3').innerHTML = heading;
+		}
+	}
+
+	set body(body) {
+
+		if(typeof body == 'object'){
+
+			this.container.querySelector('.dialog-box .body').textContent = null;
+			this.container.querySelector('.dialog-box .body').appendChild(body);
+		}
+		else{
+			this.container.querySelector('.dialog-box .body').innerHTML = body;
+		}
+	}
+
+	hide() {
+		this.container.classList.add('hidden');
+	}
+
+	show() {
+		this.container.classList.remove('hidden');
 	}
 }
 
