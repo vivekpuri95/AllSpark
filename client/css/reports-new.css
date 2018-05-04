@@ -383,17 +383,30 @@ main.preview-left #stages {
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		transition: box-shadow var(--transition-duration),
+		transform var(--transition-duration);
+	}
+
+	#add-visualization-form figure:hover {
+		box-shadow: 0 0 50px rgba(0, 0, 0, 0.15);
+		transform: perspective(500px) translatez(30px);
 	}
 		#add-visualization-form img {
-			height: 200px;
-			width: 200px;
-			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-			transition: box-shadow var(--transition-duration);
+			height: auto;
+			width: 350px;
 			margin-bottom: var(--gap);
 			background: #fff;
 		}
-		#add-visualization-form img:hover {
-			box-shadow: 0 0 50px rgba(0, 0, 0, 0.15);
+
+		#add-visualization-form figcaption {
+			background: var(--color-row-hover);
+			width: 350px;
+			height: 30px;
+			justify-content: center;
+			display: flex;
+			align-items: center;
+			bottom: 0;
 		}
 
 main.preview-top #preview {
