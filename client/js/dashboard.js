@@ -522,7 +522,6 @@ class Dashboard {
 				const [current] = this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id);
 
 				let next = null;
-
 				for(let i = 0; i < this.format.reports.length; i++) {
 
 					if(this.format.reports[i] == current)
