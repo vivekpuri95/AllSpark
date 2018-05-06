@@ -134,7 +134,7 @@ class ReportsMangerPreview {
 			<option value="left">Left</option>
 		`);
 
-		this.docks.value = localStorage.reportsPreviewDock || 'bottom';
+		this.docks.value = localStorage.reportsPreviewDock || 'right';
 
 		this.docks.on('change', () => {
 			localStorage.reportsPreviewDock = this.docks.value;
@@ -1202,7 +1202,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			`);
 		}
 
-		this.form.on('submit', e => this.updateVisualization(e));
+		this.form.on('submit', e => this.update(e));
 
 		this.switcher.insertAdjacentHTML('beforeend', `
 			<table id="visualization-list" class="hidden">
@@ -1258,7 +1258,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			`);
 		}
 
-		this.addForm.on('submit', e => this.insertVisualization(e));
+		this.addForm.on('submit', e => this.insert(e));
 
 		for(const section of this.container.querySelectorAll('.configuration-section')) {
 
@@ -1272,8 +1272,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 				body.classList.toggle('hidden');
 
-				if(h3.querySelector('svg'))
-					h3.querySelector('svg').remove();
+				for(const svg of h3.querySelectorAll('.fa-angle-right, .fa-angle-down'))
+					svg.remove();
 
 				h3.insertAdjacentHTML('afterbegin', body.classList.contains('hidden') ? '<i class="fas fa-angle-right"></i>' : '<i class="fas fa-angle-down"></i>');
 			});
@@ -1281,6 +1281,9 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 	}
 
 	select() {
+
+		if(this._disabled)
+			return;
 
 		if(!this.visualization)
 			super.select();
@@ -1294,6 +1297,12 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 	get url() {
 		return `${this.key}/${this.visualization ? this.visualization.visualization_id : ''}`;
+	}
+
+	set disabled(disabled) {
+
+		super.disabled = disabled;
+		this.switcher.querySelector('#visualization-list').classList.add('hidden');
 	}
 
 	setupVisualizations() {
@@ -1320,6 +1329,9 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 				<td class="action red delete"><i class="far fa-trash-alt"></i></td>
 			`;
 
+			if(this.visualization == visualization)
+				row.classList.add('selected');
+
 			row.querySelector('.configure').on('click', async () => {
 
 				history.pushState({}, '', `/reports-new/configure-visualization/${visualization.visualization_id}`);
@@ -1328,7 +1340,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 				this.load();
 			});
 
-			row.querySelector('.delete').on('click', () => this.deleteVisualization(visualization));
+			row.querySelector('.delete').on('click', () => this.delete(visualization));
 
 			tbody.appendChild(row);
 		}
@@ -1369,7 +1381,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization.options.transformations)
 			this.visualization.options.transformations = [];
 
-		this.transformations = new ReportTransformations(this.visualization, this.page);
+		this.transformations = new ReportTransformations(this.visualization, this);
 
 		await this.page.preview.load({
 			query_id: this.report.query_id,
@@ -1392,7 +1404,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		await this.dashboards.load();
 	}
 
-	async insertVisualization(e) {
+	async insert(e) {
 
 		if(e)
 			e.preventDefault();
@@ -1411,12 +1423,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		await DataSource.load(true);
 
+		history.pushState({}, '', `/reports-new/configure-visualization/${response.insertId}`);
+
 		this.select();
 
 		this.load();
 	}
 
-	async deleteVisualization(visualization) {
+	async delete(visualization) {
 
 		if(!confirm('Are you sure?'))
 			return;
@@ -1433,12 +1447,10 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		await DataSource.load(true);
 
-		history.pushState({}, '', `/reports-new/configure-visualization/${response.insertId}`);
-
-		this.select();
+		this.page.stages.get('pick-report').select();
 	}
 
-	async updateVisualization(e) {
+	async update(e) {
 
 		if(e)
 			e.preventDefault();
@@ -1467,10 +1479,16 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 	}
 });
 
-class ReportVisualizationDashboards {
+class ReportVisualizationDashboards extends Set {
 
 	constructor(stage) {
+
+		super();
+
 		this.stage = stage;
+
+		this.container = this.stage.container.querySelector('#dashboards');
+		this.addForm = this.container.querySelector('#add-dashboard');
 	}
 
 	async load() {
@@ -1488,60 +1506,85 @@ class ReportVisualizationDashboards {
 
 	process() {
 
-		this.list = [];
+		this.response = new Map(this.response.map(d => [d.id, d]));
 
-		for(const dashboard of this.response) {
+		this.clear();
+
+		for(const dashboard of this.response.values()) {
+
 			for(const report of dashboard.format.reports) {
-				if(this.stage.visualization.visualization_id == report.visualization_id) {
-					this.list.push(new ReportVisualizationDashboard(dashboard, this.stage));
-				}
+
+				if(this.stage.visualization.visualization_id == report.visualization_id)
+					this.add(new ReportVisualizationDashboard(dashboard, this.stage));
 			}
 		}
 	}
 
 	render() {
 
-		const container = this.stage.container.querySelector('#dashboardssss');
-
-		const list = [];
-
-		this.container = container.querySelector('.dashboard-present .dashboard_container');
 		this.container.textContent = null;
 
-		this.form = container.querySelector('.dashboard-present form#add-dashboard')
-		this.form.reset();
+		for(const dashboard of this)
+			this.container.appendChild(dashboard.form);
 
-		this.form.dashboard_id.textContent = null;
-		for(const dashboard of this.response) {
-			this.form.dashboard_id.insertAdjacentHTML('beforeend',`
-				<option value=${dashboard.id}>${dashboard.name} ${dashboard.parent? `(parent: ${response.filter(a=> a.id == dashboard.parent)[0].name})` : ''}</option>
+		if(!this.size)
+			this.container.innerHTML = `<div class="NA">No dashboard added yet! :'(</div>`;
+
+		this.container.insertAdjacentHTML('beforeend', `
+
+			<form id="add-dashboard" class="subform form">
+
+				<label>
+					<span>Dashboard</span>
+					<select name="dashboard_id"></select>
+				</label>
+
+				<label>
+					<span>Position</span>
+					<input name="position" placeholder="Position" type="number">
+				</label>
+
+				<label>
+					<button type="submit"><i class="fa fa-plus"></i> Add</button>
+				</label>
+			</form>
+		`);
+
+		const form = this.container.querySelector('#add-dashboard');
+
+		for(const dashboard of this.response.values()) {
+
+			form.dashboard_id.insertAdjacentHTML('beforeend',`
+				<option value=${dashboard.id}>
+					${dashboard.name} ${this.response.has(dashboard.parent) ? `(parent: ${this.response.get(dashboard.parent).name})` : ''}
+				</option>
 			`);
 		}
 
-		this.form.on('submit', (e) => ReportVisualizationDashboards.insert(e,this));
-
-		for(const dashboard of this.list)
-			this.container.appendChild(dashboard.form);
-
-		if(!this.list.length)
-			this.container.innerHTML = `<div class="NA">No dashboard found :'(</div>`;
+		form.on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
 	}
 
-	static async insert(e, visualization) {
+	static async insert(e, stage) {
+
 		e.preventDefault();
 
-		const option = {
-			method: 'POST',
-		}
+		const form = stage.dashboards.container.querySelector('#add-dashboard');
 
-		const parameters = {
-			dashboard_id: visualization.form.dashboard_id.value,
-			visualization_id: visualization.visualization.visualization.visualization_id,
-			format: JSON.stringify({position: visualization.form.position.value})
-		}
+		if(Array.from(stage.dashboards).some(d => d.id == form.dashboard_id.value))
+			return alert('Cannot add a visualization to a dashboard more than once!');
+
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				dashboard_id: form.dashboard_id.value,
+				visualization_id: stage.visualization.visualization_id,
+				format: JSON.stringify({position: form.position.value})
+			};
 
 		await API.call('reports/dashboard/insert', parameters, option);
-		await visualization.visualization.dashboards.load();
+		await stage.dashboards.load();
 	}
 }
 
@@ -1550,15 +1593,22 @@ class ReportVisualizationDashboard {
 	constructor(dashboard, stage) {
 
 		this.stage = stage;
+
 		for(const key in dashboard)
 			this[key] = dashboard[key];
+
+		[this.visualization] = this.format.reports.filter(v => v.visualization_id == this.stage.visualization.visualization_id);
 	}
 
 	get form() {
 
-		const form = document.createElement('form');
-		const current_visualization = this.format.reports.filter(v => v.visualization_id == this.stage.visualization.visualization_id)[0]
+		if(this.formContainer)
+			return this.formContainer;
+
+		const form = this.formContainer = document.createElement('form');
+
 		form.classList.add('subform', 'form');
+
 		form.innerHTML = `
 			<label>
 				<span>Dashboard</span>
@@ -1568,49 +1618,50 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>Position</span>
-				<input type="number" name="position" value="${current_visualization.format.position || ''}">
+				<input type="number" name="position" value="${this.visualization.format.position || ''}">
 			</label>
 
 			<div class="dashboard-action">
 				<label>
-					<button type="submit"><i class="fa fa-save"></i>Save</button>
+					<button type="submit"><i class="fa fa-save"></i> Save</button>
 				</label>
 
 				<label>
-					<button class="delete"><i class="far fa-trash-alt"></i>Delete</button>
+					<button type="button" class="delete"><i class="far fa-trash-alt"></i> Delete</button>
 				</label>
 			</div>
 		`;
 
-		for(const dashboard of this.stage.dashboards.response) {
+		for(const dashboard of this.stage.dashboards.response.values()) {
+
 			form.dashboard_id.insertAdjacentHTML('beforeend',`
-				<option value=${dashboard.id}>${dashboard.name} ${dashboard.parent? `(parent: ${response.filter(a=> a.id == dashboard.parent)[0].name})` : ''}</option>
+				<option value=${dashboard.id}>
+					${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
+				</option>
 			`);
 		}
 
-		form.dashboard_id.value = current_visualization.dashboard_id;
+		form.dashboard_id.value = this.visualization.dashboard_id;
 
-		form.querySelector('.delete').on('click', async (e) => this.delete(e));
+		form.querySelector('.delete').on('click', () => this.delete());
 
-		form.on('submit', async (e) => this.update(e))
+		form.on('submit', async e => this.update(e))
 
 		return form;
 	}
 
-	async delete(e) {
-
-		e.preventDefault();
+	async delete() {
 
 		if(!confirm('Are you sure?'))
 			return;
 
-		const option = {
-			method: 'POST',
-		}
-
-		const parameters = {
-			id: this.format.reports[0].id,
-		}
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				id: this.visualization.id,
+			};
 
 		await API.call('reports/dashboard/delete', parameters, option);
 		await this.stage.dashboards.load();
@@ -1620,18 +1671,18 @@ class ReportVisualizationDashboard {
 
 		e.preventDefault();
 
-		const option = {
-			method: 'POST',
-		}
+		this.visualization.format.position = this.form.position.value;
 
-		this.format.reports[0].format.position = form.position.value;
-
-		const parameters = {
-			id: this.format.reports[0].id,
-			dashboard_id: form.dashboard_id.value,
-			visualization_id: this.stage.visualization.visualization_id,
-			format: JSON.stringify(this.format.reports[0].format)
-		}
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				id: this.visualization.id,
+				dashboard_id: this.form.dashboard_id.value,
+				visualization_id: this.visualization.visualization_id,
+				format: JSON.stringify(this.visualization.format)
+			};
 
 		await API.call('reports/dashboard/update', parameters, option);
 		await this.stage.dashboards.load();
@@ -1640,13 +1691,22 @@ class ReportVisualizationDashboard {
 
 class ReportTransformations extends Set {
 
-	constructor(visualization, page) {
+	constructor(visualization, stage) {
 
 		super();
 
 		this.visualization = visualization;
-		this.page = page;
-		this.container = this.page.container.querySelector('#transformations');
+		this.stage = stage;
+		this.page = this.stage.page;
+		this.container = this.stage.container.querySelector('#transformations');
+
+		const preview = this.container.parentElement.querySelector('h3 #transformations-preview');
+
+		preview.removeEventListener('click', ReportTransformations.previewListener);
+		preview.on('click', ReportTransformations.previewListener = e => {
+			e.stopPropagation();
+			this.preview();
+		});
 	}
 
 	load() {
@@ -1656,13 +1716,11 @@ class ReportTransformations extends Set {
 		if(!this.visualization.options)
 			return;
 
-		ReportTransformation.runningReport = this.page.preview.report;
-
 		this.clear();
 
 		for(const transformation_ of this.visualization.options.transformations || []) {
 
-			const transformation = new ReportTransformation(transformation_);
+			const transformation = new ReportTransformation(transformation_, this.stage);
 
 			this.container.appendChild(transformation.container);
 
@@ -1679,10 +1737,12 @@ class ReportTransformations extends Set {
 
 		addNew.on('click', () => {
 
-			const transformation = new ReportTransformation({}, this.report);
+			const transformation = new ReportTransformation({}, this.stage);
 
 			this.add(transformation);
 			this.container.insertBefore(transformation.container, addNew);
+
+			this.preview();
 		});
 	}
 
@@ -1695,11 +1755,42 @@ class ReportTransformations extends Set {
 
 		return response.filter(a => a);
 	}
+
+	preview() {
+
+		const report = DataSource.list.get(this.stage.report.query_id);
+
+		if(!report)
+			return;
+
+		if(!report.transformationVisualization) {
+
+			const visualization = {
+				visualization_id: Math.floor(Math.random() * 1000) + 1000,
+				name: 'Table',
+				type: 'table',
+				options: {}
+			};
+
+			report.visualizations.push(visualization);
+			report.transformationVisualization = visualization;
+		}
+
+		report.transformationVisualization.options.transformations = this.json;
+
+		this.page.preview.load({
+			query_id: this.stage.report.query_id,
+			visualization_id: report.transformationVisualization.visualization_id,
+		});
+	}
 }
 
 class ReportTransformation {
 
-	constructor(transformation) {
+	constructor(transformation, stage) {
+
+		this.stage = stage;
+		this.page = this.stage.page;
 
 		for(const key in transformation)
 			this[key] = transformation[key];
@@ -1727,35 +1818,35 @@ class ReportTransformation {
 		values.innerHTML = `<h4>Values</h4>`;
 
 		for(const row of this.rows || [])
-			rows.appendChild(ReportTransformation.row(row));
+			rows.appendChild(this.row(row));
 
 		const addRow = document.createElement('button');
 
 		addRow.type = 'button';
 		addRow.innerHTML = `<i class="fa fa-plus"></i> Add New Row`;
-		addRow.on('click', () => rows.insertBefore(ReportTransformation.row(), addRow));
+		addRow.on('click', () => rows.insertBefore(this.row(), addRow));
 
 		rows.appendChild(addRow);
 
 		for(const column of this.columns || [])
-			columns.appendChild(ReportTransformation.column(column));
+			columns.appendChild(this.column(column));
 
 		const addColumn = document.createElement('button');
 
 		addColumn.type = 'button';
 		addColumn.innerHTML = `<i class="fa fa-plus"></i> Add New Column`;
-		addColumn.on('click', () => columns.insertBefore(ReportTransformation.column(), addColumn));
+		addColumn.on('click', () => columns.insertBefore(this.column(), addColumn));
 
 		columns.appendChild(addColumn);
 
 		for(const value of this.values || [])
-			values.appendChild(ReportTransformation.value(value));
+			values.appendChild(this.value(value));
 
 		const addValue = document.createElement('button');
 
 		addValue.type = 'button';
 		addValue.innerHTML = `<i class="fa fa-plus"></i> Add New Value`;
-		addValue.on('click', () => values.insertBefore(ReportTransformation.value(), addValue));
+		addValue.on('click', () => values.insertBefore(this.value(), addValue));
 
 		values.appendChild(addValue);
 
@@ -1800,19 +1891,19 @@ class ReportTransformation {
 		return response;
 	}
 
-	static row(row = {}) {
+	row(row = {}) {
 
 		const container = document.createElement('div');
 
 		container.classList.add('row');
 
-		if(ReportTransformation.runningReport && ReportTransformation.runningReport.originalResponse) {
+		if(this.page.preview.report.originalResponse) {
 
 			container.innerHTML = `<select name="column"></select>`;
 
 			const select = container.querySelector('select');
 
-			for(const column in ReportTransformation.runningReport.originalResponse.data[0])
+			for(const column in this.page.preview.report.originalResponse.data[0])
 				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
 			select.value = row.column;
@@ -1831,19 +1922,19 @@ class ReportTransformation {
 		return container;
 	}
 
-	static column(column = {}) {
+	column(column = {}) {
 
 		const container = document.createElement('div');
 
 		container.classList.add('column');
 
-		if(ReportTransformation.runningReport && ReportTransformation.runningReport.originalResponse) {
+		if(this.page.preview.report.originalResponse) {
 
 			container.innerHTML = `<select name="column"></select>`;
 
 			const select = container.querySelector('select');
 
-			for(const column in ReportTransformation.runningReport.originalResponse.data[0])
+			for(const column in this.page.preview.report.originalResponse.data[0])
 				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
 			select.value = column.column;
@@ -1859,20 +1950,20 @@ class ReportTransformation {
 		return container;
 	}
 
-	static value(value = {}) {
+	value(value = {}) {
 
 		const container = document.createElement('div');
 
 		container.classList.add('value');
 
 
-		if(ReportTransformation.runningReport && ReportTransformation.runningReport.originalResponse) {
+		if(this.page.preview.report.originalResponse) {
 
 			container.innerHTML = `<select name="column"></select>`;
 
 			const select = container.querySelector('select');
 
-			for(const column in ReportTransformation.runningReport.originalResponse.data[0])
+			for(const column in this.page.preview.report.originalResponse.data[0])
 				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
 			select.value = value.column;

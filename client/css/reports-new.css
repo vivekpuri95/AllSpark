@@ -106,7 +106,9 @@ main.preview-bottom {
 			left: -1px;
 			z-index: 3;
 			cursor: default;
-			/* border: 1px solid #ccc; */
+		}
+		#stage-switcher #visualization-list .selected {
+			background: #FFC;
 		}
 
 main .form {
@@ -290,22 +292,32 @@ main.preview-left #stages {
 		padding: 0;
 		position: sticky;
 		top: 0;
+		z-index: 1;
 	}
 	#stage-configure-visualization h3 {
 		border-bottom: 1px dashed #999;
-		padding-bottom:  var(--gap);
 		margin-bottom: calc(var(--gap) * 2);
+		cursor: pointer;
+		position: sticky;
+		top: 28px;
+		background: #eee;
+		padding: var(--gap);
+		margin: var(--gap) 0;
+		display: flex;
+		align-items: center;
 	}
+		#stage-configure-visualization h3 > svg {
+			margin-right: var(--gap);
+		}
 	#stage-configure-visualization h4 {
 		margin: 0 0 calc(var(--gap) * 2)
-
 	}
 	#stage-configure-visualization .add-axis {
-		margin-top: calc(var(--gap)*2);
+		margin-top: calc(var(--gap) * 2);
 	}
 	#stage-configure-visualization .axes {
 		display: grid;
-		grid-gap: calc(var(--gap)*2);
+		grid-gap: calc(var(--gap) * 2);
 	}
 		#stage-configure-visualization .subform {
 			border-bottom: 1px solid #ccc;
@@ -323,14 +335,24 @@ main.preview-left #stages {
 					padding: 3px 5px;
 				}
 	#stage-configure-visualization #configure-visualization-form {
-	display: flex;
-	flex-direction: column;
+		display: flex;
+		flex-direction: column;
 	}
+	#stage-configure-visualization #transformations-preview {
+		height: 19px;
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		padding: 0 10px;
+		font-size: 80%;
+	}
+		#stage-configure-visualization #transformations-preview svg {
+			margin: 0;
+		}
 	#stage-configure-visualization #transformations {
 		display: grid;
 		grid-template-columns: 1fr;
 		grid-gap: calc(var(--gap) * 2);
-		/* overflow: auto; */
 		background: #fff;
 		padding: calc(var(--gap) * 2);
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
@@ -372,6 +394,26 @@ main.preview-left #stages {
 		#stage-configure-visualization #transformations .transformation .value button svg {
 			margin: 0;
 		}
+		#stage-configure-visualization #dashboards {
+			display: grid;
+			grid-gap: calc(var(--gap)*2);
+			padding: 10px;
+			background: #fff;
+		}
+			#stage-configure-visualization #dashboards .form {
+				box-shadow: none;
+			}
+			#stage-configure-visualization #dashboards .options .delete:hover,
+			#stage-configure-visualization #dashboards .dashboard-action .delete:hover {
+				background: #c33;
+				border: 0;
+			}
+			#stage-configure-visualization #dashboards .dashboard-action {
+				display: grid;
+				max-width: 200px;
+				grid-template-columns: 1fr 1fr;
+				grid-gap: calc(var(--gap) * 2);
+			}
 
 
 #add-visualization-picker {
@@ -388,10 +430,10 @@ main.preview-left #stages {
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
+		width: 350px;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		transition: box-shadow var(--transition-duration),
 					transform var(--transition-duration);
-		width: 350px;
 	}
 
 	#add-visualization-form figure:hover {
@@ -439,27 +481,4 @@ main.preview-left #preview {
 	}
 	#preview .data-source .toolbar {
 		margin-top: 0;
-	}
-main .dashboard-present {
-	display: grid;
-	grid-gap: calc(var(--gap)*2);
-	padding: 10px;
-	background: #fff;
-}
-	main .dashboard-present .form {
-		box-shadow: none;
-	}
-	main .dashboard-present .NA {
-		margin-bottom: 10px;
-	}
-	main .options .delete:hover,
-	main .dashboard-present .dashboard-action .delete:hover {
-		background: #c33;
-		border: 0;
-	}
-	main .dashboard-present .dashboard-action {
-		display: grid;
-		max-width: 200px;
-		grid-template-columns: 1fr 1fr;
-		grid-gap: calc(var(--gap) * 2);
 	}

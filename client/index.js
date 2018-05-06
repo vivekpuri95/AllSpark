@@ -386,9 +386,9 @@ router.get('/dashboards/:id?', (request, response) => {
 					</select>
 				</label>
 			</form>
-			
+
 			<h2 class="share-heading">Share dashboards</h2>
-			
+
 			<form class="block form" id="dashboard_share">
 				<select name="user_list" multiple></select>
 				<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add Users</button>
@@ -731,33 +731,21 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 				</form>
 
 				<div class="configuration-section">
-					<h3><i class="fas fa-angle-right"></i> Transformations</h3>
+
+					<h3>
+						<i class="fas fa-angle-right"></i>
+						Transformations
+						<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
+					</h3>
+
 					<div class="body" id="transformations"></div>
 				</div>
 
 				<div class="configuration-section">
+
 					<h3><i class="fas fa-angle-right"></i> Dashboards</h3>
-					<div class="body" id="dashboardssss">
-						<div class="dashboard-present">
-							<div class="dashboard_container"></div>
-							<form id="add-dashboard" class="subform form">
-								<label>
-									<span>Dashboard</span>
-									<select name="dashboard_id">
-									</select>
-								</label>
 
-								<label>
-									<span>Position</span>
-									<input name="position" placeholder="Position" type="number">
-								</label>
-
-								<label>
-									<button type='submit'><i class="fa fa-plus"></i>Add</button>
-								</label>
-							</form>
-						</div>
-					</div>
+					<div class="body" id="dashboards"></div>
 				</div>
 
 			</section>
