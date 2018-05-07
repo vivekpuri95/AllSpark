@@ -267,6 +267,7 @@ class DashboardsDashboard {
 			<td><a href="/dashboard/${this.id}">${this.name}</a></td>
 			<td>${this.parent || ''}</td>
 			<td>${this.icon || ''}</td>
+			<td>${this.visibility}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -322,11 +323,16 @@ class DashboardsShare {
 		for(const ud of this.userDashboardResponse)
 			this.userDashboardList.set(ud.id, new UserDashboard(ud, this));
 
-		const select_list = [];
+		const
+			select_list = [],
+			filter_user = [];
+
+		this.userDashboardResponse.map( u => filter_user.push(u.user_id));
 
 		for(const user of this.userList) {
 
-			select_list.push(`<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`);
+			if(!filter_user.includes(user.user_id))
+				select_list.push(`<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`);
 		}
 
 		DashboardsShare.form.user_list.innerHTML = select_list.join("");

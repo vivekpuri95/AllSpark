@@ -143,11 +143,11 @@ main #reports > .datasets {
 	padding: 0 calc(var(--gap) * 2);
 	box-shadow:  0 0 25px rgba(0, 0, 0, 0.15);
 	z-index: 5;
-	width: 240px;
+	width: 250px;
 	align-items: flex-start;
 	overflow: auto;
 	opacity: 0;
-	transform: translateX(240px);
+	transform: translateX(250px);
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }

@@ -343,6 +343,7 @@ router.get('/dashboards/:id?', (request, response) => {
 						<th>Name</th>
 						<th>Parent</th>
 						<th>Icon</th>
+						<th>Visibility</th>
 						<th class="action">Edit</th>
 						<th class="action">Delete</th>
 					</tr>
