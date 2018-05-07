@@ -278,6 +278,10 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 					<i class="fas fa-envelope"></i>
 					Email
 				</button>
+				<button id="configure" class="hidden">
+					<i class="fas fa-share-alt"></i>
+					Configure
+				</button>
 			</div>
 
 			<form class="form mailto-content hidden">

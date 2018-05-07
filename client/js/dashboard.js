@@ -354,6 +354,11 @@ class Dashboard {
 				edit.click();
 		}
 
+		const configure = Dashboard.toolbar.querySelector('#configure');
+		configure.on('click', () => location.href = `/dashboards/${this.id}`);
+		configure.classList.remove('hidden');
+
+
 		const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
 		exportButton.classList.remove('hidden');
 
