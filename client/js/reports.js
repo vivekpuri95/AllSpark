@@ -1551,6 +1551,7 @@ class ReportVisualizationDashboards extends Set {
 		`);
 
 		const form = this.container.querySelector('#add-dashboard');
+
 		for(const dashboard of this.response.values()) {
 
 			form.dashboard_id.insertAdjacentHTML('beforeend',`
