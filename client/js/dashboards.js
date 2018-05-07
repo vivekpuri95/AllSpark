@@ -370,13 +370,9 @@ class DashboardsShare {
 
 		users.set('dashboard_id', this.id);
 
-		for (let i=0; i < DashboardsShare.form.user_list.options.length; i++) {
-			var opt = DashboardsShare.form.user_list.options[i];
+		for (let i = 0; i < DashboardsShare.form.user_list.selectedOptions.length; i++) {
 
-			if (opt.selected) {
-
-				users.append('user_id', opt.value);
-			}
+			users.append('user_id', DashboardsShare.form.user_list.options[i].value);
 		}
 
 		const
@@ -385,7 +381,6 @@ class DashboardsShare {
 			};
 
 		await API.call('user/dashboards/insert', users.toString(), options);
-
 		await this.load();
 
 	}
