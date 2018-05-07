@@ -319,23 +319,16 @@ class DashboardsShare {
 	process() {
 
 		this.userDashboardList.clear();
+		DashboardsShare.form.user_list.textContent = null;
 
 		for(const ud of this.userDashboardResponse)
 			this.userDashboardList.set(ud.id, new UserDashboard(ud, this));
 
-		const
-			select_list = [],
-			filter_user = [];
-
-		this.userDashboardResponse.map( u => filter_user.push(u.user_id));
-
 		for(const user of this.userList) {
 
-			if(!filter_user.includes(user.user_id))
-				select_list.push(`<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`);
+			if(!this.userDashboardResponse.some( u => u.user_id == user.user_id))
+				DashboardsShare.form.user_list.insertAdjacentHTML('beforeend', `<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`)
 		}
-
-		DashboardsShare.form.user_list.innerHTML = select_list.join("");
 
 	}
 
@@ -357,8 +350,7 @@ class DashboardsShare {
 
 		e.preventDefault();
 
-		let users = {};
-		users = new URLSearchParams(users);
+		let users = new URLSearchParams();
 
 		users.set('dashboard_id', this.id);
 
