@@ -30,6 +30,7 @@ main #form .report {
 main table tr td select {
 	width: 30%;
 	margin-left: 35%;
+	height: 100px;
 }
 
 main table tr td button {

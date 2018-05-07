@@ -341,7 +341,6 @@ router.get('/dashboards/:id?', (request, response) => {
 						<th>Icon</th>
 						<th class="action">Edit</th>
 						<th class="action">Delete</th>
-						<th class="action">Share</th>
 					</tr>
 				</thead>
 
@@ -355,6 +354,7 @@ router.get('/dashboards/:id?', (request, response) => {
 			<div class="toolbar">
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="dashboard-form"><i class="fa fa-save"></i> Save</button>
+				<button id="share" type="button" title="Share"><i class="fa fa-share-alt"></i> Share</button>
 			</div>
 
 			<form class="block form" id="dashboard-form">
@@ -410,7 +410,7 @@ router.get('/dashboards/:id?', (request, response) => {
 					<tr>
 						<td colspan="2">
 							<form class="form" id="dashboard_share">
-								<select name="user_list"></select>
+								<select name="user_list" multiple></select>
 							</form>
 						</td>
 						<td>

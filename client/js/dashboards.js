@@ -201,6 +201,8 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.form.on('submit', DashboardsDashboard.form_listener = async e => this.update(e));
 
+		DashboardsDashboard.container.querySelector('#share').on('click', () => this.share());
+
 		await Sections.show('form');
 
 		DashboardsDashboard.form.name.focus();
@@ -272,12 +274,7 @@ class DashboardsDashboard {
 			<td>${this.icon || ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
-			<td class="action share" title="Share"><i class="fa fa-share-alt"></i></td>
 		`;
-
-		this.container.querySelector('.share').on('click', () => {
-			this.share();
-		});
 
 		this.container.querySelector('.green').on('click', () => {
 			this.edit();
@@ -324,7 +321,7 @@ class DashboardsShare {
 		this.userList = await API.call('users/list');
 
 		if(DashboardsShare.form_listener)
-			DashboardsDashboard.form.removeEventListener('submit', DashboardsDashboard.form_listener);
+			DashboardsShare.form.removeEventListener('submit', DashboardsShare.form_listener);
 
 		DashboardsShare.form.on('submit', DashboardsShare.form_listener = e => this.add(e));
 
@@ -339,7 +336,7 @@ class DashboardsShare {
 		for(const ud of this.userDashboardResponse)
 			this.userDashboardList.set(ud.id, new UserDashboard(ud, this));
 
-		const select_list = [`<option value=""></option>`];
+		const select_list = [];
 
 		for(const user of this.userList) {
 
@@ -368,16 +365,27 @@ class DashboardsShare {
 
 		e.preventDefault();
 
+		let users = {};
+		users = new URLSearchParams(users);
+
+		users.set('dashboard_id', this.id);
+
+		for (let i=0; i < DashboardsShare.form.user_list.options.length; i++) {
+			var opt = DashboardsShare.form.user_list.options[i];
+
+			if (opt.selected) {
+
+				users.append('user_id', opt.value);
+			}
+		}
+
 		const
-			parameters = {
-				dashboard_id : this.id,
-				user_id : DashboardsShare.form.user_list.value
-			},
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('user/dashboards/insert', parameters, options);
+		await API.call('user/dashboards/insert', users.toString(), options);
+
 		await this.load();
 
 	}
