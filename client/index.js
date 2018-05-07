@@ -391,7 +391,7 @@ router.get('/dashboards/:id?', (request, response) => {
 			
 			<form class="block form" id="dashboard_share">
 				<select name="user_list" multiple></select>
-				<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add User</button>
+				<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add Users</button>
 			</form>
 
 			<table class="block user-dashboard">
