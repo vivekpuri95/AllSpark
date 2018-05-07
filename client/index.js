@@ -409,14 +409,14 @@ router.get('/dashboards/:id?', (request, response) => {
 	`));
 });
 
-router.get('/reports-new/:stage?/:id?', (request, response) => {
+router.get('/reports/:stage?/:id?', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('/css/reports-new.css');
+	template.stylesheets.push('/css/reports.css');
 
 	template.scripts = template.scripts.concat([
-		'/js/reports-new.js',
+		'/js/reports.js',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
@@ -439,6 +439,7 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 						<i class="fa fa-plus"></i>
 						Add New Report
 					</button>
+					<a href="/reports-old">Old reports editor</a>
 				</form>
 
 				<div id="list-container">
@@ -766,14 +767,14 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 	`));
 });
 
-router.get('/:type(reports|visualization)/:id?', (request, response) => {
+router.get('/:type(reports-old|visualization-old)/:id?', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('/css/reports.css');
+	template.stylesheets.push('/css/reports-old.css');
 
 	template.scripts = template.scripts.concat([
-		'/js/reports.js',
+		'/js/reports-old.js',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
@@ -785,8 +786,6 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 	]);
 
 	response.send(template.body(`
-
-		<div class="notice">Try out the <a href="/reports-new">new reports editor</a>!</div>
 
 		<section class="section" id="list">
 
