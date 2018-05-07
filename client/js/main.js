@@ -692,7 +692,7 @@ class DataSource {
 
 		if(!source.visualizations.filter(v => v.type == 'table').length) {
 			source.visualizations.push({ name: 'Table', visualization_id: 0, type: 'table' });
-			source.visualizations.push({ name: 'Json', visualization_id: 1, type: 'json' });
+			source.visualizations.push({ name: 'Json', visualization_id: -1, type: 'json' });
 		}
 
 		this.visualizations = source.visualizations.map(v => new (Visualization.list.get(v.type))(v, this));
