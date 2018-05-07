@@ -354,7 +354,6 @@ router.get('/dashboards/:id?', (request, response) => {
 			<div class="toolbar">
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="dashboard-form"><i class="fa fa-save"></i> Save</button>
-				<button id="share" type="button" title="Share"><i class="fa fa-share-alt"></i> Share</button>
 			</div>
 
 			<form class="block form" id="dashboard-form">
@@ -381,22 +380,16 @@ router.get('/dashboards/:id?', (request, response) => {
 						<option value="private">Private</option>
 					</select>
 				</label>
-
-				<label id="format">
-					<span>Format</span>
-					<textarea id="dashboard-format"></textarea>
-				</label>
 			</form>
-		</section>
+			
+			<h2 class="share-heading">Share dashboards</h2>
+			
+			<form class="block form" id="dashboard_share">
+				<select name="user_list" multiple></select>
+				<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add User</button>
+			</form>
 
-		<section class="section" id="share">
-			<h1>Share dashboards</h1>
-
-			<div class="toolbar">
-				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-			</div>
-
-			<table class="block">
+			<table class="block user-dashboard">
 				<thead>
 					<tr>
 						<th class="thin">User Id</th>
@@ -406,21 +399,8 @@ router.get('/dashboards/:id?', (request, response) => {
 				</thead>
 				<tbody>
 				</tbody>
-				<tfoot>
-					<tr>
-						<td colspan="2">
-							<form class="form" id="dashboard_share">
-								<select name="user_list" multiple></select>
-							</form>
-						</td>
-						<td>
-							<button type="submit" class="add_user" form="dashboard_share"><i class="fa fa-plus"></i></button>
-						</td>
-					</tr>
-				</tfoot>
 			</table>
 		</section>
-
 	`));
 });
 

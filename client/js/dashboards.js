@@ -31,7 +31,6 @@ Page.class = class Dashboards extends Page {
 		});
 
 		DashboardsDashboard.setup(this);
-		DashboardsShare.setup(this);
 
 		(async () => {
 
@@ -134,6 +133,8 @@ class DashboardsDashboard {
 		DashboardsDashboard.editor = new Editor(DashboardsDashboard.container.querySelector('#dashboard-format'));
 
 		DashboardsDashboard.editor.editor.getSession().setMode('ace/mode/json');
+
+		DashboardsShare.form = DashboardsDashboard.container.querySelector('#dashboard_share');
 	}
 
 	static async add() {
@@ -201,7 +202,7 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.form.on('submit', DashboardsDashboard.form_listener = async e => this.update(e));
 
-		DashboardsDashboard.container.querySelector('#share').on('click', () => this.share());
+		this.dashboardShare.load();
 
 		await Sections.show('form');
 
@@ -254,12 +255,6 @@ class DashboardsDashboard {
 		await this.page.load();
 	}
 
-	async share() {
-
-		await this.dashboardShare.load();
-		await Sections.show("share");
-	}
-
 	get row() {
 
 		if(this.container)
@@ -295,15 +290,6 @@ class DashboardsShare {
 
 		for(const key in page)
 			this[key] = page[key];
-
-	}
-
-	static setup(page) {
-
-		DashboardsShare.container = page.container.querySelector('section#share');
-
-		DashboardsShare.container.querySelector('#back').on('click', () => page.back());
-		DashboardsShare.form = DashboardsShare.container.querySelector('#dashboard_share');
 
 	}
 
@@ -349,7 +335,7 @@ class DashboardsShare {
 
 	render() {
 
-		const container = DashboardsShare.container.querySelector('table tbody');
+		const container = this.page.container.querySelector('table.user-dashboard tbody');
 
 		container.textContent = null;
 
