@@ -278,6 +278,10 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 					<i class="fas fa-envelope"></i>
 					Email
 				</button>
+				<button id="configure" class="hidden">
+					<i class="fas fa-share-alt"></i>
+					Configure
+				</button>
 			</div>
 
 			<form class="form mailto-content hidden">
@@ -339,9 +343,9 @@ router.get('/dashboards/:id?', (request, response) => {
 						<th>Name</th>
 						<th>Parent</th>
 						<th>Icon</th>
+						<th>Visibility</th>
 						<th class="action">Edit</th>
 						<th class="action">Delete</th>
-						<th class="action">Share</th>
 					</tr>
 				</thead>
 
@@ -381,22 +385,16 @@ router.get('/dashboards/:id?', (request, response) => {
 						<option value="private">Private</option>
 					</select>
 				</label>
-
-				<label id="format">
-					<span>Format</span>
-					<textarea id="dashboard-format"></textarea>
-				</label>
 			</form>
-		</section>
+			
+			<h2 class="share-heading">Share dashboards</h2>
+			
+			<form class="block form" id="dashboard_share">
+				<select name="user_list" multiple></select>
+				<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add Users</button>
+			</form>
 
-		<section class="section" id="share">
-			<h1>Share dashboards</h1>
-
-			<div class="toolbar">
-				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-			</div>
-
-			<table class="block">
+			<table class="block user-dashboard">
 				<thead>
 					<tr>
 						<th class="thin">User Id</th>
@@ -406,21 +404,8 @@ router.get('/dashboards/:id?', (request, response) => {
 				</thead>
 				<tbody>
 				</tbody>
-				<tfoot>
-					<tr>
-						<td colspan="2">
-							<form class="form" id="dashboard_share">
-								<select name="user_list"></select>
-							</form>
-						</td>
-						<td>
-							<button type="submit" class="add_user" form="dashboard_share"><i class="fa fa-plus"></i></button>
-						</td>
-					</tr>
-				</tfoot>
 			</table>
 		</section>
-
 	`));
 });
 

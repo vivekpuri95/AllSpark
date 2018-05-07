@@ -147,7 +147,7 @@ main #reports > .datasets {
 	align-items: flex-start;
 	overflow: auto;
 	opacity: 0;
-	transform: translateX(240px);
+	transform: translateX(250px);
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }
@@ -207,7 +207,6 @@ main #reports > .list {
 		top: 0;
 		z-index: 3;
 		align-items: flex-end;
-		grid-template-columns: max-content max-content max-content max-content 1fr;
 	}
 		main #reports > .toolbar input[name=date-range] {
 			width: 250px;
