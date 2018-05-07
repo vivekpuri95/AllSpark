@@ -263,6 +263,11 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		this.sort = {};
 
 		this.prepareSearch();
+
+		this.container.querySelector('#add-report').on('click', () => {
+			this.add();
+			history.pushState({id: 'add'}, '', `/configure-report/add`);
+		});
 	}
 
 	get url() {
@@ -486,6 +491,17 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		return reports;
 	}
 
+	add() {
+
+		history.pushState({}, '', `/reports/configure-report/add`);
+
+		this.page.stages.get('configure-report').disabled = false;
+		this.page.stages.get('define-report').disabled = false;
+		this.page.stages.get('configure-visualization').disabled = false;
+
+		this.page.load();
+	}
+
 	async delete(report) {
 
 		if(!window.confirm('Are you sure?!'))
@@ -533,6 +549,20 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.is_redis.value = this.form.redis.value;
 			this.form.is_redis.classList.toggle('hidden', this.form.redis.value !== 'custom');
 		});
+
+		for(const category of MetaData.categories.values()) {
+
+			this.form.category_id.insertAdjacentHTML('beforeend', `
+				<option value="${category.category_id}">${category.name}</option>
+			`);
+		}
+
+		for(const role of MetaData.roles.values()) {
+
+			this.form.roles.insertAdjacentHTML('beforeend', `
+				<option value="${role.role_id}">${role.name}</option>
+			`);
+		}
 	}
 
 	select() {
@@ -547,10 +577,60 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 	load() {
 
+		if(!this.form.connection_name.children.length) {
+
+			for(const connection of this.page.connections.values()) {
+				this.form.connection_name.insertAdjacentHTML('beforeend',
+					`<option value="${connection.id}">${connection.connection_name} (${connection.type})</option>`
+				)
+			}
+		}
+
 		this.report = this.selectedReport;
 
-		if(!this.report)
-			throw new Page.exception('Invalid Report ID');
+		if(this.report)
+			this.edit();
+
+		else this.add();
+	}
+
+	add() {
+
+		this.form.removeEventListener('submit', this.form.listener);
+		this.form.addEventListener('submit', this.form.listener = e => this.insert(e));
+
+		this.form.reset();
+		this.form.save.classList.remove('unsaved');
+
+		if(this.form.redis.value == 'custom')
+			this.form.is_redis.classList.remove('hidden');
+
+		else this.form.is_redis.classList.add('hidden');
+	}
+
+	async insert(e) {
+
+		e.preventDefault();
+
+		const
+			parameters = {
+				roles: Array.from(this.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		const response = await API.call('reports/report/insert', parameters, options);
+
+		await DataSource.load(true);
+
+		window.history.replaceState({}, '', `/reports/define-report/${response.insertId}`);
+
+		this.page.load();
+	}
+
+	async edit() {
 
 		this.form.removeEventListener('submit', this.form.listener);
 		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
@@ -563,8 +643,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				this.form.elements[key].value = this.report[key];
 		}
 
-		this.form.format.value = this.report.format ? JSON.stringify(this.report.format, 0, 4) : '';
-
 		if(this.is_redis > 0) {
 			this.form.redis.value = 'custom';
 			this.form.is_redis.classList.remove('hidden');
@@ -573,14 +651,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		else {
 			this.form.redis.value = this.is_redis;
 			this.form.is_redis.classList.add('hidden');
-		}
-
-		this.form.connection_name.textContent = null;
-
-		for(const connection of this.page.connections.values()) {
-			this.form.connection_name.insertAdjacentHTML('beforeend',
-				`<option value="${connection.id}">${connection.connection_name} (${connection.type})</option>`
-			)
 		}
 	}
 
@@ -597,17 +667,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				method: 'POST',
 				form: new FormData(this.form),
 			};
-
-		let format = {};
-
-		try {
-			format = JSON.parse(this.form.format.value || '{}');
-		} catch(e) {
-			alert('Invalid JSON in format! :(');
-			return;
-		};
-
-		options.form.set('format', JSON.stringify(format));
 
 		await API.call('reports/report/update', parameters, options);
 

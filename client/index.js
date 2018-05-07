@@ -533,11 +533,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 
 					<label>
 						<span>Roles</span>
-						<select required id="roles">
-							<option value="5">Core</option>
-							<option value="6">Core Ops</option>
-							<option value="7">City Ops</option>
-						</select>
+						<select name="roles" required id="roles"></select>
 					</label>
 
 					<label>
@@ -568,11 +564,6 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 					<label style="max-width: 300px">
 						<span>Added By</span>
 						<span class="NA" id="added-by"></span>
-					</label>
-
-					<label>
-						<span>Format</span>
-						<textarea name="format"></textarea>
 					</label>
 				</form>
 			</section>
