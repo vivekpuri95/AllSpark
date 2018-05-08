@@ -711,7 +711,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 							</label>
 
 							<label>
-								<span>Type</span>
+								<span>Visualization Type</span>
 								<select name="type" required></select>
 							</label>
 						</div>

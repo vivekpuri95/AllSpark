@@ -408,6 +408,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		if(!tbody.children.length)
 			tbody.innerHTML = `<tr class="NA"><td colspan="11">No Reports Found! :(</td></tr>`;
+
+		this.switcher.querySelector('small').textContent = 'Pick a report';
 	}
 
 	get reports() {
@@ -590,10 +592,19 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.report = this.selectedReport;
 
-		if(this.report)
-			this.edit();
+		const small = this.page.stages.get('pick-report').switcher.querySelector('small');
 
-		else this.add();
+		if(this.report) {
+			small.textContent = this.report.name;
+			this.edit();
+		}
+
+		else {
+			small.textContent = 'Add new report';
+			this.add();
+		}
+
+
 	}
 
 	add() {
@@ -831,6 +842,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
+
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name;
 	}
 
 	async update(e) {
@@ -1473,7 +1486,9 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		options.appendChild(this.optionsForm.form);
 
-		await this.dashboards.load();
+		this.dashboards.load();
+
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name;
 	}
 
 	async insert(e) {
