@@ -575,7 +575,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 					<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
 					<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
 					<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
-                    <button id="run"><i class="fas fa-sync"></i> Run</button>
+					<button id="run"><i class="fas fa-sync"></i> Run</button>
 				</header>
 
 				<div id="define-report-parts">
