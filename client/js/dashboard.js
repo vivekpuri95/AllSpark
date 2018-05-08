@@ -55,24 +55,18 @@ Page.class = class Dashboards extends Page {
 		};
 
 		const
-			privateDashboard = {...dummyDashboard, name: "Private Dashboards", id: -1},
-			sharedWithMeDashboard = {...dummyDashboard, name: "Shared With Me", id: -2};
-
-		let
-			privateDashboardUsed = false,
-			sharedWithMeDashboardUsed = false;
+			privateDashboard = {...JSON.parse(JSON.stringify(dummyDashboard)), name: "Private Dashboards", id: -1},
+			sharedWithMeDashboard = {...JSON.parse(JSON.stringify(dummyDashboard)), name: "Shared With Me", id: -2};
 
 		for (const dashboard of dashboards) {
 
 			if ((dashboard.added_by === user.user_id || dashboard.added_by === null) && dashboard.visibility === "private" && dashboard.parent === null) {
 
-				privateDashboardUsed = true;
 				dashboard.parent = privateDashboard.id;
 			}
 
 			else if (dashboard.added_by !== user.user_id && dashboard.visibility === "private" && dashboard.parent === null) {
 
-				sharedWithMeDashboardUsed = true;
 				dashboard.parent = sharedWithMeDashboard.id;
 			}
 
@@ -82,8 +76,8 @@ Page.class = class Dashboards extends Page {
 		for (const dashboard of dashboards || [])
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 
-		privateDashboardUsed ? this.list.set(privateDashboard.id, new Dashboard(privateDashboard, this)) : {};
-		sharedWithMeDashboardUsed ? this.list.set(sharedWithMeDashboard.id, new Dashboard(sharedWithMeDashboard, this)) : {};
+		this.list.set(privateDashboard.id, new Dashboard(privateDashboard, this));
+		this.list.set(sharedWithMeDashboard.id, new Dashboard(sharedWithMeDashboard, this));
 
 		for(const [id, dashboard] of this.list) {
 			if(dashboard.parent && this.list.has(dashboard.parent))
