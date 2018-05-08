@@ -354,9 +354,6 @@ class Dashboard {
 		Sections.show('reports');
 
 		await this.datasets.load();
-
-		const reportsList = [...this.reports];
-
 		const reportObj = {};
 		for(const report of this.reports) {
 
