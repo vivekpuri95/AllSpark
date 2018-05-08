@@ -354,7 +354,7 @@ class Dashboard {
 		Sections.show('reports');
 
 		await this.datasets.load();
-		const reportObj = {};
+		let reportPositionObject = {};
 		for(const report of this.reports) {
 
 			report.container.setAttribute('style', `
@@ -375,27 +375,29 @@ class Dashboard {
 
 			Dashboard.container.appendChild(report.container);
 
-			if(!reportObj[(report.container.getBoundingClientRect().y)]) {
-				reportObj[(report.container.getBoundingClientRect().y)] = {
-					reports:[],
-					loaded: false,
-				};
-			}
-
-			(reportObj[(report.container.getBoundingClientRect().y)]).reports.push(report);
+			reportPositionObject[report.query_id] = ({
+				position: report.container.getBoundingClientRect().y,
+				loaded: false,
+				report: report
+			});
 
 			this.page.list.selectedReports.add(report);
 		}
 
-		let maxScrollHeightAchieved = screen.availHeight;
-
-		this.loadReportsBasedOnScreenHeight(reportObj, maxScrollHeightAchieved, resize, screen.availHeight);
-
 		const mainObject = document.querySelector("main");
 
+		let maxScrollHeightAchieved = Math.max(screen.availHeight, mainObject.scrollTop);
+
+		Dashboard.loadReportsBasedOnScreenHeight(reportPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
+
+
 		mainObject.addEventListener("scroll", () => {
+
+			for(const report of this.reports) {
+				reportPositionObject[report.query_id].position = report.container.getBoundingClientRect().y;
+			}
 			maxScrollHeightAchieved = Math.max(mainObject.scrollTop, maxScrollHeightAchieved);
-			this.loadReportsBasedOnScreenHeight(reportObj, maxScrollHeightAchieved, resize, screen.availHeight);
+			Dashboard.loadReportsBasedOnScreenHeight(reportPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
 			},
 			{passive: true}
 			);
@@ -455,12 +457,12 @@ class Dashboard {
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
-	loadReportsBasedOnScreenHeight(reportObj, heightScrolled, resize, offset=500) {
-		for(const position in reportObj) {
+	static loadReportsBasedOnScreenHeight(reportPositionObject, heightScrolled, resize, offset=500) {
+		for(const report in reportPositionObject) {
 
-			if((parseInt(position) < heightScrolled + offset) && !reportObj[position].loaded) {
-				reportObj[position].reports.map(report => report.visualizations.selected.load(null, resize));
-				reportObj[position].loaded = true;
+			if((parseInt(reportPositionObject[report].position) < heightScrolled + offset) && !reportPositionObject[report].loaded) {
+				reportPositionObject[report].report.visualizations.selected.load(null, resize);
+				reportPositionObject[report].loaded = true;
 			}
 		}
 	}
