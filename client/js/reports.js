@@ -1319,7 +1319,15 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.addForm.on('submit', e => this.insert(e));
 
-		for(const section of this.container.querySelectorAll('.configuration-section')) {
+		this.setupConfigurationSetions();
+	}
+
+	setupConfigurationSetions(container) {
+
+		if(!container)
+			container = this.container;
+
+		for(const section of container.querySelectorAll('.configuration-section')) {
 
 			const
 				body = section.querySelector('.body'),
@@ -1421,7 +1429,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			return;
 
 		if(ConfigureVisualization.types.has(this.visualization.type))
-			this.optionsForm = new (ConfigureVisualization.types.get(this.visualization.type))(this.visualization, this.page);
+			this.optionsForm = new (ConfigureVisualization.types.get(this.visualization.type))(this.visualization, this.page, this);
 
 		else throw new Page.Exception(`Unknown visualization type ${this.visualization.type}`);
 
@@ -2056,9 +2064,10 @@ class ReportTransformation {
 
 class ReportVisualizationOptions {
 
-	constructor(visualization, page) {
+	constructor(visualization, page, stage) {
 		this.visualization = visualization;
 		this.page = page;
+		this.stage = stage;
 	}
 
 	get form() {
@@ -2076,18 +2085,44 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const container = this.formContainer = document.createElement('div');
 
-		container.innerHTML = `
-			<h4>Axes</h4>
-			<div class="axes"></div>
-			<button class="add-axis" type="button">
-				<i class="fa fa-plus"></i> Add New Axis
-			</button>
+		const options = document.createElement('div');
+		const axis_option = document.createElement('div');
+
+		axis_option.classList.add('configuration-section');
+		axis_option.innerHTML = `
+			<h3><i class="fas fa-angle-right"></i> Axes</h3>
+			<div class="options form body">
+				<h4>Axes</h4>
+				<div class="axes"></div>
+				<button class="add-axis" type="button">
+					<i class="fa fa-plus"></i> Add New Axis
+				</button>
+			</div>
 		`;
+
+		container.appendChild(axis_option);
+
+		options.classList.add('configuration-section');
+		options.innerHTML = `
+			<h3><i class="fas fa-angle-right"></i> Options</h3>
+			<div class="options form body">
+				<div class="legend">
+					<label><span>Show Legend</span><input type="checkbox" name="lagend"></label>
+				</div>
+			</div>
+		`;
+
+		container.appendChild(options);
+
+		this.stage.setupConfigurationSetions(container);
 
 		const axes = container.querySelector('.axes');
 
 		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : [])
 			axes.appendChild(this.axis(axis));
+
+		if(this.visualization.options && this.visualization.options.legend)
+			options.querySelector('.legend input').checked = this.visualization.options.legend;
 
 		container.querySelector('.add-axis').on('click', () => {
 			axes.appendChild(this.axis());
@@ -2100,6 +2135,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const response = {
 			axes: [],
+			legend: this.formContainer.querySelector('.legend input').checked,
 		};
 
 		for(const axis of this.formContainer.querySelectorAll('.axis')) {
