@@ -200,3 +200,30 @@ exports.metadata = class extends API {
 		return metadata;
 	}
 };
+
+exports.userSearch = class extends API {
+
+	async userSearch(input) {
+
+		return await this.mysql.query(`
+			Select
+				user_id, 
+				email, 
+				CONCAT(first_name, ' ', last_name) as name, 
+				phone 
+			from 
+				tb_users 
+			where
+				status = 1
+				AND account_id = ?
+				AND (
+					user_id LIKE '%${input}%' 
+					OR email LIKE '%${input}%' 
+					OR first_name LIKE '%${input}%'
+					OR last_name LIKE '%${input}%'
+					OR middle_name LIKE '%${input}%'
+					OR phone LIKE '%${input}%'
+				)
+		`, [this.account.account_id]);
+	}
+}

@@ -279,7 +279,7 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 					Email
 				</button>
 				<button id="configure" class="hidden">
-					<i class="fas fa-share-alt"></i>
+					<i class="fas fa-cog"></i>
 					Configure
 				</button>
 			</div>
@@ -1511,7 +1511,13 @@ class Template {
 						<a class="logo" href="/dashboards"><img></a>
 
 						<nav></nav>
-
+						
+						<span class="global-search">
+							<input name="globalSearch" placeholder="Search...">
+							<ul class="hidden">
+								<li>hi</li>							
+							</ul>
+						</span>
 						<span class="user-name"></span>
 						<span class="logout">
 							<i class="fa fa-power-off"></i>&nbsp;

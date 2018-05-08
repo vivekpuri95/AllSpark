@@ -54,6 +54,11 @@ class Page {
 			document.title = account.name;
 		}
 
+		document.querySelector('body > header .global-search input').on('keyup', async () => {
+
+			await Page.search();
+		});
+
 		const user_name = document.querySelector('body > header .user-name');
 
 		if(user.id)
@@ -95,6 +100,33 @@ class Page {
 			Array.from(document.querySelectorAll('body > header nav a')).map(items => items.classList.remove('selected'));
 			user_name.querySelector('a').classList.add('selected');
 		}
+	}
+
+	static async search() {
+
+		const searchList = document.querySelector('body > header .global-search ul');
+		searchList.innerHTML = null;
+
+		const params = {
+			text: document.querySelector('body > header .global-search input').value
+		}
+
+		if(document.querySelector('body > header .global-search input').value == '') {
+			searchList.classList.add('hidden');
+			return;
+		}
+
+		const searchResult = await API.call('search/query', params);
+
+		for(const res of searchResult){
+
+			searchList.insertAdjacentHTML(
+				'beforeend',
+				`<li><a href="${res.href}"><b>${res.name}</b> in <b>${res.superset}</b></a></li>`
+			);
+		}
+
+		searchList.classList.remove('hidden');
 	}
 
 	constructor() {
