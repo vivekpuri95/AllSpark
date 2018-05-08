@@ -733,6 +733,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.container.querySelector('#filter-list').classList.remove('hidden');
 		});
 
+		this.container.querySelector('#run').on('click', () => {
+			return this.preview();
+		});
+
 		this.editor = new Editor(this.form.querySelector('#editor'));
 
 		this.editor.editor.getSession().on('change', () => {
