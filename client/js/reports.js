@@ -108,6 +108,8 @@ class ReportsMangerPreview {
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
+		this.move();
+
 		await this.report.visualizations.selected.load();
 
 		this.report.container.querySelector('header .menu-toggle').click();
@@ -136,6 +138,8 @@ class ReportsMangerPreview {
 
 		this.docks.value = localStorage.reportsPreviewDock || 'right';
 
+		localStorage.reportsPreviewDock = this.docks.value;
+
 		this.docks.on('change', () => {
 			localStorage.reportsPreviewDock = this.docks.value;
 			this.move();
@@ -153,7 +157,7 @@ class ReportsMangerPreview {
 		if(this.hidden)
 			return;
 
-		let position = this.docks ? this.docks.value : 'bottom';
+		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'bottom';
 
 		this.page.container.classList.add('preview-' + position);
 
