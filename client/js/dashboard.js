@@ -354,7 +354,7 @@ class Dashboard {
 		Sections.show('reports');
 
 		await this.datasets.load();
-		let reportPositionObject = {};
+		let reportsPositionObject = {};
 		for(const report of this.reports) {
 
 			report.container.setAttribute('style', `
@@ -375,7 +375,7 @@ class Dashboard {
 
 			Dashboard.container.appendChild(report.container);
 
-			reportPositionObject[report.query_id] = ({
+			reportsPositionObject[report.query_id] = ({
 				position: report.container.getBoundingClientRect().y,
 				loaded: false,
 				report: report
@@ -388,16 +388,16 @@ class Dashboard {
 
 		let maxScrollHeightAchieved = Math.max(screen.availHeight, mainObject.scrollTop);
 
-		Dashboard.loadReportsBasedOnScreenHeight(reportPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
+		Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
 
 
 		mainObject.addEventListener("scroll", () => {
 
 			for(const report of this.reports) {
-				reportPositionObject[report.query_id].position = report.container.getBoundingClientRect().y;
+				reportsPositionObject[report.query_id].position = report.container.getBoundingClientRect().y;
 			}
 			maxScrollHeightAchieved = Math.max(mainObject.scrollTop, maxScrollHeightAchieved);
-			Dashboard.loadReportsBasedOnScreenHeight(reportPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
+			Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
 			},
 			{passive: true}
 			);
@@ -457,12 +457,12 @@ class Dashboard {
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
-	static loadReportsBasedOnScreenHeight(reportPositionObject, heightScrolled, resize, offset=500) {
-		for(const report in reportPositionObject) {
+	static loadReportsBasedOnScreenHeight(reportsPositionObject, heightScrolled, resize, offset=500) {
+		for(const report in reportsPositionObject) {
 
-			if((parseInt(reportPositionObject[report].position) < heightScrolled + offset) && !reportPositionObject[report].loaded) {
-				reportPositionObject[report].report.visualizations.selected.load(null, resize);
-				reportPositionObject[report].loaded = true;
+			if((parseInt(reportsPositionObject[report].position) < heightScrolled + offset) && !reportsPositionObject[report].loaded) {
+				reportsPositionObject[report].report.visualizations.selected.load(null, resize);
+				reportsPositionObject[report].loaded = true;
 			}
 		}
 	}
