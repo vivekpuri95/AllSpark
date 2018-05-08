@@ -1487,6 +1487,11 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.dashboards.load();
 
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
+
+		const first = this.container.querySelector('.configuration-section');
+
+		if(first && first.querySelector('.body.hidden'))
+			first.querySelector('h3').click();
 	}
 
 	async insert(e) {
