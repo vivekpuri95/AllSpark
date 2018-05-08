@@ -390,13 +390,15 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			row.querySelector('.visualizations').on('click', () => {
 
-				history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
+				history.pushState({}, '', `/reports/define-report/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
 				this.page.stages.get('configure-visualization').disabled = false;
 
 				this.page.load();
+
+				this.page.stages.get('configure-visualization').select();
 			});
 
 			row.querySelector('.delete').on('click', () => this.delete(report));
@@ -1418,6 +1420,13 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
+
+		if(!window.location.pathname.includes('configure-visualization')) {
+			this.container.classList.add('hidden');
+			return;
+		} else {
+			this.container.classList.remove('hidden');
+		}
 
 		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
 
