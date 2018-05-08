@@ -291,7 +291,6 @@ class DashboardsShare {
 
 		for(const key in page)
 			this[key] = page[key];
-
 	}
 
 	async load() {
@@ -329,7 +328,6 @@ class DashboardsShare {
 			if(!this.userDashboardResponse.some( u => u.user_id == user.user_id))
 				DashboardsShare.form.user_list.insertAdjacentHTML('beforeend', `<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`)
 		}
-
 	}
 
 	render() {
@@ -343,7 +341,6 @@ class DashboardsShare {
 
 		if(!this.userDashboardList.size)
 			container.insertAdjacentHTML('beforeend', `<tr class="NA"><td colspan="2">Not shared to any user! :(</td></tr>`);
-
 	}
 
 	async add(e) {
@@ -366,9 +363,7 @@ class DashboardsShare {
 
 		await API.call('user/dashboards/insert', users.toString(), options);
 		await this.load();
-
 	}
-
 }
 
 class UserDashboard {
@@ -379,7 +374,6 @@ class UserDashboard {
 			this[key] = data[key];
 
 		this.page = page;
-
 	}
 
 	get row() {
@@ -398,7 +392,6 @@ class UserDashboard {
 		this.container.querySelector('.red').on('click', async() => this.delete());
 
 		return this.container;
-
 	}
 
 	async delete() {
@@ -416,7 +409,5 @@ class UserDashboard {
 
 		await API.call('user/dashboards/delete', parameters, options);
 		await this.page.load();
-
 	}
-
 }
