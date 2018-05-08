@@ -63,8 +63,8 @@ exports.updateFormat = class extends API {
 		this.assert(commonFun.isJson(this.request.body.format), "format is invalid");
 
 		return await this.mysql.query(
-			'UPDATE tb_visualization_dashboard SET format = ? WHERE dashboard_id = ? and account_id = (select account_id from tb_dashboard where id = ?)',
-			[this.request.body.format, this.request.body.id, this.account.account_id],
+			'UPDATE tb_visualization_dashboard SET format = ? WHERE id = ? and (select true from tb_dashboards where id = ? and account_id = ?)',
+			[this.request.body.format, this.request.body.id, this.request.body.dashboard_id, this.account.account_id],
 			'write'
 		);
 	}

@@ -969,7 +969,7 @@ class DataSource {
 			const edit = document.createElement('a');
 
 			edit.title = 'Edit Report';
-			edit.href = `/reports/${this.query_id}`;
+			edit.href = `/reports/define-report/${this.query_id}`;
 			edit.innerHTML = '<i class="fas fa-pencil-alt"></i>';
 
 			actions.insertBefore(edit, actions.querySelector('.menu-toggle'));
@@ -2897,7 +2897,7 @@ class Visualization {
 		if(configure) {
 
 			if(this.visualization_id)
-				configure.href = `/visualization/${this.visualization_id}`;
+				configure.href = `/reports/configure-visualization/${this.visualization_id}`;
 
 			configure.classList.toggle('hidden', !this.visualization_id);
 		}

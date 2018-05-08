@@ -33,7 +33,7 @@ Page.class = class Dashboards extends Page {
 
 		this.list.clear();
 
-		await DataSource.load();
+		await DataSource.load(true);
 
 		const dashboards = await API.call('dashboards/list');
 
@@ -72,8 +72,8 @@ Page.class = class Dashboards extends Page {
 
 			dashboard.format.reports.sort((a, b) => parseInt(a.position) - parseInt(b.position))
 		}
-
-		for (const dashboard of dashboards || [])
+    
+		for(const dashboard of dashboards || [])
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 
 		this.list.set(privateDashboard.id, new Dashboard(privateDashboard, this));
@@ -89,8 +89,13 @@ Page.class = class Dashboards extends Page {
 		this.render();
 		this.renderList();
 
-		if(window.location.pathname.endsWith('first') && this.list.size)
-			Array.from(this.list.values())[0].load();
+		if(window.location.pathname.endsWith('first') && this.list.size) {
+
+			if(localStorage.lastOpenedDashboard && this.list.has(localStorage.lastOpenedDashboard))
+				await this.list.get(localStorage.lastOpenedDashboard).load();
+
+			else await Array.from(this.list.values())[0].load();
+		}
 
 		else if(id && this.list.has(id) && window.location.pathname.includes('dashboard'))
 			await this.list.get(id).load();
@@ -303,10 +308,14 @@ class Dashboard {
 		if(!this.format.reports)
 			this.format.reports = [];
 
+		this.format.reports = this.format.reports.sort((a, b) => a.position - b.position);
+
 		this.datasets = new DashboardDatasets(this);
 	}
 
 	async load(resize) {
+
+		this.lastOpenedDashboard = this.id;
 
 		if(!Dashboard.container)
 			return;
@@ -388,6 +397,11 @@ class Dashboard {
 			if(Dashboard.editing)
 				edit.click();
 		}
+
+		const configure = Dashboard.toolbar.querySelector('#configure');
+		configure.on('click', () => location.href = `/dashboards/${this.id}`);
+		configure.classList.remove('hidden');
+
 
 		const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
 		exportButton.classList.remove('hidden');
@@ -494,86 +508,177 @@ class Dashboard {
 			header.insertAdjacentHTML('beforeend', `
 				<div class="edit">
 					<span class="remove" title="Remove Graph"><i class="fa fa-times"></i></span>
+					<span class="move-up" title="Move visualization up"><i class="fas fa-angle-up"></i></span>
+					<span class="move-down" title="Move visualization down"><i class="fas fa-angle-down"></i></span>
 				</div>
 			`);
 
-			header.querySelector('.remove').on('click', () => {
+			header.querySelector('.move-up').on('click', () => {
 
-				this.format.reports.splice(report.dashboard.position, 1);
-				this.page.list.selectedReports.delete(report);
-				report.dashboard.position = undefined;
+				const [current] = this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id);
 
-				Dashboard.container.removeChild(report.container);
+				let previous = null;
 
-				this.load(true);
-			});
+				for(let i = 0; i < this.format.reports.length; i++) {
 
-			report.container.setAttribute('draggable', 'true');
+					if(this.format.reports[i] == current)
+						previous = this.format.reports[i - 1];
+				}
 
-			report.container.on('dragstart', e => {
-				this.page.list.selectedReports.beingDragged = report;
-				e.effectAllowed = 'move';
-				report.container.classList.add('being-dragged');
-			});
-
-			report.container.on('dragend', e => {
-
-				if(!this.page.list.selectedReports.beingDragged)
+				if(!previous)
 					return;
 
-				report.container.classList.remove('being-dragged');
-				this.page.list.selectedReports.beingDragged = null;
-			});
-
-			report.container.on('dragenter', e => {
-
-				if(!this.page.list.selectedReports.beingDragged)
-					return;
-
-				report.container.classList.add('drag-enter');
-			});
-
-			report.container.on('dragleave', () =>  {
-
-				if(!this.page.list.selectedReports.beingDragged)
-					return;
-
-				report.container.classList.remove('drag-enter');
-			});
-
-			// To make the targate droppable
-			report.container.on('dragover', e => {
-
-				e.preventDefault();
-
-				if(!this.page.list.selectedReports.beingDragged)
-					return;
-
-				e.stopPropagation();
-
-				report.container.classList.add('drag-enter');
-			});
-
-			report.container.on('drop', e => {
-
-				report.container.classList.remove('drag-enter');
-
-				if(!this.page.list.selectedReports.beingDragged)
-					return;
-
-				if(this.page.list.selectedReports.beingDragged == report)
-					return;
+				current.format.position = Math.max(1, current.format.position - 1);
+				previous.format.position = Math.min(this.format.reports.length, previous.format.position + 1);
 
 				const
-					beingDragged = this.page.list.selectedReports.beingDragged,
-					format = this.format.reports[beingDragged.dashboard.position];
+					currentParameters = {
+						id: current.id,
+						format: JSON.stringify(current.format),
+					},
+					currentOptions = {
+						method: 'POST',
+					};
 
-				this.format.reports.splice(beingDragged.dashboard.position, 1);
+				API.call('reports/dashboard/update', currentParameters, currentOptions);
 
-				this.format.reports.splice(report.dashboard.position, 0, format);
+				const
+					previousParameters = {
+						id: previous.id,
+						format: JSON.stringify(previous.format),
+					},
+					previousOptions = {
+						method: 'POST',
+					};
 
-				this.load(true);
+				API.call('reports/dashboard/update', previousParameters, previousOptions);
+
+				this.page.load();
 			});
+
+			header.querySelector('.move-down').on('click', () => {
+
+				const [current] = this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id);
+
+				let next = null;
+				for(let i = 0; i < this.format.reports.length; i++) {
+
+					if(this.format.reports[i] == current)
+						next = this.format.reports[i + 1];
+				}
+
+				if(!next)
+					return;
+
+				current.format.position = Math.min(this.format.reports.length, current.format.position + 1);
+				next.format.position = Math.max(1, next.format.position - 1);
+
+				const
+					currentParameters = {
+						id: current.id,
+						format: JSON.stringify(current.format),
+					},
+					currentOptions = {
+						method: 'POST',
+					};
+
+				API.call('reports/dashboard/update', currentParameters, currentOptions);
+
+				const
+					nextParameters = {
+						id: next.id,
+						format: JSON.stringify(next.format),
+					},
+					nextOptions = {
+						method: 'POST',
+					};
+
+				API.call('reports/dashboard/update', nextParameters, nextOptions);
+
+				this.page.load();
+			});
+
+			header.querySelector('.remove').on('click', () => {
+
+				const
+					parameters = {
+						id: this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id)[0].id,
+					},
+					options = {
+						method: 'POST',
+					};
+
+				API.call('reports/dashboard/delete', parameters, options);
+
+				this.page.load();
+			});
+
+			// report.container.setAttribute('draggable', 'true');
+
+			// report.container.on('dragstart', e => {
+			// 	this.page.list.selectedReports.beingDragged = report;
+			// 	e.effectAllowed = 'move';
+			// 	report.container.classList.add('being-dragged');
+			// });
+
+			// report.container.on('dragend', e => {
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	report.container.classList.remove('being-dragged');
+			// 	this.page.list.selectedReports.beingDragged = null;
+			// });
+
+			// report.container.on('dragenter', e => {
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	report.container.classList.add('drag-enter');
+			// });
+
+			// report.container.on('dragleave', () =>  {
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	report.container.classList.remove('drag-enter');
+			// });
+
+			// // To make the targate droppable
+			// report.container.on('dragover', e => {
+
+			// 	e.preventDefault();
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	e.stopPropagation();
+
+			// 	report.container.classList.add('drag-enter');
+			// });
+
+			// report.container.on('drop', e => {
+
+			// 	report.container.classList.remove('drag-enter');
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	if(this.page.list.selectedReports.beingDragged == report)
+			// 		return;
+
+			// 	const
+			// 		beingDragged = this.page.list.selectedReports.beingDragged,
+			// 		format = this.format.reports[beingDragged.dashboard.position];
+
+			// 	this.format.reports.splice(beingDragged.dashboard.position, 1);
+
+			// 	this.format.reports.splice(report.dashboard.position, 0, format);
+
+			// 	this.load(true);
+			// });
 
 			report.container.insertAdjacentHTML('beforeend', `
 				<div class="resize right" draggable="true" title="Resize Graph"></div>

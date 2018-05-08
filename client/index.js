@@ -278,6 +278,10 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 					<i class="fas fa-envelope"></i>
 					Email
 				</button>
+				<button id="configure" class="hidden">
+					<i class="fas fa-share-alt"></i>
+					Configure
+				</button>
 			</div>
 
 			<form class="form mailto-content hidden">
@@ -339,9 +343,9 @@ router.get('/dashboards/:id?', (request, response) => {
 						<th>Name</th>
 						<th>Parent</th>
 						<th>Icon</th>
+						<th>Visibility</th>
 						<th class="action">Edit</th>
 						<th class="action">Delete</th>
-						<th class="action">Share</th>
 					</tr>
 				</thead>
 
@@ -381,22 +385,16 @@ router.get('/dashboards/:id?', (request, response) => {
 						<option value="private">Private</option>
 					</select>
 				</label>
-
-				<label id="format">
-					<span>Format</span>
-					<textarea id="dashboard-format"></textarea>
-				</label>
 			</form>
-		</section>
 
-		<section class="section" id="share">
-			<h1>Share dashboards</h1>
+			<h2 class="share-heading">Share dashboards</h2>
 
-			<div class="toolbar">
-				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-			</div>
+			<form class="block form" id="dashboard_share">
+				<select name="user_list" multiple></select>
+				<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add Users</button>
+			</form>
 
-			<table class="block">
+			<table class="block user-dashboard">
 				<thead>
 					<tr>
 						<th class="thin">User Id</th>
@@ -406,32 +404,19 @@ router.get('/dashboards/:id?', (request, response) => {
 				</thead>
 				<tbody>
 				</tbody>
-				<tfoot>
-					<tr>
-						<td colspan="2">
-							<form class="form" id="dashboard_share">
-								<select name="user_list"></select>
-							</form>
-						</td>
-						<td>
-							<button type="submit" class="add_user" form="dashboard_share"><i class="fa fa-plus"></i></button>
-						</td>
-					</tr>
-				</tfoot>
 			</table>
 		</section>
-
 	`));
 });
 
-router.get('/reports-new/:stage?/:id?', (request, response) => {
+router.get('/reports/:stage?/:id?', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('/css/reports-new.css');
+	template.stylesheets.push('/css/reports.css');
 
 	template.scripts = template.scripts.concat([
-		'/js/reports-new.js',
+		'/js/reports.js',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
@@ -454,6 +439,7 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 						<i class="fa fa-plus"></i>
 						Add New Report
 					</button>
+					<a href="/reports-old">Old reports editor</a>
 				</form>
 
 				<div id="list-container">
@@ -547,11 +533,7 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 
 					<label>
 						<span>Roles</span>
-						<select required id="roles">
-							<option value="5">Core</option>
-							<option value="6">Core Ops</option>
-							<option value="7">City Ops</option>
-						</select>
+						<select name="roles" required id="roles"></select>
 					</label>
 
 					<label>
@@ -582,11 +564,6 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 					<label style="max-width: 300px">
 						<span>Added By</span>
 						<span class="NA" id="added-by"></span>
-					</label>
-
-					<label>
-						<span>Format</span>
-						<textarea name="format"></textarea>
 					</label>
 				</form>
 			</section>
@@ -746,33 +723,21 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 				</form>
 
 				<div class="configuration-section">
-					<h3><i class="fas fa-angle-right"></i> Transformations</h3>
+
+					<h3>
+						<i class="fas fa-angle-right"></i>
+						Transformations
+						<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
+					</h3>
+
 					<div class="body" id="transformations"></div>
 				</div>
 
 				<div class="configuration-section">
+
 					<h3><i class="fas fa-angle-right"></i> Dashboards</h3>
-					<div class="body" id="dashboardssss">
-						<div class="dashboard-present">
-							<div class="dashboard_container"></div>
-							<form id="add-dashboard" class="subform form">
-								<label>
-									<span>Dashboard</span>
-									<select name="dashboard_id">
-									</select>
-								</label>
 
-								<label>
-									<span>Position</span>
-									<input name="position" placeholder="Position" type="number">
-								</label>
-
-								<label>
-									<button type='submit'><i class="fa fa-plus"></i>Add</button>
-								</label>
-							</form>
-						</div>
-					</div>
+					<div class="body" id="dashboards"></div>
 				</div>
 
 			</section>
@@ -793,14 +758,14 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 	`));
 });
 
-router.get('/:type(reports|visualization)/:id?', (request, response) => {
+router.get('/:type(reports-old|visualization-old)/:id?', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('/css/reports.css');
+	template.stylesheets.push('/css/reports-old.css');
 
 	template.scripts = template.scripts.concat([
-		'/js/reports.js',
+		'/js/reports-old.js',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
@@ -812,8 +777,6 @@ router.get('/:type(reports|visualization)/:id?', (request, response) => {
 	]);
 
 	response.send(template.body(`
-
-		<div class="notice">Try out the <a href="/reports-new">new reports editor</a>!</div>
 
 		<section class="section" id="list">
 
