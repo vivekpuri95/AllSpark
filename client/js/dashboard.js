@@ -354,7 +354,7 @@ class Dashboard {
 		Sections.show('reports');
 
 		await this.datasets.load();
-
+		let reportsPositionObject = {};
 		for(const report of this.reports) {
 
 			report.container.setAttribute('style', `
@@ -375,10 +375,32 @@ class Dashboard {
 
 			Dashboard.container.appendChild(report.container);
 
-			report.visualizations.selected.load(null, resize);
+			reportsPositionObject[report.query_id] = ({
+				position: report.container.getBoundingClientRect().y,
+				loaded: false,
+				report: report
+			});
 
 			this.page.list.selectedReports.add(report);
 		}
+
+		const mainObject = document.querySelector("main");
+
+		let maxScrollHeightAchieved = Math.max(screen.availHeight, mainObject.scrollTop);
+
+		Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
+
+
+		mainObject.addEventListener("scroll", () => {
+
+			for(const report of this.reports) {
+				reportsPositionObject[report.query_id].position = report.container.getBoundingClientRect().y;
+			}
+			maxScrollHeightAchieved = Math.max(mainObject.scrollTop, maxScrollHeightAchieved);
+			Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
+			},
+			{passive: true}
+			);
 
 		if(!this.page.list.selectedReports.size)
 			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
@@ -433,6 +455,16 @@ class Dashboard {
 
 		if(!this.datasets.size)
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
+	}
+
+	static loadReportsBasedOnScreenHeight(reportsPositionObject, heightScrolled, resize, offset=500) {
+		for(const report in reportsPositionObject) {
+
+			if((parseInt(reportsPositionObject[report].position) < heightScrolled + offset) && !reportsPositionObject[report].loaded) {
+				reportsPositionObject[report].report.visualizations.selected.load(null, resize);
+				reportsPositionObject[report].loaded = true;
+			}
+		}
 	}
 
 	mailto() {
