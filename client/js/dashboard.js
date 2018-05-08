@@ -393,11 +393,12 @@ class Dashboard {
 
 		const mainObject = document.querySelector("main");
 
-		mainObject.on("scroll", () => {
-
+		mainObject.addEventListener("scroll", () => {
 			maxScrollHeightAchieved = Math.max(mainObject.scrollTop, maxScrollHeightAchieved);
 			this.loadReportsBasedOnScreenHeight(reportObj, maxScrollHeightAchieved, resize, screen.availHeight);
-		});
+			},
+			{passive: true}
+			);
 
 		if(!this.page.list.selectedReports.size)
 			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
