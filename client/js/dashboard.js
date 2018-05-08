@@ -355,6 +355,9 @@ class Dashboard {
 
 		await this.datasets.load();
 
+		const reportsList = [...this.reports];
+
+		const reportObj = {};
 		for(const report of this.reports) {
 
 			report.container.setAttribute('style', `
@@ -375,10 +378,29 @@ class Dashboard {
 
 			Dashboard.container.appendChild(report.container);
 
-			report.visualizations.selected.load(null, resize);
+			if(!reportObj[(report.container.getBoundingClientRect().y)]) {
+				reportObj[(report.container.getBoundingClientRect().y)] = {
+					reports:[],
+					loaded: false,
+				};
+			}
+
+			(reportObj[(report.container.getBoundingClientRect().y)]).reports.push(report);
 
 			this.page.list.selectedReports.add(report);
 		}
+
+		let maxScrollHeightAchieved = screen.availHeight;
+
+		this.loadReportsBasedOnScreenHeight(reportObj, maxScrollHeightAchieved, resize, screen.availHeight);
+
+		const mainObject = document.querySelector("main");
+
+		mainObject.on("scroll", () => {
+
+			maxScrollHeightAchieved = Math.max(mainObject.scrollTop, maxScrollHeightAchieved);
+			this.loadReportsBasedOnScreenHeight(reportObj, maxScrollHeightAchieved, resize, screen.availHeight);
+		});
 
 		if(!this.page.list.selectedReports.size)
 			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
@@ -433,6 +455,16 @@ class Dashboard {
 
 		if(!this.datasets.size)
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
+	}
+
+	loadReportsBasedOnScreenHeight(reportObj, heightScrolled, resize, offset=500) {
+		for(const position in reportObj) {
+
+			if((parseInt(position) < heightScrolled + offset) && !reportObj[position].loaded) {
+				reportObj[position].reports.map(report => report.visualizations.selected.load(null, resize));
+				reportObj[position].loaded = true;
+			}
+		}
 	}
 
 	mailto() {
