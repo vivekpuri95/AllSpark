@@ -108,8 +108,6 @@ class ReportsMangerPreview {
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
-		this.move();
-
 		await this.report.visualizations.selected.load();
 
 		this.report.container.querySelector('header .menu-toggle').click();
