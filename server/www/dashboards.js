@@ -11,7 +11,7 @@ exports.list = class extends API {
 		let dashboards = this.mysql.query("select * from tb_dashboards where status = 1 and account_id = ?", [this.account.account_id]);
 
 		let sharedDashboards = this.mysql.query(
-			"select * from tb_user_dashboard ud join tb_dashboards d on d.id = ud.dashboard_id where d.status = 1 and account_id = ?",
+			"select ud.* from tb_user_dashboard ud join tb_dashboards d on d.id = ud.dashboard_id where d.status = 1 and account_id = ?",
 			[this.account.account_id]
 		);
 
