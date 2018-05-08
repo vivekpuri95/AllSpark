@@ -595,7 +595,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		const small = this.page.stages.get('pick-report').switcher.querySelector('small');
 
 		if(this.report) {
-			small.textContent = this.report.name;
+			small.textContent = this.report.name + ` (${this.report.query_id})`;
 			this.edit();
 		}
 
@@ -603,8 +603,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			small.textContent = 'Add new report';
 			this.add();
 		}
-
-
 	}
 
 	add() {
@@ -843,7 +841,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
 
-		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name;
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` (${this.report.query_id})`;
 	}
 
 	async update(e) {
@@ -1488,7 +1486,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.dashboards.load();
 
-		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name;
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` (${this.report.query_id})`;
 	}
 
 	async insert(e) {
