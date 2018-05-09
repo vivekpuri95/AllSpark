@@ -413,7 +413,10 @@ main.preview-left #stages {
 				grid-template-columns: 1fr 1fr;
 				grid-gap: calc(var(--gap) * 2);
 			}
-
+	.configuration-section span {
+		display: flex;
+		align-items: center;
+	}
 
 #add-visualization-picker {
 	grid-column: 1 / 3;

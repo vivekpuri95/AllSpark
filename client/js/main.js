@@ -2904,7 +2904,8 @@ class Visualization {
 
 		this.source.resetError();
 
-		this.source.container.querySelector('.columns').classList.toggle('hidden', !this.options.legend)
+		if(this.options)
+			this.source.container.querySelector('.columns').classList.toggle('hidden', !this.options.legend)
 	}
 }
 
