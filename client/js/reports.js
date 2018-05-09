@@ -108,6 +108,9 @@ class ReportsMangerPreview {
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
+		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
+		this.page.container.classList.add('preview-right');
+
 		await this.report.visualizations.selected.load();
 
 		this.report.container.querySelector('header .menu-toggle').click();
@@ -401,6 +404,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				this.page.load();
 
 				this.page.stages.get('configure-visualization').select();
+				this.page.stages.get('configure-visualization').switcher.querySelector('#visualization-list').classList.toggle('hidden');
 			});
 
 			row.querySelector('.delete').on('click', () => this.delete(report));
@@ -1374,7 +1378,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization)
 			super.select();
 
-		this.switcher.querySelector('#visualization-list').classList.toggle('hidden');
+		else this.switcher.querySelector('#visualization-list').classList.toggle('hidden');
 
 		Sections.show('stage-configure-visualization');
 
