@@ -28,6 +28,7 @@ exports.list = class extends API {
 					id LIKE '%${this.request.body.search}%'
 					OR name LIKE '%${this.request.body.search}%'
 				)
+				LIMIT 10
 			`);
 		}
 
@@ -35,7 +36,7 @@ exports.list = class extends API {
 
 		if(this.request.body.search) {
 
-			for(const row of result){
+			for(const row of result) {
 
 				row.superset = 'Datasets';
 				row.href = '/settings';

@@ -26,8 +26,6 @@ exports.query = class extends API {
 			await report_obj.list()
 		]);
 
-		let response = [].concat(report_list).concat(user_list).concat(dataset_list).concat(dashboard_list);
-
-		return response;
+		return [].concat(report_list).concat(user_list).concat(dataset_list).concat(dashboard_list);
 	}
 }

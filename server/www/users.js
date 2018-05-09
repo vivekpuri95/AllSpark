@@ -109,7 +109,8 @@ exports.list = class extends API {
 						OR first_name LIKE '%${this.request.body.search}%'
 						OR middle_name LIKE '%${this.request.body.search}%'
 						OR last_name LIKE '%${this.request.body.search}%'
-					)					
+					)
+					LIMIT 10				
 				`);
 			}
 

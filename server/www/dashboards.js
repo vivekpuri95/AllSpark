@@ -17,6 +17,7 @@ exports.list = class extends API {
 					OR name LIKE '%${this.request.body.search}%'
 					OR visibility LIKE '%${this.request.body.search}%'
 				)
+				LIMIT 10
 			`);
 		}
 

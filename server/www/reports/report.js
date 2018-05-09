@@ -24,12 +24,14 @@ exports.list = class extends API {
 				and q.account_id = ${this.account.account_id}
         `;
 
-		if(this.request.body.search){
+		if(this.request.body.search) {
 			query = query.concat(`
 				AND (
 					query_id LIKE '%${this.request.body.search}%'
 					OR name LIKE '%${this.request.body.search}%'
+					OR tags LIKE '%${this.request.body.search}%'
 				)
+				LIMIT 10
 			`);
 		}
 
