@@ -928,7 +928,7 @@ class DataSource {
 				user_element.push(`
 					<li>
 						<a href="/user/profile/${user.user_id}">${user.name}</a>
-						<span>${user.reason.join(",")}</span>
+						<span>${user.reason}</span>
 					</li>
 				`);
 			}

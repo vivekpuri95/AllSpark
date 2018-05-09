@@ -80,12 +80,16 @@ exports.list = class extends API {
 
 		}
 		else {
+
 			results = await Promise.all([
 				this.mysql.query(`SELECT * FROM tb_users WHERE account_id = ? AND status = 1`, [this.account.account_id]),
 				this.mysql.query(`SELECT id, user_id, category_id, role_id FROM tb_user_roles`),
 				this.mysql.query(`SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`)
 			]);
 		}
+
+		if(this.request.body.search)
+			return results[0];
 
 		for (const role of results[1]) {
 			if (!roles[role.user_id]) {
@@ -200,30 +204,3 @@ exports.metadata = class extends API {
 		return metadata;
 	}
 };
-
-exports.userSearch = class extends API {
-
-	async userSearch(input) {
-
-		return await this.mysql.query(`
-			Select
-				user_id, 
-				email, 
-				CONCAT(first_name, ' ', last_name) as name, 
-				phone 
-			from 
-				tb_users 
-			where
-				status = 1
-				AND account_id = ?
-				AND (
-					user_id LIKE '%${input}%' 
-					OR email LIKE '%${input}%' 
-					OR first_name LIKE '%${input}%'
-					OR last_name LIKE '%${input}%'
-					OR middle_name LIKE '%${input}%'
-					OR phone LIKE '%${input}%'
-				)
-		`, [this.account.account_id]);
-	}
-}

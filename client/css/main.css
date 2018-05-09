@@ -188,6 +188,7 @@ body {
 
 		body > header .global-search {
 			margin-left: auto;
+			margin-right: 10px;
 			align-self: center;
 			width: 250px;
 		}
