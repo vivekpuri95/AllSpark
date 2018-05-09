@@ -2085,37 +2085,30 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const container = this.formContainer = document.createElement('div');
 
-		const options = document.createElement('div');
-		const axis_option = document.createElement('div');
-
-		axis_option.classList.add('configuration-section');
-		axis_option.innerHTML = `
-			<h3><i class="fas fa-angle-right"></i> Axes</h3>
-			<div class="options form body">
-				<div class="axes"></div>
-				<button class="add-axis" type="button">
-					<i class="fa fa-plus"></i> Add New Axis
-				</button>
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Axes</h3>
+				<div class="options form body">
+					<div class="axes"></div>
+					<button class="add-axis" type="button">
+						<i class="fa fa-plus"></i> Add New Axis
+					</button>
+				</div>
 			</div>
-		`;
 
-		container.appendChild(axis_option);
-
-		options.classList.add('configuration-section');
-		options.innerHTML = `
-			<h3><i class="fas fa-angle-right"></i> Options</h3>
-			<div class="options form body">
-				<div class="legend">
-					<label>
-						<span>
-							<input type="checkbox" name="lagend">Show Legend.
-						</span>
-					</label>
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="options form body">
+					<div class="legend">
+						<label>
+							<span>
+								<input type="checkbox" name="lagend">Show Legend.
+							</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		`;
-
-		container.appendChild(options);
 
 		this.stage.setupConfigurationSetions(container);
 
@@ -2125,7 +2118,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			axes.appendChild(this.axis(axis));
 
 		if(this.visualization.options && this.visualization.options.legend)
-			options.querySelector('.legend input').checked = this.visualization.options.legend;
+			container.querySelector('.legend input').checked = this.visualization.options.legend;
 
 		container.querySelector('.add-axis').on('click', () => {
 			axes.appendChild(this.axis());
