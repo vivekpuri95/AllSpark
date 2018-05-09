@@ -72,7 +72,7 @@ Page.class = class Dashboards extends Page {
 
 			dashboard.format.reports.sort((a, b) => parseInt(a.position) - parseInt(b.position))
 		}
-    
+
 		for(const dashboard of dashboards || [])
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 
@@ -282,14 +282,18 @@ class Dashboard {
 
 		side_button.on('click', () => {
 
-			container.classList.remove('hidden');
-			page.container.querySelector('#reports .datasets').classList.add('show');
+			container.classList.toggle('hidden');
+			page.container.querySelector('#reports .datasets').classList.toggle('show');
+			side_button.classList.toggle('show');
+			side_button.innerHTML = `<i class="fas fa-angle-double-${container.classList.contains('hidden') ? 'left' : 'right'}"></i>`;
 		});
 
 		container.on('click', () => {
 
 			container.classList.add('hidden');
 			page.container.querySelector('#reports .datasets').classList.remove('show');
+			side_button.classList.remove('show');
+			side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
 		});
 	}
 
@@ -1006,8 +1010,6 @@ class DashboardDatasets extends Map {
 
 		container.innerHTML = '<h3>Global Filters</h3>';
 
-		let counter = 1;
-
 		for(const dataset of this.values()) {
 
 			const
@@ -1018,9 +1020,6 @@ class DashboardDatasets extends Map {
 
 			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
 
-			if(counter++ > 4)
-				label.classList.add('hidden');
-
 			label.appendChild(dataset.container);
 
 			container.appendChild(label);
@@ -1029,7 +1028,6 @@ class DashboardDatasets extends Map {
 		container.insertAdjacentHTML('beforeend', `
 			<div class="actions">
 				<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
-				<button class="more icon" title="More Filters"><i class="fas fa-filter"></i></button>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
 				<button class="reset-toggle clear icon" title="Clear All Filters"><i class="far fa-check-square"></i></button>
 			</div>
@@ -1061,14 +1059,6 @@ class DashboardDatasets extends Map {
 				resetToggle.title = 'Check All Filters';
 				resetToggle.innerHTML = `<i class="far fa-square"></i>`;
 			}
-		});
-
-		container.querySelector('button.more').on('click', () => {
-
-			container.querySelector('button.more').classList.add('hidden');
-
-			for(const dataset of container.querySelectorAll('label.hidden'))
-				dataset.classList.remove('hidden');
 		});
 	}
 
