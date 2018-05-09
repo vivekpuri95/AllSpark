@@ -122,14 +122,14 @@ main #mailto.selected {
 }
 main .mailto-content {
 	background: #fff;
-	grid-auto-flow: column;
-	justify-content: baseline;
-	align-items: self-end;
-	margin-bottom: 5px;
+	align-items: end;
+	margin-bottom: calc(var(--gap) * 2);
 	position: sticky;
 	top: 45px;
 	z-index: 10;
+	grid-template-columns: max-content max-content max-content max-content;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	grid-gap: calc(var(--gap) * 2);
 }
 main #reports > .datasets {
 	display: flex;
