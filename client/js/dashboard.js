@@ -520,12 +520,7 @@ class Dashboard {
 
 		const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
 
-		edit.innerHTML = `<i class="fa fa-save"></i> Save`;
-
-		if(Dashboard.toolbar.editListener)
-			edit.removeEventListener('click', Dashboard.toolbar.editListener);
-
-		edit.on('click', Dashboard.toolbar.editListener = () => this.save());
+		edit.classList.add('hidden');
 
 		for(const report of this.page.list.selectedReports) {
 
@@ -756,7 +751,13 @@ class Dashboard {
 			if(!report)
 				return;
 
-			const format = this.format.reports[report.dashboard.position];
+			let format = (this.format.reports[report.dashboard.position]) || {};
+
+			if(!format.format) {
+				format.format = {};
+			}
+
+			const visualizationFormat = format.format;
 
 			if(report.draggingEdge.classList.contains('right')) {
 
@@ -767,7 +768,7 @@ class Dashboard {
 				if(column <= columnStart)
 					return;
 
-				format.width = column - columnStart;
+				visualizationFormat.width = column - columnStart;
 			}
 
 			if(report.draggingEdge.classList.contains('bottom')) {
@@ -779,19 +780,24 @@ class Dashboard {
 				if(row <= rowStart)
 					return;
 
-				format.height = row - rowStart;
+				visualizationFormat.height = row - rowStart;
 			}
 
 			if(
-				format.width != report.container.style.gridColumnEnd.split(' ')[1] ||
-				format.height != report.container.style.gridRowEnd.split(' ')[1]
+				visualizationFormat.width != report.container.style.gridColumnEnd.split(' ')[1] ||
+				visualizationFormat.height != report.container.style.gridRowEnd.split(' ')[1]
 			) {
 
 				report.container.setAttribute('style', `
 					order: ${report.dashboard.position || 0};
-					grid-column: auto / span ${format.width || Dashboard.grid.columns};
-					grid-row: auto / span ${format.height || Dashboard.grid.rows};
+					grid-column: auto / span ${visualizationFormat.width || Dashboard.grid.columns};
+					grid-row: auto / span ${visualizationFormat.height || Dashboard.grid.rows};
 				`);
+
+				if(this.dragTimeout) {
+					clearTimeout(this.dragTimeout);
+				}
+				this.dragTimeout = setTimeout(() => this.save(visualizationFormat, format.id), 1000);
 
 				report.visualizations.selected.render(true);
 			}
@@ -809,22 +815,21 @@ class Dashboard {
 		}
 	}
 
-	async save() {
+	async save(format, id) {
 
 		Dashboard.editing = false;
 
 		const
 			parameters = {
-				id: this.id,
-				format: JSON.stringify(this.format),
+				id: id,
+				format: JSON.stringify(format || this.format),
 			},
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('dashboards/update', parameters, options);
+		await API.call('reports/dashboard/update', parameters, options);
 
-		await this.page.list.get(this.id).load();
 	}
 
 	get menuItem() {
