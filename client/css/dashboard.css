@@ -95,7 +95,7 @@ main > nav::-webkit-scrollbar-track {
 	main > nav .label.selected {
 		background: var(--color-secondary);
 		color: var(--color-secondary-text);
-		box-shadow: inset 10px 0px 0 var(--color-accent);
+		box-shadow: inset 5px 0px 0 var(--color-accent);
 	}
 		main > nav .submenu .label {
 			padding-left: 40px;
@@ -122,10 +122,14 @@ main #mailto.selected {
 }
 main .mailto-content {
 	background: #fff;
-	grid-auto-flow: column;
-	justify-content: baseline;
-	align-items: self-end;
-	margin-bottom: 5px;
+	align-items: end;
+	margin-bottom: calc(var(--gap) * 2);
+	position: sticky;
+	top: 45px;
+	z-index: 10;
+	grid-template-columns: max-content max-content max-content max-content;
+	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	grid-gap: calc(var(--gap) * 2);
 }
 main #reports > .datasets {
 	display: flex;
@@ -143,7 +147,7 @@ main #reports > .datasets {
 	align-items: flex-start;
 	overflow: auto;
 	opacity: 0;
-	transform: translateX(240px);
+	transform: translateX(250px);
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }
@@ -201,9 +205,8 @@ main #reports > .list {
 	main #reports > .toolbar {
 		position: sticky;
 		top: 0;
-		z-index: 3;
+		z-index: 5;
 		align-items: flex-end;
-		grid-template-columns: max-content max-content max-content max-content 1fr;
 	}
 		main #reports > .toolbar input[name=date-range] {
 			width: 250px;
@@ -222,6 +225,11 @@ main #reports > .list {
 					opacity var(--transition-duration),
 					border var(--transition-duration);
 	}
+	main #reports .list .data-source header .edit {
+		display: grid;
+		grid-auto-flow: column;
+		grid-gap: calc(var(--gap) * 2);
+	}
 	main #reports .list .data-source.being-dragged {
 		opacity: 0.5;
 	}
@@ -236,10 +244,13 @@ main #reports > .list {
 		background: rgba(255, 255, 255, 0.8);
 		color: #333;
 		z-index: 4;
+		transition: right var(--transition-duration);
 	}
-
 	main #reports .side:hover {
 		border: 1px solid #999;
+	}
+	main #reports .side.show {
+		right: 260px;
 	}
 		main #reports .side > svg {
 			margin-right: 0px;

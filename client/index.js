@@ -215,10 +215,12 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 	template.stylesheets.push();
 
 	template.stylesheets = template.stylesheets.concat([
+		'/css/reports.css',
 		'/css/dashboard.css',
 	]);
 
 	template.scripts = template.scripts.concat([
+		'/js/reports.js',
 		'/js/dashboard.js',
 
 		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
@@ -278,6 +280,10 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 					<i class="fas fa-envelope"></i>
 					Email
 				</button>
+				<button id="configure" class="hidden">
+					<i class="fas fa-cog"></i>
+					Configure
+				</button>
 			</div>
 
 			<form class="form mailto-content hidden">
@@ -300,19 +306,25 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 			<div class="list"></div>
 			<div id="blanket" class="hidden"></div>
 			<button type="button" class="side">
-				<span class="left-arrow"><i class="fas fa-angle-double-left"></i></span>
+				<i class="fas fa-angle-double-left"></i>
 			</button>
 		</section>
 	`));
 });
 
-router.get('/dashboards/:id?', (request, response) => {
+router.get('/dashboards-manager/:id?', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('/css/dashboards.css');
+	template.stylesheets = template.stylesheets.concat([
+		'/css/reports.css',
+		'/css/dashboards-manager.css',
+	]);
 
-	template.scripts.push('/js/dashboards.js');
+	template.scripts = template.scripts.concat([
+		'/js/reports.js',
+		'/js/dashboards-manager.js'
+	]);
 
 	response.send(template.body(`
 
@@ -339,9 +351,9 @@ router.get('/dashboards/:id?', (request, response) => {
 						<th>Name</th>
 						<th>Parent</th>
 						<th>Icon</th>
+						<th>Visibility</th>
 						<th class="action">Edit</th>
 						<th class="action">Delete</th>
-						<th class="action">Share</th>
 					</tr>
 				</thead>
 
@@ -381,22 +393,16 @@ router.get('/dashboards/:id?', (request, response) => {
 						<option value="private">Private</option>
 					</select>
 				</label>
-
-				<label id="format">
-					<span>Format</span>
-					<textarea id="dashboard-format"></textarea>
-				</label>
 			</form>
-		</section>
 
-		<section class="section" id="share">
-			<h1>Share dashboards</h1>
+			<h2 class="share-heading">Share dashboards</h2>
 
-			<div class="toolbar">
-				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-			</div>
+			<form class="block form" id="dashboard_share">
+				<select name="user_list" multiple></select>
+				<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add Users</button>
+			</form>
 
-			<table class="block">
+			<table class="block user-dashboard">
 				<thead>
 					<tr>
 						<th class="thin">User Id</th>
@@ -406,32 +412,23 @@ router.get('/dashboards/:id?', (request, response) => {
 				</thead>
 				<tbody>
 				</tbody>
-				<tfoot>
-					<tr>
-						<td colspan="2">
-							<form class="form" id="dashboard_share">
-								<select name="user_list"></select>
-							</form>
-						</td>
-						<td>
-							<button type="submit" class="add_user" form="dashboard_share"><i class="fa fa-plus"></i></button>
-						</td>
-					</tr>
-				</tfoot>
 			</table>
 		</section>
-
 	`));
 });
 
-router.get('/reports-new/:stage?/:id?', (request, response) => {
+router.get('/reports/:stage?/:id?', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('/css/reports-new.css');
+	template.stylesheets = template.stylesheets.concat([
+		'/css/reports.css',
+		'/css/reports-manager.css',
+	]);
 
 	template.scripts = template.scripts.concat([
-		'/js/reports-new.js',
+		'/js/reports.js',
+		'/js/reports-manager.js',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
@@ -445,167 +442,68 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 
 		<div id="stage-switcher"></div>
 
-		<section class="section" id="stage-pick-report">
+		<div id="stages">
+			<section class="section" id="stage-pick-report">
 
-			<form class="toolbar filters">
+				<form class="toolbar filters">
 
-				<button type="button" id="add-report">
-					<i class="fa fa-plus"></i>
-					Add New Report
-				</button>
-			</form>
+					<button type="button" id="add-report">
+						<i class="fa fa-plus"></i>
+						Add New Report
+					</button>
+				</form>
 
-			<div id="list-container">
-				<table>
-					<thead>
-						<tr class="search"></tr>
-						<tr>
-							<th class="sort search" data-key="query_id">ID</th>
-							<th class="sort search" data-key="name" >Name</th>
-							<th class="sort search" data-key="description">Description</th>
-							<th class="sort search" data-key="connection">Connection </th>
-							<th class="sort search" data-key="tags">Tags</th>
-							<th class="sort search" data-key="filters">Filters</th>
-							<th class="sort search" data-key="visualizations">Visualizations</th>
-							<th class="sort search" data-key="is_enabled">Enabled</th>
-							<th class="action">Configue</th>
-							<th class="action">Define</th>
-							<th class="action">Delete</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
-			</div>
-		</section>
-
-		<section class="section" id="stage-configure-report">
-
-			<header class="toolbar">
-				<button type="submit" form="configure-report-form"><i class="fa fa-save"></i> Save</button>
-			</header>
-
-			<form class="form" id="configure-report-form">
-
-				<label>
-					<span>Name</span>
-					<input type="text" name="name">
-				</label>
-
-				<label>
-					<span>Connection</span>
-					<select name="connection_name" required></select>
-				</label>
-
-				<div id="query" class="hidden">
-					<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
-					<div id="schema"></div>
-					<div id="editor"></div>
-
-					<div id="test-container">
-						<div id="test-executing" class="hidden notice"></div>
-					</div>
-
-					<div id="missing-filters" class="hidden"></div>
+				<div id="list-container">
+					<table>
+						<thead>
+							<tr class="search"></tr>
+							<tr>
+								<th class="sort search" data-key="query_id">ID</th>
+								<th class="sort search" data-key="name" >Name</th>
+								<th class="sort search" data-key="description">Description</th>
+								<th class="sort search" data-key="connection">Connection </th>
+								<th class="sort search" data-key="tags">Tags</th>
+								<th class="sort search" data-key="filters">Filters</th>
+								<th class="sort search" data-key="visualizations">Visualizations</th>
+								<th class="sort search" data-key="is_enabled">Enabled</th>
+								<th class="action">Configue</th>
+								<th class="action">Define</th>
+								<th class="action">Delete</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
 				</div>
+			</section>
 
-				<div id="api" class="hidden">
+			<section class="section" id="stage-configure-report">
+
+				<header class="toolbar">
+					<button type="submit" form="configure-report-form"><i class="fa fa-save"></i> Save</button>
+				</header>
+
+				<form class="form" id="configure-report-form">
 
 					<label>
-						<span>URL</span>
-						<input type="url" name="url">
+						<span>Name</span>
+						<input type="text" name="name">
 					</label>
 
 					<label>
-						<span>Method</span>
-						<select name="method">
-							<option>GET</option>
-							<option>POST</option>
-						</select>
+						<span>Connection</span>
+						<select name="connection_name" required></select>
 					</label>
-				</div>
-
-				<label>
-					<span>Category</span>
-					<select name="category_id"></select>
-				</label>
-
-				<label>
-					<span>Description</span>
-					<textarea name="description"></textarea>
-				</label>
-
-				<label>
-					<span>Tags (Comma Separated)</span>
-					<input type="text" name="tags">
-				</label>
-
-				<label>
-					<span>Requested By</span>
-					<input type="text" name="requested_by">
-				</label>
-
-				<label>
-					<span>Roles</span>
-					<select required id="roles">
-						<option value="5">Core</option>
-						<option value="6">Core Ops</option>
-						<option value="7">City Ops</option>
-					</select>
-				</label>
-
-				<label>
-					<span>Refresh Rate (Seconds)</span>
-					<input type="number" name="refresh_rate" min="0" step="1">
-				</label>
-
-				<label>
-					<span>Redis</span>
-
-					<select id="redis">
-						<option value="0">Disabled</option>
-						<option value="EOD">EOD</option>
-						<option value="custom">Custom<custom>
-					</select>
-
-					<input name="is_redis" class="hidden" value="0" min="1">
-				</label>
-
-				<label>
-					<span>Status</span>
-					<select name="is_enabled" required>
-						<option value="1">Enabled</option>
-						<option value="0">Disabled</option>
-					</select>
-				</label>
-
-				<label style="max-width: 300px">
-					<span>Added By</span>
-					<span class="NA" id="added-by"></span>
-				</label>
-
-				<label>
-					<span>Format</span>
-					<textarea name="format"></textarea>
-				</label>
-			</form>
-		</section>
-
-		<section class="section" id="stage-define-report">
-
-			<header class="toolbar">
-				<button type="submit" form="define-report-form"><i class="fa fa-save"></i> Save</button>
-				<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
-				<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
-				<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
-			</header>
-
-			<div id="define-report-parts">
-				<div id="schema" class="hidden"></div>
-
-				<form id="define-report-form">
 
 					<div id="query" class="hidden">
+						<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
+						<div id="schema"></div>
 						<div id="editor"></div>
+
+						<div id="test-container">
+							<div id="test-executing" class="hidden notice"></div>
+						</div>
+
+						<div id="missing-filters" class="hidden"></div>
 					</div>
 
 					<div id="api" class="hidden">
@@ -623,462 +521,250 @@ router.get('/reports-new/:stage?/:id?', (request, response) => {
 							</select>
 						</label>
 					</div>
+
+					<label>
+						<span>Category</span>
+						<select name="category_id"></select>
+					</label>
+
+					<label>
+						<span>Description</span>
+						<textarea name="description"></textarea>
+					</label>
+
+					<label>
+						<span>Tags (Comma Separated)</span>
+						<input type="text" name="tags">
+					</label>
+
+					<label>
+						<span>Requested By</span>
+						<input type="text" name="requested_by">
+					</label>
+
+					<label>
+						<span>Roles</span>
+						<select name="roles" required id="roles"></select>
+					</label>
+
+					<label>
+						<span>Refresh Rate (Seconds)</span>
+						<input type="number" name="refresh_rate" min="0" step="1">
+					</label>
+
+					<label>
+						<span>Redis</span>
+
+						<select id="redis">
+							<option value="0">Disabled</option>
+							<option value="EOD">EOD</option>
+							<option value="custom">Custom<custom>
+						</select>
+
+						<input name="is_redis" class="hidden" value="0" min="1">
+					</label>
+
+					<label>
+						<span>Status</span>
+						<select name="is_enabled" required>
+							<option value="1">Enabled</option>
+							<option value="0">Disabled</option>
+						</select>
+					</label>
+
+					<label style="max-width: 300px">
+						<span>Added By</span>
+						<span class="NA" id="added-by"></span>
+					</label>
 				</form>
+			</section>
 
-				<div id="filters" class="hidden">
+			<section class="section" id="stage-define-report">
 
-					<div id="filter-list">
+				<header class="toolbar">
+					<button type="submit" form="define-report-form"><i class="fa fa-save"></i> Save</button>
+					<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
+					<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
+					<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
+					<button id="run"><i class="fas fa-sync"></i> Run</button>
+				</header>
 
-						<div class="toolbar">
-							<button id="add-filter"><i class="fas fa-plus"></i> Add New Filter</button>
+				<div id="define-report-parts">
+					<div id="schema" class="hidden"></div>
+
+					<form id="define-report-form">
+
+						<div id="query" class="hidden">
+							<div id="editor"></div>
 						</div>
 
-						<div id="missing-filters" class="hidden"></div>
+						<div id="api" class="hidden">
 
-						<table>
-							<thead>
-								<tr>
-									<th>Name</th>
-									<th>Placeholder</th>
-									<th>Type</th>
-									<th>Dataset</th>
-									<th class="action">Edit</th>
-									<th class="action">Delete</th>
-								</tr>
-							</thead>
-							<tbody></tbody>
-						</table>
+							<label>
+								<span>URL</span>
+								<input type="url" name="url">
+							</label>
+
+							<label>
+								<span>Method</span>
+								<select name="method">
+									<option>GET</option>
+									<option>POST</option>
+								</select>
+							</label>
+						</div>
+					</form>
+
+					<div id="filters" class="hidden">
+
+						<div id="filter-list">
+
+							<div class="toolbar">
+								<button id="add-filter"><i class="fas fa-plus"></i> Add New Filter</button>
+							</div>
+
+							<div id="missing-filters" class="hidden"></div>
+
+							<table>
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Placeholder</th>
+										<th>Type</th>
+										<th>Dataset</th>
+										<th class="action">Edit</th>
+										<th class="action">Delete</th>
+									</tr>
+								</thead>
+								<tbody></tbody>
+							</table>
+						</div>
+
+						<div id="filter-form" class="hidden">
+
+							<div class="toolbar">
+								<button id="filter-back"><i class="fa fa-arrow-left"></i> Back</button>
+								<button type="submit" form="filter-form-f"><i class="fa fa-save"></i> Save</button>
+							</div>
+
+							<form id="filter-form-f" class="form">
+
+								<label>
+									<span>Name</span>
+									<input type="text" name="name" required>
+								</label>
+
+								<label>
+									<span>Placeholder</span>
+									<input type="text" name="placeholder" required>
+								</label>
+
+								<label>
+									<span>Type</span>
+									<select name="type" required>
+										<option value="0">Integer</option>
+										<option value="1">String</option>
+										<option value="2">Date</option>
+										<option value="3">Month</option>
+									</select>
+								</label>
+
+								<label>
+									<span>Description</span>
+									<input type="text" name="description">
+								</label>
+
+								<label>
+									<span>Default Value</span>
+									<input type="text" name="default_value">
+								</label>
+
+								<label>
+									<span>Offset</span>
+									<input type="text" name="offset">
+								</label>
+
+								<label>
+									<span>Dataset</span>
+									<select name="dataset">
+										<option value="">None</option>
+									</select>
+								</label>
+
+								<label>
+									<span>Multiple</span>
+									<select name="multiple" required>
+										<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
+										<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
+									</select>
+								</label>
+							</form>
+						</div>
 					</div>
+				</div>
+			</section>
 
-					<div id="filter-form" class="hidden">
+			<section class="section" id="stage-configure-visualization">
 
-						<div class="toolbar">
-							<button id="filter-back"><i class="fa fa-arrow-left"></i> Back</button>
-							<button type="submit" form="filter-form-f"><i class="fa fa-save"></i> Save</button>
-						</div>
+				<div class="toolbar">
+					<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save & Preview</button>
+				</div>
 
-						<form id="filter-form-f" class="form">
+				<form id="configure-visualization-form">
 
+					<div class="configuration-section">
+						<h3><i class="fas fa-angle-right"></i> General</h3>
+
+						<div class="form body">
 							<label>
 								<span>Name</span>
 								<input type="text" name="name" required>
 							</label>
 
 							<label>
-								<span>Placeholder</span>
-								<input type="text" name="placeholder" required>
+								<span>Visualization Type</span>
+								<select name="type" required></select>
 							</label>
-
-							<label>
-								<span>Type</span>
-								<select name="type" required>
-									<option value="0">Integer</option>
-									<option value="1">String</option>
-									<option value="2">Date</option>
-									<option value="3">Month</option>
-								</select>
-							</label>
-
-							<label>
-								<span>Description</span>
-								<input type="text" name="description">
-							</label>
-
-							<label>
-								<span>Default Value</span>
-								<input type="text" name="default_value">
-							</label>
-
-							<label>
-								<span>Offset</span>
-								<input type="text" name="offset">
-							</label>
-
-							<label>
-								<span>Dataset</span>
-								<select name="dataset">
-									<option value="">None</option>
-								</select>
-							</label>
-
-							<label>
-								<span>Multiple</span>
-								<select name="multiple" required>
-									<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
-									<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
-								</select>
-							</label>
-						</form>
+						</div>
 					</div>
+
+					<div class="options"></div>
+
+				</form>
+
+				<div class="configuration-section">
+
+					<h3>
+						<i class="fas fa-angle-right"></i>
+						Transformations
+						<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
+					</h3>
+
+					<div class="body" id="transformations"></div>
 				</div>
-			</div>
-		</section>
 
-		<section class="section" id="stage-pick-visualization">
+				<div class="configuration-section">
 
-			<div id="visualization-list" class="hidden">
+					<h3><i class="fas fa-angle-right"></i> Dashboards</h3>
 
-				<div class="toolbar">
-					<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button>
+					<div class="body" id="dashboards"></div>
 				</div>
 
-				<table>
-					<thead>
-						<tr>
-							<th>ID</th>
-							<th>Name</th>
-							<th>Type</th>
-							<th>Transformations</th>
-							<th class="action">Edit</th>
-							<th class="action">Delete</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
-			</div>
+			</section>
 
-			<div id="add-visualization-picker" class="hidden">
+			<section class="section" id="add-visualization-picker">
 
 				<div class="toolbar">
 					<button id="visualization-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
-					<button type="submit" form="visualization-form"><i class="fas fa-save"></i> Save</button>
+					<button type="submit" form="add-visualization-form"><i class="fas fa-save"></i> Save</button>
 				</div>
 
-				<form id="visualization-form"></form>
-			</div>
-		</section>
+				<form id="add-visualization-form"></form>
 
-		<section class="section" id="stage-configure-visualization">
-
-			<div class="toolbar">
-				<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save</button>
-			</div>
-
-			<form id="configure-visualization-form" class="form">
-
-				<label>
-					<span>Name</span>
-					<input type="text" name="name" required>
-				</label>
-
-				<label>
-					<span>Type</span>
-					<select name="type" required></select>
-				</label>
-
-				<div class="options"></div>
-			</form>
-
-			<div id="transformations"></div>
-
-		</section>
+			</section>
+		</div>
 
 		<div id="preview" class="hidden"></div>
-	`));
-});
-
-router.get('/:type(reports|visualization)/:id?', (request, response) => {
-
-	const template = new Template(request, response);
-
-	template.stylesheets.push('/css/reports.css');
-
-	template.scripts = template.scripts.concat([
-		'/js/reports.js',
-
-		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
-		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
-
-		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
-
-		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
-	]);
-
-	response.send(template.body(`
-
-		<div class="notice">Try out the <a href="/reports-new">new reports editor</a>!</div>
-
-		<section class="section" id="list">
-
-			<h1>Reports Manager</h1>
-			<form class="toolbar filters">
-
-				<button type="button" id="add-report">
-					<i class="fa fa-plus"></i>
-					Add New Report
-				</button>
-			</form>
-
-			<div id="list-container">
-				<table class="block">
-					<thead>
-						<tr class="table-search"></tr>
-						<tr class="table-head">
-							<th class="sort" title="query_id" >ID<i class="fa fa-sort"></th>
-							<th class="sort" title="name" >Name<i class="fa fa-sort"></th>
-							<th class="sort" title="description" >Description<i class="fa fa-sort"></th>
-							<th title="connection">Connection</th>
-							<th title="tags">Tags</th>
-							<th class="sort" title="filters" >Filters<i class="fa fa-sort"></th>
-							<th class="sort" title="visualizations" >Visualizations<i class="fa fa-sort"></th>
-							<th title="is_enabled">Enabled</th>
-							<th class="action">Edit</th>
-							<th class="action">Delete</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
-			</div>
-		</section>
-
-		<section class="section" id="form">
-
-			<h1></h1>
-
-			<header class="toolbar">
-				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-				<button type="submit" form="report-form"><i class="fa fa-save"></i> Save</button>
-				<button id="import"><i class="fa fa-upload"></i> Import</button>
-
-				<button id="test" class="right"><i class="fas fa-sync"></i> Run</button>
-				<button id="force-test"><i class="fas fa-sign-in-alt""></i> Force Run</button>
-				<button id="view"><i class="fas fa-external-link-alt""></i> View</button>
-			</header>
-
-			<form class="form" id="report-form">
-
-				<label>
-					<span>Name</span>
-					<input type="text" name="name">
-				</label>
-
-				<label>
-					<span>Connection</span>
-					<select name="connection_name" required></select>
-				</label>
-
-				<div id="query" class="hidden">
-					<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
-					<div id="schema"></div>
-					<div id="editor"></div>
-
-					<div id="test-container">
-						<div id="test-executing" class="hidden notice"></div>
-					</div>
-
-					<div id="missing-filters" class="hidden"></div>
-				</div>
-
-				<div id="api" class="hidden">
-
-					<label>
-						<span>URL</span>
-						<input type="url" name="url">
-					</label>
-
-					<label>
-						<span>Method</span>
-						<select name="method">
-							<option>GET</option>
-							<option>POST</option>
-						</select>
-					</label>
-				</div>
-
-				<div id="transformations-container">
-					<span>Transformations</span>
-					<div id="transformations"></div>
-				</div>
-
-				<label>
-					<span>Category</span>
-					<select name="category_id"></select>
-				</label>
-
-				<label>
-					<span>Description</span>
-					<textarea name="description"></textarea>
-				</label>
-
-				<label>
-					<span>Tags (Comma Separated)</span>
-					<input type="text" name="tags">
-				</label>
-
-				<label>
-					<span>Requested By</span>
-					<input type="text" name="requested_by">
-				</label>
-
-				<label>
-					<span>Roles</span>
-					<select required id="roles">
-						<option value="5">Core</option>
-						<option value="6">Core Ops</option>
-						<option value="7">City Ops</option>
-					</select>
-				</label>
-
-				<label>
-					<span>Refresh Rate (Seconds)</span>
-					<input type="number" name="refresh_rate" min="0" step="1">
-				</label>
-
-				<label>
-					<span>Redis</span>
-
-					<select id=redis>
-						<option value="0">Disabled</option>
-						<option value="EOD">EOD</option>
-						<option value="custom">Custom<custom>
-					</select>
-
-					<input name="is_redis" class= "hidden" value="0" min="1">
-				</label>
-
-				<label>
-					<span>Status</span>
-					<select name="is_enabled" required>
-						<option value="1">Enabled</option>
-						<option value="0">Disabled</option>
-					</select>
-				</label>
-
-				<label style="max-width: 300px">
-					<span>Added By</span>
-					<span class="NA" id="added-by"></span>
-				</label>
-
-				<label>
-					<span>Format</span>
-					<textarea name="format"></textarea>
-				</label>
-			</form>
-
-			<h3>Filters</h3>
-
-			<div id="filters-list"></div>
-
-			<form id="add-filter" class="form filter">
-
-				<label>
-					<span>Name</span>
-					<input type="text" name="name" required>
-				</label>
-
-				<label>
-					<span>Placeholder</span>
-					<input type="text" name="placeholder" required>
-				</label>
-
-				<label>
-					<span>Type</span>
-					<select name="type" required>
-						<option value="0">Integer</option>
-						<option value="1">String</option>
-						<option value="2">Date</option>
-						<option value="3">Month</option>
-						<option value="4">city</option>
-					</select>
-				</label>
-
-				<label>
-					<span>Description</span>
-					<input type="text" name="description">
-				</label>
-
-				<label>
-					<span>Default Value</span>
-					<input type="text" name="default_value">
-				</label>
-
-				<label>
-					<span>Offset</span>
-					<input type="text" name="offset">
-				</label>
-
-				<label>
-					<span>Dataset</span>
-					<select name="dataset">
-						<option value="">None</option>
-					</select>
-				</label>
-
-				<label>
-					<span>Multiple</span>
-					<select name="multiple" required>
-						<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
-						<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
-					</select>
-				</label>
-
-				<label class="save">
-					<span>&nbsp;</span>
-					<button type="submit"><i class="fa fa-plus"></i> Add</button>
-				</label>
-			</form>
-
-			<h3>Visualizations</h3>
-
-			<div id="visualizations-list">
-				<table>
-					<thead>
-						<tr>
-							<th>ID</th>
-							<th>Name</th>
-							<th>Type</th>
-							<th class="action">Edit</th>
-							<th class="action">Delete</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
-
-				<form id="add-visualization" class="form visualization">
-
-					<label>
-						<span>Name</span>
-						<input type="text" name="name" placeholder="Name" required>
-					</label>
-
-					<label>
-						<span>Type</span>
-						<select name="type" required></select>
-					</label>
-
-					<label class="save">
-						<span>&nbsp;</span>
-						<button type="submit"><i class="fa fa-plus"></i> Add</button>
-					</label>
-				</form>
-			</div>
-		</section>
-
-		<section class="section" id="visualization-preview">
-
-			<div class="toolbar">
-				<button id="visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
-				<button type="submit" form="visualization-form"><i class="fa fa-save"></i> Save</button>
-			</div>
-
-			<form class="form" id="visualization-form">
-
-				<label>
-					<span>Name</span>
-					<input type="text" name="name" required>
-				</label>
-
-				<label>
-					<span>Type</span>
-					<select name="type" required></select>
-				</label>
-
-				<div class="options"></div>
-			</form>
-
-			<div class="preview"></div>
-		</section>
 	`));
 });
 
@@ -1432,6 +1118,62 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 				</form>
 			</section>
 		</div>
+
+		<div class="setting-page accounts-page hidden">
+			<section class="section" id="accounts-list">
+				<h1>Manage Accounts</h1>
+				<header class="toolbar">
+					<button id="add-account"><i class="fa fa-plus"></i> Add New Account</button>
+				</header>
+
+				<table class="block">
+					<thead>
+						<th>Account Id</th>
+						<th>Name</th>
+						<th>URL</th>
+						<th>Icon</th>
+						<th>Logo</th>
+						<th>Edit</th>
+						<th>Delete</th>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+
+            <section class="section" id="accounts-form">
+                <h1></h1>
+                <header class="toolbar">
+                    <button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+                    <button type="submit" form="account-form"><i class="fa fa-save"></i> Save</button>
+                </header>
+                <form class="block form" id="account-form">
+                    <label>
+                        <span>Name</span>
+                        <input type="text" name="name">
+                    </label>
+                    <label>
+                        <span>URL</span>
+                        <input type="text" name="url">
+                    </label>
+                    <label>
+                        <span>Icon</span>
+                        <img src="" alt="icon" id="icon" height="30">
+                        <input type="text" name="icon">
+                    </label>
+                    <label>
+                        <span>Logo</span>
+                        <img src="" alt="logo" id="logo" height="30">
+                        <input type="text" name="logo">
+                    </label>
+
+					<label id="format">
+						<span>Settings</span>
+						<textarea id="settings-format" name="settings"></textarea>
+					</label>
+
+                </form>
+            </section>
+		</div>
 	`));
 });
 
@@ -1473,10 +1215,14 @@ class Template {
 				<body>
 					<div id="ajax-working"></div>
 					<header>
-						<a class="logo" href="/dashboards"><img></a>
+						<a class="logo" href="/dashboard/first"><img></a>
 
 						<nav></nav>
 
+						<span class="global-search">
+							<input name="globalSearch" class="search-input" placeholder="Search...">
+							<ul class="hidden"></ul>
+						</span>
 						<span class="user-name"></span>
 						<span class="logout">
 							<i class="fa fa-power-off"></i>&nbsp;

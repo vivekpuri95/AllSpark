@@ -42,11 +42,16 @@ exports.insert = class extends API {
 
 		this.assert(!authResponse.error, authResponse.message);
 
-		return await this.mysql.query(
-			"INSERT IGNORE INTO tb_user_dashboard (user_id, dashboard_id) VALUES (?, ?)",
-			[this.request.body.user_id, this.request.body.dashboard_id],
-			"write"
-		);
+		for(const user of this.request.body.user_id) {
+
+			await this.mysql.query(
+				"INSERT IGNORE INTO tb_user_dashboard (user_id, dashboard_id) VALUES (?, ?)",
+				[user, this.request.body.dashboard_id],
+				"write"
+			);
+		}
+
+		return "Users updated!"
 	}
 };
 

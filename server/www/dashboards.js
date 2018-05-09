@@ -8,10 +8,23 @@ exports.list = class extends API {
 
 	async list() {
 
-		let dashboards = this.mysql.query("select * from tb_dashboards where status = 1 and account_id = ?", [this.account.account_id]);
+		let query = `select * from tb_dashboards where status = 1 and account_id = ${this.account.account_id}`;
+
+		if(this.request.body.search) {
+			query = query.concat(`
+				AND (
+					id LIKE '%${this.request.body.search}%'
+					OR name LIKE '%${this.request.body.search}%'
+					OR visibility LIKE '%${this.request.body.search}%'
+				)
+				LIMIT 10
+			`);
+		}
+
+		let dashboards = this.mysql.query(query);
 
 		let sharedDashboards = this.mysql.query(
-			"select * from tb_user_dashboard ud join tb_dashboards d on d.id = ud.dashboard_id where d.status = 1 and account_id = ?",
+			"select ud.* from tb_user_dashboard ud join tb_dashboards d on d.id = ud.dashboard_id where d.status = 1 and account_id = ?",
 			[this.account.account_id]
 		);
 
@@ -68,6 +81,8 @@ exports.list = class extends API {
 			}
 
 			dashboardObject[d].format = {reports: formatObject};
+			dashboardObject[d].href = `/dashboard/${dashboardObject[d].id}`;
+			dashboardObject[d].superset = 'Dashboards';
 		}
 
 		return Object.values(dashboardObject);

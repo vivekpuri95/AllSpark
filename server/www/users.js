@@ -70,20 +70,54 @@ exports.list = class extends API {
 			this.user.privilege.needs('user');
 		}
 
-		let results, roles = {}, privileges = {};
+		let
+			results,
+			roles = {},
+			privileges = {},
+			user_query = `
+				SELECT 
+					* 
+				FROM 
+					tb_users 
+				WHERE
+					account_id = ${this.account.account_id} 
+					AND status = 1
+			`,
+			role_query = `SELECT id, user_id, category_id, role_id FROM tb_user_roles`,
+			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`;
 		if (this.request.body.user_id) {
+
+			user_query = user_query.concat(` AND user_id = ${this.request.body.user_id}`);
+			role_query = role_query.concat(` WHERE user_id = ${this.request.body.user_id}`);
+			prv_query = prv_query.concat(` WHERE user_id = ${this.request.body.user_id}`);
+
 			results = await Promise.all([
-				this.mysql.query(`SELECT * FROM tb_users WHERE user_id = ? AND account_id = ? AND status = 1`, [this.request.body.user_id, this.account.account_id]),
-				this.mysql.query(`SELECT id, user_id, category_id, role_id FROM tb_user_roles WHERE user_id = ? `, [this.request.body.user_id]),
-				this.mysql.query(`SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege WHERE user_id = ? `, [this.request.body.user_id])
+				this.mysql.query(user_query),
+				this.mysql.query(role_query),
+				this.mysql.query(prv_query)
 			]);
 
 		}
 		else {
+
+			if(this.request.body.search) {
+				user_query = user_query.concat(`
+					AND  (
+						user_id LIKE '%${this.request.body.search}%'
+						OR phone LIKE '%${this.request.body.search}%'
+						OR email LIKE '%${this.request.body.search}%'
+						OR first_name LIKE '%${this.request.body.search}%'
+						OR middle_name LIKE '%${this.request.body.search}%'
+						OR last_name LIKE '%${this.request.body.search}%'
+					)
+					LIMIT 10				
+				`);
+			}
+
 			results = await Promise.all([
-				this.mysql.query(`SELECT * FROM tb_users WHERE account_id = ? AND status = 1`, [this.account.account_id]),
-				this.mysql.query(`SELECT id, user_id, category_id, role_id FROM tb_user_roles`),
-				this.mysql.query(`SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`)
+				this.mysql.query(user_query),
+				this.mysql.query(role_query),
+				this.mysql.query(prv_query)
 			]);
 		}
 
@@ -104,7 +138,11 @@ exports.list = class extends API {
 		for (const row of results[0]) {
 			row.roles = roles[row.user_id] ? roles[row.user_id] : [];
 			row.privileges = privileges[row.user_id] ? privileges[row.user_id] : [];
+			row.href = `/user/profile/${row.user_id}`;
+			row.superset = 'Users'
+			row.name = [row.first_name, row.middle_name, row.last_name].filter(u => u).join(' ');
 		}
+
 		return results[0];
 	}
 
@@ -190,7 +228,7 @@ exports.metadata = class extends API {
 			metadata[row.type].push(row);
 		}
 
-		metadata.visualizations = await this.mysql.query('SELECT id, name, slug FROM tb_visualizations');
+		metadata.visualizations = await this.mysql.query('SELECT * FROM tb_visualizations');
 
 		metadata.datasets = await this.mysql.query(
 			'SELECT id, name, query_id, category_id FROM tb_datasets WHERE account_id = ?',

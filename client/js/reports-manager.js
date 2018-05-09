@@ -16,6 +16,8 @@ class ReportsManger extends Page {
 
 		this.stages.clear();
 
+		this.stages.container = this.container.querySelector('#stages');
+
 		const switcher = this.container.querySelector('#stage-switcher');
 
 		for(const [key, stageClass] of ReportsManger.stages) {
@@ -63,7 +65,7 @@ class ReportsManger extends Page {
 
 			stage = this.stages.get('pick-report');
 
-			history.replaceState({}, '', `/reports-new/${stage.url}`);
+			history.replaceState({}, '', `/reports/${stage.url}`);
 
 			stage.select();
 		}
@@ -106,17 +108,61 @@ class ReportsMangerPreview {
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
+		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
+		this.page.container.classList.add('preview-right');
+
 		await this.report.visualizations.selected.load();
 
 		this.report.container.querySelector('header .menu-toggle').click();
+
+		this.renderDocks();
 	}
 
 	set hidden(hidden) {
 		this.container.classList.toggle('hidden', hidden);
+		this.move();
 	}
 
 	get hidden() {
 		return this.container.classList.contains('hidden');
+	}
+
+	renderDocks() {
+
+		this.docks = document.createElement('select');
+
+		this.docks.insertAdjacentHTML('beforeend', `
+			<option value="right">Right</option>
+			<option value="bottom">Bottom</option>
+			<option value="left">Left</option>
+		`);
+
+		this.docks.value = localStorage.reportsPreviewDock || 'right';
+
+		localStorage.reportsPreviewDock = this.docks.value;
+
+		this.docks.on('change', () => {
+			localStorage.reportsPreviewDock = this.docks.value;
+			this.move();
+		});
+
+		this.move();
+
+		this.report.container.querySelector('.menu').appendChild(this.docks);
+	}
+
+	move() {
+
+		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
+
+		if(this.hidden)
+			return;
+
+		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'bottom';
+
+		this.page.container.classList.add('preview-' + position);
+
+		this.report.visualizations.selected.render();
 	}
 }
 
@@ -147,19 +193,19 @@ class ReportsMangerStage {
 
 		container.on('click', () => {
 
+			if(this.disabled)
+				return;
+
 			this.select();
 
-			if(!this.disabled)
-				history.pushState({}, '', `/reports-new/${this.url}`);
+			if(this.key != 'configure-visualization')
+				history.pushState({}, '', `/reports/${this.url}`);
 		});
 
 		return container;
 	}
 
 	select() {
-
-		if(this.disabled)
-			return;
 
 		if(this.page.stages.selected)
 			this.page.stages.selected.switcher.classList.remove('selected');
@@ -222,6 +268,11 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		this.sort = {};
 
 		this.prepareSearch();
+
+		this.container.querySelector('#add-report').on('click', () => {
+			this.add();
+			history.pushState({id: 'add'}, '', `/configure-report/add`);
+		});
 	}
 
 	get url() {
@@ -234,6 +285,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		for(const stage of this.page.stages.values())
 			stage.disabled = stage != this;
+
+		this.page.preview.hidden = true;
 	}
 
 	prepareSearch() {
@@ -299,7 +352,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 			row.innerHTML = `
 				<td>${report.query_id}</td>
 				<td>
-					<a href="/report/${report.id}" target="_blank">
+					<a href="/report/${report.query_id}" target="_blank">
 						${report.name}
 					</a>
 				</td>
@@ -320,35 +373,38 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			row.querySelector('.configure').on('click', () => {
 
-				history.pushState({}, '', `/reports-new/configure-report/${report.query_id}`);
+				history.pushState({}, '', `/reports/configure-report/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('pick-visualization').disabled = false;
+				this.page.stages.get('configure-visualization').disabled = false;
 
 				this.page.load();
 			});
 
 			row.querySelector('.define').on('click', () => {
 
-				history.pushState({}, '', `/reports-new/define-report/${report.query_id}`);
+				history.pushState({}, '', `/reports/define-report/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('pick-visualization').disabled = false;
+				this.page.stages.get('configure-visualization').disabled = false;
 
 				this.page.load();
 			});
 
 			row.querySelector('.visualizations').on('click', () => {
 
-				history.pushState({}, '', `/reports-new/pick-visualization/${report.query_id}`);
+				history.pushState({}, '', `/reports/define-report/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('pick-visualization').disabled = false;
+				this.page.stages.get('configure-visualization').disabled = false;
 
 				this.page.load();
+
+				this.page.stages.get('configure-visualization').select();
+				this.page.stages.get('configure-visualization').switcher.querySelector('#visualization-list').classList.toggle('hidden');
 			});
 
 			row.querySelector('.delete').on('click', () => this.delete(report));
@@ -358,6 +414,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		if(!tbody.children.length)
 			tbody.innerHTML = `<tr class="NA"><td colspan="11">No Reports Found! :(</td></tr>`;
+
+		this.switcher.querySelector('small').textContent = 'Pick a report';
 	}
 
 	get reports() {
@@ -443,6 +501,17 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		return reports;
 	}
 
+	add() {
+
+		history.pushState({}, '', `/reports/configure-report/add`);
+
+		this.page.stages.get('configure-report').disabled = false;
+		this.page.stages.get('define-report').disabled = false;
+		this.page.stages.get('configure-visualization').disabled = false;
+
+		this.page.load();
+	}
+
 	async delete(report) {
 
 		if(!window.confirm('Are you sure?!'))
@@ -490,26 +559,95 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.is_redis.value = this.form.redis.value;
 			this.form.is_redis.classList.toggle('hidden', this.form.redis.value !== 'custom');
 		});
+
+		for(const category of MetaData.categories.values()) {
+
+			this.form.category_id.insertAdjacentHTML('beforeend', `
+				<option value="${category.category_id}">${category.name}</option>
+			`);
+		}
+
+		for(const role of MetaData.roles.values()) {
+
+			this.form.roles.insertAdjacentHTML('beforeend', `
+				<option value="${role.role_id}">${role.name}</option>
+			`);
+		}
+	}
+
+	select() {
+		super.select();
+
+		this.page.stages.get('configure-visualization').setupVisualizations();
 	}
 
 	get url() {
 		return `${this.key}/${this.report.query_id}`;
 	}
 
-	select() {
-
-		for(const [key, stage] of this.page.stages)
-			stage.disabled = key == 'configure-visualization';
-
-		super.select();
-	}
-
 	load() {
+
+		if(!this.form.connection_name.children.length) {
+
+			for(const connection of this.page.connections.values()) {
+				this.form.connection_name.insertAdjacentHTML('beforeend',
+					`<option value="${connection.id}">${connection.connection_name} (${connection.type})</option>`
+				)
+			}
+		}
 
 		this.report = this.selectedReport;
 
-		if(!this.report)
-			throw new Page.exception('Invalid Report ID');
+		const small = this.page.stages.get('pick-report').switcher.querySelector('small');
+
+		if(this.report) {
+			small.textContent = this.report.name + ` #${this.report.query_id}`;
+			this.edit();
+		}
+
+		else {
+			small.textContent = 'Add new report';
+			this.add();
+		}
+	}
+
+	add() {
+
+		this.form.removeEventListener('submit', this.form.listener);
+		this.form.addEventListener('submit', this.form.listener = e => this.insert(e));
+
+		this.form.reset();
+		this.form.save.classList.remove('unsaved');
+
+		if(this.form.redis.value == 'custom')
+			this.form.is_redis.classList.remove('hidden');
+
+		else this.form.is_redis.classList.add('hidden');
+	}
+
+	async insert(e) {
+
+		e.preventDefault();
+
+		const
+			parameters = {
+				roles: Array.from(this.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		const response = await API.call('reports/report/insert', parameters, options);
+
+		await DataSource.load(true);
+
+		window.history.replaceState({}, '', `/reports/define-report/${response.insertId}`);
+
+		this.page.load();
+	}
+
+	async edit() {
 
 		this.form.removeEventListener('submit', this.form.listener);
 		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
@@ -522,8 +660,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				this.form.elements[key].value = this.report[key];
 		}
 
-		this.form.format.value = this.report.format ? JSON.stringify(this.report.format, 0, 4) : '';
-
 		if(this.is_redis > 0) {
 			this.form.redis.value = 'custom';
 			this.form.is_redis.classList.remove('hidden');
@@ -532,14 +668,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		else {
 			this.form.redis.value = this.is_redis;
 			this.form.is_redis.classList.add('hidden');
-		}
-
-		this.form.connection_name.textContent = null;
-
-		for(const connection of this.page.connections.values()) {
-			this.form.connection_name.insertAdjacentHTML('beforeend',
-				`<option value="${connection.id}">${connection.connection_name} (${connection.type})</option>`
-			)
 		}
 	}
 
@@ -556,17 +684,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				method: 'POST',
 				form: new FormData(this.form),
 			};
-
-		let format = {};
-
-		try {
-			format = JSON.parse(this.form.format.value || '{}');
-		} catch(e) {
-			alert('Invalid JSON in format! :(');
-			return;
-		};
-
-		options.form.set('format', JSON.stringify(format));
 
 		await API.call('reports/report/update', parameters, options);
 
@@ -633,6 +750,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.container.querySelector('#filter-list').classList.remove('hidden');
 		});
 
+		this.container.querySelector('#run').on('click', () => {
+			return this.preview();
+		});
+
 		this.editor = new Editor(this.form.querySelector('#editor'));
 
 		this.editor.editor.getSession().on('change', () => {
@@ -670,16 +791,14 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		});
 	}
 
-	get url() {
-		return `${this.key}/${this.report.query_id}`;
+	select() {
+		super.select();
+
+		this.page.stages.get('configure-visualization').setupVisualizations();
 	}
 
-	select() {
-
-		for(const [key, stage] of this.page.stages)
-			stage.disabled = ['visualization-transformations', 'configure-visualization'].includes(key);
-
-		super.select();
+	get url() {
+		return `${this.key}/${this.report.query_id}`;
 	}
 
 	async preview() {
@@ -727,6 +846,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
+
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
 
 	async update(e) {
@@ -764,6 +885,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		for(const filter of this.report.filters) {
 
+			missing.delete(filter.placeholder);
+
 			if(!filter.container)
 				continue;
 
@@ -771,8 +894,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			if(!placeholders.has(filter.placeholder))
 				filter.container.elements.placeholder.classList.add('red');
-
-			missing.delete(filter.placeholder);
 		}
 
 		if(missing.size) {
@@ -1145,159 +1266,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 	}
 });
 
-ReportsManger.stages.set('pick-visualization', class PickVisualization extends ReportsMangerStage {
-
-	constructor(page, key) {
-
-		super(page, key);
-
-		this.order = '4';
-		this.title = 'Pick Visualization';
-		this.description = 'Pick a visualization for your report';
-
-		this.container.querySelector('#add-visualization').on('click', () => {
-
-			this.container.querySelector('#visualization-list').classList.add('hidden');
-			this.container.querySelector('#add-visualization-picker').classList.remove('hidden');
-
-			this.form.reset();
-		});
-		this.container.querySelector('#visualization-picker-back').on('click', () => {
-
-			this.container.querySelector('#visualization-list').classList.remove('hidden');
-			this.container.querySelector('#add-visualization-picker').classList.add('hidden');
-		});
-
-		this.form = this.container.querySelector('#visualization-form');
-
-		for(const visualization of MetaData.visualizations.values()) {
-
-			this.form.insertAdjacentHTML('beforeend', `
-				<label>
-					<figure>
-						<img src="data:text/png,asd"></img>
-						<figcaption><input type="radio" name="type" value="${visualization.slug}"> ${visualization.name}</figcaption>
-					</figure>
-				</label>
-			`);
-		}
-
-		this.form.on('submit', e => this.insertVisualization(e));
-	}
-
-	select() {
-
-		for(const [key, stage] of this.page.stages)
-			stage.disabled = ['visualization-transformations', 'configure-visualization'].includes(key);
-
-		super.select();
-
-		this.page.preview.hidden = true;
-	}
-
-	get url() {
-		return `${this.key}/${this.report.query_id}`;
-	}
-
-	load() {
-
-		this.report = this.selectedReport;
-
-		if(!this.report)
-			throw new Page.exception('Invalid Report ID');
-
-		const tbody = this.container.querySelector('table tbody');
-
-		tbody.textContent = null;
-
-		for(const visualization of this.report.visualizations) {
-
-			const row = document.createElement('tr');
-
-			let type = MetaData.visualizations.get(visualization.type);
-
-			row.innerHTML = `
-				<td>${visualization.visualization_id}</td>
-				<td>${visualization.name}</td>
-				<td>${type ? type.name : ''}</td>
-				<td>${visualization.format ? visualization.format.transformations : 0}</td>
-				<td class="action configure"><i class="fas fa-cog"></i></td>
-				<td class="action red delete"><i class="far fa-trash-alt"></i></td>
-			`;
-
-			row.querySelector('.configure').on('click', () => {
-
-				history.pushState({}, '', `/reports-new/configure-visualization/${visualization.visualization_id}`);
-
-				for(const stage of this.page.stages.values())
-					stage.disabled = false;
-
-				this.page.load();
-			});
-
-			row.querySelector('.delete').on('click', () => this.deleteVisualization(visualization));
-
-			tbody.appendChild(row);
-		}
-
-		if(!this.report.visualizations.length)
-			tbody.innerHTML = '<tr class="NA"><td>No Visualization Found! :(</td></tr>';
-
-		this.container.querySelector('#visualization-list').classList.remove('hidden');
-		this.container.querySelector('#add-visualization-picker').classList.add('hidden');
-	}
-
-	async insertVisualization(e) {
-
-		if(e)
-			e.preventDefault();
-
-		const
-			form = document.getElementById('add-visualization'),
-			parameters = {
-				query_id: this.report.query_id,
-				name: this.form.type.value[0].toUpperCase() + this.form.type.value.slice(1),
-				type: this.form.type.value,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		await API.call('reports/visualizations/insert', parameters, options);
-
-		await DataSource.load(true);
-
-		this.load();
-	}
-
-	async deleteVisualization(visualization) {
-
-		if(!confirm('Are you sure?'))
-			return;
-
-		const
-			parameters = {
-				visualization_id: visualization.visualization_id,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		await API.call('reports/visualizations/delete', parameters, options);
-
-		await DataSource.load(true);
-
-		this.load();
-	}
-});
-
 ReportsManger.stages.set('configure-visualization', class ConfigureVisualization extends ReportsMangerStage {
 
 	constructor(page, key) {
 
 		super(page, key);
 
-		this.order = '5';
+		this.order = '4';
 		this.title = 'Configure Visualization';
 		this.description = 'Define how the report is visualized';
 
@@ -1309,11 +1284,159 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			`);
 		}
 
-		this.form.on('submit', e => this.updateVisualization(e));
+		this.form.on('submit', e => this.update(e));
+
+		this.switcher.insertAdjacentHTML('beforeend', `
+			<table id="visualization-list" class="hidden">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Type</th>
+						<th>Edit</th>
+						<th>Delete</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+				<tfoot>
+					<tr>
+						<td colspan="4"><button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></td>
+					</tr>
+				</tfoot>
+			</table>
+		`);
+
+		this.switcher.querySelector('#visualization-list').on('click', e => {
+			e.stopPropagation();
+		});
+
+		this.switcher.querySelector('#add-visualization').on('click', () => {
+
+			this.addForm.reset();
+
+			this.page.preview.hidden = true;
+			this.switcher.querySelector('#visualization-list').classList.add('hidden');
+
+			Sections.show('add-visualization-picker');
+		});
+
+		this.page.container.querySelector('#visualization-picker-back').on('click', () => {
+
+			Sections.show('stage-configure-visualization');
+
+			this.page.preview.hidden = false;
+		});
+
+		this.addForm = this.page.container.querySelector('#add-visualization-form');
+
+		for(const visualization of MetaData.visualizations.values()) {
+
+			this.addForm.insertAdjacentHTML('beforeend', `
+				<label>
+					<figure>
+						<img src="${visualization.image}"></img>
+						<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp; ${visualization.name}</figcaption>
+					</figure>
+				</label>
+			`);
+		}
+
+		this.addForm.on('submit', e => this.insert(e));
+
+		this.setupConfigurationSetions();
+	}
+
+	setupConfigurationSetions(container) {
+
+		if(!container)
+			container = this.container;
+
+		for(const section of container.querySelectorAll('.configuration-section')) {
+
+			const
+				body = section.querySelector('.body'),
+				h3 = section.querySelector('h3');
+
+			body.classList.add('hidden');
+
+			h3.on('click', () => {
+
+				body.classList.toggle('hidden');
+
+				for(const svg of h3.querySelectorAll('.fa-angle-right, .fa-angle-down'))
+					svg.remove();
+
+				h3.insertAdjacentHTML('afterbegin', body.classList.contains('hidden') ? '<i class="fas fa-angle-right"></i>' : '<i class="fas fa-angle-down"></i>');
+			});
+		}
+	}
+
+	select() {
+
+		if(this._disabled)
+			return;
+
+		if(!this.visualization)
+			super.select();
+
+		else this.switcher.querySelector('#visualization-list').classList.toggle('hidden');
+
+		Sections.show('stage-configure-visualization');
+
+		this.setupVisualizations();
 	}
 
 	get url() {
-		return `${this.key}/${this.visualization.visualization_id}`;
+		return `${this.key}/${this.visualization ? this.visualization.visualization_id : ''}`;
+	}
+
+	set disabled(disabled) {
+
+		super.disabled = disabled;
+		this.switcher.querySelector('#visualization-list').classList.add('hidden');
+	}
+
+	setupVisualizations() {
+
+		this.report = this.selectedReport;
+
+		if(!this.report)
+			throw new Page.exception('Invalid Report ID');
+
+		const tbody = this.switcher.querySelector('table tbody');
+
+		tbody.textContent = null;
+
+		for(const visualization of this.report.visualizations) {
+
+			const row = document.createElement('tr');
+
+			let type = MetaData.visualizations.get(visualization.type);
+
+			row.innerHTML = `
+				<td>${visualization.name}</td>
+				<td>${type ? type.name : ''}</td>
+				<td class="action configure"><i class="fas fa-cog"></i></td>
+				<td class="action red delete"><i class="far fa-trash-alt"></i></td>
+			`;
+
+			if(this.visualization == visualization)
+				row.classList.add('selected');
+
+			row.querySelector('.configure').on('click', async () => {
+
+				history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
+
+				await this.page.load();
+				this.load();
+			});
+
+			row.querySelector('.delete').on('click', () => this.delete(visualization));
+
+			tbody.appendChild(row);
+		}
+
+		if(!this.report.visualizations.length)
+			tbody.innerHTML = '<tr class="NA"><td colspan="4">No Visualization Found! :(</td></tr>';
 	}
 
 	async load() {
@@ -1323,20 +1446,39 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
 
+		if(!window.location.pathname.includes('configure-visualization')) {
+			this.container.classList.add('hidden');
+			return;
+		} else {
+			this.container.classList.remove('hidden');
+		}
+
 		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
 
+		if(!this.visualization)
+			return;
+
 		if(ConfigureVisualization.types.has(this.visualization.type))
-			this.optionsForm = new (ConfigureVisualization.types.get(this.visualization.type))(this.visualization, this.page);
+			this.optionsForm = new (ConfigureVisualization.types.get(this.visualization.type))(this.visualization, this.page, this);
 
 		else throw new Page.Exception(`Unknown visualization type ${this.visualization.type}`);
 
-		try {
-			this.visualization.options = JSON.parse(this.visualization.options);
-		} catch(e) {
-			this.visualization.options = {};
+		this.dashboards = new ReportVisualizationDashboards(this);
+
+		if(typeof this.visualization.options == 'string') {
+
+			try {
+				this.visualization.options = JSON.parse(this.visualization.options) || {};
+			} catch(e) {}
 		}
 
-		this.transformations = new ReportTransformations(this.visualization, this.page);
+		if(!this.visualization.options)
+			this.visualization.options = {};
+
+		if(!this.visualization.options.transformations)
+			this.visualization.options.transformations = [];
+
+		this.transformations = new ReportTransformations(this.visualization, this);
 
 		await this.page.preview.load({
 			query_id: this.report.query_id,
@@ -1355,9 +1497,64 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		options.textContent = null;
 
 		options.appendChild(this.optionsForm.form);
+
+		this.dashboards.load();
+
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
+
+		const first = this.container.querySelector('.configuration-section');
+
+		if(first && first.querySelector('.body.hidden'))
+			first.querySelector('h3').click();
 	}
 
-	async updateVisualization(e) {
+	async insert(e) {
+
+		if(e)
+			e.preventDefault();
+
+		const
+			parameters = {
+				query_id: this.report.query_id,
+				name: this.addForm.type.value[0].toUpperCase() + this.addForm.type.value.slice(1),
+				type: this.addForm.type.value,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		const response = await API.call('reports/visualizations/insert', parameters, options);
+
+		await DataSource.load(true);
+
+		history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
+
+		this.select();
+
+		this.load();
+	}
+
+	async delete(visualization) {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const
+			parameters = {
+				visualization_id: visualization.visualization_id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		const response = await API.call('reports/visualizations/delete', parameters, options);
+
+		await DataSource.load(true);
+
+		this.page.stages.get('pick-report').select();
+	}
+
+	async update(e) {
 
 		if(e)
 			e.preventDefault();
@@ -1372,7 +1569,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			};
 
 		if(this.optionsForm)
-			parameters.options = JSON.stringify(this.optionsForm.json);
+			this.visualization.options = this.optionsForm.json;
 
 		this.visualization.options.transformations = this.transformations.json;
 
@@ -1386,15 +1583,234 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 	}
 });
 
+class ReportVisualizationDashboards extends Set {
+
+	constructor(stage) {
+
+		super();
+
+		this.stage = stage;
+
+		this.container = this.stage.container.querySelector('#dashboards');
+		this.addForm = this.container.querySelector('#add-dashboard');
+	}
+
+	async load() {
+
+		await this.fetch();
+
+		this.process();
+
+		this.render();
+	}
+
+	async fetch() {
+		this.response = await API.call('dashboards/list')
+	}
+
+	process() {
+
+		this.response = new Map(this.response.map(d => [d.id, d]));
+
+		this.clear();
+
+		for(const dashboard of this.response.values()) {
+
+			for(const report of dashboard.format.reports) {
+
+				if(this.stage.visualization.visualization_id == report.visualization_id)
+					this.add(new ReportVisualizationDashboard(dashboard, this.stage));
+			}
+		}
+	}
+
+	render() {
+
+		this.container.textContent = null;
+
+		for(const dashboard of this)
+			this.container.appendChild(dashboard.form);
+
+		if(!this.size)
+			this.container.innerHTML = `<div class="NA">No dashboard added yet! :'(</div>`;
+
+		this.container.insertAdjacentHTML('beforeend', `
+
+			<form id="add-dashboard" class="subform form">
+
+				<label>
+					<span>Dashboard</span>
+					<select name="dashboard_id"></select>
+				</label>
+
+				<label>
+					<span>Position</span>
+					<input name="position" placeholder="Position" type="number">
+				</label>
+
+				<label>
+					<button type="submit"><i class="fa fa-plus"></i> Add</button>
+				</label>
+			</form>
+		`);
+
+		const form = this.container.querySelector('#add-dashboard');
+
+		for(const dashboard of this.response.values()) {
+
+			form.dashboard_id.insertAdjacentHTML('beforeend',`
+				<option value=${dashboard.id}>
+					${dashboard.name} ${this.response.has(dashboard.parent) ? `(parent: ${this.response.get(dashboard.parent).name})` : ''}
+				</option>
+			`);
+		}
+
+		form.on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
+	}
+
+	static async insert(e, stage) {
+
+		e.preventDefault();
+
+		const form = stage.dashboards.container.querySelector('#add-dashboard');
+
+		if(Array.from(stage.dashboards).some(d => d.id == form.dashboard_id.value))
+			return alert('Cannot add a visualization to a dashboard more than once!');
+
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				dashboard_id: form.dashboard_id.value,
+				visualization_id: stage.visualization.visualization_id,
+				format: JSON.stringify({position: parseInt(form.position.value)})
+			};
+
+		await API.call('reports/dashboard/insert', parameters, option);
+		await stage.dashboards.load();
+	}
+}
+
+class ReportVisualizationDashboard {
+
+	constructor(dashboard, stage) {
+
+		this.stage = stage;
+
+		for(const key in dashboard)
+			this[key] = dashboard[key];
+
+		[this.visualization] = this.format.reports.filter(v => v.visualization_id == this.stage.visualization.visualization_id);
+	}
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const form = this.formContainer = document.createElement('form');
+
+		form.classList.add('subform', 'form');
+
+		form.innerHTML = `
+			<label>
+				<span>Dashboard</span>
+				<select name="dashboard_id">
+				</select>
+			</label>
+
+			<label>
+				<span>Position</span>
+				<input type="number" name="position" value="${this.visualization.format.position || ''}">
+			</label>
+
+			<div class="dashboard-action">
+				<label>
+					<button type="submit"><i class="fa fa-save"></i> Save</button>
+				</label>
+
+				<label>
+					<button type="button" class="delete"><i class="far fa-trash-alt"></i> Delete</button>
+				</label>
+			</div>
+		`;
+
+		for(const dashboard of this.stage.dashboards.response.values()) {
+
+			form.dashboard_id.insertAdjacentHTML('beforeend',`
+				<option value=${dashboard.id}>
+					${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
+				</option>
+			`);
+		}
+
+		form.dashboard_id.value = this.visualization.dashboard_id;
+
+		form.querySelector('.delete').on('click', () => this.delete());
+
+		form.on('submit', async e => this.update(e))
+
+		return form;
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				id: this.visualization.id,
+			};
+
+		await API.call('reports/dashboard/delete', parameters, option);
+		await this.stage.dashboards.load();
+	}
+
+	async update(e) {
+
+		e.preventDefault();
+
+		this.visualization.format.position = parseInt(this.form.position.value);
+
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				id: this.visualization.id,
+				dashboard_id: this.form.dashboard_id.value,
+				visualization_id: this.visualization.visualization_id,
+				format: JSON.stringify(this.visualization.format)
+			};
+
+		await API.call('reports/dashboard/update', parameters, option);
+		await this.stage.dashboards.load();
+	}
+}
+
 class ReportTransformations extends Set {
 
-	constructor(visualization, page) {
+	constructor(visualization, stage) {
 
 		super();
 
 		this.visualization = visualization;
-		this.page = page;
-		this.container = this.page.container.querySelector('#transformations');
+		this.stage = stage;
+		this.page = this.stage.page;
+		this.container = this.stage.container.querySelector('#transformations');
+
+		const preview = this.container.parentElement.querySelector('h3 #transformations-preview');
+
+		preview.removeEventListener('click', ReportTransformations.previewListener);
+		preview.on('click', ReportTransformations.previewListener = e => {
+			e.stopPropagation();
+			this.preview();
+		});
 	}
 
 	load() {
@@ -1404,13 +1820,11 @@ class ReportTransformations extends Set {
 		if(!this.visualization.options)
 			return;
 
-		ReportTransformation.runningReport = this.page.preview.report;
-
 		this.clear();
 
 		for(const transformation_ of this.visualization.options.transformations || []) {
 
-			const transformation = new ReportTransformation(transformation_);
+			const transformation = new ReportTransformation(transformation_, this.stage);
 
 			this.container.appendChild(transformation.container);
 
@@ -1427,10 +1841,12 @@ class ReportTransformations extends Set {
 
 		addNew.on('click', () => {
 
-			const transformation = new ReportTransformation({}, this.report);
+			const transformation = new ReportTransformation({}, this.stage);
 
 			this.add(transformation);
 			this.container.insertBefore(transformation.container, addNew);
+
+			this.preview();
 		});
 	}
 
@@ -1443,11 +1859,42 @@ class ReportTransformations extends Set {
 
 		return response.filter(a => a);
 	}
+
+	preview() {
+
+		const report = DataSource.list.get(this.stage.report.query_id);
+
+		if(!report)
+			return;
+
+		if(!report.transformationVisualization) {
+
+			const visualization = {
+				visualization_id: Math.floor(Math.random() * 1000) + 1000,
+				name: 'Table',
+				type: 'table',
+				options: {}
+			};
+
+			report.visualizations.push(visualization);
+			report.transformationVisualization = visualization;
+		}
+
+		report.transformationVisualization.options.transformations = this.json;
+
+		this.page.preview.load({
+			query_id: this.stage.report.query_id,
+			visualization_id: report.transformationVisualization.visualization_id,
+		});
+	}
 }
 
 class ReportTransformation {
 
-	constructor(transformation) {
+	constructor(transformation, stage) {
+
+		this.stage = stage;
+		this.page = this.stage.page;
 
 		for(const key in transformation)
 			this[key] = transformation[key];
@@ -1475,35 +1922,35 @@ class ReportTransformation {
 		values.innerHTML = `<h4>Values</h4>`;
 
 		for(const row of this.rows || [])
-			rows.appendChild(ReportTransformation.row(row));
+			rows.appendChild(this.row(row));
 
 		const addRow = document.createElement('button');
 
 		addRow.type = 'button';
 		addRow.innerHTML = `<i class="fa fa-plus"></i> Add New Row`;
-		addRow.on('click', () => rows.insertBefore(ReportTransformation.row(), addRow));
+		addRow.on('click', () => rows.insertBefore(this.row(), addRow));
 
 		rows.appendChild(addRow);
 
 		for(const column of this.columns || [])
-			columns.appendChild(ReportTransformation.column(column));
+			columns.appendChild(this.column(column));
 
 		const addColumn = document.createElement('button');
 
 		addColumn.type = 'button';
 		addColumn.innerHTML = `<i class="fa fa-plus"></i> Add New Column`;
-		addColumn.on('click', () => columns.insertBefore(ReportTransformation.column(), addColumn));
+		addColumn.on('click', () => columns.insertBefore(this.column(), addColumn));
 
 		columns.appendChild(addColumn);
 
 		for(const value of this.values || [])
-			values.appendChild(ReportTransformation.value(value));
+			values.appendChild(this.value(value));
 
 		const addValue = document.createElement('button');
 
 		addValue.type = 'button';
 		addValue.innerHTML = `<i class="fa fa-plus"></i> Add New Value`;
-		addValue.on('click', () => values.insertBefore(ReportTransformation.value(), addValue));
+		addValue.on('click', () => values.insertBefore(this.value(), addValue));
 
 		values.appendChild(addValue);
 
@@ -1548,19 +1995,19 @@ class ReportTransformation {
 		return response;
 	}
 
-	static row(row = {}) {
+	row(row = {}) {
 
 		const container = document.createElement('div');
 
 		container.classList.add('row');
 
-		if(ReportTransformation.runningReport && ReportTransformation.runningReport.originalResponse) {
+		if(this.page.preview.report.originalResponse) {
 
 			container.innerHTML = `<select name="column"></select>`;
 
 			const select = container.querySelector('select');
 
-			for(const column in ReportTransformation.runningReport.originalResponse.data[0])
+			for(const column in this.page.preview.report.originalResponse.data[0])
 				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
 			select.value = row.column;
@@ -1579,19 +2026,19 @@ class ReportTransformation {
 		return container;
 	}
 
-	static column(column = {}) {
+	column(column = {}) {
 
 		const container = document.createElement('div');
 
 		container.classList.add('column');
 
-		if(ReportTransformation.runningReport && ReportTransformation.runningReport.originalResponse) {
+		if(this.page.preview.report.originalResponse) {
 
 			container.innerHTML = `<select name="column"></select>`;
 
 			const select = container.querySelector('select');
 
-			for(const column in ReportTransformation.runningReport.originalResponse.data[0])
+			for(const column in this.page.preview.report.originalResponse.data[0])
 				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
 			select.value = column.column;
@@ -1607,20 +2054,20 @@ class ReportTransformation {
 		return container;
 	}
 
-	static value(value = {}) {
+	value(value = {}) {
 
 		const container = document.createElement('div');
 
 		container.classList.add('value');
 
 
-		if(ReportTransformation.runningReport && ReportTransformation.runningReport.originalResponse) {
+		if(this.page.preview.report.originalResponse) {
 
 			container.innerHTML = `<select name="column"></select>`;
 
 			const select = container.querySelector('select');
 
-			for(const column in ReportTransformation.runningReport.originalResponse.data[0])
+			for(const column in this.page.preview.report.originalResponse.data[0])
 				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
 			select.value = value.column;
@@ -1654,9 +2101,10 @@ class ReportTransformation {
 
 class ReportVisualizationOptions {
 
-	constructor(visualization, page) {
+	constructor(visualization, page, stage) {
 		this.visualization = visualization;
 		this.page = page;
+		this.stage = stage;
 	}
 
 	get form() {
@@ -1675,17 +2123,39 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		const container = this.formContainer = document.createElement('div');
 
 		container.innerHTML = `
-			<h4>Axes</h4>
-			<div class="axes"></div>
-			<button class="add-axis" type="button">
-				<i class="fa fa-plus"></i> Add New Axis
-			</button>
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Axes</h3>
+				<div class="options form body">
+					<div class="axes"></div>
+					<button class="add-axis" type="button">
+						<i class="fa fa-plus"></i> Add New Axis
+					</button>
+				</div>
+			</div>
+
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="options form body">
+					<div class="legend">
+						<label>
+							<span>
+								<input type="checkbox" name="lagend">Show Legend.
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
 		`;
+
+		this.stage.setupConfigurationSetions(container);
 
 		const axes = container.querySelector('.axes');
 
-		for(const axis of this.visualization.options.axes || [])
+		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : [])
 			axes.appendChild(this.axis(axis));
+
+		if(this.visualization.options && this.visualization.options.legend)
+			container.querySelector('.legend input').checked = this.visualization.options.legend;
 
 		container.querySelector('.add-axis').on('click', () => {
 			axes.appendChild(this.axis());
@@ -1698,6 +2168,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const response = {
 			axes: [],
+			legend: this.formContainer.querySelector('.legend input').checked,
 		};
 
 		for(const axis of this.formContainer.querySelectorAll('.axis')) {

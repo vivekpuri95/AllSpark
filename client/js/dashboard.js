@@ -33,16 +33,51 @@ Page.class = class Dashboards extends Page {
 
 		this.list.clear();
 
-		await DataSource.load();
+		await DataSource.load(true);
 
 		const dashboards = await API.call('dashboards/list');
 
-		for(const dashboard of dashboards) {
-			dashboard.format.reports.sort((a,b) => parseInt(a.position) - parseInt(b.position))
+		const dummyDashboard = {
+			"id": -1,
+			"account_id": account.account_id,
+			"name": "dummy",
+			"parent": null,
+			"icon": null,
+			"status": 1,
+			"visibility": "public",
+			"added_by": null,
+			"roles": null,
+			"format": {},
+			"created_at": "",
+			"updated_at": "",
+			"shared_user": [],
+			"visualizations": []
+		};
+
+		const
+			privateDashboard = {...JSON.parse(JSON.stringify(dummyDashboard)), name: "Private Dashboards", id: -1, icon: "fas fa-user-secret"},
+			sharedWithMeDashboard = {...JSON.parse(JSON.stringify(dummyDashboard)), name: "Shared With Me", id: -2, icon: "fas fa-user-plus"};
+
+		for (const dashboard of dashboards) {
+
+			if ((dashboard.added_by === user.user_id || dashboard.added_by === null) && dashboard.visibility === "private" && dashboard.parent === null) {
+
+				dashboard.parent = privateDashboard.id;
+			}
+
+			else if (dashboard.added_by !== user.user_id && dashboard.visibility === "private" && dashboard.parent === null) {
+
+				dashboard.parent = sharedWithMeDashboard.id;
+			}
+
+			dashboard.format.reports.sort((a, b) => parseInt(a.position) - parseInt(b.position))
 		}
 
 		for(const dashboard of dashboards || [])
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
+
+		this.list.set(privateDashboard.id, new Dashboard(privateDashboard, this));
+		this.list.set(sharedWithMeDashboard.id, new Dashboard(sharedWithMeDashboard, this));
 
 		for(const [id, dashboard] of this.list) {
 			if(dashboard.parent && this.list.has(dashboard.parent))
@@ -54,8 +89,13 @@ Page.class = class Dashboards extends Page {
 		this.render();
 		this.renderList();
 
-		if(window.location.pathname.endsWith('first') && this.list.size)
-			Array.from(this.list.values())[0].load();
+		if(window.location.pathname.endsWith('first') && this.list.size) {
+
+			if(localStorage.lastOpenedDashboard && this.list.has(parseInt(localStorage.lastOpenedDashboard)))
+				await this.list.get(parseInt(localStorage.lastOpenedDashboard)).load();
+
+			else await Array.from(this.list.values())[0].load();
+		}
 
 		else if(id && this.list.has(id) && window.location.pathname.includes('dashboard'))
 			await this.list.get(id).load();
@@ -242,15 +282,18 @@ class Dashboard {
 
 		side_button.on('click', () => {
 
-			container.classList.remove('hidden');
-			page.container.querySelector('#reports .datasets').classList.remove('hidden')
-			page.container.querySelector('#reports .datasets').classList.add('show');
+			container.classList.toggle('hidden');
+			page.container.querySelector('#reports .datasets').classList.toggle('show');
+			side_button.classList.toggle('show');
+			side_button.innerHTML = `<i class="fas fa-angle-double-${container.classList.contains('hidden') ? 'left' : 'right'}"></i>`;
 		});
 
 		container.on('click', () => {
 
 			container.classList.add('hidden');
-			page.container.querySelector('#reports .datasets').classList.add('hidden');
+			page.container.querySelector('#reports .datasets').classList.remove('show');
+			side_button.classList.remove('show');
+			side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
 		});
 	}
 
@@ -269,10 +312,16 @@ class Dashboard {
 		if(!this.format.reports)
 			this.format.reports = [];
 
+		this.format.reports = this.format.reports.sort((a, b) => a.position - b.position);
+
 		this.datasets = new DashboardDatasets(this);
+
+		Dashboard.screenHeightOffset = 2 * screen.availHeight;
 	}
 
 	async load(resize) {
+
+		localStorage.lastOpenedDashboard = this.id;
 
 		if(!Dashboard.container)
 			return;
@@ -311,14 +360,8 @@ class Dashboard {
 		Sections.show('reports');
 
 		await this.datasets.load();
-
-		const options = {
-			method: 'POST',
-		};
-
+		let reportsPositionObject = {};
 		for(const report of this.reports) {
-
-			report.visibleTo = await API.call('reports/report/visibleTo', {query_id : report.query_id}, options);
 
 			report.container.setAttribute('style', `
 				order: ${report.dashboard.position || 0};
@@ -326,9 +369,9 @@ class Dashboard {
 				grid-row: auto / span ${report.dashboard.height || Dashboard.grid.rows};
 			`);
 
-			if(report.dashboard.visualization) {
+			if(report.dashboard.visualization_id) {
 
-				const [visualization] = report.visualizations.filter(v => v.type == report.dashboard.visualization);
+				const [visualization] = report.visualizations.filter(v => v.visualization_id == report.dashboard.visualization_id);
 
 				if(visualization)
 					report.visualizations.selected = visualization;
@@ -338,10 +381,32 @@ class Dashboard {
 
 			Dashboard.container.appendChild(report.container);
 
-			report.visualizations.selected.load(null, resize);
+			reportsPositionObject[report.query_id] = ({
+				position: report.container.getBoundingClientRect().y,
+				loaded: false,
+				report: report
+			});
 
 			this.page.list.selectedReports.add(report);
 		}
+
+		const mainObject = document.querySelector("main");
+
+		let maxScrollHeightAchieved = Math.max(Dashboard.screenHeightOffset, mainObject.scrollTop);
+
+		Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize,);
+
+
+		mainObject.addEventListener("scroll", () => {
+
+			for(const report of this.reports) {
+				reportsPositionObject[report.query_id].position = report.container.getBoundingClientRect().y;
+			}
+			maxScrollHeightAchieved = Math.max(mainObject.scrollTop, maxScrollHeightAchieved);
+			Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize,);
+			},
+			{passive: true}
+			);
 
 		if(!this.page.list.selectedReports.size)
 			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
@@ -361,6 +426,11 @@ class Dashboard {
 				edit.click();
 		}
 
+		const configure = Dashboard.toolbar.querySelector('#configure');
+		configure.on('click', () => location.href = `/dashboards-manager/${this.id}`);
+		configure.classList.remove('hidden');
+
+
 		const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
 		exportButton.classList.remove('hidden');
 
@@ -375,10 +445,16 @@ class Dashboard {
 			downloadAnchor.click();
 		});
 
+		Dashboard.toolbar.querySelector('#mailto').classList.remove('selected');
+		this.page.reports.querySelector('.mailto-content').classList.add('hidden');
+
 		const mailto = Dashboard.toolbar.querySelector('#mailto');
 		mailto.classList.remove('hidden');
 
-		mailto.on('click', () => {
+		if(Dashboard.mail_listener)
+			mailto.removeEventListener('click', Dashboard.mail_listener);
+
+		mailto.on('click', Dashboard.mail_listener = () => {
 			mailto.classList.toggle('selected');
 			this.mailto();
 		});
@@ -387,9 +463,19 @@ class Dashboard {
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
+	static loadReportsBasedOnScreenHeight(reportsPositionObject, heightScrolled, resize, offset=Dashboard.screenHeightOffset) {
+		for(const report in reportsPositionObject) {
+
+			if((parseInt(reportsPositionObject[report].position) < heightScrolled + offset) && !reportsPositionObject[report].loaded) {
+				reportsPositionObject[report].report.visualizations.selected.load(null, resize);
+				reportsPositionObject[report].loaded = true;
+			}
+		}
+	}
+
 	mailto() {
 
-		const form = document.querySelector('.mailto-content');
+		const form = this.page.reports.querySelector('.mailto-content');
 		form.classList.toggle('hidden');
 
 		form.subject.value = this.name;
@@ -438,12 +524,7 @@ class Dashboard {
 
 		const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
 
-		edit.innerHTML = `<i class="fa fa-save"></i> Save`;
-
-		if(Dashboard.toolbar.editListener)
-			edit.removeEventListener('click', Dashboard.toolbar.editListener);
-
-		edit.on('click', Dashboard.toolbar.editListener = () => this.save());
+		edit.classList.add('hidden');
 
 		for(const report of this.page.list.selectedReports) {
 
@@ -460,86 +541,177 @@ class Dashboard {
 			header.insertAdjacentHTML('beforeend', `
 				<div class="edit">
 					<span class="remove" title="Remove Graph"><i class="fa fa-times"></i></span>
+					<span class="move-up" title="Move visualization up"><i class="fas fa-angle-up"></i></span>
+					<span class="move-down" title="Move visualization down"><i class="fas fa-angle-down"></i></span>
 				</div>
 			`);
 
-			header.querySelector('.remove').on('click', () => {
+			header.querySelector('.move-up').on('click', () => {
 
-				this.format.reports.splice(report.dashboard.position, 1);
-				this.page.list.selectedReports.delete(report);
-				report.dashboard.position = undefined;
+				const [current] = this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id);
 
-				Dashboard.container.removeChild(report.container);
+				let previous = null;
 
-				this.load(true);
-			});
+				for(let i = 0; i < this.format.reports.length; i++) {
 
-			report.container.setAttribute('draggable', 'true');
+					if(this.format.reports[i] == current)
+						previous = this.format.reports[i - 1];
+				}
 
-			report.container.on('dragstart', e => {
-				this.page.list.selectedReports.beingDragged = report;
-				e.effectAllowed = 'move';
-				report.container.classList.add('being-dragged');
-			});
-
-			report.container.on('dragend', e => {
-
-				if(!this.page.list.selectedReports.beingDragged)
+				if(!previous)
 					return;
 
-				report.container.classList.remove('being-dragged');
-				this.page.list.selectedReports.beingDragged = null;
-			});
-
-			report.container.on('dragenter', e => {
-
-				if(!this.page.list.selectedReports.beingDragged)
-					return;
-
-				report.container.classList.add('drag-enter');
-			});
-
-			report.container.on('dragleave', () =>  {
-
-				if(!this.page.list.selectedReports.beingDragged)
-					return;
-
-				report.container.classList.remove('drag-enter');
-			});
-
-			// To make the targate droppable
-			report.container.on('dragover', e => {
-
-				e.preventDefault();
-
-				if(!this.page.list.selectedReports.beingDragged)
-					return;
-
-				e.stopPropagation();
-
-				report.container.classList.add('drag-enter');
-			});
-
-			report.container.on('drop', e => {
-
-				report.container.classList.remove('drag-enter');
-
-				if(!this.page.list.selectedReports.beingDragged)
-					return;
-
-				if(this.page.list.selectedReports.beingDragged == report)
-					return;
+				current.format.position = Math.max(1, current.format.position - 1);
+				previous.format.position = Math.min(this.format.reports.length, previous.format.position + 1);
 
 				const
-					beingDragged = this.page.list.selectedReports.beingDragged,
-					format = this.format.reports[beingDragged.dashboard.position];
+					currentParameters = {
+						id: current.id,
+						format: JSON.stringify(current.format),
+					},
+					currentOptions = {
+						method: 'POST',
+					};
 
-				this.format.reports.splice(beingDragged.dashboard.position, 1);
+				API.call('reports/dashboard/update', currentParameters, currentOptions);
 
-				this.format.reports.splice(report.dashboard.position, 0, format);
+				const
+					previousParameters = {
+						id: previous.id,
+						format: JSON.stringify(previous.format),
+					},
+					previousOptions = {
+						method: 'POST',
+					};
 
-				this.load(true);
+				API.call('reports/dashboard/update', previousParameters, previousOptions);
+
+				this.page.load();
 			});
+
+			header.querySelector('.move-down').on('click', () => {
+
+				const [current] = this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id);
+
+				let next = null;
+				for(let i = 0; i < this.format.reports.length; i++) {
+
+					if(this.format.reports[i] == current)
+						next = this.format.reports[i + 1];
+				}
+
+				if(!next)
+					return;
+
+				current.format.position = Math.min(this.format.reports.length, current.format.position + 1);
+				next.format.position = Math.max(1, next.format.position - 1);
+
+				const
+					currentParameters = {
+						id: current.id,
+						format: JSON.stringify(current.format),
+					},
+					currentOptions = {
+						method: 'POST',
+					};
+
+				API.call('reports/dashboard/update', currentParameters, currentOptions);
+
+				const
+					nextParameters = {
+						id: next.id,
+						format: JSON.stringify(next.format),
+					},
+					nextOptions = {
+						method: 'POST',
+					};
+
+				API.call('reports/dashboard/update', nextParameters, nextOptions);
+
+				this.page.load();
+			});
+
+			header.querySelector('.remove').on('click', () => {
+
+				const
+					parameters = {
+						id: this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id)[0].id,
+					},
+					options = {
+						method: 'POST',
+					};
+
+				API.call('reports/dashboard/delete', parameters, options);
+
+				this.page.load();
+			});
+
+			// report.container.setAttribute('draggable', 'true');
+
+			// report.container.on('dragstart', e => {
+			// 	this.page.list.selectedReports.beingDragged = report;
+			// 	e.effectAllowed = 'move';
+			// 	report.container.classList.add('being-dragged');
+			// });
+
+			// report.container.on('dragend', e => {
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	report.container.classList.remove('being-dragged');
+			// 	this.page.list.selectedReports.beingDragged = null;
+			// });
+
+			// report.container.on('dragenter', e => {
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	report.container.classList.add('drag-enter');
+			// });
+
+			// report.container.on('dragleave', () =>  {
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	report.container.classList.remove('drag-enter');
+			// });
+
+			// // To make the targate droppable
+			// report.container.on('dragover', e => {
+
+			// 	e.preventDefault();
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	e.stopPropagation();
+
+			// 	report.container.classList.add('drag-enter');
+			// });
+
+			// report.container.on('drop', e => {
+
+			// 	report.container.classList.remove('drag-enter');
+
+			// 	if(!this.page.list.selectedReports.beingDragged)
+			// 		return;
+
+			// 	if(this.page.list.selectedReports.beingDragged == report)
+			// 		return;
+
+			// 	const
+			// 		beingDragged = this.page.list.selectedReports.beingDragged,
+			// 		format = this.format.reports[beingDragged.dashboard.position];
+
+			// 	this.format.reports.splice(beingDragged.dashboard.position, 1);
+
+			// 	this.format.reports.splice(report.dashboard.position, 0, format);
+
+			// 	this.load(true);
+			// });
 
 			report.container.insertAdjacentHTML('beforeend', `
 				<div class="resize right" draggable="true" title="Resize Graph"></div>
@@ -583,7 +755,13 @@ class Dashboard {
 			if(!report)
 				return;
 
-			const format = this.format.reports[report.dashboard.position];
+			let format = (this.format.reports[report.dashboard.position]) || {};
+
+			if(!format.format) {
+				format.format = {};
+			}
+
+			const visualizationFormat = format.format;
 
 			if(report.draggingEdge.classList.contains('right')) {
 
@@ -594,7 +772,7 @@ class Dashboard {
 				if(column <= columnStart)
 					return;
 
-				format.width = column - columnStart;
+				visualizationFormat.width = column - columnStart;
 			}
 
 			if(report.draggingEdge.classList.contains('bottom')) {
@@ -606,19 +784,24 @@ class Dashboard {
 				if(row <= rowStart)
 					return;
 
-				format.height = row - rowStart;
+				visualizationFormat.height = row - rowStart;
 			}
 
 			if(
-				format.width != report.container.style.gridColumnEnd.split(' ')[1] ||
-				format.height != report.container.style.gridRowEnd.split(' ')[1]
+				visualizationFormat.width != report.container.style.gridColumnEnd.split(' ')[1] ||
+				visualizationFormat.height != report.container.style.gridRowEnd.split(' ')[1]
 			) {
 
 				report.container.setAttribute('style', `
 					order: ${report.dashboard.position || 0};
-					grid-column: auto / span ${format.width || Dashboard.grid.columns};
-					grid-row: auto / span ${format.height || Dashboard.grid.rows};
+					grid-column: auto / span ${visualizationFormat.width || Dashboard.grid.columns};
+					grid-row: auto / span ${visualizationFormat.height || Dashboard.grid.rows};
 				`);
+
+				if(this.dragTimeout) {
+					clearTimeout(this.dragTimeout);
+				}
+				this.dragTimeout = setTimeout(() => this.save(visualizationFormat, format.id), 1000);
 
 				report.visualizations.selected.render(true);
 			}
@@ -636,22 +819,21 @@ class Dashboard {
 		}
 	}
 
-	async save() {
+	async save(format, id) {
 
 		Dashboard.editing = false;
 
 		const
 			parameters = {
-				id: this.id,
-				format: JSON.stringify(this.format),
+				id: id,
+				format: JSON.stringify(format || this.format),
 			},
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('dashboards/update', parameters, options);
+		await API.call('reports/dashboard/update', parameters, options);
 
-		await this.page.list.get(this.id).load();
 	}
 
 	get menuItem() {
@@ -821,14 +1003,12 @@ class DashboardDatasets extends Map {
 
 		container.textContent = null;
 
-		container.classList.add('hidden');
+		container.classList.remove('show');
 
 		if(!this.size)
 			return;
 
 		container.innerHTML = '<h3>Global Filters</h3>';
-
-		let counter = 1;
 
 		for(const dataset of this.values()) {
 
@@ -840,9 +1020,6 @@ class DashboardDatasets extends Map {
 
 			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
 
-			if(counter++ > 4)
-				label.classList.add('hidden');
-
 			label.appendChild(dataset.container);
 
 			container.appendChild(label);
@@ -851,7 +1028,6 @@ class DashboardDatasets extends Map {
 		container.insertAdjacentHTML('beforeend', `
 			<div class="actions">
 				<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
-				<button class="more icon" title="More Filters"><i class="fas fa-filter"></i></button>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
 				<button class="reset-toggle clear icon" title="Clear All Filters"><i class="far fa-check-square"></i></button>
 			</div>
@@ -883,14 +1059,6 @@ class DashboardDatasets extends Map {
 				resetToggle.title = 'Check All Filters';
 				resetToggle.innerHTML = `<i class="far fa-square"></i>`;
 			}
-		});
-
-		container.querySelector('button.more').on('click', () => {
-
-			container.querySelector('button.more').classList.add('hidden');
-
-			for(const dataset of container.querySelectorAll('label.hidden'))
-				dataset.classList.remove('hidden');
 		});
 	}
 

@@ -15,7 +15,7 @@ main #form .report {
 			min-width: 60px !important;
 			max-width: 60px;
 		}
-		main #form .red {
+		main #dashboard-form .red {
 			box-shadow: inset -15px 0 #f66;
 		}
 
@@ -27,25 +27,30 @@ main #form .report {
 				margin: 0;
 			}
 
-main table tr td select {
-	width: 30%;
-	margin-left: 35%;
+main form#dashboard_share {
+	margin-top: 10px;
+	display: flex;
+}
+	main form#dashboard_share select {
+		width: 20%;
+		height: 10%;
+		padding: 0;
+	}
+		main form#dashboard_share select option {
+			padding: 3px 5px;
+		}
+	main form#dashboard_share button {
+		margin-left: 10px;
+		margin-top: auto;
+	}
+		main form#dashboard_share button > svg {
+			margin-right: 0px;
+		}
+
+main h2.share-heading {
+	padding-top: 15px;
 }
 
-main table tr td button {
-
-	border: none;
-	margin-left: 15px;
-	background: var(--color-row-hover);
-}
-main table tr td button > svg {
-
-	margin-right: 0px;
-}
-
-main table tfoot td{
-
-	position: sticky;
-	bottom: 0;
-	background: var(--color-row-hover)
+main table.user-dashboard {
+	margin-top: 10px;
 }

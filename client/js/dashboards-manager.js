@@ -1,4 +1,4 @@
-Page.class = class Dashboards extends Page {
+Page.class = class DashboardManager extends Page {
 
 	constructor() {
 
@@ -10,7 +10,7 @@ Page.class = class Dashboards extends Page {
 
 		this.listContainer.querySelector('#add-dashboard').on('click', () => {
 			DashboardsDashboard.add();
-			history.pushState({id: 'add'}, '', `/dashboards/add`);
+			history.pushState({id: 'add'}, '', `/dashboards-manager/add`);
 		});
 
 		this.listContainer.querySelector('#import-dashboard').on('click', () => {
@@ -31,7 +31,6 @@ Page.class = class Dashboards extends Page {
 		});
 
 		DashboardsDashboard.setup(this);
-		DashboardsShare.setup(this);
 
 		(async () => {
 
@@ -134,6 +133,8 @@ class DashboardsDashboard {
 		DashboardsDashboard.editor = new Editor(DashboardsDashboard.container.querySelector('#dashboard-format'));
 
 		DashboardsDashboard.editor.editor.getSession().setMode('ace/mode/json');
+
+		DashboardsShare.form = DashboardsDashboard.container.querySelector('#dashboard_share');
 	}
 
 	static async add() {
@@ -173,7 +174,7 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.page.list.get(response.insertId).edit();
 
-		history.pushState({what: response.insertId}, '', `/dashboards/${response.insertId}`);
+		history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
 	}
 
 	constructor(data, page) {
@@ -200,6 +201,8 @@ class DashboardsDashboard {
 			DashboardsDashboard.form.removeEventListener('submit', DashboardsDashboard.form_listener);
 
 		DashboardsDashboard.form.on('submit', DashboardsDashboard.form_listener = async e => this.update(e));
+
+		this.dashboardShare.load();
 
 		await Sections.show('form');
 
@@ -252,12 +255,6 @@ class DashboardsDashboard {
 		await this.page.load();
 	}
 
-	async share() {
-
-		await this.dashboardShare.load();
-		await Sections.show("share");
-	}
-
 	get row() {
 
 		if(this.container)
@@ -270,18 +267,14 @@ class DashboardsDashboard {
 			<td><a href="/dashboard/${this.id}">${this.name}</a></td>
 			<td>${this.parent || ''}</td>
 			<td>${this.icon || ''}</td>
+			<td>${this.visibility}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
-			<td class="action share" title="Share"><i class="fa fa-share-alt"></i></td>
 		`;
-
-		this.container.querySelector('.share').on('click', () => {
-			this.share();
-		});
 
 		this.container.querySelector('.green').on('click', () => {
 			this.edit();
-			history.pushState({what: this.id}, '', `/dashboards/${this.id}`);
+			history.pushState({what: this.id}, '', `/dashboards-manager/${this.id}`);
 		});
 
 		this.container.querySelector('.red').on('click', async() => this.delete());
@@ -298,16 +291,6 @@ class DashboardsShare {
 
 		for(const key in page)
 			this[key] = page[key];
-
-	}
-
-	static setup(page) {
-
-		DashboardsShare.container = page.container.querySelector('section#share');
-
-		DashboardsShare.container.querySelector('#back').on('click', () => page.back());
-		DashboardsShare.form = DashboardsShare.container.querySelector('#dashboard_share');
-
 	}
 
 	async load() {
@@ -324,7 +307,7 @@ class DashboardsShare {
 		this.userList = await API.call('users/list');
 
 		if(DashboardsShare.form_listener)
-			DashboardsDashboard.form.removeEventListener('submit', DashboardsDashboard.form_listener);
+			DashboardsShare.form.removeEventListener('submit', DashboardsShare.form_listener);
 
 		DashboardsShare.form.on('submit', DashboardsShare.form_listener = e => this.add(e));
 
@@ -335,24 +318,21 @@ class DashboardsShare {
 	process() {
 
 		this.userDashboardList.clear();
+		DashboardsShare.form.user_list.textContent = null;
 
 		for(const ud of this.userDashboardResponse)
 			this.userDashboardList.set(ud.id, new UserDashboard(ud, this));
 
-		const select_list = [`<option value=""></option>`];
-
 		for(const user of this.userList) {
 
-			select_list.push(`<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`);
+			if(!this.userDashboardResponse.some( u => u.user_id == user.user_id))
+				DashboardsShare.form.user_list.insertAdjacentHTML('beforeend', `<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`)
 		}
-
-		DashboardsShare.form.user_list.innerHTML = select_list.join("");
-
 	}
 
 	render() {
 
-		const container = DashboardsShare.container.querySelector('table tbody');
+		const container = this.page.container.querySelector('table.user-dashboard tbody');
 
 		container.textContent = null;
 
@@ -361,27 +341,29 @@ class DashboardsShare {
 
 		if(!this.userDashboardList.size)
 			container.insertAdjacentHTML('beforeend', `<tr class="NA"><td colspan="2">Not shared to any user! :(</td></tr>`);
-
 	}
 
 	async add(e) {
 
 		e.preventDefault();
 
+		let users = new URLSearchParams();
+
+		users.set('dashboard_id', this.id);
+
+		for (let i = 0; i < DashboardsShare.form.user_list.selectedOptions.length; i++) {
+
+			users.append('user_id', DashboardsShare.form.user_list.options[i].value);
+		}
+
 		const
-			parameters = {
-				dashboard_id : this.id,
-				user_id : DashboardsShare.form.user_list.value
-			},
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('user/dashboards/insert', parameters, options);
+		await API.call('user/dashboards/insert', users.toString(), options);
 		await this.load();
-
 	}
-
 }
 
 class UserDashboard {
@@ -392,7 +374,6 @@ class UserDashboard {
 			this[key] = data[key];
 
 		this.page = page;
-
 	}
 
 	get row() {
@@ -411,7 +392,6 @@ class UserDashboard {
 		this.container.querySelector('.red').on('click', async() => this.delete());
 
 		return this.container;
-
 	}
 
 	async delete() {
@@ -429,7 +409,5 @@ class UserDashboard {
 
 		await API.call('user/dashboards/delete', parameters, options);
 		await this.page.load();
-
 	}
-
 }
