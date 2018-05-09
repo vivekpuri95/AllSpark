@@ -55,8 +55,8 @@ Page.class = class Dashboards extends Page {
 		};
 
 		const
-			privateDashboard = {...JSON.parse(JSON.stringify(dummyDashboard)), name: "Private Dashboards", id: -1},
-			sharedWithMeDashboard = {...JSON.parse(JSON.stringify(dummyDashboard)), name: "Shared With Me", id: -2};
+			privateDashboard = {...JSON.parse(JSON.stringify(dummyDashboard)), name: "Private Dashboards", id: -1, icon: "fas fa-user-secret"},
+			sharedWithMeDashboard = {...JSON.parse(JSON.stringify(dummyDashboard)), name: "Shared With Me", id: -2, icon: "fas fa-user-plus"};
 
 		for (const dashboard of dashboards) {
 
