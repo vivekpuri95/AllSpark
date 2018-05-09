@@ -5,21 +5,44 @@ const constants = require('../utils/constants');
 exports.list = class extends API {
 
 	async list() {
-		return await this.mysql.query(`
-			SELECT
-				d.*,
-				CONCAT_WS(' ',first_name, last_name) user_name
-			FROM
-				tb_datasets d
-			LEFT JOIN
-				tb_users u
-			ON
-				d.created_by = u.user_id AND d.account_id = u.account_id
-			WHERE
-				d.account_id = ?
-				AND d.status = 1`,
-			[this.account.account_id],
-		);
+
+		let
+			query = `
+				SELECT
+					d.*,
+					CONCAT_WS(' ',first_name, last_name) user_name
+				FROM
+					tb_datasets d
+				LEFT JOIN
+					tb_users u
+				ON
+					d.created_by = u.user_id AND d.account_id = u.account_id
+				WHERE
+					d.account_id = ${this.account.account_id}
+					AND d.status = 1
+			`;
+
+		if(this.request.body.search) {
+			query = query.concat(`
+				AND (
+					id LIKE '%${this.request.body.search}%'
+					OR name LIKE '%${this.request.body.search}%'
+				)
+			`);
+		}
+
+		const result = await this.mysql.query(query);
+
+		if(this.request.body.search) {
+
+			for(const row of result){
+
+				row.superset = 'Datasets';
+				row.href = '/settings';
+			}
+		}
+
+		return result;
 	}
 };
 

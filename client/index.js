@@ -1513,10 +1513,8 @@ class Template {
 						<nav></nav>
 						
 						<span class="global-search">
-							<input name="globalSearch" placeholder="Search...">
-							<ul class="hidden">
-								<li>hi</li>							
-							</ul>
+							<input name="globalSearch" class="search-input" placeholder="Search...">
+							<ul class="hidden"></ul>
 						</span>
 						<span class="user-name"></span>
 						<span class="logout">

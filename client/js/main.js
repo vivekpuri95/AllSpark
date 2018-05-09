@@ -122,11 +122,28 @@ class Page {
 
 			searchList.insertAdjacentHTML(
 				'beforeend',
-				`<li><a href="${res.href}"><b>${res.name}</b> in <b>${res.superset}</b></a></li>`
+				`<li><a href="${res.href}"><strong>${res.name}</strong> in <strong>${res.superset}</strong></a></li>`
 			);
 		}
 
+		Page.setEvents();
+
 		searchList.classList.remove('hidden');
+	}
+
+	static setEvents() {
+
+		document.querySelector('body').on('click', () => {
+
+			document.querySelector('body > header .global-search ul').classList.add('hidden');
+		});
+
+		document.querySelector('body > header .global-search input').on('click', (e) => {
+
+			document.querySelector('body > header .global-search ul').classList.remove('hidden');
+			e.stopPropagation();
+		});
+
 	}
 
 	constructor() {
