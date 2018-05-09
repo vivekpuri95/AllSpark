@@ -215,10 +215,12 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 	template.stylesheets.push();
 
 	template.stylesheets = template.stylesheets.concat([
+		'/css/reports.css',
 		'/css/dashboard.css',
 	]);
 
 	template.scripts = template.scripts.concat([
+		'/js/reports.js',
 		'/js/dashboard.js',
 
 		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
@@ -310,13 +312,19 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 	`));
 });
 
-router.get('/dashboards/:id?', (request, response) => {
+router.get('/dashboards-manager/:id?', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('/css/dashboards.css');
+	template.stylesheets = template.stylesheets.concat([
+		'/css/reports.css',
+		'/css/dashboards.css',
+	]);
 
-	template.scripts.push('/js/dashboards.js');
+	template.scripts = template.scripts.concat([
+		'/js/reports.js',
+		'/js/dashboards.js'
+	]);
 
 	response.send(template.body(`
 
@@ -413,10 +421,14 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('/css/reports.css');
+	template.stylesheets = template.stylesheets.concat([
+		'/css/reports.css',
+		'/css/reports-manager.css',
+	]);
 
 	template.scripts = template.scripts.concat([
 		'/js/reports.js',
+		'/js/reports-manager.js',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
@@ -439,7 +451,6 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 						<i class="fa fa-plus"></i>
 						Add New Report
 					</button>
-					<a href="/reports-old">Old reports editor</a>
 				</form>
 
 				<div id="list-container">
@@ -1507,10 +1518,10 @@ class Template {
 				<body>
 					<div id="ajax-working"></div>
 					<header>
-						<a class="logo" href="/dashboards"><img></a>
+						<a class="logo" href="/dashboard/first"><img></a>
 
 						<nav></nav>
-						
+
 						<span class="global-search">
 							<input name="globalSearch" class="search-input" placeholder="Search...">
 							<ul class="hidden"></ul>

@@ -1,4 +1,4 @@
-Page.class = class Dashboards extends Page {
+Page.class = class DashboardManager extends Page {
 
 	constructor() {
 
@@ -10,7 +10,7 @@ Page.class = class Dashboards extends Page {
 
 		this.listContainer.querySelector('#add-dashboard').on('click', () => {
 			DashboardsDashboard.add();
-			history.pushState({id: 'add'}, '', `/dashboards/add`);
+			history.pushState({id: 'add'}, '', `/dashboards-manager/add`);
 		});
 
 		this.listContainer.querySelector('#import-dashboard').on('click', () => {
@@ -174,7 +174,7 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.page.list.get(response.insertId).edit();
 
-		history.pushState({what: response.insertId}, '', `/dashboards/${response.insertId}`);
+		history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
 	}
 
 	constructor(data, page) {
@@ -274,7 +274,7 @@ class DashboardsDashboard {
 
 		this.container.querySelector('.green').on('click', () => {
 			this.edit();
-			history.pushState({what: this.id}, '', `/dashboards/${this.id}`);
+			history.pushState({what: this.id}, '', `/dashboards-manager/${this.id}`);
 		});
 
 		this.container.querySelector('.red').on('click', async() => this.delete());

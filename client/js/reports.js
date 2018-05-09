@@ -1,1903 +1,1719 @@
-class ReportsManger extends Page {
+"use strict";
 
-	constructor(page, key) {
+class DataSource {
 
-		super(page, key);
+	static async load(force = false) {
 
-		this.stages = new Map;
-		this.preview = new ReportsMangerPreview(this);
-
-		this.setup();
-
-		window.onbeforeunload = () => this.container.querySelector('.unsaved');
-	}
-
-	async setup() {
-
-		this.stages.clear();
-
-		this.stages.container = this.container.querySelector('#stages');
-
-		const switcher = this.container.querySelector('#stage-switcher');
-
-		for(const [key, stageClass] of ReportsManger.stages) {
-
-			const stage = new stageClass(this, key);
-
-			switcher.appendChild(stage.switcher);
-
-			this.stages.set(key, stage);
-		}
-
-		window.on('popstate', () => this.load());
-
-		await this.fetch();
-
-		this.process();
-		this.load();
-	}
-
-	async fetch() {
-
-		[this.connections] = await Promise.all([
-			API.call('credentials/list'),
-			DataSource.load(true),
-		]);
-	}
-
-	process() {
-		this.connections = new Map(this.connections.map(c => [c.id, c]));
-	}
-
-	load() {
-
-		let stage = null;
-
-		for(const [key, _stage] of this.stages) {
-			if(window.location.pathname.includes(`/${key}`))
-				stage = _stage;
-		}
-
-		if(stage)
-			stage.select();
-
-		else {
-
-			stage = this.stages.get('pick-report');
-
-			history.replaceState({}, '', `/reports/${stage.url}`);
-
-			stage.select();
-		}
-	}
-}
-
-class ReportsMangerPreview {
-
-	constructor(page) {
-
-		this.page = page;
-		this.container = this.page.container.querySelector('#preview');
-	}
-
-	async load(options = {}) {
-
-		this.container.textContent = null;
-		this.container.classList.add('hidden');
-
-		if(!DataSource.list.has(options.query_id))
-			return this.report = false;
-
-		this.report = JSON.parse(JSON.stringify(DataSource.list.get(options.query_id)));
-
-		if(options.visualization_id)
-			this.report.visualizations = this.report.visualizations.filter(f => f.visualization_id == options.visualization_id);
-		else
-			this.report.visualizations = this.report.visualizations.filter(f => f.type == 'table');
-
-		if(options.query && options.query != this.report.query) {
-			this.report.query = options.query;
-			this.report.queryOverride = true;
-		}
-
-		this.report = new DataSource(this.report);
-
-		this.report.container.querySelector('header').classList.add('hidden');
-		this.report.visualizations.selected.container.classList.toggle('unsaved', this.report.queryOverride ? 1 : 0);
-
-		this.container.appendChild(this.report.container);
-		this.container.classList.remove('hidden');
-
-		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
-		this.page.container.classList.add('preview-right');
-
-		await this.report.visualizations.selected.load();
-
-		this.report.container.querySelector('header .menu-toggle').click();
-
-		this.renderDocks();
-	}
-
-	set hidden(hidden) {
-		this.container.classList.toggle('hidden', hidden);
-		this.move();
-	}
-
-	get hidden() {
-		return this.container.classList.contains('hidden');
-	}
-
-	renderDocks() {
-
-		this.docks = document.createElement('select');
-
-		this.docks.insertAdjacentHTML('beforeend', `
-			<option value="right">Right</option>
-			<option value="bottom">Bottom</option>
-			<option value="left">Left</option>
-		`);
-
-		this.docks.value = localStorage.reportsPreviewDock || 'right';
-
-		localStorage.reportsPreviewDock = this.docks.value;
-
-		this.docks.on('change', () => {
-			localStorage.reportsPreviewDock = this.docks.value;
-			this.move();
-		});
-
-		this.move();
-
-		this.report.container.querySelector('.menu').appendChild(this.docks);
-	}
-
-	move() {
-
-		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
-
-		if(this.hidden)
+		if(DataSource.list && !force)
 			return;
 
-		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'bottom';
+		const response = await API.call('reports/report/list');
 
-		this.page.container.classList.add('preview-' + position);
-
-		this.report.visualizations.selected.render();
-	}
-}
-
-class ReportsMangerStage {
-
-	constructor(page, key) {
-
-		this.page = page;
-		this.key = key;
-
-		this.container = this.page.container.querySelector(`#stage-${this.key}`);
+		DataSource.list = new Map(response.map(report => [report.query_id, report]));
 	}
 
-	get switcher() {
+	constructor(source) {
 
-		if(this.switcherContainer)
-			return this.switcherContainer;
+		for(const key in source)
+			this[key] = source[key];
 
-		const container = this.switcherContainer = document.createElement('div');
+		this.tags = this.tags || '';
+		this.tags = this.tags.split(',').filter(a => a.trim());
 
-		container.classList.add('stage');
+		this.filters = new DataSourceFilters(this);
+		this.columns = new DataSourceColumns(this);
+		this.transformations = new DataSourceTransformations(this);
+		this.visualizations = [];
+
+		if(!source.visualizations)
+			source.visualizations = [];
+
+		if(!source.visualizations.filter(v => v.type == 'table').length) {
+			source.visualizations.push({ name: 'Table', visualization_id: 0, type: 'table' });
+			source.visualizations.push({ name: 'Json', visualization_id: -1, type: 'json' });
+		}
+
+		this.visualizations = source.visualizations.map(v => new (Visualization.list.get(v.type))(v, this));
+		this.postProcessors = new DataSourcePostProcessors(this);
+	}
+
+	async fetch(parameters = {}) {
+
+		parameters = new URLSearchParams(parameters);
+
+		parameters.set('query_id', this.query_id);
+		parameters.set('email', user.email);
+
+		if(this.queryOverride)
+			parameters.set('query', this.query);
+
+		for(const filter of this.filters.values()) {
+
+			if(filter.dataset && filter.dataset.query_id) {
+
+				if(filter.dataset.containerElement) {
+
+					for(const input of filter.label.querySelectorAll('input:checked'))
+						parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, input.value);
+
+				} else {
+
+					for(const row of await filter.dataset.fetch())
+						parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, row.value);
+				}
+
+				continue;
+			}
+
+			if(this.filters.containerElement)
+				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, this.filters.container.elements[filter.placeholder].value);
+			else
+				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
+		}
+
+		let response = null;
+
+		const options = {
+			method: 'POST',
+		};
+
+		this.resetError();
+
+		try {
+			response = await API.call('reports/engine/report', parameters.toString(), options);
+		}
+
+		catch(e) {
+			this.error(JSON.stringify(e.message, 0, 4));
+			response = {};
+		}
+
+		if(parameters.get('download'))
+			return response;
+
+		this.originalResponse = response;
+
+		this.container.querySelector('.query').innerHTML = response.query;
+
+		let age = response.cached ? Math.floor(response.cached.age * 100) / 100 : 0;
+
+		if(age < 1000)
+			age += 'ms';
+
+		else if(age < 1000 * 60)
+			age = (age / 1000) + 's';
+
+		else if(age < 1000 * 60 * 60)
+			age = (age / (1000 * 60)) + 'h';
+
+		let runtime = Math.floor(response.runtime * 100) / 100;
+
+		if(runtime < 1000)
+			runtime += 'ms';
+
+		else if(runtime < 1000 * 60)
+			runtime = (runtime / 1000) + 's';
+
+		else if(runtime < 1000 * 60 * 60)
+			runtime = (runtime / (1000 * 60)) + 'h';
+
+		this.container.querySelector('.description .cached').textContent = response.cached && response.cached.status ? age : 'No';
+		this.container.querySelector('.description .runtime').textContent = runtime;
+
+		this.columns.update();
+		this.postProcessors.update();
+
+		this.render();
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('section');
+
+		const container = this.containerElement;
+
+		container.classList.add('data-source');
 
 		container.innerHTML = `
-			<span class="order">${this.order}</span>
-			<span class="title">${this.title}</span>
-			<small>${this.description}</small>
+
+			<header>
+				<h2 title="${this.name}">${this.name} <span>#${this.query_id}</span></h2>
+				<div class="actions right">
+					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
+					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
+				</div>
+			</header>
+
+			<div class="toolbar menu hidden">
+				<button type="button" class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
+				<button type="button" class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
+				<button type="button" class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
+				<button type="button" class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
+
+				<div class="download-btn" title="Download CSV">
+					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
+					<div class="download-dropdown-content hidden">
+						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
+						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i>xlsx</button>
+						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
+					</div>
+				</div>
+				<select class="change-visualization hidden"></select>
+				<button class="export-toggle"><i class="fa fa-download"></i> Export</button>
+			</div>
+
+			<div class="columns"></div>
+			<div class="query hidden"></div>
+			<div class="drilldown hidden"></div>
+
+			<div class="description hidden">
+				<div class="body">${this.description || 'No description found.'}</div>
+				<div class="footer">
+					<span>
+						<span class="label">Role:</span>
+						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : 'Invalid'}</span>
+					</span>
+					<span>
+						<span class="label">Added On:</span>
+						<span>${Format.date(this.created_at)}</span>
+					</span>
+					<span>
+						<span class="label">Cached:</span>
+						<span class="cached"></span>
+					</span>
+					<span>
+						<span class="label">Runtime:</span>
+						<span class="runtime"></span>
+					</span>
+					<span class="right visible-to">
+						<span class="label">Visible To</span>
+						<span class="visible-length"></span>
+					</span>
+					<span>
+						<span class="label">Added By:</span>
+						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
+					</span>
+					<span class="requested hidden">
+						<span class="label">Requested By:</span>
+						<span>${this.requested_by || 'NA'}</span>
+					</span>
+				</div>
+			</div>
+
+			<div class="export-json hidden">
+				${JSON.stringify(DataSource.list.get(this.query_id))}
+			</div>
 		`;
 
-		container.on('click', () => {
+		container.querySelector('.menu .export-toggle').on('click', () => {
+			container.querySelector('.export-json').classList.toggle('hidden');
+			container.querySelector('.export-toggle').classList.toggle('selected');
 
-			if(this.disabled)
-				return;
-
-			this.select();
-
-			if(this.key != 'configure-visualization')
-				history.pushState({}, '', `/reports/${this.url}`);
+			this.visualizations.selected.render(true);
 		});
+		container.querySelector('header .menu-toggle').on('click', () => {
+			container.querySelector('.menu').classList.toggle('hidden');
+			container.querySelector('header .menu-toggle').classList.toggle('selected');
+
+			this.visualizations.selected.render(true);
+		});
+
+		container.querySelector('.description .visible-to').on('click', () => {
+
+			if(!this.dialog)
+				this.dialog = new DialogBox(this);
+
+			this.dialog.heading = 'Users';
+
+			const user_element = [];
+
+			for(const user of this.visibleTo) {
+				user_element.push(`
+					<li>
+						<a href="/user/profile/${user.user_id}">${user.name}</a>
+						<span>${user.reason}</span>
+					</li>
+				`);
+			}
+
+			this.dialog.body = `<ul class="user-list">${user_element.join()}</ul>`;
+			this.dialog.show();
+
+		});
+
+		container.querySelector('header .reload').on('click', () => {
+			this.visualizations.selected.load(true);
+		});
+
+		container.querySelector('.menu .filters-toggle').on('click', () => {
+
+			container.querySelector('.filters-toggle').classList.toggle('selected');
+
+			if(container.contains(this.filters.container))
+				container.removeChild(this.filters.container);
+
+			else container.insertBefore(this.filters.container, container.querySelector('.columns'));
+
+			this.visualizations.selected.render(true);
+		});
+
+		container.querySelector('.menu .description-toggle').on('click', async () => {
+
+
+			if(this.requested_by)
+				container.querySelector('.description .requested').classList.remove('hidden');
+
+			container.querySelector('.description').classList.toggle('hidden');
+			container.querySelector('.description-toggle').classList.toggle('selected');
+
+			this.visualizations.selected.render(true);
+
+			await this.userList();
+			container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
+		});
+
+		container.querySelector('.menu .query-toggle').on('click', () => {
+
+			container.querySelector('.query').classList.toggle('hidden');
+			container.querySelector('.query-toggle').classList.toggle('selected');
+
+			this.visualizations.selected.render(true);
+		});
+
+		container.querySelector('.menu .download-btn .download').on('click', (e) => {
+			container.querySelector('.menu .download-btn .download').classList.toggle('selected');
+			container.querySelector('.menu .download-btn .download-dropdown-content').classList.toggle('hidden');
+		});
+
+		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
+		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
+		container.querySelector('.menu .xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
+
+		if(user.privileges.has('report')) {
+
+			const
+				configure = document.createElement('a'),
+				actions = container.querySelector('header .actions');
+
+			configure.title = 'Configure Visualization';
+			configure.classList.add('configure-visualization');
+			configure.innerHTML = '<i class="fas fa-cog"></i>';
+
+			actions.insertBefore(configure, actions.querySelector('.menu-toggle'));
+
+			const edit = document.createElement('a');
+
+			edit.title = 'Edit Report';
+			edit.href = `/reports/define-report/${this.query_id}`;
+			edit.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+
+			actions.insertBefore(edit, actions.querySelector('.menu-toggle'));
+		}
+
+		else container.querySelector('.menu .query-toggle').classList.add('hidden');
+
+		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
+
+		if(this.visualizations.length) {
+
+			const select = container.querySelector('.change-visualization');
+
+			for(const [i, v] of this.visualizations.entries()) {
+
+				if(v.default)
+					this.visualizations.selected = v;
+
+				select.insertAdjacentHTML('beforeend', `<option value="${i}">${v.type}</option>`);
+			}
+
+			select.on('change', async () => {
+				this.visualizations[select.value].load();
+			});
+
+			if(!this.visualizations.selected)
+				this.visualizations.selected = this.visualizations[select.value];
+
+			if(this.visualizations.length > 1)
+				select.classList.remove('hidden');
+
+			if(this.visualizations.selected)
+				container.appendChild(this.visualizations.selected.container);
+		}
+
+		this.xlsxDownloadable = ["line", "bar",].includes(this.visualizations.selected.type);
+
+		const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
+
+		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
+
+		if(!this.filters.size)
+			container.querySelector('.filters-toggle').classList.add('hidden');
+
+		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle'));
+
+		if(this.drilldown) {
+
+			let source = this;
+
+			const list = container.querySelector('.drilldown');
+
+			list.textContent = null;
+
+			while(source.drilldown) {
+
+				const
+					copy = source,
+					fragment = document.createDocumentFragment(),
+					link = document.createElement('a')
+
+				link.innerHTML = `${source.drilldown.parent.name}`;
+
+				const title = [];
+
+				for(const p of source.drilldown.parameters)
+					title.push(`${p.value}: ${p.selectedValue instanceof Dataset ? p.selectedValue.value : p.selectedValue}`);
+
+				link.title = title.join('\n');
+
+				link.on('click', () => {
+
+					const parent = this.container.parentElement;
+
+					parent.removeChild(this.container);
+					parent.appendChild(copy.drilldown.parent.container);
+					copy.drilldown.parent.visualizations.selected.render();
+				});
+
+				fragment.appendChild(link);
+
+				if(list.children.length) {
+
+					const angle = document.createElement('i');
+
+					angle.classList.add('fas', 'fa-angle-right');
+
+					fragment.appendChild(angle);
+
+					list.insertBefore(fragment, list.children[0]);
+				}
+
+				else list.appendChild(fragment);
+
+				source = source.drilldown.parent;
+			}
+		}
+
+		this.columns.render();
 
 		return container;
 	}
 
-	select() {
+	async userList() {
 
-		if(this.page.stages.selected)
-			this.page.stages.selected.switcher.classList.remove('selected');
+		if(this.visibleTo)
+			return this.visibleTo;
 
-		this.switcher.classList.add('selected');
-
-		Sections.show(this.container.id);
-
-		this.page.stages.selected = this;
-
-		this.load();
+		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
-	set disabled(disabled) {
+	get response() {
 
-		this._disabled = disabled;
+		if(!this.originalResponse || !this.originalResponse.data)
+			return [];
 
-		this.switcher.classList.toggle('disabled', disabled);
-	}
+		let response = [];
 
-	get disabled() {
-		return this._disabled;
-	}
+		this.originalResponse.groupedAnnotations = new Map;
 
-	get selectedReport() {
+		const data = this.transformations.run(this.originalResponse.data);
 
-		let report = null;
+		for(const _row of data) {
 
-		const id = parseInt(window.location.pathname.split('/').pop());
+			const row = new DataSourceRow(_row, this);
 
-		if(window.location.pathname.includes('/configure-visualization')) {
-
-			for(const _report of DataSource.list.values()) {
-
-				if(_report.visualizations.filter(v => v.visualization_id == id).length)
-					report = _report;
-			}
+			if(!row.skip)
+				response.push(row);
 		}
 
-		else report = DataSource.list.get(id);
-
-		return report;
-	}
-}
-
-Page.class = ReportsManger;
-
-ReportsManger.stages = new Map;
-
-ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerStage {
-
-	constructor(page, key) {
-
-		super(page, key);
-
-		this.order = '1';
-		this.title = 'Pick Report';
-		this.description = 'Pick a Report';
-
-		this.sort = {};
-
-		this.prepareSearch();
-
-		this.container.querySelector('#add-report').on('click', () => {
-			this.add();
-			history.pushState({id: 'add'}, '', `/configure-report/add`);
-		});
-	}
-
-	get url() {
-		return this.key;
-	}
-
-	select() {
-
-		super.select();
-
-		for(const stage of this.page.stages.values())
-			stage.disabled = stage != this;
-
-		this.page.preview.hidden = true;
-	}
-
-	prepareSearch() {
-
-		const search = this.container.querySelector('table thead tr.search');
-		const columns = this.container.querySelectorAll('table thead th');
-
-		for(const column of columns) {
-
-			const searchColumn = document.createElement('th');
-
-			search.appendChild(searchColumn);
-
-			if(column.classList.contains('action'))
-				searchColumn.classList.add('action');
-
-			if(!column.classList.contains('search'))
-				continue;
-
-			searchColumn.innerHTML = `
-				<input type="search" class="column-search" data-key="${column.dataset.key}" placeholder="Search ${column.textContent}">
-			`;
-
-			searchColumn.querySelector('.column-search').on('keyup', () => this.load());
-
-			search.appendChild(searchColumn);
-
-			if(column.classList.contains('sort')) {
-
-				column.on('click', () => {
-
-					this.sort = {
-						column: column.dataset.key,
-						order: !this.sort.order,
-					};
-
-					this.load();
-				});
-			}
-		}
-	}
-
-	async load() {
-
-		const
-			theadSearch = document.querySelectorAll('.column-search'),
-			tbody = this.container.querySelector('tbody');
-
-		tbody.textContent = null;
-
-		for(const report of this.reports) {
-
-			const row = document.createElement('tr');
-
-			let tags = report.tags ? report.tags.split(',') : [];
-			tags = tags.filter(t => t).map(tag => `<a>${tag.trim()}</a>`).join('');
-
-			let connection = this.page.connections.get(parseInt(report.connection_name)) || '';
-
-			if(connection)
-				connection = `${connection.connection_name} (${connection.type})`;
-
-			row.innerHTML = `
-				<td>${report.query_id}</td>
-				<td>
-					<a href="/report/${report.query_id}" target="_blank">
-						${report.name}
-					</a>
-				</td>
-				<td>${report.description || ''}</td>
-				<td>${connection}</td>
-				<td class="tags"><div>${tags}</div></td>
-				<td title="${report.filters.map(f => f.name).join(', ')}" >
-					${report.filters.length}
-				</td>
-				<td class="action green visualizations" title="${report.visualizations.map(f => f.name).join(', ')}" >
-					${report.visualizations.length}
-				</td>
-				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
-				<td class="action green configure">Configure</td>
-				<td class="action green define">Define</td>
-				<td class="action red delete">Delete</td>
-			`;
-
-			row.querySelector('.configure').on('click', () => {
-
-				history.pushState({}, '', `/reports/configure-report/${report.query_id}`);
-
-				this.page.stages.get('configure-report').disabled = false;
-				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('configure-visualization').disabled = false;
-
-				this.page.load();
-			});
-
-			row.querySelector('.define').on('click', () => {
-
-				history.pushState({}, '', `/reports/define-report/${report.query_id}`);
-
-				this.page.stages.get('configure-report').disabled = false;
-				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('configure-visualization').disabled = false;
-
-				this.page.load();
-			});
-
-			row.querySelector('.visualizations').on('click', () => {
-
-				history.pushState({}, '', `/reports/define-report/${report.query_id}`);
-
-				this.page.stages.get('configure-report').disabled = false;
-				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('configure-visualization').disabled = false;
-
-				this.page.load();
-
-				this.page.stages.get('configure-visualization').select();
-				this.page.stages.get('configure-visualization').switcher.querySelector('#visualization-list').classList.toggle('hidden');
-			});
-
-			row.querySelector('.delete').on('click', () => this.delete(report));
-
-			tbody.appendChild(row);
-		}
-
-		if(!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA"><td colspan="11">No Reports Found! :(</td></tr>`;
-
-		this.switcher.querySelector('small').textContent = 'Pick a report';
-	}
-
-	get reports() {
-
-		let reports = JSON.parse(JSON.stringify(Array.from(DataSource.list.values())));
-
-		const inputs = this.container.querySelectorAll('thead tr.search th input');
-
-		reports = reports.filter(report => {
-
-			for(const input of inputs) {
-
-				const query = input.value.toLowerCase();
-
-				if(!query)
-					continue;
-
-				if(['filters', 'visualization'].includes(input.dataset.key)) {
-
-					if(!report.filters.some(filter => filter.name.toLowerCase().includes(query)))
-						return false;
-				}
-
-				else if(input.dataset.key == 'connection') {
-
-					let connection = this.page.connections.get(parseInt(report.connection_name)) || '';
-
-					if(!connection)
-						return false;
-
-					if(!connection.connection_name.toLowerCase().includes(query) && !connection.type.toLowerCase().includes(query))
-						return false;
-				}
-
-				else if(input.dataset.key == 'is_enabled') {
-
-					if(!(report.is_enabled ? 'yes' : 'no').includes(query))
-						return false;
-				}
-
-				else {
-
-					if(!report[input.dataset.key] || !report[input.dataset.key].toString().toLowerCase().includes(query))
-						return false;
-				}
-			}
-
-			return true;
-		});
-
-		if(this.sort.column) {
-
-			reports = reports.sort((a, b) => {
-
-				a = a[this.sort.column] || '';
-				b = b[this.sort.column] || '';
-
-				if(typeof a == 'string') {
-					a = a.toUpperCase();
-					b = b.toUpperCase();
-				}
-
-				else if(a instanceof Array) {
-					a = a.length;
-					b = b.length;
-				}
+		if(this.postProcessors.selected)
+			response = this.postProcessors.selected.processor(response);
+
+		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key)) {
+			response.sort((a, b) => {
+
+				const
+					first = a.get(this.columns.sortBy.key).toString().toLowerCase(),
+					second = b.get(this.columns.sortBy.key).toString().toLowerCase();
 
 				let result = 0;
 
-				if(a < b)
+				if(!isNaN(first) && !isNaN(second))
+					result = first - second;
+
+				else if(first < second)
 					result = -1;
 
-				if(a > b)
+				else if(first > second)
 					result = 1;
 
-				if(this.sort.order)
+				if(!this.columns.sortBy.sort)
 					result *= -1;
 
 				return result;
 			});
 		}
 
-		return reports;
+		return response;
 	}
 
-	add() {
+	async download(e, what) {
 
-		history.pushState({}, '', `/reports/configure-report/add`);
+		this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
+		e.currentTarget.parentElement.classList.add('hidden');
 
-		this.page.stages.get('configure-report').disabled = false;
-		this.page.stages.get('define-report').disabled = false;
-		this.page.stages.get('configure-visualization').disabled = false;
+		const response = await this.fetch({download: 1});
 
-		this.page.load();
-	}
+		let str = [];
 
-	async delete(report) {
+		if(what.mode == 'json') {
 
-		if(!window.confirm('Are you sure?!'))
-			return;
+			for(const data of response.data) {
 
-		const
-			parameters = {
-				query_id: report.query_id,
-				is_deleted: 1,
-			},
-			options = {
-				method: 'POST',
-			};
+				const line = [];
 
-		await API.call('reports/report/update', parameters, options);
+				line.push(JSON.stringify(data));
 
-		await DataSource.load(true);
-
-		this.load();
-	}
-});
-
-ReportsManger.stages.set('configure-report', class ConfigureReport extends ReportsMangerStage {
-
-	constructor(page, key) {
-
-		super(page, key);
-
-		this.order = '2';
-		this.title = 'Configure Report';
-		this.description = 'Change the report\'s properties';
-
-		this.form = this.container.querySelector('form');
-		this.form.save = this.container.querySelector('.toolbar button[type=submit]');
-
-		for(const element of this.form.elements)
-			element.on('change', () => this.form.save.classList.add('unsaved'));
-
-		this.form.redis.removeEventListener('change', this.handleRedisSelect);
-
-		this.form.redis.on('change', this.handleRedisSelect = () => {
-
-			this.form.is_redis.type = this.form.redis.value === 'EOD' ? 'text' : 'number';
-
-			this.form.is_redis.value = this.form.redis.value;
-			this.form.is_redis.classList.toggle('hidden', this.form.redis.value !== 'custom');
-		});
-
-		for(const category of MetaData.categories.values()) {
-
-			this.form.category_id.insertAdjacentHTML('beforeend', `
-				<option value="${category.category_id}">${category.name}</option>
-			`);
-		}
-
-		for(const role of MetaData.roles.values()) {
-
-			this.form.roles.insertAdjacentHTML('beforeend', `
-				<option value="${role.role_id}">${role.name}</option>
-			`);
-		}
-	}
-
-	select() {
-		super.select();
-
-		this.page.stages.get('configure-visualization').setupVisualizations();
-	}
-
-	get url() {
-		return `${this.key}/${this.report.query_id}`;
-	}
-
-	load() {
-
-		if(!this.form.connection_name.children.length) {
-
-			for(const connection of this.page.connections.values()) {
-				this.form.connection_name.insertAdjacentHTML('beforeend',
-					`<option value="${connection.id}">${connection.connection_name} (${connection.type})</option>`
-				)
+				str.push(line);
 			}
 		}
 
-		this.report = this.selectedReport;
+		else if(what.mode == 'xlsx' && this.xlsxDownloadable) {
 
-		const small = this.page.stages.get('pick-report').switcher.querySelector('small');
+			const response = [];
 
-		if(this.report) {
-			small.textContent = this.report.name + ` #${this.report.query_id}`;
-			this.edit();
+			for(const row of this.response) {
+
+				const temp = {};
+				const arr = [...row];
+				for(const cell of arr) {
+					temp[cell[0]] = cell[1];
+				}
+
+				response.push(temp)
+			}
+
+			const obj = {
+					columns		 :[...this.columns.entries()].map(x => x[0]),
+					visualization:this.visualizations.selected.type,
+					sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+					file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+			};
+
+			for(const axis in this.visualizations.selected.options.axes) {
+				if (isNaN(parseInt(axis)))
+					obj[axis] = (((this.visualizations.selected.options.axes)[axis]).columns)[0].key;
+			}
+
+			return await this.excelSheetDownloader(response, obj);
 		}
 
 		else {
-			small.textContent = 'Add new report';
-			this.add();
-		}
-	}
 
-	add() {
+			for(const data of response.data) {
 
-		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.insert(e));
+				const line = [];
 
-		this.form.reset();
-		this.form.save.classList.remove('unsaved');
+				for(const index in data)
+					line.push(JSON.stringify(String(data[index])));
 
-		if(this.form.redis.value == 'custom')
-			this.form.is_redis.classList.remove('hidden');
-
-		else this.form.is_redis.classList.add('hidden');
-	}
-
-	async insert(e) {
-
-		e.preventDefault();
-
-		const
-			parameters = {
-				roles: Array.from(this.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.form),
-			};
-
-		const response = await API.call('reports/report/insert', parameters, options);
-
-		await DataSource.load(true);
-
-		window.history.replaceState({}, '', `/reports/define-report/${response.insertId}`);
-
-		this.page.load();
-	}
-
-	async edit() {
-
-		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
-
-		this.form.reset();
-		this.form.save.classList.remove('unsaved');
-
-		for(const key in this.report) {
-			if(this.form.elements[key])
-				this.form.elements[key].value = this.report[key];
-		}
-
-		if(this.is_redis > 0) {
-			this.form.redis.value = 'custom';
-			this.form.is_redis.classList.remove('hidden');
-		}
-
-		else {
-			this.form.redis.value = this.is_redis;
-			this.form.is_redis.classList.add('hidden');
-		}
-	}
-
-	async update(e) {
-
-		e.preventDefault();
-
-		const
-			parameters = {
-				query_id: this.report.query_id,
-				roles: Array.from(this.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.form),
-			};
-
-		await API.call('reports/report/update', parameters, options);
-
-		await DataSource.load(true);
-
-		this.load();
-	}
-});
-
-ReportsManger.stages.set('define-report', class DefineReport extends ReportsMangerStage {
-
-	constructor(page, key) {
-
-		super(page, key);
-
-		this.order = '3';
-		this.title = 'Define Report\'s Data';
-		this.description = 'The report\'s SQL query or API';
-
-		this.form = this.container.querySelector('form');
-		this.form.save = this.container.querySelector('.toolbar button[type=submit]');
-
-		this.filterForm = this.container.querySelector('#filters form');
-
-		for(const dataset of MetaData.datasets.values()) {
-			this.filterForm.dataset.insertAdjacentHTML('beforeend', `
-				<option value="${dataset.id}">${dataset.name}</option>
-			`);
-		}
-
-		this.schemas = new Map;
-
-		const schemaToggle = this.container.querySelector('#schema-toggle')
-
-		schemaToggle.on('click', () => {
-			schemaToggle.classList.toggle('selected');
-			this.container.querySelector('#schema').classList.toggle('hidden');
-		});
-
-		const filtersToggle = this.container.querySelector('#filters-toggle')
-
-		filtersToggle.on('click', () => {
-			filtersToggle.classList.toggle('selected');
-			this.container.querySelector('#filters').classList.toggle('hidden');
-		});
-
-		const previewToggle = this.container.querySelector('#preview-toggle');
-
-		previewToggle.on('click', () => {
-
-			if(!this.page.preview.report)
-				return this.preview();
-
-			this.page.preview.hidden = previewToggle.classList.contains('selected');
-			previewToggle.classList.toggle('selected');
-
-			this.editor.editor.resize();
-		});
-
-		this.container.querySelector('#add-filter').on('click', () => this.addFilter());
-
-		this.container.querySelector('#filter-back').on('click', () => {
-			this.container.querySelector('#filter-form').classList.add('hidden');
-			this.container.querySelector('#filter-list').classList.remove('hidden');
-		});
-
-		this.container.querySelector('#run').on('click', () => {
-			return this.preview();
-		});
-
-		this.editor = new Editor(this.form.querySelector('#editor'));
-
-		this.editor.editor.getSession().on('change', () => {
-
-			if(!this.report)
-				return;
-
-			this.filterSuggestions();
-
-			this.form.save.classList.toggle('unsaved', this.editor.value != this.report.query);
-		});
-
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.preview(),
-			});
-		});
-	}
-
-	select() {
-		super.select();
-
-		this.page.stages.get('configure-visualization').setupVisualizations();
-	}
-
-	get url() {
-		return `${this.key}/${this.report.query_id}`;
-	}
-
-	async preview() {
-
-		const options = {
-			query: this.editor.editor.getSelectedText() || this.editor.value,
-			query_id: this.report.query_id,
-		};
-
-		await this.page.preview.load(options);
-
-		this.page.preview.hidden = false;
-		this.container.querySelector('#preview-toggle').classList.add('selected');
-		this.editor.editor.resize();
-	}
-
-	load() {
-
-		this.report = this.selectedReport;
-
-		if(!this.report)
-			throw new Page.exception('Invalid Report ID');
-
-		const connection = this.page.connections.get(parseInt(this.report.connection_name));
-
-		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
-		this.form.querySelector('#query').classList.toggle('hidden', connection.type == 'api');
-
-		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
-
-		this.form.reset();
-		this.form.save.classList.remove('unsaved');
-		this.editor.editor.focus();
-
-		for(const key in this.report) {
-			if(this.form.elements[key])
-				this.form.elements[key].value = this.report[key];
-		}
-
-		this.editor.value = this.report.query;
-
-		this.schema();
-		this.filters();
-
-		this.container.querySelector('#filter-form').classList.add('hidden');
-		this.container.querySelector('#filter-list').classList.remove('hidden');
-
-		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
-	}
-
-	async update(e) {
-
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		const
-			parameters = {
-				query_id: this.report.query_id,
-				query: this.editor.value,
-				url_options: JSON.stringify({method: this.form.method.value}),
-				url: this.form.url.value,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		await API.call('reports/report/update', parameters, options);
-
-		await DataSource.load(true);
-
-		this.load();
-	}
-
-	filterSuggestions() {
-
-		let placeholders = this.editor.value.match(/{{([a-zA-Z0-9_-]*)}}/g) || [];
-
-		placeholders = new Set(placeholders.map(a => a.match('{{(.*)}}')[1]));
-
-		const
-			missing = new Set(placeholders),
-			missingContainer = this.container.querySelector('#missing-filters');
-
-		for(const filter of this.report.filters) {
-
-			missing.delete(filter.placeholder);
-
-			if(!filter.container)
-				continue;
-
-			filter.container.elements.placeholder.classList.remove('red');
-
-			if(!placeholders.has(filter.placeholder))
-				filter.container.elements.placeholder.classList.add('red');
-		}
-
-		if(missing.size) {
-			missingContainer.innerHTML = `Missing Placeholders: <strong>${Array.from(missing).join(', ')}</strong>`;
-			missingContainer.classList.remove('hidden');
-		}
-
-		else missingContainer.classList.add('hidden');
-	}
-
-	async schema() {
-
-		const source = this.page.connections.get(this.report.connection_name);
-
-		if(!source || !['mysql', 'pgsql'].includes(source.type)) {
-			this.form.querySelector('#query').classList.add('hidden');
-			this.form.querySelector('#api').classList.remove('hidden');
-		}
-
-		this.form.querySelector('#query').classList.remove('hidden');
-		this.form.querySelector('#api').classList.add('hidden');
-
-		if(this.schemas.has(this.report.connection_name))
-			return this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
-
-		let response = null;
-
-		const container = this.container.querySelector('#schema');
-
-		try {
-			response = await API.call('credentials/schema', { id: this.report.connection_name });
-		} catch(e) {
-			container.innerHTML = `<div class="NA">Failed to load Schema! :(</div>`;
-			return;
-		}
-
-		const
-			schema = mysqlKeywords.map(k => {return {
-				name: k,
-				value: k,
-				meta: 'MySQL Keyword',
-			}}),
-			databases = document.createElement('ul');
-
-		if(this.report) {
-
-			for(const filter of this.report.filters) {
-				schema.push({
-					name: filter.placeholder,
-					value: filter.placeholder,
-					meta: 'Report Filter',
-				});
-			}
-		}
-
-		container.textContent = null;
-
-		const
-			search = document.createElement('input'),
-			that = this;
-
-		search.type = 'search';
-		search.placeholder = 'Search...';
-
-		search.on('keyup', () => renderList());
-
-		container.appendChild(search);
-
-		for(const database of response) {
-
-			schema.push({
-				name: database.name,
-				value: database.name,
-				meta: '(d)',
-			});
-
-			for(const table of database.tables) {
-
-				schema.push({
-					name: table.name,
-					value: table.name,
-					meta: '(t) ' + database.name,
-				});
-
-				for(const column of table.columns) {
-
-					schema.push({
-						name: column.name,
-						value: column.name,
-						meta: '(c) ' + table.name,
-					});
-				}
-			}
-		}
-
-		this.schemas.set(this.report.connection_name, schema);
-
-		container.appendChild(databases);
-
-		renderList();
-
-		function renderList() {
-
-			databases.textContent = null;
-
-			for(const database of response) {
-
-				const tables = document.createElement('ul');
-
-				if(!search.value)
-					tables.classList.add('hidden');
-
-				for(const table of database.tables) {
-
-					const columns = document.createElement('ul');
-
-					if(!search.value)
-						columns.classList.add('hidden');
-
-					for(const column of table.columns) {
-
-						if(search.value && !column.name.includes(search.value))
-							continue;
-
-						let name = column.name;
-
-						if(search.value) {
-							name = [
-								name.slice(0, name.indexOf(search.value)),
-								'<mark>',
-								search.value,
-								'</mark>',
-								name.slice(name.indexOf(search.value) + search.value.length)
-							].join('');
-						}
-
-						const li = document.createElement('li');
-
-						li.innerHTML = `
-							<span class="name">
-								<strong>C</strong>
-								<span>${name}</span>
-								<small>${column.type}</small>
-							</span>
-						`;
-
-						li.querySelector('span').on('click', () => {
-							that.editor.editor.getSession().insert(that.editor.editor.getCursorPosition(), column.name);
-						});
-
-						columns.appendChild(li);
-					}
-
-					const li = document.createElement('li');
-
-					if(!columns.children.length && !table.name.includes(search.value))
-						continue;
-
-					let name = table.name;
-
-					if(search.value && name.includes(search.value)) {
-						name = [
-							name.slice(0, name.indexOf(search.value)),
-							'<mark>',
-							search.value,
-							'</mark>',
-							name.slice(name.indexOf(search.value) + search.value.length)
-						].join('');
-					}
-
-					li.innerHTML = `
-						<span class="name">
-							<strong>T</strong>
-							<span>${name}</span>
-							<small>${table.columns.length} columns</small>
-						</span>
-					`;
-
-					li.appendChild(columns)
-
-					li.querySelector('span').on('click', () => {
-						li.classList.toggle('opened');
-						columns.classList.toggle('hidden')
-					});
-
-					tables.appendChild(li);
-				}
-
-				if(!tables.children.length && !database.name.includes(search.value))
-					continue;
-
-				const li = document.createElement('li');
-
-				let name = database.name;
-
-				if(search.value && name.includes(search.value)) {
-					name = [
-						name.slice(0, name.indexOf(search.value)),
-						'<mark>',
-						search.value,
-						'</mark>',
-						name.slice(name.indexOf(search.value) + search.value.length)
-					].join('');
-				}
-
-				li.innerHTML = `
-					<span class="name">
-						<strong>D</strong>
-						<span>${name}</span>
-						<small>${database.tables.length} tables</small>
-					</span>
-				`;
-
-				li.appendChild(tables)
-
-				li.querySelector('span').on('click', () => {
-					li.classList.toggle('opened');
-					tables.classList.toggle('hidden');
-				});
-
-				databases.appendChild(li);
+				str.push(line.join());
 			}
 
-			if(!databases.children.length)
-				databases.innerHTML = `<div class="NA">No matches found! :(</div>`;
+			str = Object.keys(response.data[0]).join() + '\r\n' + str.join('\r\n');
 		}
-
-		this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
-	}
-
-	filters() {
-
-		const tbody = this.container.querySelector('#filters table tbody');
-
-		tbody.textContent = null;
-
-		for(const filter of this.report.filters) {
-
-			const row = document.createElement('tr');
-
-			let datasetName = '';
-
-			if(filter.dataset && MetaData.datasets.has(filter.dataset)) {
-
-				const
-					dataset = MetaData.datasets.get(filter.dataset),
-					report = DataSource.list.get(dataset.query_id);
-
-				if(report) {
-					datasetName = `
-						<a href="/report/${dataset.query_id}" target="_blank" title="${DataSource.list.get(dataset.query_id).name}">
-							${dataset.name}
-						</a>
-					`;
-				}
-
-				else datasetName = dataset.name;
-			}
-
-			row.innerHTML = `
-				<td>${filter.name}</td>
-				<td>${filter.placeholder}</td>
-				<td>${filter.type}</td>
-				<td>${datasetName}</td>
-				<td class="action green"><i class="far fa-edit"></i></td>
-				<td class="action red"><i class="far fa-trash-alt"></i></td>
-			`;
-
-			row.querySelector('.green').on('click', () => this.editFilter(filter));
-			row.querySelector('.red').on('click', () => this.deleteFilter(filter));
-
-			tbody.appendChild(row);
-		}
-
-		if(!this.report.filters.length)
-			tbody.innerHTML = `<tr class="NA"><td>No filters added yet! :(</td></tr>`
-	}
-
-	addFilter() {
-
-		this.container.querySelector('#filter-form').classList.remove('hidden');
-		this.container.querySelector('#filter-list').classList.add('hidden');
-
-		this.filterForm.removeEventListener('submit', this.filterForm.listener);
-		this.filterForm.on('submit', this.filterForm.listener = e => this.insertFilter(e));
-
-		this.filterForm.reset();
-
-		this.filterForm.name.focus();
-	}
-
-	async insertFilter(e) {
-
-		if(e)
-			e.preventDefault();
 
 		const
-			parameters = {
-				query_id: this.report.query_id
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.filterForm),
-			};
+			a = document.createElement('a'),
+			blob = new Blob([str], {type: 'application\/octet-stream'}),
+			fileName = [
+				this.name,
+			];
 
-		await API.call('reports/filters/insert', parameters, options);
+		if(this.filters.has('Start Date'))
+			fileName.push(this.filters.container.elements[this.filters.get('Start Date').placeholder].value);
 
-		await DataSource.load(true);
+		if(this.filters.has('End Date'))
+			fileName.push(this.filters.container.elements[this.filters.get('End Date').placeholder].value);
 
-		this.load();
+		if(fileName.length == 1)
+			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(new Date));
+
+		a.href = window.URL.createObjectURL(blob);
+
+		a.download = fileName.join(' - ') + '.' + what.mode;
+
+		a.click();
 	}
 
-	editFilter(filter) {
+	async excelSheetDownloader(data, obj) {
 
-		this.container.querySelector('#filter-form').classList.remove('hidden');
-		this.container.querySelector('#filter-list').classList.add('hidden');
+		obj.data = data;
 
-		this.filterForm.removeEventListener('submit', this.filterForm.listener);
-		this.filterForm.on('submit', this.filterForm.listener = e => this.updateFilter(e, filter));
+		const xlsxBlobOutput = await (await (fetch("/api/v2/reports/engine/download", {
+			body: JSON.stringify(obj),
+			cache: 'no-cache',
+			credentials: 'same-origin',
+			headers: {
+				'user-agent': 'Mozilla/4.0 MDN Example',
+				'content-type': 'application/json'
+			},
+			method: 'POST',
+			mode: 'cors',
+			redirect: 'follow',
+			referrer: 'no-referrer',
+		}))).blob();
 
-		this.filterForm.reset();
+		const link = document.createElement('a');
+		link.href = window.URL.createObjectURL(xlsxBlobOutput);
+		link.download = obj.file_name + "_" + new Date().toString().replace(/ /g, "_") + ".xlsx";
+		link.click();
+	}
 
-		for(const key in filter) {
-			if(key in this.filterForm)
-				this.filterForm[key].value = filter[key];
+	get link() {
+
+		const link = window.location.origin + '/report/' + this.query_id;
+
+		const parameters = new URLSearchParams();
+
+		for(const [_, filter] of this.filters) {
+			if(this.filters.container && filter.placeholder in this.filters.container.elements)
+				parameters.set(filter.placeholder, this.filters.container.elements[filter.placeholder].value);
 		}
 
-		this.filterForm.name.focus();
+		return link + '?' + parameters.toString();
 	}
 
-	async updateFilter(e, filter) {
+	resetError() {
 
-		if(e)
-			e.preventDefault();
+		if(this.container.querySelector('pre.warning'))
+			this.container.removeChild(this.container.querySelector('pre.warning'));
 
-		const
-			parameters = {
-				filter_id: filter.filter_id
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.filterForm),
-			};
-
-		await API.call('reports/filters/update', parameters, options);
-
-		await DataSource.load(true);
-
-		this.load();
+		this.visualizations.selected.container.classList.remove('hidden');
 	}
 
-	async deleteFilter(filter) {
+	error(message) {
 
-		if(!confirm('Are you sure?!'))
-			return;
+		this.resetError();
 
-		const
-			parameters = {
-				filter_id: filter.filter_id,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		await API.call('reports/filters/delete', parameters, options);
-
-		await DataSource.load(true);
-
-		this.load();
-	}
-});
-
-ReportsManger.stages.set('configure-visualization', class ConfigureVisualization extends ReportsMangerStage {
-
-	constructor(page, key) {
-
-		super(page, key);
-
-		this.order = '4';
-		this.title = 'Configure Visualization';
-		this.description = 'Define how the report is visualized';
-
-		this.form = this.container.querySelector('#configure-visualization-form');
-
-		for(const visualization of MetaData.visualizations.values()) {
-			this.form.type.insertAdjacentHTML('beforeend', `
-				<option value="${visualization.slug}">${visualization.name}</option>
-			`);
-		}
-
-		this.form.on('submit', e => this.update(e));
-
-		this.switcher.insertAdjacentHTML('beforeend', `
-			<table id="visualization-list" class="hidden">
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Type</th>
-						<th>Edit</th>
-						<th>Delete</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-				<tfoot>
-					<tr>
-						<td colspan="4"><button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></td>
-					</tr>
-				</tfoot>
-			</table>
+		this.container.insertAdjacentHTML('beforeend', `
+			<pre class="warning">${message}</pre>
 		`);
 
-		this.switcher.querySelector('#visualization-list').on('click', e => {
-			e.stopPropagation();
-		});
-
-		this.switcher.querySelector('#add-visualization').on('click', () => {
-
-			this.addForm.reset();
-
-			this.page.preview.hidden = true;
-			this.switcher.querySelector('#visualization-list').classList.add('hidden');
-
-			Sections.show('add-visualization-picker');
-		});
-
-		this.page.container.querySelector('#visualization-picker-back').on('click', () => {
-
-			Sections.show('stage-configure-visualization');
-
-			this.page.preview.hidden = false;
-		});
-
-		this.addForm = this.page.container.querySelector('#add-visualization-form');
-
-		for(const visualization of MetaData.visualizations.values()) {
-
-			this.addForm.insertAdjacentHTML('beforeend', `
-				<label>
-					<figure>
-						<img src="${visualization.image}"></img>
-						<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp; ${visualization.name}</figcaption>
-					</figure>
-				</label>
-			`);
-		}
-
-		this.addForm.on('submit', e => this.insert(e));
-
-		this.setupConfigurationSetions();
-	}
-
-	setupConfigurationSetions(container) {
-
-		if(!container)
-			container = this.container;
-
-		for(const section of container.querySelectorAll('.configuration-section')) {
-
-			const
-				body = section.querySelector('.body'),
-				h3 = section.querySelector('h3');
-
-			body.classList.add('hidden');
-
-			h3.on('click', () => {
-
-				body.classList.toggle('hidden');
-
-				for(const svg of h3.querySelectorAll('.fa-angle-right, .fa-angle-down'))
-					svg.remove();
-
-				h3.insertAdjacentHTML('afterbegin', body.classList.contains('hidden') ? '<i class="fas fa-angle-right"></i>' : '<i class="fas fa-angle-down"></i>');
-			});
-		}
-	}
-
-	select() {
-
-		if(this._disabled)
-			return;
-
-		if(!this.visualization)
-			super.select();
-
-		else this.switcher.querySelector('#visualization-list').classList.toggle('hidden');
-
-		Sections.show('stage-configure-visualization');
-
-		this.setupVisualizations();
-	}
-
-	get url() {
-		return `${this.key}/${this.visualization ? this.visualization.visualization_id : ''}`;
-	}
-
-	set disabled(disabled) {
-
-		super.disabled = disabled;
-		this.switcher.querySelector('#visualization-list').classList.add('hidden');
-	}
-
-	setupVisualizations() {
-
-		this.report = this.selectedReport;
-
-		if(!this.report)
-			throw new Page.exception('Invalid Report ID');
-
-		const tbody = this.switcher.querySelector('table tbody');
-
-		tbody.textContent = null;
-
-		for(const visualization of this.report.visualizations) {
-
-			const row = document.createElement('tr');
-
-			let type = MetaData.visualizations.get(visualization.type);
-
-			row.innerHTML = `
-				<td>${visualization.name}</td>
-				<td>${type ? type.name : ''}</td>
-				<td class="action configure"><i class="fas fa-cog"></i></td>
-				<td class="action red delete"><i class="far fa-trash-alt"></i></td>
-			`;
-
-			if(this.visualization == visualization)
-				row.classList.add('selected');
-
-			row.querySelector('.configure').on('click', async () => {
-
-				history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
-
-				await this.page.load();
-				this.load();
-			});
-
-			row.querySelector('.delete').on('click', () => this.delete(visualization));
-
-			tbody.appendChild(row);
-		}
-
-		if(!this.report.visualizations.length)
-			tbody.innerHTML = '<tr class="NA"><td colspan="4">No Visualization Found! :(</td></tr>';
-	}
-
-	async load() {
-
-		this.report = this.selectedReport;
-
-		if(!this.report)
-			throw new Page.exception('Invalid Report ID');
-
-		if(!window.location.pathname.includes('configure-visualization')) {
-			this.container.classList.add('hidden');
-			return;
-		} else {
-			this.container.classList.remove('hidden');
-		}
-
-		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
-
-		if(!this.visualization)
-			return;
-
-		if(ConfigureVisualization.types.has(this.visualization.type))
-			this.optionsForm = new (ConfigureVisualization.types.get(this.visualization.type))(this.visualization, this.page, this);
-
-		else throw new Page.Exception(`Unknown visualization type ${this.visualization.type}`);
-
-		this.dashboards = new ReportVisualizationDashboards(this);
-
-		if(typeof this.visualization.options == 'string') {
-
-			try {
-				this.visualization.options = JSON.parse(this.visualization.options) || {};
-			} catch(e) {}
-		}
-
-		if(!this.visualization.options)
-			this.visualization.options = {};
-
-		if(!this.visualization.options.transformations)
-			this.visualization.options.transformations = [];
-
-		this.transformations = new ReportTransformations(this.visualization, this);
-
-		await this.page.preview.load({
-			query_id: this.report.query_id,
-			visualization_id: this.visualization.visualization_id,
-		});
-
-		this.transformations.load();
-
-		this.form.reset();
-
-		this.form.name.value = this.visualization.name;
-		this.form.type.value = this.visualization.type;
-
-		const options = this.container.querySelector('.options');
-
-		options.textContent = null;
-
-		options.appendChild(this.optionsForm.form);
-
-		this.dashboards.load();
-
-		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
-
-		const first = this.container.querySelector('.configuration-section');
-
-		if(first && first.querySelector('.body.hidden'))
-			first.querySelector('h3').click();
-	}
-
-	async insert(e) {
-
-		if(e)
-			e.preventDefault();
-
-		const
-			parameters = {
-				query_id: this.report.query_id,
-				name: this.addForm.type.value[0].toUpperCase() + this.addForm.type.value.slice(1),
-				type: this.addForm.type.value,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		const response = await API.call('reports/visualizations/insert', parameters, options);
-
-		await DataSource.load(true);
-
-		history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
-
-		this.select();
-
-		this.load();
-	}
-
-	async delete(visualization) {
-
-		if(!confirm('Are you sure?'))
-			return;
-
-		const
-			parameters = {
-				visualization_id: visualization.visualization_id,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		const response = await API.call('reports/visualizations/delete', parameters, options);
-
-		await DataSource.load(true);
-
-		this.page.stages.get('pick-report').select();
-	}
-
-	async update(e) {
-
-		if(e)
-			e.preventDefault();
-
-		const
-			parameters = {
-				visualization_id: this.visualization.visualization_id,
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.form),
-			};
-
-		if(this.optionsForm)
-			this.visualization.options = this.optionsForm.json;
-
-		this.visualization.options.transformations = this.transformations.json;
-
-		options.form.set('options', JSON.stringify(this.visualization.options));
-
-		await API.call('reports/visualizations/update', parameters, options);
-
-		await DataSource.load(true);
-
-		this.load();
-	}
-});
-
-class ReportVisualizationDashboards extends Set {
-
-	constructor(stage) {
-
-		super();
-
-		this.stage = stage;
-
-		this.container = this.stage.container.querySelector('#dashboards');
-		this.addForm = this.container.querySelector('#add-dashboard');
-	}
-
-	async load() {
-
-		await this.fetch();
-
-		this.process();
-
-		this.render();
-	}
-
-	async fetch() {
-		this.response = await API.call('dashboards/list')
-	}
-
-	process() {
-
-		this.response = new Map(this.response.map(d => [d.id, d]));
-
-		this.clear();
-
-		for(const dashboard of this.response.values()) {
-
-			for(const report of dashboard.format.reports) {
-
-				if(this.stage.visualization.visualization_id == report.visualization_id)
-					this.add(new ReportVisualizationDashboard(dashboard, this.stage));
-			}
-		}
+		this.visualizations.selected.container.classList.add('hidden');
 	}
 
 	render() {
 
-		this.container.textContent = null;
+		const drilldown = [];
 
-		for(const dashboard of this)
-			this.container.appendChild(dashboard.form);
+		for(const column of this.columns.values()) {
 
-		if(!this.size)
-			this.container.innerHTML = `<div class="NA">No dashboard added yet! :'(</div>`;
+			if(column.drilldown && column.drilldown.query_id)
+				drilldown.push(column.name);
+		}
 
-		this.container.insertAdjacentHTML('beforeend', `
+		if(drilldown.length) {
 
-			<form id="add-dashboard" class="subform form">
+			const
+				actions = this.container.querySelector('header .actions'),
+				old = actions.querySelector('.drilldown');
 
-				<label>
-					<span>Dashboard</span>
-					<select name="dashboard_id"></select>
-				</label>
+			if(old)
+				old.remove();
 
-				<label>
-					<span>Position</span>
-					<input name="position" placeholder="Position" type="number">
-				</label>
-
-				<label>
-					<button type="submit"><i class="fa fa-plus"></i> Add</button>
-				</label>
-			</form>
-		`);
-
-		const form = this.container.querySelector('#add-dashboard');
-
-		for(const dashboard of this.response.values()) {
-
-			form.dashboard_id.insertAdjacentHTML('beforeend',`
-				<option value=${dashboard.id}>
-					${dashboard.name} ${this.response.has(dashboard.parent) ? `(parent: ${this.response.get(dashboard.parent).name})` : ''}
-				</option>
+			actions.insertAdjacentHTML('afterbegin', `
+				<span class="grey drilldown" title="Drilldown available on: ${drilldown.join(', ')}">
+					<i class="fas fa-angle-double-down"></i>
+				</span>
 			`);
 		}
 
-		form.on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
-	}
-
-	static async insert(e, stage) {
-
-		e.preventDefault();
-
-		const form = stage.dashboards.container.querySelector('#add-dashboard');
-
-		if(Array.from(stage.dashboards).some(d => d.id == form.dashboard_id.value))
-			return alert('Cannot add a visualization to a dashboard more than once!');
-
-		const
-			option = {
-				method: 'POST',
-			},
-			parameters = {
-				dashboard_id: form.dashboard_id.value,
-				visualization_id: stage.visualization.visualization_id,
-				format: JSON.stringify({position: parseInt(form.position.value)})
-			};
-
-		await API.call('reports/dashboard/insert', parameters, option);
-		await stage.dashboards.load();
+		this.columns.render();
 	}
 }
 
-class ReportVisualizationDashboard {
+class DataSourceFilters extends Map {
 
-	constructor(dashboard, stage) {
-
-		this.stage = stage;
-
-		for(const key in dashboard)
-			this[key] = dashboard[key];
-
-		[this.visualization] = this.format.reports.filter(v => v.visualization_id == this.stage.visualization.visualization_id);
-	}
-
-	get form() {
-
-		if(this.formContainer)
-			return this.formContainer;
-
-		const form = this.formContainer = document.createElement('form');
-
-		form.classList.add('subform', 'form');
-
-		form.innerHTML = `
-			<label>
-				<span>Dashboard</span>
-				<select name="dashboard_id">
-				</select>
-			</label>
-
-			<label>
-				<span>Position</span>
-				<input type="number" name="position" value="${this.visualization.format.position || ''}">
-			</label>
-
-			<div class="dashboard-action">
-				<label>
-					<button type="submit"><i class="fa fa-save"></i> Save</button>
-				</label>
-
-				<label>
-					<button type="button" class="delete"><i class="far fa-trash-alt"></i> Delete</button>
-				</label>
-			</div>
-		`;
-
-		for(const dashboard of this.stage.dashboards.response.values()) {
-
-			form.dashboard_id.insertAdjacentHTML('beforeend',`
-				<option value=${dashboard.id}>
-					${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
-				</option>
-			`);
-		}
-
-		form.dashboard_id.value = this.visualization.dashboard_id;
-
-		form.querySelector('.delete').on('click', () => this.delete());
-
-		form.on('submit', async e => this.update(e))
-
-		return form;
-	}
-
-	async delete() {
-
-		if(!confirm('Are you sure?'))
-			return;
-
-		const
-			option = {
-				method: 'POST',
-			},
-			parameters = {
-				id: this.visualization.id,
-			};
-
-		await API.call('reports/dashboard/delete', parameters, option);
-		await this.stage.dashboards.load();
-	}
-
-	async update(e) {
-
-		e.preventDefault();
-
-		this.visualization.format.position = parseInt(this.form.position.value);
-
-		const
-			option = {
-				method: 'POST',
-			},
-			parameters = {
-				id: this.visualization.id,
-				dashboard_id: this.form.dashboard_id.value,
-				visualization_id: this.visualization.visualization_id,
-				format: JSON.stringify(this.visualization.format)
-			};
-
-		await API.call('reports/dashboard/update', parameters, option);
-		await this.stage.dashboards.load();
-	}
-}
-
-class ReportTransformations extends Set {
-
-	constructor(visualization, stage) {
+	constructor(source) {
 
 		super();
 
-		this.visualization = visualization;
-		this.stage = stage;
-		this.page = this.stage.page;
-		this.container = this.stage.container.querySelector('#transformations');
+		this.source = source;
 
-		const preview = this.container.parentElement.querySelector('h3 #transformations-preview');
+		if(!this.source.filters || !this.source.filters.length)
+			return;
 
-		preview.removeEventListener('click', ReportTransformations.previewListener);
-		preview.on('click', ReportTransformations.previewListener = e => {
-			e.stopPropagation();
-			this.preview();
-		});
+		for(const filter of this.source.filters)
+			this.set(filter.placeholder, new DataSourceFilter(filter, this.source));
 	}
 
-	load() {
+	get container() {
 
-		this.container.textContent = null;
+		if(this.containerElement)
+			return this.containerElement;
 
-		if(!this.visualization.options)
+		const container = this.containerElement = document.createElement('form');
+
+		container.classList.add('toolbar', 'form', 'filters');
+
+		for(const filter of this.values())
+			container.appendChild(filter.label);
+
+		container.on('submit', e => this.source.visualizations.selected.load(e));
+
+		container.insertAdjacentHTML('beforeend', `
+			<label class="right">
+				<span>&nbsp;</span>
+				<button type="reset">
+					<i class="fa fa-undo"></i> Reset
+				</button>
+			</label>
+			<label>
+				<span>&nbsp;</span>
+				<button type="submit">
+					<i class="fa fa-sync"></i> Submit
+				</button>
+			</label>
+		`);
+
+		return container;
+	}
+}
+
+class DataSourceFilter {
+
+	static setup() {
+
+		DataSourceFilter.types = {
+			1: 'text',
+			0: 'number',
+			2: 'date',
+			3: 'month',
+			4: 'city',
+		};
+
+		DataSourceFilter.placeholderPrefix = 'param_';
+	}
+
+	constructor(filter, source) {
+
+		for(const key in filter)
+			this[key] = filter[key];
+
+		this.source = source;
+
+		if(this.dataset && MetaData.datasets.has(this.dataset))
+			this.dataset = new Dataset(this.dataset, this);
+
+		else this.dataset = null;
+	}
+
+	get label() {
+
+		if(this.labelContainer)
+			return this.labelContainer;
+
+		const container = document.createElement('label');
+
+		let input = document.createElement('input');
+
+		input.type = DataSourceFilter.types[this.type];
+		input.name = this.placeholder;
+
+		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
+			input.max = new Date().toISOString().substring(0, 10);
+
+		input.value = this.value;
+
+		if(this.dataset)
+			input = this.dataset.container;
+
+		container.innerHTML = `<span>${this.name}<span>`;
+
+		container.appendChild(input);
+
+		return this.labelContainer = container;
+	}
+
+	get value() {
+
+		if(this.dataset && this.dataset.query_id)
+			return this.dataset;
+
+		if(this.labelContainer)
+			return this.label.querySelector('input').value;
+
+		let value = this.default_value;
+
+		if(!isNaN(parseFloat(this.offset))) {
+
+			if(DataSourceFilter.types[this.type] == 'date')
+				value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			if(DataSourceFilter.types[this.type] == 'month') {
+				const date = new Date();
+				value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
+			}
+		}
+
+		return value;
+	}
+
+	set value(value) {
+
+		if(this.dataset)
+			return this.dataset.value = value;
+
+		this.label.querySelector('input').value = value;
+	}
+}
+
+class DataSourceRow extends Map {
+
+	constructor(row, source) {
+
+		super();
+
+		for(const key in row)
+			this.set(key, row[key]);
+
+		this.source = source;
+
+		if(!row) {
+			this.annotations = new Set();
+			return;
+		}
+
+		this.clear();
+
+		const
+			columnsList = this.source.columns.list,
+			columnKeys = [...columnsList.keys()];
+
+		for(const [key, column] of columnsList) {
+
+			if(column.formula) {
+
+				let formula = column.formula;
+
+				for(const column of columnsList.values()) {
+
+					if(!formula.includes(column.key))
+						continue;
+
+					let value = parseFloat(row[column.key]);
+
+					if(isNaN(value))
+						value = `'${row[column.key]}'` || '';
+
+					formula = formula.replace(new RegExp(column.key, 'gi'), value);
+				}
+
+				try {
+
+					row[key] = eval(formula);
+
+					if(!isNaN(parseFloat(row[key])))
+						row[key] = parseFloat(row[key]);
+
+				} catch(e) {
+					row[key] = null;
+				}
+			}
+
+			if(column.filtered) {
+
+				if(!row[key])
+					this.skip = true;
+
+				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key] === null ? '' : row[key]))
+					this.skip = true;
+			}
+
+			this.set(key, row[key] || 0);
+		}
+
+		// Sort the row by position of their columns in the source's columns map
+		const values = [...this.entries()].sort((a, b) => columnKeys.indexOf(a[0]) - columnKeys.indexOf(b[0]));
+
+		this.clear();
+
+		for(const [key, value] of values)
+			this.set(key, value);
+
+		this.annotations = new Set();
+	}
+}
+
+class DataSourceColumns extends Map {
+
+	constructor(source) {
+
+		super();
+
+		this.source = source;
+	}
+
+	update(response) {
+
+		if(!this.source.originalResponse.data || !this.source.originalResponse.data.length)
 			return;
 
 		this.clear();
 
-		for(const transformation_ of this.visualization.options.transformations || []) {
-
-			const transformation = new ReportTransformation(transformation_, this.stage);
-
-			this.container.appendChild(transformation.container);
-
-			this.add(transformation);
-		}
-
-		this.container.insertAdjacentHTML('beforeend', `
-			<button type="button" class="add-new-transformation">
-				<i class="fa fa-plus"></i> Add New Transformation
-			</button>
-		`);
-
-		const addNew = this.container.querySelector('.add-new-transformation');
-
-		addNew.on('click', () => {
-
-			const transformation = new ReportTransformation({}, this.stage);
-
-			this.add(transformation);
-			this.container.insertBefore(transformation.container, addNew);
-
-			this.preview();
-		});
+		for(const column in response ? response[0] : this.source.originalResponse.data[0])
+			this.set(column, new DataSourceColumn(column, this.source));
 	}
 
-	get json() {
+	render() {
 
-		const response = [];
+		const container = this.source.container.querySelector('.columns');
 
-		for(const transformation of this)
-			response.push(transformation.json);
+		container.textContent = null;
 
-		return response.filter(a => a);
+		for(const column of this.values())
+			container.appendChild(column.container);
+
+		if(!this.size)
+			container.innerHTML = '&nbsp;';
 	}
 
-	preview() {
+	get list() {
 
-		const report = DataSource.list.get(this.stage.report.query_id);
+		const result = new Map;
 
-		if(!report)
-			return;
+		for(const [key, column] of this) {
 
-		if(!report.transformationVisualization) {
-
-			const visualization = {
-				visualization_id: Math.floor(Math.random() * 1000) + 1000,
-				name: 'Table',
-				type: 'table',
-				options: {}
-			};
-
-			report.visualizations.push(visualization);
-			report.transformationVisualization = visualization;
+			if(!column.disabled)
+				result.set(key, column);
 		}
 
-		report.transformationVisualization.options.transformations = this.json;
-
-		this.page.preview.load({
-			query_id: this.stage.report.query_id,
-			visualization_id: report.transformationVisualization.visualization_id,
-		});
+		return result;
 	}
 }
 
-class ReportTransformation {
+class DataSourceColumn {
 
-	constructor(transformation, stage) {
+	constructor(column, source) {
 
-		this.stage = stage;
-		this.page = this.stage.page;
+		DataSourceColumn.colors = [
+			'#8595e1',
+			'#ef6692',
+			'#d6bcc0',
+			'#ffca05',
+			'#8dd593',
+			'#ff8b75',
+			'#2a0f54',
+			'#d33f6a',
+			'#f0b98d',
+			'#6c54b5',
+			'#bb7784',
+			'#b5bbe3',
+			'#0c8765',
+			'#ef9708',
+			'#1abb9c',
+			'#9da19c',
+		];
 
-		for(const key in transformation)
-			this[key] = transformation[key];
+		DataSourceColumn.searchTypes = [
+			{
+				name: 'Contains',
+				apply: (q, v) => v.toString().toLowerCase().includes(q.toString().toLowerCase()),
+			},
+			{
+				name: 'Not Contains',
+				apply: (q, v) => !v.toString().toLowerCase().includes(q.toString().toLowerCase()),
+			},
+			{
+				name: '=',
+				apply: (q, v) => v.toString().toLowerCase() == q.toString().toLowerCase(),
+			},
+			{
+				name: '!=',
+				apply: (q, v) => v.toString().toLowerCase() != q.toString().toLowerCase(),
+			},
+			{
+				name: '>',
+				apply: (q, v) => v > q,
+			},
+			{
+				name: '<',
+				apply: (q, v) => v < q,
+			},
+			{
+				name: '>=',
+				apply: (q, v) => v >= q,
+			},
+			{
+				name: '<=',
+				apply: (q, v) => v <= q,
+			},
+			{
+				name: 'Regular Expression',
+				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
+			},
+		];
+
+		DataSourceColumn.accumulationTypes = [
+			{
+				name: 'sum',
+				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0)),
+			},
+			{
+				name: 'average',
+				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0) / rows.length),
+			},
+			{
+				name: 'max',
+				apply: (rows, column) => Format.number(Math.max(...rows.map(r => r.get(column)))),
+			},
+			{
+				name: 'min',
+				apply: (rows, column) => Format.number(Math.min(...rows.map(r => r.get(column)))),
+			},
+			{
+				name: 'distinct',
+				apply: (rows, column) => Format.number(new Set(rows.map(r => r.get(column))).size),
+			},
+		];
+
+		this.key = column;
+		this.source = source;
+		this.name = this.key.split('_').map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
+		this.disabled = 0;
+		this.color = DataSourceColumn.colors[this.source.columns.size % DataSourceColumn.colors.length];
+
+		if(this.source.format && this.source.format.columns) {
+
+			const [format] = this.source.format.columns.filter(column => column.key == this.key);
+
+			for(const key in format || {})
+				this[key] = format[key];
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('column');
+
+		container.innerHTML = `
+			<span class="color" style="background: ${this.color}"></span>
+			<span class="name">${this.name}</span>
+
+			<div class="blanket hidden">
+				<form class="block form">
+
+					<h3>Column Properties</h3>
+
+					<label>
+						<span>Key</span>
+						<input type="text" name="key" value="${this.key}" disabled readonly>
+					</label>
+
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" value="${this.name}" >
+					</label>
+
+					<label>
+						<span>Search</span>
+						<div class="search">
+							<select name="searchType"></select>
+							<input type="search" name="searchQuery">
+						</div>
+					</label>
+
+					<label>
+						<span>Type</span>
+						<select name="type">
+							<option value="string">String</option>
+							<option value="number">Number</option>
+							<option value="date">Date</option>
+						</select>
+					</label>
+
+					<label>
+						<span>Color</span>
+						<input type="color" name="color">
+					</label>
+
+					<label>
+						<span>Sort</span>
+						<select name="sort">
+							<option value="-1">None</option>
+							<option value="0">Descending</option>
+							<option value="1">Ascending</option>
+						</select>
+					</label>
+
+					<label>
+						<span>Formula</span>
+						<input type="text" name="formula">
+						<small></small>
+					</label>
+
+					<label>
+						<span>Prefix</span>
+						<input type="text" name="prefix">
+					</label>
+
+					<label>
+						<span>Postfix</span>
+						<input type="text" name="postfix">
+					</label>
+
+					<label>
+						<span>Disabled</span>
+						<select name="disabled">
+							<option value="0">No</option>
+							<option value="1">Yes</option>
+						</select>
+					</label>
+
+					<h3>Drill down</h3>
+
+					<label>
+						<span>Report</span>
+						<select name="drilldown_query_id">
+							<option value=""></option>
+						</select>
+					</label>
+
+					<label>
+						<span>Parameters</span>
+						<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
+					</label>
+
+					<div class="parameter-list"></div>
+
+					<footer>
+
+						<button type="button" class="cancel">
+							<i class="far fa-times-circle"></i> Cancel
+						</button>
+
+						<button type="button" class="apply">
+							<i class="fas fa-check"></i> Apply
+						</button>
+
+						<button type="submit">
+							<i class="fa fa-save"></i> Save
+						</button>
+					</footer>
+				</form>
+			</div>
+		`;
+
+		this.blanket = container.querySelector('.blanket');
+		this.form = this.blanket.querySelector('.form');
+
+		this.form.elements.formula.on('keyup', async () => {
+
+			if(this.formulaTimeout)
+				clearTimeout(this.formulaTimeout);
+
+			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
+		});
+
+		if(user.privileges.has('report')) {
+
+			const edit = document.createElement('a');
+
+			edit.classList.add('edit-column');
+			edit.title = 'Edit Column';
+			edit.on('click', () => this.edit());
+
+			edit.innerHTML = `<i class="fas fa-ellipsis-v"></i>`;
+
+			this.container.appendChild(edit);
+		}
+
+		this.form.on('submit', async e => this.save(e));
+
+		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
+
+		this.form.on('click', e => e.stopPropagation());
+
+		for(const [i, type] of DataSourceColumn.searchTypes.entries()) {
+
+			this.form.searchType.insertAdjacentHTML('beforeend', `
+				<option value="${i}">${type.name}</option>
+			`);
+		}
+
+		for(const report of DataSource.list.values()) {
+
+			this.form.drilldown_query_id.insertAdjacentHTML('beforeend', `
+				<option value="${report.query_id}">${report.name}</option>
+			`);
+		}
+
+		this.form.drilldown_query_id.on('change', () => this.updateDrilldownParamters());
+		this.updateDrilldownParamters();
+
+		let timeout;
+
+		container.querySelector('.name').on('click', async () => {
+
+			clearTimeout(timeout);
+
+			timeout = setTimeout(async () => {
+
+				this.disabled = !this.disabled;
+
+				this.source.columns.render();
+
+				await this.update();
+			}, 300);
+		});
+
+		this.form.querySelector('.add-parameters').on('click', () => {
+			this.addParameterDiv();
+			this.updateDrilldownParamters();
+		});
+
+		this.form.querySelector('.cancel').on('click', () => this.blanket.classList.add('hidden'));
+		this.form.querySelector('.apply').on('click', () => this.apply());
+
+		container.querySelector('.name').on('dblclick', async (e) => {
+
+			clearTimeout(timeout);
+
+			for(const column of this.source.columns.values()) {
+
+				if(column.key == this.key || (this.source.visualizations.selected.axes && column.key == this.source.visualizations.selected.axes.bottom.column))
+					continue;
+
+				column.disabled = true;
+				column.source.columns.render();
+				await column.update();
+			}
+
+			this.disabled = false;
+
+			this.source.columns.render();
+
+			await this.update();
+		})
+
+		this.setDragAndDrop();
+
+		return container;
+	}
+
+	edit() {
+
+		for(const key in this) {
+
+			if(key in this.form)
+				this.form[key].value = this[key];
+		}
+
+		if(this.drilldown) {
+
+			this.form.querySelector('.parameter-list').textContent = null;
+
+			this.form.drilldown_query_id.value = this.drilldown ? this.drilldown.query_id : '';
+
+			for(const param of this.drilldown.parameters || [])
+				this.addParameterDiv(param);
+
+			this.updateDrilldownParamters();
+		}
+
+		this.blanket.classList.remove('hidden');
+	}
+
+	addParameterDiv(parameter = {}) {
+
+		const container = document.createElement('div');
+
+		container.innerHTML = `
+			<label>
+				<span>Filter</span>
+				<select name="placeholder" value="${parameter.placeholder || ''}"></select>
+			</label>
+
+			<label>
+				<span>Type</span>
+				<select name="type" value="${parameter.type || ''}">
+					<option value="column">Column</option>
+					<option value="filter">Filter</option>
+					<option value="static">Custom</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Value</span>
+				<select name="value" value="${parameter.value || ''}"></select>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button type="button" class="delete">
+					<i class="far fa-trash-alt"></i> Delete
+				</button>
+			</label>
+		`;
+
+		container.classList.add('parameter');
+
+		const parameterList = this.form.querySelector('.parameter-list');
+
+		parameterList.appendChild(container);
+
+		container.querySelector('select[name=type]').on('change', () => this.updateDrilldownParamters(true));
+
+		container.querySelector('.delete').on('click', () => {
+			parameterList.removeChild(container);
+		});
+
+		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
+	}
+
+	updateDrilldownParamters(updatingType) {
+
+		const
+			parameterList = this.form.querySelector('.parameter-list'),
+			parameters = parameterList.querySelectorAll('.parameter'),
+			report = DataSource.list.get(parseInt(this.form.drilldown_query_id.value));
+
+		if(report && report.filters.length) {
+
+			for(const parameter of parameters) {
+
+				const
+					placeholder = parameter.querySelector('select[name=placeholder]'),
+					type = parameter.querySelector('select[name=type]'),
+					value = parameter.querySelector('select[name=value]');
+
+				placeholder.textContent = null;
+
+				for(const filter of report.filters)
+					placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+
+				if(placeholder.getAttribute('value'))
+					placeholder.value = placeholder.getAttribute('value');
+
+				if(!updatingType && type.getAttribute('value'))
+					type.value = type.getAttribute('value');
+
+				value.textContent = null;
+
+				if(type.value == 'column') {
+
+					for(const column of this.source.columns.list.values())
+						value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+				}
+
+				else if(type.value == 'filter') {
+
+					for(const filter of this.source.filters.values())
+						value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+				}
+
+				if(value.getAttribute('value'))
+					value.value = value.getAttribute('value');
+			}
+		}
+
+		else parameterList.textContent = null;
+
+		parameterList.classList.toggle('hidden', !parameters.length || !report || !report.filters.length);
+		this.form.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
+	}
+
+	async apply() {
+
+		for(const element of this.form.elements)
+			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+
+		this.container.querySelector('.name').textContent = this.name;
+		this.container.querySelector('.color').style.background = this.color;
+		await this.source.visualizations.selected.render();
+		this.blanket.classList.add('hidden');
+	}
+
+	async save(e) {
+
+		if(e)
+			e.preventDefault();
+
+		if(!this.source.format)
+			this.source.format = {};
+
+		if(!this.source.format.columns)
+			this.source.format.columns = [];
+
+		let
+			response,
+			updated = 0,
+			json_param = [];
+
+		for(const element of this.form.elements)
+			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+
+		for(const row of this.form.querySelectorAll('.parameter')) {
+
+			let param_json = {};
+
+			for(const select of row.querySelectorAll('select'))
+				param_json[select.name] = select.value;
+
+			json_param.push(param_json);
+		}
+
+		response = {
+			key : this.key,
+			name : this.name,
+			type : this.type,
+			disabled : this.disabled,
+			color : this.color,
+			searchType : this.searchType,
+			searchQuery : this.searchQuery,
+			sort : this.sort,
+			prefix : this.prefix,
+			postfix : this.postfix,
+			formula : this.formula,
+			drilldown : {
+				query_id : this.drilldown_query_id,
+				parameters : json_param
+			}
+		};
+
+		for(const [i, column] of this.source.format.columns.entries()) {
+
+			if(column.key == this.key) {
+				this.source.format.columns[i] = response;
+				updated = 1;
+				break;
+			}
+		}
+
+		if(updated == 0) {
+			this.source.format.columns.push(response);
+		}
+
+		const
+			parameters = {
+				query_id : this.source.query_id,
+				format : JSON.stringify(this.source.format),
+			},
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('reports/report/update', parameters, options);
+		await this.apply();
+
+		this.blanket.classList.add('hidden');
+	}
+
+	async update() {
+
+		this.render();
+
+		this.blanket.classList.add('hidden');
+
+		//this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
+
+		this.source.columns.render();
+		await this.source.visualizations.selected.render();
+	}
+
+	render() {
+
+		this.container.querySelector('.name').textContent = this.name;
+
+		this.container.classList.toggle('disabled', this.disabled);
+		this.container.classList.toggle('filtered', this.filtered ? true : false);
+	}
+
+	validateFormula() {
+
+		let formula = this.form.elements.formula.value;
+
+		for(const column of this.source.columns.values()) {
+
+			if(formula.includes(column.key))
+				formula = formula.replace(new RegExp(column.key, 'gi'), 1);
+		}
+
+		try {
+			eval(formula);
+		}
+
+		catch(e) {
+
+			this.form.elements.formula.classList.add('error');
+			this.form.elements.formula.parentElement.querySelector('small').textContent = e.message;
+
+			return;
+		}
+
+		this.form.elements.formula.classList.remove('error');
+		this.form.elements.formula.parentElement.querySelector('small').innerHTML = '&nbsp;';
+	}
+
+	setDragAndDrop() {
+
+		const container = this.container;
+
+		container.setAttribute('draggable', 'true');
+
+		container.on('dragstart', e => {
+			this.source.columns.beingDragged = this;
+			e.effectAllowed = 'move';
+			container.classList.add('being-dragged');
+			this.source.container.querySelector('.columns').classList.add('being-dragged');
+		});
+
+		container.on('dragend', () => {
+			container.classList.remove('being-dragged');
+			this.source.container.querySelector('.columns').classList.remove('being-dragged');
+		});
+
+		container.on('dragenter', e => {
+			container.classList.add('drag-enter');
+		});
+
+		container.on('dragleave', () =>  {
+			container.classList.remove('drag-enter');
+		});
+
+		// To make the targate droppable
+		container.on('dragover', e => e.preventDefault());
+
+		container.on('drop', e => {
+
+			container.classList.remove('drag-enter');
+
+			if(this.source.columns.beingDragged == this)
+				return;
+
+			this.source.columns.delete(this.source.columns.beingDragged.key);
+
+			const columns = [...this.source.columns.values()];
+
+			this.source.columns.clear();
+
+			for(const column of columns) {
+
+				if(column == this)
+					this.source.columns.set(this.source.columns.beingDragged.key, this.source.columns.beingDragged);
+
+				this.source.columns.set(column.key, column);
+			}
+
+			this.source.visualizations.selected.render();
+			this.source.columns.render();
+		});
+	}
+
+	async initiateDrilldown(row) {
+
+		if(!this.drilldown || !parseInt(this.drilldown.query_id) || !this.drilldown.parameters)
+			return;
+
+		let destination = DataSource.list.get(parseInt(this.drilldown.query_id));
+
+		if(!destination)
+			return;
+
+		destination = new DataSource(destination);
+
+		const destinationDatasets = [];
+
+		for(const filter of destination.filters.values()) {
+
+			if(filter.dataset)
+				destinationDatasets.push(filter.dataset.load());
+		}
+
+		await Promise.all(destinationDatasets);
+
+		for(const parameter of this.drilldown.parameters) {
+
+			if(!destination.filters.has(parameter.placeholder))
+				continue;
+
+			const filter = destination.filters.get(parameter.placeholder);
+
+			let value;
+
+			if(parameter.type == 'column')
+				value = row.get(parameter.value);
+
+			else if(parameter.type == 'filter')
+				value = this.source.filters.get(parameter.value).value;
+
+			else if(parameter.type == 'static')
+				value = parameter.value;
+
+			filter.value = value;
+			parameter.selectedValue = value;
+		}
+
+		destination.drilldown = {
+			...this.drilldown,
+			parent: this.source,
+		};
+
+		destination.container.setAttribute('style', this.source.container.getAttribute('style'));
+
+		const parent = this.source.container.parentElement;
+
+		parent.removeChild(this.source.container);
+		parent.appendChild(destination.container);
+
+		destination.container.querySelector('.drilldown').classList.remove('hidden');
+
+		destination.visualizations.selected.load();
+	}
+
+	get search() {
+
+		if(this.searchContainer)
+			return this.searchContainer;
+
+		const
+			container = this.searchContainer = document.createElement('th'),
+			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join('');
+
+		container.innerHTML = `
+			<div>
+				<select class="search-type">${searchTypes}</select>
+				<input type="search" class="query" placeholder="${this.name}">
+			</div>
+		`;
+
+		const
+			select = container.querySelector('.search-type'),
+			query = container.querySelector('.query');
+
+		select.on('change', () => {
+			this.searchType = select.value;
+			this.searchQuery = query.value;
+			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
+			this.accumulation.run();
+			this.source.visualizations.selected.render();
+			setTimeout(() => select.focus());
+		});
+
+		query.on('keyup', () => {
+			this.searchType = select.value;
+			this.searchQuery = query.value;
+			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
+			this.accumulation.run();
+			this.source.visualizations.selected.render();
+			setTimeout(() => query.focus());
+		});
+
+		return container;
+	}
+
+	get accumulation() {
+
+		if(this.accumulationContainer)
+			return this.accumulationContainer;
+
+		const
+			container = this.accumulationContainer = document.createElement('th'),
+			accumulationTypes = DataSourceColumn.accumulationTypes.map((type, i) => `
+				<option>${type.name}</option>
+			`).join('');
+
+		container.innerHTML = `
+			<div>
+				<select>
+					<option>&#402;</option>
+					${accumulationTypes}
+				</select>
+				<span class="result"></span>
+			</div>
+		`;
+
+		const
+			select = container.querySelector('select'),
+			result = container.querySelector('.result');
+
+		select.on('change', () => container.run());
+
+		container.run = () => {
+
+			const
+				data = this.source.response,
+				accumulation = DataSourceColumn.accumulationTypes.filter(a => a.name == select.value);
+
+			if(select.value && accumulation.length) {
+
+				const value = accumulation[0].apply(data, this.key);
+
+				result.textContent = value == 'NaN' ? '' : value;
+			}
+
+			else result.textContent = '';
+		}
+
+		return container;
+	}
+
+	get heading() {
+
+		if(this.headingContainer)
+			return this.headingContainer;
+
+		const container = this.headingContainer = document.createElement('th');
+
+		container.classList.add('heading');
+
+		container.innerHTML = `
+			${this.drilldown && this.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
+			<span class="name">${this.name}</span>
+			<span class="sort"><i class="fa fa-sort"></i></span>
+		`;
+
+		container.on('click', () => {
+			this.source.columns.sortBy = this;
+			this.sort = !this.sort;
+			this.source.visualizations.selected.render();
+		});
+
+		return container;
+	}
+}
+
+class DataSourcePostProcessors {
+
+	constructor(source) {
+
+		this.source = source;
+
+		this.list = new Map;
+
+		for(const [key, processor] of DataSourcePostProcessors.processors)
+			this.list.set(key, new processor(this.source, key));
+
+		if(source.postProcessor && this.list.has(source.postProcessor.name))
+			this.selected = this.list.get(source.postProcessor.name);
 	}
 
 	get container() {
@@ -1906,628 +1722,3916 @@ class ReportTransformation {
 			return this.containerElement;
 
 		const
-			container = this.containerElement = document.createElement('div'),
-			rows = document.createElement('div'),
-			columns = document.createElement('div'),
-			values = document.createElement('div');
+			container = this.containerElement = document.createDocumentFragment(),
+			processors = document.createElement('select');
 
-		container.classList.add('transformation');
+		processors.classList.add('postprocessors', 'hidden');
 
-		rows.classList.add('rows');
-		columns.classList.add('columns');
-		values.classList.add('values');
+		for(const [key, processor] of this.list) {
 
-		rows.innerHTML = `<h4>Rows</h4>`;
-		columns.innerHTML = `<h4>Columns</h4>`;
-		values.innerHTML = `<h4>Values</h4>`;
+			processors.insertAdjacentHTML('beforeend', `<option value="${key}">${processor.name}</option>`);
 
-		for(const row of this.rows || [])
-			rows.appendChild(this.row(row));
-
-		const addRow = document.createElement('button');
-
-		addRow.type = 'button';
-		addRow.innerHTML = `<i class="fa fa-plus"></i> Add New Row`;
-		addRow.on('click', () => rows.insertBefore(this.row(), addRow));
-
-		rows.appendChild(addRow);
-
-		for(const column of this.columns || [])
-			columns.appendChild(this.column(column));
-
-		const addColumn = document.createElement('button');
-
-		addColumn.type = 'button';
-		addColumn.innerHTML = `<i class="fa fa-plus"></i> Add New Column`;
-		addColumn.on('click', () => columns.insertBefore(this.column(), addColumn));
-
-		columns.appendChild(addColumn);
-
-		for(const value of this.values || [])
-			values.appendChild(this.value(value));
-
-		const addValue = document.createElement('button');
-
-		addValue.type = 'button';
-		addValue.innerHTML = `<i class="fa fa-plus"></i> Add New Value`;
-		addValue.on('click', () => values.insertBefore(this.value(), addValue));
-
-		values.appendChild(addValue);
-
-		container.appendChild(rows);
-		container.appendChild(columns);
-		container.appendChild(values);
-
-		return container;
-	}
-
-	get json() {
-
-		const response = {
-			type: 'pivot',
-			rows: [],
-			columns: [],
-			values: [],
-		};
-
-		for(const row of this.container.querySelectorAll('.row')) {
-			response.rows.push({
-				column: row.querySelector('*[name=column]').value,
-			});
+			container.appendChild(processor.container);
 		}
 
-		for(const column of this.container.querySelectorAll('.column')) {
-			response.columns.push({
-				column: column.querySelector('*[name=column]').value,
-			});
+		if(this.selected) {
+			processors.value = this.selected.key;
+			this.selected.container.classList.remove('hidden');
 		}
 
-		for(const value of this.container.querySelectorAll('.value')) {
-			response.values.push({
-				column: value.querySelector('*[name=column]').value,
-				function: value.querySelector('select[name=function]').value
-			});
-		}
+		processors.on('change', () => {
 
-		if(!response.rows.length && !response.columns.length && !response.values.length)
-			return null;
+			this.selected = this.list.get(processors.value);
 
-		return response;
-	}
+			for(const [key, processor] of this.list)
+				processor.container.classList.toggle('hidden', key == 'Orignal' || key != processors.value);
 
-	row(row = {}) {
-
-		const container = document.createElement('div');
-
-		container.classList.add('row');
-
-		if(this.page.preview.report.originalResponse) {
-
-			container.innerHTML = `<select name="column"></select>`;
-
-			const select = container.querySelector('select');
-
-			for(const column in this.page.preview.report.originalResponse.data[0])
-				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-			select.value = row.column;
-
-		} else {
-			container.innerHTML = `<input type="text" name="column" value="${row.column || ''}">`;
-		}
-
-		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
-
-		container.querySelector('button').on('click', e => {
-			e.stopPropagation();
-			container.remove();
+			this.source.visualizations.selected.render();
 		});
 
-		return container;
-	}
-
-	column(column = {}) {
-
-		const container = document.createElement('div');
-
-		container.classList.add('column');
-
-		if(this.page.preview.report.originalResponse) {
-
-			container.innerHTML = `<select name="column"></select>`;
-
-			const select = container.querySelector('select');
-
-			for(const column in this.page.preview.report.originalResponse.data[0])
-				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-			select.value = column.column;
-
-		} else {
-			container.innerHTML = `<input type="text" name="column" value="${column.column || ''}">`;
-		}
-
-		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
-
-		container.querySelector('button').on('click', () => container.remove());
+		container.appendChild(processors);
 
 		return container;
 	}
 
-	value(value = {}) {
+	update() {
 
-		const container = document.createElement('div');
+		const container = this.source.container.querySelector('.postprocessors');
 
-		container.classList.add('value');
+		if(container)
+			container.classList.toggle('hidden', !this.source.columns.has('timing'));
+	}
+}
 
+class DataSourcePostProcessor {
 
-		if(this.page.preview.report.originalResponse) {
+	constructor(source, key) {
+		this.source = source;
+		this.key = key;
+	}
 
-			container.innerHTML = `<select name="column"></select>`;
+	get container() {
 
-			const select = container.querySelector('select');
+		if(this.containerElement)
+			return this.containerElement;
 
-			for(const column in this.page.preview.report.originalResponse.data[0])
-				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+		const container = this.containerElement = document.createElement('select');
 
-			select.value = value.column;
+		container.classList.add('hidden');
 
-		} else {
-			container.innerHTML = `<input type="text" name="column" value="${value.column || ''}">`;
-		}
+		for(const [value, name] of this.domain)
+			container.insertAdjacentHTML('beforeend', `<option value="${value}">${name}</option>`);
 
-		container.insertAdjacentHTML('beforeend',`
-			<select name="function">
-				<option value="sum">Sum</option>
-				<option value="count">Count</option>
-				<option value="distinctcount">Distinct Count</option>
-				<option value="values">Values</option>
-				<option value="distinctvalues">Distinct Values</option>
-				<option value="max">Max</option>
-				<option value="min">Min</option>
-				<option value="average">Average</option>
-			</select>
-			<button type="button"><i class="far fa-trash-alt"></i></button>
-		`);
+		if(this.source.postProcessor && this.source.postProcessor.value && this.source.postProcessors.selected == this)
+			container.value = this.source.postProcessor.value;
 
-		if(value.function)
-			container.querySelector('select[name=function]').value = value.function;
-
-		container.querySelector('button').on('click', () => container.remove());
+		container.on('change', () => this.source.visualizations.selected.render());
 
 		return container;
 	}
 }
 
-class ReportVisualizationOptions {
+class DataSourceTransformations extends Set {
 
-	constructor(visualization, page, stage) {
-		this.visualization = visualization;
-		this.page = page;
-		this.stage = stage;
+	constructor(source) {
+
+		super();
+
+		this.source = source;
 	}
 
-	get form() {
-		return document.createElement('form');
-	}
+	run(response) {
 
-	get json() {
-		return {};
-	}
-}
-
-class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
-
-	get form() {
-
-		const container = this.formContainer = document.createElement('div');
-
-		container.innerHTML = `
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Axes</h3>
-				<div class="options form body">
-					<div class="axes"></div>
-					<button class="add-axis" type="button">
-						<i class="fa fa-plus"></i> Add New Axis
-					</button>
-				</div>
-			</div>
-
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="options form body">
-					<div class="legend">
-						<label>
-							<span>
-								<input type="checkbox" name="lagend">Show Legend.
-							</span>
-						</label>
-					</div>
-				</div>
-			</div>
-		`;
-
-		this.stage.setupConfigurationSetions(container);
-
-		const axes = container.querySelector('.axes');
-
-		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : [])
-			axes.appendChild(this.axis(axis));
-
-		if(this.visualization.options && this.visualization.options.legend)
-			container.querySelector('.legend input').checked = this.visualization.options.legend;
-
-		container.querySelector('.add-axis').on('click', () => {
-			axes.appendChild(this.axis());
-		});
-
-		return container;
-	}
-
-	get json() {
-
-		const response = {
-			axes: [],
-			legend: this.formContainer.querySelector('.legend input').checked,
-		};
-
-		for(const axis of this.formContainer.querySelectorAll('.axis')) {
-
-			const columns = [];
-
-			for(const option of axis.querySelectorAll('select[name=columns] option:checked'))
-				columns.push({key: option.value});
-
-			response.axes.push({
-				position: axis.querySelector('select[name=position]').value,
-				label: axis.querySelector('input[name=label]').value,
-				columns,
-			});
-		}
-
-		return response;
-	}
-
-	axis(axis = {}) {
-
-		const container = document.createElement('div');
-
-		container.classList.add('axis', 'subform');
-
-		container.innerHTML = `
-			<label>
-				<span>Position</span>
-				<select name="position" value="${axis.position}">
-					<option value="top">Top</option>
-					<option value="right">Right</option>
-					<option value="bottom">Bottom</option>
-					<option value="left">Left</option>
-				</select>
-			</label>
-
-			<label>
-				<span>Label</span>
-				<input type="text" name="label" value="${axis.label || ''}">
-			</label>
-
-			<label>
-				<span>Columns</span>
-				<select name="columns" multiple></select>
-			</label>
-
-			<label>
-				<button class="delete" type="button">
-					<i class="far fa-trash-alt"></i> Delete
-				</button>
-			</label>
-		`;
-
-		const columns = container.querySelector('select[name=columns]');
-
-		for(const [key, column] of this.page.preview.report.columns) {
-
-			columns.insertAdjacentHTML('beforeend', `
-				<option value="${key}" ${axis.columns && axis.columns.some(c => c.key == key) ? 'selected' : ''}>${column.name}</option>
-			`)
-		}
-
-		container.querySelector('select[name=position]').value = axis.position;
-
-		container.querySelector('.delete').on('click', () => container.parentElement && container.parentElement.removeChild(container));
-
-		return container;
-	}
-}
-
-const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
-
-ConfigureVisualization.types = new Map;
-
-ConfigureVisualization.types.set('table', class TableOptions extends ReportVisualizationOptions {
-});
-
-ConfigureVisualization.types.set('line', class LineOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('scatter', class ScatterOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('dualaxisbar', class DualAxisBarOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('stacked', class StackedOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('area', class AreaOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualizationOptions {
-});
-
-ConfigureVisualization.types.set('funnel', class FunnelOptions extends ReportVisualizationOptions {
-});
-
-ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends ReportVisualizationOptions {
-});
-
-ConfigureVisualization.types.set('cohort', class CohortOptions extends ReportVisualizationOptions {
-});
-
-ConfigureVisualization.types.set('json', class JSONOptions extends ReportVisualizationOptions {
-});
-
-ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportVisualizationOptions {
-
-	get form() {
-
-		if(this.formContainer)
-			return this.formContainer;
-
-		const container = this.formContainer = document.createElement('div');
-
-		container.classList.add('subform');
-
-		container.innerHTML = `
-			<label>
-				<span>Column</span>
-				<select name="column"></select>
-			</label>
-
-			<label>
-				<span>Type</span>
-				<select name="valueType">
-					<option value="text">Text</option>
-					<option value="number">Number</option>
-					<option value="date">Date</option>
-				</select>
-			</label>
-
-			<label>
-				<span>Prefix</span>
-				<input type="text" name="prefix" value="${(this.visualization.options && this.visualization.options.prefix) || ''}">
-			</label>
-
-			<label>
-				<span>Postfix</span>
-				<input type="text" name="postfix" value="${(this.visualization.options && this.visualization.options.postfix) || ''}">
-			</label>
-		`;
+		this.clear();
 
 		const
-			columnSelect = container.querySelector('select[name=column]'),
-			valueType = container.querySelector('select[name=valueType]');
+			visualization = this.source.visualizations.selected,
+			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
 
-		for(const [key, column] of this.report.columns) {
+		for(const transformation of transformations)
+			this.add(new DataSourceTransformation(transformation, this.source));
 
-			columnSelect.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
+		response = JSON.parse(JSON.stringify(response));
+
+		for(const transformation of this)
+			response = transformation.run(response);
+
+		if(this.size) {
+			this.source.columns.update(response);
+			this.source.columns.render();
 		}
 
-		columnSelect.value = (this.visualization.options && this.visualization.options.column) || '';
-		valueType.value = (this.visualization.options && this.visualization.options.valueType) || '';
+		return response;
+	}
+}
 
-		return container;
+class DataSourceTransformation {
+
+	constructor(transformation, source) {
+
+		this.source = source;
+
+		for(const key in transformation)
+			this[key] = transformation[key];
 	}
 
-	get json() {
+	run(response = []) {
 
-		return {
-			column: this.form.querySelector('select[name=column]').value,
-			valueType: this.form.querySelector('select[name=valueType]').value,
-			prefix: this.form.querySelector('input[name=prefix]').value,
-			postfix: this.form.querySelector('input[name=postfix]').value,
-		}
-	}
-});
+		if(!response || !response.length || !this.rows || this.rows.length != 1)
+			return response;
 
-ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationOptions {
+		const
+			[{column: groupColumn}] = this.columns.length ? this.columns : [{}],
+			[{column: groupRow}] = this.rows;
 
-	get form() {
+		if(!groupRow)
+			return response;
 
-		if (this.formContainer)
-			return this.formContainer;
+		const
+			columns = new Set,
+			rows = new Map;
 
-		const container = this.formContainer = document.createElement('form');
+		if(groupColumn) {
 
-		container.classList.add('form');
-
-		container.innerHTML = `
-			<label>
-				<span>Column</span>
-				<select name="timing"></select>
-			</label>
-
-			<label>
-				<span>Value</span>
-				<select name="value"></select>
-			</label>
-
-			<label>
-				<span>Invert Values</span>
-				<select name="invertValues">
-					<option value="1">Yes</option>
-					<option value="0">No</option>
-				</select>
-			</label>
-
-			<label>
-				<span>Prefix</span>
-				<input type="text" name="prefix">
-			</label>
-
-			<label>
-				<span>Postfix</span>
-				<input type="text" name="postfix">
-			</label>
-
-			<h4>Boxes</h4>
-			<div id="config-boxes"></div>
-			<button class="add-box" type="button">
-				<i class="fa fa-plus"></i> Add New Box
-			</button>
-		`;
-
-		const timing = container.querySelector('select[name=timing]');
-		const value = container.querySelector('select[name=value]');
-
-		for (const [key, column] of this.report.columns) {
-
-			timing.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-
-			value.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-		}
-
-		if (this.visualization.options) {
-			timing.value = this.visualization.options.timingColumn;
-			value.value = this.visualization.options.valueColumn;
-			this.form.querySelector('select[name=invertValues]').value = this.visualization.options.invertValues;
-			this.form.querySelector('input[name=prefix]').value = this.visualization.options.prefix;
-			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
-
-			for (let box of this.visualization.options.boxes) {
-				container.appendChild(this.box(box));
+			for(const row of response) {
+				if(!columns.has(row[groupColumn]))
+					columns.add(row[groupColumn]);
 			}
 		}
 
-		container.querySelector('.add-box').on('click', () => {
-			container.appendChild(this.box());
+		for(const responseRow of response) {
+
+			if(!rows.get(responseRow[groupRow]))
+				rows.set(responseRow[groupRow], new Map);
+
+			const row = rows.get(responseRow[groupRow]);
+
+			if(groupColumn) {
+
+				for(const column of columns) {
+
+					if(!row.has(column))
+						row.set(column, []);
+
+					if(responseRow[groupColumn] != column)
+						continue;
+
+					row.get(column).push(responseRow[this.values[0].column]);
+				}
+			} else {
+
+				for(const value of this.values || []) {
+
+					if(!(value.column in responseRow))
+						continue;
+
+					if(!row.has(value.column))
+						row.set(value.column, []);
+
+					row.get(value.column).push(responseRow[value.column])
+				}
+			}
+		}
+
+		const newResponse = [];
+
+		for(const [groupRowValue, row] of rows) {
+
+			const newRow = {};
+
+			newRow[groupRow] = groupRowValue;
+
+			for(const [groupColumnValue, values] of row) {
+
+				let
+					value = null,
+					function_ = null;
+
+				if(groupColumn)
+					function_ = this.values[0].function;
+
+				else {
+
+					for(const value of this.values) {
+						if(value.column == groupColumnValue)
+							function_ = value.function;
+					}
+				}
+
+				switch(function_) {
+
+					case 'sum':
+						value = values.reduce((sum, value) => sum += parseFloat(value), 0);
+						break;
+
+					case 'count':
+						value = values.length;
+						break;
+
+					case 'distinctcount':
+						value = new Set(values).size;
+						break;
+
+					case 'max':
+						value = Math.max(...values);
+						break;
+
+					case 'min':
+						value = Math.min(...values);
+						break;
+
+					case 'average':
+						value = Math.floor(values.reduce((sum, value) => sum += parseFloat(value), 0) / values.length * 100) / 100;
+						break;
+
+					case 'values':
+						value = values.join(', ');
+						break;
+
+					case 'distinctvalues':
+						value = Array.from(new Set(values)).join(', ');
+						break;
+
+					default:
+						value = values.length;
+				}
+
+				newRow[groupColumnValue] = value;
+			}
+
+			newResponse.push(newRow);
+		}
+
+		return newResponse;
+	}
+}
+
+DataSourcePostProcessors.processors = new Map;
+
+DataSourcePostProcessors.processors.set('Orignal', class extends DataSourcePostProcessor {
+
+	get name() {
+		return 'No Filter';
+	}
+
+	get domain() {
+		return new Map();
+	}
+
+	processor(response) {
+		return response;
+	}
+});
+
+DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostProcessor {
+
+	get name() {
+		return 'Weekday';
+	}
+
+	get domain() {
+		return new Map([
+			[0, 'Sunday'],
+			[1, 'Monday'],
+			[2, 'Tuesday'],
+			[3, 'Wednesday'],
+			[4, 'Thursday'],
+			[5, 'Friday'],
+			[6, 'Saturday'],
+		]);
+	}
+
+	processor(response) {
+		return response.filter(r => new Date(r.get('timing')).getDay() == this.container.value)
+	}
+});
+
+DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePostProcessor {
+
+	get name() {
+		return 'Collapse To';
+	}
+
+	get domain() {
+
+		return new Map([
+			['week', 'Week'],
+			['month', 'Month'],
+		]);
+	}
+
+	processor(response) {
+
+		const result = new Map;
+
+		for(const row of response) {
+
+			let period;
+
+			const periodDate = new Date(row.get('timing'));
+
+			// Week starts from monday, not sunday
+			if(this.container.value == 'week')
+				period = periodDate.getDay() ? periodDate.getDay() - 1 : 6;
+
+			else if(this.container.value == 'month')
+				period = periodDate.getDate() - 1;
+
+			const timing = new Date(Date.parse(row.get('timing')) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			if(!result.has(timing)) {
+
+				result.set(timing, new DataSourceRow(null, this.source));
+
+				let newRow = result.get(timing);
+
+				for(const key of row.keys())
+					newRow.set(key, 0);
+			}
+
+			const newRow = result.get(timing);
+
+			for(const [key, value] of row) {
+
+				if(!isNaN(value))
+					newRow.set(key, newRow.get(key) + parseFloat(value));
+
+				else newRow.set(key, value);
+			}
+
+			newRow.set('timing', row.get('timing'));
+
+			// Copy over any annotations from the old row
+			for(const annotation of row.annotations) {
+				annotation.row = newRow;
+				newRow.annotations.add(annotation);
+			}
+		}
+
+		return Array.from(result.values());
+	}
+});
+
+DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSourcePostProcessor {
+
+	get name() {
+		return 'Rolling Average';
+	}
+
+	get domain() {
+
+		return new Map([
+			[7, '7 Days'],
+			[14, '14 Days'],
+			[30, '30 Days'],
+		]);
+	}
+
+	processor(response) {
+
+		const
+			result = new Map,
+			copy = new Map;
+
+		for(const row of response)
+			copy.set(Date.parse(row.get('timing')), row);
+
+		for(const [timing, row] of copy) {
+
+			if(!result.has(timing)) {
+
+				result.set(timing, new DataSourceRow(null, this.source));
+
+				let newRow = result.get(timing);
+
+				for(const key of row.keys())
+					newRow.set(key, 0);
+			}
+
+			const newRow = result.get(timing);
+
+			for(let i = 0; i < this.container.value; i++) {
+
+				const element = copy.get(timing - i * 24 * 60 * 60 * 1000);
+
+				if(!element)
+					continue;
+
+				for(const [key, value] of newRow)
+					newRow.set(key,  value + (element.get(key) / this.container.value));
+			}
+
+			newRow.set('timing', row.get('timing'));
+
+			// Copy over any annotations from the old row
+			for(const annotation of row.annotations) {
+				annotation.row = newRow;
+				newRow.annotations.add(annotation);
+			}
+		}
+
+		return Array.from(result.values());
+	}
+});
+
+DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePostProcessor {
+
+	get name() {
+		return 'Rolling Sum';
+	}
+
+	get domain() {
+
+		return new Map([
+			[7, '7 Days'],
+			[14, '14 Days'],
+			[30, '30 Days'],
+		]);
+	}
+
+	processor(response) {
+
+		const
+			result = new Map,
+			copy = new Map;
+
+		for(const row of response)
+			copy.set(Date.parse(row.get('timing')), row);
+
+		for(const [timing, row] of copy) {
+
+			if(!result.has(timing)) {
+
+				result.set(timing, new DataSourceRow(null, this.source));
+
+				let newRow = result.get(timing);
+
+				for(const key of row.keys())
+					newRow.set(key, 0);
+			}
+
+			const newRow = result.get(timing);
+
+			for(let i = 0; i < this.container.value; i++) {
+
+				const element = copy.get(timing - i * 24 * 60 * 60 * 1000);
+
+				if(!element)
+					continue;
+
+				for(const [key, value] of newRow)
+					newRow.set(key,  value + element.get(key));
+			}
+
+			newRow.set('timing', row.get('timing'));
+
+			// Copy over any annotations from the old row
+			for(const annotation of row.annotations) {
+				annotation.row = newRow;
+				newRow.annotations.add(annotation);
+			}
+		}
+
+		return Array.from(result.values());
+	}
+});
+
+class Visualization {
+
+	constructor(visualization, source) {
+
+		for(const key in visualization)
+			this[key] = visualization[key];
+
+		this.id = Math.floor(Math.random() * 100000);
+
+		this.source = source;
+
+		try {
+			this.options = JSON.parse(this.options);
+		} catch(e) {}
+
+		for(const key in this.options)
+			this[key] = this.options[key];
+	}
+
+	render() {
+
+		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
+
+		if(visualizationToggle)
+			visualizationToggle.value = this.source.visualizations.indexOf(this);
+
+		this.source.container.removeChild(this.source.container.querySelector('.visualization'));
+
+		this.source.visualizations.selected = this;
+
+		this.source.container.appendChild(this.container);
+
+		const configure = this.source.container.querySelector('.configure-visualization');
+
+		if(configure) {
+
+			if(this.visualization_id)
+				configure.href = `/reports/configure-visualization/${this.visualization_id}`;
+
+			configure.classList.toggle('hidden', !this.visualization_id);
+		}
+
+		this.source.resetError();
+
+		if(this.options)
+			this.source.container.querySelector('.columns').classList.toggle('hidden', !this.options.legend)
+	}
+}
+
+class LinearVisualization extends Visualization {
+
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		for(const axis of this.axes || []) {
+			this.axes[axis.position] = axis;
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+	}
+
+	draw() {
+
+		if(!this.source.response || !this.source.response.length)
+			return this.source.error('No data found! :(');
+
+		if(!this.axes)
+			return this.source.error('Axes not defined! :(');
+
+		if(!this.axes.bottom)
+			return this.source.error('Bottom axis not defined! :(');
+
+		if(!this.axes.left)
+			return this.source.error('Left axis not defined! :(');
+
+		if(!this.axes.bottom.columns.length)
+			return this.source.error('Bottom axis requires exactly one column! :(');
+
+		if(!this.axes.left.columns.length)
+			return this.source.error('Left axis requires atleast one column! :(');
+
+		if(this.axes.bottom.columns.length > 1)
+			return this.source.error('Bottom axis cannot has more than one column! :(');
+
+		for(const column of this.axes.bottom.columns) {
+			if(!this.source.columns.get(column.key))
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :(`);
+		}
+
+		for(const column of this.axes.left.columns) {
+			if(!this.source.columns.get(column.key))
+				return this.source.error(`Left axis column <em>${column.key}</em> not found! :(`);
+		}
+
+		for(const bottom of this.axes.bottom.columns) {
+			for(const left of this.axes.left.columns) {
+
+				if(bottom.key == left.key)
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on both axis! :(`);
+			}
+		}
+
+		for(const [key, column] of this.source.columns) {
+
+			if(this.axes.left.columns.some(c => c.key == key) || (this.axes.right && this.axes.right.columns.some(c => c.key == key)) || this.axes.bottom.columns.some(c => c.key == key))
+				continue;
+
+			column.disabled = true;
+			column.render();
+		}
+
+		this.rows = this.source.response;
+
+		this.axes.bottom.height = 25;
+		this.axes.left.width = 50;
+
+		if(this.axes.bottom.label)
+			this.axes.bottom.height += 20;
+
+		if(this.axes.left.label)
+			this.axes.left.width += 20;
+
+		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
+		this.width = this.container.clientWidth - this.axes.left.width - 40;
+
+		window.addEventListener('resize', () => {
+
+			const
+				height = this.container.clientHeight - this.axes.bottom.height - 20,
+				width = this.container.clientWidth - this.axes.left.width - 40;
+
+			if(this.width != width || this.height != height) {
+
+				this.width = width;
+				this.height = height;
+
+				this.plot(true);
+			}
 		});
+	}
+
+	plot() {
+
+		const container = d3.selectAll(`#visualization-${this.id}`);
+
+		container.selectAll('*').remove();
+
+		if(!this.rows)
+			return;
+
+		this.columns = {};
+
+		for(const row of this.rows) {
+
+			for(const [key, value] of row) {
+
+				if(key == this.axes.bottom.column)
+					continue;
+
+				const column = this.source.columns.get(key);
+
+				if(!column)
+					continue;
+
+				if(!this.columns[key]) {
+					this.columns[key] = [];
+					Object.assign(this.columns[key], column);
+				}
+
+				this.columns[key].push({
+					x: row.get(this.axes.bottom.column),
+					y: value,
+					y1: this.axes.right ? row.get(this.axes.right.column) : null,
+					key,
+				});
+			}
+		}
+
+		this.columns = Object.values(this.columns);
+
+		this.svg = container
+			.append('svg')
+			.append('g')
+			.attr('class', 'chart');
+
+		if(!this.rows.length) {
+
+			return this.svg
+				.append('g')
+				.append('text')
+				.attr('x', (this.width / 2))
+				.attr('y', (this.height / 2))
+				.attr('text-anchor', 'middle')
+				.attr('class', 'NA')
+				.attr('fill', '#999')
+				.text(this.source.originalResponse.message || 'No data found! :(');
+		}
+
+		if(this.rows.length != this.source.response.length) {
+
+			// Reset Zoom Button
+			const resetZoom = this.svg.append('g')
+				.attr('class', 'reset-zoom')
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('rect')
+				.attr('width', 80)
+				.attr('height', 20)
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('text')
+				.attr('y', 15)
+				.attr('x', (this.width / 2) - 35 + 40)
+				.attr('text-anchor', 'middle')
+				.style('font-size', '12px')
+				.text('Reset Zoom');
+
+			// Click on reset zoom function
+			resetZoom.on('click', () => {
+				this.rows = this.source.response;
+				this.plot();
+			});
+		}
+
+		const that = this;
+
+		this.zoomRectangle = null;
+
+		container
+
+		.on('mousemove', function() {
+
+			const mouse = d3.mouse(this);
+
+			if(that.zoomRectangle) {
+
+				const
+					filteredRows = that.rows.filter(row => {
+
+						const item = that.x(row.get(that.axes.bottom.column)) + 100;
+
+						if(mouse[0] < that.zoomRectangle.origin[0])
+							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+						else
+							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+					}),
+					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+
+				// Assign width and height to the rectangle
+				that.zoomRectangle
+					.select('rect')
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]))
+					.attr('width', width)
+					.attr('height', that.height);
+
+				that.zoomRectangle
+					.select('g')
+					.selectAll('*')
+					.remove();
+
+				that.zoomRectangle
+					.select('g')
+					.append('text')
+					.text(`${Format.number(filteredRows.length)} Selected`)
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+					.attr('y', (that.height / 2) - 5);
+
+				if(filteredRows.length) {
+
+					that.zoomRectangle
+						.select('g')
+						.append('text')
+						.text(`${filteredRows[0].get(that.axes.bottom.column)} - ${filteredRows[filteredRows.length - 1].get(that.axes.bottom.column)}`)
+						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+						.attr('y', (that.height / 2) + 20);
+				}
+
+				return;
+			}
+
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
+
+			if(!row)
+				return;
+
+			const tooltip = [];
+
+			for(const [key, value] of row) {
+
+				if(key == that.axes.bottom.column)
+					continue;
+
+				const column = row.source.columns.get(key);
+
+				tooltip.push(`
+					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
+						<span class="circle" style="background:${column.color}"></span>
+						<span>
+							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
+							${column.name}
+						</span>
+						<span class="value">${Format.number(value)}</span>
+					</li>
+				`);
+			}
+
+			const content = `
+				<header>${row.get(that.axes.bottom.column)}</header>
+				<ul class="body">
+					${tooltip.reverse().join('')}
+				</ul>
+			`;
+
+			Tooltip.show(that.container, mouse, content, row);
+		})
+
+		.on('mouseleave', function() {
+			Tooltip.hide(that.container);
+		})
+
+		.on('mousedown', function() {
+
+			Tooltip.hide(that.container);
+
+			if(that.zoomRectangle)
+				return;
+
+			that.zoomRectangle = container.select('svg').append('g');
+
+			that.zoomRectangle
+				.attr('class', 'zoom')
+				.style('text-anchor', 'middle')
+				.append('rect')
+				.attr('class', 'zoom-rectangle');
+
+			that.zoomRectangle
+				.append('g');
+
+			that.zoomRectangle.origin = d3.mouse(this);
+		})
+
+		.on('mouseup', function() {
+
+			if(!that.zoomRectangle)
+				return;
+
+			that.zoomRectangle.remove();
+
+			const
+				mouse = d3.mouse(this),
+				filteredRows = that.rows.filter(row => {
+
+					const item = that.x(row.get(that.axes.bottom.column)) + 100;
+
+					if(mouse[0] < that.zoomRectangle.origin[0])
+						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+					else
+						return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+				});
+
+			that.zoomRectangle = null;
+
+			if(!filteredRows.length)
+				return;
+
+			that.rows = filteredRows;
+
+			that.plot();
+		}, true);
+	}
+}
+
+Visualization.list = new Map;
+
+Visualization.list.set('table', class Table extends Visualization {
+
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		this.rowLimit = 15;
+		this.rowLimitMultiplier = 1.75;
+	}
+
+	async load(e) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `
+			<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+		`;
+
+		await this.source.fetch();
+
+		this.render();
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('section');
+
+		container.classList.add('visualization', 'table');
+
+		container.innerHTML = `
+			<div class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
 
 		return container;
 	}
 
-	get json() {
+	render() {
 
-		let config = {
-			timingColumn: this.form.querySelector('select[name=timing]').value,
-			valueColumn: this.form.querySelector('select[name=value]').value,
-			invertValues: parseInt(this.form.querySelector('select[name=invertValues]').value),
-			prefix: this.form.querySelector('input[name=prefix]').value,
-			postfix: this.form.querySelector('input[name=postfix]').value,
-		};
+		const
+			container = this.container.querySelector('.container'),
+			rows = this.source.response;
 
-		config.boxes = [];
+		container.textContent = null;
 
-		for (let box of this.form.querySelectorAll('.subform')) {
-			config.boxes.push({
-				offset: box.querySelector('input[name=offset]').value,
-				relativeValTo: box.querySelector('input[name=relativeValTo]').value,
-				row: box.querySelector('input[name=row]').value,
-				column: box.querySelector('input[name=column]').value,
-				rowspan: box.querySelector('input[name=rowspan]').value,
-				columnspan: box.querySelector('input[name=columnspan]').value
-			});
+		const
+			table = document.createElement('table'),
+			thead = document.createElement('thead'),
+			search = document.createElement('tr'),
+			accumulation = document.createElement('tr'),
+			headings = document.createElement('tr'),
+			rowCount = document.createElement('div');
+
+		search.classList.add('search');
+		accumulation.classList.add('accumulation');
+
+		for(const column of this.source.columns.list.values()) {
+
+			search.appendChild(column.search);
+			accumulation.appendChild(column.accumulation);
+			headings.appendChild(column.heading);
 		}
 
-		return config;
-	}
+		thead.appendChild(search);
+		thead.appendChild(accumulation);
+		thead.appendChild(headings);
+		table.appendChild(thead);
 
-	box(boxValues = {}) {
-		const boxConfig = document.createElement('div');
+		const tbody = document.createElement('tbody');
 
-		boxConfig.classList.add('subform', 'form');
+		for(const [position, row] of rows.entries()) {
 
-		boxConfig.innerHTML = `
-				<label>
-					<span>Offset</span>
-					<input type="text" name="offset">
-				</label>
+			if(position >= this.rowLimit)
+				break;
 
-				<label>
-					<span>Relative To(Index)</span>
-					<input type="text" name="relativeValTo">
-				</label>
+			const tr = document.createElement('tr');
 
-				<label>
-					<span>Column</span>
-					<input type="text" name="column">
-				</label>
+			for(const [key, column] of this.source.columns.list) {
 
-				<label>
-					<span>Row</span>
-					<input type="text" name="row">
-				</label>
+				const td = document.createElement('td');
 
-				<label>
-					<span>Column Span</span>
-					<input type="text" name="columnspan">
-				</label>
+				td.textContent = row.get(key);
 
-				<label>
-					<span>Row Span</span>
-					<input type="text" name="rowspan">
-				</label>
+				if(column.drilldown && column.drilldown.query_id) {
+
+					td.classList.add('drilldown');
+					td.on('click', () => column.initiateDrilldown(row));
+
+					td.title = `Drill down into ${DataSource.list.get(column.drilldown.query_id).name}!`;
+				}
+
+				tr.appendChild(td);
+			}
+
+			tr.on('click', () => tr.classList.toggle('selected'));
+
+			tbody.appendChild(tr);
+		}
+
+		if(rows.length > this.rowLimit) {
+
+			const tr = document.createElement('tr');
+
+			tr.classList.add('show-rows');
+
+			tr.innerHTML = `
+				<td colspan="${this.source.columns.list.size}">
+					<i class="fa fa-angle-down"></i>
+					<span>Show ${parseInt(Math.ceil(this.rowLimit * this.rowLimitMultiplier) - this.rowLimit)} more rows</span>
+					<i class="fa fa-angle-down"></i>
+				</td>
 			`;
 
-		if (boxValues) {
-			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
-			boxConfig.querySelector('input[name=relativeValTo]').value = boxValues.relativeValTo;
-			boxConfig.querySelector('input[name=row]').value = boxValues.row;
-			boxConfig.querySelector('input[name=column]').value = boxValues.column;
-			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan;
-			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan;
+			tr.on('click', () => {
+				this.rowLimit = Math.ceil(this.rowLimit * this.rowLimitMultiplier);
+				this.source.visualizations.selected.render();
+			});
+
+			tbody.appendChild(tr);
 		}
 
-		return boxConfig;
+		if(!rows || !rows.length) {
+			table.insertAdjacentHTML('beforeend', `
+				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found! :('}</td></tr>
+			`);
+		}
+
+		rowCount.classList.add('row-count');
+
+		rowCount.innerHTML = `
+			<span>
+				<span class="label">Showing:</span>
+				<strong title="Number of rows currently shown on screen">
+					${Format.number(Math.min(this.rowLimit, rows.length))}
+				</strong>
+			</span>
+			<span>
+				<span class="label">Filtered:</span>
+				<strong title="Number of rows that match any search or grouping criterion">
+					${Format.number(rows.length)}
+				</strong>
+			</span>
+			<span>
+				<span class="label">Total:</span>
+				<strong title="Total number of rows in the dataset">
+					${Format.number(this.source.originalResponse.data ? this.source.originalResponse.data.length : 0)}
+				</strong>
+			</span>
+		`;
+
+		table.appendChild(tbody);
+		container.appendChild(table);
+		container.appendChild(rowCount);
 	}
 });
 
-const mysqlKeywords = [
-	'SELECT',
-	'FROM',
-	'WHERE',
-	'AS',
-	'AND',
-	'OR',
-	'IN',
-	'BETWEEN',
-	'DISTINCT',
-	'COUNT',
-	'GROUP BY',
-	'FORCE INDEX',
-	'DATE',
-	'MONTH',
-	'YEAR',
-	'YEARMONTH',
-	'UNIX_TIMESTAMP',
-	'CONCAT',
-	'CONCAT_WS',
-	'SUM',
-	'INTERVAL',
-	'DAY',
-	'MINUTE',
-	'SECOND',
-	'DATE_FORMAT',
-	'USING',
-];
+Visualization.list.set('line', class Line extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'line');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e, resize) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render(resize);
+	}
+
+	render(resize) {
+
+		this.draw();
+
+		this.plot(resize);
+	}
+
+	plot(resize) {
+
+		super.plot(resize);
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		const
+			container = d3.selectAll(`#visualization-${this.id}`),
+			that = this;
+
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
+
+		const
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
+
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
+
+		let
+			max = null,
+			min = null;
+
+		for(const row of this.rows) {
+
+			for(const [name, value] of row) {
+
+				if(name == this.axes.bottom.column)
+					continue;
+
+				if(max == null)
+					max = Math.floor(value);
+
+				if(min == null)
+					min = Math.floor(value);
+
+				max = Math.max(max, Math.floor(value) || 0);
+				min = Math.min(min, Math.floor(value) || 0);
+			}
+		}
+
+		this.y.domain([min, max]);
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.rangePoints([0, this.width], 0.1, 0);
+
+		const
+			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
+
+		xAxis.tickValues(ticks);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
+		//graph type line and
+		const
+			line = d3.svg
+				.line()
+				.x(d => this.x(d.x)  + this.axes.left.width)
+				.y(d => this.y(d.y));
+
+		//Appending line in chart
+		this.svg.selectAll('.city')
+			.data(this.columns)
+			.enter()
+			.append('g')
+			.attr('class', 'city')
+			.append('path')
+			.attr('class', 'line')
+			.attr('d', d => line(d))
+			.style('stroke', d => d.color);
+
+		// Selecting all the paths
+		const path = this.svg.selectAll('path');
+
+		if(!resize) {
+			path[0].forEach(path => {
+				var length = path.getTotalLength();
+
+				path.style.strokeDasharray = length + ' ' + length;
+				path.style.strokeDashoffset = length;
+				path.getBoundingClientRect();
+
+				path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+				path.style.strokeDashoffset = '0';
+			});
+		}
+
+		// For each line appending the circle at each point
+		for(const column of this.columns) {
+
+			this.svg.selectAll('dot')
+				.data(column)
+				.enter()
+				.append('circle')
+				.attr('class', 'clips')
+				.attr('id', (_, i) => i)
+				.attr('r', 0)
+				.style('fill', column.color)
+				.attr('cx', d => this.x(d.x) + this.axes.left.width)
+				.attr('cy', d => this.y(d.y))
+		}
+
+		container
+		.on('mousemove.line', function() {
+
+			container.selectAll('svg > g > circle[class="clips"]').attr('r', 0);
+
+			const
+				mouse = d3.mouse(this),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
+				row = that.rows[xpos];
+
+			if(!row || that.zoomRectangle)
+				return;
+
+			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+		})
+
+		.on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 0));
+
+		path.on('mouseover', function (d) {
+			d3.select(this).classed('line-hover', true);
+		});
+
+		path.on('mouseout', function (d) {
+			d3.select(this).classed('line-hover', false);
+		});
+	}
+});
+
+Visualization.list.set('bubble', class Line extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'bubble');
+
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e, resize) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render(resize);
+	}
+
+	render(resize) {
+
+		this.draw();
+
+		this.plot(resize);
+	}
+
+	plot(resize) {
+
+		super.plot(resize);
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		const
+			container = d3.selectAll(`#visualization-${this.id}`),
+			that = this;
+
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
+		this.bubble = d3.scale.linear().range([0, 50]);
+
+		const
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
+
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
+
+		this.y.max = 0;
+		this.y.min = 0;
+		this.bubble.max = 0;
+		this.bubble.min = 0;
+
+		for(const row of this.rows) {
+
+			for(const [key, value] of row) {
+
+				if(this.axes.left.columns.some(c => c.key == key)) {
+					this.y.max = Math.max(this.y.max, Math.ceil(value) || 0);
+					this.y.min = Math.min(this.y.min, Math.ceil(value) || 0);
+				}
+
+				if(this.axes.right.columns.some(c => c.key == key)) {
+					this.bubble.max = Math.max(this.bubble.max, Math.ceil(value) || 0);
+					this.bubble.min = Math.min(this.bubble.min, Math.ceil(value) || 0);
+				}
+			}
+		}
+
+		this.y.domain([this.y.min, this.y.max]);
+		this.bubble.domain([this.bubble.min, this.bubble.max]);
+
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.rangePoints([0, this.width], 0.1, 0);
+
+		const
+			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
+
+		xAxis.tickValues(ticks);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
+		//graph type line and
+		const
+			line = d3.svg
+				.line()
+				.x(d => this.x(d.x)  + this.axes.left.width)
+				.y(d => this.y(d.y));
+
+		// For each line appending the circle at each point
+		for(const column of this.columns) {
+
+			this.svg.selectAll('dot')
+				.data(column)
+				.enter()
+				.append('circle')
+				.attr('class', 'clips')
+				.attr('id', (_, i) => i)
+				.attr('r', d => this.bubble(d.y1))
+				.style('fill', column.color)
+				.attr('cx', d => this.x(d.x) + this.axes.left.width)
+				.attr('cy', d => this.y(d.y))
+		}
+
+		container
+		.on('mousemove.line', function() {
+
+			// container.selectAll('svg > g > circle[class="clips"]').attr('r', 3);
+
+			const
+				mouse = d3.mouse(this),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
+				row = that.rows[xpos];
+
+			if(!row || that.zoomRectangle)
+				return;
+
+			// container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+		})
+
+		// .on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 3));
+	}
+});
+
+Visualization.list.set('scatter', class Line extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'scatter');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e, resize) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render(resize);
+	}
+
+	render(resize) {
+
+		this.draw();
+
+		this.plot(resize);
+	}
+
+	plot(resize) {
+
+		super.plot(resize);
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		const
+			container = d3.selectAll(`#visualization-${this.id}`),
+			that = this;
+
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
+
+		const
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
+
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
+
+		let
+			max = null,
+			min = null;
+
+		for(const row of this.rows) {
+
+			for(const [name, value] of row) {
+
+				if(name == this.axes.bottom.column)
+					continue;
+
+				if(max == null)
+					max = Math.floor(value);
+
+				if(min == null)
+					min = Math.floor(value);
+
+				max = Math.max(max, Math.floor(value) || 0);
+				min = Math.min(min, Math.floor(value) || 0);
+			}
+		}
+
+		this.y.domain([min, max]);
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.rangePoints([0, this.width], 0.1, 0);
+
+		const
+			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
+
+		xAxis.tickValues(ticks);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
+		//graph type line and
+		const
+			line = d3.svg
+				.line()
+				.x(d => this.x(d.x)  + this.axes.left.width)
+				.y(d => this.y(d.y));
+
+		// For each line appending the circle at each point
+		for(const column of this.columns) {
+
+			this.svg.selectAll('dot')
+				.data(column)
+				.enter()
+				.append('circle')
+				.attr('class', 'clips')
+				.attr('id', (_, i) => i)
+				.attr('r', 3)
+				.style('fill', column.color)
+				.attr('cx', d => this.x(d.x) + this.axes.left.width)
+				.attr('cy', d => this.y(d.y))
+		}
+
+		container
+		.on('mousemove.line', function() {
+
+			container.selectAll('svg > g > circle[class="clips"]').attr('r', 3);
+
+			const
+				mouse = d3.mouse(this),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
+				row = that.rows[xpos];
+
+			if(!row || that.zoomRectangle)
+				return;
+
+			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+		})
+
+		.on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 3));
+	}
+});
+
+Visualization.list.set('bar', class Bar extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'bar');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.source.response;
+
+		this.render();
+	}
+
+	render(resize) {
+
+		this.draw();
+		this.plot(resize);
+	}
+
+	plot(resize)  {
+
+		super.plot(resize);
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		const that = this;
+
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
+
+		const
+			x1 = d3.scale.ordinal(),
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
+
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
+
+		let
+			max = 0,
+			min = 0;
+
+		for(const row of this.rows) {
+
+			for(const [key, value] of row) {
+
+				if(!this.axes.left.columns.some(c => c.key == key))
+					continue;
+
+				max = Math.max(max, Math.ceil(value) || 0);
+				min = Math.min(min, Math.ceil(value) || 0);
+			}
+		}
+
+		this.y.domain([min, max]);
+
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.rangeBands([0, this.width], 0.1, 0);
+
+		const
+			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
+
+		xAxis.tickValues(ticks);
+
+		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
+		let bars = this.svg
+			.append('g')
+			.selectAll('g')
+			.data(this.columns)
+			.enter()
+			.append('g')
+			.style('fill', column => column.color)
+			.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+			.selectAll('rect')
+			.data(column => column)
+			.enter()
+			.append('rect')
+			.classed('bar', true)
+			.attr('width', x1.rangeBand())
+			.attr('x', cell => this.x(cell.x) + this.axes.left.width)
+			.on('click', function(_, row, column) {
+				that.source.columns.get(that.columns[column].key).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
+			.on('mouseover', function(_, __, column) {
+				that.hoverColumn = that.columns[column];
+				d3.select(this).classed('hover', true);
+			})
+			.on('mouseout', function() {
+				that.hoverColumn = null;
+				d3.select(this).classed('hover', false);
+			});
+
+		if(!resize) {
+
+			bars = bars
+				.attr('y', cell => this.y(0))
+				.attr('height', () => 0)
+				.transition()
+				.duration(Visualization.animationDuration)
+				.ease('quad-in');
+		}
+
+		bars
+			.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0))
+			.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+	}
+});
+
+Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'dualaxisbar');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render();
+	}
+
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		for(const axis of this.axes || []) {
+			this.axes[axis.position] = axis;
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+	}
+
+	draw() {
+
+		if(!this.source.response || !this.source.response.length)
+			return this.source.error('No data found! :(');
+
+		if(!this.axes)
+			return this.source.error('Axes not defined! :(');
+
+		if(!this.axes.bottom)
+			return this.source.error('Bottom axis not defined! :(');
+
+		if(!this.axes.left)
+			return this.source.error('Left axis not defined! :(');
+
+		if(!this.axes.right)
+			return this.source.error('Right axis not defined! :(');
+
+		if(!this.axes.bottom.columns.length)
+			return this.source.error('Bottom axis requires exactly one column! :(');
+
+		if(!this.axes.left.columns.length)
+			return this.source.error('Left axis requires atleast one column! :(');
+
+		if(!this.axes.right.columns.length)
+			return this.source.error('Right axis requires atleast one column! :(');
+
+		if(this.axes.bottom.columns.length > 1)
+			return this.source.error('Bottom axis cannot has more than one column! :(');
+
+		for(const column of this.axes.bottom.columns) {
+			if(!this.source.columns.get(column.key))
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :()`);
+		}
+
+		for(const column of this.axes.left.columns) {
+			if(!this.source.columns.get(column.key))
+				return this.source.error(`Left axis column <em>${column.key}</em> not found! :(`);
+		}
+
+		for(const column of this.axes.right.columns) {
+			if(!this.source.columns.get(column.key))
+				return this.source.error(`Right axis column <em>${column.key}</em> not found! :(`);
+		}
+
+		for(const bottom of this.axes.bottom.columns) {
+
+			for(const left of this.axes.left.columns) {
+
+				if(bottom.key == left.key)
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis! :(`);
+			}
+
+			for(const right of this.axes.right.columns) {
+
+				if(bottom.key == right.key)
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis! :(`);
+			}
+		}
+
+		for(const [key, column] of this.source.columns) {
+
+			if(this.axes.left.columns.some(c => c.key == key) || this.axes.right.columns.some(c => c.key == key) || this.axes.bottom.columns.some(c => c.key == key))
+				continue;
+
+			column.disabled = true;
+			column.render();
+		}
+
+		this.rows = this.source.response;
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		this.axes.bottom.height = 25;
+		this.axes.left.width = 40;
+		this.axes.right.width = 25;
+
+		if(this.axes.bottom.label)
+			this.axes.bottom.height += 20;
+
+		if(this.axes.left.label)
+			this.axes.left.width += 20;
+
+		if(this.axes.right.label)
+			this.axes.right.width += 10;
+
+		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
+		this.width = this.container.clientWidth - this.axes.left.width - this.axes.right.width - 40;
+
+		window.addEventListener('resize', () => {
+
+			const
+				height = this.container.clientHeight - this.axes.bottom.height - 20,
+				width = this.container.clientWidth - this.axes.left.width - this.axes.right.width - 40;
+
+			if(this.width != width || this.height != height) {
+
+				this.width = width;
+				this.height = height;
+
+				this.plot(true);
+			}
+		});
+	}
+
+	render(resize) {
+
+		this.draw();
+		this.plot(resize);
+	}
+
+	plot(resize)  {
+
+		const container = d3.selectAll(`#visualization-${this.id}`);
+
+		container.selectAll('*').remove();
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		this.columns = {
+			left: {},
+			right: {},
+		};
+
+		for(const row of this.rows) {
+
+			for(const [key, value] of row) {
+
+				if(key == this.axes.bottom.column)
+					continue;
+
+				const column = this.source.columns.get(key);
+
+				if(!column)
+					continue;
+
+				let direction = null;
+
+				if(this.axes.left.columns.some(c => c.key == key))
+					direction = 'left';
+
+				if(this.axes.right.columns.some(c => c.key == key))
+					direction = 'right';
+
+				if(!direction)
+					continue;
+
+				if(!this.columns[direction][key]) {
+					this.columns[direction][key] = [];
+					Object.assign(this.columns[direction][key], column);
+				}
+
+				this.columns[direction][key].push({
+					x: row.get(this.axes.bottom.column),
+					y: value,
+					key,
+				});
+			}
+		}
+
+		this.columns.left = Object.values(this.columns.left);
+		this.columns.right = Object.values(this.columns.right);
+
+		this.svg = container
+			.append('svg')
+			.append('g')
+			.attr('class', 'chart');
+
+		if(!this.rows.length) {
+
+			return this.svg
+				.append('g')
+				.append('text')
+				.attr('x', (this.width / 2))
+				.attr('y', (this.height / 2))
+				.attr('text-anchor', 'middle')
+				.attr('class', 'NA')
+				.attr('fill', '#999')
+				.text(this.source.originalResponse.message || 'No data found! :(');
+		}
+
+		if(this.rows.length != this.source.response.length) {
+
+			// Reset Zoom Button
+			const resetZoom = this.svg.append('g')
+				.attr('class', 'reset-zoom')
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('rect')
+				.attr('width', 80)
+				.attr('height', 20)
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('text')
+				.attr('y', 15)
+				.attr('x', (this.width / 2) - 35 + 40)
+				.attr('text-anchor', 'middle')
+				.style('font-size', '12px')
+				.text('Reset Zoom');
+
+			// Click on reset zoom function
+			resetZoom.on('click', () => {
+				this.rows = this.source.response;
+				this.plot();
+			});
+		}
+
+		if(!this.rows.length)
+			return;
+
+		const that = this;
+
+		this.bottom = d3.scale.ordinal();
+		this.left = d3.scale.linear().range([this.height, 20]);
+		this.right = d3.scale.linear().range([this.height, 20]);
+
+		const
+			x1 = d3.scale.ordinal(),
+			bottomAxis = d3.svg.axis()
+				.scale(this.bottom)
+				.orient('bottom'),
+
+			leftAxis = d3.svg.axis()
+				.scale(this.left)
+				.innerTickSize(-this.width)
+			    .tickFormat(d3.format('s'))
+				.orient('left'),
+
+			rightAxis = d3.svg.axis()
+				.scale(this.right)
+				.innerTickSize(this.width)
+			    .tickFormat(d3.format('s'))
+				.orient('right');
+
+		this.left.max = 0;
+		this.right.max = 0;
+
+		for(const row of this.rows) {
+
+			for(const [key, value] of row) {
+
+				if(this.axes.left.columns.some(c => c.key == key))
+					this.left.max = Math.max(this.left.max, Math.ceil(value) || 0);
+
+				if(this.axes.right.columns.some(c => c.key == key))
+					this.right.max = Math.max(this.right.max, Math.ceil(value) || 0);
+			}
+		}
+
+		this.left.domain([0, this.left.max]);
+		this.right.domain([0, this.right.max]);
+
+		this.bottom.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.bottom.rangeBands([0, this.width], 0.1, 0);
+
+		const
+			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickInterval = parseInt(this.bottom.domain().length / tickNumber),
+			ticks = this.bottom.domain().filter((d, i) => !(i % tickInterval));
+
+		bottomAxis.tickValues(ticks);
+
+		x1.domain(this.columns.left.map(c => c.name)).rangeBands([0, this.bottom.rangeBand()]);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(bottomAxis);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(leftAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(rightAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(90) translate(${(this.height / 2)}, ${(this.axes.left.width + this.width + 40) * -1})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.right.label);
+
+		let bars = this.svg
+			.append('g')
+			.selectAll('g')
+			.data(this.columns.left)
+			.enter()
+			.append('g')
+			.style('fill', column => column.color)
+			.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+			.selectAll('rect')
+			.data(column => column)
+			.enter()
+			.append('rect')
+			.classed('bar', true)
+			.attr('width', x1.rangeBand())
+			.attr('x', cell => this.bottom(cell.x) + this.axes.left.width)
+			.on('click', function(_, row, column) {
+				that.source.columns.get(that.columns.left[column].key).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
+			.on('mouseover', function(_, __, column) {
+				that.hoverColumn = that.columns.left[column];
+				d3.select(this).classed('hover', true);
+			})
+			.on('mouseout', function() {
+				that.hoverColumn = null;
+				d3.select(this).classed('hover', false);
+			});
+
+		if(!resize) {
+
+			bars = bars
+				.attr('height', () => 0)
+				.attr('y', () => this.height)
+				.transition()
+				.duration(Visualization.animationDuration)
+				.ease('quad-in');
+		}
+
+		bars
+			.attr('height', cell => this.height - this.left(cell.y))
+			.attr('y', cell => this.left(cell.y));
+
+
+		//graph type line and
+		const
+			line = d3.svg
+				.line()
+				.x(d => this.bottom(d.x)  + this.axes.left.width + (this.bottom.rangeBand() / 2))
+				.y(d => this.right(d.y));
+
+		//Appending line in chart
+		this.svg.selectAll('.city')
+			.data(this.columns.right)
+			.enter()
+			.append('g')
+			.attr('class', 'city')
+			.append('path')
+			.attr('class', 'line')
+			.attr('d', d => line(d))
+			.style('stroke', d => d.color);
+
+		// Selecting all the paths
+		const path = this.svg.selectAll('path');
+
+		if(!resize) {
+			path[0].forEach(path => {
+				var length = path.getTotalLength();
+
+				path.style.strokeDasharray = length + ' ' + length;
+				path.style.strokeDashoffset = length;
+				path.getBoundingClientRect();
+
+				path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+				path.style.strokeDashoffset = '0';
+			});
+		}
+
+		// For each line appending the circle at each point
+		for(const column of this.columns.right) {
+
+			this.svg.selectAll('dot')
+				.data(column)
+				.enter()
+				.append('circle')
+				.attr('class', 'clips')
+				.attr('id', (_, i) => i)
+				.attr('r', 5)
+				.style('fill', column.color)
+				.attr('cx', d => this.bottom(d.x) + this.axes.left.width + (this.bottom.rangeBand() / 2))
+				.attr('cy', d => this.right(d.y))
+		}
+
+		this.zoomRectangle = null;
+
+		container
+
+		.on('mousemove', function() {
+
+			const mouse = d3.mouse(this);
+
+			if(that.zoomRectangle) {
+
+				const
+					filteredRows = that.rows.filter(row => {
+
+						const item = that.bottom(row.get(that.axes.bottom.column)) + 100;
+
+						if(mouse[0] < that.zoomRectangle.origin[0])
+							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+						else
+							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+					}),
+					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+
+				// Assign width and height to the rectangle
+				that.zoomRectangle
+					.select('rect')
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]))
+					.attr('width', width)
+					.attr('height', that.height);
+
+				that.zoomRectangle
+					.select('g')
+					.selectAll('*')
+					.remove();
+
+				that.zoomRectangle
+					.select('g')
+					.append('text')
+					.text(`${Format.number(filteredRows.length)} Selected`)
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+					.attr('y', (that.height / 2) - 5);
+
+				if(filteredRows.length) {
+
+					that.zoomRectangle
+						.select('g')
+						.append('text')
+						.text(`${filteredRows[0].get(that.axes.bottom.column)} - ${filteredRows[filteredRows.length - 1].get(that.axes.bottom.column)}`)
+						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+						.attr('y', (that.height / 2) + 20);
+				}
+
+				return;
+			}
+
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
+
+			if(!row)
+				return;
+
+			const tooltip = [];
+
+			for(const [key, value] of row) {
+
+				if(key == that.axes.bottom.column)
+					continue;
+
+				tooltip.push(`
+					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
+						<span class="circle" style="background:${row.source.columns.get(key).color}"></span>
+						<span>${row.source.columns.get(key).name}</span>
+						<span class="value">${Format.number(value)}</span>
+					</li>
+				`);
+			}
+
+			const content = `
+				<header>${row.get(that.axes.bottom.column)}</header>
+				<ul class="body">
+					${tooltip.reverse().join('')}
+				</ul>
+			`;
+
+			Tooltip.show(that.container, mouse, content, row);
+		})
+
+		.on('mouseleave', function() {
+			Tooltip.hide(that.container);
+		})
+
+		.on('mousedown', function() {
+
+			Tooltip.hide(that.container);
+
+			if(that.zoomRectangle)
+				return;
+
+			that.zoomRectangle = container.select('svg').append('g');
+
+			that.zoomRectangle
+				.attr('class', 'zoom')
+				.style('text-anchor', 'middle')
+				.append('rect')
+				.attr('class', 'zoom-rectangle');
+
+			that.zoomRectangle
+				.append('g');
+
+			that.zoomRectangle.origin = d3.mouse(this);
+		})
+
+		.on('mouseup', function() {
+
+			if(!that.zoomRectangle)
+				return;
+
+			that.zoomRectangle.remove();
+
+			const
+				mouse = d3.mouse(this),
+				filteredRows = that.rows.filter(row => {
+
+					const item = that.bottom(row.get(that.axes.bottom.column)) + 100;
+
+					if(mouse[0] < that.zoomRectangle.origin[0])
+						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+					else
+						return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+				});
+
+			that.zoomRectangle = null;
+
+			if(!filteredRows.length)
+				return;
+
+			that.rows = filteredRows;
+
+			that.plot();
+		}, true);
+	}
+});
+
+Visualization.list.set('stacked', class Stacked extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'stacked');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render();
+	}
+
+	render(resize) {
+
+		this.draw();
+		this.plot(resize);
+	}
+
+	plot(resize) {
+
+		super.plot(resize);
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		const that = this;
+
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
+
+		const
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
+
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
+
+		let max = 0;
+
+		for(const row of this.rows) {
+
+			let total = 0;
+
+			for(const [name, value] of row) {
+				if(name != this.axes.bottom.column)
+					total += parseFloat(value) || 0;
+			}
+
+			max = Math.max(max, Math.ceil(total) || 0);
+		}
+
+		this.y.domain([0, max]);
+
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.rangeBands([0, this.width], 0.1, 0);
+
+		const
+			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
+
+		xAxis.tickValues(ticks);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
+		const layer = this.svg
+			.selectAll('.layer')
+			.data(d3.layout.stack()(this.columns))
+			.enter()
+			.append('g')
+			.attr('class', 'layer')
+			.style('fill', d => d.color);
+
+		let bars = layer
+			.selectAll('rect')
+			.data(column => column)
+			.enter()
+			.append('rect')
+			.classed('bar', true)
+			.on('click', function(_, row, column) {
+				that.source.columns.get(that.columns[column].key).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
+			.on('mouseover', function(_, __, column) {
+				that.hoverColumn = that.columns[column];
+				d3.select(this).classed('hover', true);
+			})
+			.on('mouseout', function() {
+				that.hoverColumn = null;
+				d3.select(this).classed('hover', false);
+			})
+			.attr('width', this.x.rangeBand())
+			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
+
+		if(!resize) {
+
+			bars = bars
+				.attr('height', d => 0)
+				.attr('y', d => this.height)
+				.transition()
+				.duration(Visualization.animationDuration)
+				.ease('quad-in');
+		}
+
+		bars
+			.attr('height', d => this.height - this.y(d.y))
+			.attr('y', d => this.y(d.y + d.y0));
+	}
+});
+
+Visualization.list.set('area', class Area extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'area');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render();
+	}
+
+	render(resize) {
+
+		this.draw();
+		this.plot(resize);
+	}
+
+	plot(resize) {
+
+		super.plot(resize);
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		const
+			container = d3.selectAll(`#visualization-${this.id}`),
+			that = this;
+
+		this.x = d3.scale.ordinal();
+		this.y = d3.scale.linear().range([this.height, 20]);
+
+		const
+			xAxis = d3.svg.axis()
+				.scale(this.x)
+				.orient('bottom'),
+
+			yAxis = d3.svg.axis()
+				.scale(this.y)
+				.innerTickSize(-this.width)
+				.orient('left');
+
+		let
+			max = 0,
+			min = 0;
+
+		for(const row of this.rows) {
+
+			let total = 0;
+
+			for(const [name, value] of row) {
+
+				if(name == this.axes.bottom.column)
+					continue;
+
+				total += parseFloat(value) || 0;
+				min = Math.min(min, Math.floor(value) || 0);
+			}
+
+			max = Math.max(max, Math.ceil(total) || 0);
+		}
+
+		this.y.domain([min, max]);
+		this.x.domain(this.rows.map(r => r.get(this.axes.bottom.column)));
+		this.x.rangePoints([0, this.width], 0.1, 0);
+
+		const
+			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickInterval = parseInt(this.x.domain().length / tickNumber),
+			ticks = this.x.domain().filter((d, i) => !(i % tickInterval)),
+
+			area = d3.svg.area()
+				.x(d => this.x(d.x))
+				.y0(d => this.y(d.y0))
+				.y1(d => this.y(d.y0 + d.y));
+
+		xAxis.tickValues(ticks);
+
+		this.svg
+			.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+			.attr('transform', `translate(${this.axes.left.width}, 0)`);
+
+		this.svg
+			.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
+			.call(xAxis);
+
+		this.svg
+			.append('text')
+			.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.bottom.label);
+
+		this.svg
+			.append('text')
+			.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`)
+			.attr('class', 'axis-label')
+			.style('text-anchor', 'middle')
+			.text(this.axes.left.label);
+
+		let areas = this.svg
+			.selectAll('.path')
+			.data(d3.layout.stack()(this.columns))
+			.enter()
+			.append('g')
+			.attr('transform', `translate(${this.axes.left.width}, 0)`)
+			.attr('class', 'path')
+			.append('path')
+			.classed('bar', true)
+			.on('mouseover', function(column) {
+				that.hoverColumn = column;
+				d3.select(this).classed('hover', true);
+			})
+			.on('mouseout', function() {
+				that.hoverColumn = null;
+				d3.select(this).classed('hover', false);
+			})
+			.attr('d', d => area(d))
+			.style('fill', d => d.color);
+
+		if(!resize) {
+			areas = areas
+				.style('opacity', 0)
+				.transition()
+				.duration(Visualization.animationDuration)
+				.ease("quad-in");
+		}
+
+		areas.style('opacity', 0.8);
+
+		// For each line appending the circle at each point
+		for(const column of this.columns) {
+
+			this.svg
+				.selectAll('dot')
+				.data(column)
+				.enter()
+				.append('circle')
+				.attr('class', 'clips')
+				.attr('id', (d, i) => i)
+				.attr('r', 0)
+				.style('fill', column.color)
+				.attr('cx', cell => this.x(cell.x) + this.axes.left.width)
+				.attr('cy', cell => this.y(cell.y + cell.y0));
+		}
+
+		container
+		.on('mousemove.area', function() {
+
+			container.selectAll('svg > g > circle[class="clips"]').attr('r', 0);
+
+			const
+				mouse = d3.mouse(this),
+				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
+				row = that.rows[xpos];
+
+			if(!row || that.zoomRectangle)
+				return;
+
+			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+		})
+
+		.on('mouseout.area', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 0));
+	}
+});
+
+Visualization.list.set('funnel', class Funnel extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'funnel');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render();
+	}
+
+	render() {
+
+		const
+			series = [],
+			rows = this.source.response;
+
+		if(rows.length > 1) {
+
+			for(const [i, row] of rows.entries()) {
+
+				series.push([{
+					date: 0,
+					label: row.get('name'),
+					color: DataSourceColumn.colors[i],
+					y: row.get('value'),
+				}]);
+			}
+		} else {
+
+			for(const column of this.source.columns.values()) {
+
+				if(column.disabled)
+					continue;
+
+				series.push([{
+					date: 0,
+					label: column.name,
+					color: column.color,
+					y: rows[0].get(column.key),
+				}]);
+			}
+		}
+
+
+		this.draw({
+			series: series.reverse(),
+			divId: `#visualization-${this.id}`,
+			chart: {},
+		});
+	}
+
+	draw(obj) {
+
+		d3.selectAll(obj.divId).on('mousemove', null)
+			.on('mouseout', null)
+			.on('mousedown', null)
+			.on('click', null);
+
+		var chart = {};
+
+		// Setting margin and width and height
+		var margin = {top: 20, right: 0, bottom: 40, left: 0},
+			width = this.container.clientWidth - margin.left - margin.right,
+			height = this.container.clientHeight - margin.top - margin.bottom;
+
+		var x = d3.scale.ordinal()
+			.domain([0, 1])
+			.rangeBands([0, width], 0.1, 0);
+
+		var y = d3.scale.linear().range([height, margin.top]);
+
+		// Defining xAxis location at bottom the axes
+		var xAxis = d3.svg.axis().scale(x).orient("bottom");
+
+		var diagonal = d3.svg.diagonal()
+			.source(d => {
+				return {x: d[0].y + 5, y: d[0].x};
+			})
+			.target(d => {
+				return {x: d[1].y + 5, y: d[1].x};
+			})
+			.projection(d => [d.y, d.x]);
+
+		var series = d3.layout.stack()(obj.series);
+
+		series.map(r => r.data = r);
+
+		chart.plot = resize => {
+
+			var funnelTop = width * 0.60,
+				funnelBottom = width * 0.2,
+				funnelBottonHeight = height * 0.2;
+
+			//Empty the container before loading
+			d3.selectAll(obj.divId + " > *").remove();
+			//Adding chart and placing chart at specific locaion using translate
+			var svg = d3.select(obj.divId)
+				.append("svg")
+				.append("g")
+				.attr("class", "chart")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+			//check if the data is present or not
+			if (series.length == 0 || series[0].data.length == 0) {
+				//Chart Title
+				svg.append('g').attr('class', 'noDataWrap').append('text')
+					.attr("x", (width / 2))
+					.attr("y", (height / 2))
+					.attr("text-anchor", "middle")
+					.style("font-size", "20px")
+					.text(obj.loading ? "Loading Data ..." : "No data to display");
+				return;
+			}
+
+			x.domain([0]);
+			x.rangeBands([0, width], 0.1, 0);
+			y.domain([
+				0,
+				d3.max(series, function (c) {
+					return d3.max(c.data, function (v) {
+						return Math.ceil(v.y0 + v.y);
+					});
+				}) + 4
+			]);
+
+			var layer = svg.selectAll(".layer")
+				.data(series)
+				.enter().append("g")
+				.attr("class", "layer")
+				.style("fill", d => d[0].color);
+
+			let rectangles = layer.selectAll("rect")
+				.data(function (d) {
+					return d.data;
+				})
+				.enter().append("rect")
+				.attr("x", d => x(d.date))
+				.attr("width", x.rangeBand())
+
+			if(!resize) {
+				rectangles = rectangles
+					.attr("height", d => 0)
+					.attr("y", d => 30)
+					.transition()
+					.duration(Visualization.animationDuration);
+			}
+
+			rectangles
+				.attr("height", d => y(d.y0) - y(d.y + d.y0))
+				.attr("y", d => y(d.y + d.y0));
+
+			var poly1 = [
+				{x: 0, y: margin.top},
+				{x: (width - funnelTop) / 2, y: margin.top},
+				{x: (width - funnelBottom) / 2, y: height - funnelBottonHeight},
+				{x: (width - funnelBottom) / 2, y: height},
+				{x: 0, y: height}
+			];
+
+			var poly2 = [
+				{x: width, y: margin.top},
+				{x: (width - funnelTop) / 2 + funnelTop + 5, y: margin.top},
+				{x: (width - funnelBottom) / 2 + funnelBottom + 5, y: height - funnelBottonHeight},
+				{x: (width - funnelBottom) / 2 + funnelBottom + 5, y: height},
+				{x: width, y: height}
+			];
+
+			var polygon = svg.selectAll("polygon")
+				.data([poly2, poly1])
+				.enter().append("polygon")
+				.attr('points', d =>  d.map(d => [d.x, d.y].join()).join(' '))
+				.attr('stroke', 'white')
+				.attr('stroke-width', 2)
+				.attr('fill', 'white');
+
+			//selecting all the paths
+			var path = svg.selectAll('rect'),
+				that = this;
+
+			//mouse over function
+			path .on('mousemove', function(d) {
+
+				var cord = d3.mouse(this);
+
+				if (cord[1] < 2 * margin.top || cord[1] > (height + 2 * margin.top) || cord[0] < margin.left || cord[0] > (width + margin.left) || series.length == 0 || series[0].data.length == 0)
+					return
+
+				const content = `
+					<header>${d.label}</header>
+					<div class="body">${d.y}</div>
+				`;
+
+				Tooltip.show(that.container, [cord[0], cord[1]], content);
+			});
+			polygon.on('mouseover', function () {
+				Tooltip.hide(that.container);
+			});
+
+			var labelConnectors = svg.append('g').attr('class', 'connectors');
+			var previousLabelHeight = 0, singPoint = height / d3.max(y.domain());
+			for (var i = 0; i < series.length; i++) {
+				var section = series[i].data[0];
+				var startLocation = section.y0 * singPoint,
+					sectionHeight = section.y * singPoint,
+					bottomLeft = funnelBottonHeight - startLocation,
+					x1, y1,  endingPintY, curveData;
+				var label = labelConnectors.append('g');
+				var text;
+
+				//for lower part of the funnel
+				if (sectionHeight / 2 < bottomLeft) {
+
+					x1 = (width + funnelBottom) / 2;
+					y1 = (startLocation + sectionHeight / 2);
+
+					endingPintY = y1;
+
+					if (endingPintY - previousLabelHeight <= 10)
+						endingPintY = previousLabelHeight + 5;
+
+					curveData = [
+						{x: x1, y: (height) - y1 - 5},
+						{x: x1 + (window.innerWidth < 768 ? 30 : 50), y: height - endingPintY}
+					];
+
+					text = label.append('text')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('y', height - (endingPintY))
+						.attr('text-anchor', 'left')
+						.style('font-size', '15px')
+
+					if (window.innerWidth < 768) {
+						text.style('font-size', '10px');
+					}
+					text.append('tspan')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('dx', '0')
+						.attr('dy', '1em')
+						.text(series[i].data[0].label);
+
+					text.append('tspan')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('dx', '0')
+						.attr('dy', '1.2em')
+						.style('font-size', '13px')
+						.text(`${series[i].data[0].y}  (${(series[i].data[0].y / series[series.length - 1].data[0].y * 100).toFixed(2)}%)`);
+
+				} else {
+
+					//for upper part of the funnel
+					var arr = findInterSection(
+						width / 2, height - (startLocation + sectionHeight / 2),
+						width, height - (startLocation + sectionHeight / 2),
+						(width + funnelTop) / 2, margin.top,
+						(width + funnelBottom) / 2, height - funnelBottonHeight);
+
+					x1 = arr[0];
+					y1 = arr[1];
+
+					endingPintY = y1;
+					if ((endingPintY - (endingPintY - previousLabelHeight)) <= 15)
+						endingPintY = previousLabelHeight + endingPintY + 15;
+
+					curveData = [
+						{x: x1, y: y1},
+						{x: x1 + (window.innerWidth < 768 ? 30 : 50), y: endingPintY-20}
+					];
+
+					text = label.append('text')
+						.attr('x', x1 + (window.innerWidth < 768 ? 40 : 70))
+						.attr('y', endingPintY-20)
+						.attr('text-anchor', 'left')
+						.style('font-size', '15px');
+
+					if (window.innerWidth < 768)
+						text.style('font-size', '10px');
+
+					text.append('tspan')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('dx', '0')
+						.attr('dy', '1em')
+						.text(series[i].data[0].label);
+
+					text.append('tspan')
+						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
+						.attr('dx', '0')
+						.attr('dy', '1.2em')
+						.style('font-size', '13px')
+						.text(`${series[i].data[0].y} (${(series[i].data[0].y / series[series.length - 1].data[0].y * 100).toFixed(2)}%)`);
+				}
+
+				previousLabelHeight = endingPintY + 45;
+
+				label.datum(curveData)
+					.append('path')
+					.attr('class', 'link')
+					.attr('d', diagonal)
+					.attr('stroke', '#2a3f54')
+					.attr('stroke-width', 1)
+					.attr('fill', 'none');
+			}
+		};
+
+		chart.plot();
+
+		window.addEventListener('resize', () => {
+			width = this.container.clientWidth - margin.left - margin.right;
+			chart.plot(true);
+		});
+
+		function findInterSection(x1, y1, x2, y2, x3, y3, x4, y4) {
+			var m1 = (y2 - y1) / (x2 - x1), m2 = (y4 - y3) / (x4 - x3), b1 = (y1 - m1 * x1), b2 = (y3 - m2 * x3);
+			return [((b2 - b1) / (m1 - m2)), -1 * ((b1 * m2 - b2 * m1) / (m1 - m2))];
+		}
+
+		return chart;
+	}
+});
+
+Visualization.list.set('pie', class Pie extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'pie');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.process();
+
+		this.render();
+	}
+
+	process() {
+
+		const
+			response = this.source.originalResponse,
+			newResponse = {};
+
+		if(!response || !response.data || !response.data.length)
+			return;
+
+		for(const row of this.source.originalResponse.data)
+			newResponse[row.name] = parseFloat(row.value) || 0;
+
+		this.source.originalResponse.data = [newResponse];
+
+		this.source.columns.clear();
+		this.source.columns.update();
+		this.source.columns.render();
+
+		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
+
+		if(visualizationToggle)
+			visualizationToggle.value = this.source.visualizations.indexOf(this);
+	}
+
+	render(resize) {
+
+		this.rows = this.source.response;
+
+		this.height = this.container.clientHeight - 20;
+		this.width = this.container.clientWidth - 20;
+
+		window.addEventListener('resize', () => {
+
+			const
+				height = this.container.clientHeight - 20,
+				width = this.container.clientWidth - 20;
+
+			if(this.width != width || this.height != height)
+				this.render(true);
+		});
+
+		const
+			container = d3.selectAll(`#visualization-${this.id}`),
+			radius = Math.min(this.width - 50, this.height - 50) / 2,
+			that = this;
+
+		container.selectAll('*').remove();
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		const
+			[row] = this.rows,
+			data = [],
+			sum = Array.from(row.values()).reduce((sum, value) => sum + value, 0);
+
+		for(const [name, value] of this.rows[0])
+			data.push({name, value, percentage: Math.floor(value / sum * 1000) / 10});
+
+		const
+
+			pie = d3.layout
+				.pie()
+				.value(row => row.percentage),
+
+			arc = d3.svg.arc()
+				.outerRadius(radius)
+				.innerRadius(radius - 75),
+
+			arcHover = d3.svg.arc()
+				.outerRadius(radius + 10)
+				.innerRadius(radius - 75),
+
+			arcs = container
+				.append('svg')
+				.data([data])
+				.append('g')
+				.attr('transform', 'translate(' + (this.width / 2) + ',' + (this.height / 2) + ')')
+				.selectAll('g')
+				.data(pie)
+				.enter()
+				.append('g')
+				.attr('class', 'pie'),
+
+			slice = arcs.append('path')
+				.attr('fill', row => this.source.columns.get(row.data.name).color)
+				.classed('pie-slice', true);
+
+		slice
+			.on('click', function(column, _, row) {
+				that.source.columns.get(column.data.name).initiateDrilldown(that.rows[row]);
+				d3.select(this).classed('hover', false);
+			})
+			.on('mousemove', function(row) {
+
+				const mouse = d3.mouse(this);
+
+				mouse[0] += that.width / 2;
+				mouse[1] += that.height / 2;
+
+				const content = `
+					<header>${row.data.name}</header>
+					<ul class="body">${row.data.value}</ul>
+				`;
+
+				Tooltip.show(that.container, mouse, content, row);
+
+				d3.select(this).classed('hover', true);
+			})
+
+			.on('mouseenter', function(row) {
+
+				d3
+					.select(this)
+					.transition()
+					.duration(Visualization.animationDuration / 3)
+					.attr('d', row => arcHover(row));
+			})
+
+			.on('mouseleave', function() {
+
+				d3
+					.select(this)
+					.transition()
+					.duration(Visualization.animationDuration / 3)
+					.attr('d', row => arc(row));
+
+				Tooltip.hide(that.container);
+
+				d3.select(this).classed('hover', false);
+			});
+
+		if(!resize) {
+			slice
+				.transition()
+				.duration(Visualization.animationDuration / data.length * 2)
+				.delay((_, i) => i * Visualization.animationDuration / data.length)
+				.attrTween('d', function(d) {
+
+					const i = d3.interpolate(d.endAngle, d.startAngle);
+
+					return t => {
+						d.startAngle = i(t);
+						return arc(d)
+					}
+				});
+		} else {
+			slice.attr('d', row => arc(row));
+		}
+
+		// Add the text
+		arcs.append('text')
+			.attr('transform', row => {
+				row.innerRadius = radius - 50;
+				row.outerRadius = radius;
+				return `translate(${arc.centroid(row)})`;
+			})
+			.attr('text-anchor', 'middle')
+			.text(row => row.data.percentage + '%');
+	}
+});
+
+Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('section');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'spatial-map');
+
+		container.innerHTML = `
+			<div class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(parameters = {}) {
+
+		super.render();
+
+		await this.source.fetch(parameters);
+
+		this.render();
+	}
+
+	render() {
+
+		const
+			markers = [],
+			response = this.source.response;
+
+		// If the maps object wasn't already initialized
+		if(!this.map)
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), { zoom: 12 });
+
+		// If the clustered object wasn't already initialized
+		if(!this.clusterer)
+			this.clusterer = new MarkerClusterer(this.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+
+		// Add the marker to the markers array
+		for(const row of response) {
+			markers.push(
+				new google.maps.Marker({
+					position: {
+						lat: parseFloat(row.get('lat')),
+						lng: parseFloat(row.get('lng')),
+					},
+				})
+			);
+		}
+
+		if(!this.markers || this.markers.length != markers.length) {
+
+			// Empty the map
+			this.clusterer.clearMarkers();
+
+			// Load the markers
+			this.clusterer.addMarkers(markers);
+
+			this.markers = markers;
+		}
+
+		// Point the map to location's center
+		this.map.panTo({
+			lat: parseFloat(response[0].get('lat')),
+			lng: parseFloat(response[0].get('lng')),
+		});
+	}
+});
+
+Visualization.list.set('cohort', class Cohort extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('section');
+
+		container.classList.add('visualization', 'cohort');
+
+		container.innerHTML = `
+			<div class="container"></div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if(e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+
+		this.container.querySelector('.container').innerHTML = `
+			<div class="loading">
+				<i class="fa fa-spinner fa-spin"></i>
+			</div>
+		`;
+
+		await this.source.fetch();
+
+		this.process();
+		this.render();
+	}
+
+	process() {
+
+		this.max = 0;
+
+		this.source.response.pop();
+
+		for(const row of this.source.response) {
+
+			for(const column of row.get('data') || [])
+				this.max = Math.max(this.max, column.count);
+		}
+	}
+
+	render() {
+
+		const
+			container = this.container.querySelector('.container'),
+			table = document.createElement('table'),
+			tbody = document.createElement('tbody'),
+			type = this.source.filters.get('type').label.querySelector('input').value,
+			response = this.source.response;
+
+		container.textContent = null;
+
+		table.insertAdjacentHTML('beforeend', `
+			<thead>
+				<tr>
+					<th class="sticky">${type[0].toUpperCase() + type.substring(1)}</th>
+					<th class="sticky">Cohort Size</th>
+					<th class="sticky">
+						${response.length && response[0].get('data').map((v, i) => type[0].toUpperCase()+type.substring(1)+' '+(++i)).join('</th><th class="sticky">')}
+					</th>
+				</tr>
+			</thead>
+		`);
+
+		for(const row of response) {
+
+			const cells = [];
+
+			for(const cell of row.get('data')) {
+
+				let contents = Format.number(cell.percentage) + '%';
+
+				if(cell.href)
+					contents = `<a href="${cell.href}" target="_blank">${contents}</a>`;
+
+				cells.push(`
+					<td style="${this.getColor(cell.count)}" class="${cell.href ? 'href' : ''}" title="${cell.description}">
+						${contents}
+					</td>
+				`);
+			}
+
+			let size = Format.number(row.get('size'));
+
+			if(row.get('baseHref'))
+				size = `<a href="${row.get('baseHref')}" target="_blank">${size}</a>`;
+
+			tbody.insertAdjacentHTML('beforeend', `
+				<tr>
+					<td class="sticky">${Format.date(row.get('timing'))}</td>
+					<td class="sticky ${row.get('baseHref') ? 'href' : ''}">${size}</td>
+					${cells.join('')}
+				</tr>
+			`);
+		}
+
+		if(!response.length)
+			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No data found! :('}</caption>`;
+
+		table.appendChild(tbody);
+		container.appendChild(table);
+	}
+
+	getColor(count) {
+
+		const intensity = Math.floor((this.max - count) / this.max * 255);
+
+		return `background: rgba(255, ${intensity}, ${intensity}, 0.8)`;
+	}
+});
+
+Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization {
+
+	get container() {
+
+		if (this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('section');
+
+		container.classList.add('visualization', 'bigtext');
+
+		container.innerHTML = `
+			<div class="container"></div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if (e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+		this.container.querySelector('.container').innerHTML = `
+			<div class="loading">
+				<i class="fa fa-spinner fa-spin"></i>
+			</div>
+		`;
+
+		await this.source.fetch();
+
+		this.process();
+
+		this.render();
+	}
+
+	process() {
+
+		const [response] = this.source.response;
+
+		if(!this.column)
+			return this.source.error('Value column not selected! :(');
+
+		const value = response.get(this.column);
+
+		if(!value)
+			return this.source.error(`<em>${this.column}</em> column not found! :(`);
+
+		if(this.valueType == 'number' && isNaN(value))
+			return this.source.error('Invalid Number! :(');
+
+		if(this.valueType == 'date' && !Date.parse(value))
+			return this.source.error('Invalid Date! :(');
+	}
+
+	render() {
+
+		const [response] = this.source.response;
+
+		let value = response.get(this.column);
+
+		if(this.valueType == 'number')
+			value = Format.number(value);
+
+		if(this.valueType == 'date')
+			value = Format.date(value);
+
+		this.container.querySelector('.container').innerHTML = `
+			<div class="value">
+				${this.prefix || ''}${value}${this.postfix || ''}
+			</div>
+		`;
+	}
+});
+
+Visualization.list.set('livenumber', class LiveNumber extends Visualization {
+
+	get container() {
+
+		if (this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('section');
+
+		container.classList.add('visualization', 'livenumber');
+
+		container.innerHTML = `
+			<div class="container"></div>
+		`;
+
+		return container;
+	}
+
+	async load(e) {
+
+		if (e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+		this.container.querySelector('.container').innerHTML = `
+			<div class="loading">
+				<i class="fa fa-spinner fa-spin"></i>
+			</div>
+		`;
+
+		await this.source.fetch();
+
+		this.process();
+
+		this.render();
+	}
+
+	process() {
+		const response = this.source.response;
+
+		try {
+			for (const row of response) {
+				const responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString();
+				const todayDate = new Date();
+
+				for (let box in this.boxes) {
+					const configDate = new Date(Date.now() - this.boxes[box].offset * 86400000).toDateString();
+					if (responseDate == configDate) {
+						this.boxes[box].value = row.get(this.valueColumn);
+					}
+				}
+			}
+
+			for (let box of this.boxes) {
+				box.percentage = Math.round(((box.value - this.boxes[box.relativeValTo].value) / box.value) * 100);
+			}
+		}
+		catch (e) {
+			return this.source.error(e);
+		}
+	}
+
+	render() {
+		const container = this.container.querySelector('.container');
+		container.textContent = null;
+
+		for (let box of this.boxes) {
+			const configBox = document.createElement('div');
+
+			configBox.innerHTML = `
+				<h7 class="${this.getColor(box.percentage)}">
+					${this.prefix || ''}${box.value}${this.postfix || ''}
+				</h7>
+				<p class="percentage">${box.percentage}%</p>
+			`;
+
+			configBox.style = `
+				grid-column: ${box.column} / span ${box.columnspan};
+				grid-row: ${box.row} / span ${box.rowspan};
+			`;
+
+			container.appendChild(configBox);
+		}
+
+		this.container.querySelector('p').classList.add('hidden');
+	}
+
+	getColor(percentage) {
+		if (percentage == 0)
+			return '';
+		else
+			if (percentage > 0)
+				if (this.invertValues)
+					return 'red';
+				else
+					return 'green';
+			else
+				if (this.invertValues)
+					return 'green';
+				else
+					return 'red';
+	}
+});
+
+Visualization.list.set('json', class JSONVisualization extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		this.containerElement = document.createElement('div');
+
+		const container = this.containerElement;
+
+		container.classList.add('visualization', 'line');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(e, resize) {
+
+		if (e && e.preventDefault)
+			e.preventDefault();
+
+		super.render();
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.render(resize);
+	}
+
+	render(resize) {
+
+		this.editor = new Editor(this.container);
+
+		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
+
+		this.editor.editor.getSession().setMode('ace/mode/json');
+	}
+});
+
+class Tooltip {
+
+	static show(div, position, content) {
+
+		if(!div.querySelector('.tooltip'))
+			div.insertAdjacentHTML('beforeend', `<div class="tooltip"></div>`)
+
+		const
+			container = div.querySelector('.tooltip'),
+			distanceFromMouse = 40;
+
+		container.innerHTML = content;
+
+		if(container.classList.contains('hidden'))
+			container.classList.remove('hidden');
+
+		let left = Math.max(position[0] + distanceFromMouse, 5),
+			top = position[1] + distanceFromMouse;
+
+		if(left + container.clientWidth > div.clientWidth)
+			left = div.clientWidth - container.clientWidth - 5;
+
+		if(top + container.clientHeight > div.clientHeight)
+			top = position[1] - container.clientHeight - distanceFromMouse;
+
+		container.setAttribute('style', `left: ${left}px; top: ${top}px;`);
+	}
+
+	static hide(div) {
+
+		const container = div.querySelector('.tooltip');
+
+		if(!container)
+			return;
+
+		container.classList.add('hidden');
+	}
+}
+
+class Dataset {
+
+	constructor(id, filter) {
+
+		if(!MetaData.datasets.has(id))
+			throw new Page.exception('Invalid dataset id! :(');
+
+		const dataset = MetaData.datasets.get(id);
+
+		for(const key in dataset)
+			this[key] = dataset[key];
+
+		this.filter = filter;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('dataset');
+
+		if(['Start Date', 'End Date'].includes(this.name)) {
+
+			let value = null;
+
+			if(this.name == 'Start Date')
+				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			else
+				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			container.innerHTML = `
+				<input type="date" name="${this.filter.placeholder}" value="${value}">
+			`;
+
+			return container;
+		}
+
+		container.innerHTML = `
+			<input type="search" placeholder="Search...">
+			<div class="options hidden"></div>
+		`;
+
+		const
+			search = this.container.querySelector('input[type=search]'),
+			options = this.container.querySelector('.options');
+
+		search.on('click', e => {
+
+			e.stopPropagation();
+
+			for(const options of document.querySelectorAll('.dataset .options'))
+				options.classList.add('hidden');
+
+			search.value = '';
+			options.classList.remove('hidden');
+
+			this.update();
+		});
+
+		search.on('keyup', () => this.update());
+
+		options.on('click', e => e.stopPropagation());
+
+		document.body.on('click', () => options.classList.add('hidden'));
+
+		options.innerHTML = `
+			<header>
+				<a class="all">All</a>
+				<a class="clear">Clear</a>
+			</header>
+			<div class="list"></div>
+			<div class="no-matches NA hidden">No matches found! :(</div>
+			<footer></footer>
+		`;
+
+		options.querySelector('header .all').on('click', () => this.all());
+		options.querySelector('header .clear').on('click', () => this.clear());
+
+		this.load();
+
+		return container;
+	}
+
+	async load() {
+
+		if(!this.query_id)
+			return [];
+
+		const
+			search = this.container.querySelector('input[type=search]'),
+			list = this.container.querySelector('.options .list');
+
+		let values = [];
+
+		try {
+			values = await this.fetch();
+		} catch(e) {}
+
+		if(!values.length)
+			return list.innerHTML = `<div class="NA">No data found! :(</div>`;
+
+		list.textContent = null;
+
+		for(const row of values) {
+
+			const
+				label = document.createElement('label'),
+				input = document.createElement('input'),
+				text = document.createTextNode(row.name);
+
+			input.name = this.filter.placeholder;
+			input.value = row.value;
+			input.type = this.filter.multiple ? 'checkbox' : 'radio';
+			input.checked = true;
+
+			label.appendChild(input);
+			label.appendChild(text);
+
+			label.setAttribute('title', row.value);
+
+			label.querySelector('input').on('change', () => this.update());
+
+			list.appendChild(label);
+		}
+
+		this.update();
+	}
+
+	async fetch() {
+
+		if(!this.query_id)
+			return [];
+
+		let
+			values,
+			timestamp;
+
+		const parameters = {
+			id: this.id,
+		};
+
+		if(account.auth_api)
+			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = localStorage.access_token;
+
+		try {
+			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
+		} catch(e) {}
+
+		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
+
+			({data: values} = await API.call('datasets/values', parameters));
+
+			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
+		}
+
+		return values;
+	}
+
+	async update() {
+
+		if(!this.query_id)
+			return [];
+
+		const
+			search = this.container.querySelector('input[type=search]'),
+			options = this.container.querySelector('.options');
+
+		for(const input of options.querySelectorAll('.list label input')) {
+
+			let hide = false;
+
+			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+				hide = true;
+
+			input.parentElement.classList.toggle('hidden', hide);
+			input.parentElement.classList.toggle('selected', input.checked);
+		}
+
+		const
+			total = options.querySelectorAll('.list label').length,
+			hidden = options.querySelectorAll('.list label.hidden').length,
+			selected = options.querySelectorAll('.list input:checked').length;
+
+		search.placeholder = `Search... (${selected} selected)`;
+
+		options.querySelector('footer').innerHTML = `
+			<span>Total: <strong>${total}</strong></span>
+			<span>Showing: <strong>${total - hidden}</strong></span>
+			<span>Selected: <strong>${selected}</strong></span>
+		`;
+
+		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
+	}
+
+	set value(source) {
+
+		if(source.query_id) {
+
+			const
+				inputs = this.container.querySelectorAll('.options .list label input'),
+				sourceInputs = source.container.querySelectorAll('.options .list label input');
+
+			if (inputs.length) {
+				for (const [i, input] of sourceInputs.entries())
+					inputs[i].checked = input.checked;
+			}
+		}
+
+		else {
+
+			for(const input of this.container.querySelectorAll('input'))
+				input.checked = source == input.value;
+		}
+
+		this.update();
+	}
+
+	get value() {
+		return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
+	}
+
+	all() {
+
+		if(!this.filter.multiple)
+			return;
+
+		for(const input of this.container.querySelectorAll('.options .list label input'))
+			input.checked = true;
+
+		this.update();
+	}
+
+	clear() {
+
+		for(const input of this.container.querySelectorAll('.options .list label input'))
+			input.checked = false;
+
+		this.update();
+	}
+}
+
+Dataset.timeout = 5 * 60 * 1000;
+Visualization.animationDuration = 750;
+
+DataSourceFilter.setup();

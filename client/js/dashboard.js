@@ -91,8 +91,8 @@ Page.class = class Dashboards extends Page {
 
 		if(window.location.pathname.endsWith('first') && this.list.size) {
 
-			if(localStorage.lastOpenedDashboard && this.list.has(localStorage.lastOpenedDashboard))
-				await this.list.get(localStorage.lastOpenedDashboard).load();
+			if(localStorage.lastOpenedDashboard && this.list.has(parseInt(localStorage.lastOpenedDashboard)))
+				await this.list.get(parseInt(localStorage.lastOpenedDashboard)).load();
 
 			else await Array.from(this.list.values())[0].load();
 		}
@@ -321,7 +321,7 @@ class Dashboard {
 
 	async load(resize) {
 
-		this.lastOpenedDashboard = this.id;
+		localStorage.lastOpenedDashboard = this.id;
 
 		if(!Dashboard.container)
 			return;
@@ -427,7 +427,7 @@ class Dashboard {
 		}
 
 		const configure = Dashboard.toolbar.querySelector('#configure');
-		configure.on('click', () => location.href = `/dashboards/${this.id}`);
+		configure.on('click', () => location.href = `/dashboards-manager/${this.id}`);
 		configure.classList.remove('hidden');
 
 
