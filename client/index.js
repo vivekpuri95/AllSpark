@@ -717,10 +717,8 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 						</div>
 					</div>
 
-					<div class="configuration-section">
-						<h3><i class="fas fa-angle-right"></i> Options</h3>
-						<div class="options form body"></div>
-					</div>
+					<div class="options"></div>
+
 				</form>
 
 				<div class="configuration-section">
