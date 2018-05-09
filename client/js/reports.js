@@ -1647,7 +1647,7 @@ class ReportVisualizationDashboards extends Set {
 			parameters = {
 				dashboard_id: form.dashboard_id.value,
 				visualization_id: stage.visualization.visualization_id,
-				format: JSON.stringify({position: form.position.value})
+				format: JSON.stringify({position: parseInt(form.position.value)})
 			};
 
 		await API.call('reports/dashboard/insert', parameters, option);
@@ -1738,7 +1738,7 @@ class ReportVisualizationDashboard {
 
 		e.preventDefault();
 
-		this.visualization.format.position = this.form.position.value;
+		this.visualization.format.position = parseInt(this.form.position.value);
 
 		const
 			option = {
@@ -2092,7 +2092,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		axis_option.innerHTML = `
 			<h3><i class="fas fa-angle-right"></i> Axes</h3>
 			<div class="options form body">
-				<h4>Axes</h4>
 				<div class="axes"></div>
 				<button class="add-axis" type="button">
 					<i class="fa fa-plus"></i> Add New Axis
@@ -2107,7 +2106,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			<h3><i class="fas fa-angle-right"></i> Options</h3>
 			<div class="options form body">
 				<div class="legend">
-					<label><span>Show Legend</span><input type="checkbox" name="lagend"></label>
+					<label>
+						<span>
+							<input type="checkbox" name="lagend">Show Legend.
+						</span>
+					</label>
 				</div>
 			</div>
 		`;

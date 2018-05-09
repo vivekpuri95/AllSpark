@@ -716,7 +716,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 						</div>
 					</div>
 
-					<div class="options form body"></div>
+					<div class="options body"></div>
 
 				</form>
 
