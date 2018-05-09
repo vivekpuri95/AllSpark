@@ -9,21 +9,34 @@ exports.list = class extends API {
 
 	async list() {
 
+		let query = `
+			SELECT
+				q.*,
+				CONCAT(u.first_name, ' ', u.last_name) AS added_by_name
+			FROM
+				tb_query q
+			LEFT JOIN
+				tb_users u
+			ON
+				q.added_by = u.user_id
+			WHERE
+				is_deleted = 0
+				and q.account_id = ${this.account.account_id}
+        `;
+
+		if(this.request.body.search) {
+			query = query.concat(`
+				AND (
+					query_id LIKE '%${this.request.body.search}%'
+					OR name LIKE '%${this.request.body.search}%'
+					OR tags LIKE '%${this.request.body.search}%'
+				)
+				LIMIT 10
+			`);
+		}
+
 		const results = await Promise.all([
-			this.mysql.query(`
-                SELECT
-                    q.*,
-                    CONCAT(u.first_name, ' ', u.last_name) AS added_by_name
-                FROM
-                    tb_query q
-                LEFT JOIN
-                    tb_users u
-                ON
-                    q.added_by = u.user_id
-                WHERE
-                    is_deleted = 0
-                    and q.account_id = ?
-            `, [this.account.account_id]),
+			this.mysql.query(query),
 			this.mysql.query('SELECT * FROM tb_query_filters'),
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 		]);
@@ -37,6 +50,8 @@ exports.list = class extends API {
 
 			row.filters = results[1].filter(filter => filter.query_id == row.query_id);
 			row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
+			row.href = `/report/${row.query_id}`;
+			row.superset = 'Reports';
 			response.push(row);
 
 			try {

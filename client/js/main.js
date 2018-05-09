@@ -54,6 +54,11 @@ class Page {
 			document.title = account.name;
 		}
 
+		document.querySelector('body > header .global-search input').on('keyup', async () => {
+
+			await Page.search();
+		});
+
 		const user_name = document.querySelector('body > header .user-name');
 
 		if(user.id)
@@ -95,6 +100,59 @@ class Page {
 			Array.from(document.querySelectorAll('body > header nav a')).map(items => items.classList.remove('selected'));
 			user_name.querySelector('a').classList.add('selected');
 		}
+	}
+
+	static async search() {
+
+		const searchList = document.querySelector('body > header .global-search ul');
+		searchList.innerHTML = null;
+
+		if(document.querySelector('body > header .global-search input').value == '') {
+			searchList.classList.add('hidden');
+			return;
+		}
+
+		const params = {
+			text: document.querySelector('body > header .global-search input').value
+		};
+
+		const searchResult = await API.call('search/query', params);
+
+		for(const res of searchResult) {
+
+			searchList.insertAdjacentHTML(
+				'beforeend',
+				`<li><a href="${res.href}"><strong>${res.name}</strong>&nbsp;in&nbsp;<strong>${res.superset}</strong></a></li>`
+			);
+		}
+
+		if(!searchResult.length) {
+			searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
+		}
+
+		Page.setEvents(searchList);
+
+		searchList.classList.remove('hidden');
+	}
+
+	static setEvents(searchList) {
+
+		document.querySelector('body').on('click', () => {
+
+			searchList.classList.add('hidden');
+		});
+
+		document.querySelector('body > header .global-search input').on('click', (e) => {
+
+			if(document.querySelector('body > header .global-search input').value == '') {
+				searchList.classList.add('hidden');
+			}
+			else {
+				searchList.classList.remove('hidden');
+			}
+			e.stopPropagation();
+		});
+
 	}
 
 	constructor() {
@@ -896,7 +954,7 @@ class DataSource {
 				user_element.push(`
 					<li>
 						<a href="/user/profile/${user.user_id}">${user.name}</a>
-						<span>${user.reason.join(",")}</span>
+						<span>${user.reason}</span>
 					</li>
 				`);
 			}
