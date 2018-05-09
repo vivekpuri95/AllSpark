@@ -311,6 +311,8 @@ class Dashboard {
 		this.format.reports = this.format.reports.sort((a, b) => a.position - b.position);
 
 		this.datasets = new DashboardDatasets(this);
+
+		Dashboard.screenHeightOffset = 2 * screen.availHeight;
 	}
 
 	async load(resize) {
@@ -386,9 +388,9 @@ class Dashboard {
 
 		const mainObject = document.querySelector("main");
 
-		let maxScrollHeightAchieved = Math.max(screen.availHeight, mainObject.scrollTop);
+		let maxScrollHeightAchieved = Math.max(Dashboard.screenHeightOffset, mainObject.scrollTop);
 
-		Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
+		Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize,);
 
 
 		mainObject.addEventListener("scroll", () => {
@@ -397,7 +399,7 @@ class Dashboard {
 				reportsPositionObject[report.query_id].position = report.container.getBoundingClientRect().y;
 			}
 			maxScrollHeightAchieved = Math.max(mainObject.scrollTop, maxScrollHeightAchieved);
-			Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize, screen.availHeight);
+			Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize,);
 			},
 			{passive: true}
 			);
@@ -457,7 +459,7 @@ class Dashboard {
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
-	static loadReportsBasedOnScreenHeight(reportsPositionObject, heightScrolled, resize, offset=500) {
+	static loadReportsBasedOnScreenHeight(reportsPositionObject, heightScrolled, resize, offset=Dashboard.screenHeightOffset) {
 		for(const report in reportsPositionObject) {
 
 			if((parseInt(reportsPositionObject[report].position) < heightScrolled + offset) && !reportsPositionObject[report].loaded) {
