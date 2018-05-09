@@ -205,7 +205,7 @@ main #reports > .list {
 	main #reports > .toolbar {
 		position: sticky;
 		top: 0;
-		z-index: 3;
+		z-index: 5;
 		align-items: flex-end;
 	}
 		main #reports > .toolbar input[name=date-range] {
@@ -244,10 +244,13 @@ main #reports > .list {
 		background: rgba(255, 255, 255, 0.8);
 		color: #333;
 		z-index: 4;
+		transition: right var(--transition-duration);
 	}
-
 	main #reports .side:hover {
 		border: 1px solid #999;
+	}
+	main #reports .side.show {
+		right: 260px;
 	}
 		main #reports .side > svg {
 			margin-right: 0px;
