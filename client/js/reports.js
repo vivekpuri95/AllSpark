@@ -136,6 +136,8 @@ class ReportsMangerPreview {
 
 		this.docks.value = localStorage.reportsPreviewDock || 'right';
 
+		localStorage.reportsPreviewDock = this.docks.value;
+
 		this.docks.on('change', () => {
 			localStorage.reportsPreviewDock = this.docks.value;
 			this.move();
@@ -153,7 +155,7 @@ class ReportsMangerPreview {
 		if(this.hidden)
 			return;
 
-		let position = this.docks ? this.docks.value : 'bottom';
+		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'bottom';
 
 		this.page.container.classList.add('preview-' + position);
 
@@ -390,13 +392,15 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			row.querySelector('.visualizations').on('click', () => {
 
-				history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
+				history.pushState({}, '', `/reports/define-report/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
 				this.page.stages.get('configure-visualization').disabled = false;
 
 				this.page.load();
+
+				this.page.stages.get('configure-visualization').select();
 			});
 
 			row.querySelector('.delete').on('click', () => this.delete(report));
@@ -406,6 +410,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		if(!tbody.children.length)
 			tbody.innerHTML = `<tr class="NA"><td colspan="11">No Reports Found! :(</td></tr>`;
+
+		this.switcher.querySelector('small').textContent = 'Pick a report';
 	}
 
 	get reports() {
@@ -588,10 +594,17 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.report = this.selectedReport;
 
-		if(this.report)
-			this.edit();
+		const small = this.page.stages.get('pick-report').switcher.querySelector('small');
 
-		else this.add();
+		if(this.report) {
+			small.textContent = this.report.name + ` #${this.report.query_id}`;
+			this.edit();
+		}
+
+		else {
+			small.textContent = 'Add new report';
+			this.add();
+		}
 	}
 
 	add() {
@@ -829,6 +842,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
+
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
 
 	async update(e) {
@@ -1427,6 +1442,13 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
 
+		if(!window.location.pathname.includes('configure-visualization')) {
+			this.container.classList.add('hidden');
+			return;
+		} else {
+			this.container.classList.remove('hidden');
+		}
+
 		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
 
 		if(!this.visualization)
@@ -1472,7 +1494,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		options.appendChild(this.optionsForm.form);
 
-		await this.dashboards.load();
+		this.dashboards.load();
+
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
+
+		const first = this.container.querySelector('.configuration-section');
+
+		if(first && first.querySelector('.body.hidden'))
+			first.querySelector('h3').click();
 	}
 
 	async insert(e) {

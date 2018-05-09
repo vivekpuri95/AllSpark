@@ -696,7 +696,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 			<section class="section" id="stage-configure-visualization">
 
 				<div class="toolbar">
-					<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save</button>
+					<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save & Preview</button>
 				</div>
 
 				<form id="configure-visualization-form">
@@ -711,7 +711,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 							</label>
 
 							<label>
-								<span>Type</span>
+								<span>Visualization Type</span>
 								<select name="type" required></select>
 							</label>
 						</div>
