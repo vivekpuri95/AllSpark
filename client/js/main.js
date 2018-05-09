@@ -107,40 +107,49 @@ class Page {
 		const searchList = document.querySelector('body > header .global-search ul');
 		searchList.innerHTML = null;
 
-		const params = {
-			text: document.querySelector('body > header .global-search input').value
-		}
-
 		if(document.querySelector('body > header .global-search input').value == '') {
 			searchList.classList.add('hidden');
 			return;
 		}
 
+		const params = {
+			text: document.querySelector('body > header .global-search input').value
+		};
+
 		const searchResult = await API.call('search/query', params);
 
-		for(const res of searchResult){
+		for(const res of searchResult) {
 
 			searchList.insertAdjacentHTML(
 				'beforeend',
-				`<li><a href="${res.href}"><strong>${res.name}</strong> in <strong>${res.superset}</strong></a></li>`
+				`<li><a href="${res.href}"><strong>${res.name}</strong>&nbsp;in&nbsp;<strong>${res.superset}</strong></a></li>`
 			);
 		}
 
-		Page.setEvents();
+		if(!searchResult.length) {
+			searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
+		}
+
+		Page.setEvents(searchList);
 
 		searchList.classList.remove('hidden');
 	}
 
-	static setEvents() {
+	static setEvents(searchList) {
 
 		document.querySelector('body').on('click', () => {
 
-			document.querySelector('body > header .global-search ul').classList.add('hidden');
+			searchList.classList.add('hidden');
 		});
 
 		document.querySelector('body > header .global-search input').on('click', (e) => {
 
-			document.querySelector('body > header .global-search ul').classList.remove('hidden');
+			if(document.querySelector('body > header .global-search input').value == '') {
+				searchList.classList.add('hidden');
+			}
+			else {
+				searchList.classList.remove('hidden');
+			}
 			e.stopPropagation();
 		});
 
