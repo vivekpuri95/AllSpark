@@ -1019,6 +1019,11 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 						<span>Query Id</span>
 						<input type="number" name="query_id">
 					</label>
+					
+					<label>
+						<span>Order</span>
+						<input type="number" name="order">
+					</label>
 				</form>
 			</section>
 		</div>
