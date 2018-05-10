@@ -98,7 +98,9 @@ Page.class = class Login extends Page {
 
 		try {
 
-			localStorage.refresh_token = await API.call('authentication/login', {}, options);
+			const response = await API.call('authentication/login', {}, options);
+
+			localStorage.refresh_token = response.jwt;
 
 			await API.refreshToken();
 
