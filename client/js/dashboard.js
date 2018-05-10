@@ -1010,7 +1010,11 @@ class DashboardDatasets extends Map {
 
 		container.innerHTML = '<h3>Global Filters</h3>';
 
-		for(const dataset of this.values()) {
+		const datasets = Array.from(this.values()).sort((a, b) => {
+			return a.order - b.order;
+		});
+
+		for(const dataset of datasets) {
 
 			const
 				label = document.createElement('label'),
