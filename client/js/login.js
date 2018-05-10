@@ -59,7 +59,10 @@ Page.class = class Login extends Page {
 					method: 'POST',
 				};
 
-			localStorage.refresh_token = await API.call('authentication/login', params, options);
+			const response = await API.call('authentication/login', params, options);
+
+			localStorage.refresh_token = response.jwt;
+			localStorage.access_token = response.access_token;
 
 		} catch(error) {
 
