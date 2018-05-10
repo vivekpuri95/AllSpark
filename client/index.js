@@ -986,6 +986,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 							<th>Name</th>
 							<th>Category</th>
 							<th>Query id</th>
+							<th>Order</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>
