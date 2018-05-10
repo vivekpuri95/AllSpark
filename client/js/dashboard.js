@@ -835,7 +835,6 @@ class Dashboard {
 			};
 
 		await API.call('reports/dashboard/update', parameters, options);
-
 	}
 
 	get menuItem() {

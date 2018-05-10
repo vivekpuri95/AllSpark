@@ -2189,6 +2189,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				position: axis.querySelector('select[name=position]').value,
 				label: axis.querySelector('input[name=label]').value,
 				columns,
+				restcolumns: axis.querySelector('input[name=restcolumns]').checked,
 			});
 		}
 
@@ -2204,7 +2205,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		container.innerHTML = `
 			<label>
 				<span>Position</span>
-				<select name="position" value="${axis.position}">
+				<select name="position" value="${axis.position}" required>
 					<option value="top">Top</option>
 					<option value="right">Right</option>
 					<option value="bottom">Bottom</option>
@@ -2221,6 +2222,8 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<span>Columns</span>
 				<select name="columns" multiple></select>
 			</label>
+
+			<label><span><input type="checkbox" name="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 			<label>
 				<button class="delete" type="button">
