@@ -2252,6 +2252,7 @@ class LinearVisualization extends Visualization {
 		super(visualization, source);
 
 		for(const axis of this.axes || []) {
+
 			this.axes[axis.position] = axis;
 			axis.column = axis.columns.length ? axis.columns[0].key : '';
 		}
@@ -2264,6 +2265,20 @@ class LinearVisualization extends Visualization {
 
 		if(!this.axes)
 			return this.source.error('Axes not defined! :(');
+
+		for(const axis of this.axes) {
+
+			if(!axis.restcolumns)
+				continue;
+
+			axis.columns = [];
+
+			for(const key of this.source.columns.keys()) {
+
+				if(!this.axes.some(a => a.columns.some(c => c.key == key)))
+					axis.columns.push({key});
+			}
+		}
 
 		if(!this.axes.bottom)
 			return this.source.error('Bottom axis not defined! :(');
