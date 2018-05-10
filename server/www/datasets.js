@@ -53,11 +53,22 @@ exports.insert = class extends API {
 
 		const params = {
 			account_id: this.account.account_id,
-			name: this.request.body.name,
-			query_id: this.request.body.query_id,
-			category_id: this.request.body.category_id,
 			created_by: this.user.user_id
 		};
+
+		const keys = [
+			'name',
+			'query_id',
+			'category_id',
+			'order'
+		];
+
+		for (const key in this.request.body) {
+			if (keys.includes(key)) {
+				params[key] = this.request.body[key];
+			}
+		}
+
 		return await this.mysql.query(
 			`INSERT INTO tb_datasets SET ?`,
 			[params],
@@ -70,13 +81,21 @@ exports.update = class extends API {
 	async update() {
 		this.user.privilege.needs('report');
 
-		const params = {
-			account_id: this.account.account_id,
-			name: this.request.body.name,
-			query_id: this.request.body.query_id,
-			category_id: this.request.body.category_id,
-			created_by: this.user.user_id
-		};
+		const keys = [
+			'name',
+			'query_id',
+			'category_id',
+			'order'
+		];
+
+		const params = {};
+
+		for (const key in this.request.body) {
+			if (keys.includes(key)) {
+				params[key] = this.request.body[key];
+			}
+		}
+
 		return await this.mysql.query(
 			`UPDATE tb_datasets SET ? WHERE account_id = ? AND id = ?`,
 			[params, this.account.account_id, this.request.body.id],

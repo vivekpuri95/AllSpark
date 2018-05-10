@@ -1130,6 +1130,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		tbody.textContent = null;
 
+		this.report.filters.sort((a, b) => {
+			a = MetaData.datasets.has(a.dataset) ? MetaData.datasets.get(a.dataset).order : 0;
+			b = MetaData.datasets.has(b.dataset) ? MetaData.datasets.get(b.dataset).order : 0;
+
+			return a - b;
+		});
+
 		for(const filter of this.report.filters) {
 
 			const row = document.createElement('tr');
