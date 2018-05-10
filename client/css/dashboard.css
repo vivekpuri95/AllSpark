@@ -195,11 +195,10 @@ main #reports > .datasets.show {
 
 main #reports > .list {
 	display: grid;
-	grid-template-columns: repeat(8, 12.5%);
-	grid-auto-rows: 250px;
+	grid-template-columns: repeat(32, 1.25fr);
+	grid-auto-rows: calc(50px - (var(--gap) * 4));
 	grid-column-gap: calc(var(--gap) * 2);
 	grid-row-gap: calc(var(--gap) * 4);
-	width: calc(100% - var(--gap) * 14);
 	align-items: start;
 }
 	main #reports > .toolbar {
@@ -217,7 +216,7 @@ main #reports > .list {
 			max-width: 200px;
 		}
 	main #reports .list .data-source {
-		grid-column: auto / span 8;
+		grid-column: auto / span 16;
 		grid-row: auto / span 2;
 		position: relative;
 		transition: grid-column 300ms;

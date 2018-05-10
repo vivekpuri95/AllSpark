@@ -269,9 +269,9 @@ class Dashboard {
 	static setup(page) {
 
 		Dashboard.grid = {
-			columns: 8,
-			rows: 2,
-			rowHeight: 250,
+			columns: 32,
+			rows: 10,
+			rowHeight: 50,
 		};
 
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
@@ -757,17 +757,16 @@ class Dashboard {
 
 			let format = (this.format.reports[report.dashboard.position]) || {};
 
-			if(!format.format) {
+			if(!format.format)
 				format.format = {};
-			}
 
 			const visualizationFormat = format.format;
 
 			if(report.draggingEdge.classList.contains('right')) {
 
 				const
-					column = getColumn(e.clientX) + 1,
-					columnStart = getColumn(report.container.offsetLeft);
+					columnStart = getColumn(report.container.offsetLeft),
+					column = getColumn(e.clientX) + 1;
 
 				if(column <= columnStart)
 					return;
@@ -778,13 +777,13 @@ class Dashboard {
 			if(report.draggingEdge.classList.contains('bottom')) {
 
 				const
-					row = getRow(e.clientY) + 1,
-					rowStart = getRow(report.container.offsetTop);
+					rowStart = getRow(report.container.offsetTop),
+					row = rowStart + getRow(e.clientY);
 
 				if(row <= rowStart)
 					return;
 
-				visualizationFormat.height = row - rowStart;
+				visualizationFormat.height = row - rowStart - 1;
 			}
 
 			if(
@@ -798,19 +797,22 @@ class Dashboard {
 					grid-row: auto / span ${visualizationFormat.height || Dashboard.grid.rows};
 				`);
 
-				if(this.dragTimeout) {
+				if(this.dragTimeout)
 					clearTimeout(this.dragTimeout);
-				}
-				this.dragTimeout = setTimeout(() => this.save(visualizationFormat, format.id), 1000);
 
-				report.visualizations.selected.render(true);
+				this.dragTimeout = setTimeout(() => report.visualizations.selected.render(true), 400);
+
+				if(this.saveTimeout)
+					clearTimeout(this.saveTimeout);
+
+				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, format.id), 1000);
 			}
 		});
 
 		function getColumn(position) {
 			return Math.floor(
 				(position - Dashboard.container.offsetLeft) /
-				((Dashboard.container.clientWidth / Dashboard.grid.columns) + 10)
+				((Dashboard.container.clientWidth / Dashboard.grid.columns))
 			);
 		}
 
