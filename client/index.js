@@ -1229,7 +1229,7 @@ class Template {
 
 						<nav></nav>
 
-						<span class="global-search">
+						<span class="global-search hidden">
 							<input name="globalSearch" class="search-input" placeholder="Search...">
 							<ul class="hidden"></ul>
 						</span>

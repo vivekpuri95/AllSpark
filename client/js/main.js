@@ -56,17 +56,22 @@ class Page {
 			document.title = account.name;
 		}
 
-		document.querySelector('body > header .global-search input').on('keyup', async () => {
+		const user_name = document.querySelector('body > header .user-name');
+
+		if(user.id) {
+
+			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
+			document.querySelector('body > header .global-search').classList.remove('hidden');
+		}
+		document.querySelector('body > header .logout').on('click', () => User.logout());
+
+		document.querySelector('body > header .global-search input').on('keyup', async (e) => {
+
+			if([37, 38, 39, 40].some(key => key == e.which))
+				return;
 
 			await Page.search();
 		});
-
-		const user_name = document.querySelector('body > header .user-name');
-
-		if(user.id)
-			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
-
-		document.querySelector('body > header .logout').on('click', () => User.logout());
 
 		Page.navList = [
 			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
@@ -106,11 +111,11 @@ class Page {
 
 	static async search() {
 
-		const searchList = document.querySelector('body > header .global-search ul');
-		searchList.innerHTML = null;
+		Page.searchList = document.querySelector('body > header .global-search ul');
+		Page.searchList.innerHTML = null;
 
 		if(document.querySelector('body > header .global-search input').value == '') {
-			searchList.classList.add('hidden');
+			Page.searchList.classList.add('hidden');
 			return;
 		}
 
@@ -120,40 +125,86 @@ class Page {
 
 		const searchResult = await API.call('search/query', params);
 
-		for(const res of searchResult) {
+		for(const [i, res] of searchResult.entries()) {
 
-			searchList.insertAdjacentHTML(
-				'beforeend',
-				`<li><a href="${res.href}"><strong>${res.name}</strong>&nbsp;in&nbsp;<strong>${res.superset}</strong></a></li>`
-			);
+			const list_item = document.createElement('li');
+
+			list_item.setAttribute('tabIndex', 0);
+
+			list_item.innerHTML = `
+				<a href="${res.href}" tabindex="-1">
+					<span><strong>${res.name}</strong> in <strong>${res.superset}</strong></span>
+				</a>
+				<span class="li-edit"><i class="far fa-edit"></i></span>
+			`;
+
+			list_item.querySelector('.li-edit').on('click', () => {
+
+				const href = {
+					Reports : '/reports/configure-report/query_id',
+					Dashboards : '/dashboards-manager/id',
+					Users : '/users/user_id',
+					Datasets : '/settings/datasets/id'
+				};
+
+				href[res.superset] = href[res.superset].split('/');
+				const suffix = href[res.superset].pop();
+				href[res.superset] = href[res.superset].join('/').concat(`/${res[suffix]}`);
+
+				location.href = href[res.superset];
+
+			});
+
+			Page.searchList.appendChild(list_item);
 		}
 
 		if(!searchResult.length) {
-			searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
+			Page.searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
 		}
 
-		Page.setEvents(searchList);
+		// document.querySelector('body > header .global-search input').on('keydown', (e) => Page.searchUpDown(e));
 
-		searchList.classList.remove('hidden');
+		Page.setEvents();
+
+		Page.searchList.classList.remove('hidden');
+
 	}
 
-	static setEvents(searchList) {
+	static setEvents() {
 
 		document.querySelector('body').on('click', () => {
 
-			searchList.classList.add('hidden');
+			Page.searchList.classList.add('hidden');
 		});
 
 		document.querySelector('body > header .global-search input').on('click', (e) => {
 
 			if(document.querySelector('body > header .global-search input').value == '') {
-				searchList.classList.add('hidden');
+				Page.searchList.classList.add('hidden');
 			}
 			else {
-				searchList.classList.remove('hidden');
+				Page.searchList.classList.remove('hidden');
 			}
 			e.stopPropagation();
 		});
+
+	}
+
+	static searchUpDown(e) {
+
+		e.stopPropagation();
+
+		let active_li = Page.searchList.activeElement || Page.searchList.querySelector('li');
+		active_li.blur();
+
+		if (e.which == 40){
+			active_li = active_li.nextElementSibling || active_li;
+		}
+		else if (e.which == 38){
+			active_li = active_li.previousElementSibling || active_li;
+		}
+
+		active_li.focus();
 
 	}
 

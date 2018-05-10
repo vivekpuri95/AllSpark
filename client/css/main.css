@@ -219,25 +219,52 @@ body {
 
 				body > header .global-search ul li {
 					color: #333;
-					height: 45px;
-					transition: 0.5s;
+					transition: 300ms;
+					display: flex;
+					justify-content: space-between;
+					min-height: 40px;
+					max-height: 100px;
+					overflow: hidden;
 				}
-
+				body > header .global-search ul li:focus {
+					background: #ddd;
+					outline: 1px;
+				}
+				body > header .global-search ul li:focus .li-edit {
+					opacity: 1;
+				}
 				body > header .global-search ul li:hover {
 					background: #ddd;
+				}
+				body > header .global-search ul li:hover .li-edit {
+					opacity: 1;
+				}
+
+				body > header .global-search ul li:active{
+					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.1);
 				}
 
 					body > header .global-search ul li a{
 						color: #333;
-						align-self: center;
 						display: flex;
-						height: 100%;
-						align-items: center;
 						padding-left: 10px;
+						align-items: center;
+						width: 100%;
+						outline: 0;
 					}
 
 					body > header .global-search ul li a:hover {
 						background: none;
+						transition: 0.3s;
+					}
+
+					body > header .global-search ul li .li-edit {
+						opacity: 0;
+						display: flex;
+						padding: 3px 5px;
+						align-items: center;
+						cursor: pointer;
+						transition: 300ms;
 					}
 
 		body > header .user-name {
