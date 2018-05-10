@@ -65,10 +65,7 @@ class Page {
 		}
 		document.querySelector('body > header .logout').on('click', () => User.logout());
 
-		document.querySelector('body > header .global-search input').on('keyup', async (e) => {
-
-			if([37, 38, 39, 40].some(key => key == e.which))
-				return;
+		document.querySelector('body > header .global-search input').on('keyup', async () => {
 
 			await Page.search();
 		});
@@ -162,7 +159,7 @@ class Page {
 			Page.searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
 		}
 
-		// document.querySelector('body > header .global-search input').on('keydown', (e) => Page.searchUpDown(e));
+		document.querySelector('body > header .global-search').on('keydown', (e) => Page.searchUpDown(e));
 
 		Page.setEvents();
 
@@ -194,17 +191,16 @@ class Page {
 
 		e.stopPropagation();
 
-		let active_li = Page.searchList.activeElement || Page.searchList.querySelector('li');
-		active_li.blur();
+		Page.active_li = Page.active_li || Page.searchList.querySelector('li');
 
 		if (e.which == 40){
-			active_li = active_li.nextElementSibling || active_li;
+			Page.active_li = Page.active_li.nextElementSibling || Page.active_li;
 		}
 		else if (e.which == 38){
-			active_li = active_li.previousElementSibling || active_li;
+			Page.active_li = Page.active_li.previousElementSibling || Page.active_li;
 		}
 
-		active_li.focus();
+		Page.active_li.focus();
 
 	}
 
