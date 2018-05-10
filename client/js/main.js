@@ -122,7 +122,7 @@ class Page {
 
 		const searchResult = await API.call('search/query', params);
 
-		for(const [i, res] of searchResult.entries()) {
+		for(const res of searchResult) {
 
 			const list_item = document.createElement('li');
 
@@ -193,10 +193,10 @@ class Page {
 
 		Page.active_li = Page.active_li || Page.searchList.querySelector('li');
 
-		if (e.which == 40){
+		if (e.which == 40) {
 			Page.active_li = Page.active_li.nextElementSibling || Page.active_li;
 		}
-		else if (e.which == 38){
+		else if (e.which == 38) {
 			Page.active_li = Page.active_li.previousElementSibling || Page.active_li;
 		}
 
