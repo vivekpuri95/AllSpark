@@ -269,9 +269,9 @@ class Dashboard {
 	static setup(page) {
 
 		Dashboard.grid = {
-			columns: 8,
-			rows: 2,
-			rowHeight: 250,
+			columns: 16,
+			rows: 5,
+			rowHeight: 100,
 		};
 
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
