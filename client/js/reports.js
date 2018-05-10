@@ -2278,6 +2278,8 @@ class LinearVisualization extends Visualization {
 				if(!this.axes.some(a => a.columns.some(c => c.key == key)))
 					axis.columns.push({key});
 			}
+
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
 		}
 
 		if(!this.axes.bottom)
