@@ -281,10 +281,10 @@ class Dashboard {
 		const container = page.container.querySelector('#reports #blanket');
 
 		side_button.on('click', () => {
-
 			container.classList.toggle('hidden');
 			page.container.querySelector('#reports .datasets').classList.toggle('show');
 			side_button.classList.toggle('show');
+			side_button.classList.toggle('selected');
 			side_button.innerHTML = `<i class="fas fa-angle-double-${container.classList.contains('hidden') ? 'left' : 'right'}"></i>`;
 		});
 
@@ -293,6 +293,7 @@ class Dashboard {
 			container.classList.add('hidden');
 			page.container.querySelector('#reports .datasets').classList.remove('show');
 			side_button.classList.remove('show');
+			side_button.classList.remove('selected');
 			side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
 		});
 	}
@@ -1084,7 +1085,7 @@ class DashboardDatasets extends Map {
 			}
 
 			if(found) {
-				report.visualizations.selected.load();
+				setTimeout(() => report.visualizations.selected.load(), 0);
 				report.container.style.opacity = 1;
 			}
 
