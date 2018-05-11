@@ -1349,6 +1349,7 @@ class DataSourceColumn {
 
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
+		this.source.columns.sortBy = this;
 		await this.source.visualizations.selected.render();
 		this.blanket.classList.add('hidden');
 	}
