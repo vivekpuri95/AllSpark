@@ -31,8 +31,10 @@ class Page {
 
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
-			if(parameters.has('access_token') && parameters.get('access_token'))
+			if(parameters.has('access_token') && parameters.get('access_token')) {
+				User.logout();
 				localStorage.access_token = parameters.get('access_token');
+			}
 		}
 	}
 
@@ -277,13 +279,9 @@ class User {
 
 	static logout(next) {
 
-		const
-			access_token = localStorage.access_token || '',
-			parameters = new URLSearchParams();
+		const parameters = new URLSearchParams();
 
 		localStorage.clear();
-
-		localStorage.access_token = access_token || '';
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
