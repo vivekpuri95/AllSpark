@@ -33,9 +33,10 @@ Page.class = class Dashboards extends Page {
 
 		this.list.clear();
 
-		await DataSource.load(true);
-
-		const dashboards = await API.call('dashboards/list');
+		const [_, dashboards] = await Promise.all([
+			DataSource.load(true),
+			API.call('dashboards/list')
+		]);
 
 		const dummyDashboard = {
 			"id": -1,
