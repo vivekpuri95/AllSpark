@@ -208,7 +208,7 @@ class GlobalSearch {
 			}
 		);
 
-		this.container.on('keydown', Page.keyUpDownListenter = e => this.searchUpDown(e));
+		// this.container.on('keydown', Page.keyUpDownListenter = e => this.searchUpDown(e));
 
 	}
 
