@@ -682,7 +682,7 @@ class SettingsAccount {
 		this.form.querySelector("#icon").src = this.icon;
 		this.form.querySelector("#logo").src = this.logo;
 
-		const fields = ["name", "url", "icon", "logo",];
+		const fields = ["name", "url", "icon", "logo", "auth_api"];
 
 		for(const field of fields) {
 			this.form[field].value = SettingsAccount.format(this[field]);
@@ -739,7 +739,7 @@ class SettingsAccount {
 
 		const tr = document.createElement("tr");
 
-		const whiteListElements = ["account_id", "name", "icon", "url", "logo",];
+		const whiteListElements = ["account_id", "name", "icon", "url", "logo", "auth_api"];
 
 		for (const element in this) {
 
