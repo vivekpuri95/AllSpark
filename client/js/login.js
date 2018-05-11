@@ -53,7 +53,7 @@ Page.class = class Login extends Page {
 
 			const
 				params = {
-					access_token: localStorage.access_token || parameters.get('access_token'),
+					access_token: localStorage.access_token || parameters.get('access_token') || '',
 				},
 				options = {
 					method: 'POST',
