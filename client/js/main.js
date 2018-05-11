@@ -558,7 +558,7 @@ class API extends AJAX {
 				method: 'POST',
 			};
 
-		if(account.auth_api)
+		if(account.auth_api && parameters.access_token)
 			parameters.access_token = localStorage.access_token;
 
 		const response = await API.call('authentication/refresh', parameters, options);
