@@ -5548,7 +5548,7 @@ class Dataset {
 			id: this.id,
 		};
 
-		if(account.auth_api)
+		if(account.auth_api && localStorage.access_token)
 			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = localStorage.access_token;
 
 		try {
