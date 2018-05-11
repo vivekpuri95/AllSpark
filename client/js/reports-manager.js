@@ -2146,7 +2146,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 					<div class="legend">
 						<label>
 							<span>
-								<input type="checkbox" name="lagend">Show Legend.
+								<input type="checkbox" name="lagend">Hide Legend.
 							</span>
 						</label>
 					</div>
@@ -2175,7 +2175,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const response = {
 			axes: [],
-			legend: this.formContainer.querySelector('.legend input').checked,
+			hideLegend: this.formContainer.querySelector('.legend input').checked,
 		};
 
 		for(const axis of this.formContainer.querySelectorAll('.axis')) {

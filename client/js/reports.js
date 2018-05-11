@@ -2241,7 +2241,7 @@ class Visualization {
 		this.source.resetError();
 
 		if(this.options)
-			this.source.container.querySelector('.columns').classList.toggle('hidden', !this.options.legend)
+			this.source.container.querySelector('.columns').classList.toggle('hidden', this.options.hideLegend)
 	}
 }
 
