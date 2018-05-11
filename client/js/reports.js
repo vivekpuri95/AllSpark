@@ -436,6 +436,7 @@ class DataSource {
 
 			if(!row.skip)
 				response.push(row);
+
 		}
 
 		if(this.postProcessors.selected)
@@ -834,7 +835,7 @@ class DataSourceRow extends Map {
 				}
 			}
 
-			if(column.filtered) {
+			if(column.searchQuery && column.searchQuery !== '') {
 
 				if(!row[key])
 					this.skip = true;
@@ -1348,6 +1349,7 @@ class DataSourceColumn {
 
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
+		this.source.columns.sortBy = this;
 		await this.source.visualizations.selected.render();
 		this.blanket.classList.add('hidden');
 	}
