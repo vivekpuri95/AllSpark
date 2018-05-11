@@ -1139,6 +1139,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 						<th>URL</th>
 						<th>Icon</th>
 						<th>Logo</th>
+						<th>Authentication API</th>
 						<th>Edit</th>
 						<th>Delete</th>
 					</thead>
@@ -1171,7 +1172,10 @@ router.get('/settings/:tab?/:id?', (request, response) => {
                         <img src="" alt="logo" id="logo" height="30">
                         <input type="text" name="logo">
                     </label>
-
+					<label>
+                        <span>Authentication API</span>
+                        <input type="text" name="auth_api">
+                    </label>
 					<label id="format">
 						<span>Settings</span>
 						<textarea id="settings-format" name="settings"></textarea>
