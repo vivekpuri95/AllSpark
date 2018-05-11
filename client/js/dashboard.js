@@ -1013,6 +1013,11 @@ class DashboardDatasets extends Map {
 		container.innerHTML = '<h3>Global Filters</h3>';
 
 		const datasets = Array.from(this.values()).sort((a, b) => {
+			if (!a.order)
+				return 1;
+			if (!b.order)
+				return -1;
+
 			return a.order - b.order;
 		});
 

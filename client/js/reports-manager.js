@@ -1134,6 +1134,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			a = MetaData.datasets.has(a.dataset) ? MetaData.datasets.get(a.dataset).order : 0;
 			b = MetaData.datasets.has(b.dataset) ? MetaData.datasets.get(b.dataset).order : 0;
 
+			if (!a)
+				return 1;
+			if (!b)
+				return -1;
+
 			return a - b;
 		});
 
