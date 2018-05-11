@@ -199,7 +199,7 @@ exports.refresh = class extends API {
 			} catch(e) {}
 
 			result = result.data;
-			userDetail = result.data.userDetails;
+			userDetail = result.userDetails;
 		}
 
 		this.assert(userDetail, "User not found! :(", 401);
