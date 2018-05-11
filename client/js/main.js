@@ -283,7 +283,7 @@ class User {
 
 		localStorage.clear();
 
-		localStorage.access_token = access_token || '';
+		//localStorage.access_token = access_token || '';
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
