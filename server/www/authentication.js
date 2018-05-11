@@ -115,7 +115,7 @@ exports.login = class extends API {
 
 	async login() {
 
-		let userDetail;
+		let userDetail, access_token;
 
 		if (this.account.auth_api && this.request.body.access_token) {
 
@@ -132,12 +132,14 @@ exports.login = class extends API {
 				},
 				gzip: true
 			});
-
 			try {
 				result = JSON.parse(result.body);
 			} catch(e) {}
 
+			result = result.data;
+			access_token = result.access_token;
 			userDetail = result.userDetails;
+
 		} else {
 
 			this.assert(this.request.body.email, "Email Required");
@@ -162,7 +164,7 @@ exports.login = class extends API {
 			email: userDetail.email,
 		};
 
-		return commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400);
+		return {jwt: commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400), access_token: access_token};
 	}
 };
 
@@ -192,10 +194,12 @@ exports.refresh = class extends API {
 			});
 
 			try {
+
 				result = JSON.parse(result.body);
 			} catch(e) {}
 
-			userDetail = result.userDetails;
+			result = result.data;
+			userDetail = result.data.userDetails;
 		}
 
 		this.assert(userDetail, "User not found! :(", 401);
