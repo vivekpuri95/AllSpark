@@ -139,7 +139,7 @@ body {
 		position: sticky;
 		top: 0;
 		z-index: 10;
-		flex: 50px 0 0;
+		flex: 60px 0 0;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	}
 	body > header::-webkit-scrollbar {
@@ -429,15 +429,18 @@ body {
 
 .global-search {
 	width: 250px;
-	margin-left: 10px;
+	align-self:  center;
+	margin: 0 10px 0 auto;
+	position: relative;
 }
 	.global-search > input.search-input {
 		width: 100%;
-		margin-top: 10px;
+		/* margin-top: 10px; */
 		border-radius: 5px;
 		background: rgba(255,255,255,0.15) !important;
 		border: 0px !important;
 		color: #fff;
+		align-self: center;
 	}
 	.global-search > input.search-input:focus {
 	background: #fff !important;
@@ -450,6 +453,9 @@ body {
 		color: #333;
 		background: #fff;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
+		position: absolute;
+		right: 0;
+		left: 0;
 	}
 		.global-search ul li {
 			display: flex;

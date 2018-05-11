@@ -1229,7 +1229,6 @@ class Template {
 
 						<nav></nav>
 
-						<span class="search"></span>
 						<span class="user-name"></span>
 						<span class="logout">
 							<i class="fa fa-power-off"></i>&nbsp;

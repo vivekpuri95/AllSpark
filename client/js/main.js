@@ -61,8 +61,8 @@ class Page {
 		if(user.id) {
 
 			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
-			const search = new GlobalSearch(document.querySelector('body > header .search')).container;
-			document.querySelector('body > header .search').appendChild(search);
+			const search = new GlobalSearch(document.querySelector('body > header .search')).container();
+			document.querySelector('body > header').insertBefore(search, document.querySelector('body > header .user-name'));
 		}
 		document.querySelector('body > header .logout').on('click', () => User.logout());
 
@@ -168,20 +168,7 @@ Page.serviceWorker = class PageServiceWorker {
 
 class GlobalSearch {
 
-	constructor(element) {
-
-		this.container = document.createElement('div');
-		this.container.classList.add('global-search');
-
-		this.container.innerHTML = `
-			<input class="search-input" placeholder="Search...">
-			<ul class="hidden"></ul>
-		`;
-
-		this.searchList = this.container.querySelector('ul');
-		this.setEvents();
-
-		element.appendChild(this.container);
+	constructor() {
 	}
 
 	setEvents() {
@@ -221,7 +208,7 @@ class GlobalSearch {
 			}
 		);
 
-		// this.container.on('keydown', Page.keyUpDownListenter = e => this.searchUpDown(e));
+		this.container.on('keydown', Page.keyUpDownListenter = e => this.searchUpDown(e));
 
 	}
 
@@ -241,6 +228,22 @@ class GlobalSearch {
 
 		this.active_li.focus();
 
+	}
+
+	container() {
+
+		this.container = document.createElement('div');
+		this.container.classList.add('global-search');
+
+		this.container.innerHTML = `
+			<input class="search-input" placeholder="Search...">
+			<ul class="hidden"></ul>
+		`;
+
+		this.searchList = this.container.querySelector('ul');
+		this.setEvents();
+
+		return this.container;
 	}
 
 	async loadList() {
@@ -296,11 +299,6 @@ class GlobalSearch {
 		if(!data.length) {
 			this.searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
 		}
-	}
-
-	get searchContainer() {
-
-		return this.container;
 	}
 
 	viewList() {
