@@ -61,14 +61,11 @@ class Page {
 		if(user.id) {
 
 			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
-			document.querySelector('body > header .global-search').classList.remove('hidden');
+			const search = new GlobalSearch(document.querySelector('body > header .search')).container;
+			document.querySelector('body > header .search').appendChild(search);
 		}
 		document.querySelector('body > header .logout').on('click', () => User.logout());
 
-		document.querySelector('body > header .global-search input').on('keyup', async () => {
-
-			await Page.search();
-		});
 
 		Page.navList = [
 			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
@@ -104,104 +101,6 @@ class Page {
 			Array.from(document.querySelectorAll('body > header nav a')).map(items => items.classList.remove('selected'));
 			user_name.querySelector('a').classList.add('selected');
 		}
-	}
-
-	static async search() {
-
-		Page.searchList = document.querySelector('body > header .global-search ul');
-		Page.searchList.innerHTML = null;
-
-		if(document.querySelector('body > header .global-search input').value == '') {
-			Page.searchList.classList.add('hidden');
-			return;
-		}
-
-		const params = {
-			text: document.querySelector('body > header .global-search input').value
-		};
-
-		const searchResult = await API.call('search/query', params);
-
-		for(const res of searchResult) {
-
-			const list_item = document.createElement('li');
-
-			list_item.setAttribute('tabIndex', 0);
-
-			list_item.innerHTML = `
-				<a href="${res.href}" tabindex="-1">
-					<span><strong>${res.name}</strong> in <strong>${res.superset}</strong></span>
-				</a>
-				<span class="li-edit"><i class="far fa-edit"></i></span>
-			`;
-
-			list_item.querySelector('.li-edit').on('click', () => {
-
-				const href = {
-					Reports : '/reports/configure-report/query_id',
-					Dashboards : '/dashboards-manager/id',
-					Users : '/users/user_id',
-					Datasets : '/settings/datasets/id'
-				};
-
-				href[res.superset] = href[res.superset].split('/');
-				const suffix = href[res.superset].pop();
-				href[res.superset] = href[res.superset].join('/').concat(`/${res[suffix]}`);
-
-				location.href = href[res.superset];
-
-			});
-
-			Page.searchList.appendChild(list_item);
-		}
-
-		if(!searchResult.length) {
-			Page.searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
-		}
-
-		document.querySelector('body > header .global-search').on('keydown', (e) => Page.searchUpDown(e));
-
-		Page.setEvents();
-
-		Page.searchList.classList.remove('hidden');
-
-	}
-
-	static setEvents() {
-
-		document.querySelector('body').on('click', () => {
-
-			Page.searchList.classList.add('hidden');
-		});
-
-		document.querySelector('body > header .global-search input').on('click', (e) => {
-
-			if(document.querySelector('body > header .global-search input').value == '') {
-				Page.searchList.classList.add('hidden');
-			}
-			else {
-				Page.searchList.classList.remove('hidden');
-			}
-			e.stopPropagation();
-		});
-
-	}
-
-	static searchUpDown(e) {
-
-		e.stopPropagation();
-
-		Page.active_li = Page.active_li || Page.searchList.querySelector('li');
-
-		if (e.which == 40) {
-			Page.active_li = Page.active_li.nextElementSibling || Page.active_li;
-		}
-		else if (e.which == 38) {
-			Page.active_li = Page.active_li.previousElementSibling || Page.active_li;
-		}
-
-		Page.active_li.focus();
-
 	}
 
 	constructor() {
@@ -264,6 +163,154 @@ Page.serviceWorker = class PageServiceWorker {
 			this.page.container.parentElement.insertBefore(message, this.page.container);
 
 		}, 1000);
+	}
+}
+
+class GlobalSearch {
+
+	constructor(element) {
+
+		this.container = document.createElement('div');
+		this.container.classList.add('global-search');
+
+		this.container.innerHTML = `
+			<input class="search-input" placeholder="Search...">
+			<ul class="hidden"></ul>
+		`;
+
+		this.searchList = this.container.querySelector('ul');
+		this.setEvents();
+
+		element.appendChild(this.container);
+	}
+
+	setEvents() {
+
+		this.searchInput = this.container.querySelector('input');
+
+		document.querySelector('body').on('click', () => {
+
+			this.hideList();
+		});
+34
+		this.searchInput.on('click', (e) => {
+
+			if(this.searchInput.value == '') {
+				this.hideList();
+			}
+			else {
+				this.viewList();
+			}
+			e.stopPropagation();
+		});
+
+		this.searchInput.on('keyup', async (e) => {
+
+			clearTimeout(GlobalSearch.inputTimeout);
+			e.stopPropagation();
+
+			if(this.searchInput.value == '') {
+				this.hideList();
+				return;
+			}
+
+			GlobalSearch.inputTimeout = setTimeout( async () => {
+				await this.loadList()
+			}, 300);
+
+			}
+		);
+
+		// this.container.on('keydown', Page.keyUpDownListenter = e => this.searchUpDown(e));
+
+	}
+
+	searchUpDown(e) {
+
+		e.stopPropagation();
+
+		if (e.which == 40) {
+			this.active_li = this.active_li.nextElementSibling || this.active_li
+		}
+		else if (e.which == 38) {
+			this.active_li = this.active_li.previousElementSibling || this.active_li;
+		}
+		else {
+			return
+		}
+
+		this.active_li.focus();
+
+	}
+
+	async loadList() {
+
+		this.container.removeEventListener('keydown', Page.keyUpDownListenter);
+		this.active_li = this.searchList.querySelector('li');
+
+		const params = {
+			text: this.searchInput.value
+		};
+
+		this.listElements = await API.call('search/query', params);
+		this.viewList();
+	}
+
+	set listElements(data) {
+
+		this.searchList.innerHTML = null;
+
+		for(const row of data) {
+
+			const list_item = document.createElement('li');
+
+			list_item.setAttribute('tabIndex', 0);
+
+			list_item.innerHTML = `
+				<a href="${row.href}" tabindex="-1">
+					<span><strong>${row.name}</strong> in <strong>${row.superset}</strong></span>
+				</a>
+				<span class="li-edit"><i class="far fa-edit"></i></span>
+			`;
+
+			list_item.querySelector('.li-edit').on('click', () => {
+
+				const href = {
+					Reports : '/reports/configure-report/query_id',
+					Dashboards : '/dashboards-manager/id',
+					Users : '/users/user_id',
+					Datasets : '/settings/datasets/id'
+				};
+
+				href[res.superset] = href[res.superset].split('/');
+				const suffix = href[res.superset].pop();
+				href[res.superset] = href[res.superset].join('/').concat(`/${res[suffix]}`);
+
+				location.href = href[res.superset];
+
+			});
+
+			this.searchList.appendChild(list_item);
+		}
+
+		if(!data.length) {
+			this.searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
+		}
+	}
+
+	get searchContainer() {
+
+		return this.container;
+	}
+
+	viewList() {
+
+		this.searchList.classList.remove('hidden');
+	}
+
+	hideList() {
+
+		this.searchList.classList.add('hidden');
 	}
 }
 

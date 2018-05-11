@@ -1229,10 +1229,7 @@ class Template {
 
 						<nav></nav>
 
-						<span class="global-search hidden">
-							<input name="globalSearch" class="search-input" placeholder="Search...">
-							<ul class="hidden"></ul>
-						</span>
+						<span class="search"></span>
 						<span class="user-name"></span>
 						<span class="logout">
 							<i class="fa fa-power-off"></i>&nbsp;

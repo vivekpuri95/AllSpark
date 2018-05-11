@@ -141,7 +141,6 @@ body {
 		z-index: 10;
 		flex: 50px 0 0;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-		overflow: auto;
 	}
 	body > header::-webkit-scrollbar {
 		display: none;
@@ -162,16 +161,13 @@ body {
 		body > header nav {
 			display: flex;
 		}
-		body > header .logout,
-		body > header nav a,
-		body > header .user-name a {
+		body > header .logout, body > header nav > a, body > header .user-name a {
 			display: flex;
 			color: var(--color-primary-text);
 			padding: 15px 20px;
 			letter-spacing: 1px;
 			transition: background var(--transition-duration);
 			align-items: center;
-			white-space: nowrap;
 		}
 		body > header .logout:hover,
 		body > header a:hover,
@@ -186,86 +182,9 @@ body {
 			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 		}
 
-		body > header .global-search {
+		body > header .search {
 			margin-left: auto;
-			margin-right: 10px;
-			align-self: center;
-			width: 250px;
 		}
-			body > header .global-search .search-input {
-				border-radius: 5px;
-				width: 100%;
-				background: rgba(255, 255, 255, 0.15);
-				outline: 0;
-				border: 0;
-				color: #fff;
-			}
-			body > header .global-search .search-input:focus {
-				background: #fff;
-				color: #333;
-			}
-			body > header .global-search ul {
-				position: fixed;
-				margin: 0px;
-				background: #fff;
-				list-style-type: none;
-				padding: 0px;
-				width: inherit;
-				margin-top: 5px;
-				max-height: 400px;
-				overflow: auto;
-				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-			}
-
-				body > header .global-search ul li {
-					color: #333;
-					transition: 300ms;
-					display: flex;
-					justify-content: space-between;
-					min-height: 40px;
-					max-height: 100px;
-					overflow: hidden;
-				}
-				body > header .global-search ul li:focus {
-					background: #ddd;
-					outline: 1px;
-				}
-				body > header .global-search ul li:focus .li-edit {
-					opacity: 1;
-				}
-				body > header .global-search ul li:hover {
-					background: #ddd;
-				}
-				body > header .global-search ul li:hover .li-edit {
-					opacity: 1;
-				}
-
-				body > header .global-search ul li:active {
-					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.1);
-				}
-
-					body > header .global-search ul li a {
-						color: #333;
-						display: flex;
-						padding-left: 10px;
-						align-items: center;
-						width: 100%;
-						outline: 0;
-					}
-
-					body > header .global-search ul li a:hover {
-						background: none;
-						transition: 0.3s;
-					}
-
-					body > header .global-search ul li .li-edit {
-						opacity: 0;
-						display: flex;
-						padding: 3px 5px;
-						align-items: center;
-						cursor: pointer;
-						transition: 300ms;
-					}
 
 		body > header .user-name {
 			white-space: nowrap;
@@ -507,3 +426,74 @@ body {
 			bottom: 0;
 			height: 40px;
 		}
+
+.global-search {
+	width: 250px;
+	margin-left: 10px;
+}
+	.global-search > input.search-input {
+		width: 100%;
+		margin-top: 10px;
+		border-radius: 5px;
+		background: rgba(255,255,255,0.15) !important;
+		border: 0px !important;
+		color: #fff;
+	}
+	.global-search > input.search-input:focus {
+	background: #fff !important;
+	color: #333;
+	}
+	.global-search ul {
+		margin: 0;
+		padding: 5px 0;
+		list-style-type: none;
+		color: #333;
+		background: #fff;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
+	}
+		.global-search ul li {
+			display: flex;
+			justify-content: space-between;
+			outline: 0;
+			max-height: 100px;
+			white-space: normal;
+			align-items: center;
+			display: grid;
+			transition: background var(--transition-duration), box-shadow var(--transition-duration);
+			grid-template-columns: 1fr max-content;
+		}
+
+		.global-search ul li:active {
+		box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.1);
+		}
+
+		.global-search ul li:focus,
+		.global-search ul li:hover{
+		background: #eee;
+		}
+			.global-search ul li a {
+			color: #333;
+			outline: 0;
+			padding: 10px;
+			height: 100%;
+			align-items: center;
+			display: flex;
+			}
+			.global-search ul li a:hover {
+			background: none;
+			}
+			.global-search ul li .li-edit {
+			padding: 0 10px;
+			align-self: center;
+			cursor: pointer;
+			opacity: 0;
+			transition: var(--transition-duration);
+			display: flex;
+			height: 100%;
+			align-items: center;
+			outline: 2px;
+			}
+			.global-search ul li:focus .li-edit,
+			.global-search ul li:hover .li-edit {
+				opacity: 1;
+			}
