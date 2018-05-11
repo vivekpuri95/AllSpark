@@ -192,7 +192,7 @@ class GlobalSearch {
 
 			this.hideList();
 		});
-34
+
 		this.searchInput.on('click', (e) => {
 
 			if(this.searchInput.value == '') {
@@ -282,11 +282,11 @@ class GlobalSearch {
 					Datasets : '/settings/datasets/id'
 				};
 
-				href[res.superset] = href[res.superset].split('/');
-				const suffix = href[res.superset].pop();
-				href[res.superset] = href[res.superset].join('/').concat(`/${res[suffix]}`);
+				href[row.superset] = href[row.superset].split('/');
+				const suffix = href[row.superset].pop();
+				href[row.superset] = href[row.superset].join('/').concat(`/${row[suffix]}`);
 
-				location.href = href[res.superset];
+				location.href = href[row.superset];
 
 			});
 
