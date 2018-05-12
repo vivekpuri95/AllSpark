@@ -389,8 +389,8 @@ router.get('/dashboards-manager/:id?', (request, response) => {
 				<label>
 					<span>Type</span>
 					<select name="visibility">
-						<option value="public">Public</option>
 						<option value="private">Private</option>
+						<option value="public">Public</option>
 					</select>
 				</label>
 			</form>
@@ -1020,7 +1020,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 						<span>Query Id</span>
 						<input type="number" name="query_id">
 					</label>
-					
+
 					<label>
 						<span>Order</span>
 						<input type="number" name="order">

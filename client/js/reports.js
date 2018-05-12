@@ -2848,7 +2848,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3054,7 +3054,7 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3222,7 +3222,7 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3385,7 +3385,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3768,7 +3768,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.bottom.domain().length / tickNumber),
 			ticks = this.bottom.domain().filter((d, i) => !(i % tickInterval));
 
@@ -4132,7 +4132,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -4300,7 +4300,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval)),
 
@@ -5459,11 +5459,13 @@ class Dataset {
 
 			e.stopPropagation();
 
-			for(const options of document.querySelectorAll('.dataset .options'))
-				options.classList.add('hidden');
+			for(const options_ of document.querySelectorAll('.dataset .options')) {
+				if(options_ != options)
+					options_.classList.add('hidden');
+			}
 
 			search.value = '';
-			options.classList.remove('hidden');
+			options.classList.toggle('hidden');
 
 			this.update();
 		});
@@ -5530,6 +5532,10 @@ class Dataset {
 			label.setAttribute('title', row.value);
 
 			label.querySelector('input').on('change', () => this.update());
+			label.on('dblclick', e => {
+				this.clear();
+				label.click();
+			});
 
 			list.appendChild(label);
 		}
