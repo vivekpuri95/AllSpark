@@ -408,6 +408,10 @@ main.preview-left #stages {
 				background: #c33;
 				border: 0;
 			}
+			#stage-configure-visualization #dashboards .view-dashboard {
+				font-size: 90%;
+				margin-left: var(--gap);
+			}
 			#stage-configure-visualization #dashboards .dashboard-action {
 				display: grid;
 				max-width: 200px;

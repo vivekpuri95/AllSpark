@@ -1728,8 +1728,7 @@ class ReportVisualizationDashboard {
 		form.innerHTML = `
 			<label>
 				<span>Dashboard</span>
-				<select name="dashboard_id">
-				</select>
+				<div><select name="dashboard_id"></select> <a target="_blank" class="view-dashboard">View</a></div>
 			</label>
 
 			<label>
@@ -1757,6 +1756,7 @@ class ReportVisualizationDashboard {
 			`);
 		}
 
+		form.dashboard_id.on('change', () => form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value);
 		form.dashboard_id.value = this.visualization.dashboard_id;
 
 		form.querySelector('.delete').on('click', () => this.delete());

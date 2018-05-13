@@ -210,7 +210,6 @@ Settings.list.set('roles', class Roles extends SettingPage {
 	}
 });
 
-
 Settings.list.set('accounts', class Accounts extends SettingPage {
 
 	get name() {
@@ -316,7 +315,7 @@ class SettingsDataset {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.category_id && MetaData.categories.has(this.category_id) ? MetaData.categories.get(this.category_id).name : ''}</td>
-			<td>${this.query_id}</td>
+			<td><a href="/report/${this.query_id}" target="_blank">${this.query_id}</td>
 			<td>${this.order || ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
