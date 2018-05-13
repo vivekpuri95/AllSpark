@@ -837,6 +837,14 @@
 	font-weight: bold;
 	pointer-events: none;
 }
+.visualization .container > svg circle.bubble {
+	opacity: 0.8;
+	transition: opacity var(--transition-duration);
+}
+.visualization .container > svg circle.bubble:hover {
+	cursor: pointer;
+	opacity: 1;
+}
 .visualization.bigtext .container .value {
 	display: flex;
 	align-items: center;

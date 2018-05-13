@@ -469,7 +469,7 @@ class Dashboard {
 		for(const visualization_id in reportsPositionObject) {
 
 			if((parseInt(reportsPositionObject[visualization_id].position) < heightScrolled + offset) && !reportsPositionObject[visualization_id].loaded) {
-				reportsPositionObject[visualization_id].report.visualizations.selected.load(null, resize);
+				reportsPositionObject[visualization_id].report.visualizations.selected.load({resize});
 				reportsPositionObject[visualization_id].loaded = true;
 			}
 		}
@@ -1046,7 +1046,7 @@ class DashboardDatasets extends Map {
 		`);
 
 		container.querySelector('button.apply').on('click', () => this.apply());
-		container.querySelector('button.reload').on('click', () => this.apply());
+		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
 
 		const resetToggle = container.querySelector('button.reset-toggle');
 
@@ -1074,7 +1074,7 @@ class DashboardDatasets extends Map {
 		});
 	}
 
-	apply() {
+	apply(options = {}) {
 
 		for(const report of this.page.list.selectedReports) {
 
@@ -1091,7 +1091,7 @@ class DashboardDatasets extends Map {
 			}
 
 			if(found) {
-				setTimeout(() => report.visualizations.selected.load(), 0);
+				setTimeout(() => report.visualizations.selected.load(options), 0);
 				report.container.style.opacity = 1;
 			}
 

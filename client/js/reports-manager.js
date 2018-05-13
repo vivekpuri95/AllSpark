@@ -2195,6 +2195,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				label: axis.querySelector('input[name=label]').value,
 				columns,
 				restcolumns: axis.querySelector('input[name=restcolumns]').checked,
+				format: axis.querySelector('select[name=format]').value,
 			});
 		}
 
@@ -2231,6 +2232,14 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			<label><span><input type="checkbox" name="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 			<label>
+				<span>Format</span>
+				<select name="format">
+					<option value="">None</option>
+					<option value="s">SI</option>
+				</select>
+			</label>
+
+			<label>
 				<button class="delete" type="button">
 					<i class="far fa-trash-alt"></i> Delete
 				</button>
@@ -2247,6 +2256,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		}
 
 		container.querySelector('select[name=position]').value = axis.position;
+		container.querySelector('select[name=format]').value = axis.format;
 
 		container.querySelector('.delete').on('click', () => container.parentElement && container.parentElement.removeChild(container));
 
@@ -2306,39 +2316,42 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 		const container = this.formContainer = document.createElement('div');
 
-		container.classList.add('subform');
-
 		container.innerHTML = `
-			<label>
-				<span>Column</span>
-				<select name="column"></select>
-			</label>
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body form">
+					<label>
+						<span>Column</span>
+						<select name="column"></select>
+					</label>
 
-			<label>
-				<span>Type</span>
-				<select name="valueType">
-					<option value="text">Text</option>
-					<option value="number">Number</option>
-					<option value="date">Date</option>
-				</select>
-			</label>
+					<label>
+						<span>Type</span>
+						<select name="valueType">
+							<option value="text">Text</option>
+							<option value="number">Number</option>
+							<option value="date">Date</option>
+						</select>
+					</label>
 
-			<label>
-				<span>Prefix</span>
-				<input type="text" name="prefix" value="${(this.visualization.options && this.visualization.options.prefix) || ''}">
-			</label>
+					<label>
+						<span>Prefix</span>
+						<input type="text" name="prefix" value="${(this.visualization.options && this.visualization.options.prefix) || ''}">
+					</label>
 
-			<label>
-				<span>Postfix</span>
-				<input type="text" name="postfix" value="${(this.visualization.options && this.visualization.options.postfix) || ''}">
-			</label>
+					<label>
+						<span>Postfix</span>
+						<input type="text" name="postfix" value="${(this.visualization.options && this.visualization.options.postfix) || ''}">
+					</label>
+				</div>
+			</div>
 		`;
 
 		const
 			columnSelect = container.querySelector('select[name=column]'),
 			valueType = container.querySelector('select[name=valueType]');
 
-		for(const [key, column] of this.report.columns) {
+		for(const [key, column] of this.page.preview.report.columns) {
 
 			columnSelect.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
@@ -2347,6 +2360,8 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 		columnSelect.value = (this.visualization.options && this.visualization.options.column) || '';
 		valueType.value = (this.visualization.options && this.visualization.options.valueType) || '';
+
+		this.stage.setupConfigurationSetions(container);
 
 		return container;
 	}
@@ -2469,41 +2484,42 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 	}
 
 	box(boxValues = {}) {
+
 		const boxConfig = document.createElement('div');
 
 		boxConfig.classList.add('subform', 'form');
 
 		boxConfig.innerHTML = `
-				<label>
-					<span>Offset</span>
-					<input type="text" name="offset">
-				</label>
+			<label>
+				<span>Offset</span>
+				<input type="text" name="offset">
+			</label>
 
-				<label>
-					<span>Relative To(Index)</span>
-					<input type="text" name="relativeValTo">
-				</label>
+			<label>
+				<span>Relative To(Index)</span>
+				<input type="text" name="relativeValTo">
+			</label>
 
-				<label>
-					<span>Column</span>
-					<input type="text" name="column">
-				</label>
+			<label>
+				<span>Column</span>
+				<input type="text" name="column">
+			</label>
 
-				<label>
-					<span>Row</span>
-					<input type="text" name="row">
-				</label>
+			<label>
+				<span>Row</span>
+				<input type="text" name="row">
+			</label>
 
-				<label>
-					<span>Column Span</span>
-					<input type="text" name="columnspan">
-				</label>
+			<label>
+				<span>Column Span</span>
+				<input type="text" name="columnspan">
+			</label>
 
-				<label>
-					<span>Row Span</span>
-					<input type="text" name="rowspan">
-				</label>
-			`;
+			<label>
+				<span>Row Span</span>
+				<input type="text" name="rowspan">
+			</label>
+		`;
 
 		if (boxValues) {
 			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
