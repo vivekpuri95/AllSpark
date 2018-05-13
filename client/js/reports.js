@@ -3767,7 +3767,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		this.bottom.rangeBands([0, this.width], 0.1, 0);
 
 		const
-			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			biggestTick = this.bottom.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
 			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.bottom.domain().length / tickNumber),
 			ticks = this.bottom.domain().filter((d, i) => !(i % tickInterval));

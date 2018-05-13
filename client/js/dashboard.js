@@ -383,7 +383,7 @@ class Dashboard {
 
 			Dashboard.container.appendChild(report.container);
 
-			reportsPositionObject[report.query_id] = ({
+			reportsPositionObject[report.dashboard.visualization_id] = ({
 				position: report.container.getBoundingClientRect().y,
 				loaded: false,
 				report: report
@@ -402,7 +402,7 @@ class Dashboard {
 		mainObject.addEventListener("scroll", () => {
 
 			for(const report of this.reports) {
-				reportsPositionObject[report.query_id].position = report.container.getBoundingClientRect().y;
+				reportsPositionObject[report.dashboard.visualization_id].position = report.container.getBoundingClientRect().y;
 			}
 			maxScrollHeightAchieved = Math.max(mainObject.scrollTop, maxScrollHeightAchieved);
 			Dashboard.loadReportsBasedOnScreenHeight(reportsPositionObject, maxScrollHeightAchieved, resize,);
@@ -466,11 +466,11 @@ class Dashboard {
 	}
 
 	static loadReportsBasedOnScreenHeight(reportsPositionObject, heightScrolled, resize, offset=Dashboard.screenHeightOffset) {
-		for(const report in reportsPositionObject) {
+		for(const visualization_id in reportsPositionObject) {
 
-			if((parseInt(reportsPositionObject[report].position) < heightScrolled + offset) && !reportsPositionObject[report].loaded) {
-				reportsPositionObject[report].report.visualizations.selected.load(null, resize);
-				reportsPositionObject[report].loaded = true;
+			if((parseInt(reportsPositionObject[visualization_id].position) < heightScrolled + offset) && !reportsPositionObject[visualization_id].loaded) {
+				reportsPositionObject[visualization_id].report.visualizations.selected.load(null, resize);
+				reportsPositionObject[visualization_id].loaded = true;
 			}
 		}
 	}
