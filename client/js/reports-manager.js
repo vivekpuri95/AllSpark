@@ -2256,7 +2256,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		}
 
 		container.querySelector('select[name=position]').value = axis.position;
-		container.querySelector('select[name=format]').value = axis.format;
+		container.querySelector('select[name=format]').value = axis.format || '';
 
 		container.querySelector('.delete').on('click', () => container.parentElement && container.parentElement.removeChild(container));
 
