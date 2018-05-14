@@ -1192,7 +1192,11 @@ class DataSourceColumn {
 
 				if (!found) {
 					this.disabled = true;
-					this.source.format.columns.push(this);
+					const obj = {
+						key: this.key,
+						disabled: true
+					};
+					this.source.format.columns.push(obj);
 				}
 
 				this.source.columns.render();
