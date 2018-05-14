@@ -34,7 +34,7 @@ router.get('/login', (request, response) => {
 		<div class="logo hidden">
 			<img src="" />
 		</div>
-		
+
 		<div class="whitelabel">
 			<i class="fa fa-spinner fa-spin"></i>
 		</div>
@@ -414,8 +414,7 @@ router.get('/dashboards-manager/:id?', (request, response) => {
 						<th class="action">Action</th>
 					</tr>
 				</thead>
-				<tbody>
-				</tbody>
+				<tbody></tbody>
 			</table>
 		</section>
 	`));
@@ -510,7 +509,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 						<div id="missing-filters" class="hidden"></div>
 					</div>
 
-					<div id="api" class="hidden">
+					<div id="api" class="hidden form">
 
 						<label>
 							<span>URL</span>
