@@ -486,6 +486,7 @@ body {
 				padding: 10px;
 				height: 100%;
 				align-items: center;
+				white-space: nowrap;
 				display: flex;
 			}
 			.global-search ul li a:hover {
