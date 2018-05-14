@@ -305,7 +305,7 @@ class APIRequest {
 
 		this.prepareQuery();
 
-		if(this.urlOptions.method === "GET") {
+		if (this.urlOptions.method === "GET") {
 
 			return {
 				request: [this.url, {...this.urlOptions}],
@@ -314,7 +314,7 @@ class APIRequest {
 		}
 
 		return {
-			request: [this.url, {body:this.parameters, ...this.urlOptions}],
+			request: [this.url, {body: this.parameters, ...this.urlOptions}],
 			type: "api",
 		}
 	}
@@ -325,9 +325,9 @@ class APIRequest {
 
 		for (const filter of this.filters) {
 
-			if(filter.value.__proto__.constructor.name === "Array") {
+			if (filter.value.__proto__.constructor.name === "Array") {
 
-				for(const item of filter.value) {
+				for (const item of filter.value) {
 
 					parameters.append(filter.placeholder, item);
 				}
@@ -361,7 +361,7 @@ class APIRequest {
 
 		if (this.urlOptions.method === 'GET') {
 
-			this.url += parameters;
+			this.url += "?" + parameters;
 		}
 
 		this.parameters = parameters;
@@ -495,7 +495,7 @@ class ReportEngine extends API {
 		};
 	}
 
-	async log(query_id, query="", result_query, executionTime, type, userId, is_redis, rows) {
+	async log(query_id, query = "", result_query, executionTime, type, userId, is_redis, rows) {
 
 		try {
 
