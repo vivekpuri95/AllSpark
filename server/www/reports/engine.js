@@ -11,6 +11,8 @@ const redis = require("../../utils/redis").Redis;
 const requestPromise = promisify(request);
 const config = require("config");
 const fs = require("fs");
+const fetch = require('node-fetch');
+const URLSearchParams = require('url').URLSearchParams;
 
 // prepare the raw data
 class report extends API {
@@ -304,17 +306,14 @@ class APIRequest {
 		this.prepareQuery();
 
 		return {
-			request: [{
-				har: this.har,
-				gzip: true,
-			}],
+			request: [this.url, {body:this.parameters, ...this.urlOptions}],
 			type: "api",
 		}
 	}
 
 	prepareQuery() {
 
-		let parameters = [];
+		let parameters = new URLSearchParams;
 
 		for (const filter of this.filters) {
 
@@ -322,27 +321,20 @@ class APIRequest {
 
 				for(const item of filter.value) {
 
-					parameters.push({
-						name: filter.placeholder,
-						value: item
-					});
+					parameters.append(filter.placeholder, item);
 				}
 			}
 
 			else {
 
-				parameters.push({
-					name: filter.placeholder,
-					value: filter.value
-				});
+				parameters.append(filter.placeholder, filter.value);
 			}
 		}
 
-		parameters = parameters.map(x => `${x.name}=${x.value}`).join("");
 
 		try {
 
-			this.har = JSON.parse(this.reportObj.url_options);
+			this.urlOptions = JSON.parse(this.reportObj.url_options);
 		}
 
 		catch (e) {
@@ -352,37 +344,20 @@ class APIRequest {
 			return err;
 		}
 
-		this.har.queryString = [];
-
-		this.har.headers = [
-			{
-				name: 'content-type',
-				value: 'application/x-www-form-urlencoded'
-			}
-		];
-
-		this.har.url = this.reportObj.url;
-
-		if (this.har.method === 'GET') {
-
-			this.har.queryString = parameters;
-		}
-
-		else {
-
-			this.har.postData = {
-				mimeType: 'application/x-www-form-urlencoded',
-				text: parameters,
-			};
-		}
-
 		if (!this.filters.filter(f => f.placeholder === 'token').length) {
 
-			this.har.queryString.push({
-				name: 'token',
-				value: this.token,
-			});
+			parameters.append("token", this.token);
 		}
+
+		this.url = this.reportObj.url;
+
+		if (this.urlOptions.method === 'GET') {
+
+			this.url += parameters;
+		}
+
+		this.parameters = parameters;
+
 	}
 }
 
@@ -466,7 +441,7 @@ class ReportEngine extends API {
 		ReportEngine.engines = {
 			mysql: this.mysql.query,
 			pgsql: this.pgsql.query,
-			api: requestPromise,
+			api: fetch,
 		};
 
 		this.parameters = parameters || {};
@@ -502,9 +477,7 @@ class ReportEngine extends API {
 
 			query = this.parameters.request;
 
-			data = JSON.parse(data.body);
-
-			delete data[0].har.postData.paramsObj
+			data = await data.json();
 		}
 
 		return {
@@ -514,13 +487,14 @@ class ReportEngine extends API {
 		};
 	}
 
-	async log(query_id, query, result_query, executionTime, type, userId, is_redis, rows) {
+	async log(query_id, query="", result_query, executionTime, type, userId, is_redis, rows) {
 
 		try {
 
 			if (typeof result_query === "object") {
 
-				query = JSON.stringify(query)
+				query = JSON.stringify(query);
+				result_query = JSON.stringify(result_query);
 			}
 
 			const db = dbConfig.write.database.concat('_logs');
