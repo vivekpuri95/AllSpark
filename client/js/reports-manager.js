@@ -2151,7 +2151,14 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 					<div class="legend">
 						<label>
 							<span>
-								<input type="checkbox" name="lagend">Hide Legend.
+								<input type="checkbox">Hide Legend.
+							</span>
+						</label>
+					</div>
+					<div class="show-values">
+						<label>
+							<span>
+								<input type="checkbox">Show Value.
 							</span>
 						</label>
 					</div>
@@ -2166,8 +2173,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : [])
 			axes.appendChild(this.axis(axis));
 
-		if(this.visualization.options && this.visualization.options.legend)
-			container.querySelector('.legend input').checked = this.visualization.options.legend;
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('.legend input').checked = this.visualization.options.hideLegend;
+
+		if(this.visualization.options && this.visualization.options.showValues)
+			container.querySelector('.show-values input').checked = this.visualization.options.showValues;
 
 		container.querySelector('.add-axis').on('click', () => {
 			axes.appendChild(this.axis());
@@ -2181,6 +2191,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		const response = {
 			axes: [],
 			hideLegend: this.formContainer.querySelector('.legend input').checked,
+			showValues: this.formContainer.querySelector('.show-values input').checked,
 		};
 
 		for(const axis of this.formContainer.querySelectorAll('.axis')) {
