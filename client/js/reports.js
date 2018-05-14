@@ -157,7 +157,7 @@ class DataSource {
 					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
 					<div class="download-dropdown-content hidden">
 						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
-						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i>xlsx</button>
+						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i>Xlsx</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
 						<button class="export-toggle"><i class="fa fa-download"></i> Export</button>
 					</div>
@@ -208,7 +208,7 @@ class DataSource {
 			</div>
 		`;
 
-		document.querySelector('body').on('click', e => {
+		document.querySelector('body').on('click', (e) => {
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
 		})
 
