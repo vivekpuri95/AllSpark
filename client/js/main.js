@@ -176,7 +176,6 @@ class GlobalSearch {
 		this.searchInput = this.container.querySelector('input');
 
 		document.querySelector('body').on('click', () => {
-
 			this.hideList();
 		});
 
@@ -202,7 +201,7 @@ class GlobalSearch {
 			}
 
 			GlobalSearch.inputTimeout = setTimeout( async () => {
-				await this.loadList()
+				await this.loadList();
 			}, 300);
 
 			}
@@ -304,11 +303,13 @@ class GlobalSearch {
 	viewList() {
 
 		this.searchList.classList.remove('hidden');
+		this.searchInput.classList.add('bottom-border');
 	}
 
 	hideList() {
 
 		this.searchList.classList.add('hidden');
+		this.searchInput.classList.remove('bottom-border');
 	}
 }
 

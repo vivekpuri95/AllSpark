@@ -435,12 +435,15 @@ body {
 }
 	.global-search > input.search-input {
 		width: 100%;
-		/* margin-top: 10px; */
 		border-radius: 5px;
 		background: rgba(255,255,255,0.15) !important;
 		border: 0px !important;
 		color: #fff;
 		align-self: center;
+	}
+	.global-search > input.search-input.bottom-border {
+
+		border-radius: 5px 5px 0px 0px;
 	}
 	.global-search > input.search-input:focus {
 	background: #fff !important;
@@ -452,10 +455,12 @@ body {
 		list-style-type: none;
 		color: #333;
 		background: #fff;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
 		position: absolute;
 		right: 0;
 		left: 0;
+		max-height: 400px;
+		overflow: auto;
 	}
 		.global-search ul li {
 			display: flex;
