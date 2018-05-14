@@ -1191,6 +1191,7 @@ class DataSourceColumn {
 				}
 
 				if (!found) {
+					this.disabled = !this.disabled;
 					this.source.format.columns ?
 					this.source.format.columns.push({
 						key: this.key,
