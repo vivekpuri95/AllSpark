@@ -411,7 +411,7 @@ class Dashboard {
 			);
 
 		if(!this.page.list.selectedReports.size)
-			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
+			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
 
 		if(this.page.user.privileges.has('reports')) {
 

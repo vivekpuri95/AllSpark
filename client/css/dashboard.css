@@ -201,6 +201,9 @@ main #reports > .list {
 	grid-row-gap: calc(var(--gap) * 4);
 	align-items: start;
 }
+	main #reports > .list .NA.no-reports {
+		width: 150px;
+	}
 	main #reports > .toolbar {
 		position: sticky;
 		top: 0;
