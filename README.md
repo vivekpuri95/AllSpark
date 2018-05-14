@@ -27,11 +27,11 @@ The repo has a config directory in the root. Look for the `/config/sample.json` 
 
 Fill in the necessery details in the json file and start your pm2 instances.
 
-## Start Client & Server
+## Start Server
 
 ### Unix
 ```
-NODE_ENV='env' pm2 start bin/www --name env
+NODE_ENV='demo' pm2 start bin/www --name demo
 ```
 
 ### Windows
@@ -44,3 +44,24 @@ pm2 start bin/www --name env
 ```
 NODE_ENV="dev" npm start
 ```
+
+## Install Instructions
+
+### Ubuntu (18)
+
+sudo apt-get install mysql-server
+sudo apt-get install apache2
+sudo apt-get install php
+sudo apt-get install phpmyadmin
+sudo apt-get install redis-server
+sudo apt-get install nodejs
+
+npm install -g pm2
+redis-server --daemonize yes
+
+git clone ... allspark
+cd allspark
+npm install
+cp config/sample.json config/env.json
+// Add DB crendetials
+// Follow the Start Server Section's instructions

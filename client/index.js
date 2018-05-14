@@ -389,8 +389,8 @@ router.get('/dashboards-manager/:id?', (request, response) => {
 				<label>
 					<span>Type</span>
 					<select name="visibility">
-						<option value="public">Public</option>
 						<option value="private">Private</option>
+						<option value="public">Public</option>
 					</select>
 				</label>
 			</form>
@@ -432,8 +432,8 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
-		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
@@ -1020,7 +1020,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 						<span>Query Id</span>
 						<input type="number" name="query_id">
 					</label>
-					
+
 					<label>
 						<span>Order</span>
 						<input type="number" name="order">

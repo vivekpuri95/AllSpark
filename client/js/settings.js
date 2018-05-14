@@ -118,8 +118,6 @@ Settings.list.set('datasets', class Datasets extends SettingPage {
 
 		await Sections.show('datasets-list');
 	}
-
-
 });
 
 Settings.list.set('privileges', class Privileges extends SettingPage {
@@ -166,8 +164,6 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 
 		await Sections.show('privileges-list');
 	}
-
-
 });
 
 Settings.list.set('roles', class Roles extends SettingPage {
@@ -211,10 +207,8 @@ Settings.list.set('roles', class Roles extends SettingPage {
 			container.appendChild(role.row);
 
 		await Sections.show('roles-list');
-
 	}
 });
-
 
 Settings.list.set('accounts', class Accounts extends SettingPage {
 
@@ -321,8 +315,8 @@ class SettingsDataset {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.category_id && MetaData.categories.has(this.category_id) ? MetaData.categories.get(this.category_id).name : ''}</td>
-			<td>${this.query_id}</td>
-			<td>${this.order}</td>
+			<td><a href="/report/${this.query_id}" target="_blank">${this.query_id}</td>
+			<td>${this.order || ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -388,7 +382,6 @@ class SettingsDataset {
 		await this.datasets.load();
 	}
 }
-
 
 class SettingsPrivilege {
 
@@ -588,7 +581,6 @@ class SettingsRole {
 
 		await API.call('roles/delete', parameter, options);
 		await this.roles.load();
-
 	}
 
 	get row() {

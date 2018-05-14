@@ -673,7 +673,10 @@ class DataSourceFilters extends Map {
 		for(const filter of this.values())
 			container.appendChild(filter.label);
 
-		container.on('submit', e => this.source.visualizations.selected.load(e));
+		container.on('submit', e => {
+			e.preventDefault();
+			this.source.visualizations.selected.load();
+		});
 
 		container.insertAdjacentHTML('beforeend', `
 			<label class="right">
@@ -2351,12 +2354,12 @@ class LinearVisualization extends Visualization {
 				this.width = width;
 				this.height = height;
 
-				this.plot(true);
+				this.plot({resize: true});
 			}
 		});
 	}
 
-	plot() {
+	plot(options = {}) {
 
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
@@ -2601,20 +2604,17 @@ Visualization.list.set('table', class Table extends Visualization {
 		this.rowLimitMultiplier = 1.75;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 		`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
 	get container() {
@@ -2635,7 +2635,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		return container;
 	}
 
-	render() {
+	render(options = {}) {
 
 		const
 			container = this.container.querySelector('.container'),
@@ -2775,30 +2775,27 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		return container;
 	}
 
-	async load(e, resize) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render(resize);
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
 
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -2819,6 +2816,12 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = null,
@@ -2848,7 +2851,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -2901,7 +2904,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		// Selecting all the paths
 		const path = this.svg.selectAll('path');
 
-		if(!resize) {
+		if(!options.resize) {
 			path[0].forEach(path => {
 				var length = path.getTotalLength();
 
@@ -2979,30 +2982,27 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 		return container;
 	}
 
-	async load(e, resize) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render(resize);
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
 
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -3024,6 +3024,12 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		this.y.max = 0;
 		this.y.min = 0;
@@ -3054,7 +3060,7 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3086,7 +3092,6 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 			.style('text-anchor', 'middle')
 			.text(this.axes.left.label);
 
-		//graph type line and
 		const
 			line = d3.svg
 				.line()
@@ -3096,35 +3101,29 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 		// For each line appending the circle at each point
 		for(const column of this.columns) {
 
-			this.svg.selectAll('dot')
+			let dots = this.svg
+				.selectAll('dot')
 				.data(column)
 				.enter()
 				.append('circle')
-				.attr('class', 'clips')
+				.attr('class', 'bubble')
 				.attr('id', (_, i) => i)
-				.attr('r', d => this.bubble(d.y1))
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
-				.attr('cy', d => this.y(d.y))
+				.attr('cy', d => this.y(d.y));
+
+			if(!options.resize) {
+
+				dots = dots
+					.attr('r', d => 0)
+					.transition()
+					.duration(Visualization.animationDuration)
+					.ease('quad-in');
+			}
+
+			dots
+				.attr('r', d => this.bubble(d.y1));
 		}
-
-		container
-		.on('mousemove.line', function() {
-
-			// container.selectAll('svg > g > circle[class="clips"]').attr('r', 3);
-
-			const
-				mouse = d3.mouse(this),
-				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
-				row = that.rows[xpos];
-
-			if(!row || that.zoomRectangle)
-				return;
-
-			// container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
-		})
-
-		// .on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 3));
 	}
 });
 
@@ -3149,30 +3148,27 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 		return container;
 	}
 
-	async load(e, resize) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render(resize);
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
 
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -3193,6 +3189,12 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = null,
@@ -3222,7 +3224,7 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3317,31 +3319,28 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.source.response;
 
-		this.render();
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize)  {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -3361,6 +3360,12 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = 0,
@@ -3385,7 +3390,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3447,7 +3452,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				d3.select(this).classed('hover', false);
 			});
 
-		if(!resize) {
+		if(!options.resize) {
 
 			bars = bars
 				.attr('y', cell => this.y(0))
@@ -3484,18 +3489,15 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
 	constructor(visualization, source) {
@@ -3608,18 +3610,18 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				this.width = width;
 				this.height = height;
 
-				this.plot(true);
+				this.plot({resize: true});
 			}
 		});
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize)  {
+	plot(options = {})  {
 
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
@@ -3736,13 +3738,13 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			leftAxis = d3.svg.axis()
 				.scale(this.left)
 				.innerTickSize(-this.width)
-			    .tickFormat(d3.format('s'))
+				.tickFormat(d3.format('s'))
 				.orient('left'),
 
 			rightAxis = d3.svg.axis()
 				.scale(this.right)
 				.innerTickSize(this.width)
-			    .tickFormat(d3.format('s'))
+				.tickFormat(d3.format('s'))
 				.orient('right');
 
 		this.left.max = 0;
@@ -3767,8 +3769,8 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		this.bottom.rangeBands([0, this.width], 0.1, 0);
 
 		const
-			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			biggestTick = this.bottom.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.bottom.domain().length / tickNumber),
 			ticks = this.bottom.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3843,7 +3845,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				d3.select(this).classed('hover', false);
 			});
 
-		if(!resize) {
+		if(!options.resize) {
 
 			bars = bars
 				.attr('height', () => 0)
@@ -3879,7 +3881,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		// Selecting all the paths
 		const path = this.svg.selectAll('path');
 
-		if(!resize) {
+		if(!options.resize) {
 			path[0].forEach(path => {
 				var length = path.getTotalLength();
 
@@ -4069,29 +4071,26 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -4110,6 +4109,12 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let max = 0;
 
@@ -4132,7 +4137,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -4193,7 +4198,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			.attr('width', this.x.rangeBand())
 			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
 
-		if(!resize) {
+		if(!options.resize) {
 
 			bars = bars
 				.attr('height', d => 0)
@@ -4230,29 +4235,26 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -4273,6 +4275,12 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = 0,
@@ -4300,7 +4308,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval)),
 
@@ -4357,7 +4365,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			.attr('d', d => area(d))
 			.style('fill', d => d.color);
 
-		if(!resize) {
+		if(!options.resize) {
 			areas = areas
 				.style('opacity', 0)
 				.transition()
@@ -4424,21 +4432,18 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
-	render() {
+	render(options = {}) {
 
 		const
 			series = [],
@@ -4476,10 +4481,13 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			series: series.reverse(),
 			divId: `#visualization-${this.id}`,
 			chart: {},
+			options,
 		});
 	}
 
 	draw(obj) {
+
+		const options = obj.options;
 
 		d3.selectAll(obj.divId).on('mousemove', null)
 			.on('mouseout', null)
@@ -4515,7 +4523,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		series.map(r => r.data = r);
 
-		chart.plot = resize => {
+		chart.plot = (options = {}) => {
 
 			var funnelTop = width * 0.60,
 				funnelBottom = width * 0.2,
@@ -4567,7 +4575,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.attr("x", d => x(d.date))
 				.attr("width", x.rangeBand())
 
-			if(!resize) {
+			if(!options.resize) {
 				rectangles = rectangles
 					.attr("height", d => 0)
 					.attr("y", d => 30)
@@ -4731,11 +4739,11 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			}
 		};
 
-		chart.plot();
+		chart.plot(options);
 
 		window.addEventListener('resize', () => {
 			width = this.container.clientWidth - margin.left - margin.right;
-			chart.plot(true);
+			chart.plot({resize: true});
 		});
 
 		function findInterSection(x1, y1, x2, y2, x3, y3, x4, y4) {
@@ -4768,20 +4776,17 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.process();
 
-		this.render();
+		this.render(options);
 	}
 
 	process() {
@@ -4808,7 +4813,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			visualizationToggle.value = this.source.visualizations.indexOf(this);
 	}
 
-	render(resize) {
+	render(options) {
 
 		this.rows = this.source.response;
 
@@ -4822,7 +4827,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				width = this.container.clientWidth - 20;
 
 			if(this.width != width || this.height != height)
-				this.render(true);
+				this.render({resize: true});
 		});
 
 		const
@@ -4916,7 +4921,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				d3.select(this).classed('hover', false);
 			});
 
-		if(!resize) {
+		if(!options.resize) {
 			slice
 				.transition()
 				.duration(Visualization.animationDuration / data.length * 2)
@@ -4968,13 +4973,13 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 		return container;
 	}
 
-	async load(parameters = {}) {
+	async load(options = {}) {
 
 		super.render();
 
-		await this.source.fetch(parameters);
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
 	render() {
@@ -5040,12 +5045,9 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
@@ -5053,10 +5055,10 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 			</div>
 		`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.process();
-		this.render();
+		this.render(options);
 	}
 
 	process() {
@@ -5160,23 +5162,21 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if (e && e.preventDefault)
-			e.preventDefault();
+		super.render(options);
 
-		super.render();
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.process();
 
-		this.render();
+		this.render(options);
 	}
 
 	process() {
@@ -5198,7 +5198,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			return this.source.error('Invalid Date! :(');
 	}
 
-	render() {
+	render(options = {}) {
 
 		const [response] = this.source.response;
 
@@ -5236,23 +5236,21 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if (e && e.preventDefault)
-			e.preventDefault();
+		super.render(options);
 
-		super.render();
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.process();
 
-		this.render();
+		this.render(options);
 	}
 
 	process() {
@@ -5280,7 +5278,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		}
 	}
 
-	render() {
+	render(options = {}) {
 		const container = this.container.querySelector('.container');
 		container.textContent = null;
 
@@ -5343,20 +5341,18 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 		return container;
 	}
 
-	async load(e, resize) {
+	async load(options = {}) {
 
-		if (e && e.preventDefault)
-			e.preventDefault();
+		super.render(options);
 
-		super.render();
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render(resize);
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.editor = new Editor(this.container);
 
@@ -5459,11 +5455,13 @@ class Dataset {
 
 			e.stopPropagation();
 
-			for(const options of document.querySelectorAll('.dataset .options'))
-				options.classList.add('hidden');
+			for(const options_ of document.querySelectorAll('.dataset .options')) {
+				if(options_ != options)
+					options_.classList.add('hidden');
+			}
 
 			search.value = '';
-			options.classList.remove('hidden');
+			options.classList.toggle('hidden');
 
 			this.update();
 		});
@@ -5530,6 +5528,10 @@ class Dataset {
 			label.setAttribute('title', row.value);
 
 			label.querySelector('input').on('change', () => this.update());
+			label.on('dblclick', e => {
+				this.clear();
+				label.click();
+			});
 
 			list.appendChild(label);
 		}
