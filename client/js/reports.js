@@ -1180,7 +1180,7 @@ class DataSourceColumn {
 			clearTimeout(timeout);
 
 			timeout = setTimeout(async () => {
-				for (const column of this.source.format.columns) {
+				for (const column of this.source.format.columns || []) {
 					if (column.key == this.key)
 						column.disabled = !column.disabled;
 				}
