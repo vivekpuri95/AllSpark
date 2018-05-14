@@ -4818,7 +4818,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			visualizationToggle.value = this.source.visualizations.indexOf(this);
 	}
 
-	render(options) {
+	render(options = {}) {
 
 		this.rows = this.source.response;
 

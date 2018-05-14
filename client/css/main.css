@@ -170,6 +170,7 @@ body {
 			letter-spacing: 1px;
 			transition: background var(--transition-duration);
 			align-items: center;
+			white-space: nowrap;
 		}
 		body > header .logout:hover,
 		body > header a:hover,
