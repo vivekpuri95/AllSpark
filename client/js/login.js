@@ -27,16 +27,13 @@ Page.class = class Login extends Page {
 		if(account.auth_api && localStorage.access_token)
 			return this.skip_authentication();
 
+		this.container.querySelector('.whitelabel').classList.add('hidden');
+		this.form.classList.remove('hidden');
+
 		this.form.email.focus();
 	}
 
 	async skip_authentication() {
-
-		this.form.innerHTML = `
-			<div class="whitelabel">
-				<i class="fa fa-spinner fa-spin"></i>
-			</div>
-		`;
 
 		const parameters = new URLSearchParams(window.location.search);
 
