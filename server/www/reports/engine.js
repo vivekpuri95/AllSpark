@@ -162,7 +162,7 @@ class report extends API {
 
 		let redisData = null;
 
-		if(redis) {
+		if (redis) {
 			redisData = await redis.get(hash);
 		}
 
@@ -208,7 +208,7 @@ class report extends API {
 
 		result.cached = {store_time: Date.now()};
 
-		if(redis) {
+		if (redis) {
 
 			await redis.set(hash, JSON.stringify(result));
 
@@ -314,15 +314,31 @@ class APIRequest {
 
 	prepareQuery() {
 
-		const parameters = [];
+		let parameters = [];
 
 		for (const filter of this.filters) {
 
-			parameters.push({
-				name: filter.placeholder,
-				value: filter.value
-			});
+			if(filter.value.__proto__.constructor.name === "Array") {
+
+				for(const item of filter.value) {
+
+					parameters.push({
+						name: filter.placeholder,
+						value: item
+					});
+				}
+			}
+
+			else {
+
+				parameters.push({
+					name: filter.placeholder,
+					value: filter.value
+				});
+			}
 		}
+
+		parameters = parameters.map(x => `${x.name}=${x.value}`).join("");
 
 		try {
 
@@ -356,7 +372,7 @@ class APIRequest {
 
 			this.har.postData = {
 				mimeType: 'application/x-www-form-urlencoded',
-				params: parameters,
+				text: parameters,
 			};
 		}
 
@@ -487,6 +503,8 @@ class ReportEngine extends API {
 			query = this.parameters.request;
 
 			data = JSON.parse(data.body);
+
+			delete data[0].har.postData.paramsObj
 		}
 
 		return {
@@ -555,6 +573,28 @@ class query extends API {
 
 class download extends API {
 
+	static async jsonRequest(obj, url) {
+
+		return new Promise((resolve, reject) => {
+
+				request({
+						method: 'POST',
+						uri: url,
+						json: obj
+					},
+					function (error, response, body) {
+						if (error) {
+							return reject(error)
+						}
+						return resolve({
+							response,
+							body
+						})
+					})
+			}
+		)
+	}
+
 	async download() {
 
 		let queryData = this.request.body.data;
@@ -577,16 +617,16 @@ class download extends API {
 					series: queryData,
 					charts: {
 						1: {
-							x: {name:this.request.body.bottom},
-							y: {name:this.request.body.left},
-							x1: {name:this.request.body.top},
-							y1: {name:this.request.body.right},
+							x: {name: this.request.body.bottom},
+							y: {name: this.request.body.left},
+							x1: {name: this.request.body.top},
+							y1: {name: this.request.body.right},
 							cols: this.request.body.columns,
 							type: JSON.parse(excel_visualization),
 						}
 					},
 					sheet_name: this.request.body.sheet_name,
-					file_name: `${this.request.body.file_name}_${(new Date().toISOString()).substring(0,10)}_${(this.user || {}).user_id || ''}`
+					file_name: `${this.request.body.file_name}_${(new Date().toISOString()).substring(0, 10)}_${(this.user || {}).user_id || ''}`
 				},
 			]
 		};
@@ -596,28 +636,6 @@ class download extends API {
 		this.response.sendFile(data.body.response);
 		throw({"pass": true})
 
-	}
-
-	static async jsonRequest(obj, url) {
-
-		return new Promise((resolve, reject) => {
-
-			request({
-					method: 'POST',
-					uri: url,
-					json: obj
-				},
-				function (error, response, body) {
-					if (error) {
-						return reject(error)
-					}
-					return resolve({
-						response,
-						body
-					})
-				})
-			}
-		)
 	}
 }
 
