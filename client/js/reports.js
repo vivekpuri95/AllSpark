@@ -1191,10 +1191,11 @@ class DataSourceColumn {
 				}
 
 				if (!found) {
+					this.source.format.columns ?
 					this.source.format.columns.push({
 						key: this.key,
 						disabled: true,
-					});
+					}) : [];
 				}
 
 				this.source.columns.render();
