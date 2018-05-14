@@ -161,7 +161,9 @@ body {
 		body > header nav {
 			display: flex;
 		}
-		body > header .logout, body > header nav > a, body > header .user-name a {
+		body > header .logout,
+		body > header nav > a,
+		body > header .user-name a {
 			display: flex;
 			color: var(--color-primary-text);
 			padding: 15px 20px;
@@ -182,8 +184,10 @@ body {
 			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 		}
 
-		body > header .search {
-			margin-left: auto;
+		body > header .search-header {
+			width: 250px;
+			align-self:  center;
+			margin: 0 10px 0 auto;
 		}
 
 		body > header .user-name {
@@ -376,7 +380,6 @@ body {
 	align-items: center;
 	justify-content: center;
 }
-
 	.dialog-box {
 		background: var(--color-primary-text);
 		box-shadow: 0 0 100px rgba(0, 0, 0, 0.25);
@@ -387,7 +390,6 @@ body {
 		justify-self: center;
 		overflow: auto;
 	}
-
 		.dialog-box header {
 			display: flex;
 			background: var(--color-primary);
@@ -401,7 +403,6 @@ body {
 				font-weight: normal;
 				font-size: 100%;
 			}
-
 			.dialog-box header span.close {
 				cursor: pointer;
 				padding: 5px 8px;
@@ -410,15 +411,12 @@ body {
 				transition: box-shadow var(--transition-duration),
 							background var(--transition-duration);
 			}
-
 			.dialog-box header span.close:hover {
 				background: rgba(255, 255, 255, 0.3);
 			}
-
 			.dialog-box header span.close:active {
 				box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.9)
 			}
-
 		.dialog-box footer {
 			background: var(--color-secondary);
 			color: var(--color-secondary-text);
@@ -428,26 +426,24 @@ body {
 		}
 
 .global-search {
-	width: 250px;
-	align-self:  center;
-	margin: 0 10px 0 auto;
+	width: 100%;
 	position: relative;
+	outline: 0;
 }
 	.global-search > input.search-input {
 		width: 100%;
 		border-radius: 5px;
-		background: rgba(255,255,255,0.15) !important;
+		background: rgba(255, 255, 255, 0.15) !important;
 		border: 0px !important;
 		color: #fff;
 		align-self: center;
 	}
 	.global-search > input.search-input.bottom-border {
-
 		border-radius: 5px 5px 0px 0px;
 	}
 	.global-search > input.search-input:focus {
-	background: #fff !important;
-	color: #333;
+		background: #fff !important;
+		color: #333;
 	}
 	.global-search ul {
 		margin: 0;
@@ -463,46 +459,48 @@ body {
 		overflow: auto;
 	}
 		.global-search ul li {
-			display: flex;
-			justify-content: space-between;
 			outline: 0;
-			max-height: 100px;
-			white-space: normal;
-			align-items: center;
 			display: grid;
 			transition: background var(--transition-duration), box-shadow var(--transition-duration);
 			grid-template-columns: 1fr max-content;
 		}
-
 		.global-search ul li:active {
-		box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.1);
+			box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.1);
 		}
-
 		.global-search ul li:focus,
-		.global-search ul li:hover{
-		background: #eee;
+		.global-search ul li:hover {
+			background: #eee;
 		}
+			.global-search ul li > span.loading {
+				display: flex;
+				justify-content: center;
+				height: 100%;
+				font-size: 150%;
+				padding: 5px;
+				color: #999;
+				background: #eee;
+			}
 			.global-search ul li a {
-			color: #333;
-			outline: 0;
-			padding: 10px;
-			height: 100%;
-			align-items: center;
-			display: flex;
+				color: #333;
+				outline: 0;
+				padding: 10px;
+				height: 100%;
+				align-items: center;
+				display: flex;
 			}
 			.global-search ul li a:hover {
-			background: none;
+				background: none;
 			}
 			.global-search ul li .li-edit {
-			padding: 0 10px;
-			align-self: center;
-			cursor: pointer;
-			opacity: 0;
-			transition: var(--transition-duration);
-			display: flex;
-			height: 100%;
-			align-items: center;
-			outline: 2px;
+				padding: 0 10px;
+				align-self: center;
+				cursor: pointer;
+				opacity: 0;
+				transition: var(--transition-duration);
+				display: flex;
+				height: 100%;
+				align-items: center;
+				outline: 2px;
 			}
 			.global-search ul li:focus .li-edit,
 			.global-search ul li:hover .li-edit {

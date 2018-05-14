@@ -40,10 +40,12 @@ class Page {
 
 	static render() {
 
+		const header = document.querySelector('body > header');
+
 		if(account) {
 
 			if(account.settings.get('hideHeader')) {
-				document.querySelector('body > header').classList.add('hidden');
+				header.classList.add('hidden');
 				return;
 			}
 
@@ -51,20 +53,21 @@ class Page {
 				document.getElementById('favicon').href = account.icon;
 
 			if(account.logo)
-				document.querySelector('body > header .logo img').src = account.logo;
+				header.querySelector('.logo img').src = account.logo;
 
 			document.title = account.name;
 		}
 
-		const user_name = document.querySelector('body > header .user-name');
+		const user_name = header.querySelector('.user-name');
 
 		if(user.id) {
 
 			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
-			const search = new GlobalSearch(document.querySelector('body > header .search')).container();
-			document.querySelector('body > header').insertBefore(search, document.querySelector('body > header .user-name'));
+			const search = new GlobalSearch().container;
+			search.classList.add('search-header');
+			header.insertBefore(search, user_name);
 		}
-		document.querySelector('body > header .logout').on('click', () => User.logout());
+		header.querySelector('.logout').on('click', () => User.logout());
 
 
 		Page.navList = [
@@ -75,7 +78,7 @@ class Page {
 			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
 		];
 
-		const nav_container = document.querySelector('body > header nav');
+		const nav_container = header.querySelector('nav');
 
 		for(const item of Page.navList) {
 
@@ -90,7 +93,7 @@ class Page {
 			`);
 		}
 
-		for(const item of document.querySelectorAll('body > header nav a')) {
+		for(const item of nav_container.querySelectorAll('a')) {
 			if(window.location.pathname.startsWith(new URL(item.href).pathname)) {
 				user_name.classList.remove('selected');
 				item.classList.add('selected');
@@ -98,7 +101,7 @@ class Page {
 		}
 
 		if(window.location.pathname.includes('/user/profile')) {
-			Array.from(document.querySelectorAll('body > header nav a')).map(items => items.classList.remove('selected'));
+			Array.from(nav_container.querySelectorAll('a')).map(items => items.classList.remove('selected'));
 			user_name.querySelector('a').classList.add('selected');
 		}
 	}
@@ -168,24 +171,45 @@ Page.serviceWorker = class PageServiceWorker {
 
 class GlobalSearch {
 
-	constructor() {
+	constructor(page) {
+
+		this.page = page
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('global-search');
+
+		container.innerHTML = `
+			<input class="search-input" placeholder="Search...">
+			<ul class="hidden"></ul>
+		`;
+
+		this.searchList = container.querySelector('ul');
+		this.setEvents();
+
+		return container;
 	}
 
 	setEvents() {
 
 		this.searchInput = this.container.querySelector('input');
 
-		document.querySelector('body').on('click', () => {
-			this.hideList();
+		document.body.on('click', () => {
+			this.hide();
 		});
 
 		this.searchInput.on('click', (e) => {
 
 			if(this.searchInput.value == '') {
-				this.hideList();
+				this.hide();
 			}
 			else {
-				this.viewList();
+				this.show();
 			}
 			e.stopPropagation();
 		});
@@ -196,12 +220,12 @@ class GlobalSearch {
 			e.stopPropagation();
 
 			if(this.searchInput.value == '') {
-				this.hideList();
+				this.hide();
 				return;
 			}
 
 			GlobalSearch.inputTimeout = setTimeout( async () => {
-				await this.loadList();
+				await this.fetch();
 			}, 300);
 
 			}
@@ -211,56 +235,22 @@ class GlobalSearch {
 
 	}
 
-	searchUpDown(e) {
+	async fetch() {
 
-		e.stopPropagation();
-
-		if (e.which == 40) {
-			this.active_li = this.active_li.nextElementSibling || this.active_li
-		}
-		else if (e.which == 38) {
-			this.active_li = this.active_li.previousElementSibling || this.active_li;
-		}
-		else {
-			return
-		}
-
-		this.active_li.focus();
-
-	}
-
-	container() {
-
-		this.container = document.createElement('div');
-		this.container.classList.add('global-search');
-
-		this.container.innerHTML = `
-			<input class="search-input" placeholder="Search...">
-			<ul class="hidden"></ul>
-		`;
-
-		this.searchList = this.container.querySelector('ul');
-		this.setEvents();
-
-		return this.container;
-	}
-
-	async loadList() {
-
-		this.container.removeEventListener('keydown', Page.keyUpDownListenter);
-		this.active_li = this.searchList.querySelector('li');
+		this.searchList.innerHTML = `<li><span class="loading"><i class="fa fa-spinner fa-spin"></i></span></li>`;
 
 		const params = {
 			text: this.searchInput.value
 		};
 
-		this.listElements = await API.call('search/query', params);
-		this.viewList();
+		const data = await API.call('search/query', params);
+		this.render(data);
+		this.show();
 	}
 
-	set listElements(data) {
+	render(data) {
 
-		this.searchList.innerHTML = null;
+		this.searchList.textContent = null;
 
 		for(const row of data) {
 
@@ -300,16 +290,34 @@ class GlobalSearch {
 		}
 	}
 
-	viewList() {
+	show() {
 
 		this.searchList.classList.remove('hidden');
 		this.searchInput.classList.add('bottom-border');
 	}
 
-	hideList() {
+	hide() {
 
 		this.searchList.classList.add('hidden');
 		this.searchInput.classList.remove('bottom-border');
+	}
+
+	keyUpDown(e) {
+
+		e.stopPropagation();
+
+		if (e.which == 40) {
+			this.active_li = this.active_li.nextElementSibling || this.active_li
+		}
+		else if (e.which == 38) {
+			this.active_li = this.active_li.previousElementSibling || this.active_li;
+		}
+		else {
+			return
+		}
+
+		this.active_li.focus();
+
 	}
 }
 
