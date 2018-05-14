@@ -34,7 +34,7 @@ router.get('/login', (request, response) => {
 		<div class="logo hidden">
 			<img src="" />
 		</div>
-		
+
 		<div class="whitelabel">
 			<i class="fa fa-spinner fa-spin"></i>
 		</div>

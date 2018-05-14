@@ -159,10 +159,10 @@ class DataSource {
 						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
 						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i>xlsx</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
+						<button class="export-toggle"><i class="fa fa-download"></i> Export</button>
 					</div>
 				</div>
 				<select class="change-visualization hidden"></select>
-				<button class="export-toggle"><i class="fa fa-download"></i> Export</button>
 			</div>
 
 			<div class="columns"></div>
@@ -207,6 +207,10 @@ class DataSource {
 				${JSON.stringify(DataSource.list.get(this.query_id))}
 			</div>
 		`;
+
+		document.querySelector('body').on('click', e => {
+			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
+		})
 
 		container.querySelector('.menu .export-toggle').on('click', () => {
 			container.querySelector('.export-json').classList.toggle('hidden');
@@ -284,6 +288,7 @@ class DataSource {
 		});
 
 		container.querySelector('.menu .download-btn .download').on('click', (e) => {
+			e.stopPropagation();
 			container.querySelector('.menu .download-btn .download').classList.toggle('selected');
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.toggle('hidden');
 		});
