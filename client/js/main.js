@@ -36,6 +36,8 @@ class Page {
 				localStorage.access_token = parameters.get('access_token');
 			}
 		}
+
+		await API.refreshToken();
 	}
 
 	static render() {
