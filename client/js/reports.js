@@ -2246,7 +2246,7 @@ class Visualization {
 
 		this.source.resetError();
 
-		if(this.options.hideLegend)
+		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 }
