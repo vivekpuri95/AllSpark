@@ -8,10 +8,10 @@
     "stop": "pm2 stop allspark"
   },
   "dependencies": {
-    "compression": "^1.7.2",
     "bcrypt": "^1.0.3",
     "bcryptjs": "^2.4.3",
     "body-parser": "~1.18.2",
+    "compression": "^1.7.2",
     "config": "^1.29.4",
     "cookie-parser": "~1.4.3",
     "crypto": "^1.0.1",
@@ -26,6 +26,7 @@
     "moment-timezone": "^0.5.14",
     "morgan": "~1.9.0",
     "mysql": "^2.15.0",
+    "node-fetch": "^2.1.2",
     "pg": "^7.4.1",
     "python-shell": "^0.5.0",
     "redis": "^2.8.0",
