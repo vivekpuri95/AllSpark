@@ -3477,7 +3477,21 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.on('mouseout', function() {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
-			});
+			})
+
+		if(this.options.showValues)
+			this.svg
+				.selectAll('g')
+				.data(this.columns)
+				.selectAll('text.bar')
+				.data(d => d)
+				.enter()
+				.append('text')
+				.attr("class", "bar")
+				.attr("text-anchor", "middle")
+				.attr("x", d => this.axes.left.width + this.x(d.x) + (x1.rangeBand()/2) )
+				.attr("y", d => this.y(d.y) - (this.axes.bottom.height/2))
+				.text(c => c.y);
 
 		if(!options.resize) {
 
