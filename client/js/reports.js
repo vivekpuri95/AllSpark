@@ -2232,6 +2232,7 @@ class Visualization {
 		this.source.visualizations.selected = this;
 
 		this.source.container.appendChild(this.container);
+		this.source.container.querySelector('.columns').classList.remove('hidden');
 
 		const configure = this.source.container.querySelector('.configure-visualization');
 
@@ -2245,8 +2246,8 @@ class Visualization {
 
 		this.source.resetError();
 
-		if(this.options)
-			this.source.container.querySelector('.columns').classList.toggle('hidden', this.options.hideLegend)
+		if(this.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 }
 
