@@ -170,6 +170,7 @@ body {
 			letter-spacing: 1px;
 			transition: background var(--transition-duration);
 			align-items: center;
+			white-space: nowrap;
 		}
 		body > header .logout:hover,
 		body > header a:hover,
@@ -486,7 +487,6 @@ body {
 				padding: 10px;
 				height: 100%;
 				align-items: center;
-				white-space: nowrap;
 				display: flex;
 			}
 			.global-search ul li a:hover {
