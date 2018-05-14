@@ -49,6 +49,9 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
+			if(account.auth_api && localStorage.access_token && filter.placeholder == 'access_token')
+				filter.value = localStorage.access_token;
+
 			if(filter.dataset && filter.dataset.query_id) {
 
 				if(filter.dataset.containerElement) {
