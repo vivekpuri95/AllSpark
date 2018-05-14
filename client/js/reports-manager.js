@@ -906,15 +906,15 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	async schema() {
 
-		const source = this.page.connections.get(this.report.connection_name);
+		const source = this.page.connections.get(parseInt(this.report.connection_name));
 
 		if(!source || !['mysql', 'pgsql'].includes(source.type)) {
 			this.form.querySelector('#query').classList.add('hidden');
 			this.form.querySelector('#api').classList.remove('hidden');
+		} else {
+			this.form.querySelector('#query').classList.remove('hidden');
+			this.form.querySelector('#api').classList.add('hidden');
 		}
-
-		this.form.querySelector('#query').classList.remove('hidden');
-		this.form.querySelector('#api').classList.add('hidden');
 
 		if(this.schemas.has(this.report.connection_name))
 			return this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
