@@ -305,6 +305,14 @@ class APIRequest {
 
 		this.prepareQuery();
 
+		if(this.urlOptions.method === "GET") {
+
+			return {
+				request: [this.url, {...this.urlOptions}],
+				type: "api",
+			}
+		}
+
 		return {
 			request: [this.url, {body:this.parameters, ...this.urlOptions}],
 			type: "api",
