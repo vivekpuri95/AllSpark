@@ -2148,13 +2148,16 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="options form body">
-					<div class="legend">
-						<label>
-							<span>
-								<input type="checkbox" name="lagend">Hide Legend.
-							</span>
-						</label>
-					</div>
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend.
+						</span>
+					</label>
+					<label>
+						<span>
+							<input type="checkbox" name="showValues">Show Value.
+						</span>
+					</label>
 				</div>
 			</div>
 		`;
@@ -2166,8 +2169,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : [])
 			axes.appendChild(this.axis(axis));
 
-		if(this.visualization.options && this.visualization.options.legend)
-			container.querySelector('.legend input').checked = this.visualization.options.legend;
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+
+		if(this.visualization.options && this.visualization.options.showValues)
+			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
 
 		container.querySelector('.add-axis').on('click', () => {
 			axes.appendChild(this.axis());
@@ -2180,7 +2186,8 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const response = {
 			axes: [],
-			hideLegend: this.formContainer.querySelector('.legend input').checked,
+			hideLegend: this.formContainer.querySelector('input[name=hideLegend]').checked,
+			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
 		};
 
 		for(const axis of this.formContainer.querySelectorAll('.axis')) {
