@@ -20,14 +20,11 @@ main > nav {
 	border-right: 1px solid #ccc;
 }
 	main > nav .collapse {
-		margin-top: auto;
-		position: sticky;
-		bottom: 0;
-		background: var(--color-primary);
+
 	}
 		main > nav .collapse .name {
 			color: #ccc;
-			margin: 0 auto !important;
+			margin: 0 auto;
 		}
 	nav.collapsed-nav {
 		overflow: unset;
@@ -84,6 +81,50 @@ main > nav::-webkit-scrollbar-track {
 		font: inherit;
 		vertical-align: inherit;
 	}
+	main > nav footer {
+		display: flex;
+		color: #777;
+		align-items: center;
+		transition: background var(--transition-duration),
+					box-shadow var(--transition-duration);
+		border-radius: 0;
+		font: inherit;
+		vertical-align: inherit;
+		padding: 0;
+		justify-content: space-between;
+		margin-top: auto;
+		position: sticky;
+		bottom: 0;
+		background: var(--color-primary);
+	}
+		.collapsed-grid .collapse-panel {
+			display: flex;
+			padding: 12px 0;
+			justify-content: center;
+			width: 100%;
+			color: #fff;
+		}
+	 	main > nav footer .collapse-panel {
+			display: flex;
+			padding: 12px 0;
+			justify-content: center;
+			width: 50px;
+			color: #fff;
+		}
+		main > nav footer .collapse-panel:hover {
+			cursor: pointer;
+			background: rgba(0, 0, 0, 0.15)
+		}
+		main > nav footer .powered-by {
+		font-size: 80%;
+		color: #ccc;
+		letter-spacing: 0.5px;
+		padding: 12px;
+		}
+		main > nav footer .powered-by a {
+			font-weight: bold;
+			letter-spacing: 1.5px;
+		}
 	main > nav .label:hover {
 		background: var(--color-secondary);
 		color: var(--color-secondary-text);

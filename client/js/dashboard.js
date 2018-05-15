@@ -120,25 +120,26 @@ Page.class = class Dashboards extends Page {
 		}
 
 		nav.insertAdjacentHTML('beforeend', `
-			<div class="item collapse">
-				<div class="label">
-					<span class="name left"><i class="fa fa-angle-double-left" aria-hidden="true"></i><span>Collapse Sidebar</span></span>
-					<span class="name right hidden"><i class="fa fa-angle-double-right" aria-hidden="true"></i></span>
-				</div>
-			</div>
+			<footer>
+				<span class="powered-by hidden"> Powered By <a target="_blank" href="https://github.com/Jungle-Works/AllSpark">AllSpark</a></span>
+				<div class="collapse-panel">
+					<span class="left"><i class="fa fa-angle-double-left"></i></span>
+					<span class="right hidden"><i class="fa fa-angle-double-right"></i></span>
+				</div<
+			</footer>
 		`);
 
-		nav.querySelector('.collapse').on('click', (e) => {
+		nav.querySelector('.powered-by').classList.toggle('hidden', !account.settings.get("enable_powered_by"))
+
+		nav.querySelector('.collapse-panel').on('click', (e) => {
 
 			nav.classList.toggle('collapsed-nav');
 
 			const right = e.currentTarget.querySelector('.right')
 
-			e.currentTarget.querySelector('.left').classList.toggle('hidden');
-
 			right.classList.toggle('hidden');
-
-			e.currentTarget.querySelector('.name').classList.toggle('hidden');
+			e.currentTarget.querySelector('.left').classList.toggle('hidden');
+			nav.querySelector('.powered-by').classList.toggle('hidden');
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
 
