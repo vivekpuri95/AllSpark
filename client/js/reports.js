@@ -3477,7 +3477,28 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.on('mouseout', function() {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
-			});
+			})
+
+		let values;
+
+		if(this.options.showValues) {
+
+			values = this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (Format.number(cell.y).toString().length * 4))
+				.text(cell => Format.number(cell.y));
+		}
 
 		if(!options.resize) {
 
@@ -3487,11 +3508,28 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.transition()
 				.duration(Visualization.animationDuration)
 				.ease('quad-in');
+
+			if(values) {
+
+				values = values
+					.attr('y', cell => this.y(0))
+					.attr('height', () => 0)
+					.transition()
+					.duration(Visualization.animationDuration)
+					.ease('quad-in');
+			}
 		}
 
 		bars
 			.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0))
 			.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+
+		if(values) {
+
+			values
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 3)
+				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+		}
 	}
 });
 
