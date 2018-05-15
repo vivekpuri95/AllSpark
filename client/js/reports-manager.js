@@ -1158,6 +1158,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			const row = document.createElement('tr');
 
+			if (filter.type == 4)
+				row.classList.add('hidden');
+
 			let datasetName = '';
 
 			if(filter.dataset && MetaData.datasets.has(filter.dataset)) {
