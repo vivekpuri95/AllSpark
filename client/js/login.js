@@ -39,7 +39,7 @@ Page.class = class Login extends Page {
 
 		if(!localStorage.access_token && (!parameters.has('access_token') || !parameters.get('access_token'))) {
 
-			this.form.innerHTML = '<div class="whitelabel"><i class="fas fa-exclamation-triangle"></i></div>';
+			this.form.innerHTML = '<div class="whitelabel form"><i class="fas fa-exclamation-triangle"></i></div>';
 
 			this.message.textContent = 'Cannot authenticate user, please reload the page :(';
 			this.message.classList.remove('hidden');
