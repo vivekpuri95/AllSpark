@@ -131,7 +131,6 @@ class API {
 
 				if (e instanceof API.Exception) {
 
-					console.log(e);
 					return response.status(e.status || 500).send({
 						status: false,
 						message: e.message,
@@ -214,6 +213,9 @@ API.Exception = class {
 	constructor(status, message) {
 		this.status = status;
 		this.message = message;
+
+		console.error("API Exception Error!!!!", this);
+		console.trace();
 	}
 }
 
