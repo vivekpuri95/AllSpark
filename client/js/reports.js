@@ -1182,21 +1182,21 @@ class DataSourceColumn {
 			timeout = setTimeout(async () => {
 				let found = false;
 
-				for (const column of this.source.format.columns || []) {
-					if (column.key == this.key) {
-						column.disabled = !column.disabled;
-						found = true;
-						break;
+				if (this.source.format && this.source.format.columns) {
+					for (const column of this.source.format.columns) {
+						if (column.key == this.key) {
+							column.disabled = !column.disabled;
+							found = true;
+							break;
+						}
 					}
 				}
 
-				if (!found) {
-					this.disabled = !this.disabled;
-					this.source.format.columns ?
+				if (!found && this.source.format && this.source.format.columns) {
 					this.source.format.columns.push({
 						key: this.key,
 						disabled: true,
-					}) : [];
+					});
 				}
 
 				this.source.columns.render();
