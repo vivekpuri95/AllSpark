@@ -1080,6 +1080,8 @@ class DashboardDatasets extends Map {
 
 			let found = false;
 
+			report.filters.container;
+
 			for(const filter of report.filters.values()) {
 
 				if(!filter.dataset || !this.has(filter.dataset.id))
@@ -1091,7 +1093,7 @@ class DashboardDatasets extends Map {
 			}
 
 			if(found) {
-				setTimeout(() => report.visualizations.selected.load(options), 0);
+				setTimeout(() => report.visualizations.selected.load(options));
 				report.container.style.opacity = 1;
 			}
 
