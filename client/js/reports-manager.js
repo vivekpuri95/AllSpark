@@ -1186,8 +1186,15 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	addFilter() {
 
-		this.container.querySelector('#filter-form').classList.remove('hidden');
+		const filterForm = this.container.querySelector('#filter-form');
+		filterForm.classList.remove('hidden');
 		this.container.querySelector('#filter-list').classList.add('hidden');
+
+		for (const type of MetaData.filters.types || []) {
+			filterForm.querySelector('select[name="type"]').insertAdjacentHTML('beforeend', `
+				<option value="${type}">${type}</option>
+			`);
+		}
 
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
 		this.filterForm.on('submit', this.filterForm.listener = e => this.insertFilter(e));
