@@ -27,7 +27,7 @@ main > nav {
 	}
 		main > nav .collapse .name {
 			color: #ccc;
-			margin: 0 auto !important;
+			margin: 0 auto;
 		}
 	nav.collapsed-nav {
 		overflow: unset;
@@ -84,6 +84,29 @@ main > nav::-webkit-scrollbar-track {
 		font: inherit;
 		vertical-align: inherit;
 	}
+	main > nav .label.bottom-content {
+		padding: 0;
+		justify-content: space-between;
+	}
+	main > nav .label.bottom-content .collapse-panel {
+		padding: 12px 20px;
+	}
+	main > nav .label.bottom-content .collapse-panel:hover {
+		cursor: pointer;
+	}
+	main > nav .label.bottom-content:hover {
+		background: none;
+	}
+	main > nav .label .powered-by {
+		font-size: 80%;
+		color: #ccc;
+		letter-spacing: 0.5px;
+		padding: 12px;
+	}
+		main > nav .label .powered-by a {
+			font-weight: bold;
+			letter-spacing: 1.5px;
+		}
 	main > nav .label:hover {
 		background: var(--color-secondary);
 		color: var(--color-secondary-text);
