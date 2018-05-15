@@ -1210,6 +1210,8 @@ class DataSourceColumn {
 					});
 				}
 
+				this.disabled = !this.disabled;
+
 				this.source.columns.render();
 				await this.update();
 			}, 300);
