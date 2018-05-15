@@ -458,6 +458,10 @@ class ReportEngine extends API {
 
 	get hash() {
 
+		if(this.parameters.type === 'api' && this.parameters.request[1].body) {
+
+			this.parameters.request[1].params = this.parameters.request[1].body.toString();
+		}
 		return crypto.createHash('md5').update(JSON.stringify(this.parameters)).digest('hex');
 	}
 
