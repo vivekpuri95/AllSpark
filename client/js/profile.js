@@ -38,9 +38,9 @@ class Profile extends Page {
 		const response = Profile.response[0];
 
 		Profile.container.querySelector('.edit').classList.toggle('hidden', user.user_id != location.pathname.split('/').pop())
-
+		const middle_name = response.middle_name ? " "+response.middle_name : "";
 		Profile.container.querySelector('.profile-details').innerHTML = `
-			<label><span>Name:&nbsp;</span><div>${response.first_name + `${response.middle_name ? response.middle_name : ""}` +" "+response.last_name}</div></label>
+			<label><span>Name:&nbsp;</span><div>${response.first_name + middle_name +" "+response.last_name}</div></label>
 			<label><span>User_id:&nbsp;</span><div>${response.user_id}</div></label>
 			<label><span>Email:&nbsp;</span><div>${response.email}</div></label>
 			<label><span>Phone:&nbsp;</span><div>${response.phone || 'NA'}</div></label>
