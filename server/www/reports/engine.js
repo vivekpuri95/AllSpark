@@ -198,7 +198,8 @@ class report extends API {
 		}
 		catch (e) {
 
-			throw new API.Exception(400, e);
+			console.error(e.stack);
+			throw new API.Exception(400, e.message);
 		}
 
 		await engine.log(this.reportObj.query_id, this.reportObj.query, result.query, result.runtime,
