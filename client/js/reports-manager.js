@@ -834,8 +834,21 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.form.save.classList.remove('unsaved');
 		this.editor.editor.focus();
 
-		for(const key in this.report) {
-			if(this.form.elements[key])
+		for (const key in this.report) {
+
+			if (key == 'url_options') {
+				let urlOptions;
+
+				try {
+					urlOptions = JSON.parse(this.report[key]);
+				}
+				catch(e) {
+					return;
+				}
+
+				this.form.elements.method.value = urlOptions.method;
+			}
+			else if (this.form.elements[key])
 				this.form.elements[key].value = this.report[key];
 		}
 
@@ -1145,6 +1158,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		for(const filter of this.report.filters) {
 
 			const row = document.createElement('tr');
+
+			if (filter.type == 4)
+				row.classList.add('hidden');
 
 			let datasetName = '';
 
