@@ -123,8 +123,8 @@ Page.class = class Dashboards extends Page {
 			<footer>
 				<span class="powered-by"> Powered By <a target="_blank" href="https://github.com/Jungle-Works/AllSpark">AllSpark</a>.</span>
 				<div class="collapse-panel">
-					<span class="left"><i class="fa fa-angle-double-left" aria-hidden="true"></i></span>
-					<span class="right hidden"><i class="fa fa-angle-double-right" aria-hidden="true"></i></span>
+					<span class="left"><i class="fa fa-angle-double-left"></i></span>
+					<span class="right hidden"><i class="fa fa-angle-double-right"></i></span>
 				</div<
 			</footer>
 		`);
