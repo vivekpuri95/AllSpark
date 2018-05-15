@@ -834,8 +834,20 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.form.save.classList.remove('unsaved');
 		this.editor.editor.focus();
 
-		for(const key in this.report) {
-			if(this.form.elements[key])
+		for (const key in this.report) {
+			let method_json;
+
+			if (key == 'url_options') {
+				try {
+					method_json = JSON.parse(this.report[key]);
+				}
+				catch(e) {
+					return;
+				}
+
+				this.form.elements.method.value = method_json.method;
+			}
+			else if (this.form.elements[key])
 				this.form.elements[key].value = this.report[key];
 		}
 
