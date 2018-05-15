@@ -176,7 +176,7 @@ router.get('/user/profile/:id?', (request, response) => {
 		<section id="profile">
 			<h1>
 				Profile details
-				<a href="/user/profile/edit">
+				<a href="/user/profile/edit" class="edit">
 					<i class="fa fa-edit"></i>
 					Edit
 				</a>
