@@ -121,13 +121,15 @@ Page.class = class Dashboards extends Page {
 
 		nav.insertAdjacentHTML('beforeend', `
 			<footer>
-				<span class="powered-by"> Powered By <a target="_blank" href="https://github.com/Jungle-Works/AllSpark">AllSpark</a>.</span>
+				<span class="powered-by hidden"> Powered By <a target="_blank" href="https://github.com/Jungle-Works/AllSpark">AllSpark</a>.</span>
 				<div class="collapse-panel">
 					<span class="left"><i class="fa fa-angle-double-left"></i></span>
 					<span class="right hidden"><i class="fa fa-angle-double-right"></i></span>
 				</div<
 			</footer>
 		`);
+
+		nav.querySelector('.powered-by').classList.toggle('hidden', !account.settings.get("enable_powered_by"))
 
 		nav.querySelector('.collapse-panel').on('click', (e) => {
 
