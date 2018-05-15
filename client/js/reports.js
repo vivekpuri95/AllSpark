@@ -1192,7 +1192,10 @@ class DataSourceColumn {
 					}
 				}
 
-				if (!found && this.source.format && this.source.format.columns) {
+				if (!found && this.source.format) {
+					if (!this.source.format.columns)
+						this.source.format.columns = [];
+
 					this.source.format.columns.push({
 						key: this.key,
 						disabled: true,
