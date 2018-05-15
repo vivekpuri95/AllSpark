@@ -20,10 +20,7 @@ main > nav {
 	border-right: 1px solid #ccc;
 }
 	main > nav .collapse {
-		margin-top: auto;
-		position: sticky;
-		bottom: 0;
-		background: var(--color-primary);
+
 	}
 		main > nav .collapse .name {
 			color: #ccc;
@@ -84,26 +81,47 @@ main > nav::-webkit-scrollbar-track {
 		font: inherit;
 		vertical-align: inherit;
 	}
-	main > nav .label.bottom-content {
+	main > nav footer {
+		display: flex;
+		color: #777;
+		align-items: center;
+		transition: background var(--transition-duration),
+					box-shadow var(--transition-duration);
+		border-radius: 0;
+		font: inherit;
+		vertical-align: inherit;
 		padding: 0;
 		justify-content: space-between;
+		margin-top: auto;
+		position: sticky;
+		bottom: 0;
+		background: var(--color-primary);
 	}
-	main > nav .label.bottom-content .collapse-panel {
-		padding: 12px 20px;
-	}
-	main > nav .label.bottom-content .collapse-panel:hover {
-		cursor: pointer;
-	}
-	main > nav .label.bottom-content:hover {
-		background: none;
-	}
-	main > nav .label .powered-by {
+		.collapsed-grid .collapse-panel {
+			display: flex;
+			padding: 12px 0;
+			justify-content: center;
+			width: 100%;
+			color: #fff;
+		}
+	 	main > nav footer .collapse-panel {
+			display: flex;
+			padding: 12px 0;
+			justify-content: center;
+			width: 50px;
+			color: #fff;
+		}
+		main > nav footer .collapse-panel:hover {
+			cursor: pointer;
+			background: rgba(0, 0, 0, 0.15)
+		}
+		main > nav footer .powered-by {
 		font-size: 80%;
 		color: #ccc;
 		letter-spacing: 0.5px;
 		padding: 12px;
-	}
-		main > nav .label .powered-by a {
+		}
+		main > nav footer .powered-by a {
 			font-weight: bold;
 			letter-spacing: 1.5px;
 		}
