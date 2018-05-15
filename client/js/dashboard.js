@@ -122,7 +122,7 @@ Page.class = class Dashboards extends Page {
 		nav.insertAdjacentHTML('beforeend', `
 			<div class="item collapse">
 				<div class="label bottom-content">
-					<span class="powered-by"> Powered By <a target="_blank" href="https://github.com/Jungle-Works/AllSpark">Allspark</a>.</span>
+					<span class="powered-by"> Powered By <a target="_blank" href="https://github.com/Jungle-Works/AllSpark">AllSpark</a>.</span>
 					<div class="label collapse-panel">
 						<span class="name left"><i class="fa fa-angle-double-left" aria-hidden="true"></i></span>
 						<span class="name right hidden"><i class="fa fa-angle-double-right" aria-hidden="true"></i></span>
