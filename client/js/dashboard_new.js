@@ -1221,6 +1221,9 @@ class DashboardDatasets extends Map {
 
 			label.appendChild(dataset.container);
 
+			if(Dashboard.selectedValues.has(dataset.id))
+				dataset.value = Dashboard.selectedValues.get(dataset.id);
+
 			container.appendChild(label);
 		}
 
@@ -1289,6 +1292,17 @@ class DashboardDatasets extends Map {
 			else
 				report.container.style.opacity = 0.4;
 		}
+
+		Dashboard.selectedValues.clear();
+		for(const [key, value] of this) {
+			const inputs = [];
+			for(const input of value.containerElement.querySelectorAll('.list label')) {
+				if(input.querySelector('input').checked) {
+					inputs.push(input.querySelector('input').value)
+				}
+			}
+			Dashboard.selectedValues.set(key,inputs);
+		}
 	}
 
 	clear() {
@@ -1304,3 +1318,4 @@ class DashboardDatasets extends Map {
 	}
 }
 
+Dashboard.selectedValues = new Map;
