@@ -1172,7 +1172,19 @@ class DataSourceColumn {
 			`);
 		}
 
-		for(const report of DataSource.list.values()) {
+		const sortedReports = Array.from(DataSource.list.values()).sort(function(a, b) {
+			const nameA = a.name.toUpperCase();
+			const nameB = b.name.toUpperCase();
+			if (nameA < nameB) {
+				return -1;
+			}
+			if (nameA > nameB) {
+				return 1;
+			}
+			return 0;
+		});
+
+		for(const report of sortedReports) {
 
 			this.form.drilldown_query_id.insertAdjacentHTML('beforeend', `
 				<option value="${report.query_id}">${report.name} #${report.query_id}</option>
