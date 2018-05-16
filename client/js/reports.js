@@ -1646,7 +1646,11 @@ class DataSourceColumn {
 			this.searchType = select.value;
 			this.searchQuery = query.value;
 			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
-			this.accumulation.run();
+
+			for (const column of this.source.columns.values()) {
+				column.accumulation.run()
+			}
+
 			this.source.visualizations.selected.render();
 			setTimeout(() => select.focus());
 		});
@@ -1655,7 +1659,11 @@ class DataSourceColumn {
 			this.searchType = select.value;
 			this.searchQuery = query.value;
 			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
-			this.accumulation.run();
+
+			for (const column of this.source.columns.values()) {
+				column.accumulation.run()
+			}
+
 			this.source.visualizations.selected.render();
 			setTimeout(() => query.focus());
 		});
