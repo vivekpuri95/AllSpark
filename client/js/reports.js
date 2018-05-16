@@ -219,13 +219,13 @@ class DataSource {
 			container.querySelector('.export-json').classList.toggle('hidden');
 			container.querySelector('.export-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 		});
 		container.querySelector('header .menu-toggle').on('click', () => {
 			container.querySelector('.menu').classList.toggle('hidden');
 			container.querySelector('header .menu-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 		});
 
 		container.querySelector('.description .visible-to').on('click', () => {
@@ -264,7 +264,7 @@ class DataSource {
 
 			else container.insertBefore(this.filters.container, container.querySelector('.columns'));
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 		});
 
 		container.querySelector('.menu .description-toggle').on('click', async () => {
@@ -276,7 +276,7 @@ class DataSource {
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 
 			await this.userList();
 			container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
@@ -287,7 +287,7 @@ class DataSource {
 			container.querySelector('.query').classList.toggle('hidden');
 			container.querySelector('.query-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 		});
 
 		container.querySelector('.menu .download-btn .download').on('click', (e) => {
@@ -5695,16 +5695,19 @@ class Dataset {
 		}
 
 		else {
-
-			for(const input of this.container.querySelectorAll('input'))
-				input.checked = source == input.value;
+			this.container.querySelector('input').value = source.value;
 		}
 
 		this.update();
 	}
 
 	get value() {
-		return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
+
+		if(this.query_id) {
+			return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
+		} else {
+			return this.container.querySelector('input').value;
+		}
 	}
 
 	all() {
