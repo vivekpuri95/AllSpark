@@ -69,7 +69,7 @@ Page.class = class Dashboards extends Page {
 			},
 			publicDashboard = {
 				...JSON.parse(JSON.stringify(dummyDashboard)),
-				name: "public Dashboards",
+				name: "Public Dashboards",
 				id: -3,
 				icon: "fas fa-user-secret"
 			};
@@ -94,9 +94,9 @@ Page.class = class Dashboards extends Page {
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 		}
 
+		this.list.set(publicDashboard.id, new Dashboard(publicDashboard, this));
 		this.list.set(privateDashboard.id, new Dashboard(privateDashboard, this));
 		this.list.set(sharedWithMeDashboard.id, new Dashboard(sharedWithMeDashboard, this));
-		this.list.set(publicDashboard.id, new Dashboard(publicDashboard, this));
 
 		// manage hierarchy
 
@@ -139,6 +139,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		const [loadReport] = window.location.pathname.split('/').filter(x => x === "report");
+
 		await this.renderNav(id);
 		if (loadReport) {
 
@@ -150,7 +151,6 @@ Page.class = class Dashboards extends Page {
 			await this.list.get(id).load();
 			await this.list.get(id).render();
 		}
-
 	}
 
 	renderList() {
@@ -262,7 +262,9 @@ Page.class = class Dashboards extends Page {
 		}
 
 		const labels = container.querySelectorAll(".label");
-		for (const item of labels) item.classList.remove("selected");
+
+		for (const item of labels)
+			item.classList.remove("selected");
 	};
 
 	renderNav(id) {
@@ -273,6 +275,8 @@ Page.class = class Dashboards extends Page {
 		nav.textContent = null;
 
 		const search = document.createElement('label');
+
+		search.classList.add('dashboard-search');
 
 		search.innerHTML = `<input type="search" name="search" placeholder="Search..." >`;
 
@@ -513,7 +517,6 @@ class Dashboard {
 		};
 
 		Dashboard.screenHeightOffset = 2 * screen.availHeight;
-
 	}
 
 	async load() {
@@ -569,7 +572,6 @@ class Dashboard {
 
 			console.log(e);
 		}
-
 	}
 
 	loadVisitedVisualizations(heightScrolled, resize, offset = Dashboard.screenHeightOffset) {
@@ -755,7 +757,7 @@ class Dashboard {
 
 			element.classList.remove("selected");
 		}
-		console.log("@@@@@@###")
+
 		if (menuElement) {
 
 			menuElement.classList.add("selected");
@@ -1108,8 +1110,6 @@ class Dashboard {
 		function getRow(position) {
 			return Math.floor((position - Dashboard.container.offsetTop) / Dashboard.grid.rowHeight);
 		}
-
-
 	}
 
 	async save(format, id) {
