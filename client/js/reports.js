@@ -715,7 +715,7 @@ class DataSourceFilter {
 			0: 'number',
 			2: 'date',
 			3: 'month',
-			4: 'city',
+			4: 'hidden',
 		};
 
 		DataSourceFilter.placeholderPrefix = 'param_';
@@ -740,6 +740,8 @@ class DataSourceFilter {
 			return this.labelContainer;
 
 		const container = document.createElement('label');
+		if (DataSourceFilter.types[this.type] == 'hidden')
+			container.classList.add('hidden');
 
 		let input = document.createElement('input');
 
