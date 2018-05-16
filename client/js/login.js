@@ -63,6 +63,7 @@ Page.class = class Login extends Page {
 
 		} catch(error) {
 
+			this.container.querySelector('.whitelabel').classList.add('hidden');
 			this.message.classList.remove('notice', 'hidden');
 			this.message.classList.add('warning');
 			this.message.textContent = error.message || error;

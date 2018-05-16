@@ -35,7 +35,7 @@ router.get('/login', (request, response) => {
 			<img src="" />
 		</div>
 
-		<div class="whitelabel">
+		<div class="whitelabel form">
 			<i class="fa fa-spinner fa-spin"></i>
 		</div>
 
