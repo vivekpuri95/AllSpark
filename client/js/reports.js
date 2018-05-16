@@ -515,15 +515,16 @@ class DataSource {
 			}
 
 			const obj = {
-					columns		 :[...this.columns.entries()].map(x => x[0]),
-					visualization:this.visualizations.selected.type,
-					sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-					file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				columns		 :[...this.columns.entries()].map(x => x[0]),
+				visualization:this.visualizations.selected.type,
+				sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				token		 :localStorage.token,
 			};
 
-			for(const axis in this.visualizations.selected.options.axes) {
-				if (isNaN(parseInt(axis)))
-					obj[axis] = (((this.visualizations.selected.options.axes)[axis]).columns)[0].key;
+			for(const axis of this.visualizations.selected.options.axes) {
+				if(axis.columns.length)
+					obj[axis.position] = axis.columns[0].key;
 			}
 
 			return await this.excelSheetDownloader(response, obj);
