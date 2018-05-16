@@ -1175,7 +1175,7 @@ class DataSourceColumn {
 		for(const report of DataSource.list.values()) {
 
 			this.form.drilldown_query_id.insertAdjacentHTML('beforeend', `
-				<option value="${report.query_id}">${report.name}</option>
+				<option value="${report.query_id}">${report.name} #${report.query_id}</option>
 			`);
 		}
 
@@ -1297,6 +1297,7 @@ class DataSourceColumn {
 			<label>
 				<span>Value</span>
 				<select name="value" value="${parameter.value || ''}"></select>
+				<input name="value" value="${parameter.value || ''}" class="hidden">
 			</label>
 
 			<label>
@@ -1335,8 +1336,11 @@ class DataSourceColumn {
 
 				const
 					placeholder = parameter.querySelector('select[name=placeholder]'),
-					type = parameter.querySelector('select[name=type]'),
-					value = parameter.querySelector('select[name=value]');
+					type = parameter.querySelector('select[name=type]');
+				let value = parameter.querySelector('select[name=value]');
+
+				value.classList.remove('hidden');
+				parameter.querySelector('input[name=value]').classList.add('hidden');
 
 				placeholder.textContent = null;
 
@@ -1361,6 +1365,11 @@ class DataSourceColumn {
 
 					for(const filter of this.source.filters.values())
 						value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+				}
+				else {
+					value.classList.add('hidden');
+					value = parameter.querySelector('input[name=value]');
+					value.classList.remove('hidden');
 				}
 
 				if(value.getAttribute('value'))
@@ -1409,8 +1418,17 @@ class DataSourceColumn {
 
 			let param_json = {};
 
-			for(const select of row.querySelectorAll('select'))
+			for(const select of row.querySelectorAll('select')) {
+
 				param_json[select.name] = select.value;
+
+				if(select.name == 'type' && select.value == 'static') {
+
+					const input = row.querySelector('input');
+					param_json[input.name] = input.value;
+					break;
+				}
+			}
 
 			json_param.push(param_json);
 		}
