@@ -741,6 +741,8 @@ class DataSourceFilter {
 			return this.labelContainer;
 
 		const container = document.createElement('label');
+		if (DataSourceFilter.types[this.type] == 'hidden')
+			container.classList.add('hidden');
 
 		let input = document.createElement('input');
 
