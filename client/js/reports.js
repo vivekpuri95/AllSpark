@@ -5701,15 +5701,21 @@ class Dataset {
 
 	set value(source) {
 
+		const inputs = this.container.querySelectorAll('.options .list label input');
+
 		if(source.query_id) {
 
-			const
-				inputs = this.container.querySelectorAll('.options .list label input'),
-				sourceInputs = source.container.querySelectorAll('.options .list label input');
+			const sourceInputs = source.container.querySelectorAll('.options .list label input');
 
 			if (inputs.length) {
 				for (const [i, input] of sourceInputs.entries())
 					inputs[i].checked = input.checked;
+			}
+		}
+
+		else if(typeof source == 'object' && source.length) {
+			for (const input of inputs) {
+				input.checked = source.includes(input.value);
 			}
 		}
 
