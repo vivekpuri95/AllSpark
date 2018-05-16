@@ -711,12 +711,11 @@ class DataSourceFilter {
 	static setup() {
 
 		DataSourceFilter.types = {
-			0: 'number',
 			1: 'text',
+			0: 'number',
 			2: 'date',
 			3: 'month',
-			4: 'city',
-			5: 'hidden',
+			4: 'hidden',
 		};
 
 		DataSourceFilter.placeholderPrefix = 'param_';
