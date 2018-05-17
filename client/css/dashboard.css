@@ -295,7 +295,8 @@ main #reports > .list {
 		background: rgba(255, 255, 255, 0.8);
 		color: #333;
 		z-index: 4;
-		transition: right var(--transition-duration);
+		transition: right var(--transition-duration),
+					background var(--transition-duration);
 	}
 	main #reports .side:hover {
 		border: 1px solid #999;
