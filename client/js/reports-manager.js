@@ -1235,6 +1235,12 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.filterForm.reset();
 
+		for (const type of MetaData.filters.types || []) {
+			this.filterForm.querySelector('select[name="type"]').insertAdjacentHTML('beforeend', `
+				<option value="${type}">${type}</option>
+			`);
+		}
+
 		for(const key in filter) {
 			if(key in this.filterForm)
 				this.filterForm[key].value = filter[key];
