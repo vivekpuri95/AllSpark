@@ -123,6 +123,7 @@ class API {
 				if(e.pass) {
 					return;
 				}
+
 				if (obj) {
 
 					await API.errorMessage(e, obj);
@@ -145,16 +146,13 @@ class API {
 				if (e instanceof assert.AssertionError) {
 
 					if (commonFun.isJson(e.message)) {
-
 						e.message = JSON.parse(e.message);
 					}
-
 					e.status = e.message.status || 400;
 					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "Something went wrong! :(");
 				}
 
 				else {
-
 					e.status = e.status || 500;
 				}
 
@@ -215,6 +213,9 @@ API.Exception = class {
 	constructor(status, message) {
 		this.status = status;
 		this.message = message;
+
+		console.error("API Exception Error!!!!", this);
+		console.trace();
 	}
 }
 

@@ -96,19 +96,6 @@ main.preview-bottom {
 		#stage-switcher .stage.disabled > small {
 			color: #ccc;
 		}
-		#stage-switcher #visualization-list {
-			position: absolute;
-			background: #fff;
-			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-			top: 100%;
-			width: calc(100% + 2px);
-			left: -1px;
-			z-index: 3;
-			cursor: default;
-		}
-		#stage-switcher #visualization-list .selected {
-			background: #FFC;
-		}
 
 main .form {
 	background: #fff;
@@ -146,7 +133,7 @@ main.preview-left #stages {
 }
 	#stage-pick-report table thead tr th {
 		position: sticky;
-		top: 48px;
+		top: 38px;
 		cursor: pointer;
 	}
 	#stage-pick-report table thead tr.search th {
@@ -168,7 +155,7 @@ main.preview-left #stages {
 		grid-row-gap: calc(var(--gap) * 2);
 		padding: calc(var(--gap) * 2);
 		border: 1px solid #ccc;
-		background: #eef;
+		background: #fff;
 	}
 		#stage-define-report #api label {
 			max-width: initial;
@@ -261,7 +248,7 @@ main.preview-left #stages {
 
 		#stage-define-report #filters {
 			flex: 1 40%;
-			height: 50vh;
+			/* height: 50vh; */
 			margin-left: calc(var(--gap) * 2);
 			overflow: auto;
 		}
@@ -281,6 +268,11 @@ main.preview-left #stages {
 				background: #fff;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			}
+
+#stage-pick-visualization table {
+	background: #fff;
+	box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+}
 
 #stage-configure-visualization.show {
 	display: grid;
@@ -407,6 +399,10 @@ main.preview-left #stages {
 			#stage-configure-visualization #dashboards .dashboard-action .delete:hover {
 				background: #c33;
 				border: 0;
+			}
+			#stage-configure-visualization #dashboards .view-dashboard {
+				font-size: 90%;
+				margin-left: var(--gap);
 			}
 			#stage-configure-visualization #dashboards .dashboard-action {
 				display: grid;

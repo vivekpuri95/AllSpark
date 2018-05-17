@@ -213,16 +213,19 @@ exports.schema = class extends API {
 				information_schema.columns `;
 
 		switch (typeOfConnection) {
+
 			case "mysql":
+
 				columns = await this.mysql.query(selectQuery, [], this.request.query.id);
-
 				break;
+
 			case "pgsql":
-				columns = await this.pgsql.query(selectQuery.replace(/column_type/g, "data_type"), [], this.request.query.id);
 
+				columns = await this.pgsql.query(selectQuery.replace(/column_type/g, "data_type"), [], this.request.query.id);
 				break;
+
 			default:
-				return "type not found";
+				return [];
 		}
 
 		for (const column of columns) {

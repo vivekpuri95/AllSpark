@@ -35,7 +35,11 @@ router.get('/login', (request, response) => {
 			<img src="" />
 		</div>
 
-		<form class="form">
+		<div class="whitelabel form">
+			<i class="fa fa-spinner fa-spin"></i>
+		</div>
+
+		<form class="form hidden">
 
 			<label>
 				<span>Email</span>
@@ -172,7 +176,7 @@ router.get('/user/profile/:id?', (request, response) => {
 		<section id="profile">
 			<h1>
 				Profile details
-				<a href="/user/profile/edit">
+				<a href="/user/profile/edit" class="edit">
 					<i class="fa fa-edit"></i>
 					Edit
 				</a>
@@ -221,7 +225,7 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 
 	template.scripts = template.scripts.concat([
 		'/js/reports.js',
-		'/js/dashboard.js',
+		'/js/dashboard_new.js',
 
 		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
 		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
@@ -389,8 +393,8 @@ router.get('/dashboards-manager/:id?', (request, response) => {
 				<label>
 					<span>Type</span>
 					<select name="visibility">
-						<option value="public">Public</option>
 						<option value="private">Private</option>
+						<option value="public">Public</option>
 					</select>
 				</label>
 			</form>
@@ -410,8 +414,7 @@ router.get('/dashboards-manager/:id?', (request, response) => {
 						<th class="action">Action</th>
 					</tr>
 				</thead>
-				<tbody>
-				</tbody>
+				<tbody></tbody>
 			</table>
 		</section>
 	`));
@@ -432,8 +435,8 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 
 		'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
-		// 'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
-		// 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
+		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
 
 		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 	]);
@@ -506,7 +509,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 						<div id="missing-filters" class="hidden"></div>
 					</div>
 
-					<div id="api" class="hidden">
+					<div id="api" class="hidden form">
 
 						<label>
 							<span>URL</span>
@@ -666,6 +669,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 										<option value="1">String</option>
 										<option value="2">Date</option>
 										<option value="3">Month</option>
+										<option value="4">Hidden</option>
 									</select>
 								</label>
 
@@ -702,6 +706,41 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 						</div>
 					</div>
 				</div>
+			</section>
+
+			<section class="section" id="stage-pick-visualization">
+
+				<div id="visualization-list">
+
+					<div class="toolbar">
+						<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></button>
+					</div>
+
+					<table>
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+								<th>Type</th>
+								<th>Preview</th>
+								<th>Edit</th>
+								<th>Delete</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<div class="hidden" id="add-visualization-picker">
+
+					<div class="toolbar">
+						<button id="visualization-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
+						<button type="submit" form="add-visualization-form"><i class="fas fa-save"></i> Save</button>
+					</div>
+
+					<form id="add-visualization-form"></form>
+				</div>
+
 			</section>
 
 			<section class="section" id="stage-configure-visualization">
@@ -749,17 +788,6 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 
 					<div class="body" id="dashboards"></div>
 				</div>
-
-			</section>
-
-			<section class="section" id="add-visualization-picker">
-
-				<div class="toolbar">
-					<button id="visualization-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
-					<button type="submit" form="add-visualization-form"><i class="fas fa-save"></i> Save</button>
-				</div>
-
-				<form id="add-visualization-form"></form>
 
 			</section>
 		</div>
@@ -986,6 +1014,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 							<th>Name</th>
 							<th>Category</th>
 							<th>Query id</th>
+							<th>Order</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>
@@ -1018,6 +1047,11 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 					<label>
 						<span>Query Id</span>
 						<input type="number" name="query_id">
+					</label>
+
+					<label>
+						<span>Order</span>
+						<input type="number" name="order">
 					</label>
 				</form>
 			</section>
@@ -1133,6 +1167,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 						<th>URL</th>
 						<th>Icon</th>
 						<th>Logo</th>
+						<th>Authentication API</th>
 						<th>Edit</th>
 						<th>Delete</th>
 					</thead>
@@ -1165,7 +1200,10 @@ router.get('/settings/:tab?/:id?', (request, response) => {
                         <img src="" alt="logo" id="logo" height="30">
                         <input type="text" name="logo">
                     </label>
-
+					<label>
+                        <span>Authentication API</span>
+                        <input type="text" name="auth_api">
+                    </label>
 					<label id="format">
 						<span>Settings</span>
 						<textarea id="settings-format" name="settings"></textarea>
@@ -1219,10 +1257,6 @@ class Template {
 
 						<nav></nav>
 
-						<span class="global-search">
-							<input name="globalSearch" class="search-input" placeholder="Search...">
-							<ul class="hidden"></ul>
-						</span>
 						<span class="user-name"></span>
 						<span class="logout">
 							<i class="fa fa-power-off"></i>&nbsp;

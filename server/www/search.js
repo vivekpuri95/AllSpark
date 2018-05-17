@@ -12,20 +12,24 @@ exports.query = class extends API {
 			search: this.request.query.text
 		};
 
-		const user_obj = Object.assign(new users(), this);
-		const dashboards_obj = Object.assign(new dashboards(), this);
-		const datasets_obj = Object.assign(new datasets(), this);
-		const report_obj = Object.assign(new reports(), this);
+		const search_set = [users, dashboards, datasets, reports];
+		let response = [];
 
-		let user_list, dashboard_list, dataset_list, report_list;
+		for(const item of search_set) {
 
-		[user_list, dashboard_list, dataset_list, report_list] = await Promise.all([
-			await user_obj.list(),
-			await dashboards_obj.list(),
-			await datasets_obj.list(),
-			await report_obj.list()
-		]);
+			const obj = Object.assign(new item(), this);
+			let list;
 
-		return [].concat(report_list).concat(user_list).concat(dataset_list).concat(dashboard_list);
+			try {
+				list = await obj.list();
+			}
+			catch (e) {
+				list = [];
+			}
+
+			response = response.concat(list);
+		}
+
+		return response;
 	}
 }

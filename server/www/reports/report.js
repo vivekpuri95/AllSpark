@@ -199,7 +199,7 @@ exports.userPrvList = class extends API {
                     USING(category_id)
                WHERE
                     u.account_id = ?
-
+                    AND u.status = 1
                 UNION ALL
 
                SELECT
@@ -224,6 +224,7 @@ exports.userPrvList = class extends API {
                     USING(role_id)
                WHERE
                     u.account_id = ?
+                    AND u.status = 1
                ) user
                LEFT  JOIN
                     (

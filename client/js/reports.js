@@ -49,6 +49,9 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
+			if(account.auth_api && localStorage.access_token && filter.placeholder == 'access_token')
+				filter.value = localStorage.access_token;
+
 			if(filter.dataset && filter.dataset.query_id) {
 
 				if(filter.dataset.containerElement) {
@@ -157,12 +160,12 @@ class DataSource {
 					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
 					<div class="download-dropdown-content hidden">
 						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
-						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i>xlsx</button>
+						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i> XLSX</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
+						<button type="button" class="export-toggle"><i class="fa fa-download"></i> Export</button>
 					</div>
 				</div>
 				<select class="change-visualization hidden"></select>
-				<button class="export-toggle"><i class="fa fa-download"></i> Export</button>
 			</div>
 
 			<div class="columns"></div>
@@ -208,17 +211,21 @@ class DataSource {
 			</div>
 		`;
 
+		document.querySelector('body').on('click', (e) => {
+			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
+		})
+
 		container.querySelector('.menu .export-toggle').on('click', () => {
 			container.querySelector('.export-json').classList.toggle('hidden');
 			container.querySelector('.export-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 		});
 		container.querySelector('header .menu-toggle').on('click', () => {
 			container.querySelector('.menu').classList.toggle('hidden');
 			container.querySelector('header .menu-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 		});
 
 		container.querySelector('.description .visible-to').on('click', () => {
@@ -257,7 +264,7 @@ class DataSource {
 
 			else container.insertBefore(this.filters.container, container.querySelector('.columns'));
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 		});
 
 		container.querySelector('.menu .description-toggle').on('click', async () => {
@@ -269,7 +276,7 @@ class DataSource {
 			container.querySelector('.description').classList.toggle('hidden');
 			container.querySelector('.description-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 
 			await this.userList();
 			container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
@@ -280,10 +287,11 @@ class DataSource {
 			container.querySelector('.query').classList.toggle('hidden');
 			container.querySelector('.query-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render(true);
+			this.visualizations.selected.render({resize: true});
 		});
 
 		container.querySelector('.menu .download-btn .download').on('click', (e) => {
+			e.stopPropagation();
 			container.querySelector('.menu .download-btn .download').classList.toggle('selected');
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.toggle('hidden');
 		});
@@ -436,6 +444,7 @@ class DataSource {
 
 			if(!row.skip)
 				response.push(row);
+
 		}
 
 		if(this.postProcessors.selected)
@@ -506,15 +515,16 @@ class DataSource {
 			}
 
 			const obj = {
-					columns		 :[...this.columns.entries()].map(x => x[0]),
-					visualization:this.visualizations.selected.type,
-					sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-					file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				columns		 :[...this.columns.entries()].map(x => x[0]),
+				visualization:this.visualizations.selected.type,
+				sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				token		 :localStorage.token,
 			};
 
-			for(const axis in this.visualizations.selected.options.axes) {
-				if (isNaN(parseInt(axis)))
-					obj[axis] = (((this.visualizations.selected.options.axes)[axis]).columns)[0].key;
+			for(const axis of this.visualizations.selected.options.axes) {
+				if(axis.columns.length)
+					obj[axis.position] = axis.columns[0].key;
 			}
 
 			return await this.excelSheetDownloader(response, obj);
@@ -672,7 +682,10 @@ class DataSourceFilters extends Map {
 		for(const filter of this.values())
 			container.appendChild(filter.label);
 
-		container.on('submit', e => this.source.visualizations.selected.load(e));
+		container.on('submit', e => {
+			e.preventDefault();
+			this.source.visualizations.selected.load();
+		});
 
 		container.insertAdjacentHTML('beforeend', `
 			<label class="right">
@@ -702,7 +715,7 @@ class DataSourceFilter {
 			0: 'number',
 			2: 'date',
 			3: 'month',
-			4: 'city',
+			4: 'hidden',
 		};
 
 		DataSourceFilter.placeholderPrefix = 'param_';
@@ -727,6 +740,8 @@ class DataSourceFilter {
 			return this.labelContainer;
 
 		const container = document.createElement('label');
+		if (DataSourceFilter.types[this.type] == 'hidden')
+			container.classList.add('hidden');
 
 		let input = document.createElement('input');
 
@@ -834,7 +849,7 @@ class DataSourceRow extends Map {
 				}
 			}
 
-			if(column.filtered) {
+			if(column.searchQuery && column.searchQuery !== '') {
 
 				if(!row[key])
 					this.skip = true;
@@ -1159,10 +1174,22 @@ class DataSourceColumn {
 			`);
 		}
 
-		for(const report of DataSource.list.values()) {
+		const sortedReports = Array.from(DataSource.list.values()).sort(function(a, b) {
+			const nameA = a.name.toUpperCase();
+			const nameB = b.name.toUpperCase();
+			if (nameA < nameB) {
+				return -1;
+			}
+			if (nameA > nameB) {
+				return 1;
+			}
+			return 0;
+		});
+
+		for(const report of sortedReports) {
 
 			this.form.drilldown_query_id.insertAdjacentHTML('beforeend', `
-				<option value="${report.query_id}">${report.name}</option>
+				<option value="${report.query_id}">${report.name} #${report.query_id}</option>
 			`);
 		}
 
@@ -1176,11 +1203,34 @@ class DataSourceColumn {
 			clearTimeout(timeout);
 
 			timeout = setTimeout(async () => {
+				let found = false;
+
+				if(!this.source.format)
+					this.source.format = {};
+
+				if (this.source.format.columns) {
+					for (const column of this.source.format.columns) {
+						if (column.key == this.key) {
+							column.disabled = !column.disabled;
+							found = true;
+							break;
+						}
+					}
+				}
+
+				if (!found) {
+					if (!this.source.format.columns)
+						this.source.format.columns = [];
+
+					this.source.format.columns.push({
+						key: this.key,
+						disabled: true,
+					});
+				}
 
 				this.disabled = !this.disabled;
 
 				this.source.columns.render();
-
 				await this.update();
 			}, 300);
 		});
@@ -1264,6 +1314,7 @@ class DataSourceColumn {
 			<label>
 				<span>Value</span>
 				<select name="value" value="${parameter.value || ''}"></select>
+				<input name="value" value="${parameter.value || ''}" class="hidden">
 			</label>
 
 			<label>
@@ -1302,8 +1353,11 @@ class DataSourceColumn {
 
 				const
 					placeholder = parameter.querySelector('select[name=placeholder]'),
-					type = parameter.querySelector('select[name=type]'),
-					value = parameter.querySelector('select[name=value]');
+					type = parameter.querySelector('select[name=type]');
+				let value = parameter.querySelector('select[name=value]');
+
+				value.classList.remove('hidden');
+				parameter.querySelector('input[name=value]').classList.add('hidden');
 
 				placeholder.textContent = null;
 
@@ -1329,6 +1383,11 @@ class DataSourceColumn {
 					for(const filter of this.source.filters.values())
 						value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
 				}
+				else {
+					value.classList.add('hidden');
+					value = parameter.querySelector('input[name=value]');
+					value.classList.remove('hidden');
+				}
 
 				if(value.getAttribute('value'))
 					value.value = value.getAttribute('value');
@@ -1344,10 +1403,14 @@ class DataSourceColumn {
 	async apply() {
 
 		for(const element of this.form.elements)
-			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+			this[element.name] = element.value == '' ? null : element.value || null;
 
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
+
+		if(this.sort != '0')
+			this.source.columns.sortBy = this;
+
 		await this.source.visualizations.selected.render();
 		this.blanket.classList.add('hidden');
 	}
@@ -1375,8 +1438,17 @@ class DataSourceColumn {
 
 			let param_json = {};
 
-			for(const select of row.querySelectorAll('select'))
+			for(const select of row.querySelectorAll('select')) {
+
 				param_json[select.name] = select.value;
+
+				if(select.name == 'type' && select.value == 'static') {
+
+					const input = row.querySelector('input');
+					param_json[input.name] = input.value;
+					break;
+				}
+			}
 
 			json_param.push(param_json);
 		}
@@ -1613,7 +1685,11 @@ class DataSourceColumn {
 			this.searchType = select.value;
 			this.searchQuery = query.value;
 			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
-			this.accumulation.run();
+
+			for (const column of this.source.columns.values()) {
+				column.accumulation.run()
+			}
+
 			this.source.visualizations.selected.render();
 			setTimeout(() => select.focus());
 		});
@@ -1622,7 +1698,11 @@ class DataSourceColumn {
 			this.searchType = select.value;
 			this.searchQuery = query.value;
 			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
-			this.accumulation.run();
+
+			for (const column of this.source.columns.values()) {
+				column.accumulation.run()
+			}
+
 			this.source.visualizations.selected.render();
 			setTimeout(() => query.focus());
 		});
@@ -2227,6 +2307,7 @@ class Visualization {
 		this.source.visualizations.selected = this;
 
 		this.source.container.appendChild(this.container);
+		this.source.container.querySelector('.columns').classList.remove('hidden');
 
 		const configure = this.source.container.querySelector('.configure-visualization');
 
@@ -2240,8 +2321,8 @@ class Visualization {
 
 		this.source.resetError();
 
-		if(this.options)
-			this.source.container.querySelector('.columns').classList.toggle('hidden', !this.options.legend)
+		if(this.options && this.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 }
 
@@ -2252,6 +2333,7 @@ class LinearVisualization extends Visualization {
 		super(visualization, source);
 
 		for(const axis of this.axes || []) {
+
 			this.axes[axis.position] = axis;
 			axis.column = axis.columns.length ? axis.columns[0].key : '';
 		}
@@ -2264,6 +2346,22 @@ class LinearVisualization extends Visualization {
 
 		if(!this.axes)
 			return this.source.error('Axes not defined! :(');
+
+		for(const axis of this.axes) {
+
+			if(!axis.restcolumns)
+				continue;
+
+			axis.columns = [];
+
+			for(const key of this.source.columns.keys()) {
+
+				if(!this.axes.some(a => a.columns.some(c => c.key == key)))
+					axis.columns.push({key});
+			}
+
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
 
 		if(!this.axes.bottom)
 			return this.source.error('Bottom axis not defined! :(');
@@ -2332,12 +2430,12 @@ class LinearVisualization extends Visualization {
 				this.width = width;
 				this.height = height;
 
-				this.plot(true);
+				this.plot({resize: true});
 			}
 		});
 	}
 
-	plot() {
+	plot(options = {}) {
 
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
@@ -2582,20 +2680,17 @@ Visualization.list.set('table', class Table extends Visualization {
 		this.rowLimitMultiplier = 1.75;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 		`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
 	get container() {
@@ -2616,7 +2711,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		return container;
 	}
 
-	render() {
+	render(options = {}) {
 
 		const
 			container = this.container.querySelector('.container'),
@@ -2756,30 +2851,27 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		return container;
 	}
 
-	async load(e, resize) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render(resize);
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
 
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -2800,6 +2892,12 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = null,
@@ -2829,7 +2927,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -2882,7 +2980,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		// Selecting all the paths
 		const path = this.svg.selectAll('path');
 
-		if(!resize) {
+		if(!options.resize) {
 			path[0].forEach(path => {
 				var length = path.getTotalLength();
 
@@ -2960,30 +3058,27 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 		return container;
 	}
 
-	async load(e, resize) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render(resize);
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
 
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -3005,6 +3100,12 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		this.y.max = 0;
 		this.y.min = 0;
@@ -3035,7 +3136,7 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3067,7 +3168,6 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 			.style('text-anchor', 'middle')
 			.text(this.axes.left.label);
 
-		//graph type line and
 		const
 			line = d3.svg
 				.line()
@@ -3077,35 +3177,29 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 		// For each line appending the circle at each point
 		for(const column of this.columns) {
 
-			this.svg.selectAll('dot')
+			let dots = this.svg
+				.selectAll('dot')
 				.data(column)
 				.enter()
 				.append('circle')
-				.attr('class', 'clips')
+				.attr('class', 'bubble')
 				.attr('id', (_, i) => i)
-				.attr('r', d => this.bubble(d.y1))
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
-				.attr('cy', d => this.y(d.y))
+				.attr('cy', d => this.y(d.y));
+
+			if(!options.resize) {
+
+				dots = dots
+					.attr('r', d => 0)
+					.transition()
+					.duration(Visualization.animationDuration)
+					.ease('quad-in');
+			}
+
+			dots
+				.attr('r', d => this.bubble(d.y1));
 		}
-
-		container
-		.on('mousemove.line', function() {
-
-			// container.selectAll('svg > g > circle[class="clips"]').attr('r', 3);
-
-			const
-				mouse = d3.mouse(this),
-				xpos = parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length)),
-				row = that.rows[xpos];
-
-			if(!row || that.zoomRectangle)
-				return;
-
-			// container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
-		})
-
-		// .on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 3));
 	}
 });
 
@@ -3130,30 +3224,27 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 		return container;
 	}
 
-	async load(e, resize) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render(resize);
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
 
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -3174,6 +3265,12 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = null,
@@ -3203,7 +3300,7 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3298,31 +3395,28 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.source.response;
 
-		this.render();
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize)  {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -3342,6 +3436,12 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = 0,
@@ -3366,7 +3466,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3426,9 +3526,37 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.on('mouseout', function() {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
-			});
+			})
 
-		if(!resize) {
+		let values;
+
+		if(this.options.showValues) {
+
+			values = this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (Format.number(cell.y).toString().length * 4))
+				.text(cell => {
+
+					if(['s'].includes(this.axes.bottom.format))
+						return d3.format(this.axes.left.format)(cell.y);
+
+					else
+						return Format.number(cell.y)
+				});
+		}
+
+		if(!options.resize) {
 
 			bars = bars
 				.attr('y', cell => this.y(0))
@@ -3436,11 +3564,28 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.transition()
 				.duration(Visualization.animationDuration)
 				.ease('quad-in');
+
+			if(values) {
+
+				values = values
+					.attr('y', cell => this.y(0))
+					.attr('height', () => 0)
+					.transition()
+					.duration(Visualization.animationDuration)
+					.ease('quad-in');
+			}
 		}
 
 		bars
 			.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0))
 			.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+
+		if(values) {
+
+			values
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 3)
+				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+		}
 	}
 });
 
@@ -3465,18 +3610,15 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
 	constructor(visualization, source) {
@@ -3589,18 +3731,18 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				this.width = width;
 				this.height = height;
 
-				this.plot(true);
+				this.plot({resize: true});
 			}
 		});
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize)  {
+	plot(options = {})  {
 
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
@@ -3717,13 +3859,13 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			leftAxis = d3.svg.axis()
 				.scale(this.left)
 				.innerTickSize(-this.width)
-			    .tickFormat(d3.format('s'))
+				.tickFormat(d3.format('s'))
 				.orient('left'),
 
 			rightAxis = d3.svg.axis()
 				.scale(this.right)
 				.innerTickSize(this.width)
-			    .tickFormat(d3.format('s'))
+				.tickFormat(d3.format('s'))
 				.orient('right');
 
 		this.left.max = 0;
@@ -3748,8 +3890,8 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		this.bottom.rangeBands([0, this.width], 0.1, 0);
 
 		const
-			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			biggestTick = this.bottom.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.bottom.domain().length / tickNumber),
 			ticks = this.bottom.domain().filter((d, i) => !(i % tickInterval));
 
@@ -3824,7 +3966,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				d3.select(this).classed('hover', false);
 			});
 
-		if(!resize) {
+		if(!options.resize) {
 
 			bars = bars
 				.attr('height', () => 0)
@@ -3860,7 +4002,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		// Selecting all the paths
 		const path = this.svg.selectAll('path');
 
-		if(!resize) {
+		if(!options.resize) {
 			path[0].forEach(path => {
 				var length = path.getTotalLength();
 
@@ -4050,29 +4192,26 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -4091,6 +4230,12 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let max = 0;
 
@@ -4113,7 +4258,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
@@ -4174,7 +4319,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			.attr('width', this.x.rangeBand())
 			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
 
-		if(!resize) {
+		if(!options.resize) {
 
 			bars = bars
 				.attr('height', d => 0)
@@ -4211,29 +4356,26 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.draw();
-		this.plot(resize);
+		this.plot(options);
 	}
 
-	plot(resize) {
+	plot(options = {}) {
 
-		super.plot(resize);
+		super.plot(options);
 
 		if(!this.rows || !this.rows.length)
 			return;
@@ -4254,6 +4396,12 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.scale(this.y)
 				.innerTickSize(-this.width)
 				.orient('left');
+
+		if(['s'].includes(this.axes.bottom.format))
+				xAxis.tickFormat(d3.format(this.axes.left.format));
+
+		if(['s'].includes(this.axes.left.format))
+				yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = 0,
@@ -4281,7 +4429,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		const
 			biggestTick = this.x.domain().reduce((s, v) => s.length > v.length ? s : v, ''),
-			tickNumber = Math.floor(this.container.clientWidth / (biggestTick.length * 12)),
+			tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
 			tickInterval = parseInt(this.x.domain().length / tickNumber),
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval)),
 
@@ -4338,7 +4486,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			.attr('d', d => area(d))
 			.style('fill', d => d.color);
 
-		if(!resize) {
+		if(!options.resize) {
 			areas = areas
 				.style('opacity', 0)
 				.transition()
@@ -4405,21 +4553,18 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
-	render() {
+	render(options = {}) {
 
 		const
 			series = [],
@@ -4457,10 +4602,13 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			series: series.reverse(),
 			divId: `#visualization-${this.id}`,
 			chart: {},
+			options,
 		});
 	}
 
 	draw(obj) {
+
+		const options = obj.options;
 
 		d3.selectAll(obj.divId).on('mousemove', null)
 			.on('mouseout', null)
@@ -4496,7 +4644,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		series.map(r => r.data = r);
 
-		chart.plot = resize => {
+		chart.plot = (options = {}) => {
 
 			var funnelTop = width * 0.60,
 				funnelBottom = width * 0.2,
@@ -4548,7 +4696,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.attr("x", d => x(d.date))
 				.attr("width", x.rangeBand())
 
-			if(!resize) {
+			if(!options.resize) {
 				rectangles = rectangles
 					.attr("height", d => 0)
 					.attr("y", d => 30)
@@ -4712,11 +4860,11 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 			}
 		};
 
-		chart.plot();
+		chart.plot(options);
 
 		window.addEventListener('resize', () => {
 			width = this.container.clientWidth - margin.left - margin.right;
-			chart.plot(true);
+			chart.plot({resize: true});
 		});
 
 		function findInterSection(x1, y1, x2, y2, x3, y3, x4, y4) {
@@ -4749,20 +4897,17 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.process();
 
-		this.render();
+		this.render(options);
 	}
 
 	process() {
@@ -4789,7 +4934,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			visualizationToggle.value = this.source.visualizations.indexOf(this);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.rows = this.source.response;
 
@@ -4803,7 +4948,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				width = this.container.clientWidth - 20;
 
 			if(this.width != width || this.height != height)
-				this.render(true);
+				this.render({resize: true});
 		});
 
 		const
@@ -4897,7 +5042,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				d3.select(this).classed('hover', false);
 			});
 
-		if(!resize) {
+		if(!options.resize) {
 			slice
 				.transition()
 				.duration(Visualization.animationDuration / data.length * 2)
@@ -4949,13 +5094,13 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 		return container;
 	}
 
-	async load(parameters = {}) {
+	async load(options = {}) {
 
 		super.render();
 
-		await this.source.fetch(parameters);
+		await this.source.fetch(options);
 
-		this.render();
+		this.render(options);
 	}
 
 	render() {
@@ -5021,12 +5166,9 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if(e && e.preventDefault)
-			e.preventDefault();
-
-		super.render();
+		super.render(options);
 
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
@@ -5034,10 +5176,10 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 			</div>
 		`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.process();
-		this.render();
+		this.render(options);
 	}
 
 	process() {
@@ -5141,23 +5283,21 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if (e && e.preventDefault)
-			e.preventDefault();
+		super.render(options);
 
-		super.render();
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.process();
 
-		this.render();
+		this.render(options);
 	}
 
 	process() {
@@ -5179,7 +5319,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			return this.source.error('Invalid Date! :(');
 	}
 
-	render() {
+	render(options = {}) {
 
 		const [response] = this.source.response;
 
@@ -5217,23 +5357,21 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		return container;
 	}
 
-	async load(e) {
+	async load(options = {}) {
 
-		if (e && e.preventDefault)
-			e.preventDefault();
+		super.render(options);
 
-		super.render();
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
 		this.process();
 
-		this.render();
+		this.render(options);
 	}
 
 	process() {
@@ -5261,7 +5399,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		}
 	}
 
-	render() {
+	render(options = {}) {
 		const container = this.container.querySelector('.container');
 		container.textContent = null;
 
@@ -5324,20 +5462,18 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 		return container;
 	}
 
-	async load(e, resize) {
+	async load(options = {}) {
 
-		if (e && e.preventDefault)
-			e.preventDefault();
+		super.render(options);
 
-		super.render();
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-		await this.source.fetch();
+		await this.source.fetch(options);
 
-		this.render(resize);
+		this.render(options);
 	}
 
-	render(resize) {
+	render(options = {}) {
 
 		this.editor = new Editor(this.container);
 
@@ -5410,11 +5546,11 @@ class Dataset {
 
 		container.classList.add('dataset');
 
-		if(['Start Date', 'End Date'].includes(this.name)) {
+		if(this.name.includes('Date')) {
 
 			let value = null;
 
-			if(this.name == 'Start Date')
+			if(this.name.includes('Start'))
 				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
 			else
@@ -5440,11 +5576,13 @@ class Dataset {
 
 			e.stopPropagation();
 
-			for(const options of document.querySelectorAll('.dataset .options'))
-				options.classList.add('hidden');
+			for(const options_ of document.querySelectorAll('.dataset .options')) {
+				if(options_ != options)
+					options_.classList.add('hidden');
+			}
 
 			search.value = '';
-			options.classList.remove('hidden');
+			options.classList.toggle('hidden');
 
 			this.update();
 		});
@@ -5511,6 +5649,10 @@ class Dataset {
 			label.setAttribute('title', row.value);
 
 			label.querySelector('input').on('change', () => this.update());
+			label.on('dblclick', e => {
+				this.clear();
+				label.click();
+			});
 
 			list.appendChild(label);
 		}
@@ -5531,7 +5673,7 @@ class Dataset {
 			id: this.id,
 		};
 
-		if(account.auth_api)
+		if(account.auth_api && localStorage.access_token)
 			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = localStorage.access_token;
 
 		try {
@@ -5586,11 +5728,11 @@ class Dataset {
 
 	set value(source) {
 
+		const inputs = this.container.querySelectorAll('.options .list label input');
+
 		if(source.query_id) {
 
-			const
-				inputs = this.container.querySelectorAll('.options .list label input'),
-				sourceInputs = source.container.querySelectorAll('.options .list label input');
+			const sourceInputs = source.container.querySelectorAll('.options .list label input');
 
 			if (inputs.length) {
 				for (const [i, input] of sourceInputs.entries())
@@ -5598,17 +5740,26 @@ class Dataset {
 			}
 		}
 
-		else {
+		else if(typeof source == 'object' && source.length) {
+			for (const input of inputs) {
+				input.checked = source.includes(input.value);
+			}
+		}
 
-			for(const input of this.container.querySelectorAll('input'))
-				input.checked = source == input.value;
+		else {
+			this.container.querySelector('input').value = source.value;
 		}
 
 		this.update();
 	}
 
 	get value() {
-		return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
+
+		if(this.query_id) {
+			return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
+		} else {
+			return this.container.querySelector('input').value;
+		}
 	}
 
 	all() {

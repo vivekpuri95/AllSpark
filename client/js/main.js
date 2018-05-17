@@ -31,17 +31,23 @@ class Page {
 
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
-			if(parameters.has('access_token') && parameters.get('access_token'))
+			if(parameters.has('access_token') && parameters.get('access_token')) {
+				User.logout();
 				localStorage.access_token = parameters.get('access_token');
+			}
 		}
+
+		await API.refreshToken();
 	}
 
 	static render() {
 
+		const header = document.querySelector('body > header');
+
 		if(account) {
 
 			if(account.settings.get('hideHeader')) {
-				document.querySelector('body > header').classList.add('hidden');
+				header.classList.add('hidden');
 				return;
 			}
 
@@ -49,32 +55,32 @@ class Page {
 				document.getElementById('favicon').href = account.icon;
 
 			if(account.logo)
-				document.querySelector('body > header .logo img').src = account.logo;
+				header.querySelector('.logo img').src = account.logo;
 
 			document.title = account.name;
 		}
 
-		document.querySelector('body > header .global-search input').on('keyup', async () => {
+		const user_name = header.querySelector('.user-name');
 
-			await Page.search();
-		});
+		if(user.id) {
 
-		const user_name = document.querySelector('body > header .user-name');
-
-		if(user.id)
 			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
+			const search = new GlobalSearch().container;
+			search.classList.add('search-header');
+			header.insertBefore(search, user_name);
+		}
+		header.querySelector('.logout').on('click', () => User.logout());
 
-		document.querySelector('body > header .logout').on('click', () => User.logout());
 
 		Page.navList = [
 			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
 			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
-			{url: '/reports', name: 'Reports', privilege: 'queries', icon: 'fa fa-database'},
-			{url: '/connections', name: 'Connections', privilege: 'datasources', icon: 'fa fa-server'},
+			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
+			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
 			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
 		];
 
-		const nav_container = document.querySelector('body > header nav');
+		const nav_container = header.querySelector('nav');
 
 		for(const item of Page.navList) {
 
@@ -89,7 +95,7 @@ class Page {
 			`);
 		}
 
-		for(const item of document.querySelectorAll('body > header nav a')) {
+		for(const item of nav_container.querySelectorAll('a')) {
 			if(window.location.pathname.startsWith(new URL(item.href).pathname)) {
 				user_name.classList.remove('selected');
 				item.classList.add('selected');
@@ -97,62 +103,9 @@ class Page {
 		}
 
 		if(window.location.pathname.includes('/user/profile')) {
-			Array.from(document.querySelectorAll('body > header nav a')).map(items => items.classList.remove('selected'));
+			Array.from(nav_container.querySelectorAll('a')).map(items => items.classList.remove('selected'));
 			user_name.querySelector('a').classList.add('selected');
 		}
-	}
-
-	static async search() {
-
-		const searchList = document.querySelector('body > header .global-search ul');
-		searchList.innerHTML = null;
-
-		if(document.querySelector('body > header .global-search input').value == '') {
-			searchList.classList.add('hidden');
-			return;
-		}
-
-		const params = {
-			text: document.querySelector('body > header .global-search input').value
-		};
-
-		const searchResult = await API.call('search/query', params);
-
-		for(const res of searchResult) {
-
-			searchList.insertAdjacentHTML(
-				'beforeend',
-				`<li><a href="${res.href}"><strong>${res.name}</strong>&nbsp;in&nbsp;<strong>${res.superset}</strong></a></li>`
-			);
-		}
-
-		if(!searchResult.length) {
-			searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
-		}
-
-		Page.setEvents(searchList);
-
-		searchList.classList.remove('hidden');
-	}
-
-	static setEvents(searchList) {
-
-		document.querySelector('body').on('click', () => {
-
-			searchList.classList.add('hidden');
-		});
-
-		document.querySelector('body > header .global-search input').on('click', (e) => {
-
-			if(document.querySelector('body > header .global-search input').value == '') {
-				searchList.classList.add('hidden');
-			}
-			else {
-				searchList.classList.remove('hidden');
-			}
-			e.stopPropagation();
-		});
-
 	}
 
 	constructor() {
@@ -218,6 +171,158 @@ Page.serviceWorker = class PageServiceWorker {
 	}
 }
 
+class GlobalSearch {
+
+	constructor(page) {
+
+		this.page = page
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('global-search');
+
+		container.innerHTML = `
+			<input class="search-input" placeholder="Search...">
+			<ul class="hidden"></ul>
+		`;
+
+		this.searchList = container.querySelector('ul');
+		this.setEvents();
+
+		return container;
+	}
+
+	setEvents() {
+
+		this.searchInput = this.container.querySelector('input');
+
+		document.body.on('click', () => {
+			this.hide();
+		});
+
+		this.searchInput.on('click', (e) => {
+
+			if(this.searchInput.value == '') {
+				this.hide();
+			}
+			else {
+				this.show();
+			}
+			e.stopPropagation();
+		});
+
+		this.searchInput.on('keyup', async (e) => {
+
+			clearTimeout(GlobalSearch.inputTimeout);
+			e.stopPropagation();
+
+			if(this.searchInput.value == '') {
+				this.hide();
+				return;
+			}
+
+			GlobalSearch.inputTimeout = setTimeout( async () => {
+				await this.fetch();
+			}, 300);
+
+			}
+		);
+
+		// this.container.on('keydown', Page.keyUpDownListenter = e => this.searchUpDown(e));
+
+	}
+
+	async fetch() {
+
+		this.searchList.innerHTML = `<li><span class="loading"><i class="fa fa-spinner fa-spin"></i></span></li>`;
+
+		const params = {
+			text: this.searchInput.value
+		};
+
+		const data = await API.call('search/query', params);
+		this.render(data);
+		this.show();
+	}
+
+	render(data) {
+
+		this.searchList.textContent = null;
+
+		for(const row of data) {
+
+			const list_item = document.createElement('li');
+
+			list_item.setAttribute('tabIndex', 0);
+
+			list_item.innerHTML = `
+				<a href="${row.href}" tabindex="-1">
+					<span><strong>${row.name}</strong> in <strong>${row.superset}</strong></span>
+				</a>
+				<span class="li-edit"><i class="far fa-edit"></i></span>
+			`;
+
+			list_item.querySelector('.li-edit').on('click', () => {
+
+				const href = {
+					Reports : '/reports/configure-report/query_id',
+					Dashboards : '/dashboards-manager/id',
+					Users : '/users/user_id',
+					Datasets : '/settings/datasets/id'
+				};
+
+				href[row.superset] = href[row.superset].split('/');
+				const suffix = href[row.superset].pop();
+				href[row.superset] = href[row.superset].join('/').concat(`/${row[suffix]}`);
+
+				location.href = href[row.superset];
+
+			});
+
+			this.searchList.appendChild(list_item);
+		}
+
+		if(!data.length) {
+			this.searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
+		}
+	}
+
+	show() {
+
+		this.searchList.classList.remove('hidden');
+		this.searchInput.classList.add('bottom-border');
+	}
+
+	hide() {
+
+		this.searchList.classList.add('hidden');
+		this.searchInput.classList.remove('bottom-border');
+	}
+
+	keyUpDown(e) {
+
+		e.stopPropagation();
+
+		if (e.which == 40) {
+			this.active_li = this.active_li.nextElementSibling || this.active_li
+		}
+		else if (e.which == 38) {
+			this.active_li = this.active_li.previousElementSibling || this.active_li;
+		}
+		else {
+			return
+		}
+
+		this.active_li.focus();
+
+	}
+}
+
 class Account {
 
 	static async load() {
@@ -277,13 +382,9 @@ class User {
 
 	static logout(next) {
 
-		const
-			access_token = localStorage.access_token || '',
-			parameters = new URLSearchParams();
+		const parameters = new URLSearchParams();
 
 		localStorage.clear();
-
-		localStorage.access_token = access_token || '';
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
@@ -560,7 +661,7 @@ class API extends AJAX {
 				method: 'POST',
 			};
 
-		if(account.auth_api)
+		if(account.auth_api && parameters.access_token)
 			parameters.access_token = localStorage.access_token;
 
 		const response = await API.call('authentication/refresh', parameters, options);

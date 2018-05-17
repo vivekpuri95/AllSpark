@@ -27,22 +27,19 @@ Page.class = class Login extends Page {
 		if(account.auth_api && localStorage.access_token)
 			return this.skip_authentication();
 
+		this.container.querySelector('.whitelabel').classList.add('hidden');
+		this.form.classList.remove('hidden');
+
 		this.form.email.focus();
 	}
 
 	async skip_authentication() {
 
-		this.form.innerHTML = `
-			<div class="whitelabel">
-				<i class="fa fa-spinner fa-spin"></i>
-			</div>
-		`;
-
 		const parameters = new URLSearchParams(window.location.search);
 
 		if(!localStorage.access_token && (!parameters.has('access_token') || !parameters.get('access_token'))) {
 
-			this.form.innerHTML = '<div class="whitelabel"><i class="fas fa-exclamation-triangle"></i></div>';
+			this.form.innerHTML = '<div class="whitelabel form"><i class="fas fa-exclamation-triangle"></i></div>';
 
 			this.message.textContent = 'Cannot authenticate user, please reload the page :(';
 			this.message.classList.remove('hidden');
@@ -53,16 +50,20 @@ Page.class = class Login extends Page {
 
 			const
 				params = {
-					access_token: localStorage.access_token || parameters.get('access_token'),
+					access_token: localStorage.access_token || parameters.get('access_token') || '',
 				},
 				options = {
 					method: 'POST',
 				};
 
-			localStorage.refresh_token = await API.call('authentication/login', params, options);
+			const response = await API.call('authentication/login', params, options);
+
+			localStorage.refresh_token = response.jwt;
+			localStorage.access_token = response.access_token;
 
 		} catch(error) {
 
+			this.container.querySelector('.whitelabel').classList.add('hidden');
 			this.message.classList.remove('notice', 'hidden');
 			this.message.classList.add('warning');
 			this.message.textContent = error.message || error;
@@ -95,7 +96,9 @@ Page.class = class Login extends Page {
 
 		try {
 
-			localStorage.refresh_token = await API.call('authentication/login', {}, options);
+			const response = await API.call('authentication/login', {}, options);
+
+			localStorage.refresh_token = response.jwt;
 
 			await API.refreshToken();
 
