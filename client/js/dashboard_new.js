@@ -824,26 +824,25 @@ class Dashboard {
 
 			if (Dashboard.editing)
 				edit.click();
+
+			const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
+			exportButton.classList.remove('hidden');
+
+			exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
+
+			exportButton.on('click', Dashboard.toolbar.exportListener = () => {
+				const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.export));
+
+				const downloadAnchor = document.createElement('a');
+				downloadAnchor.setAttribute('href', jsonFile);
+				downloadAnchor.setAttribute('download', 'dashboard.json');
+				downloadAnchor.click();
+			});
+
+			const configure = Dashboard.toolbar.querySelector('#configure');
+			configure.on('click', () => location.href = `/dashboards-manager/${this.id}`);
+			configure.classList.remove('hidden');
 		}
-
-		const configure = Dashboard.toolbar.querySelector('#configure');
-		configure.on('click', () => location.href = `/dashboards-manager/${this.id}`);
-		configure.classList.remove('hidden');
-
-
-		const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
-		exportButton.classList.remove('hidden');
-
-		exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
-
-		exportButton.on('click', Dashboard.toolbar.exportListener = () => {
-			const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.export));
-
-			const downloadAnchor = document.createElement('a');
-			downloadAnchor.setAttribute('href', jsonFile);
-			downloadAnchor.setAttribute('download', 'dashboard.json');
-			downloadAnchor.click();
-		});
 
 		Dashboard.toolbar.querySelector('#mailto').classList.remove('selected');
 		this.page.reports.querySelector('.mailto-content').classList.add('hidden');
