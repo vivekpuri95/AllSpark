@@ -1241,7 +1241,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		select.textContent = null;
 		for (const type of MetaData.filterTypes) {
 			select.insertAdjacentHTML('beforeend', `
-				<option value="${type}">${type}</option>
+				<option value="${type.toLowerCase()}">${type}</option>
 			`);
 		}
 
