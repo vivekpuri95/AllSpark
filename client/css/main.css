@@ -161,6 +161,7 @@ body {
 			}
 		body > header nav {
 			display: flex;
+			margin-right: auto;
 		}
 		body > header .logout,
 		body > header nav > a,
@@ -189,7 +190,7 @@ body {
 		body > header .search-header {
 			width: 250px;
 			align-self:  center;
-			margin: 0 10px 0 auto;
+			margin: 0 10px;
 		}
 
 		body > header .user-name {
