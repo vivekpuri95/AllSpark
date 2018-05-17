@@ -1403,7 +1403,7 @@ class DataSourceColumn {
 	async apply() {
 
 		for(const element of this.form.elements)
-			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+			this[element.name] = element.value == '' ? null : element.value || null;
 
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
