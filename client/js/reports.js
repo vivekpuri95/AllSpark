@@ -750,12 +750,12 @@ class DataSourceFilter {
 			return this.labelContainer;
 
 		const container = document.createElement('label');
-		if (this.type.toLowerCase() == 'hidden')
+		if (this.type == 'hidden')
 			container.classList.add('hidden');
 
 		let input = document.createElement('input');
 
-		input.type = this.type.toLowerCase();
+		input.type = this.type;
 		input.name = this.placeholder;
 
 		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
@@ -785,10 +785,10 @@ class DataSourceFilter {
 
 		if(!isNaN(parseFloat(this.offset))) {
 
-			if(this.type.toLowerCase() == 'date')
+			if(this.type == 'date')
 				value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
-			if(this.type.toLowerCase() == 'month') {
+			if(this.type == 'month') {
 				const date = new Date();
 				value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
 			}
