@@ -708,6 +708,41 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 				</div>
 			</section>
 
+			<section class="section" id="stage-pick-visualization">
+
+				<div id="visualization-list">
+
+					<div class="toolbar">
+						<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></button>
+					</div>
+
+					<table>
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+								<th>Type</th>
+								<th>Preview</th>
+								<th>Edit</th>
+								<th>Delete</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<div class="hidden" id="add-visualization-picker">
+
+					<div class="toolbar">
+						<button id="visualization-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
+						<button type="submit" form="add-visualization-form"><i class="fas fa-save"></i> Save</button>
+					</div>
+
+					<form id="add-visualization-form"></form>
+				</div>
+
+			</section>
+
 			<section class="section" id="stage-configure-visualization">
 
 				<div class="toolbar">
@@ -753,17 +788,6 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 
 					<div class="body" id="dashboards"></div>
 				</div>
-
-			</section>
-
-			<section class="section" id="add-visualization-picker">
-
-				<div class="toolbar">
-					<button id="visualization-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
-					<button type="submit" form="add-visualization-form"><i class="fas fa-save"></i> Save</button>
-				</div>
-
-				<form id="add-visualization-form"></form>
 
 			</section>
 		</div>
