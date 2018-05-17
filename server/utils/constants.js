@@ -27,3 +27,11 @@ exports.publicEndpoints = [
 ];
 
 exports.filterPrefix = "param_";
+
+exports.filterTypes = [
+	'Number',
+	'Text',
+	'Date',
+	'Month',
+	'Hidden'
+];

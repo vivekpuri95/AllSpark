@@ -1190,8 +1190,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		filterForm.classList.remove('hidden');
 		this.container.querySelector('#filter-list').classList.add('hidden');
 
-		for (const type of MetaData.filters.types || []) {
-			filterForm.querySelector('select[name="type"]').insertAdjacentHTML('beforeend', `
+		const select = filterForm.querySelector('select[name="type"]');
+		select.textContent = null;
+		for (const type of MetaData.filterTypes) {
+			select.insertAdjacentHTML('beforeend', `
 				<option value="${type}">${type}</option>
 			`);
 		}
@@ -1235,8 +1237,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.filterForm.reset();
 
-		for (const type of MetaData.filters.types || []) {
-			this.filterForm.querySelector('select[name="type"]').insertAdjacentHTML('beforeend', `
+		const select = this.filterForm.querySelector('select[name="type"]');
+		select.textContent = null;
+		for (const type of MetaData.filterTypes) {
+			select.insertAdjacentHTML('beforeend', `
 				<option value="${type}">${type}</option>
 			`);
 		}

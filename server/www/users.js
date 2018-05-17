@@ -1,5 +1,7 @@
-const API = require("../utils/api");
-const commonFun = require("../utils/commonFunctions");
+const API = require("../utils/api"),
+	commonFun = require("../utils/commonFunctions"),
+	constants = require('../utils/constants');
+
 
 exports.insert = class extends API {
 
@@ -235,16 +237,7 @@ exports.metadata = class extends API {
 			[this.account.account_id]
 		);
 
-		let filterTypes = await this.mysql.query('SHOW COLUMNS FROM `tb_query_filters` where Field = \'type\'');
-		if (filterTypes.length) {
-			filterTypes = filterTypes[0].Type;
-			filterTypes = filterTypes.substring(5, filterTypes.length - 1);
-			filterTypes = filterTypes.replace(/\'/g, '');
-			filterTypes = filterTypes.split(',');
-		}
-
-		metadata.filters = {};
-		metadata.filters.types = filterTypes.length ? filterTypes : [];
+		metadata.filterTypes = constants.filterTypes;
 
 		return metadata;
 	}
