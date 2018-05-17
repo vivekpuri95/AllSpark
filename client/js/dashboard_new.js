@@ -528,6 +528,8 @@ class Dashboard {
 
 		this.visualizations = Dashboard.sortVisualizations(this.visualizations);
 
+		this.resetSideButton();
+
 		for (const visualization of this.visualizations) {
 
 			if (!visualization.format) {
@@ -573,6 +575,9 @@ class Dashboard {
 
 			console.log(e);
 		}
+
+		if (!this.datasets.size)
+			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
 	loadVisitedVisualizations(heightScrolled, resize, offset = Dashboard.screenHeightOffset) {
@@ -611,6 +616,17 @@ class Dashboard {
 		return data;
 	}
 
+	resetSideButton() {
+
+		const side_button = this.page.container.querySelector('#reports .side');
+
+		side_button.classList.remove('hidden');
+		side_button.classList.remove('show');
+		side_button.classList.remove('selected');
+		side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
+		this.page.container.querySelector('#reports #blanket').classList.add('hidden');
+	}
+
 	mailto() {
 
 		const form = this.page.reports.querySelector('.mailto-content');
@@ -632,9 +648,6 @@ class Dashboard {
 
 			a.click();
 		})
-
-		if (!this.datasets.size)
-			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
 	get menuItem() {
