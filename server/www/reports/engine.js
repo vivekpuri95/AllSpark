@@ -62,6 +62,49 @@ class report extends API {
 		this.reportObj = reportDetails[0][0];
 		this.filters = reportDetails[1] || [];
 
+		let [preReportApi] = await this.mysql.query(
+			`select value from tb_settings where owner = 'account' and profile = 'pre_report_api' and account_id = ?`,
+			[this.account.account_id],
+		);
+
+		if ([preReportApi && commonFun.isJson(preReportApi.value)]) {
+
+			preReportApi = (JSON.parse(preReportApi.value)).value;
+
+			let preReportApiDetails;
+
+			try {
+				preReportApiDetails = await requestPromise({
+
+					har: {
+						url: preReportApi + this.request.body[constants.filterPrefix + "access_token"],
+						method: 'GET',
+						headers: [
+							{
+								name: 'content-type',
+								value: 'application/x-www-form-urlencoded'
+							}
+						]
+					},
+					gzip: true
+				});
+			}
+			catch (e) {
+				return {"status": false, data: "invalid request " + e.message};
+			}
+
+			preReportApiDetails = JSON.parse(preReportApiDetails.body).data[0];
+
+			for (const key in preReportApiDetails) {
+
+				this.filters.push({
+					placeholder: key,
+					value: JSON.stringify(preReportApiDetails[key]),
+					default_value: JSON.stringify(preReportApiDetails[key]),
+				})
+			}
+		}
+
 		this.reportObj.query = this.request.body.query || this.reportObj.query;
 	}
 
@@ -458,7 +501,7 @@ class ReportEngine extends API {
 
 	get hash() {
 
-		if(this.parameters.type === 'api' && this.parameters.request[1].body) {
+		if (this.parameters.type === 'api' && this.parameters.request[1].body) {
 
 			this.parameters.request[1].params = this.parameters.request[1].body.toString();
 		}
