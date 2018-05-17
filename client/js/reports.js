@@ -3549,10 +3549,10 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.text(cell => {
 
 					if(['s'].includes(this.axes.bottom.format))
-						d3.format(this.axes.left.format)(cell.y);
+						return d3.format(this.axes.left.format)(cell.y);
 
 					else
-						Format.number(cell.y)
+						return Format.number(cell.y)
 				});
 		}
 
