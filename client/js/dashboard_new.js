@@ -353,40 +353,41 @@ Page.class = class Dashboards extends Page {
 		}
 
 		nav.insertAdjacentHTML('beforeend', `
-			<div class="item collapse">
-				<div class="label">
-					<span class="name left"><i class="fa fa-angle-double-left" aria-hidden="true"></i><span>Collapse Sidebar</span></span>
-					<span class="name right hidden"><i class="fa fa-angle-double-right" aria-hidden="true"></i></span>
-				</div>
-			</div>
+			<footer>
+				<span class="powered-by"> Powered By <a target="_blank" href="https://github.com/Jungle-Works/AllSpark">AllSpark</a></span>
+				<div class="collapse-panel">
+					<span class="left"><i class="fa fa-angle-double-left"></i></span>
+					<span class="right hidden"><i class="fa fa-angle-double-right"></i></span>
+				</div<
+			</footer>
 		`);
 
-		nav.querySelector('.collapse').on('click', (e) => {
+		nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.has('disable_powered_by') && account.settings.get('disable_powered_by'))
+
+		nav.querySelector('.collapse-panel').on('click', (e) => {
 
 			nav.classList.toggle('collapsed-nav');
 
-			const right = e.currentTarget.querySelector('.right');
-
-			e.currentTarget.querySelector('.left').classList.toggle('hidden');
+			const right = e.currentTarget.querySelector('.right')
 
 			right.classList.toggle('hidden');
+			e.currentTarget.querySelector('.left').classList.toggle('hidden');
 
-			e.currentTarget.querySelector('.name').classList.toggle('hidden');
+			if(!nav.querySelector('.powered-by').classList.contains('hidden') && !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.add('hidden');
+			else if( !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.remove('hidden');
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
 
-			for (const item of nav.querySelectorAll('.item')) {
+			for(const item of nav.querySelectorAll('.item')) {
 
-				if (!right.hidden) {
-
+				if(!right.hidden) {
 					item.classList.remove('list-open');
 				}
 
-				if (!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu')) {
-
+				if(!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
 					item.querySelector('.label .name').classList.toggle('hidden');
-				}
-
 				item.querySelector('.submenu') ? item.querySelector('.submenu').classList.toggle('collapsed-submenu-bar') : '';
 			}
 
@@ -746,7 +747,7 @@ class Dashboard {
 		return visualizationList;
 	}
 
-	async render(resize={resize: true}) {
+	async render(resize = {resize: true}) {
 
 		await Sections.show('reports');
 
@@ -1266,7 +1267,7 @@ class DashboardDatasets extends Map {
 		});
 	}
 
-	apply(options={}) {
+	apply(options = {}) {
 
 		for (const report of this.page.loadedVisualizations) {
 
