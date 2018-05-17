@@ -1,74 +1,74 @@
 	main .dataset {
-			position: relative;
+		position: relative;
+		width: 100%;
+	}
+		main .dataset input[type=search],
+		main .dataset input[type=date] {
 			width: 100%;
 		}
-			main .dataset input[type=search],
-			main .dataset input[type=date] {
-				width: 100%;
+		main .dataset .options {
+			position: absolute;
+			background: #fff;
+			z-index: 3;
+			width: 100%;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+			max-height: 250px;
+			overflow: auto;
+			border:  1px solid #ccc;
+			border-top: 0;
+		}
+			main .dataset label {
+				display: grid;
+				grid-template-columns: auto 1fr;
+				align-items: center;
+				padding: calc(var(--gap) * 1.5);
+				margin: 0;
+				transition: background var(--transition-duration),
+							box-shadow var(--transition-duration);
+				max-width: 100%;
 			}
-			main .dataset .options {
-				position: absolute;
-				background: #fff;
-				z-index: 3;
-				width: 100%;
-				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-				max-height: 250px;
-				overflow: auto;
-				border:  1px solid #ccc;
-				border-top: 0;
+			main .dataset label:hover {
+				background: #ddd;
 			}
-				main .dataset label {
-					display: grid;
-					grid-template-columns: auto 1fr;
-					align-items: center;
-					padding: calc(var(--gap) * 1.5);
+			main .dataset label:active {
+				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.2);
+			}
+			main .dataset .options label.selected,
+			main .dataset .options label.selected:hover {
+				background: #eda;
+			}
+				main .dataset label input {
 					margin: 0;
-					transition: background var(--transition-duration),
-								box-shadow var(--transition-duration);
-					max-width: 100%;
 				}
-				main .dataset label:hover {
-					background: #ddd;
+			main .dataset .options header,
+			main .dataset .options footer {
+				background: #fff;
+				position: sticky;
+				font-size: 85%;
+				padding: var(--gap);
+				color: #999;
+				display: grid;
+				grid-template-columns: auto auto auto;
+				grid-gap: calc(var(--gap) * 2);
+				justify-content: flex-start;
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+			}
+			main .dataset .options header {
+				border-bottom: 1px dashed #999;
+				top: 0;
+			}
+				main .dataset .options header a {
+					cursor: pointer;
 				}
-				main .dataset label:active {
-					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.2);
-				}
-				main .dataset .options label.selected,
-				main .dataset .options label.selected:hover {
-					background: #eda;
-				}
-					main .dataset label input {
-						margin: 0;
-					}
-				main .dataset .options header,
-				main .dataset .options footer {
-					background: #fff;
-					position: sticky;
-					font-size: 85%;
-					padding: var(--gap);
-					color: #999;
-					display: grid;
-					grid-template-columns: auto auto auto;
-					grid-gap: calc(var(--gap) * 2);
-					justify-content: flex-start;
-					box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-				}
-				main .dataset .options header {
-					border-bottom: 1px dashed #999;
-					top: 0;
-				}
-					main .dataset .options header a {
-						cursor: pointer;
-					}
-				main .dataset .options footer {
-					border-top: 1px dashed #999;
-					bottom: 0;
-				}
-				main .dataset .options .NA {
-					padding: calc(var(--gap) * 2);
-					color: #999;
-					text-align: center;
-				}
+			main .dataset .options footer {
+				border-top: 1px dashed #999;
+				bottom: 0;
+			}
+			main .dataset .options .NA {
+				padding: calc(var(--gap) * 2);
+				color: #999;
+				text-align: center;
+			}
 
 	main .data-source {
 		display: flex;
@@ -80,7 +80,6 @@
 			overflow: auto;
 			user-select: text;
 			font-family: inherit;
-			color: #999;
 		}
 		main .data-source > header {
 			border-bottom: 1px dashed #999;

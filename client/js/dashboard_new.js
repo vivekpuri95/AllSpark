@@ -522,6 +522,14 @@ class Dashboard {
 
 	async load() {
 
+		if(this.format && this.format.category_id) {
+
+			this.page.listContainer.form.category.value = this.format.category_id;
+			this.page.renderList();
+			await Sections.show('list');
+			return;
+		}
+
 		//no need for dashboard.format
 
 		this.visualizationList = new Set;
@@ -748,6 +756,9 @@ class Dashboard {
 	}
 
 	async render(resize = {resize: true}) {
+
+		if(this.format && this.format.category_id)
+			return;
 
 		await Sections.show('reports');
 

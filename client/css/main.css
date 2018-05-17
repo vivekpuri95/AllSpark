@@ -84,10 +84,11 @@ a:active {
 	border-radius: 0;
 }
 .notice {
-	background: #dfd;
+	background: #9f9;
 }
 .warning {
-	background: #fdd;
+	background: #f55;
+	color: #fff;
 }
 .warning.site-outdated {
 	text-align: center;

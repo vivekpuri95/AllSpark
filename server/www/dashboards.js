@@ -41,7 +41,18 @@ exports.list = class extends API {
 
 		const dashboardObject = {};
 
-		dashboards.map(dashboard => dashboardObject[dashboard.id] = {...dashboard, shared_user: [], visualizations: []});
+		for(const dashboard of dashboards) {
+
+			try {
+				dashboard.format = JSON.parse(dashboard.format);
+			}
+
+			catch(e) {
+				dashboard.format = [];
+			}
+
+			dashboardObject[dashboard.id] = {...dashboard, shared_user: [], visualizations: []}
+		}
 
 		for (const sharedDashboard of sharedDashboards) {
 
@@ -80,7 +91,9 @@ exports.list = class extends API {
 				formatObject.push({...queryVisualization, ...queryVisualization.format})
 			}
 
-			dashboardObject[d].format = {reports: formatObject};
+			if(formatObject.length)
+				dashboardObject[d].format = {reports: formatObject};
+
 			dashboardObject[d].href = `/dashboard/${dashboardObject[d].id}`;
 			dashboardObject[d].superset = 'Dashboards';
 		}
