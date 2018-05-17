@@ -1205,7 +1205,10 @@ class DataSourceColumn {
 			timeout = setTimeout(async () => {
 				let found = false;
 
-				if (this.source.format && this.source.format.columns) {
+				if(!this.source.format)
+					this.source.format = {};
+
+				if (this.source.format.columns) {
 					for (const column of this.source.format.columns) {
 						if (column.key == this.key) {
 							column.disabled = !column.disabled;
@@ -1215,7 +1218,7 @@ class DataSourceColumn {
 					}
 				}
 
-				if (!found && this.source.format) {
+				if (!found) {
 					if (!this.source.format.columns)
 						this.source.format.columns = [];
 
