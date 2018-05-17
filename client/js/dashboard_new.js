@@ -592,7 +592,7 @@ class Dashboard {
 				//scroll karte hue report paar gaye(offset mila kar)
 
 				this.page.loadedVisualizations.add(this.visualizationsPositionObject[visualization].report);
-				this.visualizationsPositionObject[visualization].report.visualizations.selected.load(resize);
+				this.visualizationsPositionObject[visualization].report.selectedVisualization.load(resize);
 				this.visualizationsPositionObject[visualization].loaded = true;
 			}
 		}
