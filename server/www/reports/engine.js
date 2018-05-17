@@ -597,7 +597,7 @@ class download extends API {
 		this.assert(commonFun.isJson(excel_visualization), "excel_visualization format issue");
 
 		// queryData = JSON.parse(queryData);
-
+		const fileName = `${this.request.body.file_name}_${(new Date().toISOString()).substring(0, 10)}_${(this.user || {}).user_id || ''}`;
 		const requestObj = {
 			data_obj: [
 				{
@@ -612,8 +612,8 @@ class download extends API {
 							type: JSON.parse(excel_visualization),
 						}
 					},
-					sheet_name: this.request.body.sheet_name,
-					file_name: `${this.request.body.file_name}_${(new Date().toISOString()).substring(0, 10)}_${(this.user || {}).user_id || ''}`
+					sheet_name: this.request.body.sheet_name.slice(0, 20),
+					file_name: fileName.slice(0, 20)
 				},
 			]
 		};
