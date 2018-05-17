@@ -1407,7 +1407,10 @@ class DataSourceColumn {
 
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
-		this.source.columns.sortBy = this;
+
+		if(this.sort != '0')
+			this.source.columns.sortBy = this;
+
 		await this.source.visualizations.selected.render();
 		this.blanket.classList.add('hidden');
 	}
@@ -3543,7 +3546,14 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.attr('width', x1.rangeBand())
 				.attr('fill', '#666')
 				.attr('x', cell => this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (Format.number(cell.y).toString().length * 4))
-				.text(cell => Format.number(cell.y));
+				.text(cell => {
+
+					if(['s'].includes(this.axes.bottom.format))
+						d3.format(this.axes.left.format)(cell.y);
+
+					else
+						Format.number(cell.y)
+				});
 		}
 
 		if(!options.resize) {
