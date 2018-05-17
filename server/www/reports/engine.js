@@ -67,7 +67,7 @@ class report extends API {
 			[this.account.account_id],
 		);
 
-		if ([preReportApi && commonFun.isJson(preReportApi.value)]) {
+		if (preReportApi && commonFun.isJson(preReportApi.value)) {
 
 			preReportApi = (JSON.parse(preReportApi.value)).value;
 
