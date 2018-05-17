@@ -5536,11 +5536,11 @@ class Dataset {
 
 		container.classList.add('dataset');
 
-		if(['Start Date', 'End Date'].includes(this.name)) {
+		if(this.name.includes('Date')) {
 
 			let value = null;
 
-			if(this.name == 'Start Date')
+			if(this.name.includes('Start'))
 				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
 			else

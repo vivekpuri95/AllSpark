@@ -1269,29 +1269,35 @@ class DashboardDatasets extends Map {
 	apply(options = {}) {
 
 		for (const report of this.page.loadedVisualizations) {
-
-			let found = false;
-
 			report.filters.container;
-
-			for (const filter of report.filters.values()) {
-
-				if (!filter.dataset || !this.has(filter.dataset.id))
-					continue;
-
-				filter.dataset.value = this.get(filter.dataset.id);
-
-				found = true;
-			}
-
-			if (found) {
-				setTimeout(() => report.visualizations.selected.load(options), 0);
-				report.container.style.opacity = 1;
-			}
-
-			else
-				report.container.style.opacity = 0.4;
 		}
+
+		setTimeout(() => {
+			for (const report of this.page.loadedVisualizations) {
+
+				let found = false;
+
+				for (const filter of report.filters.values()) {
+
+					filter.label;
+
+					if (!filter.dataset || !this.has(filter.dataset.id))
+						continue;
+
+					filter.dataset.value = this.get(filter.dataset.id);
+
+					found = true;
+				}
+
+				if (found) {
+					setTimeout(() => report.visualizations.selected.load(options));
+					report.container.style.opacity = 1;
+				}
+
+				else
+					report.container.style.opacity = 0.4;
+			}
+		});
 
 		Dashboard.selectedValues.clear();
 		for(const [key, value] of this) {
