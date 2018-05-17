@@ -14,7 +14,7 @@ main > nav {
 	position: sticky;
 	top: 0;
 	overflow-y: auto;
-	z-index: 4;
+	z-index: 5;
 	color: #777;
 	height: calc(100vh - 50px);
 	border-right: 1px solid #ccc;
