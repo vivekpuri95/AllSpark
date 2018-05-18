@@ -114,7 +114,7 @@ Page.class = class Dashboards extends Page {
 
 			this.renderNav();
 
-			let item = this.page.container.querySelector("main > nav .item:not(.hidden)");
+			let item = this.container.querySelector("nav .item:not(.hidden)");
 
 			if(!item) {
 				this.renderList();
@@ -127,7 +127,8 @@ Page.class = class Dashboards extends Page {
 				item = item.querySelector(".submenu")
 			}
 
-			item.click();
+			item.querySelector(".label").click();
+			return;
 		}
 
 		if (!id) {
@@ -924,24 +925,23 @@ class Dashboard {
 
 			header.querySelector('.move-up').on('click', () => {
 
-				const [current] = report.selectedVisualization;
+				const current = report.selectedVisualization;
 
 				let previous = null;
 
-				for (let [index, value] of this.page.visualizations.entries()) {
+				for (let [index, value] of this.visualizations.entries()) {
 
-					if (value.selectedVisualization.visualization_id === current.visualization_id) {
-						previous = [...this.page.visualizations][index - 1];
+					if (value.visualization_id === current.visualization_id) {
+						previous = [...this.visualizations][index - 1];
 						break;
 					}
-
 				}
 
 				if (!previous)
 					return;
 
 				current.format.position = Math.max(1, current.format.position - 1);
-				previous.format.position = Math.min(this.format.reports.length, previous.format.position + 1);
+				previous.format.position = Math.min(this.visualizations.length, previous.format.position + 1);
 
 				const
 					currentParameters = {
@@ -970,19 +970,22 @@ class Dashboard {
 
 			header.querySelector('.move-down').on('click', () => {
 
-				const [current] = this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id);
+				const current = report.selectedVisualization;
 
 				let next = null;
-				for (let i = 0; i < this.format.reports.length; i++) {
+				for (let [index, value] of this.visualizations.entries()) {
 
-					if (this.format.reports[i] == current)
-						next = this.format.reports[i + 1];
+					if (value.visualization_id === current.visualization_id) {
+						next = [...this.visualizations][index + 1];
+						break;
+					}
+
 				}
 
 				if (!next)
 					return;
 
-				current.format.position = Math.min(this.format.reports.length, current.format.position + 1);
+				current.format.position = Math.min(this.visualizations.length, current.format.position + 1);
 				next.format.position = Math.max(1, next.format.position - 1);
 
 				const
