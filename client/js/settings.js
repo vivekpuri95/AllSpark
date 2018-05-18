@@ -264,11 +264,11 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 	}
 });
 
-Settings.list.set('category', class Category extends SettingPage {
+Settings.list.set('categories', class Categories extends SettingPage {
 
 	get name() {
 
-		return 'Category';
+		return 'Categories';
 	}
 
 	setup() {

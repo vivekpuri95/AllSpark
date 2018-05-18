@@ -1001,7 +1001,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 		<div class="setting-page datasets-page hidden">
 			<section class="section" id="datasets-list">
 
-				<h1>Datasets Manage</h1>
+				<h1>Manage Datasets</h1>
 
 				<header class="toolbar">
 					<button id="add-datset"><i class="fa fa-plus"></i> Add New Dataset</button>
@@ -1059,7 +1059,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 
 		<div class="setting-page privilege-page hidden">
 			<section class="section" id="privileges-list">
-				<h1>Privileges Manage</h1>
+				<h1>Manage Privileges</h1>
 				<header class="toolbar">
 					<button id="add-privilege"><i class="fa fa-plus"></i> Add New Privilege</button>
 				</header>
@@ -1107,7 +1107,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 
 			<section class="section" id="roles-list">
 
-				<h1>Roles Manager</h1>
+				<h1>Manage Roles</h1>
 
 				<header class="toolbar">
 					<button id="add-role"><i class="fa fa-plus"></i> Add New Role</button>
@@ -1215,7 +1215,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 		
 		<div class="setting-page category-page hidden">
 			<section class="section" id="category-list">
-				<h1>Category Manager</h1>
+				<h1>Manage Categories</h1>
 
 				<header class="toolbar">
 					<button id="add-category"><i class="fa fa-plus"></i> Add New Category</button>
@@ -1257,17 +1257,17 @@ router.get('/settings/:tab?/:id?', (request, response) => {
                         <span>Parent</span>
                         <input type="text" name="parent">
                     </label>
-					<label>
+                    <label>
                         <span>Admin</span>
                         <select name="is_admin">
-                        	<option value="1">Yes</option>
-                        	<option value="0">No</option>
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
                         </select>
                     </label>
                 </form>
-			</section>
-		</div>
-	`));
+            </section>
+        </div>
+    `));
 });
 
 class Template {
