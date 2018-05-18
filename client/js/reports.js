@@ -246,7 +246,7 @@ class DataSource {
 				`);
 			}
 
-			this.dialog.body = `<ul class="user-list">${user_element.join()}</ul>`;
+			this.dialog.body = `<ul class="user-list">${user_element.join('')}</ul>`;
 			this.dialog.show();
 
 		});
@@ -278,8 +278,14 @@ class DataSource {
 
 			this.visualizations.selected.render({resize: true});
 
-			await this.userList();
-			container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
+			if(user.privileges.has('administrator')) {
+
+				await this.userList();
+				container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
+			}
+			else {
+				container.querySelector('.description .visible-to').classList.add('hidden');
+			}
 		});
 
 		container.querySelector('.menu .query-toggle').on('click', () => {

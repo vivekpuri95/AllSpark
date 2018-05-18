@@ -42,6 +42,9 @@ exports.insert = class extends API {
 
 		this.assert(!authResponse.error, authResponse.message);
 
+		if(typeof this.request.body.user_id != 'object')
+			this.request.body.user_id = [this.request.body.user_id];
+
 		for(const user of this.request.body.user_id) {
 
 			await this.mysql.query(
