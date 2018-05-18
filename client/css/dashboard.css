@@ -192,11 +192,11 @@ main #reports > .datasets {
 	padding: 0 calc(var(--gap) * 2);
 	box-shadow:  0 0 25px rgba(0, 0, 0, 0.15);
 	z-index: 5;
-	width: 250px;
+	width: 260px;
 	align-items: flex-start;
 	overflow: auto;
 	opacity: 0;
-	transform: translateX(250px);
+	transform: translateX(260px);
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }
@@ -309,7 +309,7 @@ main #reports > .list {
 		outline: 0;
 	}
 	main #reports .side.show {
-		right: 260px;
+		right: 270px;
 		border: 0;
 	}
 		main #reports .side > svg {

@@ -306,6 +306,9 @@ class DashboardsShare {
 		this.userDashboardResponse = await API.call('user/dashboards/list', parameters, options);
 		this.userList = await API.call('users/list');
 
+		// const multiSelectData = this.setFormat(this.userList);
+		// DashboardsShare.form.appendChild(new MultiSelect(multiSelectData, true).container);
+
 		if(DashboardsShare.form_listener)
 			DashboardsShare.form.removeEventListener('submit', DashboardsShare.form_listener);
 
@@ -313,6 +316,20 @@ class DashboardsShare {
 
 		this.process();
 		this.render();
+	}
+
+	setFormat(data) {
+
+		const response = [];
+
+		for(const row of data) {
+			response.push({
+				value : row.user_id,
+				name : row.name
+			});
+		}
+
+		return response;
 	}
 
 	process() {

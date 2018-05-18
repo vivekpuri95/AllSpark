@@ -5528,20 +5528,7 @@ class Tooltip {
 	}
 }
 
-class Dataset {
-
-	constructor(id, filter) {
-
-		if(!MetaData.datasets.has(id))
-			throw new Page.exception('Invalid dataset id! :(');
-
-		const dataset = MetaData.datasets.get(id);
-
-		for(const key in dataset)
-			this[key] = dataset[key];
-
-		this.filter = filter;
-	}
+class MultiSelect {
 
 	get container() {
 
@@ -5550,15 +5537,13 @@ class Dataset {
 
 		const container = this.containerElement = document.createElement('div');
 
-		container.classList.add('dataset');
+		container.classList.add('multi-select');
 
-		if(this.name.includes('Date')) {
-
+		if(['Start Date', 'End Date'].includes(this.name)) {
 			let value = null;
 
-			if(this.name.includes('Start'))
+			if(this.name == 'Start Date')
 				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-
 			else
 				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
@@ -5571,82 +5556,33 @@ class Dataset {
 
 		container.innerHTML = `
 			<input type="search" placeholder="Search...">
-			<div class="options hidden"></div>
+			<div class="options hidden">
+				<header>
+					<a class="all">All</a>
+					<a class="clear">Clear</a>
+				</header>
+				<div class="list"></div>
+				<div class="no-matches NA hidden">No matches found! :(</div>
+				<footer></footer>
+			</div>
 		`;
 
-		const
-			search = this.container.querySelector('input[type=search]'),
-			options = this.container.querySelector('.options');
+		const optionList = container.querySelector('.options .list');
 
-		search.on('click', e => {
+		if(!this.datalist.length) {
+			this.container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
+		}
 
-			e.stopPropagation();
-
-			for(const options_ of document.querySelectorAll('.dataset .options')) {
-				if(options_ != options)
-					options_.classList.add('hidden');
-			}
-
-			search.value = '';
-			options.classList.toggle('hidden');
-
-			this.update();
-		});
-
-		search.on('keyup', () => this.update());
-
-		options.on('click', e => e.stopPropagation());
-
-		document.body.on('click', () => options.classList.add('hidden'));
-
-		options.innerHTML = `
-			<header>
-				<a class="all">All</a>
-				<a class="clear">Clear</a>
-			</header>
-			<div class="list"></div>
-			<div class="no-matches NA hidden">No matches found! :(</div>
-			<footer></footer>
-		`;
-
-		options.querySelector('header .all').on('click', () => this.all());
-		options.querySelector('header .clear').on('click', () => this.clear());
-
-		this.load();
-
-		return container;
-	}
-
-	async load() {
-
-		if(!this.query_id)
-			return [];
-
-		const
-			search = this.container.querySelector('input[type=search]'),
-			list = this.container.querySelector('.options .list');
-
-		let values = [];
-
-		try {
-			values = await this.fetch();
-		} catch(e) {}
-
-		if(!values.length)
-			return list.innerHTML = `<div class="NA">No data found! :(</div>`;
-
-		list.textContent = null;
-
-		for(const row of values) {
+		for(const row of this.datalist) {
 
 			const
 				label = document.createElement('label'),
 				input = document.createElement('input'),
 				text = document.createTextNode(row.name);
 
-			input.name = this.filter.placeholder;
+			input.name = row.name;
 			input.value = row.value;
-			input.type = this.filter.multiple ? 'checkbox' : 'radio';
+			input.type = this.multiple ? 'checkbox' : 'radio';
 			input.checked = true;
 
 			label.appendChild(input);
@@ -5656,47 +5592,92 @@ class Dataset {
 
 			label.querySelector('input').on('change', () => this.update());
 			label.on('dblclick', e => {
+
+				e.stopPropagation();
+
 				this.clear();
 				label.click();
 			});
 
-			list.appendChild(label);
+			optionList.appendChild(label);
 		}
+
+		this.setEvents();
 
 		this.update();
+
+		return container;
 	}
 
-	async fetch() {
+	set value(source) {
 
-		if(!this.query_id)
-			return [];
+		const inputs = this.container.querySelectorAll('.options .list label input');
 
-		let
-			values,
-			timestamp;
+		if(source.query_id) {
 
-		const parameters = {
-			id: this.id,
-		};
+			const sourceInputs = source.container.querySelectorAll('.options .list label input');
 
-		if(account.auth_api && localStorage.access_token)
-			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = localStorage.access_token;
-
-		try {
-			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
-		} catch(e) {}
-
-		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
-
-			({data: values} = await API.call('datasets/values', parameters));
-
-			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
+			if (inputs.length) {
+				for (const [i, input] of sourceInputs.entries())
+					inputs[i].checked = input.checked;
+			}
 		}
 
-		return values;
+		else if(typeof source == 'object' && source.length) {
+			for (const input of inputs) {
+				input.checked = source.includes(input.value);
+			}
+		}
+
+		else {
+			this.container.querySelector('input').value = source.value;
+		}
+
+		this.update()
 	}
 
-	async update() {
+	get value() {
+
+		if(this.query_id) {
+			return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
+		} else {
+			return this.container.querySelector('input').value;
+		}
+	}
+
+	setEvents() {
+
+		this.container.querySelector('input[type=search]').on('click', (e) => {
+
+			e.stopPropagation();
+
+			for(const option of document.querySelectorAll('.multi-select .options')) {
+				option.classList.add('hidden');
+			}
+
+			this.container.querySelector('.options').classList.remove('hidden');
+		});
+
+		this.container.querySelector('input[type=search]').on('dblclick', () => {
+
+			this.container.querySelector('.options').classList.add('hidden');
+		});
+
+		document.body.on('click', () => {
+
+			this.container.querySelector('.options').classList.add('hidden');
+		});
+
+		this.container.querySelector('.options').on('click', (e) => e.stopPropagation());
+
+		this.container.querySelector('input[type=search]').on('keyup', () => this.update());
+
+		this.container.querySelector('.options header .all').on('click', () => this.all());
+
+		this.container.querySelector('.options header .clear').on('click', () => this.clear());
+	}
+
+	update() {
 
 		if(!this.query_id)
 			return [];
@@ -5730,47 +5711,12 @@ class Dataset {
 		`;
 
 		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
-	}
 
-	set value(source) {
-
-		const inputs = this.container.querySelectorAll('.options .list label input');
-
-		if(source.query_id) {
-
-			const sourceInputs = source.container.querySelectorAll('.options .list label input');
-
-			if (inputs.length) {
-				for (const [i, input] of sourceInputs.entries())
-					inputs[i].checked = input.checked;
-			}
-		}
-
-		else if(typeof source == 'object' && source.length) {
-			for (const input of inputs) {
-				input.checked = source.includes(input.value);
-			}
-		}
-
-		else {
-			this.container.querySelector('input').value = source.value;
-		}
-
-		this.update();
-	}
-
-	get value() {
-
-		if(this.query_id) {
-			return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
-		} else {
-			return this.container.querySelector('input').value;
-		}
 	}
 
 	all() {
 
-		if(!this.filter.multiple)
+		if(!this.multiple)
 			return;
 
 		for(const input of this.container.querySelectorAll('.options .list label input'))
@@ -5786,6 +5732,58 @@ class Dataset {
 
 		this.update();
 	}
+}
+
+class Dataset extends MultiSelect {
+
+	constructor(id, filter) {
+
+		super();
+
+		if(!MetaData.datasets.has(id))
+			throw new Page.exception('Invalid dataset id! :(');
+
+		const dataset = MetaData.datasets.get(id);
+
+		for(const key in dataset)
+			this[key] = dataset[key];
+
+		this.filter = filter;
+	}
+
+	async fetch() {
+
+		if(!this.query_id)
+			return [];
+
+		let
+			values,
+			timestamp;
+
+		const parameters = {
+			id: this.id,
+		};
+
+		if(account.auth_api && localStorage.access_token)
+			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = localStorage.access_token;
+
+		try {
+			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
+		} catch(e) {}
+
+		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
+
+			({data: values} = await API.call('datasets/values', parameters));
+
+			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
+		}
+
+		super.datalist = values;
+		super.multiple = this.filter.multiple;
+
+		return values;
+	}
+
 }
 
 Dataset.timeout = 5 * 60 * 1000;
