@@ -683,7 +683,7 @@ class Dashboard {
 
 		container.classList.add('item');
 
-		if (!allVisualizations.length || !this.page.user.privileges.has('report')) {
+		if (!allVisualizations.length) {
 
 			container.classList.add('hidden');
 		}
