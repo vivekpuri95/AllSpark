@@ -123,7 +123,6 @@ class report extends API {
 			'number',
 			'date',
 			'month',
-			'column',
 		];
 
 		for (const filter of this.filters) {
@@ -310,7 +309,7 @@ class MySQL {
 
 		for (const filter of this.filters) {
 
-			if(filter.type === "column") {
+			if(filter.type === 5) {
 
 				this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "??");
 				continue;
