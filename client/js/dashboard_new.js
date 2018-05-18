@@ -111,12 +111,16 @@ Page.class = class Dashboards extends Page {
 		const id = state ? state.filter : parseInt(window.location.pathname.split('/').pop());
 
 		if (window.location.pathname.split('/').pop() === "first") {
-			let dashboardIdToLoad;
 
 			this.renderNav();
 			const nav = document.querySelector('main > nav');
 
-			let item = nav.querySelector(".parentDashboard, div:not([class*='hidden'])");
+			let item = nav.querySelector(".item:not(.hidden)");
+
+			if(!item) {
+				this.renderList();
+				return await Sections.show("list");
+			}
 
 			while (item.querySelector(".submenu")) {
 
@@ -125,13 +129,6 @@ Page.class = class Dashboards extends Page {
 			}
 
 			item.click();
-
-			if (dashboardIdToLoad) {
-				await this.renderNav(dashboardIdToLoad);
-				await this.list.get(dashboardIdToLoad).load();
-				return await this.list.get(dashboardIdToLoad).render();
-			}
-			return await Sections.show("list");
 		}
 
 		if (!id) {
