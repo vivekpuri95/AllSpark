@@ -351,9 +351,9 @@ class DashboardsShare {
 
 		users.set('dashboard_id', this.id);
 
-		for (let i = 0; i < DashboardsShare.form.user_list.selectedOptions.length; i++) {
+		for(const option of DashboardsShare.form.user_list.selectedOptions) {
 
-			users.append('user_id', DashboardsShare.form.user_list.options[i].value);
+			users.append('user_id', option.value);
 		}
 
 		const
