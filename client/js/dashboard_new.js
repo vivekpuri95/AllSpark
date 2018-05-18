@@ -87,7 +87,7 @@ Page.class = class Dashboards extends Page {
 				dashboard.parent = sharedWithMeDashboard.id;
 			}
 
-			else if(dashboard.parent === null) {
+			else if (dashboard.parent === null) {
 				dashboard.parent = publicDashboard.id;
 			}
 
@@ -110,25 +110,25 @@ Page.class = class Dashboards extends Page {
 
 		const id = state ? state.filter : parseInt(window.location.pathname.split('/').pop());
 
-		if(window.location.pathname.split('/').pop() === "first") {
-			let dashboardIdToLoad;
+		if (window.location.pathname.split('/').pop() === "first") {
 
 			this.renderNav();
-			for(const dashboard of this.list.values()) {
 
-				if(!dashboard.children.size && dashboard.visualizations.length) {
+			let item = this.container.querySelector("nav .item:not(.hidden)");
 
-					dashboardIdToLoad = dashboard.id;
-					break;
-				}
+			if(!item) {
+				this.renderList();
+				return await Sections.show("list");
 			}
 
-			if(dashboardIdToLoad) {
-				await this.renderNav(dashboardIdToLoad);
-				await this.list.get(dashboardIdToLoad).load();
-				return await this.list.get(dashboardIdToLoad).render();
+			while (item.querySelector(".submenu")) {
+
+				item.querySelector(".label").click();
+				item = item.querySelector(".submenu")
 			}
-			return await Sections.show("list");
+
+			item.querySelector(".label").click();
+			return;
 		}
 
 		if (!id) {
@@ -380,13 +380,13 @@ Page.class = class Dashboards extends Page {
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
 
-			for(const item of nav.querySelectorAll('.item')) {
+			for (const item of nav.querySelectorAll('.item')) {
 
-				if(!right.hidden) {
+				if (!right.hidden) {
 					item.classList.remove('list-open');
 				}
 
-				if(!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
+				if (!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
 					item.querySelector('.label .name').classList.toggle('hidden');
 				item.querySelector('.submenu') ? item.querySelector('.submenu').classList.toggle('collapsed-submenu-bar') : '';
 			}
@@ -465,38 +465,6 @@ Page.class = class Dashboards extends Page {
 
 class Dashboard {
 
-	static setup(page) {
-
-		Dashboard.grid = {
-			columns: 32,
-			rows: 10,
-			rowHeight: 50,
-		};
-
-		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
-		Dashboard.container = page.container.querySelector('section#reports .list');
-
-		const side_button = page.container.querySelector('#reports .side');
-		const container = page.container.querySelector('#reports #blanket');
-
-		side_button.on('click', () => {
-			container.classList.toggle('hidden');
-			page.container.querySelector('#reports .datasets').classList.toggle('show');
-			side_button.classList.toggle('show');
-			side_button.classList.toggle('selected');
-			side_button.innerHTML = `<i class="fas fa-angle-double-${container.classList.contains('hidden') ? 'left' : 'right'}"></i>`;
-		});
-
-		container.on('click', () => {
-
-			container.classList.add('hidden');
-			page.container.querySelector('#reports .datasets').classList.remove('show');
-			side_button.classList.remove('show');
-			side_button.classList.remove('selected');
-			side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
-		});
-	}
-
 	constructor(dashboardObject, page) {
 
 		this.page = page;
@@ -520,89 +488,6 @@ class Dashboard {
 		Dashboard.screenHeightOffset = 2 * screen.availHeight;
 	}
 
-	async load() {
-
-		if(this.format && this.format.category_id) {
-
-			this.page.listContainer.form.category.value = this.format.category_id;
-			this.page.renderList();
-			await Sections.show('list');
-			return;
-		}
-
-		//no need for dashboard.format
-
-		this.visualizationList = new Set;
-
-		this.visualizations = Dashboard.sortVisualizations(this.visualizations);
-
-		this.resetSideButton();
-
-		for (const visualization of this.visualizations) {
-
-			if (!visualization.format) {
-
-				visualization.format = {};
-			}
-
-			if (!DataSource.list.has(visualization.query_id)) {
-
-				continue;
-			}
-
-			const queryDataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))));
-
-			queryDataSource.container.setAttribute('style', `
-				order: ${visualization.format.position || 0};
-				grid-column: auto / span ${visualization.format.width || Dashboard.grid.columns};
-				grid-row: auto / span ${visualization.format.height || Dashboard.grid.rows};
-			`);
-
-
-			queryDataSource.selectedVisualization = queryDataSource.visualizations.filter(v =>
-
-				v.visualization_id === visualization.visualization_id
-			);
-
-			if (!queryDataSource.selectedVisualization.length) {
-
-				continue;
-			}
-
-			queryDataSource.selectedVisualization = queryDataSource.selectedVisualization[0];
-
-			this.visualizationList.add(queryDataSource);
-		}
-
-		try {
-			this.datasets = new DashboardDatasets(this);
-
-			await this.datasets.load();
-		}
-		catch(e) {
-
-			console.log(e);
-		}
-
-		if (!this.datasets.size)
-			this.page.container.querySelector('#reports .side').classList.add('hidden');
-	}
-
-	loadVisitedVisualizations(heightScrolled, resize, offset = Dashboard.screenHeightOffset) {
-
-		for (const visualization in this.visualizationsPositionObject) {
-
-			if ((parseInt(this.visualizationsPositionObject[visualization].position) < heightScrolled + offset) && !this.visualizationsPositionObject[visualization].loaded) {
-
-				//scroll karte hue report paar gaye(offset mila kar)
-
-				this.page.loadedVisualizations.add(this.visualizationsPositionObject[visualization].report);
-				this.visualizationsPositionObject[visualization].report.selectedVisualization.load(resize);
-				this.visualizationsPositionObject[visualization].loaded = true;
-			}
-		}
-	}
-
 	get export() {
 		const data = {
 			dashboard: {
@@ -622,40 +507,6 @@ class Dashboard {
 		}
 
 		return data;
-	}
-
-	resetSideButton() {
-
-		const side_button = this.page.container.querySelector('#reports .side');
-
-		side_button.classList.remove('hidden');
-		side_button.classList.remove('show');
-		side_button.classList.remove('selected');
-		side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
-		this.page.container.querySelector('#reports #blanket').classList.add('hidden');
-	}
-
-	mailto() {
-
-		const form = this.page.reports.querySelector('.mailto-content');
-		form.classList.toggle('hidden');
-
-		form.subject.value = this.name;
-		form.body.value = location.href;
-
-		form.on('submit', (e) => {
-
-			e.preventDefault();
-
-			const searchParams = new URLSearchParams();
-			searchParams.set('subject', form.subject.value);
-			searchParams.set('body', form.body.value);
-
-			const a = document.createElement('a');
-			a.setAttribute('href', `mailto: ${form.email.value}?${searchParams}`);
-
-			a.click();
-		})
 	}
 
 	get menuItem() {
@@ -744,9 +595,158 @@ class Dashboard {
 		return container;
 	}
 
+	static setup(page) {
+
+		Dashboard.grid = {
+			columns: 32,
+			rows: 10,
+			rowHeight: 50,
+		};
+
+		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
+		Dashboard.container = page.container.querySelector('section#reports .list');
+
+		const side_button = page.container.querySelector('#reports .side');
+		const container = page.container.querySelector('#reports #blanket');
+
+		side_button.on('click', () => {
+			container.classList.toggle('hidden');
+			page.container.querySelector('#reports .datasets').classList.toggle('show');
+			side_button.classList.toggle('show');
+			side_button.classList.toggle('selected');
+			side_button.innerHTML = `<i class="fas fa-angle-double-${container.classList.contains('hidden') ? 'left' : 'right'}"></i>`;
+		});
+
+		container.on('click', () => {
+
+			container.classList.add('hidden');
+			page.container.querySelector('#reports .datasets').classList.remove('show');
+			side_button.classList.remove('show');
+			side_button.classList.remove('selected');
+			side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
+		});
+	}
+
 	static sortVisualizations(visualizationList) {
 
-		return visualizationList.sort((v1, v2) => v1.position - v2.position);
+		return visualizationList.sort((v1, v2) => v1.format.position - v2.format.position);
+	}
+
+	async load() {
+
+		if (this.format && this.format.category_id) {
+
+			this.page.listContainer.form.category.value = this.format.category_id;
+			this.page.renderList();
+			await Sections.show('list');
+			return;
+		}
+
+		//no need for dashboard.format
+
+		this.visualizationList = new Set;
+
+		this.visualizations = Dashboard.sortVisualizations(this.visualizations);
+
+		this.resetSideButton();
+
+		for (const visualization of this.visualizations) {
+
+			if (!visualization.format) {
+
+				visualization.format = {};
+			}
+
+			if (!DataSource.list.has(visualization.query_id)) {
+
+				continue;
+			}
+
+			const queryDataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))));
+
+			queryDataSource.container.setAttribute('style', `
+				order: ${visualization.format.position || 0};
+				grid-column: auto / span ${visualization.format.width || Dashboard.grid.columns};
+				grid-row: auto / span ${visualization.format.height || Dashboard.grid.rows};
+			`);
+
+
+			queryDataSource.selectedVisualization = queryDataSource.visualizations.filter(v =>
+
+				v.visualization_id === visualization.visualization_id
+			);
+
+			if (!queryDataSource.selectedVisualization.length) {
+
+				continue;
+			}
+
+			queryDataSource.selectedVisualization = queryDataSource.selectedVisualization[0];
+
+			this.visualizationList.add(queryDataSource);
+		}
+
+		try {
+			this.datasets = new DashboardDatasets(this);
+
+			await this.datasets.load();
+		}
+		catch (e) {
+
+			console.log(e);
+		}
+
+		if (!this.datasets.size)
+			this.page.container.querySelector('#reports .side').classList.add('hidden');
+	}
+
+	loadVisitedVisualizations(heightScrolled, resize, offset = Dashboard.screenHeightOffset) {
+
+		for (const visualization in this.visualizationsPositionObject) {
+
+			if ((parseInt(this.visualizationsPositionObject[visualization].position) < heightScrolled + offset) && !this.visualizationsPositionObject[visualization].loaded) {
+
+				//scroll karte hue report paar gaye(offset mila kar)
+
+				this.page.loadedVisualizations.add(this.visualizationsPositionObject[visualization].report);
+				this.visualizationsPositionObject[visualization].report.selectedVisualization.load(resize);
+				this.visualizationsPositionObject[visualization].loaded = true;
+			}
+		}
+	}
+
+	resetSideButton() {
+
+		const side_button = this.page.container.querySelector('#reports .side');
+
+		side_button.classList.remove('hidden');
+		side_button.classList.remove('show');
+		side_button.classList.remove('selected');
+		side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
+		this.page.container.querySelector('#reports #blanket').classList.add('hidden');
+	}
+
+	mailto() {
+
+		const form = this.page.reports.querySelector('.mailto-content');
+		form.classList.toggle('hidden');
+
+		form.subject.value = this.name;
+		form.body.value = location.href;
+
+		form.on('submit', (e) => {
+
+			e.preventDefault();
+
+			const searchParams = new URLSearchParams();
+			searchParams.set('subject', form.subject.value);
+			searchParams.set('body', form.body.value);
+
+			const a = document.createElement('a');
+			a.setAttribute('href', `mailto: ${form.email.value}?${searchParams}`);
+
+			a.click();
+		})
 	}
 
 	childrenVisualizations(dashboard) {
@@ -770,7 +770,7 @@ class Dashboard {
 
 	async render(resize = {resize: true}) {
 
-		if(this.format && this.format.category_id)
+		if (this.format && this.format.category_id)
 			return;
 
 		await Sections.show('reports');
@@ -925,24 +925,23 @@ class Dashboard {
 
 			header.querySelector('.move-up').on('click', () => {
 
-				const [current] = report.selectedVisualization;
+				const current = report.selectedVisualization;
 
 				let previous = null;
 
-				for (let [index, value] of this.page.visualizations.entries()) {
+				for (let [index, value] of this.visualizations.entries()) {
 
-					if (value.selectedVisualization.visualization_id === current.visualization_id) {
-						previous = [...this.page.visualizations][index - 1];
+					if (value.visualization_id === current.visualization_id) {
+						previous = [...this.visualizations][index - 1];
 						break;
 					}
-
 				}
 
 				if (!previous)
 					return;
 
 				current.format.position = Math.max(1, current.format.position - 1);
-				previous.format.position = Math.min(this.format.reports.length, previous.format.position + 1);
+				previous.format.position = Math.min(this.visualizations.length, previous.format.position + 1);
 
 				const
 					currentParameters = {
@@ -971,19 +970,22 @@ class Dashboard {
 
 			header.querySelector('.move-down').on('click', () => {
 
-				const [current] = this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id);
+				const current = report.selectedVisualization;
 
 				let next = null;
-				for (let i = 0; i < this.format.reports.length; i++) {
+				for (let [index, value] of this.visualizations.entries()) {
 
-					if (this.format.reports[i] == current)
-						next = this.format.reports[i + 1];
+					if (value.visualization_id === current.visualization_id) {
+						next = [...this.visualizations][index + 1];
+						break;
+					}
+
 				}
 
 				if (!next)
 					return;
 
-				current.format.position = Math.min(this.format.reports.length, current.format.position + 1);
+				current.format.position = Math.min(this.visualizations.length, current.format.position + 1);
 				next.format.position = Math.max(1, next.format.position - 1);
 
 				const
@@ -1123,7 +1125,6 @@ class Dashboard {
 		});
 
 
-
 		function getColumn(position) {
 			return Math.floor(
 				(position - Dashboard.container.offsetLeft) /
@@ -1245,7 +1246,7 @@ class DashboardDatasets extends Map {
 
 			label.appendChild(dataset.container);
 
-			if(Dashboard.selectedValues.has(dataset.id))
+			if (Dashboard.selectedValues.has(dataset.id))
 				dataset.value = Dashboard.selectedValues.get(dataset.id);
 
 			container.appendChild(label);
@@ -1324,14 +1325,14 @@ class DashboardDatasets extends Map {
 		});
 
 		Dashboard.selectedValues.clear();
-		for(const [key, value] of this) {
+		for (const [key, value] of this) {
 			const inputs = [];
-			for(const input of value.containerElement.querySelectorAll('.list label')) {
-				if(input.querySelector('input').checked) {
+			for (const input of value.containerElement.querySelectorAll('.list label')) {
+				if (input.querySelector('input').checked) {
 					inputs.push(input.querySelector('input').value)
 				}
 			}
-			Dashboard.selectedValues.set(key,inputs);
+			Dashboard.selectedValues.set(key, inputs);
 		}
 	}
 
