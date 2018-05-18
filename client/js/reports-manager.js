@@ -1618,7 +1618,7 @@ class ReportVisualizationDashboards extends Set {
 
 		for(const dashboard of this.response.values()) {
 
-			for(const report of dashboard.format.reports) {
+			for(const report of dashboard.format.reports || []) {
 
 				if(this.stage.visualization.visualization_id == report.visualization_id)
 					this.add(new ReportVisualizationDashboard(dashboard, this.stage));

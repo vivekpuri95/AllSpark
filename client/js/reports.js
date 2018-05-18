@@ -248,7 +248,6 @@ class DataSource {
 
 			this.dialog.body = `<ul class="user-list">${user_element.join('')}</ul>`;
 			this.dialog.show();
-
 		});
 
 		container.querySelector('header .reload').on('click', () => {
@@ -474,7 +473,7 @@ class DataSource {
 				else if(first > second)
 					result = 1;
 
-				if(!this.columns.sortBy.sort)
+				if(parseInt(this.columns.sortBy.sort) === 0)
 					result *= -1;
 
 				return result;
@@ -863,6 +862,12 @@ class DataSourceRow extends Map {
 				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key] === null ? '' : row[key]))
 					this.skip = true;
 			}
+
+			if(column.type == 'date')
+				row[key] = Format.date(row[key]);
+
+			else if(column.type == 'number')
+				row[key] = Format.number(row[key]);
 
 			this.set(key, row[key] || 0);
 		}
@@ -1414,7 +1419,7 @@ class DataSourceColumn {
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
 
-		if(this.sort != '0')
+		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
 		await this.source.visualizations.selected.render();
