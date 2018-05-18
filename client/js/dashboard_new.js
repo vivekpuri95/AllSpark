@@ -113,9 +113,8 @@ Page.class = class Dashboards extends Page {
 		if (window.location.pathname.split('/').pop() === "first") {
 
 			this.renderNav();
-			const nav = document.querySelector('main > nav');
 
-			let item = nav.querySelector(".item:not(.hidden)");
+			let item = this.page.container.querySelector("main > nav .item:not(.hidden)");
 
 			if(!item) {
 				this.renderList();
