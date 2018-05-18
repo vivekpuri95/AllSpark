@@ -1212,6 +1212,61 @@ router.get('/settings/:tab?/:id?', (request, response) => {
                 </form>
             </section>
 		</div>
+		
+		<div class="setting-page category-page hidden">
+			<section class="section" id="category-list">
+				<h1>Category Manager</h1>
+
+				<header class="toolbar">
+					<button id="add-category"><i class="fa fa-plus"></i> Add New Category</button>
+				</header>
+
+				<table class="block">
+					<thead>
+						<tr>
+							<th class="thin">ID</th>
+							<th>Name</th>
+							<th>Slug</th>
+							<th>Parent</th>
+							<th>Admin</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+			<section class="section" id="category-edit">
+				<h1></h1>
+                
+                <header class="toolbar">
+                    <button id="back"><i class="fa fa-arrow-left"></i> Back</button>
+                    <button type="submit" form="category-form"><i class="fa fa-save"></i> Save</button>
+                </header>
+                
+                <form class="block form" id="category-form">
+                    <label>
+                        <span>Name</span>
+                        <input type="text" name="name">
+                    </label>
+                    <label>
+                        <span>Slug</span>
+                        <input type="text" name="slug">
+                    </label>
+                    <label>
+                        <span>Parent</span>
+                        <input type="text" name="parent">
+                    </label>
+					<label>
+                        <span>Admin</span>
+                        <select name="is_admin">
+                        	<option value="1">Yes</option>
+                        	<option value="0">No</option>
+                        </select>
+                    </label>
+                </form>
+			</section>
+		</div>
 	`));
 });
 

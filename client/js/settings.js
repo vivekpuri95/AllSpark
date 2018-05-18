@@ -264,6 +264,54 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 	}
 });
 
+Settings.list.set('category', class Category extends SettingPage {
+
+	get name() {
+
+		return 'Category';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.category-page');
+		this.form = this.page.querySelector('#category-edit');
+
+		this.container.querySelector('#add-category').on('click', () => SettingsCategory.add(this));
+		this.form.querySelector('#back').on('click', () => Sections.show('category-list'));
+
+	}
+
+	async load() {
+
+		const categoryList = await API.call('category/list');
+		this.list = new Map();
+
+		for(const category of categoryList) {
+
+			this.list.set(category.category_id, new SettingsCategory(category, this));
+		}
+
+		await this.render();
+
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#category-list table tbody');
+		container.textContent = null;
+
+		if(!this.list.size)
+			container.innerHTML = '<div class="NA">No rows found :(</div>'
+
+		for(const category of this.list.values())
+			container.appendChild(category.row);
+
+		await Sections.show('category-list');
+
+	}
+
+});
+
 class SettingsDataset {
 
 	constructor(dataset, datasets) {
@@ -773,4 +821,124 @@ class SettingsAccount {
 
 	static submitEventListener() {}
 
+}
+
+class SettingsCategory {
+
+	constructor(category, page) {
+
+		Object.assign(this, category);
+
+		this.page = page;
+		this.form = this.page.form.querySelector('#category-form');
+
+	}
+
+	static add(page) {
+
+		page.form.querySelector('h1').textContent = 'Add new Category';
+
+		const categoryForm = page.form.querySelector('#category-form');
+
+		SettingsCategory.form = categoryForm;
+		categoryForm.reset();
+
+		categoryForm.removeEventListener('submit', SettingsCategory.submitListener);
+		categoryForm.on('submit', SettingsCategory.submitListener = e => SettingsCategory.insert(e, page));
+		Sections.show('category-edit');
+		categoryForm.name.focus();
+
+	}
+
+	static async insert(e, page) {
+
+		e.preventDefault();
+
+		const options = {
+			method: 'POST',
+			form: new FormData(SettingsCategory.form),
+		}
+
+		await API.call('category/insert', {}, options);
+		await page.load();
+
+	}
+
+	async edit() {
+
+		this.form.removeEventListener('submit', SettingsCategory.submitListener);
+
+		this.form.on('submit', SettingsCategory.submitListener = e => this.update(e));
+		this.page.form.querySelector('h1').textContent = `Editing ${this.name}`;
+
+		const formElements = ["name", "slug", "parent", "is_admin"];
+
+		for(const element of formElements) {
+			this.form[element].value = this[element];
+		}
+
+		await Sections.show('category-edit');
+		this.form.name.focus();
+
+	}
+
+	async update(e) {
+
+		if (e.preventDefault)
+			e.preventDefault();
+
+		const
+			parameters = {
+				category_id: this.category_id
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		await API.call('category/update', parameters, options);
+		await this.page.load();
+
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				category_id: this.category_id
+			}
+
+		await API.call('category/delete', parameter, options);
+		await this.page.load();
+	}
+
+	get row() {
+
+		if(this.container)
+			return this.container;
+
+		this.container = document.createElement('tr');
+
+		this.container.innerHTML = `
+			<td>${this.category_id}</td>
+			<td>${this.name}</td>
+			<td>${this.slug}</td>
+			<td>${this.parent}</td>
+			<td>${this.is_admin? 'Yes' : 'No'}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		this.container.querySelector('.green').on('click', () => this.edit());
+		this.container.querySelector('.red').on('click', () => this.delete());
+
+		return this.container;
+
+	}
 }
