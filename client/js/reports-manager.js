@@ -1335,8 +1335,8 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		const
 			parameters = {
 				query_id: this.report.query_id,
-				name: this.addForm.type.value[0].toUpperCase() + this.addForm.type.value.slice(1),
-				type: this.addForm.type.value,
+				name: this.form.type.value[0].toUpperCase() + this.form.type.value.slice(1),
+				type: this.form.type.value,
 			},
 			options = {
 				method: 'POST',
