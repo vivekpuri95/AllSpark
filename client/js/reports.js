@@ -273,7 +273,10 @@ class DataSource {
 			if(this.requested_by)
 				container.querySelector('.description .requested').classList.remove('hidden');
 
-			container.querySelector('.description').classList.toggle('hidden');
+			const description = container.querySelector('.description');
+			description.classList.toggle('hidden');
+			description.innerHTML = this.visualizations.selected.description;
+
 			container.querySelector('.description-toggle').classList.toggle('selected');
 
 			this.visualizations.selected.render({resize: true});
@@ -1213,8 +1216,15 @@ class DataSourceColumn {
 			clearTimeout(timeout);
 
 			timeout = setTimeout(async () => {
-				let found = false;
 
+				for (const axes of this.source.selectedVisualization.axes || []) {
+					for (const column of axes.columns) {
+						if (this.key == column.key && axes.columns.length <= 1)
+							return;
+					}
+				}
+
+				let found = false;
 				if(!this.source.format)
 					this.source.format = {};
 

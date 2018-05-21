@@ -1536,6 +1536,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.form.name.value = this.visualization.name;
 		this.form.type.value = this.visualization.type;
+		this.form.description.value = this.visualization.description;
 
 		const options = this.container.querySelector('.options');
 
