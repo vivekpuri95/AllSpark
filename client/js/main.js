@@ -1038,6 +1038,9 @@ class MultiSelect {
 		if(this.containerElement)
 			return this.containerElement;
 
+		if(!this.datalist)
+			throw new API.Exception(400, 'No datalist');
+
 		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('multi-select');

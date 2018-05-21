@@ -1246,7 +1246,7 @@ class DashboardDatasets extends Map {
 
 			label.appendChild(dataset.container);
 
-			if (Dashboard.selectedValues.has(dataset.id)){
+			if (Dashboard.selectedValues.has(dataset.id)) {
 
 				const
 					dataset = Dashboard.selectedValues.get(dataset.id),
