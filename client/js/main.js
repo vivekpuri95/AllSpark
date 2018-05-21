@@ -21,6 +21,8 @@ class Page {
 		await Page.load();
 
 		Page.render();
+
+		Prompt.popup();
 	}
 
 	static async load() {
@@ -122,6 +124,15 @@ class Page {
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
+	}
+}
+
+class Prompt {
+
+	static popup() {
+		document.on('keyup', e => {
+			debugger;
+		})
 	}
 }
 
