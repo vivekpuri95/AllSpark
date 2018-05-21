@@ -5589,8 +5589,8 @@ class Dataset extends MultiSelect {
 			id: this.id,
 		};
 
-		if(account.auth_api && localStorage.access_token)
-			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = localStorage.access_token;
+		if(account.auth_api && await IndexedDb.instance.has('access_token'))
+			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = await IndexedDb.instance.get('access_token');
 
 		try {
 			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
