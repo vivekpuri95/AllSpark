@@ -131,8 +131,11 @@ class Prompt {
 
 	static popup() {
 		document.on('keyup', e => {
-			debugger;
-		})
+			if(e.altKey && e.keyCode == 69) {
+				const value =  prompt("Enter the tookan");
+				console.log(value);
+			}
+		});
 	}
 }
 
