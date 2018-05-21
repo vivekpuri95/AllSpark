@@ -212,11 +212,23 @@ router.get('/user/profile/:id?', (request, response) => {
 	`))
 });
 
-router.get('/:type(dashboard|report)/:id?', (request, response) => {
+router.get('/streams', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push();
+	template.scripts = template.scripts.concat([
+		'/js/streams.js',
+		'/js/streams-test.js',
+
+		'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+	]);
+
+	response.send(template.body());
+});
+
+router.get('/:type(dashboard|report)/:id?', (request, response) => {
+
+	const template = new Template(request, response);
 
 	template.stylesheets = template.stylesheets.concat([
 		'/css/reports.css',
@@ -670,6 +682,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 										<option value="2">Date</option>
 										<option value="3">Month</option>
 										<option value="4">Hidden</option>
+										<option value="5">Column</option>
 									</select>
 								</label>
 
@@ -1212,7 +1225,7 @@ router.get('/settings/:tab?/:id?', (request, response) => {
                 </form>
             </section>
 		</div>
-		
+
 		<div class="setting-page category-page hidden">
 			<section class="section" id="category-list">
 				<h1>Manage Categories</h1>
@@ -1238,12 +1251,12 @@ router.get('/settings/:tab?/:id?', (request, response) => {
 			</section>
 			<section class="section" id="category-edit">
 				<h1></h1>
-                
+
                 <header class="toolbar">
                     <button id="back"><i class="fa fa-arrow-left"></i> Back</button>
                     <button type="submit" form="category-form"><i class="fa fa-save"></i> Save</button>
                 </header>
-                
+
                 <form class="block form" id="category-form">
                     <label>
                         <span>Name</span>
@@ -1288,7 +1301,7 @@ class Template {
 		];
 	}
 
-	body(main) {
+	body(main = '') {
 
 		this.stylesheets.push('/css/dark.css');
 

@@ -1,14 +1,16 @@
 "use strict";
 
-window.addEventListener('DOMContentLoaded', async () => {
+if(typeof window != 'undefined') {
+	window.addEventListener('DOMContentLoaded', async () => {
 
-	await Page.setup();
+		await Page.setup();
 
-	if(!Page.class)
-		return;
+		if(!Page.class)
+			return;
 
-	window.page = new (Page.class)();
-});
+		window.page = new (Page.class)();
+	});
+}
 
 class Page {
 
@@ -23,6 +25,7 @@ class Page {
 
 	static async load() {
 
+		await IndexedDb.load();
 		await Account.load();
 		await User.load();
 		await MetaData.load();
@@ -33,7 +36,7 @@ class Page {
 
 			if(parameters.has('access_token') && parameters.get('access_token')) {
 				User.logout();
-				localStorage.access_token = parameters.get('access_token');
+				await IndexedDb.instance.set('access_token', parameters.get('access_token'));
 			}
 		}
 
@@ -115,8 +118,10 @@ class Page {
 		this.account = window.account;
 		this.user = window.user;
 		this.metadata = window.MetaData;
+		this.indexedDb = IndexedDb.instance;
 
 		this.serviceWorker = new Page.serviceWorker(this);
+		this.webWorker = new Page.webWorker(this);
 	}
 }
 
@@ -168,6 +173,120 @@ Page.serviceWorker = class PageServiceWorker {
 			this.page.container.parentElement.insertBefore(message, this.page.container);
 
 		}, 1000);
+	}
+}
+
+class IndexedDb {
+
+	static async load() {
+
+		if(IndexedDb.instance)
+			return;
+
+		IndexedDb.instance = new IndexedDb();
+
+		await IndexedDb.instance.open();
+	}
+
+	constructor(page) {
+		this.page = page;
+	}
+
+	open() {
+
+		return new Promise((resolve, reject) => {
+
+			this.request = indexedDB.open('MainDb', 1);
+
+			this.request.onupgradeneeded = e => this.setup(e.target.result);
+			this.request.onsuccess = e => {
+
+				this.db = e.target.result;
+
+				this.db.onerror = e => {throw new Page.exception(e);}
+				resolve();
+			};
+
+			this.request.onerror = reject;
+		});
+	}
+
+	setup(db) {
+		db.createObjectStore('MainStore', {keyPath: 'key'});
+	}
+
+	has(key) {
+
+		return new Promise((resolve, reject) => {
+
+			const request = this.db.transaction('MainStore').objectStore('MainStore').get(key);
+
+			request.onsuccess = e => resolve(e.target.result ? true : false);
+			request.onerror = e => resolve(false);
+		});
+	}
+
+	get(key) {
+
+		return new Promise((resolve, reject) => {
+
+			const request = this.db.transaction('MainStore').objectStore('MainStore').get(key);
+
+			request.onsuccess = e => resolve(e.target.result ? e.target.result.value : undefined);
+			request.onerror = e => resolve();
+		});
+	}
+
+	set(key, value) {
+
+		return new Promise((resolve, reject) => {
+
+			const request = this.db.transaction('MainStore', 'readwrite').objectStore('MainStore').put({key, value});
+
+			request.onsuccess = e => resolve(e.result);
+			request.onerror = e => reject(e);
+		});
+	}
+}
+
+if(typeof Worker != 'undefined') {
+
+	Page.webWorker = class PageWebWorker extends Worker {
+
+		constructor(page) {
+
+			super('/js/web-worker.js');
+
+			this.page = page;
+			this.requests = new Map();
+
+			this.onmessage = e => this.message(e);
+			this.onerror = e => this.error(e);
+		}
+
+		send(action, request) {
+
+			const reference = Math.random();
+
+			return new Promise(resolve => {
+
+				this.requests.set(reference, response => resolve(response));
+
+				this.postMessage({reference, action, request});
+			});
+		}
+
+		message(e) {
+
+			if(!this.requests.has(e.data.reference))
+				throw new Page.exception(`Invalid web worker response for reference ${e.data.reference}`, e.data.response);
+
+			this.requests.get(e.data.reference)(e.data.response);
+		}
+
+		error(e) {
+			throw new Page.exception(e);
+		}
 	}
 }
 
@@ -234,7 +353,6 @@ class GlobalSearch {
 		);
 
 		// this.container.on('keydown', Page.keyUpDownListenter = e => this.searchUpDown(e));
-
 	}
 
 	async fetch() {
@@ -319,7 +437,6 @@ class GlobalSearch {
 		}
 
 		this.active_li.focus();
-
 	}
 }
 
@@ -327,29 +444,25 @@ class Account {
 
 	static async load() {
 
-		let account = null;
-
-		try {
-			account = JSON.parse(localStorage.account);
-		} catch(e) {}
-
-		if(!account)
-			account = await Account.fetch();
-
-		localStorage.account = JSON.stringify(account);
+		const account = await Account.fetch();
 
 		return window.account = account ? new Account(account) : null;
 	}
 
 	static async fetch() {
 
+		if(await IndexedDb.instance.has('account'))
+			return await IndexedDb.instance.get('account');
+
 		try {
 
-			return await API.call('accounts/get');
+			await IndexedDb.instance.set('account', await API.call('accounts/get'));
 
 		} catch(e) {
 			return null;
 		}
+
+		return await IndexedDb.instance.get('account');
 	}
 
 	constructor(account) {
@@ -373,18 +486,21 @@ class User {
 
 		let user = null;
 
+		const token = await IndexedDb.instance.get('token');
+
 		try {
-			user = JSON.parse(atob(localStorage.token.split('.')[1]));
+			user = JSON.parse(atob(token.split('.')[1]));
 		} catch(e) {}
 
 		return window.user = new User(user);
 	}
 
-	static logout(next) {
+	static async logout(next) {
 
 		const parameters = new URLSearchParams();
 
 		localStorage.clear();
+		await IndexedDb.instance.db.transaction('MainStore', 'readwrite').objectStore('MainStore').clear();
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
@@ -580,13 +696,15 @@ class API extends AJAX {
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
-		if(localStorage.token) {
+		const token = await IndexedDb.instance.get('token');
+
+		if(token) {
 
 			if(typeof parameters == 'string')
-				parameters += '&token='+localStorage.token;
+				parameters += '&token='+token;
 
 			else
-				parameters.token = localStorage.token;
+				parameters.token = token;
 		}
 
 		// If a form id was supplied, then also load the data from that form
@@ -636,13 +754,15 @@ class API extends AJAX {
 
 	static async refreshToken() {
 
-		let getToken = true;
+		let
+			getToken = true,
+			token = await IndexedDb.instance.get('token');
 
-		if(localStorage.token) {
+		if(token) {
 
 			try {
 
-				const user = JSON.parse(atob(localStorage.token.split('.')[1]));
+				const user = JSON.parse(atob(token.split('.')[1]));
 
 				if(user.exp && user.exp * 1000 > Date.now())
 					getToken = false;
@@ -650,23 +770,23 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!localStorage.refresh_token || !getToken)
+		if(!await IndexedDb.instance.has('refresh_token') || !getToken)
 			return;
 
 		const
 			parameters = {
-				refresh_token: localStorage.refresh_token
+				refresh_token: await IndexedDb.instance.get('refresh_token'),
 			},
 			options = {
 				method: 'POST',
 			};
 
 		if(account.auth_api && parameters.access_token)
-			parameters.access_token = localStorage.access_token;
+			parameters.access_token = await IndexedDb.instance.get('access_token');
 
 		const response = await API.call('authentication/refresh', parameters, options);
 
-		localStorage.token = response;
+		await IndexedDb.instance.set('token', response);
 
 		Page.load();
 	}
@@ -694,6 +814,9 @@ class AJAXLoader {
 	 */
 	static show() {
 
+		if(typeof document == 'undefined')
+			return;
+
 		if(!AJAXLoader.count)
 			AJAXLoader.count = 0;
 
@@ -716,6 +839,9 @@ class AJAXLoader {
 	 * Hide the flag.
 	 */
 	static hide() {
+
+		if(typeof document == 'undefined')
+			return;
 
 		AJAXLoader.count--;
 
@@ -898,10 +1024,13 @@ class DialogBox {
 	}
 }
 
-Node.prototype.on = window.on = function(name, fn) {
-	this.addEventListener(name, fn);
+if(typeof Node != 'undefined') {
+	Node.prototype.on = window.on = function(name, fn) {
+		this.addEventListener(name, fn);
+	}
 }
 
 MetaData.timeout = 5 * 60 * 1000;
 
-window.onerror = ErrorLogs.send;
+if(typeof window != 'undefined')
+	window.onerror = ErrorLogs.send;

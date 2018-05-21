@@ -534,7 +534,7 @@ class Dashboard {
 
 		container.classList.add('item');
 
-		if (!allVisualizations.length) {
+		if (!allVisualizations.length && !parseInt(this.format.category_id)) {
 
 			container.classList.add('hidden');
 		}
@@ -662,7 +662,7 @@ class Dashboard {
 				continue;
 			}
 
-			const queryDataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))));
+			const queryDataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))), this.page);
 
 			queryDataSource.container.setAttribute('style', `
 				order: ${visualization.format.position || 0};

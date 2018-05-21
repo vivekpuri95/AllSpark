@@ -12,10 +12,12 @@ class DataSource {
 		DataSource.list = new Map(response.map(report => [report.query_id, report]));
 	}
 
-	constructor(source) {
+	constructor(source, page) {
 
 		for(const key in source)
 			this[key] = source[key];
+
+		this.page = page;
 
 		this.tags = this.tags || '';
 		this.tags = this.tags.split(',').filter(a => a.trim());
@@ -42,15 +44,14 @@ class DataSource {
 		parameters = new URLSearchParams(parameters);
 
 		parameters.set('query_id', this.query_id);
-		parameters.set('email', user.email);
 
 		if(this.queryOverride)
 			parameters.set('query', this.query);
 
 		for(const filter of this.filters.values()) {
 
-			if(account.auth_api && localStorage.access_token && filter.placeholder == 'access_token')
-				filter.value = localStorage.access_token;
+			if(account.auth_api && await IndexedDb.instance.has('access_token') && filter.placeholder == 'access_token')
+				filter.value = await IndexedDb.instance.get('access_token');
 
 			if(filter.dataset && filter.dataset.query_id) {
 
@@ -248,7 +249,6 @@ class DataSource {
 
 			this.dialog.body = `<ul class="user-list">${user_element.join('')}</ul>`;
 			this.dialog.show();
-
 		});
 
 		container.querySelector('header .reload').on('click', () => {
@@ -450,7 +450,6 @@ class DataSource {
 
 			if(!row.skip)
 				response.push(row);
-
 		}
 
 		if(this.postProcessors.selected)
@@ -474,13 +473,12 @@ class DataSource {
 				else if(first > second)
 					result = 1;
 
-				if(!this.columns.sortBy.sort)
+				if(parseInt(this.columns.sortBy.sort) === 0)
 					result *= -1;
 
 				return result;
 			});
 		}
-
 		return response;
 	}
 
@@ -525,7 +523,7 @@ class DataSource {
 				visualization:this.visualizations.selected.type,
 				sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				token		 :localStorage.token,
+				token		 :await IndexedDb.instance.get('token'),
 			};
 
 			for(const axis of this.visualizations.selected.options.axes) {
@@ -863,6 +861,12 @@ class DataSourceRow extends Map {
 				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key] === null ? '' : row[key]))
 					this.skip = true;
 			}
+
+			if(column.type == 'date')
+				row[key] = Format.date(row[key]);
+
+			else if(column.type == 'number')
+				row[key] = Format.number(row[key]);
 
 			this.set(key, row[key] || 0);
 		}
@@ -1414,7 +1418,7 @@ class DataSourceColumn {
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
 
-		if(this.sort != '0')
+		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
 		await this.source.visualizations.selected.render();

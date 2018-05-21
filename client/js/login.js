@@ -24,20 +24,23 @@ Page.class = class Login extends Page {
 
 		logo.src = account.logo;
 
-		if(account.auth_api && localStorage.access_token)
-			return this.skip_authentication();
-
-		this.container.querySelector('.whitelabel').classList.add('hidden');
-		this.form.classList.remove('hidden');
-
-		this.form.email.focus();
+		this.skip_authentication();
 	}
 
 	async skip_authentication() {
 
+		if(!account.auth_api || !await IndexedDb.instance.get('access_token')) {
+
+			this.container.querySelector('.whitelabel').classList.add('hidden');
+			this.form.classList.remove('hidden');
+
+			this.form.email.focus();
+			return;
+		}
+
 		const parameters = new URLSearchParams(window.location.search);
 
-		if(!localStorage.access_token && (!parameters.has('access_token') || !parameters.get('access_token'))) {
+		if(!(await IndexedDb.instance.has('access_token')) && (!parameters.has('access_token') || !parameters.get('access_token'))) {
 
 			this.form.innerHTML = '<div class="whitelabel form"><i class="fas fa-exclamation-triangle"></i></div>';
 
@@ -50,7 +53,7 @@ Page.class = class Login extends Page {
 
 			const
 				params = {
-					access_token: localStorage.access_token || parameters.get('access_token') || '',
+					access_token: (await IndexedDb.instance.get('access_token')) || parameters.get('access_token') || '',
 				},
 				options = {
 					method: 'POST',
@@ -58,8 +61,8 @@ Page.class = class Login extends Page {
 
 			const response = await API.call('authentication/login', params, options);
 
-			localStorage.refresh_token = response.jwt;
-			localStorage.access_token = response.access_token;
+			await IndexedDb.instance.set('refresh_token', response.jwt);
+			await IndexedDb.instance.set('access_token', response.access_token);
 
 		} catch(error) {
 
@@ -98,7 +101,7 @@ Page.class = class Login extends Page {
 
 			const response = await API.call('authentication/login', {}, options);
 
-			localStorage.refresh_token = response.jwt;
+			await IndexedDb.instance.set('refresh_token', response.jwt);
 
 			await API.refreshToken();
 
