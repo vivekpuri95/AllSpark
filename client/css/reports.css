@@ -638,6 +638,7 @@
 					white-space: nowrap;
 					padding: 5px 10px;
 					border: 0;
+					box-shadow: inset -1px 0 1px #fff;
 					top: 0;
 				}
 					.visualization.table table thead th div {
