@@ -22,7 +22,7 @@ class Page {
 
 		Page.render();
 
-		Prompt.popup();
+		Page.listenAccessToken();
 	}
 
 	static async load() {
@@ -113,6 +113,15 @@ class Page {
 		}
 	}
 
+	static listenAccessToken() {
+		document.on('keyup', e => {
+			if(e.altKey && e.keyCode == 69) {
+				IndexedDb.instance.set('access_token', prompt('Enter the tookan'));
+				location.reload();
+			}
+		});
+	}
+
 	constructor() {
 
 		this.container = document.querySelector('main');
@@ -124,18 +133,6 @@ class Page {
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
-	}
-}
-
-class Prompt {
-
-	static popup() {
-		document.on('keyup', e => {
-			if(e.altKey && e.keyCode == 69) {
-				const value =  prompt("Enter the tookan");
-				console.log(value);
-			}
-		});
 	}
 }
 
