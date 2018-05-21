@@ -534,7 +534,7 @@ class Dashboard {
 
 		container.classList.add('item');
 
-		if (!allVisualizations.length) {
+		if (!allVisualizations.length && !parseInt(this.format.category_id)) {
 
 			container.classList.add('hidden');
 		}
