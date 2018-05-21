@@ -3558,8 +3558,8 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.attr('x', cell => this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (Format.number(cell.y).toString().length * 4))
 				.text(cell => {
 
-					if(['s'].includes(this.axes.bottom.format))
-						return d3.format(this.axes.bottom.format)(cell.y);
+					if(['s'].includes(this.axes.left.format))
+						return d3.format(this.axes.left.format)(cell.y);
 
 					else
 						return Format.number(cell.y)
