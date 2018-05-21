@@ -98,20 +98,19 @@ class ReportsMangerPreview {
 
 		this.report = new DataSource(this.report);
 
-		this.report.container.querySelector('header').classList.add('hidden');
+		this.report.container;
 		this.report.visualizations.selected.container.classList.toggle('unsaved', this.report.queryOverride ? 1 : 0);
 
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
-		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
-		this.page.container.classList.add(`preview-${options.position || 'right'}`);
+		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'right';
+		this.page.container.classList.add('preview-' + position);
 
-		await this.report.visualizations.selected.load();
-
-		this.report.container.querySelector('header .menu-toggle').click();
+		await this.report.fetch();
 
 		this.renderDocks();
+		this.move();
 	}
 
 	set hidden(hidden) {
@@ -142,8 +141,6 @@ class ReportsMangerPreview {
 			this.move();
 		});
 
-		this.move();
-
 		this.report.container.querySelector('.menu').appendChild(this.docks);
 	}
 
@@ -154,7 +151,7 @@ class ReportsMangerPreview {
 		if(this.hidden || !this.report)
 			return;
 
-		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'bottom';
+		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'right';
 
 		this.page.container.classList.add('preview-' + position);
 

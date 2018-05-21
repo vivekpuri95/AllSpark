@@ -478,6 +478,3 @@ main.preview-left #preview {
 	#preview .data-source {
 		max-height: 600px;
 	}
-	#preview .data-source .toolbar {
-		margin-top: 0;
-	}
