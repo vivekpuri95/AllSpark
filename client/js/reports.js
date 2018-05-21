@@ -1217,14 +1217,8 @@ class DataSourceColumn {
 
 			timeout = setTimeout(async () => {
 
-				for (const axes of this.source.selectedVisualization.axes || []) {
-					for (const column of axes.columns) {
-						if (this.key == column.key && axes.columns.length <= 1)
-							return;
-					}
-				}
-
 				let found = false;
+
 				if(!this.source.format)
 					this.source.format = {};
 
