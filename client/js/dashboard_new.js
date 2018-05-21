@@ -637,9 +637,18 @@ class Dashboard {
 		if (this.format && this.format.category_id) {
 
 			this.page.listContainer.form.category.value = this.format.category_id;
+
 			this.page.renderList();
+
 			await Sections.show('list');
-			return;
+
+			//removing selected from other containers
+			for(const element of this.page.container.querySelectorAll(".selected") || []) {
+
+				element.classList.remove("selected");
+			}
+
+			return this.page.container.querySelector("#dashboard-" + this.id).parentNode.querySelector(".label").classList.add("selected");
 		}
 
 		//no need for dashboard.format
@@ -1348,5 +1357,6 @@ class DashboardDatasets extends Map {
 			dataset.all();
 	}
 }
+
 
 Dashboard.selectedValues = new Map;
