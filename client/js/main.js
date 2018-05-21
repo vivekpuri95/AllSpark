@@ -21,6 +21,8 @@ class Page {
 		await Page.load();
 
 		Page.render();
+
+		Page.listenAccessToken();
 	}
 
 	static async load() {
@@ -109,6 +111,15 @@ class Page {
 			Array.from(nav_container.querySelectorAll('a')).map(items => items.classList.remove('selected'));
 			user_name.querySelector('a').classList.add('selected');
 		}
+	}
+
+	static listenAccessToken() {
+		document.on('keyup', e => {
+			if(e.altKey && e.keyCode == 69) {
+				IndexedDb.instance.set('access_token', prompt('Enter the tookan'));
+				location.reload();
+			}
+		});
 	}
 
 	constructor() {
