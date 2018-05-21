@@ -1026,9 +1026,10 @@ class DialogBox {
 
 class MultiSelect {
 
-	constructor(data = {}) {
+	constructor({datalist, multiple = false} = {}) {
 
-		Object.assign(this, data);
+		this.datalist = datalist;
+		this.multiple = multiple;
 
 		this.selectedValues = new Set();
 	}
@@ -1094,7 +1095,7 @@ class MultiSelect {
 		}
 
 		this.setEvents();
-
+		this.datalist.map(obj => this.selectedValues.add(obj.value));
 		this.update();
 
 		return container;
@@ -1136,46 +1137,50 @@ class MultiSelect {
 
 		this.selectedValues.clear();
 
-		if(!this.containerElement) {
+		source.map( x => this.selectedValues.add(x));
 
-			source.map( x => this.selectedValues.add(x));
-			return;
-		}
-
-		const inputs = this.container.querySelectorAll('.options .list label input');
-
-		for(const input of inputs) {
-
-			input.checked = source.includes(input.value);
-		}
+		// if(!this.containerElement) {
+		//
+		// 	source.map( x => this.selectedValues.add(x));
+		// 	return;
+		// }
+		//
+		// const inputs = this.container.querySelectorAll('.options .list label input');
+		//
+		// for(const input of inputs) {
+		//
+		// 	input.checked = source.includes(input.value);
+		// }
 
 		this.update()
 	}
 
 	get value() {
 
-		if(!this.containerElement) {
-
-			return Array.from(this.selectedValues);
-		}
-
-		const values = [];
-
-		for(const option of this.container.querySelectorAll('.options .list input:checked')) {
-
-			values.push(option.value);
-		}
-
-		return values;
+		return Array.from(this.selectedValues);
 	}
 
 	update() {
+
+		if(!this.containerElement)
+			return;
+
+		this.selectedValues.clear();
 
 		const
 			search = this.container.querySelector('input[type=search]'),
 			options = this.container.querySelector('.options');
 
 		for(const input of options.querySelectorAll('.list label input')) {
+
+			if(input.checked)
+				this.selectedValues.add(input.value);
+
+		}
+
+		for(const input of options.querySelectorAll('.list label input')) {
+
+			input.checked = Array.from(this.selectedValues).includes(input.value) ? true : false;
 
 			let hide = false;
 
@@ -1208,22 +1213,13 @@ class MultiSelect {
 		if(!this.multiple)
 			return;
 
-		for(const input of this.container.querySelectorAll('.options .list label input')) {
-
-			input.checked = true;
-			this.selectedValues.add(input.value);
-		}
-
+		this.datalist.map(obj => this.selectedValues.add(obj.value));
 		this.update();
 	}
 
 	clear() {
 
 		this.selectedValues.clear();
-
-		for(const input of this.container.querySelectorAll('.options .list label input'))
-			input.checked = false;
-
 		this.update();
 	}
 }

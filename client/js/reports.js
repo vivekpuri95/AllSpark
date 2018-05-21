@@ -5551,29 +5551,28 @@ class Dataset extends MultiSelect {
 
 	get container() {
 
-		if(['Start Date', 'End Date'].includes(this.name)) {
+		if(this.containerElement)
+			return this.containerElement;
 
-			if(this.containerElement)
-				return this.containerElement;
+		if(!this.name.includes('Date'))
+			return super.container;
 
-			const container = this.containerElement = document.createElement('div');
-			container.classList.add('multi-select');
 
-			let value = null;
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('multi-select');
 
-			if(this.name == 'Start Date')
-				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-			else
-				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		let value = null;
 
-			container.innerHTML = `
-				<input type="date" name="${this.filter.placeholder}" value="${value}">
-			`;
+		if(this.name.includes('Start'))
+			value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		else
+			value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
-			return container;
-		}
+		container.innerHTML = `
+			<input type="date" name="${this.filter.placeholder}" value="${value}">
+		`;
 
-		return super.container;
+		return container;
 	}
 
 	async fetch() {
@@ -5607,6 +5606,18 @@ class Dataset extends MultiSelect {
 		super.multiple = this.filter.multiple;
 
 		return values;
+	}
+
+	set value(source) {
+
+		const
+			sourceOptions = source.container.querySelectorAll('.options .list label input:checked'),
+			data = [];
+
+		for(const option of sourceOptions)
+			data.push(option.value);
+
+		super.value = data;
 	}
 }
 
