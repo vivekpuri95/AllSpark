@@ -299,9 +299,9 @@ class DashboardsShare {
 		const multiSelectData = [];
 
 		DashboardsShare.page = page;
-		DashboardsShare.userList = await DashboardsShare.loadUserList();
+		DashboardsShare.userList = await API.call('users/list');
 
-		this.userList.map(row => multiSelectData.push({
+		DashboardsShare.userList.map(row => multiSelectData.push({
 			value: row.user_id,
 			name : row.name
 		}));
@@ -314,11 +314,6 @@ class DashboardsShare {
 		);
 	}
 
-	static async loadUserList() {
-
-		return await API.call('users/list');
-	}
-
 	async load() {
 
 		const
@@ -327,10 +322,22 @@ class DashboardsShare {
 			},
 			options = {
 				method : 'GET',
-			};
+			},
+			multiSelectData = [];
 
 		this.userDashboardResponse = await API.call('user/dashboards/list', parameters, options);
-		this.userList = await DashboardsShare.loadUserList();
+
+		for( const users of DashboardsShare.userList) {
+
+			if(!this.userDashboardResponse.filter(u => u.user_id == users.user_id).length) {
+				multiSelectData.push({
+					value: users.user_id,
+					name : users.name
+				});
+			}
+		}
+
+		DashboardsShare.userMultiList.setdatalist(multiSelectData);
 
 		if(DashboardsShare.form_listener)
 			DashboardsShare.form.removeEventListener('submit', DashboardsShare.form_listener);
@@ -344,16 +351,9 @@ class DashboardsShare {
 	process() {
 
 		this.userDashboardList.clear();
-		// DashboardsShare.form.user_list.textContent = null;
 
 		for(const ud of this.userDashboardResponse)
 			this.userDashboardList.set(ud.id, new UserDashboard(ud, this));
-
-		// for(const user of this.userList) {
-		//
-		// 	if(!this.userDashboardResponse.some( u => u.user_id == user.user_id))
-		// 		DashboardsShare.form.user_list.insertAdjacentHTML('beforeend', `<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`)
-		// }
 	}
 
 	render() {
