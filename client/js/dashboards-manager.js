@@ -296,17 +296,10 @@ class DashboardsShare {
 
 	static async setup(page) {
 
-		const multiSelectData = [];
-
 		DashboardsShare.page = page;
 		DashboardsShare.userList = await API.call('users/list');
 
-		DashboardsShare.userList.map(row => multiSelectData.push({
-			value: row.user_id,
-			name : row.name
-		}));
-
-		DashboardsShare.userMultiList = new MultiSelect({datalist:multiSelectData, multiple:true});
+		DashboardsShare.userMultiList = new MultiSelect({datalist: [], multiple:true});
 
 		DashboardsShare.form.insertBefore(
 			this.userMultiList.container,

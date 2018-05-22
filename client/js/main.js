@@ -1127,6 +1127,8 @@ class MultiSelect {
 
 	setdatalist(datalist) {
 
+		this.datalist = datalist;
+
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
 
@@ -1176,7 +1178,7 @@ class MultiSelect {
 			optionList.appendChild(label);
 		}
 
-		this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+		this.multiple ? datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
 
 		this.update();
 	}
