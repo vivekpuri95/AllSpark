@@ -10,7 +10,7 @@ exports.list = class extends API {
 exports.toggle = class extends API {
 	async toggle() {
 
-		// this.user.privilege.needs('administrator');
+		this.user.privilege.needs('administrator');
 
 		return await this.mysql.query(`
 			INSERT INTO tb_account_features(account_id, feature_id)
