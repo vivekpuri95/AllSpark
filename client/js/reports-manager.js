@@ -908,7 +908,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const source = this.page.connections.get(parseInt(this.report.connection_name));
 
-		if(!source || !['mysql', 'pgsql'].includes(source.type)) {
+		if(!source || !['mysql', 'pgsql', 'bigquery'].includes(source.type)) {
 			this.form.querySelector('#query').classList.add('hidden');
 			this.form.querySelector('#api').classList.remove('hidden');
 		} else {
