@@ -1151,10 +1151,8 @@ class MultiSelect {
 
 		this.selectedValues.clear();
 
-		for(const input of this.container.querySelectorAll('.options .list label input')) {
-
-			if(input.checked)
-				this.selectedValues.add(input.value);
+		for(const input of this.container.querySelectorAll('.options .list label input:checked')) {
+			this.selectedValues.add(input.value);
 		}
 
 		this.update();
