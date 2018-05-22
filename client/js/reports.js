@@ -1132,11 +1132,8 @@ class DataSourceColumn {
 
 					<h3>Drill down</h3>
 
-					<label>
+					<label class="drilldown-dropdown">
 						<span>Report</span>
-						<select name="drilldown_query_id">
-							<option value=""></option>
-						</select>
 					</label>
 
 					<label>
@@ -1218,14 +1215,19 @@ class DataSourceColumn {
 			return 0;
 		});
 
-		for(const report of sortedReports) {
+		const list = [];
 
-			this.form.drilldown_query_id.insertAdjacentHTML('beforeend', `
-				<option value="${report.query_id}">${report.name} #${report.query_id}</option>
-			`);
-		}
+		for(const report of sortedReports)
+			list.push({name: report.name, value: report.query_id});
 
-		this.form.drilldown_query_id.on('change', () => this.updateDrilldownParamters());
+		this.drilldown = new MultiSelect({datalist: list, multiple: false});
+
+		const drilldown_container = this.drilldown.container;
+		drilldown_container.classList.add('drilldown_query_id');
+
+		this.form.querySelector('.drilldown-dropdown').appendChild(drilldown_container);
+
+		this.form.querySelector('.drilldown_query_id').on('change', () => this.updateDrilldownParamters());
 		this.updateDrilldownParamters();
 
 		let timeout;
@@ -1314,7 +1316,7 @@ class DataSourceColumn {
 
 			this.form.querySelector('.parameter-list').textContent = null;
 
-			this.form.drilldown_query_id.value = this.drilldown ? this.drilldown.query_id : '';
+			this.form.querySelector('.drilldown_query_id').value = this.drilldown ? this.drilldown.query_id : '';
 
 			for(const param of this.drilldown.parameters || [])
 				this.addParameter(param);
@@ -1378,7 +1380,7 @@ class DataSourceColumn {
 		const
 			parameterList = this.form.querySelector('.parameter-list'),
 			parameters = parameterList.querySelectorAll('.parameter'),
-			report = DataSource.list.get(parseInt(this.form.drilldown_query_id.value));
+			report = DataSource.list.get(parseInt(this.form.querySelector('.drilldown_query_id').value));
 
 		if(report && report.filters.length) {
 
