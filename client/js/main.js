@@ -116,7 +116,12 @@ class Page {
 	static listenAccessToken() {
 		document.on('keyup', e => {
 			if(e.altKey && e.keyCode == 69) {
-				IndexedDb.instance.set('access_token', prompt('Enter the tookan'));
+				const value = prompt('Enter the Token.');
+
+				if(!value)
+					return;
+
+				IndexedDb.instance.set('access_token', value);
 				location.reload();
 			}
 		});
