@@ -31,14 +31,9 @@ main form#dashboard_share {
 	margin-top: 10px;
 	display: flex;
 }
-	main form#dashboard_share select {
+	main form#dashboard_share .multi-select {
 		width: 20%;
-		height: 10%;
-		padding: 0;
 	}
-		main form#dashboard_share select option {
-			padding: 3px 5px;
-		}
 	main form#dashboard_share button {
 		margin-left: 10px;
 		margin-top: auto;
