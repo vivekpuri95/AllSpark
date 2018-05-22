@@ -177,21 +177,24 @@ class report extends API {
 		}
 	}
 
-	async storeQueryResult(result) {
+	async storeQueryResult(result, saveRawDataFlag =false) {
 
-		if (this.reportObj.load_saved && this.saveResultFalg) {
+		if (this.reportObj.load_saved && (this.saveResultFalg || saveRawDataFlag)) {
 
 			await this.mysql.query(
 				"insert into ??.?? (query_id, type, user_id, query, data) values (?, ?, ?, ?, ?)",
 				[
 					this.queryResultDb, constants.saveQueryResultTable,
-					this.reportObj.query_id, this.reportObj.type, this.user.user_id, this.reportObj.query,
+					this.reportObj.query_id, this.reportObj.type || "raw", this.user.user_id, this.reportObj.query || "",
 					JSON.stringify(result)
 				],
 				this.queryResultConnection
 			);
 
-			await redis.hset(`accountSettings#${this.account.account_id}`, "settings.save_result", 0);
+			if(!saveRawDataFlag) {
+
+				await redis.hset(`accountSettings#${this.account.account_id}`, "settings.save_result", 0);
+			}
 		}
 	}
 
@@ -206,6 +209,18 @@ class report extends API {
 
 		await this.authenticate();
 
+		if(this.request.body.data) {
+
+			this.assert(commonFun.isJson(this.request.body.data), "data for saving is not json");
+
+			this.request.body.data = JSON.parse(this.request.body.data);
+
+			return {
+				data: await this.storeQueryResult(this.request.body.data, 1),
+				message: "saved"
+			};
+		}
+
 		this.prepareFiltersForOffset();
 
 		await this.storeQueryResultSetup();
@@ -213,6 +228,7 @@ class report extends API {
 		let preparedRequest;
 
 		switch (this.reportObj.type.toLowerCase()) {
+
 			case "mysql":
 				preparedRequest = new MySQL(this.reportObj, this.filters, this.request.body.token);
 				break;
