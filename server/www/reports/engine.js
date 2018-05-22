@@ -312,7 +312,7 @@ class MySQL {
 
 		for (const filter of this.filters) {
 
-			if (filter.type === 5) {
+			if (filter.type == 'column') {
 
 				this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "??");
 				continue;
