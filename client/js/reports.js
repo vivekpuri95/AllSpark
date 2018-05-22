@@ -99,20 +99,6 @@ class DataSource {
 
 		this.container.querySelector('.query').innerHTML = response.query;
 
-		const description = this.container.querySelector('.description .body');
-		description.textContent = null;
-
-		if (!this.description && !this.visualizations.selected.description) {
-			description.innerHTML = 'No description found!';
-		}
-		else {
-			if (this.description)
-				description.insertAdjacentHTML('beforeend', '<h3>Report Description</h3>' + this.description);
-
-			if (this.visualizations.selected.description)
-				description.insertAdjacentHTML('beforeend', '<h3>Visualization Description</h3>' + this.visualizations.selected.description);
-		}
-
 		let age = response.cached ? Math.floor(response.cached.age * 100) / 100 : 0;
 
 		if(age < 1000)
@@ -668,6 +654,20 @@ class DataSource {
 					<i class="fas fa-angle-double-down"></i>
 				</span>
 			`);
+		}
+
+		const description = this.container.querySelector('.description .body');
+		description.textContent = null;
+
+		if (!this.description && !this.visualizations.selected.description) {
+			description.innerHTML = 'No description found!';
+		}
+		else {
+			if (this.description)
+				description.insertAdjacentHTML('beforeend', '<h3>Report Description</h3>' + this.description);
+
+			if (this.visualizations.selected.description)
+				description.insertAdjacentHTML('beforeend', '<h3>Visualization Description</h3>' + this.visualizations.selected.description);
 		}
 
 		this.columns.render();
