@@ -171,29 +171,42 @@ class report extends API {
 			this.queryResultDb = await redis.hget(`accountSettings#${this.account.account_id}`, "settings.db");
 			this.queryResultConnection = parseInt(await redis.hget(`accountSettings#${this.account.account_id}`, "settings.connection_id"));
 
-			this.saveResultFalg = parseInt(await redis.hget(`accountSettings#${this.account.account_id}`, "settings.save_result"));
-
 			this.assert(this.queryResultConnection, "connection id for loading saved result is not valid");
 		}
 	}
 
-	async storeQueryResult(result, saveRawDataFlag =false) {
+	async storeQueryResult(result) {
 
-		if (this.reportObj.load_saved && (this.saveResultFalg || saveRawDataFlag)) {
+		if (this.reportObj.load_saved) {
 
-			await this.mysql.query(
-				"insert into ??.?? (query_id, type, user_id, query, data) values (?, ?, ?, ?, ?)",
-				[
-					this.queryResultDb, constants.saveQueryResultTable,
-					this.reportObj.query_id, this.reportObj.type || "raw", this.user.user_id, this.reportObj.query || "",
-					JSON.stringify(result)
-				],
+			const [idToUpdate] = await this.mysql.query(
+				"select max(id) as id from ??.?? where query_id = ? and type = ?",
+				[this.queryResultDb, constants.saveQueryResultTable, this.reportObj.query_id, this.reportObj.type],
+
 				this.queryResultConnection
 			);
 
-			if(!saveRawDataFlag) {
+			if (!idToUpdate) {
 
-				await redis.hset(`accountSettings#${this.account.account_id}`, "settings.save_result", 0);
+				return await this.mysql.query(
+					"insert into ??.?? (query_id, type, user_id, query, data) values (?, ?, ?, ?, ?)",
+					[
+						this.queryResultDb, constants.saveQueryResultTable,
+						this.reportObj.query_id, this.reportObj.type || "raw", this.user.user_id, this.reportObj.query || "",
+						JSON.stringify(result)
+					],
+					this.queryResultConnection
+				);
+			}
+
+			else {
+
+				return await this.mysql.query(
+					"update ??.?? set data = ? where query_id = ? and type = ? where id = ?",
+					[this.queryResultDb, constants.saveQueryResultTable,
+						JSON.stringify(result), this.reportObj.type, idToUpdate],
+					this.queryResultConnection
+				);
 			}
 		}
 	}
@@ -209,14 +222,16 @@ class report extends API {
 
 		await this.authenticate();
 
-		if(this.request.body.data) {
+		if (this.request.body.data) {
 
 			this.assert(commonFun.isJson(this.request.body.data), "data for saving is not json");
 
 			this.request.body.data = JSON.parse(this.request.body.data);
 
+			this.reportObj.type = "raw";
+
 			return {
-				data: await this.storeQueryResult(this.request.body.data, 1),
+				data: await this.storeQueryResult(this.request.body.data),
 				message: "saved"
 			};
 		}
@@ -273,7 +288,7 @@ class report extends API {
 
 				result = JSON.parse(redisData);
 
-				await this.storeQueryResult(result);
+				// await this.storeQueryResult(result);
 
 				await engine.log(this.reportObj.query_id, this.reportObj.query, result.query,
 					Date.now() - this.reportObjStartTime, this.reportObj.type,
@@ -323,7 +338,7 @@ class report extends API {
 				this.assert(commonFun.isJson(result.data), "result is not a json");
 
 				result.data = JSON.parse(result.data);
-				const age = Math.round((Date.now() - Date.parse(result.created_at))/1000);
+				const age = Math.round((Date.now() - Date.parse(result.created_at)) / 1000);
 				result = result.data;
 
 				result.load_saved = {
@@ -611,6 +626,16 @@ class Bigquery {
 		};
 	}
 
+	get finalQuery() {
+
+		this.prepareQuery();
+
+		return {
+			type: "bigquery",
+			request: [this.reportObj.query, this.filterList || [], this.reportObj.account_id, this.reportObj.connection_name + ".json", this.reportObj.project_name]
+		}
+	}
+
 	makeFilters(data, name, type = "STRING", is_multiple = 0,) {
 
 
@@ -661,9 +686,9 @@ class Bigquery {
 		for (const filter of this.filters) {
 			this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), `@${filter.placeholder}`);
 
-			if(!filter.type) {
+			if (!filter.type) {
 
-				if(parseInt(filter.value)) {
+				if (parseInt(filter.value)) {
 
 					filter.type = 1;
 				}
@@ -674,16 +699,6 @@ class Bigquery {
 			}
 
 			this.makeFilters(filter.value, filter.placeholder, filter.type, filter.multiple);
-		}
-	}
-
-	get finalQuery() {
-
-		this.prepareQuery();
-
-		return {
-			type: "bigquery",
-			request: [this.reportObj.query, this.filterList || [], this.reportObj.account_id, this.reportObj.connection_name + ".json", this.reportObj.project_name]
 		}
 	}
 }
