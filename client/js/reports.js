@@ -728,15 +728,6 @@ class DataSourceFilters extends Map {
 class DataSourceFilter {
 
 	static setup() {
-
-		DataSourceFilter.types = {
-			1: 'text',
-			0: 'number',
-			2: 'date',
-			3: 'month',
-			4: 'hidden',
-		};
-
 		DataSourceFilter.placeholderPrefix = 'param_';
 	}
 
@@ -759,12 +750,12 @@ class DataSourceFilter {
 			return this.labelContainer;
 
 		const container = document.createElement('label');
-		if (DataSourceFilter.types[this.type] == 'hidden')
+		if (this.type == 'hidden')
 			container.classList.add('hidden');
 
 		let input = document.createElement('input');
 
-		input.type = DataSourceFilter.types[this.type];
+		input.type = this.type;
 		input.name = this.placeholder;
 
 		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
@@ -794,10 +785,10 @@ class DataSourceFilter {
 
 		if(!isNaN(parseFloat(this.offset))) {
 
-			if(DataSourceFilter.types[this.type] == 'date')
+			if(this.type == 'date')
 				value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
-			if(DataSourceFilter.types[this.type] == 'month') {
+			if(this.type == 'month') {
 				const date = new Date();
 				value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
 			}

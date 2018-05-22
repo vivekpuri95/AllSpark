@@ -1,5 +1,7 @@
-const API = require("../utils/api");
-const commonFun = require("../utils/commonFunctions");
+const API = require("../utils/api"),
+	commonFun = require("../utils/commonFunctions"),
+	constants = require('../utils/constants');
+
 
 exports.insert = class extends API {
 
@@ -234,6 +236,8 @@ exports.metadata = class extends API {
 			'SELECT * FROM tb_datasets WHERE account_id = ?',
 			[this.account.account_id]
 		);
+
+		metadata.filterTypes = constants.filterTypes;
 
 		return metadata;
 	}

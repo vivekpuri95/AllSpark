@@ -563,6 +563,7 @@ class MetaData {
 		MetaData.roles = new Map;
 		MetaData.datasets = new Map;
 		MetaData.visualizations = new Map;
+		MetaData.filterTypes = new Set;
 
 		if(!user.id)
 			return;
@@ -616,6 +617,7 @@ class MetaData {
 			MetaData.categories.set(category.category_id, category);
 		}
 
+		MetaData.filterTypes = new Set(metadata.filterTypes);
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 	}

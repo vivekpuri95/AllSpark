@@ -118,13 +118,6 @@ class report extends API {
 
 		//filter fields required = offset, placeholder, default_value
 
-		const types = [
-			'string',
-			'number',
-			'date',
-			'month',
-		];
-
 		for (const filter of this.filters) {
 
 			if (isNaN(parseFloat(filter.offset))) {
@@ -132,7 +125,7 @@ class report extends API {
 				continue;
 			}
 
-			if (types[filter.type] == 'date') {
+			if (filter.type == 'date') {
 
 				filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
@@ -143,7 +136,7 @@ class report extends API {
 				}
 			}
 
-			if (types[filter.type] == 'month') {
+			if (filter.type == 'month') {
 
 				const date = new
 				Date();
@@ -312,7 +305,7 @@ class MySQL {
 
 		for (const filter of this.filters) {
 
-			if (filter.type === 5) {
+			if (filter.type == 'column') {
 
 				this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "??");
 				continue;
@@ -504,11 +497,11 @@ class Bigquery {
 		this.filters = filters;
 
 		this.typeMapping = {
-			0: "string",
-			1: "integer",
-			2: "date",
-			3: "integer",
-			4: "string",
+			"integer": "integer",
+			"string": "string",
+			"date": "date",
+			"month": "integer",
+			"hidden": "string",
 		};
 	}
 

@@ -676,14 +676,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 
 								<label>
 									<span>Type</span>
-									<select name="type" required>
-										<option value="0">Integer</option>
-										<option value="1">String</option>
-										<option value="2">Date</option>
-										<option value="3">Month</option>
-										<option value="4">Hidden</option>
-										<option value="5">Column</option>
-									</select>
+									<select name="type" required></select>
 								</label>
 
 								<label>

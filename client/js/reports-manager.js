@@ -1186,8 +1186,17 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	addFilter() {
 
-		this.container.querySelector('#filter-form').classList.remove('hidden');
+		const filterForm = this.container.querySelector('#filter-form');
+		filterForm.classList.remove('hidden');
 		this.container.querySelector('#filter-list').classList.add('hidden');
+
+		const select = filterForm.querySelector('select[name="type"]');
+		select.textContent = null;
+		for (const type of MetaData.filterTypes) {
+			select.insertAdjacentHTML('beforeend', `
+				<option value="${type.toLowerCase()}">${type}</option>
+			`);
+		}
 
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
 		this.filterForm.on('submit', this.filterForm.listener = e => this.insertFilter(e));
@@ -1227,6 +1236,14 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.filterForm.on('submit', this.filterForm.listener = e => this.updateFilter(e, filter));
 
 		this.filterForm.reset();
+
+		const select = this.filterForm.querySelector('select[name="type"]');
+		select.textContent = null;
+		for (const type of MetaData.filterTypes) {
+			select.insertAdjacentHTML('beforeend', `
+				<option value="${type.toLowerCase()}">${type}</option>
+			`);
+		}
 
 		for(const key in filter) {
 			if(key in this.filterForm)
