@@ -507,7 +507,8 @@ class Bigquery {
 			0: "string",
 			1: "integer",
 			2: "date",
-			3: "integer"
+			3: "integer",
+			4: "string",
 		};
 	}
 
@@ -560,6 +561,18 @@ class Bigquery {
 		this.filterList = [];
 		for (const filter of this.filters) {
 			this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), `@${filter.placeholder}`);
+
+			if(!filter.type) {
+
+				if(parseInt(filter.value)) {
+
+					filter.type = 1;
+				}
+				else {
+
+					filter.type = 0;
+				}
+			}
 
 			this.makeFilters(filter.value, filter.placeholder, filter.type, filter.multiple);
 		}
