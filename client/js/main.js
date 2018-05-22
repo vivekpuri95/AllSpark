@@ -1035,6 +1035,188 @@ class DialogBox {
 	}
 }
 
+class MultiSelect {
+
+	constructor({datalist, multiple = false} = {}) {
+
+		this.datalist = datalist;
+		this.multiple = multiple;
+
+		this.selectedValues = new Set();
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		if(!this.datalist)
+			throw new Page.Exception('No datalist');
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('multi-select');
+
+		container.innerHTML = `
+			<input type="search" placeholder="Search...">
+			<div class="options hidden">
+				<header>
+					<a class="all">All</a>
+					<a class="clear">Clear</a>
+				</header>
+				<div class="list"></div>
+				<div class="no-matches NA hidden">No matches found! :(</div>
+				<footer></footer>
+			</div>
+		`;
+
+		const optionList = container.querySelector('.options .list');
+
+		if(!this.datalist.length) {
+			container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
+		}
+
+		for(const row of this.datalist) {
+
+			const
+				label = document.createElement('label'),
+				input = document.createElement('input'),
+				text = document.createTextNode(row.name);
+
+			input.name = row.name;
+			input.value = row.value;
+			input.type = this.multiple ? 'checkbox' : 'radio';
+			input.checked = true;
+
+			label.appendChild(input);
+			label.appendChild(text);
+
+			label.setAttribute('title', row.value);
+
+			input.on('change', () => {
+
+				input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
+				this.update();
+			});
+
+			label.on('dblclick', e => {
+
+				e.stopPropagation();
+
+				this.clear();
+				label.click();
+			});
+
+			optionList.appendChild(label);
+		}
+
+		this.setEvents();
+		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+		this.update();
+
+		return container;
+	}
+
+	setEvents() {
+
+		this.container.querySelector('input[type=search]').on('click', (e) => {
+
+			e.stopPropagation();
+
+			for(const option of document.querySelectorAll('.multi-select .options')) {
+				option.classList.add('hidden');
+			}
+
+			this.container.querySelector('.options').classList.remove('hidden');
+		});
+
+		this.container.querySelector('input[type=search]').on('dblclick', () => {
+
+			this.container.querySelector('.options').classList.add('hidden');
+		});
+
+		document.body.on('click', () => {
+
+			this.container.querySelector('.options').classList.add('hidden');
+		});
+
+		this.container.querySelector('.options').on('click', (e) => e.stopPropagation());
+
+		this.container.querySelector('input[type=search]').on('keyup', () => this.update());
+
+		this.container.querySelector('.options header .all').on('click', () => this.all());
+
+		this.container.querySelector('.options header .clear').on('click', () => this.clear());
+	}
+
+	set value(source) {
+
+		this.selectedValues.clear();
+		source.map( x => this.selectedValues.add(x.toString()));
+
+		this.update();
+	}
+
+	get value() {
+
+		return Array.from(this.selectedValues);
+	}
+
+	update() {
+
+		if(!this.containerElement)
+			return;
+
+		const
+			search = this.container.querySelector('input[type=search]'),
+			options = this.container.querySelector('.options');
+
+		for(const input of options.querySelectorAll('.list label input')) {
+
+			input.checked = this.selectedValues.has(input.value) ? true : false;
+
+			let hide = false;
+
+			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+				hide = true;
+
+			input.parentElement.classList.toggle('hidden', hide);
+			input.parentElement.classList.toggle('selected', input.checked);
+		}
+
+		const
+			total = options.querySelectorAll('.list label').length,
+			hidden = options.querySelectorAll('.list label.hidden').length,
+			selected = options.querySelectorAll('.list input:checked').length;
+
+		search.placeholder = `Search... (${selected} selected)`;
+
+		options.querySelector('footer').innerHTML = `
+			<span>Total: <strong>${total}</strong></span>
+			<span>Showing: <strong>${total - hidden}</strong></span>
+			<span>Selected: <strong>${selected}</strong></span>
+		`;
+
+		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
+
+	}
+
+	all() {
+
+		if(!this.multiple)
+			return;
+
+		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+		this.update();
+	}
+
+	clear() {
+
+		this.selectedValues.clear();
+		this.update();
+	}
+}
+
 if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {
 		this.addEventListener(name, fn);

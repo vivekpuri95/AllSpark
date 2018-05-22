@@ -5548,9 +5548,11 @@ class Tooltip {
 	}
 }
 
-class Dataset {
+class Dataset extends MultiSelect {
 
 	constructor(id, filter) {
+
+		super();
 
 		if(!MetaData.datasets.has(id))
 			throw new Page.exception('Invalid dataset id! :(');
@@ -5568,122 +5570,25 @@ class Dataset {
 		if(this.containerElement)
 			return this.containerElement;
 
+		if(!this.name.includes('Date'))
+			return super.container;
+
+
 		const container = this.containerElement = document.createElement('div');
+		container.classList.add('multi-select');
 
-		container.classList.add('dataset');
+		let value = null;
 
-		if(this.name.includes('Date')) {
-
-			let value = null;
-
-			if(this.name.includes('Start'))
-				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-
-			else
-				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-
-			container.innerHTML = `
-				<input type="date" name="${this.filter.placeholder}" value="${value}">
-			`;
-
-			return container;
-		}
+		if(this.name.includes('Start'))
+			value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		else
+			value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
 		container.innerHTML = `
-			<input type="search" placeholder="Search...">
-			<div class="options hidden"></div>
+			<input type="date" name="${this.filter.placeholder}" value="${value}">
 		`;
-
-		const
-			search = this.container.querySelector('input[type=search]'),
-			options = this.container.querySelector('.options');
-
-		search.on('click', e => {
-
-			e.stopPropagation();
-
-			for(const options_ of document.querySelectorAll('.dataset .options')) {
-				if(options_ != options)
-					options_.classList.add('hidden');
-			}
-
-			search.value = '';
-			options.classList.toggle('hidden');
-
-			this.update();
-		});
-
-		search.on('keyup', () => this.update());
-
-		options.on('click', e => e.stopPropagation());
-
-		document.body.on('click', () => options.classList.add('hidden'));
-
-		options.innerHTML = `
-			<header>
-				<a class="all">All</a>
-				<a class="clear">Clear</a>
-			</header>
-			<div class="list"></div>
-			<div class="no-matches NA hidden">No matches found! :(</div>
-			<footer></footer>
-		`;
-
-		options.querySelector('header .all').on('click', () => this.all());
-		options.querySelector('header .clear').on('click', () => this.clear());
-
-		this.load();
 
 		return container;
-	}
-
-	async load() {
-
-		if(!this.query_id)
-			return [];
-
-		const
-			search = this.container.querySelector('input[type=search]'),
-			list = this.container.querySelector('.options .list');
-
-		let values = [];
-
-		try {
-			values = await this.fetch();
-		} catch(e) {}
-
-		if(!values.length)
-			return list.innerHTML = `<div class="NA">No data found! :(</div>`;
-
-		list.textContent = null;
-
-		for(const row of values) {
-
-			const
-				label = document.createElement('label'),
-				input = document.createElement('input'),
-				text = document.createTextNode(row.name);
-
-			input.name = this.filter.placeholder;
-			input.value = row.value;
-			input.type = this.filter.multiple ? 'checkbox' : 'radio';
-			input.checked = true;
-
-			label.appendChild(input);
-			label.appendChild(text);
-
-			label.setAttribute('title', row.value);
-
-			label.querySelector('input').on('change', () => this.update());
-			label.on('dblclick', e => {
-				this.clear();
-				label.click();
-			});
-
-			list.appendChild(label);
-		}
-
-		this.update();
 	}
 
 	async fetch() {
@@ -5713,98 +5618,27 @@ class Dataset {
 			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
 		}
 
+		super.datalist = values;
+		super.multiple = this.filter.multiple;
+
 		return values;
-	}
-
-	async update() {
-
-		if(!this.query_id)
-			return [];
-
-		const
-			search = this.container.querySelector('input[type=search]'),
-			options = this.container.querySelector('.options');
-
-		for(const input of options.querySelectorAll('.list label input')) {
-
-			let hide = false;
-
-			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
-				hide = true;
-
-			input.parentElement.classList.toggle('hidden', hide);
-			input.parentElement.classList.toggle('selected', input.checked);
-		}
-
-		const
-			total = options.querySelectorAll('.list label').length,
-			hidden = options.querySelectorAll('.list label.hidden').length,
-			selected = options.querySelectorAll('.list input:checked').length;
-
-		search.placeholder = `Search... (${selected} selected)`;
-
-		options.querySelector('footer').innerHTML = `
-			<span>Total: <strong>${total}</strong></span>
-			<span>Showing: <strong>${total - hidden}</strong></span>
-			<span>Selected: <strong>${selected}</strong></span>
-		`;
-
-		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
 	}
 
 	set value(source) {
 
-		const inputs = this.container.querySelectorAll('.options .list label input');
-
-		if(source.query_id) {
-
-			const sourceInputs = source.container.querySelectorAll('.options .list label input');
-
-			if (inputs.length) {
-				for (const [i, input] of sourceInputs.entries())
-					inputs[i].checked = input.checked;
-			}
-		}
-
-		else if(typeof source == 'object' && source.length) {
-			for (const input of inputs) {
-				input.checked = source.includes(input.value);
-			}
-		}
-
-		else {
-			this.container.querySelector('input').value = source.value;
-		}
-
-		this.update();
-	}
-
-	get value() {
-
-		if(this.query_id) {
-			return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
-		} else {
-			return this.container.querySelector('input').value;
-		}
-	}
-
-	all() {
-
-		if(!this.filter.multiple)
+		if(Array.isArray(source)) {
+			super.value = source;
 			return;
+		}
 
-		for(const input of this.container.querySelectorAll('.options .list label input'))
-			input.checked = true;
+		const
+			sourceOptions = source.container.querySelectorAll('.options .list label input:checked'),
+			data = [];
 
-		this.update();
-	}
+		for(const option of sourceOptions)
+			data.push(option.value);
 
-	clear() {
-
-		for(const input of this.container.querySelectorAll('.options .list label input'))
-			input.checked = false;
-
-		this.update();
+		super.value = data;
 	}
 }
 

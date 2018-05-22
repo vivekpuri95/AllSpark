@@ -441,7 +441,7 @@ Page.class = class Dashboards extends Page {
 
 			if (filter.dataset) {
 
-				promises.push(filter.dataset.load());
+				promises.push(filter.dataset.fetch());
 			}
 		}
 
@@ -1216,7 +1216,7 @@ class DashboardDatasets extends Map {
 		const promises = [];
 
 		for (const dataset of this.values())
-			promises.push(dataset.load());
+			promises.push(dataset.fetch());
 
 		await Promise.all(promises);
 	}

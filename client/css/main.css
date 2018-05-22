@@ -269,6 +269,7 @@ body {
 			main .dialog-box-blanket .dialog-box .body ul.user-list li a {
 				color: #333;
 				font-size: 110%;
+				width: fit-content;
 			}
 			main .dialog-box-blanket .dialog-box .body ul.user-list li span {
 				color: #999;
@@ -509,3 +510,70 @@ body {
 			.global-search ul li:hover .li-edit {
 				opacity: 1;
 			}
+
+.multi-select {
+	width: 100%;
+	position: relative;
+}
+	.multi-select > input {
+		width: 100%;
+	}
+	.multi-select .options {
+		border: 1px solid #ccc;
+		border-top: 0;
+		background: #fff;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		max-height: 250px;
+		width: 100%;
+		position: absolute;
+		z-index: 1;
+		overflow: auto;
+	}
+		.multi-select .options header {
+			border-bottom: 1px dashed #999;
+			font-size: 85%;
+			padding: var(--gap);
+			display: grid;
+			grid-template-columns: auto auto;
+			grid-gap: calc(var(--gap) * 2);
+			justify-content: flex-start;
+			top: 0;
+			position: sticky;
+			background: #fff;
+			color: #999;
+		}
+		.multi-select .options .NA {
+			padding: calc(var(--gap) * 2);
+			color: #999;
+			text-align: center;
+		}
+		.multi-select .options .list {
+			border-bottom: 1px dashed #999;
+		}
+			.multi-select .options .list label {
+				display: grid;
+				grid-template-columns: auto 1fr;
+				align-items: center;
+				padding: calc(var(--gap) * 1.5);
+				margin: 0;
+				transition: background var(--transition-duration),
+							box-shadow var(--transition-duration);
+				max-width: inherit;
+				overflow: hidden;
+			}
+			.multi-select .options .list label.selected {
+				background: #eda;
+			}
+		.multi-select footer {
+			display: grid;
+			grid-template-columns: auto auto auto;
+			justify-content: flex-start;
+			grid-gap: calc(var(--gap) * 2);
+			padding: var(--gap);
+			position: sticky;
+			bottom: 0;
+			background: #fff;
+			font-size: 85%;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+			color: #999;
+		}
