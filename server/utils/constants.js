@@ -33,5 +33,6 @@ exports.filterTypes = [
 	'Text',
 	'Date',
 	'Month',
-	'Hidden'
+	'Hidden',
+	'Column'
 ];
