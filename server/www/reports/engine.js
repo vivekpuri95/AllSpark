@@ -192,7 +192,7 @@ class report extends API {
 					"insert into ??.?? (query_id, type, user_id, query, data) values (?, ?, ?, ?, ?)",
 					[
 						this.queryResultDb, constants.saveQueryResultTable,
-						this.reportObj.query_id, this.reportObj.type || "raw", this.user.user_id, this.reportObj.query || "",
+						this.reportObj.query_id, this.reportObj.type, this.user.user_id, this.reportObj.query || "",
 						JSON.stringify(result)
 					],
 					this.queryResultConnection
@@ -228,7 +228,6 @@ class report extends API {
 
 			this.request.body.data = JSON.parse(this.request.body.data);
 
-			this.reportObj.type = "raw";
 
 			return {
 				data: await this.storeQueryResult(this.request.body.data),
