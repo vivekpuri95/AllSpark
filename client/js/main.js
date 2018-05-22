@@ -1045,6 +1045,7 @@ class MultiSelect {
 		this.multiple = multiple;
 
 		this.selectedValues = new Set();
+		this.inputName = 'multiselect' + Math.floor(Math.random() * 1000);
 	}
 
 	get container() {
@@ -1085,7 +1086,7 @@ class MultiSelect {
 				input = document.createElement('input'),
 				text = document.createTextNode(row.name);
 
-			input.name = row.name;
+			input.name = this.inputName;
 			input.value = row.value;
 			input.type = this.multiple ? 'checkbox' : 'radio';
 			input.checked = true;
