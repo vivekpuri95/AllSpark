@@ -5610,6 +5610,11 @@ class Dataset extends MultiSelect {
 
 	set value(source) {
 
+		if(Array.isArray(source)) {
+			super.value = source;
+			return;
+		}
+
 		const
 			sourceOptions = source.container.querySelectorAll('.options .list label input:checked'),
 			data = [];

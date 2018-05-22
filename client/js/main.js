@@ -1084,7 +1084,7 @@ class MultiSelect {
 
 			input.on('change', () => {
 
-				input.checked ? this.selectedValues.add(input.value) : this.selectedValues.delete(input.value);
+				input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
 				this.update();
 			});
 
@@ -1141,7 +1141,7 @@ class MultiSelect {
 	set value(source) {
 
 		this.selectedValues.clear();
-		source.map( x => this.selectedValues.add(x));
+		source.map( x => this.selectedValues.add(x.toString()));
 
 		this.update();
 	}
@@ -1162,7 +1162,7 @@ class MultiSelect {
 
 		for(const input of options.querySelectorAll('.list label input')) {
 
-			input.checked = Array.from(this.selectedValues).includes(input.value) ? true : false;
+			input.checked = this.selectedValues.has(input.value) ? true : false;
 
 			let hide = false;
 
