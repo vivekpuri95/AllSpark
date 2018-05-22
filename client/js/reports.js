@@ -877,6 +877,12 @@ class DataSourceRow extends Map {
 					this.skip = true;
 			}
 
+			if(column.source.columns.get(column.key).postfix)
+				row[key] = row[key] + column.source.columns.get(column.key).postfix;
+
+			if(column.source.columns.get(column.key).prefix)
+				row[key] = column.source.columns.get(column.key).prefix + row[key];
+
 			if(column.type == 'date')
 				row[key] = Format.date(row[key]);
 
