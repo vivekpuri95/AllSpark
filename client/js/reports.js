@@ -174,7 +174,7 @@ class DataSource {
 			<div class="drilldown hidden"></div>
 
 			<div class="description hidden">
-				<div class="body">${this.description || 'No description found.'}</div>
+				<div class="body"></div>
 				<div class="footer">
 					<span>
 						<span class="label">Role:</span>
@@ -275,7 +275,9 @@ class DataSource {
 
 			const description = container.querySelector('.description');
 			description.classList.toggle('hidden');
-			description.innerHTML = this.visualizations.selected.description;
+
+			description.insertAdjacentHTML('afterbegin', this.description ? `<h3>Report Description:</h3>` + this.description : ``);
+			description.insertAdjacentHTML('afterbegin', this.visualizations.selected.description ? `<h3>Visualization Description:</h3>` + this.visualizations.selected.description : ``);
 
 			container.querySelector('.description-toggle').classList.toggle('selected');
 
