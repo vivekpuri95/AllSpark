@@ -660,6 +660,7 @@ class DataSource {
 		description.textContent = null;
 
 		if (!this.description && !this.visualizations.selected.description) {
+			description.classList.add('NA');
 			description.innerHTML = 'No description found!';
 		}
 		else {
