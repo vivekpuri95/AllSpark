@@ -320,9 +320,16 @@ class DashboardsShare {
 
 		this.userDashboardResponse = await API.call('user/dashboards/list', parameters, options);
 
+		const userDashboard = new Map();
+
+		for(const user of this.userDashboardResponse) {
+
+			userDashboard.set(user.user_id, user);
+		}
+
 		for( const users of DashboardsShare.userList) {
 
-			if(!this.userDashboardResponse.filter(u => u.user_id == users.user_id).length) {
+			if(!userDashboard.has(users.user_id)) {
 				multiSelectData.push({
 					value: users.user_id,
 					name : users.name
@@ -330,7 +337,9 @@ class DashboardsShare {
 			}
 		}
 
-		DashboardsShare.userMultiList.setdatalist(multiSelectData);
+		DashboardsShare.userMultiList.datalist = multiSelectData;
+
+		DashboardsShare.userMultiList.render();
 
 		if(DashboardsShare.form_listener)
 			DashboardsShare.form.removeEventListener('submit', DashboardsShare.form_listener);

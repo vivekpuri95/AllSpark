@@ -1039,7 +1039,7 @@ class DialogBox {
 
 class MultiSelect {
 
-	constructor({datalist, multiple = false} = {}) {
+	constructor({datalist, multiple = true} = {}) {
 
 		this.datalist = datalist;
 		this.multiple = multiple;
@@ -1052,9 +1052,6 @@ class MultiSelect {
 
 		if(this.containerElement)
 			return this.containerElement;
-
-		if(!this.datalist)
-			throw new Page.Exception('No datalist');
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -1073,7 +1070,7 @@ class MultiSelect {
 			</div>
 		`;
 
-		this.setdatalist(this.datalist);
+		this.render();
 
 		this.setEvents();
 
@@ -1125,18 +1122,16 @@ class MultiSelect {
 		return Array.from(this.selectedValues);
 	}
 
-	setdatalist(datalist) {
-
-		this.datalist = datalist;
+	render() {
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
 
-		if(!datalist.length) {
+		if(!this.datalist.length) {
 			this.container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
 		}
 
-		for(const row of datalist) {
+		for(const row of this.datalist) {
 
 			const
 				label = document.createElement('label'),
@@ -1178,7 +1173,7 @@ class MultiSelect {
 			optionList.appendChild(label);
 		}
 
-		this.multiple ? datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+		this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
 
 		this.update();
 	}
