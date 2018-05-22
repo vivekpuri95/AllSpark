@@ -507,7 +507,8 @@ class Bigquery {
 			0: "string",
 			1: "integer",
 			2: "date",
-			3: "integer"
+			3: "integer",
+			4: "string",
 		};
 	}
 
