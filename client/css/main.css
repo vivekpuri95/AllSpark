@@ -544,14 +544,14 @@ body {
 			color: #999;
 		}
 		.multi-select .options .NA {
-			padding: calc(var(--gap)*2);
+			padding: calc(var(--gap) * 2);
 			color: #999;
 			text-align: center;
 		}
 		.multi-select .options .list {
 			border-bottom: 1px dashed #999;
 		}
-			.multi-select .options .list label  {
+			.multi-select .options .list label {
 				display: grid;
 				grid-template-columns: auto 1fr;
 				align-items: center;

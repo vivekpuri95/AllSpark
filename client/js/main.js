@@ -1062,7 +1062,7 @@ class MultiSelect {
 		const optionList = container.querySelector('.options .list');
 
 		if(!this.datalist.length) {
-			this.container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
+			container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
 		}
 
 		for(const row of this.datalist) {
@@ -1082,7 +1082,8 @@ class MultiSelect {
 
 			label.setAttribute('title', row.value);
 
-			label.querySelector('input').on('change', () => this.update());
+			label.querySelector('input').on('change', () => this.updateSelectedValues());
+
 			label.on('dblclick', e => {
 
 				e.stopPropagation();
@@ -1095,7 +1096,7 @@ class MultiSelect {
 		}
 
 		this.setEvents();
-		this.datalist.map(obj => this.selectedValues.add(obj.value));
+		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
 		this.update();
 
 		return container;
@@ -1136,23 +1137,9 @@ class MultiSelect {
 	set value(source) {
 
 		this.selectedValues.clear();
-
 		source.map( x => this.selectedValues.add(x));
 
-		// if(!this.containerElement) {
-		//
-		// 	source.map( x => this.selectedValues.add(x));
-		// 	return;
-		// }
-		//
-		// const inputs = this.container.querySelectorAll('.options .list label input');
-		//
-		// for(const input of inputs) {
-		//
-		// 	input.checked = source.includes(input.value);
-		// }
-
-		this.update()
+		this.update();
 	}
 
 	get value() {
@@ -1160,23 +1147,27 @@ class MultiSelect {
 		return Array.from(this.selectedValues);
 	}
 
+	updateSelectedValues() {
+
+		this.selectedValues.clear();
+
+		for(const input of this.container.querySelectorAll('.options .list label input')) {
+
+			if(input.checked)
+				this.selectedValues.add(input.value);
+		}
+
+		this.update();
+	}
+
 	update() {
 
 		if(!this.containerElement)
 			return;
 
-		this.selectedValues.clear();
-
 		const
 			search = this.container.querySelector('input[type=search]'),
 			options = this.container.querySelector('.options');
-
-		for(const input of options.querySelectorAll('.list label input')) {
-
-			if(input.checked)
-				this.selectedValues.add(input.value);
-
-		}
 
 		for(const input of options.querySelectorAll('.list label input')) {
 
@@ -1213,7 +1204,7 @@ class MultiSelect {
 		if(!this.multiple)
 			return;
 
-		this.datalist.map(obj => this.selectedValues.add(obj.value));
+		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
 		this.update();
 	}
 
