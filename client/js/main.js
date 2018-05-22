@@ -1044,22 +1044,19 @@ class DialogBox {
 
 class MultiSelect {
 
-	constructor({datalist, multiple = false} = {}) {
+	constructor({datalist, multiple = true} = {}) {
 
 		this.datalist = datalist;
 		this.multiple = multiple;
 
 		this.selectedValues = new Set();
-		this.inputName = 'multiselect' + Math.floor(Math.random() * 1000);
+		this.inputName = 'multiselect-' + Math.floor(Math.random() * 10000);
 	}
 
 	get container() {
 
 		if(this.containerElement)
 			return this.containerElement;
-
-		if(!this.datalist)
-			throw new Page.Exception('No datalist');
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -1078,49 +1075,9 @@ class MultiSelect {
 			</div>
 		`;
 
-		const optionList = container.querySelector('.options .list');
-
-		if(!this.datalist.length) {
-			container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
-		}
-
-		for(const row of this.datalist) {
-
-			const
-				label = document.createElement('label'),
-				input = document.createElement('input'),
-				text = document.createTextNode(row.name);
-
-			input.name = this.inputName;
-			input.value = row.value;
-			input.type = this.multiple ? 'checkbox' : 'radio';
-			input.checked = true;
-
-			label.appendChild(input);
-			label.appendChild(text);
-
-			label.setAttribute('title', row.value);
-
-			input.on('change', () => {
-
-				input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
-				this.update();
-			});
-
-			label.on('dblclick', e => {
-
-				e.stopPropagation();
-
-				this.clear();
-				label.click();
-			});
-
-			optionList.appendChild(label);
-		}
+		this.render();
 
 		this.setEvents();
-		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
-		this.update();
 
 		return container;
 	}
@@ -1168,6 +1125,62 @@ class MultiSelect {
 	get value() {
 
 		return Array.from(this.selectedValues);
+	}
+
+	render() {
+
+		const optionList = this.container.querySelector('.options .list');
+		optionList.textContent = null;
+
+		if(!this.datalist.length) {
+			this.container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
+		}
+
+		for(const row of this.datalist) {
+
+			const
+				label = document.createElement('label'),
+				input = document.createElement('input'),
+				text = document.createTextNode(row.name);
+
+			input.name = this.inputName;
+			input.value = row.value;
+			input.type = this.multiple ? 'checkbox' : 'radio';
+			input.checked = true;
+
+			label.appendChild(input);
+			label.appendChild(text);
+
+			label.setAttribute('title', row.value);
+
+			input.on('change', () => {
+
+				if(!this.multiple) {
+
+					this.selectedValues.clear();
+					this.selectedValues.add(input.value.toString());
+				}
+				else {
+
+					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
+				}
+				this.update();
+			});
+
+			label.on('dblclick', e => {
+
+				e.stopPropagation();
+
+				this.clear();
+				label.click();
+			});
+
+			optionList.appendChild(label);
+		}
+
+		this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+
+		this.update();
 	}
 
 	update() {
