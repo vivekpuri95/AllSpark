@@ -497,8 +497,8 @@ class Bigquery {
 		this.filters = filters;
 
 		this.typeMapping = {
-			"integer": "integer",
-			"string": "string",
+			"number": "integer",
+			"text": "string",
 			"date": "date",
 			"month": "integer",
 			"hidden": "string",
