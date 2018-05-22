@@ -1040,7 +1040,7 @@ class MultiSelect {
 			return this.containerElement;
 
 		if(!this.datalist)
-			throw new API.Exception(400, 'No datalist');
+			throw new Page.Exception('No datalist');
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -1082,7 +1082,11 @@ class MultiSelect {
 
 			label.setAttribute('title', row.value);
 
-			label.querySelector('input').on('change', () => this.updateSelectedValues());
+			input.on('change', () => {
+
+				input.checked ? this.selectedValues.add(input.value) : this.selectedValues.delete(input.value);
+				this.update();
+			});
 
 			label.on('dblclick', e => {
 
@@ -1145,17 +1149,6 @@ class MultiSelect {
 	get value() {
 
 		return Array.from(this.selectedValues);
-	}
-
-	updateSelectedValues() {
-
-		this.selectedValues.clear();
-
-		for(const input of this.container.querySelectorAll('.options .list label input:checked')) {
-			this.selectedValues.add(input.value);
-		}
-
-		this.update();
 	}
 
 	update() {
