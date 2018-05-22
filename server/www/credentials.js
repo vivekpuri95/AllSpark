@@ -1,5 +1,5 @@
 const mysql = require('../utils/mysql');
-const bigquery = require('./bigquery').BigQuery;
+const bigquery = require('../utils/bigquery').BigQuery;
 const API = require('../utils/api');
 const sql = require('mysql');
 const { Client } = require('pg');

@@ -2,7 +2,7 @@ const API = require("../../utils/api");
 const commonFun = require('../../utils/commonFunctions');
 const dbConfig = require('config').get("sql_db");
 const promisify = require('util').promisify;
-//const BigQuery = require('../../www/bigQuery').BigQuery;
+const bigQuery = require('../../utils/bigquery').BigQuery;
 const constants = require("../../utils/constants");
 const crypto = require('crypto');
 const request = require("request");
@@ -10,7 +10,6 @@ const auth = require('../../utils/auth');
 const redis = require("../../utils/redis").Redis;
 const requestPromise = promisify(request);
 const config = require("config");
-const fs = require("fs");
 const fetch = require('node-fetch');
 const URLSearchParams = require('url').URLSearchParams;
 
@@ -32,7 +31,8 @@ class report extends API {
 				SELECT
 				  q.*,
 				  IF(user_id IS NULL, 0, 1) AS flag,
-				  c.type
+				  c.type,
+				  c.project_name
 				FROM
 					tb_query q
 				LEFT JOIN
@@ -189,6 +189,9 @@ class report extends API {
 			case "pgsql":
 				preparedRequest = new Postgres(this.reportObj, this.filters, this.request.body.token);
 				break;
+			case "bigquery":
+				preparedRequest = new Bigquery(this.reportObj, this.filters, this.request.body.token);
+				break;
 			default:
 				this.assert(false, "Report Type " + this.reportObj.type.toLowerCase() + " does not exist", 404);
 		}
@@ -309,7 +312,7 @@ class MySQL {
 
 		for (const filter of this.filters) {
 
-			if(filter.type === 5) {
+			if (filter.type === 5) {
 
 				this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "??");
 				continue;
@@ -341,6 +344,7 @@ class MySQL {
 		return (filterIndexList.sort((x, y) => x.index - y.index)).map(x => x.value) || [];
 	}
 }
+
 
 class APIRequest {
 
@@ -419,6 +423,7 @@ class APIRequest {
 	}
 }
 
+
 class Postgres {
 
 	constructor(reportObj, filters = [], token) {
@@ -490,6 +495,88 @@ class Postgres {
 	}
 }
 
+
+class Bigquery {
+
+	constructor(reportObj, filters = []) {
+
+		this.reportObj = reportObj;
+		this.filters = filters;
+
+		this.typeMapping = {
+			0: "string",
+			1: "integer",
+			2: "date",
+			3: "integer"
+		};
+	}
+
+	makeFilters(data, name, type = "STRING", is_multiple = 0,) {
+
+
+		let filterObj = {
+			name: name
+		};
+
+		type = this.typeMapping[type];
+
+		if (is_multiple) {
+
+			filterObj.parameterType = {
+				"type": "ARRAY",
+				"arrayType": {
+					"type": type.toUpperCase(),
+				}
+			};
+
+			filterObj.parameterValue = {
+				arrayValues: [],
+			};
+
+			for (const item of data) {
+
+				filterObj.parameterValue.arrayValues.push({
+					value: item
+				});
+			}
+		}
+
+		else {
+
+			filterObj.parameterType = {
+				type: type.toUpperCase(),
+			};
+
+			filterObj.parameterValue = {
+				value: data,
+			}
+		}
+
+		this.filterList.push(filterObj);
+	}
+
+	prepareQuery() {
+
+		this.filterList = [];
+		for (const filter of this.filters) {
+			this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), `@${filter.placeholder}`);
+
+			this.makeFilters(filter.value, filter.placeholder, filter.type, filter.multiple);
+		}
+	}
+
+	get finalQuery() {
+
+		this.prepareQuery();
+
+		return {
+			type: "bigquery",
+			request: [this.reportObj.query, this.filterList || [], this.reportObj.account_id, this.reportObj.connection_name + ".json", this.reportObj.project_name]
+		}
+	}
+}
+
+
 class ReportEngine extends API {
 
 	constructor(parameters) {
@@ -500,6 +587,7 @@ class ReportEngine extends API {
 			mysql: this.mysql.query,
 			pgsql: this.pgsql.query,
 			api: fetch,
+			bigquery: bigQuery.call
 		};
 
 		this.parameters = parameters || {};
@@ -511,7 +599,7 @@ class ReportEngine extends API {
 
 			this.parameters.request[1].params = this.parameters.request[1].body.toString();
 		}
-		return crypto.createHash('md5').update(JSON.stringify(this.parameters)).digest('hex');
+		return crypto.createHash('md5').update(JSON.stringify(this.parameters) || "").digest('hex');
 	}
 
 	async execute() {
@@ -586,6 +674,7 @@ class ReportEngine extends API {
 		}
 	}
 }
+
 
 class query extends API {
 
