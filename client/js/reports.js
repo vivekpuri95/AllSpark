@@ -659,7 +659,9 @@ class DataSource {
 		const description = this.container.querySelector('.description .body');
 		description.textContent = null;
 
+		description.classList.remove('NA');
 		if (!this.description && !this.visualizations.selected.description) {
+			description.classList.add('NA');
 			description.innerHTML = 'No description found!';
 		}
 		else {
