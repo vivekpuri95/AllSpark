@@ -186,6 +186,8 @@
 			main .data-source > .description .body {
 				white-space: pre-wrap;
 				padding: calc(var(--gap) * 2);
+				margin: 0 0 var(--gap);
+				font-size: 80%;
 			}
 			main .data-source > .description .footer {
 				border-top: 1px dashed #ccc;

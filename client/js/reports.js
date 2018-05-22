@@ -273,9 +273,11 @@ class DataSource {
 			if(this.requested_by)
 				container.querySelector('.description .requested').classList.remove('hidden');
 
-			const description = container.querySelector('.description');
+			let description = container.querySelector('.description');
 			description.classList.toggle('hidden');
 
+			description = description.querySelector('.body');
+			description.textContent = null;
 			description.insertAdjacentHTML('afterbegin', this.description ? `<h3>Report Description:</h3>` + this.description : ``);
 			description.insertAdjacentHTML('afterbegin', this.visualizations.selected.description ? `<h3>Visualization Description:</h3>` + this.visualizations.selected.description : ``);
 
