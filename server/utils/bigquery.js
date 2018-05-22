@@ -1,7 +1,7 @@
 const gcloud = require('google-cloud');
-const mysql = require('../utils/mysql').MySQL;
+const mysql = require('./mysql').MySQL;
 const fs = require('fs');
-const commonFun = require('../utils/commonFunctions');
+const commonFun = require('./commonFunctions');
 const config = require("config");
 const path = require("path");
 

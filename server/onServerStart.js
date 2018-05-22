@@ -1,5 +1,5 @@
 const mysql = require('./utils/mysql').MySQL;
-const bigquery = require('./www/bigquery').setup;
+const bigquery = require('./utils/bigquery').setup;
 
 
 async function loadAccounts() {
