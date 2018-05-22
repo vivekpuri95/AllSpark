@@ -116,7 +116,7 @@ class Page {
 	static listenAccessToken() {
 		document.on('keyup', e => {
 			if(e.altKey && e.keyCode == 69) {
-				const value = prompt('Enter the tookan');
+				const value = prompt('Enter the Token.');
 
 				if(!value)
 					return;
