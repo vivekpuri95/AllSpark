@@ -17,7 +17,7 @@ exports.toggle = class extends API {
 			SELECT ?,? FROM dual WHERE ? IN (SELECT feature_id FROM tb_features) AND ? IN (SELECT account_id FROM tb_accounts)
 			ON DUPLICATE KEY UPDATE status = ?;
 			`,
-			[this.request.body.account_id, this.request.body.feature_id, this.request.body.feature_id, this.request.body.status],
+			[this.request.body.account_id, this.request.body.feature_id, this.request.body.feature_id, this.request.body.status, this.request.body.account_id],
 			'write'
 		);
 	}
