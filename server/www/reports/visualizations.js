@@ -21,7 +21,7 @@ exports.update = class extends API {
     async update() {
 
         let
-            values = {}, visual_cols = ['query_id', 'name', 'type', 'options'];
+            values = {}, visual_cols = ['query_id', 'name', 'type', 'description', 'options'];
 
         for(const key in this.request.body) {
             if(visual_cols.includes(key))

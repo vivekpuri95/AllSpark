@@ -174,7 +174,7 @@ class DataSource {
 			<div class="drilldown hidden"></div>
 
 			<div class="description hidden">
-				<div class="body">${this.description || 'No description found.'}</div>
+				<div class="body"></div>
 				<div class="footer">
 					<span>
 						<span class="label">Role:</span>
@@ -274,6 +274,7 @@ class DataSource {
 				container.querySelector('.description .requested').classList.remove('hidden');
 
 			container.querySelector('.description').classList.toggle('hidden');
+
 			container.querySelector('.description-toggle').classList.toggle('selected');
 
 			this.visualizations.selected.render({resize: true});
@@ -653,6 +654,20 @@ class DataSource {
 					<i class="fas fa-angle-double-down"></i>
 				</span>
 			`);
+		}
+
+		const description = this.container.querySelector('.description .body');
+		description.textContent = null;
+
+		if (!this.description && !this.visualizations.selected.description) {
+			description.innerHTML = 'No description found!';
+		}
+		else {
+			if (this.description)
+				description.insertAdjacentHTML('beforeend', '<h3>Report Description</h3>' + this.description);
+
+			if (this.visualizations.selected.description)
+				description.insertAdjacentHTML('beforeend', '<h3>Visualization Description</h3>' + this.visualizations.selected.description);
 		}
 
 		this.columns.render();
@@ -1213,6 +1228,7 @@ class DataSourceColumn {
 			clearTimeout(timeout);
 
 			timeout = setTimeout(async () => {
+
 				let found = false;
 
 				if(!this.source.format)

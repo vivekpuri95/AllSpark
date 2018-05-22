@@ -777,6 +777,11 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 								<span>Visualization Type</span>
 								<select name="type" required></select>
 							</label>
+							
+							<label>
+								<span>Description</span>
+								<textarea  name="description" rows="4" cols="50"></textarea>
+							</label>
 						</div>
 					</div>
 
