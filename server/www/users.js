@@ -239,7 +239,7 @@ exports.metadata = class extends API {
 
 		metadata.filterTypes = constants.filterTypes;
 
-		metadata.features = await this.mysql.query('SELECT * from tb_account_features');
+		metadata.features = await this.mysql.query('SELECT * from tb_features');
 
 		return metadata;
 	}
