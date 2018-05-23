@@ -1044,10 +1044,11 @@ class DialogBox {
 
 class MultiSelect {
 
-	constructor({datalist, multiple = true} = {}) {
+	constructor({datalist, multiple = true, expand = false} = {}) {
 
 		this.datalist = datalist;
 		this.multiple = multiple;
+		this.expand = expand;
 
 		this.selectedValues = new Set();
 		this.inputName = 'multiselect-' + Math.floor(Math.random() * 10000);
@@ -1128,6 +1129,9 @@ class MultiSelect {
 	}
 
 	render() {
+
+		if(this.expand)
+			this.container.querySelector('.options').classList.add('expanded');
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
