@@ -1,12 +1,5 @@
 const API = require('../../utils/api.js');
 
-exports.list = class extends API {
-	async list() {
-		this.user.privilege.needs('administrator');
-		return await this.mysql.query('SELECT * from tb_account_features');
-	}
-}
-
 exports.toggle = class extends API {
 	async toggle() {
 
