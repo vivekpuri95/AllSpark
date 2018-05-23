@@ -223,6 +223,9 @@ main #reports > .datasets.show {
 		max-width: 100%;
 		margin-bottom: calc(var(--gap) * 2);
 	}
+		main #reports > .datasets .dataset-container .multi-select {
+			width: 240px;
+		}
 	main #reports > .datasets .dataset-container:last-of-type {
 		margin-bottom: 0;
 	}

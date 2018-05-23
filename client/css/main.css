@@ -513,7 +513,6 @@ body {
 
 .multi-select {
 	width: 100%;
-	position: relative;
 }
 	.multi-select > input {
 		width: 100%;
@@ -525,7 +524,6 @@ body {
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		max-height: 250px;
 		width: 100%;
-		position: absolute;
 		z-index: 1;
 		overflow: auto;
 	}
