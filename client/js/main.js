@@ -626,7 +626,7 @@ class MetaData {
 		MetaData.filterTypes = new Set(metadata.filterTypes);
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
-		MetaData.features = new Map(metadata.features.map(f => [f.id, f]));
+		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
 	}
 }
 

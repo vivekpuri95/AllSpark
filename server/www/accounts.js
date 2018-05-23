@@ -9,7 +9,7 @@ exports.list = class extends API {
 
 		this.user.privilege.needs('administrator');
 
-		const accountList = await this.mysql.query(`	
+		const accountList = await this.mysql.query(`
 			SELECT
 				a.*,
 				s.profile,
