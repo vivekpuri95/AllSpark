@@ -9,7 +9,7 @@ exports.list = class extends API {
 
 		this.user.privilege.needs('administrator');
 
-		const query = `
+		const accountList = await this.mysql.query(`	
 			SELECT
 				a.*,
 				s.profile,
@@ -29,11 +29,8 @@ exports.list = class extends API {
 				AND f.status = 1
 			WHERE
 				a.status = 1
-				${this.request.body.account_id ? 'and a.account_id = '+this.request.body.account_id : ''}
 				group by profile, account_id
-			`;
-
-		const accountList = await this.mysql.query(query);
+		`);
 
 		this.assert(accountList.length, "Account not found :(");
 		const accountObj = {};
