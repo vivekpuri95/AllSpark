@@ -3,15 +3,7 @@ const API = require('../utils/api');
 exports.list = class extends API {
 
 	async list() {
-		return await this.mysql.query(`
-			SELECT
-				*
-			FROM
-				tb_privileges
-			WHERE
-				account_id = ? AND status=1`,
-			[this.account.account_id],
-		);
+		return await this.mysql.query(`SELECT * FROM tb_privileges WHERE status=1`);
 	}
 };
 
@@ -20,7 +12,6 @@ exports.insert = class extends API {
 		this.user.privilege.needs('administrator');
 
 		const params = {
-			account_id: this.account.account_id,
 			name: this.request.body.name,
 			is_admin: this.request.body.is_admin
 		};
@@ -37,13 +28,12 @@ exports.update = class extends API {
 		this.user.privilege.needs('administrator');
 
 		const params = {
-			account_id: this.account.account_id,
 			name: this.request.body.name,
 			is_admin: this.request.body.is_admin
 		};
 		return await this.mysql.query(
-			`UPDATE tb_privileges SET ? WHERE account_id = ? AND privilege_id = ?`,
-			[params, this.account.account_id, this.request.body.privilege_id],
+			`UPDATE tb_privileges SET ? WHERE privilege_id = ?`,
+			[params, this.request.body.privilege_id],
 			'write'
 		);
 	}
@@ -54,8 +44,8 @@ exports.delete = class extends API {
 		this.user.privilege.needs('administrator');
 		console.log(this.request.body.privilege_id)
 		return await this.mysql.query(
-			`UPDATE	tb_privileges SET status = 0 WHERE account_id = ? AND privilege_id = ?`,
-			[this.account.account_id, this.request.body.privilege_id],
+			`UPDATE	tb_privileges SET status = 0 WHERE privilege_id = ?`,
+			[this.request.body.privilege_id],
 			'write'
 		);
 	}
