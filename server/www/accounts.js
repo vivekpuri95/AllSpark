@@ -29,7 +29,7 @@ exports.list = class extends API {
 				AND f.status = 1
 			WHERE
 				a.status = 1
-				${this.request.body.account_id ? 'and account_id = '+this.request.body.account_id : ''}
+				${this.request.body.account_id ? 'and a.account_id = '+this.request.body.account_id : ''}
 				group by profile, account_id
 			`;
 
