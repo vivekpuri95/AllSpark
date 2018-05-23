@@ -529,6 +529,9 @@ body {
 		z-index: 1;
 		overflow: auto;
 	}
+	.multi-select .options.expanded {
+		position: initial;
+	}
 		.multi-select .options header {
 			border-bottom: 1px dashed #999;
 			font-size: 85%;
