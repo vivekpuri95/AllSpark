@@ -530,7 +530,7 @@ body {
 		overflow: auto;
 	}
 	.multi-select .options.expanded {
-		position: unset;
+		position: initial;
 	}
 		.multi-select .options header {
 			border-bottom: 1px dashed #999;
