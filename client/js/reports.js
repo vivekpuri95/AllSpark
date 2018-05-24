@@ -480,6 +480,7 @@ class DataSource {
 				return result;
 			});
 		}
+
 		return response;
 	}
 
@@ -923,8 +924,11 @@ class DataSourceColumns extends Map {
 
 		container.textContent = null;
 
-		for(const column of this.values())
-			container.appendChild(column.container);
+		for(const column of this.values()) {
+
+			if(!column.hidden)
+				container.appendChild(column.container);
+		}
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
@@ -1032,7 +1036,7 @@ class DataSourceColumn {
 		this.key = column;
 		this.source = source;
 		this.name = this.key.split('_').map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
-		this.disabled = 0;
+		this.disabled = false;
 		this.color = DataSourceColumn.colors[this.source.columns.size % DataSourceColumn.colors.length];
 
 		if(this.source.format && this.source.format.columns) {
@@ -1530,13 +1534,13 @@ class DataSourceColumn {
 
 		this.blanket.classList.add('hidden');
 
-		//this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
-
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
 	}
 
 	render() {
+
+		this.container.classList.add('hidden', this.hidden);
 
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').innerHTML = this.disabled ? '' : '&#x2714;';
@@ -2427,6 +2431,7 @@ class LinearVisualization extends Visualization {
 			if(this.axes.left.columns.some(c => c.key == key) || (this.axes.right && this.axes.right.columns.some(c => c.key == key)) || this.axes.bottom.columns.some(c => c.key == key))
 				continue;
 
+			column.hidden = true;
 			column.disabled = true;
 			column.render();
 		}
@@ -3727,6 +3732,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			if(this.axes.left.columns.some(c => c.key == key) || this.axes.right.columns.some(c => c.key == key) || this.axes.bottom.columns.some(c => c.key == key))
 				continue;
 
+			column.hidden = true;
 			column.disabled = true;
 			column.render();
 		}
