@@ -179,14 +179,26 @@ class report extends API {
 
 		if (this.reportObj.load_saved) {
 
-			const [idToUpdate] = await this.mysql.query(
+			let [idToUpdate] = await this.mysql.query(
 				"select max(id) as id from ??.?? where query_id = ? and type = ?",
 				[this.queryResultDb, constants.saveQueryResultTable, this.reportObj.query_id, this.reportObj.type],
 
 				this.queryResultConnection
 			);
 
-			if (!idToUpdate) {
+			if (idToUpdate && idToUpdate.id) {
+
+				idToUpdate = idToUpdate.id;
+
+				return await this.mysql.query(
+					"update ??.?? set data = ? where query_id = ? and type = ? and id = ?",
+					[this.queryResultDb, constants.saveQueryResultTable,
+						JSON.stringify(result), this.reportObj.query_id, this.reportObj.type, idToUpdate],
+					this.queryResultConnection
+				);
+			}
+
+			else {
 
 				return await this.mysql.query(
 					"insert into ??.?? (query_id, type, user_id, query, data) values (?, ?, ?, ?, ?)",
@@ -198,16 +210,10 @@ class report extends API {
 					this.queryResultConnection
 				);
 			}
+		}
 
-			else {
-
-				return await this.mysql.query(
-					"update ??.?? set data = ? where query_id = ? and type = ? where id = ?",
-					[this.queryResultDb, constants.saveQueryResultTable,
-						JSON.stringify(result), this.reportObj.type, idToUpdate],
-					this.queryResultConnection
-				);
-			}
+		else {
+			return [];
 		}
 	}
 
@@ -222,7 +228,9 @@ class report extends API {
 
 		await this.authenticate();
 
-		if (this.request.body.data) {
+		await this.storeQueryResultSetup();
+
+		if (this.request.body.data && this.reportObj.load_saved) {
 
 			this.assert(commonFun.isJson(this.request.body.data), "data for saving is not json");
 
@@ -236,8 +244,6 @@ class report extends API {
 		}
 
 		this.prepareFiltersForOffset();
-
-		await this.storeQueryResultSetup();
 
 		let preparedRequest;
 
@@ -378,7 +384,6 @@ class report extends API {
 				await redis.expire(hash, this.reportObj.is_redis);
 			}
 		}
-
 
 		result.cached = {status: false};
 
