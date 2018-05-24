@@ -1046,12 +1046,11 @@ class DialogBox {
 
 class MultiSelect {
 
-	constructor({datalist, multiple = true, expand = false, disable = false} = {}) {
+	constructor({datalist, multiple = true, expand = false} = {}) {
 
 		this.datalist = datalist;
 		this.multiple = multiple;
 		this.expand = expand;
-		this.disable = disable;
 
 		this.selectedValues = new Set();
 		this.inputName = 'multiselect-' + Math.floor(Math.random() * 10000);
@@ -1131,13 +1130,26 @@ class MultiSelect {
 		return Array.from(this.selectedValues);
 	}
 
+	set disabled(value) {
+
+		this._disabled = value;
+		this.render();
+	}
+
+	get disabled() {
+
+		return this._disabled;
+	}
+
 	render() {
 
 		if(this.expand)
 			this.container.querySelector('.options').classList.add('expanded');
 
-		if(this.disable) {
+		if(this.disabled) {
+
 			this.container.querySelector('input[type=search]').disabled = true;
+			this.container.querySelector('.options').classList.add('hidden');
 			this.container.querySelector('input[type=search]').classList.add('disabled');
 		}
 
@@ -1232,6 +1244,17 @@ class MultiSelect {
 
 		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
 
+		if(this.changeCallback)
+			this.changeCallback();
+
+	}
+
+	on(event, callback) {
+
+		if(event != 'change')
+			throw new Page.exception('Only Change event is supported...');
+
+		this.changeCallback = callback;
 	}
 
 	all() {

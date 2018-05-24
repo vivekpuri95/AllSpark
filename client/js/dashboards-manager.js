@@ -333,7 +333,6 @@ class DashboardsShare {
 		}
 
 		DashboardsShare.userMultiList.datalist = multiSelectData;
-
 		DashboardsShare.userMultiList.render();
 
 		if(DashboardsShare.form_listener)
