@@ -137,7 +137,7 @@ main.preview-left #stages {
 		cursor: pointer;
 	}
 	#stage-pick-report table thead tr.search th {
-		padding: var(--gap);
+		padding: calc(var(--gap) * 2) var(--gap);
 		top: 0;
 		background: #fff;
 	}
