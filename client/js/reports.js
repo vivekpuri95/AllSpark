@@ -1540,7 +1540,7 @@ class DataSourceColumn {
 
 	render() {
 
-		this.container.classList.add('hidden', this.hidden);
+		this.container.classList.toggle('hidden', this.hidden ? true : false);
 
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').innerHTML = this.disabled ? '' : '&#x2714;';
