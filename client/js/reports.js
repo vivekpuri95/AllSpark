@@ -1054,7 +1054,7 @@ class DataSourceColumn {
 		container.classList.add('column');
 
 		container.innerHTML = `
-			<span class="color" style="background: ${this.color}"></span>
+			<span class="color" style="background: ${this.color}">&#x2714;</span>
 			<span class="name">${this.name}</span>
 
 			<div class="blanket hidden">
@@ -1261,7 +1261,7 @@ class DataSourceColumn {
 		});
 
 		this.form.querySelector('.add-parameters').on('click', () => {
-			this.addParameterDiv();
+			this.addParameter();
 			this.updateDrilldownParamters();
 		});
 
@@ -1309,7 +1309,7 @@ class DataSourceColumn {
 			this.form.drilldown_query_id.value = this.drilldown ? this.drilldown.query_id : '';
 
 			for(const param of this.drilldown.parameters || [])
-				this.addParameterDiv(param);
+				this.addParameter(param);
 
 			this.updateDrilldownParamters();
 		}
@@ -1317,7 +1317,7 @@ class DataSourceColumn {
 		this.blanket.classList.remove('hidden');
 	}
 
-	addParameterDiv(parameter = {}) {
+	addParameter(parameter = {}) {
 
 		const container = document.createElement('div');
 
@@ -1539,6 +1539,7 @@ class DataSourceColumn {
 	render() {
 
 		this.container.querySelector('.name').textContent = this.name;
+		this.container.querySelector('.color').innerHTML = this.disabled ? '' : '&#x2714;';
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
