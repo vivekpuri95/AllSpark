@@ -1198,7 +1198,6 @@ class MultiSelect {
 
 			if(this.disabled) {
 			    input.disabled = true;
-			    input.checked = false;
 			}
 
 			label.on('dblclick', e => {
@@ -1212,10 +1211,7 @@ class MultiSelect {
 			optionList.appendChild(label);
 		}
 
-		if(this.disabled)
-		    this.selectedValues = new Set();
-		else
-		    this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+	    this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
 
 		this.update();
 	}

@@ -299,7 +299,7 @@ class DashboardsShare {
 		DashboardsShare.page = page;
 		DashboardsShare.userList = await API.call('users/list');
 
-		DashboardsShare.userMultiList = new MultiSelect({datalist : [], multiple : true});
+		DashboardsShare.userMultiList = new MultiSelect({datalist: [], multiple: true});
 
 		DashboardsShare.form.insertBefore(
 			this.userMultiList.container,
