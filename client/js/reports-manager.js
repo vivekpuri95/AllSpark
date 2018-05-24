@@ -634,6 +634,9 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		window.history.replaceState({}, '', `/reports/define-report/${response.insertId}`);
 
 		this.page.load();
+		this.page.stages.get('configure-report').disabled = false;
+		this.page.stages.get('define-report').disabled = false;
+		this.page.stages.get('pick-visualization').disabled = false;
 	}
 
 	async edit() {
