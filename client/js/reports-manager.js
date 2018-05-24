@@ -2583,7 +2583,12 @@ class EditSourceData {
 		this.queryId = queryId;
 	}
 
-	get tableContainer() {
+	get container() {
+
+		if(this.tableContainer) {
+
+			return this.tableContainer;
+		}
 
 		const div = document.createElement('div');
 
@@ -2595,8 +2600,7 @@ class EditSourceData {
 			</table>
 		`;
 
-		if (!this.container)
-			this.container = div;
+		this.tableContainer = div;
 
 		this.render();
 
@@ -2622,7 +2626,6 @@ class EditSourceData {
 	}
 
 	getSortedRows(index, element) {
-
 
 		if (this.rows.length === 1) {
 
@@ -2662,25 +2665,20 @@ class EditSourceData {
 
 	async render() {
 
-		if (!this.container) {
-
-			this.container = this.tableContainer;
-		}
-
 		if (!this.data || !this.data.length) {
 
-			this.container.innerHTML = '<p class="NA">No data found :(</p>';
+			this.tableContainer.innerHTML = '<p class="NA">No data found :(</p>';
 
-			return this.container;
+			return this.tableContainer;
 		}
 
-		const tableElement = this.container.querySelector('table');
+		const tableElement = this.tableContainer.querySelector('table');
 
-		const thead = this.container.querySelector('thead');
+		const thead = this.tableContainer.querySelector('thead');
 
 		let tHeadHtml = '';
 
-		const tbody = this.container.querySelector('tbody');
+		const tbody = this.tableContainer.querySelector('tbody');
 		tbody.textContent = null;
 
 		if (!thead.innerHTML) {
@@ -2700,7 +2698,7 @@ class EditSourceData {
 
 					this.getSortedRows(index, element);
 					await this.render();
-				})
+				});
 			}
 		}
 
@@ -2716,7 +2714,7 @@ class EditSourceData {
 			tbody.innerHTML += '<tr>' + tableRow + '</tr>';
 		}
 
-		const saveButton = this.container.querySelector('button[type="submit"]');
+		const saveButton = this.tableContainer.querySelector('button[type="submit"]');
 
 		saveButton.removeEventListener('click', EditSourceData.submitListener);
 		saveButton.on('click', EditSourceData.submitListener = (e) => this.save(e));
@@ -2725,7 +2723,7 @@ class EditSourceData {
 		tableElement.appendChild(thead);
 		tableElement.appendChild(tbody);
 
-		return this.container;
+		return this.tableContainer;
 	}
 
 	async save(e) {
