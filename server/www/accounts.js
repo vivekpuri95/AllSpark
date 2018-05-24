@@ -33,7 +33,7 @@ exports.list = class extends API {
 				group by profile, account_id
 		`);
 
-		this.assert(accountList.length, "Account not found :(");
+		this.assert(accountList.length, "No Account found");
 		const accountObj = {};
 
 		accountList.map(x => {

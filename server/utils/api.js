@@ -140,7 +140,7 @@ class API {
 				if (!(e instanceof Error)) {
 
 					e = new Error(e);
-					e.status = 401;
+					e.status = 400;
 				}
 
 				if (e instanceof assert.AssertionError) {
