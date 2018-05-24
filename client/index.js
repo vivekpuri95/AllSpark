@@ -237,7 +237,7 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 
 	template.scripts = template.scripts.concat([
 		'/js/reports.js',
-		'/js/dashboard_new.js',
+		'/js/dashboard.js',
 
 		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
 		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
