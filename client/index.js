@@ -322,7 +322,7 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 			<div class="list"></div>
 			<div id="blanket" class="hidden"></div>
 			<button type="button" class="side">
-				<i class="fas fa-angle-double-left"></i>
+				<i class="fas fa-filter"></i>
 			</button>
 		</section>
 	`));
@@ -769,7 +769,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 								<span>Visualization Type</span>
 								<select name="type" required></select>
 							</label>
-							
+
 							<label>
 								<span>Description</span>
 								<textarea  name="description" rows="4" cols="50"></textarea>
