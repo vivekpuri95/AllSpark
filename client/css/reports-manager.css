@@ -328,12 +328,12 @@ main.preview-left #stages {
 		flex-direction: column;
 	}
 	#stage-configure-visualization #transformations-preview {
-		height: 19px;
+		height: 15px;
 		margin-left: auto;
 		display: flex;
 		align-items: center;
 		padding: 0 10px;
-		font-size: 80%;
+		font-size: 70%;
 	}
 		#stage-configure-visualization #transformations-preview svg {
 			margin: 0;
