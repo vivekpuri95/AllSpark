@@ -606,24 +606,22 @@ class Dashboard {
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
 
-		const side_button = page.container.querySelector('#reports .side');
+		const sideButton = page.container.querySelector('#reports .side');
 		const container = page.container.querySelector('#reports #blanket');
 
-		side_button.on('click', () => {
+		sideButton.on('click', () => {
 			container.classList.toggle('hidden');
 			page.container.querySelector('#reports .datasets').classList.toggle('show');
-			side_button.classList.toggle('show');
-			side_button.classList.toggle('selected');
-			side_button.innerHTML = `<i class="fas fa-angle-double-${container.classList.contains('hidden') ? 'left' : 'right'}"></i>`;
+			sideButton.classList.toggle('show');
+			sideButton.classList.toggle('selected');
 		});
 
 		container.on('click', () => {
 
 			container.classList.add('hidden');
 			page.container.querySelector('#reports .datasets').classList.remove('show');
-			side_button.classList.remove('show');
-			side_button.classList.remove('selected');
-			side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
+			sideButton.classList.remove('show');
+			sideButton.classList.remove('selected');
 		});
 	}
 
@@ -726,12 +724,11 @@ class Dashboard {
 
 	resetSideButton() {
 
-		const side_button = this.page.container.querySelector('#reports .side');
+		const sideButton = this.page.container.querySelector('#reports .side');
 
-		side_button.classList.remove('hidden');
-		side_button.classList.remove('show');
-		side_button.classList.remove('selected');
-		side_button.innerHTML = '<i class="fas fa-angle-double-left"></i>';
+		sideButton.classList.remove('hidden');
+		sideButton.classList.remove('show');
+		sideButton.classList.remove('selected');
 		this.page.container.querySelector('#reports #blanket').classList.add('hidden');
 	}
 
