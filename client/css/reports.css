@@ -338,11 +338,17 @@
 				main .data-source > .columns.being-dragged .column * {
 					pointer-events: none;
 				}
+				main .data-source > .columns .column.disabled > .color {
+					background: #aaa !important;
+				}
 				main .data-source > .columns .column > .color {
-					border-radius: 15px;
-					width: 15px;
-					height: 15px;
+					border-radius: 9px;
+					width: 18px;
+					height: 18px;
 					margin-left: var(--gap);
+					display: flex;
+					justify-content: center;
+					font-size: 90%;
 				}
 				main .data-source > .columns .column > .name {
 					padding: 0px 10px;
@@ -405,6 +411,7 @@
 								position: sticky;
 								top: 0;
 								font-weight: normal;
+								font-size: 100%;
 							}
 							main .data-source .column form label {
 								margin-left: calc(var(--gap) * 2);

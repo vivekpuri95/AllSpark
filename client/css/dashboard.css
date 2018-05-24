@@ -256,7 +256,7 @@ main #reports > .list {
 	main #reports > .toolbar {
 		position: sticky;
 		top: 0;
-		z-index: 4;
+		z-index: 5;
 		align-items: flex-end;
 	}
 		main #reports > .toolbar input[name=date-range] {
