@@ -1078,6 +1078,9 @@ class MultiSelect {
 			</div>
 		`;
 
+		if(this.expand)
+		    this.container.querySelector('.options').classList.remove('hidden');
+
 		this.render();
 
 		this.setEvents();
@@ -1100,10 +1103,16 @@ class MultiSelect {
 
 		this.container.querySelector('input[type=search]').on('dblclick', () => {
 
+		    if(this.expand)
+		        return;
+
 			this.container.querySelector('.options').classList.add('hidden');
 		});
 
 		document.body.on('click', () => {
+
+		    if(this.expand)
+		        return;
 
 			this.container.querySelector('.options').classList.add('hidden');
 		});
@@ -1146,12 +1155,8 @@ class MultiSelect {
 		if(this.expand)
 			this.container.querySelector('.options').classList.add('expanded');
 
-		if(this.disabled) {
-
+		if(this.disabled)
 			this.container.querySelector('input[type=search]').disabled = true;
-			this.container.querySelector('.options').classList.add('hidden');
-			this.container.querySelector('input[type=search]').classList.add('disabled');
-		}
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
@@ -1191,6 +1196,11 @@ class MultiSelect {
 				this.update();
 			});
 
+			if(this.disabled) {
+			    input.disabled = true;
+			    input.checked = false;
+			}
+
 			label.on('dblclick', e => {
 
 				e.stopPropagation();
@@ -1202,7 +1212,10 @@ class MultiSelect {
 			optionList.appendChild(label);
 		}
 
-		this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+		if(this.disabled)
+		    this.selectedValues = new Set();
+		else
+		    this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
 
 		this.update();
 	}
@@ -1259,7 +1272,7 @@ class MultiSelect {
 
 	all() {
 
-		if(!this.multiple)
+		if(!this.multiple || this.disabled)
 			return;
 
 		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
@@ -1267,6 +1280,9 @@ class MultiSelect {
 	}
 
 	clear() {
+
+	    if(this.disabled)
+	        return;
 
 		this.selectedValues.clear();
 		this.update();
