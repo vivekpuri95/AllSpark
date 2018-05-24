@@ -154,7 +154,7 @@ class ReportsMangerPreview {
 		if(this.hidden || !this.report)
 			return;
 
-		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'right';
+		let position = localStorage.reportsPreviewDock || 'right';
 
 		this.page.container.classList.add('preview-' + position);
 
@@ -810,8 +810,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.report = this.selectedReport;
 
 		this.page.stages.get('configure-visualization').disabled = true;
-		this.page.preview.hidden = false;
 		this.container.querySelector('#preview-toggle').classList.add('selected');
+
+		localStorage.reportsPreviewDock = 'bottom';
+		this.page.preview.hidden = false;
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
@@ -1549,6 +1551,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.transformations = new ReportTransformations(this.visualization, this);
 
+		localStorage.reportsPreviewDock = 'right';
 		await this.page.preview.load({
 			query_id: this.report.query_id,
 			visualization_id: this.visualization.visualization_id,
