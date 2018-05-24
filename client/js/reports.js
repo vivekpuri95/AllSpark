@@ -2559,7 +2559,7 @@ class LinearVisualization extends Visualization {
 
 				const
 					filteredRows = [],
-					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+					width = Math.abs(mouse[0] - 10 - that.zoomRectangle.origin[0]);
 
 				for(const row of that.rows) {
 
