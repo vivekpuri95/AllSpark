@@ -96,6 +96,9 @@ class ReportsMangerPreview {
 			this.report.queryOverride = true;
 		}
 
+		if(options.visualizationOptions)
+			this.report.visualizations[0].options = options.visualizationOptions;
+
 		this.report = new DataSource(this.report);
 
 		this.report.container;
@@ -1471,6 +1474,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		}
 
 		this.form.on('submit', e => this.update(e));
+		this.container.querySelector('#preview-configure-visualization').on('click', e => this.preview(e));
 
 		this.setupConfigurationSetions();
 	}
@@ -1600,6 +1604,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		await DataSource.load(true);
 
 		this.load();
+	}
+
+	async preview() {
+		this.page.preview.load({
+			query_id: this.report.query_id,
+			visualization_id: this.visualization.visualization_id,
+			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json},
+		});
 	}
 });
 

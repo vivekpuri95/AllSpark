@@ -304,9 +304,6 @@ main.preview-left #stages {
 	#stage-configure-visualization h4 {
 		margin: 0 0 calc(var(--gap) * 2)
 	}
-	#stage-configure-visualization .add-axis {
-		margin-top: calc(var(--gap) * 2);
-	}
 	#stage-configure-visualization .axes {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
