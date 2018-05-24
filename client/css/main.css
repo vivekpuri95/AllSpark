@@ -518,6 +518,9 @@ body {
 	.multi-select > input {
 		width: 100%;
 	}
+	.multi-select > input.disabled {
+		opacity: 0.8;
+	}
 	.multi-select .options {
 		border: 1px solid #ccc;
 		border-top: 0;

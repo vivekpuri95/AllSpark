@@ -1046,11 +1046,12 @@ class DialogBox {
 
 class MultiSelect {
 
-	constructor({datalist, multiple = true, expand = false} = {}) {
+	constructor({datalist, multiple = true, expand = false, disable = false} = {}) {
 
 		this.datalist = datalist;
 		this.multiple = multiple;
 		this.expand = expand;
+		this.disable = disable;
 
 		this.selectedValues = new Set();
 		this.inputName = 'multiselect-' + Math.floor(Math.random() * 10000);
@@ -1134,6 +1135,11 @@ class MultiSelect {
 
 		if(this.expand)
 			this.container.querySelector('.options').classList.add('expanded');
+
+		if(this.disable) {
+			this.container.querySelector('input[type=search]').disabled = true;
+			this.container.querySelector('input[type=search]').classList.add('disabled');
+		}
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;

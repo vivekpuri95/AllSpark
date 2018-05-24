@@ -320,12 +320,7 @@ class DashboardsShare {
 
 		this.userDashboardResponse = await API.call('user/dashboards/list', parameters, options);
 
-		const userDashboard = new Map();
-
-		for(const user of this.userDashboardResponse) {
-
-			userDashboard.set(user.user_id, user);
-		}
+		const userDashboard = new Map(this.userDashboardResponse.map(user => [user.user_id, user]));
 
 		for( const users of DashboardsShare.userList) {
 
