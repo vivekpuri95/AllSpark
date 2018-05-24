@@ -1368,9 +1368,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
 
-		this.select();
-
-		this.load();
+		this.page.load();
+		this.container.querySelector('#add-visualization-picker').classList.add('hidden');
+		this.container.querySelector('#visualization-list').classList.remove('hidden');
 	}
 
 	async delete(visualization) {
