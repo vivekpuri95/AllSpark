@@ -519,6 +519,8 @@ body {
 		width: 100%;
 	}
 	.multi-select .options {
+		display: flex;
+		flex-direction: column;
 		border: 1px solid #ccc;
 		border-top: 0;
 		background: #fff;
@@ -531,6 +533,7 @@ body {
 	}
 	.multi-select .options.expanded {
 		position: initial;
+		height: 200px;
 	}
 		.multi-select .options header {
 			border-bottom: 1px dashed #999;
@@ -551,7 +554,6 @@ body {
 			text-align: center;
 		}
 		.multi-select .options .list {
-			border-bottom: 1px dashed #999;
 		}
 			.multi-select .options .list label {
 				display: grid;
@@ -569,8 +571,8 @@ body {
 			}
 		.multi-select footer {
 			display: grid;
+			margin-top: auto;
 			grid-template-columns: auto auto auto;
-			justify-content: flex-start;
 			grid-gap: calc(var(--gap) * 2);
 			padding: var(--gap);
 			position: sticky;
@@ -579,4 +581,5 @@ body {
 			font-size: 85%;
 			box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
 			color: #999;
+			border-top: 1px dashed #999;
 		}

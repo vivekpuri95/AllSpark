@@ -1078,6 +1078,9 @@ class MultiSelect {
 			</div>
 		`;
 
+		if(this.expand)
+		    this.container.querySelector('.options').classList.remove('hidden');
+
 		this.render();
 
 		this.setEvents();
@@ -1100,10 +1103,16 @@ class MultiSelect {
 
 		this.container.querySelector('input[type=search]').on('dblclick', () => {
 
+		    if(this.expand)
+		        return;
+
 			this.container.querySelector('.options').classList.add('hidden');
 		});
 
 		document.body.on('click', () => {
+
+		    if(this.expand)
+		        return;
 
 			this.container.querySelector('.options').classList.add('hidden');
 		});
@@ -1130,10 +1139,24 @@ class MultiSelect {
 		return Array.from(this.selectedValues);
 	}
 
+	set disabled(value) {
+
+		this._disabled = value;
+		this.render();
+	}
+
+	get disabled() {
+
+		return this._disabled;
+	}
+
 	render() {
 
 		if(this.expand)
 			this.container.querySelector('.options').classList.add('expanded');
+
+		if(this.disabled)
+			this.container.querySelector('input[type=search]').disabled = true;
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
@@ -1173,6 +1196,10 @@ class MultiSelect {
 				this.update();
 			});
 
+			if(this.disabled) {
+			    input.disabled = true;
+			}
+
 			label.on('dblclick', e => {
 
 				e.stopPropagation();
@@ -1184,7 +1211,7 @@ class MultiSelect {
 			optionList.appendChild(label);
 		}
 
-		this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+	    this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
 
 		this.update();
 	}
@@ -1226,11 +1253,22 @@ class MultiSelect {
 
 		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
 
+		if(this.changeCallback)
+			this.changeCallback();
+
+	}
+
+	on(event, callback) {
+
+		if(event != 'change')
+			throw new Page.exception('Only Change event is supported...');
+
+		this.changeCallback = callback;
 	}
 
 	all() {
 
-		if(!this.multiple)
+		if(!this.multiple || this.disabled)
 			return;
 
 		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
@@ -1238,6 +1276,9 @@ class MultiSelect {
 	}
 
 	clear() {
+
+	    if(this.disabled)
+	        return;
 
 		this.selectedValues.clear();
 		this.update();

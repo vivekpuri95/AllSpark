@@ -299,7 +299,7 @@ class DashboardsShare {
 		DashboardsShare.page = page;
 		DashboardsShare.userList = await API.call('users/list');
 
-		DashboardsShare.userMultiList = new MultiSelect({datalist: [], multiple:true, expand:true});
+		DashboardsShare.userMultiList = new MultiSelect({datalist: [], multiple: true});
 
 		DashboardsShare.form.insertBefore(
 			this.userMultiList.container,
@@ -320,12 +320,7 @@ class DashboardsShare {
 
 		this.userDashboardResponse = await API.call('user/dashboards/list', parameters, options);
 
-		const userDashboard = new Map();
-
-		for(const user of this.userDashboardResponse) {
-
-			userDashboard.set(user.user_id, user);
-		}
+		const userDashboard = new Map(this.userDashboardResponse.map(user => [user.user_id, user]));
 
 		for( const users of DashboardsShare.userList) {
 
@@ -338,7 +333,6 @@ class DashboardsShare {
 		}
 
 		DashboardsShare.userMultiList.datalist = multiSelectData;
-
 		DashboardsShare.userMultiList.render();
 
 		if(DashboardsShare.form_listener)
