@@ -2558,21 +2558,24 @@ class LinearVisualization extends Visualization {
 			if(that.zoomRectangle) {
 
 				const
-					filteredRows = that.rows.filter(row => {
-
-						const item = that.x(row.get(that.axes.bottom.column)) + 100;
-
-						if(mouse[0] < that.zoomRectangle.origin[0])
-							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
-						else
-							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
-					}),
+					filteredRows = [],
 					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+
+				for(const row of that.rows) {
+
+					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
+
+					if(
+						(mouse[0] < that.zoomRectangle.origin[0] && item >= mouse[0] && item <= that.zoomRectangle.origin[0]) ||
+						(mouse[0] >= that.zoomRectangle.origin[0] && item <= mouse[0] && item >= that.zoomRectangle.origin[0])
+					)
+						filteredRows.push(row);
+				}
 
 				// Assign width and height to the rectangle
 				that.zoomRectangle
 					.select('rect')
-					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]))
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0] - 10))
 					.attr('width', width)
 					.attr('height', that.height);
 
@@ -2601,7 +2604,7 @@ class LinearVisualization extends Visualization {
 				return;
 			}
 
-			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width) / (that.width / that.rows.length))];
 
 			if(!row)
 				return;
@@ -2659,7 +2662,10 @@ class LinearVisualization extends Visualization {
 			that.zoomRectangle
 				.append('g');
 
+
 			that.zoomRectangle.origin = d3.mouse(this);
+			that.zoomRectangle.origin[0] -= 10;
+			that.zoomRectangle.origin[1] -= 10;
 		})
 
 		.on('mouseup', function() {
@@ -2673,7 +2679,7 @@ class LinearVisualization extends Visualization {
 				mouse = d3.mouse(this),
 				filteredRows = that.rows.filter(row => {
 
-					const item = that.x(row.get(that.axes.bottom.column)) + 100;
+					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
 
 					if(mouse[0] < that.zoomRectangle.origin[0])
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
