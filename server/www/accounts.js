@@ -24,7 +24,7 @@ exports.list = class extends API {
 				AND s.owner = 'account'
 			LEFT JOIN
 				tb_account_features f
-			ON 
+			ON
 				a.account_id = f.account_id
 				AND f.status = 1
 			WHERE
@@ -55,7 +55,8 @@ exports.list = class extends API {
 				value: JSON.parse(x.value),
 			});
 
-			accountObj[x.account_id].features = x.features.split(',');
+
+			accountObj[x.account_id].features = (x.features || '').split(',').filter(x => x);
 		});
 
 		return Object.values(accountObj);
@@ -155,7 +156,7 @@ exports.insert = class extends API {
 					owner,
 					profile,
 					value
-				) 
+				)
 				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
 			`,
 			insertList,
@@ -215,7 +216,7 @@ exports.update = class extends API {
 					owner,
 					profile,
 					value
-				) 
+				)
 				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
 			`,
 			insertList,

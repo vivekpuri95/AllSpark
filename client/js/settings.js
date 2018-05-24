@@ -6,6 +6,7 @@ class Settings extends Page {
 		const nav = this.container.querySelector('nav');
 
 		for (const [key, settings] of Settings.list) {
+
 			const setting = new settings(this.container);
 
 			const a = document.createElement('a');
@@ -32,6 +33,7 @@ class Settings extends Page {
 		}
 
 		let byDefault;
+
 		if(localStorage.settingsCurrentTab) {
 
 			for(const a of this.container.querySelectorAll('nav a')) {
@@ -42,6 +44,7 @@ class Settings extends Page {
 		else {
 			byDefault = this.container.querySelector('nav a');
 		}
+
 		byDefault.classList.add('selected');
 
 		for (const [key, settings] of Settings.list) {
@@ -242,7 +245,7 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 			this.list.set(account.account_id, new SettingsAccount(account, this));
 		}
 
-		return await this.render();
+		await this.render();
 	}
 
 	async render() {
@@ -260,7 +263,7 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 			container.appendChild(account.row);
 		}
 
-		return await Sections.show('accounts-list');
+		await Sections.show('accounts-list');
 	}
 });
 
@@ -730,6 +733,13 @@ class SettingsAccount {
 
 		SettingsAccount.editor.value = JSON.stringify(this.settings, 0, 4) || "b";
 
+		const features = new AccountsFeatures(this);
+
+		if(this.form.parentElement.querySelector('.feature-form'))
+			this.form.parentElement.querySelector('.feature-form').remove();
+
+		this.form.parentElement.appendChild(features.container);
+
 		await Sections.show('accounts-form');
 
 		this.page.form.on("submit", SettingsAccount.submitEventListener = async e => {
@@ -820,7 +830,168 @@ class SettingsAccount {
 	}
 
 	static submitEventListener() {}
+}
 
+class AccountsFeatures {
+
+	constructor(account) {
+
+		this.account = account;
+
+		this.total_features = new Map;
+
+		for(const [key, feature] of MetaData.features) {
+			feature.status = this.account.features.includes(key.toString());
+			this.total_features.set(key, new AccountsFeature(feature, this.account));
+
+		}
+	}
+
+	get container() {
+
+		const container = document.createElement('div');
+
+		container.classList.add('feature-form');
+		container.innerHTML = `
+
+			<h3>Features</h3>
+
+			<div class="toolbar form">
+
+				<label class="feature-type">
+					<span>Types</span>
+				</label>
+
+				<label>
+					<span>Search</span>
+					<input id="feature-search" type="text" placeholder="Search..">
+				</label>
+			</div>
+			<table>
+				<thead>
+					<tr>
+						<th class="action">Id</th>
+						<th>Types</th>
+						<th>Name</th>
+						<th>Status</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		`;
+
+		let list = [];
+
+		for(const value of MetaData.features.values())
+			list.push({name: value, value: value})
+
+		list = new Set(list);
+
+		this.feature_type = new MultiSelect({datalist: Array.from(list), multiple: true});
+
+		container.querySelector('.feature-type').appendChild(this.feature_type.container);
+
+		const tbody = container.querySelector('tbody');
+
+		tbody.textContent = null;
+
+		for(const feature of this.total_features.values())
+			tbody.appendChild(feature.row);
+
+
+		container.querySelector('#feature-search').on('keyup', (e) => {
+
+			e.preventDefault();
+
+			if(!e.currentTarget.value)
+				return;
+
+			const key = e.currentTarget.value.toLowerCase();
+
+			tbody.textContent = null;
+
+			for(const feature of this.feature.values()) {
+
+				if(feature.name.includes(key) && this.feature_type.value.indexOf(feature.type) >= 0)
+					tbody.appendChild(feature.row);
+			}
+
+			if(!tbody.childElementCount)
+				tbody.innerHTML = `<tr><td colspan=4><div class="NA">No Feature found :(</div></td></tr>`;
+		})
+
+		container.querySelector('.feature-type').on('change', (e) => {
+
+			const selected = this.feature_type.value;
+
+			tbody.textContent = null;
+
+			if(!selected.length) {
+				tbody.innerHTML = `<tr><td colspan=4><div class="NA">No Feature found :(</div></td></tr>`;
+				return;
+			}
+
+			for(const feature of this.feature.values()) {
+
+				if(selected.indexOf(feature.type) >= 0)
+					tbody.appendChild(feature.row);
+			}
+		})
+
+		return container;
+	}
+}
+
+class AccountsFeature {
+
+	constructor(feature, account) {
+
+		this.feature = feature;
+		this.account = account;
+	}
+
+	get row() {
+
+		const tr = document.createElement('tr');
+
+		tr.innerHTML = `
+			<td>${this.feature.feature_id}</td>
+			<td>${this.feature.type}a</td>
+			<td>${this.feature.name}</td>
+			<td>
+				<select id="status">
+					<option value=1>ON</option>
+					<option value=0>OFF</option>
+				</select>
+			</td>
+		`;
+
+		const status = tr.querySelector('select#status');
+		status.value =  this.feature.status ? 1 : 0;
+
+		status.on('change', async (e) => this.update(e, status.value));
+
+		return tr;
+	}
+
+	async update(e, status) {
+
+		e.preventDefault();
+
+		const options = {
+			method: 'POST',
+		}
+
+		const parameter = {
+			account_id: this.account.account_id,
+			feature_id: this.feature.feature_id,
+			status: status,
+		}
+
+		await API.call('accounts/features/toggle', parameter, options);
+		await this.account.page.load();
+		await Sections.show('accounts-form');
+	}
 }
 
 class SettingsCategory {
