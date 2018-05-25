@@ -2,3 +2,6 @@
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 }
+#form .test-result {
+	margin-bottom: calc(var(--gap) * 2);
+}

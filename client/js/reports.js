@@ -480,6 +480,7 @@ class DataSource {
 				return result;
 			});
 		}
+
 		return response;
 	}
 
@@ -923,8 +924,11 @@ class DataSourceColumns extends Map {
 
 		container.textContent = null;
 
-		for(const column of this.values())
-			container.appendChild(column.container);
+		for(const column of this.values()) {
+
+			if(!column.hidden)
+				container.appendChild(column.container);
+		}
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
@@ -1032,7 +1036,7 @@ class DataSourceColumn {
 		this.key = column;
 		this.source = source;
 		this.name = this.key.split('_').map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
-		this.disabled = 0;
+		this.disabled = false;
 		this.color = DataSourceColumn.colors[this.source.columns.size % DataSourceColumn.colors.length];
 
 		if(this.source.format && this.source.format.columns) {
@@ -1054,7 +1058,7 @@ class DataSourceColumn {
 		container.classList.add('column');
 
 		container.innerHTML = `
-			<span class="color" style="background: ${this.color}"></span>
+			<span class="color" style="background: ${this.color}">&#x2714;</span>
 			<span class="name">${this.name}</span>
 
 			<div class="blanket hidden">
@@ -1261,7 +1265,7 @@ class DataSourceColumn {
 		});
 
 		this.form.querySelector('.add-parameters').on('click', () => {
-			this.addParameterDiv();
+			this.addParameter();
 			this.updateDrilldownParamters();
 		});
 
@@ -1309,7 +1313,7 @@ class DataSourceColumn {
 			this.form.drilldown_query_id.value = this.drilldown ? this.drilldown.query_id : '';
 
 			for(const param of this.drilldown.parameters || [])
-				this.addParameterDiv(param);
+				this.addParameter(param);
 
 			this.updateDrilldownParamters();
 		}
@@ -1317,7 +1321,7 @@ class DataSourceColumn {
 		this.blanket.classList.remove('hidden');
 	}
 
-	addParameterDiv(parameter = {}) {
+	addParameter(parameter = {}) {
 
 		const container = document.createElement('div');
 
@@ -1530,15 +1534,16 @@ class DataSourceColumn {
 
 		this.blanket.classList.add('hidden');
 
-		//this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
-
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
 	}
 
 	render() {
 
+		this.container.classList.toggle('hidden', this.hidden ? true : false);
+
 		this.container.querySelector('.name').textContent = this.name;
+		this.container.querySelector('.color').innerHTML = this.disabled ? '' : '&#x2714;';
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
@@ -2426,6 +2431,7 @@ class LinearVisualization extends Visualization {
 			if(this.axes.left.columns.some(c => c.key == key) || (this.axes.right && this.axes.right.columns.some(c => c.key == key)) || this.axes.bottom.columns.some(c => c.key == key))
 				continue;
 
+			column.hidden = true;
 			column.disabled = true;
 			column.render();
 		}
@@ -2558,21 +2564,24 @@ class LinearVisualization extends Visualization {
 			if(that.zoomRectangle) {
 
 				const
-					filteredRows = that.rows.filter(row => {
+					filteredRows = [],
+					width = Math.abs(mouse[0] - 10 - that.zoomRectangle.origin[0]);
 
-						const item = that.x(row.get(that.axes.bottom.column)) + 100;
+				for(const row of that.rows) {
 
-						if(mouse[0] < that.zoomRectangle.origin[0])
-							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
-						else
-							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
-					}),
-					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
+
+					if(
+						(mouse[0] < that.zoomRectangle.origin[0] && item >= mouse[0] && item <= that.zoomRectangle.origin[0]) ||
+						(mouse[0] >= that.zoomRectangle.origin[0] && item <= mouse[0] && item >= that.zoomRectangle.origin[0])
+					)
+						filteredRows.push(row);
+				}
 
 				// Assign width and height to the rectangle
 				that.zoomRectangle
 					.select('rect')
-					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]))
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0] - 10))
 					.attr('width', width)
 					.attr('height', that.height);
 
@@ -2601,7 +2610,7 @@ class LinearVisualization extends Visualization {
 				return;
 			}
 
-			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width) / (that.width / that.rows.length))];
 
 			if(!row)
 				return;
@@ -2659,7 +2668,10 @@ class LinearVisualization extends Visualization {
 			that.zoomRectangle
 				.append('g');
 
+
 			that.zoomRectangle.origin = d3.mouse(this);
+			that.zoomRectangle.origin[0] -= 10;
+			that.zoomRectangle.origin[1] -= 10;
 		})
 
 		.on('mouseup', function() {
@@ -2673,7 +2685,7 @@ class LinearVisualization extends Visualization {
 				mouse = d3.mouse(this),
 				filteredRows = that.rows.filter(row => {
 
-					const item = that.x(row.get(that.axes.bottom.column)) + 100;
+					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
 
 					if(mouse[0] < that.zoomRectangle.origin[0])
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -3720,6 +3732,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			if(this.axes.left.columns.some(c => c.key == key) || this.axes.right.columns.some(c => c.key == key) || this.axes.bottom.columns.some(c => c.key == key))
 				continue;
 
+			column.hidden = true;
 			column.disabled = true;
 			column.render();
 		}

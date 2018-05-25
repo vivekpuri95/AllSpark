@@ -96,6 +96,9 @@ class ReportsMangerPreview {
 			this.report.queryOverride = true;
 		}
 
+		if(options.visualizationOptions)
+			this.report.visualizations[0].options = options.visualizationOptions;
+
 		this.report = new DataSource(this.report);
 
 		this.report.container;
@@ -151,7 +154,7 @@ class ReportsMangerPreview {
 		if(this.hidden || !this.report)
 			return;
 
-		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'right';
+		let position = localStorage.reportsPreviewDock || 'right';
 
 		this.page.container.classList.add('preview-' + position);
 
@@ -634,6 +637,9 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		window.history.replaceState({}, '', `/reports/define-report/${response.insertId}`);
 
 		this.page.load();
+		this.page.stages.get('configure-report').disabled = false;
+		this.page.stages.get('define-report').disabled = false;
+		this.page.stages.get('pick-visualization').disabled = false;
 	}
 
 	async edit() {
@@ -804,8 +810,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.report = this.selectedReport;
 
 		this.page.stages.get('configure-visualization').disabled = true;
-		this.page.preview.hidden = false;
 		this.container.querySelector('#preview-toggle').classList.add('selected');
+
+		localStorage.reportsPreviewDock = 'bottom';
+		this.page.preview.hidden = false;
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
@@ -1365,9 +1373,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
 
-		this.select();
-
-		this.load();
+		this.page.load();
+		this.container.querySelector('#add-visualization-picker').classList.add('hidden');
+		this.container.querySelector('#visualization-list').classList.remove('hidden');
 	}
 
 	async delete(visualization) {
@@ -1468,6 +1476,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		}
 
 		this.form.on('submit', e => this.update(e));
+		this.container.querySelector('#preview-configure-visualization').on('click', e => this.preview(e));
 
 		this.setupConfigurationSetions();
 	}
@@ -1542,6 +1551,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.transformations = new ReportTransformations(this.visualization, this);
 
+		localStorage.reportsPreviewDock = 'right';
 		await this.page.preview.load({
 			query_id: this.report.query_id,
 			visualization_id: this.visualization.visualization_id,
@@ -1597,6 +1607,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		await DataSource.load(true);
 
 		this.load();
+	}
+
+	async preview() {
+		this.page.preview.load({
+			query_id: this.report.query_id,
+			visualization_id: this.visualization.visualization_id,
+			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json},
+		});
 	}
 });
 
