@@ -116,7 +116,7 @@ Page.class = class Dashboards extends Page {
 
 			let item = this.container.querySelector("nav .item:not(.hidden)");
 
-			if(!item) {
+			if (!item) {
 				this.renderList();
 				return await Sections.show("list");
 			}
@@ -335,6 +335,13 @@ Page.class = class Dashboards extends Page {
 				label.on("click", () => {
 
 					this.closeOtherDropDowns(label.id, nav);
+					let currentDashboard = window.location.pathname.split("/");
+
+					if (currentDashboard.includes("dashboard")) {
+
+						currentDashboard = currentDashboard.pop();
+						nav.querySelector(`#dashboard-${currentDashboard}`).classList.add("selected");
+					}
 				});
 
 				showItemList = menuItem.querySelectorAll(".hidden");
@@ -511,7 +518,6 @@ class Dashboard {
 
 	get menuItem() {
 
-
 		if (this.container) {
 
 			return this.container;
@@ -641,7 +647,7 @@ class Dashboard {
 			await Sections.show('list');
 
 			//removing selected from other containers
-			for(const element of this.page.container.querySelectorAll(".selected") || []) {
+			for (const element of this.page.container.querySelectorAll(".selected") || []) {
 
 				element.classList.remove("selected");
 			}
