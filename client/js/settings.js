@@ -880,12 +880,12 @@ class AccountsFeatures {
 			</table>
 		`;
 
-		let list = [];
+		let list = new Set;
 
 		for(const value of MetaData.features.values())
-			list.push({name: value, value: value})
+			list.add(value.type);
 
-		list = new Set(list);
+		list = Array.from(list).map(x => {return {name:x,value:x}})
 
 		this.feature_type = new MultiSelect({datalist: Array.from(list), multiple: true});
 
@@ -910,14 +910,14 @@ class AccountsFeatures {
 
 			tbody.textContent = null;
 
-			for(const feature of this.feature.values()) {
+			for(const feature of this.total_features.values()) {
 
-				if(feature.name.includes(key) && this.feature_type.value.indexOf(feature.type) >= 0)
+				if(feature.feature.name.includes(key) && this.feature_type.value.indexOf(feature.feature.type) >= 0)
 					tbody.appendChild(feature.row);
 			}
 
 			if(!tbody.childElementCount)
-				tbody.innerHTML = `<tr><td colspan=4><div class="NA">No Feature found :(</div></td></tr>`;
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
 		})
 
 		container.querySelector('.feature-type').on('change', (e) => {
@@ -927,15 +927,17 @@ class AccountsFeatures {
 			tbody.textContent = null;
 
 			if(!selected.length) {
-				tbody.innerHTML = `<tr><td colspan=4><div class="NA">No Feature found :(</div></td></tr>`;
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
 				return;
 			}
 
-			for(const feature of this.feature.values()) {
+			for(const feature of this.total_features.values()) {
 
-				if(selected.indexOf(feature.type) >= 0)
+				if(selected.indexOf(feature.feature.type) >= 0)
 					tbody.appendChild(feature.row);
 			}
+			if(!tbody.childElementCount)
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
 		})
 
 		return container;
