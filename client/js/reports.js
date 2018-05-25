@@ -1220,14 +1220,11 @@ class DataSourceColumn {
 		for(const report of sortedReports)
 			list.push({name: report.name, value: report.query_id});
 
-		this.drilldown = new MultiSelect({datalist: list, multiple: false});
+		this.drilldownQuery = new MultiSelect({datalist: list, multiple: false});
 
-		const drilldown_container = this.drilldown.container;
-		drilldown_container.classList.add('drilldown_query_id');
+		this.form.querySelector('.drilldown-dropdown').appendChild(this.drilldownQuery.container);
 
-		this.form.querySelector('.drilldown-dropdown').appendChild(drilldown_container);
-
-		this.form.querySelector('.drilldown_query_id').on('change', () => this.updateDrilldownParamters());
+		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
 		this.updateDrilldownParamters();
 
 		let timeout;
@@ -1316,7 +1313,7 @@ class DataSourceColumn {
 
 			this.form.querySelector('.parameter-list').textContent = null;
 
-			this.form.querySelector('.drilldown_query_id').value = this.drilldown ? this.drilldown.query_id : '';
+			this.drilldownQuery.value = this.drilldown ? this.drilldown.query_id : '';
 
 			for(const param of this.drilldown.parameters || [])
 				this.addParameter(param);
@@ -1380,7 +1377,7 @@ class DataSourceColumn {
 		const
 			parameterList = this.form.querySelector('.parameter-list'),
 			parameters = parameterList.querySelectorAll('.parameter'),
-			report = DataSource.list.get(parseInt(this.form.querySelector('.drilldown_query_id').value));
+			report = DataSource.list.get(parseInt(this.drilldownQuery.value));
 
 		if(report && report.filters.length) {
 
