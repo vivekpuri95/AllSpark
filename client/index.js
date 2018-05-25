@@ -237,7 +237,7 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 
 	template.scripts = template.scripts.concat([
 		'/js/reports.js',
-		'/js/dashboard_new.js',
+		'/js/dashboard.js',
 
 		'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
 		'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
@@ -322,7 +322,7 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 			<div class="list"></div>
 			<div id="blanket" class="hidden"></div>
 			<button type="button" class="side">
-				<i class="fas fa-angle-double-left"></i>
+				<i class="fas fa-filter"></i>
 			</button>
 		</section>
 	`));
@@ -751,7 +751,8 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 			<section class="section" id="stage-configure-visualization">
 
 				<div class="toolbar">
-					<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save & Preview</button>
+					<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save</button>
+					<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>
 				</div>
 
 				<form id="configure-visualization-form">
