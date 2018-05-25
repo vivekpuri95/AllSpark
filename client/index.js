@@ -1309,7 +1309,7 @@ class Template {
 					<meta name="viewport" content="width=device-width, initial-scale=1">
 					<meta name="theme-color" content="#fff">
 					<title></title>
-					<link id="favicon" rel="shortcut icon" type="image/png" href="https://lbxoezeogn43sov13789n8p9-wpengine.netdna-ssl.com/img/favicon.png" />
+					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
 
 					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + checksum + '">').join('')}
 					${this.scripts.map(s => '<script src="' + s + '?' + checksum + '"></script>').join('')}
