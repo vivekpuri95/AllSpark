@@ -297,7 +297,7 @@ main #reports > .list {
 		border-radius: 20px;
 		background: var(--color-accent);
 		color: var(--color-accent-text);
-		z-index: 6;
+		z-index: 4;
 		display: flex;
 		justify-content: center;
 		align-items: center;
