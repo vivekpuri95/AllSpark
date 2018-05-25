@@ -145,19 +145,29 @@ exports.login = class extends API {
 			this.assert(this.request.body.email, "Email Required");
 			this.assert(this.request.body.password, "Password Required");
 
-			[userDetail] = await this.mysql.query(
-				`SELECT * FROM tb_users WHERE email = ? AND account_id = ?`,
-				[this.request.body.email, this.account.account_id]
+			userDetail = await this.mysql.query(
+				`SELECT * FROM tb_users WHERE email = ?`,
+				[this.request.body.email]
 			);
 
-			this.assert(userDetail, "Invalid Email! :(");
+			this.assert(userDetail.length, "Invalid Email! :(");
+
+			if(userDetail.length > 1) {
+
+				return await this.mysql.query(
+					"select * from tb_accounts where account_id in (?)",
+					[userDetail.map(x => x.account_id)]
+				);
+			}
+
+			userDetail = userDetail[0];
 
 			const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
 
 			this.assert(checkPassword, "Invalid Password! :(");
 		}
 
-		this.assert(userDetail && userDetail.user_id, 'User not found!')
+		this.assert(userDetail && userDetail.user_id, 'User not found!');
 
 		const obj = {
 			user_id: userDetail.user_id,
@@ -274,7 +284,7 @@ exports.refresh = class extends API {
 
 		const obj = {
 			user_id: user.user_id,
-			account_id: this.account.account_id,
+			account_id: user.account_id,
 			email: user.email,
 			name: [user.first_name, user.middle_name, user.last_name].filter(x => x).join(' '),
 			roles,
