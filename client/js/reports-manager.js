@@ -1783,8 +1783,8 @@ class ReportVisualizationDashboard {
 		}
 
 		form.dashboard_id.on('change', () => form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value);
-		form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value
 		form.dashboard_id.value = this.visualization.dashboard_id;
+		form.querySelector('.view-dashboard').href = '/dashboard/' + (this.visualization.dashboard_id);
 
 		form.querySelector('.delete').on('click', () => this.delete());
 
