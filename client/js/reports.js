@@ -178,7 +178,7 @@ class DataSource {
 				<div class="footer">
 					<span>
 						<span class="label">Role:</span>
-						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : 'Invalid'}</span>
+						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : '<span>NA</span>'}</span>
 					</span>
 					<span>
 						<span class="label">Added On:</span>
