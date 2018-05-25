@@ -1415,7 +1415,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				<td>${visualization.description || ''}</td>
 				<td>${type ? type.name : ''}</td>
 				<td class="action preview"><i class="fas fa-eye"></i></td>
-				<td class="action edit"><i class="fas fa-edit"></i></td>
+				<td class="action edit"><i class="fas fa-cog"></i></td>
 				<td class="action red delete"><i class="far fa-trash-alt"></i></td>
 			`;
 

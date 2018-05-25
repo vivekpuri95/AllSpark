@@ -31,6 +31,7 @@ Page.class = class DashboardManager extends Page {
 		});
 
 		DashboardsDashboard.setup(this);
+		DashboardsShare.setup(this);
 
 		(async () => {
 
@@ -293,6 +294,19 @@ class DashboardsShare {
 			this[key] = page[key];
 	}
 
+	static async setup(page) {
+
+		DashboardsShare.page = page;
+		DashboardsShare.userList = await API.call('users/list');
+
+		DashboardsShare.userMultiList = new MultiSelect({datalist: [], multiple: true});
+
+		DashboardsShare.form.insertBefore(
+			this.userMultiList.container,
+			DashboardsShare.form.querySelector('.add_user')
+		);
+	}
+
 	async load() {
 
 		const
@@ -301,13 +315,25 @@ class DashboardsShare {
 			},
 			options = {
 				method : 'GET',
-			};
+			},
+			multiSelectData = [];
 
 		this.userDashboardResponse = await API.call('user/dashboards/list', parameters, options);
-		this.userList = await API.call('users/list');
 
-		// const multiSelectData = this.setFormat(this.userList);
-		// DashboardsShare.form.appendChild(new MultiSelect(multiSelectData, true).container);
+		const userDashboard = new Map(this.userDashboardResponse.map(user => [user.user_id, user]));
+
+		for( const users of DashboardsShare.userList) {
+
+			if(!userDashboard.has(users.user_id)) {
+				multiSelectData.push({
+					value: users.user_id,
+					name : users.name
+				});
+			}
+		}
+
+		DashboardsShare.userMultiList.datalist = multiSelectData;
+		DashboardsShare.userMultiList.render();
 
 		if(DashboardsShare.form_listener)
 			DashboardsShare.form.removeEventListener('submit', DashboardsShare.form_listener);
@@ -318,33 +344,12 @@ class DashboardsShare {
 		this.render();
 	}
 
-	setFormat(data) {
-
-		const response = [];
-
-		for(const row of data) {
-			response.push({
-				value : row.user_id,
-				name : row.name
-			});
-		}
-
-		return response;
-	}
-
 	process() {
 
 		this.userDashboardList.clear();
-		DashboardsShare.form.user_list.textContent = null;
 
 		for(const ud of this.userDashboardResponse)
 			this.userDashboardList.set(ud.id, new UserDashboard(ud, this));
-
-		for(const user of this.userList) {
-
-			if(!this.userDashboardResponse.some( u => u.user_id == user.user_id))
-				DashboardsShare.form.user_list.insertAdjacentHTML('beforeend', `<option value="${user.user_id}">${user.first_name.concat(' ', user.last_name)}</option>`)
-		}
 	}
 
 	render() {
@@ -368,9 +373,9 @@ class DashboardsShare {
 
 		users.set('dashboard_id', this.id);
 
-		for(const option of DashboardsShare.form.user_list.selectedOptions) {
+		for(const option of DashboardsShare.userMultiList.value) {
 
-			users.append('user_id', option.value);
+			users.append('user_id', option);
 		}
 
 		const

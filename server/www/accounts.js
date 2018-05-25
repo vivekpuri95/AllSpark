@@ -14,7 +14,8 @@ exports.list = class extends API {
 			SELECT
 				a.*,
 				s.profile,
-				s.value
+				s.value,
+				group_concat(distinct f.feature_id) as features
 			FROM
 				tb_accounts a
 			LEFT JOIN
@@ -22,10 +23,17 @@ exports.list = class extends API {
 			ON
 				s.account_id = a.account_id
 				AND s.owner = 'account'
+			LEFT JOIN
+				tb_account_features f
+			ON 
+				a.account_id = f.account_id
+				AND f.status = 1
 			WHERE
 				a.status = 1
-			`);
+				group by profile, account_id
+		`);
 
+		this.assert(accountList.length, "Account not found :(");
 		const accountObj = {};
 
 		accountList.map(x => {
@@ -37,6 +45,7 @@ exports.list = class extends API {
 
 			delete accountObj[x.account_id]['profile'];
 			delete accountObj[x.account_id]['value'];
+			delete accountObj[x.account_id]['features'];
 
 			if (!accountObj[x.account_id].settings) {
 
@@ -46,7 +55,9 @@ exports.list = class extends API {
 			accountObj[x.account_id].settings.push({
 				profile: x.profile,
 				value: JSON.parse(x.value),
-			})
+			});
+
+			accountObj[x.account_id].features = x.features.split(',');
 		});
 
 		return Object.values(accountObj);

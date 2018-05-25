@@ -414,7 +414,6 @@ router.get('/dashboards-manager/:id?', (request, response) => {
 			<h2 class="share-heading">Share dashboards</h2>
 
 			<form class="block form" id="dashboard_share">
-				<select name="user_list" multiple></select>
 				<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add Users</button>
 			</form>
 

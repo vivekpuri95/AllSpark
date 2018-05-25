@@ -116,7 +116,12 @@ class Page {
 	static listenAccessToken() {
 		document.on('keyup', e => {
 			if(e.altKey && e.keyCode == 69) {
-				IndexedDb.instance.set('access_token', prompt('Enter the tookan'));
+				const value = prompt('Enter the Token.');
+
+				if(!value)
+					return;
+
+				IndexedDb.instance.set('access_token', value);
 				location.reload();
 			}
 		});
@@ -564,6 +569,7 @@ class MetaData {
 		MetaData.datasets = new Map;
 		MetaData.visualizations = new Map;
 		MetaData.filterTypes = new Set;
+		MetaData.features = new Set;
 
 		if(!user.id)
 			return;
@@ -620,6 +626,7 @@ class MetaData {
 		MetaData.filterTypes = new Set(metadata.filterTypes);
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
+		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
 	}
 }
 
@@ -1039,21 +1046,20 @@ class DialogBox {
 
 class MultiSelect {
 
-	constructor({datalist, multiple = false} = {}) {
+	constructor({datalist, multiple = true, expand = false} = {}) {
 
 		this.datalist = datalist;
 		this.multiple = multiple;
+		this.expand = expand;
 
 		this.selectedValues = new Set();
+		this.inputName = 'multiselect-' + Math.floor(Math.random() * 10000);
 	}
 
 	get container() {
 
 		if(this.containerElement)
 			return this.containerElement;
-
-		if(!this.datalist)
-			throw new Page.Exception('No datalist');
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -1072,49 +1078,12 @@ class MultiSelect {
 			</div>
 		`;
 
-		const optionList = container.querySelector('.options .list');
+		if(this.expand)
+		    this.container.querySelector('.options').classList.remove('hidden');
 
-		if(!this.datalist.length) {
-			container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
-		}
-
-		for(const row of this.datalist) {
-
-			const
-				label = document.createElement('label'),
-				input = document.createElement('input'),
-				text = document.createTextNode(row.name);
-
-			input.name = row.name;
-			input.value = row.value;
-			input.type = this.multiple ? 'checkbox' : 'radio';
-			input.checked = true;
-
-			label.appendChild(input);
-			label.appendChild(text);
-
-			label.setAttribute('title', row.value);
-
-			input.on('change', () => {
-
-				input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
-				this.update();
-			});
-
-			label.on('dblclick', e => {
-
-				e.stopPropagation();
-
-				this.clear();
-				label.click();
-			});
-
-			optionList.appendChild(label);
-		}
+		this.render();
 
 		this.setEvents();
-		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
-		this.update();
 
 		return container;
 	}
@@ -1134,10 +1103,16 @@ class MultiSelect {
 
 		this.container.querySelector('input[type=search]').on('dblclick', () => {
 
+		    if(this.expand)
+		        return;
+
 			this.container.querySelector('.options').classList.add('hidden');
 		});
 
 		document.body.on('click', () => {
+
+		    if(this.expand)
+		        return;
 
 			this.container.querySelector('.options').classList.add('hidden');
 		});
@@ -1162,6 +1137,83 @@ class MultiSelect {
 	get value() {
 
 		return Array.from(this.selectedValues);
+	}
+
+	set disabled(value) {
+
+		this._disabled = value;
+		this.render();
+	}
+
+	get disabled() {
+
+		return this._disabled;
+	}
+
+	render() {
+
+		if(this.expand)
+			this.container.querySelector('.options').classList.add('expanded');
+
+		if(this.disabled)
+			this.container.querySelector('input[type=search]').disabled = true;
+
+		const optionList = this.container.querySelector('.options .list');
+		optionList.textContent = null;
+
+		if(!this.datalist.length) {
+			this.container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
+		}
+
+		for(const row of this.datalist) {
+
+			const
+				label = document.createElement('label'),
+				input = document.createElement('input'),
+				text = document.createTextNode(row.name);
+
+			input.name = this.inputName;
+			input.value = row.value;
+			input.type = this.multiple ? 'checkbox' : 'radio';
+			input.checked = true;
+
+			label.appendChild(input);
+			label.appendChild(text);
+
+			label.setAttribute('title', row.value);
+
+			input.on('change', () => {
+
+				if(!this.multiple) {
+
+					this.selectedValues.clear();
+					this.selectedValues.add(input.value.toString());
+				}
+				else {
+
+					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
+				}
+				this.update();
+			});
+
+			if(this.disabled) {
+			    input.disabled = true;
+			}
+
+			label.on('dblclick', e => {
+
+				e.stopPropagation();
+
+				this.clear();
+				label.click();
+			});
+
+			optionList.appendChild(label);
+		}
+
+	    this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+
+		this.update();
 	}
 
 	update() {
@@ -1201,11 +1253,22 @@ class MultiSelect {
 
 		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
 
+		if(this.changeCallback)
+			this.changeCallback();
+
+	}
+
+	on(event, callback) {
+
+		if(event != 'change')
+			throw new Page.exception('Only Change event is supported...');
+
+		this.changeCallback = callback;
 	}
 
 	all() {
 
-		if(!this.multiple)
+		if(!this.multiple || this.disabled)
 			return;
 
 		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
@@ -1213,6 +1276,9 @@ class MultiSelect {
 	}
 
 	clear() {
+
+	    if(this.disabled)
+	        return;
 
 		this.selectedValues.clear();
 		this.update();
