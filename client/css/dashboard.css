@@ -37,6 +37,9 @@ main > nav {
 	nav.collapsed-nav {
 		overflow: unset;
 	}
+main > nav.collapsed-nav .dashboard-search {
+	display: none;
+}
 main > nav.collapsed-nav .selected {
 	box-shadow: none !important;
 	background: var(--color-accent) !important;
