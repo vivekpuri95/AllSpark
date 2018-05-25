@@ -1271,7 +1271,7 @@ class MultiSelect {
 
 	all() {
 
-		if(!this.multiple || this.disabled)
+		if(!this.multiple || this.disabled || !this.datalist)
 			return;
 
 		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
