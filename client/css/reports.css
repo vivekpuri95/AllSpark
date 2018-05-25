@@ -349,7 +349,12 @@
 					display: flex;
 					justify-content: center;
 					align-items: center;
-					font-size: 90%;
+					-webkit-text-stroke-width: 0.5px;
+					-webkit-text-stroke-color: #fff;
+					text-stroke-width: 0.5px;
+					text-stroke-color: #fff;
+					font-weight: bold;
+					font-size: 110%;
 				}
 				main .data-source > .columns .column > .name {
 					padding: 0px 10px;
