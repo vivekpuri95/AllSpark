@@ -843,7 +843,6 @@ class AccountsFeatures {
 		for(const [key, feature] of MetaData.features) {
 			feature.status = this.account.features.includes(key.toString());
 			this.totalFeatures.set(key, new AccountsFeature(feature, this.account));
-
 		}
 	}
 
@@ -885,11 +884,11 @@ class AccountsFeatures {
 		for(const value of MetaData.features.values())
 			list.add(value.type);
 
-		list = Array.from(list).map(x => {return {name:x,value:x}})
+		list = Array.from(list).map(x => {return {name: x, value: x}});
 
-		this.feature_type = new MultiSelect({datalist: Array.from(list), multiple: true});
+		this.featureType = new MultiSelect({datalist: Array.from(list), multiple: true});
 
-		container.querySelector('.feature-type').appendChild(this.feature_type.container);
+		container.querySelector('.feature-type').appendChild(this.featureType.container);
 
 		const tbody = container.querySelector('tbody');
 
@@ -897,7 +896,6 @@ class AccountsFeatures {
 
 		for(const feature of this.totalFeatures.values())
 			tbody.appendChild(feature.row);
-
 
 		container.querySelector('#feature-search').on('keyup', (e) => {
 
@@ -909,33 +907,34 @@ class AccountsFeatures {
 
 			for(const feature of this.totalFeatures.values()) {
 
-				if(feature.name.includes(key) && this.feature_type.value.indexOf(feature.type) >= 0)
+				if(feature.name.includes(key) && this.featureType.value.indexOf(feature.type) >= 0)
 					tbody.appendChild(feature.row);
 			}
 
 			if(!tbody.childElementCount)
 				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
-		})
+		});
 
 		container.querySelector('.feature-type').on('change', (e) => {
 
-			const selected = this.feature_type.value;
+			const selected = this.featureType.value;
 
 			tbody.textContent = null;
 
 			if(!selected.length) {
 				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
 				return;
-			}
+			};
 
 			for(const feature of this.totalFeatures.values()) {
 
 				if(selected.indexOf(feature.type) >= 0)
 					tbody.appendChild(feature.row);
-			}
+			};
+
 			if(!tbody.childElementCount)
 				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
-		})
+		});
 
 		return container;
 	}
@@ -957,12 +956,12 @@ class AccountsFeature {
 
 		tr.innerHTML = `
 			<td>${this.feature_id}</td>
-			<td>${this.type}a</td>
+			<td>${this.type}</td>
 			<td>${this.name}</td>
 			<td>
 				<select id="status">
-					<option value=1>ON</option>
-					<option value=0>OFF</option>
+					<option value="1">ON</option>
+					<option value="0">OFF</option>
 				</select>
 			</td>
 		`;
@@ -979,15 +978,15 @@ class AccountsFeature {
 
 		e.preventDefault();
 
-		const options = {
-			method: 'POST',
-		}
-
-		const parameter = {
-			account_id: this.account.account_id,
-			feature_id: this.feature_id,
-			status: status,
-		}
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				account_id: this.account.account_id,
+				feature_id: this.feature_id,
+				status: status,
+			};
 
 		await API.call('accounts/features/toggle', parameter, options);
 		await this.account.page.load();
