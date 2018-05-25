@@ -838,11 +838,11 @@ class AccountsFeatures {
 
 		this.account = account;
 
-		this.total_features = new Map;
+		this.totalFeatures = new Map;
 
 		for(const [key, feature] of MetaData.features) {
 			feature.status = this.account.features.includes(key.toString());
-			this.total_features.set(key, new AccountsFeature(feature, this.account));
+			this.totalFeatures.set(key, new AccountsFeature(feature, this.account));
 
 		}
 	}
@@ -895,7 +895,7 @@ class AccountsFeatures {
 
 		tbody.textContent = null;
 
-		for(const feature of this.total_features.values())
+		for(const feature of this.totalFeatures.values())
 			tbody.appendChild(feature.row);
 
 
@@ -903,16 +903,13 @@ class AccountsFeatures {
 
 			e.preventDefault();
 
-			if(!e.currentTarget.value)
-				return;
-
 			const key = e.currentTarget.value.toLowerCase();
 
 			tbody.textContent = null;
 
-			for(const feature of this.total_features.values()) {
+			for(const feature of this.totalFeatures.values()) {
 
-				if(feature.feature.name.includes(key) && this.feature_type.value.indexOf(feature.feature.type) >= 0)
+				if(feature.name.includes(key) && this.feature_type.value.indexOf(feature.type) >= 0)
 					tbody.appendChild(feature.row);
 			}
 
@@ -931,9 +928,9 @@ class AccountsFeatures {
 				return;
 			}
 
-			for(const feature of this.total_features.values()) {
+			for(const feature of this.totalFeatures.values()) {
 
-				if(selected.indexOf(feature.feature.type) >= 0)
+				if(selected.indexOf(feature.type) >= 0)
 					tbody.appendChild(feature.row);
 			}
 			if(!tbody.childElementCount)
@@ -948,7 +945,9 @@ class AccountsFeature {
 
 	constructor(feature, account) {
 
-		this.feature = feature;
+		for(const key in feature)
+			this[key] = feature[key];
+
 		this.account = account;
 	}
 
@@ -957,9 +956,9 @@ class AccountsFeature {
 		const tr = document.createElement('tr');
 
 		tr.innerHTML = `
-			<td>${this.feature.feature_id}</td>
-			<td>${this.feature.type}a</td>
-			<td>${this.feature.name}</td>
+			<td>${this.feature_id}</td>
+			<td>${this.type}a</td>
+			<td>${this.name}</td>
 			<td>
 				<select id="status">
 					<option value=1>ON</option>
@@ -969,7 +968,7 @@ class AccountsFeature {
 		`;
 
 		const status = tr.querySelector('select#status');
-		status.value =  this.feature.status ? 1 : 0;
+		status.value =  this.status ? 1 : 0;
 
 		status.on('change', async (e) => this.update(e, status.value));
 
@@ -986,7 +985,7 @@ class AccountsFeature {
 
 		const parameter = {
 			account_id: this.account.account_id,
-			feature_id: this.feature.feature_id,
+			feature_id: this.feature_id,
 			status: status,
 		}
 
