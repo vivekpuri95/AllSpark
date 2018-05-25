@@ -5643,6 +5643,11 @@ class Dataset extends MultiSelect {
 			return;
 		}
 
+		if(!source.container.querySelector('.options')) {
+			this.container.querySelector('input').value = source.querySelector('input').value;
+			return;
+		}
+
 		const
 			sourceOptions = source.container.querySelectorAll('.options .list label input:checked'),
 			data = [];

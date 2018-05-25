@@ -1179,10 +1179,8 @@ class DashboardDatasets extends Map {
 
 			for (const filter of visualization.filters.values()) {
 
-				if (!filter.dataset) {
-
+				if (!filter.dataset)
 					continue;
-				}
 
 				if (!datasets[filter.dataset.id]) {
 					datasets[filter.dataset.id] = {
