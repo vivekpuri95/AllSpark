@@ -33,37 +33,35 @@ async function loadAccounts() {
 
 	const accountObj = {};
 
-	if (accountList.length) {
-		for (const account of accountList) {
+	for (const account of accountList) {
 
-			if (!accountObj[account.url]) {
-				accountObj[account.url] = {
-					account_id: account.account_id,
-					name: account.name,
-					url: account.url,
-					icon: account.icon,
-					logo: account.logo,
-					auth_api: account.auth_api
-				};
-			}
-
-			if (!accountObj[account.url].features) {
-				accountObj[account.url].features = new Map();
-
-				accountObj[account.url].features.needs = function (arg) {
-					if (this.has(arg))
-						return 1;
-					throw("This account lack this feature! Throw some money");
-				}
-			}
-
-			accountObj[account.url].features.set(account.feature_slug, {
-				feature_id: account.feature_id,
-				name: account.feature_name,
-				slug: account.feature_slug,
-				type: account.feature_type
-			});
+		if (!accountObj[account.url]) {
+			accountObj[account.url] = {
+				account_id: account.account_id,
+				name: account.name,
+				url: account.url,
+				icon: account.icon,
+				logo: account.logo,
+				auth_api: account.auth_api
+			};
 		}
+
+		if (!accountObj[account.url].features) {
+			accountObj[account.url].features = new Map();
+
+			accountObj[account.url].features.needs = function (arg) {
+				if (this.has(arg))
+					return 1;
+				throw("This account lack this feature!");
+			}
+		}
+
+		accountObj[account.url].features.set(account.feature_slug, {
+			feature_id: account.feature_id,
+			name: account.feature_name,
+			slug: account.feature_slug,
+			type: account.feature_type
+		});
 	}
 
 	global.account = accountObj;
