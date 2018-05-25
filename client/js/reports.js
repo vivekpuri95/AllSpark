@@ -105,10 +105,10 @@ class DataSource {
 			age += 'ms';
 
 		else if(age < 1000 * 60)
-			age = (age / 1000) + 's';
+			age = Format.number((age / 1000)) + 's';
 
 		else if(age < 1000 * 60 * 60)
-			age = (age / (1000 * 60)) + 'h';
+			age = Format.number((age / (1000 * 60))) + 'h';
 
 		let runtime = Math.floor(response.runtime * 100) / 100;
 
