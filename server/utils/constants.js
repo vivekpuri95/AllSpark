@@ -28,6 +28,10 @@ exports.publicEndpoints = [
 
 exports.filterPrefix = "param_";
 
+exports.saveQueryResultDb = "save_history";
+
+exports.saveQueryResultTable = "tb_save_history";
+
 exports.filterTypes = [
 	'Number',
 	'Text',

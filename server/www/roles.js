@@ -66,7 +66,12 @@ exports.test = class extends API {
 		// const engine = new (require("./reports/engine").ReportEngine)(pg.finalQuery);
 		//
 		// return engine.execute()
+		const redis = require("../utils/redis").Redis;
 
-		return this.request.body;
+
+		await redis.hset("test", "data.key", "value");
+
+		return await redis.hget("test", "data.keys");
+
 	}
-}
+};

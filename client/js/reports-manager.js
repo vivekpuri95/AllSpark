@@ -2593,3 +2593,189 @@ const mysqlKeywords = [
 	'DATE_FORMAT',
 	'USING',
 ];
+
+class EditSourceData {
+
+	constructor(queryId) {
+
+		this.queryId = queryId;
+	}
+
+	get container() {
+
+		if(this.tableContainer) {
+
+			return this.tableContainer;
+		}
+
+		const div = document.createElement('div');
+
+		div.innerHTML = `
+			<button type="submit">Save</button>
+			<table>
+				<thead></thead>
+				<tbody contentEditable name="data"></tbody>
+			</table>
+		`;
+
+		this.tableContainer = div;
+
+		this.render();
+
+		return div;
+	}
+
+	async load() {
+
+		await DataSource.load();
+
+		this.datasource = new DataSource(DataSource.list.get(this.queryId));
+
+		await this.datasource.fetch();
+		this.data = this.datasource.response;
+
+		this.columns = [...this.data[0].keys()];
+		this.rows = [];
+
+		for (const item of this.data) {
+
+			this.rows.push([...item.values()]);
+		}
+	}
+
+	getSortedRows(index, element) {
+
+		if (this.rows.length === 1) {
+
+			return this.rows;
+		}
+
+		const order = element.dataset.sorted;
+
+		const asc = order === 'asc', desc = order === 'desc';
+
+		element.dataset.sorted = asc ? "desc" : "asc";
+
+		const sortFlag = asc ? -1 : 1;
+
+		if (asc && desc) {
+
+			return this.rows;
+		}
+
+		this.rows = this.rows.sort((x, y) => {
+
+			let A = x[index], B = y[index];
+
+			if (A < B) {
+
+				return -1 * sortFlag;
+			}
+
+			if (A > B) {
+
+				return sortFlag;
+			}
+
+			return 0;
+		});
+	}
+
+	async render() {
+
+		if (!this.data || !this.data.length) {
+
+			this.tableContainer.innerHTML = '<p class="NA">No data found :(</p>';
+
+			return this.tableContainer;
+		}
+
+		const tableElement = this.tableContainer.querySelector('table');
+
+		const thead = this.tableContainer.querySelector('thead');
+
+		let tHeadHtml = '';
+
+		const tbody = this.tableContainer.querySelector('tbody');
+		tbody.textContent = null;
+
+		if (!thead.innerHTML) {
+
+			for (const columnName of this.columns) {
+
+				tHeadHtml += '<th class="heading"><span class="name">' + columnName + '</span></th>';
+			}
+
+			thead.innerHTML = '<tr>' + tHeadHtml + '</tr>';
+
+			for (const [index, element] of thead.querySelectorAll('.name').entries()) {
+
+				element.dataset.sorted = 'desc';
+
+				element.parentNode.on('click', async () => {
+
+					this.getSortedRows(index, element);
+					await this.render();
+				});
+			}
+		}
+
+		for (const row of this.rows) {
+
+			let tableRow = '';
+
+			for (const cell of row) {
+
+				tableRow += '<td>' + cell + '</td>';
+			}
+
+			tbody.innerHTML += '<tr>' + tableRow + '</tr>';
+		}
+
+		const saveButton = this.tableContainer.querySelector('button[type="submit"]');
+
+		saveButton.removeEventListener('click', EditSourceData.submitListener);
+		saveButton.on('click', EditSourceData.submitListener = (e) => this.save(e));
+
+
+		tableElement.appendChild(thead);
+		tableElement.appendChild(tbody);
+
+		return this.tableContainer;
+	}
+
+	async save(e) {
+
+		if (e) {
+
+			e.preventDefault();
+		}
+
+
+		const t = this.container.querySelector('table');
+		const result = [];
+
+		for (const element of [...t.rows].slice(1)) {
+
+			const temp = {};
+
+			for (const [index, data] of [...element.cells].entries()) {
+
+				temp[this.columns[index]] = data.textContent;
+			}
+
+			result.push(temp);
+		}
+
+		const
+			parameter = {
+				data: JSON.stringify(result),
+				query_id: this.datasource.query_id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		return await API.call('reports/engine/report', parameter, options);
+	}
+}

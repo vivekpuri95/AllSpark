@@ -12,6 +12,8 @@ const requestPromise = promisify(request);
 const config = require("config");
 const fetch = require('node-fetch');
 const URLSearchParams = require('url').URLSearchParams;
+const fs = require("fs");
+const userQueryLogs = require("../accounts").userQueryLogs;
 
 // prepare the raw data
 class report extends API {
@@ -157,6 +159,64 @@ class report extends API {
 		}
 	}
 
+	async storeQueryResultSetup() {
+
+		if (this.reportObj.load_saved) {
+
+			const userQueryLogsObj = new userQueryLogs();
+			Object.assign(userQueryLogsObj, this);
+
+			await userQueryLogsObj.userQueryLogs();
+
+			this.queryResultDb = await redis.hget(`accountSettings#${this.account.account_id}`, "settings.db");
+			this.queryResultConnection = parseInt(await redis.hget(`accountSettings#${this.account.account_id}`, "settings.connection_id"));
+
+			this.assert(this.queryResultConnection, "connection id for loading saved result is not valid");
+		}
+	}
+
+	async storeQueryResult(result) {
+
+		if (this.reportObj.load_saved) {
+
+			let [idToUpdate] = await this.mysql.query(
+				"select max(id) as id from ??.?? where query_id = ? and type = ?",
+				[this.queryResultDb, constants.saveQueryResultTable, this.reportObj.query_id, this.reportObj.type],
+
+				this.queryResultConnection
+			);
+
+			if (idToUpdate && idToUpdate.id) {
+
+				idToUpdate = idToUpdate.id;
+
+				return await this.mysql.query(
+					"update ??.?? set data = ? where query_id = ? and type = ? and id = ?",
+					[this.queryResultDb, constants.saveQueryResultTable,
+						JSON.stringify(result), this.reportObj.query_id, this.reportObj.type, idToUpdate],
+					this.queryResultConnection
+				);
+			}
+
+			else {
+
+				return await this.mysql.query(
+					"insert into ??.?? (query_id, type, user_id, query, data) values (?, ?, ?, ?, ?)",
+					[
+						this.queryResultDb, constants.saveQueryResultTable,
+						this.reportObj.query_id, this.reportObj.type, this.user.user_id, this.reportObj.query || "",
+						JSON.stringify(result)
+					],
+					this.queryResultConnection
+				);
+			}
+		}
+
+		else {
+			return [];
+		}
+	}
+
 	async report(queryId, reportObj, filterList) {
 
 		this.reportId = this.request.body.query_id || queryId;
@@ -168,11 +228,27 @@ class report extends API {
 
 		await this.authenticate();
 
+		await this.storeQueryResultSetup();
+
+		if (this.request.body.data && this.reportObj.load_saved) {
+
+			this.assert(commonFun.isJson(this.request.body.data), "data for saving is not json");
+
+			this.request.body.data = JSON.parse(this.request.body.data);
+
+
+			return {
+				data: await this.storeQueryResult(this.request.body.data),
+				message: "saved"
+			};
+		}
+
 		this.prepareFiltersForOffset();
 
 		let preparedRequest;
 
 		switch (this.reportObj.type.toLowerCase()) {
+
 			case "mysql":
 				preparedRequest = new MySQL(this.reportObj, this.filters, this.request.body.token);
 				break;
@@ -209,11 +285,15 @@ class report extends API {
 
 		let result;
 
+		//Priority: Redis > (Saved Result)
+
 		if (!forcedRun && this.reportObj.is_redis && redisData && !this.has_today) {
 
 			try {
 
 				result = JSON.parse(redisData);
+
+				// await this.storeQueryResult(result);
 
 				await engine.log(this.reportObj.query_id, this.reportObj.query, result.query,
 					Date.now() - this.reportObjStartTime, this.reportObj.type,
@@ -231,9 +311,55 @@ class report extends API {
 			}
 		}
 
+		if (this.reportObj.load_saved) {
+
+			[result] = await this.mysql.query(`
+				select 
+					* 
+				from 
+					??.??
+				where
+					query_id = ?
+					and id = 
+						(
+							select 
+								max(id)
+							from
+								??.??
+							where
+								query_id = ?
+								and type = ?
+						)
+			`,
+				[
+					this.queryResultDb, "tb_save_history", this.reportObj.query_id, this.queryResultDb, "tb_save_history",
+					this.reportObj.query_id, this.reportObj.type
+				],
+				parseInt(this.queryResultConnection),
+			);
+
+			if (result && result.data) {
+
+				this.assert(commonFun.isJson(result.data), "result is not a json");
+
+				result.data = JSON.parse(result.data);
+				const age = Math.round((Date.now() - Date.parse(result.created_at)) / 1000);
+				result = result.data;
+
+				result.load_saved = {
+					status: true,
+					age: age
+				};
+
+				return result;
+			}
+		}
+
 		try {
 
 			result = await engine.execute();
+			await this.storeQueryResult(result);
+
 		}
 		catch (e) {
 
@@ -258,7 +384,6 @@ class report extends API {
 				await redis.expire(hash, this.reportObj.is_redis);
 			}
 		}
-
 
 		result.cached = {status: false};
 
@@ -505,6 +630,16 @@ class Bigquery {
 		};
 	}
 
+	get finalQuery() {
+
+		this.prepareQuery();
+
+		return {
+			type: "bigquery",
+			request: [this.reportObj.query, this.filterList || [], this.reportObj.account_id, this.reportObj.connection_name + ".json", this.reportObj.project_name]
+		}
+	}
+
 	makeFilters(data, name, type = "STRING", is_multiple = 0,) {
 
 
@@ -555,9 +690,9 @@ class Bigquery {
 		for (const filter of this.filters) {
 			this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), `@${filter.placeholder}`);
 
-			if(!filter.type) {
+			if (!filter.type) {
 
-				if(parseInt(filter.value)) {
+				if (parseInt(filter.value)) {
 
 					filter.type = 1;
 				}
@@ -568,16 +703,6 @@ class Bigquery {
 			}
 
 			this.makeFilters(filter.value, filter.placeholder, filter.type, filter.multiple);
-		}
-	}
-
-	get finalQuery() {
-
-		this.prepareQuery();
-
-		return {
-			type: "bigquery",
-			request: [this.reportObj.query, this.filterList || [], this.reportObj.account_id, this.reportObj.connection_name + ".json", this.reportObj.project_name]
 		}
 	}
 }

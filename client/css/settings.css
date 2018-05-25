@@ -31,3 +31,11 @@ main {
 			height: 500px;
 			margin: 0;
 }
+main .feature-form h3 {
+	border-bottom: 1px dashed #999;
+	margin-bottom: 0;
+}
+main .feature-form table {
+	background: #fff;
+	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+}
