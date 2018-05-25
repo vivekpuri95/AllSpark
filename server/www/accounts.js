@@ -1,7 +1,8 @@
 const API = require('../utils/api.js');
 const account = require('../onServerStart');
 const commonFun = require("../utils/commonFunctions");
-
+const redis = require("../utils/redis").Redis;
+const constants = require("../utils/constants");
 
 exports.list = class extends API {
 
@@ -37,7 +38,8 @@ exports.list = class extends API {
 
 		accountList.map(x => {
 
-			if (!accountObj[x.account_id]) {
+			if(!accountObj[x.account_id]) {
+
 				accountObj[x.account_id] = JSON.parse(JSON.stringify(x));
 			}
 
@@ -98,7 +100,9 @@ exports.get = class extends API {
 
 			try {
 				settings = JSON.parse(x.value);
-			} catch(e) {};
+			}
+			catch (e) {
+			}
 
 			accountObj.settings.push({
 				profile: x.profile,
@@ -137,11 +141,11 @@ exports.insert = class extends API {
 
 		let settings, insertList = [];
 
-		if(this.request.body.settings) {
+		if (this.request.body.settings) {
 			this.assert(commonFun.isJson(this.request.body.settings), "settings is not in JSON format");
 			settings = JSON.parse(this.request.body.settings);
 
-			for(const setting of settings) {
+			for (const setting of settings) {
 
 				insertList.push([result.insertId, "account", setting.profile, JSON.stringify(setting.value)]);
 			}
@@ -161,8 +165,8 @@ exports.insert = class extends API {
 			insertList,
 			"write");
 
-        await account.loadAccounts();
-        return result;
+		await account.loadAccounts();
+		return result;
 	}
 }
 
@@ -195,13 +199,13 @@ exports.update = class extends API {
 
 		let settings, insertList = [];
 
-		if(this.request.body.settings) {
+		if (this.request.body.settings) {
 
 			this.assert(commonFun.isJson(this.request.body.settings), "settings is not in JSON format");
 
 			settings = JSON.parse(this.request.body.settings);
 
-			for(const setting of settings) {
+			for (const setting of settings) {
 
 				insertList.push([account_id, "account", setting.profile, JSON.stringify(setting.value)]);
 			}
@@ -221,8 +225,8 @@ exports.update = class extends API {
 			insertList,
 			"write");
 
-        await account.loadAccounts();
-        return result;
+		await account.loadAccounts();
+		return result;
 	}
 }
 
@@ -236,7 +240,92 @@ exports.delete = class extends API {
 			'write'
 		);
 
-        await account.loadAccounts();
-        return result;
+		await this.mysql.query(
+			"update tb_settings set status = 0 where account_id = ?",
+			[this.request.body.account_id],
+			"write"
+		);
+
+		await account.loadAccounts();
+		return result;
 	}
-}
+};
+
+
+exports.userQueryLogs = class extends API {
+
+	async userQueryLogs() {
+
+		const logsExists = await redis.hget(`accountSettings#${this.account.account_id}`, "settings.result_db");
+
+		if (parseInt(logsExists)) {
+
+			return "setup already done"
+		}
+
+		const [currentAccountSettings] = await this.mysql.query(
+			"select value from tb_settings where account_id = ? and owner = 'account' and profile = ?",
+			[this.account.account_id, constants.saveQueryResultDb]
+		);
+
+		this.assert(!currentAccountSettings.length, "Setting for save history not found");
+
+		let historyConnectionId = JSON.parse(currentAccountSettings.value).value;
+
+		this.assert(historyConnectionId, "connection id not found");
+
+		const [resultLogCredentials] = await this.mysql.query(
+			"select * from tb_credentials where id = ? and status = 1",
+			[historyConnectionId]
+		);
+
+		this.assert(resultLogCredentials, "Credential not found");
+
+		return await this.initialSetup(resultLogCredentials);
+	}
+
+	async initialSetup(credentials) {
+
+		await this.mysql.query(
+			`CREATE DATABASE IF NOT EXISTS ${credentials.db || constants.saveQueryResultDb}`,
+			[],
+			credentials.id
+		);
+
+		await this.mysql.query(`
+			CREATE TABLE IF NOT EXISTS ??.?? (
+			  \`id\` int(11) unsigned NOT NULL AUTO_INCREMENT,
+			  \`query_id\` int(11) DEFAULT NULL,
+			  \`type\` varchar(20) DEFAULT NULL,
+			  \`user_id\` int(11) DEFAULT NULL,
+			  \`query\` text,
+			  \`data\` text,
+			  \`created_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+			  \`updated_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			  PRIMARY KEY (\`id\`),
+			  KEY \`query_id\` (\`query_id\`),
+			  KEY \`type\` (\`type\`),
+			  KEY \`user_id\` (\`user_id\`),
+			  KEY \`created_at\` (\`created_at\`)
+			) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
+			[credentials.db || constants.saveQueryResultDb, constants.saveQueryResultTable],
+			credentials.id,
+		);
+
+		if (!credentials.db) {
+
+			await this.mysql.query(
+				`update tb_credentials set db = ? where id = ?`,
+				[credentials.db || constants.saveQueryResultDb, credentials.id],
+				"write"
+			);
+		}
+
+		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.result_db", 1);
+		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.connection_id", credentials.id);
+		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.db", credentials.db || constants.saveQueryResultDb);
+		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.save_result", 1);
+
+		return credentials.db || constants.saveQueryResultDb
+	}
+};
