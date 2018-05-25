@@ -257,8 +257,8 @@ Page.class = class Dashboards extends Page {
 
 				submenu.classList.add("hidden");
 			}
-			item.querySelector(".angle") ? item.querySelector(".angle").classList.remove("down") : {}
 
+			item.querySelector(".angle") ? item.querySelector(".angle").classList.remove("down") : {}
 		}
 
 		const labels = container.querySelectorAll(".label");
@@ -320,7 +320,7 @@ Page.class = class Dashboards extends Page {
 					hasHidden.classList.remove("hidden");
 				}
 
-				item.querySelector(".angle") ? item.querySelector(".angle").classList.remove("down") : {};
+				item.querySelector(".angle") ? item.querySelector(".angle").classList.add("down") : {};
 			}
 		});
 
@@ -328,7 +328,7 @@ Page.class = class Dashboards extends Page {
 
 			if (!dashboard.parent) {
 
-				let menuItem = dashboard.menuItem, showItemList;
+				let menuItem = dashboard.menuItem;
 				menuItem.classList.add("parentDashboard");
 				const label = menuItem.querySelector(".label");
 
@@ -344,15 +344,22 @@ Page.class = class Dashboards extends Page {
 					}
 				});
 
-				showItemList = menuItem.querySelectorAll(".hidden");
-
 				if (showLabelIds.includes(dashboard.id)) {
 
-					[].forEach.call(showItemList, (el) => {
+					for(const elem of menuItem.querySelectorAll(".submenu")) {
 
-						el.classList.remove("hidden");
-						el.querySelector(".angle") ? el.querySelector(".angle").classList.remove("down") : {}
-					});
+						elem.classList.remove("hidden");
+					}
+
+					for(const elem of menuItem.querySelectorAll(".label")) {
+
+						const angle = elem.querySelector(".angle");
+						
+						if(angle) {
+
+							angle.classList.add("down");
+						}
+					}
 				}
 
 				nav.appendChild(menuItem);
@@ -549,7 +556,7 @@ class Dashboard {
 			<div class="label" id=${"dashboard-" + this.id}>
 				${icon}
 				<span class="name">${this.name}</span>
-				${this.children.size ? '<span class="angle down"><i class="fa fa-angle-down"></i></span>' : ''}
+				${this.children.size ? '<span class="angle"><i class="fa fa-angle-right"></i></span>' : ''}
 			</div>
 			${this.children.size ? '<div class="submenu hidden"></div>' : ''}
 		`;

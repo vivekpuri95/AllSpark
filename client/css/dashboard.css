@@ -162,7 +162,7 @@ main > nav::-webkit-scrollbar-track {
 				transition: transform var(--transition-duration);
 			}
 			main > nav .item .label .angle.down {
-				transform: rotate(-90deg);
+				transform: rotate(90deg);
 			}
 main #mailto.selected {
 	background: var(--color-accent);
