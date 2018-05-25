@@ -1225,6 +1225,9 @@ class MultiSelect {
 			search = this.container.querySelector('input[type=search]'),
 			options = this.container.querySelector('.options');
 
+		if(!options)
+			return;
+
 		for(const input of options.querySelectorAll('.list label input')) {
 
 			input.checked = this.selectedValues.has(input.value) ? true : false;
