@@ -43,6 +43,8 @@ class Page {
 		}
 
 		await API.refreshToken();
+		await User.load();
+		await MetaData.load();
 	}
 
 	static render() {
