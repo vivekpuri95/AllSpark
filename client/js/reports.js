@@ -105,10 +105,10 @@ class DataSource {
 			age += 'ms';
 
 		else if(age < 1000 * 60)
-			age = (age / 1000) + 's';
+			age = Format.number((age / 1000)) + 's';
 
 		else if(age < 1000 * 60 * 60)
-			age = (age / (1000 * 60)) + 'h';
+			age = Format.number((age / (1000 * 60))) + 'h';
 
 		let runtime = Math.floor(response.runtime * 100) / 100;
 
@@ -178,7 +178,7 @@ class DataSource {
 				<div class="footer">
 					<span>
 						<span class="label">Role:</span>
-						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : 'Invalid'}</span>
+						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : '<span class="NA">NA</span>'}</span>
 					</span>
 					<span>
 						<span class="label">Added On:</span>
@@ -5640,6 +5640,11 @@ class Dataset extends MultiSelect {
 
 		if(Array.isArray(source)) {
 			super.value = source;
+			return;
+		}
+
+		if(!source.container.querySelector('.options')) {
+			this.container.querySelector('input').value = source.container.querySelector('input').value;
 			return;
 		}
 

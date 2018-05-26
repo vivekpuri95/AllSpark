@@ -83,8 +83,6 @@ Page.class = class Login extends Page {
 
 		e.preventDefault();
 
-		console.log(this);
-
 		if(!account)
 			return;
 

@@ -1651,6 +1651,9 @@ class ReportVisualizationDashboards extends Set {
 
 		for(const dashboard of this.response.values()) {
 
+			if(!dashboard.format)
+				dashboard.format = {};
+
 			for(const report of dashboard.format.reports || []) {
 
 				if(this.stage.visualization.visualization_id == report.visualization_id)
@@ -1780,8 +1783,8 @@ class ReportVisualizationDashboard {
 		}
 
 		form.dashboard_id.on('change', () => form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value);
-		form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value
 		form.dashboard_id.value = this.visualization.dashboard_id;
+		form.querySelector('.view-dashboard').href = '/dashboard/' + (this.visualization.dashboard_id);
 
 		form.querySelector('.delete').on('click', () => this.delete());
 

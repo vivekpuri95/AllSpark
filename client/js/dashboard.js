@@ -547,7 +547,7 @@ class Dashboard {
 
 		container.classList.add('item');
 
-		if (!allVisualizations.length && !parseInt(this.format.category_id)) {
+		if (!allVisualizations.length && (!this.format || !parseInt(this.format.category_id))) {
 
 			container.classList.add('hidden');
 		}
@@ -1192,10 +1192,8 @@ class DashboardDatasets extends Map {
 
 			for (const filter of visualization.filters.values()) {
 
-				if (!filter.dataset) {
-
+				if (!filter.dataset)
 					continue;
-				}
 
 				if (!datasets[filter.dataset.id]) {
 					datasets[filter.dataset.id] = {
