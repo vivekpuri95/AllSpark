@@ -5,7 +5,7 @@ const bigquery = require('./utils/bigquery').setup;
 async function loadAccounts() {
 
 	const accountList = await mysql.query(`
-		SELECT 
+		SELECT
 			a.account_id,
 			a.name,
 			a.url,
@@ -16,14 +16,14 @@ async function loadAccounts() {
 			f.name AS feature_name,
 			f.slug AS feature_slug,
 			f.type AS feature_type
-		FROM 
+		FROM
 			tb_accounts a
 		LEFT JOIN
 			tb_account_features af
 		ON
 			a.account_id = af.account_id
 			AND af.status = 1
-		JOIN
+		LEFT JOIN
 			tb_features f
 		ON
 			af.feature_id = f.feature_id
