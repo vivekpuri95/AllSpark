@@ -23,7 +23,7 @@ async function loadAccounts() {
 		ON
 			a.account_id = af.account_id
 			AND af.status = 1
-		JOIN
+		LEFT JOIN
 			tb_features f
 		ON
 			af.feature_id = f.feature_id

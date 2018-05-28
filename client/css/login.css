@@ -45,4 +45,8 @@ main > * {
 			}
 			main form button {
 				letter-spacing: 1px;
+				margin-left: auto;
 			}
+	main .signup {
+		padding: calc(var(--gap) * 2);
+	}

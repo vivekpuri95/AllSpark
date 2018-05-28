@@ -1,0 +1,23 @@
+main section form#signup-form {
+    padding: 0 0 10px 0;
+}
+    main section form#signup-form label {
+        margin-left: 10px;
+    }
+main section div.toolbar {
+    position: sticky;
+    top: 0;
+}
+    main section div.toolbar .loading {
+        display: flex;
+        align-items: center;
+        margin: 0;
+        height: initial;
+    }
+main section h3 {
+    margin: 0;
+    background: var(--color-primary);
+    color: var(--color-primary-text);
+    font-weight: normal;
+    padding: var(--gap);
+}

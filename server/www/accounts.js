@@ -122,15 +122,13 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		let payload = {};
+		let payload = {}, account_cols = ["name", "url", "icon", "logo"];
 
 		for (const values in this.request.body) {
-			payload[values] = this.request.body[values];
-		}
 
-		delete payload.settings;
-		delete payload.token;
-		delete payload.access_token;
+			if(account_cols.includes(values))
+				payload[values] = this.request.body[values];
+		}
 
 		const result = await this.mysql.query(
 			`INSERT INTO tb_accounts SET ?`,
@@ -151,8 +149,13 @@ exports.insert = class extends API {
 				insertList.push([result.insertId, "account", setting.profile, JSON.stringify(setting.value)]);
 			}
 		}
+		const [category, role] = await Promise.all([
+			this.mysql.query(`INSERT INTO tb_categories (account_id, name, slug, is_admin) VALUES(?, "Main", "main", 1)`, [result.insertId], 'write'),
+			this.mysql.query(`INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Main", 1)`, [result.insertId], 'write'),
+		]);
 
-		await this.mysql.query(`
+		try {
+			await this.mysql.query(`
 			INSERT INTO
 				tb_settings
 				(
@@ -163,11 +166,19 @@ exports.insert = class extends API {
 				)
 				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
 			`,
-			insertList,
-			"write");
+				insertList,
+				"write");
+		}
+		catch(e) {
+			console.log(e);
+		}
 
 		await account.loadAccounts();
-		return result;
+		return {
+			account_id: result.insertId,
+			category_id: category.insertId,
+			role_id: role.insertId
+		};
 	}
 }
 
