@@ -20,7 +20,7 @@ exports.createaccount = class extends API {
 			this.request.body.name, this.request.body.email);
 
 		if(check.length)
-			return ;
+			return "Account already exists";
 
 		const account_obj = Object.assign(new account(), this);
 		let account_res;
