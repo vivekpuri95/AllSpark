@@ -226,6 +226,8 @@ class report extends API {
 
 		await this.load(reportObj, filterList);
 
+		this.account.features.needs(this.reportObj.type + '-source');
+
 		await this.authenticate();
 
 		await this.storeQueryResultSetup();
