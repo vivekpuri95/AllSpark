@@ -314,15 +314,15 @@ class report extends API {
 		if (this.reportObj.load_saved) {
 
 			[result] = await this.mysql.query(`
-				select 
-					* 
-				from 
+				select
+					*
+				from
 					??.??
 				where
 					query_id = ?
-					and id = 
+					and id =
 						(
-							select 
+							select
 								max(id)
 							from
 								??.??
@@ -694,11 +694,11 @@ class Bigquery {
 
 				if (parseInt(filter.value)) {
 
-					filter.type = 1;
+					filter.type = 'number';
 				}
 				else {
 
-					filter.type = 0;
+					filter.type = 'text';
 				}
 			}
 
