@@ -67,6 +67,9 @@ Page.class = class Login extends Page {
 			await IndexedDb.instance.set('refresh_token', response.jwt);
 			await IndexedDb.instance.set('access_token', response.access_token);
 
+			this.cookies.set('refresh_token', response.jwt);
+			this.cookies.set('access_token', response.access_token);
+
 		} catch(error) {
 
 			this.container.querySelector('.whitelabel').classList.add('hidden');
@@ -103,6 +106,7 @@ Page.class = class Login extends Page {
 			const response = await API.call('authentication/login', {}, options);
 
 			await IndexedDb.instance.set('refresh_token', response.jwt);
+			this.cookies.set('refresh_token', response.jwt);
 
 			await API.refreshToken();
 

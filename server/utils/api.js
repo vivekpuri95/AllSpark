@@ -50,7 +50,7 @@ class API {
 		walk(__dirname + '/../www');
 	}
 
-	static serve() {
+	static serve(clientEndpoint) {
 
 		return async function (request, response, next) {
 
@@ -62,15 +62,18 @@ class API {
 					url = request.url.replace(/\//g, pathSeparator),
 					path = resolve(__dirname + '/../www') + pathSeparator + url.substring(4, url.indexOf('?') < 0 ? undefined : url.indexOf('?'));
 
-				if (!API.endpoints.has(path)) {
+				if (!API.endpoints.has(path) && !clientEndpoint) {
 					return next();
 				}
 
-				obj = new (API.endpoints.get(path))();
+				let endpoint = API.endpoints.get(path) || clientEndpoint;
+
+				obj = new endpoint();
 
 				obj.request = request;
 				obj.response = response;
 				obj.assert = assertExpression;
+
 				const token = request.query.token || request.body.token;
 
 				let userDetails;

@@ -6,14 +6,86 @@ const compression = require('compression');
 const config = require('config');
 const {promisify} = require('util');
 const fs = require('fs');
+const API = require('../server/utils/api');
 
 const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
 router.use(compression());
-
 router.use(express.static('./client'));
 
-router.get('/service-worker.js', async (request, response) => {
+class HTMLAPI extends API {
+
+	constructor(request, response) {
+
+		super();
+
+		this.request = request;
+		this.response = response;
+
+		this.stylesheets = [
+			'/css/main.css',
+		];
+
+		this.scripts = [
+			'/js/main.js',
+			'https://use.fontawesome.com/releases/v5.0.8/js/all.js" async defer f="',
+			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
+		];
+	}
+
+	body(main = '') {
+
+		this.stylesheets.push('/css/dark.css');
+
+		return `<!DOCTYPE html>
+			<html lang="en">
+				<head>
+					<meta name="viewport" content="width=device-width, initial-scale=1">
+					<meta name="theme-color" content="#fff">
+					<title></title>
+					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
+
+					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + checksum + '">').join('')}
+					${this.scripts.map(s => '<script src="' + s + '?' + checksum + '"></script>').join('')}
+
+					<link rel="manifest" href="/manifest.webmanifest">
+				</head>
+				<body>
+					<div id="ajax-working"></div>
+					<header>
+						<div class="logo-container">
+
+							<div class="left-menu-toggle hidden">
+								<i class="fas fa-bars"></i>
+							</div>
+
+							<a class="logo" href="/dashboard/first"><img></a>
+						</div>
+
+						<nav class="hidden"></nav>
+					</header>
+					<div class="nav-blanket"></div>
+					<main>
+						${main || ''}
+					</main>
+				</body>
+			</html>
+		`;
+	}
+}
+
+router.get('/test', class extends HTMLAPI {
+
+	get main() {
+
+		this.stylesheets.push('/css/login.css');
+		this.scripts.push('/js/login.js');
+
+		return `hey`;
+	}
+});
+
+/*router.get('/service-worker.js', async (request, response) => {
 
 	response.setHeader('Content-Type', 'application/javascript');
 	response.send([
@@ -24,7 +96,7 @@ router.get('/service-worker.js', async (request, response) => {
 
 router.get('/login', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.stylesheets.push('/css/login.css');
 	template.scripts.push('/js/login.js');
@@ -66,7 +138,7 @@ router.get('/login', (request, response) => {
 
 router.get('/login/forgot', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.stylesheets.push('/css/login.css');
 	template.scripts.push('/js/forgotpassword.js');
@@ -99,7 +171,7 @@ router.get('/login/forgot', (request, response) => {
 
 router.get('/login/reset', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.stylesheets.push('/css/login.css');
 
@@ -132,7 +204,7 @@ router.get('/login/reset', (request, response) => {
 });
 
 router.get('/user/profile/edit', (request, response) => {
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 	template.scripts.push('/js/user/profile/edit.js');
 
 	response.send(template.body(`
@@ -167,7 +239,7 @@ router.get('/user/profile/edit', (request, response) => {
 
 router.get('/user/profile/:id?', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.stylesheets.push('/css/profile.css');
 	template.scripts.push('/js/profile.js');
@@ -214,7 +286,7 @@ router.get('/user/profile/:id?', (request, response) => {
 
 router.get('/streams', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.scripts = template.scripts.concat([
 		'/js/streams.js',
@@ -228,7 +300,9 @@ router.get('/streams', (request, response) => {
 
 router.get('/:type(dashboard|report)/:id?', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
+
+	console.log(template.user, '---------------------------------------------');
 
 	template.stylesheets = template.stylesheets.concat([
 		'/css/reports.css',
@@ -330,7 +404,7 @@ router.get('/:type(dashboard|report)/:id?', (request, response) => {
 
 router.get('/dashboards-manager/:id?', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.stylesheets = template.stylesheets.concat([
 		'/css/reports.css',
@@ -433,7 +507,7 @@ router.get('/dashboards-manager/:id?', (request, response) => {
 
 router.get('/reports/:stage?/:id?', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.stylesheets = template.stylesheets.concat([
 		'/css/reports.css',
@@ -809,7 +883,7 @@ router.get('/reports/:stage?/:id?', (request, response) => {
 
 router.get('/users/:id?', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.stylesheets.push('/css/users.css');
 	template.scripts.push('/js/users.js');
@@ -936,7 +1010,7 @@ router.get('/users/:id?', (request, response) => {
 
 router.get('/connections/:id?', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.stylesheets.push('/css/connections.css');
 	template.scripts.push('/js/connections.js');
@@ -1000,7 +1074,7 @@ router.get('/connections/:id?', (request, response) => {
 
 router.get('/settings/:tab?/:id?', (request, response) => {
 
-	const template = new Template(request, response);
+	const template = new HTMLAPI(request, response);
 
 	template.stylesheets.push('/css/settings.css');
 	template.scripts.push('/js/settings.js');
@@ -1279,65 +1353,6 @@ router.get('/settings/:tab?/:id?', (request, response) => {
             </section>
         </div>
     `));
-});
-
-class Template {
-
-	constructor(request, response) {
-
-		this.request = request;
-		this.response = response;
-
-		this.stylesheets = [
-			'/css/main.css',
-		];
-
-		this.scripts = [
-			'/js/main.js',
-			'https://use.fontawesome.com/releases/v5.0.8/js/all.js" async defer f="',
-			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
-		];
-	}
-
-	body(main = '') {
-
-		this.stylesheets.push('/css/dark.css');
-
-		return `<!DOCTYPE html>
-			<html lang="en">
-				<head>
-					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<meta name="theme-color" content="#fff">
-					<title></title>
-					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
-
-					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + checksum + '">').join('')}
-					${this.scripts.map(s => '<script src="' + s + '?' + checksum + '"></script>').join('')}
-
-					<link rel="manifest" href="/manifest.webmanifest">
-				</head>
-				<body>
-					<div id="ajax-working"></div>
-					<header>
-						<div class="logo-container">
-
-							<div class="left-menu-toggle hidden">
-								<i class="fas fa-bars"></i>
-							</div>
-
-							<a class="logo" href="/dashboard/first"><img></a>
-						</div>
-
-						<nav class="hidden"></nav>
-					</header>
-					<div class="nav-blanket"></div>
-					<main>
-						${main || ''}
-					</main>
-				</body>
-			</html>
-		`;
-	}
-}
+});*/
 
 module.exports = router;
