@@ -1322,7 +1322,7 @@ class Template {
 						<div class="logo-container">
 
 							<div class="left-menu-toggle hidden">
-								<i class="fas fa-list-ul"></i>
+								<i class="fas fa-bars"></i>
 							</div>
 
 							<a class="logo" href="/dashboard/first"><img></a>
