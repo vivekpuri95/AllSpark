@@ -79,25 +79,23 @@ class Page {
 
 		if(account.settings.get('top_nav_position') == 'left') {
 
-			document.querySelector('.logo-container .left-menu').classList.remove('hidden');
+			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
 
 			nav_container.classList.add('left');
-
-			header.insertAdjacentHTML('afterend', `<div class="nav-blanket"></div>`);
-
-			header.querySelector('.left-menu').on('click', () => {
-
-				header.querySelector('.left-menu').classList.toggle('selected');
-				nav_container.classList.toggle('show');
-				document.querySelector('.nav-blanket').classList.toggle('menu-cover');
-			});
-
-			document.querySelector('.nav-blanket').on('click', () => {
-				header.querySelector('.left-menu').classList.toggle('selected');
-				nav_container.classList.toggle('show');
-				document.querySelector('.nav-blanket').classList.toggle('menu-cover');
-			});
 		};
+
+		header.querySelector('.left-menu-toggle').on('click', () => {
+
+			header.querySelector('.left-menu-toggle').classList.toggle('selected');
+			nav_container.classList.toggle('show');
+			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		});
+
+		document.querySelector('.nav-blanket').on('click', () => {
+			header.querySelector('.left-menu-toggle').classList.toggle('selected');
+			nav_container.classList.toggle('show');
+			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		});
 
 		nav_container.classList.remove('hidden');
 

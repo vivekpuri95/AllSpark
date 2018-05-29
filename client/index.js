@@ -1321,7 +1321,7 @@ class Template {
 					<header>
 						<div class="logo-container">
 
-							<div class="left-menu hidden">
+							<div class="left-menu-toggle hidden">
 								<i class="fas fa-list-ul"></i>
 							</div>
 
@@ -1330,6 +1330,7 @@ class Template {
 
 						<nav class="hidden"></nav>
 					</header>
+					<div class="nav-blanket"></div>
 					<main>
 						${main || ''}
 					</main>
