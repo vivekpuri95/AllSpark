@@ -261,7 +261,7 @@ Credential.types.set('mysql', class {
 
 			<label>
 				<span>Password</span>
-				<input type="text" name="password" value="${connections.password || ''}">
+				<input type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>

@@ -71,7 +71,7 @@ Page.class = class Dashboards extends Page {
 				...JSON.parse(JSON.stringify(dummyDashboard)),
 				name: "Public Dashboards",
 				id: -3,
-				icon: "fas fa-user-secret"
+				icon: "fas fa-globe"
 			};
 
 
@@ -354,7 +354,7 @@ Page.class = class Dashboards extends Page {
 					for(const elem of menuItem.querySelectorAll(".label")) {
 
 						const angle = elem.querySelector(".angle");
-						
+
 						if(angle) {
 
 							angle.classList.add("down");
