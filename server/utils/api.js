@@ -103,27 +103,24 @@ class API {
 				}
 
 				if (clientEndpoint) {
-					obj.result = await obj.body();
+					return response.send(await obj.body());
 				}
 
-				else {
-
-					if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
-						throw new API.Exception(401, 'User Not Authenticated! :(');
-					}
-
-					obj.result = await obj[path.split(pathSeparator).pop()]();
-
-					obj.result = {
-						status: obj.result ? true : false,
-						data: obj.result,
-					};
-
-					response.set({'Content-Encoding': 'gzip'});
-					response.set({'Content-Type': 'application/json'});
-
-					await obj.gzip();
+				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
+					throw new API.Exception(401, 'User Not Authenticated! :(');
 				}
+
+				const result = await obj[path.split(pathSeparator).pop()]();
+
+				obj.result = {
+					status: result ? true : false,
+					data: result,
+				};
+
+				await obj.gzip();
+
+				response.set({'Content-Encoding': 'gzip'});
+				response.set({'Content-Type': 'application/json'});
 
 				response.send(obj.result);
 			}
