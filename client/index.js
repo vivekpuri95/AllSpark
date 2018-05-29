@@ -1319,16 +1319,18 @@ class Template {
 				<body>
 					<div id="ajax-working"></div>
 					<header>
-						<a class="logo" href="/dashboard/first"><img></a>
+						<div class="logo-container">
 
-						<nav></nav>
+							<div class="left-menu-toggle hidden">
+								<i class="fas fa-list-ul"></i>
+							</div>
 
-						<span class="user-name"></span>
-						<span class="logout">
-							<i class="fa fa-power-off"></i>&nbsp;
-							Logout
-						</span>
+							<a class="logo" href="/dashboard/first"><img></a>
+						</div>
+
+						<nav class="hidden"></nav>
 					</header>
+					<div class="nav-blanket"></div>
 					<main>
 						${main || ''}
 					</main>

@@ -67,6 +67,46 @@ class Page {
 			document.title = account.name;
 		}
 
+		Page.navList = [
+			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
+			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
+			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
+			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+		];
+
+		const nav_container = header.querySelector('nav');
+
+		if(account.settings.get('top_nav_position') == 'left') {
+
+			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
+
+			nav_container.classList.add('left');
+		};
+
+		header.querySelector('.left-menu-toggle').on('click', () => {
+
+			header.querySelector('.left-menu-toggle').classList.toggle('selected');
+			nav_container.classList.toggle('show');
+			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		});
+
+		document.querySelector('.nav-blanket').on('click', () => {
+			header.querySelector('.left-menu-toggle').classList.toggle('selected');
+			nav_container.classList.toggle('show');
+			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		});
+
+		nav_container.classList.remove('hidden');
+
+		header.insertAdjacentHTML('beforeend', `
+			<span class="user-name"></span>
+			<span class="logout">
+				<i class="fa fa-power-off"></i>&nbsp;
+				Logout
+			</span>
+		`);
+
 		const user_name = header.querySelector('.user-name');
 
 		if(user.id) {
@@ -77,17 +117,6 @@ class Page {
 			header.insertBefore(search, user_name);
 		}
 		header.querySelector('.logout').on('click', () => User.logout());
-
-
-		Page.navList = [
-			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
-			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
-			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
-			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
-			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
-		];
-
-		const nav_container = header.querySelector('nav');
 
 		for(const item of Page.navList) {
 
