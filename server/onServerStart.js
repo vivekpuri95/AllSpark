@@ -15,9 +15,15 @@ async function loadAccounts() {
 			f.feature_id,
 			f.name AS feature_name,
 			f.slug AS feature_slug,
-			f.type AS feature_type
+			f.type AS feature_type,
+			s.profile,
+			s.value as settings
 		FROM 
 			tb_accounts a
+		LEFT JOIN
+			tb_settings s
+		ON
+			a.account_id = s.account_id 
 		LEFT JOIN
 			tb_account_features af
 		ON
@@ -29,6 +35,7 @@ async function loadAccounts() {
 			af.feature_id = f.feature_id
 		WHERE
 			a.status = 1
+			AND s.status = 1
 	`);
 
 	const accountObj = {};
@@ -62,6 +69,24 @@ async function loadAccounts() {
 			slug: account.feature_slug,
 			type: account.feature_type
 		});
+
+		if(!accountObj[account.url].settings) {
+
+			accountObj[account.url].settings = new Map();
+		}
+
+		try {
+			account.settings = JSON.parse(account.settings);
+		}
+		catch(e) {
+			account.settings = {}
+		}
+
+		for(const setting in account.settings){
+
+			accountObj[account.url].settings.set(setting, account.settings[setting]);
+		}
+
 	}
 
 	global.account = accountObj;

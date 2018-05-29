@@ -58,9 +58,7 @@ router.get('/login', (request, response) => {
 			</div>
 		</form>
 		<div class="block signup">
-			<span>
-				<a href="/login/forgot">Forgot password?</a> Or Create a <a href="/signup">new account</a>
-			</span>		
+			<a href="/login/forgot">Forgot password?</a><span class="hidden"> Or Create a <a href="/signup">new account</a></span>
 		</div>
 
 		<div id="message" class="hidden"></div>
@@ -75,13 +73,13 @@ router.get('/signup', (request, response) => {
 	template.scripts.push('/js/signup.js');
 
 	response.send(template.body(`
-		<section class="section show" id="signup">
+		<section class="section" id="signup">
 			<h1>Signup Page</h1>
 		
 			<div class="toolbar">
 				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 				<button type="submit" form="signup-form"><i class="fa fa-save"></i> Sign up</button>
-				<span class="loading hidden"><i class="fa fa-spinner fa-spin"></i></span>
+				<span class="notice hidden"></span>
 			</div>
 			
 			<form class="block form" id="signup-form">

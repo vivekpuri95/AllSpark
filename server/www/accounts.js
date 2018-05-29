@@ -154,18 +154,21 @@ exports.insert = class extends API {
 			this.mysql.query(`INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Main", 1)`, [result.insertId], 'write'),
 		]);
 
+		if(!insertList.length)
+			insertList.push([result.insertId, "account", null, null]);
+
 		try {
 			await this.mysql.query(`
-			INSERT INTO
-				tb_settings
-				(
-					account_id,
-					owner,
-					profile,
-					value
-				)
-				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
-			`,
+				INSERT INTO
+					tb_settings
+					(
+						account_id,
+						owner,
+						profile,
+						value
+					)
+					VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
+				`,
 				insertList,
 				"write");
 		}
@@ -341,3 +344,67 @@ exports.userQueryLogs = class extends API {
 		return credentials.db || constants.saveQueryResultDb
 	}
 };
+
+exports.signup = class extends API {
+
+	async signup() {
+
+		console.log(global.account);
+
+		if(!this.account.settings.get("enable_account_signup")) {
+			throw new API.Exception(400, 'Account Signup restricted!');
+		}
+
+		const check = this.mysql.query(
+			`SELECT 
+				* 
+			FROM 
+				tb_accounts a JOIN tb_users u USING (account_id) 
+			WHERE 
+				a.status = 1 
+				AND u.status = 1 
+				AND u.email = ?
+			`,
+			this.request.body.name, this.request.body.email);
+
+		if(check.length) {
+			throw new API.Exception(400, "Account already exists");
+		}
+
+		const account_obj = Object.assign(new exports.insert(), this);
+		let account_res;
+
+		try {
+			account_res = await account_obj.insert();
+		}
+		catch(e) {
+
+			throw new API.Exception(400, "Account not created")
+		}
+
+		const password = await commonFun.makeBcryptHash(this.request.body.password);
+
+		const user = await this.mysql.query(
+			`INSERT INTO tb_users (account_id, first_name, middle_name, last_name, email, password, phone)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			[
+				account_res.account_id,
+				this.request.body.first_name,
+				this.request.body.middle_name,
+				this.request.body.last_name,
+				this.request.body.email,
+				password,
+				this.request.body.phone
+			],
+			'write'
+		);
+
+
+		await Promise.all([
+			this.mysql.query(`INSERT INTO tb_user_roles (user_id, category_id, role_id) VALUES (?, ?, ?)`,[user.insertId, account_res.category_id, account_res.role_id],'write'),
+			this.mysql.query(`INSERT INTO tb_user_privilege (user_id, category_id, privilege_id) VALUES (?, ?, 1)`,[user.insertId, account_res.category_id],'write'),
+		]);
+
+		return "User signup successful";
+	}
+}

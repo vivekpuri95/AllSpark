@@ -4,6 +4,9 @@ Page.class = class Signup extends Page {
 
 		super();
 
+		if(account.settings.get("enable_account_signup"))
+			Sections.show('signup');
+
 		if(this.user.id) {
 			location.href = 'dashboard/first';
 			return;
@@ -17,7 +20,7 @@ Page.class = class Signup extends Page {
 	setup() {
 
 		this.container.querySelector('.toolbar #back').on('click', () => location.href = '/login');
-		this.container.querySelector('.toolbar .loading').classList.add('hidden');
+		this.container.querySelector('.toolbar span.notice').classList.add('hidden');
 		this.form.on('submit', e => this.submit(e));
 	}
 
@@ -30,9 +33,11 @@ Page.class = class Signup extends Page {
 			form: new FormData(this.form),
 		};
 
-		this.container.querySelector('.toolbar .loading').classList.remove('hidden');
+		await API.call('accounts/signup', {}, options);
 
-		await API.call('signup/createaccount', {}, options);
+
+		this.container.querySelector('.toolbar span.notice').innerHTML = 'Signup Successful! Please login...';
+		this.container.querySelector('.toolbar span.notice').classList.remove('hidden');
 
 		this.form.reset();
 		location.href = '/login';
