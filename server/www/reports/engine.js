@@ -111,6 +111,7 @@ class report extends API {
 	}
 
 	async authenticate() {
+		this.account.features.needs(this.reportObj.type + '-source');
 
 		const authResponse = await auth.report(this.reportObj, this.user);
 		this.assert(!authResponse.error, "user not authorised to get the report");
@@ -225,7 +226,6 @@ class report extends API {
 
 
 		await this.load(reportObj, filterList);
-
 		await this.authenticate();
 
 		await this.storeQueryResultSetup();

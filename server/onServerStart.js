@@ -56,7 +56,7 @@ async function loadAccounts() {
 			}
 		}
 
-		accountObj[account.url].features.set(account.feature_slug, {
+		accountObj[account.url].features.set(account.feature_slug + '-' + account.feature_type, {
 			feature_id: account.feature_id,
 			name: account.feature_name,
 			slug: account.feature_slug,
