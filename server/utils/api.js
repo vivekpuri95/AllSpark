@@ -102,15 +102,15 @@ class API {
 					obj.account = global.account[host];
 				}
 
-				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length && !clientEndpoint) {
-					throw new API.Exception(401, 'User Not Authenticated! :(');
-				}
-
-				if(clientEndpoint) {
+				if (clientEndpoint) {
 					obj.result = await obj.body();
 				}
 
 				else {
+
+					if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
+						throw new API.Exception(401, 'User Not Authenticated! :(');
+					}
 
 					obj.result = await obj[path.split(pathSeparator).pop()]();
 
