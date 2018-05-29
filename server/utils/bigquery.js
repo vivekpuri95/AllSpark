@@ -1,15 +1,9 @@
-let gcloud = null;
+const gcloud = require('google-cloud');;
 const mysql = require('./mysql').MySQL;
 const fs = require('fs');
 const commonFun = require('./commonFunctions');
 const config = require("config");
 const path = require("path");
-
-try {
-	gcloud = require('google-cloud');
-} catch(e) {
-	gcloud = {};
-}
 
 const gauth = function (project, file) {
 

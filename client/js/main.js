@@ -77,7 +77,7 @@ class Page {
 
 		const nav_container = header.querySelector('nav');
 
-		if(account.settings.get('top_nav_position') == 'left') {
+		if(account && account.settings.get('top_nav_position') == 'left') {
 
 			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
 

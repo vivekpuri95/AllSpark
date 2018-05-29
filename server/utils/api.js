@@ -66,7 +66,7 @@ class API {
 					return next();
 				}
 
-				let endpoint = API.endpoints.get(path) || clientEndpoint;
+				let endpoint = clientEndpoint || API.endpoints.get(path);
 
 				obj = new endpoint();
 
@@ -102,21 +102,28 @@ class API {
 					obj.account = global.account[host];
 				}
 
-				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
+				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length && !clientEndpoint) {
 					throw new API.Exception(401, 'User Not Authenticated! :(');
 				}
 
-				const result = await obj[path.split(pathSeparator).pop()]();
+				if(clientEndpoint) {
+					obj.result = await obj.body();
+				}
 
-				obj.result = {
-					status: result ? true : false,
-					data: result,
-				};
+				else {
 
-				await obj.gzip();
+					obj.result = await obj[path.split(pathSeparator).pop()]();
 
-				response.set({'Content-Encoding': 'gzip'});
-				response.set({'Content-Type': 'application/json'});
+					obj.result = {
+						status: obj.result ? true : false,
+						data: obj.result,
+					};
+
+					response.set({'Content-Encoding': 'gzip'});
+					response.set({'Content-Type': 'application/json'});
+
+					await obj.gzip();
+				}
 
 				response.send(obj.result);
 			}
@@ -199,7 +206,6 @@ class API {
 			});
 		});
 	}
-
 }
 
 function assertExpression(expression, message, statusCode) {
