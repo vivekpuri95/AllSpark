@@ -349,26 +349,8 @@ exports.signup = class extends API {
 
 	async signup() {
 
-		console.log(global.account);
-
 		if(!this.account.settings.get("enable_account_signup")) {
 			throw new API.Exception(400, 'Account Signup restricted!');
-		}
-
-		const check = this.mysql.query(
-			`SELECT 
-				* 
-			FROM 
-				tb_accounts a JOIN tb_users u USING (account_id) 
-			WHERE 
-				a.status = 1 
-				AND u.status = 1 
-				AND u.email = ?
-			`,
-			this.request.body.name, this.request.body.email);
-
-		if(check.length) {
-			throw new API.Exception(400, "Account already exists");
 		}
 
 		const account_obj = Object.assign(new exports.insert(), this);
