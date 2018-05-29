@@ -149,38 +149,34 @@ exports.insert = class extends API {
 				insertList.push([result.insertId, "account", setting.profile, JSON.stringify(setting.value)]);
 			}
 		}
-		const [category, role] = await Promise.all([
-			this.mysql.query(`INSERT INTO tb_categories (account_id, name, slug, is_admin) VALUES(?, "Main", "main", 1)`, [result.insertId], 'write'),
-			this.mysql.query(`INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Main", 1)`, [result.insertId], 'write'),
-		]);
 
 		if(!insertList.length)
 			insertList.push([result.insertId, "account", null, null]);
 
-		try {
-			await this.mysql.query(`
-				INSERT INTO
-					tb_settings
-					(
-						account_id,
-						owner,
-						profile,
-						value
-					)
-					VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
-				`,
+		const [category, role, setting] = await Promise.all([
+			this.mysql.query(
+				`INSERT INTO tb_categories (account_id, name, slug, is_admin) VALUES(?, "Main", "main", 1)`,
+				[result.insertId],
+				'write'
+			),
+			this.mysql.query(
+				`INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Main", 1)`,
+				[result.insertId],
+				'write'
+			),
+			this.mysql.query(
+				`INSERT INTO tb_settings (account_id, owner, profile, value) VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)`,
 				insertList,
-				"write");
-		}
-		catch(e) {
-			console.log(e);
-		}
+				"write"
+			)
+		]);
 
 		await account.loadAccounts();
 		return {
 			account_id: result.insertId,
 			category_id: category.insertId,
-			role_id: role.insertId
+			role_id: role.insertId,
+			setting:setting.insertId
 		};
 	}
 }
