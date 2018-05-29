@@ -52,7 +52,10 @@ async function loadAccounts() {
 			accountObj[account.url].features.needs = function (arg) {
 				if (this.has(arg))
 					return 1;
-				throw("This account lack this feature!");
+
+				const e = new Error("Insufficient feature privileges: " + arg);
+				e.status = 400;
+				throw e;
 			}
 		}
 
