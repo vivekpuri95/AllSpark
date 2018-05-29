@@ -1302,7 +1302,6 @@ class Template {
 	body(main = '') {
 
 		this.stylesheets.push('/css/dark.css');
-		this.stylesheets.push('/css/jungleworks.css');
 
 		return `<!DOCTYPE html>
 			<html lang="en">
