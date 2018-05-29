@@ -1,4 +1,4 @@
-const gcloud = require('google-cloud');;
+const gcloud = require('google-cloud');
 const mysql = require('./mysql').MySQL;
 const fs = require('fs');
 const commonFun = require('./commonFunctions');
