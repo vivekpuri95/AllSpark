@@ -165,7 +165,9 @@ body {
 		opacity: 0;
 		background: var(--color-primary);
 		transform: translateX(-220px);
-		transition: opacity var(--transition-duration),
+		box-shadow: 5px 0 30px 0 rgba(0, 0, 0, 0.5);
+		transition: box-shadow var(--transition-duration),
+					opacity var(--transition-duration),
 					transform var(--transition-duration),
 					background var(--transition-duration);
 	}

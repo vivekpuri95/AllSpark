@@ -1302,6 +1302,7 @@ class Template {
 	body(main = '') {
 
 		this.stylesheets.push('/css/dark.css');
+		this.stylesheets.push('/css/jungleworks.css');
 
 		return `<!DOCTYPE html>
 			<html lang="en">
@@ -1322,7 +1323,7 @@ class Template {
 						<div class="logo-container">
 
 							<div class="left-menu-toggle hidden">
-								<i class="fas fa-list-ul"></i>
+								<i class="fas fa-bars"></i>
 							</div>
 
 							<a class="logo" href="/dashboard/first"><img></a>
