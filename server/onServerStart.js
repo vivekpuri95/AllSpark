@@ -83,7 +83,7 @@ async function loadAccounts() {
 			account.settings = {}
 		}
 
-		for(const setting in account.settings){
+		for(const setting in account.settings) {
 
 			accountObj[account.url].settings.set(setting, account.settings[setting]);
 		}

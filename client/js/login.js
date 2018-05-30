@@ -4,7 +4,7 @@ Page.class = class Login extends Page {
 
 		super();
 
-		if(account.settings.get("enable_account_signup")) {
+		if(account.settings.get('enable_account_signup')) {
 			this.container.querySelector('.signup span').classList.remove('hidden');
 		}
 

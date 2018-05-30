@@ -4,11 +4,11 @@ main section form#signup-form {
     main section form#signup-form label {
         margin-left: 10px;
     }
-main section div.toolbar {
+main section .toolbar {
     position: sticky;
     top: 0;
 }
-    main section div.toolbar span {
+    main section .toolbar span {
         padding: 5px;
         display: flex;
         align-items: center;

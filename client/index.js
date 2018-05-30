@@ -58,19 +58,19 @@ router.get('/login', (request, response) => {
 			</div>
 		</form>
 		<div class="block signup">
-			<a href="/login/forgot">Forgot password?</a><span class="hidden"> Or Create a <a href="/signup">new account</a></span>
+			<a href="/login/forgot">Forgot password?</a><span class="hidden"> Or Create a <a href="/account-signup">new account</a></span>
 		</div>
 
 		<div id="message" class="hidden"></div>
 	`));
 });
 
-router.get('/signup', (request, response) => {
+router.get('/account-signup', (request, response) => {
 
 	const template = new Template(request, response);
 
-	template.stylesheets.push('/css/signup.css');
-	template.scripts.push('/js/signup.js');
+	template.stylesheets.push('/css/accountSignup.css');
+	template.scripts.push('/js/accountSignup.js');
 
 	response.send(template.body(`
 		<section class="section" id="signup">

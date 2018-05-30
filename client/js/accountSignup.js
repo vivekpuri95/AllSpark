@@ -4,22 +4,19 @@ Page.class = class Signup extends Page {
 
 		super();
 
-		if(account.settings.get("enable_account_signup"))
+		if(account.settings.get('enable_account_signup'))
 			Sections.show('signup');
 
 		if(this.user.id) {
-			location.href = 'dashboard/first';
+			location.href = '/';
 			return;
 		}
 
 		this.form = this.container.querySelector('form#signup-form');
-		this.setup();
+		this.container.querySelector('.toolbar #back').on('click', () => {
 
-	}
-
-	setup() {
-
-		this.container.querySelector('.toolbar #back').on('click', () => location.href = '/login');
+			window.state ? window.history.go(-1) : location.href = '/';
+		});
 		this.container.querySelector('.toolbar span.notice').classList.add('hidden');
 		this.form.on('submit', e => this.submit(e));
 	}
