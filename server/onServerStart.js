@@ -44,6 +44,7 @@ async function loadAccounts() {
 	for (const account of accountList) {
 
 		if (!accountObj[account.url]) {
+
 			accountObj[account.url] = {
 				account_id: account.account_id,
 				name: account.name,
@@ -55,6 +56,7 @@ async function loadAccounts() {
 		}
 
 		if (!accountObj[account.url].features) {
+
 			accountObj[account.url].features = new Map();
 
 			accountObj[account.url].features.needs = function (arg) {
@@ -68,27 +70,28 @@ async function loadAccounts() {
 		}
 
 		accountObj[account.url].features.set(account.feature_slug + '-' + account.feature_type, {
+
 			feature_id: account.feature_id,
 			name: account.feature_name,
 			slug: account.feature_slug,
 			type: account.feature_type
 		});
 
-		if(!accountObj[account.url].settings) {
-
-			accountObj[account.url].settings = new Map();
-		}
-
 		try {
 			account.settings = JSON.parse(account.settings);
 		}
 		catch(e) {
-			account.settings = {}
+			account.settings = [];
 		}
 
-		for(const setting in account.settings) {
+		if(!accountObj[account.url].settings) {
 
-			accountObj[account.url].settings.set(setting, account.settings[setting]);
+			accountObj[account.url].settings = new AccountProfileSettings();
+		}
+
+		for(const setting of account.settings) {
+
+			accountObj[account.url].settings.set(setting.key, setting.value);
 		}
 
 	}
@@ -99,6 +102,14 @@ async function loadAccounts() {
 async function loadBigquery() {
 
 	await bigquery();
+}
+
+class AccountProfileSettings extends Map {
+
+	constructor() {
+
+		super();
+	}
 }
 
 exports.loadAccounts = loadAccounts;
