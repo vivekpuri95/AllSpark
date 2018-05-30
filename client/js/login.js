@@ -52,37 +52,15 @@ Page.class = class Login extends Page {
 			this.message.classList.add('warning');
 		}
 
-		try {
+		const
+			params = {
+				access_token: (await IndexedDb.instance.get('access_token')) || parameters.get('access_token') || '',
+			},
+			options = {
+				method: 'POST',
+			};
 
-			const
-				params = {
-					access_token: (await IndexedDb.instance.get('access_token')) || parameters.get('access_token') || '',
-				},
-				options = {
-					method: 'POST',
-				};
-
-			const response = await API.call('authentication/login', params, options);
-
-			await IndexedDb.instance.set('refresh_token', response.jwt);
-			await IndexedDb.instance.set('access_token', response.access_token);
-
-			this.cookies.set('refresh_token', response.jwt);
-			this.cookies.set('access_token', response.access_token);
-
-		} catch(error) {
-
-			this.container.querySelector('.whitelabel').classList.add('hidden');
-			this.message.classList.remove('notice', 'hidden');
-			this.message.classList.add('warning');
-			this.message.textContent = error.message || error;
-
-			return;
-		}
-
-		this.message.innerHTML = 'Login Successful! Redirecting&hellip;';
-
-		window.location = '../';
+		this.login(params, options);
 	}
 
 	async submit(e) {
@@ -96,31 +74,44 @@ Page.class = class Login extends Page {
 		this.message.classList.remove('warning', 'hidden');
 		this.message.textContent = 'Logging you in!';
 
-		const options = {
-			method: 'POST',
-			form: new FormData(this.form),
-		};
+		const
+			params = {},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		this.login(params, options);
+	}
+
+	async login(params, options) {
 
 		try {
 
-			const response = await API.call('authentication/login', {}, options);
+			const response = await API.call('authentication/login', params, options);
+
+			if(!response.jwt && response.length)
+				throw new Page.exception('Same email from multiple accounts not supported yet! :(');
 
 			await IndexedDb.instance.set('refresh_token', response.jwt);
 			this.cookies.set('refresh_token', response.jwt);
 
+			if(response.access_token) {
+				await IndexedDb.instance.set('access_token', response.access_token);
+				this.cookies.set('access_token', response.access_token);
+			}
+
 			await API.refreshToken();
+
+			this.message.innerHTML = 'Login Successful! Redirecting&hellip;';
+			window.location = '../';
 
 		} catch(error) {
 
-			this.message.classList.remove('notice');
+			this.container.querySelector('.whitelabel').classList.add('hidden');
+			this.message.classList.remove('notice', 'hidden');
 			this.message.classList.add('warning');
 			this.message.textContent = error.message || error;
-
-			return;
 		}
-
-		this.message.innerHTML = 'Login Successful! Redirecting&hellip;';
-
-		window.location = '../';
 	}
 }
