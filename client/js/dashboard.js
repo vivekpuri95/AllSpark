@@ -380,6 +380,8 @@ Page.class = class Dashboards extends Page {
 			</footer>
 		`);
 
+		nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.has('disable_powered_by') && account.settings.get('disable_powered_by'))
+
 		nav.querySelector('.collapse-panel').on('click', (e) => {
 
 			nav.classList.toggle('collapsed');
@@ -388,6 +390,12 @@ Page.class = class Dashboards extends Page {
 
 			right.classList.toggle('hidden');
 			e.currentTarget.querySelector('.left').classList.toggle('hidden');
+
+			if(!nav.querySelector('.powered-by').classList.contains('hidden') && !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.add('hidden');
+
+			else if( !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.remove('hidden');
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
 

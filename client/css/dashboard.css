@@ -166,10 +166,11 @@ main > nav::-webkit-scrollbar-track {
 			letter-spacing: 0.5px;
 			padding: 12px;
 		}
-		main > nav footer .powered-by a {
-			font-weight: bold;
-			letter-spacing: 1.5px;
-		}
+			main > nav footer .powered-by a {
+				color: var(--color-primary-text);
+				font-weight: bold;
+				letter-spacing: 1.5px;
+			}
 main #mailto.selected {
 	background: var(--color-accent);
 	color: var(--color-accent-text);
