@@ -1,10 +1,8 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var api = require('../utils/api');
-var account = require('../onServerStart');
-
-//var bigquery = require("../www/bigquery").setup;
+const api = require('../utils/api');
+const account = require('../onServerStart');
 
 (async () => {
 
@@ -27,6 +25,7 @@ router.use(function(req, res, next){
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Exprexxo' });
 });
+
 router.get('/hello', function(req, res, next) {
     res.render('index', { title: 'hello' });
 });

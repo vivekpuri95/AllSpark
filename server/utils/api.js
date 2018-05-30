@@ -50,7 +50,7 @@ class API {
 		walk(__dirname + '/../www');
 	}
 
-	static serve() {
+	static serve(clientEndpoint) {
 
 		return async function (request, response, next) {
 
@@ -62,15 +62,18 @@ class API {
 					url = request.url.replace(/\//g, pathSeparator),
 					path = resolve(__dirname + '/../www') + pathSeparator + url.substring(4, url.indexOf('?') < 0 ? undefined : url.indexOf('?'));
 
-				if (!API.endpoints.has(path)) {
+				if (!API.endpoints.has(path) && !clientEndpoint) {
 					return next();
 				}
 
-				obj = new (API.endpoints.get(path))();
+				let endpoint = clientEndpoint || API.endpoints.get(path);
+
+				obj = new endpoint();
 
 				obj.request = request;
 				obj.response = response;
 				obj.assert = assertExpression;
+
 				const token = request.query.token || request.body.token;
 
 				let userDetails;
@@ -97,6 +100,10 @@ class API {
 
 				if (!obj.account) {
 					obj.account = global.account[host];
+				}
+
+				if (clientEndpoint) {
+					return response.send(await obj.body());
 				}
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
@@ -196,7 +203,6 @@ class API {
 			});
 		});
 	}
-
 }
 
 function assertExpression(expression, message, statusCode) {
