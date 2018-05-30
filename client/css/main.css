@@ -1,14 +1,16 @@
 :root {
-	--color-primary: #2a3f54;
+	--color-primary: #2a313f;
 	--color-primary-text: #fff;
 	--color-secondary: #ddd;
 	--color-secondary-text: #333;
-	--color-accent: #0366d6;
+	--color-accent:  #1abb9c;
 	--color-accent-text: #fff;
+	--color-row-hover: #ddf;
 	--transition-duration: 300ms;
-	--gap: 5px;
 	--color-red-text: #a94442;
 	--color-green-text: #1abb9c;
+
+	--gap: 5px;
 }
 * {
 	box-sizing: border-box;
@@ -18,11 +20,12 @@ input:not([type=checkbox]):not([type=radio]),
 select,
 button {
 	padding: 5px 10px;
-	border: 1px solid #ccc;
 	background: transparent;
 	height: 28px;
 	outline-width: 2px;
 	font-size: 90%;
+	border: 1px solid #ccc;
+	background: #fff;
 	transition: background var(--transition-duration),
 				color var(--transition-duration),
 				box-shadow var(--transition-duration),
@@ -141,7 +144,7 @@ body {
 		transition: background var(--transition-duration);
 	}
 	body > header {
-		background: linear-gradient(to right, #0a5ffc 0%, #3786fd 100%);
+		background: var(--color-primary);
 		color: var(--color-primary-text);
 		display: flex;
 		position: sticky;
@@ -232,13 +235,13 @@ body {
 			white-space: nowrap;
 		}
 		body > header .logout:hover,
-		body > header a:hover,
-		body > header .logout:focus,
-		body > header a:focus {
+		body > header a:hover {
 			text-decoration: none;
 			background: rgba(255, 255, 255, 0.3);
 			cursor: pointer;
+			transition: box-shadow var(--transition-duration);
 		}
+		body > header a:active,
 		body > header a.selected {
 			background: rgba(255, 255, 255, 0.3);
 			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);

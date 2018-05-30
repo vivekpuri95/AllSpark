@@ -479,8 +479,8 @@
 				}
 
 			main .data-source .visualization .tooltip {
-				background: #fff;
-				color: var(--color-secondary-text);
+				background: var(--color-primary);
+				color: var(--color-primary-text);
 				box-shadow: 0 0 35px rgba(0, 0, 0, 0.25);
 				position: absolute;
 				font-size: 90%;
@@ -490,7 +490,7 @@
 			}
 				main .data-source .visualization .tooltip header {
 					padding: var(--gap) calc(var(--gap) * 2);
-					border-bottom: 1px solid var(--color-accent);
+					border-bottom: 1px solid var(--color-primary-text);
 					display: flex;
 				}
 				main .data-source .visualization .tooltip footer {

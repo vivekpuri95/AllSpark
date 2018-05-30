@@ -6,12 +6,8 @@ class Settings extends Map {
 	}
 
 	get(key) {
-
-		const obj = super.get(key);
-
-		return obj.value;
+		return super.has(key) ? super.get(key).value : undefined;
 	}
-
 }
 
 module.exports = Settings;

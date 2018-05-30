@@ -33,7 +33,8 @@ class HTMLAPI extends API {
 
 	async body() {
 
-		this.stylesheets.push('/css/dark.css');
+		if(this.account.settings.has('custom_css'))
+			this.stylesheets.push('/css/custom.css');
 
 		return `<!DOCTYPE html>
 			<html lang="en">
@@ -64,7 +65,7 @@ class HTMLAPI extends API {
 					</header>
 					<div class="nav-blanket"></div>
 					<main>
-						${this.main || ''}
+						${await this.main() || ''}
 					</main>
 				</body>
 			</html>
@@ -74,9 +75,10 @@ class HTMLAPI extends API {
 
 router.get('/service-worker.js', API.serve(class extends HTMLAPI {
 
-	get main() {
+	async body() {
 
 		this.response.setHeader('Content-Type', 'application/javascript');
+
 		return [
 			await (promisify(fs.readFile))('client/js/service-worker.js', {encoding: 'utf8'}),
 			`'${checksum}'`
@@ -84,6 +86,15 @@ router.get('/service-worker.js', API.serve(class extends HTMLAPI {
 	}
 }));
 
+router.get('/css/custom.css', API.serve(class extends HTMLAPI {
+
+	async body() {
+
+		this.response.setHeader('Content-Type', 'text/css');
+
+		return this.account.settings.get('custom_css') || '';
+	}
+}));
 
 router.get('/account-signup', API.serve(class extends HTMLAPI {
 
@@ -95,20 +106,20 @@ router.get('/account-signup', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/accountSignup.js');
 	}
 
-	get main() {
+	async main() {
 
 		return `
 			<section class="section" id="signup">
 				<h1>Signup Page</h1>
-			
+
 				<div class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 					<button type="submit" form="signup-form"><i class="fa fa-save"></i> Sign up</button>
 					<span class="notice hidden"></span>
 				</div>
-				
+
 				<form class="block form" id="signup-form">
-					
+
 					<h3>Account Details</h3>
 					<label>
 						<span>Account Name</span>
@@ -126,9 +137,9 @@ router.get('/account-signup', API.serve(class extends HTMLAPI {
 						<span>Logo</span>
 						<input type="text" name="logo">
 					</label>
-					
+
 					<h3>Admin Details</h3>
-		
+
 					<label>
 						<span>First Name</span>
 						<input type="text" name="first_name">
@@ -169,7 +180,7 @@ router.get('/login', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/login.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<div class="logo hidden">
 				<img src="" />
@@ -179,28 +190,28 @@ router.get('/login', API.serve(class extends HTMLAPI {
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 
-			
-		<form class="form hidden">
+			<form class="form hidden">
 
-			<label>
-				<span>Email</span>
-				<input type="text" name="email" required>
-			</label>
+				<label>
+					<span>Email</span>
+					<input type="text" name="email" required>
+				</label>
 
-			<label>
-				<span>Password</span>
-				<input type="password" name="password" required>
-			</label>
-			<div>
-				<button class="submit">
-					<i class="fa fa-paper-plane"></i>
-					Sign In
-				</button>
+				<label>
+					<span>Password</span>
+					<input type="password" name="password" required>
+				</label>
+				<div>
+					<button class="submit">
+						<i class="fa fa-paper-plane"></i>
+						Sign In
+					</button>
+				</div>
+			</form>
+			<div class="signup">
+				<a href="/login/forgot">Forgot Password?</a>
+				${this.account.settings.get('enable_account_signup') ? 'Or Create a <a href="/account-signup">new account</a>' : ''}
 			</div>
-		</form>
-		<div class="block signup">
-			<a href="/login/forgot">Forgot password?</a><span class="hidden"> Or Create a <a href="/account-signup">new account</a></span>
-		</div>
 
 			<div id="message" class="hidden"></div>
 		`;
@@ -217,7 +228,7 @@ router.get('/login/forgot', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/forgotpassword.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<div class="logo hidden">
 				<img src="" />
@@ -254,7 +265,7 @@ router.get('/login/reset', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/resetpassword.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<div class="logo hidden">
 				<img src="" />
@@ -290,7 +301,7 @@ router.get('/user/profile/edit', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/user/profile/edit.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<section class="section" id="form">
 				<form class="block form">
@@ -332,7 +343,7 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/profile.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<section id="profile">
 				<h1>
@@ -388,7 +399,7 @@ router.get('/streams', API.serve(class extends HTMLAPI {
 		]);
 	}
 
-	get main() {
+	async main() {
 		return ''
 	}
 }));
@@ -415,7 +426,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 		]);
 	}
 
-	get main() {
+	async main() {
 		return `
 			<nav>
 				<div class="NA"><i class="fa fa-spinner fa-spin"></i></div>
@@ -516,7 +527,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 		]);
 	}
 
-	get main() {
+	async main() {
 		return `
 			<section class="section show" id="list">
 
@@ -630,7 +641,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 		]);
 	}
 
-	get main() {
+	async main() {
 		return `
 			<div id="stage-switcher"></div>
 
@@ -996,7 +1007,7 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/users.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<section class="section" id="list">
 
@@ -1127,7 +1138,7 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/connections.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<section class="section" id="list">
 
@@ -1196,7 +1207,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/settings.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<nav></nav>
 
