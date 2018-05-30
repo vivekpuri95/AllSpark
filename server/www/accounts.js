@@ -122,15 +122,13 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		let payload = {};
+		let payload = {}, account_cols = ["name", "url", "icon", "logo"];
 
 		for (const values in this.request.body) {
-			payload[values] = this.request.body[values];
-		}
 
-		delete payload.settings;
-		delete payload.token;
-		delete payload.access_token;
+			if(account_cols.includes(values))
+				payload[values] = this.request.body[values];
+		}
 
 		const result = await this.mysql.query(
 			`INSERT INTO tb_accounts SET ?`,
@@ -152,22 +150,34 @@ exports.insert = class extends API {
 			}
 		}
 
-		await this.mysql.query(`
-			INSERT INTO
-				tb_settings
-				(
-					account_id,
-					owner,
-					profile,
-					value
-				)
-				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
-			`,
-			insertList,
-			"write");
+		if(!insertList.length)
+			insertList.push([result.insertId, "account", null, null]);
+
+		const [category, role, setting] = await Promise.all([
+			this.mysql.query(
+				`INSERT INTO tb_categories (account_id, name, slug, is_admin) VALUES(?, "Main", "main", 1)`,
+				[result.insertId],
+				'write'
+			),
+			this.mysql.query(
+				`INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Main", 1)`,
+				[result.insertId],
+				'write'
+			),
+			this.mysql.query(
+				`INSERT INTO tb_settings (account_id, owner, profile, value) VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)`,
+				insertList,
+				"write"
+			)
+		]);
 
 		await account.loadAccounts();
-		return result;
+		return {
+			account_id: result.insertId,
+			category_id: category.insertId,
+			role_id: role.insertId,
+			setting:setting.insertId
+		};
 	}
 }
 
@@ -330,3 +340,49 @@ exports.userQueryLogs = class extends API {
 		return credentials.db || constants.saveQueryResultDb
 	}
 };
+
+exports.signup = class extends API {
+
+	async signup() {
+
+		if(!this.account.settings.get("enable_account_signup")) {
+			throw new API.Exception(400, 'Account Signup restricted!');
+		}
+
+		const account_obj = Object.assign(new exports.insert(), this);
+		let account_res;
+
+		try {
+			account_res = await account_obj.insert();
+		}
+		catch(e) {
+
+			throw new API.Exception(400, "Account not created")
+		}
+
+		const password = await commonFun.makeBcryptHash(this.request.body.password);
+
+		const user = await this.mysql.query(
+			`INSERT INTO tb_users (account_id, first_name, middle_name, last_name, email, password, phone)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			[
+				account_res.account_id,
+				this.request.body.first_name,
+				this.request.body.middle_name,
+				this.request.body.last_name,
+				this.request.body.email,
+				password,
+				this.request.body.phone
+			],
+			'write'
+		);
+
+
+		await Promise.all([
+			this.mysql.query(`INSERT INTO tb_user_roles (user_id, category_id, role_id) VALUES (?, ?, ?)`,[user.insertId, account_res.category_id, account_res.role_id],'write'),
+			this.mysql.query(`INSERT INTO tb_user_privilege (user_id, category_id, privilege_id) VALUES (?, ?, 1)`,[user.insertId, account_res.category_id],'write'),
+		]);
+
+		return "User signup successful";
+	}
+}

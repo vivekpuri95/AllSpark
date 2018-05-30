@@ -1,5 +1,6 @@
 const mysql = require('./utils/mysql').MySQL;
 const bigquery = require('./utils/bigquery').setup;
+const settings = require('./utils/settings');
 
 
 async function loadAccounts() {
@@ -15,9 +16,18 @@ async function loadAccounts() {
 			f.feature_id,
 			f.name AS feature_name,
 			f.slug AS feature_slug,
-			f.type AS feature_type
-		FROM
+			f.type AS feature_type,
+			s.profile,
+			s.value as settings
+		FROM 
 			tb_accounts a
+		LEFT JOIN
+			tb_settings s
+		ON
+			a.account_id = s.account_id
+			AND s.status = 1
+			AND s.owner = 'account'
+			AND s.profile = 'main' 
 		LEFT JOIN
 			tb_account_features af
 		ON
@@ -36,6 +46,7 @@ async function loadAccounts() {
 	for (const account of accountList) {
 
 		if (!accountObj[account.url]) {
+
 			accountObj[account.url] = {
 				account_id: account.account_id,
 				name: account.name,
@@ -47,6 +58,7 @@ async function loadAccounts() {
 		}
 
 		if (!accountObj[account.url].features) {
+
 			accountObj[account.url].features = new Map();
 
 			accountObj[account.url].features.needs = function (arg) {
@@ -60,11 +72,28 @@ async function loadAccounts() {
 		}
 
 		accountObj[account.url].features.set(account.feature_slug + '-' + account.feature_type, {
+
 			feature_id: account.feature_id,
 			name: account.feature_name,
 			slug: account.feature_slug,
 			type: account.feature_type
 		});
+
+		if(!account.settings)
+			account.settings = [];
+
+		try {
+			account.settings = JSON.parse(account.settings);
+		}
+		catch(e) {
+			account.settings = [];
+		}
+
+		if(!accountObj[account.url].settings) {
+
+			accountObj[account.url].settings = new settings(account.settings);
+		}
+
 	}
 
 	global.account = accountObj;

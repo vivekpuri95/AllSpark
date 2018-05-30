@@ -567,8 +567,8 @@ class Account {
 
 		if(account.settings && account.settings[0]) {
 
-			for(const key in account.settings[0].value)
-				this.settings.set(key, account.settings[0].value[key]);
+			for(const setting of account.settings[0].value)
+				this.settings.set(setting.key, setting.value);
 		}
 	}
 }
