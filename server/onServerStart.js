@@ -23,7 +23,10 @@ async function loadAccounts() {
 		LEFT JOIN
 			tb_settings s
 		ON
-			a.account_id = s.account_id 
+			a.account_id = s.account_id
+			AND s.status = 1
+			AND s.owner = 'account'
+			AND s.profile = 'main' 
 		LEFT JOIN
 			tb_account_features af
 		ON
@@ -35,9 +38,6 @@ async function loadAccounts() {
 			af.feature_id = f.feature_id
 		WHERE
 			a.status = 1
-			AND s.status = 1
-			AND s.owner = 'account'
-			AND s.profile = 'main'
 	`);
 
 	const accountObj = {};
@@ -77,6 +77,9 @@ async function loadAccounts() {
 			slug: account.feature_slug,
 			type: account.feature_type
 		});
+
+		if(!account.settings)
+			account.settings = [];
 
 		try {
 			account.settings = JSON.parse(account.settings);
