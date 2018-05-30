@@ -37,6 +37,7 @@ async function loadAccounts() {
 			a.status = 1
 			AND s.status = 1
 			AND s.owner = 'account'
+			AND s.profile = 'main'
 	`);
 
 	const accountObj = {};
