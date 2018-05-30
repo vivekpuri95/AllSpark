@@ -5,7 +5,7 @@ const bigquery = require('./utils/bigquery').setup;
 async function loadAccounts() {
 
 	const accountList = await mysql.query(`
-		SELECT 
+		SELECT
 			a.account_id,
 			a.name,
 			a.url,
@@ -60,11 +60,14 @@ async function loadAccounts() {
 			accountObj[account.url].features.needs = function (arg) {
 				if (this.has(arg))
 					return 1;
-				throw("This account lack this feature!");
+
+				const e = new Error("Insufficient feature privileges: " + arg);
+				e.status = 400;
+				throw e;
 			}
 		}
 
-		accountObj[account.url].features.set(account.feature_slug, {
+		accountObj[account.url].features.set(account.feature_slug + '-' + account.feature_type, {
 			feature_id: account.feature_id,
 			name: account.feature_name,
 			slug: account.feature_slug,

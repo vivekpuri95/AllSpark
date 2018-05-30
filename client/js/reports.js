@@ -1647,7 +1647,7 @@ class DataSourceColumn {
 		for(const filter of destination.filters.values()) {
 
 			if(filter.dataset)
-				destinationDatasets.push(filter.dataset.load());
+				destinationDatasets.push(filter.dataset.fetch());
 		}
 
 		await Promise.all(destinationDatasets);
