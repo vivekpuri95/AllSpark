@@ -380,7 +380,7 @@ Page.class = class Dashboards extends Page {
 			</footer>
 		`);
 
-		nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.has('disable_powered_by') && account.settings.get('disable_powered_by'))
+		nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.get('disable_powered_by'))
 
 		nav.querySelector('.collapse-panel').on('click', (e) => {
 
