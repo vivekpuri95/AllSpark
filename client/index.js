@@ -91,73 +91,73 @@ router.get('/account-signup', API.serve(class extends HTMLAPI {
 
 		super();
 
-	  template.stylesheets.push('/css/accountSignup.css');
-	  template.scripts.push('/js/accountSignup.js');
+		this.stylesheets.push('/css/accountSignup.css');
+		this.scripts.push('/js/accountSignup.js');
 	}
 
 	get main() {
 
-	return `
-		<section class="section" id="signup">
-			<h1>Signup Page</h1>
-		
-			<div class="toolbar">
-				<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-				<button type="submit" form="signup-form"><i class="fa fa-save"></i> Sign up</button>
-				<span class="notice hidden"></span>
-			</div>
+		return `
+			<section class="section" id="signup">
+				<h1>Signup Page</h1>
 			
-			<form class="block form" id="signup-form">
+				<div class="toolbar">
+					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
+					<button type="submit" form="signup-form"><i class="fa fa-save"></i> Sign up</button>
+					<span class="notice hidden"></span>
+				</div>
 				
-				<h3>Account Details</h3>
-				<label>
-					<span>Account Name</span>
-					<input type="text" name="name" required>
-				</label>
-				<label>
-					<span>Url</span>
-					<input type="text" name="url" required>
-				</label>
-				<label>
-					<span>Icon</span>
-					<input type="text" name="icon">
-				</label>
-				<label>
-					<span>Logo</span>
-					<input type="text" name="logo">
-				</label>
-				
-				<h3>Admin Details</h3>
-	
-				<label>
-					<span>First Name</span>
-					<input type="text" name="first_name">
-				</label>
-				<label>
-					<span>Middle Name</span>
-					<input type="text" name="middle_name">
-				</label>
-				<label>
-					<span>Last Name</span>
-					<input type="text" name="last_name">
-				</label>
-				<label>
-					<span>Email</span>
-					<input type="email" name="email" required>
-				</label>
-				<label>
-					<span>Password</span>
-					<input type="password" name="password" required>
-				</label>
-				<label>
-					<span>Phone</span>
-					<input type="text" name="phone">
-				</label>
-			</form>
-		</section>
-	`;
-  }
-}))
+				<form class="block form" id="signup-form">
+					
+					<h3>Account Details</h3>
+					<label>
+						<span>Account Name</span>
+						<input type="text" name="name" required>
+					</label>
+					<label>
+						<span>Url</span>
+						<input type="text" name="url" required>
+					</label>
+					<label>
+						<span>Icon</span>
+						<input type="text" name="icon">
+					</label>
+					<label>
+						<span>Logo</span>
+						<input type="text" name="logo">
+					</label>
+					
+					<h3>Admin Details</h3>
+		
+					<label>
+						<span>First Name</span>
+						<input type="text" name="first_name">
+					</label>
+					<label>
+						<span>Middle Name</span>
+						<input type="text" name="middle_name">
+					</label>
+					<label>
+						<span>Last Name</span>
+						<input type="text" name="last_name">
+					</label>
+					<label>
+						<span>Email</span>
+						<input type="email" name="email" required>
+					</label>
+					<label>
+						<span>Password</span>
+						<input type="password" name="password" required>
+					</label>
+					<label>
+						<span>Phone</span>
+						<input type="text" name="phone">
+					</label>
+				</form>
+			</section>
+		`;
+	}
+}));
 
 router.get('/login', API.serve(class extends HTMLAPI {
 
