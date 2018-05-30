@@ -1,4 +1,4 @@
-class Settings extends Map{
+class Settings extends Map {
 
 	constructor(setting) {
 
@@ -7,7 +7,7 @@ class Settings extends Map{
 
 	get(key) {
 
-		let obj = this.get(key);
+		const obj = super.get(key);
 
 		return obj.value;
 	}
