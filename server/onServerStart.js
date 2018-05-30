@@ -1,5 +1,6 @@
 const mysql = require('./utils/mysql').MySQL;
 const bigquery = require('./utils/bigquery').setup;
+const settings = require('./utils/settings');
 
 
 async function loadAccounts() {
@@ -90,12 +91,7 @@ async function loadAccounts() {
 
 		if(!accountObj[account.url].settings) {
 
-			accountObj[account.url].settings = new AccountProfileSettings();
-		}
-
-		for(const setting of account.settings) {
-
-			accountObj[account.url].settings.set(setting.key, setting.value);
+			accountObj[account.url].settings = new settings(account.settings);
 		}
 
 	}
@@ -106,14 +102,6 @@ async function loadAccounts() {
 async function loadBigquery() {
 
 	await bigquery();
-}
-
-class AccountProfileSettings extends Map {
-
-	constructor() {
-
-		super();
-	}
 }
 
 exports.loadAccounts = loadAccounts;
