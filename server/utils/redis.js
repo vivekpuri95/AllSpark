@@ -66,8 +66,26 @@ class Redis {
 		return await deletePromisified(key);
 	}
 
+	static async hset(key, field, value) {
+
+		const hsetPromisified = promisify(redis_client.hset).bind(redis_client);
+		console.log("hset key: field", key, " : ", field);
+
+		return await hsetPromisified(key, field, value);
+	}
+
+	static async hget(key, field) {
+
+		const hgetPromisified = promisify(redis_client.hget).bind(redis_client);
+		console.log("hget key: field", key, " : ", field);
+
+		return await hgetPromisified(key, field);
+	}
 }
 
+//
+// (async () => await Redis.hset("testRedisKey", "testkey", "value"))();
+//
 
 exports.redis = redis_client;
 exports.Redis = Redis;

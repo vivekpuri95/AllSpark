@@ -1,14 +1,16 @@
 "use strict";
 
-window.addEventListener('DOMContentLoaded', async () => {
+if(typeof window != 'undefined') {
+	window.addEventListener('DOMContentLoaded', async () => {
 
-	await Page.setup();
+		await Page.setup();
 
-	if(!Page.class)
-		return;
+		if(!Page.class)
+			return;
 
-	window.page = new (Page.class)();
-});
+		window.page = new (Page.class)();
+	});
+}
 
 class Page {
 
@@ -19,10 +21,13 @@ class Page {
 		await Page.load();
 
 		Page.render();
+
+		Page.listenAccessToken();
 	}
 
 	static async load() {
 
+		await IndexedDb.load();
 		await Account.load();
 		await User.load();
 		await MetaData.load();
@@ -33,11 +38,13 @@ class Page {
 
 			if(parameters.has('access_token') && parameters.get('access_token')) {
 				User.logout();
-				localStorage.access_token = parameters.get('access_token');
+				await IndexedDb.instance.set('access_token', parameters.get('access_token'));
 			}
 		}
 
 		await API.refreshToken();
+		await User.load();
+		await MetaData.load();
 	}
 
 	static render() {
@@ -60,6 +67,46 @@ class Page {
 			document.title = account.name;
 		}
 
+		Page.navList = [
+			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
+			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
+			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
+			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+		];
+
+		const nav_container = header.querySelector('nav');
+
+		if(account && account.settings.get('top_nav_position') == 'left') {
+
+			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
+
+			nav_container.classList.add('left');
+		};
+
+		header.querySelector('.left-menu-toggle').on('click', () => {
+
+			header.querySelector('.left-menu-toggle').classList.toggle('selected');
+			nav_container.classList.toggle('show');
+			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		});
+
+		document.querySelector('.nav-blanket').on('click', () => {
+			header.querySelector('.left-menu-toggle').classList.toggle('selected');
+			nav_container.classList.toggle('show');
+			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		});
+
+		nav_container.classList.remove('hidden');
+
+		header.insertAdjacentHTML('beforeend', `
+			<span class="user-name"></span>
+			<span class="logout">
+				<i class="fa fa-power-off"></i>&nbsp;
+				Logout
+			</span>
+		`);
+
 		const user_name = header.querySelector('.user-name');
 
 		if(user.id) {
@@ -70,17 +117,6 @@ class Page {
 			header.insertBefore(search, user_name);
 		}
 		header.querySelector('.logout').on('click', () => User.logout());
-
-
-		Page.navList = [
-			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
-			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
-			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
-			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
-			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
-		];
-
-		const nav_container = header.querySelector('nav');
 
 		for(const item of Page.navList) {
 
@@ -108,6 +144,20 @@ class Page {
 		}
 	}
 
+	static listenAccessToken() {
+		document.on('keyup', e => {
+			if(e.altKey && e.keyCode == 69) {
+				const value = prompt('Enter the Token.');
+
+				if(!value)
+					return;
+
+				IndexedDb.instance.set('access_token', value);
+				location.reload();
+			}
+		});
+	}
+
 	constructor() {
 
 		this.container = document.querySelector('main');
@@ -115,8 +165,11 @@ class Page {
 		this.account = window.account;
 		this.user = window.user;
 		this.metadata = window.MetaData;
+		this.indexedDb = IndexedDb.instance;
+		this.cookies = new Cookies();
 
 		this.serviceWorker = new Page.serviceWorker(this);
+		this.webWorker = new Page.webWorker(this);
 	}
 }
 
@@ -168,6 +221,165 @@ Page.serviceWorker = class PageServiceWorker {
 			this.page.container.parentElement.insertBefore(message, this.page.container);
 
 		}, 1000);
+	}
+}
+
+class IndexedDb {
+
+	static async load() {
+
+		if(IndexedDb.instance)
+			return;
+
+		IndexedDb.instance = new IndexedDb();
+
+		await IndexedDb.instance.open();
+	}
+
+	constructor(page) {
+		this.page = page;
+	}
+
+	open() {
+
+		return new Promise((resolve, reject) => {
+
+			this.request = indexedDB.open('MainDb', 1);
+
+			this.request.onupgradeneeded = e => this.setup(e.target.result);
+			this.request.onsuccess = e => {
+
+				this.db = e.target.result;
+
+				this.db.onerror = e => {throw new Page.exception(e);}
+				resolve();
+			};
+
+			this.request.onerror = reject;
+		});
+	}
+
+	setup(db) {
+		db.createObjectStore('MainStore', {keyPath: 'key'});
+	}
+
+	has(key) {
+
+		return new Promise((resolve, reject) => {
+
+			const request = this.db.transaction('MainStore').objectStore('MainStore').get(key);
+
+			request.onsuccess = e => resolve(e.target.result ? true : false);
+			request.onerror = e => resolve(false);
+		});
+	}
+
+	get(key) {
+
+		return new Promise((resolve, reject) => {
+
+			const request = this.db.transaction('MainStore').objectStore('MainStore').get(key);
+
+			request.onsuccess = e => resolve(e.target.result ? e.target.result.value : undefined);
+			request.onerror = e => resolve();
+		});
+	}
+
+	set(key, value) {
+
+		return new Promise((resolve, reject) => {
+
+			const request = this.db.transaction('MainStore', 'readwrite').objectStore('MainStore').put({key, value});
+
+			request.onsuccess = e => resolve(e.result);
+			request.onerror = e => reject(e);
+		});
+	}
+}
+
+/**
+ * A generic cookie map interface that lets us do basic CRUD tasks.
+ */
+class Cookies {
+
+	/**
+	 * Sets a new cookie with given name and value and overwrites any previously held values.
+	 *
+	 * @param {string} key		The name of the cookie being set.
+	 * @param {string} Value	The value of the cookie being set.
+	 * @return {boolean}		The status of the set request.
+	 */
+	set(key, value) {
+		document.cookie = `${key}=${encodeURIComponent(value)}`;
+		return true;
+	}
+
+	/**
+	 * Checks if a cookie with the given name exists.
+	 *
+	 * @param  {string} key	The name of the cookie whose existance is being questioned
+	 * @return {boolean}	Returns true if the cookie exists, false otherwise
+	 */
+	has(key) {
+		return new Boolean(document.cookie.split(';').filter(c => c.includes(`${key}=`)).length);
+	}
+
+	/**
+	 * Gets the value of a cookie with the given name.
+	 *
+	 * @param  {string}	key		The name of the cookie whose value will be retured.
+	 * @return {srtring|null}	The value of the cookie, null if not found.
+	 */
+	get(key) {
+
+		// TODO: Handle the prefix bug, (both foo and barfoo will be matched with current approach)
+		const [cookie] = document.cookie.split(';').filter(c => c.includes(`${key}=`));
+
+		if(!cookie)
+			return null;
+
+		return decodeURIComponent(cookie.split('=')[1]);
+	}
+}
+
+if(typeof Worker != 'undefined') {
+
+	Page.webWorker = class PageWebWorker extends Worker {
+
+		constructor(page) {
+
+			super('/js/web-worker.js');
+
+			this.page = page;
+			this.requests = new Map();
+
+			this.onmessage = e => this.message(e);
+			this.onerror = e => this.error(e);
+		}
+
+		send(action, request) {
+
+			const reference = Math.random();
+
+			return new Promise(resolve => {
+
+				this.requests.set(reference, response => resolve(response));
+
+				this.postMessage({reference, action, request});
+			});
+		}
+
+		message(e) {
+
+			if(!this.requests.has(e.data.reference))
+				throw new Page.exception(`Invalid web worker response for reference ${e.data.reference}`, e.data.response);
+
+			this.requests.get(e.data.reference)(e.data.response);
+		}
+
+		error(e) {
+			throw new Page.exception(e);
+		}
 	}
 }
 
@@ -234,7 +446,6 @@ class GlobalSearch {
 		);
 
 		// this.container.on('keydown', Page.keyUpDownListenter = e => this.searchUpDown(e));
-
 	}
 
 	async fetch() {
@@ -319,7 +530,6 @@ class GlobalSearch {
 		}
 
 		this.active_li.focus();
-
 	}
 }
 
@@ -327,29 +537,25 @@ class Account {
 
 	static async load() {
 
-		let account = null;
-
-		try {
-			account = JSON.parse(localStorage.account);
-		} catch(e) {}
-
-		if(!account)
-			account = await Account.fetch();
-
-		localStorage.account = JSON.stringify(account);
+		const account = await Account.fetch();
 
 		return window.account = account ? new Account(account) : null;
 	}
 
 	static async fetch() {
 
+		if(await IndexedDb.instance.has('account'))
+			return await IndexedDb.instance.get('account');
+
 		try {
 
-			return await API.call('accounts/get');
+			await IndexedDb.instance.set('account', await API.call('accounts/get'));
 
 		} catch(e) {
 			return null;
 		}
+
+		return await IndexedDb.instance.get('account');
 	}
 
 	constructor(account) {
@@ -361,8 +567,8 @@ class Account {
 
 		if(account.settings && account.settings[0]) {
 
-			for(const key in account.settings[0].value)
-				this.settings.set(key, account.settings[0].value[key]);
+			for(const setting of account.settings[0].value)
+				this.settings.set(setting.key, setting.value);
 		}
 	}
 }
@@ -373,18 +579,21 @@ class User {
 
 		let user = null;
 
+		const token = await IndexedDb.instance.get('token');
+
 		try {
-			user = JSON.parse(atob(localStorage.token.split('.')[1]));
+			user = JSON.parse(atob(token.split('.')[1]));
 		} catch(e) {}
 
 		return window.user = new User(user);
 	}
 
-	static logout(next) {
+	static async logout(next) {
 
 		const parameters = new URLSearchParams();
 
 		localStorage.clear();
+		await IndexedDb.instance.db.transaction('MainStore', 'readwrite').objectStore('MainStore').clear();
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
@@ -436,6 +645,8 @@ class MetaData {
 		MetaData.roles = new Map;
 		MetaData.datasets = new Map;
 		MetaData.visualizations = new Map;
+		MetaData.filterTypes = new Set;
+		MetaData.features = new Set;
 
 		if(!user.id)
 			return;
@@ -489,8 +700,10 @@ class MetaData {
 			MetaData.categories.set(category.category_id, category);
 		}
 
+		MetaData.filterTypes = new Set(metadata.filterTypes);
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
+		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
 	}
 }
 
@@ -580,13 +793,15 @@ class API extends AJAX {
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
-		if(localStorage.token) {
+		const token = await IndexedDb.instance.get('token');
+
+		if(token) {
 
 			if(typeof parameters == 'string')
-				parameters += '&token='+localStorage.token;
+				parameters += '&token='+token;
 
 			else
-				parameters.token = localStorage.token;
+				parameters.token = token;
 		}
 
 		// If a form id was supplied, then also load the data from that form
@@ -636,13 +851,15 @@ class API extends AJAX {
 
 	static async refreshToken() {
 
-		let getToken = true;
+		let
+			getToken = true,
+			token = await IndexedDb.instance.get('token');
 
-		if(localStorage.token) {
+		if(token) {
 
 			try {
 
-				const user = JSON.parse(atob(localStorage.token.split('.')[1]));
+				const user = JSON.parse(atob(token.split('.')[1]));
 
 				if(user.exp && user.exp * 1000 > Date.now())
 					getToken = false;
@@ -650,23 +867,24 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!localStorage.refresh_token || !getToken)
+		if(!await IndexedDb.instance.has('refresh_token') || !getToken)
 			return;
 
 		const
 			parameters = {
-				refresh_token: localStorage.refresh_token
+				refresh_token: await IndexedDb.instance.get('refresh_token'),
 			},
 			options = {
 				method: 'POST',
 			};
 
 		if(account.auth_api && parameters.access_token)
-			parameters.access_token = localStorage.access_token;
+			parameters.access_token = await IndexedDb.instance.get('access_token');
 
 		const response = await API.call('authentication/refresh', parameters, options);
 
-		localStorage.token = response;
+		await IndexedDb.instance.set('token', response);
+		new Cookies().set('token', response);
 
 		Page.load();
 	}
@@ -694,6 +912,9 @@ class AJAXLoader {
 	 */
 	static show() {
 
+		if(typeof document == 'undefined')
+			return;
+
 		if(!AJAXLoader.count)
 			AJAXLoader.count = 0;
 
@@ -716,6 +937,9 @@ class AJAXLoader {
 	 * Hide the flag.
 	 */
 	static hide() {
+
+		if(typeof document == 'undefined')
+			return;
 
 		AJAXLoader.count--;
 
@@ -898,10 +1122,257 @@ class DialogBox {
 	}
 }
 
-Node.prototype.on = window.on = function(name, fn) {
-	this.addEventListener(name, fn);
+class MultiSelect {
+
+	constructor({datalist, multiple = true, expand = false} = {}) {
+
+		this.datalist = datalist;
+		this.multiple = multiple;
+		this.expand = expand;
+
+		this.selectedValues = new Set();
+		this.inputName = 'multiselect-' + Math.floor(Math.random() * 10000);
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('multi-select');
+
+		container.innerHTML = `
+			<input type="search" placeholder="Search...">
+			<div class="options hidden">
+				<header>
+					<a class="all">All</a>
+					<a class="clear">Clear</a>
+				</header>
+				<div class="list"></div>
+				<div class="no-matches NA hidden">No matches found! :(</div>
+				<footer></footer>
+			</div>
+		`;
+
+		if(this.expand)
+		    this.container.querySelector('.options').classList.remove('hidden');
+
+		this.render();
+
+		this.setEvents();
+
+		return container;
+	}
+
+	setEvents() {
+
+		this.container.querySelector('input[type=search]').on('click', (e) => {
+
+			e.stopPropagation();
+
+			for(const option of document.querySelectorAll('.multi-select .options')) {
+				option.classList.add('hidden');
+			}
+
+			this.container.querySelector('.options').classList.remove('hidden');
+		});
+
+		this.container.querySelector('input[type=search]').on('dblclick', () => {
+
+		    if(this.expand)
+		        return;
+
+			this.container.querySelector('.options').classList.add('hidden');
+		});
+
+		document.body.on('click', () => {
+
+		    if(this.expand)
+		        return;
+
+			this.container.querySelector('.options').classList.add('hidden');
+		});
+
+		this.container.querySelector('.options').on('click', (e) => e.stopPropagation());
+
+		this.container.querySelector('input[type=search]').on('keyup', () => this.update());
+
+		this.container.querySelector('.options header .all').on('click', () => this.all());
+
+		this.container.querySelector('.options header .clear').on('click', () => this.clear());
+	}
+
+	set value(source) {
+
+		this.selectedValues.clear();
+		source.map( x => this.selectedValues.add(x.toString()));
+
+		this.update();
+	}
+
+	get value() {
+
+		return Array.from(this.selectedValues);
+	}
+
+	set disabled(value) {
+
+		this._disabled = value;
+		this.render();
+	}
+
+	get disabled() {
+
+		return this._disabled;
+	}
+
+	render() {
+
+		if(this.expand)
+			this.container.querySelector('.options').classList.add('expanded');
+
+		if(this.disabled)
+			this.container.querySelector('input[type=search]').disabled = true;
+
+		const optionList = this.container.querySelector('.options .list');
+		optionList.textContent = null;
+
+		if(!this.datalist.length) {
+			this.container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
+		}
+
+		for(const row of this.datalist) {
+
+			const
+				label = document.createElement('label'),
+				input = document.createElement('input'),
+				text = document.createTextNode(row.name);
+
+			input.name = this.inputName;
+			input.value = row.value;
+			input.type = this.multiple ? 'checkbox' : 'radio';
+			input.checked = true;
+
+			label.appendChild(input);
+			label.appendChild(text);
+
+			label.setAttribute('title', row.value);
+
+			input.on('change', () => {
+
+				if(!this.multiple) {
+
+					this.selectedValues.clear();
+					this.selectedValues.add(input.value.toString());
+				}
+				else {
+
+					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
+				}
+				this.update();
+			});
+
+			if(this.disabled) {
+			    input.disabled = true;
+			}
+
+			label.on('dblclick', e => {
+
+				e.stopPropagation();
+
+				this.clear();
+				label.click();
+			});
+
+			optionList.appendChild(label);
+		}
+
+	    this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+
+		this.update();
+	}
+
+	update() {
+
+		if(!this.containerElement)
+			return;
+
+		const
+			search = this.container.querySelector('input[type=search]'),
+			options = this.container.querySelector('.options');
+
+		if(!options)
+			return;
+
+		for(const input of options.querySelectorAll('.list label input')) {
+
+			input.checked = this.selectedValues.has(input.value) ? true : false;
+
+			let hide = false;
+
+			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+				hide = true;
+
+			input.parentElement.classList.toggle('hidden', hide);
+			input.parentElement.classList.toggle('selected', input.checked);
+		}
+
+		const
+			total = options.querySelectorAll('.list label').length,
+			hidden = options.querySelectorAll('.list label.hidden').length,
+			selected = options.querySelectorAll('.list input:checked').length;
+
+		search.placeholder = `Search... (${selected} selected)`;
+
+		options.querySelector('footer').innerHTML = `
+			<span>Total: <strong>${total}</strong></span>
+			<span>Showing: <strong>${total - hidden}</strong></span>
+			<span>Selected: <strong>${selected}</strong></span>
+		`;
+
+		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
+
+		if(this.changeCallback)
+			this.changeCallback();
+
+	}
+
+	on(event, callback) {
+
+		if(event != 'change')
+			throw new Page.exception('Only Change event is supported...');
+
+		this.changeCallback = callback;
+	}
+
+	all() {
+
+		if(!this.multiple || this.disabled || !this.datalist)
+			return;
+
+		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+		this.update();
+	}
+
+	clear() {
+
+	    if(this.disabled)
+	        return;
+
+		this.selectedValues.clear();
+		this.update();
+	}
+}
+
+if(typeof Node != 'undefined') {
+	Node.prototype.on = window.on = function(name, fn) {
+		this.addEventListener(name, fn);
+	}
 }
 
 MetaData.timeout = 5 * 60 * 1000;
 
-window.onerror = ErrorLogs.send;
+if(typeof window != 'undefined')
+	window.onerror = ErrorLogs.send;

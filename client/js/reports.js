@@ -12,10 +12,12 @@ class DataSource {
 		DataSource.list = new Map(response.map(report => [report.query_id, report]));
 	}
 
-	constructor(source) {
+	constructor(source, page) {
 
 		for(const key in source)
 			this[key] = source[key];
+
+		this.page = page;
 
 		this.tags = this.tags || '';
 		this.tags = this.tags.split(',').filter(a => a.trim());
@@ -42,15 +44,14 @@ class DataSource {
 		parameters = new URLSearchParams(parameters);
 
 		parameters.set('query_id', this.query_id);
-		parameters.set('email', user.email);
 
 		if(this.queryOverride)
 			parameters.set('query', this.query);
 
 		for(const filter of this.filters.values()) {
 
-			if(account.auth_api && localStorage.access_token && filter.placeholder == 'access_token')
-				filter.value = localStorage.access_token;
+			if(account.auth_api && await IndexedDb.instance.has('access_token') && filter.placeholder == 'access_token')
+				filter.value = await IndexedDb.instance.get('access_token');
 
 			if(filter.dataset && filter.dataset.query_id) {
 
@@ -104,10 +105,10 @@ class DataSource {
 			age += 'ms';
 
 		else if(age < 1000 * 60)
-			age = (age / 1000) + 's';
+			age = Format.number((age / 1000)) + 's';
 
 		else if(age < 1000 * 60 * 60)
-			age = (age / (1000 * 60)) + 'h';
+			age = Format.number((age / (1000 * 60))) + 'h';
 
 		let runtime = Math.floor(response.runtime * 100) / 100;
 
@@ -173,11 +174,11 @@ class DataSource {
 			<div class="drilldown hidden"></div>
 
 			<div class="description hidden">
-				<div class="body">${this.description || 'No description found.'}</div>
+				<div class="body"></div>
 				<div class="footer">
 					<span>
 						<span class="label">Role:</span>
-						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : 'Invalid'}</span>
+						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : '<span class="NA">NA</span>'}</span>
 					</span>
 					<span>
 						<span class="label">Added On:</span>
@@ -246,9 +247,8 @@ class DataSource {
 				`);
 			}
 
-			this.dialog.body = `<ul class="user-list">${user_element.join()}</ul>`;
+			this.dialog.body = `<ul class="user-list">${user_element.join('')}</ul>`;
 			this.dialog.show();
-
 		});
 
 		container.querySelector('header .reload').on('click', () => {
@@ -274,12 +274,19 @@ class DataSource {
 				container.querySelector('.description .requested').classList.remove('hidden');
 
 			container.querySelector('.description').classList.toggle('hidden');
+
 			container.querySelector('.description-toggle').classList.toggle('selected');
 
 			this.visualizations.selected.render({resize: true});
 
-			await this.userList();
-			container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
+			if(user.privileges.has('administrator')) {
+
+				await this.userList();
+				container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
+			}
+			else {
+				container.querySelector('.description .visible-to').classList.add('hidden');
+			}
 		});
 
 		container.querySelector('.menu .query-toggle').on('click', () => {
@@ -444,7 +451,6 @@ class DataSource {
 
 			if(!row.skip)
 				response.push(row);
-
 		}
 
 		if(this.postProcessors.selected)
@@ -468,7 +474,7 @@ class DataSource {
 				else if(first > second)
 					result = 1;
 
-				if(!this.columns.sortBy.sort)
+				if(parseInt(this.columns.sortBy.sort) === 0)
 					result *= -1;
 
 				return result;
@@ -519,7 +525,7 @@ class DataSource {
 				visualization:this.visualizations.selected.type,
 				sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				token		 :localStorage.token,
+				token		 :await IndexedDb.instance.get('token'),
 			};
 
 			for(const axis of this.visualizations.selected.options.axes) {
@@ -574,16 +580,10 @@ class DataSource {
 
 		const xlsxBlobOutput = await (await (fetch("/api/v2/reports/engine/download", {
 			body: JSON.stringify(obj),
-			cache: 'no-cache',
-			credentials: 'same-origin',
 			headers: {
-				'user-agent': 'Mozilla/4.0 MDN Example',
 				'content-type': 'application/json'
 			},
 			method: 'POST',
-			mode: 'cors',
-			redirect: 'follow',
-			referrer: 'no-referrer',
 		}))).blob();
 
 		const link = document.createElement('a');
@@ -651,6 +651,22 @@ class DataSource {
 			`);
 		}
 
+		const description = this.container.querySelector('.description .body');
+		description.textContent = null;
+
+		description.classList.remove('NA');
+		if (!this.description && !this.visualizations.selected.description) {
+			description.classList.add('NA');
+			description.innerHTML = 'No description found!';
+		}
+		else {
+			if (this.description)
+				description.insertAdjacentHTML('beforeend', '<h3>Report Description</h3>' + this.description);
+
+			if (this.visualizations.selected.description)
+				description.insertAdjacentHTML('beforeend', '<h3>Visualization Description</h3>' + this.visualizations.selected.description);
+		}
+
 		this.columns.render();
 	}
 }
@@ -709,15 +725,6 @@ class DataSourceFilters extends Map {
 class DataSourceFilter {
 
 	static setup() {
-
-		DataSourceFilter.types = {
-			1: 'text',
-			0: 'number',
-			2: 'date',
-			3: 'month',
-			4: 'hidden',
-		};
-
 		DataSourceFilter.placeholderPrefix = 'param_';
 	}
 
@@ -740,12 +747,12 @@ class DataSourceFilter {
 			return this.labelContainer;
 
 		const container = document.createElement('label');
-		if (DataSourceFilter.types[this.type] == 'hidden')
+		if (this.type == 'hidden')
 			container.classList.add('hidden');
 
 		let input = document.createElement('input');
 
-		input.type = DataSourceFilter.types[this.type];
+		input.type = this.type;
 		input.name = this.placeholder;
 
 		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
@@ -775,10 +782,10 @@ class DataSourceFilter {
 
 		if(!isNaN(parseFloat(this.offset))) {
 
-			if(DataSourceFilter.types[this.type] == 'date')
+			if(this.type == 'date')
 				value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
-			if(DataSourceFilter.types[this.type] == 'month') {
+			if(this.type == 'month') {
 				const date = new Date();
 				value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + this.offset, 1)).toISOString().substring(0, 7);
 			}
@@ -858,6 +865,18 @@ class DataSourceRow extends Map {
 					this.skip = true;
 			}
 
+			if(column.source.columns.get(column.key).postfix)
+				row[key] = row[key] + column.source.columns.get(column.key).postfix;
+
+			if(column.source.columns.get(column.key).prefix)
+				row[key] = column.source.columns.get(column.key).prefix + row[key];
+
+			if(column.type == 'date')
+				row[key] = Format.date(row[key]);
+
+			else if(column.type == 'number')
+				row[key] = Format.number(row[key]);
+
 			this.set(key, row[key] || 0);
 		}
 
@@ -899,8 +918,11 @@ class DataSourceColumns extends Map {
 
 		container.textContent = null;
 
-		for(const column of this.values())
-			container.appendChild(column.container);
+		for(const column of this.values()) {
+
+			if(!column.hidden)
+				container.appendChild(column.container);
+		}
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
@@ -1008,7 +1030,7 @@ class DataSourceColumn {
 		this.key = column;
 		this.source = source;
 		this.name = this.key.split('_').map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
-		this.disabled = 0;
+		this.disabled = false;
 		this.color = DataSourceColumn.colors[this.source.columns.size % DataSourceColumn.colors.length];
 
 		if(this.source.format && this.source.format.columns) {
@@ -1030,7 +1052,7 @@ class DataSourceColumn {
 		container.classList.add('column');
 
 		container.innerHTML = `
-			<span class="color" style="background: ${this.color}"></span>
+			<span class="color" style="background: ${this.color}">&#x2714;</span>
 			<span class="name">${this.name}</span>
 
 			<div class="blanket hidden">
@@ -1203,6 +1225,7 @@ class DataSourceColumn {
 			clearTimeout(timeout);
 
 			timeout = setTimeout(async () => {
+
 				let found = false;
 
 				if(!this.source.format)
@@ -1236,7 +1259,7 @@ class DataSourceColumn {
 		});
 
 		this.form.querySelector('.add-parameters').on('click', () => {
-			this.addParameterDiv();
+			this.addParameter();
 			this.updateDrilldownParamters();
 		});
 
@@ -1284,7 +1307,7 @@ class DataSourceColumn {
 			this.form.drilldown_query_id.value = this.drilldown ? this.drilldown.query_id : '';
 
 			for(const param of this.drilldown.parameters || [])
-				this.addParameterDiv(param);
+				this.addParameter(param);
 
 			this.updateDrilldownParamters();
 		}
@@ -1292,7 +1315,7 @@ class DataSourceColumn {
 		this.blanket.classList.remove('hidden');
 	}
 
-	addParameterDiv(parameter = {}) {
+	addParameter(parameter = {}) {
 
 		const container = document.createElement('div');
 
@@ -1408,7 +1431,7 @@ class DataSourceColumn {
 		this.container.querySelector('.name').textContent = this.name;
 		this.container.querySelector('.color').style.background = this.color;
 
-		if(this.sort != '0')
+		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
 		await this.source.visualizations.selected.render();
@@ -1505,15 +1528,16 @@ class DataSourceColumn {
 
 		this.blanket.classList.add('hidden');
 
-		//this.container.classList.toggle('error', this.form.elements.formula.classList.contains('error'));
-
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
 	}
 
 	render() {
 
+		this.container.classList.toggle('hidden', this.hidden ? true : false);
+
 		this.container.querySelector('.name').textContent = this.name;
+		this.container.querySelector('.color').innerHTML = this.disabled ? '' : '&#x2714;';
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
@@ -1617,7 +1641,7 @@ class DataSourceColumn {
 		for(const filter of destination.filters.values()) {
 
 			if(filter.dataset)
-				destinationDatasets.push(filter.dataset.load());
+				destinationDatasets.push(filter.dataset.fetch());
 		}
 
 		await Promise.all(destinationDatasets);
@@ -2401,6 +2425,7 @@ class LinearVisualization extends Visualization {
 			if(this.axes.left.columns.some(c => c.key == key) || (this.axes.right && this.axes.right.columns.some(c => c.key == key)) || this.axes.bottom.columns.some(c => c.key == key))
 				continue;
 
+			column.hidden = true;
 			column.disabled = true;
 			column.render();
 		}
@@ -2533,21 +2558,24 @@ class LinearVisualization extends Visualization {
 			if(that.zoomRectangle) {
 
 				const
-					filteredRows = that.rows.filter(row => {
+					filteredRows = [],
+					width = Math.abs(mouse[0] - 10 - that.zoomRectangle.origin[0]);
 
-						const item = that.x(row.get(that.axes.bottom.column)) + 100;
+				for(const row of that.rows) {
 
-						if(mouse[0] < that.zoomRectangle.origin[0])
-							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
-						else
-							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
-					}),
-					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
+
+					if(
+						(mouse[0] < that.zoomRectangle.origin[0] && item >= mouse[0] && item <= that.zoomRectangle.origin[0]) ||
+						(mouse[0] >= that.zoomRectangle.origin[0] && item <= mouse[0] && item >= that.zoomRectangle.origin[0])
+					)
+						filteredRows.push(row);
+				}
 
 				// Assign width and height to the rectangle
 				that.zoomRectangle
 					.select('rect')
-					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]))
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0] - 10))
 					.attr('width', width)
 					.attr('height', that.height);
 
@@ -2576,7 +2604,7 @@ class LinearVisualization extends Visualization {
 				return;
 			}
 
-			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width) / (that.width / that.rows.length))];
 
 			if(!row)
 				return;
@@ -2634,7 +2662,10 @@ class LinearVisualization extends Visualization {
 			that.zoomRectangle
 				.append('g');
 
+
 			that.zoomRectangle.origin = d3.mouse(this);
+			that.zoomRectangle.origin[0] -= 10;
+			that.zoomRectangle.origin[1] -= 10;
 		})
 
 		.on('mouseup', function() {
@@ -2648,7 +2679,7 @@ class LinearVisualization extends Visualization {
 				mouse = d3.mouse(this),
 				filteredRows = that.rows.filter(row => {
 
-					const item = that.x(row.get(that.axes.bottom.column)) + 100;
+					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
 
 					if(mouse[0] < that.zoomRectangle.origin[0])
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -3548,7 +3579,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.attr('x', cell => this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (Format.number(cell.y).toString().length * 4))
 				.text(cell => {
 
-					if(['s'].includes(this.axes.bottom.format))
+					if(['s'].includes(this.axes.left.format))
 						return d3.format(this.axes.left.format)(cell.y);
 
 					else
@@ -3695,6 +3726,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			if(this.axes.left.columns.some(c => c.key == key) || this.axes.right.columns.some(c => c.key == key) || this.axes.bottom.columns.some(c => c.key == key))
 				continue;
 
+			column.hidden = true;
 			column.disabled = true;
 			column.render();
 		}
@@ -5522,9 +5554,11 @@ class Tooltip {
 	}
 }
 
-class Dataset {
+class Dataset extends MultiSelect {
 
 	constructor(id, filter) {
+
+		super();
 
 		if(!MetaData.datasets.has(id))
 			throw new Page.exception('Invalid dataset id! :(');
@@ -5542,122 +5576,25 @@ class Dataset {
 		if(this.containerElement)
 			return this.containerElement;
 
+		if(!this.name.includes('Date'))
+			return super.container;
+
+
 		const container = this.containerElement = document.createElement('div');
+		container.classList.add('multi-select');
 
-		container.classList.add('dataset');
+		let value = null;
 
-		if(this.name.includes('Date')) {
-
-			let value = null;
-
-			if(this.name.includes('Start'))
-				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-
-			else
-				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-
-			container.innerHTML = `
-				<input type="date" name="${this.filter.placeholder}" value="${value}">
-			`;
-
-			return container;
-		}
+		if(this.name.includes('Start'))
+			value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		else
+			value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
 		container.innerHTML = `
-			<input type="search" placeholder="Search...">
-			<div class="options hidden"></div>
+			<input type="date" name="${this.filter.placeholder}" value="${value}">
 		`;
-
-		const
-			search = this.container.querySelector('input[type=search]'),
-			options = this.container.querySelector('.options');
-
-		search.on('click', e => {
-
-			e.stopPropagation();
-
-			for(const options_ of document.querySelectorAll('.dataset .options')) {
-				if(options_ != options)
-					options_.classList.add('hidden');
-			}
-
-			search.value = '';
-			options.classList.toggle('hidden');
-
-			this.update();
-		});
-
-		search.on('keyup', () => this.update());
-
-		options.on('click', e => e.stopPropagation());
-
-		document.body.on('click', () => options.classList.add('hidden'));
-
-		options.innerHTML = `
-			<header>
-				<a class="all">All</a>
-				<a class="clear">Clear</a>
-			</header>
-			<div class="list"></div>
-			<div class="no-matches NA hidden">No matches found! :(</div>
-			<footer></footer>
-		`;
-
-		options.querySelector('header .all').on('click', () => this.all());
-		options.querySelector('header .clear').on('click', () => this.clear());
-
-		this.load();
 
 		return container;
-	}
-
-	async load() {
-
-		if(!this.query_id)
-			return [];
-
-		const
-			search = this.container.querySelector('input[type=search]'),
-			list = this.container.querySelector('.options .list');
-
-		let values = [];
-
-		try {
-			values = await this.fetch();
-		} catch(e) {}
-
-		if(!values.length)
-			return list.innerHTML = `<div class="NA">No data found! :(</div>`;
-
-		list.textContent = null;
-
-		for(const row of values) {
-
-			const
-				label = document.createElement('label'),
-				input = document.createElement('input'),
-				text = document.createTextNode(row.name);
-
-			input.name = this.filter.placeholder;
-			input.value = row.value;
-			input.type = this.filter.multiple ? 'checkbox' : 'radio';
-			input.checked = true;
-
-			label.appendChild(input);
-			label.appendChild(text);
-
-			label.setAttribute('title', row.value);
-
-			label.querySelector('input').on('change', () => this.update());
-			label.on('dblclick', e => {
-				this.clear();
-				label.click();
-			});
-
-			list.appendChild(label);
-		}
-
-		this.update();
 	}
 
 	async fetch() {
@@ -5673,8 +5610,8 @@ class Dataset {
 			id: this.id,
 		};
 
-		if(account.auth_api && localStorage.access_token)
-			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = localStorage.access_token;
+		if(account.auth_api && await IndexedDb.instance.has('access_token'))
+			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = await IndexedDb.instance.get('access_token');
 
 		try {
 			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
@@ -5687,98 +5624,32 @@ class Dataset {
 			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
 		}
 
+		super.datalist = values;
+		super.multiple = this.filter.multiple;
+
 		return values;
-	}
-
-	async update() {
-
-		if(!this.query_id)
-			return [];
-
-		const
-			search = this.container.querySelector('input[type=search]'),
-			options = this.container.querySelector('.options');
-
-		for(const input of options.querySelectorAll('.list label input')) {
-
-			let hide = false;
-
-			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
-				hide = true;
-
-			input.parentElement.classList.toggle('hidden', hide);
-			input.parentElement.classList.toggle('selected', input.checked);
-		}
-
-		const
-			total = options.querySelectorAll('.list label').length,
-			hidden = options.querySelectorAll('.list label.hidden').length,
-			selected = options.querySelectorAll('.list input:checked').length;
-
-		search.placeholder = `Search... (${selected} selected)`;
-
-		options.querySelector('footer').innerHTML = `
-			<span>Total: <strong>${total}</strong></span>
-			<span>Showing: <strong>${total - hidden}</strong></span>
-			<span>Selected: <strong>${selected}</strong></span>
-		`;
-
-		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
 	}
 
 	set value(source) {
 
-		const inputs = this.container.querySelectorAll('.options .list label input');
-
-		if(source.query_id) {
-
-			const sourceInputs = source.container.querySelectorAll('.options .list label input');
-
-			if (inputs.length) {
-				for (const [i, input] of sourceInputs.entries())
-					inputs[i].checked = input.checked;
-			}
-		}
-
-		else if(typeof source == 'object' && source.length) {
-			for (const input of inputs) {
-				input.checked = source.includes(input.value);
-			}
-		}
-
-		else {
-			this.container.querySelector('input').value = source.value;
-		}
-
-		this.update();
-	}
-
-	get value() {
-
-		if(this.query_id) {
-			return this.container.querySelectorAll('.options .list input:checked').length + ' '+ this.name;
-		} else {
-			return this.container.querySelector('input').value;
-		}
-	}
-
-	all() {
-
-		if(!this.filter.multiple)
+		if(Array.isArray(source)) {
+			super.value = source;
 			return;
+		}
 
-		for(const input of this.container.querySelectorAll('.options .list label input'))
-			input.checked = true;
+		if(!source.container.querySelector('.options')) {
+			this.container.querySelector('input').value = source.container.querySelector('input').value;
+			return;
+		}
 
-		this.update();
-	}
+		const
+			sourceOptions = source.container.querySelectorAll('.options .list label input:checked'),
+			data = [];
 
-	clear() {
+		for(const option of sourceOptions)
+			data.push(option.value);
 
-		for(const input of this.container.querySelectorAll('.options .list label input'))
-			input.checked = false;
-
-		this.update();
+		super.value = data;
 	}
 }
 

@@ -4,6 +4,10 @@ Page.class = class Login extends Page {
 
 		super();
 
+		if(account.settings.get('enable_account_signup')) {
+			this.container.querySelector('.signup span').classList.remove('hidden');
+		}
+
 		this.form = this.container.querySelector('form');
 		this.message = this.container.querySelector('#message');
 
@@ -18,26 +22,32 @@ Page.class = class Login extends Page {
 
 		document.querySelector('body > header .logout').classList.add('hidden');
 
+		document.querySelector('body > header .left-menu-toggle').classList.add('hidden');
+		document.querySelector('body > header nav').classList.remove('left');
+
 		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
 
 		logo.src = account.logo;
 
-		if(account.auth_api && localStorage.access_token)
-			return this.skip_authentication();
-
-		this.container.querySelector('.whitelabel').classList.add('hidden');
-		this.form.classList.remove('hidden');
-
-		this.form.email.focus();
+		this.skip_authentication();
 	}
 
 	async skip_authentication() {
 
+		if(!account.auth_api || !await IndexedDb.instance.get('access_token')) {
+
+			this.container.querySelector('.whitelabel').classList.add('hidden');
+			this.form.classList.remove('hidden');
+
+			this.form.email.focus();
+			return;
+		}
+
 		const parameters = new URLSearchParams(window.location.search);
 
-		if(!localStorage.access_token && (!parameters.has('access_token') || !parameters.get('access_token'))) {
+		if(!(await IndexedDb.instance.has('access_token')) && (!parameters.has('access_token') || !parameters.get('access_token'))) {
 
 			this.form.innerHTML = '<div class="whitelabel form"><i class="fas fa-exclamation-triangle"></i></div>';
 
@@ -50,7 +60,7 @@ Page.class = class Login extends Page {
 
 			const
 				params = {
-					access_token: localStorage.access_token || parameters.get('access_token') || '',
+					access_token: (await IndexedDb.instance.get('access_token')) || parameters.get('access_token') || '',
 				},
 				options = {
 					method: 'POST',
@@ -58,8 +68,11 @@ Page.class = class Login extends Page {
 
 			const response = await API.call('authentication/login', params, options);
 
-			localStorage.refresh_token = response.jwt;
-			localStorage.access_token = response.access_token;
+			await IndexedDb.instance.set('refresh_token', response.jwt);
+			await IndexedDb.instance.set('access_token', response.access_token);
+
+			this.cookies.set('refresh_token', response.jwt);
+			this.cookies.set('access_token', response.access_token);
 
 		} catch(error) {
 
@@ -80,8 +93,6 @@ Page.class = class Login extends Page {
 
 		e.preventDefault();
 
-		console.log(this);
-
 		if(!account)
 			return;
 
@@ -98,7 +109,8 @@ Page.class = class Login extends Page {
 
 			const response = await API.call('authentication/login', {}, options);
 
-			localStorage.refresh_token = response.jwt;
+			await IndexedDb.instance.set('refresh_token', response.jwt);
+			this.cookies.set('refresh_token', response.jwt);
 
 			await API.refreshToken();
 

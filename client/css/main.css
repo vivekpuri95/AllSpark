@@ -84,7 +84,7 @@ a:active {
 	border-radius: 0;
 }
 .notice {
-	background: #9f9;
+	background: #cfc;
 }
 .warning {
 	background: #f77;
@@ -132,7 +132,14 @@ body {
 	body > #ajax-working.show {
 		opacity: 1;
 	}
-
+	body > .menu-cover {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		background: rgba(0,0,0,0.6);
+		z-index: 7;
+		transition: background var(--transition-duration);
+	}
 	body > header {
 		background: linear-gradient(to right, #0a5ffc 0%, #3786fd 100%);
 		color: var(--color-primary-text);
@@ -143,6 +150,54 @@ body {
 		flex: 50px 0 0;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	}
+	body > header .logo-container {
+		display: flex;
+		width: 220px;
+	}
+	body > header nav.left {
+		flex-direction: column;
+		position: absolute;
+		top: 50px;
+		width: 220px;
+		height: calc(100vh - 50px);
+		z-index: 8;
+		overflow: auto;
+		opacity: 0;
+		background: var(--color-primary);
+		transform: translateX(-220px);
+		box-shadow: 5px 0 30px 0 rgba(0, 0, 0, 0.5);
+		transition: box-shadow var(--transition-duration),
+					opacity var(--transition-duration),
+					transform var(--transition-duration),
+					background var(--transition-duration);
+	}
+	body > header nav.left::-webkit-scrollbar {
+		background: var(--color-secondary);
+		width: 8px;
+	}
+	body > header nav.left::-webkit-scrollbar-thumb {
+		background: var(--color-accent);
+	}
+	body > header nav.left::-webkit-scrollbar-track {
+		box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
+	}
+	body > header nav.left.show {
+		transform: translateX(0px);
+		opacity: 1;
+	}
+		body > header nav.left a {
+			padding: 20px;
+			display: block;
+		}
+	body > header .left-menu-toggle {
+		display: flex;
+		align-items: center;
+		cursor: pointer;
+		padding: calc(var(--gap) * 2);
+	}
+	body > header .left-menu-toggle.selected {
+		background: var(--color-accent);
+	}
 	body > header::-webkit-scrollbar {
 		display: none;
 	}
@@ -151,7 +206,8 @@ body {
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			padding: calc(var(--gap) * 2);
+			padding: var(--gap);
+			flex: 1;
 			overflow: hidden;
 		}
 		body > header .logo:hover {
@@ -192,6 +248,7 @@ body {
 			width: 250px;
 			align-self:  center;
 			margin: 0 10px;
+			margin-left: auto;
 		}
 
 		body > header .user-name {
@@ -269,6 +326,7 @@ body {
 			main .dialog-box-blanket .dialog-box .body ul.user-list li a {
 				color: #333;
 				font-size: 110%;
+				width: fit-content;
 			}
 			main .dialog-box-blanket .dialog-box .body ul.user-list li span {
 				color: #999;
@@ -300,7 +358,6 @@ body {
 				background: var(--color-primary);
 				color: var(--color-primary-text);
 			}
-
       		main table thead th:last-child {
 				border-right: 0;
 			}
@@ -510,3 +567,77 @@ body {
 			.global-search ul li:hover .li-edit {
 				opacity: 1;
 			}
+
+.multi-select {
+	width: 100%;
+	position: relative;
+}
+	.multi-select > input {
+		width: 100%;
+	}
+	.multi-select .options {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid #ccc;
+		border-top: 0;
+		background: #fff;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		max-height: 250px;
+		width: 100%;
+		position: absolute;
+		z-index: 3;
+		overflow: auto;
+	}
+	.multi-select .options.expanded {
+		position: initial;
+		height: 200px;
+	}
+		.multi-select .options header {
+			border-bottom: 1px dashed #999;
+			font-size: 85%;
+			padding: var(--gap);
+			display: grid;
+			grid-template-columns: auto auto;
+			grid-gap: calc(var(--gap) * 2);
+			justify-content: flex-start;
+			top: 0;
+			position: sticky;
+			background: #fff;
+			color: #999;
+		}
+		.multi-select .options .NA {
+			padding: calc(var(--gap) * 2);
+			color: #999;
+			text-align: center;
+		}
+		.multi-select .options .list {
+		}
+			.multi-select .options .list label {
+				display: grid;
+				grid-template-columns: auto 1fr;
+				align-items: center;
+				padding: calc(var(--gap) * 1.5);
+				margin: 0;
+				transition: background var(--transition-duration),
+							box-shadow var(--transition-duration);
+				max-width: inherit;
+				overflow: hidden;
+			}
+			.multi-select .options .list label.selected {
+				background: #eda;
+			}
+		.multi-select footer {
+			display: grid;
+			margin-top: auto;
+			grid-template-columns: auto auto auto;
+			grid-gap: calc(var(--gap) * 2);
+			padding: var(--gap);
+			position: sticky;
+			bottom: 0;
+			background: #fff;
+			font-size: 85%;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+			color: #999;
+			white-space: normal;
+			border-top: 1px dashed #999;
+		}

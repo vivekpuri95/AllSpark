@@ -187,6 +187,14 @@
 				white-space: pre-wrap;
 				padding: calc(var(--gap) * 2);
 			}
+				main .data-source > .description .body h3 {
+					margin: calc(var(--gap) * 2) 0 var(--gap);
+					color: #999;
+					font-size: 80%;
+				}
+				main .data-source > .description .body h3:first-child {
+					margin-top: 0;
+				}
 			main .data-source > .description .footer {
 				border-top: 1px dashed #ccc;
 				padding: 10px;
@@ -330,11 +338,23 @@
 				main .data-source > .columns.being-dragged .column * {
 					pointer-events: none;
 				}
+				main .data-source > .columns .column.disabled > .color {
+					background: #aaa !important;
+				}
 				main .data-source > .columns .column > .color {
-					border-radius: 15px;
-					width: 15px;
-					height: 15px;
+					border-radius: 9px;
+					width: 18px;
+					height: 18px;
 					margin-left: var(--gap);
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					-webkit-text-stroke-width: 0.5px;
+					-webkit-text-stroke-color: #fff;
+					text-stroke-width: 0.5px;
+					text-stroke-color: #fff;
+					font-weight: bold;
+					font-size: 110%;
 				}
 				main .data-source > .columns .column > .name {
 					padding: 0px 10px;
@@ -397,6 +417,7 @@
 								position: sticky;
 								top: 0;
 								font-weight: normal;
+								font-size: 100%;
 							}
 							main .data-source .column form label {
 								margin-left: calc(var(--gap) * 2);
@@ -638,6 +659,7 @@
 					white-space: nowrap;
 					padding: 5px 10px;
 					border: 0;
+					box-shadow: inset -1px 0 1px #fff;
 					top: 0;
 				}
 					.visualization.table table thead th div {

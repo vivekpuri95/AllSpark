@@ -6,6 +6,7 @@ class Settings extends Page {
 		const nav = this.container.querySelector('nav');
 
 		for (const [key, settings] of Settings.list) {
+
 			const setting = new settings(this.container);
 
 			const a = document.createElement('a');
@@ -32,6 +33,7 @@ class Settings extends Page {
 		}
 
 		let byDefault;
+
 		if(localStorage.settingsCurrentTab) {
 
 			for(const a of this.container.querySelectorAll('nav a')) {
@@ -42,6 +44,7 @@ class Settings extends Page {
 		else {
 			byDefault = this.container.querySelector('nav a');
 		}
+
 		byDefault.classList.add('selected');
 
 		for (const [key, settings] of Settings.list) {
@@ -242,7 +245,7 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 			this.list.set(account.account_id, new SettingsAccount(account, this));
 		}
 
-		return await this.render();
+		await this.render();
 	}
 
 	async render() {
@@ -260,8 +263,56 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 			container.appendChild(account.row);
 		}
 
-		return await Sections.show('accounts-list');
+		await Sections.show('accounts-list');
 	}
+});
+
+Settings.list.set('categories', class Categories extends SettingPage {
+
+	get name() {
+
+		return 'Categories';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.category-page');
+		this.form = this.page.querySelector('#category-edit');
+
+		this.container.querySelector('#add-category').on('click', () => SettingsCategory.add(this));
+		this.form.querySelector('#back').on('click', () => Sections.show('category-list'));
+
+	}
+
+	async load() {
+
+		const categoryList = await API.call('category/list');
+		this.list = new Map();
+
+		for(const category of categoryList) {
+
+			this.list.set(category.category_id, new SettingsCategory(category, this));
+		}
+
+		await this.render();
+
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#category-list table tbody');
+		container.textContent = null;
+
+		if(!this.list.size)
+			container.innerHTML = '<div class="NA">No rows found :(</div>'
+
+		for(const category of this.list.values())
+			container.appendChild(category.row);
+
+		await Sections.show('category-list');
+
+	}
+
 });
 
 class SettingsDataset {
@@ -682,6 +733,13 @@ class SettingsAccount {
 
 		SettingsAccount.editor.value = JSON.stringify(this.settings, 0, 4) || "b";
 
+		const features = new AccountsFeatures(this);
+
+		if(this.form.parentElement.querySelector('.feature-form'))
+			this.form.parentElement.querySelector('.feature-form').remove();
+
+		this.form.parentElement.appendChild(features.container);
+
 		await Sections.show('accounts-form');
 
 		this.page.form.on("submit", SettingsAccount.submitEventListener = async e => {
@@ -772,5 +830,286 @@ class SettingsAccount {
 	}
 
 	static submitEventListener() {}
+}
 
+class AccountsFeatures {
+
+	constructor(account) {
+
+		this.account = account;
+
+		this.totalFeatures = new Map;
+
+		for(const [key, feature] of MetaData.features) {
+			feature.status = this.account.features.includes(key.toString());
+			this.totalFeatures.set(key, new AccountsFeature(feature, this.account));
+		}
+	}
+
+	get container() {
+
+		const container = document.createElement('div');
+
+		container.classList.add('feature-form');
+		container.innerHTML = `
+
+			<h3>Features</h3>
+
+			<div class="toolbar form">
+
+				<label class="feature-type">
+					<span>Types</span>
+				</label>
+
+				<label>
+					<span>Search</span>
+					<input id="feature-search" type="text" placeholder="Search..">
+				</label>
+			</div>
+			<table>
+				<thead>
+					<tr>
+						<th class="action">Id</th>
+						<th>Types</th>
+						<th>Name</th>
+						<th>Status</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		`;
+
+		let list = new Set;
+
+		for(const value of MetaData.features.values())
+			list.add(value.type);
+
+		list = Array.from(list).map(x => {return {name: x, value: x}});
+
+		this.featureType = new MultiSelect({datalist: Array.from(list), multiple: true});
+
+		container.querySelector('.feature-type').appendChild(this.featureType.container);
+
+		const tbody = container.querySelector('tbody');
+
+		tbody.textContent = null;
+
+		for(const feature of this.totalFeatures.values())
+			tbody.appendChild(feature.row);
+
+		container.querySelector('#feature-search').on('keyup', (e) => {
+
+			e.preventDefault();
+
+			const key = e.currentTarget.value.toLowerCase();
+
+			tbody.textContent = null;
+
+			for(const feature of this.totalFeatures.values()) {
+
+				if(feature.name.includes(key) && this.featureType.value.indexOf(feature.type) >= 0)
+					tbody.appendChild(feature.row);
+			}
+
+			if(!tbody.childElementCount)
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
+		});
+
+		container.querySelector('.feature-type').on('change', (e) => {
+
+			const selected = this.featureType.value;
+
+			tbody.textContent = null;
+
+			if(!selected.length) {
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
+				return;
+			};
+
+			for(const feature of this.totalFeatures.values()) {
+
+				if(selected.indexOf(feature.type) >= 0)
+					tbody.appendChild(feature.row);
+			};
+
+			if(!tbody.childElementCount)
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
+		});
+
+		return container;
+	}
+}
+
+class AccountsFeature {
+
+	constructor(feature, account) {
+
+		for(const key in feature)
+			this[key] = feature[key];
+
+		this.account = account;
+	}
+
+	get row() {
+
+		const tr = document.createElement('tr');
+
+		tr.innerHTML = `
+			<td>${this.feature_id}</td>
+			<td>${this.type}</td>
+			<td>${this.name}</td>
+			<td>
+				<select id="status">
+					<option value="1">ON</option>
+					<option value="0">OFF</option>
+				</select>
+			</td>
+		`;
+
+		const status = tr.querySelector('select#status');
+		status.value =  this.status ? 1 : 0;
+
+		status.on('change', async (e) => this.update(e, status.value));
+
+		return tr;
+	}
+
+	async update(e, status) {
+
+		e.preventDefault();
+
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				account_id: this.account.account_id,
+				feature_id: this.feature_id,
+				status: status,
+			};
+
+		await API.call('accounts/features/toggle', parameter, options);
+		await this.account.page.load();
+		await Sections.show('accounts-form');
+	}
+}
+
+class SettingsCategory {
+
+	constructor(category, page) {
+
+		Object.assign(this, category);
+
+		this.page = page;
+		this.form = this.page.form.querySelector('#category-form');
+
+	}
+
+	static add(page) {
+
+		page.form.querySelector('h1').textContent = 'Add new Category';
+
+		const categoryForm = page.form.querySelector('#category-form');
+
+		SettingsCategory.form = categoryForm;
+		categoryForm.reset();
+
+		categoryForm.removeEventListener('submit', SettingsCategory.submitListener);
+		categoryForm.on('submit', SettingsCategory.submitListener = e => SettingsCategory.insert(e, page));
+		Sections.show('category-edit');
+		categoryForm.name.focus();
+
+	}
+
+	static async insert(e, page) {
+
+		e.preventDefault();
+
+		const options = {
+			method: 'POST',
+			form: new FormData(SettingsCategory.form),
+		}
+
+		await API.call('category/insert', {}, options);
+		await page.load();
+
+	}
+
+	async edit() {
+
+		this.form.removeEventListener('submit', SettingsCategory.submitListener);
+
+		this.form.on('submit', SettingsCategory.submitListener = e => this.update(e));
+		this.page.form.querySelector('h1').textContent = `Editing ${this.name}`;
+
+		const formElements = ["name", "slug", "parent", "is_admin"];
+
+		for(const element of formElements) {
+			this.form[element].value = this[element];
+		}
+
+		await Sections.show('category-edit');
+		this.form.name.focus();
+
+	}
+
+	async update(e) {
+
+		if (e.preventDefault)
+			e.preventDefault();
+
+		const
+			parameters = {
+				category_id: this.category_id
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		await API.call('category/update', parameters, options);
+		await this.page.load();
+
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				category_id: this.category_id
+			}
+
+		await API.call('category/delete', parameter, options);
+		await this.page.load();
+	}
+
+	get row() {
+
+		if(this.container)
+			return this.container;
+
+		this.container = document.createElement('tr');
+
+		this.container.innerHTML = `
+			<td>${this.category_id}</td>
+			<td>${this.name}</td>
+			<td>${this.slug}</td>
+			<td>${this.parent}</td>
+			<td>${this.is_admin? 'Yes' : 'No'}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		this.container.querySelector('.green').on('click', () => this.edit());
+		this.container.querySelector('.red').on('click', () => this.delete());
+
+		return this.container;
+
+	}
 }

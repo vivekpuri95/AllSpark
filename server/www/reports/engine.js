@@ -2,7 +2,7 @@ const API = require("../../utils/api");
 const commonFun = require('../../utils/commonFunctions');
 const dbConfig = require('config').get("sql_db");
 const promisify = require('util').promisify;
-//const BigQuery = require('../../www/bigQuery').BigQuery;
+const bigQuery = require('../../utils/bigquery').BigQuery;
 const constants = require("../../utils/constants");
 const crypto = require('crypto');
 const request = require("request");
@@ -10,9 +10,10 @@ const auth = require('../../utils/auth');
 const redis = require("../../utils/redis").Redis;
 const requestPromise = promisify(request);
 const config = require("config");
-const fs = require("fs");
 const fetch = require('node-fetch');
 const URLSearchParams = require('url').URLSearchParams;
+const fs = require("fs");
+const userQueryLogs = require("../accounts").userQueryLogs;
 
 // prepare the raw data
 class report extends API {
@@ -32,7 +33,8 @@ class report extends API {
 				SELECT
 				  q.*,
 				  IF(user_id IS NULL, 0, 1) AS flag,
-				  c.type
+				  c.type,
+				  c.project_name
 				FROM
 					tb_query q
 				LEFT JOIN
@@ -109,6 +111,7 @@ class report extends API {
 	}
 
 	async authenticate() {
+		this.account.features.needs(this.reportObj.type + '-source');
 
 		const authResponse = await auth.report(this.reportObj, this.user);
 		this.assert(!authResponse.error, "user not authorised to get the report");
@@ -118,13 +121,6 @@ class report extends API {
 
 		//filter fields required = offset, placeholder, default_value
 
-		const types = [
-			'string',
-			'number',
-			'date',
-			'month',
-		];
-
 		for (const filter of this.filters) {
 
 			if (isNaN(parseFloat(filter.offset))) {
@@ -132,7 +128,7 @@ class report extends API {
 				continue;
 			}
 
-			if (types[filter.type] == 'date') {
+			if (filter.type == 'date') {
 
 				filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
@@ -143,7 +139,7 @@ class report extends API {
 				}
 			}
 
-			if (types[filter.type] == 'month') {
+			if (filter.type == 'month') {
 
 				const date = new
 				Date();
@@ -164,6 +160,64 @@ class report extends API {
 		}
 	}
 
+	async storeQueryResultSetup() {
+
+		if (this.reportObj.load_saved) {
+
+			const userQueryLogsObj = new userQueryLogs();
+			Object.assign(userQueryLogsObj, this);
+
+			await userQueryLogsObj.userQueryLogs();
+
+			this.queryResultDb = await redis.hget(`accountSettings#${this.account.account_id}`, "settings.db");
+			this.queryResultConnection = parseInt(await redis.hget(`accountSettings#${this.account.account_id}`, "settings.connection_id"));
+
+			this.assert(this.queryResultConnection, "connection id for loading saved result is not valid");
+		}
+	}
+
+	async storeQueryResult(result) {
+
+		if (this.reportObj.load_saved) {
+
+			let [idToUpdate] = await this.mysql.query(
+				"select max(id) as id from ??.?? where query_id = ? and type = ?",
+				[this.queryResultDb, constants.saveQueryResultTable, this.reportObj.query_id, this.reportObj.type],
+
+				this.queryResultConnection
+			);
+
+			if (idToUpdate && idToUpdate.id) {
+
+				idToUpdate = idToUpdate.id;
+
+				return await this.mysql.query(
+					"update ??.?? set data = ? where query_id = ? and type = ? and id = ?",
+					[this.queryResultDb, constants.saveQueryResultTable,
+						JSON.stringify(result), this.reportObj.query_id, this.reportObj.type, idToUpdate],
+					this.queryResultConnection
+				);
+			}
+
+			else {
+
+				return await this.mysql.query(
+					"insert into ??.?? (query_id, type, user_id, query, data) values (?, ?, ?, ?, ?)",
+					[
+						this.queryResultDb, constants.saveQueryResultTable,
+						this.reportObj.query_id, this.reportObj.type, this.user.user_id, this.reportObj.query || "",
+						JSON.stringify(result)
+					],
+					this.queryResultConnection
+				);
+			}
+		}
+
+		else {
+			return [];
+		}
+	}
+
 	async report(queryId, reportObj, filterList) {
 
 		this.reportId = this.request.body.query_id || queryId;
@@ -172,14 +226,29 @@ class report extends API {
 
 
 		await this.load(reportObj, filterList);
-
 		await this.authenticate();
+
+		await this.storeQueryResultSetup();
+
+		if (this.request.body.data && this.reportObj.load_saved) {
+
+			this.assert(commonFun.isJson(this.request.body.data), "data for saving is not json");
+
+			this.request.body.data = JSON.parse(this.request.body.data);
+
+
+			return {
+				data: await this.storeQueryResult(this.request.body.data),
+				message: "saved"
+			};
+		}
 
 		this.prepareFiltersForOffset();
 
 		let preparedRequest;
 
 		switch (this.reportObj.type.toLowerCase()) {
+
 			case "mysql":
 				preparedRequest = new MySQL(this.reportObj, this.filters, this.request.body.token);
 				break;
@@ -188,6 +257,9 @@ class report extends API {
 				break;
 			case "pgsql":
 				preparedRequest = new Postgres(this.reportObj, this.filters, this.request.body.token);
+				break;
+			case "bigquery":
+				preparedRequest = new Bigquery(this.reportObj, this.filters, this.request.body.token);
 				break;
 			default:
 				this.assert(false, "Report Type " + this.reportObj.type.toLowerCase() + " does not exist", 404);
@@ -213,11 +285,15 @@ class report extends API {
 
 		let result;
 
+		//Priority: Redis > (Saved Result)
+
 		if (!forcedRun && this.reportObj.is_redis && redisData && !this.has_today) {
 
 			try {
 
 				result = JSON.parse(redisData);
+
+				// await this.storeQueryResult(result);
 
 				await engine.log(this.reportObj.query_id, this.reportObj.query, result.query,
 					Date.now() - this.reportObjStartTime, this.reportObj.type,
@@ -235,9 +311,55 @@ class report extends API {
 			}
 		}
 
+		if (this.reportObj.load_saved) {
+
+			[result] = await this.mysql.query(`
+				select
+					*
+				from
+					??.??
+				where
+					query_id = ?
+					and id =
+						(
+							select
+								max(id)
+							from
+								??.??
+							where
+								query_id = ?
+								and type = ?
+						)
+			`,
+				[
+					this.queryResultDb, "tb_save_history", this.reportObj.query_id, this.queryResultDb, "tb_save_history",
+					this.reportObj.query_id, this.reportObj.type
+				],
+				parseInt(this.queryResultConnection),
+			);
+
+			if (result && result.data) {
+
+				this.assert(commonFun.isJson(result.data), "result is not a json");
+
+				result.data = JSON.parse(result.data);
+				const age = Math.round((Date.now() - Date.parse(result.created_at)) / 1000);
+				result = result.data;
+
+				result.load_saved = {
+					status: true,
+					age: age
+				};
+
+				return result;
+			}
+		}
+
 		try {
 
 			result = await engine.execute();
+			await this.storeQueryResult(result);
+
 		}
 		catch (e) {
 
@@ -262,7 +384,6 @@ class report extends API {
 				await redis.expire(hash, this.reportObj.is_redis);
 			}
 		}
-
 
 		result.cached = {status: false};
 
@@ -309,6 +430,12 @@ class MySQL {
 
 		for (const filter of this.filters) {
 
+			if (filter.type == 'column') {
+
+				this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "??");
+				continue;
+			}
+
 			this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "?");
 
 		}
@@ -335,6 +462,7 @@ class MySQL {
 		return (filterIndexList.sort((x, y) => x.index - y.index)).map(x => x.value) || [];
 	}
 }
+
 
 class APIRequest {
 
@@ -413,6 +541,7 @@ class APIRequest {
 	}
 }
 
+
 class Postgres {
 
 	constructor(reportObj, filters = [], token) {
@@ -484,6 +613,101 @@ class Postgres {
 	}
 }
 
+
+class Bigquery {
+
+	constructor(reportObj, filters = []) {
+
+		this.reportObj = reportObj;
+		this.filters = filters;
+
+		this.typeMapping = {
+			"number": "integer",
+			"text": "string",
+			"date": "date",
+			"month": "integer",
+			"hidden": "string",
+		};
+	}
+
+	get finalQuery() {
+
+		this.prepareQuery();
+
+		return {
+			type: "bigquery",
+			request: [this.reportObj.query, this.filterList || [], this.reportObj.account_id, this.reportObj.connection_name + ".json", this.reportObj.project_name]
+		}
+	}
+
+	makeFilters(data, name, type = "STRING", is_multiple = 0,) {
+
+
+		let filterObj = {
+			name: name
+		};
+
+		type = this.typeMapping[type];
+
+		if (is_multiple) {
+
+			filterObj.parameterType = {
+				"type": "ARRAY",
+				"arrayType": {
+					"type": type.toUpperCase(),
+				}
+			};
+
+			filterObj.parameterValue = {
+				arrayValues: [],
+			};
+
+			for (const item of data) {
+
+				filterObj.parameterValue.arrayValues.push({
+					value: item
+				});
+			}
+		}
+
+		else {
+
+			filterObj.parameterType = {
+				type: type.toUpperCase(),
+			};
+
+			filterObj.parameterValue = {
+				value: data,
+			}
+		}
+
+		this.filterList.push(filterObj);
+	}
+
+	prepareQuery() {
+
+		this.filterList = [];
+		for (const filter of this.filters) {
+			this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), `@${filter.placeholder}`);
+
+			if (!filter.type) {
+
+				if (parseInt(filter.value)) {
+
+					filter.type = 'number';
+				}
+				else {
+
+					filter.type = 'text';
+				}
+			}
+
+			this.makeFilters(filter.value, filter.placeholder, filter.type, filter.multiple);
+		}
+	}
+}
+
+
 class ReportEngine extends API {
 
 	constructor(parameters) {
@@ -494,6 +718,7 @@ class ReportEngine extends API {
 			mysql: this.mysql.query,
 			pgsql: this.pgsql.query,
 			api: fetch,
+			bigquery: bigQuery.call
 		};
 
 		this.parameters = parameters || {};
@@ -505,7 +730,7 @@ class ReportEngine extends API {
 
 			this.parameters.request[1].params = this.parameters.request[1].body.toString();
 		}
-		return crypto.createHash('md5').update(JSON.stringify(this.parameters)).digest('hex');
+		return crypto.createHash('md5').update(JSON.stringify(this.parameters) || "").digest('hex');
 	}
 
 	async execute() {
@@ -580,6 +805,7 @@ class ReportEngine extends API {
 		}
 	}
 }
+
 
 class query extends API {
 

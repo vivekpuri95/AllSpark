@@ -1,7 +1,8 @@
 const API = require('../utils/api.js');
 const account = require('../onServerStart');
 const commonFun = require("../utils/commonFunctions");
-
+const redis = require("../utils/redis").Redis;
+const constants = require("../utils/constants");
 
 exports.list = class extends API {
 
@@ -13,7 +14,8 @@ exports.list = class extends API {
 			SELECT
 				a.*,
 				s.profile,
-				s.value
+				s.value,
+				group_concat(distinct f.feature_id) as features
 			FROM
 				tb_accounts a
 			LEFT JOIN
@@ -21,18 +23,29 @@ exports.list = class extends API {
 			ON
 				s.account_id = a.account_id
 				AND s.owner = 'account'
+			LEFT JOIN
+				tb_account_features f
+			ON
+				a.account_id = f.account_id
+				AND f.status = 1
 			WHERE
 				a.status = 1
-			`);
+				group by profile, account_id
+		`);
 
+		this.assert(accountList.length, "No Account found");
 		const accountObj = {};
 
 		accountList.map(x => {
 
-			accountObj[x.account_id] =  JSON.parse(JSON.stringify(x));
+			if(!accountObj[x.account_id]) {
+
+				accountObj[x.account_id] = JSON.parse(JSON.stringify(x));
+			}
 
 			delete accountObj[x.account_id]['profile'];
 			delete accountObj[x.account_id]['value'];
+			delete accountObj[x.account_id]['features'];
 
 			if (!accountObj[x.account_id].settings) {
 
@@ -42,7 +55,10 @@ exports.list = class extends API {
 			accountObj[x.account_id].settings.push({
 				profile: x.profile,
 				value: JSON.parse(x.value),
-			})
+			});
+
+
+			accountObj[x.account_id].features = (x.features || '').split(',').filter(x => x);
 		});
 
 		return Object.values(accountObj);
@@ -85,7 +101,9 @@ exports.get = class extends API {
 
 			try {
 				settings = JSON.parse(x.value);
-			} catch(e) {};
+			}
+			catch (e) {
+			}
 
 			accountObj.settings.push({
 				profile: x.profile,
@@ -104,15 +122,13 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		let payload = {};
+		let payload = {}, account_cols = ["name", "url", "icon", "logo"];
 
 		for (const values in this.request.body) {
-			payload[values] = this.request.body[values];
-		}
 
-		delete payload.settings;
-		delete payload.token;
-		delete payload.access_token;
+			if(account_cols.includes(values))
+				payload[values] = this.request.body[values];
+		}
 
 		const result = await this.mysql.query(
 			`INSERT INTO tb_accounts SET ?`,
@@ -124,32 +140,44 @@ exports.insert = class extends API {
 
 		let settings, insertList = [];
 
-		if(this.request.body.settings) {
+		if (this.request.body.settings) {
 			this.assert(commonFun.isJson(this.request.body.settings), "settings is not in JSON format");
 			settings = JSON.parse(this.request.body.settings);
 
-			for(const setting of settings) {
+			for (const setting of settings) {
 
 				insertList.push([result.insertId, "account", setting.profile, JSON.stringify(setting.value)]);
 			}
 		}
 
-		await this.mysql.query(`
-			INSERT INTO
-				tb_settings
-				(
-					account_id,
-					owner,
-					profile,
-					value
-				) 
-				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
-			`,
-			insertList,
-			"write");
+		if(!insertList.length)
+			insertList.push([result.insertId, "account", null, null]);
 
-        await account.loadAccounts();
-        return result;
+		const [category, role, setting] = await Promise.all([
+			this.mysql.query(
+				`INSERT INTO tb_categories (account_id, name, slug, is_admin) VALUES(?, "Main", "main", 1)`,
+				[result.insertId],
+				'write'
+			),
+			this.mysql.query(
+				`INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Main", 1)`,
+				[result.insertId],
+				'write'
+			),
+			this.mysql.query(
+				`INSERT INTO tb_settings (account_id, owner, profile, value) VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)`,
+				insertList,
+				"write"
+			)
+		]);
+
+		await account.loadAccounts();
+		return {
+			account_id: result.insertId,
+			category_id: category.insertId,
+			role_id: role.insertId,
+			setting:setting.insertId
+		};
 	}
 }
 
@@ -182,13 +210,13 @@ exports.update = class extends API {
 
 		let settings, insertList = [];
 
-		if(this.request.body.settings) {
+		if (this.request.body.settings) {
 
 			this.assert(commonFun.isJson(this.request.body.settings), "settings is not in JSON format");
 
 			settings = JSON.parse(this.request.body.settings);
 
-			for(const setting of settings) {
+			for (const setting of settings) {
 
 				insertList.push([account_id, "account", setting.profile, JSON.stringify(setting.value)]);
 			}
@@ -202,14 +230,14 @@ exports.update = class extends API {
 					owner,
 					profile,
 					value
-				) 
+				)
 				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
 			`,
 			insertList,
 			"write");
 
-        await account.loadAccounts();
-        return result;
+		await account.loadAccounts();
+		return result;
 	}
 }
 
@@ -223,7 +251,138 @@ exports.delete = class extends API {
 			'write'
 		);
 
-        await account.loadAccounts();
-        return result;
+		await this.mysql.query(
+			"update tb_settings set status = 0 where account_id = ?",
+			[this.request.body.account_id],
+			"write"
+		);
+
+		await account.loadAccounts();
+		return result;
+	}
+};
+
+
+exports.userQueryLogs = class extends API {
+
+	async userQueryLogs() {
+
+		const logsExists = await redis.hget(`accountSettings#${this.account.account_id}`, "settings.result_db");
+
+		if (parseInt(logsExists)) {
+
+			return "setup already done"
+		}
+
+		const [currentAccountSettings] = await this.mysql.query(
+			"select value from tb_settings where account_id = ? and owner = 'account' and profile = ?",
+			[this.account.account_id, constants.saveQueryResultDb]
+		);
+
+		this.assert(!currentAccountSettings.length, "Setting for save history not found");
+
+		let historyConnectionId = JSON.parse(currentAccountSettings.value).value;
+
+		this.assert(historyConnectionId, "connection id not found");
+
+		const [resultLogCredentials] = await this.mysql.query(
+			"select * from tb_credentials where id = ? and status = 1",
+			[historyConnectionId]
+		);
+
+		this.assert(resultLogCredentials, "Credential not found");
+
+		return await this.initialSetup(resultLogCredentials);
+	}
+
+	async initialSetup(credentials) {
+
+		await this.mysql.query(
+			`CREATE DATABASE IF NOT EXISTS ${credentials.db || constants.saveQueryResultDb}`,
+			[],
+			credentials.id
+		);
+
+		await this.mysql.query(`
+			CREATE TABLE IF NOT EXISTS ??.?? (
+			  \`id\` int(11) unsigned NOT NULL AUTO_INCREMENT,
+			  \`query_id\` int(11) DEFAULT NULL,
+			  \`type\` varchar(20) DEFAULT NULL,
+			  \`user_id\` int(11) DEFAULT NULL,
+			  \`query\` text,
+			  \`data\` text,
+			  \`created_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+			  \`updated_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			  PRIMARY KEY (\`id\`),
+			  KEY \`query_id\` (\`query_id\`),
+			  KEY \`type\` (\`type\`),
+			  KEY \`user_id\` (\`user_id\`),
+			  KEY \`created_at\` (\`created_at\`)
+			) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
+			[credentials.db || constants.saveQueryResultDb, constants.saveQueryResultTable],
+			credentials.id,
+		);
+
+		if (!credentials.db) {
+
+			await this.mysql.query(
+				`update tb_credentials set db = ? where id = ?`,
+				[credentials.db || constants.saveQueryResultDb, credentials.id],
+				"write"
+			);
+		}
+
+		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.result_db", 1);
+		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.connection_id", credentials.id);
+		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.db", credentials.db || constants.saveQueryResultDb);
+		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.save_result", 1);
+
+		return credentials.db || constants.saveQueryResultDb
+	}
+};
+
+exports.signup = class extends API {
+
+	async signup() {
+
+		if(!this.account.settings.get("enable_account_signup")) {
+			throw new API.Exception(400, 'Account Signup restricted!');
+		}
+
+		const account_obj = Object.assign(new exports.insert(), this);
+		let account_res;
+
+		try {
+			account_res = await account_obj.insert();
+		}
+		catch(e) {
+
+			throw new API.Exception(400, "Account not created")
+		}
+
+		const password = await commonFun.makeBcryptHash(this.request.body.password);
+
+		const user = await this.mysql.query(
+			`INSERT INTO tb_users (account_id, first_name, middle_name, last_name, email, password, phone)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			[
+				account_res.account_id,
+				this.request.body.first_name,
+				this.request.body.middle_name,
+				this.request.body.last_name,
+				this.request.body.email,
+				password,
+				this.request.body.phone
+			],
+			'write'
+		);
+
+
+		await Promise.all([
+			this.mysql.query(`INSERT INTO tb_user_roles (user_id, category_id, role_id) VALUES (?, ?, ?)`,[user.insertId, account_res.category_id, account_res.role_id],'write'),
+			this.mysql.query(`INSERT INTO tb_user_privilege (user_id, category_id, privilege_id) VALUES (?, ?, 1)`,[user.insertId, account_res.category_id],'write'),
+		]);
+
+		return "User signup successful";
 	}
 }

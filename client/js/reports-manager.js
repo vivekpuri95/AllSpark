@@ -96,22 +96,24 @@ class ReportsMangerPreview {
 			this.report.queryOverride = true;
 		}
 
+		if(options.visualizationOptions)
+			this.report.visualizations[0].options = options.visualizationOptions;
+
 		this.report = new DataSource(this.report);
 
-		this.report.container.querySelector('header').classList.add('hidden');
+		this.report.container;
 		this.report.visualizations.selected.container.classList.toggle('unsaved', this.report.queryOverride ? 1 : 0);
 
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
-		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
-		this.page.container.classList.add(`preview-${options.position || 'right'}`);
+		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'right';
+		this.page.container.classList.add('preview-' + position);
 
-		await this.report.visualizations.selected.load();
-
-		this.report.container.querySelector('header .menu-toggle').click();
+		await this.report.fetch();
 
 		this.renderDocks();
+		this.move();
 	}
 
 	set hidden(hidden) {
@@ -142,8 +144,6 @@ class ReportsMangerPreview {
 			this.move();
 		});
 
-		this.move();
-
 		this.report.container.querySelector('.menu').appendChild(this.docks);
 	}
 
@@ -154,7 +154,7 @@ class ReportsMangerPreview {
 		if(this.hidden || !this.report)
 			return;
 
-		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'bottom';
+		let position = localStorage.reportsPreviewDock || 'right';
 
 		this.page.container.classList.add('preview-' + position);
 
@@ -637,6 +637,9 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		window.history.replaceState({}, '', `/reports/define-report/${response.insertId}`);
 
 		this.page.load();
+		this.page.stages.get('configure-report').disabled = false;
+		this.page.stages.get('define-report').disabled = false;
+		this.page.stages.get('pick-visualization').disabled = false;
 	}
 
 	async edit() {
@@ -807,8 +810,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.report = this.selectedReport;
 
 		this.page.stages.get('configure-visualization').disabled = true;
-		this.page.preview.hidden = false;
 		this.container.querySelector('#preview-toggle').classList.add('selected');
+
+		localStorage.reportsPreviewDock = 'bottom';
+		this.page.preview.hidden = false;
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
@@ -911,7 +916,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const source = this.page.connections.get(parseInt(this.report.connection_name));
 
-		if(!source || !['mysql', 'pgsql'].includes(source.type)) {
+		if(!source || !['mysql', 'pgsql', 'bigquery'].includes(source.type)) {
 			this.form.querySelector('#query').classList.add('hidden');
 			this.form.querySelector('#api').classList.remove('hidden');
 		} else {
@@ -1189,8 +1194,17 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	addFilter() {
 
-		this.container.querySelector('#filter-form').classList.remove('hidden');
+		const filterForm = this.container.querySelector('#filter-form');
+		filterForm.classList.remove('hidden');
 		this.container.querySelector('#filter-list').classList.add('hidden');
+
+		const select = filterForm.querySelector('select[name="type"]');
+		select.textContent = null;
+		for (const type of MetaData.filterTypes) {
+			select.insertAdjacentHTML('beforeend', `
+				<option value="${type.toLowerCase()}">${type}</option>
+			`);
+		}
 
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
 		this.filterForm.on('submit', this.filterForm.listener = e => this.insertFilter(e));
@@ -1230,6 +1244,14 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.filterForm.on('submit', this.filterForm.listener = e => this.updateFilter(e, filter));
 
 		this.filterForm.reset();
+
+		const select = this.filterForm.querySelector('select[name="type"]');
+		select.textContent = null;
+		for (const type of MetaData.filterTypes) {
+			select.insertAdjacentHTML('beforeend', `
+				<option value="${type.toLowerCase()}">${type}</option>
+			`);
+		}
 
 		for(const key in filter) {
 			if(key in this.filterForm)
@@ -1338,8 +1360,8 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		const
 			parameters = {
 				query_id: this.report.query_id,
-				name: this.addForm.type.value[0].toUpperCase() + this.addForm.type.value.slice(1),
-				type: this.addForm.type.value,
+				name: this.form.type.value[0].toUpperCase() + this.form.type.value.slice(1),
+				type: this.form.type.value,
 			},
 			options = {
 				method: 'POST',
@@ -1351,9 +1373,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
 
-		this.select();
-
-		this.load();
+		this.page.load();
+		this.container.querySelector('#add-visualization-picker').classList.add('hidden');
+		this.container.querySelector('#visualization-list').classList.remove('hidden');
 	}
 
 	async delete(visualization) {
@@ -1401,7 +1423,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				<td>${visualization.description || ''}</td>
 				<td>${type ? type.name : ''}</td>
 				<td class="action preview"><i class="fas fa-eye"></i></td>
-				<td class="action edit"><i class="fas fa-edit"></i></td>
+				<td class="action edit"><i class="fas fa-cog"></i></td>
 				<td class="action red delete"><i class="far fa-trash-alt"></i></td>
 			`;
 
@@ -1454,6 +1476,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		}
 
 		this.form.on('submit', e => this.update(e));
+		this.container.querySelector('#preview-configure-visualization').on('click', e => this.preview(e));
 
 		this.setupConfigurationSetions();
 	}
@@ -1528,6 +1551,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.transformations = new ReportTransformations(this.visualization, this);
 
+		localStorage.reportsPreviewDock = 'right';
 		await this.page.preview.load({
 			query_id: this.report.query_id,
 			visualization_id: this.visualization.visualization_id,
@@ -1539,6 +1563,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.form.name.value = this.visualization.name;
 		this.form.type.value = this.visualization.type;
+		this.form.description.value = this.visualization.description;
 
 		const options = this.container.querySelector('.options');
 
@@ -1583,6 +1608,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.load();
 	}
+
+	async preview() {
+		this.page.preview.load({
+			query_id: this.report.query_id,
+			visualization_id: this.visualization.visualization_id,
+			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json},
+		});
+	}
 });
 
 class ReportVisualizationDashboards extends Set {
@@ -1618,7 +1651,10 @@ class ReportVisualizationDashboards extends Set {
 
 		for(const dashboard of this.response.values()) {
 
-			for(const report of dashboard.format.reports) {
+			if(!dashboard.format)
+				dashboard.format = {};
+
+			for(const report of dashboard.format.reports || []) {
 
 				if(this.stage.visualization.visualization_id == report.visualization_id)
 					this.add(new ReportVisualizationDashboard(dashboard, this.stage));
@@ -1747,8 +1783,8 @@ class ReportVisualizationDashboard {
 		}
 
 		form.dashboard_id.on('change', () => form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value);
-		form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value
 		form.dashboard_id.value = this.visualization.dashboard_id;
+		form.querySelector('.view-dashboard').href = '/dashboard/' + (this.visualization.dashboard_id);
 
 		form.querySelector('.delete').on('click', () => this.delete());
 
@@ -2560,3 +2596,189 @@ const mysqlKeywords = [
 	'DATE_FORMAT',
 	'USING',
 ];
+
+class EditSourceData {
+
+	constructor(queryId) {
+
+		this.queryId = queryId;
+	}
+
+	get container() {
+
+		if(this.tableContainer) {
+
+			return this.tableContainer;
+		}
+
+		const div = document.createElement('div');
+
+		div.innerHTML = `
+			<button type="submit">Save</button>
+			<table>
+				<thead></thead>
+				<tbody contentEditable name="data"></tbody>
+			</table>
+		`;
+
+		this.tableContainer = div;
+
+		this.render();
+
+		return div;
+	}
+
+	async load() {
+
+		await DataSource.load();
+
+		this.datasource = new DataSource(DataSource.list.get(this.queryId));
+
+		await this.datasource.fetch();
+		this.data = this.datasource.response;
+
+		this.columns = [...this.data[0].keys()];
+		this.rows = [];
+
+		for (const item of this.data) {
+
+			this.rows.push([...item.values()]);
+		}
+	}
+
+	getSortedRows(index, element) {
+
+		if (this.rows.length === 1) {
+
+			return this.rows;
+		}
+
+		const order = element.dataset.sorted;
+
+		const asc = order === 'asc', desc = order === 'desc';
+
+		element.dataset.sorted = asc ? "desc" : "asc";
+
+		const sortFlag = asc ? -1 : 1;
+
+		if (asc && desc) {
+
+			return this.rows;
+		}
+
+		this.rows = this.rows.sort((x, y) => {
+
+			let A = x[index], B = y[index];
+
+			if (A < B) {
+
+				return -1 * sortFlag;
+			}
+
+			if (A > B) {
+
+				return sortFlag;
+			}
+
+			return 0;
+		});
+	}
+
+	async render() {
+
+		if (!this.data || !this.data.length) {
+
+			this.tableContainer.innerHTML = '<p class="NA">No data found :(</p>';
+
+			return this.tableContainer;
+		}
+
+		const tableElement = this.tableContainer.querySelector('table');
+
+		const thead = this.tableContainer.querySelector('thead');
+
+		let tHeadHtml = '';
+
+		const tbody = this.tableContainer.querySelector('tbody');
+		tbody.textContent = null;
+
+		if (!thead.innerHTML) {
+
+			for (const columnName of this.columns) {
+
+				tHeadHtml += '<th class="heading"><span class="name">' + columnName + '</span></th>';
+			}
+
+			thead.innerHTML = '<tr>' + tHeadHtml + '</tr>';
+
+			for (const [index, element] of thead.querySelectorAll('.name').entries()) {
+
+				element.dataset.sorted = 'desc';
+
+				element.parentNode.on('click', async () => {
+
+					this.getSortedRows(index, element);
+					await this.render();
+				});
+			}
+		}
+
+		for (const row of this.rows) {
+
+			let tableRow = '';
+
+			for (const cell of row) {
+
+				tableRow += '<td>' + cell + '</td>';
+			}
+
+			tbody.innerHTML += '<tr>' + tableRow + '</tr>';
+		}
+
+		const saveButton = this.tableContainer.querySelector('button[type="submit"]');
+
+		saveButton.removeEventListener('click', EditSourceData.submitListener);
+		saveButton.on('click', EditSourceData.submitListener = (e) => this.save(e));
+
+
+		tableElement.appendChild(thead);
+		tableElement.appendChild(tbody);
+
+		return this.tableContainer;
+	}
+
+	async save(e) {
+
+		if (e) {
+
+			e.preventDefault();
+		}
+
+
+		const t = this.container.querySelector('table');
+		const result = [];
+
+		for (const element of [...t.rows].slice(1)) {
+
+			const temp = {};
+
+			for (const [index, data] of [...element.cells].entries()) {
+
+				temp[this.columns[index]] = data.textContent;
+			}
+
+			result.push(temp);
+		}
+
+		const
+			parameter = {
+				data: JSON.stringify(result),
+				query_id: this.datasource.query_id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		return await API.call('reports/engine/report', parameter, options);
+	}
+}

@@ -24,6 +24,20 @@ exports.publicEndpoints = [
 	'/v2/authentication/resetLink',
 	'/v2/authentication/tookan',
 	'/v2/scope/scopeAuth',
+	'/v2/accounts/signup',
 ];
 
 exports.filterPrefix = "param_";
+
+exports.saveQueryResultDb = "save_history";
+
+exports.saveQueryResultTable = "tb_save_history";
+
+exports.filterTypes = [
+	'Number',
+	'Text',
+	'Date',
+	'Month',
+	'Hidden',
+	'Column'
+];

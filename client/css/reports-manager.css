@@ -137,7 +137,7 @@ main.preview-left #stages {
 		cursor: pointer;
 	}
 	#stage-pick-report table thead tr.search th {
-		padding: var(--gap);
+		padding: calc(var(--gap) * 2) var(--gap);
 		top: 0;
 		background: #fff;
 	}
@@ -304,9 +304,6 @@ main.preview-left #stages {
 	#stage-configure-visualization h4 {
 		margin: 0 0 calc(var(--gap) * 2)
 	}
-	#stage-configure-visualization .add-axis {
-		margin-top: calc(var(--gap) * 2);
-	}
 	#stage-configure-visualization .axes {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
@@ -331,12 +328,12 @@ main.preview-left #stages {
 		flex-direction: column;
 	}
 	#stage-configure-visualization #transformations-preview {
-		height: 19px;
+		height: 15px;
 		margin-left: auto;
 		display: flex;
 		align-items: center;
 		padding: 0 10px;
-		font-size: 80%;
+		font-size: 70%;
 	}
 		#stage-configure-visualization #transformations-preview svg {
 			margin: 0;
@@ -477,7 +474,4 @@ main.preview-left #preview {
 	}
 	#preview .data-source {
 		max-height: 600px;
-	}
-	#preview .data-source .toolbar {
-		margin-top: 0;
 	}
