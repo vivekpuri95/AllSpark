@@ -335,12 +335,16 @@ Page.class = class Dashboards extends Page {
 				label.on("click", () => {
 
 					this.closeOtherDropDowns(label.id, nav);
+
 					let currentDashboard = window.location.pathname.split("/");
 
 					if (currentDashboard.includes("dashboard")) {
 
 						currentDashboard = currentDashboard.pop();
-						nav.querySelector(`#dashboard-${currentDashboard}`).classList.add("selected");
+						currentDashboard = nav.querySelector(`#dashboard-${currentDashboard}`);
+
+						if(currentDashboard)
+							currentDashboard.classList.add("selected");
 					}
 				});
 
@@ -862,7 +866,6 @@ class Dashboard {
 			edit.removeEventListener('click', Dashboard.toolbar.editListener);
 
 			edit.on('click', Dashboard.toolbar.editListener = () => {
-				console.log(this);
 				this.edit()
 			});
 

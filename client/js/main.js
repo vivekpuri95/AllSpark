@@ -77,7 +77,7 @@ class Page {
 
 		const nav_container = header.querySelector('nav');
 
-		if(account.settings.get('top_nav_position') == 'left') {
+		if(account && account.settings.get('top_nav_position') == 'left') {
 
 			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
 
@@ -166,6 +166,7 @@ class Page {
 		this.user = window.user;
 		this.metadata = window.MetaData;
 		this.indexedDb = IndexedDb.instance;
+		this.cookies = new Cookies();
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
@@ -293,6 +294,51 @@ class IndexedDb {
 			request.onsuccess = e => resolve(e.result);
 			request.onerror = e => reject(e);
 		});
+	}
+}
+
+/**
+ * A generic cookie map interface that lets us do basic CRUD tasks.
+ */
+class Cookies {
+
+	/**
+	 * Sets a new cookie with given name and value and overwrites any previously held values.
+	 *
+	 * @param {string} key		The name of the cookie being set.
+	 * @param {string} Value	The value of the cookie being set.
+	 * @return {boolean}		The status of the set request.
+	 */
+	set(key, value) {
+		document.cookie = `${key}=${encodeURIComponent(value)}`;
+		return true;
+	}
+
+	/**
+	 * Checks if a cookie with the given name exists.
+	 *
+	 * @param  {string} key	The name of the cookie whose existance is being questioned
+	 * @return {boolean}	Returns true if the cookie exists, false otherwise
+	 */
+	has(key) {
+		return new Boolean(document.cookie.split(';').filter(c => c.includes(`${key}=`)).length);
+	}
+
+	/**
+	 * Gets the value of a cookie with the given name.
+	 *
+	 * @param  {string}	key		The name of the cookie whose value will be retured.
+	 * @return {srtring|null}	The value of the cookie, null if not found.
+	 */
+	get(key) {
+
+		// TODO: Handle the prefix bug, (both foo and barfoo will be matched with current approach)
+		const [cookie] = document.cookie.split(';').filter(c => c.includes(`${key}=`));
+
+		if(!cookie)
+			return null;
+
+		return decodeURIComponent(cookie.split('=')[1]);
 	}
 }
 
@@ -838,6 +884,7 @@ class API extends AJAX {
 		const response = await API.call('authentication/refresh', parameters, options);
 
 		await IndexedDb.instance.set('token', response);
+		new Cookies().set('token', response);
 
 		Page.load();
 	}
