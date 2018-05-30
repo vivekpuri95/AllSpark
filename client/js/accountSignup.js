@@ -32,7 +32,6 @@ Page.class = class Signup extends Page {
 
 		await API.call('accounts/signup', {}, options);
 
-
 		this.container.querySelector('.toolbar span.notice').innerHTML = 'Signup Successful! Please login...';
 		this.container.querySelector('.toolbar span.notice').classList.remove('hidden');
 
