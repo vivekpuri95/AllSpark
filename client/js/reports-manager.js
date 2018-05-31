@@ -2221,7 +2221,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			const columns = [];
 
-			for(const option of axis.querySelectorAll('select[name=columns] option:checked'))
+			for(const option of axis.querySelectorAll('.axis-column .multi-select .options input:checked'))
 				columns.push({key: option.value});
 
 			response.axes.push({
@@ -2238,9 +2238,19 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	axis(axis = {}) {
 
-		const container = document.createElement('div');
+		const
+			container = document.createElement('div'),
+			datalist = [];
 
 		container.classList.add('axis', 'subform');
+
+		for(const [key, column] of this.page.preview.report.columns)
+			datalist.push({"name":column.name, "value":key});
+
+		const multiSelectColumns =   new MultiSelect({datalist:datalist, expand:true});
+		const axisColumn = multiSelectColumns.container;
+
+		multiSelectColumns.value = axis.columns? axis.columns.map(x => x.key) : [];
 
 		container.innerHTML = `
 			<label>
@@ -2258,12 +2268,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<input type="text" name="label" value="${axis.label || ''}">
 			</label>
 
-			<label>
+			<label class="axis-column">
 				<span>Columns</span>
-				<select name="columns" multiple></select>
 			</label>
 
-			<label><span><input type="checkbox" name="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
+			<label><span><input type="checkbox" name="restcolumns" class="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 			<label>
 				<span>Format</span>
@@ -2280,14 +2289,12 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			</label>
 		`;
 
-		const columns = container.querySelector('select[name=columns]');
+		container.querySelector('.axis-column').appendChild(axisColumn);
 
-		for(const [key, column] of this.page.preview.report.columns) {
+		container.querySelector('.restcolumns').on('change', () => {
 
-			columns.insertAdjacentHTML('beforeend', `
-				<option value="${key}" ${axis.columns && axis.columns.some(c => c.key == key) ? 'selected' : ''}>${column.name}</option>
-			`)
-		}
+			multiSelectColumns.disabled = container.querySelector('.restcolumns').checked ? true : false;
+		});
 
 		container.querySelector('select[name=position]').value = axis.position;
 		container.querySelector('select[name=format]').value = axis.format || '';
