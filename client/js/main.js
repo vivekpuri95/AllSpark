@@ -488,11 +488,11 @@ class Account {
 
 		this.settings = new Map;
 
-		if(account.settings && account.settings[0]) {
+		if(!Array.isArray(account.settings))
+			return;
 
-			for(const key in account.settings[0].value)
-				this.settings.set(key, account.settings[0].value[key]);
-		}
+		for(const setting of account.settings)
+			this.settings.set(setting.key, setting.value);
 	}
 }
 
