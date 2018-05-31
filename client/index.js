@@ -184,34 +184,58 @@ router.get('/login', API.serve(class extends HTMLAPI {
 				<img src="" />
 			</div>
 
-			<div class="whitelabel form">
+			<section id="loading" class="section form">
 				<i class="fa fa-spinner fa-spin"></i>
-			</div>
+			</section>
 
-			<form class="form hidden">
+			<section id="accept-email" class="section">
+				<form class="form">
 
-				<label>
-					<span>Email</span>
-					<input type="text" name="email" required>
-				</label>
+					<label>
+						<span>Email</span>
+						<input type="email" name="email" required>
+					</label>
 
-				<label>
-					<span>Password</span>
-					<input type="password" name="password" required>
-				</label>
-				<div>
-					<button class="submit">
-						<i class="fa fa-paper-plane"></i>
-						Sign In
-					</button>
-				</div>
-			</form>
-			<div class="signup">
+					<div>
+						<button class="submit">
+							<i class="fas fa-arrow-right"></i>
+							Next
+						</button>
+					</div>
+				</form>
+			</section>
+
+			<section id="accept-account" class="section"></section>
+
+			<section id="accept-password" class="section">
+				<form class="form">
+
+					<label>
+						<span>Email</span>
+						<input type="email" name="email" disabled required>
+					</label>
+
+					<label>
+						<span>Password</span>
+						<input type="password" name="password" required>
+					</label>
+
+					<div>
+						<a id="password-back"><i class="fas fa-arrow-left"></i> &nbsp;Back</a>
+						<button class="submit">
+							<i class="fas fa-sign-in-alt"></i>
+							Sign In
+						</button>
+					</div>
+				</form>
+			</section>
+
+			<section id="message"></section>
+
+			<div id="signup">
 				<a href="/login/forgot">Forgot Password?</a>
 				${this.account.settings.get('enable_account_signup') ? 'Or Create a <a href="/account-signup">new account</a>' : ''}
 			</div>
-
-			<div id="message" class="hidden"></div>
 		`;
 	}
 }));
