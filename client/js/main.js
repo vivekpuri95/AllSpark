@@ -620,6 +620,12 @@ class UserPrivileges extends Set {
 	}
 
 	has(name) {
+
+		if(name === "superadmin") {
+
+			return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase()).length;
+		}
+
 		return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase() || p.privilege_id === 0).length;
 	}
 }

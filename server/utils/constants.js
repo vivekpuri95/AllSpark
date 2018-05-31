@@ -12,7 +12,7 @@ exports.privilege = {
 	connection: "connection",
 	dashboard: "dashboard",
 	report: "report",
-
+	superadmin: "superadmin",
 	ignore_category: ['connection', 'dashboard']
 };
 
