@@ -99,18 +99,11 @@ exports.get = class extends API {
 
 		accountList.map(x => {
 
-			let settings = {};
-
 			try {
-				settings = JSON.parse(x.value);
+				accountObj.settings = JSON.parse(x.value);
 			}
 			catch (e) {
 			}
-
-			accountObj.settings.push({
-				profile: x.profile,
-				value: settings,
-			});
 		});
 
 		delete accountObj['value'];
