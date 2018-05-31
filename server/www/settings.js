@@ -18,10 +18,10 @@ exports.insert = class extends API {
 		delete valueObj["account_id"];
 
 		return await this.mysql.query(`
-				INSERT INTO 
+				INSERT INTO
 					tb_settings
 					(
-						account_id, 
+						account_id,
 						profile,
 						owner,
 						value
@@ -70,7 +70,7 @@ exports.delete = class extends API {
 
 		this.assert(this.request.body.id, "no id found to delete");
 
-		return await this.mysql.query("DELETE FROM tb_settings WHERE id = ?", [this.request.body.delete], "write");
+		return await this.mysql.query("DELETE FROM tb_settings WHERE id = ?", [this.request.body.id], "write");
 	}
 };
 
@@ -80,7 +80,7 @@ exports.list = class extends API {
 
 		this.user.privilege.needs("administrator");
 
-		const settingsList = await this.mysql.query("select * from tb_settings");
+		const settingsList = await this.mysql.query("select * from tb_settings where account_id = ?", [this.request.query.account_id]);
 		for(const row of settingsList) {
 
 			row.value = JSON.parse(row.value);

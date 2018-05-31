@@ -737,6 +737,21 @@ class SettingsAccount {
 		if(this.form.parentElement.querySelector('.feature-form'))
 			this.form.parentElement.querySelector('.feature-form').remove();
 
+		const settings_json = [{
+			key: 'top_nav_position',
+			type: 'string',
+			name: 'Header Nav Position.',
+			desc: 'Position of top nav bar.'
+		}]
+
+		const profileContainer = new SettingsManager(this, settings_json);
+		await profileContainer.load();
+
+		if(this.form.parentElement.querySelector('.settings-container'))
+			this.form.parentElement.querySelector('.settings-container').remove();
+
+		this.form.parentElement.appendChild(profileContainer.container);
+
 		this.form.parentElement.appendChild(features.container);
 
 		await Sections.show('accounts-form');
@@ -747,7 +762,7 @@ class SettingsAccount {
 			await this.page.load();
 			await Sections.show('accounts-form');
 		});
-	}
+			}
 
 	async update(e) {
 

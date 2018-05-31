@@ -42,3 +42,26 @@ main .feature-form table {
 	background: #fff;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 }
+main .profile-container h3 {
+	border-bottom: 1px dashed #999;
+}
+main .settings-container {
+	display: grid;
+	grid-template-columns: 300px auto;
+}
+	main .settings-container table {
+		background: #fff;
+	}
+	main .settings-container .sideBar {
+		border: 1px solid #999;
+	}
+	main .settings-container .profile-container {
+		border: 1px solid #999;
+		border-left: 0;
+	}
+	main .settings-container .toolbar {
+		padding: 5px;
+	}
+	main .settings-container .add-form {
+		grid-template-columns: 1fr 1fr;
+	}

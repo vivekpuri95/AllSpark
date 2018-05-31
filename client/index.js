@@ -1227,6 +1227,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 		this.stylesheets.push('/css/settings.css');
 		this.scripts.push('/js/settings.js');
+		this.scripts.push('/js/settings-manager.js');
 	}
 
 	async main() {
