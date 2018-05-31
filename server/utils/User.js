@@ -3,95 +3,100 @@ const config = require("config");
 
 class User {
 
-    constructor(userObj) {
+	constructor(userObj) {
 
-        Object.assign(this, userObj);
+		Object.assign(this, userObj);
 
-        this.privilege = privilege(userObj);
-        this.role = roles(userObj);
-    }
+		this.privilege = privilege(userObj);
+		this.role = roles(userObj);
+	}
 }
 
 
 function privilege(userObj) {
 
-    return {
+	return {
 
-        has: function(privilegeName, categoryId=0) {
+		has: function (privilegeName, categoryId = 0) {
 
-            if(config.has('privilege_ignore') && config.get('privilege_ignore')) {
-                return true;
-            }
+			if (config.has('privilege_ignore') && config.get('privilege_ignore')) {
+				return true;
+			}
 
-            if (userObj.error) {
+			if (privilegeName === "superadmin") {
 
-                throw(userObj.message);
+				return userObj.privileges.filter(x => x.name == privilegeName).length;
+			}
 
-            }
+			if (userObj.error) {
 
-            const ignoreCategoryFlag = constants.privilege.ignore_category.includes(privilegeName);
+				throw(userObj.message);
 
-            for(const userPrivilege of userObj.privileges) {
+			}
 
-                if((userPrivilege.name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && (categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id) || ignoreCategoryFlag)) {
+			const ignoreCategoryFlag = constants.privilege.ignore_category.includes(privilegeName);
 
-                    return true;
-                }
-            }
+			for (const userPrivilege of userObj.privileges) {
 
-            return false;
-        },
+				if ((userPrivilege.name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && (categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id) || ignoreCategoryFlag)) {
 
-        needs: function(privilegeName, categoryId=0) {
+					return true;
+				}
+			}
 
-            if(this.has(...arguments)) {
+			return false;
+		},
 
-                return 1
-            }
+		needs: function (privilegeName, categoryId = 0) {
 
-            throw("The user does not have enough privileges for this action.");
-        }
-    }
+			if (this.has(...arguments)) {
+
+				return 1
+			}
+
+			throw("The user does not have enough privileges for this action.");
+		}
+	}
 }
 
 
 function roles(userObj) {
 
-    return {
+	return {
 
-        has: function(roleId, categoryId) {
+		has: function (roleId, categoryId) {
 
-            if(config.has('role_ignore') && config.get('role_ignore')) {
-                return true;
-            }
+			if (config.has('role_ignore') && config.get('role_ignore')) {
+				return true;
+			}
 
-            if (userObj.error) {
+			if (userObj.error) {
 
-                throw(userObj.message);
-            }
+				throw(userObj.message);
+			}
 
-            for(const role of userObj.roles) {
+			for (const role of userObj.roles) {
 
-                if((role.category_id === categoryId || constants.adminCategory.includes(role.category_id)) && (roleId === role.role || constants.adminRole.includes(role.role))) {
+				if ((role.category_id === categoryId || constants.adminCategory.includes(role.category_id)) && (roleId === role.role || constants.adminRole.includes(role.role))) {
 
-                    return true;
-                }
-            }
+					return true;
+				}
+			}
 
-            return false;
+			return false;
 
-        },
+		},
 
-        needs: function(roleId, categoryId) {
+		needs: function (roleId, categoryId) {
 
-            if(this.has(...arguments)) {
+			if (this.has(...arguments)) {
 
-                return 1
-            }
+				return 1
+			}
 
-            throw("The user does not have enough roles for this action.");
-        }
-    }
+			throw("The user does not have enough roles for this action.");
+		}
+	}
 }
 
 module.exports = User;

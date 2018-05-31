@@ -5,6 +5,8 @@ const request = require('request');
 const promisify = require('util').promisify;
 const Mailer = require('../utils/mailer');
 const requestPromise = promisify(request);
+const config = require("config");
+const constants = require("../utils/constants");
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -290,6 +292,14 @@ exports.refresh = class extends API {
 			privileges,
 		};
 
+		if(config.has("superAdmin_users") && config.get("superAdmin_users").includes(user.email)) {
+
+			obj.privileges.push({
+				privilege_id: -1,
+				privilege_name: constants.privilege.superadmin,
+				category_id: constants.adminCategory[0],
+			})
+		}
 		return commonFun.makeJWT(obj, 5 * 60);
 	}
 }
