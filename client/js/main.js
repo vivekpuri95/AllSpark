@@ -1290,16 +1290,16 @@ class MultiSelect {
 
 	    if(this.multiple) {
 
-            this.datalist.map(obj => this.selectedValues.add(obj.value.toString()))
-        }
-        else {
+			this.datalist.map(obj => this.selectedValues.add(obj.value.toString()))
+		}
+		else {
 
 			if(this.selectedValues.size != 1) {
 
 				this.selectedValues.clear();
-                this.selectedValues.add(this.datalist[0].value.toString())
-            }
-        }
+				this.selectedValues.add(this.datalist[0].value.toString())
+			}
+		}
 
 		this.update();
 	}

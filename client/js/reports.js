@@ -5640,8 +5640,8 @@ class Dataset extends MultiSelect {
 		if(!source.container) {
 
 			super.value = [source];
-            return;
-        }
+			return;
+		}
 
 		if(!source.container.querySelector('.options')) {
 			this.container.querySelector('input').value = source.container.querySelector('input').value;
