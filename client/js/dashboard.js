@@ -71,7 +71,7 @@ Page.class = class Dashboards extends Page {
 				...JSON.parse(JSON.stringify(dummyDashboard)),
 				name: "Public Dashboards",
 				id: -3,
-				icon: "fas fa-user-secret"
+				icon: "fas fa-globe"
 			};
 
 
@@ -116,7 +116,7 @@ Page.class = class Dashboards extends Page {
 
 			let item = this.container.querySelector("nav .item:not(.hidden)");
 
-			if(!item) {
+			if (!item) {
 				this.renderList();
 				return await Sections.show("list");
 			}
@@ -257,8 +257,8 @@ Page.class = class Dashboards extends Page {
 
 				submenu.classList.add("hidden");
 			}
-			item.querySelector(".angle") ? item.querySelector(".angle").classList.remove("down") : {}
 
+			item.querySelector(".angle") ? item.querySelector(".angle").classList.remove("down") : {}
 		}
 
 		const labels = container.querySelectorAll(".label");
@@ -320,7 +320,7 @@ Page.class = class Dashboards extends Page {
 					hasHidden.classList.remove("hidden");
 				}
 
-				item.querySelector(".angle") ? item.querySelector(".angle").classList.remove("down") : {};
+				item.querySelector(".angle") ? item.querySelector(".angle").classList.add("down") : {};
 			}
 		});
 
@@ -328,24 +328,42 @@ Page.class = class Dashboards extends Page {
 
 			if (!dashboard.parent) {
 
-				let menuItem = dashboard.menuItem, showItemList;
+				let menuItem = dashboard.menuItem;
 				menuItem.classList.add("parentDashboard");
 				const label = menuItem.querySelector(".label");
 
 				label.on("click", () => {
 
 					this.closeOtherDropDowns(label.id, nav);
-				});
 
-				showItemList = menuItem.querySelectorAll(".hidden");
+					let currentDashboard = window.location.pathname.split("/");
+
+					if (currentDashboard.includes("dashboard")) {
+
+						currentDashboard = currentDashboard.pop();
+						currentDashboard = nav.querySelector(`#dashboard-${currentDashboard}`);
+
+						if(currentDashboard)
+							currentDashboard.classList.add("selected");
+					}
+				});
 
 				if (showLabelIds.includes(dashboard.id)) {
 
-					[].forEach.call(showItemList, (el) => {
+					for(const elem of menuItem.querySelectorAll(".submenu")) {
 
-						el.classList.remove("hidden");
-						el.querySelector(".angle") ? el.querySelector(".angle").classList.remove("down") : {}
-					});
+						elem.classList.remove("hidden");
+					}
+
+					for(const elem of menuItem.querySelectorAll(".label")) {
+
+						const angle = elem.querySelector(".angle");
+
+						if(angle) {
+
+							angle.classList.add("down");
+						}
+					}
 				}
 
 				nav.appendChild(menuItem);
@@ -362,35 +380,33 @@ Page.class = class Dashboards extends Page {
 			</footer>
 		`);
 
-		// nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.has('disable_powered_by') && account.settings.get('disable_powered_by'))
+		nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.get('disable_powered_by'))
 
 		nav.querySelector('.collapse-panel').on('click', (e) => {
 
-			nav.classList.toggle('collapsed-nav');
+			nav.classList.toggle('collapsed');
 
 			const right = e.currentTarget.querySelector('.right')
 
 			right.classList.toggle('hidden');
 			e.currentTarget.querySelector('.left').classList.toggle('hidden');
 
-			// if(!nav.querySelector('.powered-by').classList.contains('hidden') && !account.settings.get('disable_powered_by'))
-			// 	nav.querySelector('.powered-by').classList.add('hidden');
-			// else if( !account.settings.get('disable_powered_by'))
-			// 	nav.querySelector('.powered-by').classList.remove('hidden');
+			if(!nav.querySelector('.powered-by').classList.contains('hidden') && !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.add('hidden');
+
+			else if( !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.remove('hidden');
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
 
 			for (const item of nav.querySelectorAll('.item')) {
 
-				if (!right.hidden) {
+				if (!right.hidden)
 					item.classList.remove('list-open');
-				}
 
 				if (!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
 					item.querySelector('.label .name').classList.toggle('hidden');
-				item.querySelector('.submenu') ? item.querySelector('.submenu').classList.toggle('collapsed-submenu-bar') : '';
 			}
-
 		});
 
 		if (!nav.children.length) {
@@ -511,14 +527,12 @@ class Dashboard {
 
 	get menuItem() {
 
-
-		if (this.container) {
-
+		if (this.container)
 			return this.container;
-		}
-		const allVisualizations = this.childrenVisualizations(this);
 
-		const container = this.container = document.createElement('div');
+		const
+			container = this.container = document.createElement('div'),
+			allVisualizations = this.childrenVisualizations(this);
 
 		let icon;
 
@@ -543,17 +557,16 @@ class Dashboard {
 			<div class="label" id=${"dashboard-" + this.id}>
 				${icon}
 				<span class="name">${this.name}</span>
-				${this.children.size ? '<span class="angle down"><i class="fa fa-angle-down"></i></span>' : ''}
+				${this.children.size ? '<span class="angle"><i class="fa fa-angle-right"></i></span>' : ''}
 			</div>
 			${this.children.size ? '<div class="submenu hidden"></div>' : ''}
 		`;
 
 		const submenu = container.querySelector('.submenu');
 
-
 		container.querySelector('.label').on('click', () => {
 
-			if (container.querySelector('.collapsed-submenu-bar')) {
+			if (this.page.container.querySelector('nav.collapsed')) {
 
 				for (const item of container.parentElement.querySelectorAll('.item')) {
 
@@ -641,7 +654,7 @@ class Dashboard {
 			await Sections.show('list');
 
 			//removing selected from other containers
-			for(const element of this.page.container.querySelectorAll(".selected") || []) {
+			for (const element of this.page.container.querySelectorAll(".selected") || []) {
 
 				element.classList.remove("selected");
 			}
@@ -849,7 +862,6 @@ class Dashboard {
 			edit.removeEventListener('click', Dashboard.toolbar.editListener);
 
 			edit.on('click', Dashboard.toolbar.editListener = () => {
-				console.log(this);
 				this.edit()
 			});
 

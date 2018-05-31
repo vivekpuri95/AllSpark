@@ -42,7 +42,7 @@ exports.update = class extends API {
 exports.delete = class extends API {
 	async delete() {
 		this.user.privilege.needs('administrator');
-		console.log(this.request.body.privilege_id)
+
 		return await this.mysql.query(
 			`UPDATE	tb_privileges SET status = 0 WHERE privilege_id = ?`,
 			[this.request.body.privilege_id],

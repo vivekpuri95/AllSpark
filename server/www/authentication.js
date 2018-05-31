@@ -153,7 +153,6 @@ exports.login = class extends API {
 			this.assert(userDetail.length, "Invalid Email! :(");
 
 			if(userDetail.length > 1) {
-
 				return await this.mysql.query(
 					"select * from tb_accounts where account_id in (?)",
 					[userDetail.map(x => x.account_id)]

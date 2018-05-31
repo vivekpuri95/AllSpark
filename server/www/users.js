@@ -230,7 +230,25 @@ exports.metadata = class extends API {
 			metadata[row.type].push(row);
 		}
 
-		metadata.visualizations = await this.mysql.query('SELECT * FROM tb_visualizations');
+		metadata.visualizations = await this.mysql.query(`
+			SELECT 
+				v.*
+			FROM 
+				tb_features f
+			JOIN
+				tb_account_features af
+			ON
+				f.feature_id = af.feature_id
+				AND af.status = 1
+				AND af.account_id = ?
+				AND f.type = 'visualization'
+			JOIN
+				tb_visualizations v
+			ON
+				f.slug = v.slug
+			`,
+			[this.account.account_id]
+		);
 
 		metadata.datasets = await this.mysql.query(
 			'SELECT * FROM tb_datasets WHERE account_id = ?',
@@ -238,6 +256,22 @@ exports.metadata = class extends API {
 		);
 
 		metadata.filterTypes = constants.filterTypes;
+
+		metadata.sourceTypes = await this.mysql.query(`
+			SELECT 
+				f.slug
+			FROM 
+				tb_features f
+			JOIN
+				tb_account_features af
+			ON
+				f.feature_id = af.feature_id
+				AND af.status = 1
+				AND f.type = 'source'
+				AND af.account_id = ?
+			`,
+			[this.account.account_id]
+		);
 
 		metadata.features = await this.mysql.query('SELECT * from tb_features');
 
