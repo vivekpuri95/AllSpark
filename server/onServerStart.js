@@ -19,7 +19,7 @@ async function loadAccounts() {
 			f.type AS feature_type,
 			s.profile,
 			s.value as settings
-		FROM 
+		FROM
 			tb_accounts a
 		LEFT JOIN
 			tb_settings s
@@ -27,7 +27,7 @@ async function loadAccounts() {
 			a.account_id = s.account_id
 			AND s.status = 1
 			AND s.owner = 'account'
-			AND s.profile = 'main' 
+			AND s.profile = 'main'
 		LEFT JOIN
 			tb_account_features af
 		ON
@@ -79,11 +79,8 @@ async function loadAccounts() {
 			type: account.feature_type
 		});
 
-		if(!account.settings)
-			account.settings = [];
-
 		try {
-			account.settings = JSON.parse(account.settings);
+			account.settings = JSON.parse(account.settings) || [];
 		}
 		catch(e) {
 			account.settings = [];
