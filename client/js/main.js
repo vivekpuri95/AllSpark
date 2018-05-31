@@ -563,11 +563,11 @@ class Account {
 
 		this.settings = new Map;
 
-		if(account.settings && account.settings[0]) {
+		if(!Array.isArray(account.settings))
+			return;
 
-			for(const setting of account.settings[0].value)
-				this.settings.set(setting.key, setting.value);
-		}
+		for(const setting of account.settings)
+			this.settings.set(setting.key, setting.value);
 	}
 }
 

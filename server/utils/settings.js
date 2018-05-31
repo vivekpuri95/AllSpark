@@ -1,6 +1,9 @@
 class Settings extends Map {
 
-	constructor(setting) {
+	constructor(setting = []) {
+
+		if(!Array.isArray(setting))
+			return;
 
 		super(setting.map(x => [x.key, x]));
 	}
