@@ -1253,7 +1253,6 @@ class MultiSelect {
 			input.name = this.inputName;
 			input.value = row.value;
 			input.type = this.multiple ? 'checkbox' : 'radio';
-			input.checked = true;
 
 			label.appendChild(input);
 			label.appendChild(text);
@@ -1289,7 +1288,18 @@ class MultiSelect {
 			optionList.appendChild(label);
 		}
 
-	    this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+	    if(this.multiple) {
+
+            this.datalist.map(obj => this.selectedValues.add(obj.value.toString()))
+        }
+        else {
+
+			if(this.selectedValues.size != 1) {
+
+				this.selectedValues.clear();
+                this.selectedValues.add(this.datalist[0].value.toString())
+            }
+        }
 
 		this.update();
 	}
