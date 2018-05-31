@@ -380,35 +380,33 @@ Page.class = class Dashboards extends Page {
 			</footer>
 		`);
 
-		// nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.has('disable_powered_by') && account.settings.get('disable_powered_by'))
+		nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.get('disable_powered_by'))
 
 		nav.querySelector('.collapse-panel').on('click', (e) => {
 
-			nav.classList.toggle('collapsed-nav');
+			nav.classList.toggle('collapsed');
 
 			const right = e.currentTarget.querySelector('.right')
 
 			right.classList.toggle('hidden');
 			e.currentTarget.querySelector('.left').classList.toggle('hidden');
 
-			// if(!nav.querySelector('.powered-by').classList.contains('hidden') && !account.settings.get('disable_powered_by'))
-			// 	nav.querySelector('.powered-by').classList.add('hidden');
-			// else if( !account.settings.get('disable_powered_by'))
-			// 	nav.querySelector('.powered-by').classList.remove('hidden');
+			if(!nav.querySelector('.powered-by').classList.contains('hidden') && !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.add('hidden');
+
+			else if( !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.remove('hidden');
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
 
 			for (const item of nav.querySelectorAll('.item')) {
 
-				if (!right.hidden) {
+				if (!right.hidden)
 					item.classList.remove('list-open');
-				}
 
 				if (!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
 					item.querySelector('.label .name').classList.toggle('hidden');
-				item.querySelector('.submenu') ? item.querySelector('.submenu').classList.toggle('collapsed-submenu-bar') : '';
 			}
-
 		});
 
 		if (!nav.children.length) {
@@ -529,13 +527,12 @@ class Dashboard {
 
 	get menuItem() {
 
-		if (this.container) {
-
+		if (this.container)
 			return this.container;
-		}
-		const allVisualizations = this.childrenVisualizations(this);
 
-		const container = this.container = document.createElement('div');
+		const
+			container = this.container = document.createElement('div'),
+			allVisualizations = this.childrenVisualizations(this);
 
 		let icon;
 
@@ -567,10 +564,9 @@ class Dashboard {
 
 		const submenu = container.querySelector('.submenu');
 
-
 		container.querySelector('.label').on('click', () => {
 
-			if (container.querySelector('.collapsed-submenu-bar')) {
+			if (this.page.container.querySelector('nav.collapsed')) {
 
 				for (const item of container.parentElement.querySelectorAll('.item')) {
 
