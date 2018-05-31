@@ -79,11 +79,8 @@ async function loadAccounts() {
 			type: account.feature_type
 		});
 
-		if(!account.settings)
-			account.settings = [];
-
 		try {
-			account.settings = JSON.parse(account.settings);
+			account.settings = JSON.parse(account.settings || []);
 		}
 		catch(e) {
 			account.settings = [];

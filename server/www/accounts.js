@@ -81,6 +81,8 @@ exports.get = class extends API {
 			ON
 				s.account_id = a.account_id
 				AND s.owner = 'account'
+				AND s.status = 1
+				AND s.profile = 'main'
 			WHERE
 				a.status = 1
 				and a.account_id = ?

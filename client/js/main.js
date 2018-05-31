@@ -1172,8 +1172,11 @@ class MultiSelect {
 
 			e.stopPropagation();
 
-			for(const option of document.querySelectorAll('.multi-select .options')) {
-				option.classList.add('hidden');
+			if(!this.container.querySelector('.options').classList.contains('expanded')) {
+
+				for(const option of document.querySelectorAll('.multi-select .options')) {
+					option.classList.add('hidden');
+				}
 			}
 
 			this.container.querySelector('.options').classList.remove('hidden');
@@ -1233,8 +1236,7 @@ class MultiSelect {
 		if(this.expand)
 			this.container.querySelector('.options').classList.add('expanded');
 
-		if(this.disabled)
-			this.container.querySelector('input[type=search]').disabled = true;
+		this.container.querySelector('input[type=search]').disabled = this.disabled ? true : false;
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
