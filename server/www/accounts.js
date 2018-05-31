@@ -81,6 +81,8 @@ exports.get = class extends API {
 			ON
 				s.account_id = a.account_id
 				AND s.owner = 'account'
+				AND s.status = 1
+				AND s.profile = 'main'
 			WHERE
 				a.status = 1
 				and a.account_id = ?
@@ -97,18 +99,11 @@ exports.get = class extends API {
 
 		accountList.map(x => {
 
-			let settings = {};
-
 			try {
-				settings = JSON.parse(x.value);
+				accountObj.settings = JSON.parse(x.value);
 			}
 			catch (e) {
 			}
-
-			accountObj.settings.push({
-				profile: x.profile,
-				value: settings,
-			});
 		});
 
 		delete accountObj['value'];
