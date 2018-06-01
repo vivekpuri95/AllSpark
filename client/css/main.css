@@ -588,9 +588,10 @@ body {
 		z-index: 3;
 		overflow: auto;
 	}
-	.multi-select .options.expanded {
+	.multi-select.expanded .options {
 		position: initial;
 		height: 200px;
+		box-shadow: none;
 	}
 		.multi-select .options header {
 			border-bottom: 1px dashed #999;

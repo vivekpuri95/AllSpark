@@ -297,6 +297,7 @@ main.preview-left #stages {
 		display: flex;
 		align-items: center;
 		font-size: 95%;
+		z-index: 1;
 	}
 		#stage-configure-visualization h3 > svg {
 			margin-right: var(--gap);

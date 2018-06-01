@@ -1176,7 +1176,7 @@ class MultiSelect {
 
 			e.stopPropagation();
 
-			if(!this.container.querySelector('.options').classList.contains('expanded')) {
+			if(!this.container.classList.contains('expanded')) {
 
 				for(const option of document.querySelectorAll('.multi-select .options')) {
 					option.classList.add('hidden');
@@ -1238,7 +1238,7 @@ class MultiSelect {
 	render() {
 
 		if(this.expand)
-			this.container.querySelector('.options').classList.add('expanded');
+			this.container.classList.add('expanded');
 
 		this.container.querySelector('input[type=search]').disabled = this.disabled ? true : false;
 
@@ -1296,7 +1296,8 @@ class MultiSelect {
 
 	    if(this.multiple) {
 
-			this.datalist.map(obj => this.selectedValues.add(obj.value.toString()))
+			if(!this.selectedValues.size)
+				this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
 		}
 		else {
 

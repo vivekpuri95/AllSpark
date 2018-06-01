@@ -2191,10 +2191,14 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		this.stage.setupConfigurationSetions(container);
 
-		const axes = container.querySelector('.axes');
+		this.formContainer.axes = [];
 
-		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : [])
-			axes.appendChild(this.axis(axis));
+		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : []) {
+
+			const axisForm = this.axis(axis);
+			this.formContainer.axes.push(axisForm);
+			container.querySelector('.axes').appendChild(axisForm);
+		}
 
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
@@ -2203,7 +2207,10 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
 
 		container.querySelector('.add-axis').on('click', () => {
-			axes.appendChild(this.axis());
+
+			const axisForm = this.axis();
+			this.formContainer.axes.push(axisForm);
+			container.querySelector('.axes').appendChild(axisForm);
 		});
 
 		return container;
@@ -2217,12 +2224,12 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
 		};
 
-		for(const axis of this.formContainer.querySelectorAll('.axis')) {
+		for(const axis of this.formContainer.axes) {
 
 			const columns = [];
 
-			for(const option of axis.querySelectorAll('select[name=columns] option:checked'))
-				columns.push({key: option.value});
+			for(const option of axis.multiSelectColumns.value)
+				columns.push({key: option});
 
 			response.axes.push({
 				position: axis.querySelector('select[name=position]').value,
@@ -2238,9 +2245,19 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	axis(axis = {}) {
 
-		const container = document.createElement('div');
+		const
+			container = document.createElement('div'),
+			datalist = [];
 
 		container.classList.add('axis', 'subform');
+
+		for(const [key, column] of this.page.preview.report.columns)
+			datalist.push({name: column.name, value: key});
+
+		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
+		const axisColumn = container.multiSelectColumns.container;
+
+		container.multiSelectColumns.value = axis.columns ? axis.columns.map(x => x.key) : [];
 
 		container.innerHTML = `
 			<label>
@@ -2258,12 +2275,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<input type="text" name="label" value="${axis.label || ''}">
 			</label>
 
-			<label>
+			<label class="axis-column">
 				<span>Columns</span>
-				<select name="columns" multiple></select>
 			</label>
 
-			<label><span><input type="checkbox" name="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
+			<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 			<label>
 				<span>Format</span>
@@ -2280,14 +2296,26 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			</label>
 		`;
 
-		const columns = container.querySelector('select[name=columns]');
+		const restColumns = container.querySelector('.restcolumns');
 
-		for(const [key, column] of this.page.preview.report.columns) {
+		restColumns.on('change', () => {
 
-			columns.insertAdjacentHTML('beforeend', `
-				<option value="${key}" ${axis.columns && axis.columns.some(c => c.key == key) ? 'selected' : ''}>${column.name}</option>
-			`)
+			this.restCheck(restColumns.checked);
+			axisColumn.classList.toggle('hidden');
+
+			if(restColumns.checked) {
+
+				container.querySelector('.restCheck').classList.remove('hidden');
+			}
+		});
+
+		if(axis.restcolumns) {
+
+			this.restCheck(true);
+			axisColumn.classList.add('hidden');
 		}
+
+		container.querySelector('.axis-column').appendChild(axisColumn);
 
 		container.querySelector('select[name=position]').value = axis.position;
 		container.querySelector('select[name=format]').value = axis.format || '';
@@ -2295,6 +2323,13 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		container.querySelector('.delete').on('click', () => container.parentElement && container.parentElement.removeChild(container));
 
 		return container;
+	}
+
+	restCheck(action) {
+
+		for(const rest of this.formContainer.querySelectorAll('.restCheck')) {
+			rest.classList.toggle('hidden', action);
+		}
 	}
 }
 
