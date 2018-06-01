@@ -976,6 +976,15 @@ class Format {
 
 	static date(date) {
 
+		const options = {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+		};
+
+		if(!Format.date.formatter)
+			Format.date.formatter = new Intl.NumberFormat('en-IN', options);
+
 		if(typeof date == 'string')
 			date = Date.parse(date);
 
@@ -985,17 +994,15 @@ class Format {
 		if(!date)
 			return '';
 
-		const options = {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-		};
-
-		return new Intl.DateTimeFormat('en-IN', options).format(date);
+		return Format.date.formatter.format(date);
 	}
 
 	static number(number) {
-		return new Intl.NumberFormat('en-IN').format(number);
+
+		if(!Format.number.formatter)
+			Format.number.formatter = new Intl.NumberFormat('en-IN');
+
+		return Format.number.formatter.format(number);
 	}
 }
 
