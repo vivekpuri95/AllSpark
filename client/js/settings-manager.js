@@ -31,7 +31,6 @@ class SettingsManager {
 		container.innerHTML = `
 			<section class="sideBar">
 				<table>
-
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -43,17 +42,9 @@ class SettingsManager {
 
 				</table>
 
-				<form class="add-form form">
-					<label>
-						<span>Name</span>
-						<input type="text" required name="name">
-					</label>
-
-					<label>
-						<span>Add</span>
-						<button type="submit"><i class="fa fa-plus"></i></button>
-					</label>
-				</form>
+				<div class="toolbar">
+					<button class="add-form"><i class="fa fa-plus"></i>Add New Profile</button>
+				</div>
 			</section>
 
 			<section class="profile-container">
@@ -62,6 +53,14 @@ class SettingsManager {
 					<button type="submit" form="settings-form">Save</button>
 				</header>
 				<form id="settings-form">
+					<div class="form">
+						<label>
+							<span> Profile Name</span>
+							<input type="text" required name="name" placeholder="Name">
+						</label>
+					</div>
+
+					<div id="settings-type-container"></div>
 				</form>
 			</section>
 		`;
@@ -69,9 +68,12 @@ class SettingsManager {
 		for(const data of this.responseList.values())
 			container.querySelector('table tbody').appendChild(data.row);
 
+		if(!container.querySelector('table tbody').childElementCount)
+			container.querySelector('table tbody').innerHTML = `<tr><td class="NA">No profile found :(</td></tr>`;
+
 		container.querySelector('table tbody tr').click();
 
-		container.querySelector('.add-form').on('submit', SettingsManager.add_listener = e => this.add(e));
+		container.querySelector('.add-form').on('click', SettingsManager.add_listener = e => this.add(e));
 
 		return container;
 	}
@@ -80,19 +82,49 @@ class SettingsManager {
 
 		e.preventDefault();
 
-		const
-			options = {
-				method: 'POST',
-			},
-			parameter = {
-				account_id: this.account.account_id,
-				profile: this.profile_container.querySelector('.add-form').name.value,
-				owner: 'account',
-				value: [],
-			};
+		this.newEntry = [];
 
-		await API.call('settings/insert', parameter, options);
-		await this.account.edit();
+		this.profile_container.querySelector('.profile-container .profile-header h3').textContent = 'Add New Profile';
+
+		this.profile_container.querySelector('.profile-container form#settings-form').name.value = null;
+		this.profile_container.querySelector('.profile-container #settings-form #settings-type-container').textContent = null;
+
+		for(const setting of this.settings_format) {
+
+			let setting_type = SettingsManager.types.get(setting.type);
+
+			if(!setting_type)
+				continue;
+
+			setting_type = new setting_type(setting);
+			this.profile_container .querySelector('.profile-container #settings-form #settings-type-container').appendChild(setting_type.container)
+			this.newEntry.push(setting_type);
+		}
+
+		if(SettingManage.submit_listener)
+			this.profile_container.querySelector('.profile-container form').removeEventListener('submit', SettingManage.submit_listener);
+
+		const value = [];
+		this.profile_container.querySelector('.profile-container form').on('submit', SettingManage.submit_listener = async (e) => {
+
+			for(const entry of this.newEntry) {
+				value.push({"key": entry.setting_format.key, "value": entry.value})
+			}
+
+			const
+				options = {
+					method: 'POST',
+				},
+				parameter = {
+					account_id: this.account.account_id,
+					profile: this.profile_container.querySelector('#settings-form').name.value,
+					owner: 'account',
+					value: JSON.stringify(value),
+				};
+
+			await API.call('settings/insert', parameter, options);
+			await this.account.edit();
+		})
 	}
 }
 
@@ -114,6 +146,7 @@ class SettingManage {
 		`;
 
 		tr.on('click', () => this.edit());
+		tr.querySelector('.action').on('click', (e) => this.delete(e));
 
 		return tr;
 	}
@@ -126,6 +159,8 @@ class SettingManage {
 
 		this.profile.profile_container.querySelector('.profile-container .profile-header h3').textContent = 'Edit ' + this.setting.profile + '\'s profile.';
 
+		this.profile.profile_container.querySelector('.profile-container form#settings-form').name.value = this.setting.profile;
+
 		const container = [];
 		this.xyz = [];
 
@@ -135,7 +170,7 @@ class SettingManage {
 				if(format.key != value.key)
 					continue;
 
-				let format_type = SettingsManager.list.get(format.type);
+				let format_type = SettingsManager.types.get(format.type);
 
 				if(!format_type)
 					continue;
@@ -149,14 +184,17 @@ class SettingManage {
 				container.push(format_type.container);
 			}
 		}
-		const main_container = this.profile.profile_container.querySelector('.profile-container #settings-form');
+		const main_container = this.profile.profile_container.querySelector('.profile-container #settings-form #settings-type-container');
 
 		main_container.textContent = null;
 		for(const value of container) {
 			main_container.appendChild(value);
 		}
 
-		this.profile.profile_container.querySelector('.profile-container form').on('submit', e => this.update(e));
+		if(SettingManage.submit_listener)
+			this.profile.profile_container.querySelector('.profile-container form').removeEventListener('submit', SettingManage.submit_listener);
+
+		this.profile.profile_container.querySelector('.profile-container form').on('submit', SettingManage.submit_listener =  e => this.update(e));
 	}
 
 	async update(e) {
@@ -182,6 +220,22 @@ class SettingManage {
 		await API.call('settings/update', parameters, options);
 		await this.profile.account.edit();
 	}
+
+	async delete(e) {
+
+		e.stopPropagation();
+
+		const
+			options = {
+				method: "POST"
+			},
+			parameters = {
+				id: this.setting.id,
+			};
+
+		await API.call('settings/delete', parameters, options);
+		await this.profile.account.edit();
+	}
 }
 
 class SettingManager{
@@ -191,9 +245,9 @@ class SettingManager{
 	}
 }
 
-SettingsManager.list = new Map;
+SettingsManager.types = new Map;
 
-SettingsManager.list.set('string', class a extends SettingManager {
+SettingsManager.types.set('string', class extends SettingManager {
 
 	constructor(setting_format) {
 
@@ -229,7 +283,7 @@ SettingsManager.list.set('string', class a extends SettingManager {
 	}
 });
 
-SettingsManager.list.set('multiSelect', class ab extends SettingManager {
+SettingsManager.types.set('multiSelect', class extends SettingManager {
 
 	constructor(setting_format) {
 
@@ -277,53 +331,4 @@ SettingsManager.list.set('multiSelect', class ab extends SettingManager {
 
 		this.multiselect.value = params;
 	}
-})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+});

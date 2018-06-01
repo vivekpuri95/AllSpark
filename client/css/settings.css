@@ -53,10 +53,12 @@ main .settings-container {
 		background: #fff;
 	}
 	main .settings-container table tr.selected {
-		background: red;
+		background: #faf1bcf5;
 	}
 	main .settings-container .sideBar {
 		border: 1px solid #999;
+		display: flex;
+		flex-direction: column;
 	}
 	main .settings-container .profile-container {
 		border: 1px solid #999;
@@ -64,6 +66,7 @@ main .settings-container {
 	}
 	main .settings-container .toolbar {
 		padding: 5px;
+		margin-top: auto;
 	}
 	main .settings-container .add-form {
 		grid-template-columns: 1fr 1fr;

@@ -10,15 +10,7 @@ exports.insert = class extends API {
 		this.assert(this.request.body.profile, "profile not found");
 		this.assert(this.request.body.owner, "owner not found");
 		this.assert(this.request.body.account_id, "account id not found");
-
-		let valueObj = {...this.request.body};
-		console.log(valueObj)
-
-		delete valueObj["profile"];
-		delete valueObj["owner"];
-		delete valueObj["token"];
-		delete valueObj["account_id"];
-		valueObj = valueObj.value ? valueObj.value : []
+		this.assert(commonFun.isJson(this.request.body.value), "Please send valid JSON");
 
 		return await this.mysql.query(`
 				INSERT INTO
@@ -32,7 +24,7 @@ exports.insert = class extends API {
 				VALUES
 					(?, ?, ?, ?)
 				`,
-			[this.request.body.account_id, this.request.body.profile, this.request.body.owner, JSON.stringify(valueObj)],
+			[this.request.body.account_id, this.request.body.profile, this.request.body.owner, this.request.body.value],
 			"write");
 	}
 };
