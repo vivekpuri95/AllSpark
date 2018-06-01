@@ -47,7 +47,7 @@ exports.update = class extends API {
 			setParams = {};
 
 		for (const key in params) {
-			if (~keys.indexOf(key) && key != 'user_id')
+			if (keys.includes(key) && key != 'user_id')
 				setParams[key] = params[key] || null;
 		}
 
@@ -77,12 +77,12 @@ exports.list = class extends API {
 			roles = {},
 			privileges = {},
 			user_query = `
-				SELECT 
-					* 
-				FROM 
-					tb_users 
+				SELECT
+					*
+				FROM
+					tb_users
 				WHERE
-					account_id = ${this.account.account_id} 
+					account_id = ${this.account.account_id}
 					AND status = 1
 			`,
 			role_query = `SELECT id, user_id, category_id, role_id FROM tb_user_roles`,
@@ -112,7 +112,7 @@ exports.list = class extends API {
 						OR middle_name LIKE '%${this.request.body.search}%'
 						OR last_name LIKE '%${this.request.body.search}%'
 					)
-					LIMIT 10				
+					LIMIT 10
 				`);
 			}
 
@@ -231,9 +231,9 @@ exports.metadata = class extends API {
 		}
 
 		metadata.visualizations = await this.mysql.query(`
-			SELECT 
+			SELECT
 				v.*
-			FROM 
+			FROM
 				tb_features f
 			JOIN
 				tb_account_features af
@@ -258,9 +258,9 @@ exports.metadata = class extends API {
 		metadata.filterTypes = constants.filterTypes;
 
 		metadata.sourceTypes = await this.mysql.query(`
-			SELECT 
+			SELECT
 				f.slug
-			FROM 
+			FROM
 				tb_features f
 			JOIN
 				tb_account_features af

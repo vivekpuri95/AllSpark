@@ -203,6 +203,9 @@ class UserManage {
 				parameters[element.name] = element.value;
 		}
 
+		if(!UserManage.form.password.value)
+			delete parameters.password;
+
 		await API.call('users/update', parameters, options);
 
 		await Users.load();

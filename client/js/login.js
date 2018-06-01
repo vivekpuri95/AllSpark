@@ -111,8 +111,15 @@ Page.class = class Login extends Page {
 
 		Sections.show('accept-password');
 
+		const logo = this.container.querySelector('.logo img');
+
+		logo.parentElement.classList.add('hidden');
+		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
+		logo.src = account.logo;
+
 		const form = this.container.querySelector('#accept-password form');
 
+		form.reset();
 		form.email.value = this.container.querySelector('#accept-email input').value;
 		form.password.focus();
 
@@ -132,7 +139,7 @@ Page.class = class Login extends Page {
 		const
 			parameters = {
 				email: this.container.querySelector('#accept-email input').value,
-				password: this.container.querySelector('#accept-password input').value,
+				password: this.container.querySelector('#accept-password input[type=password]').value,
 				account_id: account.account_id,
 			},
 			options = {
