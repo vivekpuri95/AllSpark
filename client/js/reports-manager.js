@@ -2309,7 +2309,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		if(axis.restcolumns) {
 
-			this.restCheck('add');
+			this.restCheck(true);
 			axisColumn.classList.add('hidden');
 		}
 
