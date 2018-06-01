@@ -2252,12 +2252,12 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		container.classList.add('axis', 'subform');
 
 		for(const [key, column] of this.page.preview.report.columns)
-			datalist.push({"name":column.name, "value":key});
+			datalist.push({name: column.name, value: key});
 
-		container.multiSelectColumns =   new MultiSelect({datalist:datalist, expand:true});
+		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
 		const axisColumn = container.multiSelectColumns.container;
 
-		container.multiSelectColumns.value = axis.columns? axis.columns.map(x => x.key) : [];
+		container.multiSelectColumns.value = axis.columns ? axis.columns.map(x => x.key) : [];
 
 		container.innerHTML = `
 			<label>
@@ -2279,7 +2279,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<span>Columns</span>
 			</label>
 
-			<label><span class="rest-span"><input type="checkbox" name="restcolumns" class="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
+			<label class="rest-check"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 			<label>
 				<span>Format</span>
@@ -2298,17 +2298,12 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		container.querySelector('.restcolumns').on('change', () => {
 
+			this.restCheck(container.querySelector('.restcolumns').checked);
+			axisColumn.classList.toggle('hidden');
+
 			if(container.querySelector('.restcolumns').checked) {
 
-				this.restCheck('add');
-
-				axisColumn.classList.add('hidden');
-				container.querySelector('.rest-span').classList.remove('hidden');
-			}
-			else {
-
-				this.restCheck('remove');
-				axisColumn.classList.remove('hidden');
+				container.querySelector('.rest-check').classList.remove('hidden');
 			}
 		});
 
@@ -2330,8 +2325,8 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	restCheck(action) {
 
-		for(const rest of this.formContainer.querySelectorAll('.rest-span')) {
-			rest.classList[action]('hidden');
+		for(const rest of this.formContainer.querySelectorAll('.rest-check')) {
+			rest.classList.toggle('hidden', action);
 		}
 	}
 }

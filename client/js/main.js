@@ -1296,7 +1296,8 @@ class MultiSelect {
 
 	    if(this.multiple) {
 
-			this.datalist.map(obj => this.selectedValues.add(obj.value.toString()))
+			if(!this.selectedValues.size)
+				this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
 		}
 		else {
 
