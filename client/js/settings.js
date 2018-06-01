@@ -188,12 +188,11 @@ Settings.list.set('roles', class Roles extends SettingPage {
 	async load() {
 
 		const roles_list = await API.call('roles/list');
+
 		this.list = new Map();
 
-		for(const role of roles_list) {
-
+		for(const role of roles_list)
 			this.list.set(role.role_id, new SettingsRole(role, this));
-		}
 
 		await this.render();
 	}
@@ -483,7 +482,7 @@ class SettingsPrivilege {
 		this.container.innerHTML = `
 			<td>${this.privilege_id}</td>
 			<td>${this.name}</td>
-			<td>${this.is_admin}</td>
+			<td>${this.is_admin ? 'Yes' : 'No'}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -644,7 +643,7 @@ class SettingsRole {
 		this.container.innerHTML = `
 			<td>${this.role_id}</td>
 			<td>${this.name}</td>
-			<td>${this.is_admin? 'Yes' : 'No'}</td>
+			<td>${this.is_admin ? 'Yes' : 'No'}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -662,43 +661,43 @@ class SettingsAccount {
 
 		Object.assign(this, account);
 		this.page = page;
-		this.form = this.page.form.querySelector("#account-form");
+		this.form = this.page.form.querySelector('#account-form');
 	}
 
 	static async add(page) {
 
 		SettingsAccount.page = page;
 
-		const accountForm = page.form.querySelector("#account-form");
+		const accountForm = page.form.querySelector('#account-form');
 
 		SettingsAccount.form = accountForm;
 
 		accountForm.reset();
-		SettingsAccount.editor.value = "";
+		SettingsAccount.editor.value = '';
 
 		const logo = accountForm.logo;
 		const icon = accountForm.icon;
 
-		logo.src = "";
-		accountForm.querySelector("#logo").classList.toggle("hidden", true);
+		logo.src = '';
+		accountForm.querySelector('#logo').classList.toggle('hidden', true);
 
-		icon.src = "";
-		accountForm.querySelector("#icon").classList.toggle("hidden", true);
+		icon.src = '';
+		accountForm.querySelector('#icon').classList.toggle('hidden', true);
 
-		page.form.querySelector("#cancel-form").on('click', () => {
-			accountForm.removeEventListener("submit", SettingsAccount.submitEventListener);
+		page.form.querySelector('#cancel-form').on('click', () => {
+			accountForm.removeEventListener('submit', SettingsAccount.submitEventListener);
 			Sections.show('accounts-list')
 		});
 
-		await Sections.show("accounts-form");
+		await Sections.show('accounts-form');
 
-		page.form.querySelector('h1').textContent = "Adding new Account";
-		page.form.removeEventListener("submit", SettingsAccount.submitEventListener);
+		page.form.querySelector('h1').textContent = 'Adding new Account';
+		page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
 
-		page.form.on("submit", SettingsAccount.submitEventListener =  async e => {
+		page.form.on('submit', SettingsAccount.submitEventListener =  async e => {
 			await SettingsAccount.insert(e);
 			await page.load();
-			await Sections.show("accounts-form");
+			await Sections.show('accounts-form');
 		});
 	}
 
@@ -720,18 +719,18 @@ class SettingsAccount {
 	}
 
 	async edit() {
-		this.page.form.removeEventListener("submit", SettingsAccount.submitEventListener);
 
-		this.form.querySelector("#icon").src = this.icon;
-		this.form.querySelector("#logo").src = this.logo;
+		this.page.container.querySelector('#accounts-form h1').textContent = `Editing ${this.name}`;
 
-		const fields = ["name", "url", "icon", "logo", "auth_api"];
+		this.form.querySelector('#icon').src = this.icon;
+		this.form.querySelector('#logo').src = this.logo;
 
-		for(const field of fields) {
-			this.form[field].value = SettingsAccount.format(this[field]);
+		for(const input of this.form.elements) {
+			if(input.name in this)
+				input.value = this[input.name];
 		}
 
-		SettingsAccount.editor.value = JSON.stringify(this.settings, 0, 4) || "b";
+		SettingsAccount.editor.value = JSON.stringify(this.settings, 0, 4) || '';
 
 		const features = new AccountsFeatures(this);
 
@@ -742,7 +741,8 @@ class SettingsAccount {
 
 		await Sections.show('accounts-form');
 
-		this.page.form.on("submit", SettingsAccount.submitEventListener = async e => {
+		this.page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+		this.page.form.on('submit', SettingsAccount.submitEventListener = async e => {
 			await this.update(e);
 			await this.page.load();
 			await Sections.show('accounts-form');
@@ -787,49 +787,35 @@ class SettingsAccount {
 
 	get row() {
 
-		const tr = document.createElement("tr");
+		const tr = document.createElement('tr');
 
-		const whiteListElements = ["account_id", "name", "icon", "url", "logo", "auth_api"];
+		const whiteListElements = ['account_id', 'name', 'icon', 'url', 'logo', 'auth_api'];
 
 		for (const element in this) {
 
-			if (!whiteListElements.includes(element)) {
-
+			if (!whiteListElements.includes(element))
 				continue;
-			}
 
 			const td = document.createElement('td');
 
-			td.innerHTML = SettingsAccount.format(this[element]);
+			td.innerHTML = this[element];
 			tr.appendChild(td);
 
-			if (["icon", "logo"].includes(element)) {
+			if (['icon', 'logo'].includes(element)) {
 				td.innerHTML = `<img src=${this[element]} height="30">`
 			}
 		}
 
 		tr.innerHTML += `
-				<td class="action green" title="Edit"><i class="fa fa-edit"></i></td>
-				<td class="action red" title="Delete"><i class="fa fa-trash-alt"></i></td>
-			`;
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
 
 		tr.querySelector('.green').on('click', () => this.edit());
 		tr.querySelector('.red').on('click', () => this.delete());
 
 		return tr;
 	}
-
-	static format(obj) {
-
-		if (typeof obj === "object") {
-
-			obj = JSON.stringify(obj);
-		}
-
-		return obj;
-	}
-
-	static submitEventListener() {}
 }
 
 class AccountsFeatures {
@@ -869,7 +855,7 @@ class AccountsFeatures {
 			<table>
 				<thead>
 					<tr>
-						<th class="action">Id</th>
+						<th class="action">ID</th>
 						<th>Types</th>
 						<th>Name</th>
 						<th>Status</th>

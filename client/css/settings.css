@@ -24,12 +24,15 @@ main {
 			color: var(--color-secondary-text);
 			box-shadow: inset 10px 0px 0 var(--color-accent);
 		}
-		main #format {
-			max-width: inherit;
-		}
-		main #format .ace_editor {
-			height: 500px;
-			margin: 0;
+	main #account-form label img {
+		border: 1px solid #ccc;
+	}
+	main #format {
+		max-width: inherit;
+	}
+	main #format .ace_editor {
+		height: 500px;
+		margin: 0;
 }
 main .feature-form h3 {
 	border-bottom: 1px dashed #999;

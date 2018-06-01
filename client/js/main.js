@@ -303,9 +303,9 @@ class Cookies {
 	/**
 	 * Sets a new cookie with given name and value and overwrites any previously held values.
 	 *
-	 * @param {string} key		The name of the cookie being set.
-	 * @param {string} Value	The value of the cookie being set.
-	 * @return {boolean}		The status of the set request.
+	 * @param  string	key		The name of the cookie being set.
+	 * @param  string	Value	The value of the cookie being set.
+	 * @return boolean			The status of the set request.
 	 */
 	set(key, value) {
 		document.cookie = `${key}=${encodeURIComponent(value)}`;
@@ -315,8 +315,8 @@ class Cookies {
 	/**
 	 * Checks if a cookie with the given name exists.
 	 *
-	 * @param  {string} key	The name of the cookie whose existance is being questioned
-	 * @return {boolean}	Returns true if the cookie exists, false otherwise
+	 * @param  string	key	The name of the cookie whose existance is being questioned
+	 * @return boolean		Returns true if the cookie exists, false otherwise
 	 */
 	has(key) {
 		return new Boolean(document.cookie.split(';').filter(c => c.includes(`${key}=`)).length);
@@ -325,8 +325,8 @@ class Cookies {
 	/**
 	 * Gets the value of a cookie with the given name.
 	 *
-	 * @param  {string}	key		The name of the cookie whose value will be retured.
-	 * @return {srtring|null}	The value of the cookie, null if not found.
+	 * @param  string	key	The name of the cookie whose value will be retured.
+	 * @return srtring	The	value of the cookie, null if not found.
 	 */
 	get(key) {
 

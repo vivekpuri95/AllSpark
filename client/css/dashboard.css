@@ -16,7 +16,6 @@ main > nav {
 	overflow-y: auto;
 	z-index: 5;
 	height: calc(100vh - 50px);
-	border-right: 1px solid #ccc;
 	background: var(--color-primary);
 	color: var(--color-primary-text);
 }
@@ -128,19 +127,9 @@ main > nav::-webkit-scrollbar-track {
 			}
 	main > nav footer {
 		display: flex;
-		color: #777;
-		align-items: center;
-		border-radius: 0;
-		font: inherit;
-		vertical-align: inherit;
-		padding: 0;
 		justify-content: space-between;
 		margin-top: auto;
-		position: sticky;
-		bottom: 0;
 		background: var(--color-primary);
-		transition: background var(--transition-duration),
-					box-shadow var(--transition-duration);
 	}
 		.collapsed-grid .collapse-panel {
 			display: flex;
@@ -153,8 +142,8 @@ main > nav::-webkit-scrollbar-track {
 			display: flex;
 			padding: 12px 0;
 			justify-content: center;
+			align-items: center;
 			width: 50px;
-			color: #fff;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
@@ -168,8 +157,6 @@ main > nav::-webkit-scrollbar-track {
 		}
 			main > nav footer .powered-by a {
 				color: var(--color-primary-text);
-				font-weight: bold;
-				letter-spacing: 1.5px;
 			}
 main #mailto.selected {
 	background: var(--color-accent);

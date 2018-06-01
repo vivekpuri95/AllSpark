@@ -145,19 +145,18 @@ exports.login = class extends API {
 		} else {
 
 			this.assert(this.request.body.email, "Email Required");
-			this.assert(this.request.body.password, "Password Required");
 
 			userDetail = await this.mysql.query(
-				`SELECT * FROM tb_users WHERE email = ?`,
-				[this.request.body.email]
+				`SELECT * FROM tb_users WHERE email = ? AND (account_id = ? OR ? = '')`,
+				[this.request.body.email, this.request.body.account_id || '', this.request.body.account_id || '']
 			);
 
-			this.assert(userDetail.length, "Invalid Email! :(");
+			this.assert(userDetail.length, "Email not found! :(");
 
-			if(userDetail.length > 1) {
+			if(!this.request.body.password) {
 				return await this.mysql.query(
-					"select * from tb_accounts where account_id in (?)",
-					[userDetail.map(x => x.account_id)]
+					"SELECT * FROM tb_accounts WHERE account_id IN (?) AND url = ?",
+					[userDetail.map(x => x.account_id), this.request.hostname]
 				);
 			}
 

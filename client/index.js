@@ -184,34 +184,58 @@ router.get('/login', API.serve(class extends HTMLAPI {
 				<img src="" />
 			</div>
 
-			<div class="whitelabel form">
+			<section id="loading" class="section form">
 				<i class="fa fa-spinner fa-spin"></i>
-			</div>
+			</section>
 
-			<form class="form hidden">
+			<section id="accept-email" class="section">
+				<form class="form">
 
-				<label>
-					<span>Email</span>
-					<input type="text" name="email" required>
-				</label>
+					<label>
+						<span>Email</span>
+						<input type="email" name="email" required>
+					</label>
 
-				<label>
-					<span>Password</span>
-					<input type="password" name="password" required>
-				</label>
-				<div>
-					<button class="submit">
-						<i class="fa fa-paper-plane"></i>
-						Sign In
-					</button>
-				</div>
-			</form>
-			<div class="signup">
+					<div>
+						<button class="submit">
+							<i class="fas fa-arrow-right"></i>
+							Next
+						</button>
+					</div>
+				</form>
+			</section>
+
+			<section id="accept-account" class="section"></section>
+
+			<section id="accept-password" class="section">
+				<form class="form">
+
+					<label>
+						<span>Email</span>
+						<input type="email" name="email" disabled required>
+					</label>
+
+					<label>
+						<span>Password</span>
+						<input type="password" name="password" required>
+					</label>
+
+					<div>
+						<a id="password-back"><i class="fas fa-arrow-left"></i> &nbsp;Back</a>
+						<button class="submit">
+							<i class="fas fa-sign-in-alt"></i>
+							Sign In
+						</button>
+					</div>
+				</form>
+			</section>
+
+			<section id="message"></section>
+
+			<div id="signup">
 				<a href="/login/forgot">Forgot Password?</a>
 				${this.account.settings.get('enable_account_signup') ? 'Or Create a <a href="/account-signup">new account</a>' : ''}
 			</div>
-
-			<div id="message" class="hidden"></div>
 		`;
 	}
 }));
@@ -343,42 +367,42 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 
 	async main() {
 		return `
-			<section id="profile">
-				<h1>
-					Profile details
-					<a href="/user/profile/edit" class="edit">
-						<i class="fa fa-edit"></i>
-						Edit
-					</a>
-				</h1>
-				<div class="profile-details"></div>
-				<div class="privileges">
-					<label><span>Privileges:&nbsp;</span>
-						<table>
-							<thead>
-								<tr>
-									<th>Category</th>
-									<th>Privileges</th>
-								</tr>
-							</thead>
-							<tbody></tbody>
-						</table>
-					</label>
-				</div>
-				<div class="roles">
-					<label><span>Roles:&nbsp;</span>
-						<table>
-							<thead>
-								<tr>
-									<th>Category</th>
-									<th>Roles</th>
-								</tr>
-							</thead>
-							<tbody></tbody>
-						</table>
-					</label>
-				</div>
-			</section>
+			<h1>
+				<span></span>
+				<a href="/user/profile/edit" class="edit"><i class="fa fa-edit"></i> Edit</a>
+			</h1>
+
+			<div class="profile-details"></div>
+
+			<h2>Privileges</h2>
+			<p>
+				Privileges define what <strong>actions</strong> the user can perform.<br>
+				<span class="NA">For Example: Manage Reports, Users, Connections, Dashboards, etc</span>
+			</p>
+			<table class="privileges">
+				<thead>
+					<tr>
+						<th>Category</th>
+						<th>Privilege</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+
+			<h2>Roles</h2>
+			<p>
+				Roles define what <strong>data</strong> the user can view.<br>
+				<span class="NA">For Example: <em>Merchant Dashboard</em>, <em>Production MySQL</em> (Connection), <em>Delivery Analysys Report</em> etc</span>
+			</p>
+			<table class="roles">
+				<thead>
+					<tr>
+						<th>Category</th>
+						<th>Role</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
 		`;
 	}
 }));
@@ -1403,13 +1427,13 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 	                    </label>
 	                    <label>
 	                        <span>Icon</span>
-	                        <img src="" alt="icon" id="icon" height="30">
 	                        <input type="text" name="icon">
+	                        <img src="" alt="icon" id="icon" height="30">
 	                    </label>
 	                    <label>
 	                        <span>Logo</span>
-	                        <img src="" alt="logo" id="logo" height="30">
 	                        <input type="text" name="logo">
+	                        <img src="" alt="logo" id="logo" height="30">
 	                    </label>
 						<label>
 	                        <span>Authentication API</span>

@@ -1,81 +1,83 @@
-class Profile extends Page {
+Page.class = class extends Page {
 
 	constructor() {
 
 		super();
 
-		(async () => {
-			Profile.setup();
-			await Profile.load();
-			Profile.render();
-		})();
+		this.id = parseInt(location.pathname.split('/').pop());
+		this.load();
 	}
 
-	static setup() {
+	async load() {
 
-		Profile.container = document.querySelector('main section#profile');
+		await this.fetch();
+
+		this.render();
 	}
 
-	static async load() {
+	async fetch() {
 
-		const options = {
-			method: 'POST',
-		}
+		const
+			parameters = {
+				user_id: this.id || user.id,
+			},
+			options = {
+				method: 'POST',
+			};
 
-		const parameters = {
-			user_id: location.pathname.split('/').pop(),
-		}
-
-		Profile.response = await API.call('users/list', parameters, options);
+		[this.data] = await API.call('users/list', parameters, options);
 	}
 
-	static render() {
+	render() {
 
-		if(!Profile.response.length) {
-			Profile.container.innerHTML = '<div class="NA">No User found :(</div>'
-			return;
-		}
-		const response = Profile.response[0];
+		if(!this.data)
+			return this.container.innerHTML = '<div class="NA">No User found :(</div>';
 
-		Profile.container.querySelector('.edit').classList.toggle('hidden', user.user_id != location.pathname.split('/').pop())
-		const middle_name = response.middle_name ? " "+response.middle_name : "";
-		Profile.container.querySelector('.profile-details').innerHTML = `
-			<label><span>Name:&nbsp;</span><div>${response.first_name + middle_name +" "+response.last_name}</div></label>
-			<label><span>User_id:&nbsp;</span><div>${response.user_id}</div></label>
-			<label><span>Email:&nbsp;</span><div>${response.email}</div></label>
-			<label><span>Phone:&nbsp;</span><div>${response.phone || 'NA'}</div></label>
+		this.container.querySelector('.edit').classList.toggle('hidden', user.id != this.id);
+
+		this.container.querySelector('h1 span').textContent = [this.data.first_name, this.data.middle_name, this.data.last_name].filter(a => a).join(' ');
+
+		this.container.querySelector('.profile-details').innerHTML = `
+			<label>
+				<span>User ID</span>
+				<div>${this.data.user_id}</div>
+			</label>
+			<label>
+				<span>Email</span>
+				<div>${this.data.email}</div>
+			</label>
+			<label>
+				<span>Phone</span>
+				<div>${this.data.phone || ''}</div>
+			</label>
 		`;
 
-		if(!response.privileges.length) {
-			Profile.container.querySelector('.privileges table').innerHTML = '<div class="NA">No privilege assigned :(';
-		}
-		else {
-			const privileges_table = Profile.container.querySelector('.privileges table tbody');
-			for(const data of response.privileges) {
-				const tr = document.createElement('tr');
-				tr.innerHTML =`
-					<td>${MetaData.categories.get(data.category_id).name}</td>
-					<td>${MetaData.privileges.get(data.privilege_id).name}</td>
-				`;
-				privileges_table.appendChild(tr);
-			}
+		const privileges = this.container.querySelector('.privileges tbody');
+
+		for(const privilege of this.data.privileges || []) {
+			privileges.insertAdjacentHTML('beforeend', `
+				<tr>
+					<td>${MetaData.categories.has(privilege.category_id) ? MetaData.categories.get(privilege.category_id).name : ''}</td>
+					<td>${MetaData.privileges.has(privilege.privilege_id) ? MetaData.privileges.get(privilege.privilege_id).name : ''}</td>
+				</tr>
+			`);
 		}
 
-		if(!response.roles.length) {
-			Profile.container.querySelector('.roles table').innerHTML = '<div class="NA">No role assigned :(';
+		if(!this.data.privileges || !this.data.privileges.length)
+			privileges.innerHTML = `<tr class="NA"><td>No Privileges assigned! :(</td></tr>`;
+
+		const roles = this.container.querySelector('.roles tbody');
+
+		for(const role of this.data.roles || []) {
+			roles.insertAdjacentHTML('beforeend', `
+				<tr>
+					<td>${MetaData.categories.has(role.category_id) ? MetaData.categories.get(role.category_id).name : ''}</td>
+					<td>${MetaData.roles.has(role.role_id) ? MetaData.roles.get(role.role_id).name : ''}</td>
+				</tr>
+			`);
 		}
-		else {
-			const roles_table = Profile.container.querySelector('.roles table tbody');
-			for(const data of response.roles) {
-				const tr = document.createElement('tr');
-				tr.innerHTML =`
-					<td>${MetaData.categories.get(data.category_id).name}</td>
-					<td>${MetaData.roles.get(data.role_id).name}</td>
-				`;
-				roles_table.appendChild(tr);
-			}
-		}
+
+		if(!this.data.roles || !this.data.roles.length)
+			roles.innerHTML = `<tr class="NA"><td>No Priviles assigned! :(</td></tr>`;
 	}
 }
-
-Page.class = Profile;
