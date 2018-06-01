@@ -43,7 +43,7 @@ main .feature-form table {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 }
 main .profile-container h3 {
-	border-bottom: 1px dashed #999;
+	/* border-bottom: 1px dashed #999; */
 }
 main .settings-container {
 	display: grid;
@@ -51,6 +51,9 @@ main .settings-container {
 }
 	main .settings-container table {
 		background: #fff;
+	}
+	main .settings-container table tr.selected {
+		background: red;
 	}
 	main .settings-container .sideBar {
 		border: 1px solid #999;
@@ -65,3 +68,15 @@ main .settings-container {
 	main .settings-container .add-form {
 		grid-template-columns: 1fr 1fr;
 	}
+	main .settings-container .profile-header {
+		display: flex;
+		border-bottom: 1px dashed #999;
+		align-items: center;
+		padding: 5px;
+	}
+		main .settings-container .profile-header h3 {
+			margin: 0;
+		}
+		main .settings-container .profile-header button {
+			margin-left: auto;
+		}

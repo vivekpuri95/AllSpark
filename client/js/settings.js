@@ -737,12 +737,20 @@ class SettingsAccount {
 		if(this.form.parentElement.querySelector('.feature-form'))
 			this.form.parentElement.querySelector('.feature-form').remove();
 
-		const settings_json = [{
-			key: 'top_nav_position',
-			type: 'string',
-			name: 'Header Nav Position.',
-			desc: 'Position of top nav bar.'
-		}]
+		const settings_json = [
+			{
+				key: 'top_nav_position',
+				type: 'string',
+				name: 'Header Nav Position.',
+				desc: 'Position of top nav bar.'
+			},
+			{
+				key: 'enable_account_signup',
+				type: 'multiSelect',
+				name: 'Allow user to signup.',
+				desc: 'Allow user to signup.'
+			}
+		]
 
 		const profileContainer = new SettingsManager(this, settings_json);
 		await profileContainer.load();
