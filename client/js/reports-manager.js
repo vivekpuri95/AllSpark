@@ -2279,7 +2279,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<span>Columns</span>
 			</label>
 
-			<label class="rest-check"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
+			<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 			<label>
 				<span>Format</span>
@@ -2296,14 +2296,16 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			</label>
 		`;
 
-		container.querySelector('.restcolumns').on('change', () => {
+		const restColumns = container.querySelector('.restcolumns');
 
-			this.restCheck(container.querySelector('.restcolumns').checked);
+		restColumns.on('change', () => {
+
+			this.restCheck(restColumns.checked);
 			axisColumn.classList.toggle('hidden');
 
-			if(container.querySelector('.restcolumns').checked) {
+			if(restColumns.checked) {
 
-				container.querySelector('.rest-check').classList.remove('hidden');
+				container.querySelector('.restCheck').classList.remove('hidden');
 			}
 		});
 
@@ -2325,7 +2327,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	restCheck(action) {
 
-		for(const rest of this.formContainer.querySelectorAll('.rest-check')) {
+		for(const rest of this.formContainer.querySelectorAll('.restCheck')) {
 			rest.classList.toggle('hidden', action);
 		}
 	}
