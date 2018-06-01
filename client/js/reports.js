@@ -580,16 +580,10 @@ class DataSource {
 
 		const xlsxBlobOutput = await (await (fetch("/api/v2/reports/engine/download", {
 			body: JSON.stringify(obj),
-			cache: 'no-cache',
-			credentials: 'same-origin',
 			headers: {
-				'user-agent': 'Mozilla/4.0 MDN Example',
 				'content-type': 'application/json'
 			},
 			method: 'POST',
-			mode: 'cors',
-			redirect: 'follow',
-			referrer: 'no-referrer',
 		}))).blob();
 
 		const link = document.createElement('a');
@@ -1647,7 +1641,7 @@ class DataSourceColumn {
 		for(const filter of destination.filters.values()) {
 
 			if(filter.dataset)
-				destinationDatasets.push(filter.dataset.load());
+				destinationDatasets.push(filter.dataset.fetch());
 		}
 
 		await Promise.all(destinationDatasets);
@@ -5643,19 +5637,18 @@ class Dataset extends MultiSelect {
 			return;
 		}
 
+		if(!source.container) {
+
+			super.value = [source];
+			return;
+		}
+
 		if(!source.container.querySelector('.options')) {
 			this.container.querySelector('input').value = source.container.querySelector('input').value;
 			return;
 		}
 
-		const
-			sourceOptions = source.container.querySelectorAll('.options .list label input:checked'),
-			data = [];
-
-		for(const option of sourceOptions)
-			data.push(option.value);
-
-		super.value = data;
+		super.value = Array.from(source.selectedValues);
 	}
 }
 

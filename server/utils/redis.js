@@ -86,7 +86,6 @@ class Redis {
 //
 // (async () => await Redis.hset("testRedisKey", "testkey", "value"))();
 //
-(async () => console.log(await Redis.hget("accountSettings#2", "settings.save_result")))();
 
 exports.redis = redis_client;
 exports.Redis = Redis;

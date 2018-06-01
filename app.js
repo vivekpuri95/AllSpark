@@ -2,6 +2,7 @@
 
 const express = require('express');
 const path = require('path');
+const compression = require('compression');
 const favicon = require('serve-favicon');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
@@ -23,6 +24,8 @@ app.use(bodyParser.json({limit: '5mb', parameterLimit: 100000}));
 app.use(bodyParser.urlencoded({limit: '5mb', parameterLimit: 100000, extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(compression());
+
 
 
 app.use('/api/', index);

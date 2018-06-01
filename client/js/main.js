@@ -65,6 +65,46 @@ class Page {
 			document.title = account.name;
 		}
 
+		Page.navList = [
+			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
+			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
+			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
+			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+		];
+
+		const nav_container = header.querySelector('nav');
+
+		if(account && account.settings.get('top_nav_position') == 'left') {
+
+			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
+
+			nav_container.classList.add('left');
+		};
+
+		header.querySelector('.left-menu-toggle').on('click', () => {
+
+			header.querySelector('.left-menu-toggle').classList.toggle('selected');
+			nav_container.classList.toggle('show');
+			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		});
+
+		document.querySelector('.nav-blanket').on('click', () => {
+			header.querySelector('.left-menu-toggle').classList.toggle('selected');
+			nav_container.classList.toggle('show');
+			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		});
+
+		nav_container.classList.remove('hidden');
+
+		header.insertAdjacentHTML('beforeend', `
+			<span class="user-name"></span>
+			<span class="logout">
+				<i class="fa fa-power-off"></i>&nbsp;
+				Logout
+			</span>
+		`);
+
 		const user_name = header.querySelector('.user-name');
 
 		if(user.id) {
@@ -75,17 +115,6 @@ class Page {
 			header.insertBefore(search, user_name);
 		}
 		header.querySelector('.logout').on('click', () => User.logout());
-
-
-		Page.navList = [
-			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
-			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
-			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
-			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
-			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
-		];
-
-		const nav_container = header.querySelector('nav');
 
 		for(const item of Page.navList) {
 
@@ -135,6 +164,7 @@ class Page {
 		this.user = window.user;
 		this.metadata = window.MetaData;
 		this.indexedDb = IndexedDb.instance;
+		this.cookies = new Cookies();
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
@@ -262,6 +292,51 @@ class IndexedDb {
 			request.onsuccess = e => resolve(e.result);
 			request.onerror = e => reject(e);
 		});
+	}
+}
+
+/**
+ * A generic cookie map interface that lets us do basic CRUD tasks.
+ */
+class Cookies {
+
+	/**
+	 * Sets a new cookie with given name and value and overwrites any previously held values.
+	 *
+	 * @param {string} key		The name of the cookie being set.
+	 * @param {string} Value	The value of the cookie being set.
+	 * @return {boolean}		The status of the set request.
+	 */
+	set(key, value) {
+		document.cookie = `${key}=${encodeURIComponent(value)}`;
+		return true;
+	}
+
+	/**
+	 * Checks if a cookie with the given name exists.
+	 *
+	 * @param  {string} key	The name of the cookie whose existance is being questioned
+	 * @return {boolean}	Returns true if the cookie exists, false otherwise
+	 */
+	has(key) {
+		return new Boolean(document.cookie.split(';').filter(c => c.includes(`${key}=`)).length);
+	}
+
+	/**
+	 * Gets the value of a cookie with the given name.
+	 *
+	 * @param  {string}	key		The name of the cookie whose value will be retured.
+	 * @return {srtring|null}	The value of the cookie, null if not found.
+	 */
+	get(key) {
+
+		// TODO: Handle the prefix bug, (both foo and barfoo will be matched with current approach)
+		const [cookie] = document.cookie.split(';').filter(c => c.includes(`${key}=`));
+
+		if(!cookie)
+			return null;
+
+		return decodeURIComponent(cookie.split('=')[1]);
 	}
 }
 
@@ -545,6 +620,12 @@ class UserPrivileges extends Set {
 	}
 
 	has(name) {
+
+		if(name === "superadmin") {
+
+			return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase()).length;
+		}
+
 		return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase() || p.privilege_id === 0).length;
 	}
 }
@@ -807,6 +888,7 @@ class API extends AJAX {
 		const response = await API.call('authentication/refresh', parameters, options);
 
 		await IndexedDb.instance.set('token', response);
+		new Cookies().set('token', response);
 
 		Page.load();
 	}
@@ -1094,8 +1176,11 @@ class MultiSelect {
 
 			e.stopPropagation();
 
-			for(const option of document.querySelectorAll('.multi-select .options')) {
-				option.classList.add('hidden');
+			if(!this.container.querySelector('.options').classList.contains('expanded')) {
+
+				for(const option of document.querySelectorAll('.multi-select .options')) {
+					option.classList.add('hidden');
+				}
 			}
 
 			this.container.querySelector('.options').classList.remove('hidden');
@@ -1155,8 +1240,7 @@ class MultiSelect {
 		if(this.expand)
 			this.container.querySelector('.options').classList.add('expanded');
 
-		if(this.disabled)
-			this.container.querySelector('input[type=search]').disabled = true;
+		this.container.querySelector('input[type=search]').disabled = this.disabled ? true : false;
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
@@ -1175,7 +1259,6 @@ class MultiSelect {
 			input.name = this.inputName;
 			input.value = row.value;
 			input.type = this.multiple ? 'checkbox' : 'radio';
-			input.checked = true;
 
 			label.appendChild(input);
 			label.appendChild(text);
@@ -1211,7 +1294,18 @@ class MultiSelect {
 			optionList.appendChild(label);
 		}
 
-	    this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+	    if(this.multiple) {
+
+			this.datalist.map(obj => this.selectedValues.add(obj.value.toString()))
+		}
+		else {
+
+			if(this.selectedValues.size != 1) {
+
+				this.selectedValues.clear();
+				this.selectedValues.add(this.datalist[0].value.toString())
+			}
+		}
 
 		this.update();
 	}
