@@ -206,11 +206,8 @@ body {
 	}
 		body > header .logo {
 			width: 220px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
+			text-align: center;
 			padding: var(--gap);
-			flex: 1;
 			overflow: hidden;
 		}
 		body > header .logo:hover {
@@ -218,7 +215,7 @@ body {
 		}
 			body > header .logo img {
 				max-width: 90%;
-				max-height: 100%;
+				height: 100%;
 			}
 		body > header nav {
 			display: flex;
