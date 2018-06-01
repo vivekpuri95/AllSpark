@@ -1,5 +1,19 @@
+/**
+ * Handles user login and account selection in face of ambiguity.
+ *
+ * The login flow is made up of a few stages.
+ *
+ * 1. Skip user login if the account's auth is overridden.
+ * - or -
+ * 1. Get the user's email.
+ * 2. Let the user pick an account if they are registered in multiple accounts on same domain.
+ * 3. Get the user's password and finally send for authentication.
+ */
 Page.class = class Login extends Page {
 
+	/**
+	 * Load the account's logo, set up submit and back listeners and initialize the login bypass.
+	 */
 	constructor() {
 
 		super();
@@ -27,6 +41,9 @@ Page.class = class Login extends Page {
 		this.bypassLogin();
 	}
 
+	/**
+	 * Bypass the user login in case the account overrides the auth via settings.
+	 */
 	async bypassLogin() {
 
 		if(!this.account.auth_api || !(await IndexedDb.instance.get('access_token')))
@@ -46,6 +63,10 @@ Page.class = class Login extends Page {
 		await this.authenticate(parameters, options);
 	}
 
+	/**
+	 * Load the email form.
+	 * This only happens if the user wasn't already logged in automatically with the auth bypass.
+	 */
 	async acceptEmail() {
 
 		await Sections.show('accept-email');
@@ -53,6 +74,11 @@ Page.class = class Login extends Page {
 		this.container.querySelector('#accept-email input').focus();
 	}
 
+	/**
+	 * Renders the account list in case the user's email is
+	 * associated with multiple accounts on same host.
+	 * The user is then asked to pick an account which they wish to log in with.
+	 */
 	async loadAccounts() {
 
 		this.message('');
@@ -107,6 +133,11 @@ Page.class = class Login extends Page {
 		else Sections.show('accept-account');
 	}
 
+	/**
+	 * Once the user's email and account are established,
+	 * we can finally ask for their password.
+	 * The account's logo is also shown as well.
+	 */
 	async acceptPassword(account) {
 
 		Sections.show('accept-password');
@@ -131,6 +162,11 @@ Page.class = class Login extends Page {
 		});
 	}
 
+	/**
+	 * Once the user has submited their password we can send for authentication.
+	 *
+	 * @param object	account	The account that the user chose in the previous step.
+	 */
 	async login(account) {
 
 		Sections.show('loading');
@@ -151,6 +187,13 @@ Page.class = class Login extends Page {
 		Sections.show('accept-password');
 	}
 
+	/**
+	 * Authenticate the user with given parameters, do some prep work
+	 * if login was successful and take the user to the homepage.
+	 *
+	 * @param options	parameters	The paramters that need to be sent for validation.
+	 * @param options	options		The API call's options.
+	 */
 	async authenticate(parameters, options) {
 
 		try {
@@ -168,9 +211,11 @@ Page.class = class Login extends Page {
 				this.cookies.set('access_token', response.access_token);
 			}
 
+			// This is done to load the user's information
 			await API.refreshToken();
 
 			this.message('Login Successful! Redirecting&hellip;', 'notice');
+
 			window.location = '../';
 
 		} catch(error) {
@@ -178,6 +223,13 @@ Page.class = class Login extends Page {
 		}
 	}
 
+	/**
+	 * Shows the user a message with given body and type.
+	 * If no body is passed, the message container is hidden.
+	 *
+	 * @param string	body	The message body.
+	 * @param string	type	The type of the message (notice, warning, nothing)
+	 */
 	message(body, type = '') {
 
 		const container = this.container.querySelector('#message');
