@@ -1,5 +1,6 @@
 const zlib = require('zlib');
 const mysql = require('./mysql').MySQL;
+const crypto = require('crypto');
 const fs = require('fs');
 const pathSeparator = require('path').sep;
 const {resolve} = require('path');
@@ -9,6 +10,8 @@ const constants = require('./constants');
 const assert = require("assert");
 const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
+
+const gitChecksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
 class API {
 
@@ -101,6 +104,15 @@ class API {
 				if (!obj.account) {
 					obj.account = global.account[host];
 				}
+
+				const checksums = [
+					gitChecksum,
+					crypto.createHash('md5').update(JSON.stringify(obj.account)).digest('hex'),
+					crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex'),
+					crypto.createHash('md5').update(JSON.stringify(obj.user || '')).digest('hex'),
+				];
+
+				obj.checksum = crypto.createHash('md5').update(checksums.join()).digest('hex').substring(0, 10);
 
 				if (clientEndpoint) {
 					return response.send(await obj.body());

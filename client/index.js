@@ -7,8 +7,6 @@ const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
 
-const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
-
 router.use(express.static('./client'));
 
 class HTMLAPI extends API {
@@ -44,8 +42,8 @@ class HTMLAPI extends API {
 					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
 
-					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + checksum + '">').join('')}
-					${this.scripts.map(s => '<script src="' + s + '?' + checksum + '"></script>').join('')}
+					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + this.checksum + '">').join('')}
+					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>').join('')}
 
 					<link rel="manifest" href="/manifest.webmanifest">
 				</head>
@@ -81,7 +79,7 @@ router.get('/service-worker.js', API.serve(class extends HTMLAPI {
 
 		return [
 			await (promisify(fs.readFile))('client/js/service-worker.js', {encoding: 'utf8'}),
-			`'${checksum}'`
+			`'${this.checksum}'`
 		].join('\n');
 	}
 }));
