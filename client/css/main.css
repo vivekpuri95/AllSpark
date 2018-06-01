@@ -207,7 +207,6 @@ body {
 		body > header .logo {
 			width: 220px;
 			text-align: center;
-			padding: var(--gap);
 			overflow: hidden;
 		}
 		body > header .logo:hover {
