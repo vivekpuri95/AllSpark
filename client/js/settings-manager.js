@@ -184,7 +184,7 @@ class SettingManage {
 			let formatType = SettingsManager.types.get(format.type);
 
 			if(!formatType)
-					continue;
+				continue;
 
 			formatType = new formatType(format);
 
@@ -292,18 +292,7 @@ SettingsManager.types.set('multiSelect', class extends SettingManager {
 
 		super(setting_format);
 
-		const datalist = [
-			{
-				"name": "True",
-				"value": "true",
-			},
-			{
-				"name": "False",
-				"value": "false",
-			}
-		];
-
-		this.multiselect = new MultiSelect({datalist: datalist, multiple: false});
+		this.multiselect = new MultiSelect({datalist: this.setting_format.datalist, multiple: this.setting_format.multiple});
 	}
 
 	get container() {

@@ -748,17 +748,11 @@ class SettingsAccount {
 				key: 'enable_account_signup',
 				type: 'multiSelect',
 				name: 'Allow user to signup.',
-				desc: 'Allow user to signup.'
+				desc: 'Allow user to signup.',
+				datalist: [{"name": "True","value": "true"},{"name": "False","value": "false"}],
+				multiple: false,
 			}
-		]
-
-		// const profileContainer = new SettingsManager(this, settings_json);
-		// await profileContainer.load();
-
-		// if(this.form.parentElement.querySelector('.settings-container'))
-		// 	this.form.parentElement.querySelector('.settings-container').remove();
-
-		// this.form.parentElement.appendChild(profileContainer.container);
+		];
 
 		const settingsContainer = new SettingsManager('account', this.account_id, settings_json)
 		await settingsContainer.load();
