@@ -926,6 +926,9 @@ class DataSourceColumns extends Map {
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
+
+		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 
 	get list() {
@@ -1052,8 +1055,10 @@ class DataSourceColumn {
 		container.classList.add('column');
 
 		container.innerHTML = `
-			<span class="color" style="background: ${this.color}">&#x2714;</span>
-			<span class="name">${this.name}</span>
+			<span class="label">
+				<span class="color" style="background: ${this.color}">&#x2714;</span>
+				<span class="name">${this.name}</span>
+			</span>
 
 			<div class="blanket hidden">
 				<form class="block form">
@@ -1162,6 +1167,8 @@ class DataSourceColumn {
 		this.blanket = container.querySelector('.blanket');
 		this.form = this.blanket.querySelector('.form');
 
+		const label = this.container.querySelector('.label');
+
 		this.form.elements.formula.on('keyup', async () => {
 
 			if(this.formulaTimeout)
@@ -1176,11 +1183,14 @@ class DataSourceColumn {
 
 			edit.classList.add('edit-column');
 			edit.title = 'Edit Column';
-			edit.on('click', () => this.edit());
+			edit.on('click', e => {
+				e.stopPropagation();
+				this.edit();
+			});
 
-			edit.innerHTML = `<i class="fas fa-ellipsis-v"></i>`;
+			edit.innerHTML = `&#8285;`;
 
-			this.container.appendChild(edit);
+			this.container.querySelector('.label').appendChild(edit);
 		}
 
 		this.form.on('submit', async e => this.save(e));
@@ -1220,7 +1230,7 @@ class DataSourceColumn {
 
 		let timeout;
 
-		container.querySelector('.name').on('click', async () => {
+		container.querySelector('.label').on('click', async () => {
 
 			clearTimeout(timeout);
 
@@ -1266,7 +1276,7 @@ class DataSourceColumn {
 		this.form.querySelector('.cancel').on('click', () => this.blanket.classList.add('hidden'));
 		this.form.querySelector('.apply').on('click', () => this.apply());
 
-		container.querySelector('.name').on('dblclick', async (e) => {
+		container.querySelector('.label').on('dblclick', async (e) => {
 
 			clearTimeout(timeout);
 
@@ -1428,8 +1438,8 @@ class DataSourceColumn {
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
-		this.container.querySelector('.name').textContent = this.name;
-		this.container.querySelector('.color').style.background = this.color;
+		this.container.querySelector('.label .name').textContent = this.name;
+		this.container.querySelector('.label .color').style.background = this.color;
 
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
@@ -1536,8 +1546,8 @@ class DataSourceColumn {
 
 		this.container.classList.toggle('hidden', this.hidden ? true : false);
 
-		this.container.querySelector('.name').textContent = this.name;
-		this.container.querySelector('.color').innerHTML = this.disabled ? '' : '&#x2714;';
+		this.container.querySelector('.label .name').textContent = this.name;
+		this.container.querySelector('.label .color').innerHTML = this.disabled ? '' : '&#x2714;';
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
@@ -2344,9 +2354,6 @@ class Visualization {
 		}
 
 		this.source.resetError();
-
-		if(this.options && this.options.hideLegend)
-			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 }
 
@@ -3576,11 +3583,19 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.append('text')
 				.attr('width', x1.rangeBand())
 				.attr('fill', '#666')
-				.attr('x', cell => this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (Format.number(cell.y).toString().length * 4))
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
+				})
 				.text(cell => {
 
 					if(['s'].includes(this.axes.left.format))
-						return d3.format(this.axes.left.format)(cell.y);
+						return d3.format('.4s')(cell.y);
 
 					else
 						return Format.number(cell.y)
