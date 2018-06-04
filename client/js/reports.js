@@ -144,7 +144,7 @@ class DataSource {
 		container.innerHTML = `
 
 			<header>
-				<h2 title="${this.name}">${this.name} <span>#${this.query_id}</span></h2>
+				<h2><span class="title">${this.name}</span> <span>#${this.query_id}</span></h2>
 				<div class="actions right">
 					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
 					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
@@ -926,6 +926,9 @@ class DataSourceColumns extends Map {
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
+
+		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 
 	get list() {
@@ -1052,8 +1055,10 @@ class DataSourceColumn {
 		container.classList.add('column');
 
 		container.innerHTML = `
-			<span class="color" style="background: ${this.color}">&#x2714;</span>
-			<span class="name">${this.name}</span>
+			<span class="label">
+				<span class="color" style="background: ${this.color}">&#x2714;</span>
+				<span class="name">${this.name}</span>
+			</span>
 
 			<div class="blanket hidden">
 				<form class="block form">
@@ -1162,6 +1167,8 @@ class DataSourceColumn {
 		this.blanket = container.querySelector('.blanket');
 		this.form = this.blanket.querySelector('.form');
 
+		const label = this.container.querySelector('.label');
+
 		this.form.elements.formula.on('keyup', async () => {
 
 			if(this.formulaTimeout)
@@ -1176,11 +1183,14 @@ class DataSourceColumn {
 
 			edit.classList.add('edit-column');
 			edit.title = 'Edit Column';
-			edit.on('click', () => this.edit());
+			edit.on('click', e => {
+				e.stopPropagation();
+				this.edit();
+			});
 
-			edit.innerHTML = `<i class="fas fa-ellipsis-v"></i>`;
+			edit.innerHTML = `&#8285;`;
 
-			this.container.appendChild(edit);
+			this.container.querySelector('.label').appendChild(edit);
 		}
 
 		this.form.on('submit', async e => this.save(e));
@@ -1220,7 +1230,7 @@ class DataSourceColumn {
 
 		let timeout;
 
-		container.querySelector('.name').on('click', async () => {
+		container.querySelector('.label').on('click', async () => {
 
 			clearTimeout(timeout);
 
@@ -1266,7 +1276,7 @@ class DataSourceColumn {
 		this.form.querySelector('.cancel').on('click', () => this.blanket.classList.add('hidden'));
 		this.form.querySelector('.apply').on('click', () => this.apply());
 
-		container.querySelector('.name').on('dblclick', async (e) => {
+		container.querySelector('.label').on('dblclick', async (e) => {
 
 			clearTimeout(timeout);
 
@@ -1428,8 +1438,8 @@ class DataSourceColumn {
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
-		this.container.querySelector('.name').textContent = this.name;
-		this.container.querySelector('.color').style.background = this.color;
+		this.container.querySelector('.label .name').textContent = this.name;
+		this.container.querySelector('.label .color').style.background = this.color;
 
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
@@ -1536,8 +1546,8 @@ class DataSourceColumn {
 
 		this.container.classList.toggle('hidden', this.hidden ? true : false);
 
-		this.container.querySelector('.name').textContent = this.name;
-		this.container.querySelector('.color').innerHTML = this.disabled ? '' : '&#x2714;';
+		this.container.querySelector('.label .name').textContent = this.name;
+		this.container.querySelector('.label .color').innerHTML = this.disabled ? '' : '&#x2714;';
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
@@ -2321,6 +2331,8 @@ class Visualization {
 
 	render() {
 
+		this.source.container.querySelector('h2 .title').textContent = this.name;
+
 		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
 
 		if(visualizationToggle)
@@ -2344,9 +2356,6 @@ class Visualization {
 		}
 
 		this.source.resetError();
-
-		if(this.options && this.options.hideLegend)
-			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 }
 
@@ -2915,6 +2924,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		this.y = d3.scale.linear().range([this.height, 20]);
 
 		const
+			x1 = d3.scale.ordinal(),
 			xAxis = d3.svg.axis()
 				.scale(this.x)
 				.orient('bottom'),
@@ -2963,6 +2973,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
 		xAxis.tickValues(ticks);
+		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
 			.append('g')
@@ -2998,20 +3009,57 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.y(d => this.y(d.y));
 
 		//Appending line in chart
-		this.svg.selectAll('.city')
+		this.svg.selectAll('.line-container')
 			.data(this.columns)
 			.enter()
 			.append('g')
-			.attr('class', 'city')
+			.attr('class', 'line-container')
 			.append('path')
 			.attr('class', 'line')
 			.attr('d', d => line(d))
 			.style('stroke', d => d.color);
 
+		if(this.options.showValues) {
+
+			this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
+				})
+				.text(cell => {
+
+					if(['s'].includes(this.axes.left.format))
+						return d3.format('.4s')(cell.y);
+
+					else
+						return Format.number(cell.y)
+				})
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5)
+				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+		}
+
 		// Selecting all the paths
 		const path = this.svg.selectAll('path');
 
 		if(!options.resize) {
+
 			path[0].forEach(path => {
 				var length = path.getTotalLength();
 
@@ -3036,7 +3084,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.attr('r', 0)
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
-				.attr('cy', d => this.y(d.y))
+				.attr('cy', d => this.y(d.y));
 		}
 
 		container
@@ -3502,7 +3550,6 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
 		xAxis.tickValues(ticks);
-
 		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
@@ -3557,7 +3604,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.on('mouseout', function() {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
-			})
+			});
 
 		let values;
 
@@ -3576,11 +3623,19 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.append('text')
 				.attr('width', x1.rangeBand())
 				.attr('fill', '#666')
-				.attr('x', cell => this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (Format.number(cell.y).toString().length * 4))
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
+				})
 				.text(cell => {
 
 					if(['s'].includes(this.axes.left.format))
-						return d3.format(this.axes.left.format)(cell.y);
+						return d3.format('.4s')(cell.y);
 
 					else
 						return Format.number(cell.y)
@@ -3928,7 +3983,6 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			ticks = this.bottom.domain().filter((d, i) => !(i % tickInterval));
 
 		bottomAxis.tickValues(ticks);
-
 		x1.domain(this.columns.left.map(c => c.name)).rangeBands([0, this.bottom.rangeBand()]);
 
 		this.svg
@@ -4420,6 +4474,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		this.y = d3.scale.linear().range([this.height, 20]);
 
 		const
+			x1 = d3.scale.ordinal(),
 			xAxis = d3.svg.axis()
 				.scale(this.x)
 				.orient('bottom'),
@@ -4471,6 +4526,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.y1(d => this.y(d.y0 + d.y));
 
 		xAxis.tickValues(ticks);
+		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
 			.append('g')
@@ -4517,6 +4573,42 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			})
 			.attr('d', d => area(d))
 			.style('fill', d => d.color);
+
+		if(this.options.showValues) {
+
+			this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
+				})
+				.text(cell => {
+
+					if(['s'].includes(this.axes.left.format))
+						return d3.format('.4s')(cell.y);
+
+					else
+						return Format.number(cell.y)
+				})
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5)
+				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+		}
 
 		if(!options.resize) {
 			areas = areas
