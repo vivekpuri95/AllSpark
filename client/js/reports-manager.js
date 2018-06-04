@@ -113,7 +113,7 @@ class ReportsMangerPreview {
 		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'right';
 		this.page.container.classList.add('preview-' + position);
 
-		await this.report.fetch();
+		await this.report.visualizations.selected.load();
 
 		this.renderDocks();
 		this.move();

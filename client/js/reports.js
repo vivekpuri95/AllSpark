@@ -144,7 +144,7 @@ class DataSource {
 		container.innerHTML = `
 
 			<header>
-				<h2 title="${this.name}">${this.name} <span>#${this.query_id}</span></h2>
+				<h2><span class="title">${this.name}</span> <span>#${this.query_id}</span></h2>
 				<div class="actions right">
 					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
 					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
@@ -2330,6 +2330,8 @@ class Visualization {
 	}
 
 	render() {
+
+		this.source.container.querySelector('h2 .title').textContent = this.name;
 
 		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
 
