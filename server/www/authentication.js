@@ -147,8 +147,8 @@ exports.login = class extends API {
 			this.assert(this.request.body.email, "Email Required");
 
 			userDetail = await this.mysql.query(
-				`SELECT * FROM tb_users WHERE email = ? AND (account_id = ? OR ? = '')`,
-				[this.request.body.email, this.request.body.account_id || '', this.request.body.account_id || '']
+				`SELECT * FROM tb_users u JOIN tb_accounts a USING(account_id) WHERE u.email = ? AND (a.account_id = ? OR ? = '') AND a.url = ?`,
+				[this.request.body.email, this.request.body.account_id || '', this.request.body.account_id || '', this.request.hostname]
 			);
 
 			this.assert(userDetail.length, "Email not found! :(");
@@ -167,7 +167,7 @@ exports.login = class extends API {
 			this.assert(checkPassword, "Invalid Password! :(");
 		}
 
-		this.assert(userDetail && userDetail.user_id, 'User not found!');
+		this.assert(userDetail && userDetail.user_id == this.account.account_id, 'User not found!');
 
 		const obj = {
 			user_id: userDetail.user_id,
