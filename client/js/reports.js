@@ -2922,6 +2922,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		this.y = d3.scale.linear().range([this.height, 20]);
 
 		const
+			x1 = d3.scale.ordinal(),
 			xAxis = d3.svg.axis()
 				.scale(this.x)
 				.orient('bottom'),
@@ -2970,6 +2971,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
 		xAxis.tickValues(ticks);
+		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
 			.append('g')
@@ -3005,20 +3007,57 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.y(d => this.y(d.y));
 
 		//Appending line in chart
-		this.svg.selectAll('.city')
+		this.svg.selectAll('.line-container')
 			.data(this.columns)
 			.enter()
 			.append('g')
-			.attr('class', 'city')
+			.attr('class', 'line-container')
 			.append('path')
 			.attr('class', 'line')
 			.attr('d', d => line(d))
 			.style('stroke', d => d.color);
 
+		if(this.options.showValues) {
+
+			this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
+				})
+				.text(cell => {
+
+					if(['s'].includes(this.axes.left.format))
+						return d3.format('.4s')(cell.y);
+
+					else
+						return Format.number(cell.y)
+				})
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5)
+				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+		}
+
 		// Selecting all the paths
 		const path = this.svg.selectAll('path');
 
 		if(!options.resize) {
+
 			path[0].forEach(path => {
 				var length = path.getTotalLength();
 
@@ -3043,7 +3082,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.attr('r', 0)
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
-				.attr('cy', d => this.y(d.y))
+				.attr('cy', d => this.y(d.y));
 		}
 
 		container
@@ -3509,7 +3548,6 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
 		xAxis.tickValues(ticks);
-
 		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
@@ -3564,7 +3602,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.on('mouseout', function() {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
-			})
+			});
 
 		let values;
 
@@ -3943,7 +3981,6 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			ticks = this.bottom.domain().filter((d, i) => !(i % tickInterval));
 
 		bottomAxis.tickValues(ticks);
-
 		x1.domain(this.columns.left.map(c => c.name)).rangeBands([0, this.bottom.rangeBand()]);
 
 		this.svg
@@ -4435,6 +4472,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		this.y = d3.scale.linear().range([this.height, 20]);
 
 		const
+			x1 = d3.scale.ordinal(),
 			xAxis = d3.svg.axis()
 				.scale(this.x)
 				.orient('bottom'),
@@ -4486,6 +4524,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.y1(d => this.y(d.y0 + d.y));
 
 		xAxis.tickValues(ticks);
+		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
 			.append('g')
@@ -4532,6 +4571,42 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			})
 			.attr('d', d => area(d))
 			.style('fill', d => d.color);
+
+		if(this.options.showValues) {
+
+			this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
+				})
+				.text(cell => {
+
+					if(['s'].includes(this.axes.left.format))
+						return d3.format('.4s')(cell.y);
+
+					else
+						return Format.number(cell.y)
+				})
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5)
+				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+		}
 
 		if(!options.resize) {
 			areas = areas
