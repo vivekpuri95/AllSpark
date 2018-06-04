@@ -167,7 +167,8 @@ exports.login = class extends API {
 			this.assert(checkPassword, "Invalid Password! :(");
 		}
 
-		this.assert(userDetail && userDetail.user_id == this.account.account_id, 'User not found!');
+		this.assert(userDetail && userDetail.user_id, 'User not found!');
+		this.assert(userDetail.account_id == this.account.account_id, "User not found");
 
 		const obj = {
 			user_id: userDetail.user_id,
