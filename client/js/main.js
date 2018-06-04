@@ -1223,6 +1223,9 @@ class MultiSelect {
 		this.selectedValues.clear();
 		source.map( x => this.selectedValues.add(x.toString()));
 
+		if(this.changeCallback)
+			this.changeCallback();
+
 		this.update();
 	}
 
@@ -1283,6 +1286,10 @@ class MultiSelect {
 
 					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
 				}
+
+				if(this.changeCallback)
+					this.changeCallback();
+
 				this.update();
 			});
 
@@ -1358,9 +1365,6 @@ class MultiSelect {
 
 		options.querySelector('.no-matches').classList.toggle('hidden', total != hidden);
 
-		if(this.changeCallback)
-			this.changeCallback();
-
 	}
 
 	on(event, callback) {
@@ -1377,6 +1381,10 @@ class MultiSelect {
 			return;
 
 		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+
+		if(this.changeCallback)
+			this.changeCallback();
+
 		this.update();
 	}
 
@@ -1386,6 +1394,10 @@ class MultiSelect {
 	        return;
 
 		this.selectedValues.clear();
+
+		if(this.changeCallback)
+			this.changeCallback();
+
 		this.update();
 	}
 }
