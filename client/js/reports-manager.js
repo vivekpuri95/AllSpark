@@ -99,6 +99,9 @@ class ReportsMangerPreview {
 		if(options.visualizationOptions)
 			this.report.visualizations[0].options = options.visualizationOptions;
 
+		if(options.visualizationType)
+			this.report.visualizations[0].type = options.visualizationType;
+
 		this.report = new DataSource(this.report);
 
 		this.report.container;
@@ -1614,6 +1617,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			query_id: this.report.query_id,
 			visualization_id: this.visualization.visualization_id,
 			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json},
+			visualizationType: this.form.type.value,
 		});
 	}
 });
