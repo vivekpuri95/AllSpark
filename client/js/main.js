@@ -983,7 +983,7 @@ class Format {
 		};
 
 		if(!Format.date.formatter)
-			Format.date.formatter = new Intl.NumberFormat('en-IN', options);
+			Format.date.formatter = new Intl.DateTimeFormat('en-IN', options);
 
 		if(typeof date == 'string')
 			date = Date.parse(date);
@@ -1218,10 +1218,14 @@ class MultiSelect {
 		this.container.querySelector('.options header .clear').on('click', () => this.clear());
 	}
 
-	set value(source) {
+	set value(values) {
 
 		this.selectedValues.clear();
-		source.map( x => this.selectedValues.add(x.toString()));
+
+		for(const value of values) {
+			if(this.datalist.some(r => r.value == value))
+				this.selectedValues.add(value);
+		}
 
 		this.update();
 	}
@@ -1360,7 +1364,6 @@ class MultiSelect {
 
 		if(this.changeCallback)
 			this.changeCallback();
-
 	}
 
 	on(event, callback) {
