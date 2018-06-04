@@ -1,31 +1,60 @@
 class SettingsManager {
 
-	constructor(account,settings_format) {
-		this.account = account;
-		this.settings_format = settings_format;
+	constructor(owner, owner_id, settingsFormat) {
+		this.owner = owner;
+		this.owner_id = owner_id;
+		this.settingsFormat = settingsFormat;
+		this.responseList = new Map;
 	}
 
 	async load() {
+
+		await this.fetch();
+		this.process();
+		this.render();
+	}
+
+	async fetch() {
 
 		const
 			option = {
 				method: "GET",
 			},
 			parameter = {
-				account_id: this.account.account_id,
+				account_id: this.owner_id,
 			};
 
-		const response = await API.call('settings/list', parameter, option);
-		this.responseList = new Map;
+		this.response = await API.call('settings/list', parameter, option);
+	}
 
-		for(const data of response) {
+	process() {
+
+		for(const data of this.response) {
 			this.responseList.set(data.id, new SettingManage(data, this));
 		};
 	}
 
-	get container() {
+	render() {
 
-		const container = this.profile_container = document.createElement('div');
+		const formContainer = this.form;
+
+		formContainer.querySelector('table tbody').textContent = null;
+
+		for(const data of this.responseList.values())
+			formContainer.querySelector('table tbody').appendChild(data.row);
+
+		if(!formContainer.querySelectorAll('table tbody tr').length)
+			formContainer.querySelector('table tbody').innerHTML = `<tr><td colspan="2" class="NA">No profile found :(</td></tr>`;
+
+		formContainer.querySelector('table tbody tr').click();
+	}
+
+	get form() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
 		container.classList.add('settings-container');
 
 		container.innerHTML = `
@@ -65,14 +94,6 @@ class SettingsManager {
 			</section>
 		`;
 
-		for(const data of this.responseList.values())
-			container.querySelector('table tbody').appendChild(data.row);
-
-		if(!container.querySelector('table tbody').childElementCount)
-			container.querySelector('table tbody').innerHTML = `<tr><td class="NA">No profile found :(</td></tr>`;
-
-		container.querySelector('table tbody tr').click();
-
 		container.querySelector('.add-form').on('click', SettingsManager.add_listener = e => this.add(e));
 
 		return container;
@@ -82,52 +103,37 @@ class SettingsManager {
 
 		e.preventDefault();
 
-		this.newEntry = [];
+		this.containerElement.querySelector('.profile-container .profile-header h3').textContent = 'Add New Profile';
 
-		this.profile_container.querySelector('.profile-container .profile-header h3').textContent = 'Add New Profile';
-
-		this.profile_container.querySelector('.profile-container form#settings-form').name.value = null;
-		this.profile_container.querySelector('.profile-container #settings-form #settings-type-container').textContent = null;
-
-		for(const setting of this.settings_format) {
-
-			let setting_type = SettingsManager.types.get(setting.type);
-
-			if(!setting_type)
-				continue;
-
-			setting_type = new setting_type(setting);
-			this.profile_container .querySelector('.profile-container #settings-form #settings-type-container').appendChild(setting_type.container)
-			this.newEntry.push(setting_type);
-		}
+		this.containerElement.querySelector('.profile-container form#settings-form').name.value = null;
+		this.containerElement.querySelector('.profile-container #settings-form #settings-type-container').textContent = null;
 
 		if(SettingManage.submit_listener)
-			this.profile_container.querySelector('.profile-container form').removeEventListener('submit', SettingManage.submit_listener);
+			this.containerElement.querySelector('.profile-container form').removeEventListener('submit', SettingManage.submit_listener);
 
-		const value = [];
-		this.profile_container.querySelector('.profile-container form').on('submit', SettingManage.submit_listener = async (e) => {
+		this.containerElement.querySelector('.profile-container form').on('submit', SettingManage.submit_listener = async (e) => {
 
-			for(const entry of this.newEntry) {
-				value.push({"key": entry.setting_format.key, "value": entry.value})
-			}
+			e.preventDefault();
 
 			const
 				options = {
 					method: 'POST',
 				},
 				parameter = {
-					account_id: this.account.account_id,
-					profile: this.profile_container.querySelector('#settings-form').name.value,
-					owner: 'account',
-					value: JSON.stringify(value),
+					account_id: this.owner_id,
+					profile: this.containerElement.querySelector('#settings-form').name.value,
+					owner: this.owner,
+					value: JSON.stringify([]),
 				};
 
-			await API.call('settings/insert', parameter, options);
-			await this.account.edit();
-		})
+			const response = await API.call('settings/insert', parameter, options);
+
+			await this.load();
+
+			this.responseList.get(response.insertId).edit();
+		});
 	}
 }
-
 class SettingManage {
 
 	constructor(setting, profile) {
@@ -137,6 +143,9 @@ class SettingManage {
 	}
 
 	get row() {
+
+		if(this.tr)
+			return this.tr;
 
 		const tr = this.tr = document.createElement('tr');
 
@@ -153,48 +162,46 @@ class SettingManage {
 
 	edit() {
 
-		Array.from(this.profile.profile_container.querySelectorAll('.settings-container table tbody tr')).map( tr => tr.classList.remove('selected'));
+		for(const tr of this.profile.containerElement.querySelectorAll('.settings-container table tbody tr'))
+			tr.classList.remove('selected');
 
 		this.tr.classList.add('selected');
 
-		this.profile.profile_container.querySelector('.profile-container .profile-header h3').textContent = 'Edit ' + this.setting.profile + '\'s profile.';
+		this.profile.containerElement.querySelector('.profile-container .profile-header h3').textContent = 'Edit ' + this.setting.profile + '\'s profile.';
 
-		this.profile.profile_container.querySelector('.profile-container form#settings-form').name.value = this.setting.profile;
+		this.form = this.profile.containerElement.querySelector('.profile-container form');
 
-		const container = [];
+		this.form.name.value = this.setting.profile;
+
 		this.xyz = [];
 
-		for(const value of this.setting.value) {
-			for(const format of this.profile.settings_format) {
-
-				if(format.key != value.key)
-					continue;
-
-				let format_type = SettingsManager.types.get(format.type);
-
-				if(!format_type)
-					continue;
-
-				format_type = new format_type(format);
-
-				format_type.value = value.value;
-
-				this.xyz.push(format_type);
-
-				container.push(format_type.container);
-			}
-		}
-		const main_container = this.profile.profile_container.querySelector('.profile-container #settings-form #settings-type-container');
+		const main_container = this.form.querySelector('#settings-type-container');
 
 		main_container.textContent = null;
-		for(const value of container) {
-			main_container.appendChild(value);
+
+		for(const format of this.profile.settingsFormat) {
+
+			let formatType = SettingsManager.types.get(format.type);
+
+			if(!formatType)
+					continue;
+
+			formatType = new formatType(format);
+
+			for(const value of this.setting.value) {
+				if(format.key == value.key)
+					formatType.value = value.value;
+			}
+
+			this.xyz.push(formatType);
+
+			main_container.appendChild(formatType.container);
 		}
 
 		if(SettingManage.submit_listener)
-			this.profile.profile_container.querySelector('.profile-container form').removeEventListener('submit', SettingManage.submit_listener);
+			this.form.removeEventListener('submit', SettingManage.submit_listener);
 
-		this.profile.profile_container.querySelector('.profile-container form').on('submit', SettingManage.submit_listener =  e => this.update(e));
+		this.form.on('submit', SettingManage.submit_listener =  e => this.update(e));
 	}
 
 	async update(e) {
@@ -212,13 +219,14 @@ class SettingManage {
 				method: "POST"
 			},
 			parameters = {
-				profile: this.setting.profile,
+				profile: this.form.name.value,
 				id: this.setting.id,
 				value: JSON.stringify(value),
 			};
 
 		await API.call('settings/update', parameters, options);
-		await this.profile.account.edit();
+		await this.profile.load();
+		this.profile.responseList.get(this.setting.id).edit();
 	}
 
 	async delete(e) {
@@ -234,10 +242,10 @@ class SettingManage {
 			};
 
 		await API.call('settings/delete', parameters, options);
-		await this.profile.account.edit();
+		await this.profile.load();
+		this.profile.responseList.get(this.setting.id).edit();
 	}
 }
-
 class SettingManager{
 
 	constructor(setting_format) {
@@ -248,11 +256,6 @@ class SettingManager{
 SettingsManager.types = new Map;
 
 SettingsManager.types.set('string', class extends SettingManager {
-
-	constructor(setting_format) {
-
-		super(setting_format);
-	}
 
 	get container() {
 

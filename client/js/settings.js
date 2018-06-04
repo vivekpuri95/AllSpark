@@ -752,25 +752,34 @@ class SettingsAccount {
 			}
 		]
 
-		const profileContainer = new SettingsManager(this, settings_json);
-		await profileContainer.load();
+		// const profileContainer = new SettingsManager(this, settings_json);
+		// await profileContainer.load();
+
+		// if(this.form.parentElement.querySelector('.settings-container'))
+		// 	this.form.parentElement.querySelector('.settings-container').remove();
+
+		// this.form.parentElement.appendChild(profileContainer.container);
+
+		const settingsContainer = new SettingsManager('account', this.account_id, settings_json)
+		await settingsContainer.load();
 
 		if(this.form.parentElement.querySelector('.settings-container'))
 			this.form.parentElement.querySelector('.settings-container').remove();
 
-		this.form.parentElement.appendChild(profileContainer.container);
+		this.form.parentElement.appendChild(settingsContainer.form);
 
 		this.form.parentElement.appendChild(features.container);
 
 		await Sections.show('accounts-form');
 
-		this.page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
-		this.page.form.on('submit', SettingsAccount.submitEventListener = async e => {
+		this.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+
+		this.form.on("submit", SettingsAccount.submitEventListener = async e => {
 			await this.update(e);
 			await this.page.load();
 			await Sections.show('accounts-form');
 		});
-			}
+	}
 
 	async update(e) {
 

@@ -14,7 +14,7 @@ exports.list = class extends API {
 			SELECT
 				a.*,
 				s.profile,
-				s.value,
+				any_value(s.value) value,
 				group_concat(distinct f.feature_id) as features
 			FROM
 				tb_accounts a
