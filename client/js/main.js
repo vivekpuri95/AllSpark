@@ -1227,6 +1227,9 @@ class MultiSelect {
 				this.selectedValues.add(value);
 		}
 
+		if(this.changeCallback)
+			this.changeCallback();
+
 		this.update();
 	}
 
@@ -1287,6 +1290,10 @@ class MultiSelect {
 
 					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
 				}
+
+				if(this.changeCallback)
+					this.changeCallback();
+
 				this.update();
 			});
 
@@ -1380,6 +1387,10 @@ class MultiSelect {
 			return;
 
 		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+
+		if(this.changeCallback)
+			this.changeCallback();
+
 		this.update();
 	}
 
@@ -1389,6 +1400,10 @@ class MultiSelect {
 	        return;
 
 		this.selectedValues.clear();
+
+		if(this.changeCallback)
+			this.changeCallback();
+
 		this.update();
 	}
 }
