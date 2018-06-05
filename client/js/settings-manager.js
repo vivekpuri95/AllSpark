@@ -10,7 +10,7 @@ class SettingsManager {
 	async load() {
 
 		await this.fetch();
-		this.process();
+		await this.process();
 		this.render();
 	}
 
@@ -29,6 +29,8 @@ class SettingsManager {
 
 	process() {
 
+		this.responseList.clear();
+
 		for(const data of this.response) {
 			this.responseList.set(data.id, new SettingManage(data, this));
 		};
@@ -37,16 +39,16 @@ class SettingsManager {
 	render() {
 
 		const formContainer = this.form;
-
+		const tbody = formContainer.querySelector('table tbody');
 		formContainer.querySelector('table tbody').textContent = null;
 
 		for(const data of this.responseList.values())
-			formContainer.querySelector('table tbody').appendChild(data.row);
+			tbody.appendChild(data.row);
 
-		if(!formContainer.querySelectorAll('table tbody tr').length)
-			formContainer.querySelector('table tbody').innerHTML = `<tr><td colspan="2" class="NA">No profile found :(</td></tr>`;
+		if(!tbody.querySelectorAll('tr').length)
+			tbody.innerHTML = `<tr><td colspan="2" class="NA">No profile found :(</td></tr>`;
 
-		formContainer.querySelector('table tbody tr').click();
+		tbody.querySelector('tr').click();
 	}
 
 	get form() {
@@ -63,7 +65,7 @@ class SettingsManager {
 					<thead>
 						<tr>
 							<th>Name</th>
-							<th class="action">Discard</th>
+							<th class="action">Delete</th>
 						</tr>
 					</thead>
 
@@ -76,9 +78,9 @@ class SettingsManager {
 				</div>
 			</section>
 
-			<section class="profile-container">
+			<section class="profile-container hidden">
 				<header class="profile-header">
-					<h3>Edit</h3>
+					<h3></h3>
 					<button type="submit" form="settings-form">Save</button>
 				</header>
 				<form id="settings-form">
@@ -103,15 +105,19 @@ class SettingsManager {
 
 		e.preventDefault();
 
+		this.containerElement.querySelector('.profile-container').classList.remove('hidden');
+
+		const form = this.containerElement.querySelector('.profile-container form#settings-form');
+
 		this.containerElement.querySelector('.profile-container .profile-header h3').textContent = 'Add New Profile';
 
-		this.containerElement.querySelector('.profile-container form#settings-form').name.value = null;
-		this.containerElement.querySelector('.profile-container #settings-form #settings-type-container').textContent = null;
+		form.name.value = null;
+		form.querySelector('#settings-type-container').textContent = null;
 
 		if(SettingManage.submit_listener)
-			this.containerElement.querySelector('.profile-container form').removeEventListener('submit', SettingManage.submit_listener);
+			form.removeEventListener('submit', SettingManage.submit_listener);
 
-		this.containerElement.querySelector('.profile-container form').on('submit', SettingManage.submit_listener = async (e) => {
+		form.on('submit', SettingManage.submit_listener = async (e) => {
 
 			e.preventDefault();
 
@@ -167,13 +173,15 @@ class SettingManage {
 
 		this.tr.classList.add('selected');
 
+		this.profile.containerElement.querySelector('.profile-container').classList.remove('hidden');
+
 		this.profile.containerElement.querySelector('.profile-container .profile-header h3').textContent = 'Edit ' + this.setting.profile + '\'s profile.';
 
 		this.form = this.profile.containerElement.querySelector('.profile-container form');
 
 		this.form.name.value = this.setting.profile;
 
-		this.xyz = [];
+		this.format = [];
 
 		const main_container = this.form.querySelector('#settings-type-container');
 
@@ -193,7 +201,7 @@ class SettingManage {
 					formatType.value = value.value;
 			}
 
-			this.xyz.push(formatType);
+			this.format.push(formatType);
 
 			main_container.appendChild(formatType.container);
 		}
@@ -210,9 +218,7 @@ class SettingManage {
 
 		const value = [];
 
-		for(const entry of this.xyz) {
-			value.push({"key": entry.setting_format.key, "value": entry.value})
-		}
+		this.format.map(x => value.push({"key": x.setting_format.key, "value": x.value}));
 
 		const
 			options = {
@@ -232,6 +238,10 @@ class SettingManage {
 	async delete(e) {
 
 		e.stopPropagation();
+		e.stopPropagation();
+
+		if(!confirm('Are you sure ?'))
+			return;
 
 		const
 			options = {
@@ -243,7 +253,6 @@ class SettingManage {
 
 		await API.call('settings/delete', parameters, options);
 		await this.profile.load();
-		this.profile.responseList.get(this.setting.id).edit();
 	}
 }
 class SettingManager{
@@ -268,7 +277,38 @@ SettingsManager.types.set('string', class extends SettingManager {
 		container.innerHTML = `
 			<label>
 				<span>${this.setting_format.name}</span>
-				<input type="text" value="">
+				<input type="text" value="" placeholder="String">
+			</label>
+		`;
+
+		return container;
+	}
+
+	get value() {
+
+		return this.container.querySelector('input').value;
+	}
+
+	set value(param) {
+
+		this.container.querySelector('input').value = param;
+	}
+});
+
+SettingsManager.types.set('number', class extends SettingManager {
+
+	get container() {
+
+		if(this.div)
+			return this.div;
+
+		const container = this.div = document.createElement('div');
+		container.classList.add('form');
+
+		container.innerHTML = `
+			<label>
+				<span>${this.setting_format.name}</span>
+				<input type="number" value="" placeholder="Number">
 			</label>
 		`;
 

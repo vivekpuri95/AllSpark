@@ -745,6 +745,12 @@ class SettingsAccount {
 				desc: 'Position of top nav bar.'
 			},
 			{
+				key: 'abc',
+				type: 'number',
+				name: 'abc.',
+				desc: 'Position of top nav bar.'
+			},
+			{
 				key: 'enable_account_signup',
 				type: 'multiSelect',
 				name: 'Allow user to signup.',
