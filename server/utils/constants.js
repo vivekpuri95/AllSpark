@@ -22,7 +22,6 @@ exports.publicEndpoints = [
 	'/v2/authentication/refresh',
 	'/v2/authentication/reset',
 	'/v2/authentication/resetLink',
-	'/v2/authentication/tookan',
 	'/v2/scope/scopeAuth',
 	'/v2/accounts/signup',
 ];
