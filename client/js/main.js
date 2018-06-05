@@ -1223,7 +1223,7 @@ class MultiSelect {
 		this.selectedValues.clear();
 
 		for(const value of values) {
-			if(this.datalist.some(r => r.value == value))
+			if(this.datalist && this.datalist.some(r => r.value == value))
 				this.selectedValues.add(value);
 		}
 

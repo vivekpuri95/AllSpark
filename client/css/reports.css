@@ -827,6 +827,14 @@
 	font-size: 90%;
 }
 
+.visualization .container > svg .clips.drilldown {
+	transition: opacity var(--transition-duration);
+}
+.visualization .container > svg .clips.drilldown:hover {
+	cursor: pointer;
+	opacity: 0.8;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
 .visualization .container > svg .line {
 	fill: none;
 	stroke: steelblue;
