@@ -99,7 +99,7 @@ class API {
 				if(!obj.account) {
 					for(const account of global.accounts) {
 
-						if(account.host == host)
+						if(account.url == host)
 							obj.account = account;
 					}
 				}
