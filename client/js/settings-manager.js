@@ -73,9 +73,9 @@ class SettingsManager {
 
 				</table>
 
-				<div class="toolbar">
+				<footer class="toolbar">
 					<button class="add-form"><i class="fa fa-plus"></i>Add New Profile</button>
-				</div>
+				</footer>
 			</section>
 
 			<section class="profile-container hidden">
@@ -157,7 +157,7 @@ class SettingManage {
 
 		tr.innerHTML = `
 			<td>${this.setting.profile}</td>
-			<td class="action red"><i class="fa fa-trash-alt"></i></td>
+			<td class="action red"><i class="far fa-trash-alt"></i></td>
 		`;
 
 		tr.on('click', () => this.edit());
@@ -175,7 +175,7 @@ class SettingManage {
 
 		this.profile.containerElement.querySelector('.profile-container').classList.remove('hidden');
 
-		this.profile.containerElement.querySelector('.profile-container .profile-header h3').textContent = 'Edit ' + this.setting.profile + '\'s profile.';
+		this.profile.containerElement.querySelector('.profile-container .profile-header h3').textContent = this.setting.profile;
 
 		this.form = this.profile.containerElement.querySelector('.profile-container form');
 
@@ -323,6 +323,45 @@ SettingsManager.types.set('number', class extends SettingManager {
 	set value(param) {
 
 		this.container.querySelector('input').value = param;
+	}
+});
+
+SettingsManager.types.set('code', class extends SettingManager {
+
+	constructor(setting_format) {
+
+		super(setting_format);
+
+		this.editContainer = new Editor(document.createElement('div'));
+	}
+
+	get container() {
+
+		if(this.div)
+			return this.div;
+
+		const container = this.div = document.createElement('div');
+		container.classList.add('form', 'code-type-editor');
+
+		container.innerHTML = `
+			<label>
+				<span>${this.setting_format.name}</span>
+			</label>
+		`;
+
+		container.querySelector('label').appendChild(this.editContainer.container);
+
+		return container;
+	}
+
+	get value() {
+
+		return this.editContainer.value;
+	}
+
+	set value(params) {
+
+		this.editContainer.value = params;
 	}
 });
 

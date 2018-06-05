@@ -745,6 +745,12 @@ class SettingsAccount {
 				desc: 'Position of top nav bar.'
 			},
 			{
+				key: 'top_nav_position',
+				type: 'code',
+				name: 'Header Nav Position.',
+				desc: 'Position of top nav bar.'
+			},
+			{
 				key: 'abc',
 				type: 'number',
 				name: 'abc.',
