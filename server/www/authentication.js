@@ -7,6 +7,7 @@ const Mailer = require('../utils/mailer');
 const requestPromise = promisify(request);
 const config = require("config");
 const constants = require("../utils/constants");
+const account = require('../onServerStart');
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -141,6 +142,7 @@ exports.login = class extends API {
 			result = result.data;
 			access_token = result.access_token;
 			userDetail = result.userDetails;
+			await account.loadAccounts();
 
 		} else {
 
