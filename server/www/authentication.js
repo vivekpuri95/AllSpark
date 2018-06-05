@@ -264,7 +264,7 @@ exports.refresh = class extends API {
                     user_id = ?
                     AND u.account_id = ?
                `,
-			[user.user_id, this.account.account_id, user.user_id, this.account.account_id]
+			[user.user_id, user.account_id, user.user_id, user.account_id]
 		);
 
 		const privileges = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {
