@@ -2698,7 +2698,7 @@ class LinearVisualization extends Visualization {
 
 			that.zoomRectangle = null;
 
-			if(!filteredRows.length)
+			if(filteredRows.length < 2)
 				return;
 
 			that.rows = filteredRows;
@@ -3080,17 +3080,46 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.enter()
 				.append('circle')
 				.attr('class', 'clips')
+				.classed('drilldown', cell => that.source.columns.get(cell.key).drilldown)
 				.attr('id', (_, i) => i)
 				.attr('r', 0)
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
-				.attr('cy', d => this.y(d.y));
+				.attr('cy', d => this.y(d.y))
+				.on('mouseover', function(cell) {
+
+					if(!that.source.columns.get(cell.key).drilldown)
+						return;
+
+					d3.select(this)
+						.attr('r', 6)
+						.transition()
+						.duration(Visualization.animationDuration)
+						.attr('r', 12);
+
+					d3.select(this).classed('hover', 1);
+				})
+				.on('mouseout', function(cell) {
+
+					if(!that.source.columns.get(cell.key).drilldown)
+						return;
+
+					d3.select(this)
+						.transition()
+						.duration(Visualization.animationDuration)
+						.attr('r', 6);
+
+					d3.select(this).classed('hover', 0);
+				})
+				.on('click', (cell, row) => {
+					that.source.columns.get(cell.key).initiateDrilldown(that.rows[row]);
+				});
 		}
 
 		container
 		.on('mousemove.line', function() {
 
-			container.selectAll('svg > g > circle[class="clips"]').attr('r', 0);
+			container.selectAll('svg > g > circle.clips:not(.hover)').attr('r', 0);
 
 			const
 				mouse = d3.mouse(this),
@@ -3100,10 +3129,10 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			if(!row || that.zoomRectangle)
 				return;
 
-			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+			container.selectAll(`svg > g > circle[id='${xpos}'].clips:not(.hover)`).attr('r', 6);
 		})
 
-		.on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 0));
+		.on('mouseout.line', () => container.selectAll('svg > g > circle.clips').attr('r', 0));
 
 		path.on('mouseover', function (d) {
 			d3.select(this).classed('line-hover', true);
@@ -3115,7 +3144,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 	}
 });
 
-Visualization.list.set('bubble', class Line extends LinearVisualization {
+Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 
 	get container() {
 
@@ -3282,7 +3311,7 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 	}
 });
 
-Visualization.list.set('scatter', class Line extends LinearVisualization {
+Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 	get container() {
 
@@ -3436,7 +3465,7 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 		container
 		.on('mousemove.line', function() {
 
-			container.selectAll('svg > g > circle[class="clips"]').attr('r', 3);
+			container.selectAll('svg > g > circle.clips').attr('r', 3);
 
 			const
 				mouse = d3.mouse(this),
@@ -3446,10 +3475,10 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 			if(!row || that.zoomRectangle)
 				return;
 
-			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+			container.selectAll(`svg > g > circle[id='${xpos}'].clips`).attr('r', 6);
 		})
 
-		.on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 3));
+		.on('mouseout.line', () => container.selectAll('svg > g > circle.clips').attr('r', 3));
 	}
 });
 
@@ -4629,17 +4658,46 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.enter()
 				.append('circle')
 				.attr('class', 'clips')
+				.classed('drilldown', cell => that.source.columns.get(cell.key).drilldown)
 				.attr('id', (d, i) => i)
 				.attr('r', 0)
 				.style('fill', column.color)
 				.attr('cx', cell => this.x(cell.x) + this.axes.left.width)
-				.attr('cy', cell => this.y(cell.y + cell.y0));
+				.attr('cy', cell => this.y(cell.y + cell.y0))
+				.on('mouseover', function(cell) {
+
+					if(!that.source.columns.get(cell.key).drilldown)
+						return;
+
+					d3.select(this)
+						.attr('r', 6)
+						.transition()
+						.duration(Visualization.animationDuration)
+						.attr('r', 12);
+
+					d3.select(this).classed('hover', 1);
+				})
+				.on('mouseout', function(cell) {
+
+					if(!that.source.columns.get(cell.key).drilldown)
+						return;
+
+					d3.select(this)
+						.transition()
+						.duration(Visualization.animationDuration)
+						.attr('r', 6);
+
+					d3.select(this).classed('hover', 0);
+				})
+				.on('click', (cell, row) => {
+					that.source.columns.get(cell.key).initiateDrilldown(that.rows[row]);
+				});
 		}
 
 		container
 		.on('mousemove.area', function() {
 
-			container.selectAll('svg > g > circle[class="clips"]').attr('r', 0);
+			container.selectAll('svg > g > circle.clips').attr('r', 0);
 
 			const
 				mouse = d3.mouse(this),
@@ -4649,10 +4707,10 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			if(!row || that.zoomRectangle)
 				return;
 
-			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+			container.selectAll(`svg > g > circle[id='${xpos}'].clips`).attr('r', 6);
 		})
 
-		.on('mouseout.area', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 0));
+		.on('mouseout.area', () => container.selectAll('svg > g > circle.clips').attr('r', 0));
 	}
 });
 
