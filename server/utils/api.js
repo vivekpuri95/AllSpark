@@ -90,19 +90,22 @@ class API {
 
 				let host = request.headers.host.split(':')[0];
 
-				if (!(host in global.account)) {
-					throw new API.Exception(400, 'Account not found!');
+				for(const account of global.accounts) {
+
+					if(userDetails && account.account_id == userDetails.account_id)
+						obj.account = account;
 				}
 
-				for (const host in global.account) {
+				if(!obj.account) {
+					for(const account of global.accounts) {
 
-					if (userDetails && global.account[host].account_id == userDetails.account_id) {
-						obj.account = global.account[host];
+						if(account.host == host)
+							obj.account = account;
 					}
 				}
 
 				if (!obj.account) {
-					obj.account = global.account[host];
+					throw new API.Exception(400, 'Account not found!');
 				}
 
 				const checksums = [
