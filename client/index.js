@@ -962,7 +962,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-configure-visualization">
 
 					<div class="toolbar">
-						<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save</button>
+						<button type="button" id="configure-visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
+						<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
 						<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>
 					</div>
 

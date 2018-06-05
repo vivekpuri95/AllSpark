@@ -35,7 +35,8 @@
 			}
 			main .dataset .options label.selected,
 			main .dataset .options label.selected:hover {
-				background: #eda;
+				background: var(--color-selected);
+				color: var(--color-selected-text);
 			}
 				main .dataset label input {
 					margin: 0;
