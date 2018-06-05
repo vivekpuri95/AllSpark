@@ -888,7 +888,7 @@ class API extends AJAX {
 				method: 'POST',
 			};
 
-		if(account.auth_api && parameters.access_token)
+		if(account && account.auth_api && parameters.access_token)
 			parameters.access_token = await IndexedDb.instance.get('access_token');
 
 		const response = await API.call('authentication/refresh', parameters, options);
