@@ -7,11 +7,10 @@
 	--color-secondary-text: #333;
 	--color-accent:  #1abb9c;
 	--color-accent-text: #fff;
-	--color-row-hover: #ddf;
-	--transition-duration: 300ms;
-	--color-red-text: #a94442;
-	--color-green-text: #1abb9c;
+	--color-selected: #fff59d;
+	--color-selected-text: inherit;
 
+	--transition-duration: 300ms;
 	--gap: 5px;
 }
 * {
@@ -627,7 +626,8 @@ body {
 				overflow: hidden;
 			}
 			.multi-select .options .list label.selected {
-				background: #eda;
+				background: var(--color-selected);
+				color: var(--color-selected-text);
 			}
 		.multi-select footer {
 			display: grid;

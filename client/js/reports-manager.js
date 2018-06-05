@@ -198,7 +198,7 @@ class ReportsMangerStage {
 			this.select();
 
 			if(this.key != 'configure-visualization')
-				history.pushState({}, '', `/reports/${this.url}`);
+				window.history.pushState({}, '', `/reports/${this.url}`);
 		});
 
 		return container;
@@ -287,7 +287,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		this.container.querySelector('#add-report').on('click', () => {
 			this.add();
-			history.pushState({id: 'add'}, '', `/configure-report/add`);
+			window.history.pushState({id: 'add'}, '', `/configure-report/add`);
 		});
 	}
 
@@ -389,7 +389,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			row.querySelector('.configure').on('click', () => {
 
-				history.pushState({}, '', `/reports/configure-report/${report.query_id}`);
+				window.history.pushState({}, '', `/reports/configure-report/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
@@ -400,7 +400,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			row.querySelector('.define').on('click', () => {
 
-				history.pushState({}, '', `/reports/define-report/${report.query_id}`);
+				window.history.pushState({}, '', `/reports/define-report/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
@@ -411,7 +411,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			row.querySelector('.visualizations').on('click', () => {
 
-				history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
+				window.history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
@@ -516,7 +516,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 	add() {
 
-		history.pushState({}, '', `/reports/configure-report/add`);
+		window.history.pushState({}, '', `/reports/configure-report/add`);
 
 		this.page.stages.get('configure-report').disabled = false;
 
@@ -1338,14 +1338,24 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		for(const visualization of MetaData.visualizations.values()) {
 
-			this.form.insertAdjacentHTML('beforeend', `
-				<label>
-					<figure>
-						<img src="${visualization.image}"></img>
-						<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp; ${visualization.name}</figcaption>
-					</figure>
-				</label>
-			`);
+			const label = document.createElement('label');
+
+			label.innerHTML = `
+				<figure>
+					<img src="${visualization.image}"></img>
+					<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp; ${visualization.name}</figcaption>
+				</figure>
+			`;
+
+			label.on('click', () => {
+
+				if(this.form.querySelector('figure.selected'))
+					this.form.querySelector('figure.selected').classList.remove('selected');
+
+				label.querySelector('figure').classList.add('selected');
+			});
+
+			this.form.appendChild(label);
 		}
 
 		this.form.on('submit', e => this.insert(e));
@@ -1374,7 +1384,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		await DataSource.load(true);
 
-		history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
+		window.history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
 
 		this.page.load();
 		this.container.querySelector('#add-visualization-picker').classList.add('hidden');
@@ -1443,7 +1453,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 			row.querySelector('.edit').on('click', () => {
 
-				history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
+				window.history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
 
 				this.page.stages.get('configure-visualization').disabled = false;
 
@@ -1456,7 +1466,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		}
 
 		if(!this.report.visualizations.length)
-			tbody.innerHTML = '<tr class="NA"><td colspan="4">No Visualization Found! :(</td></tr>';
+			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found! :(</td></tr>';
 	}
 });
 
@@ -1471,6 +1481,20 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.description = 'Define how the report is visualized';
 
 		this.form = this.container.querySelector('#configure-visualization-form');
+
+		this.container.querySelector('#configure-visualization-back').on('click', () => {
+
+			if(window.history.state) {
+				window.history.back();
+				return;
+			}
+
+			history.pushState({}, '', `/reports/pick-visualization/${this.report.query_id}`);
+
+			this.disabled = true;
+
+			this.page.load();
+		});
 
 		for(const visualization of MetaData.visualizations.values()) {
 			this.form.type.insertAdjacentHTML('beforeend', `
@@ -1777,13 +1801,15 @@ class ReportVisualizationDashboard {
 			</div>
 		`;
 
-		for(const dashboard of this.stage.dashboards.response.values()) {
+		if(this.stage.dashboards.response) {
+			for(const dashboard of this.stage.dashboards.response.values()) {
 
-			form.dashboard_id.insertAdjacentHTML('beforeend',`
-				<option value=${dashboard.id}>
-					${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
-				</option>
-			`);
+				form.dashboard_id.insertAdjacentHTML('beforeend',`
+					<option value=${dashboard.id}>
+						${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
+					</option>
+				`);
+			}
 		}
 
 		form.dashboard_id.on('change', () => form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value);
