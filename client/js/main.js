@@ -293,6 +293,17 @@ class IndexedDb {
 			request.onerror = e => reject(e);
 		});
 	}
+
+	delete(key) {
+
+		return new Promise((resolve, reject) => {
+
+			const request = this.db.transaction('MainStore', 'readwrite').objectStore('MainStore').delete(key);
+
+			request.onsuccess = e => resolve(e.result);
+			request.onerror = e => reject(e);
+		});
+	}
 }
 
 /**
