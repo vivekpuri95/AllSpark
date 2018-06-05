@@ -1309,7 +1309,7 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		if(this.drilldown) {
+		if(this.drilldown && this.drilldown.query_id) {
 
 			this.form.querySelector('.parameter-list').textContent = null;
 
@@ -1498,7 +1498,7 @@ class DataSourceColumn {
 			postfix : this.postfix,
 			formula : this.formula,
 			drilldown : {
-				query_id : this.drilldown_query_id,
+				query_id : this.drilldownQuery.value,
 				parameters : json_param
 			}
 		};
