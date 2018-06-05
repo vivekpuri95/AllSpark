@@ -41,7 +41,7 @@ async function loadAccounts() {
 			a.status = 1
 	`);
 
-	const accounts = [];
+	const accounts = {};
 
 	for (const account of accountList) {
 
