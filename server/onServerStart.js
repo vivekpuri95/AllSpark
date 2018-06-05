@@ -41,13 +41,13 @@ async function loadAccounts() {
 			a.status = 1
 	`);
 
-	const accountObj = {};
+	const accounts = {};
 
 	for (const account of accountList) {
 
-		if (!accountObj[account.url]) {
+		if (!accounts[account.account_id]) {
 
-			accountObj[account.url] = {
+			accounts[account.account_id] = {
 				account_id: account.account_id,
 				name: account.name,
 				url: account.url,
@@ -57,11 +57,11 @@ async function loadAccounts() {
 			};
 		}
 
-		if (!accountObj[account.url].features) {
+		if (!accounts[account.account_id].features) {
 
-			accountObj[account.url].features = new Map();
+			accounts[account.account_id].features = new Map();
 
-			accountObj[account.url].features.needs = function (arg) {
+			accounts[account.account_id].features.needs = function (arg) {
 				if (this.has(arg))
 					return 1;
 
@@ -71,7 +71,7 @@ async function loadAccounts() {
 			}
 		}
 
-		accountObj[account.url].features.set(account.feature_slug + '-' + account.feature_type, {
+		accounts[account.account_id].features.set(account.feature_slug + '-' + account.feature_type, {
 
 			feature_id: account.feature_id,
 			name: account.feature_name,
@@ -86,14 +86,14 @@ async function loadAccounts() {
 			account.settings = [];
 		}
 
-		if(!accountObj[account.url].settings) {
+		if(!accounts[account.account_id].settings) {
 
-			accountObj[account.url].settings = new settings(account.settings);
+			accounts[account.account_id].settings = new settings(account.settings);
 		}
 
 	}
 
-	global.account = accountObj;
+	global.accounts = Object.values(accounts);
 }
 
 async function loadBigquery() {

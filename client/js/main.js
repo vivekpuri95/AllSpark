@@ -293,6 +293,17 @@ class IndexedDb {
 			request.onerror = e => reject(e);
 		});
 	}
+
+	delete(key) {
+
+		return new Promise((resolve, reject) => {
+
+			const request = this.db.transaction('MainStore', 'readwrite').objectStore('MainStore').delete(key);
+
+			request.onsuccess = e => resolve(e.result);
+			request.onerror = e => reject(e);
+		});
+	}
 }
 
 /**
@@ -888,7 +899,7 @@ class API extends AJAX {
 				method: 'POST',
 			};
 
-		if(account.auth_api && parameters.access_token)
+		if(account && account.auth_api && parameters.access_token)
 			parameters.access_token = await IndexedDb.instance.get('access_token');
 
 		const response = await API.call('authentication/refresh', parameters, options);

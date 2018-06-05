@@ -99,13 +99,13 @@
 				font-size: 18px;
 				margin: 0 auto 0 0;
 				padding: 0;
-				color: #888;
+				color: #666;
 				font-weight: normal;
 				white-space: nowrap;
 				line-height: inherit;
 				user-select: text;
 			}
-				main .data-source > header h2 span {
+				main .data-source > header h2 .id {
 					color: #aaa;
 					font-size: 90%;
 				}
