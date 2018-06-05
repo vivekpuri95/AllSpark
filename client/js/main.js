@@ -37,8 +37,9 @@ class Page {
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
 			if(parameters.has('access_token') && parameters.get('access_token')) {
-				await IndexedDb.instance.set('access_token', parameters.get('access_token'));
-				User.logout();
+				User.logout(undefined, async () => {
+					await IndexedDb.instance.set('access_token', parameters.get('access_token'));
+				});
 			}
 		}
 
@@ -597,21 +598,19 @@ class User {
 		return window.user = new User(user);
 	}
 
-	static async logout(next) {
+	static async logout(next, callback) {
 
 		const parameters = new URLSearchParams();
 
 		localStorage.clear();
 
-		const access_token = await IndexedDb.instance.get('access_token');
-
 		await IndexedDb.instance.db.transaction('MainStore', 'readwrite').objectStore('MainStore').clear();
-
-		if(access_token)
-			await IndexedDb.instance.set('access_token', access_token);
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
+
+		if(callback)
+			await callback();
 
 		window.location = '/login?'+parameters.toString();
 	}
