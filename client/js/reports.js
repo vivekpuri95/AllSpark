@@ -2952,13 +2952,13 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 					continue;
 
 				if(max == null)
-					max = Math.floor(value);
+					max = Math.ceil(value);
 
 				if(min == null)
 					min = Math.floor(value);
 
 				max = Math.max(max, Math.floor(value) || 0);
-				min = Math.min(min, Math.floor(value) || 0);
+				min = Math.min(min, Math.ceil(value) || 0);
 			}
 		}
 
@@ -3392,12 +3392,12 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 					continue;
 
 				if(max == null)
-					max = Math.floor(value);
+					max = Math.ceil(value);
 
 				if(min == null)
 					min = Math.floor(value);
 
-				max = Math.max(max, Math.floor(value) || 0);
+				max = Math.max(max, Math.ceil(value) || 0);
 				min = Math.min(min, Math.floor(value) || 0);
 			}
 		}
