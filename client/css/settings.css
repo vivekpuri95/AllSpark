@@ -51,7 +51,7 @@ main .settings-container {
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	}
 		main .settings-container table tr.selected {
-			background: red;
+			background: var(--color-selected);
 		}
 		main .settings-container table tr:active {
 			box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
