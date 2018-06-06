@@ -151,28 +151,6 @@ class ProfileManage {
 
 		this.tr.classList.add('selected');
 
-		this.format = [];
-
-		for(const format of this.parent.settingsFormat) {
-
-			let formatType = SettingsManager.types.get(format.type);
-
-			if(!formatType)
-				continue;
-
-			formatType = new formatType(format);
-
-			for(const value of this.value) {
-				if(format.key == value.key)
-					formatType.value = value.value;
-			}
-
-			this.format.push(formatType);
-
-			this.section.querySelector('form').appendChild(formatType.container);
-
-		}
-
 		if(this.parent.containerElement.querySelector('.profile-container'))
 			this.parent.containerElement.querySelector('.profile-container').remove();
 
@@ -200,6 +178,28 @@ class ProfileManage {
 				</label>
 			</form>
 		`;
+
+		this.format = [];
+
+		for(const format of this.parent.settingsFormat) {
+
+			let formatType = SettingsManager.types.get(format.type);
+
+			if(!formatType)
+				continue;
+
+			formatType = new formatType(format);
+
+			for(const value of this.value) {
+				if(format.key == value.key)
+					formatType.value = value.value;
+			}
+
+			this.format.push(formatType);
+		}
+
+		for(const element of this.format)
+			this.section.querySelector('form').appendChild(element.container);
 
 		section.querySelector('form').on('submit', (e) => this.update(e));
 
