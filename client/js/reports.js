@@ -1377,7 +1377,7 @@ class DataSourceColumn {
 		const
 			parameterList = this.form.querySelector('.parameter-list'),
 			parameters = parameterList.querySelectorAll('.parameter'),
-			report = DataSource.list.get(parseInt(this.drilldownQuery.value));
+			report = DataSource.list.get(parseInt(this.drilldownQuery.value[0]));
 
 		if(report && report.filters.length) {
 
