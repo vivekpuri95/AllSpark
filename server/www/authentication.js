@@ -7,6 +7,7 @@ const Mailer = require('../utils/mailer');
 const requestPromise = promisify(request);
 const config = require("config");
 const constants = require("../utils/constants");
+const account = require('../onServerStart');
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -141,6 +142,7 @@ exports.login = class extends API {
 			result = result.data;
 			access_token = result.access_token;
 			userDetail = result.userDetails;
+			await account.loadAccounts();
 
 		} else {
 
@@ -165,7 +167,6 @@ exports.login = class extends API {
 			const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
 
 			this.assert(checkPassword, "Invalid Password! :(");
-			this.assert(userDetail && userDetail.account_id == this.account.account_id, "User not found");
 		}
 
 		this.assert(userDetail && userDetail.user_id, 'User not found!');
@@ -263,7 +264,7 @@ exports.refresh = class extends API {
                     user_id = ?
                     AND u.account_id = ?
                `,
-			[user.user_id, this.account.account_id, user.user_id, this.account.account_id]
+			[user.user_id, user.account_id, user.user_id, user.account_id]
 		);
 
 		const privileges = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {
@@ -303,41 +304,3 @@ exports.refresh = class extends API {
 		return commonFun.makeJWT(obj, 5 * 60);
 	}
 }
-
-exports.tookan = class extends API {
-	async tookan() {
-
-		if (!this.request.query.access_token) {
-
-			throw("access token not found")
-		}
-
-		let userDetail = await this.mysql.query(`
-            SELECT
-                u.*
-            FROM
-                jungleworks.tb_users tu
-            JOIN
-                tb_users u
-                using(user_id)
-            WHERE
-                access_token = ?
-            `,
-			[this.request.query.access_token]);
-
-		if (!userDetail.length) {
-
-			throw("User not found! :(", 401)
-		}
-
-		userDetail = userDetail[0];
-
-		const obj = {
-			user_id: userDetail.user_id,
-			email: userDetail.email,
-		};
-
-		return commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400);
-	}
-
-};
