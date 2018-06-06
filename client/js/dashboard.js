@@ -1239,7 +1239,7 @@ class DashboardDatasets extends Map {
 		if (!this.size)
 			return;
 
-		container.innerHTML = '<h3>Global Filters</h3>';
+		container.innerHTML = '<h3><i class="fas fa-filter"></i> Global Filters</h3>';
 
 		const datasets = Array.from(this.values()).sort((a, b) => {
 			if (!a.order)
