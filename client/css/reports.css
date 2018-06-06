@@ -442,6 +442,9 @@
 							main .data-source .column form label {
 								margin-left: calc(var(--gap) * 2);
 							}
+							main .data-source .column form label.drilldown-dropdown {
+								max-width: 100%;
+							}
 								main .data-source .column form .search {
 									grid-template-columns: auto 200px;
 									display: grid;
