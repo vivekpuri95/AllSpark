@@ -48,9 +48,10 @@ main .settings-container {
 }
 	main .settings-container table {
 		background: #fff;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	}
 		main .settings-container table tr.selected {
-			background: #faf1bcf5;
+			background: red;
 		}
 		main .settings-container table tr:active {
 			box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
@@ -58,7 +59,7 @@ main .settings-container {
 		main .settings-container table tr:hover {
 			cursor: pointer;
 		}
-	main .settings-container .sideBar {
+	main .settings-container .side-bar {
 		border: 1px solid #999;
 		display: flex;
 		flex-direction: column;
@@ -70,28 +71,28 @@ main .settings-container {
 		border: 1px solid #999;
 		border-left: 0;
 	}
-	main .settings-container .profile-header {
-		display: flex;
-		border-bottom: 1px dashed #999;
-		align-items: center;
-		padding: calc(var(--gap) * 2);
-	}
-		main .settings-container .profile-header h3 {
-			margin: 0;
+		main .settings-container .profile-header {
+			display: flex;
+			border-bottom: 1px dashed #999;
+			align-items: center;
+			padding: calc(var(--gap) * 2);
 		}
-		main .settings-container .profile-header button {
-			margin-left: auto;
+			main .settings-container .profile-header h3 {
+				margin: 0;
+			}
+			main .settings-container .profile-header button {
+				margin-left: auto;
+			}
+		main label.code-type-editor{
+			max-width: 100%
 		}
-	main label.code-type-editor{
-		max-width: 100%
-	}
-	main .code-type-editor .ace_editor {
-		display: flex;
-		height: 300px;
-		width: 100%;
-	}
-	main .settings-container footer {
-		display: flex;
-		margin-top: auto;
-		border-top: 1px dashed #999;
-	}
+		main .code-type-editor .ace_editor {
+			display: flex;
+			height: 300px;
+			width: 100%;
+		}
+		main .settings-container footer {
+			display: flex;
+			margin-top: auto;
+			border-top: 1px dashed #999;
+		}

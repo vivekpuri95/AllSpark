@@ -1,16 +1,16 @@
 class SettingsManager {
 
-	constructor(owner, owner_id, settingsFormat) {
+	constructor(owner, owner_id, format) {
 		this.owner = owner;
 		this.owner_id = owner_id;
-		this.settingsFormat = settingsFormat;
-		this.responseList = new Map;
+		this.format = format;
+		this.profiles = new Map;
 	}
 
 	async load() {
 
 		await this.fetch();
-		await this.process();
+		this.process();
 		this.render();
 	}
 
@@ -29,23 +29,23 @@ class SettingsManager {
 
 	process() {
 
-		this.responseList.clear();
+		this.profiles.clear();
 
 		for(const data of this.response) {
-			this.responseList.set(data.id, new ProfileManage(data, this));
-		};
+			this.profiles.set(data.id, new ProfileManage(data, this));
+		}
 	}
 
 	render() {
 
 		const formContainer = this.form;
 		const tbody = formContainer.querySelector('table tbody');
-		formContainer.querySelector('table tbody').textContent = null;
+		tbody.textContent = null;
 
-		for(const data of this.responseList.values())
+		for(const data of this.profiles.values())
 			tbody.appendChild(data.row);
 
-		if(!tbody.querySelectorAll('tr').length)
+		if(!this.profiles.size)
 			tbody.innerHTML = `<tr><td colspan="2" class="NA">No profile found :(</td></tr>`;
 
 		tbody.querySelector('tr').click();
@@ -60,7 +60,7 @@ class SettingsManager {
 		container.classList.add('settings-container');
 
 		container.innerHTML = `
-			<section class="sideBar">
+			<section class="side-bar">
 				<table>
 					<thead>
 						<tr>
@@ -113,7 +113,7 @@ class SettingsManager {
 
 		await this.load();
 
-		this.responseList.get(response.insertId).edit();
+		this.profiles.get(response.insertId).edit();
 	}
 }
 class ProfileManage {
@@ -146,8 +146,8 @@ class ProfileManage {
 
 	edit() {
 
-		for(const tr of this.parent.containerElement.querySelectorAll('.settings-container table tbody tr'))
-			tr.classList.remove('selected');
+		if(this.parent.containerElement.querySelector('.settings-container table tbody tr.selected'))
+			this.parent.containerElement.querySelector('.settings-container table tbody tr.selected').classList.remove('selected');
 
 		this.tr.classList.add('selected');
 
@@ -179,9 +179,9 @@ class ProfileManage {
 			</form>
 		`;
 
-		this.format = [];
+		this.typeFormatormat = [];
 
-		for(const format of this.parent.settingsFormat) {
+		for(const format of this.parent.format) {
 
 			let formatType = SettingsManager.types.get(format.type);
 
@@ -195,11 +195,12 @@ class ProfileManage {
 					formatType.value = value.value;
 			}
 
-			this.format.push(formatType);
+			this.typeFormatormat.push(formatType);
 		}
 
-		for(const element of this.format)
-			this.section.querySelector('form').appendChild(element.container);
+		const form = this.section.querySelector('form');
+		for(const element of this.typeFormatormat)
+			form.appendChild(element.container);
 
 		section.querySelector('form').on('submit', (e) => this.update(e));
 
@@ -212,7 +213,7 @@ class ProfileManage {
 
 		const value = [];
 
-		this.format.map(x => value.push({"key": x.setting_format.key, "value": x.value}));
+		this.typeFormatormat.map(x => value.push({"key": x.setting_format.key, "value": x.value}));
 
 		const
 			options = {
@@ -232,7 +233,6 @@ class ProfileManage {
 	async delete(e) {
 
 		e.stopPropagation();
-		e.stopPropagation();
 
 		if(!confirm('Are you sure ?'))
 			return;
@@ -250,7 +250,7 @@ class ProfileManage {
 	}
 }
 
-class SettingManager{
+class FormatType{
 
 	constructor(setting_format) {
 		this.setting_format = setting_format;
@@ -259,7 +259,7 @@ class SettingManager{
 
 SettingsManager.types = new Map;
 
-SettingsManager.types.set('string', class extends SettingManager {
+SettingsManager.types.set('string', class extends FormatType {
 
 	get container() {
 
@@ -287,7 +287,7 @@ SettingsManager.types.set('string', class extends SettingManager {
 	}
 });
 
-SettingsManager.types.set('number', class extends SettingManager {
+SettingsManager.types.set('number', class extends FormatType {
 
 	get container() {
 
@@ -315,7 +315,7 @@ SettingsManager.types.set('number', class extends SettingManager {
 	}
 });
 
-SettingsManager.types.set('code', class extends SettingManager {
+SettingsManager.types.set('code', class extends FormatType {
 
 	constructor(setting_format) {
 
@@ -352,7 +352,7 @@ SettingsManager.types.set('code', class extends SettingManager {
 	}
 });
 
-SettingsManager.types.set('multiSelect', class extends SettingManager {
+SettingsManager.types.set('multiSelect', class extends FormatType {
 
 	constructor(setting_format) {
 
