@@ -204,13 +204,17 @@ main #reports > .datasets.show {
 		margin: 0 0 10px;
 		border-bottom: 1px dashed #999;
 		font-size: 95%;
-		padding: var(--gap) 0;
+		padding: calc(var(--gap)* 2) 0;
 		background: #fff;
 		width: 100%;
 		position: sticky;
+		letter-spacing: 0.5px;
 		top: 0;
 		z-index: 1;
 	}
+		main #reports > .datasets h3 svg {
+			color: #999;
+		}
 	main #reports > .datasets .dataset-container {
 		grid-column: 1;
 		width: 100%;
