@@ -32,7 +32,7 @@ class SettingsManager {
 		this.responseList.clear();
 
 		for(const data of this.response) {
-			this.responseList.set(data.id, new SettingManage(data, this));
+			this.responseList.set(data.id, new ProfileManage(data, this));
 		};
 	}
 
@@ -73,30 +73,23 @@ class SettingsManager {
 
 				</table>
 
-				<footer class="toolbar">
-					<button class="add-form"><i class="fa fa-plus"></i>Add New Profile</button>
-				</footer>
-			</section>
-
-			<section class="profile-container hidden">
-				<header class="profile-header">
-					<h3></h3>
-					<button type="submit" form="settings-form">Save</button>
-				</header>
-				<form id="settings-form">
-					<div class="form">
+				<footer>
+					<form class="add-form form">
 						<label>
-							<span> Profile Name</span>
-							<input type="text" required name="name" placeholder="Name">
+							<span>Name</span>
+							<input type="text" name="name" placeholder="Add New Profile" required>
 						</label>
-					</div>
 
-					<div id="settings-type-container"></div>
-				</form>
+						<label>
+							<span>Add</span>
+							<button type="submit"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</form>
+				</footer>
 			</section>
 		`;
 
-		container.querySelector('.add-form').on('click', SettingsManager.add_listener = e => this.add(e));
+		container.querySelector('.add-form').on('submit', SettingsManager.add_listener = e => this.add(e));
 
 		return container;
 	}
@@ -105,47 +98,32 @@ class SettingsManager {
 
 		e.preventDefault();
 
-		this.containerElement.querySelector('.profile-container').classList.remove('hidden');
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				account_id: this.owner_id,
+				profile: this.containerElement.querySelector('.add-form').name.value,
+				owner: this.owner,
+				value: JSON.stringify([]),
+			};
 
-		const form = this.containerElement.querySelector('.profile-container form#settings-form');
+		const response = await API.call('settings/insert', parameter, options);
 
-		this.containerElement.querySelector('.profile-container .profile-header h3').textContent = 'Add New Profile';
+		await this.load();
 
-		form.name.value = null;
-		form.querySelector('#settings-type-container').textContent = null;
-
-		if(SettingManage.submit_listener)
-			form.removeEventListener('submit', SettingManage.submit_listener);
-
-		form.on('submit', SettingManage.submit_listener = async (e) => {
-
-			e.preventDefault();
-
-			const
-				options = {
-					method: 'POST',
-				},
-				parameter = {
-					account_id: this.owner_id,
-					profile: this.containerElement.querySelector('#settings-form').name.value,
-					owner: this.owner,
-					value: JSON.stringify([]),
-				};
-
-			const response = await API.call('settings/insert', parameter, options);
-
-			await this.load();
-
-			this.responseList.get(response.insertId).edit();
-		});
+		this.responseList.get(response.insertId).edit();
 	}
 }
-class SettingManage {
+class ProfileManage {
 
-	constructor(setting, profile) {
+	constructor(setting, parent) {
 
-		this.setting = setting;
-		this.profile = profile;
+		for(const key in setting)
+			this[key] = setting[key];
+
+		this.parent = parent;
 	}
 
 	get row() {
@@ -156,7 +134,7 @@ class SettingManage {
 		const tr = this.tr = document.createElement('tr');
 
 		tr.innerHTML = `
-			<td>${this.setting.profile}</td>
+			<td>${this.profile}</td>
 			<td class="action red"><i class="far fa-trash-alt"></i></td>
 		`;
 
@@ -168,26 +146,14 @@ class SettingManage {
 
 	edit() {
 
-		for(const tr of this.profile.containerElement.querySelectorAll('.settings-container table tbody tr'))
+		for(const tr of this.parent.containerElement.querySelectorAll('.settings-container table tbody tr'))
 			tr.classList.remove('selected');
 
 		this.tr.classList.add('selected');
 
-		this.profile.containerElement.querySelector('.profile-container').classList.remove('hidden');
-
-		this.profile.containerElement.querySelector('.profile-container .profile-header h3').textContent = this.setting.profile;
-
-		this.form = this.profile.containerElement.querySelector('.profile-container form');
-
-		this.form.name.value = this.setting.profile;
-
 		this.format = [];
 
-		const main_container = this.form.querySelector('#settings-type-container');
-
-		main_container.textContent = null;
-
-		for(const format of this.profile.settingsFormat) {
+		for(const format of this.parent.settingsFormat) {
 
 			let formatType = SettingsManager.types.get(format.type);
 
@@ -196,20 +162,48 @@ class SettingManage {
 
 			formatType = new formatType(format);
 
-			for(const value of this.setting.value) {
+			for(const value of this.value) {
 				if(format.key == value.key)
 					formatType.value = value.value;
 			}
 
 			this.format.push(formatType);
 
-			main_container.appendChild(formatType.container);
+			this.section.querySelector('form').appendChild(formatType.container);
+
 		}
 
-		if(SettingManage.submit_listener)
-			this.form.removeEventListener('submit', SettingManage.submit_listener);
+		if(this.parent.containerElement.querySelector('.profile-container'))
+			this.parent.containerElement.querySelector('.profile-container').remove();
 
-		this.form.on('submit', SettingManage.submit_listener =  e => this.update(e));
+		this.parent.containerElement.appendChild(this.section);
+	}
+
+	get section() {
+
+		if(this.sectionElement)
+			return this.sectionElement;
+
+		const section = this.sectionElement = document.createElement('section');
+		section.classList.add('profile-container');
+
+		section.innerHTML = `
+			<header class="profile-header">
+				<h3>${this.profile}</h3>
+				<button type="submit" form="settings-form">Save</button>
+			</header>
+
+			<form id="settings-form" class="form">
+				<label>
+					<span> Profile Name</span>
+					<input type="text" required name="name" placeholder="Name" value="${this.profile}">
+				</label>
+			</form>
+		`;
+
+		section.querySelector('form').on('submit', (e) => this.update(e));
+
+		return section;
 	}
 
 	async update(e) {
@@ -225,14 +219,14 @@ class SettingManage {
 				method: "POST"
 			},
 			parameters = {
-				profile: this.form.name.value,
-				id: this.setting.id,
+				profile: this.section.querySelector('form').name.value,
+				id: this.id,
 				value: JSON.stringify(value),
 			};
 
 		await API.call('settings/update', parameters, options);
-		await this.profile.load();
-		this.profile.responseList.get(this.setting.id).edit();
+		await this.parent.load();
+		this.parent.responseList.get(this.id).edit();
 	}
 
 	async delete(e) {
@@ -248,13 +242,14 @@ class SettingManage {
 				method: "POST"
 			},
 			parameters = {
-				id: this.setting.id,
+				id: this.id,
 			};
 
 		await API.call('settings/delete', parameters, options);
-		await this.profile.load();
+		await this.parent.load();
 	}
 }
+
 class SettingManager{
 
 	constructor(setting_format) {
@@ -271,14 +266,11 @@ SettingsManager.types.set('string', class extends SettingManager {
 		if(this.div)
 			return this.div;
 
-		const container = this.div = document.createElement('div');
-		container.classList.add('form');
+		const container = this.div = document.createElement('label');
 
 		container.innerHTML = `
-			<label>
-				<span>${this.setting_format.name}</span>
-				<input type="text" value="" placeholder="String">
-			</label>
+			<span>${this.setting_format.name}</span>
+			<input type="text" value="" placeholder="String">
 		`;
 
 		return container;
@@ -302,14 +294,11 @@ SettingsManager.types.set('number', class extends SettingManager {
 		if(this.div)
 			return this.div;
 
-		const container = this.div = document.createElement('div');
-		container.classList.add('form');
+		const container = this.div = document.createElement('label');
 
 		container.innerHTML = `
-			<label>
-				<span>${this.setting_format.name}</span>
-				<input type="number" value="" placeholder="Number">
-			</label>
+			<span>${this.setting_format.name}</span>
+			<input type="number" value="" placeholder="Number">
 		`;
 
 		return container;
@@ -340,16 +329,14 @@ SettingsManager.types.set('code', class extends SettingManager {
 		if(this.div)
 			return this.div;
 
-		const container = this.div = document.createElement('div');
-		container.classList.add('form', 'code-type-editor');
+		const container = this.div = document.createElement('label');
+		container.classList.add('code-type-editor');
 
 		container.innerHTML = `
-			<label>
-				<span>${this.setting_format.name}</span>
-			</label>
+			<span>${this.setting_format.name}</span>
 		`;
 
-		container.querySelector('label').appendChild(this.editContainer.container);
+		container.appendChild(this.editContainer.container);
 
 		return container;
 	}
@@ -379,16 +366,13 @@ SettingsManager.types.set('multiSelect', class extends SettingManager {
 		if(this.div)
 			return this.div;
 
-		const container = this.div = document.createElement('div');
-		container.classList.add('form');
+		const container = this.div = document.createElement('label');
 
 		container.innerHTML = `
-			<label>
-				<span>${this.setting_format.name}</span>
-			</label>
+			<span>${this.setting_format.name}</span>
 		`;
 
-		container.querySelector('label').appendChild(this.multiselect.container);
+		container.appendChild(this.multiselect.container);
 
 		return container;
 	}

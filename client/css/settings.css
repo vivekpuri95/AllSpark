@@ -64,8 +64,8 @@ main .settings-container {
 		border: 1px solid #999;
 		border-left: 0;
 	}
-	main .settings-container .toolbar {
-		padding: calc(var(--gap) * 2);
+	main .settings-container footer {
+		display: flex;
 		margin-top: auto;
 		border-top: 1px dashed #999;
 	}
