@@ -6,7 +6,7 @@ main {
 	padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2);
 }
 main.preview-bottom {
-	grid-template-rows: max-content 1fr max-content;
+	grid-template-rows: max-content calc(60vh - 155px) 40vh;
 }
 	main button.unsaved {
 		background: #c33;
@@ -221,8 +221,10 @@ main.preview-left #stages {
 						padding: 8px;
 						transition: background var(--transition-duration),
 									box-shadow var(--transition-duration);
-						grid-template-columns: max-content 1fr max-content;
+						grid-template-columns: max-content auto max-content;
 						grid-gap: var(--gap);
+						max-width: 100%;
+						overflow: hidden;
 					}
 					#stage-define-report #schema li .name:hover {
 						background: rgba(0, 0, 0, 0.10);
@@ -233,6 +235,10 @@ main.preview-left #stages {
 					#stage-define-report #schema li.opened > .name {
 						background: rgba(0, 0, 0, 0.10);
 					}
+						#stage-define-report #schema li .name span {
+							overflow: hidden;
+							text-overflow: ellipsis;
+						}
 						#stage-define-report #schema li .name small {
 							margin-left: auto;
 							color: #999;
@@ -284,7 +290,7 @@ main.preview-left #stages {
 		padding: 0;
 		position: sticky;
 		top: 0;
-		z-index: 1;
+		z-index: 2;
 	}
 	#stage-configure-visualization .toolbar .right {
 		margin-left: auto;
@@ -393,9 +399,6 @@ main.preview-left #stages {
 			padding: 10px;
 			background: #fff;
 		}
-			#stage-configure-visualization #dashboards .form {
-				box-shadow: none;
-			}
 			#stage-configure-visualization #dashboards .options .delete:hover,
 			#stage-configure-visualization #dashboards .dashboard-action .delete:hover {
 				background: #c33;
@@ -411,6 +414,9 @@ main.preview-left #stages {
 				grid-template-columns: 1fr 1fr;
 				grid-gap: calc(var(--gap) * 2);
 			}
+	.configuration-section .body .subform {
+		box-shadow: none;
+	}
 	.configuration-section span {
 		display: flex;
 		align-items: center;

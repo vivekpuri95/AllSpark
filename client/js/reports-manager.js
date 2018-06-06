@@ -1004,9 +1004,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		container.appendChild(databases);
 
-		renderList();
-
-		function renderList() {
+		const renderList = () => {
 
 			databases.textContent = null;
 
@@ -1046,12 +1044,12 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 						li.innerHTML = `
 							<span class="name">
 								<strong>C</strong>
-								<span>${name}</span>
+								<span title="${name}">${name}</span>
 								<small>${column.type}</small>
 							</span>
 						`;
 
-						li.querySelector('span').on('click', () => {
+						li.querySelector('.name').on('click', () => {
 							that.editor.editor.getSession().insert(that.editor.editor.getCursorPosition(), column.name);
 						});
 
@@ -1078,16 +1076,29 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 					li.innerHTML = `
 						<span class="name">
 							<strong>T</strong>
-							<span>${name}</span>
-							<small>${table.columns.length} columns</small>
+							<span title="${name}">${name}</span>
+							<small>${table.columns.length} columns, <a title="Preview first 100 rows">Pr</a></small>
 						</span>
 					`;
 
 					li.appendChild(columns)
 
-					li.querySelector('span').on('click', () => {
+					li.querySelector('.name').on('click', () => {
 						li.classList.toggle('opened');
 						columns.classList.toggle('hidden')
+					});
+
+					li.querySelector('.name small a').on('click', e => {
+
+						e.stopPropagation();
+
+						if(!this.report)
+							return;
+
+						this.page.preview.load({
+							query: `SELECT * FROM \`${database.name}\`.\`${table.name}\` LIMIT 100`,
+							query_id: this.report.query_id,
+						});
 					});
 
 					tables.appendChild(li);
@@ -1131,6 +1142,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			if(!databases.children.length)
 				databases.innerHTML = `<div class="NA">No matches found! :(</div>`;
 		}
+
+		renderList();
 
 		this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
 	}
@@ -2485,48 +2498,56 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		const container = this.formContainer = document.createElement('form');
 
-		container.classList.add('form');
-
 		container.innerHTML = `
-			<label>
-				<span>Column</span>
-				<select name="timing"></select>
-			</label>
 
-			<label>
-				<span>Value</span>
-				<select name="value"></select>
-			</label>
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="form body">
+					<label>
+						<span>Timing Column</span>
+						<select name="timing"></select>
+					</label>
 
-			<label>
-				<span>Invert Values</span>
-				<select name="invertValues">
-					<option value="1">Yes</option>
-					<option value="0">No</option>
-				</select>
-			</label>
+					<label>
+						<span>Value Column</span>
+						<select name="value"></select>
+					</label>
 
-			<label>
-				<span>Prefix</span>
-				<input type="text" name="prefix">
-			</label>
+					<label>
+						<span>Invert Values</span>
+						<select name="invertValues">
+							<option value="1">Yes</option>
+							<option value="0">No</option>
+						</select>
+					</label>
 
-			<label>
-				<span>Postfix</span>
-				<input type="text" name="postfix">
-			</label>
+					<label>
+						<span>Prefix</span>
+						<input type="text" name="prefix">
+					</label>
 
-			<h4>Boxes</h4>
-			<div id="config-boxes"></div>
-			<button class="add-box" type="button">
-				<i class="fa fa-plus"></i> Add New Box
-			</button>
+					<label>
+						<span>Postfix</span>
+						<input type="text" name="postfix">
+					</label>
+				</div>
+			</div>
+
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Boxes</h3>
+				<div class="form body">
+					<div id="config-boxes"></div>
+					<button class="add-box" type="button">
+						<i class="fa fa-plus"></i> Add New Box
+					</button>
+				</div>
+			</div>
 		`;
 
 		const timing = container.querySelector('select[name=timing]');
 		const value = container.querySelector('select[name=value]');
 
-		for (const [key, column] of this.report.columns) {
+		for (const [key, column] of this.page.preview.report.columns) {
 
 			timing.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
@@ -2545,12 +2566,12 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
 
 			for (let box of this.visualization.options.boxes) {
-				container.appendChild(this.box(box));
+				container.querySelector('#config-boxes').appendChild(this.box(box));
 			}
 		}
 
 		container.querySelector('.add-box').on('click', () => {
-			container.appendChild(this.box());
+			container.querySelector('#config-boxes').appendChild(this.box());
 		});
 
 		return container;
@@ -2570,12 +2591,12 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		for (let box of this.form.querySelectorAll('.subform')) {
 			config.boxes.push({
-				offset: box.querySelector('input[name=offset]').value,
-				relativeValTo: box.querySelector('input[name=relativeValTo]').value,
-				row: box.querySelector('input[name=row]').value,
-				column: box.querySelector('input[name=column]').value,
-				rowspan: box.querySelector('input[name=rowspan]').value,
-				columnspan: box.querySelector('input[name=columnspan]').value
+				offset: parseInt(box.querySelector('input[name=offset]').value),
+				relativeTo: parseInt(box.querySelector('input[name=relativeTo]').value),
+				row: parseInt(box.querySelector('input[name=row]').value),
+				column: parseInt(box.querySelector('input[name=column]').value),
+				rowspan: parseInt(box.querySelector('input[name=rowspan]').value),
+				columnspan: parseInt(box.querySelector('input[name=columnspan]').value),
 			});
 		}
 
@@ -2591,42 +2612,42 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 		boxConfig.innerHTML = `
 			<label>
 				<span>Offset</span>
-				<input type="text" name="offset">
+				<input type="number" name="offset">
 			</label>
 
 			<label>
 				<span>Relative To(Index)</span>
-				<input type="text" name="relativeValTo">
+				<input type="number" name="relativeTo">
 			</label>
 
 			<label>
 				<span>Column</span>
-				<input type="text" name="column">
+				<input type="number" name="column">
 			</label>
 
 			<label>
 				<span>Row</span>
-				<input type="text" name="row">
+				<input type="number" name="row">
 			</label>
 
 			<label>
 				<span>Column Span</span>
-				<input type="text" name="columnspan">
+				<input type="number" name="columnspan">
 			</label>
 
 			<label>
 				<span>Row Span</span>
-				<input type="text" name="rowspan">
+				<input type="number" name="rowspan">
 			</label>
 		`;
 
 		if (boxValues) {
-			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
-			boxConfig.querySelector('input[name=relativeValTo]').value = boxValues.relativeValTo;
-			boxConfig.querySelector('input[name=row]').value = boxValues.row;
-			boxConfig.querySelector('input[name=column]').value = boxValues.column;
-			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan;
-			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan;
+			boxConfig.querySelector('input[name=offset]').value = boxValues.offset || '';
+			boxConfig.querySelector('input[name=relativeTo]').value = boxValues.relativeTo || '';
+			boxConfig.querySelector('input[name=row]').value = boxValues.row || '';
+			boxConfig.querySelector('input[name=column]').value = boxValues.column || '';
+			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan || '';
+			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan || '';
 		}
 
 		return boxConfig;

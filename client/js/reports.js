@@ -1498,7 +1498,7 @@ class DataSourceColumn {
 			postfix : this.postfix,
 			formula : this.formula,
 			drilldown : {
-				query_id : this.drilldownQuery.value,
+				query_id : this.drilldownQuery.value[0],
 				parameters : json_param
 			}
 		};
@@ -1526,7 +1526,7 @@ class DataSourceColumn {
 			};
 
 		await API.call('reports/report/update', parameters, options);
-		await this.apply();
+		await this.source.visualizations.selected.load();
 
 		this.blanket.classList.add('hidden');
 	}
@@ -2796,7 +2796,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				td.textContent = row.get(key);
 
-				if(column.drilldown && column.drilldown.query_id) {
+				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
 
 					td.classList.add('drilldown');
 					td.on('click', () => column.initiateDrilldown(row));
@@ -5556,14 +5556,20 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	process() {
+
 		const response = this.source.response;
 
 		try {
-			for (const row of response) {
-				const responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString();
-				const todayDate = new Date();
+			for(const row of response) {
 
-				for (let box in this.boxes) {
+				if(!row.has(this.timingColumn))
+					throw `${this.timingColumn} column not found!`;
+
+				const
+					responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString(),
+					todayDate = new Date();
+
+				for(const box in this.boxes) {
 					const configDate = new Date(Date.now() - this.boxes[box].offset * 86400000).toDateString();
 					if (responseDate == configDate) {
 						this.boxes[box].value = row.get(this.valueColumn);
@@ -5571,8 +5577,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				}
 			}
 
-			for (let box of this.boxes) {
-				box.percentage = Math.round(((box.value - this.boxes[box.relativeValTo].value) / box.value) * 100);
+			for(const box of this.boxes) {
+				if(this.boxes[box.relativeTo])
+					box.percentage = Math.round(((box.value - this.boxes[box.relativeTo].value) / box.value) * 100);
 			}
 		}
 		catch (e) {
@@ -5581,17 +5588,23 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	render(options = {}) {
+
+		if(!this.boxes || !this.boxes.length)
+			return;
+
 		const container = this.container.querySelector('.container');
+
 		container.textContent = null;
 
-		for (let box of this.boxes) {
+		for(const box of this.boxes) {
+
 			const configBox = document.createElement('div');
 
 			configBox.innerHTML = `
 				<h7 class="${this.getColor(box.percentage)}">
 					${this.prefix || ''}${box.value}${this.postfix || ''}
 				</h7>
-				<p class="percentage">${box.percentage}%</p>
+				<p class="percentage">${box.percentage ? box.percentage + '%' : ''}</p>
 			`;
 
 			configBox.style = `
@@ -5601,8 +5614,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			container.appendChild(configBox);
 		}
-
-		this.container.querySelector('p').classList.add('hidden');
 	}
 
 	getColor(percentage) {

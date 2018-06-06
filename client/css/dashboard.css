@@ -249,7 +249,7 @@ main #reports > .list {
 	align-items: start;
 }
 	main #reports > .list .NA.no-reports {
-		grid-column: 1 / span 32;
+		grid-column: 1 / span all;
 	}
 	main #reports > .toolbar {
 		position: sticky;
