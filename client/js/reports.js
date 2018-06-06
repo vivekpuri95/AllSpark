@@ -1285,7 +1285,7 @@ class DataSourceColumn {
 				if(column.key == this.key || (this.source.visualizations.selected.axes && column.key == this.source.visualizations.selected.axes.bottom.column))
 					continue;
 
-				column.disabled = true;
+				column.disabled = column.disabled ? false : true;
 				column.source.columns.render();
 				await column.update();
 			}
