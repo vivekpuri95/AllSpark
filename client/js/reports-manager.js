@@ -2565,7 +2565,7 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			this.form.querySelector('input[name=prefix]').value = this.visualization.options.prefix;
 			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
 
-			for (let box of this.visualization.options.boxes) {
+			for (let box of this.visualization.options.boxes || []) {
 				container.querySelector('#config-boxes').appendChild(this.box(box));
 			}
 		}
