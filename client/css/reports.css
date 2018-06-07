@@ -251,7 +251,7 @@
 			main .data-source > .share-link input {
 				width: 100%;
 			}
-		main .data-source .column .blanket .form footer {
+		main .data-source .column .blanket .form > footer {
 			display: grid;
 			grid-template-columns: 1fr 1fr 1fr;
 			position: sticky;
@@ -259,7 +259,7 @@
 			bottom: 0;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		}
-			main .data-source .column .blanket .form footer button {
+			main .data-source .column .blanket > .form footer button {
 				padding: calc(var(--gap) * 2);
 				height: auto;
 				border-right: 0;
@@ -267,7 +267,7 @@
 				justify-content: center;
 				align-items: center;
 			}
-			main .data-source .column .blanket .form footer button:first-child {
+			main .data-source .column .blanket > .form footer button:first-child {
 				border-left: 0;
 			}
 		main .data-source > .drilldown {
@@ -440,7 +440,7 @@
 								font-size: 100%;
 							}
 							main .data-source .column form label {
-								margin-left: calc(var(--gap) * 2);
+								margin:  0 calc(var(--gap) * 2);
 							}
 							main .data-source .column form label.drilldown-dropdown {
 								max-width: 100%;
@@ -918,8 +918,8 @@
             font-size: 150%;
         }
         .visualization.livenumber .container .red {
-            color: var(--color-red-text);
+            color: #d23f31;
         }
         .visualization.livenumber .container .green {
-            color: var(--color-green-text);
+            color: #0f9d58;
         }

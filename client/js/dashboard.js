@@ -237,7 +237,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		if (!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA"><td colspan="6">No Reports Found! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found! :(</td></tr>`;
 	}
 
 	closeOtherDropDowns(id, container) {
@@ -849,7 +849,7 @@ class Dashboard {
 
 		if (!this.page.loadedVisualizations.size) {
 
-			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
+			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
 		}
 
 		if (this.page.user.privileges.has('reports')) {
