@@ -28,6 +28,8 @@ exports.publicEndpoints = [
 
 exports.filterPrefix = "param_";
 
+exports.external_parameter_prefix = "ext_";
+
 exports.saveQueryResultDb = "save_history";
 
 exports.saveQueryResultTable = "tb_save_history";

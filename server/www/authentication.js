@@ -111,76 +111,10 @@ exports.reset = class extends API {
 
 		await this.mysql.query('UPDATE tb_password_reset SET status = 0 WHERE status = 1 AND user_id = ?', [user_id], 'write');
 
-		return 'Password Reset Successfuly! You can log in now.';
+		return 'Password Reset Successfully! You can log in now.';
 	}
 };
 
-
-// exports.login = class extends API {
-//
-// 	async login() {
-//
-// 		let userDetail, access_token;
-//
-// 		if (this.account.auth_api && this.request.body.use_external_paramters) {
-//
-// 			let result = await requestPromise({
-// 				har: {
-// 					url: this.account.auth_api,
-// 					method: 'GET',
-// 					queryString: [
-// 						{
-// 							name: 'access_token',
-// 							value: this.request.body.access_token,
-// 						},
-// 					]
-// 				},
-// 				gzip: true
-// 			});
-// 			try {
-// 				result = JSON.parse(result.body);
-// 			} catch(e) {}
-//
-// 			result = result.data;
-// 			access_token = result.access_token;
-// 			userDetail = result.userDetails;
-// 			await account.loadAccounts();
-//
-// 		} else {
-//
-// 			this.assert(this.request.body.email, "Email Required");
-//
-// 			userDetail = await this.mysql.query(
-// 				`SELECT * FROM tb_users u JOIN tb_accounts a USING(account_id) WHERE u.email = ? AND (a.account_id = ? OR ? = '') AND a.url = ?`,
-// 				[this.request.body.email, this.request.body.account_id || '', this.request.body.account_id || '', this.request.hostname]
-// 			);
-//
-// 			this.assert(userDetail.length, "Email not found! :(");
-//
-// 			if(!this.request.body.password) {
-// 				return await this.mysql.query(
-// 					"SELECT * FROM tb_accounts WHERE account_id IN (?) AND url = ?",
-// 					[userDetail.map(x => x.account_id), this.request.hostname]
-// 				);
-// 			}
-//
-// 			userDetail = userDetail[0];
-//
-// 			const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
-//
-// 			this.assert(checkPassword, "Invalid Password! :(");
-// 		}
-//
-// 		this.assert(userDetail && userDetail.user_id, 'User not found!');
-//
-// 		const obj = {
-// 			user_id: userDetail.user_id,
-// 			email: userDetail.email,
-// 		};
-//
-// 		return {jwt: commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400), access_token: access_token};
-// 	}
-// };
 
 exports.login = class extends API {
 
@@ -208,11 +142,11 @@ exports.login = class extends API {
 
 		let parameters = new URLSearchParams;
 
-		const externalParameterKeys = this.account.settings.get("external_parameters");
+		const externalParameterKeys = (this.possibleAccounts[0]).settings.get("external_parameters");
 
 		for (const key of externalParameterKeys) {
 
-			const value = this.request.body[key];
+			const value = this.request.body[constants.external_parameter_prefix + key];
 
 			if (Array.isArray(value)) {
 
@@ -352,35 +286,22 @@ exports.refresh = class extends API {
 
 		this.assert(!userDetail.error, "Token not correct", 401);
 
-		if (this.account.auth_api && this.request.body.access_token) {
+		if (this.account.auth_api && this.request.body.external_parameters) {
 
-			let result = await requestPromise({
-				har: {
-					url: this.account.auth_api,
-					method: 'GET',
-					queryString: [
-						{
-							name: 'access_token',
-							value: this.request.body.access_token,
-						},
-					]
-				},
-				gzip: true
-			});
+			this.possibleAccounts = [this.account];
 
-			try {
+			const loginObj = new exports.login();
 
-				result = JSON.parse(result.body);
-			} catch (e) {
-			}
+			Object.assign(loginObj, this);
 
-			result = result.data;
-			userDetail = result.userDetails;
+			await loginObj.requestAuthAPI();
+
+			userDetail = loginObj.userDetails;
 		}
 
 		this.assert(userDetail, "User not found! :(", 401);
 
-		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ?", userDetail.user_id);
+		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ? and status = 1", userDetail.user_id);
 
 		this.assert(user, "User not found! :(", 401);
 
@@ -403,6 +324,7 @@ exports.refresh = class extends API {
                 WHERE
                     user_id = ?
                     AND u.account_id = ?
+                    and u.status = 1
 
                 UNION ALL
 
@@ -427,6 +349,7 @@ exports.refresh = class extends API {
                 WHERE
                     user_id = ?
                     AND u.account_id = ?
+                    and u.status = 1
                `,
 			[user.user_id, user.account_id, user.user_id, user.account_id]
 		);
