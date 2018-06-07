@@ -5601,10 +5601,10 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			const configBox = document.createElement('div');
 
 			configBox.innerHTML = `
-				<h7 class="${this.getColor(box.percentage)}">
+				<h7>
 					${this.prefix || ''}${box.value}${this.postfix || ''}
 				</h7>
-				<p class="percentage">${box.percentage ? box.percentage + '%' : ''}</p>
+				<p class="percentage ${this.getColor(box.percentage)}">${box.percentage ? box.percentage + '%' : ''}</p>
 			`;
 
 			configBox.style = `
