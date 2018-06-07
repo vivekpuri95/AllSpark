@@ -196,7 +196,6 @@ Page.class = class Login extends Page {
 
 		try {
 
-			console.log(1, await IndexedDb.instance.get('external_parameters'));
 			if(Array.isArray(this.account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
 
 				const external_parameters = await IndexedDb.instance.get('external_parameters');
@@ -210,7 +209,6 @@ Page.class = class Login extends Page {
 
 			const response = await API.call('authentication/login', parameters, options);
 
-			console.log(2, await IndexedDb.instance.get('external_parameters'));
 
 			if(!response.jwt && response.length)
 				return this.message('Ambigious email! :(', 'warning');
@@ -226,15 +224,12 @@ Page.class = class Login extends Page {
 			IndexedDb.instance.delete('account');
 
 			await Account.load();
-			console.log(3, await IndexedDb.instance.get('external_parameters'));
 
 			// This is done to load the user's information
 			await API.refreshToken();
-			console.log(4, await IndexedDb.instance.get('external_parameters'));
 
 			this.message('Login Successful! Redirecting&hellip;', 'notice');
 
-			console.log(5, await IndexedDb.instance.get('external_parameters'));
 
 			window.location = '../';
 
