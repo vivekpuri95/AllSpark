@@ -189,7 +189,7 @@ exports.login = class extends API {
 
 			this.assert(this.possibleAccounts.length, "No account found :(");
 
-			if (this.requestAccount.length > 1) {
+			if (this.possibleAccounts.length > 1) {
 
 				return this.possibleAccounts;
 			}
