@@ -48,10 +48,18 @@ class DataSource {
 		if(this.queryOverride)
 			parameters.set('query', this.query);
 
+		const external_parameters = await IndexedDb.instance.get('external_parameters');
+
 		for(const filter of this.filters.values()) {
 
-			if(account.auth_api && await IndexedDb.instance.has('access_token') && filter.placeholder == 'access_token')
-				filter.value = await IndexedDb.instance.get('access_token');
+			if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
+
+				for(const key of account.settings.get('external_parameters')) {
+
+					if(key in external_parameters)
+						parameters.set(DataSourceFilter.placeholderPrefix + key, external_parameters[key]);
+				}
+			}
 
 			if(filter.dataset && filter.dataset.query_id) {
 
@@ -5774,6 +5782,17 @@ class Dataset extends MultiSelect {
 		const parameters = {
 			id: this.id,
 		};
+
+		const external_parameters = await IndexedDb.instance.get('external_parameters');
+
+		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
+
+			for(const key of account.settings.get('external_parameters')) {
+
+				if(key in external_parameters)
+					parameters[DataSourceFilter.placeholderPrefix + key, external_parameters[key]];
+			}
+		}
 
 		if(account.auth_api && await IndexedDb.instance.has('access_token'))
 			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = await IndexedDb.instance.get('access_token');
