@@ -76,12 +76,12 @@ class SettingsManager {
 				<footer>
 					<form class="add-form form">
 						<label>
-							<span>Name</span>
-							<input type="text" name="name" placeholder="Add New Profile" required>
+							<span></span>
+							<input type="text" name="name" placeholder="New Profile Name" required>
 						</label>
 
 						<label>
-							<span>Add</span>
+							<span></span>
 							<button type="submit"><i class="fa fa-plus"></i> Add</button>
 						</label>
 					</form>
