@@ -104,7 +104,7 @@ class SettingsManager {
 			},
 			parameter = {
 				account_id: this.owner_id,
-				profile: this.containerElement.querySelector('.add-form').name.value,
+				profile: this.form.querySelector('.add-form').name.value,
 				owner: this.owner,
 				value: JSON.stringify([]),
 			};
@@ -146,15 +146,15 @@ class ProfileManage {
 
 	edit() {
 
-		if(this.parent.containerElement.querySelector('.settings-container table tbody tr.selected'))
-			this.parent.containerElement.querySelector('.settings-container table tbody tr.selected').classList.remove('selected');
+		if(this.parent.form.querySelector('.settings-container table tbody tr.selected'))
+			this.parent.form.querySelector('.settings-container table tbody tr.selected').classList.remove('selected');
 
 		this.tr.classList.add('selected');
 
-		if(this.parent.containerElement.querySelector('.profile-container'))
-			this.parent.containerElement.querySelector('.profile-container').remove();
+		if(this.parent.form.querySelector('.profile-container'))
+			this.parent.form.querySelector('.profile-container').remove();
 
-		this.parent.containerElement.appendChild(this.section);
+		this.parent.form.appendChild(this.section);
 	}
 
 	get section() {
@@ -179,7 +179,7 @@ class ProfileManage {
 			</form>
 		`;
 
-		this.typeFormatormat = [];
+		this.typeFormat = [];
 
 		for(const format of this.parent.format) {
 
@@ -195,11 +195,11 @@ class ProfileManage {
 					formatType.value = value.value;
 			}
 
-			this.typeFormatormat.push(formatType);
+			this.typeFormat.push(formatType);
 		}
 
 		const form = this.section.querySelector('form');
-		for(const element of this.typeFormatormat)
+		for(const element of this.typeFormat)
 			form.appendChild(element.container);
 
 		section.querySelector('form').on('submit', (e) => this.update(e));
@@ -213,7 +213,7 @@ class ProfileManage {
 
 		const value = [];
 
-		this.typeFormatormat.map(x => value.push({"key": x.setting_format.key, "value": x.value}));
+		this.typeFormat.map(x => value.push({"key": x.setting_format.key, "value": x.value}));
 
 		const
 			options = {
@@ -227,7 +227,7 @@ class ProfileManage {
 
 		await API.call('settings/update', parameters, options);
 		await this.parent.load();
-		this.parent.responseList.get(this.id).edit();
+		this.parent.profiles.get(this.id).edit();
 	}
 
 	async delete(e) {
