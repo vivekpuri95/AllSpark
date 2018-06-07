@@ -742,25 +742,25 @@ class SettingsAccount {
 				key: 'top_nav_position',
 				type: 'string',
 				name: 'Header Nav Position.',
-				desc: 'Position of top nav bar.'
+				description: 'Position of top nav bar.'
 			},
 			{
 				key: 'top_nav_position',
 				type: 'code',
 				name: 'Header Nav Position.',
-				desc: 'Position of top nav bar.'
+				description: 'Position of top nav bar.'
 			},
 			{
 				key: 'abc',
 				type: 'number',
 				name: 'abc.',
-				desc: 'Position of top nav bar.'
+				description: 'Position of top nav bar.',
 			},
 			{
 				key: 'enable_account_signup',
 				type: 'multiSelect',
 				name: 'Allow user to signup.',
-				desc: 'Allow user to signup.',
+				description: 'Allow user to signup.',
 				datalist: [{"name": "True","value": "true"},{"name": "False","value": "false"}],
 				multiple: false,
 			}

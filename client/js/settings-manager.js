@@ -213,7 +213,7 @@ class ProfileManage {
 
 		const value = [];
 
-		this.typeFormat.map(x => value.push({"key": x.setting_format.key, "value": x.value}));
+		this.typeFormat.map(x => value.push({"key": x.key, "value": x.value}));
 
 		const
 			options = {
@@ -253,7 +253,9 @@ class ProfileManage {
 class FormatType {
 
 	constructor(setting_format) {
-		this.setting_format = setting_format;
+
+		for(const key in setting_format)
+			this[key] = setting_format[key];
 	}
 }
 
@@ -269,7 +271,7 @@ SettingsManager.types.set('string', class extends FormatType {
 		const container = this.div = document.createElement('label');
 
 		container.innerHTML = `
-			<span>${this.setting_format.name}</span>
+			<span>${this.name}</span>
 			<input type="text" value="" placeholder="String">
 		`;
 
@@ -297,7 +299,7 @@ SettingsManager.types.set('number', class extends FormatType {
 		const container = this.div = document.createElement('label');
 
 		container.innerHTML = `
-			<span>${this.setting_format.name}</span>
+			<span>${this.name}</span>
 			<input type="number" value="" placeholder="Number">
 		`;
 
@@ -333,7 +335,7 @@ SettingsManager.types.set('code', class extends FormatType {
 		container.classList.add('code-type-editor');
 
 		container.innerHTML = `
-			<span>${this.setting_format.name}</span>
+			<span>${this.name}</span>
 		`;
 
 		container.appendChild(this.editContainer.container);
@@ -358,7 +360,7 @@ SettingsManager.types.set('multiselect', class extends FormatType {
 
 		super(setting_format);
 
-		this.multiselect = new MultiSelect({datalist: this.setting_format.datalist, multiple: this.setting_format.multiple});
+		this.multiselect = new MultiSelect({datalist: this.datalist, multiple: this.multiple});
 	}
 
 	get container() {
@@ -369,7 +371,7 @@ SettingsManager.types.set('multiselect', class extends FormatType {
 		const container = this.div = document.createElement('label');
 
 		container.innerHTML = `
-			<span>${this.setting_format.name}</span>
+			<span>${this.name}</span>
 		`;
 
 		container.appendChild(this.multiselect.container);
