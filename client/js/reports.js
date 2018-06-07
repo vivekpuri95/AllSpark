@@ -1279,16 +1279,21 @@ class DataSourceColumn {
 
 			clearTimeout(timeout);
 
+			if(this.clicked == null)
+				this.clicked = true;
+
 			for(const column of this.source.columns.values()) {
 
 				if(column.key == this.key || (this.source.visualizations.selected.axes && column.key == this.source.visualizations.selected.axes.bottom.column))
 					continue;
 
-				column.disabled = column.disabled ? false : true;
+				column.clicked = null;
+				column.disabled = this.clicked;
 				column.source.columns.render();
 				await column.update();
 			}
 
+			this.clicked = !this.clicked;
 			this.disabled = false;
 
 			this.source.columns.render();
