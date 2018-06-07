@@ -8,6 +8,8 @@ const requestPromise = promisify(request);
 const config = require("config");
 const constants = require("../utils/constants");
 const account = require('../onServerStart');
+const fetch = require('node-fetch');
+const URLSearchParams = require('url').URLSearchParams;
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -114,72 +116,233 @@ exports.reset = class extends API {
 };
 
 
+// exports.login = class extends API {
+//
+// 	async login() {
+//
+// 		let userDetail, access_token;
+//
+// 		if (this.account.auth_api && this.request.body.use_external_paramters) {
+//
+// 			let result = await requestPromise({
+// 				har: {
+// 					url: this.account.auth_api,
+// 					method: 'GET',
+// 					queryString: [
+// 						{
+// 							name: 'access_token',
+// 							value: this.request.body.access_token,
+// 						},
+// 					]
+// 				},
+// 				gzip: true
+// 			});
+// 			try {
+// 				result = JSON.parse(result.body);
+// 			} catch(e) {}
+//
+// 			result = result.data;
+// 			access_token = result.access_token;
+// 			userDetail = result.userDetails;
+// 			await account.loadAccounts();
+//
+// 		} else {
+//
+// 			this.assert(this.request.body.email, "Email Required");
+//
+// 			userDetail = await this.mysql.query(
+// 				`SELECT * FROM tb_users u JOIN tb_accounts a USING(account_id) WHERE u.email = ? AND (a.account_id = ? OR ? = '') AND a.url = ?`,
+// 				[this.request.body.email, this.request.body.account_id || '', this.request.body.account_id || '', this.request.hostname]
+// 			);
+//
+// 			this.assert(userDetail.length, "Email not found! :(");
+//
+// 			if(!this.request.body.password) {
+// 				return await this.mysql.query(
+// 					"SELECT * FROM tb_accounts WHERE account_id IN (?) AND url = ?",
+// 					[userDetail.map(x => x.account_id), this.request.hostname]
+// 				);
+// 			}
+//
+// 			userDetail = userDetail[0];
+//
+// 			const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
+//
+// 			this.assert(checkPassword, "Invalid Password! :(");
+// 		}
+//
+// 		this.assert(userDetail && userDetail.user_id, 'User not found!');
+//
+// 		const obj = {
+// 			user_id: userDetail.user_id,
+// 			email: userDetail.email,
+// 		};
+//
+// 		return {jwt: commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400), access_token: access_token};
+// 	}
+// };
+
 exports.login = class extends API {
+
+	load() {
+
+		this.requestAccount = this.request.body.account_id;
+		this.email = this.request.body.email;
+
+		this.possibleAccounts = [];
+
+		if (this.requestAccount) {
+
+			this.possibleAccounts = global.accounts.filter(x => x.account_id === this.requestAccount);
+		}
+
+		else {
+
+			this.possibleAccounts = global.accounts.filter(x => x.url === this.request.hostname);
+		}
+
+		this.authResponseObj = {};
+	}
+
+	async requestAuthAPI() {
+
+		let parameters = new URLSearchParams;
+
+		const externalParameterKeys = this.account.settings.get("external_parameters");
+
+		for (const key of externalParameterKeys) {
+
+			const value = this.request.body[key];
+
+			if (Array.isArray(value)) {
+
+				for (const item of value) {
+
+					parameters.append(key, item);
+				}
+			}
+
+			else {
+
+				parameters.append(key, value);
+			}
+		}
+
+		let url = this.possibleAccounts[0].auth_api + "?" + parameters;
+
+		try {
+
+			let authAPIResponse = await fetch(url, {"method": "GET"});
+			authAPIResponse = await authAPIResponse.json();
+			this.userDetails = authAPIResponse.userDetails;
+
+			await account.loadAccounts();
+			this.authResponseObj = JSON.parse(JSON.stringify(authAPIResponse));
+			delete this.authResponseObj.userDetails;
+
+		}
+		catch (e) {
+
+			throw new API.Exception(400, e.message);
+		}
+	}
 
 	async login() {
 
-		let userDetail, access_token;
+		this.load();
 
-		if (this.account.auth_api && this.request.body.access_token) {
+		if (!this.email) {
 
-			let result = await requestPromise({
-				har: {
-					url: this.account.auth_api,
-					method: 'GET',
-					queryString: [
-						{
-							name: 'access_token',
-							value: this.request.body.access_token,
-						},
-					]
-				},
-				gzip: true
-			});
-			try {
-				result = JSON.parse(result.body);
-			} catch(e) {}
+			this.assert(this.possibleAccounts.length, "No account found :(");
 
-			result = result.data;
-			access_token = result.access_token;
-			userDetail = result.userDetails;
-			await account.loadAccounts();
+			if (this.requestAccount.length > 1) {
 
-		} else {
-
-			this.assert(this.request.body.email, "Email Required");
-
-			userDetail = await this.mysql.query(
-				`SELECT * FROM tb_users u JOIN tb_accounts a USING(account_id) WHERE u.email = ? AND (a.account_id = ? OR ? = '') AND a.url = ?`,
-				[this.request.body.email, this.request.body.account_id || '', this.request.body.account_id || '', this.request.hostname]
-			);
-
-			this.assert(userDetail.length, "Email not found! :(");
-
-			if(!this.request.body.password) {
-				return await this.mysql.query(
-					"SELECT * FROM tb_accounts WHERE account_id IN (?) AND url = ?",
-					[userDetail.map(x => x.account_id), this.request.hostname]
-				);
+				return this.possibleAccounts;
 			}
 
-			userDetail = userDetail[0];
+			else {
 
-			const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, userDetail.password);
+				if (!this.possibleAccounts[0].auth_api) {
 
-			this.assert(checkPassword, "Invalid Password! :(");
+					throw new API.Exception(400, "Could't authenticate, please specify this account's Authorization API or login using Email.")
+				}
+
+				await this.requestAuthAPI();
+			}
 		}
 
-		this.assert(userDetail && userDetail.user_id, 'User not found!');
+		else {
+
+			const userDetails = await this.mysql.query(`
+				select
+					u.*
+				from
+					tb_users u
+				join
+					tb_accounts a
+					using(account_id)
+				where
+					email = ?
+					and u.status = 1
+					and a.status = 1
+					and account_id in (?)
+				`,
+				[this.email, this.requestAccount ? [this.requestAccount] : this.possibleAccounts.map(x => x.account_id)]
+			);
+
+			if (userDetails.length > 1) {
+
+				const accountsObj = {};
+
+				for (const account of global.account) {
+
+					accountsObj[account.account_id] = account;
+				}
+
+				return userDetails.map(x => accountsObj[x.account_id]);
+			}
+
+			else {
+
+				this.userDetails = userDetails[0];
+				this.assert(this.userDetails && this.userDetails.user_id, "Email not found :(");
+
+				this.possibleAccounts = global.accounts.filter(x => x.account_id === this.userDetails.account_id);
+
+				if (this.possibleAccounts[0].auth_api && this.request.body.external_parameters) {
+
+					await this.requestAuthAPI();
+				}
+
+				if (!this.request.body.password) {
+
+					return this.possibleAccounts;
+				}
+
+				if (!this.request.body.external_parameters && this.request.body.password) {
+
+					const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, this.userDetails.password);
+					this.assert(checkPassword, "Invalid Password! :(");
+				}
+			}
+		}
+
+		this.assert(this.userDetails && this.userDetails.user_id, "user not found while loading user's details");
 
 		const obj = {
-			user_id: userDetail.user_id,
-			email: userDetail.email,
+			user_id: this.userDetails.user_id,
+			email: this.userDetails.email,
 		};
 
-		return {jwt: commonFun.makeJWT(obj, parseInt(userDetail.ttl || 7) * 86400), access_token: access_token};
+		const finalObj = {
+			jwt: commonFun.makeJWT(obj, parseInt(this.userDetails.ttl || 7) * 86400),
+		};
+
+		Object.assign(finalObj, this.authResponseObj);
+
+		return finalObj;
 	}
 };
-
 
 exports.refresh = class extends API {
 
@@ -208,7 +371,8 @@ exports.refresh = class extends API {
 			try {
 
 				result = JSON.parse(result.body);
-			} catch(e) {}
+			} catch (e) {
+			}
 
 			result = result.data;
 			userDetail = result.userDetails;
@@ -293,7 +457,7 @@ exports.refresh = class extends API {
 			privileges,
 		};
 
-		if(config.has("superAdmin_users") && config.get("superAdmin_users").includes(user.email)) {
+		if (config.has("superAdmin_users") && config.get("superAdmin_users").includes(user.email)) {
 
 			obj.privileges.push({
 				privilege_id: -1,

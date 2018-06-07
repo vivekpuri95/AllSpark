@@ -86,7 +86,13 @@ class report extends API {
 								name: 'content-type',
 								value: 'application/x-www-form-urlencoded'
 							}
-						]
+						],
+						queryString: this.account.settings.get("external_parameters").map(x => {
+							return {
+								name: x,
+								value: this.request.body[x],
+							}
+						})
 					},
 					gzip: true
 				});
