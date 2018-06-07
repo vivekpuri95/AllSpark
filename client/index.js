@@ -34,6 +34,9 @@ class HTMLAPI extends API {
 		if(this.account.settings.has('custom_css'))
 			this.stylesheets.push('/css/custom.css');
 
+		if(this.account.settings.has('custom_js'))
+			this.scripts.push('/js/custom.js');
+
 		return `<!DOCTYPE html>
 			<html lang="en">
 				<head>
@@ -91,6 +94,16 @@ router.get('/css/custom.css', API.serve(class extends HTMLAPI {
 		this.response.setHeader('Content-Type', 'text/css');
 
 		return this.account.settings.get('custom_css') || '';
+	}
+}));
+
+router.get('/js/custom.js', API.serve(class extends HTMLAPI {
+
+	async body() {
+
+		this.response.setHeader('Content-Type', 'text/javascript');
+
+		return this.account.settings.get('custom_js') || '';
 	}
 }));
 
