@@ -912,6 +912,7 @@ class API extends AJAX {
 			for(const key in external_parameters)
 				parameters['ext_' + key] = external_parameters[key];
 		}
+		console.log(2.1, parameters, await IndexedDb.instance.get('external_parameters'));
 
 		const response = await API.call('authentication/refresh', parameters, options);
 
