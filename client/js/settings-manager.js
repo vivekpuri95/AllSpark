@@ -89,7 +89,7 @@ class SettingsManager {
 			</section>
 		`;
 
-		container.querySelector('.add-form').on('submit', SettingsManager.add_listener = e => this.add(e));
+		container.querySelector('.add-form').on('submit', e => this.add(e));
 
 		return container;
 	}
@@ -183,7 +183,7 @@ class ProfileManage {
 
 		for(const format of this.parent.format) {
 
-			let formatType = SettingsManager.types.get(format.type);
+			let formatType = SettingsManager.types.get(format.type.toLowerCase());
 
 			if(!formatType)
 				continue;
@@ -234,7 +234,7 @@ class ProfileManage {
 
 		e.stopPropagation();
 
-		if(!confirm('Are you sure ?'))
+		if(!confirm('Are you sure?'))
 			return;
 
 		const
@@ -250,7 +250,7 @@ class ProfileManage {
 	}
 }
 
-class FormatType{
+class FormatType {
 
 	constructor(setting_format) {
 		this.setting_format = setting_format;
@@ -352,7 +352,7 @@ SettingsManager.types.set('code', class extends FormatType {
 	}
 });
 
-SettingsManager.types.set('multiSelect', class extends FormatType {
+SettingsManager.types.set('multiselect', class extends FormatType {
 
 	constructor(setting_format) {
 
