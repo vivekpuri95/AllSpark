@@ -905,13 +905,20 @@ class API extends AJAX {
 				method: 'POST',
 			};
 
+		console.log(1, await IndexedDb.instance.get('external_parameters'), parameters);
+
 		if(account && account.auth_api && Array.isArray(account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
 
+		console.log(2, await IndexedDb.instance.get('external_parameters'), parameters);
 			const external_parameters = await IndexedDb.instance.get('external_parameters');
 
-			for(const key in external_parameters)
-				parameters['ext_' + key] = external_parameters[key];
+			for(const key of account.settings.get('external_parameters')) {
+
+				if(key in external_parameters)
+					parameters['ext_' + key] = external_parameters[key];
+			}
 		}
+		console.log(3, await IndexedDb.instance.get('external_parameters'), parameters);
 
 		const response = await API.call('authentication/refresh', parameters, options);
 
