@@ -10,6 +10,7 @@
 }
 	#form .password .show-password {
 		margin-left: auto;
-		font-size: 12px;
+		font-size: 90%;
 		color: #666;
+		font-weight: normal;
 	}

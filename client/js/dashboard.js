@@ -1326,7 +1326,7 @@ class DashboardDatasets extends Map {
 			}
 
 			if(found && this.page.loadedVisualizations.has(report))
-				setTimeout(() => report.visualizations.selected.load(options));
+				report.visualizations.selected.load(options);
 
 			report.container.style.opacity = found ? 1 : 0.4;
 		}
