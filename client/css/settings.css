@@ -42,3 +42,57 @@ main .feature-form table {
 	background: #fff;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 }
+main .settings-container {
+	display: grid;
+	grid-template-columns: 300px auto;
+}
+	main .settings-container table {
+		background: #fff;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	}
+		main .settings-container table tr.selected {
+			background: var(--color-selected);
+		}
+		main .settings-container table tr:active {
+			box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
+		}
+		main .settings-container table tr:hover {
+			cursor: pointer;
+		}
+	main .settings-container .side-bar {
+		border: 1px solid #999;
+		display: flex;
+		flex-direction: column;
+	}
+	main .settings-container .add-form {
+		grid-template-columns: 1fr 1fr;
+	}
+	main .settings-container .profile-container {
+		border: 1px solid #999;
+		border-left: 0;
+	}
+		main .settings-container .profile-header {
+			display: flex;
+			border-bottom: 1px dashed #999;
+			align-items: center;
+			padding: calc(var(--gap) * 2);
+		}
+			main .settings-container .profile-header h3 {
+				margin: 0;
+			}
+			main .settings-container .profile-header button {
+				margin-left: auto;
+			}
+		main label.code-type-editor{
+			max-width: 100%
+		}
+		main .code-type-editor .ace_editor {
+			display: flex;
+			height: 300px;
+			width: 100%;
+		}
+		main .settings-container footer {
+			display: flex;
+			margin-top: auto;
+			border-top: 1px dashed #999;
+		}

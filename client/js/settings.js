@@ -737,12 +737,50 @@ class SettingsAccount {
 		if(this.form.parentElement.querySelector('.feature-form'))
 			this.form.parentElement.querySelector('.feature-form').remove();
 
+		const settings_json = [
+			{
+				key: 'top_nav_position',
+				type: 'string',
+				name: 'Header Nav Position.',
+				description: 'Position of top nav bar.'
+			},
+			{
+				key: 'top_nav_position',
+				type: 'code',
+				name: 'Header Nav Position.',
+				description: 'Position of top nav bar.'
+			},
+			{
+				key: 'abc',
+				type: 'number',
+				name: 'abc.',
+				description: 'Position of top nav bar.',
+			},
+			{
+				key: 'enable_account_signup',
+				type: 'multiSelect',
+				name: 'Allow user to signup.',
+				description: 'Allow user to signup.',
+				datalist: [{"name": "True","value": "true"},{"name": "False","value": "false"}],
+				multiple: false,
+			}
+		];
+
+		const settingsContainer = new SettingsManager('account', this.account_id, settings_json)
+		await settingsContainer.load();
+
+		if(this.form.parentElement.querySelector('.settings-container'))
+			this.form.parentElement.querySelector('.settings-container').remove();
+
+		this.form.parentElement.appendChild(settingsContainer.form);
+
 		this.form.parentElement.appendChild(features.container);
 
 		await Sections.show('accounts-form');
 
-		this.page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
-		this.page.form.on('submit', SettingsAccount.submitEventListener = async e => {
+		this.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+
+		this.form.on("submit", SettingsAccount.submitEventListener = async e => {
 			await this.update(e);
 			await this.page.load();
 			await Sections.show('accounts-form');
