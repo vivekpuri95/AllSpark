@@ -748,16 +748,16 @@ class SettingsAccount {
 				description: 'Position of top nav bar.'
 			},
 			{
-				key: 'top_nav_position',
+				key: 'custom_js',
 				type: 'code',
-				name: 'Header Nav Position.',
-				description: 'Position of top nav bar.'
+				name: 'Custom JavaScript.',
+				description: 'Custom js by user.'
 			},
 			{
-				key: 'abc',
-				type: 'number',
-				name: 'abc.',
-				description: 'Position of top nav bar.',
+				key: 'pre_report_api',
+				type: 'string',
+				name: 'Pre Report API',
+				description: 'Pre Report API.',
 			},
 			{
 				key: 'enable_account_signup',
