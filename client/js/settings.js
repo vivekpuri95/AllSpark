@@ -8,7 +8,7 @@ class Settings extends Page {
 		for (const [key, settings] of Settings.list) {
 
 			if(key == 'accounts' && !this.user.email.includes('achin.sharma'))
-				return;
+				continue;
 
 			const setting = new settings(this.container);
 
