@@ -1955,7 +1955,9 @@ class ReportTransformations extends Set {
 				visualization_id: Math.floor(Math.random() * 1000) + 1000,
 				name: 'Table',
 				type: 'table',
-				options: {}
+				options: {
+					hideLegend: this.visualization.options.hideLegend
+				}
 			};
 
 			report.visualizations.push(visualization);
