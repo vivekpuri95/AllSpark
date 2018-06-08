@@ -906,7 +906,7 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if(this.page.globalFiltersApplied && this.datasets.size)
+		if(Dashboard.selectedValues && Dashboard.selectedValues.size && this.datasets.size)
 			this.datasets.apply();
 	}
 
@@ -1279,16 +1279,8 @@ class DashboardDatasets extends Map {
 			</div>
 		`);
 
-		container.querySelector('button.apply').on('click', () => {
-
-			this.page.globalFiltersApplied = true;
-			this.apply();
-		});
-		container.querySelector('button.reload').on('click', () => {
-
-			this.page.globalFiltersApplied = true;
-			this.apply({cached: 0});
-		});
+		container.querySelector('button.apply').on('click', () => this.apply());
+		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
 
 		const resetToggle = container.querySelector('button.reset-toggle');
 
