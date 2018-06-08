@@ -2487,8 +2487,11 @@ class LinearVisualization extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows || !this.axes || !this.axes.bottom)
+		if(!this.rows)
 			return;
+
+		if(!this.axes)
+			throw new Page.exception('Axes not defined! :(');
 
 		this.columns = {};
 
