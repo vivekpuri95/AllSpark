@@ -792,6 +792,11 @@ class Dashboard {
 		if (this.format && this.format.category_id)
 			return;
 
+		if (!this.datasets.size) {
+
+			this.page.container.querySelector('#reports .side').classList.add('hidden');
+		}
+
 		await Sections.show('reports');
 
 		const menuElement = this.page.container.querySelector("#dashboard-" + this.id);
@@ -901,10 +906,8 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if (!this.datasets.size) {
-
-			this.page.container.querySelector('#reports .side').classList.add('hidden');
-		}
+		if(this.page.globalFiltersApplied && this.datasets.size)
+			this.datasets.apply();
 	}
 
 	edit() {
@@ -1276,8 +1279,16 @@ class DashboardDatasets extends Map {
 			</div>
 		`);
 
-		container.querySelector('button.apply').on('click', () => this.apply());
-		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
+		container.querySelector('button.apply').on('click', () => {
+
+			this.page.globalFiltersApplied = true;
+			this.apply();
+		});
+		container.querySelector('button.reload').on('click', () => {
+
+			this.page.globalFiltersApplied = true;
+			this.apply({cached: 0});
+		});
 
 		const resetToggle = container.querySelector('button.reset-toggle');
 
