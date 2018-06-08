@@ -792,6 +792,11 @@ class Dashboard {
 		if (this.format && this.format.category_id)
 			return;
 
+		if (!this.datasets.size) {
+
+			this.page.container.querySelector('#reports .side').classList.add('hidden');
+		}
+
 		await Sections.show('reports');
 
 		const menuElement = this.page.container.querySelector("#dashboard-" + this.id);
@@ -901,10 +906,8 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if (!this.datasets.size) {
-
-			this.page.container.querySelector('#reports .side').classList.add('hidden');
-		}
+		if(Dashboard.selectedValues && Dashboard.selectedValues.size && this.datasets.size)
+			this.datasets.apply();
 	}
 
 	edit() {
