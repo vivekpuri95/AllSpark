@@ -2386,9 +2386,9 @@ class LinearVisualization extends Visualization {
 
 	draw() {
 
-		this.rows = this.source.response;
+		const rows = this.source.response;
 
-		if(!this.rows || !this.rows.length)
+		if(!rows || !rows.length)
 			return this.source.error('No data found! :(');
 
 		if(!this.axes)
@@ -2464,6 +2464,8 @@ class LinearVisualization extends Visualization {
 
 		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
 		this.width = this.container.clientWidth - this.axes.left.width - 40;
+
+		this.rows = rows;
 
 		window.addEventListener('resize', () => {
 
@@ -3763,9 +3765,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 	draw() {
 
-		this.rows = this.source.response;
+		const rows = this.source.response;
 
-		if(!this.rows || !this.rows.length)
+		if(!rows || !rows.length)
 			return this.source.error('No data found! :(');
 
 		if(!this.axes)
@@ -3832,8 +3834,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			column.render();
 		}
 
-		if(!this.rows || !this.rows.length)
-			return;
+		this.rows = rows;
 
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 40;
