@@ -55,16 +55,11 @@ class DataSource {
 
 			if(filter.dataset && filter.dataset.query_id) {
 
-				if(filter.dataset.containerElement) {
+				if(!filter.dataset.value.length && !filter.dataset.containerElement)
+					filter.dataset.value = (await filter.dataset.fetch()).map(v => v.value);
 
-					for(const input of filter.label.querySelectorAll('input:checked'))
-						parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, input.value);
-
-				} else {
-
-					for(const row of await filter.dataset.fetch())
-						parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, row.value);
-				}
+				for(const value of filter.dataset.value || [])
+					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, value);
 
 				continue;
 			}
@@ -1032,7 +1027,7 @@ class DataSourceColumn {
 
 		this.key = column;
 		this.source = source;
-		this.name = this.key.split('_').map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
+		this.name = this.key.split('_').filter(w => w.trim()).map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
 		this.disabled = false;
 		this.color = DataSourceColumn.colors[this.source.columns.size % DataSourceColumn.colors.length];
 
@@ -1318,7 +1313,7 @@ class DataSourceColumn {
 
 			this.form.querySelector('.parameter-list').textContent = null;
 
-			this.drilldownQuery.value = this.drilldown ? this.drilldown.query_id : '';
+			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
 
 			for(const param of this.drilldown.parameters || [])
 				this.addParameter(param);
@@ -5814,6 +5809,11 @@ class Dataset extends MultiSelect {
 		}
 
 		super.value = Array.from(source.selectedValues);
+	}
+
+	get value() {
+
+		return Array.from(this.selectedValues);
 	}
 }
 

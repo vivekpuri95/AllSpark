@@ -149,11 +149,8 @@ class Credential {
 
 		Credential.types.get(Credential.form.type.value).render(this);
 
-		Credential.container.querySelector('.show-password').on('click', () => {
-
-			const password = Credential.container.querySelector('.password-container input');
-
-			password.type = password.type == 'text' ? 'password': 'text';
+		Credential.form.password.on('click', () => {
+			Credential.form.password.type = Credential.form.password.type == 'text' ? 'password': 'text';
 		});
 
 		await Sections.show('form');
@@ -215,8 +212,7 @@ class Credential {
 		await API.call('credentials/update', parameters, options);
 
 		await this.page.load();
-
-		this.page.list.get(this.id).edit();
+		await Sections.show('list');
 	}
 
 	async delete() {
@@ -272,7 +268,7 @@ Credential.types.set('mysql', class {
 				<input type="text" name="user" value="${connections.user || ''}">
 			</label>
 
-			<label class="password-container">
+			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
 				<input type="password" name="password" value="${connections.password || ''}">
 			</label>
@@ -317,7 +313,7 @@ Credential.types.set('pgsql', class {
 				<input type="text" name="user" value="${connections.user || ''}">
 			</label>
 
-			<label class="password-container">
+			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
 				<input type="text" name="password" value="${connections.password || ''}">
 			</label>

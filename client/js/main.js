@@ -1270,13 +1270,14 @@ class MultiSelect {
 		if(this.expand)
 			this.container.classList.add('expanded');
 
-		this.container.querySelector('input[type=search]').disabled = this.disabled ? true : false;
+		this.container.querySelector('input[type=search]').disabled = this.disabled;
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
 
-		if(!this.datalist.length) {
-			this.container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
+		if(!this.datalist || !this.datalist.length) {
+			optionList.innerHTML = '<div class="NA">No data found... :(</div>';
+			return;
 		}
 
 		for(const row of this.datalist) {
@@ -1298,12 +1299,10 @@ class MultiSelect {
 			input.on('change', () => {
 
 				if(!this.multiple) {
-
 					this.selectedValues.clear();
 					this.selectedValues.add(input.value.toString());
 				}
 				else {
-
 					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
 				}
 
@@ -1359,7 +1358,7 @@ class MultiSelect {
 
 		for(const input of options.querySelectorAll('.list label input')) {
 
-			input.checked = this.selectedValues.has(input.value) ? true : false;
+			input.checked = this.selectedValues.has(input.value);
 
 			let hide = false;
 

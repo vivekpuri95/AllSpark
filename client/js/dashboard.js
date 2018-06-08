@@ -1262,7 +1262,7 @@ class DashboardDatasets extends Map {
 
 			label.appendChild(dataset.container);
 
-			if (Dashboard.selectedValues.has(dataset.id))
+			if(Dashboard.selectedValues.has(dataset.id))
 				dataset.value = Dashboard.selectedValues.get(dataset.id);
 
 			container.appendChild(label);
@@ -1307,49 +1307,34 @@ class DashboardDatasets extends Map {
 		});
 	}
 
-	apply(options = {}) {
+	async apply(options = {}) {
 
-		for (const report of this.page.loadedVisualizations) {
-			report.filters.container;
-		}
+		for (const report of this.dashboard.visualizationList) {
 
-		setTimeout(() => {
-			for (const report of this.page.loadedVisualizations) {
+			let found = false;
 
-				let found = false;
+			for (const filter of report.filters.values()) {
 
-				for (const filter of report.filters.values()) {
+				if (!filter.dataset || !this.has(filter.dataset.id))
+					continue;
 
-					filter.label;
+				await filter.dataset.fetch();
 
-					if (!filter.dataset || !this.has(filter.dataset.id))
-						continue;
+				filter.dataset.value = this.get(filter.dataset.id).value;
 
-					filter.dataset.value = this.get(filter.dataset.id);
-
-					found = true;
-				}
-
-				if (found) {
-					setTimeout(() => report.visualizations.selected.load(options));
-					report.container.style.opacity = 1;
-				}
-
-				else
-					report.container.style.opacity = 0.4;
+				found = true;
 			}
-		});
+
+			if(found && this.page.loadedVisualizations.has(report))
+				report.visualizations.selected.load(options);
+
+			report.container.style.opacity = found ? 1 : 0.4;
+		}
 
 		Dashboard.selectedValues.clear();
-		for (const [key, value] of this) {
-			const inputs = [];
-			for (const input of value.containerElement.querySelectorAll('.list label')) {
-				if (input.querySelector('input').checked) {
-					inputs.push(input.querySelector('input').value)
-				}
-			}
-			Dashboard.selectedValues.set(key, inputs);
-		}
+
+		for(const [id, dataset] of this)
+			Dashboard.selectedValues.set(id, dataset.value);
 	}
 
 	clear() {

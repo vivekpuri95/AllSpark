@@ -414,6 +414,9 @@ main.preview-left #stages {
 				grid-template-columns: 1fr 1fr;
 				grid-gap: calc(var(--gap) * 2);
 			}
+		#stage-configure-visualization #dashboards select {
+			width: 100%;
+		}
 	.configuration-section .body .subform {
 		box-shadow: none;
 	}
