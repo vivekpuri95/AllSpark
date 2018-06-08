@@ -2487,7 +2487,7 @@ class LinearVisualization extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows)
+		if(!this.rows || !this.axes || !this.axes.bottom)
 			return;
 
 		this.columns = {};
