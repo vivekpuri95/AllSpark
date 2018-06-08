@@ -764,9 +764,12 @@ class SettingsAccount {
 				type: 'multiSelect',
 				name: 'Allow user to signup.',
 				description: 'Allow user to signup.',
-				datalist: [{"name": "True","value": "true"},{"name": "False","value": "false"}],
+				datalist: [
+					{name: 'True',value: true},
+					{name: "False",value: false}
+				],
 				multiple: false,
-			}
+			},
 		];
 
 		const settingsContainer = new SettingsManager('account', this.account_id, settings_json)
