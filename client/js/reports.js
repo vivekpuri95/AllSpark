@@ -48,18 +48,7 @@ class DataSource {
 		if(this.queryOverride)
 			parameters.set('query', this.query);
 
-		const external_parameters = await IndexedDb.instance.get('external_parameters');
-
 		for(const filter of this.filters.values()) {
-
-			if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
-
-				for(const key of account.settings.get('external_parameters')) {
-
-					if(key in external_parameters)
-						parameters.set(DataSourceFilter.placeholderPrefix + key, external_parameters[key]);
-				}
-			}
 
 			if(filter.dataset && filter.dataset.query_id) {
 
@@ -81,6 +70,17 @@ class DataSource {
 				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, this.filters.container.elements[filter.placeholder].value);
 			else
 				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
+		}
+
+		const external_parameters = await IndexedDb.instance.get('external_parameters');
+
+		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
+
+			for(const key of account.settings.get('external_parameters')) {
+
+				if(key in external_parameters)
+					parameters.set(DataSourceFilter.placeholderPrefix + key, external_parameters[key]);
+			}
 		}
 
 		let response = null;
@@ -2386,7 +2386,9 @@ class LinearVisualization extends Visualization {
 
 	draw() {
 
-		if(!this.source.response || !this.source.response.length)
+		this.rows = this.source.response;
+
+		if(!this.rows || !this.rows.length)
 			return this.source.error('No data found! :(');
 
 		if(!this.axes)
@@ -2450,8 +2452,6 @@ class LinearVisualization extends Visualization {
 			column.disabled = true;
 			column.render();
 		}
-
-		this.rows = this.source.response;
 
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 50;
@@ -3760,7 +3760,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 	draw() {
 
-		if(!this.source.response || !this.source.response.length)
+		this.rows = this.source.response;
+
+		if(!this.rows || !this.rows.length)
 			return this.source.error('No data found! :(');
 
 		if(!this.axes)
@@ -3826,8 +3828,6 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			column.disabled = true;
 			column.render();
 		}
-
-		this.rows = this.source.response;
 
 		if(!this.rows || !this.rows.length)
 			return;
