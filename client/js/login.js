@@ -23,6 +23,8 @@ Page.class = class Login extends Page {
 
 		document.querySelector('body > header').classList.add('hidden');
 
+		this.container.querySelector('form').email.value = new URLSearchParams(location.search).get('email')
+
 		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
