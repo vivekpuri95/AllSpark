@@ -216,11 +216,6 @@ Page.class = class Login extends Page {
 			await IndexedDb.instance.set('refresh_token', response.jwt);
 			this.cookies.set('refresh_token', response.jwt);
 
-			// if(response.access_token) {
-			// 	await IndexedDb.instance.set('access_token', response.access_token);
-			// 	this.cookies.set('access_token', response.access_token);
-			// }
-
 			IndexedDb.instance.delete('account');
 
 			await Account.load();

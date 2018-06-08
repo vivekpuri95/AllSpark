@@ -158,7 +158,6 @@ class Page {
 				if(!value)
 					return;
 
-				IndexedDb.instance.set('access_token', value);
 				location.reload();
 			}
 		});

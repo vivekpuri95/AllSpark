@@ -193,7 +193,6 @@ exports.update = class extends API {
 
 		delete setParams.settings;
 		delete setParams.token;
-		delete setParams.access_token;
 
 		const values = [setParams, account_id];
 
