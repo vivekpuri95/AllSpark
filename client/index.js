@@ -851,6 +851,11 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									</select>
 								</label>
 							</div>
+							
+							<div id="csv" class="hidden">
+								<input type="file" id="csv-input" name="csv-input" accept=".xlsx, .xls, .csv">
+								<div id="csv-table"></div>
+							</div>
 						</form>
 
 						<div id="filters" class="hidden">

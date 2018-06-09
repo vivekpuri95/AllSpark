@@ -230,17 +230,63 @@ class report extends API {
 
 		await this.storeQueryResultSetup();
 
-		if (this.request.body.data && this.reportObj.load_saved) {
+		let result;
 
-			this.assert(commonFun.isJson(this.request.body.data), "data for saving is not json");
+		if (this.reportObj.load_saved) {
 
-			this.request.body.data = JSON.parse(this.request.body.data);
+			if (this.request.body.data) {
 
+				this.assert(commonFun.isJson(this.request.body.data), "data for saving is not json");
 
-			return {
-				data: await this.storeQueryResult(this.request.body.data),
-				message: "saved"
-			};
+				this.request.body.data = JSON.parse(this.request.body.data);
+
+				await this.storeQueryResult(this.request.body.data);
+
+				return {
+					data: this.request.body.data,
+					message: "saved"
+				};
+			}
+
+			[result] = await this.mysql.query(`
+				select
+					*
+				from
+					??.??
+				where
+					query_id = ?
+					and id =
+						(
+							select
+								max(id)
+							from
+								??.??
+							where
+								query_id = ?
+								and type = ?
+						)
+			`,
+				[
+					this.queryResultDb, "tb_save_history", this.reportObj.query_id, this.queryResultDb, "tb_save_history",
+					this.reportObj.query_id, this.reportObj.type
+				],
+				parseInt(this.queryResultConnection),
+			);
+
+			if (result && result.data) {
+
+				this.assert(commonFun.isJson(result.data), "result is not a json");
+
+				result.data = JSON.parse(result.data);
+				const age = Math.round((Date.now() - Date.parse(result.created_at)) / 1000);
+				result = result.data;
+
+				return {
+					data: result,
+					age: age,
+					load_saved: true,
+				};
+			}
 		}
 
 		this.prepareFiltersForOffset();
@@ -283,8 +329,6 @@ class report extends API {
 			redisData = await redis.get(hash);
 		}
 
-		let result;
-
 		//Priority: Redis > (Saved Result)
 
 		if (!forcedRun && this.reportObj.is_redis && redisData && !this.has_today) {
@@ -308,50 +352,6 @@ class report extends API {
 			}
 			catch (e) {
 				throw new API.Exception(500, "Invalid Redis Data! :(");
-			}
-		}
-
-		if (this.reportObj.load_saved) {
-
-			[result] = await this.mysql.query(`
-				select
-					*
-				from
-					??.??
-				where
-					query_id = ?
-					and id =
-						(
-							select
-								max(id)
-							from
-								??.??
-							where
-								query_id = ?
-								and type = ?
-						)
-			`,
-				[
-					this.queryResultDb, "tb_save_history", this.reportObj.query_id, this.queryResultDb, "tb_save_history",
-					this.reportObj.query_id, this.reportObj.type
-				],
-				parseInt(this.queryResultConnection),
-			);
-
-			if (result && result.data) {
-
-				this.assert(commonFun.isJson(result.data), "result is not a json");
-
-				result.data = JSON.parse(result.data);
-				const age = Math.round((Date.now() - Date.parse(result.created_at)) / 1000);
-				result = result.data;
-
-				result.load_saved = {
-					status: true,
-					age: age
-				};
-
-				return result;
 			}
 		}
 

@@ -824,7 +824,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const connection = this.page.connections.get(parseInt(this.report.connection_name));
 
 		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
-		this.form.querySelector('#query').classList.toggle('hidden', connection.type == 'api');
+		this.form.querySelector('#query').classList.toggle('hidden', connection.type != 'query');
+		this.form.querySelector('#csv').classList.toggle('hidden', connection.type != 'csv');
 
 		this.form.removeEventListener('submit', this.form.listener);
 		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
@@ -858,8 +859,89 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
 
+
+		this.container.querySelector('#csv-input').addEventListener('change', (evt) => {
+
+			const file = evt.target.files[0];
+			const fileReader = new FileReader();
+
+			fileReader.onload = async (e) => {
+
+				let contents = e.target.result;
+				contents = contents.split('\n');
+
+				if(!contents.length) {
+
+					return "no data found";
+				}
+
+				const csvJson = [];
+
+				const headers = this.splitCSV(contents[0]);
+
+				for(const rowString of contents.slice(1)) {
+
+					const cellList = this.splitCSV(rowString);
+
+					const row = {};
+
+					for(const [index, cell] of cellList.entries()) {
+
+						row[headers[index]] = cell;
+					}
+
+					csvJson.push(row);
+				}
+
+				const
+					parameter = {
+						data: JSON.stringify(csvJson),
+						query_id: this.report.query_id,
+					},
+					options = {
+						method: 'POST',
+					};
+
+				await API.call('reports/engine/report', parameter, options);
+
+				const csv = new EditSourceData(this.report.query_id);
+				await csv.load();
+				const csvTableContainer = this.container.querySelector('#csv-table');
+
+				csvTableContainer.innerHTML = null;
+				const container = csv.container;
+				csvTableContainer.appendChild(container);
+			};
+
+			fileReader.readAsText(file);
+		});
+
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
+
+	splitCSV(str, sep) {
+
+		for (var splitString = str.split(sep = sep || ","), len = splitString.length - 1, tl; len >= 0; len--) {
+
+			if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
+
+				if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
+
+					splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
+				}
+
+				else if (len) {
+					splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(sep));
+				}
+
+				else splitString = splitString.shift().split(sep).concat(splitString);
+			}
+			else splitString[len].replace(/""/g, '"');
+
+		}
+
+		return splitString;
+	};
 
 	async update(e) {
 
@@ -919,10 +1001,17 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const source = this.page.connections.get(parseInt(this.report.connection_name));
 
-		if(!source || !['mysql', 'pgsql', 'bigquery'].includes(source.type)) {
+		if(!source || !['mysql', 'pgsql', 'bigquery', 'csv'].includes(source.type)) {
 			this.form.querySelector('#query').classList.add('hidden');
 			this.form.querySelector('#api').classList.remove('hidden');
-		} else {
+		}
+
+		else if(source.type === 'csv') {
+
+			this.form.querySelector('#csv').classList.remove('hidden');
+		}
+
+		else {
 			this.form.querySelector('#query').classList.remove('hidden');
 			this.form.querySelector('#api').classList.add('hidden');
 		}
@@ -2813,14 +2902,16 @@ class EditSourceData {
 
 		for (const row of this.rows) {
 
-			let tableRow = '';
+			let tableRow = document.createElement('tr');
 
 			for (const cell of row) {
 
-				tableRow += '<td>' + cell + '</td>';
+				const td = document.createElement('td');
+				td.textContent = cell;
+				tableRow.appendChild(td);
 			}
 
-			tbody.innerHTML += '<tr>' + tableRow + '</tr>';
+			tbody.appendChild(tableRow);
 		}
 
 		const saveButton = this.tableContainer.querySelector('button[type="submit"]');

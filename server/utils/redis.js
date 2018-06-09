@@ -83,9 +83,9 @@ class Redis {
 	}
 }
 
-//
-// (async () => await Redis.hset("testRedisKey", "testkey", "value"))();
-//
+
+// (async () => await Redis.hset("accountSettings#1", "testkey", "value"))();
+
 
 exports.redis = redis_client;
 exports.Redis = Redis;

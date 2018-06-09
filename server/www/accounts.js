@@ -305,7 +305,7 @@ exports.userQueryLogs = class extends API {
 			  \`type\` varchar(20) DEFAULT NULL,
 			  \`user_id\` int(11) DEFAULT NULL,
 			  \`query\` text,
-			  \`data\` text,
+			  \`data\` longblob,
 			  \`created_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 			  \`updated_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			  PRIMARY KEY (\`id\`),
