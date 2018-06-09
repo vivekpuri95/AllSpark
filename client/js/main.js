@@ -36,9 +36,16 @@ class Page {
 
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
-			if(parameters.has('access_token') && parameters.get('access_token')) {
+			if(account && parameters.get('external_parameters') && Array.isArray(account.settings.get('external_parameters'))) {
+
 				User.logout(undefined, async () => {
-					await IndexedDb.instance.set('access_token', parameters.get('access_token'));
+
+					const parameters_ = {};
+
+					for(const [key, value] of parameters)
+						parameters_[key] = value;
+
+					await IndexedDb.instance.set('external_parameters', parameters_);
 				});
 			}
 		}
@@ -151,7 +158,6 @@ class Page {
 				if(!value)
 					return;
 
-				IndexedDb.instance.set('access_token', value);
 				location.reload();
 			}
 		});
@@ -887,7 +893,7 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!await IndexedDb.instance.has('refresh_token') || !getToken)
+		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken)
 			return;
 
 		const
@@ -898,8 +904,18 @@ class API extends AJAX {
 				method: 'POST',
 			};
 
-		if(account && account.auth_api && parameters.access_token)
-			parameters.access_token = await IndexedDb.instance.get('access_token');
+		if(account && account.auth_api && Array.isArray(account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
+
+			const external_parameters = await IndexedDb.instance.get('external_parameters');
+
+			for(const key of account.settings.get('external_parameters')) {
+
+				if(key in external_parameters)
+					parameters['ext_' + key] = external_parameters[key];
+			}
+
+			parameters.external_parameters = true;
+		}
 
 		const response = await API.call('authentication/refresh', parameters, options);
 

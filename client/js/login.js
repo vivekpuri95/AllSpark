@@ -48,16 +48,14 @@ Page.class = class Login extends Page {
 	 */
 	async bypassLogin() {
 
-		if(!this.account.auth_api || !(await IndexedDb.instance.get('access_token')))
+		if(!this.account.auth_api || !(await IndexedDb.instance.get('external_parameters')))
 			return this.acceptEmail();
 
 		Sections.show('loading');
 
 		const
 			GETParameters = new URLSearchParams(window.location.search),
-			parameters = {
-				access_token: (await IndexedDb.instance.get('access_token')) || GETParameters.get('access_token') || '',
-			},
+			parameters = {},
 			options = {
 				method: 'POST',
 			};
@@ -200,18 +198,25 @@ Page.class = class Login extends Page {
 
 		try {
 
+			if(Array.isArray(this.account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
+
+				const external_parameters = await IndexedDb.instance.get('external_parameters');
+
+				for(const key of this.account.settings.get('external_parameters')) {
+
+					if(key in external_parameters)
+						parameters['ext_' + key] = external_parameters[key];
+				}
+			}
+
 			const response = await API.call('authentication/login', parameters, options);
+
 
 			if(!response.jwt && response.length)
 				return this.message('Ambigious email! :(', 'warning');
 
 			await IndexedDb.instance.set('refresh_token', response.jwt);
 			this.cookies.set('refresh_token', response.jwt);
-
-			if(response.access_token) {
-				await IndexedDb.instance.set('access_token', response.access_token);
-				this.cookies.set('access_token', response.access_token);
-			}
 
 			IndexedDb.instance.delete('account');
 
@@ -221,6 +226,7 @@ Page.class = class Login extends Page {
 			await API.refreshToken();
 
 			this.message('Login Successful! Redirecting&hellip;', 'notice');
+
 
 			window.location = '../';
 

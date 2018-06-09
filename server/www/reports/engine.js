@@ -79,14 +79,20 @@ class report extends API {
 				preReportApiDetails = await requestPromise({
 
 					har: {
-						url: preReportApi + this.request.body[constants.filterPrefix + "access_token"],
+						url: preReportApi,
 						method: 'GET',
 						headers: [
 							{
 								name: 'content-type',
 								value: 'application/x-www-form-urlencoded'
 							}
-						]
+						],
+						queryString: this.account.settings.get("external_parameters").map(x => {
+							return {
+								name: x,
+								value: this.request.body[constants.filterPrefix + x],
+							}
+						})
 					},
 					gzip: true
 				});

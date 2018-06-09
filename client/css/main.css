@@ -164,6 +164,7 @@ body {
 		top: 50px;
 		width: 220px;
 		height: calc(100vh - 50px);
+		height: 100vh;
 		z-index: 8;
 		overflow: auto;
 		opacity: 0;

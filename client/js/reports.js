@@ -50,9 +50,6 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
-			if(account.auth_api && await IndexedDb.instance.has('access_token') && filter.placeholder == 'access_token')
-				filter.value = await IndexedDb.instance.get('access_token');
-
 			if(filter.dataset && filter.dataset.query_id) {
 
 				if(!filter.dataset.value.length && !filter.dataset.containerElement)
@@ -68,6 +65,17 @@ class DataSource {
 				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, this.filters.container.elements[filter.placeholder].value);
 			else
 				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
+		}
+
+		const external_parameters = await IndexedDb.instance.get('external_parameters');
+
+		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
+
+			for(const key of account.settings.get('external_parameters')) {
+
+				if(key in external_parameters)
+					parameters.set(DataSourceFilter.placeholderPrefix + key, external_parameters[key]);
+			}
 		}
 
 		let response = null;
@@ -2373,7 +2381,9 @@ class LinearVisualization extends Visualization {
 
 	draw() {
 
-		if(!this.source.response || !this.source.response.length)
+		const rows = this.source.response;
+
+		if(!rows || !rows.length)
 			return this.source.error('No data found! :(');
 
 		if(!this.axes)
@@ -2438,8 +2448,6 @@ class LinearVisualization extends Visualization {
 			column.render();
 		}
 
-		this.rows = this.source.response;
-
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 50;
 
@@ -2451,6 +2459,8 @@ class LinearVisualization extends Visualization {
 
 		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
 		this.width = this.container.clientWidth - this.axes.left.width - 40;
+
+		this.rows = rows;
 
 		window.addEventListener('resize', () => {
 
@@ -2476,6 +2486,9 @@ class LinearVisualization extends Visualization {
 
 		if(!this.rows)
 			return;
+
+		if(!this.axes)
+			throw new Page.exception('Axes not defined! :(');
 
 		this.columns = {};
 
@@ -3747,7 +3760,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 	draw() {
 
-		if(!this.source.response || !this.source.response.length)
+		const rows = this.source.response;
+
+		if(!rows || !rows.length)
 			return this.source.error('No data found! :(');
 
 		if(!this.axes)
@@ -3814,10 +3829,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			column.render();
 		}
 
-		this.rows = this.source.response;
-
-		if(!this.rows || !this.rows.length)
-			return;
+		this.rows = rows;
 
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 40;
@@ -5770,8 +5782,16 @@ class Dataset extends MultiSelect {
 			id: this.id,
 		};
 
-		if(account.auth_api && await IndexedDb.instance.has('access_token'))
-			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = await IndexedDb.instance.get('access_token');
+		const external_parameters = await IndexedDb.instance.get('external_parameters');
+
+		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
+
+			for(const key of account.settings.get('external_parameters')) {
+
+				if(key in external_parameters)
+					parameters[DataSourceFilter.placeholderPrefix + key] = external_parameters[key];
+			}
+		}
 
 		try {
 			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
