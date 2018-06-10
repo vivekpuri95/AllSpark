@@ -195,10 +195,6 @@ class DataSource {
 						<span class="label">Added By:</span>
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
-					<span class="requested hidden">
-						<span class="label">Requested By:</span>
-						<span>${this.requested_by || 'NA'}</span>
-					</span>
 				</div>
 			</div>
 
@@ -263,10 +259,6 @@ class DataSource {
 		});
 
 		container.querySelector('.menu .description-toggle').on('click', async () => {
-
-
-			if(this.requested_by)
-				container.querySelector('.description .requested').classList.remove('hidden');
 
 			container.querySelector('.description').classList.toggle('hidden');
 

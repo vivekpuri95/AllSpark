@@ -262,27 +262,18 @@ exports.userQueryLogs = class extends API {
 
 	async userQueryLogs() {
 
-		const logsExists = await redis.hget(`accountSettings#${this.account.account_id}`, "settings.result_db");
+		const logsExists = this.account.settings.get('load_saved_database');
 
 		if (parseInt(logsExists)) {
 
 			return "setup already done"
 		}
 
-		const [currentAccountSettings] = await this.mysql.query(
-			"select value from tb_settings where account_id = ? and owner = 'account' and profile = ?",
-			[this.account.account_id, constants.saveQueryResultDb]
-		);
-
-		this.assert(!currentAccountSettings.length, "Setting for save history not found");
-
-		let historyConnectionId = JSON.parse(currentAccountSettings.value).value;
-
-		this.assert(historyConnectionId, "connection id not found");
+		this.assert(this.account.settings.get('load_saved_connection'), "connection id not found");
 
 		const [resultLogCredentials] = await this.mysql.query(
 			"select * from tb_credentials where id = ? and status = 1",
-			[historyConnectionId]
+			[this.account.settings.get('load_saved_connection')]
 		);
 
 		this.assert(resultLogCredentials, "Credential not found");
@@ -326,11 +317,6 @@ exports.userQueryLogs = class extends API {
 				"write"
 			);
 		}
-
-		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.result_db", 1);
-		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.connection_id", credentials.id);
-		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.db", credentials.db || constants.saveQueryResultDb);
-		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.save_result", 1);
 
 		return credentials.db || constants.saveQueryResultDb
 	}

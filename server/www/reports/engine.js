@@ -169,8 +169,8 @@ class report extends API {
 
 			await userQueryLogsObj.userQueryLogs();
 
-			this.queryResultDb = await redis.hget(`accountSettings#${this.account.account_id}`, "settings.db");
-			this.queryResultConnection = parseInt(await redis.hget(`accountSettings#${this.account.account_id}`, "settings.connection_id"));
+			this.queryResultDb = this.account.settings.get('load_saved_database');
+			this.queryResultConnection = parseInt(this.account.settings.get('load_saved_connection'));
 
 			this.assert(this.queryResultConnection, "connection id for loading saved result is not valid");
 		}
@@ -306,6 +306,9 @@ class report extends API {
 				break;
 			case "bigquery":
 				preparedRequest = new Bigquery(this.reportObj, this.filters, this.request.body.token);
+				break;
+			case "csv":
+				this.assert(false, 'No data found in the CSV. Please upload some data first.');
 				break;
 			default:
 				this.assert(false, "Report Type " + this.reportObj.type.toLowerCase() + " does not exist", 404);

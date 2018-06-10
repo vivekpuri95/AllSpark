@@ -149,10 +149,6 @@ class Credential {
 
 		Credential.types.get(Credential.form.type.value).render(this);
 
-		Credential.form.password.on('click', () => {
-			Credential.form.password.type = Credential.form.password.type == 'text' ? 'password': 'text';
-		});
-
 		await Sections.show('form');
 
 		Credential.form.connection_name.focus();
@@ -261,7 +257,7 @@ Credential.types.set('mysql', class {
 
 	static render(connections = {}) {
 
-		Credential.container.querySelector('#details').innerHTML = `
+		Credential.form.querySelector('#details').innerHTML = `
 
 			<label>
 				<span>Username</span>
@@ -288,6 +284,10 @@ Credential.types.set('mysql', class {
 				<input type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
+
+		Credential.form.password.on('click', () => {
+			Credential.form.password.type = Credential.form.password.type == 'text' ? 'password': 'text';
+		});
 	}
 
 	static get details() {
@@ -306,7 +306,7 @@ Credential.types.set('pgsql', class {
 
 	static render(connections = {}) {
 
-		Credential.container.querySelector('#details').innerHTML = `
+		Credential.form.querySelector('#details').innerHTML = `
 
 			<label>
 				<span>Username</span>
@@ -333,6 +333,10 @@ Credential.types.set('pgsql', class {
 				<input type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
+
+		Credential.form.password.on('click', () => {
+			Credential.form.password.type = Credential.form.password.type == 'text' ? 'password': 'text';
+		});
 	}
 
 	static get details() {
@@ -350,7 +354,18 @@ Credential.types.set('pgsql', class {
 Credential.types.set('api', class {
 
 	static render(connections = {}) {
-		Credential.container.querySelector('#details').innerHTML = null;
+		Credential.form.querySelector('#details').innerHTML = null;
+	}
+
+	static get details() {
+		return JSON.stringify({});
+	}
+});
+
+Credential.types.set('csv', class {
+
+	static render(connections = {}) {
+		Credential.form.querySelector('#details').innerHTML = null;
 	}
 
 	static get details() {

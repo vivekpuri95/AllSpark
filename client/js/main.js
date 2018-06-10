@@ -1013,6 +1013,31 @@ class Format {
 		return Format.date.formatter.format(date);
 	}
 
+	static time(time) {
+
+		const options = {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: 'numeric'
+		};
+
+		if(!Format.time.formatter)
+			Format.time.formatter = new Intl.DateTimeFormat('en-IN', options);
+
+		if(typeof time == 'string')
+			time = Date.parse(time);
+
+		if(typeof time == 'object' && time)
+			time = time.getTime();
+
+		if(!time)
+			return '';
+
+		return Format.time.formatter.format(time);
+	}
+
 	static number(number) {
 
 		if(!Format.number.formatter)

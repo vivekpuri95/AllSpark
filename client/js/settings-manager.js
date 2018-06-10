@@ -116,6 +116,7 @@ class SettingsManager {
 		this.profiles.get(response.insertId).edit();
 	}
 }
+
 class ProfileManage {
 
 	constructor(setting, parent) {
@@ -190,7 +191,7 @@ class ProfileManage {
 
 			formatType = new formatType(format);
 
-			for(const value of this.value) {
+			for(const value of this.value || []) {
 				if(format.key == value.key)
 					formatType.value = value.value;
 			}
@@ -199,6 +200,7 @@ class ProfileManage {
 		}
 
 		const form = this.section.querySelector('form');
+
 		for(const element of this.typeFormat)
 			form.appendChild(element.container);
 
