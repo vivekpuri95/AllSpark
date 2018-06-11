@@ -2566,6 +2566,9 @@ class LinearVisualization extends Visualization {
 				if(key == this.axes.bottom.column)
 					continue;
 
+				if((!this.axes.left || !this.axes.left.columns.some(c => c.key == key)) && (!this.axes.right || !this.axes.right.columns.some(c => c.key == key)))
+					continue;
+
 				const column = this.source.columns.get(key);
 
 				if(!column || column.disabled)

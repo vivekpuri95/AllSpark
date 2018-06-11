@@ -1,7 +1,7 @@
-const API = require("../utils/api"),
-	commonFun = require("../utils/commonFunctions"),
-	constants = require('../utils/constants');
-
+const API = require("../utils/api");
+const commonFun = require("../utils/commonFunctions");
+const constants = require('../utils/constants');
+const config = require('config');
 
 exports.insert = class extends API {
 
@@ -256,6 +256,9 @@ exports.metadata = class extends API {
 		);
 
 		metadata.filterTypes = constants.filterTypes;
+
+		if(config.has('google_analytics') && config.get('google_analytics').client_id)
+			metadata.google_analytics = {client_id: config.get('google_analytics').client_id};
 
 		metadata.sourceTypes = await this.mysql.query(`
 			SELECT

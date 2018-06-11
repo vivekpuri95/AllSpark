@@ -1452,42 +1452,55 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					</table>
 				</section>
 
-	            <section class="section" id="accounts-form">
-	                <h1></h1>
-	                <header class="toolbar">
-	                    <button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
-	                    <button type="submit" form="account-form"><i class="fa fa-save"></i> Save</button>
-	                </header>
-	                <form class="block form" id="account-form">
-	                    <label>
-	                        <span>Name</span>
-	                        <input type="text" name="name">
-	                    </label>
-	                    <label>
-	                        <span>URL</span>
-	                        <input type="text" name="url">
-	                    </label>
-	                    <label>
-	                        <span>Icon</span>
-	                        <input type="text" name="icon">
-	                        <img src="" alt="icon" id="icon" height="30">
-	                    </label>
-	                    <label>
-	                        <span>Logo</span>
-	                        <input type="text" name="logo">
-	                        <img src="" alt="logo" id="logo" height="30">
-	                    </label>
+				<section class="section" id="accounts-form">
+					<h1></h1>
+					<header class="toolbar">
+						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+						<button type="submit" form="account-form"><i class="fa fa-save"></i> Save</button>
+					</header>
+					<form class="block form" id="account-form">
+
 						<label>
-	                        <span>Authentication API</span>
-	                        <input type="text" name="auth_api">
-	                    </label>
+							<span>Name</span>
+							<input type="text" name="name">
+						</label>
+
+						<label>
+							<span>URL</span>
+							<input type="text" name="url">
+						</label>
+
+						<label>
+							<span>Icon</span>
+							<input type="text" name="icon">
+							<img src="" alt="icon" id="icon" height="30">
+						</label>
+
+						<label>
+							<span>Logo</span>
+							<input type="text" name="logo">
+							<img src="" alt="logo" id="logo" height="30">
+						</label>
+
+						<label>
+							<span>Authentication API</span>
+							<input type="text" name="auth_api">
+						</label>
+
+						<label>
+							<span>Google Analytics Authentication <a href="https://myaccount.google.com/u/0/permissions" target="_blank">revoke</a></span>
+							<button type="button" id="authenticate-google-analytics">
+								<i class="fas fa-external-link-alt"></i>
+								Authenticate Google Analytics
+							</button>
+						</label>
+
 						<label id="format">
 							<span>Settings</span>
 							<textarea id="settings-format" name="settings"></textarea>
 						</label>
-
-	                </form>
-	            </section>
+					</form>
+				</section>
 			</div>
 
 			<div class="setting-page category-page hidden">
@@ -1516,36 +1529,71 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="category-edit">
 					<h1></h1>
 
-	                <header class="toolbar">
-	                    <button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-	                    <button type="submit" form="category-form"><i class="fa fa-save"></i> Save</button>
-	                </header>
+					<header class="toolbar">
+						<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
+						<button type="submit" form="category-form"><i class="fa fa-save"></i> Save</button>
+					</header>
 
-	                <form class="block form" id="category-form">
-	                    <label>
-	                        <span>Name</span>
-	                        <input type="text" name="name">
-	                    </label>
-	                    <label>
-	                        <span>Slug</span>
-	                        <input type="text" name="slug">
-	                    </label>
-	                    <label>
-	                        <span>Parent</span>
-	                        <input type="text" name="parent">
-	                    </label>
-	                    <label>
-	                        <span>Admin</span>
-	                        <select name="is_admin">
-	                            <option value="1">Yes</option>
-	                            <option value="0">No</option>
-	                        </select>
-	                    </label>
-	                </form>
-	            </section>
-	        </div>
-	    `;
+					<form class="block form" id="category-form">
+						<label>
+							<span>Name</span>
+							<input type="text" name="name">
+						</label>
+						<label>
+							<span>Slug</span>
+							<input type="text" name="slug">
+						</label>
+						<label>
+							<span>Parent</span>
+							<input type="text" name="parent">
+						</label>
+						<label>
+							<span>Admin</span>
+							<select name="is_admin">
+								<option value="1">Yes</option>
+								<option value="0">No</option>
+							</select>
+						</label>
+					</form>
+				</section>
+			</div>
+		`;
 	}
+}));
+
+router.get('/third-party/google-analytics/callback', API.serve(class extends HTMLAPI {
+
+	async main() {
+		return 'Hey there';
+	}
+
+	constructor() {
+
+		super();
+
+		this.scripts.push('/js/third-party/google-analytics-callback.js');
+	}
+
+	async main() {
+
+		return `
+			<style>
+				#body {
+					padding: calc(var(--gap) * 2);
+				}
+					#body #loading {
+						padding: 50px;
+						font-size: 250%;
+						text-align: center;
+					}
+			</style>
+
+			<div id="body">
+				<div id="loading"><i class="fas fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+	}
+
 }));
 
 module.exports = router;

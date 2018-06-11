@@ -2340,6 +2340,8 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const container = this.formContainer = document.createElement('div');
 
+		container.classList.add('liner-visualization-options');
+
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Axes</h3>
