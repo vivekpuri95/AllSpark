@@ -287,7 +287,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		this.container.querySelector('#add-report').on('click', () => {
 			this.add();
-			window.history.pushState({id: 'add'}, '', `/configure-report/add`);
+			window.history.pushState({id: 'add'}, '', `/reports/configure-report/add`);
 		});
 	}
 
