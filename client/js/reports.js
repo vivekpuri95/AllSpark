@@ -356,7 +356,7 @@ class DataSource {
 				container.appendChild(this.visualizations.selected.container);
 		}
 
-		this.xlsxDownloadable = ["line", "bar",].includes(this.visualizations.selected.type);
+		this.xlsxDownloadable = ["line", "bar", "area"].includes(this.visualizations.selected.type);
 
 		const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
 
