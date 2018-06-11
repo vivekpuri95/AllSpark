@@ -71,6 +71,18 @@ class report extends API {
 
 		if (preReportApi && commonFun.isJson(preReportApi.value)) {
 
+			for (const key of this.account.settings.get("external_parameters")) {
+
+				if ((constants.filterPrefix + key) in this.request.body) {
+
+					this.filters.push({
+						placeholder: key.replace(constants.filterPrefix),
+						value: this.request.body[key.replace(constants.filterPrefix)],
+						default_value: this.request.body[key.replace(constants.filterPrefix)],
+					})
+				}
+			}
+
 			preReportApi = (JSON.parse(preReportApi.value)).value;
 
 			let preReportApiDetails;
@@ -701,7 +713,7 @@ class Bigquery {
 
 			if (!filter.type) {
 
-				if (parseInt(filter.value)) {
+				if ((filter.value.match(/^-{0,1}\d+$/))) {
 
 					filter.type = 'number';
 				}
