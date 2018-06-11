@@ -5495,10 +5495,10 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		if(!this.column)
 			return this.source.error('Value column not selected! :(');
 
-		const value = response.get(this.column);
-
-		if(!value)
+		if(!response.has(this.column))
 			return this.source.error(`<em>${this.column}</em> column not found! :(`);
+
+		const value = response.get(this.column);
 
 		if(this.valueType == 'number' && isNaN(value))
 			return this.source.error('Invalid Number! :(');
