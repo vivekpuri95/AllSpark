@@ -119,8 +119,8 @@ class report extends API {
 
 				this.filters.push({
 					placeholder: key,
-					value: JSON.stringify(preReportApiDetails[key]),
-					default_value: JSON.stringify(preReportApiDetails[key]),
+					value: preReportApiDetails[key] ?  preReportApiDetails[key].toString() : '',
+					default_value: preReportApiDetails[key] ?  preReportApiDetails[key].toString() : '',
 				})
 			}
 		}
