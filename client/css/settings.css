@@ -84,7 +84,8 @@ main .settings-container {
 				margin-left: auto;
 			}
 		main label.code-type-editor{
-			max-width: 100%
+			max-width: 100%;
+			position: relative;
 		}
 		main .code-type-editor .ace_editor {
 			display: flex;
@@ -99,3 +100,31 @@ main .settings-container {
 		main .settings-container footer .add-form {
 			grid-gap: calc(var(--gap) * 2);
 		}
+		main .settings-container .edit {
+			display: flex;
+			position: relative;
+			color: rgba(0 ,0, 0, 0.5);
+			width: 100%;
+			height: 50px;
+			filter: blur(1.5px);
+		}
+			main .settings-container .click-to-edit {
+				display: flex;
+				background: rgba(0,0,0,0.05);
+				border: 1px solid #ddd;
+				position: absolute;
+				font-size: 110%;
+				width: 100%;
+				height: 50px;
+				top: 20px;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				color: #999;
+				font-weight: normal;
+			}
+			main .settings-container .edit .content {
+				display: flex;
+				align-items: center;
+				padding: calc(var(--gap) * 2);
+			}

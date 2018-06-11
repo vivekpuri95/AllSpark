@@ -738,6 +738,12 @@ class SettingsAccount {
 
 		const settings_json = [
 			{
+				key: 'toggle',
+				type: 'toggle',
+				name: 'Toggle.',
+				description: 'Toggle'
+			},
+			{
 				key: 'top_nav_position',
 				type: 'string',
 				name: 'Header Nav Position.',
@@ -775,13 +781,22 @@ class SettingsAccount {
 			{
 				key: 'custom_js',
 				type: 'code',
+				mode: 'javascript',
 				name: 'Custom JavaScript.',
 				description: 'Custom JavaScript for this account.'
 			},
 			{
 				key: 'custom_css',
 				type: 'code',
+				mode: 'css',
 				name: 'Custom CSS.',
+				description: 'Custom CSS for this account.'
+			},
+			{
+				key: 'json',
+				type: 'code',
+				mode: 'json',
+				name: 'Custom JSON.',
 				description: 'Custom CSS for this account.'
 			},
 		];

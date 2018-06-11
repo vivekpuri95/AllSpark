@@ -274,7 +274,7 @@ SettingsManager.types.set('string', class extends FormatType {
 
 		container.innerHTML = `
 			<span>${this.name}</span>
-			<input type="text" value="" placeholder="String">
+			<input type="text" placeholder="String">
 		`;
 
 		return container;
@@ -288,6 +288,37 @@ SettingsManager.types.set('string', class extends FormatType {
 	set value(param) {
 
 		this.container.querySelector('input').value = param;
+	}
+});
+
+SettingsManager.types.set('toggle', class extends FormatType {
+
+	get container() {
+
+		if(this.div)
+			return this.div;
+
+		const container = this.div = document.createElement('label');
+
+		container.innerHTML = `
+			<span>${this.name}</span>
+			<select>
+				<option value=0> Off</option>
+				<option value=1> On</option>
+			</select>
+		`;
+
+		return container;
+	}
+
+	get value() {
+
+		return this.container.querySelector('select').value;
+	}
+
+	set value(param) {
+
+		this.container.querySelector('select').value = param;
 	}
 });
 
@@ -321,13 +352,6 @@ SettingsManager.types.set('number', class extends FormatType {
 
 SettingsManager.types.set('code', class extends FormatType {
 
-	constructor(setting_format) {
-
-		super(setting_format);
-
-		this.editContainer = new Editor(document.createElement('div'));
-	}
-
 	get container() {
 
 		if(this.div)
@@ -338,21 +362,43 @@ SettingsManager.types.set('code', class extends FormatType {
 
 		container.innerHTML = `
 			<span>${this.name}</span>
+			<div class="edit">
+				<div class="content"></div>
+			</div>
+			<div class="click-to-edit">Click to edit</div>
 		`;
 
-		container.appendChild(this.editContainer.container);
+		container.querySelector('.click-to-edit').on('click', () => {
+
+			container.querySelector('.edit').classList.add('hidden');
+			container.querySelector('.click-to-edit').classList.add('hidden');
+
+			this.edittor = new Editor(document.createElement('div'));
+			this.edittor.editor.getSession().setMode(`ace/mode/${this.mode}`);
+			container.appendChild(this.edittor.container);
+
+			this.edittor.value = this.params;
+		});
 
 		return container;
 	}
 
 	get value() {
 
-		return this.editContainer.value;
+		if(this.edittor)
+			return this.edittor.value;
+
+		return this.params;
 	}
 
 	set value(params) {
 
-		this.editContainer.value = params;
+		this.params = params;
+
+		if(this.edittor)
+			this.edittor.value = params;
+		else
+			this.container.querySelector('.edit .content').textContent = params.split(';')[0];
 	}
 });
 
