@@ -18,11 +18,10 @@ exports.resetlink = class extends API {
 
 		let user = await this.mysql.query(
 			`SELECT user_id, first_name, last_name FROM tb_users WHERE email = ? AND account_id = ?`,
-			[this.request.body.email, this.account.account_id]
+			[this.request.body.email, this.request.body.account_id]
 		);
 
-		if (!user.length)
-			return true;
+		this.assert(user.length, "user not found");
 
 		const token = await new Promise((resolve, reject) => {
 			crypto.randomBytes(80, function (err, buf) {
@@ -40,14 +39,14 @@ exports.resetlink = class extends API {
 		const full_name = user['first_name'] + (user['last_name'] ? ' ' + user['last_name'] : '');
 
 		await this.mysql.query('update tb_password_reset set status = 0 where status = 1 and user_id = ?', [user_id], 'write');
-		const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`
+		const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`;
 		await this.mysql.query(query, [[[user_id, token, 1]]], 'write');
 
 		let mailer = new Mailer();
-		mailer.from_email = 'no-reply@' + this.account.url;
+		mailer.from_email = 'no-reply@' + config.get("mailer").get("domain");
 		mailer.from_name = this.account.name;
 		mailer.to.add(this.request.body.email);
-		mailer.subject = `Password reset for ${this.account.name}`
+		mailer.subject = `Password reset for ${this.account.name}`;
 		mailer.html = `
 			<div style="height:300px;width: 750px;margin:0 auto;border: 1px solid #ccc;padding: 20px 40px; box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);">
 
@@ -75,9 +74,16 @@ exports.resetlink = class extends API {
 			</div>
 		`;
 
-		await mailer.send();
+		const [response] = await mailer.send();
+
+		if (response.status === "rejected") {
+
+			return response.reject_reason
+		}
 
 		return 'Password reset email sent!';
+
+
 	}
 }
 
