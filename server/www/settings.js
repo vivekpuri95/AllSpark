@@ -39,7 +39,7 @@ exports.update = class extends API {
 		this.assert(this.request.body.id, "no id found to update");
 		this.assert(commonFun.isJson(this.request.body.value), "Please send valid JSON");
 
-		await account.loadAccount();
+		await account.loadAccounts();
 
 		return await this.mysql.query("UPDATE tb_settings SET profile = ?, value = ? WHERE id = ?", [this.request.body.profile, this.request.body.value, this.request.body.id], "write");
 	}
@@ -54,7 +54,7 @@ exports.delete = class extends API {
 
 		this.assert(this.request.body.id, "no id found to delete");
 
-		await account.loadAccount();
+		await account.loadAccounts();
 
 		return await this.mysql.query("DELETE FROM tb_settings WHERE id = ?", [this.request.body.id], "write");
 	}
@@ -71,7 +71,7 @@ exports.list = class extends API {
 		for(const row of settingsList)
 			row.value = JSON.parse(row.value);
 
-		await account.loadAccount();
+		await account.loadAccounts();
 
 		return settingsList;
 	}
