@@ -2083,7 +2083,7 @@ class ReportTransformations extends Set {
 				type: 'table',
 				options: {
 					hideLegend: this.visualization.options.hideLegend
-				}
+				},
 			};
 
 			report.visualizations.push(visualization);
@@ -2583,6 +2583,12 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 						<span>Postfix</span>
 						<input type="text" name="postfix" value="${(this.visualization.options && this.visualization.options.postfix) || ''}">
 					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend.
+						</span>
+					</label>
 				</div>
 			</div>
 		`;
@@ -2598,6 +2604,9 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 			`);
 		}
 
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+
 		columnSelect.value = (this.visualization.options && this.visualization.options.column) || '';
 		valueType.value = (this.visualization.options && this.visualization.options.valueType) || '';
 
@@ -2609,6 +2618,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 	get json() {
 
 		return {
+			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
 			column: this.form.querySelector('select[name=column]').value,
 			valueType: this.form.querySelector('select[name=valueType]').value,
 			prefix: this.form.querySelector('input[name=prefix]').value,
