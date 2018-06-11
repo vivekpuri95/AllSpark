@@ -37,7 +37,7 @@ Page.class = class ForgotPassword extends Page {
 
 		try {
 
-			const response = await API.call('authentication/resetlink', {}, options);
+			const response = await API.call('authentication/resetlink', {account_id: this.account.account_id}, options);
 
 			this.message.classList.add('notice');
 			this.message.textContent = response;
