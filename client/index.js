@@ -718,102 +718,105 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 					<header class="toolbar">
 						<button type="submit" form="configure-report-form"><i class="fa fa-save"></i> Save</button>
+						<small id="added-by"></small>
 					</header>
 
-					<form class="form" id="configure-report-form">
+					<form id="configure-report-form">
 
-						<label>
-							<span>Name</span>
-							<input type="text" name="name">
-						</label>
-
-						<label>
-							<span>Connection</span>
-							<select name="connection_name" required></select>
-						</label>
-
-						<div id="query" class="hidden">
-							<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
-							<div id="schema"></div>
-							<div id="editor"></div>
-
-							<div id="test-container">
-								<div id="test-executing" class="hidden notice"></div>
-							</div>
-
-							<div id="missing-filters" class="hidden"></div>
-						</div>
-
-						<div id="api" class="hidden form">
-
+						<div class="form">
 							<label>
-								<span>URL</span>
-								<input type="url" name="url">
+								<span>Name</span>
+								<input type="text" name="name">
 							</label>
 
 							<label>
-								<span>Method</span>
-								<select name="method">
-									<option>GET</option>
-									<option>POST</option>
+								<span>Connection</span>
+								<select name="connection_name" required></select>
+							</label>
+
+							<div id="query" class="hidden">
+								<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
+								<div id="schema"></div>
+								<div id="editor"></div>
+
+								<div id="test-container">
+									<div id="test-executing" class="hidden notice"></div>
+								</div>
+
+								<div id="missing-filters" class="hidden"></div>
+							</div>
+
+							<div id="api" class="hidden form">
+
+								<label>
+									<span>URL</span>
+									<input type="url" name="url">
+								</label>
+
+								<label>
+									<span>Method</span>
+									<select name="method">
+										<option>GET</option>
+										<option>POST</option>
+									</select>
+								</label>
+							</div>
+
+							<label>
+								<span>Category</span>
+								<select name="category_id"></select>
+							</label>
+
+							<label>
+								<span>Description</span>
+								<textarea name="description"></textarea>
+							</label>
+
+							<label>
+								<span>Tags (Comma Separated)</span>
+								<input type="text" name="tags">
+							</label>
+						</div>
+
+						<div class="form">
+							<label>
+								<span>Roles</span>
+								<select name="roles" required id="roles"></select>
+							</label>
+
+							<label>
+								<span>Refresh Rate (Seconds)</span>
+								<input type="number" name="refresh_rate" min="0" step="1">
+							</label>
+
+							<label>
+								<span>Store Result</span>
+								<select name="load_saved">
+									<option value="1">Enabled</option>
+									<option value="0" selected>Disabled</option>
+								</select>
+							</label>
+
+							<label>
+								<span>Redis</span>
+
+								<select id="redis">
+									<option value="0">Disabled</option>
+									<option value="EOD">EOD</option>
+									<option value="custom">Custom<custom>
+								</select>
+
+								<input name="is_redis" class="hidden">
+							</label>
+
+							<label>
+								<span>Status</span>
+								<select name="is_enabled" required>
+									<option value="1">Enabled</option>
+									<option value="0">Disabled</option>
 								</select>
 							</label>
 						</div>
-
-						<label>
-							<span>Category</span>
-							<select name="category_id"></select>
-						</label>
-
-						<label>
-							<span>Description</span>
-							<textarea name="description"></textarea>
-						</label>
-
-						<label>
-							<span>Tags (Comma Separated)</span>
-							<input type="text" name="tags">
-						</label>
-
-						<label>
-							<span>Requested By</span>
-							<input type="text" name="requested_by">
-						</label>
-
-						<label>
-							<span>Roles</span>
-							<select name="roles" required id="roles"></select>
-						</label>
-
-						<label>
-							<span>Refresh Rate (Seconds)</span>
-							<input type="number" name="refresh_rate" min="0" step="1">
-						</label>
-
-						<label>
-							<span>Redis</span>
-
-							<select id="redis">
-								<option value="0">Disabled</option>
-								<option value="EOD">EOD</option>
-								<option value="custom">Custom<custom>
-							</select>
-
-							<input name="is_redis" class="hidden" value="0" min="1">
-						</label>
-
-						<label>
-							<span>Status</span>
-							<select name="is_enabled" required>
-								<option value="1">Enabled</option>
-								<option value="0">Disabled</option>
-							</select>
-						</label>
-
-						<label style="max-width: 300px">
-							<span>Added By</span>
-							<span class="NA" id="added-by"></span>
-						</label>
 					</form>
 				</section>
 
@@ -824,6 +827,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
 						<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
 						<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
+						<button id="edit-data-toggle"><i class="fas fa-edit"></i> Edit Data</button>
 						<button id="run"><i class="fas fa-sync"></i> Run</button>
 					</header>
 
@@ -851,7 +855,14 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									</select>
 								</label>
 							</div>
+
+							<div id="csv" class="hidden">
+								<input type="file" id="csv-input" accept=".xlsx, .xls, .csv" class="hidden">
+								<span>Upload CSV</span>
+							</div>
 						</form>
+
+						<div id="edit-data" class="hidden"></div>
 
 						<div id="filters" class="hidden">
 

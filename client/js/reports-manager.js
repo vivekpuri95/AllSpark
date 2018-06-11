@@ -569,6 +569,9 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 			this.form.is_redis.value = this.form.redis.value;
 			this.form.is_redis.classList.toggle('hidden', this.form.redis.value !== 'custom');
+
+			if(!this.form.is_redis.classList.contains('hidden'))
+				this.form.is_redis.focus();
 		});
 
 		for(const category of MetaData.categories.values()) {
@@ -658,13 +661,20 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				this.form.elements[key].value = this.report[key];
 		}
 
-		if(this.is_redis > 0) {
+		this.container.querySelector('#added-by').innerHTML = `
+			Added by
+			<strong><a href="/user/profile/${this.report.added_by}" target="_blank">${this.report.added_by_name || 'Unknown User'}</a></strong>
+			on
+			<strong>${Format.time(this.report.created_at)}</strong>
+		`;
+
+		if(this.report.is_redis > 0) {
 			this.form.redis.value = 'custom';
 			this.form.is_redis.classList.remove('hidden');
 		}
 
 		else {
-			this.form.redis.value = this.is_redis;
+			this.form.redis.value = this.report.is_redis || 0;
 			this.form.is_redis.classList.add('hidden');
 		}
 	}
@@ -741,6 +751,27 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.editor.editor.resize();
 		});
 
+		const editDataToggle = this.container.querySelector('#edit-data-toggle');
+
+		editDataToggle.on('click', async () => {
+
+			const container = this.container.querySelector('#edit-data');
+
+			editDataToggle.classList.toggle('selected');
+			container.classList.toggle('hidden');
+			this.form.classList.toggle('hidden');
+
+			if(editDataToggle.classList.contains('hidden'))
+				return;
+
+			const editor = new EditSourceData(this.report.query_id);
+
+			await editor.load();
+
+			container.innerHTML = null;
+			container.appendChild(editor.container);
+		});
+
 		this.container.querySelector('#add-filter').on('click', () => this.addFilter());
 
 		this.container.querySelector('#filter-back').on('click', () => {
@@ -813,7 +844,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.report = this.selectedReport;
 
 		this.page.stages.get('configure-visualization').disabled = true;
-		this.container.querySelector('#preview-toggle').classList.add('selected');
 
 		localStorage.reportsPreviewDock = 'bottom';
 		this.page.preview.hidden = false;
@@ -824,13 +854,17 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const connection = this.page.connections.get(parseInt(this.report.connection_name));
 
 		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
-		this.form.querySelector('#query').classList.toggle('hidden', connection.type == 'api');
+		this.form.querySelector('#query').classList.toggle('hidden', connection.type != 'query');
+		this.form.querySelector('#csv').classList.toggle('hidden', connection.type != 'csv');
 
 		this.form.removeEventListener('submit', this.form.listener);
 		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
+
+		this.container.querySelector('#edit-data-toggle').classList.toggle('hidden', !this.report.load_saved);
+
 		this.editor.editor.focus();
 
 		for (const key in this.report) {
@@ -858,8 +892,93 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
 
+		this.container.querySelector('#csv').addEventListener('click', e => {
+			this.container.querySelector('#csv-input').click();
+		});
+
+		this.container.querySelector('#csv-input').addEventListener('change', e => this.uploadCSV(e));
+
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
+
+	uploadCSV(e) {
+
+		if(!this.report.load_saved)
+			return;
+
+		const fileReader = new FileReader();
+
+		fileReader.onload = async e => {
+
+			const contents = e.target.result.split('\n');
+
+			if(!contents.length) {
+				this.container.querySelector('#csv').innerHTML =  'No data found in the CSV! :(';
+				return;
+			}
+
+			const csvJson = [];
+
+			const headers = this.splitCSV(contents[0]);
+
+			for(const rowString of contents.slice(1)) {
+
+				const cellList = this.splitCSV(rowString);
+
+				const row = {};
+
+				for(const [index, cell] of cellList.entries()) {
+
+					row[headers[index]] = cell;
+				}
+
+				csvJson.push(row);
+			}
+
+			const
+				parameter = {
+					data: JSON.stringify(csvJson),
+					query_id: this.report.query_id,
+				},
+				options = {
+					method: 'POST',
+				};
+
+			try {
+				await API.call('reports/engine/report', parameter, options);
+			} catch(e) {
+				this.container.querySelector('#csv').innerHTML = e.message;
+			}
+
+			this.container.querySelector('#edit-data-toggle').click();
+		};
+
+		fileReader.readAsText(e.target.files[0]);
+	}
+
+	splitCSV(str, sep) {
+
+		for (var splitString = str.split(sep = sep || ','), len = splitString.length - 1, tl; len >= 0; len--) {
+
+			if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
+
+				if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
+
+					splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
+				}
+
+				else if (len) {
+					splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(sep));
+				}
+
+				else splitString = splitString.shift().split(sep).concat(splitString);
+			}
+			else splitString[len].replace(/""/g, '"');
+
+		}
+
+		return splitString;
+	};
 
 	async update(e) {
 
@@ -919,10 +1038,17 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const source = this.page.connections.get(parseInt(this.report.connection_name));
 
-		if(!source || !['mysql', 'pgsql', 'bigquery'].includes(source.type)) {
+		if(!source || !['mysql', 'pgsql', 'bigquery', 'csv'].includes(source.type)) {
 			this.form.querySelector('#query').classList.add('hidden');
 			this.form.querySelector('#api').classList.remove('hidden');
-		} else {
+		}
+
+		else if(source.type === 'csv') {
+
+			this.form.querySelector('#csv').classList.remove('hidden');
+		}
+
+		else {
 			this.form.querySelector('#query').classList.remove('hidden');
 			this.form.querySelector('#api').classList.add('hidden');
 		}
@@ -2694,15 +2820,17 @@ class EditSourceData {
 
 	get container() {
 
-		if(this.tableContainer) {
-
+		if(this.tableContainer)
 			return this.tableContainer;
-		}
 
-		const div = document.createElement('div');
+		const div = document.createElement('section');
+
+		div.classList.add('edit-data-source');
 
 		div.innerHTML = `
-			<button type="submit">Save</button>
+			<header class="toolbar">
+				<button type="submit"><i class="fas fa-paper-plane"></i> Update Data</button>
+			</header>
 			<table>
 				<thead></thead>
 				<tbody contentEditable name="data"></tbody>
@@ -2725,7 +2853,6 @@ class EditSourceData {
 		await this.datasource.fetch();
 		this.data = this.datasource.response;
 
-		this.columns = [...this.data[0].keys()];
 		this.rows = [];
 
 		for (const item of this.data) {
@@ -2781,6 +2908,8 @@ class EditSourceData {
 			return this.tableContainer;
 		}
 
+		this.columns = [...this.data[0].keys()];
+
 		const tableElement = this.tableContainer.querySelector('table');
 
 		const thead = this.tableContainer.querySelector('thead');
@@ -2813,21 +2942,22 @@ class EditSourceData {
 
 		for (const row of this.rows) {
 
-			let tableRow = '';
+			let tableRow = document.createElement('tr');
 
 			for (const cell of row) {
 
-				tableRow += '<td>' + cell + '</td>';
+				const td = document.createElement('td');
+				td.textContent = cell;
+				tableRow.appendChild(td);
 			}
 
-			tbody.innerHTML += '<tr>' + tableRow + '</tr>';
+			tbody.appendChild(tableRow);
 		}
 
 		const saveButton = this.tableContainer.querySelector('button[type="submit"]');
 
 		saveButton.removeEventListener('click', EditSourceData.submitListener);
 		saveButton.on('click', EditSourceData.submitListener = (e) => this.save(e));
-
 
 		tableElement.appendChild(thead);
 		tableElement.appendChild(tbody);
@@ -2837,11 +2967,11 @@ class EditSourceData {
 
 	async save(e) {
 
-		if (e) {
-
+		if(e)
 			e.preventDefault();
-		}
 
+		if (!this.data || !this.data.length)
+			return;
 
 		const t = this.container.querySelector('table');
 		const result = [];

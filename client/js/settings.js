@@ -7,7 +7,7 @@ class Settings extends Page {
 
 		for (const [key, settings] of Settings.list) {
 
-			if(key == 'accounts' && !this.user.email.includes('achin.sharma'))
+			if(key == 'accounts' && !this.user.email.includes('achin'))
 				continue;
 
 			const setting = new settings(this.container);
@@ -758,6 +758,18 @@ class SettingsAccount {
 				type: 'string',
 				name: 'Pre Report API',
 				description: 'Pre Report API.',
+			},
+			{
+				key: 'load_saved_connection',
+				type: 'number',
+				name: 'Store Report Result Connection ID',
+				description: 'The Connection where the report\'s result will be saved in.',
+			},
+			{
+				key: 'load_saved_database',
+				type: 'string',
+				name: 'Store Report Result Database',
+				description: 'The database where the report\'s result will be saved in.',
 			},
 			{
 				key: 'enable_account_signup',

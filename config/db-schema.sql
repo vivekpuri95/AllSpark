@@ -157,7 +157,6 @@ CREATE TABLE `tb_query` (
   `category_id` int(11) NOT NULL COMMENT 'FK',
   `description` varchar(1024) DEFAULT NULL,
   `added_by` int(100) DEFAULT NULL,
-  `requested_by` varchar(100) DEFAULT NULL,
   `tags` varchar(1024) DEFAULT NULL,
   `is_enabled` int(11) NOT NULL DEFAULT '1',
   `is_deleted` int(11) NOT NULL DEFAULT '0',
