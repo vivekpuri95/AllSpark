@@ -1,4 +1,5 @@
 const API = require("../utils/api");
+const account = require('../onServerStart');
 const commonFun = require("../utils/commonFunctions");
 
 exports.insert = class extends API {
@@ -38,8 +39,9 @@ exports.update = class extends API {
 		this.assert(this.request.body.id, "no id found to update");
 		this.assert(commonFun.isJson(this.request.body.value), "Please send valid JSON");
 
-		return await this.mysql.query("UPDATE tb_settings SET profile = ?, value = ? WHERE id = ?", [this.request.body.profile, this.request.body.value, this.request.body.id], "write");
+		await account.loadAccounts();
 
+		return await this.mysql.query("UPDATE tb_settings SET profile = ?, value = ? WHERE id = ?", [this.request.body.profile, this.request.body.value, this.request.body.id], "write");
 	}
 };
 
@@ -52,6 +54,8 @@ exports.delete = class extends API {
 
 		this.assert(this.request.body.id, "no id found to delete");
 
+		await account.loadAccounts();
+
 		return await this.mysql.query("DELETE FROM tb_settings WHERE id = ?", [this.request.body.id], "write");
 	}
 };
@@ -63,10 +67,11 @@ exports.list = class extends API {
 		this.user.privilege.needs("administrator");
 
 		const settingsList = await this.mysql.query("select * from tb_settings where account_id = ?", [this.request.query.account_id]);
-		for(const row of settingsList) {
 
+		for(const row of settingsList)
 			row.value = JSON.parse(row.value);
-		}
+
+		await account.loadAccounts();
 
 		return settingsList;
 	}

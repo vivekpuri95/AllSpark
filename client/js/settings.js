@@ -283,7 +283,6 @@ Settings.list.set('categories', class Categories extends SettingPage {
 
 		this.container.querySelector('#add-category').on('click', () => SettingsCategory.add(this));
 		this.form.querySelector('#back').on('click', () => Sections.show('category-list'));
-
 	}
 
 	async load() {
@@ -297,7 +296,6 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		}
 
 		await this.render();
-
 	}
 
 	async render() {
@@ -312,9 +310,7 @@ Settings.list.set('categories', class Categories extends SettingPage {
 			container.appendChild(category.row);
 
 		await Sections.show('category-list');
-
 	}
-
 });
 
 class SettingsDataset {
@@ -748,12 +744,6 @@ class SettingsAccount {
 				description: 'Position of top nav bar.'
 			},
 			{
-				key: 'custom_js',
-				type: 'code',
-				name: 'Custom JavaScript.',
-				description: 'Custom js by user.'
-			},
-			{
 				key: 'pre_report_api',
 				type: 'string',
 				name: 'Pre Report API',
@@ -781,6 +771,18 @@ class SettingsAccount {
 					{name: "False",value: false}
 				],
 				multiple: false,
+			},
+			{
+				key: 'custom_js',
+				type: 'code',
+				name: 'Custom JavaScript.',
+				description: 'Custom JavaScript for this account.'
+			},
+			{
+				key: 'custom_css',
+				type: 'code',
+				name: 'Custom CSS.',
+				description: 'Custom CSS for this account.'
 			},
 		];
 
@@ -1044,7 +1046,6 @@ class SettingsCategory {
 
 		this.page = page;
 		this.form = this.page.form.querySelector('#category-form');
-
 	}
 
 	static add(page) {
@@ -1060,7 +1061,6 @@ class SettingsCategory {
 		categoryForm.on('submit', SettingsCategory.submitListener = e => SettingsCategory.insert(e, page));
 		Sections.show('category-edit');
 		categoryForm.name.focus();
-
 	}
 
 	static async insert(e, page) {
@@ -1074,7 +1074,6 @@ class SettingsCategory {
 
 		await API.call('category/insert', {}, options);
 		await page.load();
-
 	}
 
 	async edit() {
@@ -1092,7 +1091,6 @@ class SettingsCategory {
 
 		await Sections.show('category-edit');
 		this.form.name.focus();
-
 	}
 
 	async update(e) {
@@ -1111,7 +1109,6 @@ class SettingsCategory {
 
 		await API.call('category/update', parameters, options);
 		await this.page.load();
-
 	}
 
 	async delete() {
@@ -1152,6 +1149,5 @@ class SettingsCategory {
 		this.container.querySelector('.red').on('click', () => this.delete());
 
 		return this.container;
-
 	}
 }
