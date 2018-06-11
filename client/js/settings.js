@@ -7,7 +7,7 @@ class Settings extends Page {
 
 		for (const [key, settings] of Settings.list) {
 
-			if(key == 'accounts' && !this.user.email.includes('achin'))
+			if(key == 'accounts' && !this.user.privileges.has('superadmin'))
 				continue;
 
 			const setting = new settings(this.container);
