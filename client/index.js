@@ -52,7 +52,7 @@ class HTMLAPI extends API {
 				</head>
 				<body>
 					<div id="ajax-working"></div>
-					<header class="${this.account.settings.get('top_nav_position') == 'hidden' ? 'hidden' : ''}">
+					<header>
 						<div class="logo-container">
 
 							<div class="left-menu-toggle hidden">

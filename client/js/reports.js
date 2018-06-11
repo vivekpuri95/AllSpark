@@ -212,7 +212,7 @@ class DataSource {
 		`;
 
 		if(user.privileges.has('reports'))
-			container.querySelector('header h2').insertAdjacentHTML('beforeend', '<span class="id">#${this.query_id}</span>');
+			container.querySelector('header h2').insertAdjacentHTML('beforeend', ` <span class="id">#${this.query_id}</span>`);
 
 		document.querySelector('body').on('click', (e) => {
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
