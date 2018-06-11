@@ -147,7 +147,7 @@ class DataSource {
 		container.innerHTML = `
 
 			<header>
-				<h2><span class="title">${this.name}</span> <span class="id">#${this.query_id}</span></h2>
+				<h2><span class="title">${this.name}</span></h2>
 				<div class="actions right">
 					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
 					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
@@ -210,6 +210,9 @@ class DataSource {
 				${JSON.stringify(DataSource.list.get(this.query_id))}
 			</div>
 		`;
+
+		if(user.privileges.has('reports'))
+			container.querySelector('header h2').insertAdjacentHTML('beforeend', '<span class="id">#${this.query_id}</span>');
 
 		document.querySelector('body').on('click', (e) => {
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
