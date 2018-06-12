@@ -793,11 +793,11 @@ class SettingsAccount {
 				description: 'Custom CSS for this account.'
 			},
 			{
-				key: 'json',
+				key: 'external_parameter',
 				type: 'code',
 				mode: 'json',
-				name: 'Custom JSON.',
-				description: 'Custom CSS for this account.'
+				name: 'External Parameter.',
+				description: 'External Parameter for this account.'
 			},
 		];
 
