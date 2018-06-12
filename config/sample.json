@@ -3,6 +3,7 @@
   "http": false,
   "bigquery_files_destination": "../../bigquery_files/",
   "secret_key": "SECRET KEY HERE",
+  "ga_id": "",
   "sql_db": {
     "read": {
       "connectionLimit": 10,
@@ -26,5 +27,6 @@
     "host": "localhost",
     "port": 6379,
     "db": 0
-  }
+  },
+  "superAdmin_users": ["email1", "email2"]
 }

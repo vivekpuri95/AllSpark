@@ -36,15 +36,21 @@ class Page {
 
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
-			if(parameters.has('access_token') && parameters.get('access_token')) {
-				User.logout();
-				await IndexedDb.instance.set('access_token', parameters.get('access_token'));
+			if(account && parameters.get('external_parameters') && Array.isArray(account.settings.get('external_parameters'))) {
+
+				User.logout(undefined, async () => {
+
+					const parameters_ = {};
+
+					for(const [key, value] of parameters)
+						parameters_[key] = value;
+
+					await IndexedDb.instance.set('external_parameters', parameters_);
+				});
 			}
 		}
 
 		await API.refreshToken();
-		await User.load();
-		await MetaData.load();
 	}
 
 	static render() {
@@ -152,7 +158,6 @@ class Page {
 				if(!value)
 					return;
 
-				IndexedDb.instance.set('access_token', value);
 				location.reload();
 			}
 		});
@@ -295,6 +300,17 @@ class IndexedDb {
 			request.onerror = e => reject(e);
 		});
 	}
+
+	delete(key) {
+
+		return new Promise((resolve, reject) => {
+
+			const request = this.db.transaction('MainStore', 'readwrite').objectStore('MainStore').delete(key);
+
+			request.onsuccess = e => resolve(e.result);
+			request.onerror = e => reject(e);
+		});
+	}
 }
 
 /**
@@ -305,9 +321,9 @@ class Cookies {
 	/**
 	 * Sets a new cookie with given name and value and overwrites any previously held values.
 	 *
-	 * @param {string} key		The name of the cookie being set.
-	 * @param {string} Value	The value of the cookie being set.
-	 * @return {boolean}		The status of the set request.
+	 * @param  string	key		The name of the cookie being set.
+	 * @param  string	Value	The value of the cookie being set.
+	 * @return boolean			The status of the set request.
 	 */
 	set(key, value) {
 		document.cookie = `${key}=${encodeURIComponent(value)}`;
@@ -317,8 +333,8 @@ class Cookies {
 	/**
 	 * Checks if a cookie with the given name exists.
 	 *
-	 * @param  {string} key	The name of the cookie whose existance is being questioned
-	 * @return {boolean}	Returns true if the cookie exists, false otherwise
+	 * @param  string	key	The name of the cookie whose existance is being questioned
+	 * @return boolean		Returns true if the cookie exists, false otherwise
 	 */
 	has(key) {
 		return new Boolean(document.cookie.split(';').filter(c => c.includes(`${key}=`)).length);
@@ -327,8 +343,8 @@ class Cookies {
 	/**
 	 * Gets the value of a cookie with the given name.
 	 *
-	 * @param  {string}	key		The name of the cookie whose value will be retured.
-	 * @return {srtring|null}	The value of the cookie, null if not found.
+	 * @param  string	key	The name of the cookie whose value will be retured.
+	 * @return srtring	The	value of the cookie, null if not found.
 	 */
 	get(key) {
 
@@ -565,11 +581,11 @@ class Account {
 
 		this.settings = new Map;
 
-		if(account.settings && account.settings[0]) {
+		if(!Array.isArray(account.settings))
+			return;
 
-			for(const setting of account.settings[0].value)
-				this.settings.set(setting.key, setting.value);
-		}
+		for(const setting of account.settings)
+			this.settings.set(setting.key, setting.value);
 	}
 }
 
@@ -588,15 +604,19 @@ class User {
 		return window.user = new User(user);
 	}
 
-	static async logout(next) {
+	static async logout(next, callback) {
 
 		const parameters = new URLSearchParams();
 
 		localStorage.clear();
+
 		await IndexedDb.instance.db.transaction('MainStore', 'readwrite').objectStore('MainStore').clear();
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
+
+		if(callback)
+			await callback();
 
 		window.location = '/login?'+parameters.toString();
 	}
@@ -622,6 +642,12 @@ class UserPrivileges extends Set {
 	}
 
 	has(name) {
+
+		if(name === "superadmin") {
+
+			return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase()).length;
+		}
+
 		return Array.from(this).filter(p => p.privilege_name.toLowerCase() == name.toLowerCase() || p.privilege_id === 0).length;
 	}
 }
@@ -867,7 +893,7 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!await IndexedDb.instance.has('refresh_token') || !getToken)
+		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken)
 			return;
 
 		const
@@ -878,8 +904,18 @@ class API extends AJAX {
 				method: 'POST',
 			};
 
-		if(account.auth_api && parameters.access_token)
-			parameters.access_token = await IndexedDb.instance.get('access_token');
+		if(account && account.auth_api && Array.isArray(account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
+
+			const external_parameters = await IndexedDb.instance.get('external_parameters');
+
+			for(const key of account.settings.get('external_parameters')) {
+
+				if(key in external_parameters)
+					parameters['ext_' + key] = external_parameters[key];
+			}
+
+			parameters.external_parameters = true;
+		}
 
 		const response = await API.call('authentication/refresh', parameters, options);
 
@@ -972,6 +1008,15 @@ class Format {
 
 	static date(date) {
 
+		const options = {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+		};
+
+		if(!Format.date.formatter)
+			Format.date.formatter = new Intl.DateTimeFormat('en-IN', options);
+
 		if(typeof date == 'string')
 			date = Date.parse(date);
 
@@ -981,17 +1026,40 @@ class Format {
 		if(!date)
 			return '';
 
+		return Format.date.formatter.format(date);
+	}
+
+	static time(time) {
+
 		const options = {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric',
+			hour: 'numeric',
+			minute: 'numeric'
 		};
 
-		return new Intl.DateTimeFormat('en-IN', options).format(date);
+		if(!Format.time.formatter)
+			Format.time.formatter = new Intl.DateTimeFormat('en-IN', options);
+
+		if(typeof time == 'string')
+			time = Date.parse(time);
+
+		if(typeof time == 'object' && time)
+			time = time.getTime();
+
+		if(!time)
+			return '';
+
+		return Format.time.formatter.format(time);
 	}
 
 	static number(number) {
-		return new Intl.NumberFormat('en-IN').format(number);
+
+		if(!Format.number.formatter)
+			Format.number.formatter = new Intl.NumberFormat('en-IN');
+
+		return Format.number.formatter.format(number);
 	}
 }
 
@@ -1172,8 +1240,11 @@ class MultiSelect {
 
 			e.stopPropagation();
 
-			for(const option of document.querySelectorAll('.multi-select .options')) {
-				option.classList.add('hidden');
+			if(!this.container.classList.contains('expanded')) {
+
+				for(const option of document.querySelectorAll('.multi-select .options')) {
+					option.classList.add('hidden');
+				}
 			}
 
 			this.container.querySelector('.options').classList.remove('hidden');
@@ -1204,10 +1275,17 @@ class MultiSelect {
 		this.container.querySelector('.options header .clear').on('click', () => this.clear());
 	}
 
-	set value(source) {
+	set value(values) {
 
 		this.selectedValues.clear();
-		source.map( x => this.selectedValues.add(x.toString()));
+
+		for(const value of values) {
+			if(this.datalist && this.datalist.some(r => r.value == value))
+				this.selectedValues.add(value);
+		}
+
+		if(this.changeCallback)
+			this.changeCallback();
 
 		this.update();
 	}
@@ -1231,16 +1309,16 @@ class MultiSelect {
 	render() {
 
 		if(this.expand)
-			this.container.querySelector('.options').classList.add('expanded');
+			this.container.classList.add('expanded');
 
-		if(this.disabled)
-			this.container.querySelector('input[type=search]').disabled = true;
+		this.container.querySelector('input[type=search]').disabled = this.disabled;
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
 
-		if(!this.datalist.length) {
-			this.container.querySelector('.options .list').innerHTML = "<div class='NA'>No data found... :(</div>";
+		if(!this.datalist || !this.datalist.length) {
+			optionList.innerHTML = '<div class="NA">No data found... :(</div>';
+			return;
 		}
 
 		for(const row of this.datalist) {
@@ -1253,7 +1331,6 @@ class MultiSelect {
 			input.name = this.inputName;
 			input.value = row.value;
 			input.type = this.multiple ? 'checkbox' : 'radio';
-			input.checked = true;
 
 			label.appendChild(input);
 			label.appendChild(text);
@@ -1263,14 +1340,16 @@ class MultiSelect {
 			input.on('change', () => {
 
 				if(!this.multiple) {
-
 					this.selectedValues.clear();
 					this.selectedValues.add(input.value.toString());
 				}
 				else {
-
 					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
 				}
+
+				if(this.changeCallback)
+					this.changeCallback();
+
 				this.update();
 			});
 
@@ -1289,7 +1368,19 @@ class MultiSelect {
 			optionList.appendChild(label);
 		}
 
-	    this.multiple ? this.datalist.map(obj => this.selectedValues.add(obj.value.toString())) : this.selectedValues.add(this.datalist[0].value.toString());
+	    if(this.multiple) {
+
+			if(!this.selectedValues.size)
+				this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+		}
+		else {
+
+			if(this.selectedValues.size != 1) {
+
+				this.selectedValues.clear();
+				this.selectedValues.add(this.datalist[0].value.toString())
+			}
+		}
 
 		this.update();
 	}
@@ -1308,7 +1399,7 @@ class MultiSelect {
 
 		for(const input of options.querySelectorAll('.list label input')) {
 
-			input.checked = this.selectedValues.has(input.value) ? true : false;
+			input.checked = this.selectedValues.has(input.value);
 
 			let hide = false;
 
@@ -1336,7 +1427,6 @@ class MultiSelect {
 
 		if(this.changeCallback)
 			this.changeCallback();
-
 	}
 
 	on(event, callback) {
@@ -1353,6 +1443,10 @@ class MultiSelect {
 			return;
 
 		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+
+		if(this.changeCallback)
+			this.changeCallback();
+
 		this.update();
 	}
 
@@ -1362,6 +1456,10 @@ class MultiSelect {
 	        return;
 
 		this.selectedValues.clear();
+
+		if(this.changeCallback)
+			this.changeCallback();
+
 		this.update();
 	}
 }

@@ -22,7 +22,6 @@ exports.query = class extends API {
 			url_options: data.url_options,
 			category_id: data.category_id,
 			description: data.description,
-			requested_by: data.requested_by,
 			tags: data.tags,
 			is_enabled: data.is_enabled,
 			is_deleted: data.is_deleted,

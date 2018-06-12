@@ -15,9 +15,10 @@ main > nav {
 	top: 0;
 	overflow-y: auto;
 	z-index: 5;
-	color: #777;
 	height: calc(100vh - 50px);
-	border-right: 1px solid #ccc;
+	height: 100vh;
+	background: var(--color-primary);
+	color: var(--color-primary-text);
 }
 	main > nav .dashboard-search input {
 		background: rgba(255, 255, 255, 0.1) !important;
@@ -34,21 +35,24 @@ main > nav {
 			color: #ccc;
 			margin: 0 auto;
 		}
-	nav.collapsed-nav {
+	nav.collapsed {
 		overflow: unset;
 	}
-main > nav.collapsed-nav .dashboard-search {
+main > nav.collapsed .dashboard-search {
 	display: none;
 }
-main > nav.collapsed-nav .selected {
+main > nav.collapsed .selected {
 	box-shadow: none !important;
 	background: var(--color-accent) !important;
 }
-	nav > .item > .collapsed-submenu-bar {
+	nav.collapsed > .item {
+		position: relative;
+	}
+	nav.collapsed > .item > .submenu {
 		position: absolute;
-		left: 60px;
+		left: 100%;
 		width: 180px;
-		margin-top: -40px;
+		top: 0;
 		background: var(--color-primary);
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
 	}
@@ -84,28 +88,48 @@ main > nav::-webkit-scrollbar-track {
 	main > nav .label {
 		display: flex;
 		padding: 12px;
-		color: #777;
 		align-items: center;
-		transition: background var(--transition-duration),
-					box-shadow var(--transition-duration);
 		border-radius: 0;
 		font: inherit;
 		vertical-align: inherit;
+		color: var(--color-primary-text);
+		transition: background var(--transition-duration),
+					box-shadow var(--transition-duration);
 	}
+	main > nav .label:hover {
+		text-decoration: none;
+		background: rgba(0, 0, 0, 0.3);
+	}
+	main > nav .label:active {
+		box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
+	}
+	main > nav .label.selected {
+		background: rgba(0, 0, 0, 0.3);
+		box-shadow: inset 5px 0px 0 var(--color-accent);
+	}
+		main > nav .submenu .label {
+			padding-left: 40px;
+		}
+		main > nav .submenu .submenu .label {
+			padding-left: 60px;
+		}
+		main > nav .submenu .submenu .submenu .label {
+			padding-left: 90px;
+		}
+			main > nav .item .label .name {
+				margin-left: 8px;
+			}
+			main > nav .item .label .angle {
+				transition: transform var(--transition-duration);
+				margin-left: auto;
+			}
+			main > nav .item .label .angle.down {
+				transform: rotate(90deg);
+			}
 	main > nav footer {
 		display: flex;
-		color: #777;
-		align-items: center;
-		transition: background var(--transition-duration),
-					box-shadow var(--transition-duration);
-		border-radius: 0;
-		font: inherit;
-		vertical-align: inherit;
-		padding: 0;
 		justify-content: space-between;
 		margin-top: auto;
-		position: sticky;
-		bottom: 0;
 		background: var(--color-primary);
 	}
 		.collapsed-grid .collapse-panel {
@@ -119,53 +143,21 @@ main > nav::-webkit-scrollbar-track {
 			display: flex;
 			padding: 12px 0;
 			justify-content: center;
+			align-items: center;
 			width: 50px;
-			color: #fff;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
 			background: rgba(0, 0, 0, 0.15)
 		}
 		main > nav footer .powered-by {
-		font-size: 80%;
-		color: #ccc;
-		letter-spacing: 0.5px;
-		padding: 12px;
+			font-size: 80%;
+			color: #ccc;
+			letter-spacing: 0.5px;
+			padding: 12px;
 		}
-		main > nav footer .powered-by a {
-			font-weight: bold;
-			letter-spacing: 1.5px;
-		}
-	main > nav .label:hover {
-		background: var(--color-secondary);
-		color: var(--color-secondary-text);
-		text-decoration: none;
-	}
-	main > nav .label:active {
-		box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
-	}
-	main > nav .label.selected {
-		background: var(--color-secondary);
-		color: var(--color-secondary-text);
-		box-shadow: inset 5px 0px 0 var(--color-accent);
-	}
-		main > nav .submenu .label {
-			padding-left: 40px;
-		}
-		main > nav .submenu .submenu .label {
-			padding-left: 60px;
-		}
-		main > nav .submenu .submenu .submenu .label {
-			padding-left: 90px;
-		}
-			main > nav .item .label .name {
-				margin: 0 auto 0 8px;
-			}
-			main > nav .item .label .angle {
-				transition: transform var(--transition-duration);
-			}
-			main > nav .item .label .angle.down {
-				transform: rotate(90deg);
+			main > nav footer .powered-by a {
+				color: var(--color-primary-text);
 			}
 main #mailto.selected {
 	background: var(--color-accent);
@@ -213,13 +205,17 @@ main #reports > .datasets.show {
 		margin: 0 0 10px;
 		border-bottom: 1px dashed #999;
 		font-size: 95%;
-		padding: var(--gap) 0;
+		padding: calc(var(--gap)* 2) 0;
 		background: #fff;
 		width: 100%;
 		position: sticky;
+		letter-spacing: 0.5px;
 		top: 0;
 		z-index: 1;
 	}
+		main #reports > .datasets h3 svg {
+			color: #999;
+		}
 	main #reports > .datasets .dataset-container {
 		grid-column: 1;
 		width: 100%;
@@ -254,12 +250,12 @@ main #reports > .list {
 	align-items: start;
 }
 	main #reports > .list .NA.no-reports {
-		grid-column: 1 / span 32;
+		grid-column: 1 / span all;
 	}
 	main #reports > .toolbar {
 		position: sticky;
 		top: 0;
-		z-index: 4;
+		z-index: 5;
 		align-items: flex-end;
 	}
 		main #reports > .toolbar input[name=date-range] {

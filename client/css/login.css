@@ -1,5 +1,5 @@
 main {
-	margin: -100px auto 0;
+	margin: 0 auto;
 	width: 300px;
 	display: flex;
 	flex-direction: column;
@@ -9,11 +9,6 @@ main {
 main > * {
 	margin: var(--gap) 0;
 }
-	main .whitelabel {
-		justify-content: center;
-		padding: 25px;
-		font-size: 200%;
-	}
 	main .logo {
 		width: 100%;
 		background: var(--color-primary);
@@ -23,11 +18,13 @@ main > * {
 		main .logo img {
 			width: 100%;
 		}
-	main .form {
+	main > section {
 		background: #fff;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-		padding: 10px;
 	}
+		main .form {
+			padding: 0;
+		}
 		main .form label {
 			max-width: initial;
 		}
@@ -47,6 +44,42 @@ main > * {
 				letter-spacing: 1px;
 				margin-left: auto;
 			}
-	main .signup {
-		padding: calc(var(--gap) * 2);
+	main #loading {
+		text-align: center;
+		padding: 25px;
+		font-size: 200%;
 	}
+	main #accept-account.show {
+		display: grid;
+		grid-gap: calc(var(--gap) * 2);
+		max-height: 80vh;
+		overflow: auto;
+	}
+		main #accept-account .account {
+			padding: calc(var(--gap) * 2);
+			display: grid;
+			grid-template-columns: 100px 1fr;
+			cursor: pointer;
+			border-bottom: 1px dashed #ccc;
+			align-items: center;
+			font-weight: bold;
+			transition: background var(--transition-duration),
+						box-shadow var(--transition-duration);
+		}
+		main #accept-account .account:last-child {
+			border: 0;
+		}
+		main #accept-account .account:hover {
+			background: #eee;
+		}
+		main #accept-account .account:active {
+			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+		}
+			main #accept-account .account img {
+				max-width: 100px;
+				justify-self: center;
+				height: 50px;
+			}
+			main #accept-account .account span {
+				margin-left: calc(var(--gap) * 2);
+			}

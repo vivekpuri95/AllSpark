@@ -14,7 +14,7 @@ dir = os.path.realpath(cred)
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
 DISCOVERY_URI = ('https://analyticsreporting.googleapis.com/$discovery/rest')
 KEY_FILE_LOCATION = dir
-SERVICE_ACCOUNT_EMAIL = 'tookan-marketing@tookan-ga.iam.gserviceaccount.com'
+SERVICE_ACCOUNT_EMAIL = ''
 
 def initialize_analyticsreporting():
 

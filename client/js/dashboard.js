@@ -237,7 +237,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		if (!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA"><td colspan="6">No Reports Found! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found! :(</td></tr>`;
 	}
 
 	closeOtherDropDowns(id, container) {
@@ -380,35 +380,33 @@ Page.class = class Dashboards extends Page {
 			</footer>
 		`);
 
-		// nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.has('disable_powered_by') && account.settings.get('disable_powered_by'))
+		nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.get('disable_powered_by'))
 
 		nav.querySelector('.collapse-panel').on('click', (e) => {
 
-			nav.classList.toggle('collapsed-nav');
+			nav.classList.toggle('collapsed');
 
 			const right = e.currentTarget.querySelector('.right')
 
 			right.classList.toggle('hidden');
 			e.currentTarget.querySelector('.left').classList.toggle('hidden');
 
-			// if(!nav.querySelector('.powered-by').classList.contains('hidden') && !account.settings.get('disable_powered_by'))
-			// 	nav.querySelector('.powered-by').classList.add('hidden');
-			// else if( !account.settings.get('disable_powered_by'))
-			// 	nav.querySelector('.powered-by').classList.remove('hidden');
+			if(!nav.querySelector('.powered-by').classList.contains('hidden') && !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.add('hidden');
+
+			else if( !account.settings.get('disable_powered_by'))
+				nav.querySelector('.powered-by').classList.remove('hidden');
 
 			document.querySelector('main').classList.toggle('collapsed-grid');
 
 			for (const item of nav.querySelectorAll('.item')) {
 
-				if (!right.hidden) {
+				if (!right.hidden)
 					item.classList.remove('list-open');
-				}
 
 				if (!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
 					item.querySelector('.label .name').classList.toggle('hidden');
-				item.querySelector('.submenu') ? item.querySelector('.submenu').classList.toggle('collapsed-submenu-bar') : '';
 			}
-
 		});
 
 		if (!nav.children.length) {
@@ -529,13 +527,12 @@ class Dashboard {
 
 	get menuItem() {
 
-		if (this.container) {
-
+		if (this.container)
 			return this.container;
-		}
-		const allVisualizations = this.childrenVisualizations(this);
 
-		const container = this.container = document.createElement('div');
+		const
+			container = this.container = document.createElement('div'),
+			allVisualizations = this.childrenVisualizations(this);
 
 		let icon;
 
@@ -567,10 +564,9 @@ class Dashboard {
 
 		const submenu = container.querySelector('.submenu');
 
-
 		container.querySelector('.label').on('click', () => {
 
-			if (container.querySelector('.collapsed-submenu-bar')) {
+			if (this.page.container.querySelector('nav.collapsed')) {
 
 				for (const item of container.parentElement.querySelectorAll('.item')) {
 
@@ -796,6 +792,11 @@ class Dashboard {
 		if (this.format && this.format.category_id)
 			return;
 
+		if (!this.datasets.size) {
+
+			this.page.container.querySelector('#reports .side').classList.add('hidden');
+		}
+
 		await Sections.show('reports');
 
 		const menuElement = this.page.container.querySelector("#dashboard-" + this.id);
@@ -853,7 +854,7 @@ class Dashboard {
 
 		if (!this.page.loadedVisualizations.size) {
 
-			Dashboard.container.innerHTML = '<div class="NA">No reports found! :(</div>';
+			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
 		}
 
 		if (this.page.user.privileges.has('reports')) {
@@ -905,10 +906,8 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if (!this.datasets.size) {
-
-			this.page.container.querySelector('#reports .side').classList.add('hidden');
-		}
+		if(Dashboard.selectedValues && Dashboard.selectedValues.size && this.datasets.size)
+			this.datasets.apply();
 	}
 
 	edit() {
@@ -1243,7 +1242,7 @@ class DashboardDatasets extends Map {
 		if (!this.size)
 			return;
 
-		container.innerHTML = '<h3>Global Filters</h3>';
+		container.innerHTML = '<h3><i class="fas fa-filter"></i> Global Filters</h3>';
 
 		const datasets = Array.from(this.values()).sort((a, b) => {
 			if (!a.order)
@@ -1266,7 +1265,7 @@ class DashboardDatasets extends Map {
 
 			label.appendChild(dataset.container);
 
-			if (Dashboard.selectedValues.has(dataset.id))
+			if(Dashboard.selectedValues.has(dataset.id))
 				dataset.value = Dashboard.selectedValues.get(dataset.id);
 
 			container.appendChild(label);
@@ -1311,49 +1310,34 @@ class DashboardDatasets extends Map {
 		});
 	}
 
-	apply(options = {}) {
+	async apply(options = {}) {
 
-		for (const report of this.page.loadedVisualizations) {
-			report.filters.container;
-		}
+		for (const report of this.dashboard.visualizationList) {
 
-		setTimeout(() => {
-			for (const report of this.page.loadedVisualizations) {
+			let found = false;
 
-				let found = false;
+			for (const filter of report.filters.values()) {
 
-				for (const filter of report.filters.values()) {
+				if (!filter.dataset || !this.has(filter.dataset.id))
+					continue;
 
-					filter.label;
+				await filter.dataset.fetch();
 
-					if (!filter.dataset || !this.has(filter.dataset.id))
-						continue;
+				filter.dataset.value = this.get(filter.dataset.id).value;
 
-					filter.dataset.value = this.get(filter.dataset.id);
-
-					found = true;
-				}
-
-				if (found) {
-					setTimeout(() => report.visualizations.selected.load(options));
-					report.container.style.opacity = 1;
-				}
-
-				else
-					report.container.style.opacity = 0.4;
+				found = true;
 			}
-		});
+
+			if(found && this.page.loadedVisualizations.has(report))
+				report.visualizations.selected.load(options);
+
+			report.container.style.opacity = found ? 1 : 0.4;
+		}
 
 		Dashboard.selectedValues.clear();
-		for (const [key, value] of this) {
-			const inputs = [];
-			for (const input of value.containerElement.querySelectorAll('.list label')) {
-				if (input.querySelector('input').checked) {
-					inputs.push(input.querySelector('input').value)
-				}
-			}
-			Dashboard.selectedValues.set(key, inputs);
-		}
+
+		for(const [id, dataset] of this)
+			Dashboard.selectedValues.set(id, dataset.value);
 	}
 
 	clear() {

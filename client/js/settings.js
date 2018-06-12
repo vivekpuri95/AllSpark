@@ -7,6 +7,9 @@ class Settings extends Page {
 
 		for (const [key, settings] of Settings.list) {
 
+			if(key == 'accounts' && !this.user.privileges.has('superadmin'))
+				continue;
+
 			const setting = new settings(this.container);
 
 			const a = document.createElement('a');
@@ -188,12 +191,11 @@ Settings.list.set('roles', class Roles extends SettingPage {
 	async load() {
 
 		const roles_list = await API.call('roles/list');
+
 		this.list = new Map();
 
-		for(const role of roles_list) {
-
+		for(const role of roles_list)
 			this.list.set(role.role_id, new SettingsRole(role, this));
-		}
 
 		await this.render();
 	}
@@ -281,7 +283,6 @@ Settings.list.set('categories', class Categories extends SettingPage {
 
 		this.container.querySelector('#add-category').on('click', () => SettingsCategory.add(this));
 		this.form.querySelector('#back').on('click', () => Sections.show('category-list'));
-
 	}
 
 	async load() {
@@ -295,7 +296,6 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		}
 
 		await this.render();
-
 	}
 
 	async render() {
@@ -310,9 +310,7 @@ Settings.list.set('categories', class Categories extends SettingPage {
 			container.appendChild(category.row);
 
 		await Sections.show('category-list');
-
 	}
-
 });
 
 class SettingsDataset {
@@ -483,7 +481,7 @@ class SettingsPrivilege {
 		this.container.innerHTML = `
 			<td>${this.privilege_id}</td>
 			<td>${this.name}</td>
-			<td>${this.is_admin}</td>
+			<td>${this.is_admin ? 'Yes' : 'No'}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -644,7 +642,7 @@ class SettingsRole {
 		this.container.innerHTML = `
 			<td>${this.role_id}</td>
 			<td>${this.name}</td>
-			<td>${this.is_admin? 'Yes' : 'No'}</td>
+			<td>${this.is_admin ? 'Yes' : 'No'}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -662,43 +660,43 @@ class SettingsAccount {
 
 		Object.assign(this, account);
 		this.page = page;
-		this.form = this.page.form.querySelector("#account-form");
+		this.form = this.page.form.querySelector('#account-form');
 	}
 
 	static async add(page) {
 
 		SettingsAccount.page = page;
 
-		const accountForm = page.form.querySelector("#account-form");
+		const accountForm = page.form.querySelector('#account-form');
 
 		SettingsAccount.form = accountForm;
 
 		accountForm.reset();
-		SettingsAccount.editor.value = "";
+		SettingsAccount.editor.value = '';
 
 		const logo = accountForm.logo;
 		const icon = accountForm.icon;
 
-		logo.src = "";
-		accountForm.querySelector("#logo").classList.toggle("hidden", true);
+		logo.src = '';
+		accountForm.querySelector('#logo').classList.toggle('hidden', true);
 
-		icon.src = "";
-		accountForm.querySelector("#icon").classList.toggle("hidden", true);
+		icon.src = '';
+		accountForm.querySelector('#icon').classList.toggle('hidden', true);
 
-		page.form.querySelector("#cancel-form").on('click', () => {
-			accountForm.removeEventListener("submit", SettingsAccount.submitEventListener);
+		page.form.querySelector('#cancel-form').on('click', () => {
+			accountForm.removeEventListener('submit', SettingsAccount.submitEventListener);
 			Sections.show('accounts-list')
 		});
 
-		await Sections.show("accounts-form");
+		await Sections.show('accounts-form');
 
-		page.form.querySelector('h1').textContent = "Adding new Account";
-		page.form.removeEventListener("submit", SettingsAccount.submitEventListener);
+		page.form.querySelector('h1').textContent = 'Adding new Account';
+		page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
 
-		page.form.on("submit", SettingsAccount.submitEventListener =  async e => {
+		page.form.on('submit', SettingsAccount.submitEventListener =  async e => {
 			await SettingsAccount.insert(e);
 			await page.load();
-			await Sections.show("accounts-form");
+			await Sections.show('accounts-form');
 		});
 	}
 
@@ -720,29 +718,103 @@ class SettingsAccount {
 	}
 
 	async edit() {
-		this.page.form.removeEventListener("submit", SettingsAccount.submitEventListener);
 
-		this.form.querySelector("#icon").src = this.icon;
-		this.form.querySelector("#logo").src = this.logo;
+		this.page.container.querySelector('#accounts-form h1').textContent = `Editing ${this.name}`;
 
-		const fields = ["name", "url", "icon", "logo", "auth_api"];
+		this.form.querySelector('#icon').src = this.icon;
+		this.form.querySelector('#logo').src = this.logo;
 
-		for(const field of fields) {
-			this.form[field].value = SettingsAccount.format(this[field]);
+		for(const input of this.form.elements) {
+			if(input.name in this)
+				input.value = this[input.name];
 		}
 
-		SettingsAccount.editor.value = JSON.stringify(this.settings, 0, 4) || "b";
+		SettingsAccount.editor.value = JSON.stringify(this.settings, 0, 4) || '';
 
 		const features = new AccountsFeatures(this);
 
 		if(this.form.parentElement.querySelector('.feature-form'))
 			this.form.parentElement.querySelector('.feature-form').remove();
 
+		const settings_json = [
+			{
+				key: 'toggle',
+				type: 'toggle',
+				name: 'Toggle.',
+				description: 'Toggle'
+			},
+			{
+				key: 'top_nav_position',
+				type: 'string',
+				name: 'Header Nav Position.',
+				description: 'Position of top nav bar.'
+			},
+			{
+				key: 'pre_report_api',
+				type: 'string',
+				name: 'Pre Report API',
+				description: 'Pre Report API.',
+			},
+			{
+				key: 'load_saved_connection',
+				type: 'number',
+				name: 'Store Report Result Connection ID',
+				description: 'The Connection where the report\'s result will be saved in.',
+			},
+			{
+				key: 'load_saved_database',
+				type: 'string',
+				name: 'Store Report Result Database',
+				description: 'The database where the report\'s result will be saved in.',
+			},
+			{
+				key: 'enable_account_signup',
+				type: 'multiSelect',
+				name: 'Allow user to signup.',
+				description: 'Allow user to signup.',
+				datalist: [
+					{name: 'True',value: true},
+					{name: "False",value: false}
+				],
+				multiple: false,
+			},
+			{
+				key: 'custom_js',
+				type: 'code',
+				mode: 'javascript',
+				name: 'Custom JavaScript.',
+				description: 'Custom JavaScript for this account.'
+			},
+			{
+				key: 'custom_css',
+				type: 'code',
+				mode: 'css',
+				name: 'Custom CSS.',
+				description: 'Custom CSS for this account.'
+			},
+			{
+				key: 'external_parameter',
+				type: 'json',
+				name: 'External Parameter.',
+				description: 'External Parameter for this account.'
+			},
+		];
+
+		const settingsContainer = new SettingsManager('account', this.account_id, settings_json)
+		await settingsContainer.load();
+
+		if(this.form.parentElement.querySelector('.settings-container'))
+			this.form.parentElement.querySelector('.settings-container').remove();
+
+		this.form.parentElement.appendChild(settingsContainer.form);
+
 		this.form.parentElement.appendChild(features.container);
 
 		await Sections.show('accounts-form');
 
-		this.page.form.on("submit", SettingsAccount.submitEventListener = async e => {
+		this.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+
+		this.form.on("submit", SettingsAccount.submitEventListener = async e => {
 			await this.update(e);
 			await this.page.load();
 			await Sections.show('accounts-form');
@@ -787,49 +859,35 @@ class SettingsAccount {
 
 	get row() {
 
-		const tr = document.createElement("tr");
+		const tr = document.createElement('tr');
 
-		const whiteListElements = ["account_id", "name", "icon", "url", "logo", "auth_api"];
+		const whiteListElements = ['account_id', 'name', 'icon', 'url', 'logo', 'auth_api'];
 
 		for (const element in this) {
 
-			if (!whiteListElements.includes(element)) {
-
+			if (!whiteListElements.includes(element))
 				continue;
-			}
 
 			const td = document.createElement('td');
 
-			td.innerHTML = SettingsAccount.format(this[element]);
+			td.innerHTML = this[element];
 			tr.appendChild(td);
 
-			if (["icon", "logo"].includes(element)) {
+			if (['icon', 'logo'].includes(element)) {
 				td.innerHTML = `<img src=${this[element]} height="30">`
 			}
 		}
 
 		tr.innerHTML += `
-				<td class="action green" title="Edit"><i class="fa fa-edit"></i></td>
-				<td class="action red" title="Delete"><i class="fa fa-trash-alt"></i></td>
-			`;
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
 
 		tr.querySelector('.green').on('click', () => this.edit());
 		tr.querySelector('.red').on('click', () => this.delete());
 
 		return tr;
 	}
-
-	static format(obj) {
-
-		if (typeof obj === "object") {
-
-			obj = JSON.stringify(obj);
-		}
-
-		return obj;
-	}
-
-	static submitEventListener() {}
 }
 
 class AccountsFeatures {
@@ -869,7 +927,7 @@ class AccountsFeatures {
 			<table>
 				<thead>
 					<tr>
-						<th class="action">Id</th>
+						<th class="action">ID</th>
 						<th>Types</th>
 						<th>Name</th>
 						<th>Status</th>
@@ -1002,7 +1060,6 @@ class SettingsCategory {
 
 		this.page = page;
 		this.form = this.page.form.querySelector('#category-form');
-
 	}
 
 	static add(page) {
@@ -1018,7 +1075,6 @@ class SettingsCategory {
 		categoryForm.on('submit', SettingsCategory.submitListener = e => SettingsCategory.insert(e, page));
 		Sections.show('category-edit');
 		categoryForm.name.focus();
-
 	}
 
 	static async insert(e, page) {
@@ -1032,7 +1088,6 @@ class SettingsCategory {
 
 		await API.call('category/insert', {}, options);
 		await page.load();
-
 	}
 
 	async edit() {
@@ -1050,7 +1105,6 @@ class SettingsCategory {
 
 		await Sections.show('category-edit');
 		this.form.name.focus();
-
 	}
 
 	async update(e) {
@@ -1069,7 +1123,6 @@ class SettingsCategory {
 
 		await API.call('category/update', parameters, options);
 		await this.page.load();
-
 	}
 
 	async delete() {
@@ -1110,6 +1163,5 @@ class SettingsCategory {
 		this.container.querySelector('.red').on('click', () => this.delete());
 
 		return this.container;
-
 	}
 }

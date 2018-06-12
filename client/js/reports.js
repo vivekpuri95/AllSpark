@@ -50,21 +50,13 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
-			if(account.auth_api && await IndexedDb.instance.has('access_token') && filter.placeholder == 'access_token')
-				filter.value = await IndexedDb.instance.get('access_token');
-
 			if(filter.dataset && filter.dataset.query_id) {
 
-				if(filter.dataset.containerElement) {
+				if(!filter.dataset.value.length && !filter.dataset.containerElement)
+					filter.dataset.value = (await filter.dataset.fetch()).map(v => v.value);
 
-					for(const input of filter.label.querySelectorAll('input:checked'))
-						parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, input.value);
-
-				} else {
-
-					for(const row of await filter.dataset.fetch())
-						parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, row.value);
-				}
+				for(const value of filter.dataset.value || [])
+					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, value);
 
 				continue;
 			}
@@ -73,6 +65,17 @@ class DataSource {
 				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, this.filters.container.elements[filter.placeholder].value);
 			else
 				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
+		}
+
+		const external_parameters = await IndexedDb.instance.get('external_parameters');
+
+		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
+
+			for(const key of account.settings.get('external_parameters')) {
+
+				if(key in external_parameters)
+					parameters.set(DataSourceFilter.placeholderPrefix + key, external_parameters[key]);
+			}
 		}
 
 		let response = null;
@@ -144,7 +147,7 @@ class DataSource {
 		container.innerHTML = `
 
 			<header>
-				<h2 title="${this.name}">${this.name} <span>#${this.query_id}</span></h2>
+				<h2><span class="title">${this.name}</span></h2>
 				<div class="actions right">
 					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
 					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
@@ -200,10 +203,6 @@ class DataSource {
 						<span class="label">Added By:</span>
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
-					<span class="requested hidden">
-						<span class="label">Requested By:</span>
-						<span>${this.requested_by || 'NA'}</span>
-					</span>
 				</div>
 			</div>
 
@@ -211,6 +210,9 @@ class DataSource {
 				${JSON.stringify(DataSource.list.get(this.query_id))}
 			</div>
 		`;
+
+		if(user.privileges.has('reports'))
+			container.querySelector('header h2').insertAdjacentHTML('beforeend', ` <span class="id">#${this.query_id}</span>`);
 
 		document.querySelector('body').on('click', (e) => {
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
@@ -268,10 +270,6 @@ class DataSource {
 		});
 
 		container.querySelector('.menu .description-toggle').on('click', async () => {
-
-
-			if(this.requested_by)
-				container.querySelector('.description .requested').classList.remove('hidden');
 
 			container.querySelector('.description').classList.toggle('hidden');
 
@@ -926,6 +924,12 @@ class DataSourceColumns extends Map {
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
+
+		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
+
+		if (container.offsetWidth < container.scrollWidth)
+			container.classList.add('over-flow');
 	}
 
 	get list() {
@@ -1029,7 +1033,7 @@ class DataSourceColumn {
 
 		this.key = column;
 		this.source = source;
-		this.name = this.key.split('_').map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
+		this.name = this.key.split('_').filter(w => w.trim()).map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
 		this.disabled = false;
 		this.color = DataSourceColumn.colors[this.source.columns.size % DataSourceColumn.colors.length];
 
@@ -1052,8 +1056,10 @@ class DataSourceColumn {
 		container.classList.add('column');
 
 		container.innerHTML = `
-			<span class="color" style="background: ${this.color}">&#x2714;</span>
-			<span class="name">${this.name}</span>
+			<span class="label">
+				<span class="color" style="background: ${this.color}">&#x2714;</span>
+				<span class="name">${this.name}</span>
+			</span>
 
 			<div class="blanket hidden">
 				<form class="block form">
@@ -1127,11 +1133,8 @@ class DataSourceColumn {
 
 					<h3>Drill down</h3>
 
-					<label>
+					<label class="drilldown-dropdown">
 						<span>Report</span>
-						<select name="drilldown_query_id">
-							<option value=""></option>
-						</select>
 					</label>
 
 					<label>
@@ -1162,6 +1165,8 @@ class DataSourceColumn {
 		this.blanket = container.querySelector('.blanket');
 		this.form = this.blanket.querySelector('.form');
 
+		const label = this.container.querySelector('.label');
+
 		this.form.elements.formula.on('keyup', async () => {
 
 			if(this.formulaTimeout)
@@ -1176,11 +1181,14 @@ class DataSourceColumn {
 
 			edit.classList.add('edit-column');
 			edit.title = 'Edit Column';
-			edit.on('click', () => this.edit());
+			edit.on('click', e => {
+				e.stopPropagation();
+				this.edit();
+			});
 
-			edit.innerHTML = `<i class="fas fa-ellipsis-v"></i>`;
+			edit.innerHTML = `&#8285;`;
 
-			this.container.appendChild(edit);
+			this.container.querySelector('.label').appendChild(edit);
 		}
 
 		this.form.on('submit', async e => this.save(e));
@@ -1208,19 +1216,21 @@ class DataSourceColumn {
 			return 0;
 		});
 
-		for(const report of sortedReports) {
+		const list = [];
 
-			this.form.drilldown_query_id.insertAdjacentHTML('beforeend', `
-				<option value="${report.query_id}">${report.name} #${report.query_id}</option>
-			`);
-		}
+		for(const report of sortedReports)
+			list.push({name: report.name, value: report.query_id});
 
-		this.form.drilldown_query_id.on('change', () => this.updateDrilldownParamters());
+		this.drilldownQuery = new MultiSelect({datalist: list, multiple: false, expand: true});
+
+		this.form.querySelector('.drilldown-dropdown').appendChild(this.drilldownQuery.container);
+
+		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
 		this.updateDrilldownParamters();
 
 		let timeout;
 
-		container.querySelector('.name').on('click', async () => {
+		container.querySelector('.label').on('click', async () => {
 
 			clearTimeout(timeout);
 
@@ -1266,20 +1276,25 @@ class DataSourceColumn {
 		this.form.querySelector('.cancel').on('click', () => this.blanket.classList.add('hidden'));
 		this.form.querySelector('.apply').on('click', () => this.apply());
 
-		container.querySelector('.name').on('dblclick', async (e) => {
+		container.querySelector('.label').on('dblclick', async (e) => {
 
 			clearTimeout(timeout);
+
+			if(this.clicked == null)
+				this.clicked = true;
 
 			for(const column of this.source.columns.values()) {
 
 				if(column.key == this.key || (this.source.visualizations.selected.axes && column.key == this.source.visualizations.selected.axes.bottom.column))
 					continue;
 
-				column.disabled = true;
+				column.clicked = null;
+				column.disabled = this.clicked;
 				column.source.columns.render();
 				await column.update();
 			}
 
+			this.clicked = !this.clicked;
 			this.disabled = false;
 
 			this.source.columns.render();
@@ -1300,16 +1315,19 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		if(this.drilldown) {
+		if(this.drilldown && this.drilldown.query_id) {
 
 			this.form.querySelector('.parameter-list').textContent = null;
 
-			this.form.drilldown_query_id.value = this.drilldown ? this.drilldown.query_id : '';
+			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
 
 			for(const param of this.drilldown.parameters || [])
 				this.addParameter(param);
 
 			this.updateDrilldownParamters();
+		}
+		else {
+			this.drilldownQuery.clear();
 		}
 
 		this.blanket.classList.remove('hidden');
@@ -1368,7 +1386,7 @@ class DataSourceColumn {
 		const
 			parameterList = this.form.querySelector('.parameter-list'),
 			parameters = parameterList.querySelectorAll('.parameter'),
-			report = DataSource.list.get(parseInt(this.form.drilldown_query_id.value));
+			report = DataSource.list.get(parseInt(this.drilldownQuery.value[0]));
 
 		if(report && report.filters.length) {
 
@@ -1428,8 +1446,8 @@ class DataSourceColumn {
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
-		this.container.querySelector('.name').textContent = this.name;
-		this.container.querySelector('.color').style.background = this.color;
+		this.container.querySelector('.label .name').textContent = this.name;
+		this.container.querySelector('.label .color').style.background = this.color;
 
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
@@ -1489,7 +1507,7 @@ class DataSourceColumn {
 			postfix : this.postfix,
 			formula : this.formula,
 			drilldown : {
-				query_id : this.drilldown_query_id,
+				query_id : this.drilldownQuery.value[0],
 				parameters : json_param
 			}
 		};
@@ -1517,7 +1535,7 @@ class DataSourceColumn {
 			};
 
 		await API.call('reports/report/update', parameters, options);
-		await this.apply();
+		await this.source.visualizations.selected.load();
 
 		this.blanket.classList.add('hidden');
 	}
@@ -1536,8 +1554,8 @@ class DataSourceColumn {
 
 		this.container.classList.toggle('hidden', this.hidden ? true : false);
 
-		this.container.querySelector('.name').textContent = this.name;
-		this.container.querySelector('.color').innerHTML = this.disabled ? '' : '&#x2714;';
+		this.container.querySelector('.label .name').textContent = this.name;
+		this.container.querySelector('.label .color').innerHTML = this.disabled ? '' : '&#x2714;';
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
@@ -2321,6 +2339,8 @@ class Visualization {
 
 	render() {
 
+		this.source.container.querySelector('h2 .title').textContent = this.name;
+
 		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
 
 		if(visualizationToggle)
@@ -2344,9 +2364,6 @@ class Visualization {
 		}
 
 		this.source.resetError();
-
-		if(this.options && this.options.hideLegend)
-			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 }
 
@@ -2365,7 +2382,9 @@ class LinearVisualization extends Visualization {
 
 	draw() {
 
-		if(!this.source.response || !this.source.response.length)
+		const rows = this.source.response;
+
+		if(!rows || !rows.length)
 			return this.source.error('No data found! :(');
 
 		if(!this.axes)
@@ -2430,8 +2449,6 @@ class LinearVisualization extends Visualization {
 			column.render();
 		}
 
-		this.rows = this.source.response;
-
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 50;
 
@@ -2443,6 +2460,8 @@ class LinearVisualization extends Visualization {
 
 		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
 		this.width = this.container.clientWidth - this.axes.left.width - 40;
+
+		this.rows = rows;
 
 		window.addEventListener('resize', () => {
 
@@ -2468,6 +2487,9 @@ class LinearVisualization extends Visualization {
 
 		if(!this.rows)
 			return;
+
+		if(!this.axes)
+			throw new Page.exception('Axes not defined! :(');
 
 		this.columns = {};
 
@@ -2689,7 +2711,7 @@ class LinearVisualization extends Visualization {
 
 			that.zoomRectangle = null;
 
-			if(!filteredRows.length)
+			if(filteredRows.length < 2)
 				return;
 
 			that.rows = filteredRows;
@@ -2768,10 +2790,17 @@ Visualization.list.set('table', class Table extends Visualization {
 			headings.appendChild(column.heading);
 		}
 
-		thead.appendChild(search);
-		thead.appendChild(accumulation);
-		thead.appendChild(headings);
-		table.appendChild(thead);
+		if(!this.hideSearchBar)
+			thead.appendChild(search);
+
+		if(!this.hideFunctionBar)
+			thead.appendChild(accumulation);
+
+		if(!this.hideHeadingsBar)
+			thead.appendChild(headings);
+
+		if(thead.children.length)
+			table.appendChild(thead);
 
 		const tbody = document.createElement('tbody');
 
@@ -2788,7 +2817,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				td.textContent = row.get(key);
 
-				if(column.drilldown && column.drilldown.query_id) {
+				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
 
 					td.classList.add('drilldown');
 					td.on('click', () => column.initiateDrilldown(row));
@@ -2857,7 +2886,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		table.appendChild(tbody);
 		container.appendChild(table);
-		container.appendChild(rowCount);
+
+		if(!this.hideRowSummary)
+			container.appendChild(rowCount);
 	}
 });
 
@@ -2915,6 +2946,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		this.y = d3.scale.linear().range([this.height, 20]);
 
 		const
+			x1 = d3.scale.ordinal(),
 			xAxis = d3.svg.axis()
 				.scale(this.x)
 				.orient('bottom'),
@@ -2942,13 +2974,13 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 					continue;
 
 				if(max == null)
-					max = Math.floor(value);
+					max = Math.ceil(value);
 
 				if(min == null)
 					min = Math.floor(value);
 
 				max = Math.max(max, Math.floor(value) || 0);
-				min = Math.min(min, Math.floor(value) || 0);
+				min = Math.min(min, Math.ceil(value) || 0);
 			}
 		}
 
@@ -2963,6 +2995,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
 		xAxis.tickValues(ticks);
+		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
 			.append('g')
@@ -2998,20 +3031,57 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.y(d => this.y(d.y));
 
 		//Appending line in chart
-		this.svg.selectAll('.city')
+		this.svg.selectAll('.line-container')
 			.data(this.columns)
 			.enter()
 			.append('g')
-			.attr('class', 'city')
+			.attr('class', 'line-container')
 			.append('path')
 			.attr('class', 'line')
 			.attr('d', d => line(d))
 			.style('stroke', d => d.color);
 
+		if(this.options.showValues) {
+
+			this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
+				})
+				.text(cell => {
+
+					if(['s'].includes(this.axes.left.format))
+						return d3.format('.4s')(cell.y);
+
+					else
+						return Format.number(cell.y)
+				})
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5)
+				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+		}
+
 		// Selecting all the paths
 		const path = this.svg.selectAll('path');
 
 		if(!options.resize) {
+
 			path[0].forEach(path => {
 				var length = path.getTotalLength();
 
@@ -3032,17 +3102,46 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.enter()
 				.append('circle')
 				.attr('class', 'clips')
+				.classed('drilldown', cell => that.source.columns.get(cell.key).drilldown)
 				.attr('id', (_, i) => i)
 				.attr('r', 0)
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
 				.attr('cy', d => this.y(d.y))
+				.on('mouseover', function(cell) {
+
+					if(!that.source.columns.get(cell.key).drilldown)
+						return;
+
+					d3.select(this)
+						.attr('r', 6)
+						.transition()
+						.duration(Visualization.animationDuration)
+						.attr('r', 12);
+
+					d3.select(this).classed('hover', 1);
+				})
+				.on('mouseout', function(cell) {
+
+					if(!that.source.columns.get(cell.key).drilldown)
+						return;
+
+					d3.select(this)
+						.transition()
+						.duration(Visualization.animationDuration)
+						.attr('r', 6);
+
+					d3.select(this).classed('hover', 0);
+				})
+				.on('click', (cell, row) => {
+					that.source.columns.get(cell.key).initiateDrilldown(that.rows[row]);
+				});
 		}
 
 		container
 		.on('mousemove.line', function() {
 
-			container.selectAll('svg > g > circle[class="clips"]').attr('r', 0);
+			container.selectAll('svg > g > circle.clips:not(.hover)').attr('r', 0);
 
 			const
 				mouse = d3.mouse(this),
@@ -3052,10 +3151,10 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			if(!row || that.zoomRectangle)
 				return;
 
-			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+			container.selectAll(`svg > g > circle[id='${xpos}'].clips:not(.hover)`).attr('r', 6);
 		})
 
-		.on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 0));
+		.on('mouseout.line', () => container.selectAll('svg > g > circle.clips').attr('r', 0));
 
 		path.on('mouseover', function (d) {
 			d3.select(this).classed('line-hover', true);
@@ -3067,7 +3166,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 	}
 });
 
-Visualization.list.set('bubble', class Line extends LinearVisualization {
+Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 
 	get container() {
 
@@ -3234,7 +3333,7 @@ Visualization.list.set('bubble', class Line extends LinearVisualization {
 	}
 });
 
-Visualization.list.set('scatter', class Line extends LinearVisualization {
+Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 	get container() {
 
@@ -3315,12 +3414,12 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 					continue;
 
 				if(max == null)
-					max = Math.floor(value);
+					max = Math.ceil(value);
 
 				if(min == null)
 					min = Math.floor(value);
 
-				max = Math.max(max, Math.floor(value) || 0);
+				max = Math.max(max, Math.ceil(value) || 0);
 				min = Math.min(min, Math.floor(value) || 0);
 			}
 		}
@@ -3388,7 +3487,7 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 		container
 		.on('mousemove.line', function() {
 
-			container.selectAll('svg > g > circle[class="clips"]').attr('r', 3);
+			container.selectAll('svg > g > circle.clips').attr('r', 3);
 
 			const
 				mouse = d3.mouse(this),
@@ -3398,10 +3497,10 @@ Visualization.list.set('scatter', class Line extends LinearVisualization {
 			if(!row || that.zoomRectangle)
 				return;
 
-			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+			container.selectAll(`svg > g > circle[id='${xpos}'].clips`).attr('r', 6);
 		})
 
-		.on('mouseout.line', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 3));
+		.on('mouseout.line', () => container.selectAll('svg > g > circle.clips').attr('r', 3));
 	}
 });
 
@@ -3502,7 +3601,6 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
 		xAxis.tickValues(ticks);
-
 		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
@@ -3557,7 +3655,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			.on('mouseout', function() {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
-			})
+			});
 
 		let values;
 
@@ -3576,11 +3674,19 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.append('text')
 				.attr('width', x1.rangeBand())
 				.attr('fill', '#666')
-				.attr('x', cell => this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (Format.number(cell.y).toString().length * 4))
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
+				})
 				.text(cell => {
 
 					if(['s'].includes(this.axes.left.format))
-						return d3.format(this.axes.left.format)(cell.y);
+						return d3.format('.4s')(cell.y);
 
 					else
 						return Format.number(cell.y)
@@ -3664,7 +3770,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 	draw() {
 
-		if(!this.source.response || !this.source.response.length)
+		const rows = this.source.response;
+
+		if(!rows || !rows.length)
 			return this.source.error('No data found! :(');
 
 		if(!this.axes)
@@ -3731,10 +3839,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			column.render();
 		}
 
-		this.rows = this.source.response;
-
-		if(!this.rows || !this.rows.length)
-			return;
+		this.rows = rows;
 
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 40;
@@ -3928,7 +4033,6 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			ticks = this.bottom.domain().filter((d, i) => !(i % tickInterval));
 
 		bottomAxis.tickValues(ticks);
-
 		x1.domain(this.columns.left.map(c => c.name)).rangeBands([0, this.bottom.rangeBand()]);
 
 		this.svg
@@ -4420,6 +4524,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		this.y = d3.scale.linear().range([this.height, 20]);
 
 		const
+			x1 = d3.scale.ordinal(),
 			xAxis = d3.svg.axis()
 				.scale(this.x)
 				.orient('bottom'),
@@ -4471,6 +4576,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.y1(d => this.y(d.y0 + d.y));
 
 		xAxis.tickValues(ticks);
+		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
 			.append('g')
@@ -4518,6 +4624,42 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			.attr('d', d => area(d))
 			.style('fill', d => d.color);
 
+		if(this.options.showValues) {
+
+			this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.attr('transform', column => `translate(${x1(column.name)}, 0)`)
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (x1.rangeBand() / 2) - (value.toString().length * 4)
+				})
+				.text(cell => {
+
+					if(['s'].includes(this.axes.left.format))
+						return d3.format('.4s')(cell.y);
+
+					else
+						return Format.number(cell.y)
+				})
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5)
+				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+		}
+
 		if(!options.resize) {
 			areas = areas
 				.style('opacity', 0)
@@ -4537,17 +4679,46 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				.enter()
 				.append('circle')
 				.attr('class', 'clips')
+				.classed('drilldown', cell => that.source.columns.get(cell.key).drilldown)
 				.attr('id', (d, i) => i)
 				.attr('r', 0)
 				.style('fill', column.color)
 				.attr('cx', cell => this.x(cell.x) + this.axes.left.width)
-				.attr('cy', cell => this.y(cell.y + cell.y0));
+				.attr('cy', cell => this.y(cell.y + cell.y0))
+				.on('mouseover', function(cell) {
+
+					if(!that.source.columns.get(cell.key).drilldown)
+						return;
+
+					d3.select(this)
+						.attr('r', 6)
+						.transition()
+						.duration(Visualization.animationDuration)
+						.attr('r', 12);
+
+					d3.select(this).classed('hover', 1);
+				})
+				.on('mouseout', function(cell) {
+
+					if(!that.source.columns.get(cell.key).drilldown)
+						return;
+
+					d3.select(this)
+						.transition()
+						.duration(Visualization.animationDuration)
+						.attr('r', 6);
+
+					d3.select(this).classed('hover', 0);
+				})
+				.on('click', (cell, row) => {
+					that.source.columns.get(cell.key).initiateDrilldown(that.rows[row]);
+				});
 		}
 
 		container
 		.on('mousemove.area', function() {
 
-			container.selectAll('svg > g > circle[class="clips"]').attr('r', 0);
+			container.selectAll('svg > g > circle.clips').attr('r', 0);
 
 			const
 				mouse = d3.mouse(this),
@@ -4557,10 +4728,10 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			if(!row || that.zoomRectangle)
 				return;
 
-			container.selectAll(`svg > g > circle[id='${xpos}'][class="clips"]`).attr('r', 6);
+			container.selectAll(`svg > g > circle[id='${xpos}'].clips`).attr('r', 6);
 		})
 
-		.on('mouseout.area', () => container.selectAll('svg > g > circle[class="clips"]').attr('r', 0));
+		.on('mouseout.area', () => container.selectAll('svg > g > circle.clips').attr('r', 0));
 	}
 });
 
@@ -5043,8 +5214,10 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				mouse[1] += that.height / 2;
 
 				const content = `
-					<header>${row.data.name}</header>
-					<ul class="body">${row.data.value}</ul>
+					<header>${that.source.columns.get(row.data.name).name}</header>
+					<ul class="body">
+						${row.data.value} (${row.data.percentage}%)
+					</ul>
 				`;
 
 				Tooltip.show(that.container, mouse, content, row);
@@ -5093,14 +5266,30 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		}
 
 		// Add the text
-		arcs.append('text')
-			.attr('transform', row => {
-				row.innerRadius = radius - 50;
-				row.outerRadius = radius;
-				return `translate(${arc.centroid(row)})`;
-			})
-			.attr('text-anchor', 'middle')
-			.text(row => row.data.percentage + '%');
+		if(!this.hideNumber) {
+
+			arcs.append('text')
+				.attr('transform', row => {
+					row.innerRadius = radius - 50;
+					row.outerRadius = radius;
+					return `translate(${arc.centroid(row)})`;
+				})
+				.attr('text-anchor', 'middle')
+				.text(row => Format.number(row.data.value));
+		}
+
+		// Add the text
+		if(!this.hidePercentage) {
+
+			arcs.append('text')
+				.attr('transform', row => {
+					row.innerRadius = radius - 50;
+					row.outerRadius = radius;
+					return `translate(${arc.centroid(row)})`;
+				})
+				.attr('text-anchor', 'middle')
+				.text(row => Format.number(row.data.percentage) + '%');
+		}
 	}
 });
 
@@ -5339,10 +5528,10 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		if(!this.column)
 			return this.source.error('Value column not selected! :(');
 
-		const value = response.get(this.column);
-
-		if(!value)
+		if(!response.has(this.column))
 			return this.source.error(`<em>${this.column}</em> column not found! :(`);
+
+		const value = response.get(this.column);
 
 		if(this.valueType == 'number' && isNaN(value))
 			return this.source.error('Invalid Number! :(');
@@ -5407,14 +5596,20 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	process() {
+
 		const response = this.source.response;
 
 		try {
-			for (const row of response) {
-				const responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString();
-				const todayDate = new Date();
+			for(const row of response) {
 
-				for (let box in this.boxes) {
+				if(!row.has(this.timingColumn))
+					throw `${this.timingColumn} column not found!`;
+
+				const
+					responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString(),
+					todayDate = new Date();
+
+				for(const box in this.boxes) {
 					const configDate = new Date(Date.now() - this.boxes[box].offset * 86400000).toDateString();
 					if (responseDate == configDate) {
 						this.boxes[box].value = row.get(this.valueColumn);
@@ -5422,8 +5617,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				}
 			}
 
-			for (let box of this.boxes) {
-				box.percentage = Math.round(((box.value - this.boxes[box.relativeValTo].value) / box.value) * 100);
+			for(const box of this.boxes) {
+				if(this.boxes[box.relativeTo])
+					box.percentage = Math.round(((box.value - this.boxes[box.relativeTo].value) / box.value) * 100);
 			}
 		}
 		catch (e) {
@@ -5432,17 +5628,23 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	render(options = {}) {
+
+		if(!this.boxes || !this.boxes.length)
+			return;
+
 		const container = this.container.querySelector('.container');
+
 		container.textContent = null;
 
-		for (let box of this.boxes) {
+		for(const box of this.boxes) {
+
 			const configBox = document.createElement('div');
 
 			configBox.innerHTML = `
-				<h7 class="${this.getColor(box.percentage)}">
+				<h7>
 					${this.prefix || ''}${box.value}${this.postfix || ''}
 				</h7>
-				<p class="percentage">${box.percentage}%</p>
+				<p class="percentage ${this.getColor(box.percentage)}">${box.percentage ? box.percentage + '%' : ''}</p>
 			`;
 
 			configBox.style = `
@@ -5452,8 +5654,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			container.appendChild(configBox);
 		}
-
-		this.container.querySelector('p').classList.add('hidden');
 	}
 
 	getColor(percentage) {
@@ -5610,8 +5810,16 @@ class Dataset extends MultiSelect {
 			id: this.id,
 		};
 
-		if(account.auth_api && await IndexedDb.instance.has('access_token'))
-			parameters[DataSourceFilter.placeholderPrefix + 'access_token'] = await IndexedDb.instance.get('access_token');
+		const external_parameters = await IndexedDb.instance.get('external_parameters');
+
+		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
+
+			for(const key of account.settings.get('external_parameters')) {
+
+				if(key in external_parameters)
+					parameters[DataSourceFilter.placeholderPrefix + key] = external_parameters[key];
+			}
+		}
 
 		try {
 			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
@@ -5637,19 +5845,23 @@ class Dataset extends MultiSelect {
 			return;
 		}
 
+		if(!source.container) {
+
+			super.value = [source];
+			return;
+		}
+
 		if(!source.container.querySelector('.options')) {
 			this.container.querySelector('input').value = source.container.querySelector('input').value;
 			return;
 		}
 
-		const
-			sourceOptions = source.container.querySelectorAll('.options .list label input:checked'),
-			data = [];
+		super.value = Array.from(source.selectedValues);
+	}
 
-		for(const option of sourceOptions)
-			data.push(option.value);
+	get value() {
 
-		super.value = data;
+		return Array.from(this.selectedValues);
 	}
 }
 

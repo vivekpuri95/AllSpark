@@ -35,7 +35,8 @@
 			}
 			main .dataset .options label.selected,
 			main .dataset .options label.selected:hover {
-				background: #eda;
+				background: var(--color-selected);
+				color: var(--color-selected-text);
 			}
 				main .dataset label input {
 					margin: 0;
@@ -98,13 +99,13 @@
 				font-size: 18px;
 				margin: 0 auto 0 0;
 				padding: 0;
-				color: #888;
+				color: #333;
 				font-weight: normal;
 				white-space: nowrap;
 				line-height: inherit;
 				user-select: text;
 			}
-				main .data-source > header h2 span {
+				main .data-source > header h2 .id {
 					color: #aaa;
 					font-size: 90%;
 				}
@@ -250,7 +251,7 @@
 			main .data-source > .share-link input {
 				width: 100%;
 			}
-		main .data-source .column .blanket .form footer {
+		main .data-source .column .blanket .form > footer {
 			display: grid;
 			grid-template-columns: 1fr 1fr 1fr;
 			position: sticky;
@@ -258,7 +259,7 @@
 			bottom: 0;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		}
-			main .data-source .column .blanket .form footer button {
+			main .data-source .column .blanket > .form footer button {
 				padding: calc(var(--gap) * 2);
 				height: auto;
 				border-right: 0;
@@ -266,7 +267,7 @@
 				justify-content: center;
 				align-items: center;
 			}
-			main .data-source .column .blanket .form footer button:first-child {
+			main .data-source .column .blanket > .form footer button:first-child {
 				border-left: 0;
 			}
 		main .data-source > .drilldown {
@@ -296,7 +297,15 @@
 			width: 100%;
 			overflow: auto;
 			order: 1;
-			margin-top: calc(var(--gap) * 2);
+			margin-top: var(--gap);
+		}
+		main .data-source > .columns.over-flow::after {
+			background: -webkit-linear-gradient(left, #eee, #ccc);
+			content: "\00a0\00a0\00a0\00a0\00a0";
+			position: sticky;
+			right: 0;
+			margin-left: auto;
+			width: 50px;
 		}
 		main .data-source > .columns::-webkit-scrollbar {
 			display: none;
@@ -304,17 +313,13 @@
 			main .data-source > .columns .column {
 				display: flex;
 				position: relative;
-				margin: 0 var(--gap);
+				margin-right: var(--gap);
 				align-items: center;
 				transition: opacity var(--transition-duration);
 			}
 			main .data-source > .columns .column.disabled > span,
 			main .data-source > .columns .column.disabled > button {
 				background: #eee;
-				opacity: 0.5;
-			}
-			main .data-source > .columns .column.being-dragged {
-				border: 1px blue dashed;
 				opacity: 0.5;
 			}
 			main .data-source > .columns .column.drag-enter:before {
@@ -326,57 +331,80 @@
 				background: blue;
 				width: 2px;
 			}
-			main .data-source > .columns .column.filtered {
+			main .data-source .column.filtered {
 				background: #ff9;
 			}
-			main .data-source > .columns .column.error {
+			main .data-source .column.error {
 				background: #fcc;
-			}
-			main .data-source > .columns .column .name:hover {
-				opacity: 0.6;
 			}
 				main .data-source > .columns.being-dragged .column * {
 					pointer-events: none;
 				}
-				main .data-source > .columns .column.disabled > .color {
+				main .data-source .column.disabled > .label .color {
 					background: #aaa !important;
 				}
-				main .data-source > .columns .column > .color {
-					border-radius: 9px;
-					width: 18px;
-					height: 18px;
-					margin-left: var(--gap);
+				main .data-source .column > .label {
 					display: flex;
-					justify-content: center;
-					align-items: center;
-					-webkit-text-stroke-width: 0.5px;
-					-webkit-text-stroke-color: #fff;
-					text-stroke-width: 0.5px;
-					text-stroke-color: #fff;
-					font-weight: bold;
-					font-size: 110%;
-				}
-				main .data-source > .columns .column > .name {
-					padding: 0px 10px;
-					display: flex;
-					flex: 1;
-					font-size: 85%;
 					cursor: pointer;
 					align-items: center;
-					transition: background var(--transition-duration),
-								box-shadow var(--transition-duration);
 					white-space: nowrap;
+					padding: 3px;
+					border-radius: 10px;
+					border: 1px solid transparent;
+					transition: border var(--transition-duration),
+								box-shadow var(--transition-duration);
 				}
-				main .data-source .column .edit-column {
-					opacity: 0;
-					transition: opacity var(--transition-duration);
-					padding: 0 var(--gap);
+				main .data-source > .columns .column.being-dragged > .label {
+					border: 1px blue dashed;
+					opacity: 0.5;
 				}
-				main .data-source .column:hover .edit-column {
-					opacity: 1;
+				main .data-source .column > .label:hover {
+					border-color: #bbb;
 				}
+				main .data-source .column > .label:active {
+					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+				}
+					main .data-source .column > .label .color {
+						border-radius: 9px;
+						width: 18px;
+						height: 18px;
+						margin-left: var(--gap);
+						display: flex;
+						justify-content: center;
+						align-items: center;
+						-webkit-text-stroke-width: 0.5px;
+						-webkit-text-stroke-color: #fff;
+						text-stroke-width: 0.5px;
+						text-stroke-color: #fff;
+						font-weight: bold;
+						font-size: 110%;
+					}
+					main .data-source .column > .label .name {
+						padding: 0px 5px;
+						display: flex;
+						flex: 1;
+						font-size: 85%;
+						transition: background var(--transition-duration),
+									box-shadow var(--transition-duration);
+					}
+					main .data-source .column > .label .edit-column {
+						opacity: 0;
+						padding: 0 var(--gap);
+						font-size: 118%;
+						font-weight: bold;
+					    border-left: 1px solid transparent;
+						transition: opacity var(--transition-duration),
+									border var(--transition-duration);
+					}
+					main .data-source .column > .label .edit-column:hover {
+						text-decoration: none;
+					    border-color: #bbb;
+					}
+					main .data-source .column > .label:hover .edit-column {
+						opacity: 1;
+					}
 
-				main .data-source > .columns .column .blanket {
+				main .data-source .column .blanket {
 					position: fixed;
 					top: 0;
 					bottom: 0;
@@ -420,7 +448,10 @@
 								font-size: 100%;
 							}
 							main .data-source .column form label {
-								margin-left: calc(var(--gap) * 2);
+								margin:  0 calc(var(--gap) * 2);
+							}
+							main .data-source .column form label.drilldown-dropdown {
+								max-width: 100%;
 							}
 								main .data-source .column form .search {
 									grid-template-columns: auto 200px;
@@ -479,8 +510,8 @@
 				}
 
 			main .data-source .visualization .tooltip {
-				background: #fff;
-				color: var(--color-secondary-text);
+				background: var(--color-primary);
+				color: var(--color-primary-text);
 				box-shadow: 0 0 35px rgba(0, 0, 0, 0.25);
 				position: absolute;
 				font-size: 90%;
@@ -490,7 +521,7 @@
 			}
 				main .data-source .visualization .tooltip header {
 					padding: var(--gap) calc(var(--gap) * 2);
-					border-bottom: 1px solid var(--color-accent);
+					border-bottom: 1px solid var(--color-primary-text);
 					display: flex;
 				}
 				main .data-source .visualization .tooltip footer {
@@ -808,6 +839,14 @@
 	font-size: 90%;
 }
 
+.visualization .container > svg .clips.drilldown {
+	transition: opacity var(--transition-duration);
+}
+.visualization .container > svg .clips.drilldown:hover {
+	cursor: pointer;
+	opacity: 0.8;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
 .visualization .container > svg .line {
 	fill: none;
 	stroke: steelblue;
@@ -887,8 +926,8 @@
             font-size: 150%;
         }
         .visualization.livenumber .container .red {
-            color: var(--color-red-text);
+            color: #d23f31;
         }
         .visualization.livenumber .container .green {
-            color: var(--color-green-text);
+            color: #0f9d58;
         }

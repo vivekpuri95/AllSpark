@@ -99,6 +99,9 @@ class ReportsMangerPreview {
 		if(options.visualizationOptions)
 			this.report.visualizations[0].options = options.visualizationOptions;
 
+		if(options.visualizationType)
+			this.report.visualizations[0].type = options.visualizationType;
+
 		this.report = new DataSource(this.report);
 
 		this.report.container;
@@ -110,7 +113,7 @@ class ReportsMangerPreview {
 		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'right';
 		this.page.container.classList.add('preview-' + position);
 
-		await this.report.fetch();
+		await this.report.visualizations.selected.load();
 
 		this.renderDocks();
 		this.move();
@@ -195,7 +198,7 @@ class ReportsMangerStage {
 			this.select();
 
 			if(this.key != 'configure-visualization')
-				history.pushState({}, '', `/reports/${this.url}`);
+				window.history.pushState({}, '', `/reports/${this.url}`);
 		});
 
 		return container;
@@ -284,7 +287,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		this.container.querySelector('#add-report').on('click', () => {
 			this.add();
-			history.pushState({id: 'add'}, '', `/configure-report/add`);
+			window.history.pushState({id: 'add'}, '', `/reports/configure-report/add`);
 		});
 	}
 
@@ -386,7 +389,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			row.querySelector('.configure').on('click', () => {
 
-				history.pushState({}, '', `/reports/configure-report/${report.query_id}`);
+				window.history.pushState({}, '', `/reports/configure-report/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
@@ -397,7 +400,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			row.querySelector('.define').on('click', () => {
 
-				history.pushState({}, '', `/reports/define-report/${report.query_id}`);
+				window.history.pushState({}, '', `/reports/define-report/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
@@ -408,7 +411,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			row.querySelector('.visualizations').on('click', () => {
 
-				history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
+				window.history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
 
 				this.page.stages.get('configure-report').disabled = false;
 				this.page.stages.get('define-report').disabled = false;
@@ -513,7 +516,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 	add() {
 
-		history.pushState({}, '', `/reports/configure-report/add`);
+		window.history.pushState({}, '', `/reports/configure-report/add`);
 
 		this.page.stages.get('configure-report').disabled = false;
 
@@ -566,6 +569,9 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 			this.form.is_redis.value = this.form.redis.value;
 			this.form.is_redis.classList.toggle('hidden', this.form.redis.value !== 'custom');
+
+			if(!this.form.is_redis.classList.contains('hidden'))
+				this.form.is_redis.focus();
 		});
 
 		for(const category of MetaData.categories.values()) {
@@ -655,13 +661,20 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				this.form.elements[key].value = this.report[key];
 		}
 
-		if(this.is_redis > 0) {
+		this.container.querySelector('#added-by').innerHTML = `
+			Added by
+			<strong><a href="/user/profile/${this.report.added_by}" target="_blank">${this.report.added_by_name || 'Unknown User'}</a></strong>
+			on
+			<strong>${Format.time(this.report.created_at)}</strong>
+		`;
+
+		if(this.report.is_redis > 0) {
 			this.form.redis.value = 'custom';
 			this.form.is_redis.classList.remove('hidden');
 		}
 
 		else {
-			this.form.redis.value = this.is_redis;
+			this.form.redis.value = this.report.is_redis || 0;
 			this.form.is_redis.classList.add('hidden');
 		}
 	}
@@ -738,6 +751,27 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.editor.editor.resize();
 		});
 
+		const editDataToggle = this.container.querySelector('#edit-data-toggle');
+
+		editDataToggle.on('click', async () => {
+
+			const container = this.container.querySelector('#edit-data');
+
+			editDataToggle.classList.toggle('selected');
+			container.classList.toggle('hidden');
+			this.form.classList.toggle('hidden');
+
+			if(editDataToggle.classList.contains('hidden'))
+				return;
+
+			const editor = new EditSourceData(this.report.query_id);
+
+			await editor.load();
+
+			container.innerHTML = null;
+			container.appendChild(editor.container);
+		});
+
 		this.container.querySelector('#add-filter').on('click', () => this.addFilter());
 
 		this.container.querySelector('#filter-back').on('click', () => {
@@ -810,7 +844,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.report = this.selectedReport;
 
 		this.page.stages.get('configure-visualization').disabled = true;
-		this.container.querySelector('#preview-toggle').classList.add('selected');
 
 		localStorage.reportsPreviewDock = 'bottom';
 		this.page.preview.hidden = false;
@@ -821,13 +854,17 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const connection = this.page.connections.get(parseInt(this.report.connection_name));
 
 		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
-		this.form.querySelector('#query').classList.toggle('hidden', connection.type == 'api');
+		this.form.querySelector('#query').classList.toggle('hidden', connection.type != 'query');
+		this.form.querySelector('#csv').classList.toggle('hidden', connection.type != 'csv');
 
 		this.form.removeEventListener('submit', this.form.listener);
 		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
+
+		this.container.querySelector('#edit-data-toggle').classList.toggle('hidden', !this.report.load_saved);
+
 		this.editor.editor.focus();
 
 		for (const key in this.report) {
@@ -855,8 +892,93 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
 
+		this.container.querySelector('#csv').addEventListener('click', e => {
+			this.container.querySelector('#csv-input').click();
+		});
+
+		this.container.querySelector('#csv-input').addEventListener('change', e => this.uploadCSV(e));
+
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
+
+	uploadCSV(e) {
+
+		if(!this.report.load_saved)
+			return;
+
+		const fileReader = new FileReader();
+
+		fileReader.onload = async e => {
+
+			const contents = e.target.result.split('\n');
+
+			if(!contents.length) {
+				this.container.querySelector('#csv').innerHTML =  'No data found in the CSV! :(';
+				return;
+			}
+
+			const csvJson = [];
+
+			const headers = this.splitCSV(contents[0]);
+
+			for(const rowString of contents.slice(1)) {
+
+				const cellList = this.splitCSV(rowString);
+
+				const row = {};
+
+				for(const [index, cell] of cellList.entries()) {
+
+					row[headers[index]] = cell;
+				}
+
+				csvJson.push(row);
+			}
+
+			const
+				parameter = {
+					data: JSON.stringify(csvJson),
+					query_id: this.report.query_id,
+				},
+				options = {
+					method: 'POST',
+				};
+
+			try {
+				await API.call('reports/engine/report', parameter, options);
+			} catch(e) {
+				this.container.querySelector('#csv').innerHTML = e.message;
+			}
+
+			this.container.querySelector('#edit-data-toggle').click();
+		};
+
+		fileReader.readAsText(e.target.files[0]);
+	}
+
+	splitCSV(str, sep) {
+
+		for (var splitString = str.split(sep = sep || ','), len = splitString.length - 1, tl; len >= 0; len--) {
+
+			if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
+
+				if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
+
+					splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
+				}
+
+				else if (len) {
+					splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(sep));
+				}
+
+				else splitString = splitString.shift().split(sep).concat(splitString);
+			}
+			else splitString[len].replace(/""/g, '"');
+
+		}
+
+		return splitString;
+	};
 
 	async update(e) {
 
@@ -916,10 +1038,17 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const source = this.page.connections.get(parseInt(this.report.connection_name));
 
-		if(!source || !['mysql', 'pgsql', 'bigquery'].includes(source.type)) {
+		if(!source || !['mysql', 'pgsql', 'bigquery', 'csv'].includes(source.type)) {
 			this.form.querySelector('#query').classList.add('hidden');
 			this.form.querySelector('#api').classList.remove('hidden');
-		} else {
+		}
+
+		else if(source.type === 'csv') {
+
+			this.form.querySelector('#csv').classList.remove('hidden');
+		}
+
+		else {
 			this.form.querySelector('#query').classList.remove('hidden');
 			this.form.querySelector('#api').classList.add('hidden');
 		}
@@ -1001,9 +1130,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		container.appendChild(databases);
 
-		renderList();
-
-		function renderList() {
+		const renderList = () => {
 
 			databases.textContent = null;
 
@@ -1043,12 +1170,12 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 						li.innerHTML = `
 							<span class="name">
 								<strong>C</strong>
-								<span>${name}</span>
+								<span title="${name}">${name}</span>
 								<small>${column.type}</small>
 							</span>
 						`;
 
-						li.querySelector('span').on('click', () => {
+						li.querySelector('.name').on('click', () => {
 							that.editor.editor.getSession().insert(that.editor.editor.getCursorPosition(), column.name);
 						});
 
@@ -1075,16 +1202,29 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 					li.innerHTML = `
 						<span class="name">
 							<strong>T</strong>
-							<span>${name}</span>
-							<small>${table.columns.length} columns</small>
+							<span title="${name}">${name}</span>
+							<small>${table.columns.length} columns, <a title="Preview first 100 rows">Pr</a></small>
 						</span>
 					`;
 
 					li.appendChild(columns)
 
-					li.querySelector('span').on('click', () => {
+					li.querySelector('.name').on('click', () => {
 						li.classList.toggle('opened');
 						columns.classList.toggle('hidden')
+					});
+
+					li.querySelector('.name small a').on('click', e => {
+
+						e.stopPropagation();
+
+						if(!this.report)
+							return;
+
+						this.page.preview.load({
+							query: `SELECT * FROM \`${database.name}\`.\`${table.name}\` LIMIT 100`,
+							query_id: this.report.query_id,
+						});
 					});
 
 					tables.appendChild(li);
@@ -1128,6 +1268,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			if(!databases.children.length)
 				databases.innerHTML = `<div class="NA">No matches found! :(</div>`;
 		}
+
+		renderList();
 
 		this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
 	}
@@ -1335,14 +1477,24 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		for(const visualization of MetaData.visualizations.values()) {
 
-			this.form.insertAdjacentHTML('beforeend', `
-				<label>
-					<figure>
-						<img src="${visualization.image}"></img>
-						<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp; ${visualization.name}</figcaption>
-					</figure>
-				</label>
-			`);
+			const label = document.createElement('label');
+
+			label.innerHTML = `
+				<figure>
+					<img src="${visualization.image}"></img>
+					<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp; ${visualization.name}</figcaption>
+				</figure>
+			`;
+
+			label.on('click', () => {
+
+				if(this.form.querySelector('figure.selected'))
+					this.form.querySelector('figure.selected').classList.remove('selected');
+
+				label.querySelector('figure').classList.add('selected');
+			});
+
+			this.form.appendChild(label);
 		}
 
 		this.form.on('submit', e => this.insert(e));
@@ -1371,7 +1523,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		await DataSource.load(true);
 
-		history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
+		window.history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
 
 		this.page.load();
 		this.container.querySelector('#add-visualization-picker').classList.add('hidden');
@@ -1440,7 +1592,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 			row.querySelector('.edit').on('click', () => {
 
-				history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
+				window.history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
 
 				this.page.stages.get('configure-visualization').disabled = false;
 
@@ -1453,7 +1605,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		}
 
 		if(!this.report.visualizations.length)
-			tbody.innerHTML = '<tr class="NA"><td colspan="4">No Visualization Found! :(</td></tr>';
+			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found! :(</td></tr>';
 	}
 });
 
@@ -1468,6 +1620,20 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.description = 'Define how the report is visualized';
 
 		this.form = this.container.querySelector('#configure-visualization-form');
+
+		this.container.querySelector('#configure-visualization-back').on('click', () => {
+
+			if(window.history.state) {
+				window.history.back();
+				return;
+			}
+
+			history.pushState({}, '', `/reports/pick-visualization/${this.report.query_id}`);
+
+			this.disabled = true;
+
+			this.page.load();
+		});
 
 		for(const visualization of MetaData.visualizations.values()) {
 			this.form.type.insertAdjacentHTML('beforeend', `
@@ -1614,6 +1780,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			query_id: this.report.query_id,
 			visualization_id: this.visualization.visualization_id,
 			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json},
+			visualizationType: this.form.type.value,
 		});
 	}
 });
@@ -1773,13 +1940,15 @@ class ReportVisualizationDashboard {
 			</div>
 		`;
 
-		for(const dashboard of this.stage.dashboards.response.values()) {
+		if(this.stage.dashboards.response) {
+			for(const dashboard of this.stage.dashboards.response.values()) {
 
-			form.dashboard_id.insertAdjacentHTML('beforeend',`
-				<option value=${dashboard.id}>
-					${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
-				</option>
-			`);
+				form.dashboard_id.insertAdjacentHTML('beforeend',`
+					<option value=${dashboard.id}>
+						${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
+					</option>
+				`);
+			}
 		}
 
 		form.dashboard_id.on('change', () => form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value);
@@ -1912,7 +2081,9 @@ class ReportTransformations extends Set {
 				visualization_id: Math.floor(Math.random() * 1000) + 1000,
 				name: 'Table',
 				type: 'table',
-				options: {}
+				options: {
+					hideLegend: this.visualization.options.hideLegend
+				},
 			};
 
 			report.visualizations.push(visualization);
@@ -2191,10 +2362,14 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		this.stage.setupConfigurationSetions(container);
 
-		const axes = container.querySelector('.axes');
+		this.formContainer.axes = [];
 
-		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : [])
-			axes.appendChild(this.axis(axis));
+		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : []) {
+
+			const axisForm = this.axis(axis);
+			this.formContainer.axes.push(axisForm);
+			container.querySelector('.axes').appendChild(axisForm);
+		}
 
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
@@ -2203,7 +2378,10 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
 
 		container.querySelector('.add-axis').on('click', () => {
-			axes.appendChild(this.axis());
+
+			const axisForm = this.axis();
+			this.formContainer.axes.push(axisForm);
+			container.querySelector('.axes').appendChild(axisForm);
 		});
 
 		return container;
@@ -2217,12 +2395,12 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
 		};
 
-		for(const axis of this.formContainer.querySelectorAll('.axis')) {
+		for(const axis of this.formContainer.axes) {
 
 			const columns = [];
 
-			for(const option of axis.querySelectorAll('select[name=columns] option:checked'))
-				columns.push({key: option.value});
+			for(const option of axis.multiSelectColumns.value)
+				columns.push({key: option});
 
 			response.axes.push({
 				position: axis.querySelector('select[name=position]').value,
@@ -2238,9 +2416,19 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	axis(axis = {}) {
 
-		const container = document.createElement('div');
+		const
+			container = document.createElement('div'),
+			datalist = [];
 
 		container.classList.add('axis', 'subform');
+
+		for(const [key, column] of this.page.preview.report.columns)
+			datalist.push({name: column.name, value: key});
+
+		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
+		const axisColumn = container.multiSelectColumns.container;
+
+		container.multiSelectColumns.value = axis.columns ? axis.columns.map(x => x.key) : [];
 
 		container.innerHTML = `
 			<label>
@@ -2258,12 +2446,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<input type="text" name="label" value="${axis.label || ''}">
 			</label>
 
-			<label>
+			<label class="axis-column">
 				<span>Columns</span>
-				<select name="columns" multiple></select>
 			</label>
 
-			<label><span><input type="checkbox" name="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
+			<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 			<label>
 				<span>Format</span>
@@ -2280,14 +2467,26 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			</label>
 		`;
 
-		const columns = container.querySelector('select[name=columns]');
+		const restColumns = container.querySelector('.restcolumns');
 
-		for(const [key, column] of this.page.preview.report.columns) {
+		restColumns.on('change', () => {
 
-			columns.insertAdjacentHTML('beforeend', `
-				<option value="${key}" ${axis.columns && axis.columns.some(c => c.key == key) ? 'selected' : ''}>${column.name}</option>
-			`)
+			this.restCheck(restColumns.checked);
+			axisColumn.classList.toggle('hidden');
+
+			if(restColumns.checked) {
+
+				container.querySelector('.restCheck').classList.remove('hidden');
+			}
+		});
+
+		if(axis.restcolumns) {
+
+			this.restCheck(true);
+			axisColumn.classList.add('hidden');
 		}
+
+		container.querySelector('.axis-column').appendChild(axisColumn);
 
 		container.querySelector('select[name=position]').value = axis.position;
 		container.querySelector('select[name=format]').value = axis.format || '';
@@ -2296,6 +2495,13 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		return container;
 	}
+
+	restCheck(action) {
+
+		for(const rest of this.formContainer.querySelectorAll('.restCheck')) {
+			rest.classList.toggle('hidden', action);
+		}
+	}
 }
 
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
@@ -2303,6 +2509,82 @@ const ConfigureVisualization = ReportsManger.stages.get('configure-visualization
 ConfigureVisualization.types = new Map;
 
 ConfigureVisualization.types.set('table', class TableOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body form">
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideSearchBar">Hide Search Bar
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideFunctionBar">Hide Function Bar
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideHeadingsBar">Hide Headings Bar
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideRowSummary">Hide Row Summary
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend.
+						</span>
+					</label>
+				</div>
+			</div>
+		`;
+
+		if(this.visualization.options && this.visualization.options.hideSearchBar)
+			container.querySelector('input[name=hideSearchBar]').checked = this.visualization.options.hideSearchBar;
+
+		if(this.visualization.options && this.visualization.options.hideFunctionBar)
+			container.querySelector('input[name=hideFunctionBar]').checked = this.visualization.options.hideFunctionBar;
+
+		if(this.visualization.options && this.visualization.options.hideHeadingsBar)
+			container.querySelector('input[name=hideHeadingsBar]').checked = this.visualization.options.hideHeadingsBar;
+
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+
+		if(this.visualization.options && this.visualization.options.hideRowSummary)
+			container.querySelector('input[name=hideRowSummary]').checked = this.visualization.options.hideRowSummary;
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			hideSearchBar: this.form.querySelector('input[name=hideSearchBar]').checked,
+			hideFunctionBar: this.form.querySelector('input[name=hideFunctionBar]').checked,
+			hideHeadingsBar: this.form.querySelector('input[name=hideHeadingsBar]').checked,
+			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
+			hideRowSummary: this.form.querySelector('input[name=hideRowSummary]').checked,
+		}
+	}
 });
 
 ConfigureVisualization.types.set('line', class LineOptions extends ReportVisualizationLinearOptions {
@@ -2327,6 +2609,92 @@ ConfigureVisualization.types.set('area', class AreaOptions extends ReportVisuali
 });
 
 ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body form">
+
+					<label class="hidden">
+						<span>Name Column</span>
+						<select name="nameColumn"></select>
+					</label>
+
+					<label class="hidden">
+						<span>Value Column</span>
+						<select name="valueColumn"></select>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideValue">Hide Value
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hidePercentage">Hide Percentage
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend
+						</span>
+					</label>
+				</div>
+			</div>
+		`;
+
+		const
+			nameColumn = container.querySelector('select[name=nameColumn]'),
+			valueColumn = container.querySelector('select[name=valueColumn]');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			nameColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			valueColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		if(this.visualization.options && this.visualization.options.hidePercentage)
+			container.querySelector('input[name=hidePercentage]').checked = this.visualization.options.hidePercentage;
+
+		if(this.visualization.options && this.visualization.options.hideValue)
+			container.querySelector('input[name=hideValue]').checked = this.visualization.options.hideValue;
+
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+
+		nameColumn.value = (this.visualization.options && this.visualization.options.nameColumn) || '';
+		valueColumn.value = (this.visualization.options && this.visualization.options.valueColumn) || '';
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			hidePercentage: this.form.querySelector('input[name=hidePercentage]').checked,
+			hideValue: this.form.querySelector('input[name=hideValue]').checked,
+			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
+			nameColumn: this.form.querySelector('select[name=nameColumn]').value,
+			valueColumn: this.form.querySelector('select[name=valueColumn]').value,
+		}
+	}
 });
 
 ConfigureVisualization.types.set('funnel', class FunnelOptions extends ReportVisualizationOptions {
@@ -2377,6 +2745,12 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 						<span>Postfix</span>
 						<input type="text" name="postfix" value="${(this.visualization.options && this.visualization.options.postfix) || ''}">
 					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend.
+						</span>
+					</label>
 				</div>
 			</div>
 		`;
@@ -2392,6 +2766,9 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 			`);
 		}
 
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+
 		columnSelect.value = (this.visualization.options && this.visualization.options.column) || '';
 		valueType.value = (this.visualization.options && this.visualization.options.valueType) || '';
 
@@ -2403,6 +2780,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 	get json() {
 
 		return {
+			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
 			column: this.form.querySelector('select[name=column]').value,
 			valueType: this.form.querySelector('select[name=valueType]').value,
 			prefix: this.form.querySelector('input[name=prefix]').value,
@@ -2420,48 +2798,56 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		const container = this.formContainer = document.createElement('form');
 
-		container.classList.add('form');
-
 		container.innerHTML = `
-			<label>
-				<span>Column</span>
-				<select name="timing"></select>
-			</label>
 
-			<label>
-				<span>Value</span>
-				<select name="value"></select>
-			</label>
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="form body">
+					<label>
+						<span>Timing Column</span>
+						<select name="timing"></select>
+					</label>
 
-			<label>
-				<span>Invert Values</span>
-				<select name="invertValues">
-					<option value="1">Yes</option>
-					<option value="0">No</option>
-				</select>
-			</label>
+					<label>
+						<span>Value Column</span>
+						<select name="value"></select>
+					</label>
 
-			<label>
-				<span>Prefix</span>
-				<input type="text" name="prefix">
-			</label>
+					<label>
+						<span>Invert Values</span>
+						<select name="invertValues">
+							<option value="1">Yes</option>
+							<option value="0">No</option>
+						</select>
+					</label>
 
-			<label>
-				<span>Postfix</span>
-				<input type="text" name="postfix">
-			</label>
+					<label>
+						<span>Prefix</span>
+						<input type="text" name="prefix">
+					</label>
 
-			<h4>Boxes</h4>
-			<div id="config-boxes"></div>
-			<button class="add-box" type="button">
-				<i class="fa fa-plus"></i> Add New Box
-			</button>
+					<label>
+						<span>Postfix</span>
+						<input type="text" name="postfix">
+					</label>
+				</div>
+			</div>
+
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Boxes</h3>
+				<div class="form body">
+					<div id="config-boxes"></div>
+					<button class="add-box" type="button">
+						<i class="fa fa-plus"></i> Add New Box
+					</button>
+				</div>
+			</div>
 		`;
 
 		const timing = container.querySelector('select[name=timing]');
 		const value = container.querySelector('select[name=value]');
 
-		for (const [key, column] of this.report.columns) {
+		for (const [key, column] of this.page.preview.report.columns) {
 
 			timing.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
@@ -2479,13 +2865,13 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			this.form.querySelector('input[name=prefix]').value = this.visualization.options.prefix;
 			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
 
-			for (let box of this.visualization.options.boxes) {
-				container.appendChild(this.box(box));
+			for (let box of this.visualization.options.boxes || []) {
+				container.querySelector('#config-boxes').appendChild(this.box(box));
 			}
 		}
 
 		container.querySelector('.add-box').on('click', () => {
-			container.appendChild(this.box());
+			container.querySelector('#config-boxes').appendChild(this.box());
 		});
 
 		return container;
@@ -2505,12 +2891,12 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		for (let box of this.form.querySelectorAll('.subform')) {
 			config.boxes.push({
-				offset: box.querySelector('input[name=offset]').value,
-				relativeValTo: box.querySelector('input[name=relativeValTo]').value,
-				row: box.querySelector('input[name=row]').value,
-				column: box.querySelector('input[name=column]').value,
-				rowspan: box.querySelector('input[name=rowspan]').value,
-				columnspan: box.querySelector('input[name=columnspan]').value
+				offset: parseInt(box.querySelector('input[name=offset]').value),
+				relativeTo: parseInt(box.querySelector('input[name=relativeTo]').value),
+				row: parseInt(box.querySelector('input[name=row]').value),
+				column: parseInt(box.querySelector('input[name=column]').value),
+				rowspan: parseInt(box.querySelector('input[name=rowspan]').value),
+				columnspan: parseInt(box.querySelector('input[name=columnspan]').value),
 			});
 		}
 
@@ -2526,42 +2912,42 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 		boxConfig.innerHTML = `
 			<label>
 				<span>Offset</span>
-				<input type="text" name="offset">
+				<input type="number" name="offset">
 			</label>
 
 			<label>
 				<span>Relative To(Index)</span>
-				<input type="text" name="relativeValTo">
+				<input type="number" name="relativeTo">
 			</label>
 
 			<label>
 				<span>Column</span>
-				<input type="text" name="column">
+				<input type="number" name="column">
 			</label>
 
 			<label>
 				<span>Row</span>
-				<input type="text" name="row">
+				<input type="number" name="row">
 			</label>
 
 			<label>
 				<span>Column Span</span>
-				<input type="text" name="columnspan">
+				<input type="number" name="columnspan">
 			</label>
 
 			<label>
 				<span>Row Span</span>
-				<input type="text" name="rowspan">
+				<input type="number" name="rowspan">
 			</label>
 		`;
 
 		if (boxValues) {
-			boxConfig.querySelector('input[name=offset]').value = boxValues.offset;
-			boxConfig.querySelector('input[name=relativeValTo]').value = boxValues.relativeValTo;
-			boxConfig.querySelector('input[name=row]').value = boxValues.row;
-			boxConfig.querySelector('input[name=column]').value = boxValues.column;
-			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan;
-			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan;
+			boxConfig.querySelector('input[name=offset]').value = boxValues.offset || '';
+			boxConfig.querySelector('input[name=relativeTo]').value = boxValues.relativeTo || '';
+			boxConfig.querySelector('input[name=row]').value = boxValues.row || '';
+			boxConfig.querySelector('input[name=column]').value = boxValues.column || '';
+			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan || '';
+			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan || '';
 		}
 
 		return boxConfig;
@@ -2606,15 +2992,17 @@ class EditSourceData {
 
 	get container() {
 
-		if(this.tableContainer) {
-
+		if(this.tableContainer)
 			return this.tableContainer;
-		}
 
-		const div = document.createElement('div');
+		const div = document.createElement('section');
+
+		div.classList.add('edit-data-source');
 
 		div.innerHTML = `
-			<button type="submit">Save</button>
+			<header class="toolbar">
+				<button type="submit"><i class="fas fa-paper-plane"></i> Update Data</button>
+			</header>
 			<table>
 				<thead></thead>
 				<tbody contentEditable name="data"></tbody>
@@ -2637,7 +3025,6 @@ class EditSourceData {
 		await this.datasource.fetch();
 		this.data = this.datasource.response;
 
-		this.columns = [...this.data[0].keys()];
 		this.rows = [];
 
 		for (const item of this.data) {
@@ -2693,6 +3080,8 @@ class EditSourceData {
 			return this.tableContainer;
 		}
 
+		this.columns = [...this.data[0].keys()];
+
 		const tableElement = this.tableContainer.querySelector('table');
 
 		const thead = this.tableContainer.querySelector('thead');
@@ -2725,21 +3114,22 @@ class EditSourceData {
 
 		for (const row of this.rows) {
 
-			let tableRow = '';
+			let tableRow = document.createElement('tr');
 
 			for (const cell of row) {
 
-				tableRow += '<td>' + cell + '</td>';
+				const td = document.createElement('td');
+				td.textContent = cell;
+				tableRow.appendChild(td);
 			}
 
-			tbody.innerHTML += '<tr>' + tableRow + '</tr>';
+			tbody.appendChild(tableRow);
 		}
 
 		const saveButton = this.tableContainer.querySelector('button[type="submit"]');
 
 		saveButton.removeEventListener('click', EditSourceData.submitListener);
 		saveButton.on('click', EditSourceData.submitListener = (e) => this.save(e));
-
 
 		tableElement.appendChild(thead);
 		tableElement.appendChild(tbody);
@@ -2749,11 +3139,11 @@ class EditSourceData {
 
 	async save(e) {
 
-		if (e) {
-
+		if(e)
 			e.preventDefault();
-		}
 
+		if (!this.data || !this.data.length)
+			return;
 
 		const t = this.container.querySelector('table');
 		const result = [];

@@ -81,6 +81,8 @@ exports.get = class extends API {
 			ON
 				s.account_id = a.account_id
 				AND s.owner = 'account'
+				AND s.status = 1
+				AND s.profile = 'main'
 			WHERE
 				a.status = 1
 				and a.account_id = ?
@@ -97,18 +99,11 @@ exports.get = class extends API {
 
 		accountList.map(x => {
 
-			let settings = {};
-
 			try {
-				settings = JSON.parse(x.value);
+				accountObj.settings = JSON.parse(x.value);
 			}
 			catch (e) {
 			}
-
-			accountObj.settings.push({
-				profile: x.profile,
-				value: settings,
-			});
 		});
 
 		delete accountObj['value'];
@@ -122,7 +117,9 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		let payload = {}, account_cols = ["name", "url", "icon", "logo"];
+		const
+			payload = {},
+			account_cols = ['name', 'url', 'icon', 'logo'];
 
 		for (const values in this.request.body) {
 
@@ -136,38 +133,20 @@ exports.insert = class extends API {
 			'write'
 		);
 
-		this.assert(result.insertId, "account not inserted");
+		this.assert(result.insertId, 'Account not inserted');
 
-		let settings, insertList = [];
+		const [category, role] = await Promise.all([
 
-		if (this.request.body.settings) {
-			this.assert(commonFun.isJson(this.request.body.settings), "settings is not in JSON format");
-			settings = JSON.parse(this.request.body.settings);
-
-			for (const setting of settings) {
-
-				insertList.push([result.insertId, "account", setting.profile, JSON.stringify(setting.value)]);
-			}
-		}
-
-		if(!insertList.length)
-			insertList.push([result.insertId, "account", null, null]);
-
-		const [category, role, setting] = await Promise.all([
 			this.mysql.query(
 				`INSERT INTO tb_categories (account_id, name, slug, is_admin) VALUES(?, "Main", "main", 1)`,
 				[result.insertId],
 				'write'
 			),
+
 			this.mysql.query(
 				`INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Main", 1)`,
 				[result.insertId],
 				'write'
-			),
-			this.mysql.query(
-				`INSERT INTO tb_settings (account_id, owner, profile, value) VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)`,
-				insertList,
-				"write"
 			)
 		]);
 
@@ -176,7 +155,6 @@ exports.insert = class extends API {
 			account_id: result.insertId,
 			category_id: category.insertId,
 			role_id: role.insertId,
-			setting:setting.insertId
 		};
 	}
 }
@@ -185,56 +163,18 @@ exports.update = class extends API {
 
 	async update() {
 
-		const keys = Object.keys(this.request.body);
+		const setParams = {...this.request.body};
 
-		const payload = this.request.body,
-			account_id = payload.account_id,
-			setParams = {};
-
-		for (const key in payload) {
-			if (~keys.indexOf(key) && key != 'account_id')
-				setParams[key] = payload[key] || null;
-		}
-
-		delete setParams.settings;
+		delete setParams.account_id;
 		delete setParams.token;
-		delete setParams.access_token;
 
-		const values = [setParams, account_id];
+		const values = [setParams, this.request.body.account_id];
 
 		const result = await this.mysql.query(
 			`UPDATE tb_accounts SET ? WHERE account_id = ?`,
 			values,
 			'write'
 		);
-
-		let settings, insertList = [];
-
-		if (this.request.body.settings) {
-
-			this.assert(commonFun.isJson(this.request.body.settings), "settings is not in JSON format");
-
-			settings = JSON.parse(this.request.body.settings);
-
-			for (const setting of settings) {
-
-				insertList.push([account_id, "account", setting.profile, JSON.stringify(setting.value)]);
-			}
-		}
-
-		await this.mysql.query(`
-			INSERT INTO
-				tb_settings
-				(
-					account_id,
-					owner,
-					profile,
-					value
-				)
-				VALUES (?) ON DUPLICATE KEY UPDATE profile = VALUES(profile), value = VALUES(value)
-			`,
-			insertList,
-			"write");
 
 		await account.loadAccounts();
 		return result;
@@ -267,27 +207,18 @@ exports.userQueryLogs = class extends API {
 
 	async userQueryLogs() {
 
-		const logsExists = await redis.hget(`accountSettings#${this.account.account_id}`, "settings.result_db");
+		const logsExists = this.account.settings.get('load_saved_database');
 
 		if (parseInt(logsExists)) {
 
 			return "setup already done"
 		}
 
-		const [currentAccountSettings] = await this.mysql.query(
-			"select value from tb_settings where account_id = ? and owner = 'account' and profile = ?",
-			[this.account.account_id, constants.saveQueryResultDb]
-		);
-
-		this.assert(!currentAccountSettings.length, "Setting for save history not found");
-
-		let historyConnectionId = JSON.parse(currentAccountSettings.value).value;
-
-		this.assert(historyConnectionId, "connection id not found");
+		this.assert(this.account.settings.get('load_saved_connection'), "connection id not found");
 
 		const [resultLogCredentials] = await this.mysql.query(
 			"select * from tb_credentials where id = ? and status = 1",
-			[historyConnectionId]
+			[this.account.settings.get('load_saved_connection')]
 		);
 
 		this.assert(resultLogCredentials, "Credential not found");
@@ -310,7 +241,7 @@ exports.userQueryLogs = class extends API {
 			  \`type\` varchar(20) DEFAULT NULL,
 			  \`user_id\` int(11) DEFAULT NULL,
 			  \`query\` text,
-			  \`data\` text,
+			  \`data\` longblob,
 			  \`created_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 			  \`updated_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			  PRIMARY KEY (\`id\`),
@@ -331,11 +262,6 @@ exports.userQueryLogs = class extends API {
 				"write"
 			);
 		}
-
-		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.result_db", 1);
-		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.connection_id", credentials.id);
-		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.db", credentials.db || constants.saveQueryResultDb);
-		await redis.hset(`accountSettings#${this.account.account_id}`, "settings.save_result", 1);
 
 		return credentials.db || constants.saveQueryResultDb
 	}

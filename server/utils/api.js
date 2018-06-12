@@ -1,5 +1,6 @@
 const zlib = require('zlib');
 const mysql = require('./mysql').MySQL;
+const crypto = require('crypto');
 const fs = require('fs');
 const pathSeparator = require('path').sep;
 const {resolve} = require('path');
@@ -9,6 +10,8 @@ const constants = require('./constants');
 const assert = require("assert");
 const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
+
+const gitChecksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
 class API {
 
@@ -87,20 +90,32 @@ class API {
 
 				let host = request.headers.host.split(':')[0];
 
-				if (!(host in global.account)) {
-					throw new API.Exception(400, 'Account not found!');
+				for(const account of global.accounts) {
+
+					if(userDetails && account.account_id == userDetails.account_id)
+						obj.account = account;
 				}
 
-				for (const host in global.account) {
+				if(!obj.account) {
+					for(const account of global.accounts) {
 
-					if (userDetails && global.account[host].account_id == userDetails.account_id) {
-						obj.account = global.account[host];
+						if(account.url == host)
+							obj.account = account;
 					}
 				}
 
 				if (!obj.account) {
-					obj.account = global.account[host];
+					throw new API.Exception(400, 'Account not found!');
 				}
+
+				const checksums = [
+					gitChecksum,
+					crypto.createHash('md5').update(JSON.stringify(obj.account)).digest('hex'),
+					crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex'),
+					crypto.createHash('md5').update(JSON.stringify(obj.user || '')).digest('hex'),
+				];
+
+				obj.checksum = crypto.createHash('md5').update(checksums.join()).digest('hex').substring(0, 10);
 
 				if (clientEndpoint) {
 					return response.send(await obj.body());

@@ -5,3 +5,12 @@
 #form .test-result {
 	margin-bottom: calc(var(--gap) * 2);
 }
+#form .password {
+	display: flex;
+}
+	#form .password .show-password {
+		margin-left: auto;
+		font-size: 90%;
+		color: #666;
+		font-weight: normal;
+	}

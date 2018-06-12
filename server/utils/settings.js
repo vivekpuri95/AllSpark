@@ -1,17 +1,18 @@
 class Settings extends Map {
 
-	constructor(setting) {
+	constructor(setting = []) {
+
+		if(!Array.isArray(setting)) {
+			super();
+			return;
+		}
 
 		super(setting.map(x => [x.key, x]));
 	}
 
 	get(key) {
-
-		const obj = super.get(key);
-
-		return obj.value;
+		return super.has(key) ? super.get(key).value : undefined;
 	}
-
 }
 
 module.exports = Settings;

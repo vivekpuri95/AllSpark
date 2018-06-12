@@ -12,7 +12,7 @@ exports.privilege = {
 	connection: "connection",
 	dashboard: "dashboard",
 	report: "report",
-
+	superadmin: "superadmin",
 	ignore_category: ['connection', 'dashboard']
 };
 
@@ -22,12 +22,13 @@ exports.publicEndpoints = [
 	'/v2/authentication/refresh',
 	'/v2/authentication/reset',
 	'/v2/authentication/resetLink',
-	'/v2/authentication/tookan',
 	'/v2/scope/scopeAuth',
 	'/v2/accounts/signup',
 ];
 
 exports.filterPrefix = "param_";
+
+exports.external_parameter_prefix = "ext_";
 
 exports.saveQueryResultDb = "save_history";
 

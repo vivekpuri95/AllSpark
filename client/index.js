@@ -7,8 +7,6 @@ const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
 
-const checksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
-
 router.use(express.static('./client'));
 
 class HTMLAPI extends API {
@@ -33,7 +31,26 @@ class HTMLAPI extends API {
 
 	async body() {
 
-		this.stylesheets.push('/css/dark.css');
+		if(this.account.settings.has('custom_css'))
+			this.stylesheets.push('/css/custom.css');
+
+		if(this.account.settings.has('custom_js'))
+			this.scripts.push('/js/custom.js');
+
+		let ga = '';
+
+		if(config.has('ga_id')) {
+			ga = `
+				<script async src="https://www.googletagmanager.com/gtag/js?id=${config.get('ga_id')}"></script>
+				<script>
+					window.dataLayer = window.dataLayer || [];
+					function gtag(){dataLayer.push(arguments);}
+					gtag('js', new Date());
+
+					gtag('config', '${config.get('ga_id')}');
+				</script>
+			`;
+		}
 
 		return `<!DOCTYPE html>
 			<html lang="en">
@@ -43,10 +60,11 @@ class HTMLAPI extends API {
 					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
 
-					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + checksum + '">').join('')}
-					${this.scripts.map(s => '<script src="' + s + '?' + checksum + '"></script>').join('')}
+					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + this.checksum + '">').join('')}
+					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>').join('')}
 
 					<link rel="manifest" href="/manifest.webmanifest">
+					${ga}
 				</head>
 				<body>
 					<div id="ajax-working"></div>
@@ -64,7 +82,7 @@ class HTMLAPI extends API {
 					</header>
 					<div class="nav-blanket"></div>
 					<main>
-						${this.main || ''}
+						${await this.main() || ''}
 					</main>
 				</body>
 			</html>
@@ -74,16 +92,36 @@ class HTMLAPI extends API {
 
 router.get('/service-worker.js', API.serve(class extends HTMLAPI {
 
-	get main() {
+	async body() {
 
 		this.response.setHeader('Content-Type', 'application/javascript');
+
 		return [
 			await (promisify(fs.readFile))('client/js/service-worker.js', {encoding: 'utf8'}),
-			`'${checksum}'`
+			`'${this.checksum}'`
 		].join('\n');
 	}
 }));
 
+router.get('/css/custom.css', API.serve(class extends HTMLAPI {
+
+	async body() {
+
+		this.response.setHeader('Content-Type', 'text/css');
+
+		return this.account.settings.get('custom_css') || '';
+	}
+}));
+
+router.get('/js/custom.js', API.serve(class extends HTMLAPI {
+
+	async body() {
+
+		this.response.setHeader('Content-Type', 'text/javascript');
+
+		return this.account.settings.get('custom_js') || '';
+	}
+}));
 
 router.get('/account-signup', API.serve(class extends HTMLAPI {
 
@@ -95,20 +133,20 @@ router.get('/account-signup', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/accountSignup.js');
 	}
 
-	get main() {
+	async main() {
 
 		return `
 			<section class="section" id="signup">
 				<h1>Signup Page</h1>
-			
+
 				<div class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 					<button type="submit" form="signup-form"><i class="fa fa-save"></i> Sign up</button>
 					<span class="notice hidden"></span>
 				</div>
-				
+
 				<form class="block form" id="signup-form">
-					
+
 					<h3>Account Details</h3>
 					<label>
 						<span>Account Name</span>
@@ -126,9 +164,9 @@ router.get('/account-signup', API.serve(class extends HTMLAPI {
 						<span>Logo</span>
 						<input type="text" name="logo">
 					</label>
-					
+
 					<h3>Admin Details</h3>
-		
+
 					<label>
 						<span>First Name</span>
 						<input type="text" name="first_name">
@@ -169,40 +207,64 @@ router.get('/login', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/login.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<div class="logo hidden">
 				<img src="" />
 			</div>
 
-			<div class="whitelabel form">
+			<section id="loading" class="section form">
 				<i class="fa fa-spinner fa-spin"></i>
+			</section>
+
+			<section id="accept-email" class="section">
+				<form class="form">
+
+					<label>
+						<span>Email</span>
+						<input type="email" name="email" required>
+					</label>
+
+					<div>
+						<button class="submit">
+							<i class="fas fa-arrow-right"></i>
+							Next
+						</button>
+					</div>
+				</form>
+			</section>
+
+			<section id="accept-account" class="section"></section>
+
+			<section id="accept-password" class="section">
+				<form class="form">
+
+					<label>
+						<span>Email</span>
+						<input type="email" name="email" disabled required>
+					</label>
+
+					<label>
+						<span>Password</span>
+						<input type="password" name="password" required>
+					</label>
+
+					<div>
+						<a id="password-back"><i class="fas fa-arrow-left"></i> &nbsp;Back</a>
+						<button class="submit">
+							<i class="fas fa-sign-in-alt"></i>
+							Sign In
+						</button>
+					</div>
+				</form>
+			</section>
+
+			<section id="message"></section>
+
+			<div id="signup" class="hidden">
+				<a href="/login/forgot">Forgot Password?</a>
+				${this.account.settings.get('enable_account_signup') ? 'Or Create a <a href="/account-signup">new account</a>' : ''}
 			</div>
-
-			
-		<form class="form hidden">
-
-			<label>
-				<span>Email</span>
-				<input type="text" name="email" required>
-			</label>
-
-			<label>
-				<span>Password</span>
-				<input type="password" name="password" required>
-			</label>
-			<div>
-				<button class="submit">
-					<i class="fa fa-paper-plane"></i>
-					Sign In
-				</button>
-			</div>
-		</form>
-		<div class="block signup">
-			<a href="/login/forgot">Forgot password?</a><span class="hidden"> Or Create a <a href="/account-signup">new account</a></span>
-		</div>
-
-			<div id="message" class="hidden"></div>
 		`;
 	}
 }));
@@ -217,7 +279,7 @@ router.get('/login/forgot', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/forgotpassword.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<div class="logo hidden">
 				<img src="" />
@@ -254,7 +316,7 @@ router.get('/login/reset', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/resetpassword.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<div class="logo hidden">
 				<img src="" />
@@ -290,7 +352,7 @@ router.get('/user/profile/edit', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/user/profile/edit.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<section class="section" id="form">
 				<form class="block form">
@@ -332,44 +394,44 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/profile.js');
 	}
 
-	get main() {
+	async main() {
 		return `
-			<section id="profile">
-				<h1>
-					Profile details
-					<a href="/user/profile/edit" class="edit">
-						<i class="fa fa-edit"></i>
-						Edit
-					</a>
-				</h1>
-				<div class="profile-details"></div>
-				<div class="privileges">
-					<label><span>Privileges:&nbsp;</span>
-						<table>
-							<thead>
-								<tr>
-									<th>Category</th>
-									<th>Privileges</th>
-								</tr>
-							</thead>
-							<tbody></tbody>
-						</table>
-					</label>
-				</div>
-				<div class="roles">
-					<label><span>Roles:&nbsp;</span>
-						<table>
-							<thead>
-								<tr>
-									<th>Category</th>
-									<th>Roles</th>
-								</tr>
-							</thead>
-							<tbody></tbody>
-						</table>
-					</label>
-				</div>
-			</section>
+			<h1>
+				<span></span>
+				<a href="/user/profile/edit" class="edit"><i class="fa fa-edit"></i> Edit</a>
+			</h1>
+
+			<div class="profile-details"></div>
+
+			<h2>Privileges</h2>
+			<p>
+				Privileges define what <strong>actions</strong> the user can perform.<br>
+				<span class="NA">For Example: Manage Reports, Users, Connections, Dashboards, etc</span>
+			</p>
+			<table class="privileges">
+				<thead>
+					<tr>
+						<th>Category</th>
+						<th>Privilege</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+
+			<h2>Roles</h2>
+			<p>
+				Roles define what <strong>data</strong> the user can view.<br>
+				<span class="NA">For Example: <em>Merchant Dashboard</em>, <em>Production MySQL</em> (Connection), <em>Delivery Analysys Report</em> etc</span>
+			</p>
+			<table class="roles">
+				<thead>
+					<tr>
+						<th>Category</th>
+						<th>Role</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
 		`;
 	}
 }));
@@ -388,7 +450,7 @@ router.get('/streams', API.serve(class extends HTMLAPI {
 		]);
 	}
 
-	get main() {
+	async main() {
 		return ''
 	}
 }));
@@ -415,7 +477,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 		]);
 	}
 
-	get main() {
+	async main() {
 		return `
 			<nav>
 				<div class="NA"><i class="fa fa-spinner fa-spin"></i></div>
@@ -516,7 +578,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 		]);
 	}
 
-	get main() {
+	async main() {
 		return `
 			<section class="section show" id="list">
 
@@ -630,7 +692,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 		]);
 	}
 
-	get main() {
+	async main() {
 		return `
 			<div id="stage-switcher"></div>
 
@@ -672,102 +734,105 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 					<header class="toolbar">
 						<button type="submit" form="configure-report-form"><i class="fa fa-save"></i> Save</button>
+						<small id="added-by"></small>
 					</header>
 
-					<form class="form" id="configure-report-form">
+					<form id="configure-report-form">
 
-						<label>
-							<span>Name</span>
-							<input type="text" name="name">
-						</label>
-
-						<label>
-							<span>Connection</span>
-							<select name="connection_name" required></select>
-						</label>
-
-						<div id="query" class="hidden">
-							<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
-							<div id="schema"></div>
-							<div id="editor"></div>
-
-							<div id="test-container">
-								<div id="test-executing" class="hidden notice"></div>
-							</div>
-
-							<div id="missing-filters" class="hidden"></div>
-						</div>
-
-						<div id="api" class="hidden form">
-
+						<div class="form">
 							<label>
-								<span>URL</span>
-								<input type="url" name="url">
+								<span>Name</span>
+								<input type="text" name="name">
 							</label>
 
 							<label>
-								<span>Method</span>
-								<select name="method">
-									<option>GET</option>
-									<option>POST</option>
+								<span>Connection</span>
+								<select name="connection_name" required></select>
+							</label>
+
+							<div id="query" class="hidden">
+								<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
+								<div id="schema"></div>
+								<div id="editor"></div>
+
+								<div id="test-container">
+									<div id="test-executing" class="hidden notice"></div>
+								</div>
+
+								<div id="missing-filters" class="hidden"></div>
+							</div>
+
+							<div id="api" class="hidden form">
+
+								<label>
+									<span>URL</span>
+									<input type="url" name="url">
+								</label>
+
+								<label>
+									<span>Method</span>
+									<select name="method">
+										<option>GET</option>
+										<option>POST</option>
+									</select>
+								</label>
+							</div>
+
+							<label>
+								<span>Category</span>
+								<select name="category_id"></select>
+							</label>
+
+							<label>
+								<span>Description</span>
+								<textarea name="description"></textarea>
+							</label>
+
+							<label>
+								<span>Tags (Comma Separated)</span>
+								<input type="text" name="tags">
+							</label>
+						</div>
+
+						<div class="form">
+							<label>
+								<span>Roles</span>
+								<select name="roles" required id="roles"></select>
+							</label>
+
+							<label>
+								<span>Refresh Rate (Seconds)</span>
+								<input type="number" name="refresh_rate" min="0" step="1">
+							</label>
+
+							<label>
+								<span>Store Result</span>
+								<select name="load_saved">
+									<option value="1">Enabled</option>
+									<option value="0" selected>Disabled</option>
+								</select>
+							</label>
+
+							<label>
+								<span>Redis</span>
+
+								<select id="redis">
+									<option value="0">Disabled</option>
+									<option value="EOD">EOD</option>
+									<option value="custom">Custom<custom>
+								</select>
+
+								<input name="is_redis" class="hidden">
+							</label>
+
+							<label>
+								<span>Status</span>
+								<select name="is_enabled" required>
+									<option value="1">Enabled</option>
+									<option value="0">Disabled</option>
 								</select>
 							</label>
 						</div>
-
-						<label>
-							<span>Category</span>
-							<select name="category_id"></select>
-						</label>
-
-						<label>
-							<span>Description</span>
-							<textarea name="description"></textarea>
-						</label>
-
-						<label>
-							<span>Tags (Comma Separated)</span>
-							<input type="text" name="tags">
-						</label>
-
-						<label>
-							<span>Requested By</span>
-							<input type="text" name="requested_by">
-						</label>
-
-						<label>
-							<span>Roles</span>
-							<select name="roles" required id="roles"></select>
-						</label>
-
-						<label>
-							<span>Refresh Rate (Seconds)</span>
-							<input type="number" name="refresh_rate" min="0" step="1">
-						</label>
-
-						<label>
-							<span>Redis</span>
-
-							<select id="redis">
-								<option value="0">Disabled</option>
-								<option value="EOD">EOD</option>
-								<option value="custom">Custom<custom>
-							</select>
-
-							<input name="is_redis" class="hidden" value="0" min="1">
-						</label>
-
-						<label>
-							<span>Status</span>
-							<select name="is_enabled" required>
-								<option value="1">Enabled</option>
-								<option value="0">Disabled</option>
-							</select>
-						</label>
-
-						<label style="max-width: 300px">
-							<span>Added By</span>
-							<span class="NA" id="added-by"></span>
-						</label>
 					</form>
 				</section>
 
@@ -778,6 +843,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
 						<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
 						<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
+						<button id="edit-data-toggle"><i class="fas fa-edit"></i> Edit Data</button>
 						<button id="run"><i class="fas fa-sync"></i> Run</button>
 					</header>
 
@@ -805,7 +871,14 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									</select>
 								</label>
 							</div>
+
+							<div id="csv" class="hidden">
+								<input type="file" id="csv-input" accept=".xlsx, .xls, .csv" class="hidden">
+								<span>Upload CSV</span>
+							</div>
 						</form>
+
+						<div id="edit-data" class="hidden"></div>
 
 						<div id="filters" class="hidden">
 
@@ -929,7 +1002,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-configure-visualization">
 
 					<div class="toolbar">
-						<button type="submit" form="configure-visualization-form"><i class="fa fa-save"></i> Save</button>
+						<button type="button" id="configure-visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
+						<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
 						<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>
 					</div>
 
@@ -996,7 +1070,7 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/users.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<section class="section" id="list">
 
@@ -1127,7 +1201,7 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 		this.scripts.push('/js/connections.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<section class="section" id="list">
 
@@ -1194,9 +1268,10 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 		this.stylesheets.push('/css/settings.css');
 		this.scripts.push('/js/settings.js');
+		this.scripts.push('/js/settings-manager.js');
 	}
 
-	get main() {
+	async main() {
 		return `
 			<nav></nav>
 
@@ -1394,13 +1469,13 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 	                    </label>
 	                    <label>
 	                        <span>Icon</span>
-	                        <img src="" alt="icon" id="icon" height="30">
 	                        <input type="text" name="icon">
+	                        <img src="" alt="icon" id="icon" height="30">
 	                    </label>
 	                    <label>
 	                        <span>Logo</span>
-	                        <img src="" alt="logo" id="logo" height="30">
 	                        <input type="text" name="logo">
+	                        <img src="" alt="logo" id="logo" height="30">
 	                    </label>
 						<label>
 	                        <span>Authentication API</span>

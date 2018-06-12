@@ -6,7 +6,7 @@ main {
 	padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2);
 }
 main.preview-bottom {
-	grid-template-rows: max-content 1fr max-content;
+	grid-template-rows: max-content calc(60vh - 155px) 40vh;
 }
 	main button.unsaved {
 		background: #c33;
@@ -23,6 +23,10 @@ main.preview-bottom {
 	grid-row: 1;
 	border: 1px solid #ccc;
 	border-top: 0;
+	overflow: auto;
+}
+#stage-switcher::-webkit-scrollbar {
+	display: none;
 }
 	#stage-switcher .stage {
 		display: grid;
@@ -50,7 +54,8 @@ main.preview-bottom {
 		box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
 	}
 	#stage-switcher .stage.selected {
-		background: #FFC;
+		background: var(--color-selected);
+		color: var(--color-selected-text);
 	}
 	#stage-switcher .stage.disabled {
 		color: #ccc;
@@ -125,6 +130,22 @@ main.preview-left #stages {
 	#stages section.section.show {
 		padding: 0;
 		width: 100%;
+	}
+
+#stage-configure-report .toolbar {
+	justify-content: space-between;
+}
+	#stage-configure-report #added-by {
+		align-self: center;
+	}
+#stage-configure-report #configure-report-form {
+	display: flex;
+	flex-wrap: wrap;
+	margin: -5px;
+}
+	#stage-configure-report #configure-report-form > .form {
+		margin: 5px;
+		flex: 1;
 	}
 
 #stage-pick-report table {
@@ -220,8 +241,10 @@ main.preview-left #stages {
 						padding: 8px;
 						transition: background var(--transition-duration),
 									box-shadow var(--transition-duration);
-						grid-template-columns: max-content 1fr max-content;
+						grid-template-columns: max-content auto max-content;
 						grid-gap: var(--gap);
+						max-width: 100%;
+						overflow: hidden;
 					}
 					#stage-define-report #schema li .name:hover {
 						background: rgba(0, 0, 0, 0.10);
@@ -232,6 +255,10 @@ main.preview-left #stages {
 					#stage-define-report #schema li.opened > .name {
 						background: rgba(0, 0, 0, 0.10);
 					}
+						#stage-define-report #schema li .name span {
+							overflow: hidden;
+							text-overflow: ellipsis;
+						}
 						#stage-define-report #schema li .name small {
 							margin-left: auto;
 							color: #999;
@@ -245,10 +272,27 @@ main.preview-left #stages {
 			#stage-define-report #define-report-form #editor {
 				height: 100%;
 			}
+			#stage-define-report #define-report-form #csv {
+				background: #fff;
+				height: 100%;
+				font-size: calc(20px + 1vw);
+				align-items: center;
+				display: flex;
+				color: #ccc;
+				justify-content: center;
+				cursor: pointer;
+				transition: background var(--transition-duration),
+							box-shadow var(--transition-duration);
+			}
+			#stage-define-report #define-report-form #csv:hover {
+				background: #999;
+			}
+			#stage-define-report #define-report-form #csv:active {
+				box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.15);
+			}
 
 		#stage-define-report #filters {
 			flex: 1 40%;
-			/* height: 50vh; */
 			margin-left: calc(var(--gap) * 2);
 			overflow: auto;
 		}
@@ -268,6 +312,15 @@ main.preview-left #stages {
 				background: #fff;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			}
+		#stage-define-report #edit-data {
+			overflow: auto;
+			width: 100%;
+			border-top: 1px dashed #ccc;
+			padding-top: calc(var(--gap) * 2);
+		}
+			#stage-define-report #edit-data table {
+				background: #fff;
+			}
 
 #stage-pick-visualization table {
 	background: #fff;
@@ -283,20 +336,23 @@ main.preview-left #stages {
 		padding: 0;
 		position: sticky;
 		top: 0;
-		z-index: 1;
+		z-index: 2;
+	}
+	#stage-configure-visualization .toolbar .right {
+		margin-left: auto;
 	}
 	#stage-configure-visualization h3 {
 		border-bottom: 1px dashed #999;
-		margin-bottom: calc(var(--gap) * 2);
 		cursor: pointer;
 		position: sticky;
 		top: 28px;
 		background: #eee;
 		padding: var(--gap);
-		margin: var(--gap) 0;
+		margin: calc(var(--gap) * 2) 0;
 		display: flex;
 		align-items: center;
 		font-size: 95%;
+		z-index: 1;
 	}
 		#stage-configure-visualization h3 > svg {
 			margin-right: var(--gap);
@@ -389,9 +445,6 @@ main.preview-left #stages {
 			padding: 10px;
 			background: #fff;
 		}
-			#stage-configure-visualization #dashboards .form {
-				box-shadow: none;
-			}
 			#stage-configure-visualization #dashboards .options .delete:hover,
 			#stage-configure-visualization #dashboards .dashboard-action .delete:hover {
 				background: #c33;
@@ -407,6 +460,12 @@ main.preview-left #stages {
 				grid-template-columns: 1fr 1fr;
 				grid-gap: calc(var(--gap) * 2);
 			}
+		#stage-configure-visualization #dashboards select {
+			width: 100%;
+		}
+	.configuration-section .body .subform {
+		box-shadow: none;
+	}
 	.configuration-section span {
 		display: flex;
 		align-items: center;
@@ -428,6 +487,7 @@ main.preview-left #stages {
 		cursor: pointer;
 		width: 350px;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		transform: perspective(500px) translatez(0);
 		transition: box-shadow var(--transition-duration),
 					transform var(--transition-duration);
 	}
@@ -442,12 +502,16 @@ main.preview-left #stages {
 			margin-bottom: var(--gap);
 			background: #fff;
 		}
-
 		#add-visualization-form figcaption {
 			background: #ddf;
 			width: 100%;
 			padding: 5px;
 			text-align: center;
+			transition: background var(--transition-duration);
+		}
+		#add-visualization-form figure.selected figcaption {
+			background: var(--color-selected);
+			color: var(--color-selected-text);
 		}
 
 main.preview-top #preview {

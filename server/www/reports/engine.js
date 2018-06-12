@@ -71,6 +71,18 @@ class report extends API {
 
 		if (preReportApi && commonFun.isJson(preReportApi.value)) {
 
+			for (const key of this.account.settings.get("external_parameters")) {
+
+				if ((constants.filterPrefix + key) in this.request.body) {
+
+					this.filters.push({
+						placeholder: key.replace(constants.filterPrefix),
+						value: this.request.body[key.replace(constants.filterPrefix)],
+						default_value: this.request.body[key.replace(constants.filterPrefix)],
+					})
+				}
+			}
+
 			preReportApi = (JSON.parse(preReportApi.value)).value;
 
 			let preReportApiDetails;
@@ -79,14 +91,20 @@ class report extends API {
 				preReportApiDetails = await requestPromise({
 
 					har: {
-						url: preReportApi + this.request.body[constants.filterPrefix + "access_token"],
+						url: preReportApi,
 						method: 'GET',
 						headers: [
 							{
 								name: 'content-type',
 								value: 'application/x-www-form-urlencoded'
 							}
-						]
+						],
+						queryString: this.account.settings.get("external_parameters").map(x => {
+							return {
+								name: x,
+								value: this.request.body[constants.filterPrefix + x],
+							}
+						})
 					},
 					gzip: true
 				});
@@ -101,8 +119,8 @@ class report extends API {
 
 				this.filters.push({
 					placeholder: key,
-					value: JSON.stringify(preReportApiDetails[key]),
-					default_value: JSON.stringify(preReportApiDetails[key]),
+					value: preReportApiDetails[key] ?  preReportApiDetails[key].toString() : '',
+					default_value: preReportApiDetails[key] ?  preReportApiDetails[key].toString() : '',
 				})
 			}
 		}
@@ -169,8 +187,8 @@ class report extends API {
 
 			await userQueryLogsObj.userQueryLogs();
 
-			this.queryResultDb = await redis.hget(`accountSettings#${this.account.account_id}`, "settings.db");
-			this.queryResultConnection = parseInt(await redis.hget(`accountSettings#${this.account.account_id}`, "settings.connection_id"));
+			this.queryResultDb = this.account.settings.get('load_saved_database');
+			this.queryResultConnection = parseInt(this.account.settings.get('load_saved_connection'));
 
 			this.assert(this.queryResultConnection, "connection id for loading saved result is not valid");
 		}
@@ -230,88 +248,23 @@ class report extends API {
 
 		await this.storeQueryResultSetup();
 
-		if (this.request.body.data && this.reportObj.load_saved) {
-
-			this.assert(commonFun.isJson(this.request.body.data), "data for saving is not json");
-
-			this.request.body.data = JSON.parse(this.request.body.data);
-
-
-			return {
-				data: await this.storeQueryResult(this.request.body.data),
-				message: "saved"
-			};
-		}
-
-		this.prepareFiltersForOffset();
-
-		let preparedRequest;
-
-		switch (this.reportObj.type.toLowerCase()) {
-
-			case "mysql":
-				preparedRequest = new MySQL(this.reportObj, this.filters, this.request.body.token);
-				break;
-			case "api":
-				preparedRequest = new APIRequest(this.reportObj, this.filters, this.request.body.token);
-				break;
-			case "pgsql":
-				preparedRequest = new Postgres(this.reportObj, this.filters, this.request.body.token);
-				break;
-			case "bigquery":
-				preparedRequest = new Bigquery(this.reportObj, this.filters, this.request.body.token);
-				break;
-			default:
-				this.assert(false, "Report Type " + this.reportObj.type.toLowerCase() + " does not exist", 404);
-		}
-
-		preparedRequest = preparedRequest.finalQuery;
-
-		const engine = new ReportEngine(preparedRequest);
-
-		const hash = "Report#report_id:" + this.reportObj.query_id + "#hash:" + engine.hash + '#redis-timeout#' + this.reportObj.is_redis;
-
-		if (this.reportObj.is_redis === "EOD") {
-
-			const d = new Date();
-			this.reportObj.is_redis = (24 * 60 * 60) - (d.getHours() * 60 * 60) - (d.getMinutes() * 60) - d.getSeconds();
-		}
-
-		let redisData = null;
-
-		if (redis) {
-			redisData = await redis.get(hash);
-		}
-
 		let result;
 
-		//Priority: Redis > (Saved Result)
-
-		if (!forcedRun && this.reportObj.is_redis && redisData && !this.has_today) {
-
-			try {
-
-				result = JSON.parse(redisData);
-
-				// await this.storeQueryResult(result);
-
-				await engine.log(this.reportObj.query_id, this.reportObj.query, result.query,
-					Date.now() - this.reportObjStartTime, this.reportObj.type,
-					this.user.user_id, 1, JSON.stringify({filters: this.filters})
-				);
-
-				result.cached = {
-					status: true,
-					age: Date.now() - result.cached.store_time
-				};
-				return result;
-			}
-			catch (e) {
-				throw new API.Exception(500, "Invalid Redis Data! :(");
-			}
-		}
-
 		if (this.reportObj.load_saved) {
+
+			if (this.request.body.data) {
+
+				this.assert(commonFun.isJson(this.request.body.data), "data for saving is not json");
+
+				this.request.body.data = JSON.parse(this.request.body.data);
+
+				await this.storeQueryResult(this.request.body.data);
+
+				return {
+					data: this.request.body.data,
+					message: "saved"
+				};
+			}
 
 			[result] = await this.mysql.query(`
 				select
@@ -346,12 +299,80 @@ class report extends API {
 				const age = Math.round((Date.now() - Date.parse(result.created_at)) / 1000);
 				result = result.data;
 
-				result.load_saved = {
-					status: true,
-					age: age
+				return {
+					data: result,
+					age: age,
+					load_saved: true,
 				};
+			}
+		}
 
+		this.prepareFiltersForOffset();
+
+		let preparedRequest;
+
+		switch (this.reportObj.type.toLowerCase()) {
+
+			case "mysql":
+				preparedRequest = new MySQL(this.reportObj, this.filters, this.request.body.token);
+				break;
+			case "api":
+				preparedRequest = new APIRequest(this.reportObj, this.filters, this.request.body.token);
+				break;
+			case "pgsql":
+				preparedRequest = new Postgres(this.reportObj, this.filters, this.request.body.token);
+				break;
+			case "bigquery":
+				preparedRequest = new Bigquery(this.reportObj, this.filters, this.request.body.token);
+				break;
+			case "csv":
+				this.assert(false, 'No data found in the CSV. Please upload some data first.');
+				break;
+			default:
+				this.assert(false, "Report Type " + this.reportObj.type.toLowerCase() + " does not exist", 404);
+		}
+
+		preparedRequest = preparedRequest.finalQuery;
+
+		const engine = new ReportEngine(preparedRequest);
+
+		const hash = "Report#report_id:" + this.reportObj.query_id + "#hash:" + engine.hash + '#redis-timeout#' + this.reportObj.is_redis;
+
+		if (this.reportObj.is_redis === "EOD") {
+
+			const d = new Date();
+			this.reportObj.is_redis = (24 * 60 * 60) - (d.getHours() * 60 * 60) - (d.getMinutes() * 60) - d.getSeconds();
+		}
+
+		let redisData = null;
+
+		if (redis) {
+			redisData = await redis.get(hash);
+		}
+
+		//Priority: Redis > (Saved Result)
+
+		if (!forcedRun && this.reportObj.is_redis && redisData && !this.has_today) {
+
+			try {
+
+				result = JSON.parse(redisData);
+
+				// await this.storeQueryResult(result);
+
+				await engine.log(this.reportObj.query_id, this.reportObj.query, result.query,
+					Date.now() - this.reportObjStartTime, this.reportObj.type,
+					this.user.user_id, 1, JSON.stringify({filters: this.filters})
+				);
+
+				result.cached = {
+					status: true,
+					age: Date.now() - result.cached.store_time
+				};
 				return result;
+			}
+			catch (e) {
+				throw new API.Exception(500, "Invalid Redis Data! :(");
 			}
 		}
 
@@ -692,7 +713,7 @@ class Bigquery {
 
 			if (!filter.type) {
 
-				if (parseInt(filter.value)) {
+				if ((filter.value.match(/^-{0,1}\d+$/))) {
 
 					filter.type = 'number';
 				}

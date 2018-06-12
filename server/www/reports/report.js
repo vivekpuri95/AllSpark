@@ -82,7 +82,6 @@ exports.update = class extends API {
 				'category_id',
 				'description',
 				'added_by',
-				'requested_by',
 				'tags',
 				'is_enabled',
 				'is_deleted',
@@ -136,7 +135,6 @@ exports.insert = class extends API {
 				'category_id',
 				'description',
 				'added_by',
-				'requested_by',
 				'tags',
 				'is_enabled',
 				'is_deleted',
@@ -178,7 +176,7 @@ exports.userPrvList = class extends API {
 
 		const users = await this.mysql.query(`
 			SELECT
-				
+
 				user.*,
 				IF(dashboard_user.query_id_from_dashboards IS NULL AND user_query.query_id_from_user_query IS NULL, 0, 1) AS flag
 			FROM
@@ -247,15 +245,15 @@ exports.userPrvList = class extends API {
                USING(user_id)
                 	LEFT JOIN
                    	(
-                   		SELECT 
-                   			query_id AS query_id_from_user_query, 
-                   			user_id  
-                   		FROM 
-                   			tb_user_query 
-                   		WHERE 
+                   		SELECT
+                   			query_id AS query_id_from_user_query,
+                   			user_id
+                   		FROM
+                   			tb_user_query
+                   		WHERE
                    			query_id = ?
                    ) user_query
-               USING(user_id) 
+               USING(user_id)
 		`,
 			[this.account.account_id, this.account.account_id, reportId, reportId]);
 
