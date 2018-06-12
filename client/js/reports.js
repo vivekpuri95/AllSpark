@@ -5122,8 +5122,15 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		if(!response || !response.data || !response.data.length)
 			return;
 
-		for(const row of this.source.originalResponse.data)
-			newResponse[row.name] = parseFloat(row.value) || 0;
+		for(const row of this.source.originalResponse.data) {
+
+			const value = parseFloat(row.value);
+
+			if(!value)
+				continue;
+
+			newResponse[row.name] = value;
+		}
 
 		this.source.originalResponse.data = [newResponse];
 
