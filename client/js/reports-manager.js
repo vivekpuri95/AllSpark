@@ -2509,6 +2509,82 @@ const ConfigureVisualization = ReportsManger.stages.get('configure-visualization
 ConfigureVisualization.types = new Map;
 
 ConfigureVisualization.types.set('table', class TableOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body form">
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideSearchBar">Hide Search Bar
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideFunctionBar">Hide Function Bar
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideHeadingsBar">Hide Headings Bar
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideRowSummary">Hide Row Summary
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend.
+						</span>
+					</label>
+				</div>
+			</div>
+		`;
+
+		if(this.visualization.options && this.visualization.options.hideSearchBar)
+			container.querySelector('input[name=hideSearchBar]').checked = this.visualization.options.hideSearchBar;
+
+		if(this.visualization.options && this.visualization.options.hideFunctionBar)
+			container.querySelector('input[name=hideFunctionBar]').checked = this.visualization.options.hideFunctionBar;
+
+		if(this.visualization.options && this.visualization.options.hideHeadingsBar)
+			container.querySelector('input[name=hideHeadingsBar]').checked = this.visualization.options.hideHeadingsBar;
+
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+
+		if(this.visualization.options && this.visualization.options.hideRowSummary)
+			container.querySelector('input[name=hideRowSummary]').checked = this.visualization.options.hideRowSummary;
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			hideSearchBar: this.form.querySelector('input[name=hideSearchBar]').checked,
+			hideFunctionBar: this.form.querySelector('input[name=hideFunctionBar]').checked,
+			hideHeadingsBar: this.form.querySelector('input[name=hideHeadingsBar]').checked,
+			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
+			hideRowSummary: this.form.querySelector('input[name=hideRowSummary]').checked,
+		}
+	}
 });
 
 ConfigureVisualization.types.set('line', class LineOptions extends ReportVisualizationLinearOptions {
