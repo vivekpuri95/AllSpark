@@ -1323,6 +1323,9 @@ class DataSourceColumn {
 
 			this.updateDrilldownParamters();
 		}
+		else {
+			this.drilldownQuery.clear();
+		}
 
 		this.blanket.classList.remove('hidden');
 	}
