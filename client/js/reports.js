@@ -5214,7 +5214,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				mouse[1] += that.height / 2;
 
 				const content = `
-					<header>${row.data.name}</header>
+					<header>${this.source.columns.get(row.data.name).name}</header>
 					<ul class="body">
 						${row.data.value} (${row.data.percentage}%)
 					</ul>
