@@ -109,12 +109,12 @@ html, body {
 
 body {
 	display: flex;
-	margin: 0 !important;
+	margin: 0;
 	flex-direction: column;
-	background: #eee !important;
+	background: #eee;
 	user-select: none;
 	font-size: 14px !important;
-	color: #222 !important;
+	color: #222;
 }
 
 	body > #ajax-working {
