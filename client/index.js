@@ -47,7 +47,7 @@ class HTMLAPI extends API {
 					function gtag(){dataLayer.push(arguments);}
 					gtag('js', new Date());
 
-					gtag('config', ${config.get('ga_id')});
+					gtag('config', '${config.get('ga_id')}');
 				</script>
 			`;
 		}
