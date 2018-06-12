@@ -261,7 +261,7 @@ router.get('/login', API.serve(class extends HTMLAPI {
 
 			<section id="message"></section>
 
-			<div id="signup">
+			<div id="signup" class="hidden">
 				<a href="/login/forgot">Forgot Password?</a>
 				${this.account.settings.get('enable_account_signup') ? 'Or Create a <a href="/account-signup">new account</a>' : ''}
 			</div>

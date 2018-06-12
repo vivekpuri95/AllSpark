@@ -69,6 +69,8 @@ Page.class = class Login extends Page {
 	 */
 	async acceptEmail() {
 
+		this.container.querySelector('#signup').classList.remove('hidden');
+
 		await Sections.show('accept-email');
 
 		this.container.querySelector('#accept-email input').focus();
