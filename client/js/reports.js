@@ -2787,10 +2787,17 @@ Visualization.list.set('table', class Table extends Visualization {
 			headings.appendChild(column.heading);
 		}
 
-		thead.appendChild(search);
-		thead.appendChild(accumulation);
-		thead.appendChild(headings);
-		table.appendChild(thead);
+		if(!this.hideSearchBar)
+			thead.appendChild(search);
+
+		if(!this.hideFunctionBar)
+			thead.appendChild(accumulation);
+
+		if(!this.hideHeadingsBar)
+			thead.appendChild(headings);
+
+		if(thead.children.length)
+			table.appendChild(thead);
 
 		const tbody = document.createElement('tbody');
 
@@ -2876,7 +2883,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		table.appendChild(tbody);
 		container.appendChild(table);
-		container.appendChild(rowCount);
+
+		if(!this.hideRowSummary)
+			container.appendChild(rowCount);
 	}
 });
 
