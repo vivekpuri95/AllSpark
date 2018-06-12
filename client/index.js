@@ -37,6 +37,21 @@ class HTMLAPI extends API {
 		if(this.account.settings.has('custom_js'))
 			this.scripts.push('/js/custom.js');
 
+		let ga = '';
+
+		if(config.get('ga_id')) {
+			ga = `
+				<script async src="https://www.googletagmanager.com/gtag/js?id=${config.get('ga_id')}"></script>
+				<script>
+					window.dataLayer = window.dataLayer || [];
+					function gtag(){dataLayer.push(arguments);}
+					gtag('js', new Date());
+
+					gtag('config', ${config.get('ga_id')});
+				</script>
+			`;
+		}
+
 		return `<!DOCTYPE html>
 			<html lang="en">
 				<head>
@@ -49,6 +64,7 @@ class HTMLAPI extends API {
 					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>').join('')}
 
 					<link rel="manifest" href="/manifest.webmanifest">
+					${ga}
 				</head>
 				<body>
 					<div id="ajax-working"></div>
