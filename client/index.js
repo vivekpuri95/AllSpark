@@ -39,7 +39,7 @@ class HTMLAPI extends API {
 
 		let ga = '';
 
-		if(config.get('ga_id')) {
+		if(config.has('ga_id')) {
 			ga = `
 				<script async src="https://www.googletagmanager.com/gtag/js?id=${config.get('ga_id')}"></script>
 				<script>
