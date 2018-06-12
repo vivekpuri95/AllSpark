@@ -299,6 +299,14 @@
 			order: 1;
 			margin-top: var(--gap);
 		}
+		main .data-source > .columns.over-flow::after {
+			background: -webkit-linear-gradient(left, #eee, #ccc);
+			content: "\00a0\00a0\00a0\00a0\00a0";
+			position: sticky;
+			right: 0;
+			margin-left: auto;
+			width: 50px;
+		}
 		main .data-source > .columns::-webkit-scrollbar {
 			display: none;
 		}

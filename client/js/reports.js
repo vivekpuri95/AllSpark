@@ -927,6 +927,9 @@ class DataSourceColumns extends Map {
 
 		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
+
+		if (container.offsetWidth < container.scrollWidth)
+			container.classList.add('over-flow');
 	}
 
 	get list() {
