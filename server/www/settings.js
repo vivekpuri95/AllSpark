@@ -68,8 +68,12 @@ exports.list = class extends API {
 
 		const settingsList = await this.mysql.query("select * from tb_settings where account_id = ?", [this.request.query.account_id]);
 
-		for(const row of settingsList)
-			row.value = JSON.parse(row.value);
+		for(const row of settingsList) {
+			try {
+				row.value = JSON.parse(row.value);
+			}
+			catch(e) {}
+		}
 
 		await account.loadAccounts();
 

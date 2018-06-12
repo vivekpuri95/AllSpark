@@ -274,7 +274,7 @@ SettingsManager.types.set('string', class extends FormatType {
 
 		container.innerHTML = `
 			<span>${this.name}</span>
-			<input type="text" value="" placeholder="String">
+			<input type="text" placeholder="String">
 		`;
 
 		return container;
@@ -288,6 +288,37 @@ SettingsManager.types.set('string', class extends FormatType {
 	set value(param) {
 
 		this.container.querySelector('input').value = param;
+	}
+});
+
+SettingsManager.types.set('toggle', class extends FormatType {
+
+	get container() {
+
+		if(this.div)
+			return this.div;
+
+		const container = this.div = document.createElement('label');
+
+		container.innerHTML = `
+			<span>${this.name}</span>
+			<select>
+				<option value="0">Disabled</option>
+				<option value="1">Enabled</option>
+			</select>
+		`;
+
+		return container;
+	}
+
+	get value() {
+
+		return this.container.querySelector('select').value;
+	}
+
+	set value(param) {
+
+		this.container.querySelector('select').value = param;
 	}
 });
 
@@ -321,12 +352,62 @@ SettingsManager.types.set('number', class extends FormatType {
 
 SettingsManager.types.set('code', class extends FormatType {
 
-	constructor(setting_format) {
+	get container() {
 
-		super(setting_format);
+		if(this.div)
+			return this.div;
 
-		this.editContainer = new Editor(document.createElement('div'));
+		const container = this.div = document.createElement('label');
+		container.classList.add('code-type-editor');
+
+		container.innerHTML = `
+			<span>${this.name}</span>
+			<div class="edit">
+				<div class="content"></div>
+			</div>
+			<div class="click-to-edit">Click to edit</div>
+		`;
+
+		container.querySelector('.click-to-edit').on('click', () => this.renderEditor());
+
+		return container;
 	}
+
+	renderEditor() {
+
+		this.div.querySelector('.edit').classList.add('hidden');
+		this.div.querySelector('.click-to-edit').classList.add('hidden');
+
+		this.editor = new Editor(document.createElement('div'));
+
+		if(this.mode)
+			this.editor.editor.getSession().setMode(`ace/mode/${this.mode}`);
+
+		this.div.appendChild(this.editor.container);
+
+		this.editor.value = this.data;
+	}
+
+	get value() {
+
+		if(this.editor)
+			return this.editor.value;
+
+		return this.data;
+	}
+
+	set value(params) {
+
+		this.data = params;
+
+		if(this.editor)
+			this.editor.value = this.data;
+		else
+			this.container.querySelector('.edit .content').textContent = this.data.split(';')[0];
+	}
+});
+
+SettingsManager.types.set('json', class extends FormatType {
 
 	get container() {
 
@@ -338,21 +419,47 @@ SettingsManager.types.set('code', class extends FormatType {
 
 		container.innerHTML = `
 			<span>${this.name}</span>
+			<div class="edit">
+				<div class="content"></div>
+			</div>
+			<div class="click-to-edit">Click to edit</div>
 		`;
 
-		container.appendChild(this.editContainer.container);
+		container.querySelector('.click-to-edit').on('click', () => this.renderEditor());
 
 		return container;
 	}
 
+	renderEditor() {
+
+		this.div.querySelector('.edit').classList.add('hidden');
+		this.div.querySelector('.click-to-edit').classList.add('hidden');
+
+		this.editor = new Editor(document.createElement('div'));
+
+		this.editor.editor.getSession().setMode(`ace/mode/json`);
+
+		this.div.appendChild(this.editor.container);
+
+		this.editor.value = JSON.stringify(this.data, 0, 4);
+	}
+
 	get value() {
 
-		return this.editContainer.value;
+		if(this.editor)
+			return JSON.parse(this.editor.value);
+
+		return JSON.parse(this.data);
 	}
 
 	set value(params) {
 
-		this.editContainer.value = params;
+		this.data = params;
+
+		if(this.editor)
+			this.editor.value = JSON.stringify(this.data, 0, 4);
+		else
+			this.container.querySelector('.edit .content').textContent = JSON.stringify(this.data).split('')[0];
 	}
 });
 
