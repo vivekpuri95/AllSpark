@@ -2609,6 +2609,92 @@ ConfigureVisualization.types.set('area', class AreaOptions extends ReportVisuali
 });
 
 ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body form">
+
+					<label class="hidden">
+						<span>Name Column</span>
+						<select name="nameColumn"></select>
+					</label>
+
+					<label class="hidden">
+						<span>Value Column</span>
+						<select name="valueColumn"></select>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideValue">Hide Value
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hidePercentage">Hide Percentage
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend
+						</span>
+					</label>
+				</div>
+			</div>
+		`;
+
+		const
+			nameColumn = container.querySelector('select[name=nameColumn]'),
+			valueColumn = container.querySelector('select[name=valueColumn]');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			nameColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			valueColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		if(this.visualization.options && this.visualization.options.hidePercentage)
+			container.querySelector('input[name=hidePercentage]').checked = this.visualization.options.hidePercentage;
+
+		if(this.visualization.options && this.visualization.options.hideValue)
+			container.querySelector('input[name=hideValue]').checked = this.visualization.options.hideValue;
+
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+
+		nameColumn.value = (this.visualization.options && this.visualization.options.nameColumn) || '';
+		valueColumn.value = (this.visualization.options && this.visualization.options.valueColumn) || '';
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			hidePercentage: this.form.querySelector('input[name=hidePercentage]').checked,
+			hideValue: this.form.querySelector('input[name=hideValue]').checked,
+			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
+			nameColumn: this.form.querySelector('select[name=nameColumn]').value,
+			valueColumn: this.form.querySelector('select[name=valueColumn]').value,
+		}
+	}
 });
 
 ConfigureVisualization.types.set('funnel', class FunnelOptions extends ReportVisualizationOptions {

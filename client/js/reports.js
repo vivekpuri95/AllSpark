@@ -5212,7 +5212,9 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 				const content = `
 					<header>${row.data.name}</header>
-					<ul class="body">${row.data.value}</ul>
+					<ul class="body">
+						${row.data.value} (${row.data.percentage}%)
+					</ul>
 				`;
 
 				Tooltip.show(that.container, mouse, content, row);
@@ -5261,14 +5263,30 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		}
 
 		// Add the text
-		arcs.append('text')
-			.attr('transform', row => {
-				row.innerRadius = radius - 50;
-				row.outerRadius = radius;
-				return `translate(${arc.centroid(row)})`;
-			})
-			.attr('text-anchor', 'middle')
-			.text(row => row.data.percentage + '%');
+		if(!this.hideNumber) {
+
+			arcs.append('text')
+				.attr('transform', row => {
+					row.innerRadius = radius - 50;
+					row.outerRadius = radius;
+					return `translate(${arc.centroid(row)})`;
+				})
+				.attr('text-anchor', 'middle')
+				.text(row => Format.number(row.data.value));
+		}
+
+		// Add the text
+		if(!this.hidePercentage) {
+
+			arcs.append('text')
+				.attr('transform', row => {
+					row.innerRadius = radius - 50;
+					row.outerRadius = radius;
+					return `translate(${arc.centroid(row)})`;
+				})
+				.attr('text-anchor', 'middle')
+				.text(row => Format.number(row.data.percentage) + '%');
+		}
 	}
 });
 
