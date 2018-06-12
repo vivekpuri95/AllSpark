@@ -794,8 +794,7 @@ class SettingsAccount {
 			},
 			{
 				key: 'external_parameter',
-				type: 'code',
-				mode: 'json',
+				type: 'json',
 				name: 'External Parameter.',
 				description: 'External Parameter for this account.'
 			},
