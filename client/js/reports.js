@@ -131,6 +131,13 @@ class DataSource {
 		this.postProcessors.update();
 
 		this.render();
+
+		if(this.refresh_rate) {
+
+			clearTimeout(this.refreshRateTimeout);
+
+			this.refreshRateTimeout = setTimeout(() => this.visualizations.selected.load(), this.refresh_rate * 1000);
+		}
 	}
 
 	get container() {
@@ -2502,7 +2509,7 @@ class LinearVisualization extends Visualization {
 
 				const column = this.source.columns.get(key);
 
-				if(!column)
+				if(!column || column.disabled)
 					continue;
 
 				if(!this.columns[key]) {
@@ -3902,7 +3909,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 				const column = this.source.columns.get(key);
 
-				if(!column)
+				if(!column || column.disabled)
 					continue;
 
 				let direction = null;
