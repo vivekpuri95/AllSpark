@@ -30,7 +30,8 @@ exports.list = class extends API {
 				AND f.status = 1
 			WHERE
 				a.status = 1
-				group by profile, account_id
+			GROUP BY
+				profile, account_id, value
 		`);
 
 		this.assert(accountList.length, "No Account found");
