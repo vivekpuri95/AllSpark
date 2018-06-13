@@ -136,7 +136,10 @@ class DataSource {
 
 			clearTimeout(this.refreshRateTimeout);
 
-			this.refreshRateTimeout = setTimeout(() => this.visualizations.selected.load(), this.refresh_rate * 1000);
+			this.refreshRateTimeout = setTimeout(() => {
+				if(this.containerElement && document.body.contains(this.container))
+					this.visualizations.selected.load();
+			}, this.refresh_rate * 1000);
 		}
 	}
 
@@ -5611,79 +5614,110 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	process() {
 
-		const response = this.source.response;
+		if(!this.timingColumn)
+			return this.source.error('Timing column not selected! :(');
 
-		try {
-			for(const row of response) {
+		if(!this.valueColumn)
+			return this.source.error('Value column not selected! :(');
 
-				if(!row.has(this.timingColumn))
-					throw `${this.timingColumn} column not found!`;
+		const dates = new Map;
 
-				const
-					responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString(),
-					todayDate = new Date();
+		for(const row of this.source.response) {
 
-				for(const box in this.boxes) {
-					const configDate = new Date(Date.now() - this.boxes[box].offset * 86400000).toDateString();
-					if (responseDate == configDate) {
-						this.boxes[box].value = row.get(this.valueColumn);
-					}
-				}
-			}
+			if(!row.has(this.timingColumn))
+				return this.source.error(`Timing column '${this.timingColumn}' not found! :(`);
 
-			for(const box of this.boxes) {
-				if(this.boxes[box.relativeTo])
-					box.percentage = Math.round(((box.value - this.boxes[box.relativeTo].value) / box.value) * 100);
-			}
+			if(!row.has(this.valueColumn))
+				return this.source.error(`Value column '${this.valueColumn}' not found! :(`);
+
+			if(!Date.parse(row.get(this.timingColumn)))
+				return this.source.error(`Timing column value '${row.get(this.timingColumn)}' is not a valid date! :(`);
+
+			dates.set(Date.parse(new Date(row.get(this.timingColumn)).toISOString().substring(0, 10)), row);
 		}
-		catch (e) {
-			return this.source.error(e);
+
+		const
+			center = Date.parse(new Date(Date.now() - ((this.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			left = Date.parse(new Date(Date.now() - ((this.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			right = Date.parse(new Date(Date.now() - ((this.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
+
+		this.center = {value: 0};
+		this.right = {value: 0};
+		this.left = {value: 0};
+
+		if(dates.has(center)) {
+
+			const row = dates.get(center);
+
+			this.center = {
+				value: row.get(this.valueColumn),
+			};
+		}
+
+		if(dates.has(left)) {
+
+			const
+				row = dates.get(left),
+				value = row.get(this.valueColumn);
+
+			this.left = {
+				value: row.get(this.valueColumn),
+				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
+			};
+		}
+
+		if(dates.has(right)) {
+
+			const
+				row = dates.get(right),
+				value = row.get(this.valueColumn);
+
+			this.right = {
+				value: row.get(this.valueColumn),
+				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
+			};
 		}
 	}
 
 	render(options = {}) {
 
-		if(!this.boxes || !this.boxes.length)
-			return;
+		if(!this.center)
+			return this.source.error(`Center column not defined! :(`);
 
 		const container = this.container.querySelector('.container');
 
-		container.textContent = null;
+		container.innerHTML = `
+			<h5>${this.prefix || ''}${Format.number(this.center.value)}${this.postfix || ''}</h5>
 
-		for(const box of this.boxes) {
+			<div class="left">
+				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
+				<span class="value">
+					${this.prefix || ''}${Format.number(this.left.value)}${this.postfix || ''}<br>
+					<small>${Format.number(this.leftOffset)} days ago</small>
+				</span>
+			</div>
 
-			const configBox = document.createElement('div');
-
-			configBox.innerHTML = `
-				<h7>
-					${this.prefix || ''}${box.value}${this.postfix || ''}
-				</h7>
-				<p class="percentage ${this.getColor(box.percentage)}">${box.percentage ? box.percentage + '%' : ''}</p>
-			`;
-
-			configBox.style = `
-				grid-column: ${box.column} / span ${box.columnspan};
-				grid-row: ${box.row} / span ${box.rowspan};
-			`;
-
-			container.appendChild(configBox);
-		}
+			<div class="right">
+				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
+				<span class="value">
+					${this.prefix || ''}${Format.number(this.right.value)}${this.postfix || ''}<br>
+					<small>${Format.number(this.rightOffset)} days ago</small>
+				</span>
+			</div>
+		`;
 	}
 
 	getColor(percentage) {
-		if (percentage == 0)
+
+		if(!percentage)
 			return '';
-		else
-			if (percentage > 0)
-				if (this.invertValues)
-					return 'red';
-				else
-					return 'green';
-			else
-				if (this.invertValues)
-					return 'green';
-				else
-					return 'red';
+
+		let color = percentage > 0;
+
+		if(this.invertValues)
+			color = !color;
+
+		return color ? 'green' : 'red';
 	}
 });
 

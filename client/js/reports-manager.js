@@ -2803,22 +2803,15 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="form body">
+
 					<label>
 						<span>Timing Column</span>
-						<select name="timing"></select>
+						<select name="timingColumn"></select>
 					</label>
 
 					<label>
 						<span>Value Column</span>
-						<select name="value"></select>
-					</label>
-
-					<label>
-						<span>Invert Values</span>
-						<select name="invertValues">
-							<option value="1">Yes</option>
-							<option value="0">No</option>
-						</select>
+						<select name="valueColumn"></select>
 					</label>
 
 					<label>
@@ -2830,127 +2823,73 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 						<span>Postfix</span>
 						<input type="text" name="postfix">
 					</label>
-				</div>
-			</div>
 
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Boxes</h3>
-				<div class="form body">
-					<div id="config-boxes"></div>
-					<button class="add-box" type="button">
-						<i class="fa fa-plus"></i> Add New Box
-					</button>
+					<label>
+						<span>Center Offset</span>
+						<input type="number" name="centerOffset">
+					</label>
+
+					<label>
+						<span>Left Offset</span>
+						<input type="number" name="leftOffset">
+					</label>
+
+					<label>
+						<span>Right Offset</span>
+						<input type="number" name="rightOffset">
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="invertValues">Invert Values
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend.
+						</span>
+					</label>
 				</div>
 			</div>
 		`;
 
-		const timing = container.querySelector('select[name=timing]');
-		const value = container.querySelector('select[name=value]');
+		for(const [key, column] of this.page.preview.report.columns) {
 
-		for (const [key, column] of this.page.preview.report.columns) {
-
-			timing.insertAdjacentHTML('beforeend', `
+			container.timingColumn.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 
-			value.insertAdjacentHTML('beforeend', `
+			container.valueColumn.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 		}
 
-		if (this.visualization.options) {
-			timing.value = this.visualization.options.timingColumn;
-			value.value = this.visualization.options.valueColumn;
-			this.form.querySelector('select[name=invertValues]').value = this.visualization.options.invertValues;
-			this.form.querySelector('input[name=prefix]').value = this.visualization.options.prefix;
-			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
+		if(this.visualization.options && this.visualization.options.invertValues)
+			container.invertValues.checked = this.visualization.options.invertValues;
 
-			for (let box of this.visualization.options.boxes || []) {
-				container.querySelector('#config-boxes').appendChild(this.box(box));
-			}
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.hideLegend.checked = this.visualization.options.hideLegend;
+
+		for(const key in this.visualization.options || []) {
+			if(key in container.elements)
+				container.elements[key].value = this.visualization.options[key];
 		}
-
-		container.querySelector('.add-box').on('click', () => {
-			container.querySelector('#config-boxes').appendChild(this.box());
-		});
 
 		return container;
 	}
 
 	get json() {
 
-		let config = {
-			timingColumn: this.form.querySelector('select[name=timing]').value,
-			valueColumn: this.form.querySelector('select[name=value]').value,
-			invertValues: parseInt(this.form.querySelector('select[name=invertValues]').value),
-			prefix: this.form.querySelector('input[name=prefix]').value,
-			postfix: this.form.querySelector('input[name=postfix]').value,
-		};
+		const result = {};
 
-		config.boxes = [];
+		for(const element of this.form.elements)
+			result[element.name] = element.value;
 
-		for (let box of this.form.querySelectorAll('.subform')) {
-			config.boxes.push({
-				offset: parseInt(box.querySelector('input[name=offset]').value),
-				relativeTo: parseInt(box.querySelector('input[name=relativeTo]').value),
-				row: parseInt(box.querySelector('input[name=row]').value),
-				column: parseInt(box.querySelector('input[name=column]').value),
-				rowspan: parseInt(box.querySelector('input[name=rowspan]').value),
-				columnspan: parseInt(box.querySelector('input[name=columnspan]').value),
-			});
-		}
+		result.invertValues = this.form.invertValues.checked;
+		result.hideLegend = this.form.hideLegend.checked;
 
-		return config;
-	}
-
-	box(boxValues = {}) {
-
-		const boxConfig = document.createElement('div');
-
-		boxConfig.classList.add('subform', 'form');
-
-		boxConfig.innerHTML = `
-			<label>
-				<span>Offset</span>
-				<input type="number" name="offset">
-			</label>
-
-			<label>
-				<span>Relative To(Index)</span>
-				<input type="number" name="relativeTo">
-			</label>
-
-			<label>
-				<span>Column</span>
-				<input type="number" name="column">
-			</label>
-
-			<label>
-				<span>Row</span>
-				<input type="number" name="row">
-			</label>
-
-			<label>
-				<span>Column Span</span>
-				<input type="number" name="columnspan">
-			</label>
-
-			<label>
-				<span>Row Span</span>
-				<input type="number" name="rowspan">
-			</label>
-		`;
-
-		if (boxValues) {
-			boxConfig.querySelector('input[name=offset]').value = boxValues.offset || '';
-			boxConfig.querySelector('input[name=relativeTo]').value = boxValues.relativeTo || '';
-			boxConfig.querySelector('input[name=row]').value = boxValues.row || '';
-			boxConfig.querySelector('input[name=column]').value = boxValues.column || '';
-			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan || '';
-			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan || '';
-		}
-
-		return boxConfig;
+		return result;
 	}
 });
 
