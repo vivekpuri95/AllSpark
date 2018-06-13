@@ -29,7 +29,7 @@
     "db": 0
   },
   "superAdmin_users": ["email1", "email2"],
-  "google_analytics": {
+  "google_apis": {
     "client_id": "",
     "client_secret": ""
   }

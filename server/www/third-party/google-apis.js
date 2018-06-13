@@ -8,19 +8,19 @@ exports.validate = class extends API {
 	async validate() {
 
 		this.assert(this.user.user_id == this.request.body.state, 'Invalid state! :(');
-		this.assert(config.has('google_analytics'), 'Google Analytics client id not found in the config! :(');
+		this.assert(config.has('google_apis'), 'Google API client id not found in the config! :(');
 
 		const
 			queryString = new URLSearchParams(),
-			googleAnalyticsConfig = config.get('google_analytics');
+			google_apis = config.get('google_apis');
 
-		this.assert(googleAnalyticsConfig.client_id, 'Google Analytics Client ID not found! :(');
-		this.assert(googleAnalyticsConfig.client_secret, 'Google Analytics Client Secret not found! :(');
+		this.assert(google_apis.client_id, 'Google APIs Client ID not found! :(');
+		this.assert(google_apis.client_secret, 'Google APIs Client Secret not found! :(');
 
 		queryString.set('code', this.request.body.code);
-		queryString.set('client_id', googleAnalyticsConfig.client_id);
-		queryString.set('client_secret', googleAnalyticsConfig.client_secret);
-		queryString.set('redirect_uri', `https://${this.account.url}/third-party/google-analytics/callback`);
+		queryString.set('client_id', google_apis.client_id);
+		queryString.set('client_secret', google_apis.client_secret);
+		queryString.set('redirect_uri', `https://${this.account.url}/third-party/google-api/callback`);
 		queryString.set('grant_type', 'authorization_code');
 
 		const options = {
@@ -56,7 +56,7 @@ exports.validate = class extends API {
 		}
 
 		settings.value.push({
-			key: 'google_analytics_refresh_token',
+			key: 'google_apis_refresh_token',
 			value: response.refresh_token,
 		});
 

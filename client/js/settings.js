@@ -724,10 +724,10 @@ class SettingsAccount {
 		const gaButton = this.form.querySelector('#authenticate-google-analytics');
 
 		gaButton.removeEventListener('click', SettingsAccount.gaListener);
-		gaButton.disabled = !MetaData.google_analytics.has('client_id');
+		gaButton.disabled = !MetaData.google_apis.has('client_id');
 		gaButton.on('click', SettingsAccount.gaListener = () => this.authenticateGoogleAnalytics());
 
-		if(account.settings.get('google_analytics_refresh_token')) {
+		if(account.settings.get('google_apis_refresh_token')) {
 			gaButton.disabled = true;
 			gaButton.innerHTML = `&#10004; Already Authenticated`;
 		}
@@ -770,10 +770,10 @@ class SettingsAccount {
 				description: 'The database where the report\'s result will be saved in',
 			},
 			{
-				key: 'google_analytics_refresh_token',
+				key: 'google_apis_refresh_token',
 				type: 'string',
-				name: 'Google Analytics Refresh Token',
-				description: 'Used to authenticate the Google Analytics API calls.',
+				name: 'Google APIs Refresh Token',
+				description: 'Used to authenticate the Google API calls.',
 			},
 			{
 				key: 'enable_account_signup',
@@ -891,12 +891,12 @@ class SettingsAccount {
 
 	authenticateGoogleAnalytics() {
 
-		if(!MetaData.google_analytics.has('client_id'))
+		if(!MetaData.google_apis.has('client_id'))
 			return;
 
 		const parameters = new URLSearchParams();
 
-		parameters.set('client_id', MetaData.google_analytics.get('client_id'));
+		parameters.set('client_id', MetaData.google_apis.get('client_id'));
 		parameters.set('redirect_uri', `https://${account.url}/third-party/google-analytics/callback`);
 		parameters.set('scope', 'https://www.googleapis.com/auth/analytics.readonly');
 		parameters.set('access_type', 'offline');
