@@ -949,3 +949,7 @@ main .data-source {
 			margin: var(--gap) 0;
 			font-weight: normal;
 		}
+		.visualization.livenumber .container .left .value,
+		.visualization.livenumber .container .right .value {
+			text-align: center;
+		}

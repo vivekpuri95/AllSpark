@@ -2815,14 +2815,6 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 					</label>
 
 					<label>
-						<span>Invert Values</span>
-						<select name="invertValues">
-							<option value="1">Yes</option>
-							<option value="0">No</option>
-						</select>
-					</label>
-
-					<label>
 						<span>Prefix</span>
 						<input type="text" name="prefix">
 					</label>
@@ -2849,6 +2841,12 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 					<label>
 						<span>
+							<input type="checkbox" name="invertValues">Invert Values
+						</span>
+					</label>
+
+					<label>
+						<span>
 							<input type="checkbox" name="hideLegend">Hide Legend.
 						</span>
 					</label>
@@ -2866,6 +2864,9 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 				<option value="${key}">${column.name}</option>
 			`);
 		}
+
+		if(this.visualization.options && this.visualization.options.invertValues)
+			container.invertValues.checked = this.visualization.options.invertValues;
 
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.hideLegend.checked = this.visualization.options.hideLegend;
@@ -2885,6 +2886,7 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 		for(const element of this.form.elements)
 			result[element.name] = element.value;
 
+		result.invertValues = this.form.invertValues.checked;
 		result.hideLegend = this.form.hideLegend.checked;
 
 		return result;

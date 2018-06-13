@@ -5641,7 +5641,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			left = Date.parse(new Date(Date.now() - ((this.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
 			right = Date.parse(new Date(Date.now() - ((this.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
 
-		this.center = {};
+		this.center = {value: 0};
+		this.right = {value: 0};
+		this.left = {value: 0};
 
 		if(dates.has(center)) {
 
@@ -5660,7 +5662,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			this.left = {
 				value: row.get(this.valueColumn),
-				percentage: Math.round(((value - this.center.value) / value) * 100),
+				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
 			};
 		}
 
@@ -5672,7 +5674,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			this.right = {
 				value: row.get(this.valueColumn),
-				percentage: Math.round(((value - this.center.value) / value) * 100),
+				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
 			};
 		}
 	}
@@ -5686,25 +5688,23 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		container.innerHTML = `
 			<h5>${this.prefix || ''}${Format.number(this.center.value)}${this.postfix || ''}</h5>
+
+			<div class="left">
+				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
+				<span class="value">
+					${this.prefix || ''}${Format.number(this.left.value)}${this.postfix || ''}<br>
+					<small>${Format.number(this.leftOffset)} days ago</small>
+				</span>
+			</div>
+
+			<div class="right">
+				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
+				<span class="value">
+					${this.prefix || ''}${Format.number(this.right.value)}${this.postfix || ''}<br>
+					<small>${Format.number(this.rightOffset)} days ago</small>
+				</span>
+			</div>
 		`;
-
-		if(this.left) {
-			container.insertAdjacentHTML('beforeend', `
-				<div class="left">
-					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
-					<span class="value">${this.prefix || ''}${Format.number(this.left.value)}${this.postfix || ''}</span>
-				</div>
-			`)
-		}
-
-		if(this.right) {
-			container.insertAdjacentHTML('beforeend', `
-				<div class="right">
-					<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
-					<span class="value">${this.prefix || ''}${Format.number(this.right.value)}${this.postfix || ''}</span>
-				</div>
-			`)
-		}
 	}
 
 	getColor(percentage) {
