@@ -923,6 +923,7 @@ main .data-source {
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		font-weight: normal;
 	}
 	.visualization.livenumber .container .left {
 		border-right: 1px solid #666;
@@ -946,4 +947,5 @@ main .data-source {
 		.visualization.livenumber .container h6 {
 			font-size: calc(10px + .8vw);
 			margin: var(--gap) 0;
+			font-weight: normal;
 		}
