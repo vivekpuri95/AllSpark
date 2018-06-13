@@ -196,20 +196,13 @@ exports.login = class extends API {
 
 			this.assert(this.possibleAccounts.length, "No account found :(");
 
-			if (this.possibleAccounts.length > 1) {
 
-				return this.possibleAccounts;
+			if (!this.possibleAccounts[0].auth_api) {
+
+				throw new API.Exception(400, "Could't authenticate, please specify this account's Authorization API or login using Email.")
 			}
 
-			else {
-
-				if (!this.possibleAccounts[0].auth_api) {
-
-					throw new API.Exception(400, "Could't authenticate, please specify this account's Authorization API or login using Email.")
-				}
-
-				await this.requestAuthAPI();
-			}
+			await this.requestAuthAPI();
 		}
 
 		else {
