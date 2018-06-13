@@ -5691,7 +5691,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		if(this.left) {
 			container.insertAdjacentHTML('beforeend', `
 				<div class="left">
-					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) : '-'}%</h6>
+					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 					<span class="value">${this.prefix || ''}${Format.number(this.left.value)}${this.postfix || ''}</span>
 				</div>
 			`)
@@ -5700,7 +5700,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		if(this.right) {
 			container.insertAdjacentHTML('beforeend', `
 				<div class="right">
-					<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) : '-'}%</h6>
+					<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 					<span class="value">${this.prefix || ''}${Format.number(this.right.value)}${this.postfix || ''}</span>
 				</div>
 			`)
