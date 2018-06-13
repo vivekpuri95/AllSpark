@@ -23,9 +23,9 @@ main .dataset {
 			align-items: center;
 			padding: calc(var(--gap) * 1.5);
 			margin: 0;
+			max-width: 100%;
 			transition: background var(--transition-duration),
 						box-shadow var(--transition-duration);
-			max-width: 100%;
 		}
 		main .dataset label:hover {
 			background: #ddd;
@@ -912,22 +912,38 @@ main .data-source {
 	font-size: calc(18px + 5vw);
 }
 .visualization.livenumber .container {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr 1fr;
+	display: flex;
+	flex-wrap: wrap;
 }
-    .visualization.livenumber .container div {
-        text-align: center;
-    }
-        .visualization.livenumber .container h7 {
-            font-size: 300%;
-        }
-        .visualization.livenumber .container .percentage {
-            font-size: 150%;
-        }
-        .visualization.livenumber .container .red {
-            color: #d23f31;
-        }
-        .visualization.livenumber .container .green {
-            color: #0f9d58;
-        }
+	.visualization.livenumber .container h5 {
+		font-size: calc(14px + 3vw);
+		flex: 1 1 100%;
+		margin: 0;
+		height: 60%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	.visualization.livenumber .container .left {
+		border-right: 1px solid #666;
+	}
+	.visualization.livenumber .container .left,
+	.visualization.livenumber .container .right {
+		flex: 1 0 50%;
+		height: 40%;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		border-top: 1px solid #666;
+	}
+		.visualization.livenumber .container .red {
+			color: #a00;
+		}
+		.visualization.livenumber .container .green {
+			color: #191;
+		}
+		.visualization.livenumber .container h6 {
+			font-size: calc(10px + .8vw);
+			margin: var(--gap) 0;
+		}
