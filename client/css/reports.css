@@ -953,3 +953,8 @@ main .data-source {
 		.visualization.livenumber .container .right .value {
 			text-align: center;
 		}
+		.visualization.livenumber .container .left .value small,
+		.visualization.livenumber .container .right .value small {
+			color: #666;
+			margin-top: 1px
+		}
