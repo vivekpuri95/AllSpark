@@ -91,9 +91,6 @@ main .settings-manager {
 			max-width: 100%;
 			position: relative;
 		}
-			main .settings-manager .profile label > small.NA {
-				color: #999;
-			}
 			main .settings-manager .profile label > input {
 				max-width: 200px;
 			}
