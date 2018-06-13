@@ -104,13 +104,17 @@ exports.update = class extends API {
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;
 
-		try {
+		if(values.hasOwnProperty("format")) {
 
-			values.format = values.format ? JSON.stringify(JSON.parse(values.format)) : null;
-		}
-		catch (e) {
+			try {
 
-			values.format = JSON.stringify({});
+				values.format = values.format ? JSON.stringify(JSON.parse(values.format)) : null;
+			}
+			catch (e) {
+
+				values.format = JSON.stringify({});
+			}
+
 		}
 
 		return await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write');
