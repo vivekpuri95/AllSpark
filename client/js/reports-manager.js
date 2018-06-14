@@ -973,8 +973,16 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 				else splitString = splitString.shift().split(sep).concat(splitString);
 			}
-			else splitString[len].replace(/""/g, '"');
 
+			else splitString[len].replace(/""/g, '"');
+		}
+
+		for(let [index, element] of splitString.entries()) {
+
+			if(element.split(',').length === 1 && element.startsWith('"')) {
+
+				splitString[index] = element.replace(/"/g, '');
+			}
 		}
 
 		return splitString;
