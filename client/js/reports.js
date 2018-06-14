@@ -50,7 +50,17 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
-			if(filter.dataset && filter.dataset.query_id) {
+			if(filter.dataset && filter.dataset.query_id == 0) {
+
+				if(!filter.dataset.value && !filter.dataset.containerElement)
+					filter.dataset.value = await filter.dataset.fetch();
+
+				parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.dataset.value[0]);
+
+				continue;
+			}
+
+			if(filter.dataset && filter.dataset.query_id != 0) {
 
 				if(!filter.dataset.value.length && !filter.dataset.containerElement)
 					filter.dataset.value = (await filter.dataset.fetch()).map(v => v.value);
@@ -745,7 +755,7 @@ class DataSourceFilter {
 
 		if(this.dataset && MetaData.datasets.has(this.dataset)) {
 
-			this.dataset = MetaData.datasets.get(this.dataset).query_id == 0 ? new DateDataset(this.dataset, this) : new Dataset(this.dataset, this);
+			this.dataset = MetaData.datasets.get(this.dataset).query_id == 0 ? new OtherDataset(this.dataset, this) : new Dataset(this.dataset, this);
 		}
 
 		else this.dataset = null;
@@ -5804,7 +5814,7 @@ class Tooltip {
 	}
 }
 
-class DateDataset {
+class OtherDataset {
 
 	constructor(id, filter) {
 
@@ -5834,6 +5844,11 @@ class DateDataset {
 		let value = null;
 		const input = container.querySelector('input');
 
+		input.on('change', () => {
+
+			this.value = input.value;
+		});
+
 
 		if(this.name.includes('Date')) {
 
@@ -5859,7 +5874,12 @@ class DateDataset {
 
 	async fetch() {
 
-		return [new Date().toISOString().substring(0, 10)];
+		if(this.name.includes('Date')) {
+
+			return this.name.includes('Start') ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10) : new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		}
+
+		return [""];
 	}
 
 	set value(value) {
