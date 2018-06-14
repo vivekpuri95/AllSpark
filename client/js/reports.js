@@ -175,7 +175,7 @@ class DataSource {
 
 			<div class="toolbar menu hidden">
 				<button type="button" class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
-				<button type="button" class="description-toggle hidden" title="Description"><i class="fa fa-info"></i> Info</button>
+				<button type="button" class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
 				<button type="button" class="view expand-toggle hidden" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
 				<button type="button" class="query-toggle hidden" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
 
@@ -198,7 +198,7 @@ class DataSource {
 
 			<div class="description hidden">
 				<div class="body"></div>
-				<div class="footer">
+				<div class="footer hidden">
 					<span>
 						<span class="label">Role:</span>
 						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : '<span class="NA">NA</span>'}</span>
@@ -256,7 +256,7 @@ class DataSource {
 		if(user.privileges.has('reports')) {
 			container.querySelector('.toolbar .expand-toggle').classList.remove('hidden');
 			container.querySelector('.toolbar .query-toggle').classList.remove('hidden');
-			container.querySelector('.toolbar .description-toggle').classList.remove('hidden');
+			container.querySelector('.toolbar .description-toggle .footer').classList.remove('hidden');
 		}
 
 		container.querySelector('.description .visible-to').on('click', () => {
