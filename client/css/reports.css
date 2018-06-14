@@ -958,3 +958,7 @@ main .data-source {
 			color: #666;
 			margin-top: 1px
 		}
+.other-dataset input{
+	width: 100%;
+	position: relative;
+}

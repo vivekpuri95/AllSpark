@@ -743,8 +743,10 @@ class DataSourceFilter {
 
 		this.source = source;
 
-		if(this.dataset && MetaData.datasets.has(this.dataset))
-			this.dataset = new Dataset(this.dataset, this);
+		if(this.dataset && MetaData.datasets.has(this.dataset)) {
+
+			this.dataset = MetaData.datasets.get(this.dataset).query_id == 0 ? new DateDataset(this.dataset, this) : new Dataset(this.dataset, this);
+		}
 
 		else this.dataset = null;
 	}
@@ -5802,6 +5804,79 @@ class Tooltip {
 	}
 }
 
+class DateDataset {
+
+	constructor(id, filter) {
+
+		if(!MetaData.datasets.has(id))
+			throw new Page.exception('Invalid dataset id! :(');
+
+		const dataset = MetaData.datasets.get(id);
+
+		for(const key in dataset)
+			this[key] = dataset[key];
+
+		this.filter = filter;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('other-dataset');
+
+		container.innerHTML = `
+			<input name="${this.filter.placeholder}">
+		`;
+
+		let value = null;
+		const input = container.querySelector('input');
+
+
+		if(this.name.includes('Date')) {
+
+			if(this.name.includes('Start'))
+				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			else
+				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			input.value = value;
+			input.type = 'date';
+		}
+		else {
+
+			input.type = 'text';
+			input.value = this.filter.default_value;
+		}
+
+		this.datasetValue = [input.value];
+
+		return container;
+	}
+
+
+	async fetch() {
+
+		return [new Date().toISOString().substring(0, 10)];
+	}
+
+	set value(value) {
+
+		if(!Array.isArray(value))
+			value = [value];
+
+		this.datasetValue = value;
+	}
+
+	get value() {
+
+		return this.datasetValue;
+	}
+
+}
+
 class Dataset extends MultiSelect {
 
 	constructor(id, filter) {
@@ -5824,25 +5899,8 @@ class Dataset extends MultiSelect {
 		if(this.containerElement)
 			return this.containerElement;
 
-		if(!this.name.includes('Date'))
-			return super.container;
+		return super.container;
 
-
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('multi-select');
-
-		let value = null;
-
-		if(this.name.includes('Start'))
-			value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-		else
-			value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-
-		container.innerHTML = `
-			<input type="date" name="${this.filter.placeholder}" value="${value}">
-		`;
-
-		return container;
 	}
 
 	async fetch() {
