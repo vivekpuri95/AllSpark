@@ -1932,8 +1932,15 @@ class DataSourcePostProcessors {
 
 		const container = this.source.container.querySelector('.postprocessors');
 
+		this.timingColumn = this.source.columns.get('timing');
+
+		for(const column of this.source.columns.values()) {
+			if(column.type == 'date')
+				this.timingColumn = column;
+		}
+
 		if(container)
-			container.classList.toggle('hidden', !this.source.columns.has('timing'));
+			container.classList.toggle('hidden', this.timingColumn ? false : true);
 	}
 }
 
@@ -2176,7 +2183,13 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 	}
 
 	processor(response) {
-		return response.filter(r => new Date(r.get('timing')).getDay() == this.container.value)
+
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn)
+			return;
+
+		return response.filter(r => new Date(r.get(timingColumn.key)).getDay() == this.container.value)
 	}
 });
 
@@ -2196,13 +2209,18 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 	processor(response) {
 
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn)
+			return;
+
 		const result = new Map;
 
 		for(const row of response) {
 
 			let period;
 
-			const periodDate = new Date(row.get('timing'));
+			const periodDate = new Date(row.get(timingColumn.key));
 
 			// Week starts from monday, not sunday
 			if(this.container.value == 'week')
@@ -2211,7 +2229,7 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 			else if(this.container.value == 'month')
 				period = periodDate.getDate() - 1;
 
-			const timing = new Date(Date.parse(row.get('timing')) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			const timing = new Date(Date.parse(row.get(timingColumn.key)) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
 			if(!result.has(timing)) {
 
@@ -2233,13 +2251,7 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 				else newRow.set(key, value);
 			}
 
-			newRow.set('timing', row.get('timing'));
-
-			// Copy over any annotations from the old row
-			for(const annotation of row.annotations) {
-				annotation.row = newRow;
-				newRow.annotations.add(annotation);
-			}
+			newRow.set(timingColumn.key, row.get(timingColumn.key));
 		}
 
 		return Array.from(result.values());
@@ -2263,12 +2275,17 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 
 	processor(response) {
 
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn)
+			return;
+
 		const
 			result = new Map,
 			copy = new Map;
 
 		for(const row of response)
-			copy.set(Date.parse(row.get('timing')), row);
+			copy.set(Date.parse(row.get(timingColumn.key)), row);
 
 		for(const [timing, row] of copy) {
 
@@ -2295,13 +2312,7 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 					newRow.set(key,  value + (element.get(key) / this.container.value));
 			}
 
-			newRow.set('timing', row.get('timing'));
-
-			// Copy over any annotations from the old row
-			for(const annotation of row.annotations) {
-				annotation.row = newRow;
-				newRow.annotations.add(annotation);
-			}
+			newRow.set(timingColumn.key, row.get(timingColumn.key));
 		}
 
 		return Array.from(result.values());
@@ -2325,12 +2336,17 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 
 	processor(response) {
 
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn)
+			return;
+
 		const
 			result = new Map,
 			copy = new Map;
 
 		for(const row of response)
-			copy.set(Date.parse(row.get('timing')), row);
+			copy.set(Date.parse(row.get(timingColumn.key)), row);
 
 		for(const [timing, row] of copy) {
 
@@ -2357,13 +2373,7 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 					newRow.set(key,  value + element.get(key));
 			}
 
-			newRow.set('timing', row.get('timing'));
-
-			// Copy over any annotations from the old row
-			for(const annotation of row.annotations) {
-				annotation.row = newRow;
-				newRow.annotations.add(annotation);
-			}
+			newRow.set(timingColumn.key, row.get(timingColumn.key));
 		}
 
 		return Array.from(result.values());
