@@ -287,6 +287,19 @@ class DataSource {
 			this.visualizations.selected.render({resize: true});
 		});
 
+		let count = 0;
+
+		for(const filter of this.filters.values()) {
+
+			if(filter.type == 'hidden') {
+				count++;
+			}
+		}
+
+		if(count == this.filters.size) {
+			container.querySelector('.menu .filters-toggle').classList.add('hidden');
+		}
+
 		container.querySelector('.menu .description-toggle').on('click', async () => {
 
 			container.querySelector('.description').classList.toggle('hidden');
@@ -710,18 +723,6 @@ class DataSourceFilters extends Map {
 		this.source = source;
 
 		if(!this.source.filters || !this.source.filters.length)
-			return;
-
-		let count = 0;
-
-		for(const filter of this.source.filters) {
-
-			if(filter.type == 'hidden') {
-				count++;
-			}
-		}
-
-		if(count == this.source.filters.length)
 			return;
 
 		for(const filter of this.source.filters)
