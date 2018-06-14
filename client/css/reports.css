@@ -170,11 +170,12 @@ main .data-source {
 			right: 0;
 			z-index: 3;
 		}
-		main .data-source .download-dropdown-content .csv-download {
-			border-bottom: 0;
-		}
 		main .data-source .download-dropdown-content > button {
 			text-align: left;
+			border-top: 0;
+		}
+		main .data-source .download-dropdown-content button:first-child {
+			border-top: 1px solid #ccc;
 		}
 		main .data-source .download-dropdown-content svg {
 			width: 10px;
