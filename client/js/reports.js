@@ -32,7 +32,6 @@ class DataSource {
 
 		if(!source.visualizations.filter(v => v.type == 'table').length) {
 			source.visualizations.push({ name: 'Table', visualization_id: 0, type: 'table' });
-			source.visualizations.push({ name: 'Json', visualization_id: -1, type: 'json' });
 		}
 
 		this.visualizations = source.visualizations.map(v => new (Visualization.list.get(v.type))(v, this));
@@ -166,14 +165,15 @@ class DataSource {
 
 			<div class="toolbar menu hidden">
 				<button type="button" class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
-				<button type="button" class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
-				<button type="button" class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
-				<button type="button" class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
+				<button type="button" class="description-toggle hidden" title="Description"><i class="fa fa-info"></i> Info</button>
+				<button type="button" class="view expand-toggle hidden" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
+				<button type="button" class="query-toggle hidden" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
 
 				<div class="download-btn" title="Download CSV">
 					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
 					<div class="download-dropdown-content hidden">
 						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
+						<button type="button" class="filtered-csv-download"><i class="far fa-file-excel"></i> Filtered CSV</button>
 						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i> XLSX</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
 						<button type="button" class="export-toggle"><i class="fa fa-download"></i> Export</button>
@@ -221,11 +221,13 @@ class DataSource {
 			</div>
 		`;
 
+
 		if(user.privileges.has('reports'))
 			container.querySelector('header h2').insertAdjacentHTML('beforeend', ` <span class="id">#${this.query_id}</span>`);
 
 		document.querySelector('body').on('click', (e) => {
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
+		this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
 		})
 
 		container.querySelector('.menu .export-toggle').on('click', () => {
@@ -240,6 +242,12 @@ class DataSource {
 
 			this.visualizations.selected.render({resize: true});
 		});
+
+		if(user.privileges.has('reports')) {
+			container.querySelector('.toolbar .expand-toggle').classList.remove('hidden');
+			container.querySelector('.toolbar .query-toggle').classList.remove('hidden');
+			container.querySelector('.toolbar .description-toggle').classList.remove('hidden');
+		}
 
 		container.querySelector('.description .visible-to').on('click', () => {
 
@@ -312,6 +320,7 @@ class DataSource {
 		});
 
 		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
+		container.querySelector('.menu .filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
 		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
 		container.querySelector('.menu .xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
 
@@ -544,6 +553,19 @@ class DataSource {
 			return await this.excelSheetDownloader(response, obj);
 		}
 
+		else if(what.mode == 'filtered-csv') {
+
+			for(const data of this.response) {
+				for(const [key, value] of data) {
+					str.push(value);
+				}
+			}
+
+			str = Array.from(this.response[0].keys()).join() + '\r\n' + str.join('\r\n');
+
+			what.mode = 'csv';
+		}
+
 		else {
 
 			for(const data of response.data) {
@@ -690,6 +712,18 @@ class DataSourceFilters extends Map {
 		if(!this.source.filters || !this.source.filters.length)
 			return;
 
+		let count = 0;
+
+		for(const filter of this.source.filters) {
+
+			if(filter.type == 'hidden') {
+				count++;
+			}
+		}
+
+		if(count == this.source.filters.length)
+			return;
+
 		for(const filter of this.source.filters)
 			this.set(filter.placeholder, new DataSourceFilter(filter, this.source));
 	}
@@ -712,13 +746,8 @@ class DataSourceFilters extends Map {
 		});
 
 		container.insertAdjacentHTML('beforeend', `
+
 			<label class="right">
-				<span>&nbsp;</span>
-				<button type="reset">
-					<i class="fa fa-undo"></i> Reset
-				</button>
-			</label>
-			<label>
 				<span>&nbsp;</span>
 				<button type="submit">
 					<i class="fa fa-sync"></i> Submit
