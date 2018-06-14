@@ -316,6 +316,9 @@ class report extends API {
 			case "mysql":
 				preparedRequest = new MySQL(this.reportObj, this.filters, this.request.body.token);
 				break;
+			case "mssql":
+				preparedRequest = new MSSQL(this.reportObj, this.filters, this.request.body.token);
+				break;
 			case "api":
 				preparedRequest = new APIRequest(this.reportObj, this.filters, this.request.body.token);
 				break;
@@ -413,23 +416,13 @@ class report extends API {
 }
 
 
-class MySQL {
+class SQL {
 
 	constructor(reportObj, filters = [], token = null) {
 
 		this.reportObj = reportObj;
 		this.filters = filters;
 		this.token = token;
-	}
-
-	get finalQuery() {
-
-		this.prepareQuery();
-
-		return {
-			request: [this.reportObj.query, this.filterList || [], this.reportObj.connection_name,],
-			type: "mysql"
-		};
 	}
 
 	prepareQuery() {
@@ -462,7 +455,6 @@ class MySQL {
 		}
 
 		this.filterList = this.makeQueryParameters();
-
 	}
 
 	makeQueryParameters() {
@@ -482,6 +474,46 @@ class MySQL {
 
 		return (filterIndexList.sort((x, y) => x.index - y.index)).map(x => x.value) || [];
 	}
+}
+
+
+class MySQL extends SQL{
+
+	constructor(reportObj, filters = [], token = null) {
+
+		super(reportObj, filters, token);
+	}
+
+	get finalQuery() {
+
+		this.prepareQuery();
+
+		return {
+			request: [this.reportObj.query, this.filterList || [], this.reportObj.connection_name,],
+			type: "mysql"
+		};
+	}
+
+}
+
+
+class MSSQL extends SQL{
+
+	constructor(reportObj, filters = [], token = null) {
+
+		super(reportObj, filters, token);
+	}
+
+	get finalQuery() {
+
+		this.prepareQuery();
+
+		return {
+			request: [this.reportObj.query, this.filterList || [], this.reportObj.connection_name,],
+			type: "mssql"
+		};
+	}
+
 }
 
 
@@ -739,7 +771,8 @@ class ReportEngine extends API {
 			mysql: this.mysql.query,
 			pgsql: this.pgsql.query,
 			api: fetch,
-			bigquery: bigQuery.call
+			bigquery: bigQuery.call,
+			mssql: this.mssql.query,
 		};
 
 		this.parameters = parameters || {};
@@ -770,7 +803,7 @@ class ReportEngine extends API {
 
 		let query;
 
-		if (["mysql", "pgsql"].includes(this.parameters.type)) {
+		if (["mysql", "pgsql", "mssql"].includes(this.parameters.type)) {
 
 			query = data.instance ? data.instance.sql : data;
 		}

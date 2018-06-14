@@ -302,6 +302,57 @@ Credential.types.set('mysql', class {
 	}
 });
 
+
+Credential.types.set('mssql', class {
+
+	static render(connections = {}) {
+
+		Credential.form.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span class="password">Password <a class="show-password">Show</a></span>
+				<input type="password" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+
+			<label>
+				<span>Database</span>
+				<input type="text" name="db" value="${connections.db || ''}">
+			</label>
+		`;
+
+		Credential.form.password.on('click', () => {
+			Credential.form.password.type = Credential.form.password.type == 'text' ? 'password' : 'text';
+		});
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: Credential.form.user.value,
+			password: Credential.form.password.value,
+			host: Credential.form.host.value,
+			port: Credential.form.port.value,
+			db: Credential.form.db.value,
+		});
+	}
+});
+
+
 Credential.types.set('pgsql', class {
 
 	static render(connections = {}) {

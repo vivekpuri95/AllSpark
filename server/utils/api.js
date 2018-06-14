@@ -10,6 +10,7 @@ const constants = require('./constants');
 const assert = require("assert");
 const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
+const msssql = require("./mssql").MsSql;
 
 const gitChecksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
@@ -19,6 +20,7 @@ class API {
 
 		this.mysql = mysql;
 		this.pgsql = pgsql;
+		this.mssql = msssql;
 	}
 
 	static setup() {

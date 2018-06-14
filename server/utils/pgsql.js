@@ -75,9 +75,5 @@ class Postgres {
 	}
 }
 
-
-(async () => await Postgres.crateExternalPool())();
-
-
 exports.Postgres = (() => new Postgres)();
 exports.crateExternalPool = Postgres.crateExternalPool;
