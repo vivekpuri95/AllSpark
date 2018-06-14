@@ -33,7 +33,7 @@ class BigQuery {
 
 				if (err) {
 					console.log("in error ", err);
-					return reject({error: err, query: query});
+					return reject(err);
 				}
 
 				resolve(bqData);
