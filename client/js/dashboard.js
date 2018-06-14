@@ -1212,7 +1212,7 @@ class DashboardDatasets extends Map {
 			}
 		}
 
-		for (const dataset of Object.values(datasets)){
+		for (const dataset of Object.values(datasets)) {
 
 			if(!dataset.query_id) {
 

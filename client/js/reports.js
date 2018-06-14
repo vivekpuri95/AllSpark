@@ -755,7 +755,7 @@ class DataSourceFilter {
 
 		if(this.dataset && MetaData.datasets.has(this.dataset)) {
 
-			this.dataset = MetaData.datasets.get(this.dataset).query_id == 0 ? new OtherDataset(this.dataset, this) : new Dataset(this.dataset, this);
+			this.dataset = !MetaData.datasets.get(this.dataset).query_id ? new OtherDataset(this.dataset, this) : new Dataset(this.dataset, this);
 		}
 
 		else this.dataset = null;
@@ -5912,15 +5912,6 @@ class Dataset extends MultiSelect {
 			this[key] = dataset[key];
 
 		this.filter = filter;
-	}
-
-	get container() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		return super.container;
-
 	}
 
 	async fetch() {

@@ -225,6 +225,10 @@ main #reports > .datasets.show {
 	main #reports > .datasets .dataset-container:last-of-type {
 		margin-bottom: 0;
 	}
+	main #reports > .datasets .dataset-container .other-dataset input {
+		width: 100%;
+		position: relative;
+	}
 	main #reports > .datasets .actions {
 		display: grid;
 		grid-auto-flow:  column;
