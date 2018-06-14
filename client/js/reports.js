@@ -50,6 +50,16 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
+			if(filter.dataset && !filter.dataset.query_id) {
+
+				if(!filter.dataset.value && !filter.dataset.containerElement)
+					filter.dataset.value = await filter.dataset.fetch();
+
+				parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.dataset.value[0]);
+
+				continue;
+			}
+
 			if(filter.dataset && filter.dataset.query_id) {
 
 				if(!filter.dataset.value.length && !filter.dataset.containerElement)
@@ -743,8 +753,10 @@ class DataSourceFilter {
 
 		this.source = source;
 
-		if(this.dataset && MetaData.datasets.has(this.dataset))
-			this.dataset = new Dataset(this.dataset, this);
+		if(this.dataset && MetaData.datasets.has(this.dataset)) {
+
+			this.dataset = !MetaData.datasets.get(this.dataset).query_id ? new OtherDataset(this.dataset, this) : new Dataset(this.dataset, this);
+		}
 
 		else this.dataset = null;
 	}
@@ -5802,11 +5814,9 @@ class Tooltip {
 	}
 }
 
-class Dataset extends MultiSelect {
+class OtherDataset {
 
 	constructor(id, filter) {
-
-		super();
 
 		if(!MetaData.datasets.has(id))
 			throw new Page.exception('Invalid dataset id! :(');
@@ -5824,25 +5834,84 @@ class Dataset extends MultiSelect {
 		if(this.containerElement)
 			return this.containerElement;
 
-		if(!this.name.includes('Date'))
-			return super.container;
-
-
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('multi-select');
-
-		let value = null;
-
-		if(this.name.includes('Start'))
-			value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-		else
-			value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		container.classList.add('other-dataset');
 
 		container.innerHTML = `
-			<input type="date" name="${this.filter.placeholder}" value="${value}">
+			<input name="${this.filter.placeholder}">
 		`;
 
+		let value = null;
+		const input = container.querySelector('input');
+
+		input.on('change', () => {
+
+			this.value = input.value;
+		});
+
+
+		if(this.name.includes('Date')) {
+
+			if(this.name.includes('Start'))
+				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			else
+				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			input.value = value;
+			input.type = 'date';
+		}
+		else {
+
+			input.type = 'text';
+			input.value = this.filter.default_value;
+		}
+
+		this.datasetValue = [input.value];
+
 		return container;
+	}
+
+
+	async fetch() {
+
+		if(this.name.includes('Date')) {
+
+			return this.name.includes('Start') ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10) : new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		}
+
+		return [""];
+	}
+
+	set value(value) {
+
+		if(!Array.isArray(value))
+			value = [value];
+
+		this.datasetValue = value;
+	}
+
+	get value() {
+
+		return this.datasetValue;
+	}
+
+}
+
+class Dataset extends MultiSelect {
+
+	constructor(id, filter) {
+
+		super();
+
+		if(!MetaData.datasets.has(id))
+			throw new Page.exception('Invalid dataset id! :(');
+
+		const dataset = MetaData.datasets.get(id);
+
+		for(const key in dataset)
+			this[key] = dataset[key];
+
+		this.filter = filter;
 	}
 
 	async fetch() {
