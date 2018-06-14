@@ -578,10 +578,14 @@ class DataSource {
 
 		else if(what.mode == 'filtered-csv') {
 
-			for(const data of this.response) {
-				for(const [key, value] of data) {
-					str.push(value);
-				}
+			for(const row of this.response) {
+
+				const line = [];
+
+				for(const value of row.values())
+					line.push(JSON.stringify(String(value)));
+
+				str.push(line.join());
 			}
 
 			str = Array.from(this.response[0].keys()).join() + '\r\n' + str.join('\r\n');
@@ -4416,6 +4420,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		const that = this;
 
+		const x1 = d3.scale.ordinal();
 		this.x = d3.scale.ordinal();
 		this.y = d3.scale.linear().range([this.height, 20]);
 
@@ -4461,6 +4466,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
 		xAxis.tickValues(ticks);
+		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
 			.append('g')
@@ -4517,6 +4523,41 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			.attr('width', this.x.rangeBand())
 			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
 
+			 let values;
+
+			if(this.options.showValues) {
+
+			values = this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (this.x.rangeBand() / 2) - (value.toString().length * 4);
+				})
+				.text(cell => {
+
+					if(['s'].includes(this.axes.left.format))
+						return d3.format('.4s')(cell.y);
+					else
+						return Format.number(cell.y)
+				});
+			}
+
+
 		if(!options.resize) {
 
 			bars = bars
@@ -4525,11 +4566,28 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				.transition()
 				.duration(Visualization.animationDuration)
 				.ease('quad-in');
+
+			if(values) {
+
+				values = values
+					.attr('y', cell => this.y(0))
+					.attr('height', () => 0)
+					.transition()
+					.duration(Visualization.animationDuration)
+					.ease('quad-in');
+			}
 		}
 
 		bars
 			.attr('height', d => this.height - this.y(d.y))
 			.attr('y', d => this.y(d.y + d.y0));
+
+		if(values) {
+
+			values
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y + cell.y0 : 0) - 3)
+				.attr('height', cell => {return Math.abs(this.y(cell.y + cell.y0) - this.y(0))});
+		}
 	}
 });
 
