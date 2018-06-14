@@ -50,7 +50,7 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
-			if(filter.dataset && filter.dataset.query_id == 0) {
+			if(filter.dataset && !filter.dataset.query_id) {
 
 				if(!filter.dataset.value && !filter.dataset.containerElement)
 					filter.dataset.value = await filter.dataset.fetch();
@@ -60,7 +60,7 @@ class DataSource {
 				continue;
 			}
 
-			if(filter.dataset && filter.dataset.query_id != 0) {
+			if(filter.dataset && filter.dataset.query_id) {
 
 				if(!filter.dataset.value.length && !filter.dataset.containerElement)
 					filter.dataset.value = (await filter.dataset.fetch()).map(v => v.value);

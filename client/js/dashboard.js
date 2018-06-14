@@ -1214,7 +1214,7 @@ class DashboardDatasets extends Map {
 
 		for (const dataset of Object.values(datasets)){
 
-			if(dataset.query_id == 0) {
+			if(!dataset.query_id) {
 
 				this.set(dataset.id, new OtherDataset(dataset.id, dataset))
 				continue;
