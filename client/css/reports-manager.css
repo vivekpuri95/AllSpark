@@ -154,7 +154,7 @@ main.preview-left #stages {
 }
 	#stage-pick-report table thead tr th {
 		position: sticky;
-		top: 38px;
+		top: 48px;
 		cursor: pointer;
 	}
 	#stage-pick-report table thead tr.search th {
@@ -272,23 +272,53 @@ main.preview-left #stages {
 			#stage-define-report #define-report-form #editor {
 				height: 100%;
 			}
-			#stage-define-report #define-report-form #csv {
-				background: #fff;
-				height: 100%;
+		#stage-define-report .upload-file {
+			background: #fff;
+			height: 100%;
+			align-items: center;
+			display: flex;
+			flex-direction: column;
+			color: #999;
+			justify-content: center;
+			cursor: pointer;
+			transition: background var(--transition-duration),
+						box-shadow var(--transition-duration),
+						color var(--transition-duration);
+		}
+		#stage-define-report .upload-file:hover {
+			background: #ccc;
+			color: #666;
+		}
+		#stage-define-report .upload-file:active {
+			box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.15);
+		}
+		#stage-define-report .upload-file.drag-over {
+			background: #ccc;
+		}
+			#stage-define-report .upload-file h2 {
+				font-weight: normal;
 				font-size: calc(20px + 1vw);
-				align-items: center;
-				display: flex;
-				color: #ccc;
-				justify-content: center;
-				cursor: pointer;
-				transition: background var(--transition-duration),
-							box-shadow var(--transition-duration);
+				margin: 0;
+				pointer-events: none;
 			}
-			#stage-define-report #define-report-form #csv:hover {
-				background: #999;
+			#stage-define-report .upload-file small {
+				font-size: calc(12px + 0.3vw);
+				margin: var(--gap) 0;
+				pointer-events: none;
 			}
-			#stage-define-report #define-report-form #csv:active {
-				box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.15);
+			#stage-define-report .upload-file .message {
+				background: none;
+				padding: 0;
+				box-shadow: none;
+				color: #666;
+				font-size: calc(20px + 0.8vw);
+				pointer-events: none;
+			}
+			#stage-define-report .upload-file .warning {
+				color: #a00;
+			}
+			#stage-define-report .upload-file .notice {
+				color: #191;
 			}
 
 		#stage-define-report #filters {

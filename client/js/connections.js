@@ -441,7 +441,7 @@ DataConnection.types.set('api', class {
 	}
 });
 
-DataConnection.types.set('csv', class {
+DataConnection.types.set('file', class {
 
 	static render(connections = {}) {
 		DataConnection.form.querySelector('#details').innerHTML = null;

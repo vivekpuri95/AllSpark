@@ -612,7 +612,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 	add() {
 
 		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.insert(e));
+		this.form.on('submit', this.form.listener = e => this.insert(e));
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
@@ -651,7 +651,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 	async edit() {
 
 		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
+		this.form.on('submit', this.form.listener = e => this.update(e));
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
@@ -761,7 +761,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			container.classList.toggle('hidden');
 			this.form.classList.toggle('hidden');
 
-			if(editDataToggle.classList.contains('hidden'))
+			if(container.classList.contains('hidden'))
 				return;
 
 			const editor = new EditSourceData(this.report.query_id);
@@ -771,6 +771,14 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			container.innerHTML = null;
 			container.appendChild(editor.container);
 		});
+
+		this.uploadFile = new UploadFile(this);
+
+		this.uploadFile.on('upload', () => {
+			this.container.querySelector('#edit-data-toggle').click();
+		});
+
+		this.form.appendChild(this.uploadFile.container);
 
 		this.container.querySelector('#add-filter').on('click', () => this.addFilter());
 
@@ -846,7 +854,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.page.stages.get('configure-visualization').disabled = true;
 
 		localStorage.reportsPreviewDock = 'bottom';
-		this.page.preview.hidden = false;
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
@@ -855,15 +862,16 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
 		this.form.querySelector('#query').classList.toggle('hidden', connection.type != 'query');
-		this.form.querySelector('#csv').classList.toggle('hidden', connection.type != 'csv');
+		this.form.querySelector('.upload-file').classList.toggle('hidden', connection.type != 'file');
 
 		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
+		this.form.on('submit', this.form.listener = e => this.update(e));
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
 
 		this.container.querySelector('#edit-data-toggle').classList.toggle('hidden', !this.report.load_saved);
+		this.uploadFile.message();
 
 		this.editor.editor.focus();
 
@@ -892,101 +900,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
 
-		this.container.querySelector('#csv').addEventListener('click', e => {
-			this.container.querySelector('#csv-input').click();
-		});
-
-		this.container.querySelector('#csv-input').addEventListener('change', e => this.uploadCSV(e));
-
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
-
-	uploadCSV(e) {
-
-		if(!this.report.load_saved)
-			return;
-
-		const fileReader = new FileReader();
-
-		fileReader.onload = async e => {
-
-			const contents = e.target.result.split('\n');
-
-			if(!contents.length) {
-				this.container.querySelector('#csv').innerHTML =  'No data found in the CSV! :(';
-				return;
-			}
-
-			const csvJson = [];
-
-			const headers = this.splitCSV(contents[0]);
-
-			for(const rowString of contents.slice(1)) {
-
-				const cellList = this.splitCSV(rowString);
-
-				const row = {};
-
-				for(const [index, cell] of cellList.entries()) {
-
-					row[headers[index]] = cell;
-				}
-
-				csvJson.push(row);
-			}
-
-			const
-				parameter = {
-					data: JSON.stringify(csvJson),
-					query_id: this.report.query_id,
-				},
-				options = {
-					method: 'POST',
-				};
-
-			try {
-				await API.call('reports/engine/report', parameter, options);
-			} catch(e) {
-				this.container.querySelector('#csv').innerHTML = e.message;
-			}
-
-			this.container.querySelector('#edit-data-toggle').click();
-		};
-
-		fileReader.readAsText(e.target.files[0]);
-	}
-
-	splitCSV(str, sep) {
-
-		for (var splitString = str.split(sep = sep || ','), len = splitString.length - 1, tl; len >= 0; len--) {
-
-			if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
-
-				if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
-
-					splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
-				}
-
-				else if (len) {
-					splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(sep));
-				}
-
-				else splitString = splitString.shift().split(sep).concat(splitString);
-			}
-
-			else splitString[len].replace(/""/g, '"');
-		}
-
-		for(let [index, element] of splitString.entries()) {
-
-			if(element.split(',').length === 1 && element.startsWith('"')) {
-
-				splitString[index] = element.replace(/"/g, '');
-			}
-		}
-
-		return splitString;
-	};
 
 	async update(e) {
 
@@ -1046,15 +961,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const source = this.page.connections.get(parseInt(this.report.connection_name));
 
-		if(!source || !['mysql', 'pgsql', 'bigquery', 'csv', 'mssql'].includes(source.type)) {
+		if(!source || !['mysql', 'pgsql', 'bigquery', 'file', 'mssql'].includes(source.type)) {
 			this.form.querySelector('#query').classList.add('hidden');
 			this.form.querySelector('#api').classList.remove('hidden');
 		}
 
-		else if(source.type === 'csv') {
-
-			this.form.querySelector('#csv').classList.remove('hidden');
-		}
+		else if(source.type === 'file')
+			this.uploadFile.container.classList.remove('hidden');
 
 		else {
 			this.form.querySelector('#query').classList.remove('hidden');
@@ -2932,6 +2845,245 @@ const mysqlKeywords = [
 	'USING',
 ];
 
+/**
+ * Upload a CSV, TSV or JSON data file from the user into a report.
+ */
+class UploadFile {
+
+	/**
+	 * Save a few things at the begining.
+	 *
+	 * @param  ReportsManagerStage	stage	The stage that own the instance.
+	 * @return UploadFile
+	 */
+	constructor(stage, afterUpload) {
+
+		this.stage = stage;
+		this.page = stage.page;
+	}
+
+	/**
+	 * The upload-file container element.
+	 * This also acts as a drop surface and a way to give user feedback on the upload status.
+	 *
+	 * @return HTMLElement
+	 */
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('upload-file');
+
+		container.innerHTML = `
+			<input type="file" accept=".xlsx, .xls, .csv, .tsv, .json" class="hidden">
+			<h2>Drop File Here</h2>
+			<small>Or click to upload&hellip;</small>
+			<div class="message hidden"></div>
+		`;
+
+		const input = container.querySelector('input');
+
+		input.on('change', e => {
+			if(e.target.files.length)
+				this.upload(e.target.files[0]);
+		});
+
+		container.on('click', () => input.click());
+
+		container.on('dragenter', e => e.preventDefault());
+
+		container.on('dragover', e => {
+
+			e.preventDefault();
+
+			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
+				return this.message('Please upload a valid file.', 'warning');
+
+			if(e.dataTransfer.items.length > 1)
+				return this.message('Please upload only one file.', 'warning');
+
+			container.classList.add('drag-over');
+
+			this.message('Drop to upload one file.', 'notice');
+		});
+
+		container.on('dragleave', () => {
+
+			this.message();
+			container.classList.remove('drag-over');
+		});
+
+		container.on('drop', e => {
+
+			e.preventDefault();
+
+			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
+				return this.message('Please upload a valid file', 'warning');
+
+			if(e.dataTransfer.items.length > 1)
+				return this.message('Please upload only one file', 'warning');
+
+			container.classList.remove('drag-over');
+
+			const [file] = e.dataTransfer.files;
+
+			this.upload(file);
+		});
+
+		return container;
+	}
+
+	/**
+	 * Attach an event listener on the upload instance.
+	 *
+	 * @param string	event		The event type (eg. upload)
+	 * @param Function	callback	The callback function to call when the event happens.
+	 */
+	on(event, callback) {
+
+		if(event == 'upload')
+			this.onUpload = callback;
+
+		else throw new Page.exception(`Invalid event File Upload event type ${event}! :(`);
+	}
+
+	/**
+	 * Upload a file's data to the report.
+	 *
+	 * @param File	The File object for the file that is being uploaded.
+	 */
+	upload(file) {
+
+		if(!this.stage.report.load_saved)
+			return this.message('This report doesn\'t have \'Store Result\' property enabled! :(', 'warning');
+
+		this.message(`Uploading ${file.name}`, 'notice');
+
+		const fileReader = new FileReader();
+
+		let separator = ',';
+
+		if(file.name.endsWith('.tsv'))
+			separator = '\t';
+
+		fileReader.onload = async e => {
+
+			if(!e.target.result.trim())
+				return this.message('Uploaded file is empty', 'warning');
+
+			const
+				parameter = {
+					data: this.toJSON(e.target.result.trim(), separator),
+					query_id: this.stage.report.query_id,
+				},
+				options = {
+					method: 'POST',
+				};
+
+			try {
+				await API.call('reports/engine/report', parameter, options);
+			} catch(e) {
+				this.message(e.message, 'warning');
+			}
+
+			if(this.onUpload)
+				this.onUpload();
+
+			this.message('Upload Complete', 'notice');
+		};
+
+		fileReader.readAsText(file);
+	}
+
+	/**
+	 * Convert a file input to JSON.
+	 * This will handle types of input like JSON, CSV or TSV.
+	 *
+	 * @param  string	input		The input string that needs to be converted.
+	 * @param  string	separator	The column separator to use.
+	 * @return string				The stringified JSON that was extracted from the input.
+	 */
+	toJSON(input, separator = ',') {
+
+		try {
+			return JSON.stringify(JSON.parse(input));
+		} catch(e) {}
+
+		const
+			lines = input.split('\n'),
+			result = [],
+			headers = split(lines[0]);
+
+		for(const line of lines.slice(1)) {
+
+			const row = {};
+
+			for(const [index, cell] of split(line).entries())
+				row[headers[index]] = cell;
+
+			result.push(row);
+		}
+
+		function split(string) {
+
+			for (var splitString = string.split(separator), len = splitString.length - 1, tl; len >= 0; len--) {
+
+				if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
+
+					if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
+
+						splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
+					}
+
+					else if (len) {
+						splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(separator));
+					}
+
+					else splitString = splitString.shift().split(separator).concat(splitString);
+				}
+
+				else splitString[len].replace(/""/g, '"');
+			}
+
+			for(let [index, element] of splitString.entries()) {
+
+				if(element.split(',').length === 1 && element.startsWith('"')) {
+
+					splitString[index] = element.replace(/"/g, '');
+				}
+			}
+
+			return splitString;
+		}
+
+		return JSON.stringify(result);
+	}
+
+	/**
+	 * Show a message to the user on the file upload window with give color.
+	 *
+	 * @param  string	body	The message body.
+	 * @param  string	type	The type of the message (notice, warning or nothing)
+	 */
+	message(body = '', type = null) {
+
+		const container = this.container.querySelector('.message');
+
+		container.classList.remove('notice', 'warning');
+		container.classList.toggle('hidden', !body);
+		this.container.querySelector('h2').classList.toggle('hidden', body);
+		this.container.querySelector('small').classList.toggle('hidden', body);
+
+		if(type)
+			container.classList.add(type);
+
+		container.innerHTML = body;
+	}
+}
+
 class EditSourceData {
 
 	constructor(queryId) {
@@ -2944,11 +3096,11 @@ class EditSourceData {
 		if(this.tableContainer)
 			return this.tableContainer;
 
-		const div = document.createElement('section');
+		const container = this.tableContainer = document.createElement('section');
 
-		div.classList.add('edit-data-source');
+		container.classList.add('edit-data-source');
 
-		div.innerHTML = `
+		container.innerHTML = `
 			<header class="toolbar">
 				<button type="submit"><i class="fas fa-paper-plane"></i> Update Data</button>
 			</header>
@@ -2958,11 +3110,11 @@ class EditSourceData {
 			</table>
 		`;
 
-		this.tableContainer = div;
+		this.container.querySelector('.toolbar button').on('click', e => this.save(e));
 
 		this.render();
 
-		return div;
+		return container;
 	}
 
 	async load() {
@@ -2976,10 +3128,8 @@ class EditSourceData {
 
 		this.rows = [];
 
-		for (const item of this.data) {
-
+		for (const item of this.data)
 			this.rows.push([...item.values()]);
-		}
 	}
 
 	getSortedRows(index, element) {
@@ -3024,20 +3174,20 @@ class EditSourceData {
 
 		if (!this.data || !this.data.length) {
 
-			this.tableContainer.innerHTML = '<p class="NA">No data found :(</p>';
+			this.container.innerHTML = '<p class="NA">No data found :(</p>';
 
-			return this.tableContainer;
+			return this.container;
 		}
 
 		this.columns = [...this.data[0].keys()];
 
-		const tableElement = this.tableContainer.querySelector('table');
+		const tableElement = this.container.querySelector('table');
 
-		const thead = this.tableContainer.querySelector('thead');
+		const thead = this.container.querySelector('thead');
 
 		let tHeadHtml = '';
 
-		const tbody = this.tableContainer.querySelector('tbody');
+		const tbody = this.container.querySelector('tbody');
 		tbody.textContent = null;
 
 		if (!thead.innerHTML) {
@@ -3075,15 +3225,8 @@ class EditSourceData {
 			tbody.appendChild(tableRow);
 		}
 
-		const saveButton = this.tableContainer.querySelector('button[type="submit"]');
-
-		saveButton.removeEventListener('click', EditSourceData.submitListener);
-		saveButton.on('click', EditSourceData.submitListener = (e) => this.save(e));
-
 		tableElement.appendChild(thead);
 		tableElement.appendChild(tbody);
-
-		return this.tableContainer;
 	}
 
 	async save(e) {
