@@ -28,9 +28,5 @@
     "port": 6379,
     "db": 0
   },
-  "superAdmin_users": ["email1", "email2"],
-  "google_apis": {
-    "client_id": "",
-    "client_secret": ""
-  }
+  "superAdmin_users": ["email1", "email2"]
 }

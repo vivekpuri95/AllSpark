@@ -388,6 +388,6 @@ exports.refresh = class extends API {
 				category_id: constants.adminCategory[0],
 			})
 		}
-		return commonFun.makeJWT(obj, 5 * 60);
+		return commonFun.makeJWT(obj, 5000 * 60);
 	}
 }

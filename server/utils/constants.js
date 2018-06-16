@@ -24,6 +24,7 @@ exports.publicEndpoints = [
 	'/v2/authentication/resetLink',
 	'/v2/scope/scopeAuth',
 	'/v2/accounts/signup',
+	'/v2/oauth/connections/redirect_uri',
 ];
 
 exports.filterPrefix = "param_";

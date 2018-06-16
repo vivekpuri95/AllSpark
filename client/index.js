@@ -1205,16 +1205,16 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 		return `
 			<section class="section" id="list">
 
-				<h1>Connection Manager</h1>
+				<h1>Data Connections</h1>
 
-				<form class="toolbar filters">
-					<button type="button" id="add-connection">
+				<div class="toolbar filters">
+					<button type="button" id="add-data-connection">
 						<i class="fa fa-plus"></i>
 						Add New Connection
 					</button>
-				</form>
+				</div>
 
-				<div class="block overflow">
+				<div class="block data-connections">
 					<table>
 						<thead>
 							<tr>
@@ -1229,6 +1229,33 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 					</table>
 				</div>
 
+				<h1>OAuth Connections</h1>
+
+				<div class="oauth-connections">
+
+					<div class="test-result hidden"></div>
+
+					<table class="block">
+						<thead>
+							<tr>
+								<th class="thin">ID</th>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="action">Authenticate</th>
+								<th class="action">Delete</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+
+					<form id="add-oauth-connection" class="form">
+						<select name="provider"></select>
+						<button type="submit">
+							<i class="fas fa-plus"></i> Add New Connection
+						</button>
+					</form>
+				</div>
+
 			</section>
 
 			<section class="section" id="form">
@@ -1238,9 +1265,11 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 				<header class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 					<button type="submit" form="connections-form"><i class="fa fa-save"></i> Save</button>
-					<button type="button" id="test-connection"><i class="fas fa-cogs"></i>Test</button>
+					<button type="button" id="test-connection"><i class="fas fa-flask"></i>Test</button>
 				</header>
+
 				<div class="test-result hidden"></div>
+
 				<form class="block form" id="connections-form">
 
 					<label>
@@ -1487,14 +1516,6 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 							<input type="text" name="auth_api">
 						</label>
 
-						<label>
-							<span>Google Analytics Authentication <a href="https://myaccount.google.com/u/0/permissions" target="_blank">revoke</a></span>
-							<button type="button" id="authenticate-google-analytics">
-								<i class="fas fa-external-link-alt"></i>
-								Authenticate Google Analytics
-							</button>
-						</label>
-
 						<label id="format">
 							<span>Settings</span>
 							<textarea id="settings-format" name="settings"></textarea>
@@ -1559,41 +1580,6 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 			</div>
 		`;
 	}
-}));
-
-router.get('/third-party/google-analytics/callback', API.serve(class extends HTMLAPI {
-
-	async main() {
-		return 'Hey there';
-	}
-
-	constructor() {
-
-		super();
-
-		this.scripts.push('/js/third-party/google-analytics-callback.js');
-	}
-
-	async main() {
-
-		return `
-			<style>
-				#body {
-					padding: calc(var(--gap) * 2);
-				}
-					#body #loading {
-						padding: 50px;
-						font-size: 250%;
-						text-align: center;
-					}
-			</style>
-
-			<div id="body">
-				<div id="loading"><i class="fas fa-spinner fa-spin"></i></div>
-			</div>
-		`;
-	}
-
 }));
 
 module.exports = router;

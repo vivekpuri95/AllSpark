@@ -721,17 +721,6 @@ class SettingsAccount {
 				input.value = this[input.name];
 		}
 
-		const gaButton = this.form.querySelector('#authenticate-google-analytics');
-
-		gaButton.removeEventListener('click', SettingsAccount.gaListener);
-		gaButton.disabled = !MetaData.google_apis.has('client_id');
-		gaButton.on('click', SettingsAccount.gaListener = () => this.authenticateGoogleAnalytics());
-
-		if(account.settings.get('google_apis_refresh_token')) {
-			gaButton.disabled = true;
-			gaButton.innerHTML = `&#10004; Already Authenticated`;
-		}
-
 		SettingsAccount.editor.value = JSON.stringify(this.settings, 0, 4) || '';
 
 		const features = new AccountsFeatures(this);
@@ -768,12 +757,6 @@ class SettingsAccount {
 				type: 'string',
 				name: 'Store Report Result Database',
 				description: 'The database where the report\'s result will be saved in',
-			},
-			{
-				key: 'google_apis_refresh_token',
-				type: 'string',
-				name: 'Google APIs Refresh Token',
-				description: 'Used to authenticate the Google API calls.',
 			},
 			{
 				key: 'enable_account_signup',
@@ -887,24 +870,6 @@ class SettingsAccount {
 		tr.querySelector('.red').on('click', () => this.delete());
 
 		return tr;
-	}
-
-	authenticateGoogleAnalytics() {
-
-		if(!MetaData.google_apis.has('client_id'))
-			return;
-
-		const parameters = new URLSearchParams();
-
-		parameters.set('client_id', MetaData.google_apis.get('client_id'));
-		parameters.set('redirect_uri', `https://${account.url}/third-party/google-analytics/callback`);
-		parameters.set('scope', 'https://www.googleapis.com/auth/analytics.readonly');
-		parameters.set('access_type', 'offline');
-		parameters.set('response_type', 'code');
-		parameters.set('state', user.id);
-		parameters.set('login_hint', user.email);
-
-		window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
 	}
 }
 
