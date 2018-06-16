@@ -673,7 +673,6 @@ class MetaData {
 		MetaData.visualizations = new Map;
 		MetaData.filterTypes = new Set;
 		MetaData.features = new Set;
-		MetaData.google_apis = new Map;
 
 		if(!user.id)
 			return;
@@ -731,9 +730,6 @@ class MetaData {
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
-
-		if(metadata.google_apis && metadata.google_apis.client_id)
-			MetaData.google_apis.set('client_id', metadata.google_apis.client_id);
 	}
 }
 

@@ -257,9 +257,6 @@ exports.metadata = class extends API {
 
 		metadata.filterTypes = constants.filterTypes;
 
-		if(config.has('google_apis') && config.get('google_apis').client_id)
-			metadata.google_apis = {client_id: config.get('google_apis').client_id};
-
 		metadata.sourceTypes = await this.mysql.query(`
 			SELECT
 				f.slug
