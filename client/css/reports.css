@@ -358,8 +358,8 @@ main .data-source {
 				align-items: center;
 				white-space: nowrap;
 				padding: 8px 5px;
-				/* border-radius: 11px; */
-				transition: background var(--transition-duration),         box-shadow var(--transition-duration);
+				transition: background var(--transition-duration),
+							box-shadow var(--transition-duration);
 			}
 			main .data-source > .columns .column.being-dragged > .label {
 				border: 1px blue dashed;

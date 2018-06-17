@@ -249,7 +249,7 @@ main #reports > .list {
 	display: grid;
 	grid-template-columns: repeat(32, 1.25fr);
 	grid-auto-rows: calc(50px - (var(--gap) * 4));
-	grid-column-gap: calc(var(--gap) * 2);
+	grid-column-gap: calc(var(--gap) * 4);
 	grid-row-gap: calc(var(--gap) * 4);
 	align-items: start;
 }
