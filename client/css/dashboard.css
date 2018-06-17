@@ -274,10 +274,12 @@ main #reports > .list {
 		grid-column: auto / span 16;
 		grid-row: auto / span 2;
 		position: relative;
-		transition: grid-column 300ms;
 		transition: box-shadow var(--transition-duration),
 					opacity var(--transition-duration),
 					border var(--transition-duration);
+	}
+	main #reports .list .data-source:hover {
+		box-shadow: 0 0 35px rgba(0, 0, 0, 0.2);
 	}
 	main #reports .list .data-source header .edit {
 		display: grid;

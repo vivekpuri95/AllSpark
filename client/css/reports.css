@@ -75,6 +75,8 @@ main .data-source {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	background: #fff;
+	box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 }
 	main .data-source > .warning {
 		margin: calc(var(--gap) * 2) 0 0;
@@ -83,11 +85,11 @@ main .data-source {
 		font-family: inherit;
 	}
 	main .data-source > header {
-		border-bottom: 1px dashed #999;
 		display: flex;
 		align-items: center;
 		overflow: auto;
 		white-space: nowrap;
+		padding: calc(var(--gap) * 2);
 	}
 	main .data-source > header::-webkit-scrollbar {
 		display: none;
@@ -108,6 +110,11 @@ main .data-source {
 			main .data-source > header h2 .id {
 				color: #aaa;
 				font-size: 90%;
+				opacity: 0;
+				transition: opacity var(--transition-duration);
+			}
+			main .data-source > header h2:hover .id {
+				opacity: 1;
 			}
 		main .data-source > header .actions {
 		}
@@ -119,6 +126,13 @@ main .data-source {
 				text-align: center;
 				color: inherit;
 			}
+			main .data-source > header .actions a {
+				opacity: 0;
+				transition: opacity var(--transition-duration);
+			}
+			main .data-source > header:hover .actions a {
+				opacity: 1;
+			}
 			main .data-source > header a:hover {
 				color: var(--color-accent);
 			}
@@ -126,12 +140,10 @@ main .data-source {
 				color: #999;
 			}
 	main .data-source .toolbar {
-		background: #fff;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-		padding: calc(var(--gap) * 2) var(--gap);
+		background: transparent;
+		padding: 0 calc(var(--gap));
+		margin-bottom: calc(var(--gap) * 2);
 		font-size: 95%;
-		margin: 0;
-		margin-top:  calc(var(--gap) * 2);
 		display: flex;
 		flex-wrap: wrap;
 	}
@@ -165,9 +177,8 @@ main .data-source {
 			position: absolute;
 			display: flex;
 			flex-direction: column;
-			width: 200%;
 			top: 27px;
-			right: 0;
+			right: 0px;
 			z-index: 3;
 		}
 		main .data-source .download-dropdown-content > button {
@@ -181,9 +192,6 @@ main .data-source {
 			width: 10px;
 		}
 	main .data-source > .description {
-		background: #fff;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-		margin-top: calc(var(--gap) * 2);
 	}
 		main .data-source > .description .body {
 			white-space: pre-wrap;
@@ -224,10 +232,7 @@ main .data-source {
 				color: #999;
 			}
 	main .data-source > .query {
-		background: #fff;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		padding: 10px;
-		margin-top: calc(var(--gap) * 2);
 		user-select: text;
 		font-family: monospace;
 		max-height: 150px;
@@ -298,7 +303,8 @@ main .data-source {
 		width: 100%;
 		overflow: auto;
 		order: 1;
-		margin-top: var(--gap);
+		padding: 0 var(--gap);
+		height: 37px;
 	}
 	main .data-source > .columns.over-flow::after {
 		background: -webkit-linear-gradient(left, #eee, #ccc);
@@ -349,26 +355,24 @@ main .data-source {
 				cursor: pointer;
 				align-items: center;
 				white-space: nowrap;
-				padding: 3px;
-				border-radius: 10px;
-				border: 1px solid transparent;
-				transition: border var(--transition-duration),
-							box-shadow var(--transition-duration);
+				padding: 8px 5px;
+				/* border-radius: 11px; */
+				transition: background var(--transition-duration),         box-shadow var(--transition-duration);
 			}
 			main .data-source > .columns .column.being-dragged > .label {
 				border: 1px blue dashed;
 				opacity: 0.5;
 			}
 			main .data-source .column > .label:hover {
-				border-color: #bbb;
+				background: #eee;
 			}
 			main .data-source .column > .label:active {
 				box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
 			}
 				main .data-source .column > .label .color {
-					border-radius: 9px;
-					width: 18px;
-					height: 18px;
+					border-radius: 10px;
+					width: 20px;
+					height: 20px;
 					margin-left: var(--gap);
 					display: flex;
 					justify-content: center;
@@ -399,7 +403,6 @@ main .data-source {
 				}
 				main .data-source .column > .label .edit-column:hover {
 					text-decoration: none;
-				    border-color: #bbb;
 				}
 				main .data-source .column > .label:hover .edit-column {
 					opacity: 1;
@@ -485,17 +488,15 @@ main .data-source {
 							}
 	main .data-source .visualization {
 		position: relative;
-		margin-top: calc(var(--gap) * 2);
 		flex: 1;
+		background: #f1f1f1;
 	}
 		main .data-source .visualization .NA {
 			padding: 8px 16px;
 		}
 		main .data-source .visualization .container {
 			width: 100%;
-			background: #fff;
 			overflow: auto;
-			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			margin: 0;
 			padding: 0;
 			height: 100%;
@@ -590,11 +591,16 @@ main .data-source {
 			}
 
 
+		.visualization.json {
+			background: #272822 !important;
+		}
 		.visualization.table {
 			overflow: auto;
 			width: initial;
 			max-width: initial;
 			user-select: text;
+			border: solid #ddd;
+			border-width: 1px 0;
 		}
 			.visualization.table table {
 				caption-side: bottom;
@@ -812,7 +818,7 @@ main .data-source {
 	width: 100%;
 	height: 100%;
 	display: flex;
-	padding: 10px;
+	padding: calc(var(--gap) * 2);
 }
 .visualization .container > svg .axis path,
 .visualization .container > svg .axis line {
@@ -830,13 +836,14 @@ main .data-source {
 
 .visualization .container > svg text.axis-label {
 	letter-spacing: 2px;
-	fill: #999;
+	fill: #bbb;
 	font-weight: bold;
 }
 .visualization .container > svg text.axis-label.y {
 	writing-mode: vertical-lr;
 }
 .visualization .container > svg .tick text {
+	fill: #888;
 	font-size: 90%;
 }
 
@@ -920,24 +927,25 @@ main .data-source {
 		font-size: calc(14px + 3vw);
 		flex: 1 1 100%;
 		margin: 0;
-		height: 60%;
+		height: 55%;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		font-weight: normal;
 	}
 	.visualization.livenumber .container .left {
-		border-right: 1px solid #666;
+		border-right: 1px solid #ccc;
 	}
 	.visualization.livenumber .container .left,
 	.visualization.livenumber .container .right {
 		flex: 1 0 50%;
-		height: 40%;
+		height: 45%;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		border-top: 1px solid #666;
+		border-top: 1px solid #ccc;
+		padding: calc(var(--gap) * 2);
 	}
 		.visualization.livenumber .container .red {
 			color: #a00;
@@ -946,8 +954,8 @@ main .data-source {
 			color: #191;
 		}
 		.visualization.livenumber .container h6 {
-			font-size: calc(10px + .8vw);
-			margin: var(--gap) 0;
+			font-size: calc(10px + .75vw);
+			margin: 0 0 var(--gap) 0;
 			font-weight: normal;
 		}
 		.visualization.livenumber .container .left .value,
