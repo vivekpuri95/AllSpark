@@ -231,23 +231,26 @@ exports.userPrvList = class extends API {
                     u.user_id,
                     concat_ws(" ",first_name, middle_name, last_name) AS \`name\`,
                     email,
-                    IF(r.is_admin = 1, 0, ur.role_id) AS owner_id,
+                    IF(r.is_admin = 1, 0, r.role_id) AS owner_id,
                     r.name AS role_name,
-                    IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
+                    IF(c.is_admin = 1, 0, c.category_id) AS category_id,
                     c.name AS category_name
                FROM
-                    tb_user_roles ur
+                    tb_object_roles o
                JOIN
                     tb_users u
-                    USING(user_id)
+                    ON u.user_id = o.owner_id
                JOIN
                     tb_categories c
                     USING(category_id)
                JOIN
                     tb_roles r
-                    USING(role_id)
+                    ON r.role_id = o.target_id
                WHERE
                     u.account_id = ?
+                    AND o.account_id = ?
+                    AND o.owner = "user"
+                    AND o.target = "role"
                     AND u.status = 1
                ) user
                LEFT  JOIN
@@ -279,7 +282,7 @@ exports.userPrvList = class extends API {
                    ) user_query
                USING(user_id)
 		`,
-			[this.account.account_id, this.account.account_id, reportId, reportId]);
+			[this.account.account_id, this.account.account_id, this.account.account_id, reportId, reportId]);
 
 
 

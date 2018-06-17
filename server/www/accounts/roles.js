@@ -1,11 +1,5 @@
 const API = require('../../utils/api');
 
-exports.list = class extends API {
-    async list() {
-
-        return await this.mysql.query('SELECT * FROM tb_user_roles');
-    }
-}
 
 exports.insert = class extends API {
     async insert() {
@@ -43,12 +37,14 @@ exports.insert = class extends API {
 		}
 
         const params = {
-			user_id: this.request.body.user_id,
+			owner_id: this.request.body.user_id,
+	        owner: "user",
 			category_id: this.request.body.category_id,
-			role_id: this.request.body.role_id
+			target_id: this.request.body.role_id,
+	        target: "role"
         };
 
-        return await this.mysql.query('INSERT INTO tb_user_roles SET ?', [params], 'write');
+        return await this.mysql.query('INSERT INTO object_roles SET ?', [params], 'write');
     }
 }
 
@@ -60,17 +56,22 @@ exports.update = class extends API {
 		    SELECT
 			    c.account_id AS cat_acc, r.account_id AS role_acc
 			FROM
-			    tb_user_roles ur
+			    tb_object_roles o
 			JOIN
 			    tb_categories c USING(category_id)
 			JOIN
-			    tb_roles r USING(role_id)
+			    tb_roles r
+			ON 
+				r.role_id = o.target_id
 			WHERE
-			    id = ?
+			    o.id = ?
 			    AND c.account_id = ?
 			    AND r.account_id = ?
+			    AND o.account_id = ?
+			    AND o.target = "role"
+			    AND o.owner = "user"
 	    `,
-			[this.request.body.id, this.account.account_id, this.account.account_id]
+			[this.request.body.id, this.account.account_id, this.account.account_id, this.account.account_id]
 		);
 		const update_check = await this.mysql.query(`
 		    SELECT
@@ -94,11 +95,11 @@ exports.update = class extends API {
 
         const params = {
             category_id: this.request.body.category_id,
-            role_id: this.request.body.role_id
+            target_id: this.request.body.role_id,
         };
 
         return await this.mysql.query(
-            'UPDATE tb_user_roles SET ? WHERE id = ?',
+            'UPDATE object_roles SET ? WHERE id = ?',
             [params, this.request.body.id],
             'write'
         );
@@ -114,14 +115,19 @@ exports.delete = class extends API {
             SELECT
                 u.account_id
             FROM
-                tb_user_roles ur
+                tb_object_roles o
             JOIN
-                tb_users u USING(user_id)
+                tb_users u
+            ON
+            	u.user_id = o.owner_id
             WHERE
                 id = ?
-                AND u.account_id = ? 
+                AND u.account_id = ?
+                AND o.account_id = ?
+                AND o.owner = "user"
+                AND o.target = "role"
             `,
-            [this.request.body.id, this.account.account_id]
+            [this.request.body.id, this.account.account_id, this.account.account_id]
         );
 
         if(!delete_check.length) {
@@ -129,7 +135,7 @@ exports.delete = class extends API {
 		}
 
         return await this.mysql.query(
-            'DELETE FROM tb_user_roles WHERE id = ?',
+            'DELETE FROM tb_object_roles WHERE id = ?',
             [this.request.body.id],
             'write'
         );

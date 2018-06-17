@@ -345,30 +345,33 @@ exports.refresh = class extends API {
 
 				UNION ALL
 
-				SELECT
-					'roles' AS 'owner',
-					u.user_id,
-					IF(r.is_admin = 1, 0, ur.role_id) AS owner_id,
-					r.name AS role_name,
-					IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
-					c.name AS category_name
-				FROM
-					tb_user_roles ur
-				JOIN
-					tb_users u
-					USING(user_id)
-				JOIN
-					tb_categories c
-					USING(category_id)
-				JOIN
-					tb_roles r
-					USING(role_id)
-				WHERE
-					user_id = ?
-					AND u.account_id = ?
-					and u.status = 1
+				SELECT 
+						'roles' AS 'owner',
+						user_id,
+						IF(r.is_admin = 1, 0, role_id) AS owner_id,
+						r.name AS role_name,
+						IF(c.is_admin = 1, 0, category_id) AS category_id,
+						c.name AS category_name
+					FROM
+						tb_object_roles obr
+					JOIN
+						tb_roles r
+						ON r.role_id = obr.target_id
+					JOIN
+						tb_categories c
+						USING(category_id)
+					JOIN
+						tb_users u
+						ON u.user_id = obr.owner_id
+					WHERE 
+						OWNER = "user"
+						AND target = "role"
+						AND u.status = 1
+						AND u.user_id = ?
+						AND u.account_id = ?
+						AND obr.account_id = ?
 			   `,
-			[user.user_id, user.account_id, user.user_id, user.account_id]
+			[user.user_id, user.account_id, user.user_id, user.account_id, user.account_id]
 		);
 
 		const privileges = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {

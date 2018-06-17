@@ -56,20 +56,11 @@ exports.delete = class extends API {
 exports.test = class extends API {
 
 	async test() {
-		//__proto__.constructor.name
-		// let q = "select * from public.tb_add_on_type where id in ({{addons}})";
-		// const values = ["asd",4, 1, 2 ,5];
-		// const Postgres = require("./reports/engine").Postgres;
-		//
-		// const pg = new Postgres({query: q, connection_name: 3}, [{placeholder: "addons", value: values}]);
-		//
-		// const engine = new (require("./reports/engine").ReportEngine)(pg.finalQuery);
-		//
-		// return engine.execute()
+		const or = require('./object_roles').get;
 
-		// const a  = await this.mssql.query(this.request.body.sql, [[1, 2, 4, 5]], 4);
-		// console.log(a, "@@@@");
-		// return a
+		const g = new or();
+
+		return await g.get(0, "user", "role", 0, 0);
 
 	}
 };

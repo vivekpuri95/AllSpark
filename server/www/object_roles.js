@@ -27,7 +27,10 @@ exports.update = class extends API {
 
 		const expectedFields = ["owner", "owner_id", "target", "target_id"];
 
-		const filteredRequest = expectedFields.reduce((obj, key) => (this.request.body[key]? {...obj, [key]: this.request.body[key]} : obj), {});
+		const filteredRequest = expectedFields.reduce((obj, key) => (this.request.body[key] ? {
+			...obj,
+			[key]: this.request.body[key]
+		} : obj), {});
 
 		this.assert(Object.keys(filteredRequest).length, "required data owner, ownerId, target, targetId, some are missing");
 
@@ -62,5 +65,36 @@ exports.list = class extends API {
 			"select * from tb_object_roles where account_id = ?",
 			[this.account.account_id]
 		)
+	}
+};
+
+exports.get = class extends API {
+
+	async get(accountId, owner, target, ownerId = 0, targetId = 0,) {
+
+		if (Object.keys(this.request || []).length) {
+
+			return "not authorized";
+		}
+
+		if (accountId !== 0 && !accountId) {
+
+			return "account Id not found";
+		}
+
+		return await this.mysql.query(`
+			SELECT
+				*
+			FROM
+				tb_object_roles
+			where
+				owner = ?
+				and (owner_id = ? or ? = 0)
+				and target = ?
+				and (target_id = ? or ? = 0)
+				and (account_id = ? or ? = 0) 
+			`,
+			[owner, ownerId, ownerId, target, targetId, targetId, accountId, accountId]
+		);
 	}
 };
