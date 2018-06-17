@@ -618,6 +618,19 @@ class OAuthConnection {
 
 			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
 		}
+
+		else if(provider.name == 'Facebook Marketing') {
+
+			const parameters = new URLSearchParams();
+
+			parameters.set('client_id', provider.client_id);
+			parameters.set('redirect_uri', `https://${account.url}/connections`);
+			parameters.set('scope', 'ads_read');
+			parameters.set('response_type', 'code');
+			parameters.set('state', this.id);
+
+			window.open(`https://www.facebook.com/v3.0/dialog/oauth?` + parameters);
+		}
 	}
 
 	async delete() {

@@ -12,7 +12,7 @@ const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
 const msssql = require("./mssql").MsSql;
 
-const gitChecksum = 1 || require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
+const gitChecksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
 class API {
 
