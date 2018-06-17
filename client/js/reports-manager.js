@@ -751,32 +751,26 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.editor.editor.resize();
 		});
 
+		this.editReportData = new EditReportData();
+
+		this.editReportData.container.classList.add('hidden');
+		this.container.querySelector('#define-report-parts').appendChild(this.editReportData.container);
+
 		const editDataToggle = this.container.querySelector('#edit-data-toggle');
 
 		editDataToggle.on('click', async () => {
 
-			const container = this.container.querySelector('#edit-data');
-
 			editDataToggle.classList.toggle('selected');
-			container.classList.toggle('hidden');
+			this.editReportData.container.classList.toggle('hidden', !editDataToggle.classList.contains('selected'));
 			this.form.classList.toggle('hidden');
 
-			if(container.classList.contains('hidden'))
-				return;
-
-			const editor = new EditSourceData(this.report.query_id);
-
-			await editor.load();
-
-			container.innerHTML = null;
-			container.appendChild(editor.container);
+			if(!this.editReportData.container.classList.contains('hidden'))
+				await this.editReportData.load(this.report.query_id);
 		});
 
 		this.uploadFile = new UploadFile(this);
 
-		this.uploadFile.on('upload', () => {
-			this.container.querySelector('#edit-data-toggle').click();
-		});
+		this.uploadFile.on('upload', () => this.container.querySelector('#edit-data-toggle').click());
 
 		this.form.appendChild(this.uploadFile.container);
 
@@ -787,9 +781,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.container.querySelector('#filter-list').classList.remove('hidden');
 		});
 
-		this.container.querySelector('#run').on('click', () => {
-			return this.preview();
-		});
+		this.container.querySelector('#run').on('click', () => this.preview());
 
 		this.editor = new Editor(this.form.querySelector('#editor'));
 
@@ -3056,7 +3048,7 @@ class UploadFile {
 				}
 			}
 
-			return splitString;
+			return splitString.map(v => v.trim());
 		}
 
 		return JSON.stringify(result);
@@ -3084,13 +3076,22 @@ class UploadFile {
 	}
 }
 
-class EditSourceData {
+/**
+ * Let the user edit a report's saved data.
+ *
+ * Editing includes:
+ *  - Edit row's data.
+ *  - Add new rows.
+ *  - Delete rows.
+ *  - Sorting data by columns.
+ */
+class EditReportData {
 
-	constructor(queryId) {
-
-		this.queryId = queryId;
-	}
-
+	/**
+	 * Return the editor's container.
+	 *
+	 * @return HTMLElement
+	 */
 	get container() {
 
 		if(this.tableContainer)
@@ -3098,41 +3099,58 @@ class EditSourceData {
 
 		const container = this.tableContainer = document.createElement('section');
 
-		container.classList.add('edit-data-source');
+		container.classList.add('edit-report-data');
 
 		container.innerHTML = `
 			<header class="toolbar">
 				<button type="submit"><i class="fas fa-paper-plane"></i> Update Data</button>
 			</header>
-			<table>
-				<thead></thead>
-				<tbody contentEditable name="data"></tbody>
-			</table>
+			<table></table>
 		`;
 
-		this.container.querySelector('.toolbar button').on('click', e => this.save(e));
-
-		this.render();
+		this.container.querySelector('.toolbar button').on('click', e => {
+			e.preventDefault();
+			this.save();
+		});
 
 		return container;
 	}
 
-	async load() {
+	/**
+	 * Load a given query's data into the editor.
+	 *
+	 * @param int	query_id	The report id whose data is to be loaded.
+	 */
+	async load(query_id) {
+
+		this.container.querySelector('table').innerHTML = `<tr class="NA"><td>Loading&hellip;<td></tr>`;
 
 		await DataSource.load();
 
-		this.datasource = new DataSource(DataSource.list.get(this.queryId));
+		if(!DataSource.list.has(query_id))
+			throw API.exception('Invalid report ID');
+
+		this.datasource = new DataSource(DataSource.list.get(query_id));
 
 		await this.datasource.fetch();
 		this.data = this.datasource.response;
 
 		this.rows = [];
 
-		for (const item of this.data)
+		for(const item of this.data)
 			this.rows.push([...item.values()]);
+
+		this.render();
 	}
 
-	getSortedRows(index, element) {
+	/**
+	 * Sorts the data by the given column.
+	 * This will update this.rows in-place and rende the UI.
+	 *
+	 * @param int			index	The position of the column
+	 * @param HTMLElement	element	The th element that is to be sorted.
+	 */
+	sort(index, element) {
 
 		if (this.rows.length === 1) {
 
@@ -3143,7 +3161,7 @@ class EditSourceData {
 
 		const asc = order === 'asc', desc = order === 'desc';
 
-		element.dataset.sorted = asc ? "desc" : "asc";
+		element.dataset.sorted = asc ? 'desc' : 'asc';
 
 		const sortFlag = asc ? -1 : 1;
 
@@ -3155,6 +3173,12 @@ class EditSourceData {
 		this.rows = this.rows.sort((x, y) => {
 
 			let A = x[index], B = y[index];
+
+			if(parseInt(A))
+				A = parseInt(A);
+
+			if(parseInt(B))
+				B = parseInt(B);
 
 			if (A < B) {
 
@@ -3168,83 +3192,120 @@ class EditSourceData {
 
 			return 0;
 		});
+
+		this.render();
 	}
 
-	async render() {
-
-		if (!this.data || !this.data.length) {
-
-			this.container.innerHTML = '<p class="NA">No data found :(</p>';
-
-			return this.container;
-		}
+	/**
+	 * Clears the container and renders the current data into it.
+	 */
+	render() {
 
 		this.columns = [...this.data[0].keys()];
 
-		const tableElement = this.container.querySelector('table');
+		const
+			table = this.container.querySelector('table'),
+			thead = document.createElement('thead'),
+			tbody = document.createElement('tbody'),
+			tfoot = document.createElement('tfoot'),
+			headings = document.createElement('tr');
 
-		const thead = this.container.querySelector('thead');
+		table.textContent = null;
 
-		let tHeadHtml = '';
+		if(!this.data || !this.data.length)
+			return table.innerHTML = '<tr class="NA"><td>No data found :(</td></tr>';
 
-		const tbody = this.container.querySelector('tbody');
-		tbody.textContent = null;
+		tbody.setAttribute('contenteditable', '');
 
-		if (!thead.innerHTML) {
+		thead.appendChild(headings);
 
-			for (const columnName of this.columns) {
+		for(const [index, column] of this.columns.entries()) {
 
-				tHeadHtml += '<th class="heading"><span class="name">' + columnName + '</span></th>';
-			}
+			const th = document.createElement('th');
 
-			thead.innerHTML = '<tr>' + tHeadHtml + '</tr>';
+			th.textContent = column;
+			th.dataset.sorted = 'desc';
 
-			for (const [index, element] of thead.querySelectorAll('.name').entries()) {
+			th.on('click', () =>this.sort(index, th));
 
-				element.dataset.sorted = 'desc';
-
-				element.parentNode.on('click', async () => {
-
-					this.getSortedRows(index, element);
-					await this.render();
-				});
-			}
+			headings.appendChild(th);
 		}
 
-		for (const row of this.rows) {
+		headings.insertAdjacentHTML('beforeend', `
+			<th class="action">Add</th>
+			<th class="action">Delete</th>
+		`);
 
-			let tableRow = document.createElement('tr');
+		for(const row of this.rows)
+			this.addNewRow(row, tbody);
 
-			for (const cell of row) {
+		tfoot.innerHTML = `
+			<tr><td colspan="${this.columns.length + 2}">+ Add New Row</td></tr>
+		`;
 
-				const td = document.createElement('td');
-				td.textContent = cell;
-				tableRow.appendChild(td);
-			}
+		tfoot.on('click', () => {
+			this.addNewRow(new Array(this.columns.length).fill(''), this.container.querySelector('tbody'));
+		});
 
-			tbody.appendChild(tableRow);
-		}
-
-		tableElement.appendChild(thead);
-		tableElement.appendChild(tbody);
+		table.appendChild(thead);
+		table.appendChild(tbody);
+		table.appendChild(tfoot);
 	}
 
-	async save(e) {
+	/**
+	 * Adds a new row into the container.
+	 * The row can be added next to a current row or at the end.
+	 * We need the tbody reference here because the tbody may not necesserily exit in the container yet.
+	 *
+	 * @param Array			row		The array of row's data that is to be added.
+	 * @param HTMLElement	tbody	The tbody reference.
+	 * @param HTMLElement	before	The row before which the new row is to be added.
+	 */
+	addNewRow(row, tbody, before = null) {
 
-		if(e)
-			e.preventDefault();
+		const tr = document.createElement('tr');
 
-		if (!this.data || !this.data.length)
-			return;
+		for(const cell of row) {
 
-		const t = this.container.querySelector('table');
+			const td = document.createElement('td');
+			td.textContent = cell;
+			tr.appendChild(td);
+		}
+
+		tr.insertAdjacentHTML('beforeend', `
+			<td class="action green" contenteditable="false" title="Add One Above">+</td>
+			<td class="action red" contenteditable="false" title="Delete Row">&times;</td>
+		`);
+
+		tr.querySelector('td.green').on('click', () => {
+			this.addNewRow(new Array(this.columns.length).fill(''), tbody, tr);
+		});
+
+		tr.querySelector('td.red').on('click', () => {
+
+			if(confirm('Are you sure?!'))
+				tr.remove();
+		});
+
+		if(before)
+			tbody.insertBefore(tr, before);
+
+		else tbody.appendChild(tr);
+	}
+
+	/**
+	 * Saves the current container's contents to the server.
+	 */
+	async save() {
+
+		const table = this.container.querySelector('table');
 		const result = [];
 
-		for (const element of [...t.rows].slice(1)) {
+		for (const row of table.querySelectorAll('tbody tr')) {
 
 			const temp = {};
 
-			for (const [index, data] of [...element.cells].entries()) {
+			for (const [index, data] of row.querySelectorAll('td:not(.action)').entries()) {
 
 				temp[this.columns[index]] = data.textContent;
 			}
@@ -3261,6 +3322,6 @@ class EditSourceData {
 				method: 'POST',
 			};
 
-		return await API.call('reports/engine/report', parameter, options);
+		await API.call('reports/engine/report', parameter, options);
 	}
 }

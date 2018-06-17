@@ -873,8 +873,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</div>
 						</form>
 
-						<div id="edit-data" class="hidden"></div>
-
 						<div id="filters" class="hidden">
 
 							<div id="filter-list">

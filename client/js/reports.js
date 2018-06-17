@@ -931,7 +931,7 @@ class DataSourceRow extends Map {
 			else if(column.type == 'number')
 				row[key] = Format.number(row[key]);
 
-			this.set(key, row[key] || 0);
+			this.set(key, row[key]);
 		}
 
 		// Sort the row by position of their columns in the source's columns map
