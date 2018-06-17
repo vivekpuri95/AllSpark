@@ -192,6 +192,7 @@ main .data-source {
 			width: 10px;
 		}
 	main .data-source > .description {
+	border-top: 1px solid #ccc;
 	}
 		main .data-source > .description .body {
 			white-space: pre-wrap;
@@ -237,6 +238,7 @@ main .data-source {
 		font-family: monospace;
 		max-height: 150px;
 		overflow: auto;
+		border-top: 1px solid #ccc;
 	}
     main .data-source > .export-json {
           background: #fff;
