@@ -23,8 +23,6 @@ Page.class = class Login extends Page {
 
 		document.querySelector('body > header').classList.add('hidden');
 
-		this.container.querySelector('#accept-email form').email.value = new URLSearchParams(location.search).get('email')
-
 		const logo = this.container.querySelector('.logo img');
 
 		logo.on('load', () => logo.parentElement.classList.remove('hidden'));
@@ -54,7 +52,6 @@ Page.class = class Login extends Page {
 		Sections.show('loading');
 
 		const
-			GETParameters = new URLSearchParams(window.location.search),
 			parameters = {},
 			options = {
 				method: 'POST',
@@ -72,6 +69,13 @@ Page.class = class Login extends Page {
 		this.container.querySelector('#signup').classList.remove('hidden');
 
 		await Sections.show('accept-email');
+
+		const parameters = new URLSearchParams(location.search);
+
+		if(parameters.has('email')) {
+			this.container.querySelector('#accept-email form').email.value = parameters.get('email');
+			this.container.querySelector('#accept-email .submit').click();
+		}
 
 		this.container.querySelector('#accept-email input').focus();
 	}
@@ -162,6 +166,13 @@ Page.class = class Login extends Page {
 			e.preventDefault();
 			this.login(account);
 		});
+
+		const parameters = new URLSearchParams(location.search);
+
+		if(parameters.has('password')) {
+			this.container.querySelector('#accept-password form').password.value = parameters.get('password');
+			this.container.querySelector('#accept-password .submit').click();
+		}
 	}
 
 	/**
@@ -213,7 +224,6 @@ Page.class = class Login extends Page {
 
 			const response = await API.call('authentication/login', parameters, options);
 
-
 			if(!response.jwt && response.length)
 				return this.message('Ambigious email! :(', 'warning');
 
@@ -228,7 +238,6 @@ Page.class = class Login extends Page {
 			await API.refreshToken();
 
 			this.message('Login Successful! Redirecting&hellip;', 'notice');
-
 
 			window.location = '../';
 
