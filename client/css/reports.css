@@ -323,7 +323,6 @@ main .data-source {
 			display: flex;
 			position: relative;
 			margin-right: var(--gap);
-			align-items: center;
 			transition: opacity var(--transition-duration);
 		}
 		main .data-source > .columns .column.disabled > span,
