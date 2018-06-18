@@ -256,7 +256,7 @@ class DataSource {
 		if(user.privileges.has('reports')) {
 			container.querySelector('.toolbar .expand-toggle').classList.remove('hidden');
 			container.querySelector('.toolbar .query-toggle').classList.remove('hidden');
-			container.querySelector('.toolbar .description-toggle .footer').classList.remove('hidden');
+			container.querySelector('.toolbar .description .footer').classList.remove('hidden');
 		}
 
 		container.querySelector('.description .visible-to').on('click', () => {
