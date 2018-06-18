@@ -788,8 +788,8 @@ class SettingsAccount {
 		const settingsContainer = new SettingsManager('account', this.account_id, settings_json)
 		await settingsContainer.load();
 
-		if(this.form.parentElement.querySelector('.settings-container'))
-			this.form.parentElement.querySelector('.settings-container').remove();
+		if(this.form.parentElement.querySelector('.settings-manager'))
+			this.form.parentElement.querySelector('.settings-manager').remove();
 
 		this.form.parentElement.appendChild(settingsContainer.form);
 
