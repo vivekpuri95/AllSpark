@@ -1352,14 +1352,24 @@ class DashboardDatasets extends Map {
 
 	clear() {
 
-		for (const dataset of this.values())
+		for (const dataset of this.values()) {
+
+			if(dataset instanceof OtherDataset)
+				continue;
+
 			dataset.clear();
+		}
 	}
 
 	all() {
 
-		for (const dataset of this.values())
+		for (const dataset of this.values()) {
+
+			if(dataset instanceof OtherDataset)
+				continue;
+
 			dataset.all();
+		}
 	}
 }
 
