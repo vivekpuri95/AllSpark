@@ -398,7 +398,7 @@ class DataSource {
 				container.appendChild(this.visualizations.selected.container);
 		}
 
-		this.xlsxDownloadable = ["line", "bar",].includes(this.visualizations.selected.type);
+		this.xlsxDownloadable = [...MetaData.visualizations.values()].filter(x => x.excel_format).map(x => x.slug).includes(this.visualizations.selected.type);
 
 		const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
 
