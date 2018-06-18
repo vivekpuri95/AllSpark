@@ -76,7 +76,10 @@ main .data-source {
 	flex-direction: column;
 	height: 100%;
 	background: #fff;
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+main .data-source:hover {
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
 }
 	main .data-source > .warning {
 		margin: calc(var(--gap) * 2) 0 0;

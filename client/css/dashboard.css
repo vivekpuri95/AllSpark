@@ -278,9 +278,6 @@ main #reports > .list {
 					opacity var(--transition-duration),
 					border var(--transition-duration);
 	}
-	main #reports .list .data-source:hover {
-		box-shadow: 0 0 35px rgba(0, 0, 0, 0.2);
-	}
 	main #reports .list .data-source header .edit {
 		display: grid;
 		grid-auto-flow: column;
