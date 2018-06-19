@@ -16,11 +16,16 @@ const gitChecksum = require('child_process').execSync('git rev-parse --short HEA
 
 class API {
 
-	constructor() {
+	constructor(context = null) {
 
 		this.mysql = mysql;
 		this.pgsql = pgsql;
 		this.mssql = msssql;
+
+		if(context) {
+			this.user = context.user;
+			this.account = context.account;
+		}
 	}
 
 	static setup() {

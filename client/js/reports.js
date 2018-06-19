@@ -231,7 +231,6 @@ class DataSource {
 			</div>
 		`;
 
-
 		if(user.privileges.has('reports'))
 			container.querySelector('header h2').insertAdjacentHTML('beforeend', ` <span class="id">#${this.query_id}</span>`);
 
@@ -701,7 +700,7 @@ class DataSource {
 			if(old)
 				old.remove();
 
-			actions.insertAdjacentHTML('afterbegin', `
+			actions.insertAdjacentHTML('beforeend', `
 				<span class="grey drilldown" title="Drilldown available on: ${drilldown.join(', ')}">
 					<i class="fas fa-angle-double-down"></i>
 				</span>
@@ -931,7 +930,7 @@ class DataSourceRow extends Map {
 			else if(column.type == 'number')
 				row[key] = Format.number(row[key]);
 
-			this.set(key, row[key] || 0);
+			this.set(key, row[key]);
 		}
 
 		// Sort the row by position of their columns in the source's columns map
@@ -1113,7 +1112,7 @@ class DataSourceColumn {
 
 		container.innerHTML = `
 			<span class="label">
-				<span class="color" style="background: ${this.color}">&#x2714;</span>
+				<span class="color" style="background: ${this.color}"></span>
 				<span class="name">${this.name}</span>
 			</span>
 
@@ -1611,7 +1610,6 @@ class DataSourceColumn {
 		this.container.classList.toggle('hidden', this.hidden ? true : false);
 
 		this.container.querySelector('.label .name').textContent = this.name;
-		this.container.querySelector('.label .color').innerHTML = this.disabled ? '' : '&#x2714;';
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
@@ -2564,6 +2562,9 @@ class LinearVisualization extends Visualization {
 			for(const [key, value] of row) {
 
 				if(key == this.axes.bottom.column)
+					continue;
+
+				if((!this.axes.left || !this.axes.left.columns.some(c => c.key == key)) && (!this.axes.right || !this.axes.right.columns.some(c => c.key == key)))
 					continue;
 
 				const column = this.source.columns.get(key);
@@ -5051,9 +5052,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.data([poly2, poly1])
 				.enter().append("polygon")
 				.attr('points', d =>  d.map(d => [d.x, d.y].join()).join(' '))
-				.attr('stroke', 'white')
-				.attr('stroke-width', 2)
-				.attr('fill', 'white');
+				.attr('fill', '#f1f1f1');
 
 			//selecting all the paths
 			var path = svg.selectAll('rect'),
@@ -5842,7 +5841,7 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 		const container = this.containerElement;
 
-		container.classList.add('visualization', 'line');
+		container.classList.add('visualization', 'json');
 		container.innerHTML = `
 			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>

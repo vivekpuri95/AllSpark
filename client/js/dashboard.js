@@ -726,8 +726,6 @@ class Dashboard {
 
 			if ((parseInt(this.visualizationsPositionObject[visualization].position) < heightScrolled + offset) && !this.visualizationsPositionObject[visualization].loaded) {
 
-				//scroll karte hue report paar gaye(offset mila kar)
-
 				this.page.loadedVisualizations.add(this.visualizationsPositionObject[visualization].report);
 				this.visualizationsPositionObject[visualization].report.selectedVisualization.load(resize);
 				this.visualizationsPositionObject[visualization].loaded = true;
@@ -924,7 +922,10 @@ class Dashboard {
 
 			report.selectedVisualization = selectedVisualizationProperties
 
-			// Object.assign(report, visualizationProperties);
+			if(!report.format)
+				report.format = {};
+
+			report.format.format = selectedVisualizationProperties.format;
 
 			const
 				header = report.container.querySelector('header'),
@@ -1161,8 +1162,6 @@ class Dashboard {
 	async save(format, id) {
 
 		Dashboard.editing = false;
-
-		console.log(format, id);
 
 		const
 			parameters = {

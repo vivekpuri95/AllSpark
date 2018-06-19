@@ -328,8 +328,8 @@ class report extends API {
 			case "bigquery":
 				preparedRequest = new Bigquery(this.reportObj, this.filters, this.request.body.token);
 				break;
-			case "csv":
-				this.assert(false, 'No data found in the CSV. Please upload some data first.');
+			case "file":
+				this.assert(false, 'No data found in the file. Please upload some data first.');
 				break;
 			default:
 				this.assert(false, "Report Type " + this.reportObj.type.toLowerCase() + " does not exist", 404);

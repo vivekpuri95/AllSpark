@@ -391,6 +391,7 @@ body {
 				padding: 8px;
 				position: relative;
 			}
+				main table .thin,
 				main table .action {
 					width: 80px;
 					text-align: center;

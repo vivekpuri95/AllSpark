@@ -871,14 +871,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									</select>
 								</label>
 							</div>
-
-							<div id="csv" class="hidden">
-								<input type="file" id="csv-input" accept=".xlsx, .xls, .csv" class="hidden">
-								<span>Upload CSV</span>
-							</div>
 						</form>
-
-						<div id="edit-data" class="hidden"></div>
 
 						<div id="filters" class="hidden">
 
@@ -1205,16 +1198,16 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 		return `
 			<section class="section" id="list">
 
-				<h1>Connection Manager</h1>
+				<h1>Data Connections</h1>
 
-				<form class="toolbar filters">
-					<button type="button" id="add-connection">
+				<div class="toolbar filters">
+					<button type="button" id="add-data-connection">
 						<i class="fa fa-plus"></i>
 						Add New Connection
 					</button>
-				</form>
+				</div>
 
-				<div class="block overflow">
+				<div class="block data-connections">
 					<table>
 						<thead>
 							<tr>
@@ -1229,6 +1222,33 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 					</table>
 				</div>
 
+				<h1>OAuth Connections</h1>
+
+				<div class="oauth-connections">
+
+					<div class="test-result hidden"></div>
+
+					<table class="block">
+						<thead>
+							<tr>
+								<th class="thin">ID</th>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="action">Authenticate</th>
+								<th class="action">Delete</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+
+					<form id="add-oauth-connection" class="form">
+						<select name="provider"></select>
+						<button type="submit">
+							<i class="fas fa-plus"></i> Add New Connection
+						</button>
+					</form>
+				</div>
+
 			</section>
 
 			<section class="section" id="form">
@@ -1238,9 +1258,11 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 				<header class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
 					<button type="submit" form="connections-form"><i class="fa fa-save"></i> Save</button>
-					<button type="button" id="test-connection"><i class="fas fa-cogs"></i>Test</button>
+					<button type="button" id="test-connection"><i class="fas fa-flask"></i>Test</button>
 				</header>
+
 				<div class="test-result hidden"></div>
+
 				<form class="block form" id="connections-form">
 
 					<label>
@@ -1452,42 +1474,47 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					</table>
 				</section>
 
-	            <section class="section" id="accounts-form">
-	                <h1></h1>
-	                <header class="toolbar">
-	                    <button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
-	                    <button type="submit" form="account-form"><i class="fa fa-save"></i> Save</button>
-	                </header>
-	                <form class="block form" id="account-form">
-	                    <label>
-	                        <span>Name</span>
-	                        <input type="text" name="name">
-	                    </label>
-	                    <label>
-	                        <span>URL</span>
-	                        <input type="text" name="url">
-	                    </label>
-	                    <label>
-	                        <span>Icon</span>
-	                        <input type="text" name="icon">
-	                        <img src="" alt="icon" id="icon" height="30">
-	                    </label>
-	                    <label>
-	                        <span>Logo</span>
-	                        <input type="text" name="logo">
-	                        <img src="" alt="logo" id="logo" height="30">
-	                    </label>
+				<section class="section" id="accounts-form">
+					<h1></h1>
+					<header class="toolbar">
+						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+						<button type="submit" form="account-form"><i class="fa fa-save"></i> Save</button>
+					</header>
+					<form class="block form" id="account-form">
+
 						<label>
-	                        <span>Authentication API</span>
-	                        <input type="text" name="auth_api">
-	                    </label>
+							<span>Name</span>
+							<input type="text" name="name">
+						</label>
+
+						<label>
+							<span>URL</span>
+							<input type="text" name="url">
+						</label>
+
+						<label>
+							<span>Icon</span>
+							<input type="text" name="icon">
+							<img src="" alt="icon" id="icon" height="30">
+						</label>
+
+						<label>
+							<span>Logo</span>
+							<input type="text" name="logo">
+							<img src="" alt="logo" id="logo" height="30">
+						</label>
+
+						<label>
+							<span>Authentication API</span>
+							<input type="text" name="auth_api">
+						</label>
+
 						<label id="format">
 							<span>Settings</span>
 							<textarea id="settings-format" name="settings"></textarea>
 						</label>
-
-	                </form>
-	            </section>
+					</form>
+				</section>
 			</div>
 
 			<div class="setting-page category-page hidden">
@@ -1516,35 +1543,35 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="category-edit">
 					<h1></h1>
 
-	                <header class="toolbar">
-	                    <button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-	                    <button type="submit" form="category-form"><i class="fa fa-save"></i> Save</button>
-	                </header>
+					<header class="toolbar">
+						<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
+						<button type="submit" form="category-form"><i class="fa fa-save"></i> Save</button>
+					</header>
 
-	                <form class="block form" id="category-form">
-	                    <label>
-	                        <span>Name</span>
-	                        <input type="text" name="name">
-	                    </label>
-	                    <label>
-	                        <span>Slug</span>
-	                        <input type="text" name="slug">
-	                    </label>
-	                    <label>
-	                        <span>Parent</span>
-	                        <input type="text" name="parent">
-	                    </label>
-	                    <label>
-	                        <span>Admin</span>
-	                        <select name="is_admin">
-	                            <option value="1">Yes</option>
-	                            <option value="0">No</option>
-	                        </select>
-	                    </label>
-	                </form>
-	            </section>
-	        </div>
-	    `;
+					<form class="block form" id="category-form">
+						<label>
+							<span>Name</span>
+							<input type="text" name="name">
+						</label>
+						<label>
+							<span>Slug</span>
+							<input type="text" name="slug">
+						</label>
+						<label>
+							<span>Parent</span>
+							<input type="text" name="parent">
+						</label>
+						<label>
+							<span>Admin</span>
+							<select name="is_admin">
+								<option value="1">Yes</option>
+								<option value="0">No</option>
+							</select>
+						</label>
+					</form>
+				</section>
+			</div>
+		`;
 	}
 }));
 
