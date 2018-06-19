@@ -372,15 +372,12 @@ Page.class = class Dashboards extends Page {
 
 		nav.insertAdjacentHTML('beforeend', `
 			<footer>
-				<span class="powered-by hidden"> Powered By <a target="_blank" href="https://github.com/Jungle-Works/AllSpark">AllSpark</a></span>
 				<div class="collapse-panel">
 					<span class="left"><i class="fa fa-angle-double-left"></i></span>
 					<span class="right hidden"><i class="fa fa-angle-double-right"></i></span>
 				</div<
 			</footer>
 		`);
-
-		nav.querySelector('.powered-by').classList.toggle('hidden', account.settings.get('disable_powered_by'))
 
 		nav.querySelector('.collapse-panel').on('click', (e) => {
 
@@ -794,6 +791,8 @@ class Dashboard {
 
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 		}
+
+		this.page.container.querySelector('.dashboard-name').innerHTML = this.name;
 
 		await Sections.show('reports');
 
@@ -1251,7 +1250,17 @@ class DashboardDatasets extends Map {
 		if (!this.size)
 			return;
 
-		container.innerHTML = '<h3><i class="fas fa-filter"></i> Global Filters</h3>';
+		container.innerHTML = `
+			<div class="global-filter-head heading">
+				<i class="fas fa-filter"></i>
+				<input type="text" placeholder="Global Filters" class="global-filter-search">
+				<i class="fa fa-search"></i>
+			</div>
+			<div class="global-filter-head">
+				<input type="checkbox" checked>&nbsp;Select All 
+				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
+			</div>
+		`;
 
 		const datasets = Array.from(this.values()).sort((a, b) => {
 			if (!a.order)
@@ -1280,42 +1289,37 @@ class DashboardDatasets extends Map {
 			container.appendChild(label);
 		}
 
+		const searchInput = container.querySelector('.global-filter-search');
+
+		searchInput.on('keyup', () => {
+
+			for(const dataset of this.values()) {
+
+				dataset.container.parentElement.classList.remove('hidden');
+
+				if(!dataset.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim())) {
+
+					dataset.container.parentElement.classList.add('hidden');
+				}
+
+			}
+
+		});
+
 		container.insertAdjacentHTML('beforeend', `
 			<div class="actions">
-				<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
-				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
-				<button class="reset-toggle clear icon" title="Clear All Filters"><i class="far fa-check-square"></i></button>
+				<button class="apply" title="Apply Filters">Apply</button>
 			</div>
 		`);
 
 		container.querySelector('button.apply').on('click', () => this.apply());
 		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
 
-		const resetToggle = container.querySelector('button.reset-toggle');
+		const input = container.querySelector('.global-filter-head input[type=checkbox]');
 
-		resetToggle.on('click', () => {
+		input.on('change', () => {
 
-			if (resetToggle.classList.contains('check')) {
-
-				this.all();
-
-				resetToggle.classList.remove('check');
-				resetToggle.classList.add('clear');
-
-				resetToggle.title = 'Clear All Filters';
-				resetToggle.innerHTML = `<i class="far fa-check-square"></i>`;
-			}
-
-			else {
-
-				this.clear();
-
-				resetToggle.classList.add('check');
-				resetToggle.classList.remove('clear');
-
-				resetToggle.title = 'Check All Filters';
-				resetToggle.innerHTML = `<i class="far fa-square"></i>`;
-			}
+			input.checked ? this.all() : this.clear();
 		});
 	}
 

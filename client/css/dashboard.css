@@ -1,5 +1,6 @@
 main {
 	display: grid !important;
+	grid-template-rows: 1fr max-content;
 	grid-template-columns: 220px calc(100% - 220px);
 }
 main.collapsed-grid {
@@ -141,9 +142,10 @@ main > nav::-webkit-scrollbar-track {
 	 	main > nav footer .collapse-panel {
 			display: flex;
 			padding: 12px 0;
-			justify-content: center;
-			align-items: center;
+			justify-content: flex-end;
 			width: 50px;
+			margin-left: auto;
+			margin-right: 10px;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
@@ -200,27 +202,49 @@ main #reports > .datasets.show {
 	opacity: 1;
 }
 
-	main #reports > .datasets h3 {
-		margin: 0 0 10px;
-		border-bottom: 1px dashed #999;
-		font-size: 95%;
-		padding: calc(var(--gap)* 2) 0;
-		background: #fff;
+main #reports > .datasets .dataset-container {
+	grid-column: 1;
+	width: 100%;
+	max-width: 100%;
+	margin-top: calc(var(--gap) * 2);
+}
+	main #reports > .datasets .global-filter-head {
+		padding: 10px 0px;
+		border-bottom: 1px solid #ccc;
 		width: 100%;
-		position: sticky;
+		font-weight: bold;
+		display: flex;
+		align-items: center;
 		letter-spacing: 0.5px;
-		top: 0;
-		z-index: 1;
 	}
-		main #reports > .datasets h3 svg {
-			color: #999;
+		main #reports > .datasets .global-filter-head.heading {
+			position: sticky;
+			top: 0;
+			background: #fff;
+			z-index: 1;
 		}
-	main #reports > .datasets .dataset-container {
-		grid-column: 1;
-		width: 100%;
-		max-width: 100%;
-		margin-bottom: calc(var(--gap) * 2);
-	}
+			main #reports > .datasets .global-filter-head input[type=text] {
+				border: 0;
+				font-size: medium;
+				outline: 0;
+				width: 100%;
+			}
+		main #reports > .datasets .global-filter-head.heading svg {
+			color: #999;
+}
+			main #reports > .datasets .global-filter-head .reload {
+				margin-left: auto;
+				width: 30px;
+				display: flex;
+				justify-content: center;
+			}
+			main #reports > .datasets .global-filter-head input[type=checkbox]:checked {
+				color: var(--color-accent);
+				border: 3px solid blue;
+			}
+			main #reports > .datasets .global-filter-head .reload svg {
+				margin: 0;
+			}
 	main #reports > .datasets .dataset-container:last-of-type {
 		margin-bottom: 0;
 	}
@@ -240,8 +264,16 @@ main #reports > .datasets.show {
 		width: 100%;
 		padding: calc(var(--gap) * 2) 0;
 	}
-		main #reports > .datasets .actions .icon svg {
-			margin: 0;
+		main #reports > .datasets .actions .apply {
+			background: var(--color-accent);
+			color: #fff;
+			font-weight: bold;
+			letter-spacing: 0.5px;
+		}
+		main #reports > .datasets .actions .apply:hover {
+			background: #fff;
+			color: var(--color-accent);
+			cursor: pointer;
 		}
 
 main #reports > .list {
@@ -383,6 +415,61 @@ main #reports #blanket{
 	z-index: 5;
 }
 
+main footer.site-footer {
+	grid-column: 2 / -1;
+	z-index: 5;
+	background: var(--color-primary);
+	height: 25px;
+	display: flex;
+	color: #ccc;
+	align-items: center;
+	padding: calc(var(--gap) * 2);
+	justify-content: center;
+	font-size: 80%;
+	letter-spacing: 0.5px;
+	width: 100%;
+	margin-top: auto;
+	position: relative;
+}
+	main footer.site-footer a {
+		color: #fff;
+	}
+	main footer .debug-info {
+		position: absolute;
+		right: 0;
+		background: transparent;
+		transition: width var(--transition-duration);
+		width: 15px;
+		white-space: nowrap;
+		overflow: hidden;
+		cursor: pointer;
+	}
+	main footer .debug-info:hover {
+		width: initial;
+	}
+	main footer .debug-info:hover .debug-text {
+		display: initial;
+	}
+		main footer .debug-info svg {
+			color: #bbb;
+			cursor: pointer;
+			padding: 1px;
+			margin-left: auto;
+			margin-right: 5px;
+		}
+
+	main footer .debug-text {
+		font-weight: normal;
+		z-index: 5;
+		font-size: 90%;
+		margin-right: 5px;
+		display: none;
+	}
+		main footer .debug-text .strong {
+			color: var(--color-primary-text);
+			font-weight:normal;
+		}
+
 .daterangepicker .range_inputs {
 	display: flex;
 }
@@ -402,3 +489,8 @@ main #reports #blanket{
 	.daterangepicker .ranges li {
 		border-radius: 0;
 	}
+
+main .section h1.dashboard-name {
+	border: 0;
+	font-size: 200%;
+}

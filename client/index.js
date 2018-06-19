@@ -506,6 +506,8 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 			</section>
 
 			<section class="section" id="reports">
+			
+				<h1 class="dashboard-name"></h1>
 
 				<div class="toolbar form">
 
@@ -557,6 +559,19 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 					<i class="fas fa-filter"></i>
 				</button>
 			</section>
+			
+			<footer class="site-footer">
+				Powered by&nbsp;<span>${config.has("footer_powered_by") ? config.get("footer_powered_by") : ''}</span>
+						<a href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
+				<div class="debug-info">
+					<span class="debug-text">
+						Env: <span class="strong">${this.env.name}</span>
+						Branch: <span class="strong">${this.env.branch}</span> 
+						Last deployed: <span title="${this.env.deployed_on}" class="strong">${this.env.deployed_on}</span>
+					</span>
+					<i class="fas fa-exclamation-circle"></i>
+				</div>
+			</footer>
 		`;
 	}
 }));
