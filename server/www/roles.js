@@ -56,11 +56,9 @@ exports.delete = class extends API {
 exports.test = class extends API {
 
 	async test() {
-		const or = require('./object_roles').get;
 
-		const g = new or();
+		const d = require("../utils/auth").dashboard;
 
-		return await g.get(0, "user", "role", 0, 0);
-
+		return await d(1, this.user);
 	}
 };

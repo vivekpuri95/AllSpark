@@ -89,9 +89,9 @@ exports.get = class extends API {
 				tb_object_roles
 			where
 				owner = ?
-				and (owner_id = ? or ? = 0)
+				and (owner_id in (?) or (0) in (?))
 				and target = ?
-				and (target_id = ? or ? = 0)
+				and (target_id in (?) or (0) in (?))
 				and (account_id = ? or ? = 0) 
 			`,
 			[owner, ownerId, ownerId, target, targetId, targetId, accountId, accountId]
