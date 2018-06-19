@@ -96,7 +96,7 @@ exports.list = class extends API {
 				WHERE
 					owner = "user"
 					and target = "role"
-					and account_id = ?
+					and account_id = ${this.account.account_id}
 				`,
 			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`;
 		if (this.request.body.user_id) {

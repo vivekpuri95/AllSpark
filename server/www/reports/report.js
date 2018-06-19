@@ -2,8 +2,7 @@
 
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
-const User = require('../../utils/User');
-const redis = require('../../utils/redis').Redis;
+const role = new (require("../object_roles")).get();
 
 exports.list = class extends API {
 
@@ -24,7 +23,7 @@ exports.list = class extends API {
 				and q.account_id = ${this.account.account_id}
         `;
 
-		if(this.request.body.search) {
+		if (this.request.body.search) {
 			query = query.concat(`
 				AND (
 					query_id LIKE ?
@@ -41,42 +40,50 @@ exports.list = class extends API {
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 		]);
 
-		const response = [], reportFilters = {}, reportVisualizations = {};
+		const reportRoles = await role.get(this.account.account_id, "query", "role", result[0].length? results[0].map(x => x.query_id) : [-1],);
 
-		for(const filter of results[1]) {
+		const reportRoleMapping = {};
 
-			if(!(filter.query_id in reportFilters)) {
+		for (const row of reportRoles) {
 
-				reportFilters[filter.query_id] = [];
+			if (!reportRoleMapping[row.query_id]) {
+
+				reportRoleMapping[row.query_id] = {
+					roles: [],
+					category_id: [],
+				};
+
+				reportRoleMapping[row.query_id].roles.push(row.target_id);
+				reportRoleMapping[row.query_id].category_id.push(row.category_id);
 			}
-
-			reportFilters[filter.query_id].push(filter);
 		}
 
-		for(const visualization of results[2]) {
-
-			if(!(visualization.query_id in reportVisualizations)) {
-
-				reportVisualizations[visualization.query_id] = [];
-			}
-
-			reportVisualizations[visualization.query_id].push(visualization);
-		}
+		const response = [];
 
 		for (const row of results[0]) {
 
-			if ((await auth.report(row, this.user)).error)
-				continue;
+			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
+			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
 
-			row.filters = reportFilters[row.query_id] || [];
-			row.visualizations = reportVisualizations[row.query_id] || [];
+			if ((await auth.report(row, this.user)).error) {
+
+				continue;
+			}
+
+			row.filters = results[1].filter(filter => filter.query_id === row.query_id);
+			row.visualizations = results[2].filter(visualization => visualization.query_id === row.query_id);
 			row.href = `/report/${row.query_id}`;
 			row.superset = 'Reports';
+
 			response.push(row);
 
 			try {
+
 				row.format = row.format ? JSON.parse(row.format) : null;
-			} catch (e) {
+			}
+
+			catch (e) {
+
 				row.format = null;
 			}
 		}
@@ -124,7 +131,7 @@ exports.update = class extends API {
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;
 
-		if(values.hasOwnProperty("format")) {
+		if (values.hasOwnProperty("format")) {
 
 			try {
 
@@ -285,10 +292,9 @@ exports.userPrvList = class extends API {
 			[this.account.account_id, this.account.account_id, this.account.account_id, reportId, reportId]);
 
 
-
 		const userObj = {};
 
-		for(const row of users) {
+		for (const row of users) {
 
 			if (!userObj[row.user_id]) {
 
@@ -324,7 +330,7 @@ exports.userPrvList = class extends API {
 		}// User Details
 
 
-			const reportDetails = await this.mysql.query(`
+		const reportDetails = await this.mysql.query(`
 				SELECT
                   q.*
                 FROM
@@ -334,22 +340,22 @@ exports.userPrvList = class extends API {
                     AND is_enabled = 1
                     AND is_deleted = 0
                     AND account_id = ?`,
-				[reportId, this.account.account_id]
-			);
+			[reportId, this.account.account_id]
+		);
 
-			//queryDetails
+		//queryDetails
 
 
-			for(const user in userObj) {
+		for (const user in userObj) {
 
-				const authResponse = await auth.report({...reportDetails[0], flag: userObj[user].flag}, userObj[user]);
-				if(!authResponse.error) {
+			const authResponse = await auth.report({...reportDetails[0], flag: userObj[user].flag}, userObj[user]);
+			if (!authResponse.error) {
 
-					delete userObj[user].roles;
-					delete userObj[user].privileges;
-					privilegedUsers.push({...userObj[user], reason: authResponse.message});
-				}
+				delete userObj[user].roles;
+				delete userObj[user].privileges;
+				privilegedUsers.push({...userObj[user], reason: authResponse.message});
 			}
+		}
 		return privilegedUsers;
 
 	}
