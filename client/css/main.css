@@ -391,6 +391,7 @@ body {
 				padding: 8px;
 				position: relative;
 			}
+				main table .thin,
 				main table .action {
 					width: 80px;
 					text-align: center;
@@ -429,7 +430,7 @@ body {
 		}
 			main .form label > span {
 				font-size: 90%;
-				color: #666;
+				color: #444;
 				font-weight: bold;
 			}
 

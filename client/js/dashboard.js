@@ -726,8 +726,6 @@ class Dashboard {
 
 			if ((parseInt(this.visualizationsPositionObject[visualization].position) < heightScrolled + offset) && !this.visualizationsPositionObject[visualization].loaded) {
 
-				//scroll karte hue report paar gaye(offset mila kar)
-
 				this.page.loadedVisualizations.add(this.visualizationsPositionObject[visualization].report);
 				this.visualizationsPositionObject[visualization].report.selectedVisualization.load(resize);
 				this.visualizationsPositionObject[visualization].loaded = true;
@@ -924,7 +922,10 @@ class Dashboard {
 
 			report.selectedVisualization = selectedVisualizationProperties
 
-			// Object.assign(report, visualizationProperties);
+			if(!report.format)
+				report.format = {};
+
+			report.format.format = selectedVisualizationProperties.format;
 
 			const
 				header = report.container.querySelector('header'),
@@ -1162,8 +1163,6 @@ class Dashboard {
 
 		Dashboard.editing = false;
 
-		console.log(format, id);
-
 		const
 			parameters = {
 				id: id,
@@ -1202,6 +1201,8 @@ class DashboardDatasets extends Map {
 						id: filter.dataset.id,
 						multiple: true,
 						placeholder: `dataset-${filter.dataset.id}`,
+						query_id: filter.dataset.query_id,
+						default_value: filter.default_value,
 					}
 				}
 
@@ -1210,8 +1211,16 @@ class DashboardDatasets extends Map {
 			}
 		}
 
-		for (const dataset of Object.values(datasets))
+		for (const dataset of Object.values(datasets)) {
+
+			if(!dataset.query_id) {
+
+				this.set(dataset.id, new OtherDataset(dataset.id, dataset))
+				continue;
+			}
+
 			this.set(dataset.id, new Dataset(dataset.id, dataset));
+		}
 	}
 
 	async load() {
@@ -1342,14 +1351,24 @@ class DashboardDatasets extends Map {
 
 	clear() {
 
-		for (const dataset of this.values())
+		for (const dataset of this.values()) {
+
+			if(dataset instanceof OtherDataset)
+				continue;
+
 			dataset.clear();
+		}
 	}
 
 	all() {
 
-		for (const dataset of this.values())
+		for (const dataset of this.values()) {
+
+			if(dataset instanceof OtherDataset)
+				continue;
+
 			dataset.all();
+		}
 	}
 }
 

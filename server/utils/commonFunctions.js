@@ -10,52 +10,6 @@ const promisify = require('util').promisify;
 const jwtVerifyAsync = promisify(jwt.verify, jwt);
 
 
-function redisStore(uni_key, value, expire_time = null) {
-
-	if (!config.has('redisOptions')) {
-
-			return Promise.resolve(null);
-	}
-
-	return new Promise(function (resolve, reject) {
-
-		if (!expire_time)
-			expire_time = parseInt(moment().endOf('day').add(2, 'hours').format('X'));
-
-		redis.set(uni_key, JSON.stringify(value), function (err) {
-
-			if (err)
-				return reject(['redis_store -> redis.set: ', uni_key, err]);
-
-			redis.expireat(uni_key, expire_time, function (err) {
-
-				console.log('stored in redis: ' + uni_key);
-				if (err)
-					return reject(['redis_store -> redis.expireat: ', uni_key, err]);
-				return resolve();
-			});
-		});
-	});
-}
-
-function redisGet(key) {
-
-	if (!config.has('redisOptions'))
-		return Promise.resolve(null);
-
-	return new Promise((resolve, reject) => {
-
-		redis.get(key, function (err, result) {
-
-			if (err)
-				return reject();
-			console.log('fetching from redis key: ', key)
-			resolve(JSON.parse(result));
-		});
-	});
-}
-
-
 function promiseParallelLimit(limit, funcs) {
 	const batches = [];
 	for (let e = 0; e < Math.ceil(funcs.length / limit); e++)
@@ -64,52 +18,6 @@ function promiseParallelLimit(limit, funcs) {
 			promise.then(result =>
 				Promise.all(batch).then(Array.prototype.concat.bind(result))),
 		Promise.resolve([]));
-}
-
-
-function haversineDistance(coords1, coords2, isMiles = 0) {
-	//coordinates in [latitude, longitude]
-	//returns distance in kms
-
-	function toRad(x) {
-		return x * Math.PI / 180;
-	}
-
-	let lon1 = parseFloat(coords1[1]);
-	let lat1 = parseFloat(coords1[0]);
-
-	let lon2 = parseFloat(coords2[1]);
-	let lat2 = parseFloat(coords2[0]);
-
-
-	let R = 6371; // km
-
-	let x1 = lat2 - lat1;
-	let dLat = toRad(x1);
-	let x2 = lon2 - lon1;
-	let dLon = toRad(x2);
-
-	let a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-		Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-		Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-	let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-	let d = R * c;
-
-	if (isMiles) d /= 1.60934;
-
-	return d;
-}
-
-
-function timeDiff(startTime, endTime) {
-	const date = '2018-01-01 ';
-	let timediff = (Date.parse(date + endTime) - Date.parse(date + startTime)) / (1000);
-
-	if (timediff < 0) {
-		return 86400 + timediff
-	}
-	return timediff
 }
 
 
@@ -141,38 +49,6 @@ function merge_overlapping_intervals(intervals) {
 
 	ans.push([start, end]);
 	return ans
-}
-
-
-async function googleDistance(lat1, lon1, lat2, lon2) {
-	let options = {
-		method: 'GET',
-		url: 'https://maps.googleapis.com/maps/api/distancematrix/json',
-		qs:
-			{
-				destinations: `${lat1},${lon1}`,
-				origins: `${lat2},${lon2}`,
-				mode: 'driving'
-			},
-		json: true
-	};
-
-	const googleResponse = (await requestPromise(options)).body;
-	if (googleResponse.status != 'OK') {
-		return {
-			status: false
-		};
-	}
-
-	if (!googleResponse.rows.length)
-		return {
-			status: false
-		};
-
-	return {
-		status: true,
-		data: googleResponse,
-	}
 }
 
 
@@ -363,8 +239,6 @@ function getIndicesOf(searchStr, str, caseSensitive = 1) {
 	return indices;
 }
 
-exports.redisStore = redisStore;
-exports.redisGet = redisGet;
 exports.isJson = isJson;
 exports.makeBcryptHash = makeBcryptHash;
 exports.verifyBcryptHash = verifyBcryptHash;

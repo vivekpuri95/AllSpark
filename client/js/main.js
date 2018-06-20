@@ -1321,6 +1321,9 @@ class MultiSelect {
 			return;
 		}
 
+		if(this.datalist.length != (new Set(this.datalist.map(x => x.value))).size)
+			throw new Error('Invalid datalist format. Datalist values must be unique.');
+
 		for(const row of this.datalist) {
 
 			const

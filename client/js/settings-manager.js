@@ -32,7 +32,7 @@ class SettingsManager {
 		this.profiles.clear();
 
 		for(const data of this.response) {
-			this.profiles.set(data.id, new ProfileManage(data, this));
+			this.profiles.set(data.id, new SettingsManagerProfile(data, this));
 		}
 	}
 
@@ -57,10 +57,10 @@ class SettingsManager {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('settings-container');
+		container.classList.add('settings-manager');
 
 		container.innerHTML = `
-			<section class="side-bar">
+			<aside>
 				<table>
 					<thead>
 						<tr>
@@ -70,26 +70,23 @@ class SettingsManager {
 					</thead>
 
 					<tbody></tbody>
-
 				</table>
 
 				<footer>
-					<form class="add-form form">
+					<form class="form">
 						<label>
-							<span></span>
 							<input type="text" name="name" placeholder="New Profile Name" required>
 						</label>
 
 						<label>
-							<span></span>
 							<button type="submit"><i class="fa fa-plus"></i> Add</button>
 						</label>
 					</form>
 				</footer>
-			</section>
+			</aside>
 		`;
 
-		container.querySelector('.add-form').on('submit', e => this.add(e));
+		container.querySelector('form').on('submit', e => this.add(e));
 
 		return container;
 	}
@@ -104,7 +101,7 @@ class SettingsManager {
 			},
 			parameter = {
 				account_id: this.owner_id,
-				profile: this.form.querySelector('.add-form').name.value,
+				profile: this.form.querySelector('form').name.value,
 				owner: this.owner,
 				value: JSON.stringify([]),
 			};
@@ -117,7 +114,7 @@ class SettingsManager {
 	}
 }
 
-class ProfileManage {
+class SettingsManagerProfile {
 
 	constructor(setting, parent) {
 
@@ -147,13 +144,13 @@ class ProfileManage {
 
 	edit() {
 
-		if(this.parent.form.querySelector('.settings-container table tbody tr.selected'))
-			this.parent.form.querySelector('.settings-container table tbody tr.selected').classList.remove('selected');
+		if(this.parent.form.querySelector('.settings-manager > aside tr.selected'))
+			this.parent.form.querySelector('.settings-manager > aside tr.selected').classList.remove('selected');
 
 		this.tr.classList.add('selected');
 
-		if(this.parent.form.querySelector('.profile-container'))
-			this.parent.form.querySelector('.profile-container').remove();
+		if(this.parent.form.querySelector('.profile'))
+			this.parent.form.querySelector('.profile').remove();
 
 		this.parent.form.appendChild(this.section);
 	}
@@ -164,45 +161,49 @@ class ProfileManage {
 			return this.sectionElement;
 
 		const section = this.sectionElement = document.createElement('section');
-		section.classList.add('profile-container');
+
+		section.classList.add('profile');
 
 		section.innerHTML = `
-			<header class="profile-header">
+			<header>
 				<h3>${this.profile}</h3>
-				<button type="submit" form="settings-form">Save</button>
+				<input type="search" placeholder="Search...">
+				<button type="submit" form="settings-form"><i class="far fa-save"></i> Save</button>
 			</header>
 
 			<form id="settings-form" class="form">
 				<label>
-					<span> Profile Name</span>
+					<span>Profile Name</span>
 					<input type="text" required name="name" placeholder="Name" value="${this.profile}">
 				</label>
 			</form>
 		`;
 
-		this.typeFormat = [];
+		section.querySelector('header input[type=search]').on('keyup', () => this.search());
+
+		this.settings = [];
 
 		for(const format of this.parent.format) {
 
-			let formatType = SettingsManager.types.get(format.type.toLowerCase());
+			let setting = SettingsManager.types.get(format.type.toLowerCase());
 
-			if(!formatType)
+			if(!setting)
 				continue;
 
-			formatType = new formatType(format);
+			setting = new setting(format);
 
 			for(const value of this.value || []) {
 				if(format.key == value.key)
-					formatType.value = value.value;
+					setting.value = value.value;
 			}
 
-			this.typeFormat.push(formatType);
+			this.settings.push(setting);
 		}
 
 		const form = this.section.querySelector('form');
 
-		for(const element of this.typeFormat)
-			form.appendChild(element.container);
+		for(const setting of this.settings)
+			form.appendChild(setting.container);
 
 		section.querySelector('form').on('submit', (e) => this.update(e));
 
@@ -215,7 +216,10 @@ class ProfileManage {
 
 		const value = [];
 
-		this.typeFormat.map(x => value.push({"key": x.key, "value": x.value}));
+		this.settings.map(x => value.push({
+			key: x.key,
+			value: x.value
+		}));
 
 		const
 			options = {
@@ -250,20 +254,42 @@ class ProfileManage {
 		await API.call('settings/delete', parameters, options);
 		await this.parent.load();
 	}
+
+	search() {
+
+		const query = this.section.querySelector('header input[type=search]').value;
+
+		for(const setting of this.settings) {
+
+			let found = false;
+
+			if(!query)
+				found = true;
+
+			for(const key of ['key', 'name', 'description', 'type']) {
+				if(setting[key] && setting[key].toLowerCase().includes(query.toLowerCase())) {
+					found = true;
+					break;
+				}
+			}
+
+			setting.container.classList.toggle('hidden', !found);
+		}
+	}
 }
 
-class FormatType {
+class SettingsManagerType {
 
-	constructor(setting_format) {
+	constructor(format) {
 
-		for(const key in setting_format)
-			this[key] = setting_format[key];
+		for(const key in format)
+			this[key] = format[key];
 	}
 }
 
 SettingsManager.types = new Map;
 
-SettingsManager.types.set('string', class extends FormatType {
+SettingsManager.types.set('string', class extends SettingsManagerType {
 
 	get container() {
 
@@ -274,6 +300,7 @@ SettingsManager.types.set('string', class extends FormatType {
 
 		container.innerHTML = `
 			<span>${this.name}</span>
+			${this.description ? '<small class="NA">' + this.description + '</small>' : ''}
 			<input type="text" placeholder="String">
 		`;
 
@@ -291,7 +318,7 @@ SettingsManager.types.set('string', class extends FormatType {
 	}
 });
 
-SettingsManager.types.set('toggle', class extends FormatType {
+SettingsManager.types.set('toggle', class extends SettingsManagerType {
 
 	get container() {
 
@@ -302,6 +329,7 @@ SettingsManager.types.set('toggle', class extends FormatType {
 
 		container.innerHTML = `
 			<span>${this.name}</span>
+			${this.description ? '<small class="NA">' + this.description + '</small>' : ''}
 			<select>
 				<option value="0">Disabled</option>
 				<option value="1">Enabled</option>
@@ -322,7 +350,7 @@ SettingsManager.types.set('toggle', class extends FormatType {
 	}
 });
 
-SettingsManager.types.set('number', class extends FormatType {
+SettingsManager.types.set('number', class extends SettingsManagerType {
 
 	get container() {
 
@@ -333,6 +361,7 @@ SettingsManager.types.set('number', class extends FormatType {
 
 		container.innerHTML = `
 			<span>${this.name}</span>
+			${this.description ? '<small class="NA">' + this.description + '</small>' : ''}
 			<input type="number" value="" placeholder="Number">
 		`;
 
@@ -350,7 +379,7 @@ SettingsManager.types.set('number', class extends FormatType {
 	}
 });
 
-SettingsManager.types.set('code', class extends FormatType {
+SettingsManager.types.set('code', class extends SettingsManagerType {
 
 	get container() {
 
@@ -358,14 +387,15 @@ SettingsManager.types.set('code', class extends FormatType {
 			return this.div;
 
 		const container = this.div = document.createElement('label');
-		container.classList.add('code-type-editor');
+		container.classList.add('code-editor');
 
 		container.innerHTML = `
 			<span>${this.name}</span>
+			${this.description ? '<small class="NA">' + this.description + '</small>' : ''}
 			<div class="edit">
 				<div class="content"></div>
+				<div class="click-to-edit">Click to edit</div>
 			</div>
-			<div class="click-to-edit">Click to edit</div>
 		`;
 
 		container.querySelector('.click-to-edit').on('click', () => this.renderEditor());
@@ -396,9 +426,9 @@ SettingsManager.types.set('code', class extends FormatType {
 		return this.data;
 	}
 
-	set value(params) {
+	set value(data = '') {
 
-		this.data = params;
+		this.data = data;
 
 		if(this.editor)
 			this.editor.value = this.data;
@@ -407,7 +437,7 @@ SettingsManager.types.set('code', class extends FormatType {
 	}
 });
 
-SettingsManager.types.set('json', class extends FormatType {
+SettingsManager.types.set('json', class extends SettingsManagerType {
 
 	get container() {
 
@@ -415,14 +445,16 @@ SettingsManager.types.set('json', class extends FormatType {
 			return this.div;
 
 		const container = this.div = document.createElement('label');
-		container.classList.add('code-type-editor');
+
+		container.classList.add('code-editor');
 
 		container.innerHTML = `
 			<span>${this.name}</span>
+			${this.description ? '<small class="NA">' + this.description + '</small>' : ''}
 			<div class="edit">
 				<div class="content"></div>
+				<div class="click-to-edit">Click to edit</div>
 			</div>
-			<div class="click-to-edit">Click to edit</div>
 		`;
 
 		container.querySelector('.click-to-edit').on('click', () => this.renderEditor());
@@ -449,25 +481,27 @@ SettingsManager.types.set('json', class extends FormatType {
 		if(this.editor)
 			return JSON.parse(this.editor.value);
 
-		return JSON.parse(this.data);
+		return this.data;
 	}
 
-	set value(params) {
+	set value(data = {}) {
 
-		this.data = params;
+		this.data = data;
+
+		const value = JSON.stringify(this.data, 0, 4);
 
 		if(this.editor)
-			this.editor.value = JSON.stringify(this.data, 0, 4);
+			this.editor.value = value;
 		else
-			this.container.querySelector('.edit .content').textContent = JSON.stringify(this.data).split('')[0];
+			this.container.querySelector('.edit .content').textContent = value.split('')[0];
 	}
 });
 
-SettingsManager.types.set('multiselect', class extends FormatType {
+SettingsManager.types.set('multiselect', class extends SettingsManagerType {
 
-	constructor(setting_format) {
+	constructor(format) {
 
-		super(setting_format);
+		super(format);
 
 		this.multiselect = new MultiSelect({datalist: this.datalist, multiple: this.multiple});
 	}
@@ -481,6 +515,7 @@ SettingsManager.types.set('multiselect', class extends FormatType {
 
 		container.innerHTML = `
 			<span>${this.name}</span>
+			${this.description ? '<small class="NA">' + this.description + '</small>' : ''}
 		`;
 
 		container.appendChild(this.multiselect.container);

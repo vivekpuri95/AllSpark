@@ -1,7 +1,7 @@
-const API = require("../utils/api"),
-	commonFun = require("../utils/commonFunctions"),
-	constants = require('../utils/constants');
-
+const API = require("../utils/api");
+const commonFun = require("../utils/commonFunctions");
+const constants = require('../utils/constants');
+const config = require('config');
 
 exports.insert = class extends API {
 

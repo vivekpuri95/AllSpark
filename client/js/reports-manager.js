@@ -612,7 +612,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 	add() {
 
 		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.insert(e));
+		this.form.on('submit', this.form.listener = e => this.insert(e));
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
@@ -651,7 +651,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 	async edit() {
 
 		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
+		this.form.on('submit', this.form.listener = e => this.update(e));
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
@@ -751,26 +751,28 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.editor.editor.resize();
 		});
 
+		this.editReportData = new EditReportData();
+
+		this.editReportData.container.classList.add('hidden');
+		this.container.querySelector('#define-report-parts').appendChild(this.editReportData.container);
+
 		const editDataToggle = this.container.querySelector('#edit-data-toggle');
 
 		editDataToggle.on('click', async () => {
 
-			const container = this.container.querySelector('#edit-data');
-
 			editDataToggle.classList.toggle('selected');
-			container.classList.toggle('hidden');
+			this.editReportData.container.classList.toggle('hidden', !editDataToggle.classList.contains('selected'));
 			this.form.classList.toggle('hidden');
 
-			if(editDataToggle.classList.contains('hidden'))
-				return;
-
-			const editor = new EditSourceData(this.report.query_id);
-
-			await editor.load();
-
-			container.innerHTML = null;
-			container.appendChild(editor.container);
+			if(!this.editReportData.container.classList.contains('hidden'))
+				await this.editReportData.load(this.report.query_id);
 		});
+
+		this.uploadFile = new UploadFile(this);
+
+		this.uploadFile.on('upload', () => this.container.querySelector('#edit-data-toggle').click());
+
+		this.form.appendChild(this.uploadFile.container);
 
 		this.container.querySelector('#add-filter').on('click', () => this.addFilter());
 
@@ -779,9 +781,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.container.querySelector('#filter-list').classList.remove('hidden');
 		});
 
-		this.container.querySelector('#run').on('click', () => {
-			return this.preview();
-		});
+		this.container.querySelector('#run').on('click', () => this.preview());
 
 		this.editor = new Editor(this.form.querySelector('#editor'));
 
@@ -846,7 +846,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.page.stages.get('configure-visualization').disabled = true;
 
 		localStorage.reportsPreviewDock = 'bottom';
-		this.page.preview.hidden = false;
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
@@ -855,15 +854,16 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
 		this.form.querySelector('#query').classList.toggle('hidden', connection.type != 'query');
-		this.form.querySelector('#csv').classList.toggle('hidden', connection.type != 'csv');
+		this.form.querySelector('.upload-file').classList.toggle('hidden', connection.type != 'file');
 
 		this.form.removeEventListener('submit', this.form.listener);
-		this.form.addEventListener('submit', this.form.listener = e => this.update(e));
+		this.form.on('submit', this.form.listener = e => this.update(e));
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
 
 		this.container.querySelector('#edit-data-toggle').classList.toggle('hidden', !this.report.load_saved);
+		this.uploadFile.message();
 
 		this.editor.editor.focus();
 
@@ -892,93 +892,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
 
-		this.container.querySelector('#csv').addEventListener('click', e => {
-			this.container.querySelector('#csv-input').click();
-		});
-
-		this.container.querySelector('#csv-input').addEventListener('change', e => this.uploadCSV(e));
-
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
-
-	uploadCSV(e) {
-
-		if(!this.report.load_saved)
-			return;
-
-		const fileReader = new FileReader();
-
-		fileReader.onload = async e => {
-
-			const contents = e.target.result.split('\n');
-
-			if(!contents.length) {
-				this.container.querySelector('#csv').innerHTML =  'No data found in the CSV! :(';
-				return;
-			}
-
-			const csvJson = [];
-
-			const headers = this.splitCSV(contents[0]);
-
-			for(const rowString of contents.slice(1)) {
-
-				const cellList = this.splitCSV(rowString);
-
-				const row = {};
-
-				for(const [index, cell] of cellList.entries()) {
-
-					row[headers[index]] = cell;
-				}
-
-				csvJson.push(row);
-			}
-
-			const
-				parameter = {
-					data: JSON.stringify(csvJson),
-					query_id: this.report.query_id,
-				},
-				options = {
-					method: 'POST',
-				};
-
-			try {
-				await API.call('reports/engine/report', parameter, options);
-			} catch(e) {
-				this.container.querySelector('#csv').innerHTML = e.message;
-			}
-
-			this.container.querySelector('#edit-data-toggle').click();
-		};
-
-		fileReader.readAsText(e.target.files[0]);
-	}
-
-	splitCSV(str, sep) {
-
-		for (var splitString = str.split(sep = sep || ','), len = splitString.length - 1, tl; len >= 0; len--) {
-
-			if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
-
-				if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
-
-					splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
-				}
-
-				else if (len) {
-					splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(sep));
-				}
-
-				else splitString = splitString.shift().split(sep).concat(splitString);
-			}
-			else splitString[len].replace(/""/g, '"');
-
-		}
-
-		return splitString;
-	};
 
 	async update(e) {
 
@@ -1038,15 +953,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const source = this.page.connections.get(parseInt(this.report.connection_name));
 
-		if(!source || !['mysql', 'pgsql', 'bigquery', 'csv'].includes(source.type)) {
+		if(!source || !['mysql', 'pgsql', 'bigquery', 'file', 'mssql'].includes(source.type)) {
 			this.form.querySelector('#query').classList.add('hidden');
 			this.form.querySelector('#api').classList.remove('hidden');
 		}
 
-		else if(source.type === 'csv') {
-
-			this.form.querySelector('#csv').classList.remove('hidden');
-		}
+		else if(source.type === 'file')
+			this.uploadFile.container.classList.remove('hidden');
 
 		else {
 			this.form.querySelector('#query').classList.remove('hidden');
@@ -1512,7 +1425,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		const
 			parameters = {
 				query_id: this.report.query_id,
-				name: this.form.type.value[0].toUpperCase() + this.form.type.value.slice(1),
+				name: this.report.name,
 				type: this.form.type.value,
 			},
 			options = {
@@ -2332,6 +2245,8 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const container = this.formContainer = document.createElement('div');
 
+		container.classList.add('liner-visualization-options');
+
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Axes</h3>
@@ -2803,22 +2718,15 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="form body">
+
 					<label>
 						<span>Timing Column</span>
-						<select name="timing"></select>
+						<select name="timingColumn"></select>
 					</label>
 
 					<label>
 						<span>Value Column</span>
-						<select name="value"></select>
-					</label>
-
-					<label>
-						<span>Invert Values</span>
-						<select name="invertValues">
-							<option value="1">Yes</option>
-							<option value="0">No</option>
-						</select>
+						<select name="valueColumn"></select>
 					</label>
 
 					<label>
@@ -2830,127 +2738,73 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 						<span>Postfix</span>
 						<input type="text" name="postfix">
 					</label>
-				</div>
-			</div>
 
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Boxes</h3>
-				<div class="form body">
-					<div id="config-boxes"></div>
-					<button class="add-box" type="button">
-						<i class="fa fa-plus"></i> Add New Box
-					</button>
+					<label>
+						<span>Center Offset</span>
+						<input type="number" name="centerOffset">
+					</label>
+
+					<label>
+						<span>Left Offset</span>
+						<input type="number" name="leftOffset">
+					</label>
+
+					<label>
+						<span>Right Offset</span>
+						<input type="number" name="rightOffset">
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="invertValues">Invert Values
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend.
+						</span>
+					</label>
 				</div>
 			</div>
 		`;
 
-		const timing = container.querySelector('select[name=timing]');
-		const value = container.querySelector('select[name=value]');
+		for(const [key, column] of this.page.preview.report.columns) {
 
-		for (const [key, column] of this.page.preview.report.columns) {
-
-			timing.insertAdjacentHTML('beforeend', `
+			container.timingColumn.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 
-			value.insertAdjacentHTML('beforeend', `
+			container.valueColumn.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 		}
 
-		if (this.visualization.options) {
-			timing.value = this.visualization.options.timingColumn;
-			value.value = this.visualization.options.valueColumn;
-			this.form.querySelector('select[name=invertValues]').value = this.visualization.options.invertValues;
-			this.form.querySelector('input[name=prefix]').value = this.visualization.options.prefix;
-			this.form.querySelector('input[name=postfix]').value = this.visualization.options.postfix;
+		if(this.visualization.options && this.visualization.options.invertValues)
+			container.invertValues.checked = this.visualization.options.invertValues;
 
-			for (let box of this.visualization.options.boxes || []) {
-				container.querySelector('#config-boxes').appendChild(this.box(box));
-			}
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.hideLegend.checked = this.visualization.options.hideLegend;
+
+		for(const key in this.visualization.options || []) {
+			if(key in container.elements)
+				container.elements[key].value = this.visualization.options[key];
 		}
-
-		container.querySelector('.add-box').on('click', () => {
-			container.querySelector('#config-boxes').appendChild(this.box());
-		});
 
 		return container;
 	}
 
 	get json() {
 
-		let config = {
-			timingColumn: this.form.querySelector('select[name=timing]').value,
-			valueColumn: this.form.querySelector('select[name=value]').value,
-			invertValues: parseInt(this.form.querySelector('select[name=invertValues]').value),
-			prefix: this.form.querySelector('input[name=prefix]').value,
-			postfix: this.form.querySelector('input[name=postfix]').value,
-		};
+		const result = {};
 
-		config.boxes = [];
+		for(const element of this.form.elements)
+			result[element.name] = element.value;
 
-		for (let box of this.form.querySelectorAll('.subform')) {
-			config.boxes.push({
-				offset: parseInt(box.querySelector('input[name=offset]').value),
-				relativeTo: parseInt(box.querySelector('input[name=relativeTo]').value),
-				row: parseInt(box.querySelector('input[name=row]').value),
-				column: parseInt(box.querySelector('input[name=column]').value),
-				rowspan: parseInt(box.querySelector('input[name=rowspan]').value),
-				columnspan: parseInt(box.querySelector('input[name=columnspan]').value),
-			});
-		}
+		result.invertValues = this.form.invertValues.checked;
+		result.hideLegend = this.form.hideLegend.checked;
 
-		return config;
-	}
-
-	box(boxValues = {}) {
-
-		const boxConfig = document.createElement('div');
-
-		boxConfig.classList.add('subform', 'form');
-
-		boxConfig.innerHTML = `
-			<label>
-				<span>Offset</span>
-				<input type="number" name="offset">
-			</label>
-
-			<label>
-				<span>Relative To(Index)</span>
-				<input type="number" name="relativeTo">
-			</label>
-
-			<label>
-				<span>Column</span>
-				<input type="number" name="column">
-			</label>
-
-			<label>
-				<span>Row</span>
-				<input type="number" name="row">
-			</label>
-
-			<label>
-				<span>Column Span</span>
-				<input type="number" name="columnspan">
-			</label>
-
-			<label>
-				<span>Row Span</span>
-				<input type="number" name="rowspan">
-			</label>
-		`;
-
-		if (boxValues) {
-			boxConfig.querySelector('input[name=offset]').value = boxValues.offset || '';
-			boxConfig.querySelector('input[name=relativeTo]').value = boxValues.relativeTo || '';
-			boxConfig.querySelector('input[name=row]').value = boxValues.row || '';
-			boxConfig.querySelector('input[name=column]').value = boxValues.column || '';
-			boxConfig.querySelector('input[name=rowspan]').value = boxValues.rowspan || '';
-			boxConfig.querySelector('input[name=columnspan]').value = boxValues.columnspan || '';
-		}
-
-		return boxConfig;
+		return result;
 	}
 });
 
@@ -2983,57 +2837,320 @@ const mysqlKeywords = [
 	'USING',
 ];
 
-class EditSourceData {
+/**
+ * Upload a CSV, TSV or JSON data file from the user into a report.
+ */
+class UploadFile {
 
-	constructor(queryId) {
+	/**
+	 * Save a few things at the begining.
+	 *
+	 * @param  ReportsManagerStage	stage	The stage that own the instance.
+	 * @return UploadFile
+	 */
+	constructor(stage, afterUpload) {
 
-		this.queryId = queryId;
+		this.stage = stage;
+		this.page = stage.page;
 	}
 
+	/**
+	 * The upload-file container element.
+	 * This also acts as a drop surface and a way to give user feedback on the upload status.
+	 *
+	 * @return HTMLElement
+	 */
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('upload-file');
+
+		container.innerHTML = `
+			<input type="file" accept=".xlsx, .xls, .csv, .tsv, .json" class="hidden">
+			<h2>Drop File Here</h2>
+			<small>Or click to upload&hellip;</small>
+			<div class="message hidden"></div>
+		`;
+
+		const input = container.querySelector('input');
+
+		input.on('change', e => {
+			if(e.target.files.length)
+				this.upload(e.target.files[0]);
+		});
+
+		container.on('click', () => input.click());
+
+		container.on('dragenter', e => e.preventDefault());
+
+		container.on('dragover', e => {
+
+			e.preventDefault();
+
+			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
+				return this.message('Please upload a valid file.', 'warning');
+
+			if(e.dataTransfer.items.length > 1)
+				return this.message('Please upload only one file.', 'warning');
+
+			container.classList.add('drag-over');
+
+			this.message('Drop to upload one file.', 'notice');
+		});
+
+		container.on('dragleave', () => {
+
+			this.message();
+			container.classList.remove('drag-over');
+		});
+
+		container.on('drop', e => {
+
+			e.preventDefault();
+
+			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
+				return this.message('Please upload a valid file', 'warning');
+
+			if(e.dataTransfer.items.length > 1)
+				return this.message('Please upload only one file', 'warning');
+
+			container.classList.remove('drag-over');
+
+			const [file] = e.dataTransfer.files;
+
+			this.upload(file);
+		});
+
+		return container;
+	}
+
+	/**
+	 * Attach an event listener on the upload instance.
+	 *
+	 * @param string	event		The event type (eg. upload)
+	 * @param Function	callback	The callback function to call when the event happens.
+	 */
+	on(event, callback) {
+
+		if(event == 'upload')
+			this.onUpload = callback;
+
+		else throw new Page.exception(`Invalid event File Upload event type ${event}! :(`);
+	}
+
+	/**
+	 * Upload a file's data to the report.
+	 *
+	 * @param File	The File object for the file that is being uploaded.
+	 */
+	upload(file) {
+
+		if(!this.stage.report.load_saved)
+			return this.message('This report doesn\'t have \'Store Result\' property enabled! :(', 'warning');
+
+		this.message(`Uploading ${file.name}`, 'notice');
+
+		const fileReader = new FileReader();
+
+		let separator = ',';
+
+		if(file.name.endsWith('.tsv'))
+			separator = '\t';
+
+		fileReader.onload = async e => {
+
+			if(!e.target.result.trim())
+				return this.message('Uploaded file is empty', 'warning');
+
+			const
+				parameter = {
+					data: this.toJSON(e.target.result.trim(), separator),
+					query_id: this.stage.report.query_id,
+				},
+				options = {
+					method: 'POST',
+				};
+
+			try {
+				await API.call('reports/engine/report', parameter, options);
+			} catch(e) {
+				this.message(e.message, 'warning');
+			}
+
+			if(this.onUpload)
+				this.onUpload();
+
+			this.message('Upload Complete', 'notice');
+		};
+
+		fileReader.readAsText(file);
+	}
+
+	/**
+	 * Convert a file input to JSON.
+	 * This will handle types of input like JSON, CSV or TSV.
+	 *
+	 * @param  string	input		The input string that needs to be converted.
+	 * @param  string	separator	The column separator to use.
+	 * @return string				The stringified JSON that was extracted from the input.
+	 */
+	toJSON(input, separator = ',') {
+
+		try {
+			return JSON.stringify(JSON.parse(input));
+		} catch(e) {}
+
+		const
+			lines = input.split('\n'),
+			result = [],
+			headers = split(lines[0]);
+
+		for(const line of lines.slice(1)) {
+
+			const row = {};
+
+			for(const [index, cell] of split(line).entries())
+				row[headers[index]] = cell;
+
+			result.push(row);
+		}
+
+		function split(string) {
+
+			for (var splitString = string.split(separator), len = splitString.length - 1, tl; len >= 0; len--) {
+
+				if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
+
+					if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
+
+						splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
+					}
+
+					else if (len) {
+						splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(separator));
+					}
+
+					else splitString = splitString.shift().split(separator).concat(splitString);
+				}
+
+				else splitString[len].replace(/""/g, '"');
+			}
+
+			for(let [index, element] of splitString.entries()) {
+
+				if(element.split(',').length === 1 && element.startsWith('"')) {
+
+					splitString[index] = element.replace(/"/g, '');
+				}
+			}
+
+			return splitString.map(v => v.trim());
+		}
+
+		return JSON.stringify(result);
+	}
+
+	/**
+	 * Show a message to the user on the file upload window with give color.
+	 *
+	 * @param  string	body	The message body.
+	 * @param  string	type	The type of the message (notice, warning or nothing)
+	 */
+	message(body = '', type = null) {
+
+		const container = this.container.querySelector('.message');
+
+		container.classList.remove('notice', 'warning');
+		container.classList.toggle('hidden', !body);
+		this.container.querySelector('h2').classList.toggle('hidden', body);
+		this.container.querySelector('small').classList.toggle('hidden', body);
+
+		if(type)
+			container.classList.add(type);
+
+		container.innerHTML = body;
+	}
+}
+
+/**
+ * Let the user edit a report's saved data.
+ *
+ * Editing includes:
+ *  - Edit row's data.
+ *  - Add new rows.
+ *  - Delete rows.
+ *  - Sorting data by columns.
+ */
+class EditReportData {
+
+	/**
+	 * Return the editor's container.
+	 *
+	 * @return HTMLElement
+	 */
 	get container() {
 
 		if(this.tableContainer)
 			return this.tableContainer;
 
-		const div = document.createElement('section');
+		const container = this.tableContainer = document.createElement('section');
 
-		div.classList.add('edit-data-source');
+		container.classList.add('edit-report-data');
 
-		div.innerHTML = `
+		container.innerHTML = `
 			<header class="toolbar">
 				<button type="submit"><i class="fas fa-paper-plane"></i> Update Data</button>
 			</header>
-			<table>
-				<thead></thead>
-				<tbody contentEditable name="data"></tbody>
-			</table>
+			<table></table>
 		`;
 
-		this.tableContainer = div;
+		this.container.querySelector('.toolbar button').on('click', e => {
+			e.preventDefault();
+			this.save();
+		});
 
-		this.render();
-
-		return div;
+		return container;
 	}
 
-	async load() {
+	/**
+	 * Load a given query's data into the editor.
+	 *
+	 * @param int	query_id	The report id whose data is to be loaded.
+	 */
+	async load(query_id) {
+
+		this.container.querySelector('table').innerHTML = `<tr class="NA"><td>Loading&hellip;<td></tr>`;
 
 		await DataSource.load();
 
-		this.datasource = new DataSource(DataSource.list.get(this.queryId));
+		if(!DataSource.list.has(query_id))
+			throw API.exception('Invalid report ID');
+
+		this.datasource = new DataSource(DataSource.list.get(query_id));
 
 		await this.datasource.fetch();
 		this.data = this.datasource.response;
 
 		this.rows = [];
 
-		for (const item of this.data) {
-
+		for(const item of this.data)
 			this.rows.push([...item.values()]);
-		}
+
+		this.render();
 	}
 
-	getSortedRows(index, element) {
+	/**
+	 * Sorts the data by the given column.
+	 * This will update this.rows in-place and rende the UI.
+	 *
+	 * @param int			index	The position of the column
+	 * @param HTMLElement	element	The th element that is to be sorted.
+	 */
+	sort(index, element) {
 
 		if (this.rows.length === 1) {
 
@@ -3044,7 +3161,7 @@ class EditSourceData {
 
 		const asc = order === 'asc', desc = order === 'desc';
 
-		element.dataset.sorted = asc ? "desc" : "asc";
+		element.dataset.sorted = asc ? 'desc' : 'asc';
 
 		const sortFlag = asc ? -1 : 1;
 
@@ -3056,6 +3173,12 @@ class EditSourceData {
 		this.rows = this.rows.sort((x, y) => {
 
 			let A = x[index], B = y[index];
+
+			if(parseInt(A))
+				A = parseInt(A);
+
+			if(parseInt(B))
+				B = parseInt(B);
 
 			if (A < B) {
 
@@ -3069,90 +3192,120 @@ class EditSourceData {
 
 			return 0;
 		});
+
+		this.render();
 	}
 
-	async render() {
-
-		if (!this.data || !this.data.length) {
-
-			this.tableContainer.innerHTML = '<p class="NA">No data found :(</p>';
-
-			return this.tableContainer;
-		}
+	/**
+	 * Clears the container and renders the current data into it.
+	 */
+	render() {
 
 		this.columns = [...this.data[0].keys()];
 
-		const tableElement = this.tableContainer.querySelector('table');
+		const
+			table = this.container.querySelector('table'),
+			thead = document.createElement('thead'),
+			tbody = document.createElement('tbody'),
+			tfoot = document.createElement('tfoot'),
+			headings = document.createElement('tr');
 
-		const thead = this.tableContainer.querySelector('thead');
+		table.textContent = null;
 
-		let tHeadHtml = '';
+		if(!this.data || !this.data.length)
+			return table.innerHTML = '<tr class="NA"><td>No data found :(</td></tr>';
 
-		const tbody = this.tableContainer.querySelector('tbody');
-		tbody.textContent = null;
+		tbody.setAttribute('contenteditable', '');
 
-		if (!thead.innerHTML) {
+		thead.appendChild(headings);
 
-			for (const columnName of this.columns) {
+		for(const [index, column] of this.columns.entries()) {
 
-				tHeadHtml += '<th class="heading"><span class="name">' + columnName + '</span></th>';
-			}
+			const th = document.createElement('th');
 
-			thead.innerHTML = '<tr>' + tHeadHtml + '</tr>';
+			th.textContent = column;
+			th.dataset.sorted = 'desc';
 
-			for (const [index, element] of thead.querySelectorAll('.name').entries()) {
+			th.on('click', () =>this.sort(index, th));
 
-				element.dataset.sorted = 'desc';
-
-				element.parentNode.on('click', async () => {
-
-					this.getSortedRows(index, element);
-					await this.render();
-				});
-			}
+			headings.appendChild(th);
 		}
 
-		for (const row of this.rows) {
+		headings.insertAdjacentHTML('beforeend', `
+			<th class="action">Add</th>
+			<th class="action">Delete</th>
+		`);
 
-			let tableRow = document.createElement('tr');
+		for(const row of this.rows)
+			this.addNewRow(row, tbody);
 
-			for (const cell of row) {
+		tfoot.innerHTML = `
+			<tr><td colspan="${this.columns.length + 2}">+ Add New Row</td></tr>
+		`;
 
-				const td = document.createElement('td');
-				td.textContent = cell;
-				tableRow.appendChild(td);
-			}
+		tfoot.on('click', () => {
+			this.addNewRow(new Array(this.columns.length).fill(''), this.container.querySelector('tbody'));
+		});
 
-			tbody.appendChild(tableRow);
-		}
-
-		const saveButton = this.tableContainer.querySelector('button[type="submit"]');
-
-		saveButton.removeEventListener('click', EditSourceData.submitListener);
-		saveButton.on('click', EditSourceData.submitListener = (e) => this.save(e));
-
-		tableElement.appendChild(thead);
-		tableElement.appendChild(tbody);
-
-		return this.tableContainer;
+		table.appendChild(thead);
+		table.appendChild(tbody);
+		table.appendChild(tfoot);
 	}
 
-	async save(e) {
+	/**
+	 * Adds a new row into the container.
+	 * The row can be added next to a current row or at the end.
+	 * We need the tbody reference here because the tbody may not necesserily exit in the container yet.
+	 *
+	 * @param Array			row		The array of row's data that is to be added.
+	 * @param HTMLElement	tbody	The tbody reference.
+	 * @param HTMLElement	before	The row before which the new row is to be added.
+	 */
+	addNewRow(row, tbody, before = null) {
 
-		if(e)
-			e.preventDefault();
+		const tr = document.createElement('tr');
 
-		if (!this.data || !this.data.length)
-			return;
+		for(const cell of row) {
 
-		const t = this.container.querySelector('table');
+			const td = document.createElement('td');
+			td.textContent = cell;
+			tr.appendChild(td);
+		}
+
+		tr.insertAdjacentHTML('beforeend', `
+			<td class="action green" contenteditable="false" title="Add One Above">+</td>
+			<td class="action red" contenteditable="false" title="Delete Row">&times;</td>
+		`);
+
+		tr.querySelector('td.green').on('click', () => {
+			this.addNewRow(new Array(this.columns.length).fill(''), tbody, tr);
+		});
+
+		tr.querySelector('td.red').on('click', () => {
+
+			if(confirm('Are you sure?!'))
+				tr.remove();
+		});
+
+		if(before)
+			tbody.insertBefore(tr, before);
+
+		else tbody.appendChild(tr);
+	}
+
+	/**
+	 * Saves the current container's contents to the server.
+	 */
+	async save() {
+
+		const table = this.container.querySelector('table');
 		const result = [];
 
-		for (const element of [...t.rows].slice(1)) {
+		for (const row of table.querySelectorAll('tbody tr')) {
 
 			const temp = {};
 
-			for (const [index, data] of [...element.cells].entries()) {
+			for (const [index, data] of row.querySelectorAll('td:not(.action)').entries()) {
 
 				temp[this.columns[index]] = data.textContent;
 			}
@@ -3169,6 +3322,6 @@ class EditSourceData {
 				method: 'POST',
 			};
 
-		return await API.call('reports/engine/report', parameter, options);
+		await API.call('reports/engine/report', parameter, options);
 	}
 }

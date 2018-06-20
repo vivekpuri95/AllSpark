@@ -66,12 +66,10 @@ exports.test = class extends API {
 		// const engine = new (require("./reports/engine").ReportEngine)(pg.finalQuery);
 		//
 		// return engine.execute()
-		const redis = require("../utils/redis").Redis;
 
-
-		await redis.hset("test", "data.key", "value");
-
-		return await redis.hget("test", "data.keys");
+		// const a  = await this.mssql.query(this.request.body.sql, [[1, 2, 4, 5]], 4);
+		// console.log(a, "@@@@");
+		// return a
 
 	}
 };

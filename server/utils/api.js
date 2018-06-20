@@ -10,15 +10,22 @@ const constants = require('./constants');
 const assert = require("assert");
 const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
+const msssql = require("./mssql").MsSql;
 
 const gitChecksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
 
 class API {
 
-	constructor() {
+	constructor(context = null) {
 
 		this.mysql = mysql;
 		this.pgsql = pgsql;
+		this.mssql = msssql;
+
+		if(context) {
+			this.user = context.user;
+			this.account = context.account;
+		}
 	}
 
 	static setup() {
@@ -99,8 +106,11 @@ class API {
 				if(!obj.account) {
 					for(const account of global.accounts) {
 
-						if(account.url == host)
+						if(account.url == host) {
+
 							obj.account = account;
+							break;
+						}
 					}
 				}
 

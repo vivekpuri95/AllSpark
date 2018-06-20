@@ -2,6 +2,7 @@ const API = require('../utils/api.js');
 const account = require('../onServerStart');
 const commonFun = require("../utils/commonFunctions");
 const redis = require("../utils/redis").Redis;
+const config = require('config');
 const constants = require("../utils/constants");
 
 exports.list = class extends API {
@@ -30,7 +31,8 @@ exports.list = class extends API {
 				AND f.status = 1
 			WHERE
 				a.status = 1
-				group by profile, account_id
+			GROUP BY
+				profile, account_id, value
 		`);
 
 		this.assert(accountList.length, "No Account found");
@@ -89,27 +91,27 @@ exports.get = class extends API {
 			`,
 			[this.account.account_id]);
 
-		this.assert(accountList.length, "Account not found :(");
+		this.assert(accountList.length, "Account not found! :(");
 
-		const accountObj = {
+		const account = {
 			settings: [],
 		};
 
-		Object.assign(accountObj, accountList[0]);
+		Object.assign(account, accountList[0]);
 
-		accountList.map(x => {
+		accountList.map(a => {
 
 			try {
-				accountObj.settings = JSON.parse(x.value);
+				account.settings = JSON.parse(a.value);
 			}
 			catch (e) {
 			}
 		});
 
-		delete accountObj['value'];
-		delete accountObj['profile'];
+		delete account.value;
+		delete account.profile;
 
-		return accountObj;
+		return account;
 	}
 };
 

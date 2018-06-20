@@ -2,7 +2,10 @@ const mysql = require('../utils/mysql');
 const bigquery = require('../utils/bigquery').BigQuery;
 const API = require('../utils/api');
 const sql = require('mysql');
-const { Client } = require('pg');
+const mssql = require('../utils/mssql');
+const {Client} = require('pg');
+const Sequelize = require('sequelize');
+
 
 exports.insert = class extends API {
 
@@ -28,7 +31,15 @@ exports.insert = class extends API {
 			'write'
 		);
 
-		await mysql.crateExternalPool(this.request.body.id);
+		if (this.request.body.type.toLowerCase() === "mysql") {
+
+			await mysql.crateExternalPool(this.request.body.id);
+		}
+
+		else if (this.request.body.type.toLowerCase() === "mssql") {
+
+			await mssql.crateExternalPool(this.request.body.id);
+		}
 
 		if (bigquery)
 			await bigquery.setup();
@@ -59,7 +70,15 @@ exports.delete = class extends API {
 			'write'
 		);
 
-		await mysql.crateExternalPool(this.request.body.id);
+		if (this.request.body.type.toLowerCase() === "mysql") {
+
+			await mysql.crateExternalPool(this.request.body.id);
+		}
+
+		else if (this.request.body.type.toLowerCase() === "mssql") {
+
+			await mssql.crateExternalPool(this.request.body.id);
+		}
 
 		if (bigquery)
 			await bigquery.setup();
@@ -85,7 +104,15 @@ exports.update = class extends API {
 			'write'
 		);
 
-		await mysql.crateExternalPool(this.request.body.id);
+		if (this.request.body.type.toLowerCase() === "mysql") {
+
+			await mysql.crateExternalPool(this.request.body.id);
+		}
+
+		else if (this.request.body.type.toLowerCase() === "mssql") {
+
+			await mssql.crateExternalPool(this.request.body.id);
+		}
 
 		if (bigquery)
 			await bigquery.setup();
@@ -122,17 +149,17 @@ exports.testConnections = class extends API {
 		const startTime = Date.now();
 		const result = await obj.checkPulse();
 		return {
-			'time' : Date.now() - startTime,
+			'time': Date.now() - startTime,
 			'status': result
 		};
 	}
 };
 
 const testClasses = new Map();
-testClasses.set ("mysql",
+testClasses.set("mysql",
 	class {
 
-		constructor (config) {
+		constructor(config) {
 			this.host = config.host;
 			this.user = config.user;
 			this.password = config.password;
@@ -140,7 +167,7 @@ testClasses.set ("mysql",
 				this.port = config.port;
 		}
 
-		checkPulse () {
+		checkPulse() {
 			const con = sql.createConnection(this);
 
 			return new Promise((resolve, reject) => {
@@ -162,7 +189,7 @@ testClasses.set ("mysql",
 
 testClasses.set("pgsql",
 	class {
-		constructor (config) {
+		constructor(config) {
 			this.host = config.host;
 			this.user = config.user;
 			this.password = config.password;
@@ -171,7 +198,7 @@ testClasses.set("pgsql",
 				this.port = config.port;
 		}
 
-		checkPulse () {
+		checkPulse() {
 			const client = new Client(this);
 			client.connect();
 
@@ -188,11 +215,61 @@ testClasses.set("pgsql",
 	}
 );
 
+
+testClasses.set("mssql",
+	class {
+		constructor(config) {
+			this.host = config.host;
+			this.user = config.user;
+			this.password = config.password;
+			this.database = config.database;
+			if (config.port)
+				this.port = config.port;
+		}
+
+		async checkPulse() {
+
+			const sequelize = new Sequelize(this.database, this.user, this.password, {
+				host: this.host,
+				dialect: 'mssql',
+				operatorsAliases: false,
+
+				pool: {
+					max: 10,
+					min: 0,
+					acquire: 30000,
+					idle: 10000
+				},
+
+			});
+
+			let result;
+
+			try {
+				result = await sequelize.query(`select 1 as status`, {
+					replacements: [],
+					type: Sequelize.QueryTypes.SELECT,
+					logging: console.log
+				});
+			}
+
+			catch(e) {
+
+				console.log(e);
+				result = [{status: 0}];
+			}
+
+			return result[0].status || 0;
+		}
+	}
+);
+
 exports.schema = class extends API {
 
 	async schema() {
 
 		const databases = [];
+
 		let [typeOfConnection] = await this.mysql.query("select type from tb_credentials where id = ?", [this.request.query.id]);
 
 		if (!typeOfConnection) {
@@ -201,6 +278,7 @@ exports.schema = class extends API {
 		}
 
 		typeOfConnection = typeOfConnection.type;
+
 		let columns;
 
 		let selectQuery = `
@@ -221,7 +299,11 @@ exports.schema = class extends API {
 
 			case "pgsql":
 
-				columns = await this.pgsql.query(selectQuery.replace(/column_type/g, "data_type"), [], this.request.query.id);
+				columns = await this.pgsql.query(selectQuery.replace(/column_type/, "data_type"), [], this.request.query.id);
+				break;
+
+			case "mssql":
+				columns = await this.mssql.query(selectQuery.replace(/table_schema/, "table_catalog").replace(/column_type/, "data_type"), [], this.request.query.id);
 				break;
 
 			default:

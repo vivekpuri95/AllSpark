@@ -667,24 +667,19 @@ class SettingsAccount {
 
 		SettingsAccount.page = page;
 
-		const accountForm = page.form.querySelector('#account-form');
+		SettingsAccount.form = page.form.querySelector('#account-form');
 
-		SettingsAccount.form = accountForm;
-
-		accountForm.reset();
+		SettingsAccount.form.reset();
 		SettingsAccount.editor.value = '';
 
-		const logo = accountForm.logo;
-		const icon = accountForm.icon;
+		SettingsAccount.form.logo.src = '';
+		SettingsAccount.form.querySelector('#logo').classList.add('hidden');
 
-		logo.src = '';
-		accountForm.querySelector('#logo').classList.toggle('hidden', true);
-
-		icon.src = '';
-		accountForm.querySelector('#icon').classList.toggle('hidden', true);
+		SettingsAccount.form.icon.src = '';
+		SettingsAccount.form.querySelector('#icon').classList.add('hidden');
 
 		page.form.querySelector('#cancel-form').on('click', () => {
-			accountForm.removeEventListener('submit', SettingsAccount.submitEventListener);
+			SettingsAccount.form.removeEventListener('submit', SettingsAccount.submitEventListener);
 			Sections.show('accounts-list')
 		});
 
@@ -702,17 +697,14 @@ class SettingsAccount {
 
 	static async insert(e) {
 
-		if (e && e.preventDefault) {
+		if(e && e.preventDefault)
 			e.preventDefault();
-		}
 
 		const
 			options = {
 				method: 'POST',
 				form: new FormData(SettingsAccount.form),
 			};
-
-		options.form.set("settings", SettingsAccount.editor.value);
 
 		return await API.call('accounts/insert', {}, options);
 	}
@@ -738,73 +730,66 @@ class SettingsAccount {
 
 		const settings_json = [
 			{
-				key: 'toggle',
-				type: 'toggle',
-				name: 'Toggle.',
-				description: 'Toggle'
-			},
-			{
 				key: 'top_nav_position',
-				type: 'string',
-				name: 'Header Nav Position.',
-				description: 'Position of top nav bar.'
+				type: 'multiselect',
+				name: 'Header Nav Position',
+				description: 'Position of top navigation bar (left or top)',
+				datalist: [
+					{name: 'Top', value: 'top'},
+					{name: 'Left', value: 'left'},
+				],
+				multiple: false,
 			},
 			{
 				key: 'pre_report_api',
 				type: 'string',
 				name: 'Pre Report API',
-				description: 'Pre Report API.',
+				description: 'An API that is hit before any report is executed.',
 			},
 			{
 				key: 'load_saved_connection',
 				type: 'number',
 				name: 'Store Report Result Connection ID',
-				description: 'The Connection where the report\'s result will be saved in.',
+				description: 'The Connection where the report\'s result will be saved in',
 			},
 			{
 				key: 'load_saved_database',
 				type: 'string',
 				name: 'Store Report Result Database',
-				description: 'The database where the report\'s result will be saved in.',
+				description: 'The database where the report\'s result will be saved in',
 			},
 			{
 				key: 'enable_account_signup',
-				type: 'multiSelect',
-				name: 'Allow user to signup.',
-				description: 'Allow user to signup.',
-				datalist: [
-					{name: 'True',value: true},
-					{name: "False",value: false}
-				],
-				multiple: false,
+				type: 'toggle',
+				name: 'Allow User Signup',
 			},
 			{
 				key: 'custom_js',
 				type: 'code',
 				mode: 'javascript',
-				name: 'Custom JavaScript.',
-				description: 'Custom JavaScript for this account.'
+				name: 'Custom JavaScript',
+				description: 'Custom JavaScript for this account'
 			},
 			{
 				key: 'custom_css',
 				type: 'code',
 				mode: 'css',
-				name: 'Custom CSS.',
-				description: 'Custom CSS for this account.'
+				name: 'Custom CSS',
+				description: 'Custom CSS for this account'
 			},
 			{
-				key: 'external_parameter',
+				key: 'external_parameters',
 				type: 'json',
-				name: 'External Parameter.',
-				description: 'External Parameter for this account.'
+				name: 'External Parameters',
+				description: 'External Parameter for this account'
 			},
 		];
 
 		const settingsContainer = new SettingsManager('account', this.account_id, settings_json)
 		await settingsContainer.load();
 
-		if(this.form.parentElement.querySelector('.settings-container'))
-			this.form.parentElement.querySelector('.settings-container').remove();
+		if(this.form.parentElement.querySelector('.settings-manager'))
+			this.form.parentElement.querySelector('.settings-manager').remove();
 
 		this.form.parentElement.appendChild(settingsContainer.form);
 
@@ -823,14 +808,12 @@ class SettingsAccount {
 
 	async update(e) {
 
-		if (e && e.preventDefault) {
+		if (e && e.preventDefault)
 			e.preventDefault();
-		}
 
 		const
 			parameter = {
 				account_id: this.account_id,
-				settings: SettingsAccount.editor.value,
 			},
 			options = {
 				method: 'POST',
@@ -842,7 +825,7 @@ class SettingsAccount {
 
 	async delete() {
 
-		if(!confirm('Deleting ' + this.name + '\'s account, Are you sure?'))
+		if(!confirm('Are you sure?!'))
 			return;
 
 		const
@@ -1154,7 +1137,7 @@ class SettingsCategory {
 			<td>${this.name}</td>
 			<td>${this.slug}</td>
 			<td>${this.parent}</td>
-			<td>${this.is_admin? 'Yes' : 'No'}</td>
+			<td>${this.is_admin ? 'Yes' : 'No'}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;

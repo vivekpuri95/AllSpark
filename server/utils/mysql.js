@@ -67,7 +67,7 @@ class MySQL {
 
 }
 
-(async () => await MySQL.crateExternalPool())();
+// (async () => await MySQL.crateExternalPool())();
 
 exports.MySQL = (() => new MySQL)();
 exports.crateExternalPool = MySQL.crateExternalPool;

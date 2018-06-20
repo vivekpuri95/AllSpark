@@ -1,9 +1,14 @@
-const gcloud = require('google-cloud');
 const mysql = require('./mysql').MySQL;
 const fs = require('fs');
 const commonFun = require('./commonFunctions');
 const config = require("config");
 const path = require("path");
+
+let gcloud = null;
+
+try {
+	gcloud = require('google-cloud');
+} catch(e) {}
 
 const gauth = function (project, file) {
 
@@ -33,7 +38,7 @@ class BigQuery {
 
 				if (err) {
 					console.log("in error ", err);
-					return reject({error: err, query: query});
+					return reject(err);
 				}
 
 				resolve(bqData);

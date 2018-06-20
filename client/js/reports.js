@@ -32,7 +32,6 @@ class DataSource {
 
 		if(!source.visualizations.filter(v => v.type == 'table').length) {
 			source.visualizations.push({ name: 'Table', visualization_id: 0, type: 'table' });
-			source.visualizations.push({ name: 'Json', visualization_id: -1, type: 'json' });
 		}
 
 		this.visualizations = source.visualizations.map(v => new (Visualization.list.get(v.type))(v, this));
@@ -49,6 +48,16 @@ class DataSource {
 			parameters.set('query', this.query);
 
 		for(const filter of this.filters.values()) {
+
+			if(filter.dataset && !filter.dataset.query_id) {
+
+				if(!filter.dataset.value && !filter.dataset.containerElement)
+					filter.dataset.value = await filter.dataset.fetch();
+
+				parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.dataset.value[0]);
+
+				continue;
+			}
 
 			if(filter.dataset && filter.dataset.query_id) {
 
@@ -131,6 +140,16 @@ class DataSource {
 		this.postProcessors.update();
 
 		this.render();
+
+		if(this.refresh_rate) {
+
+			clearTimeout(this.refreshRateTimeout);
+
+			this.refreshRateTimeout = setTimeout(() => {
+				if(this.containerElement && document.body.contains(this.container))
+					this.visualizations.selected.load();
+			}, this.refresh_rate * 1000);
+		}
 	}
 
 	get container() {
@@ -157,13 +176,14 @@ class DataSource {
 			<div class="toolbar menu hidden">
 				<button type="button" class="filters-toggle"><i class="fa fa-filter"></i> Filters</button>
 				<button type="button" class="description-toggle" title="Description"><i class="fa fa-info"></i> Info</button>
-				<button type="button" class="view" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
-				<button type="button" class="query-toggle" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
+				<button type="button" class="view expand-toggle hidden" title="View Report"><i class="fas fa-expand-arrows-alt"></i> Expand</button>
+				<button type="button" class="query-toggle hidden" title="View Query"><i class="fas fa-file-alt"></i> Query</button>
 
 				<div class="download-btn" title="Download CSV">
 					<button type="button" class="download" title="Download CSV"><i class="fa fa-download"></i><i class="fa fa-caret-down"></i></button>
 					<div class="download-dropdown-content hidden">
 						<button type="button" class="csv-download"><i class="far fa-file-excel"></i> CSV</button>
+						<button type="button" class="filtered-csv-download"><i class="far fa-file-excel"></i> Filtered CSV</button>
 						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i> XLSX</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
 						<button type="button" class="export-toggle"><i class="fa fa-download"></i> Export</button>
@@ -178,7 +198,7 @@ class DataSource {
 
 			<div class="description hidden">
 				<div class="body"></div>
-				<div class="footer">
+				<div class="footer hidden">
 					<span>
 						<span class="label">Role:</span>
 						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : '<span class="NA">NA</span>'}</span>
@@ -216,6 +236,7 @@ class DataSource {
 
 		document.querySelector('body').on('click', (e) => {
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
+		this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
 		})
 
 		container.querySelector('.menu .export-toggle').on('click', () => {
@@ -230,6 +251,12 @@ class DataSource {
 
 			this.visualizations.selected.render({resize: true});
 		});
+
+		if(user.privileges.has('reports')) {
+			container.querySelector('.toolbar .expand-toggle').classList.remove('hidden');
+			container.querySelector('.toolbar .query-toggle').classList.remove('hidden');
+			container.querySelector('.description .footer').classList.remove('hidden');
+		}
 
 		container.querySelector('.description .visible-to').on('click', () => {
 
@@ -269,6 +296,19 @@ class DataSource {
 			this.visualizations.selected.render({resize: true});
 		});
 
+		let count = 0;
+
+		for(const filter of this.filters.values()) {
+
+			if(filter.type == 'hidden') {
+				count++;
+			}
+		}
+
+		if(count == this.filters.size) {
+			container.querySelector('.menu .filters-toggle').classList.add('hidden');
+		}
+
 		container.querySelector('.menu .description-toggle').on('click', async () => {
 
 			container.querySelector('.description').classList.toggle('hidden');
@@ -302,6 +342,7 @@ class DataSource {
 		});
 
 		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
+		container.querySelector('.menu .filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
 		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
 		container.querySelector('.menu .xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
 
@@ -356,7 +397,7 @@ class DataSource {
 				container.appendChild(this.visualizations.selected.container);
 		}
 
-		this.xlsxDownloadable = ["line", "bar", "area"].includes(this.visualizations.selected.type);
+		this.xlsxDownloadable = [...MetaData.visualizations.values()].filter(x => x.excel_format).map(x => x.slug).includes(this.visualizations.selected.type);
 
 		const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
 
@@ -524,6 +565,8 @@ class DataSource {
 				sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				token		 :await IndexedDb.instance.get('token'),
+				show_legends: !this.visualizations.selected.options.hideLegend || 0,
+				show_values: this.visualizations.selected.options.showValues || 0,
 			};
 
 			for(const axis of this.visualizations.selected.options.axes) {
@@ -532,6 +575,23 @@ class DataSource {
 			}
 
 			return await this.excelSheetDownloader(response, obj);
+		}
+
+		else if(what.mode == 'filtered-csv') {
+
+			for(const row of this.response) {
+
+				const line = [];
+
+				for(const value of row.values())
+					line.push(JSON.stringify(String(value)));
+
+				str.push(line.join());
+			}
+
+			str = Array.from(this.response[0].keys()).join() + '\r\n' + str.join('\r\n');
+
+			what.mode = 'csv';
 		}
 
 		else {
@@ -642,7 +702,7 @@ class DataSource {
 			if(old)
 				old.remove();
 
-			actions.insertAdjacentHTML('afterbegin', `
+			actions.insertAdjacentHTML('beforeend', `
 				<span class="grey drilldown" title="Drilldown available on: ${drilldown.join(', ')}">
 					<i class="fas fa-angle-double-down"></i>
 				</span>
@@ -702,13 +762,8 @@ class DataSourceFilters extends Map {
 		});
 
 		container.insertAdjacentHTML('beforeend', `
+
 			<label class="right">
-				<span>&nbsp;</span>
-				<button type="reset">
-					<i class="fa fa-undo"></i> Reset
-				</button>
-			</label>
-			<label>
 				<span>&nbsp;</span>
 				<button type="submit">
 					<i class="fa fa-sync"></i> Submit
@@ -733,8 +788,10 @@ class DataSourceFilter {
 
 		this.source = source;
 
-		if(this.dataset && MetaData.datasets.has(this.dataset))
-			this.dataset = new Dataset(this.dataset, this);
+		if(this.dataset && MetaData.datasets.has(this.dataset)) {
+
+			this.dataset = !MetaData.datasets.get(this.dataset).query_id ? new OtherDataset(this.dataset, this) : new Dataset(this.dataset, this);
+		}
 
 		else this.dataset = null;
 	}
@@ -875,7 +932,7 @@ class DataSourceRow extends Map {
 			else if(column.type == 'number')
 				row[key] = Format.number(row[key]);
 
-			this.set(key, row[key] || 0);
+			this.set(key, row[key]);
 		}
 
 		// Sort the row by position of their columns in the source's columns map
@@ -1057,7 +1114,7 @@ class DataSourceColumn {
 
 		container.innerHTML = `
 			<span class="label">
-				<span class="color" style="background: ${this.color}">&#x2714;</span>
+				<span class="color" style="background: ${this.color}"></span>
 				<span class="name">${this.name}</span>
 			</span>
 
@@ -1555,7 +1612,6 @@ class DataSourceColumn {
 		this.container.classList.toggle('hidden', this.hidden ? true : false);
 
 		this.container.querySelector('.label .name').textContent = this.name;
-		this.container.querySelector('.label .color').innerHTML = this.disabled ? '' : '&#x2714;';
 
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
@@ -1880,8 +1936,15 @@ class DataSourcePostProcessors {
 
 		const container = this.source.container.querySelector('.postprocessors');
 
+		this.timingColumn = this.source.columns.get('timing');
+
+		for(const column of this.source.columns.values()) {
+			if(column.type == 'date')
+				this.timingColumn = column;
+		}
+
 		if(container)
-			container.classList.toggle('hidden', !this.source.columns.has('timing'));
+			container.classList.toggle('hidden', this.timingColumn ? false : true);
 	}
 }
 
@@ -2124,7 +2187,13 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 	}
 
 	processor(response) {
-		return response.filter(r => new Date(r.get('timing')).getDay() == this.container.value)
+
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn)
+			return;
+
+		return response.filter(r => new Date(r.get(timingColumn.key)).getDay() == this.container.value)
 	}
 });
 
@@ -2144,13 +2213,18 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 	processor(response) {
 
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn)
+			return;
+
 		const result = new Map;
 
 		for(const row of response) {
 
 			let period;
 
-			const periodDate = new Date(row.get('timing'));
+			const periodDate = new Date(row.get(timingColumn.key));
 
 			// Week starts from monday, not sunday
 			if(this.container.value == 'week')
@@ -2159,7 +2233,7 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 			else if(this.container.value == 'month')
 				period = periodDate.getDate() - 1;
 
-			const timing = new Date(Date.parse(row.get('timing')) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			const timing = new Date(Date.parse(row.get(timingColumn.key)) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
 			if(!result.has(timing)) {
 
@@ -2181,13 +2255,7 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 				else newRow.set(key, value);
 			}
 
-			newRow.set('timing', row.get('timing'));
-
-			// Copy over any annotations from the old row
-			for(const annotation of row.annotations) {
-				annotation.row = newRow;
-				newRow.annotations.add(annotation);
-			}
+			newRow.set(timingColumn.key, row.get(timingColumn.key));
 		}
 
 		return Array.from(result.values());
@@ -2211,12 +2279,17 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 
 	processor(response) {
 
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn)
+			return;
+
 		const
 			result = new Map,
 			copy = new Map;
 
 		for(const row of response)
-			copy.set(Date.parse(row.get('timing')), row);
+			copy.set(Date.parse(row.get(timingColumn.key)), row);
 
 		for(const [timing, row] of copy) {
 
@@ -2243,13 +2316,7 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 					newRow.set(key,  value + (element.get(key) / this.container.value));
 			}
 
-			newRow.set('timing', row.get('timing'));
-
-			// Copy over any annotations from the old row
-			for(const annotation of row.annotations) {
-				annotation.row = newRow;
-				newRow.annotations.add(annotation);
-			}
+			newRow.set(timingColumn.key, row.get(timingColumn.key));
 		}
 
 		return Array.from(result.values());
@@ -2273,12 +2340,17 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 
 	processor(response) {
 
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn)
+			return;
+
 		const
 			result = new Map,
 			copy = new Map;
 
 		for(const row of response)
-			copy.set(Date.parse(row.get('timing')), row);
+			copy.set(Date.parse(row.get(timingColumn.key)), row);
 
 		for(const [timing, row] of copy) {
 
@@ -2305,13 +2377,7 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 					newRow.set(key,  value + element.get(key));
 			}
 
-			newRow.set('timing', row.get('timing'));
-
-			// Copy over any annotations from the old row
-			for(const annotation of row.annotations) {
-				annotation.row = newRow;
-				newRow.annotations.add(annotation);
-			}
+			newRow.set(timingColumn.key, row.get(timingColumn.key));
 		}
 
 		return Array.from(result.values());
@@ -2500,9 +2566,12 @@ class LinearVisualization extends Visualization {
 				if(key == this.axes.bottom.column)
 					continue;
 
+				if((!this.axes.left || !this.axes.left.columns.some(c => c.key == key)) && (!this.axes.right || !this.axes.right.columns.some(c => c.key == key)))
+					continue;
+
 				const column = this.source.columns.get(key);
 
-				if(!column)
+				if(!column || column.disabled)
 					continue;
 
 				if(!this.columns[key]) {
@@ -3902,7 +3971,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 				const column = this.source.columns.get(key);
 
-				if(!column)
+				if(!column || column.disabled)
 					continue;
 
 				let direction = null;
@@ -4354,6 +4423,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		const that = this;
 
+		const x1 = d3.scale.ordinal();
 		this.x = d3.scale.ordinal();
 		this.y = d3.scale.linear().range([this.height, 20]);
 
@@ -4399,6 +4469,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			ticks = this.x.domain().filter((d, i) => !(i % tickInterval));
 
 		xAxis.tickValues(ticks);
+		x1.domain(this.columns.map(c => c.name)).rangeBands([0, this.x.rangeBand()]);
 
 		this.svg
 			.append('g')
@@ -4455,6 +4526,41 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			.attr('width', this.x.rangeBand())
 			.attr('x',  cell => this.x(cell.x) + this.axes.left.width);
 
+			 let values;
+
+			if(this.options.showValues) {
+
+			values = this.svg
+				.append('g')
+				.selectAll('g')
+				.data(this.columns)
+				.enter()
+				.append('g')
+				.selectAll('text')
+				.data(column => column)
+				.enter()
+				.append('text')
+				.attr('width', x1.rangeBand())
+				.attr('fill', '#666')
+				.attr('x', cell => {
+
+					let value = Format.number(cell.y);
+
+					if(['s'].includes(this.axes.left.format))
+						value = d3.format('.4s')(cell.y);
+
+					return this.x(cell.x) + this.axes.left.width + (this.x.rangeBand() / 2) - (value.toString().length * 4);
+				})
+				.text(cell => {
+
+					if(['s'].includes(this.axes.left.format))
+						return d3.format('.4s')(cell.y);
+					else
+						return Format.number(cell.y)
+				});
+			}
+
+
 		if(!options.resize) {
 
 			bars = bars
@@ -4463,11 +4569,28 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				.transition()
 				.duration(Visualization.animationDuration)
 				.ease('quad-in');
+
+			if(values) {
+
+				values = values
+					.attr('y', cell => this.y(0))
+					.attr('height', () => 0)
+					.transition()
+					.duration(Visualization.animationDuration)
+					.ease('quad-in');
+			}
 		}
 
 		bars
 			.attr('height', d => this.height - this.y(d.y))
 			.attr('y', d => this.y(d.y + d.y0));
+
+		if(values) {
+
+			values
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y + cell.y0 : 0) - 3)
+				.attr('height', cell => {return Math.abs(this.y(cell.y + cell.y0) - this.y(0))});
+		}
 	}
 });
 
@@ -4931,9 +5054,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.data([poly2, poly1])
 				.enter().append("polygon")
 				.attr('points', d =>  d.map(d => [d.x, d.y].join()).join(' '))
-				.attr('stroke', 'white')
-				.attr('stroke-width', 2)
-				.attr('fill', 'white');
+				.attr('fill', '#f1f1f1');
 
 			//selecting all the paths
 			var path = svg.selectAll('rect'),
@@ -5122,8 +5243,15 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		if(!response || !response.data || !response.data.length)
 			return;
 
-		for(const row of this.source.originalResponse.data)
-			newResponse[row.name] = parseFloat(row.value) || 0;
+		for(const row of this.source.originalResponse.data) {
+
+			const value = parseFloat(row.value);
+
+			if(!value)
+				continue;
+
+			newResponse[row.name] = value;
+		}
 
 		this.source.originalResponse.data = [newResponse];
 
@@ -5597,79 +5725,110 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	process() {
 
-		const response = this.source.response;
+		if(!this.timingColumn)
+			return this.source.error('Timing column not selected! :(');
 
-		try {
-			for(const row of response) {
+		if(!this.valueColumn)
+			return this.source.error('Value column not selected! :(');
 
-				if(!row.has(this.timingColumn))
-					throw `${this.timingColumn} column not found!`;
+		const dates = new Map;
 
-				const
-					responseDate = (new Date(row.get(this.timingColumn).substring(0, 10))).toDateString(),
-					todayDate = new Date();
+		for(const row of this.source.response) {
 
-				for(const box in this.boxes) {
-					const configDate = new Date(Date.now() - this.boxes[box].offset * 86400000).toDateString();
-					if (responseDate == configDate) {
-						this.boxes[box].value = row.get(this.valueColumn);
-					}
-				}
-			}
+			if(!row.has(this.timingColumn))
+				return this.source.error(`Timing column '${this.timingColumn}' not found! :(`);
 
-			for(const box of this.boxes) {
-				if(this.boxes[box.relativeTo])
-					box.percentage = Math.round(((box.value - this.boxes[box.relativeTo].value) / box.value) * 100);
-			}
+			if(!row.has(this.valueColumn))
+				return this.source.error(`Value column '${this.valueColumn}' not found! :(`);
+
+			if(!Date.parse(row.get(this.timingColumn)))
+				return this.source.error(`Timing column value '${row.get(this.timingColumn)}' is not a valid date! :(`);
+
+			dates.set(Date.parse(new Date(row.get(this.timingColumn)).toISOString().substring(0, 10)), row);
 		}
-		catch (e) {
-			return this.source.error(e);
+
+		const
+			center = Date.parse(new Date(Date.now() - ((this.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			left = Date.parse(new Date(Date.now() - ((this.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			right = Date.parse(new Date(Date.now() - ((this.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
+
+		this.center = {value: 0};
+		this.right = {value: 0};
+		this.left = {value: 0};
+
+		if(dates.has(center)) {
+
+			const row = dates.get(center);
+
+			this.center = {
+				value: row.get(this.valueColumn),
+			};
+		}
+
+		if(dates.has(left)) {
+
+			const
+				row = dates.get(left),
+				value = row.get(this.valueColumn);
+
+			this.left = {
+				value: row.get(this.valueColumn),
+				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
+			};
+		}
+
+		if(dates.has(right)) {
+
+			const
+				row = dates.get(right),
+				value = row.get(this.valueColumn);
+
+			this.right = {
+				value: row.get(this.valueColumn),
+				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
+			};
 		}
 	}
 
 	render(options = {}) {
 
-		if(!this.boxes || !this.boxes.length)
-			return;
+		if(!this.center)
+			return this.source.error(`Center column not defined! :(`);
 
 		const container = this.container.querySelector('.container');
 
-		container.textContent = null;
+		container.innerHTML = `
+			<h5>${this.prefix || ''}${Format.number(this.center.value)}${this.postfix || ''}</h5>
 
-		for(const box of this.boxes) {
+			<div class="left">
+				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
+				<span class="value">
+					${this.prefix || ''}${Format.number(this.left.value)}${this.postfix || ''}<br>
+					<small>${Format.number(this.leftOffset)} days ago</small>
+				</span>
+			</div>
 
-			const configBox = document.createElement('div');
-
-			configBox.innerHTML = `
-				<h7>
-					${this.prefix || ''}${box.value}${this.postfix || ''}
-				</h7>
-				<p class="percentage ${this.getColor(box.percentage)}">${box.percentage ? box.percentage + '%' : ''}</p>
-			`;
-
-			configBox.style = `
-				grid-column: ${box.column} / span ${box.columnspan};
-				grid-row: ${box.row} / span ${box.rowspan};
-			`;
-
-			container.appendChild(configBox);
-		}
+			<div class="right">
+				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
+				<span class="value">
+					${this.prefix || ''}${Format.number(this.right.value)}${this.postfix || ''}<br>
+					<small>${Format.number(this.rightOffset)} days ago</small>
+				</span>
+			</div>
+		`;
 	}
 
 	getColor(percentage) {
-		if (percentage == 0)
+
+		if(!percentage)
 			return '';
-		else
-			if (percentage > 0)
-				if (this.invertValues)
-					return 'red';
-				else
-					return 'green';
-			else
-				if (this.invertValues)
-					return 'green';
-				else
-					return 'red';
+
+		let color = percentage > 0;
+
+		if(this.invertValues)
+			color = !color;
+
+		return color ? 'green' : 'red';
 	}
 });
 
@@ -5684,7 +5843,7 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 		const container = this.containerElement;
 
-		container.classList.add('visualization', 'line');
+		container.classList.add('visualization', 'json');
 		container.innerHTML = `
 			<div id="visualization-${this.id}" class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
@@ -5754,11 +5913,9 @@ class Tooltip {
 	}
 }
 
-class Dataset extends MultiSelect {
+class OtherDataset {
 
 	constructor(id, filter) {
-
-		super();
 
 		if(!MetaData.datasets.has(id))
 			throw new Page.exception('Invalid dataset id! :(');
@@ -5776,25 +5933,84 @@ class Dataset extends MultiSelect {
 		if(this.containerElement)
 			return this.containerElement;
 
-		if(!this.name.includes('Date'))
-			return super.container;
-
-
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('multi-select');
-
-		let value = null;
-
-		if(this.name.includes('Start'))
-			value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-		else
-			value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		container.classList.add('other-dataset');
 
 		container.innerHTML = `
-			<input type="date" name="${this.filter.placeholder}" value="${value}">
+			<input name="${this.filter.placeholder}">
 		`;
 
+		let value = null;
+		const input = container.querySelector('input');
+
+		input.on('change', () => {
+
+			this.value = input.value;
+		});
+
+
+		if(this.name.includes('Date')) {
+
+			if(this.name.includes('Start'))
+				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			else
+				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+
+			input.value = value;
+			input.type = 'date';
+		}
+		else {
+
+			input.type = 'text';
+			input.value = this.filter.default_value;
+		}
+
+		this.datasetValue = [input.value];
+
 		return container;
+	}
+
+
+	async fetch() {
+
+		if(this.name.includes('Date')) {
+
+			return this.name.includes('Start') ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10) : new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		}
+
+		return [""];
+	}
+
+	set value(value) {
+
+		if(!Array.isArray(value))
+			value = [value];
+
+		this.datasetValue = value;
+	}
+
+	get value() {
+
+		return this.datasetValue;
+	}
+
+}
+
+class Dataset extends MultiSelect {
+
+	constructor(id, filter) {
+
+		super();
+
+		if(!MetaData.datasets.has(id))
+			throw new Page.exception('Invalid dataset id! :(');
+
+		const dataset = MetaData.datasets.get(id);
+
+		for(const key in dataset)
+			this[key] = dataset[key];
+
+		this.filter = filter;
 	}
 
 	async fetch() {
