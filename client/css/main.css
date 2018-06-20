@@ -111,7 +111,6 @@ body {
 	display: flex;
 	margin: 0;
 	flex-direction: column;
-	background: #eee;
 	user-select: none;
 	font-size: 14px !important;
 	color: #222;
@@ -284,7 +283,7 @@ body {
 		display: block;
 	}
 		main section .toolbar {
-			background: #eee;
+			background: #fff;
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 			grid-auto-columns: max-content;

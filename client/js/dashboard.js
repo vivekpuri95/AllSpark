@@ -388,12 +388,6 @@ Page.class = class Dashboards extends Page {
 			right.classList.toggle('hidden');
 			e.currentTarget.querySelector('.left').classList.toggle('hidden');
 
-			if(!nav.querySelector('.powered-by').classList.contains('hidden') && !account.settings.get('disable_powered_by'))
-				nav.querySelector('.powered-by').classList.add('hidden');
-
-			else if( !account.settings.get('disable_powered_by'))
-				nav.querySelector('.powered-by').classList.remove('hidden');
-
 			document.querySelector('main').classList.toggle('collapsed-grid');
 
 			for (const item of nav.querySelectorAll('.item')) {
@@ -446,6 +440,9 @@ Page.class = class Dashboards extends Page {
 		this.loadedVisualizations.clear();
 		this.loadedVisualizations.add(report);
 
+		const dashboardName = this.container.querySelector('.dashboard-name');
+		dashboardName.classList.add('hidden');
+
 		container.textContent = null;
 
 		const promises = [];
@@ -462,7 +459,7 @@ Page.class = class Dashboards extends Page {
 
 		report.container.removeAttribute('style');
 		container.classList.add('singleton');
-		this.reports.querySelector('.toolbar').classList.add('hidden');
+		Dashboard.toolbar.classList.add('hidden');
 
 		report.container.querySelector('.menu').classList.remove('hidden');
 		report.container.querySelector('.menu-toggle').classList.add('selected');
@@ -787,29 +784,26 @@ class Dashboard {
 		if (this.format && this.format.category_id)
 			return;
 
-		if (!this.datasets.size) {
-
+		if (!this.datasets.size)
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
-		}
 
-		this.page.container.querySelector('.dashboard-name').innerHTML = this.name;
+		const dashboardName = this.page.container.querySelector('.dashboard-name');
+		dashboardName.innerHTML = this.name;
+		dashboardName.classList.remove('hidden');
+
+		Dashboard.toolbar.classList.remove('hidden');
 
 		await Sections.show('reports');
 
-		const menuElement = this.page.container.querySelector("#dashboard-" + this.id);
+		const menuElement = this.page.container.querySelector('#dashboard-' + this.id);
 
+		for (const element of this.page.container.querySelectorAll('.label'))
+			element.classList.remove('selected');
 
-		for (const element of this.page.container.querySelectorAll(".label")) {
+		if (menuElement)
+			menuElement.classList.add('selected');
 
-			element.classList.remove("selected");
-		}
-
-		if (menuElement) {
-
-			menuElement.classList.add("selected");
-		}
-
-		const mainObject = document.querySelector("main");
+		const mainObject = document.querySelector('main');
 
 		this.visualizationsPositionObject = {};
 
@@ -821,7 +815,7 @@ class Dashboard {
 
 			Dashboard.container.appendChild(queryDataSource.container);
 
-			Dashboard.container.classList.remove("singleton");
+			Dashboard.container.classList.remove('singleton');
 
 			this.visualizationsPositionObject[queryDataSource.selectedVisualization.visualization_id] = ({
 				position: queryDataSource.container.getBoundingClientRect().y,
@@ -849,10 +843,8 @@ class Dashboard {
 			}
 		);
 
-		if (!this.page.loadedVisualizations.size) {
-
+		if (!this.page.loadedVisualizations.size)
 			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
-		}
 
 		if (this.page.user.privileges.has('reports')) {
 
@@ -1251,20 +1243,21 @@ class DashboardDatasets extends Map {
 			return;
 
 		container.innerHTML = `
-			<div class="global-filter-head heading">
+			<div class="head heading">
 				<i class="fas fa-filter"></i>
-				<input type="text" placeholder="Global Filters" class="global-filter-search">
-				<i class="fa fa-search"></i>
+				<input type="search" placeholder="Global Filters" class="global-filter-search">
 			</div>
-			<div class="global-filter-head">
-				<input type="checkbox" checked>&nbsp;Select All 
+			<div class="head">
+				<label><input type="checkbox" checked> Select All</label>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
 			</div>
 		`;
 
 		const datasets = Array.from(this.values()).sort((a, b) => {
+
 			if (!a.order)
 				return 1;
+
 			if (!b.order)
 				return -1;
 
@@ -1297,13 +1290,9 @@ class DashboardDatasets extends Map {
 
 				dataset.container.parentElement.classList.remove('hidden');
 
-				if(!dataset.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim())) {
-
+				if(!dataset.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
 					dataset.container.parentElement.classList.add('hidden');
-				}
-
 			}
-
 		});
 
 		container.insertAdjacentHTML('beforeend', `
@@ -1315,7 +1304,7 @@ class DashboardDatasets extends Map {
 		container.querySelector('button.apply').on('click', () => this.apply());
 		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
 
-		const input = container.querySelector('.global-filter-head input[type=checkbox]');
+		const input = container.querySelector('.head input[type=checkbox]');
 
 		input.on('change', () => {
 

@@ -15,7 +15,7 @@ main > nav {
 	position: sticky;
 	top: 0;
 	overflow-y: auto;
-	z-index: 5;
+	z-index: 6;
 	height: calc(100vh - 50px);
 	background: var(--color-primary);
 	color: var(--color-primary-text);
@@ -51,7 +51,7 @@ main > nav.collapsed .selected {
 	nav.collapsed > .item > .submenu {
 		position: absolute;
 		left: 100%;
-		width: 180px;
+		width: 220px;
 		top: 0;
 		background: var(--color-primary);
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
@@ -127,10 +127,7 @@ main > nav::-webkit-scrollbar-track {
 				transform: rotate(90deg);
 			}
 	main > nav footer {
-		display: flex;
-		justify-content: space-between;
 		margin-top: auto;
-		background: var(--color-primary);
 	}
 		.collapsed-grid .collapse-panel {
 			display: flex;
@@ -140,26 +137,20 @@ main > nav::-webkit-scrollbar-track {
 			color: #fff;
 		}
 	 	main > nav footer .collapse-panel {
-			display: flex;
-			padding: 12px 0;
-			justify-content: flex-end;
-			width: 50px;
-			margin-left: auto;
-			margin-right: 10px;
+			padding: calc(var(--gap) * 2);
+			color: #ccc;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
-			background: rgba(0, 0, 0, 0.15)
+			background: rgba(0, 0, 0, 0.15);
 		}
-		main > nav footer .powered-by {
-			font-size: 80%;
-			color: #ccc;
-			letter-spacing: 0.5px;
-			padding: 12px;
-		}
-			main > nav footer .powered-by a {
-				color: var(--color-primary-text);
-			}
+
+main .section h1.dashboard-name {
+	border: 0;
+	font-size: 150%;
+	border-bottom:  1px dashed #ccc;
+}
+
 main #mailto.selected {
 	background: var(--color-accent);
 	color: var(--color-accent-text);
@@ -208,41 +199,45 @@ main #reports > .datasets .dataset-container {
 	max-width: 100%;
 	margin-top: calc(var(--gap) * 2);
 }
-	main #reports > .datasets .global-filter-head {
-		padding: 10px 0px;
+	main #reports > .datasets > .head {
+		padding: var(--gap) 0;
 		border-bottom: 1px solid #ccc;
 		width: 100%;
-		font-weight: bold;
 		display: flex;
 		align-items: center;
 		letter-spacing: 0.5px;
 	}
-		main #reports > .datasets .global-filter-head.heading {
-			position: sticky;
-			top: 0;
-			background: #fff;
-			z-index: 1;
+	main #reports > .datasets > .head.heading {
+		position: sticky;
+		top: 0;
+		background: #fff;
+		z-index: 1;
+		display: flex;
+	}
+		main #reports > .datasets > .head label {
+			grid-auto-flow: column;
+			font-size: 90%;
+			align-items: center;
 		}
-			main #reports > .datasets .global-filter-head input[type=text] {
+			main #reports > .datasets > .head input[type=search] {
 				border: 0;
-				font-size: medium;
-				outline: 0;
 				width: 100%;
+				outline: 0;
 			}
-		main #reports > .datasets .global-filter-head.heading svg {
+		main #reports > .datasets > .head.heading svg {
 			color: #999;
-}
-			main #reports > .datasets .global-filter-head .reload {
+		}
+			main #reports > .datasets > .head .reload {
 				margin-left: auto;
 				width: 30px;
 				display: flex;
 				justify-content: center;
 			}
-			main #reports > .datasets .global-filter-head input[type=checkbox]:checked {
+			main #reports > .datasets > .head input[type=checkbox]:checked {
 				color: var(--color-accent);
 				border: 3px solid blue;
 			}
-			main #reports > .datasets .global-filter-head .reload svg {
+			main #reports > .datasets > .head .reload svg {
 				margin: 0;
 			}
 	main #reports > .datasets .dataset-container:last-of-type {
@@ -269,6 +264,9 @@ main #reports > .datasets .dataset-container {
 			color: #fff;
 			font-weight: bold;
 			letter-spacing: 0.5px;
+			transition: background var(--transition-duration),
+						box-shadow var(--transition-duration),
+						color var(--transition-duration);
 		}
 		main #reports > .datasets .actions .apply:hover {
 			background: #fff;
@@ -280,8 +278,8 @@ main #reports > .list {
 	display: grid;
 	grid-template-columns: repeat(32, 1.25fr);
 	grid-auto-rows: calc(50px - (var(--gap) * 4));
-	grid-column-gap: calc(var(--gap) * 4);
-	grid-row-gap: calc(var(--gap) * 4);
+	grid-column-gap: calc(var(--gap) * 5);
+	grid-row-gap: calc(var(--gap) * 5);
 	align-items: start;
 }
 	main #reports > .list .NA.no-reports {
@@ -292,6 +290,7 @@ main #reports > .list {
 		top: 0;
 		z-index: 5;
 		align-items: flex-end;
+		background: transparent;
 	}
 		main #reports > .toolbar input[name=date-range] {
 			width: 250px;
@@ -396,11 +395,14 @@ main #reports > .list {
 			display: initial;
 		}
 		main .singleton .data-source .visualization {
-			max-height: 480px;
+			max-height: 500px;
 		}
-		main .singleton .data-source .visualization.table {
-			max-height: calc(100vh - 270px);
-		}
+			main .singleton .data-source .visualization.spatial-map {
+				max-height: calc(100vh - 190px);
+			}
+			main .singleton .data-source .visualization.table {
+				max-height: calc(100vh - 180px);
+			}
 
 main #reports > .NA {
 	text-align: center;
@@ -415,82 +417,36 @@ main #reports #blanket{
 	z-index: 5;
 }
 
-main footer.site-footer {
+main > footer {
 	grid-column: 2 / -1;
 	z-index: 5;
 	background: var(--color-primary);
-	height: 25px;
 	display: flex;
 	color: #ccc;
-	align-items: center;
-	padding: calc(var(--gap) * 2);
+	padding: calc(var(--gap) );
 	justify-content: center;
 	font-size: 80%;
-	letter-spacing: 0.5px;
-	width: 100%;
 	margin-top: auto;
 	position: relative;
 }
-	main footer.site-footer a {
-		color: #fff;
+	main footer.site-footer .strong {
+		color: var(--color-primary-text);
+		letter-spacing: 0.5px;
 	}
-	main footer .debug-info {
+	main footer > .env {
 		position: absolute;
-		right: 0;
-		background: transparent;
-		transition: width var(--transition-duration);
-		width: 15px;
+		right: 5px;
 		white-space: nowrap;
 		overflow: hidden;
-		cursor: pointer;
 	}
-	main footer .debug-info:hover {
+	main footer > .env:hover {
 		width: initial;
 	}
-	main footer .debug-info:hover .debug-text {
-		display: initial;
-	}
-		main footer .debug-info svg {
-			color: #bbb;
-			cursor: pointer;
-			padding: 1px;
-			margin-left: auto;
+		main footer > .env .text {
+			font-size: 90%;
 			margin-right: 5px;
+			display: none;
 		}
-
-	main footer .debug-text {
-		font-weight: normal;
-		z-index: 5;
-		font-size: 90%;
-		margin-right: 5px;
-		display: none;
-	}
-		main footer .debug-text .strong {
-			color: var(--color-primary-text);
-			font-weight:normal;
+		main footer > .env:hover .text {
+			display: initial;
 		}
-
-.daterangepicker .range_inputs {
-	display: flex;
-}
-	.daterangepicker input {
-		border-radius: 0 !important;
-	}
-	.daterangepicker button {
-		color: #333 !important;
-		border-radius: 0;
-		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		letter-spacing: 1px;
-		font-size: 11px !important;
-	}
-	.daterangepicker .ranges li {
-		border-radius: 0;
-	}
-
-main .section h1.dashboard-name {
-	border: 0;
-	font-size: 200%;
-}
