@@ -936,7 +936,9 @@ class download extends API {
 						}
 					},
 					sheet_name: this.request.body.sheet_name.slice(0, 20),
-					file_name: fileName.slice(0, 20)
+					file_name: fileName.slice(0, 20),
+					show_legends: this.request.body.show_legends,
+					show_values: this.request.body.show_values,
 				},
 			]
 		};

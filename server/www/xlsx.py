@@ -13,7 +13,7 @@ class XLSX(API, object):
         super().__init__()
 
     @staticmethod
-    def plot(worksheet, workbook, dataframe, type, sheet_name, x, y, xl_col):
+    def plot(worksheet, workbook, dataframe, type, sheet_name, x, y, xl_col, legend, show_values):
         max_row = len(dataframe) + 1
         chart = workbook.add_chart(type)
         secondry_col = y.get("y2", {}).get("name", None)
@@ -32,6 +32,7 @@ class XLSX(API, object):
                         'color': brews['Set3'][i]
                     }
                 },
+                'data_labels': {'value': True},
             }
 
             if list(dataframe.columns)[i] == secondry_col:
@@ -45,7 +46,10 @@ class XLSX(API, object):
         if secondry_col:
             chart.set_y2_axis(y["y2"])
 
-        chart.set_legend({'position': 'top'})
+        if legend:
+            chart.set_legend({'position': 'top'})
+        else:
+            chart.set_legend({'none': True})
 
         worksheet.insert_chart(xl_col, chart)
         return chart  # to combine
@@ -139,7 +143,8 @@ class XLSX(API, object):
 
                 worksheet = writer.sheets[d["sheet_name"]]
 
-                self.plot(worksheet, workbook, refined_data, c["type"], d["sheet_name"], c["x"], c["y"], col + str(lim))
+                self.plot(worksheet, workbook, refined_data, c["type"], d["sheet_name"], c["x"], c["y"], col + str(lim),
+                          d["show_legends"], d["show_values"])
                 lim += len(refined_data) + 13
                 start_row += len(refined_data) + 13
                 fuse_to_break_printing_same_data += 1
