@@ -565,6 +565,8 @@ class DataSource {
 				sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				token		 :await IndexedDb.instance.get('token'),
+				show_legends: !this.visualizations.selected.options.hideLegend || 0,
+				show_values: this.visualizations.selected.options.showValues || 0,
 			};
 
 			for(const axis of this.visualizations.selected.options.axes) {
