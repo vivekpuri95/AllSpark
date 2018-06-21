@@ -88,7 +88,7 @@ exports.list = class extends API {
 
 			if(!reportRoleMapping[queryDashboardRole.query_id]) {
 
-				reportRoleMapping[queryDashboardRole.owner_id] = {
+				reportRoleMapping[queryDashboardRole.query_id] = {
 					roles: null,
 					category_id: null,
 					dashboard_roles: [],
