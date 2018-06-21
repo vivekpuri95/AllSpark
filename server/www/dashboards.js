@@ -98,6 +98,21 @@ exports.list = class extends API {
 			dashboardObject[d].superset = 'Dashboards';
 		}
 
+		const filterDashboards = [];
+
+		for(const dashboard of Object.values(dashboardObject)) {
+
+			if(dashboard.visibility === "private" && !(dashboard.added_by === this.user.user_id || dashboard.shared_user.some(x => x.user_id === this.user.user_id))) {
+
+				filterDashboards.push(dashboard.id);
+			}
+		}
+
+		for(const dashboard of filterDashboards) {
+
+			delete dashboardObject[dashboard];
+		}
+
 		return Object.values(dashboardObject);
 	}
 };
