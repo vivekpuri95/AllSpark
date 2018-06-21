@@ -217,7 +217,7 @@ class DataSource {
 					</span>
 					<span class="right visible-to">
 						<span class="label">Visible To</span>
-						<span class="visible-length"></span>
+						<span class="count"></span>
 					</span>
 					<span>
 						<span class="label">Added By:</span>
@@ -236,7 +236,7 @@ class DataSource {
 
 		document.querySelector('body').on('click', (e) => {
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
-		this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
+			this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
 		})
 
 		container.querySelector('.menu .export-toggle').on('click', () => {
@@ -246,8 +246,21 @@ class DataSource {
 			this.visualizations.selected.render({resize: true});
 		});
 		container.querySelector('header .menu-toggle').on('click', () => {
+
 			container.querySelector('.menu').classList.toggle('hidden');
 			container.querySelector('header .menu-toggle').classList.toggle('selected');
+
+			container.querySelector('.description').classList.add('hidden');
+			container.querySelector('.description-toggle').classList.remove('selected');
+			container.querySelector('.query').classList.add('hidden');
+			container.querySelector('.query-toggle').classList.remove('selected');
+			container.querySelector('.filters-toggle').classList.remove('selected');
+
+			if(container.contains(this.filters.container))
+				container.removeChild(this.filters.container);
+
+			this.visualizations.selected.container.classList.remove('blur');
+			container.querySelector('.columns').classList.remove('blur');
 
 			this.visualizations.selected.render({resize: true});
 		});
@@ -258,7 +271,7 @@ class DataSource {
 			container.querySelector('.description .footer').classList.remove('hidden');
 		}
 
-		container.querySelector('.description .visible-to').on('click', () => {
+		container.querySelector('.description .visible-to .count').on('click', () => {
 
 			if(!this.dialog)
 				this.dialog = new DialogBox(this);
@@ -287,6 +300,8 @@ class DataSource {
 		container.querySelector('.menu .filters-toggle').on('click', () => {
 
 			container.querySelector('.filters-toggle').classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			container.querySelector('.columns').classList.toggle('blur');
 
 			if(container.contains(this.filters.container))
 				container.removeChild(this.filters.container);
@@ -312,15 +327,16 @@ class DataSource {
 		container.querySelector('.menu .description-toggle').on('click', async () => {
 
 			container.querySelector('.description').classList.toggle('hidden');
-
 			container.querySelector('.description-toggle').classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			container.querySelector('.columns').classList.toggle('blur');
 
 			this.visualizations.selected.render({resize: true});
 
-			if(user.privileges.has('administrator')) {
+			if(user.privileges.has('report')) {
 
 				await this.userList();
-				container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
+				container.querySelector('.description .count').textContent = `${this.visibleTo.length} people`;
 			}
 			else {
 				container.querySelector('.description .visible-to').classList.add('hidden');
@@ -331,6 +347,8 @@ class DataSource {
 
 			container.querySelector('.query').classList.toggle('hidden');
 			container.querySelector('.query-toggle').classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			container.querySelector('.columns').classList.toggle('blur');
 
 			this.visualizations.selected.render({resize: true});
 		});
@@ -766,7 +784,7 @@ class DataSourceFilters extends Map {
 			<label class="right">
 				<span>&nbsp;</span>
 				<button type="submit">
-					<i class="fa fa-sync"></i> Submit
+					<i class="fas fa-paper-plane"></i> Apply
 				</button>
 			</label>
 		`);
@@ -5655,6 +5673,9 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		if(!this.column)
 			return this.source.error('Value column not selected! :(');
+
+		if(!response)
+			return this.source.error('Invalid Response! :(');
 
 		if(!response.has(this.column))
 			return this.source.error(`<em>${this.column}</em> column not found! :(`);

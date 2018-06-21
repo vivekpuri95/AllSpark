@@ -11,8 +11,14 @@ const assert = require("assert");
 const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
 const msssql = require("./mssql").MsSql;
+const child_process = require('child_process');
 
-const gitChecksum = require('child_process').execSync('git rev-parse --short HEAD').toString().trim();
+const env = {
+	name: process.env.NODE_ENV,
+	deployed_on: new Date().toISOString().substring(0, 19).replace('T', ' '),
+	gitChecksum: child_process.execSync('git rev-parse --short HEAD').toString().trim(),
+	branch: child_process.execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+};
 
 class API {
 
@@ -21,6 +27,7 @@ class API {
 		this.mysql = mysql;
 		this.pgsql = pgsql;
 		this.mssql = msssql;
+		this.env = env.name;
 
 		if(context) {
 			this.user = context.user;
@@ -119,13 +126,14 @@ class API {
 				}
 
 				const checksums = [
-					gitChecksum,
+					env.gitChecksum,
 					crypto.createHash('md5').update(JSON.stringify(obj.account)).digest('hex'),
 					crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex'),
 					crypto.createHash('md5').update(JSON.stringify(obj.user || '')).digest('hex'),
 				];
 
 				obj.checksum = crypto.createHash('md5').update(checksums.join()).digest('hex').substring(0, 10);
+				obj.env = env;
 
 				if (clientEndpoint) {
 					return response.send(await obj.body());
