@@ -41,10 +41,12 @@ exports.insert = class extends API {
 	        owner: "user",
 			category_id: this.request.body.category_id,
 			target_id: this.request.body.role_id,
-	        target: "role"
+	        target: "role",
+	        account_id: this.account.account_id,
+	        added_by: this.user.user_id
         };
 
-        return await this.mysql.query('INSERT INTO object_roles SET ?', [params], 'write');
+        return await this.mysql.query('INSERT INTO tb_object_roles SET ?', [params], 'write');
     }
 }
 
@@ -99,7 +101,7 @@ exports.update = class extends API {
         };
 
         return await this.mysql.query(
-            'UPDATE object_roles SET ? WHERE id = ?',
+            'UPDATE tb_object_roles SET ? WHERE id = ?',
             [params, this.request.body.id],
             'write'
         );
