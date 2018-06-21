@@ -23,6 +23,29 @@ exports.list = class extends API {
 				and q.account_id = ${this.account.account_id}
         `;
 
+		const dashboardRoleQuery = `
+			SELECT
+				q.query_id,
+				o.*
+			FROM
+				tb_query q
+			JOIN
+				tb_query_visualizations qv
+				USING(query_id)
+			JOIN
+				tb_visualization_dashboard vd
+				USING(visualization_id)
+			JOIN
+				tb_object_roles o
+				ON o.owner_id = vd.dashboard_id
+			
+			WHERE
+				o.owner = "dashboard"
+				AND o.target = "role"
+				AND q.is_enabled = 1
+				AND q.is_deleted = 0
+		`;
+
 		if (this.request.body.search) {
 			query = query.concat(`
 				AND (
@@ -38,23 +61,34 @@ exports.list = class extends API {
 			this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]),
 			this.mysql.query('SELECT * FROM tb_query_filters'),
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
+			this.mysql.query(dashboardRoleQuery),
 		]);
 
 		const reportRoles = await role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],);
 
 		const reportRoleMapping = {};
 
+
 		for (const row of reportRoles) {
 
-			if (!reportRoleMapping[row.query_id]) {
+			if (!reportRoleMapping[row.owner_id]) {
 
-				reportRoleMapping[row.query_id] = {
+				reportRoleMapping[row.owner_id] = {
 					roles: [],
 					category_id: [],
+					dashboard_roles: [],
 				};
 
-				reportRoleMapping[row.query_id].roles.push(row.target_id);
-				reportRoleMapping[row.query_id].category_id.push(row.category_id);
+				reportRoleMapping[row.owner_id].roles.push(row.target_id);
+				reportRoleMapping[row.owner_id].category_id.push(row.category_id);
+			}
+		}
+
+		for(const queryDashboardRole of results[3]) {
+
+			if(reportRoleMapping[queryDashboardRole.query_id]) {
+
+				reportRoleMapping[queryDashboardRole.query_id].dashboard_roles.push(queryDashboardRole);
 			}
 		}
 
@@ -62,10 +96,14 @@ exports.list = class extends API {
 
 		for (const row of results[0]) {
 
+			if(row.query_id === 27) {
+				console.log("here")
+			}
+
 			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
 			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
 
-			if ((await auth.report(row, this.user)).error) {
+			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
 
 				continue;
 			}
@@ -359,6 +397,4 @@ exports.userPrvList = class extends API {
 		return privilegedUsers;
 
 	}
-
-
 };

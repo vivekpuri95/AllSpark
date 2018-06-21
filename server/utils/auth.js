@@ -7,7 +7,7 @@ const constants = require("./constants");
 
 class Authenticate {
 
-	static async report(reportObject, userJWTObject) {
+	static async report(reportObject, userJWTObject, reportDashboardRoles,) {
 
 		if (config.has("role_ignore") && config.has("privilege_ignore")) {
 
@@ -60,7 +60,7 @@ class Authenticate {
                 `,
 				[userJWTObject.user_id, reportObject, userJWTObject.user_id, reportObject, accountId]),
 
-				objRole.get(userJWTObject.account_id, "query", "role", reportObject,)
+				objRole.get(userJWTObject.account_id, "query", "role", reportObject,),
 			]);
 
 			if (!reportObject.length && reportObject.length > 1) {
@@ -73,6 +73,31 @@ class Authenticate {
 			const roles = reportObject[1].map(x => x.target_id);
 			reportObject = reportObject[0][0];
 			reportObject.roles = roles;
+		}
+
+		if(!reportDashboardRoles) {
+
+			reportDashboardRoles =await mysql.query(`
+					SELECT
+						o.*
+					FROM
+						tb_query q
+					JOIN
+						tb_query_visualizations qv
+						USING(query_id)
+					JOIN
+						tb_visualization_dashboard vd
+						USING(visualization_id)
+					JOIN
+						tb_object_roles o
+						on o.owner_id = vd.dashboard_id
+					WHERE
+						o.owner = "dashboard"
+						AND o.target = "role"
+						AND query_id = ?
+				`,
+				[reportObject.query_id ? reportObject.query_id : parseInt(reportObject) || 0]
+			);
 		}
 
 		if (reportObject.flag) {
@@ -93,6 +118,20 @@ class Authenticate {
 
 			reportObject.roles = [null];
 		}
+
+
+		for(const row of reportDashboardRoles) {
+
+			const objectRoles = [[row.account_id, row.category_id, row.target_id]];
+
+			const authResponse = commonFun.authenticatePrivileges(userPrivileges, objectRoles);
+
+			if(!authResponse.error) {
+
+				return authResponse
+			}
+		}
+
 
 		let objectPrivileges = [[reportObject.account_id], Array.isArray(reportObject.category_id) ? reportObject.category_id : [reportObject.category_id]];
 
