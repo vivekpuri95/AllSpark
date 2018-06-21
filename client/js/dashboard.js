@@ -855,7 +855,7 @@ class Dashboard {
 			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
 		}
 
-		if (this.page.user.privileges.has('reports')) {
+		if (this.page.user.privileges.has('report')) {
 
 			const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
 

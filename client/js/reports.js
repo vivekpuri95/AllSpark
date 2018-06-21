@@ -231,7 +231,7 @@ class DataSource {
 			</div>
 		`;
 
-		if(user.privileges.has('reports'))
+		if(user.privileges.has('report'))
 			container.querySelector('header h2').insertAdjacentHTML('beforeend', ` <span class="id">#${this.query_id}</span>`);
 
 		document.querySelector('body').on('click', (e) => {
@@ -252,7 +252,7 @@ class DataSource {
 			this.visualizations.selected.render({resize: true});
 		});
 
-		if(user.privileges.has('reports')) {
+		if(user.privileges.has('report')) {
 			container.querySelector('.toolbar .expand-toggle').classList.remove('hidden');
 			container.querySelector('.toolbar .query-toggle').classList.remove('hidden');
 			container.querySelector('.description .footer').classList.remove('hidden');
