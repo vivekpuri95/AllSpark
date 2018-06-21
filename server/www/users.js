@@ -102,8 +102,8 @@ exports.list = class extends API {
 		if (this.request.body.user_id) {
 
 			user_query = user_query.concat(` AND user_id = ${this.request.body.user_id}`);
-			role_query = role_query.concat(` WHERE user_id = ${this.request.body.user_id}`);
-			prv_query = prv_query.concat(` WHERE user_id = ${this.request.body.user_id}`);
+			role_query = role_query.concat(`AND user_id = ${this.request.body.user_id}`);
+			prv_query = prv_query.concat(`WHERE user_id = ${this.request.body.user_id}`);
 
 			results = await Promise.all([
 				this.mysql.query(user_query),
