@@ -40,7 +40,7 @@ exports.list = class extends API {
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 		]);
 
-		const reportRoles = await role.get(this.account.account_id, "query", "role", result[0].length? results[0].map(x => x.query_id) : [-1],);
+		const reportRoles = await role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],);
 
 		const reportRoleMapping = {};
 
