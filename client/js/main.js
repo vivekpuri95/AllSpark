@@ -76,7 +76,7 @@ class Page {
 		Page.navList = [
 			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
 			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
-			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
+			{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
 			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
 			{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
 			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
