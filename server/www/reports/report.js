@@ -86,19 +86,21 @@ exports.list = class extends API {
 
 		for(const queryDashboardRole of results[3]) {
 
-			if(reportRoleMapping[queryDashboardRole.query_id]) {
+			if(!reportRoleMapping[queryDashboardRole.query_id]) {
 
-				reportRoleMapping[queryDashboardRole.query_id].dashboard_roles.push(queryDashboardRole);
+				reportRoleMapping[row.owner_id] = {
+					roles: null,
+					category_id: null,
+					dashboard_roles: [],
+				};
 			}
+
+			reportRoleMapping[queryDashboardRole.query_id].dashboard_roles.push(queryDashboardRole);
 		}
 
 		const response = [];
 
 		for (const row of results[0]) {
-
-			if(row.query_id === 27) {
-				console.log("here")
-			}
 
 			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
 			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
