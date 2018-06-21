@@ -2727,6 +2727,9 @@ class LinearVisualization extends Visualization {
 
 				const column = row.source.columns.get(key);
 
+				if(column.disabled)
+					continue;
+
 				tooltip.push(`
 					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
 						<span class="circle" style="background:${column.color}"></span>
@@ -3405,6 +3408,17 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
 				.attr('cy', d => this.y(d.y));
 
+			if(this.options.showValues) {
+				this.svg
+					.selectAll('dot')
+					.data(column)
+					.enter()
+					.append('text')
+					.attr('x', d => this.x(d.x) + this.axes.left.width - (d.y1.toString().length * 4))
+					.attr('y', d => this.y(d.y) + 6)
+					.text(d => d.y1);
+			}
+
 			if(!options.resize) {
 
 				dots = dots
@@ -3559,7 +3573,8 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 		// For each line appending the circle at each point
 		for(const column of this.columns) {
 
-			this.svg.selectAll('dot')
+			this.svg
+				.selectAll('dot')
 				.data(column)
 				.enter()
 				.append('circle')
@@ -3569,6 +3584,17 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
 				.attr('cy', d => this.y(d.y))
+
+			if(this.options.showValues) {
+				this.svg
+					.selectAll('dot')
+					.data(column)
+					.enter()
+					.append('text')
+					.attr('x', d => this.x(d.x) + this.axes.left.width - ((d.x + ', ' + d.y).toString().length * 3))
+					.attr('y', d => this.y(d.y) - 12)
+					.text(d => d.x + ', ' + d.y);
+			}
 		}
 
 		container
@@ -4546,7 +4572,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 			 let values;
 
-			if(this.options.showValues) {
+		if(this.options.showValues) {
 
 			values = this.svg
 				.append('g')
@@ -4576,8 +4602,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 					else
 						return Format.number(cell.y)
 				});
-			}
-
+		}
 
 		if(!options.resize) {
 
@@ -4692,6 +4717,9 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			for(const [name, value] of row) {
 
 				if(name == this.axes.bottom.column)
+					continue;
+
+				if(this.source.columns.get(name).disabled)
 					continue;
 
 				total += parseFloat(value) || 0;
@@ -5326,11 +5354,11 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 			arc = d3.svg.arc()
 				.outerRadius(radius)
-				.innerRadius(radius - 75),
+				.innerRadius(this.options.classicPie ? 0 : radius - 75),
 
 			arcHover = d3.svg.arc()
 				.outerRadius(radius + 10)
-				.innerRadius(radius - 75),
+				.innerRadius(this.options.classicPie ? 0 : radius - 75),
 
 			arcs = container
 				.append('svg')
@@ -5412,7 +5440,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		}
 
 		// Add the text
-		if(!this.hideNumber) {
+		if(this.options.showValue == 'value') {
 
 			arcs.append('text')
 				.attr('transform', row => {
@@ -5424,8 +5452,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				.text(row => Format.number(row.data.value));
 		}
 
-		// Add the text
-		if(!this.hidePercentage) {
+		else {
 
 			arcs.append('text')
 				.attr('transform', row => {
@@ -5476,9 +5503,23 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			markers = [],
 			response = this.source.response;
 
+		if(!this.options.latitude)
+			return this.source.error('Latitude Column not defined! :(');
+
+		if(!this.source.columns.has(this.options.latitude))
+			return this.source.error(`Latitude Column '${this.options.latitude}' not found! :(`);
+
+		if(!this.options.longitude)
+			return this.source.error('Longitude Column not defined! :(');
+
+		if(!this.source.columns.has(this.options.longitude))
+			return this.source.error(`Longitude Column '${this.options.longitude}' not found! :(`);
+
+		const zoom = parseInt(this.options.initialZoom) || 12;
+
 		// If the maps object wasn't already initialized
 		if(!this.map)
-			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), { zoom: 12 });
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {zoom});
 
 		// If the clustered object wasn't already initialized
 		if(!this.clusterer)
@@ -5489,8 +5530,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			markers.push(
 				new google.maps.Marker({
 					position: {
-						lat: parseFloat(row.get('lat')),
-						lng: parseFloat(row.get('lng')),
+						lat: parseFloat(row.get(this.options.latitude)),
+						lng: parseFloat(row.get(this.options.longitude)),
 					},
 				})
 			);
@@ -5509,8 +5550,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		// Point the map to location's center
 		this.map.panTo({
-			lat: parseFloat(response[0].get('lat')),
-			lng: parseFloat(response[0].get('lng')),
+			lat: parseFloat(this.options.initialLatitude || response[0].get(this.options.latitude)),
+			lng: parseFloat(this.options.initialLongitude || response[0].get(this.options.longitude)),
 		});
 	}
 });
@@ -5671,21 +5712,21 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		const [response] = this.source.response;
 
-		if(!this.column)
+		if(!this.options.column)
 			return this.source.error('Value column not selected! :(');
 
 		if(!response)
 			return this.source.error('Invalid Response! :(');
 
-		if(!response.has(this.column))
-			return this.source.error(`<em>${this.column}</em> column not found! :(`);
+		if(!response.has(this.options.column))
+			return this.source.error(`<em>${this.options.column}</em> column not found! :(`);
 
-		const value = response.get(this.column);
+		const value = response.get(this.options.column);
 
-		if(this.valueType == 'number' && isNaN(value))
+		if(this.options.valueType == 'number' && isNaN(value))
 			return this.source.error('Invalid Number! :(');
 
-		if(this.valueType == 'date' && !Date.parse(value))
+		if(this.options.valueType == 'date' && !Date.parse(value))
 			return this.source.error('Invalid Date! :(');
 	}
 
@@ -5693,17 +5734,17 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		const [response] = this.source.response;
 
-		let value = response.get(this.column);
+		let value = response.get(this.options.column);
 
-		if(this.valueType == 'number')
+		if(this.options.valueType == 'number')
 			value = Format.number(value);
 
-		if(this.valueType == 'date')
+		if(this.options.valueType == 'date')
 			value = Format.date(value);
 
 		this.container.querySelector('.container').innerHTML = `
 			<div class="value">
-				${this.prefix || ''}${value}${this.postfix || ''}
+				${this.options.prefix || ''}${value}${this.options.postfix || ''}
 			</div>
 		`;
 	}
@@ -5746,32 +5787,32 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	process() {
 
-		if(!this.timingColumn)
+		if(!this.options.timingColumn)
 			return this.source.error('Timing column not selected! :(');
 
-		if(!this.valueColumn)
+		if(!this.options.valueColumn)
 			return this.source.error('Value column not selected! :(');
 
 		const dates = new Map;
 
 		for(const row of this.source.response) {
 
-			if(!row.has(this.timingColumn))
-				return this.source.error(`Timing column '${this.timingColumn}' not found! :(`);
+			if(!row.has(this.options.timingColumn))
+				return this.source.error(`Timing column '${this.options.timingColumn}' not found! :(`);
 
-			if(!row.has(this.valueColumn))
-				return this.source.error(`Value column '${this.valueColumn}' not found! :(`);
+			if(!row.has(this.options.valueColumn))
+				return this.source.error(`Value column '${this.options.valueColumn}' not found! :(`);
 
-			if(!Date.parse(row.get(this.timingColumn)))
-				return this.source.error(`Timing column value '${row.get(this.timingColumn)}' is not a valid date! :(`);
+			if(!Date.parse(row.get(this.options.timingColumn)))
+				return this.source.error(`Timing column value '${row.get(this.options.timingColumn)}' is not a valid date! :(`);
 
-			dates.set(Date.parse(new Date(row.get(this.timingColumn)).toISOString().substring(0, 10)), row);
+			dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
 
 		const
-			center = Date.parse(new Date(Date.now() - ((this.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			left = Date.parse(new Date(Date.now() - ((this.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			right = Date.parse(new Date(Date.now() - ((this.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
+			center = Date.parse(new Date(Date.now() - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			left = Date.parse(new Date(Date.now() - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			right = Date.parse(new Date(Date.now() - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
 
 		this.center = {value: 0};
 		this.right = {value: 0};
@@ -5782,7 +5823,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			const row = dates.get(center);
 
 			this.center = {
-				value: row.get(this.valueColumn),
+				value: row.get(this.options.valueColumn),
 			};
 		}
 
@@ -5790,10 +5831,10 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			const
 				row = dates.get(left),
-				value = row.get(this.valueColumn);
+				value = row.get(this.options.valueColumn);
 
 			this.left = {
-				value: row.get(this.valueColumn),
+				value: row.get(this.options.valueColumn),
 				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
 			};
 		}
@@ -5802,10 +5843,10 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			const
 				row = dates.get(right),
-				value = row.get(this.valueColumn);
+				value = row.get(this.options.valueColumn);
 
 			this.right = {
-				value: row.get(this.valueColumn),
+				value: row.get(this.options.valueColumn),
 				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
 			};
 		}
@@ -5819,21 +5860,21 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const container = this.container.querySelector('.container');
 
 		container.innerHTML = `
-			<h5>${this.prefix || ''}${Format.number(this.center.value)}${this.postfix || ''}</h5>
+			<h5>${this.options.prefix || ''}${Format.number(this.center.value)}${this.options.postfix || ''}</h5>
 
 			<div class="left">
 				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					${this.prefix || ''}${Format.number(this.left.value)}${this.postfix || ''}<br>
-					<small>${Format.number(this.leftOffset)} days ago</small>
+					${this.options.prefix || ''}${Format.number(this.left.value)}${this.options.postfix || ''}<br>
+					<small>${Format.number(this.options.leftOffset)} days ago</small>
 				</span>
 			</div>
 
 			<div class="right">
 				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					${this.prefix || ''}${Format.number(this.right.value)}${this.postfix || ''}<br>
-					<small>${Format.number(this.rightOffset)} days ago</small>
+					${this.options.prefix || ''}${Format.number(this.right.value)}${this.options.postfix || ''}<br>
+					<small>${Format.number(this.options.rightOffset)} days ago</small>
 				</span>
 			</div>
 		`;
