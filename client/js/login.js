@@ -195,6 +195,12 @@ Page.class = class Login extends Page {
 				method: 'POST',
 			};
 
+		if(account.auth_api) {
+			parameters.external_parameters = 1;
+			parameters.ext_email = this.container.querySelector('#accept-email input').value;
+			parameters.ext_password = this.container.querySelector('#accept-password input[type=password]').value;
+		}
+
 		this.authenticate(parameters, options);
 
 		Sections.show('accept-password');
