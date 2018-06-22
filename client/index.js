@@ -560,10 +560,11 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 				</button>
 			</section>
 
-			<footer class="site-footer ${this.account.settings.get('disable_powered_by') ? 'disabled' : ''}">
-				Powered by&nbsp;
-				${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
-				<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
+			<footer class="site-footer">
+				<span class="${this.account.settings.get('disable_powered_by') ? 'hidden' : ''}">
+					Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
+					<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
+				</span><span>&nbsp;</span>
 				<div class="env">
 					<span class="text">
 						Env: <span class="strong">${this.env.name}</span>
