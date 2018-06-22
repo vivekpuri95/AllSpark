@@ -75,6 +75,7 @@ main .data-source {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	position: relative;
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 main .data-source:hover {
@@ -147,7 +148,9 @@ main .data-source:hover {
 		margin-bottom: calc(var(--gap) * 2);
 		font-size: 95%;
 		display: flex;
-		flex-wrap: wrap;
+	}
+	main .data-source .toolbar::-webkit-scrollbar {
+		display: none;
 	}
 		main .data-source .toolbar > * {
 			margin: 0 5px;

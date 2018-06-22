@@ -779,7 +779,7 @@ class Dashboard {
 		return visualizationList;
 	}
 
-	async render(resize = {resize: true}) {
+	async render(resize) {
 
 		if (this.format && this.format.category_id)
 			return;

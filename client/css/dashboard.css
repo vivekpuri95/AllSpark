@@ -303,7 +303,6 @@ main #reports > .list {
 	main #reports .list .data-source {
 		grid-column: auto / span 16;
 		grid-row: auto / span 2;
-		position: relative;
 		transition: box-shadow var(--transition-duration),
 					opacity var(--transition-duration),
 					border var(--transition-duration);

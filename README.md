@@ -1,3 +1,4 @@
+
 # AllSpark
 
 Add a SQL query or pass in an api and generate graphs, reports and other visualizations in seconds.
@@ -49,6 +50,7 @@ NODE_ENV="dev" npm start
 
 ### Ubuntu (18)
 
+```
 sudo apt-get install mysql-server
 sudo apt-get install apache2
 sudo apt-get install php
@@ -63,5 +65,6 @@ git clone ... allspark
 cd allspark
 npm install
 cp config/sample.json config/env.json
+```
 // Add DB crendetials
 // Follow the Start Server Section's instructions

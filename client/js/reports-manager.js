@@ -2235,7 +2235,13 @@ class ReportVisualizationOptions {
 	}
 
 	get json() {
-		return {};
+
+		const result = {};
+
+		for(const element of this.form.querySelectorAll('input, select'))
+			result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+
+		return result;
 	}
 }
 
@@ -2263,12 +2269,12 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<div class="options form body">
 					<label>
 						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend.
+							<input type="checkbox" name="hideLegend">Hide Legend
 						</span>
 					</label>
 					<label>
 						<span>
-							<input type="checkbox" name="showValues">Show Value.
+							<input type="checkbox" name="showValues">Show Values
 						</span>
 					</label>
 				</div>
@@ -2470,35 +2476,12 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 			</div>
 		`;
 
-		if(this.visualization.options && this.visualization.options.hideSearchBar)
-			container.querySelector('input[name=hideSearchBar]').checked = this.visualization.options.hideSearchBar;
-
-		if(this.visualization.options && this.visualization.options.hideFunctionBar)
-			container.querySelector('input[name=hideFunctionBar]').checked = this.visualization.options.hideFunctionBar;
-
-		if(this.visualization.options && this.visualization.options.hideHeadingsBar)
-			container.querySelector('input[name=hideHeadingsBar]').checked = this.visualization.options.hideHeadingsBar;
-
-		if(this.visualization.options && this.visualization.options.hideLegend)
-			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
-
-		if(this.visualization.options && this.visualization.options.hideRowSummary)
-			container.querySelector('input[name=hideRowSummary]').checked = this.visualization.options.hideRowSummary;
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
 
 		this.stage.setupConfigurationSetions(container);
 
 		return container;
-	}
-
-	get json() {
-
-		return {
-			hideSearchBar: this.form.querySelector('input[name=hideSearchBar]').checked,
-			hideFunctionBar: this.form.querySelector('input[name=hideFunctionBar]').checked,
-			hideHeadingsBar: this.form.querySelector('input[name=hideHeadingsBar]').checked,
-			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
-			hideRowSummary: this.form.querySelector('input[name=hideRowSummary]').checked,
-		}
 	}
 });
 
@@ -2537,25 +2520,17 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body form">
 
-					<label class="hidden">
-						<span>Name Column</span>
-						<select name="nameColumn"></select>
-					</label>
-
-					<label class="hidden">
-						<span>Value Column</span>
-						<select name="valueColumn"></select>
+					<label>
+						<span>Show</span>
+						<select name="showValue">
+							<option value="value">Value</option>
+							<option value="percentage">Percentage</option>
+						</select>
 					</label>
 
 					<label>
 						<span>
-							<input type="checkbox" name="hideValue">Hide Value
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hidePercentage">Hide Percentage
+							<input type="checkbox" name="classicPie">Classic Pie
 						</span>
 					</label>
 
@@ -2568,47 +2543,12 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 			</div>
 		`;
 
-		const
-			nameColumn = container.querySelector('select[name=nameColumn]'),
-			valueColumn = container.querySelector('select[name=valueColumn]');
-
-		for(const [key, column] of this.page.preview.report.columns) {
-
-			nameColumn.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-
-			valueColumn.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-		}
-
-		if(this.visualization.options && this.visualization.options.hidePercentage)
-			container.querySelector('input[name=hidePercentage]').checked = this.visualization.options.hidePercentage;
-
-		if(this.visualization.options && this.visualization.options.hideValue)
-			container.querySelector('input[name=hideValue]').checked = this.visualization.options.hideValue;
-
-		if(this.visualization.options && this.visualization.options.hideLegend)
-			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
-
-		nameColumn.value = (this.visualization.options && this.visualization.options.nameColumn) || '';
-		valueColumn.value = (this.visualization.options && this.visualization.options.valueColumn) || '';
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
 
 		this.stage.setupConfigurationSetions(container);
 
 		return container;
-	}
-
-	get json() {
-
-		return {
-			hidePercentage: this.form.querySelector('input[name=hidePercentage]').checked,
-			hideValue: this.form.querySelector('input[name=hideValue]').checked,
-			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
-			nameColumn: this.form.querySelector('select[name=nameColumn]').value,
-			valueColumn: this.form.querySelector('select[name=valueColumn]').value,
-		}
 	}
 });
 
@@ -2616,6 +2556,81 @@ ConfigureVisualization.types.set('funnel', class FunnelOptions extends ReportVis
 });
 
 ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if (this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="form body">
+
+					<label>
+						<span>Latitude Column</span>
+						<select name="latitude"></select>
+					</label>
+
+					<label>
+						<span>Longitude Column</span>
+						<select name="longitude"></select>
+					</label>
+
+					<label>
+						<span>Initial Zoom</span>
+						<input type="number" step="1" name="initialZoom" min="1" max="25">
+					</label>
+
+					<label>
+						<span>Initial Latitude</span>
+						<input type="text" name="initialLatitude">
+					</label>
+
+					<label>
+						<span>Initial Longitude</span>
+						<input type="text" name="initialLongitude">
+					</label>
+
+					<label class="hidden">
+						<span>
+							<input type="checkbox" name="disableClustring">Disable Clustring
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend.
+						</span>
+					</label>
+				</div>
+			</div>
+		`;
+
+		const
+			latitude = container.querySelector('select[name=latitude]'),
+			longitude = container.querySelector('select[name=longitude]');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			latitude.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			longitude.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
 });
 
 ConfigureVisualization.types.set('cohort', class CohortOptions extends ReportVisualizationOptions {
@@ -2653,12 +2668,12 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 					<label>
 						<span>Prefix</span>
-						<input type="text" name="prefix" value="${(this.visualization.options && this.visualization.options.prefix) || ''}">
+						<input type="text" name="prefix">
 					</label>
 
 					<label>
 						<span>Postfix</span>
-						<input type="text" name="postfix" value="${(this.visualization.options && this.visualization.options.postfix) || ''}">
+						<input type="text" name="postfix">
 					</label>
 
 					<label>
@@ -2670,9 +2685,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 			</div>
 		`;
 
-		const
-			columnSelect = container.querySelector('select[name=column]'),
-			valueType = container.querySelector('select[name=valueType]');
+		const columnSelect = container.querySelector('select[name=column]');
 
 		for(const [key, column] of this.page.preview.report.columns) {
 
@@ -2681,26 +2694,12 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 			`);
 		}
 
-		if(this.visualization.options && this.visualization.options.hideLegend)
-			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
-
-		columnSelect.value = (this.visualization.options && this.visualization.options.column) || '';
-		valueType.value = (this.visualization.options && this.visualization.options.valueType) || '';
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
 
 		this.stage.setupConfigurationSetions(container);
 
 		return container;
-	}
-
-	get json() {
-
-		return {
-			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
-			column: this.form.querySelector('select[name=column]').value,
-			valueType: this.form.querySelector('select[name=valueType]').value,
-			prefix: this.form.querySelector('input[name=prefix]').value,
-			postfix: this.form.querySelector('input[name=postfix]').value,
-		}
 	}
 });
 
@@ -2711,10 +2710,9 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 		if (this.formContainer)
 			return this.formContainer;
 
-		const container = this.formContainer = document.createElement('form');
+		const container = this.formContainer = document.createElement('div');
 
 		container.innerHTML = `
-
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="form body">
@@ -2769,42 +2767,27 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			</div>
 		`;
 
+		const
+			timingColumn = container.querySelector('select[name=timingColumn]'),
+			valueColumn = container.querySelector('select[name=valueColumn]');
+
 		for(const [key, column] of this.page.preview.report.columns) {
 
-			container.timingColumn.insertAdjacentHTML('beforeend', `
+			timingColumn.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 
-			container.valueColumn.insertAdjacentHTML('beforeend', `
+			valueColumn.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 		}
 
-		if(this.visualization.options && this.visualization.options.invertValues)
-			container.invertValues.checked = this.visualization.options.invertValues;
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
 
-		if(this.visualization.options && this.visualization.options.hideLegend)
-			container.hideLegend.checked = this.visualization.options.hideLegend;
-
-		for(const key in this.visualization.options || []) {
-			if(key in container.elements)
-				container.elements[key].value = this.visualization.options[key];
-		}
+		this.stage.setupConfigurationSetions(container);
 
 		return container;
-	}
-
-	get json() {
-
-		const result = {};
-
-		for(const element of this.form.elements)
-			result[element.name] = element.value;
-
-		result.invertValues = this.form.invertValues.checked;
-		result.hideLegend = this.form.hideLegend.checked;
-
-		return result;
 	}
 });
 
