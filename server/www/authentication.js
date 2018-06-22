@@ -153,7 +153,7 @@ exports.login = class extends API {
 
 		for (const key of externalParameterKeys) {
 
-			const value = this.request.body[constants.external_parameter_prefix + key];
+			const value = this.request.body[constants.external_parameter_prefix + key] || "";
 
 			if (Array.isArray(value)) {
 
