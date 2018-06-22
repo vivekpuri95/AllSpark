@@ -52,11 +52,7 @@ Page.class = class Login extends Page {
 		Sections.show('loading');
 
 		const
-			parameters = {
-				external_parameters: 1,
-				ext_email: this.container.querySelector('#accept-email input').value,
-				ext_password: this.container.querySelector('#accept-password input[type=password]').value,
-			},
+			parameters = {},
 			options = {
 				method: 'POST',
 			};
@@ -198,6 +194,12 @@ Page.class = class Login extends Page {
 			options = {
 				method: 'POST',
 			};
+
+		if(account.auth_api) {
+			parameters.external_parameters = 1;
+			parameters.ext_email = this.container.querySelector('#accept-email input').value;
+			parameters.ext_password = this.container.querySelector('#accept-password input[type=password]').value;
+		}
 
 		this.authenticate(parameters, options);
 
