@@ -5503,6 +5503,9 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			markers = [],
 			response = this.source.response;
 
+		if(!this.options)
+			return this.source.error('Options not defined! :(');
+
 		if(!this.options.latitude)
 			return this.source.error('Latitude Column not defined! :(');
 
