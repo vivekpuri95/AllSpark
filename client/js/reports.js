@@ -1552,8 +1552,10 @@ class DataSourceColumn {
 			updated = 0,
 			json_param = [];
 
-		for(const element of this.form.elements)
+		for(const element of this.form.elements) {
+
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+		}
 
 		for(const row of this.form.querySelectorAll('.parameter')) {
 
@@ -1921,6 +1923,12 @@ class DataSourceColumn {
 	popup(e) {
 
 		e.stopPropagation();
+
+		for(const key in this) {
+
+			if(key in this.form)
+				this.form[key].value = this[key];
+		}
 
 		for(const node of this.headingContainer.parentElement.querySelectorAll('th'))
 			node.querySelector('.popup-dropdown').classList.add('hidden');
