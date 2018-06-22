@@ -533,7 +533,7 @@ class DataSource {
 				else if(first > second)
 					result = 1;
 
-				if(parseInt(this.columns.sortBy.sort) === 0)
+				if(!this.columns.sortBy.sort)
 					result *= -1;
 
 				return result;
@@ -1154,7 +1154,7 @@ class DataSourceColumn {
 						<input type="text" name="name" value="${this.name}" >
 					</label>
 
-					<label>
+					<label class="show">
 						<span>Search</span>
 						<div class="search">
 							<select name="searchType"></select>
@@ -1222,7 +1222,7 @@ class DataSourceColumn {
 
 					<div class="parameter-list"></div>
 
-					<footer>
+					<footer class="show">
 
 						<button type="button" class="cancel">
 							<i class="far fa-times-circle"></i> Cancel
@@ -1408,6 +1408,8 @@ class DataSourceColumn {
 			this.drilldownQuery.clear();
 		}
 
+		this.form.classList.remove('compact');
+		this.blanket.appendChild(this.form);
 		this.blanket.classList.remove('hidden');
 	}
 
@@ -1885,10 +1887,20 @@ class DataSourceColumn {
 		container.classList.add('heading');
 
 		container.innerHTML = `
-			${this.drilldown && this.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
-			<span class="name">${this.name}</span>
-			<span class="sort"><i class="fa fa-sort"></i></span>
+			<div>
+				<span class="name">
+					${this.drilldown && this.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
+					${this.name}
+				</span>
+				<div class="filter-popup"><span>&#9698;</span></div>
+				<div class="hidden popup-dropdown">
+				</div>
+			</div>
 		`;
+
+		document.querySelector('body').on('click', () => {
+			container.querySelector('.popup-dropdown').classList.add('hidden');
+		});
 
 		container.on('click', () => {
 
@@ -1901,7 +1913,23 @@ class DataSourceColumn {
 			this.source.visualizations.selected.render();
 		});
 
+		container.querySelector('.filter-popup').on('click', (e) => this.popup(e));
+
 		return container;
+	}
+
+	popup(e) {
+
+		e.stopPropagation();
+
+		for(const node of this.headingContainer.parentElement.querySelectorAll('th'))
+			node.querySelector('.popup-dropdown').classList.add('hidden');
+
+		this.form.classList.add('compact');
+
+		this.headingContainer.querySelector('.popup-dropdown').appendChild(this.form);
+
+		this.headingContainer.querySelector('.popup-dropdown').classList.remove('hidden');
 	}
 }
 
@@ -2895,14 +2923,9 @@ Visualization.list.set('table', class Table extends Visualization {
 		accumulation.classList.add('accumulation');
 
 		for(const column of this.source.columns.list.values()) {
-
-			search.appendChild(column.search);
 			accumulation.appendChild(column.accumulation);
 			headings.appendChild(column.heading);
 		}
-
-		if(!this.hideSearchBar)
-			thead.appendChild(search);
 
 		if(!this.hideFunctionBar)
 			thead.appendChild(accumulation);
