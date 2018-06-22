@@ -148,8 +148,6 @@ main .data-source:hover {
 		margin-bottom: calc(var(--gap) * 2);
 		font-size: 95%;
 		display: flex;
-		overflow-x: auto;
-		overflow-y: hidden;
 	}
 	main .data-source .toolbar::-webkit-scrollbar {
 		display: none;
