@@ -52,7 +52,11 @@ Page.class = class Login extends Page {
 		Sections.show('loading');
 
 		const
-			parameters = {},
+			parameters = {
+				external_parameters: 1,
+				ext_email: this.container.querySelector('#accept-email input').value,
+				ext_password: this.container.querySelector('#accept-password input[type=password]').value,
+			},
 			options = {
 				method: 'POST',
 			};
