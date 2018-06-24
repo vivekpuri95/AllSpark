@@ -78,6 +78,7 @@ class Page {
 			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
 			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
 			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
+			{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
 			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
 		];
 
@@ -860,13 +861,16 @@ class API extends AJAX {
 	 *	 future, just comment out the later conversion.
 	 *
 	 * @param  object	parameters	The parameter list.
-	 * @param  string	form		The id of the form whose elements will be picked.
+	 * @param  string	formData	The FormData object whose elements will be picked.
 	 */
-	static loadFormData(parameters, form) {
+	static loadFormData(parameters, formData) {
 
-		for(const key of form.keys()) {
+		if(!(formData instanceof FormData))
+			throw new Page.exception('The form object is not an instance of FormDat class! :(');
 
-			let value = form.get(key).trim();
+		for(const key of formData.keys()) {
+
+			let value = formData.get(key).trim();
 
 			if(value && !isNaN(value))
 				value = parseInt(value);
