@@ -587,7 +587,7 @@ class DataSource {
 				show_values: this.visualizations.selected.options.showValues || 0,
 			};
 
-			for(const axis of this.visualizations.selected.options.axes) {
+			for(const axis of this.visualizations.selected.options.axes || []) {
 				if(axis.columns.length)
 					obj[axis.position] = axis.columns[0].key;
 			}

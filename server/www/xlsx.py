@@ -40,8 +40,9 @@ class XLSX(API, object):
 
             chart.add_series(series_obj)
 
-        chart.set_x_axis({'name': x['name'], 'date_axis': x.get("date_axis", False), })
-        chart.set_y_axis({'name': y['name'], 'major_gridlines': {'visible': True}})
+        if not type["type"] in ["pie", "doughnut"]:
+            chart.set_x_axis({'name': x['name'], 'date_axis': x.get("date_axis", False), })
+            chart.set_y_axis({'name': y['name'], 'major_gridlines': {'visible': True}})
 
         if secondry_col:
             chart.set_y2_axis(y["y2"])
@@ -113,14 +114,14 @@ class XLSX(API, object):
                 else:
                     pass
 
-                if not len(columns_to_use) and c["type"].get("type", "") != "pie":
+                if not len(columns_to_use) and c["type"].get("type", "") not in ["pie", "doughnut"]:
                     continue
 
-                if c["type"].get("type", "") == "pie":
+                if c["type"].get("type", "") in ["pie", "doughnut"]:
                     columns_to_use = list(data.columns)
 
                 refined_data = data[data.columns.intersection(columns_to_use)]
-                if c["type"].get("type", "") == "pie":
+                if c["type"].get("type", "") in ["pie", "doughnut"]:
                     k = [{i: i for i in list(refined_data.columns)}]
 
                     refined_data = refined_data.append(k)
@@ -134,11 +135,11 @@ class XLSX(API, object):
 
                 refined_data = refined_data.set_index(c["x"].get("name", "x"))
 
-                if fuse_to_break_printing_same_data == 0 and c["type"].get("type", "") != "pie":
+                if fuse_to_break_printing_same_data == 0 and c["type"].get("type", "") not in ["pie", "doughnut"]:
                     data.set_index(c["x"].get("name", "x")).to_excel(writer, sheet_name=d["sheet_name"],
                                                                      startrow=start_row)
 
-                elif fuse_to_break_printing_same_data == 0 and c["type"].get("type", "") == "pie":
+                elif fuse_to_break_printing_same_data == 0 and c["type"].get("type", "") in ["pie", "doughnut"]:
                     refined_data.to_excel(writer, sheet_name=d["sheet_name"], startrow=start_row)
 
                 worksheet = writer.sheets[d["sheet_name"]]
