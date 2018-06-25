@@ -10,7 +10,7 @@ Page.class = class Dashboards extends Page {
 		this.listContainer.form = this.listContainer.querySelector('.form.toolbar');
 
 		if(!this.user.privileges.has('report'))
-			this.container.querySelector('footer env');
+			this.container.querySelector('footer env').classList.add('hidden');
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 			await Sections.show('list');
