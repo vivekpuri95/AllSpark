@@ -82,10 +82,17 @@ main .data-source:hover {
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
 }
 	main .data-source > .warning {
-		margin: calc(var(--gap) * 2) 0 0;
+		margin: 0;
 		overflow: auto;
 		user-select: text;
 		font-family: inherit;
+		background: #EF9A9A;
+		color: #fff;
+		flex: 1;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		font-size: 125%;
 	}
 	main .data-source > header {
 		display: flex;
@@ -210,17 +217,16 @@ main .data-source:hover {
 			width: 10px;
 		}
 	main .data-source > .description {
-	border-top: 1px solid #ccc;
-	background: rgba(255, 255, 255, 0.8);
-	position: absolute;
-	bottom: 0;
-	top: 80px;
-	z-index: 1;
-	l;
-	left: 0;
-	right: 0;
-	display: flex;
-	flex-direction:  column;
+		border-top: 1px solid #ccc;
+		background: rgba(255, 255, 255, 0.8);
+		position: absolute;
+		bottom: 0;
+		top: 80px;
+		z-index: 1;
+		left: 0;
+		right: 0;
+		display: flex;
+		flex-direction: column;
 	}
 		main .data-source > .description .body {
 			white-space: pre-wrap;
@@ -538,6 +544,7 @@ main .data-source:hover {
 		flex: 1;
 		background: #f1f1f1;
 		transition: filter var(--transition-duration);
+		overflow: auto;
 	}
 	main .data-source .visualization.blur {
 		filter: blur(2px);

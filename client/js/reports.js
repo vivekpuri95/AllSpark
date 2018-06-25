@@ -1888,8 +1888,13 @@ class DataSourceColumn {
 		`;
 
 		container.on('click', () => {
+
+			if(parseInt(this.sort) == 1)
+				this.sort = 0;
+
+			else this.sort = 1;
+
 			this.source.columns.sortBy = this;
-			this.sort = !this.sort;
 			this.source.visualizations.selected.render();
 		});
 
@@ -5335,8 +5340,10 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows || !this.rows.length)
+		if(!this.rows || !this.rows.length) {
+			this.source.error('No data found! :(');
 			return;
+		}
 
 		const
 			[row] = this.rows,
@@ -5354,11 +5361,11 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 			arc = d3.svg.arc()
 				.outerRadius(radius)
-				.innerRadius(this.options.classicPie ? 0 : radius - 75),
+				.innerRadius(this.options && this.options.classicPie ? 0 : radius - 75),
 
 			arcHover = d3.svg.arc()
 				.outerRadius(radius + 10)
-				.innerRadius(this.options.classicPie ? 0 : radius - 75),
+				.innerRadius(this.options && this.options.classicPie ? 0 : radius - 75),
 
 			arcs = container
 				.append('svg')
