@@ -149,7 +149,7 @@ exports.login = class extends API {
 
 		let parameters = new URLSearchParams;
 
-		const externalParameterKeys = (this.possibleAccounts[0]).settings.get("external_parameters");
+		const externalParameterKeys = (this.possibleAccounts[0]).settings.get("external_parameters") || [];
 
 		for (const key of externalParameterKeys) {
 
@@ -175,6 +175,11 @@ exports.login = class extends API {
 
 			let authAPIResponse = await fetch(url, {"method": "GET"});
 			authAPIResponse = (await authAPIResponse.json()).data;
+
+			if(!(authAPIResponse && authAPIResponse.userDetails)) {
+
+				throw({message: "User not found"});
+			}
 			this.userDetails = authAPIResponse.userDetails;
 
 			await account.loadAccounts();
