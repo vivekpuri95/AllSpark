@@ -9,6 +9,9 @@ Page.class = class Dashboards extends Page {
 		this.reports = this.container.querySelector('section#reports');
 		this.listContainer.form = this.listContainer.querySelector('.form.toolbar');
 
+		if(this.account.settings.get('disable_footer'))
+			this.container.parentElement.querySelector('main > footer').classList.add('hidden');
+
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 			await Sections.show('list');
 			this.renderList();
@@ -471,7 +474,6 @@ Page.class = class Dashboards extends Page {
 		await Sections.show('reports');
 	}
 };
-
 
 class Dashboard {
 
@@ -1167,7 +1169,6 @@ class Dashboard {
 	}
 }
 
-
 class DashboardDatasets extends Map {
 
 	constructor(dashboard) {
@@ -1364,6 +1365,5 @@ class DashboardDatasets extends Map {
 		}
 	}
 }
-
 
 Dashboard.selectedValues = new Map;

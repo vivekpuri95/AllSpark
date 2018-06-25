@@ -341,7 +341,7 @@ SettingsManager.types.set('toggle', class extends SettingsManagerType {
 
 	get value() {
 
-		return this.container.querySelector('select').value;
+		return parseInt(this.container.querySelector('select').value);
 	}
 
 	set value(param) {

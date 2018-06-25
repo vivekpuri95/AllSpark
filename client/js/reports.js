@@ -517,8 +517,10 @@ class DataSource {
 			response.sort((a, b) => {
 
 				const
-					first = a.get(this.columns.sortBy.key).toString().toLowerCase(),
-					second = b.get(this.columns.sortBy.key).toString().toLowerCase();
+					firstValue = a.get(this.columns.sortBy.key),
+					secondValue = b.get(this.columns.sortBy.key),
+					first = (firstValue === null ? '' : firstValue).toString().toLowerCase(),
+					second = (secondValue === null ? '' : secondValue).toString().toLowerCase();
 
 				let result = 0;
 
@@ -2474,6 +2476,8 @@ class LinearVisualization extends Visualization {
 
 		const rows = this.source.response;
 
+		this.source.resetError();
+
 		if(!rows || !rows.length)
 			return this.source.error('No data found! :(');
 
@@ -2538,6 +2542,17 @@ class LinearVisualization extends Visualization {
 			column.disabled = true;
 			column.render();
 		}
+
+		for(const column of this.axes.bottom.columns) {
+			if(!this.source.columns.get(column.key))
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :(`);
+		}
+
+		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Bottom axis requires atleast one column! :(');
+
+		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Left axis requires atleast one column! :(');
 
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 50;
@@ -3431,7 +3446,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					.attr('r', d => 0)
 					.transition()
 					.duration(Visualization.animationDuration)
-					.ease('quad-in');
+					.ease('elastic');
 			}
 
 			dots

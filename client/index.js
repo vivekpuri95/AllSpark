@@ -478,6 +478,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 	}
 
 	async main() {
+
 		return `
 			<nav>
 				<div class="NA"><i class="fa fa-spinner fa-spin"></i></div>
