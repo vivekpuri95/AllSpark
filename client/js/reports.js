@@ -585,6 +585,7 @@ class DataSource {
 				token		 :await IndexedDb.instance.get('token'),
 				show_legends: !this.visualizations.selected.options.hideLegend || 0,
 				show_values: this.visualizations.selected.options.showValues || 0,
+				classic_pie: this.visualizations.selected.options.classicPie
 			};
 
 			for(const axis of this.visualizations.selected.options.axes || []) {
