@@ -764,6 +764,11 @@ class SettingsAccount {
 				name: 'Allow User Signup',
 			},
 			{
+				key: 'disable_footer',
+				type: 'toggle',
+				name: 'Disable Footer',
+			},
+			{
 				key: 'disable_powered_by',
 				type: 'toggle',
 				name: 'Disable "Powered By"',
