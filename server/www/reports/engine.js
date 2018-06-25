@@ -119,8 +119,8 @@ class report extends API {
 
 				this.filters.push({
 					placeholder: key,
-					value: preReportApiDetails[key] ?  preReportApiDetails[key].toString() : '',
-					default_value: preReportApiDetails[key] ?  preReportApiDetails[key].toString() : '',
+					value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
+					default_value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
 				})
 			}
 		}
@@ -477,7 +477,7 @@ class SQL {
 }
 
 
-class MySQL extends SQL{
+class MySQL extends SQL {
 
 	constructor(reportObj, filters = [], token = null) {
 
@@ -497,7 +497,7 @@ class MySQL extends SQL{
 }
 
 
-class MSSQL extends SQL{
+class MSSQL extends SQL {
 
 	constructor(reportObj, filters = [], token = null) {
 
@@ -932,7 +932,7 @@ class download extends API {
 							x1: {name: this.request.body.top},
 							y1: {name: this.request.body.right},
 							cols: this.request.body.columns,
-							type: JSON.parse(excel_visualization),
+							type: this.request.body.classic_pie ? JSON.parse(excel_visualization) : {"type": "doughnut"},
 						}
 					},
 					sheet_name: this.request.body.sheet_name.slice(0, 20),
