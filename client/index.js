@@ -478,6 +478,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 	}
 
 	async main() {
+
 		return `
 			<nav>
 				<div class="NA"><i class="fa fa-spinner fa-spin"></i></div>
@@ -565,7 +566,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 					Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
 					<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
 				</span><span>&nbsp;</span>
-				<div class="env ${this.user.privilege.has('report') ? '' : 'hidden'}">
+				<div class="env">
 					<span class="text">
 						Env: <span class="strong">${this.env.name}</span>
 						Branch: <span class="strong">${this.env.branch}</span>
