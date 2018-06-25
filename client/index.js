@@ -1592,4 +1592,75 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
+router.get('/tasks/:id?/:define?', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/tasks.css');
+		this.scripts.push('/js/tasks.js');
+	}
+
+	main() {
+
+		return `
+			<section class="section" id="list">
+				<h1>Tasks</h1>
+
+				<header class="toolbar">
+					<button id="add-task"><i class="fas fa-plus"></i> Add New Task</button>
+				</header>
+
+				<table class="block">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Type</th>
+							<th class="action">Define</th>
+							<th class="action">Edit</th>
+							<th class="action">Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
+
+			<section class="section" id="form">
+
+				<h1></h1>
+
+				<header class="toolbar">
+					<button id="form-back"><i class="fas fa-arrow-left"></i> Back</button>
+					<button type="submit" form="task-form"><i class="far fa-save"></i> Save</button>
+				</header>
+
+				<form class="form block" id="task-form">
+
+					<label>
+						<span>Task Name</span>
+						<input type="text" name="name" required>
+					</label>
+
+					<label>
+						<span>Task Type</span>
+						<select name="type" required>
+							<option value="google-analytics">Google Analytics</option>
+						</select>
+					</label>
+				</form>
+			</section>
+
+			<section class="section" id="define">
+
+				<header class="toolbar">
+					<button id="define-back"><i class="fas fa-arrow-left"></i> Back</button>
+					<button type="submit" form="task-define"><i class="far fa-save"></i> Save</button>
+				</header>
+			</section>
+		`;
+	}
+}));
+
 module.exports = router;

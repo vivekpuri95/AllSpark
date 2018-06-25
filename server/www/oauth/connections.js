@@ -222,7 +222,7 @@ class GoogleAPIs extends OAuthConnection {
 		this.endpoint.assert(response.access_token, 'Access Token not recieved form Google! :(');
 
 		connection.access_token = response.access_token;
-		connection.expires_at = new Date(Date.now() + (response.expires_in * 1000)).toISOString();
+		connection.expires_at = new Date(Date.now() + (response.expires_in * 1000)).toISOString().replace('T', ' ').replace('Z', '');
 	}
 
 	async test() {

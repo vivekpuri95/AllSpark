@@ -1,0 +1,7 @@
+section#define form > h3 {
+	border-bottom: 1px dashed #ccc;
+}
+section#define form .metrics,
+section#define form .dimensions {
+	max-width: 300px
+}
