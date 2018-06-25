@@ -1901,7 +1901,8 @@ class DataSourceColumn {
 		`;
 
 		document.querySelector('body').on('click', () => {
-			container.querySelector('.popup-dropdown').classList.add('hidden');
+			container.querySelector('.popup-dropdown').classList.add('hidden')
+			container.querySelector('.filter-popup span').classList.remove('open');
 		});
 
 		container.on('click', () => {
@@ -1917,6 +1918,8 @@ class DataSourceColumn {
 
 		container.querySelector('.filter-popup').on('click', (e) => this.popup(e));
 
+		container.querySelector('.filter-popup span').classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
+
 		return container;
 	}
 
@@ -1930,8 +1933,12 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		for(const node of this.headingContainer.parentElement.querySelectorAll('th'))
+		for(const node of this.headingContainer.parentElement.querySelectorAll('th')) {
 			node.querySelector('.popup-dropdown').classList.add('hidden');
+			node.querySelector('.filter-popup span').classList.remove('open');
+		}
+
+		e.currentTarget.querySelector('span').classList.add('open');
 
 		this.form.classList.add('compact');
 

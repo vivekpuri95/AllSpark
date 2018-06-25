@@ -697,12 +697,17 @@ main .data-source:hover {
 				align-self: stretch;
 				opacity: 0;
 				transition: opacity var(--transition-duration);
-				margin=ri:;
-				margin-right: 5px;
+				margin-right: 10px;
 			}
 			.visualization.table thead tr th.heading:hover .filter-popup > span {
 				opacity: 1;
-				margin-right:  5px;
+				margin-right: 10px;
+			}
+			.visualization.table thead tr th.heading .filter-popup > span.open {
+				opacity: 1;
+			}
+			.visualization.table thead tr th.heading .filter-popup > span.has-filter {
+				color: red;
 			}
 			.visualization.table thead tr th.heading .popup-dropdown {
 				position: absolute;
@@ -819,8 +824,9 @@ main .data-source:hover {
 						flex: 1;
 					}
 					.visualization.table table thead th .drilldown {
-						margin-left: var(--gap);
-						font-size: 90%;
+						margin-right: 3px;
+						font-size: 80%;
+						color: #ccc;
 					}
 					.visualization.table table thead th .name {
 						margin-left: auto;
