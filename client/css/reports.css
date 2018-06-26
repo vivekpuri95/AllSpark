@@ -715,10 +715,13 @@ main .data-source:hover {
 					color: #333;
 					text-align: initial;
 					padding-top: calc(var(--gap) * 2);
+					background: #fff;
+					box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 				}
 				.visualization.table thead tr th.heading .popup-dropdown .form.compact {
 						padding: 0;
 						grid-gap: calc(var(--gap) * 2);
+						box-shadow: none;
 				}
 					.visualization.table thead tr th.heading .popup-dropdown .compact label {
 						max-width: none;
