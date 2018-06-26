@@ -3906,6 +3906,8 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		const rows = this.source.response;
 
+		this.source.resetError();
+
 		if(!rows || !rows.length)
 			return this.source.error('No data found! :(');
 
@@ -3962,6 +3964,15 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis! :(`);
 			}
 		}
+
+		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Bottom axis requires atleast one column! :(');
+
+		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Left axis requires atleast one column! :(');
+
+		if(this.axes.right.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Right axis requires atleast one column! :(');
 
 		for(const [key, column] of this.source.columns) {
 
@@ -5334,6 +5345,8 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 	render(options = {}) {
 
+		this.source.resetError();
+
 		this.rows = this.source.response;
 
 		this.height = this.container.clientHeight - 20;
@@ -5356,10 +5369,8 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows || !this.rows.length) {
-			this.source.error('No data found! :(');
-			return;
-		}
+		if(!this.rows || !this.rows.length || !this.rows[0].size)
+			return this.source.error('No data found! :(');
 
 		const
 			[row] = this.rows,
