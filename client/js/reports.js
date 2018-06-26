@@ -1542,6 +1542,9 @@ class DataSourceColumn {
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
 
+		if(!this.form.parentElement.classList.contains('blanket'))
+			this.form.parentElement.classList.add('hidden')
+
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
