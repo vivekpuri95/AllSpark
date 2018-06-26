@@ -814,7 +814,7 @@ class ReportEngine extends API {
 
 			data = await data.json();
 
-			if(data && Array.is_array(data.data))
+			if(data && Array.isArray(data.data))
 				data = data.data;
 		}
 
