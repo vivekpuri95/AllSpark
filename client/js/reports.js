@@ -533,7 +533,7 @@ class DataSource {
 				else if(first > second)
 					result = 1;
 
-				if(!this.columns.sortBy.sort)
+				if(parseInt(this.columns.sortBy.sort) === 0)
 					result *= -1;
 
 				return result;
@@ -1351,7 +1351,13 @@ class DataSourceColumn {
 			this.updateDrilldownParamters();
 		});
 
-		this.form.querySelector('.cancel').on('click', () => this.blanket.classList.add('hidden'));
+		this.form.querySelector('.cancel').on('click', () => {
+			this.blanket.classList.add('hidden');
+
+			if(!this.form.parentElement.classList.contains('blanket'))
+				this.form.parentElement.classList.add('hidden')
+		});
+
 		this.form.querySelector('.apply').on('click', () => this.apply());
 
 		container.querySelector('.label').on('dblclick', async (e) => {
@@ -1525,6 +1531,8 @@ class DataSourceColumn {
 
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
+
+		this.disabled = parseInt(this.disabled);
 
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
@@ -1895,14 +1903,14 @@ class DataSourceColumn {
 					${this.name}
 				</span>
 				<div class="filter-popup"><span>&#9698;</span></div>
-				<div class="hidden popup-dropdown">
-				</div>
+				<div class="hidden popup-dropdown"></div>
 			</div>
 		`;
 
 		document.querySelector('body').on('click', () => {
 			container.querySelector('.popup-dropdown').classList.add('hidden')
 			container.querySelector('.filter-popup span').classList.remove('open');
+			this.source.visualizations.selected.container.querySelector('tbody').classList.remove('compact-popup-present');
 		});
 
 		container.on('click', () => {
@@ -1941,6 +1949,8 @@ class DataSourceColumn {
 		e.currentTarget.querySelector('span').classList.add('open');
 
 		this.form.classList.add('compact');
+
+		this.source.visualizations.selected.container.querySelector('tbody').classList.add('compact-popup-present');
 
 		this.headingContainer.querySelector('.popup-dropdown').appendChild(this.form);
 

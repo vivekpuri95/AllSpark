@@ -688,7 +688,7 @@ main .data-source:hover {
 			.visualization.table thead tr th.heading .compact > *:not(.show) {
 				display: none !important;
 			}
-			visualization.table thead tr th.heading .filter-popup {
+			.visualization.table thead tr th.heading .filter-popup {
 				width: 15px;
 			}
 			.visualization.table thead tr th.heading .filter-popup > span {
@@ -707,7 +707,7 @@ main .data-source:hover {
 				opacity: 1;
 			}
 			.visualization.table thead tr th.heading .filter-popup > span.has-filter {
-				color: red;
+				color: #fff59d;
 			}
 			.visualization.table thead tr th.heading .popup-dropdown {
 				position: absolute;
@@ -719,43 +719,43 @@ main .data-source:hover {
 						padding: 0;
 						grid-gap: calc(var(--gap) * 2);
 				}
-				.visualization.table thead tr th.heading .popup-dropdown .compact label {
-					max-width: none;
-					margin: calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
-				}
-				.visualization.table thead tr th.heading .popup-dropdown .compact label .search {
-					display: grid;
-					grid-template-columns: 1fr 1fr;
-					grid-gap: calc(var(--gap) * 2);
-				}
-				.visualization.table thead tr th.heading .popup-dropdown .compact label .search input,
-				.visualization.table thead tr th.heading .popup-dropdown .compact label .search select {
+					.visualization.table thead tr th.heading .popup-dropdown .compact label {
+						max-width: none;
+						margin: calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
+					}
+						.visualization.table thead tr th.heading .popup-dropdown .compact label .search {
+							display: grid;
+							grid-template-columns: 1fr 1fr;
+							grid-gap: calc(var(--gap) * 2);
+						}
+				.visualization.table thead .heading .compact label .search input,
+				.visualization.table thead .heading .compact label .search select {
 					margin-bottom: 0;
 					text-align: initial !important;
 				}
  				.visualization.table thead tr th.heading .popup-dropdown footer button {
 					 border-right: 0;
 				}
-				.visualization.table thead tr th.heading .popup-dropdown footer button:first-child {
-					border-left: 0;
-				}
+					.visualization.table thead tr th.heading .popup-dropdown footer button:first-child {
+						border-left: 0;
+					}
 			.visualization.table thead tr.search th,
 			.visualization.table thead tr.accumulation th {
 				background-color: #eee;
 				padding: 0;
 			}
-			.visualization.table thead tr.search th:first-child,
-			.visualization.table thead tr.accumulation th:first-child {
-				border-left: 0;
-			}
-				.visualization.table thead tr.search div,
-				.visualization.table thead tr.accumulation div {
-					display: flex;
-					margin-bottom: 5px;
-					background: #fff;
-					align-items: initial;
-					border-right: 1px solid #ccc;
+				.visualization.table thead tr.search th:first-child,
+				.visualization.table thead tr.accumulation th:first-child {
+					border-left: 0;
 				}
+			.visualization.table thead tr.search div,
+			.visualization.table thead tr.accumulation div {
+				display: flex;
+				margin-bottom: 5px;
+				background: #fff;
+				align-items: initial;
+				border-right: 1px solid #ccc;
+			}
 				.visualization.table thead tr.search th:last-child div,
 				.visualization.table thead tr.accumulation th:last-child div {
 					border-right: 0;
@@ -839,6 +839,9 @@ main .data-source:hover {
 						opacity: 1;
 						margin-left: auto;
 					}
+		.visualization.table table tbody.compact-popup-present {
+			filter: blur(2px);
+		}
 		.visualization.table table tr.selected {
 			background: #ddf;
 			color: var(--theme-light-text);
