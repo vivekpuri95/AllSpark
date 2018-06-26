@@ -814,7 +814,7 @@ class ReportEngine extends API {
 
 			data = await data.json();
 
-			if(data && Array.isArray(data.data))
+			if (data && Array.isArray(data.data))
 				data = data.data;
 		}
 
@@ -923,6 +923,8 @@ class download extends API {
 		this.assert(commonFun.isJson(excel_visualization), "excel_visualization format issue");
 
 		// queryData = JSON.parse(queryData);
+		excel_visualization = JSON.parse(excel_visualization);
+
 		const fileName = `${this.request.body.file_name}_${(new Date().toISOString()).substring(0, 10)}_${(this.user || {}).user_id || ''}`;
 		const requestObj = {
 			data_obj: [
@@ -935,7 +937,7 @@ class download extends API {
 							x1: {name: this.request.body.top},
 							y1: {name: this.request.body.right},
 							cols: this.request.body.columns,
-							type: this.request.body.classic_pie ? JSON.parse(excel_visualization) : {"type": "doughnut"},
+							type: !this.request.body.classic_pie && excel_visualization.type == 'pie' ? {"type": "doughnut"} : excel_visualization,
 						}
 					},
 					sheet_name: this.request.body.sheet_name.slice(0, 20),
