@@ -813,6 +813,9 @@ class ReportEngine extends API {
 			query = this.parameters.request;
 
 			data = await data.json();
+
+			if(data && Array.is_array(data.data))
+				data = data.data;
 		}
 
 		return {
