@@ -1165,7 +1165,7 @@ class DataSourceColumn {
 						<input type="text" name="name" value="${this.name}" >
 					</label>
 
-					<label>
+					<label class="show">
 						<span>Search</span>
 						<div class="search">
 							<select name="searchType"></select>
@@ -1233,17 +1233,17 @@ class DataSourceColumn {
 
 					<div class="parameter-list"></div>
 
-					<footer>
+					<footer class="show">
 
 						<button type="button" class="cancel">
 							<i class="far fa-times-circle"></i> Cancel
 						</button>
 
-						<button type="button" class="apply">
+						<button type="submit" class="apply">
 							<i class="fas fa-check"></i> Apply
 						</button>
 
-						<button type="submit">
+						<button type="button" class="save">
 							<i class="fa fa-save"></i> Save
 						</button>
 					</footer>
@@ -1280,7 +1280,7 @@ class DataSourceColumn {
 			this.container.querySelector('.label').appendChild(edit);
 		}
 
-		this.form.on('submit', async e => this.save(e));
+		this.form.on('submit', async e => this.apply(e));
 
 		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
 
@@ -1362,8 +1362,14 @@ class DataSourceColumn {
 			this.updateDrilldownParamters();
 		});
 
-		this.form.querySelector('.cancel').on('click', () => this.blanket.classList.add('hidden'));
-		this.form.querySelector('.apply').on('click', () => this.apply());
+		this.form.querySelector('.cancel').on('click', () => {
+			this.blanket.classList.add('hidden');
+
+			if(!this.form.parentElement.classList.contains('blanket'))
+				this.form.parentElement.classList.add('hidden')
+		});
+
+		this.form.querySelector('.save').on('click', () => this.save());
 
 		container.querySelector('.label').on('dblclick', async (e) => {
 
@@ -1419,6 +1425,8 @@ class DataSourceColumn {
 			this.drilldownQuery.clear();
 		}
 
+		this.form.classList.remove('compact');
+		this.blanket.appendChild(this.form);
 		this.blanket.classList.remove('hidden');
 	}
 
@@ -1530,13 +1538,23 @@ class DataSourceColumn {
 		this.form.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
 	}
 
-	async apply() {
+	async apply(e) {
+
+		if(e)
+			e.preventDefault();
 
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
+		this.disabled = parseInt(this.disabled);
+
+		this.headingContainer.classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
+
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
+
+		if(!this.form.parentElement.classList.contains('blanket'))
+			this.form.parentElement.classList.add('hidden')
 
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
@@ -1545,10 +1563,7 @@ class DataSourceColumn {
 		this.blanket.classList.add('hidden');
 	}
 
-	async save(e) {
-
-		if(e)
-			e.preventDefault();
+	async save() {
 
 		if(!this.source.format)
 			this.source.format = {};
@@ -1561,8 +1576,10 @@ class DataSourceColumn {
 			updated = 0,
 			json_param = [];
 
-		for(const element of this.form.elements)
+		for(const element of this.form.elements) {
+
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+		}
 
 		for(const row of this.form.querySelectorAll('.parameter')) {
 
@@ -1896,10 +1913,20 @@ class DataSourceColumn {
 		container.classList.add('heading');
 
 		container.innerHTML = `
-			${this.drilldown && this.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
-			<span class="name">${this.name}</span>
-			<span class="sort"><i class="fa fa-sort"></i></span>
+			<div>
+				<span class="name">
+					${this.drilldown && this.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
+					${this.name}
+				</span>
+				<div class="filter-popup"><span>&#9698;</span></div>
+				<div class="hidden popup-dropdown"></div>
+			</div>
 		`;
+
+		document.querySelector('body').on('click', () => {
+			container.querySelector('.popup-dropdown').classList.add('hidden')
+			container.querySelector('.filter-popup span').classList.remove('open');
+		});
 
 		container.on('click', () => {
 
@@ -1912,7 +1939,35 @@ class DataSourceColumn {
 			this.source.visualizations.selected.render();
 		});
 
+		container.querySelector('.filter-popup').on('click', (e) => this.popup(e));
+
+		container.classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
+
 		return container;
+	}
+
+	popup(e) {
+
+		e.stopPropagation();
+
+		for(const key in this) {
+
+			if(key in this.form)
+				this.form[key].value = this[key];
+		}
+
+		for(const node of this.headingContainer.parentElement.querySelectorAll('th')) {
+			node.querySelector('.popup-dropdown').classList.add('hidden');
+			node.querySelector('.filter-popup span').classList.remove('open');
+		}
+
+		e.currentTarget.querySelector('span').classList.add('open');
+
+		this.form.classList.add('compact');
+
+		this.headingContainer.querySelector('.popup-dropdown').appendChild(this.form);
+
+		this.headingContainer.querySelector('.popup-dropdown').classList.remove('hidden');
 	}
 }
 
@@ -2906,14 +2961,9 @@ Visualization.list.set('table', class Table extends Visualization {
 		accumulation.classList.add('accumulation');
 
 		for(const column of this.source.columns.list.values()) {
-
-			search.appendChild(column.search);
 			accumulation.appendChild(column.accumulation);
 			headings.appendChild(column.heading);
 		}
-
-		if(!this.hideSearchBar)
-			thead.appendChild(search);
 
 		if(!this.hideFunctionBar)
 			thead.appendChild(accumulation);
