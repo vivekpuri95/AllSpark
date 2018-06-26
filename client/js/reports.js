@@ -1228,11 +1228,11 @@ class DataSourceColumn {
 							<i class="far fa-times-circle"></i> Cancel
 						</button>
 
-						<button type="button" class="apply">
+						<button type="submit" class="apply">
 							<i class="fas fa-check"></i> Apply
 						</button>
 
-						<button type="submit">
+						<button type="button" class="save">
 							<i class="fa fa-save"></i> Save
 						</button>
 					</footer>
@@ -1269,7 +1269,7 @@ class DataSourceColumn {
 			this.container.querySelector('.label').appendChild(edit);
 		}
 
-		this.form.on('submit', async e => this.save(e));
+		this.form.on('submit', async e => this.apply(e));
 
 		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
 
@@ -1358,7 +1358,7 @@ class DataSourceColumn {
 				this.form.parentElement.classList.add('hidden')
 		});
 
-		this.form.querySelector('.apply').on('click', () => this.apply());
+		this.form.querySelector('.save').on('click', () => this.save());
 
 		container.querySelector('.label').on('dblclick', async (e) => {
 
@@ -1527,14 +1527,17 @@ class DataSourceColumn {
 		this.form.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
 	}
 
-	async apply() {
+	async apply(e) {
+
+		if(e)
+			e.preventDefault();
 
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
 		this.disabled = parseInt(this.disabled);
 
-		this.headingContainer.querySelector('.filter-popup span').classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
+		this.headingContainer.classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
 
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
@@ -1546,10 +1549,7 @@ class DataSourceColumn {
 		this.blanket.classList.add('hidden');
 	}
 
-	async save(e) {
-
-		if(e)
-			e.preventDefault();
+	async save() {
 
 		if(!this.source.format)
 			this.source.format = {};
@@ -1927,7 +1927,7 @@ class DataSourceColumn {
 
 		container.querySelector('.filter-popup').on('click', (e) => this.popup(e));
 
-		container.querySelector('.filter-popup span').classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
+		container.classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
 
 		return container;
 	}

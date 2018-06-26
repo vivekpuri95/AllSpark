@@ -691,37 +691,38 @@ main .data-source:hover {
 			.visualization.table thead tr th.heading .filter-popup {
 				width: 15px;
 			}
-			.visualization.table thead tr th.heading .filter-popup > span {
-				transform: rotate(45deg);
-				font-size: 50%;
-				align-self: stretch;
-				opacity: 0;
-				transition: opacity var(--transition-duration);
-				margin-right: 10px;
-			}
-			.visualization.table thead tr th.heading:hover .filter-popup > span {
-				opacity: 1;
-				margin-right: 10px;
-			}
-			.visualization.table thead tr th.heading .filter-popup > span.open {
-				opacity: 1;
-			}
-			.visualization.table thead tr th.heading .filter-popup > span.has-filter {
-				color: #fff59d;
-			}
-			.visualization.table thead tr th.heading .popup-dropdown {
-				position: absolute;
-				top: 25px;
-				color: #333;
-				text-align: initial;
-			}
+				.visualization.table thead tr th.heading .filter-popup > span {
+					transform: rotate(45deg);
+					font-size: 50%;
+					align-self: stretch;
+					opacity: 0;
+					transition: opacity var(--transition-duration);
+					margin-right: 10px;
+				}
+				.visualization.table thead tr th.heading:hover .filter-popup > span {
+					opacity: 1;
+					margin-right: 10px;
+				}
+				.visualization.table thead tr th.heading .filter-popup > span.open {
+					opacity: 1;
+				}
+				.visualization.table thead tr th.heading.has-filter {
+					box-shadow: inset 0px -3px 0px 0px var(--color-accent);
+				}
+				.visualization.table thead tr th.heading .popup-dropdown {
+					position: absolute;
+					top: 25px;
+					color: #333;
+					text-align: initial;
+					padding-top: calc(var(--gap) * 2);
+				}
 				.visualization.table thead tr th.heading .popup-dropdown .form.compact {
 						padding: 0;
 						grid-gap: calc(var(--gap) * 2);
 				}
 					.visualization.table thead tr th.heading .popup-dropdown .compact label {
 						max-width: none;
-						margin: calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
+						margin: 0 calc(var(--gap) * 2);
 					}
 						.visualization.table thead tr th.heading .popup-dropdown .compact label .search {
 							display: grid;
