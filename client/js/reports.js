@@ -1534,6 +1534,8 @@ class DataSourceColumn {
 
 		this.disabled = parseInt(this.disabled);
 
+		this.headingContainer.querySelector('.filter-popup span').classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
+
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
 
@@ -1910,7 +1912,6 @@ class DataSourceColumn {
 		document.querySelector('body').on('click', () => {
 			container.querySelector('.popup-dropdown').classList.add('hidden')
 			container.querySelector('.filter-popup span').classList.remove('open');
-			this.source.visualizations.selected.container.querySelector('tbody').classList.remove('compact-popup-present');
 		});
 
 		container.on('click', () => {
@@ -1949,8 +1950,6 @@ class DataSourceColumn {
 		e.currentTarget.querySelector('span').classList.add('open');
 
 		this.form.classList.add('compact');
-
-		this.source.visualizations.selected.container.querySelector('tbody').classList.add('compact-popup-present');
 
 		this.headingContainer.querySelector('.popup-dropdown').appendChild(this.form);
 

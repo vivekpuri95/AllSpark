@@ -839,9 +839,6 @@ main .data-source:hover {
 						opacity: 1;
 						margin-left: auto;
 					}
-		.visualization.table table tbody.compact-popup-present {
-			filter: blur(2px);
-		}
 		.visualization.table table tr.selected {
 			background: #ddf;
 			color: var(--theme-light-text);
