@@ -27,11 +27,17 @@ Page.class = class Dashboards extends Page {
 		this.listContainer.form.category.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
 
-		this.load();
-
 		window.on('popstate', e => {
 			this.load(e.state)
 		});
+
+		(async () => {
+
+			await this.load();
+
+			if(window.innerWidth <= 750)
+				this.collapseNav();
+		})();
 	}
 
 	async load(state) {
@@ -272,8 +278,9 @@ Page.class = class Dashboards extends Page {
 
 	renderNav(id) {
 
-		const showLabelIds = this.parentList(id).map(x => x);
-		const nav = document.querySelector('main > nav');
+		const
+			showLabelIds = this.parentList(id).map(x => x),
+			nav = document.querySelector('main > nav');
 
 		nav.textContent = null;
 
@@ -378,34 +385,38 @@ Page.class = class Dashboards extends Page {
 				<div class="collapse-panel">
 					<span class="left"><i class="fa fa-angle-double-left"></i></span>
 					<span class="right hidden"><i class="fa fa-angle-double-right"></i></span>
-				</div<
+				</div>
 			</footer>
 		`);
 
-		nav.querySelector('.collapse-panel').on('click', (e) => {
+		nav.querySelector('.collapse-panel').on('click', () => this.collapseNav());
 
-			nav.classList.toggle('collapsed');
-
-			const right = e.currentTarget.querySelector('.right')
-
-			right.classList.toggle('hidden');
-			e.currentTarget.querySelector('.left').classList.toggle('hidden');
-
-			document.querySelector('main').classList.toggle('collapsed-grid');
-
-			for (const item of nav.querySelectorAll('.item')) {
-
-				if (!right.hidden)
-					item.classList.remove('list-open');
-
-				if (!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
-					item.querySelector('.label .name').classList.toggle('hidden');
-			}
-		});
-
-		if (!nav.children.length) {
-
+		if(!nav.children.length)
 			nav.innerHTML = `<div class="NA">No dashboards found!</div>`;
+	}
+
+	collapseNav() {
+
+		const nav = document.querySelector('main > nav');
+
+		nav.classList.toggle('collapsed');
+
+		const
+			toggle = nav.querySelector('.collapse-panel'),
+			right = toggle.querySelector('.right');
+
+		right.classList.toggle('hidden');
+		toggle.querySelector('.left').classList.toggle('hidden');
+
+		this.container.classList.toggle('collapsed-grid');
+
+		for (const item of nav.querySelectorAll('.item')) {
+
+			if (!right.hidden)
+				item.classList.remove('list-open');
+
+			if (!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
+				item.querySelector('.label .name').classList.toggle('hidden');
 		}
 	}
 
