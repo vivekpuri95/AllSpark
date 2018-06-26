@@ -693,12 +693,15 @@ class DataSource {
 		this.visualizations.selected.container.classList.remove('hidden');
 	}
 
-	error(message) {
+	error(message = '') {
 
 		this.resetError();
 
 		this.container.insertAdjacentHTML('beforeend', `
-			<pre class="warning">${message}</pre>
+			<pre class="warning">
+				<h2>No Data Found! :(</h2>
+				<span>${message}</span>
+			</pre>
 		`);
 
 		this.visualizations.selected.container.classList.add('hidden');
@@ -1051,6 +1054,14 @@ class DataSourceColumn {
 			{
 				name: 'Contains',
 				apply: (q, v) => v.toString().toLowerCase().includes(q.toString().toLowerCase()),
+			},
+			{
+				name: 'Starts With',
+				apply: (q, v) => v.toString().toLowerCase().startsWith(q.toString().toLowerCase()),
+			},
+			{
+				name: 'Ends With',
+				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
 			},
 			{
 				name: 'Not Contains',
@@ -2479,10 +2490,10 @@ class LinearVisualization extends Visualization {
 		this.source.resetError();
 
 		if(!rows || !rows.length)
-			return this.source.error('No data found! :(');
+			return this.source.error('No data found.');
 
 		if(!this.axes)
-			return this.source.error('Axes not defined! :(');
+			return this.source.error('Axes not defined.');
 
 		for(const axis of this.axes) {
 
@@ -2501,35 +2512,35 @@ class LinearVisualization extends Visualization {
 		}
 
 		if(!this.axes.bottom)
-			return this.source.error('Bottom axis not defined! :(');
+			return this.source.error('Bottom axis not defined.');
 
 		if(!this.axes.left)
-			return this.source.error('Left axis not defined! :(');
+			return this.source.error('Left axis not defined.');
 
 		if(!this.axes.bottom.columns.length)
-			return this.source.error('Bottom axis requires exactly one column! :(');
+			return this.source.error('Bottom axis requires exactly one column.');
 
 		if(!this.axes.left.columns.length)
-			return this.source.error('Left axis requires atleast one column! :(');
+			return this.source.error('Left axis requires atleast one column.');
 
 		if(this.axes.bottom.columns.length > 1)
-			return this.source.error('Bottom axis cannot has more than one column! :(');
+			return this.source.error('Bottom axis cannot has more than one column.');
 
 		for(const column of this.axes.bottom.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :(`);
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.`);
 		}
 
 		for(const column of this.axes.left.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Left axis column <em>${column.key}</em> not found! :(`);
+				return this.source.error(`Left axis column <em>${column.key}</em> not found.`);
 		}
 
 		for(const bottom of this.axes.bottom.columns) {
 			for(const left of this.axes.left.columns) {
 
 				if(bottom.key == left.key)
-					return this.source.error(`Column <em>${bottom.key}</em> cannot be on both axis! :(`);
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on both axis.`);
 			}
 		}
 
@@ -2545,14 +2556,14 @@ class LinearVisualization extends Visualization {
 
 		for(const column of this.axes.bottom.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :(`);
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.`);
 		}
 
 		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled))
-			return this.source.error('Bottom axis requires atleast one column! :(');
+			return this.source.error('Bottom axis requires atleast one column.');
 
 		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled))
-			return this.source.error('Left axis requires atleast one column! :(');
+			return this.source.error('Left axis requires atleast one column.');
 
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 50;
@@ -3909,45 +3920,45 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		this.source.resetError();
 
 		if(!rows || !rows.length)
-			return this.source.error('No data found! :(');
+			return this.source.error('No data found.');
 
 		if(!this.axes)
-			return this.source.error('Axes not defined! :(');
+			return this.source.error('Axes not defined.');
 
 		if(!this.axes.bottom)
-			return this.source.error('Bottom axis not defined! :(');
+			return this.source.error('Bottom axis not defined.');
 
 		if(!this.axes.left)
-			return this.source.error('Left axis not defined! :(');
+			return this.source.error('Left axis not defined.');
 
 		if(!this.axes.right)
-			return this.source.error('Right axis not defined! :(');
+			return this.source.error('Right axis not defined.');
 
 		if(!this.axes.bottom.columns.length)
-			return this.source.error('Bottom axis requires exactly one column! :(');
+			return this.source.error('Bottom axis requires exactly one column.');
 
 		if(!this.axes.left.columns.length)
-			return this.source.error('Left axis requires atleast one column! :(');
+			return this.source.error('Left axis requires atleast one column.');
 
 		if(!this.axes.right.columns.length)
-			return this.source.error('Right axis requires atleast one column! :(');
+			return this.source.error('Right axis requires atleast one column.');
 
 		if(this.axes.bottom.columns.length > 1)
-			return this.source.error('Bottom axis cannot has more than one column! :(');
+			return this.source.error('Bottom axis cannot has more than one column.');
 
 		for(const column of this.axes.bottom.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :()`);
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.)`);
 		}
 
 		for(const column of this.axes.left.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Left axis column <em>${column.key}</em> not found! :(`);
+				return this.source.error(`Left axis column <em>${column.key}</em> not found.`);
 		}
 
 		for(const column of this.axes.right.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Right axis column <em>${column.key}</em> not found! :(`);
+				return this.source.error(`Right axis column <em>${column.key}</em> not found.`);
 		}
 
 		for(const bottom of this.axes.bottom.columns) {
@@ -3955,24 +3966,24 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			for(const left of this.axes.left.columns) {
 
 				if(bottom.key == left.key)
-					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis! :(`);
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis.`);
 			}
 
 			for(const right of this.axes.right.columns) {
 
 				if(bottom.key == right.key)
-					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis! :(`);
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis.`);
 			}
 		}
 
 		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled))
-			return this.source.error('Bottom axis requires atleast one column! :(');
+			return this.source.error('Bottom axis requires atleast one column.');
 
 		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled))
-			return this.source.error('Left axis requires atleast one column! :(');
+			return this.source.error('Left axis requires atleast one column.');
 
 		if(this.axes.right.columns.every(c => this.source.columns.get(c.key).disabled))
-			return this.source.error('Right axis requires atleast one column! :(');
+			return this.source.error('Right axis requires atleast one column.');
 
 		for(const [key, column] of this.source.columns) {
 
@@ -4082,18 +4093,8 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			.append('g')
 			.attr('class', 'chart');
 
-		if(!this.rows.length) {
-
-			return this.svg
-				.append('g')
-				.append('text')
-				.attr('x', (this.width / 2))
-				.attr('y', (this.height / 2))
-				.attr('text-anchor', 'middle')
-				.attr('class', 'NA')
-				.attr('fill', '#999')
-				.text(this.source.originalResponse.message || 'No data found! :(');
-		}
+		if(!this.rows.length)
+			return this.source.error();
 
 		if(this.rows.length != this.source.response.length) {
 
@@ -5370,7 +5371,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		container.selectAll('*').remove();
 
 		if(!this.rows || !this.rows.length || !this.rows[0].size)
-			return this.source.error('No data found! :(');
+			return this.source.error();
 
 		const
 			[row] = this.rows,
@@ -5538,19 +5539,19 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			response = this.source.response;
 
 		if(!this.options)
-			return this.source.error('Options not defined! :(');
+			return this.source.error('Options not defined.');
 
 		if(!this.options.latitude)
-			return this.source.error('Latitude Column not defined! :(');
+			return this.source.error('Latitude Column not defined.');
 
 		if(!this.source.columns.has(this.options.latitude))
-			return this.source.error(`Latitude Column '${this.options.latitude}' not found! :(`);
+			return this.source.error(`Latitude Column '${this.options.latitude}' not found.`);
 
 		if(!this.options.longitude)
-			return this.source.error('Longitude Column not defined! :(');
+			return this.source.error('Longitude Column not defined.');
 
 		if(!this.source.columns.has(this.options.longitude))
-			return this.source.error(`Longitude Column '${this.options.longitude}' not found! :(`);
+			return this.source.error(`Longitude Column '${this.options.longitude}' not found.`);
 
 		const zoom = parseInt(this.options.initialZoom) || 12;
 
@@ -5750,21 +5751,21 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		const [response] = this.source.response;
 
 		if(!this.options.column)
-			return this.source.error('Value column not selected! :(');
+			return this.source.error('Value column not selected.');
 
 		if(!response)
-			return this.source.error('Invalid Response! :(');
+			return this.source.error('Invalid Response.');
 
 		if(!response.has(this.options.column))
-			return this.source.error(`<em>${this.options.column}</em> column not found! :(`);
+			return this.source.error(`<em>${this.options.column}</em> column not found.`);
 
 		const value = response.get(this.options.column);
 
 		if(this.options.valueType == 'number' && isNaN(value))
-			return this.source.error('Invalid Number! :(');
+			return this.source.error('Invalid Number.');
 
 		if(this.options.valueType == 'date' && !Date.parse(value))
-			return this.source.error('Invalid Date! :(');
+			return this.source.error('Invalid Date.');
 	}
 
 	render(options = {}) {
@@ -5825,23 +5826,23 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	process() {
 
 		if(!this.options.timingColumn)
-			return this.source.error('Timing column not selected! :(');
+			return this.source.error('Timing column not selected.');
 
 		if(!this.options.valueColumn)
-			return this.source.error('Value column not selected! :(');
+			return this.source.error('Value column not selected.');
 
 		const dates = new Map;
 
 		for(const row of this.source.response) {
 
 			if(!row.has(this.options.timingColumn))
-				return this.source.error(`Timing column '${this.options.timingColumn}' not found! :(`);
+				return this.source.error(`Timing column '${this.options.timingColumn}' not found.`);
 
 			if(!row.has(this.options.valueColumn))
-				return this.source.error(`Value column '${this.options.valueColumn}' not found! :(`);
+				return this.source.error(`Value column '${this.options.valueColumn}' not found.`);
 
 			if(!Date.parse(row.get(this.options.timingColumn)))
-				return this.source.error(`Timing column value '${row.get(this.options.timingColumn)}' is not a valid date! :(`);
+				return this.source.error(`Timing column value '${row.get(this.options.timingColumn)}' is not a valid date.`);
 
 			dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
@@ -5892,7 +5893,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	render(options = {}) {
 
 		if(!this.center)
-			return this.source.error(`Center column not defined! :(`);
+			return this.source.error(`Center column not defined.`);
 
 		const container = this.container.querySelector('.container');
 
