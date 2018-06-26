@@ -1611,7 +1611,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(ConfigureVisualization.types.has(this.visualization.type))
 			this.optionsForm = new (ConfigureVisualization.types.get(this.visualization.type))(this.visualization, this.page, this);
 
-		else throw new Page.Exception(`Unknown visualization type ${this.visualization.type}`);
+		else throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
 
 		this.dashboards = new ReportVisualizationDashboards(this);
 
@@ -2781,6 +2781,44 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 				<option value="${key}">${column.name}</option>
 			`);
 		}
+
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+});
+
+ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if (this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="form body">
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideHeader">Hide Header
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="hideLegend">Hide Legend.
+						</span>
+					</label>
+				</div>
+			</div>
+		`;
 
 		for(const element of this.formContainer.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';

@@ -3071,9 +3071,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'line');
 		container.innerHTML = `
@@ -3345,9 +3343,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'bubble');
 
@@ -3523,9 +3519,7 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'scatter');
 		container.innerHTML = `
@@ -3706,9 +3700,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'bar');
 		container.innerHTML = `
@@ -3928,9 +3920,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'dualaxisbar');
 		container.innerHTML = `
@@ -4510,9 +4500,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'stacked');
 		container.innerHTML = `
@@ -4727,9 +4715,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'area');
 		container.innerHTML = `
@@ -4994,9 +4980,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'funnel');
 		container.innerHTML = `
@@ -5336,9 +5320,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'pie');
 		container.innerHTML = `
@@ -5989,9 +5971,7 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'json');
 		container.innerHTML = `
@@ -6022,6 +6002,38 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 		this.editor.editor.getSession().setMode('ace/mode/json');
 	}
+});
+
+Visualization.list.set('html', class JSONVisualization extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('visualization', 'html');
+		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
+
+		if(this.options.hideHeader)
+			this.source.container.querySelector('header').classList.add('hidden');
+
+		if(this.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
+
+		this.source.container.classList.add('flush');
+
+		return container;
+	}
+
+	async load(options = {}) {
+
+		super.render(options);
+		this.render(options);
+	}
+
+	render(options = {}) {}
 });
 
 class Tooltip {
