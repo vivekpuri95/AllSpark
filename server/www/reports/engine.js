@@ -940,8 +940,8 @@ class download extends API {
 							type: !this.request.body.classic_pie && excel_visualization.type == 'pie' ? {"type": "doughnut"} : excel_visualization,
 						}
 					},
-					sheet_name: this.request.body.sheet_name.slice(0, 22) + "..",
-					file_name: fileName.slice(0, 22) + "..",
+					sheet_name: this.request.body.sheet_name.slice(0, 22) + "...",
+					file_name: fileName.slice(0, 22) + "...",
 					show_legends: this.request.body.show_legends,
 					show_values: this.request.body.show_values,
 				},
