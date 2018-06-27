@@ -5411,7 +5411,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			sum = Array.from(row.values()).reduce((sum, value) => sum + value, 0);
 
 		for(const [name, value] of this.rows[0])
-			data.push({name, value, percentage: Math.floor(value / sum * 1000) / 10});
+			data.push({name, value, percentage: Math.floor((value / sum) * 1000) / 10});
 
 		const
 
@@ -5881,8 +5881,8 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		const
 			center = Date.parse(new Date(Date.now() - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			left = Date.parse(new Date(Date.now() - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			right = Date.parse(new Date(Date.now() - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
+			left = Date.parse(new Date(center - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			right = Date.parse(new Date(center - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
 
 		this.center = {value: 0};
 		this.right = {value: 0};

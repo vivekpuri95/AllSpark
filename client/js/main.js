@@ -1061,7 +1061,7 @@ class Format {
 	static number(number) {
 
 		if(!Format.number.formatter)
-			Format.number.formatter = new Intl.NumberFormat('en-IN');
+			Format.number.formatter = new Intl.NumberFormat('en-IN', {maximumFractionDigits: 2});
 
 		return Format.number.formatter.format(number);
 	}
