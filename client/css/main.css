@@ -39,6 +39,14 @@ button,
 select {
 	 padding: 5px 12px;
 }
+input[type=button].selected,
+input[type=reset].selected,
+input[type=submit].selected,
+button.selected {
+	background: var(--color-accent);
+	color: var(--color-accent-text);
+	border: 1px solid var(--color-accent);
+}
 input[type=button]:hover,
 input[type=reset]:hover,
 input[type=submit]:hover,
