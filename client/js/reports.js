@@ -1551,7 +1551,8 @@ class DataSourceColumn {
 
 		this.disabled = parseInt(this.disabled);
 
-		this.headingContainer.classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
+		if(this.source.visualizations.selected.type == 'table')
+			this.headingContainer.classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
 
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
@@ -1944,7 +1945,8 @@ class DataSourceColumn {
 
 		container.querySelector('.filter-popup').on('click', (e) => this.popup(e));
 
-		container.classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
+		if(this.searchQuery && this.searchQuery !== '')
+			container.classList.add('has-filter')
 
 		return container;
 	}
