@@ -5879,46 +5879,30 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
 
-		const
-			center = Date.parse(new Date(Date.now() - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			left = Date.parse(new Date(center - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			right = Date.parse(new Date(center - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
+		this.center = {
+			value: 0,
+			date: Date.parse(new Date(Date.now() - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+		};
+		this.right = {
+			value: 0,
+			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+		};
+		this.left = {
+			value: 0,
+			date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+		};
 
-		this.center = {value: 0};
-		this.right = {value: 0};
-		this.left = {value: 0};
+		if(dates.has(this.center.date))
+			this.center.value = dates.get(this.center.date).get(this.options.valueColumn);
 
-		if(dates.has(center)) {
-
-			const row = dates.get(center);
-
-			this.center = {
-				value: row.get(this.options.valueColumn),
-			};
+		if(dates.has(this.left.date)) {
+			this.left.value = dates.get(this.left.date).get(this.options.valueColumn);
+			this.left.percentage = Math.round(((this.left.value - this.center.value) / this.left.value) * 100 * -1);
 		}
 
-		if(dates.has(left)) {
-
-			const
-				row = dates.get(left),
-				value = row.get(this.options.valueColumn);
-
-			this.left = {
-				value: row.get(this.options.valueColumn),
-				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
-			};
-		}
-
-		if(dates.has(right)) {
-
-			const
-				row = dates.get(right),
-				value = row.get(this.options.valueColumn);
-
-			this.right = {
-				value: row.get(this.options.valueColumn),
-				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
-			};
+		if(dates.has(this.right.date)) {
+			this.right.value = dates.get(this.right.date).get(this.options.valueColumn);
+			this.right.percentage = Math.round(((this.right.value - this.center.value) / this.right.value) * 100 * -1);
 		}
 	}
 
@@ -5936,7 +5920,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 				<span class="value">
 					${this.options.prefix || ''}${Format.number(this.left.value)}${this.options.postfix || ''}<br>
-					<small>${Format.number(this.options.leftOffset)} days ago</small>
+					<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
 				</span>
 			</div>
 
@@ -5944,7 +5928,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 				<span class="value">
 					${this.options.prefix || ''}${Format.number(this.right.value)}${this.options.postfix || ''}<br>
-					<small>${Format.number(this.options.rightOffset)} days ago</small>
+					<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
 				</span>
 			</div>
 		`;
