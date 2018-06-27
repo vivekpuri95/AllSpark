@@ -2469,7 +2469,7 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 					<label>
 						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend.
+							<input type="checkbox" name="hideLegend">Hide Legend
 						</span>
 					</label>
 				</div>
@@ -2602,7 +2602,7 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 
 					<label>
 						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend.
+							<input type="checkbox" name="hideLegend">Hide Legend
 						</span>
 					</label>
 				</div>
@@ -2678,7 +2678,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 					<label>
 						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend.
+							<input type="checkbox" name="hideLegend">Hide Legend
 						</span>
 					</label>
 				</div>
@@ -2760,7 +2760,7 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 					<label>
 						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend.
+							<input type="checkbox" name="hideLegend">Hide Legend
 						</span>
 					</label>
 				</div>
@@ -2813,7 +2813,7 @@ ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisuali
 
 					<label>
 						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend.
+							<input type="checkbox" name="hideLegend">Hide Legend
 						</span>
 					</label>
 				</div>

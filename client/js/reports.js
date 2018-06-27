@@ -6033,7 +6033,11 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		this.render(options);
 	}
 
-	render(options = {}) {}
+	render(options = {}) {
+
+		if(this.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
+	}
 });
 
 class Tooltip {
