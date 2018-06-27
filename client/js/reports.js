@@ -5411,7 +5411,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			sum = Array.from(row.values()).reduce((sum, value) => sum + value, 0);
 
 		for(const [name, value] of this.rows[0])
-			data.push({name, value, percentage: Math.floor((value / sum) * 1000) / 10});
+			data.push({name, value, percentage: Math.floor((value / sum) * 10000) / 100});
 
 		const
 
