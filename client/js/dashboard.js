@@ -227,7 +227,7 @@ Page.class = class Dashboards extends Page {
 			}
 
 			tr.innerHTML = `
-				<td>${report.query_id}RAVI</td>
+				<td>${report.query_id}</td>
 				<td><a href="/report/${report.query_id}" target="_blank" class="link">${report.name}</a></td>
 				<td>${description.join(' ') || ''}</td>
 				<td>${report.tags || ''}</td>
