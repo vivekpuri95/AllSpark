@@ -474,27 +474,6 @@ main .data-source.flush {
 					opacity: 1;
 				}
 
-			/*main .data-source .column .blanket {*/
-				/*position: fixed;*/
-				/*top: 0;*/
-				/*bottom: 0;*/
-				/*left: 0;*/
-				/*right: 0;*/
-				/*background: rgba(0, 0, 0, 0.25);*/
-				/*z-index: 11;*/
-				/*display: flex;*/
-				/*align-items: center;*/
-				/*justify-content: center;*/
-			/*}*/
-				/*main .data-source .column .blanket .block {*/
-					/*box-shadow: 0 0 100px rgba(0, 0, 0, 0.25);*/
-					/*max-height: 90%;*/
-					/*max-width: 100%;*/
-					/*flex-basis: 750px;*/
-					/*overflow: auto;*/
-					/*padding: 0;*/
-				/*}*/
-
 						main .data-source .column form h3,
 						main .dialog-box form h3{
 							margin: 0;
