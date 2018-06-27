@@ -199,6 +199,7 @@ Page.class = class Dashboards extends Page {
 
 				const searchItems = this.listContainer.form.search.value.split(" ").filter(x => x).slice(0, 5);
 
+
 				for (const searchItem of searchItems) {
 
 					const searchableText = report.query_id + " " + report.name + " " + report.description + " " + report.tags;
@@ -226,14 +227,32 @@ Page.class = class Dashboards extends Page {
 				description.push('&hellip;');
 			}
 
+			let tags = report.tags ? report.tags.split(',') : [];
+
+			const tagsArray = [];
+
+			for(const tag of tags) {
+
+				const a = document.createElement('a');
+				a.classList.add('individual-tags');
+				a.textContent = tag.trim();
+
+				a.on('click', e => this.tagSearch(e));
+
+				tagsArray.push(a);
+			}
+
 			tr.innerHTML = `
 				<td>${report.query_id}</td>
 				<td><a href="/report/${report.query_id}" target="_blank" class="link">${report.name}</a></td>
 				<td>${description.join(' ') || ''}</td>
-				<td>${report.tags || ''}</td>
+				<td class="tags"></td>
 				<td>${MetaData.categories.has(report.category_id) && MetaData.categories.get(report.category_id).name || ''}</td>
 				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
 			`;
+
+			for(const tag of tagsArray)
+				tr.querySelector('.tags').appendChild(tag);
 
 			tr.querySelector('.link').on('click', e => e.stopPropagation());
 
@@ -247,6 +266,15 @@ Page.class = class Dashboards extends Page {
 
 		if (!tbody.children.length)
 			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found! :(</td></tr>`;
+	}
+
+	tagSearch(e) {
+
+		e.stopPropagation();
+
+		this.listContainer.form.search.value = e.currentTarget.textContent;
+
+		this.renderList();
 	}
 
 	closeOtherDropDowns(id, container) {
