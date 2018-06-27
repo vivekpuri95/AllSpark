@@ -428,18 +428,17 @@ main #reports #blanket {
 	left: 0;
 	z-index: 5;
 }
-main table tbody tr .individual-tags {
-		background: var(--color-accent);
-		color: #fff;
-		cursor: pointer;
-		text-decoration: none;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		font-weight: bold;
-		padding: 3px 8px;
-		margin: 2px;
-		border-radius: 2px;
-		font-size: 11px;
+main table tbody tr .tag {
+	background: var(--color-accent);
+	color: var(--color-accent-text);
+	cursor: pointer;
+	text-decoration: none;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	padding: 3px 8px;
+	margin: 2px;
+	border-radius: 2px;
+	font-size: 80%;
 }
 main > footer {
 	grid-column: 2 / -1;

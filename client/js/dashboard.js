@@ -234,7 +234,7 @@ Page.class = class Dashboards extends Page {
 			for(const tag of tags) {
 
 				const a = document.createElement('a');
-				a.classList.add('individual-tags');
+				a.classList.add('tag');
 				a.textContent = tag.trim();
 
 				a.on('click', e => this.tagSearch(e));
