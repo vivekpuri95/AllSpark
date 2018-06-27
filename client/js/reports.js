@@ -500,6 +500,9 @@ class DataSource {
 
 		this.originalResponse.groupedAnnotations = new Map;
 
+		if(!Array.isArray(this.originalResponse.data))
+			return [];
+
 		const data = this.transformations.run(this.originalResponse.data);
 
 		for(const _row of data) {
@@ -3071,9 +3074,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'line');
 		container.innerHTML = `
@@ -3345,9 +3346,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'bubble');
 
@@ -3523,9 +3522,7 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'scatter');
 		container.innerHTML = `
@@ -3706,9 +3703,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'bar');
 		container.innerHTML = `
@@ -3928,9 +3923,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'dualaxisbar');
 		container.innerHTML = `
@@ -4510,9 +4503,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'stacked');
 		container.innerHTML = `
@@ -4727,9 +4718,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'area');
 		container.innerHTML = `
@@ -4994,9 +4983,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'funnel');
 		container.innerHTML = `
@@ -5336,9 +5323,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'pie');
 		container.innerHTML = `
@@ -5429,7 +5414,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			sum = Array.from(row.values()).reduce((sum, value) => sum + value, 0);
 
 		for(const [name, value] of this.rows[0])
-			data.push({name, value, percentage: Math.floor(value / sum * 1000) / 10});
+			data.push({name, value, percentage: Math.floor((value / sum) * 10000) / 100});
 
 		const
 
@@ -5897,46 +5882,36 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
 
-		const
-			center = Date.parse(new Date(Date.now() - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			left = Date.parse(new Date(Date.now() - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			right = Date.parse(new Date(Date.now() - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
+		let today = new Date();
 
-		this.center = {value: 0};
-		this.right = {value: 0};
-		this.left = {value: 0};
+		today = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes(), today.getSeconds()));
 
-		if(dates.has(center)) {
+		this.center = {
+			value: 0,
+			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
+		};
 
-			const row = dates.get(center);
+		this.right = {
+			value: 0,
+			date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+		};
 
-			this.center = {
-				value: row.get(this.options.valueColumn),
-			};
+		this.left = {
+			value: 0,
+			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+		};
+
+		if(dates.has(this.center.date))
+			this.center.value = dates.get(this.center.date).get(this.options.valueColumn);
+
+		if(dates.has(this.left.date)) {
+			this.left.value = dates.get(this.left.date).get(this.options.valueColumn);
+			this.left.percentage = ((this.left.value - this.center.value) / this.left.value) * 100 * -1;
 		}
 
-		if(dates.has(left)) {
-
-			const
-				row = dates.get(left),
-				value = row.get(this.options.valueColumn);
-
-			this.left = {
-				value: row.get(this.options.valueColumn),
-				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
-			};
-		}
-
-		if(dates.has(right)) {
-
-			const
-				row = dates.get(right),
-				value = row.get(this.options.valueColumn);
-
-			this.right = {
-				value: row.get(this.options.valueColumn),
-				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
-			};
+		if(dates.has(this.right.date)) {
+			this.right.value = dates.get(this.right.date).get(this.options.valueColumn);
+			this.right.percentage = ((this.right.value - this.center.value) / this.right.value) * 100 * -1;
 		}
 	}
 
@@ -5954,7 +5929,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 				<span class="value">
 					${this.options.prefix || ''}${Format.number(this.left.value)}${this.options.postfix || ''}<br>
-					<small>${Format.number(this.options.leftOffset)} days ago</small>
+					<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
 				</span>
 			</div>
 
@@ -5962,7 +5937,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 				<span class="value">
 					${this.options.prefix || ''}${Format.number(this.right.value)}${this.options.postfix || ''}<br>
-					<small>${Format.number(this.options.rightOffset)} days ago</small>
+					<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
 				</span>
 			</div>
 		`;
@@ -5989,9 +5964,7 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'json');
 		container.innerHTML = `
@@ -6021,6 +5994,42 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
 
 		this.editor.editor.getSession().setMode('ace/mode/json');
+	}
+});
+
+Visualization.list.set('html', class JSONVisualization extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('visualization', 'html');
+		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
+
+		if(this.options.hideHeader)
+			this.source.container.querySelector('header').classList.add('hidden');
+
+		if(this.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
+
+		this.source.container.classList.add('flush');
+
+		return container;
+	}
+
+	async load(options = {}) {
+
+		super.render(options);
+		this.render(options);
+	}
+
+	render(options = {}) {
+
+		if(this.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 });
 

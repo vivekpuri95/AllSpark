@@ -601,7 +601,7 @@ class Dashboard {
 
 			else {
 
-				history.pushState({what: this.id, type: 'dashboard'}, '', `/dashboard/${this.id}`);
+				history.pushState({filter: this.id, type: 'dashboard'}, '', `/dashboard/${this.id}`);
 				this.load();
 				this.render();
 			}

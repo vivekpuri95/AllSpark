@@ -78,8 +78,11 @@ main .data-source {
 	position: relative;
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
-main .data-source:hover {
+main .data-source:not(.flush):hover {
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+main .data-source.flush {
+	box-shadow: none;
 }
 	main .data-source > .warning {
 		margin: 0;
@@ -658,11 +661,13 @@ main .data-source:hover {
 				vertical-align: initial;
 			}
 
-
-		.visualization.json {
-			background: #272822 !important;
+		main .data-source .visualization.json {
+			background: #272822;
 		}
-		.visualization.table {
+		main .data-source .visualization.html {
+			background: transparent;
+		}
+		main .data-source .visualization.table {
 			overflow: auto;
 			width: initial;
 			max-width: initial;

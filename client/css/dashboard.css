@@ -149,6 +149,7 @@ main .section h1.dashboard-name {
 	border: 0;
 	font-size: 150%;
 	border-bottom:  1px dashed #ccc;
+	font-weight: normal;
 }
 
 main #mailto.selected {

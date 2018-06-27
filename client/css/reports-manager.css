@@ -182,11 +182,6 @@ main.preview-left #stages {
 			max-width: initial;
 		}
 
-	#stage-define-report > .toolbar .selected {
-		background: var(--color-accent);
-		color: var(--color-accent-text);
-		border: 1px solid var(--color-accent);
-	}
 	#define-report-parts {
 		display: flex;
 		height: 100%;
