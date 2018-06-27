@@ -402,9 +402,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 			for(const tag of tagsArray)
 				row.querySelector('.tags').appendChild(tag);
 
-			if(row.querySelector('.individual-tags'))
-				row.querySelector('.individual-tags').on('click', (e) => this.tagSearch(e));
-
 			row.querySelector('.configure').on('click', () => {
 
 				window.history.pushState({}, '', `/reports/configure-report/${report.query_id}`);
