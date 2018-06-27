@@ -5882,10 +5882,13 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
 
+		let today = new Date();
+
+		today = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes(), today.getSeconds()));
 
 		this.center = {
 			value: 0,
-			date: Date.parse(new Date(new Date(new Date().toUTCString().slice(0, -4)).getTime() - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
 		};
 		this.right = {
 			value: 0,
