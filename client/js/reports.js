@@ -5906,12 +5906,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		if(dates.has(this.left.date)) {
 			this.left.value = dates.get(this.left.date).get(this.options.valueColumn);
-			this.left.percentage = Math.round(((this.left.value - this.center.value) / this.left.value) * 100 * -1);
+			this.left.percentage = ((this.left.value - this.center.value) / this.left.value) * 100 * -1;
 		}
 
 		if(dates.has(this.right.date)) {
 			this.right.value = dates.get(this.right.date).get(this.options.valueColumn);
-			this.right.percentage = Math.round(((this.right.value - this.center.value) / this.right.value) * 100 * -1);
+			this.right.percentage = ((this.right.value - this.center.value) / this.right.value) * 100 * -1;
 		}
 	}
 
