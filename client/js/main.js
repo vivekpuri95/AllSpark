@@ -345,7 +345,7 @@ class Cookies {
 	 * Gets the value of a cookie with the given name.
 	 *
 	 * @param  string	key	The name of the cookie whose value will be retured.
-	 * @return srtring	The	value of the cookie, null if not found.
+	 * @return string	The	value of the cookie, null if not found.
 	 */
 	get(key) {
 
@@ -1121,11 +1121,8 @@ class DialogBox {
 
 	constructor(report) {
 
-		this.report = report;
-
 		this.setContainer();
 
-		this.setEvents();
 		document.querySelector('main').appendChild(this.container);
 	}
 
@@ -1141,16 +1138,13 @@ class DialogBox {
 			</section>
 		`;
 
-		this.hide();
-	}
-
-	setEvents() {
-
 		this.container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
 
 		this.container.querySelector('.dialog-box').on('click', e => e.stopPropagation());
 
 		this.container.on('click', () => this.hide());
+
+		this.hide();
 	}
 
 	set heading(dialogHeading) {
