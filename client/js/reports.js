@@ -5890,13 +5890,15 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			value: 0,
 			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
 		};
+
 		this.right = {
 			value: 0,
-			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
 		};
+
 		this.left = {
 			value: 0,
-			date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
 		};
 
 		if(dates.has(this.center.date))
