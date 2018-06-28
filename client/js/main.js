@@ -1333,8 +1333,19 @@ class MultiSelect {
 			const
 				label = document.createElement('label'),
 				input = document.createElement('input'),
-				text = document.createTextNode(row.name);
+				text = document.createElement('div');
 
+			text.classList.add('option-name');
+			text.innerHTML = `<span>${row.name}</span>`;
+
+			if(row.subtitle && row.subtitle != '') {
+
+				const subtitle = document.createElement('span');
+				subtitle.classList.add('subtitle');
+
+				subtitle.innerHTML = row.subtitle;
+				text.appendChild(subtitle);
+			}
 			input.name = this.inputName;
 			input.value = row.value;
 			input.type = this.multiple ? 'checkbox' : 'radio';

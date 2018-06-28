@@ -327,7 +327,8 @@ class DashboardsShare {
 			if(!userDashboard.has(users.user_id)) {
 				multiSelectData.push({
 					value: users.user_id,
-					name : users.name
+					name : users.name,
+					subtitle: users.email
 				});
 			}
 		}
