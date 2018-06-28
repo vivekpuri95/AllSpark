@@ -5512,7 +5512,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		}
 
 		// Add the text
-		if(this.options.showValue == 'value') {
+		if(this.options && this.options.showValue == 'value') {
 
 			arcs.append('text')
 				.attr('transform', row => {
