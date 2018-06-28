@@ -475,7 +475,7 @@ Page.class = class Dashboards extends Page {
 
 		const
 			report = new DataSource(DataSource.list.get(id)),
-			container = this.reports.querySelector('.list');
+			container = this.reports.querySelector(':scope > .list');
 
 		this.loadedVisualizations.clear();
 		this.loadedVisualizations.add(report);
