@@ -229,9 +229,7 @@ Page.class = class Dashboards extends Page {
 
 			let tags = report.tags ? report.tags.split(',') : [];
 
-			const tagsArray = [];
-
-			for(const tag of tags) {
+			tags = tags.map(t => {
 
 				const a = document.createElement('a');
 				a.classList.add('tag');
@@ -239,8 +237,8 @@ Page.class = class Dashboards extends Page {
 
 				a.on('click', e => this.tagSearch(e));
 
-				tagsArray.push(a);
-			}
+				return a;
+			});
 
 			tr.innerHTML = `
 				<td>${report.query_id}</td>
@@ -251,7 +249,7 @@ Page.class = class Dashboards extends Page {
 				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
 			`;
 
-			for(const tag of tagsArray)
+			for(const tag of tags)
 				tr.querySelector('.tags').appendChild(tag);
 
 			tr.querySelector('.link').on('click', e => e.stopPropagation());

@@ -359,18 +359,15 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			let tags = report.tags ? report.tags.split(',') : [];
 
-			const tagsArray = [];
-
-			for(const tag of tags) {
+			tags = tags.map(t => {
 
 				const a = document.createElement('a');
 				a.classList.add('tag');
-				a.textContent = tag.trim();
+				a.textContent = t.trim();
 
 				a.on('click', e => this.tagSearch(e));
-
-				tagsArray.push(a);
-			}
+				return a;
+			});
 
 			let connection = this.page.connections.get(parseInt(report.connection_name)) || '';
 
@@ -399,7 +396,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td class="action red delete">Delete</td>
 			`;
 
-			for(const tag of tagsArray)
+			for(const tag of tags)
 				row.querySelector('.tags').appendChild(tag);
 
 			row.querySelector('.configure').on('click', () => {
@@ -476,8 +473,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 				if(query.startsWith('"') && input.classList.contains('tags')) {
 
-					for(const tag of report.tags.split(','))
-						return `"${tag.trim().toLowerCase()}"` == query ? true : false;
+					return report.tags.split(',').some(tag => `"${tag.trim().toLowerCase()}"` == query);
 				}
 
 				else if(['filters', 'visualization'].includes(input.dataset.key)) {
