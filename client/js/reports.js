@@ -1656,9 +1656,7 @@ class DataSourceColumn {
 
 	async update() {
 
-		this.render()
-
-		this.drilldownDialog.hide();
+		this.render();
 
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
