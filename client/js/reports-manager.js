@@ -323,7 +323,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				continue;
 
 			searchColumn.innerHTML = `
-				<input type="search" class="column-search" data-key="${column.dataset.key}" placeholder="Search ${column.textContent}">
+				<input type="search" class="column-search ${column.dataset.key}" data-key="${column.dataset.key}" placeholder="Search ${column.textContent}">
 			`;
 
 			searchColumn.querySelector('.column-search').on('keyup', () => this.load());
@@ -358,7 +358,16 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 			const row = document.createElement('tr');
 
 			let tags = report.tags ? report.tags.split(',') : [];
-			tags = tags.filter(t => t).map(tag => `<a>${tag.trim()}</a>`).join('');
+
+			tags = tags.map(t => {
+
+				const a = document.createElement('a');
+				a.classList.add('tag');
+				a.textContent = t.trim();
+
+				a.on('click', e => this.tagSearch(e));
+				return a;
+			});
 
 			let connection = this.page.connections.get(parseInt(report.connection_name)) || '';
 
@@ -374,7 +383,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				</td>
 				<td>${report.description || ''}</td>
 				<td>${connection}</td>
-				<td class="tags"><div>${tags}</div></td>
+				<td class="tags"></td>
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
 				</td>
@@ -386,6 +395,9 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td class="action green define">Define</td>
 				<td class="action red delete">Delete</td>
 			`;
+
+			for(const tag of tags)
+				row.querySelector('.tags').appendChild(tag);
 
 			row.querySelector('.configure').on('click', () => {
 
@@ -431,6 +443,19 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		this.switcher.querySelector('small').textContent = 'Pick a report';
 	}
 
+	tagSearch(e) {
+
+		e.stopPropagation();
+
+		const
+			value = e.currentTarget.textContent,
+			column = this.container.querySelector('table thead tr.search .tags');
+
+		column.value = `"${value}"`;
+
+		this.load()
+	}
+
 	get reports() {
 
 		let reports = JSON.parse(JSON.stringify(Array.from(DataSource.list.values())));
@@ -446,7 +471,12 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				if(!query)
 					continue;
 
-				if(['filters', 'visualization'].includes(input.dataset.key)) {
+				if(query.startsWith('"') && input.classList.contains('tags')) {
+
+					return report.tags.split(',').some(tag => `"${tag.trim().toLowerCase()}"` == query);
+				}
+
+				else if(['filters', 'visualization'].includes(input.dataset.key)) {
 
 					if(!report.filters.some(filter => filter.name.toLowerCase().includes(query)))
 						return false;

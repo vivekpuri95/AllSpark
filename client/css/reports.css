@@ -526,6 +526,7 @@ main .data-source.flush {
 							main .data-source .column form .search {
 								grid-template-columns: auto 200px;
 								display: grid;
+								grid-gap: calc(var(--gap));
 							}
 								main .data-source .column form .search input {
 									flex: 1;

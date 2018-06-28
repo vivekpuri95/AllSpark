@@ -165,6 +165,18 @@ main.preview-left #stages {
 		#stage-pick-report table thead tr.search th input {
 			width: 100%;
 		}
+	#stage-pick-report table tbody tr .tag {
+		background: var(--color-accent);
+		color: var(--color-accent-text);
+		cursor: pointer;
+		text-decoration: none;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		padding: 3px 8px;
+		margin: 2px;
+		border-radius: 2px;
+		font-size: 80%;
+	}
 
 #stage-define-report.show {
 	display: flex;
