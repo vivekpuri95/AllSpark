@@ -623,6 +623,9 @@ body {
 			color: #999;
 			text-align: center;
 		}
+		.multi-select .options .list {
+			padding: var(--gap) 0;
+		}
 			.multi-select .options .list label {
 				display: grid;
 				grid-template-columns: auto 1fr;
@@ -635,7 +638,8 @@ body {
 							box-shadow var(--transition-duration);
 			}
 			.multi-select .options .list label:hover {
-				background: #eee;
+				background: #ddd;
+				cursor: pointer;
 			}
 			.multi-select .options .list label:active {
 				box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
