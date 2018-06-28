@@ -1089,24 +1089,22 @@ main .dialog-box form .parameter-list {
 			background-color: #c11;
 			border-color: #c11;
 		}
-main .dialog-box .form {
-	display: grid;
+main .dialog-box-blanket.data-source-column .form {
 	padding: 0;
-	grid-gap: calc(var(--gap) * 3);
 }
-	main .dialog-box .form label {
+	main .dialog-box-blanket.data-source-column .form label {
 		margin-left: calc(var(--gap) * 2);
 	}
-	main .dialog-box .form .drilldown-dropdown {
+	main .dialog-box-blanket.data-source-column .form .drilldown-dropdown {
 		max-width: initial;
 	}
-	main .dialog-box .form .form-footer {
+	main .dialog-box-blanket.data-source-column .form .form-footer {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
 		font-size: 110%;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	}
-		main .dialog-box .form .form-footer button {
+		main .dialog-box-blanket.data-source-column .form .form-footer button {
 			padding: calc(var(--gap) * 2);
 			height: auto;
 			border-right: 0;

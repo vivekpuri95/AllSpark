@@ -1119,46 +1119,50 @@ class Editor {
 
 class DialogBox {
 
-	constructor(report) {
+	get container() {
 
-		this.setContainer();
+		if(this.containerElement)
+			return this.containerElement;
 
-		document.querySelector('main').appendChild(this.container);
-	}
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('dialog-box-blanket');
 
-	setContainer() {
-
-		this.container = document.createElement('div');
-		this.container.classList.add('dialog-box-blanket');
-
-		this.container.innerHTML = `
+		container.innerHTML = `
 			<section class="dialog-box">
 				<header><h3></h3><span class="close"><i class="fa fa-times"></i></span></header>
 				<div class="body"></div>
 			</section>
 		`;
 
-		this.container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
+		container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
 
-		this.container.querySelector('.dialog-box').on('click', e => e.stopPropagation());
+		container.querySelector('.dialog-box').on('click', e => e.stopPropagation());
 
-		this.container.on('click', () => this.hide());
+		container.on('click', () => this.hide());
 
 		this.hide();
+
+		document.querySelector('main').appendChild(container);
+
+		return container;
 	}
 
 	set heading(dialogHeading) {
 
 		const heading = this.container.querySelector('.dialog-box header h3');
 
-		if(typeof dialogHeading == 'object') {
+		if(dialogHeading instanceof HTMLElement) {
 
 			heading.textContent = null;
 			heading.appendChild(dialogHeading);
 		}
-		else {
+		else if(typeof dialogHeading == 'string') {
 
 			heading.innerHTML = dialogHeading;
+		}
+		else {
+
+			throw Page.exception("Invalid heading format");
 		}
 	}
 
@@ -1166,14 +1170,18 @@ class DialogBox {
 
 		const body = this.container.querySelector('.dialog-box .body');
 
-		if(typeof dialogBody == 'object') {
+		if(dialogBody instanceof HTMLElement) {
 
 			body.textContent = null;
 			body.appendChild(dialogBody);
 		}
-		else {
+		else if(typeof dialogBody == 'string'){
 
 			body.innerHTML = dialogBody;
+		}
+		else {
+
+			throw Page.exception("Invalid body format");
 		}
 	}
 

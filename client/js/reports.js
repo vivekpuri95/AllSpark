@@ -274,7 +274,7 @@ class DataSource {
 		container.querySelector('.description .visible-to .count').on('click', () => {
 
 			if(!this.dialog)
-				this.dialog = new DialogBox(this);
+				this.dialog = new DialogBox();
 
 			this.dialog.heading = 'Users';
 
@@ -1163,10 +1163,12 @@ class DataSourceColumn {
 			edit.on('click', e => {
 				e.stopPropagation();
 
-				if(!this.drilldown_dialog) {
+				if(!this.drilldownDialog) {
 
-					this.drilldown_dialog = new DialogBox(this);
-					this.drilldown_dialog.heading = 'Column Properties';
+					this.drilldownDialog = new DialogBox();
+					this.drilldownDialog.container.classList.add('data-source-column');
+
+					this.drilldownDialog.heading = 'Column Properties';
 
 					this.form = document.createElement('form');
 					this.form.classList.add('block', 'form');
@@ -1288,10 +1290,10 @@ class DataSourceColumn {
 					})
 
 					this.form.querySelector('.cancel').on('click', () => {
-						this.drilldown_dialog.hide();
+						this.drilldownDialog.hide();
 
 						if(!this.form.parentElement.classList.contains('body'))
-							this.drilldown_dialog.hide();
+							this.drilldownDialog.hide();
 					});
 
 					this.form.querySelector('.save').on('click', () => this.save());
@@ -1320,7 +1322,7 @@ class DataSourceColumn {
 					this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
 					this.updateDrilldownParamters();
 
-					this.drilldown_dialog.body = this.form;
+					this.drilldownDialog.body = this.form;
 				}
 
 				this.edit();
@@ -1425,8 +1427,8 @@ class DataSourceColumn {
 			this.drilldownQuery.clear();
 		}
 
-		this.drilldown_dialog.body = this.form;
-		this.drilldown_dialog.show();
+		this.drilldownDialog.body = this.form;
+		this.drilldownDialog.show();
 	}
 
 	addParameter(parameter = {}) {
@@ -1552,13 +1554,13 @@ class DataSourceColumn {
 		this.container.querySelector('.label .color').style.background = this.color;
 
 		if(!this.form.parentElement.classList.contains('body'))
-			this.drilldown_dialog.hide();
+			this.drilldownDialog.hide();
 
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
 		await this.source.visualizations.selected.render();
-		this.drilldown_dialog.hide();
+		this.drilldownDialog.hide();
 	}
 
 	async save() {
@@ -1641,14 +1643,14 @@ class DataSourceColumn {
 		await API.call('reports/report/update', parameters, options);
 		await this.source.visualizations.selected.load();
 
-		this.drilldown_dialog.hide();
+		this.drilldownDialog.hide();
 	}
 
 	async update() {
 
 		this.render()
 
-		this.drilldown_dialog.hide();
+		this.drilldownDialog.hide();
 
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
