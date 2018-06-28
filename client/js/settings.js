@@ -770,6 +770,11 @@ class SettingsAccount {
 				description: 'The database where the report\'s result will be saved in',
 			},
 			{
+				key: 'enable_dashboard_share',
+				type: 'toggle',
+				name: 'Allow Users to share dashboard via email',
+			},
+			{
 				key: 'enable_account_signup',
 				type: 'toggle',
 				name: 'Allow User Signup',

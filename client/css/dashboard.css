@@ -169,65 +169,77 @@ main .mailto-content {
 	grid-gap: calc(var(--gap) * 2);
 }
 main #reports > .datasets {
+	z-index: 7;
+	transition: transform var(--transition-duration),
+				opacity var(--transition-duration);
+}
+main #reports > .datasets.right {
 	display: flex;
 	flex-direction: column;
-	justify-content: flex-start;
 	position: fixed;
+	overflow: auto;
+	opacity: 0;
+	width: 260px;
 	right: 0px;
 	top: 50px;
 	bottom: 0;
 	background: #fff;
 	padding: 0 calc(var(--gap) * 2);
-	box-shadow:  0 0 25px rgba(0, 0, 0, 0.15);
-	z-index: 6;
-	width: 260px;
-	align-items: flex-start;
-	overflow: auto;
-	opacity: 0;
+	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	transform: translateX(260px);
-	transition: transform var(--transition-duration),
-				opacity var(--transition-duration);
 }
-
-main #reports > .datasets.show {
+main #reports > .datasets.right.show {
 	transform: translateX(0px);
 	opacity: 1;
 }
-
-main #reports > .datasets .dataset-container {
-	grid-column: 1;
-	width: 100%;
-	max-width: 100%;
-	margin-top: calc(var(--gap) * 2);
+main #reports > .datasets.top {
+	grid-auto-columns: max-content;
+	display: flex;
+	flex-wrap: wrap;
+	padding: 0 0 var(--gap) 0;
+	align-items:  flex-end;
+	margin: 0 calc(var(--gap) * -1) calc(var(--gap) * 2);
+	position: sticky;
+	top: 0;
+	z-index: 5;
+	background: #fff;
 }
-	main #reports > .datasets > .head {
+	main #reports > .datasets.top .head {
+		display: none;
+	}
+	main #reports > .datasets.top > * {
+		margin: var(--gap);
+	}
+	main #reports > .datasets.right > * {
 		padding: var(--gap) 0;
-		border-bottom: 1px solid #ccc;
+		flex-shrink:  0;
+	}
+	main #reports > .datasets > .head {
 		width: 100%;
 		display: flex;
 		align-items: center;
-		letter-spacing: 0.5px;
 	}
-	main #reports > .datasets > .head.heading {
+	main #reports > .datasets > .heading {
+		border-bottom: 1px solid #ddd;
 		position: sticky;
 		top: 0;
 		background: #fff;
 		z-index: 1;
-		display: flex;
+		padding-top: var(--gap);
 	}
 		main #reports > .datasets > .head label {
 			grid-auto-flow: column;
 			font-size: 90%;
 			align-items: center;
 		}
-			main #reports > .datasets > .head input[type=search] {
+			main #reports > .datasets > .head.heading input[type=search] {
 				border: 0;
 				width: 100%;
 				outline: 0;
 			}
-		main #reports > .datasets > .head.heading svg {
-			color: #999;
-		}
+			main #reports > .datasets > .head.heading svg {
+				color: #999;
+			}
 			main #reports > .datasets > .head .reload {
 				margin-left: auto;
 				width: 30px;
@@ -241,39 +253,38 @@ main #reports > .datasets .dataset-container {
 			main #reports > .datasets > .head .reload svg {
 				margin: 0;
 			}
-	main #reports > .datasets .dataset-container:last-of-type {
-		margin-bottom: 0;
+	main #reports > .datasets .dataset-container {
+		max-width: 100%;
 	}
-	main #reports > .datasets .dataset-container .other-dataset input {
-		width: 100%;
-		position: relative;
+		main #reports > .datasets .dataset-container .other-dataset input {
+			width: 100%;
+			position: relative;
+		}
+	main #reports > .datasets .no-results {
+		text-align: center;
 	}
-	main #reports > .datasets .actions {
-		display: grid;
-		grid-auto-flow:  column;
-		grid-gap: calc(var(--gap) * 2);
-		grid-column: auto / span 2;
-		margin-top: auto;
+	main #reports > .datasets .apply {
+		background: var(--color-accent);
+		color: var(--color-accent-text);
+		border-color: var(--color-accent);
+		letter-spacing: 1px;
+		transition: background var(--transition-duration),
+					box-shadow var(--transition-duration),
+					color var(--transition-duration);
+	}
+	main #reports > .datasets.right .apply {
+		font-size: 110%;
+		margin: auto 0 calc(var(--gap) * 2);
 		position: sticky;
-		background: #fff;
-		bottom: 0px;
-		width: 100%;
-		padding: calc(var(--gap) * 2) 0;
+		bottom: 0;
+		height: auto;
+		padding: 8px;
 	}
-		main #reports > .datasets .actions .apply {
-			background: var(--color-accent);
-			color: #fff;
-			font-weight: bold;
-			letter-spacing: 0.5px;
-			transition: background var(--transition-duration),
-						box-shadow var(--transition-duration),
-						color var(--transition-duration);
-		}
-		main #reports > .datasets .actions .apply:hover {
-			background: #fff;
-			color: var(--color-accent);
-			cursor: pointer;
-		}
+	main #reports > .datasets .apply:hover {
+		background: var(--color-accent-text);
+		color: var(--color-accent);
+		cursor: pointer;
+	}
 
 main #reports > .list {
 	display: grid;
@@ -281,14 +292,12 @@ main #reports > .list {
 	grid-auto-rows: calc(50px - (var(--gap) * 4));
 	grid-gap: calc(var(--gap) * 5);
 	align-items: start;
+	z-index: 20;
 }
 	main #reports > .list .NA.no-reports {
 		grid-column: 1 / span all;
 	}
 	main #reports > .toolbar {
-		position: sticky;
-		top: 0;
-		z-index: 5;
 		align-items: flex-end;
 		background: transparent;
 	}
@@ -342,10 +351,10 @@ main #reports > .list {
 		border: 3px solid #fff;
 		color: #fff;
 	}
-	main #reports .side.show:focus {
+	main #reports .side.selected:focus {
 		outline: 0;
 	}
-	main #reports .side.show {
+	main #reports .side.selected {
 		right: 275px;
 	}
 		main #reports .side > svg {
