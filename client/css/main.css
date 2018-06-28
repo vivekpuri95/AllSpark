@@ -636,6 +636,7 @@ body {
 				overflow: hidden;
 				transition: background var(--transition-duration),
 							box-shadow var(--transition-duration);
+				white-space: initial;
 			}
 			.multi-select .options .list label:hover {
 				background: #ddd;
@@ -649,8 +650,7 @@ body {
 				color: var(--color-selected-text);
 			}
 				.multi-select .options .list label .option-name {
-					display: flex;
-					flex-direction: column;
+					display: grid;
 				}
 					.multi-select .options .list label .option-name .subtitle {
 						color: #999;

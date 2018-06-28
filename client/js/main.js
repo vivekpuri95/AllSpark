@@ -1336,12 +1336,15 @@ class MultiSelect {
 				text = document.createElement('div');
 
 			text.classList.add('option-name');
-			text.innerHTML = `${row.name} <span class="subtitle hidden"></span>`;
+			text.innerHTML = `<span>${row.name}</span>`;
 
-			if(row.subtitle) {
+			if(row.subtitle && row.subtitle != '') {
 
-				text.querySelector('span').innerHTML = row.subtitle;
-				text.querySelector('span').classList.remove('hidden');
+				const subtitle = document.createElement('span');
+				subtitle.classList.add('subtitle');
+
+				subtitle.innerHTML = row.subtitle;
+				text.appendChild(subtitle);
 			}
 			input.name = this.inputName;
 			input.value = row.value;
