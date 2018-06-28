@@ -229,7 +229,7 @@ Page.class = class Dashboards extends Page {
 
 			let tags = report.tags ? report.tags.split(',') : [];
 
-			tags = tags.map(t => {
+			tags = tags.map(tag => {
 
 				const a = document.createElement('a');
 				a.classList.add('tag');
