@@ -1162,7 +1162,7 @@ class DialogBox {
 		}
 		else {
 
-			throw Page.exception("Invalid heading format");
+			throw Page.exception('Invalid heading format');
 		}
 	}
 
@@ -1175,13 +1175,13 @@ class DialogBox {
 			body.textContent = null;
 			body.appendChild(dialogBody);
 		}
-		else if(typeof dialogBody == 'string'){
+		else if(typeof dialogBody == 'string') {
 
 			body.innerHTML = dialogBody;
 		}
 		else {
 
-			throw Page.exception("Invalid body format");
+			throw Page.exception('Invalid body format');
 		}
 	}
 
