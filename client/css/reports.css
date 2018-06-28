@@ -1076,12 +1076,12 @@ main .data-source.flush {
 			margin-top: 1px
 		}
 
-main .dialog-box form .parameter-list {
+main .dialog-box-blanket.data-source-column form .parameter-list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 	padding-right: calc(var(--gap) * 2);
 }
-	main .dialog-box form .parameter {
+	main .dialog-box-blanket.data-source-column form .parameter {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr max-content;
 	}
