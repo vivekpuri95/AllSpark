@@ -1095,6 +1095,10 @@ main .dialog-box-blanket.data-source-column .form {
 	main .dialog-box-blanket.data-source-column .form label {
 		margin-left: calc(var(--gap) * 2);
 	}
+		main .dialog-box-blanket.data-source-column .form label .color {
+			width: 100%;
+			padding: 0;
+		}
 	main .dialog-box-blanket.data-source-column .form .drilldown-dropdown {
 		max-width: initial;
 	}
@@ -1111,5 +1115,6 @@ main .dialog-box-blanket.data-source-column .form {
 			display: flex;
 			justify-content: center;
 			align-items: center;
+			border-bottom: 0;
 		}
 

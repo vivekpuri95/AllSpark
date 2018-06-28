@@ -1313,7 +1313,7 @@ class DataSourceColumn {
 
 			<label>
 				<span>Color</span>
-				<input type="color" name="color">
+				<input type="color" name="color" class="color">
 			</label>
 
 			<label>
