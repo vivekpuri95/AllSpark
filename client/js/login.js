@@ -249,6 +249,7 @@ Page.class = class Login extends Page {
 
 		} catch(error) {
 			this.message(error.message || error, 'warning');
+			this.container.querySelector('#loading').classList.add('hidden');
 		}
 	}
 
