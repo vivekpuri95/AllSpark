@@ -320,8 +320,8 @@ main .data-source.flush {
 		}
 	main .data-source .column .blanket .form > footer,
 	.visualization.table thead tr th.heading .compact footer {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
+		display: flex;
+		flex-direction: row;
 		position: sticky;
 		font-size: 110%;
 		bottom: 0;
@@ -334,6 +334,7 @@ main .data-source.flush {
 			display: flex;
 			justify-content: center;
 			align-items: center;
+			flex: 1;
 		}
 		main .data-source .column .blanket > .form footer button:first-child {
 			border-left: 0;
@@ -695,6 +696,7 @@ main .data-source.flush {
 					position: absolute;
 					top: 25px;
 					color: #333;
+					width: 250px;
 					text-align: initial;
 					padding-top: calc(var(--gap) * 2);
 					background: #fff;
@@ -721,6 +723,7 @@ main .data-source.flush {
 				}
  				.visualization.table thead tr th.heading .popup-dropdown footer button {
 					 border-right: 0;
+					 flex: 1;
 				}
 					.visualization.table thead tr th.heading .popup-dropdown footer button:first-child {
 						border-left: 0;
