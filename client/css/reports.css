@@ -608,7 +608,7 @@ main .data-source.flush {
 		main .data-source .visualization.table .row-count {
 			font-size: 90%;
 			text-align: right;
-			position: absolute;
+			position: sticky;
 			bottom: 0;
 			background: rgba(255, 255, 255, 0.9);
 			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
