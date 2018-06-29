@@ -1289,11 +1289,19 @@ class DataSourceColumn {
 				<input type="text" name="name" value="${this.name}" >
 			</label>
 
-			<label class="show">
+			<label class="show search-type">
 				<span>Search</span>
-				<div class="search">
+				<div class="result-container search">
 					<select name="searchType"></select>
 					<input type="search" name="searchQuery">
+				</div>
+			</label>
+
+			<label class="show accumulation-type">
+				<span>Accumulation</span>
+				<div class="result-container acc">
+					<select name="acc"></select>
+					<input type="text" name="accResult">
 				</div>
 			</label>
 
@@ -1389,6 +1397,41 @@ class DataSourceColumn {
 
 		for(const [i, type] of DataSourceColumn.searchTypes.entries())
 			form.searchType.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+
+		for(const type of DataSourceColumn.accumulationTypes)
+			form.acc.insertAdjacentHTML('beforeend', `<option value="${type.name}">${type.name}</option>`);
+
+		form.acc.on('change', () => {
+
+			const
+				data = this.source.response,
+				accumulation = DataSourceColumn.accumulationTypes.filter(a => a.name == form.acc.value);
+
+			if(form.acc.value && accumulation.length) {
+
+				const value = accumulation[0].apply(data, this.key);
+
+				form.accResult.value = value == 'NaN' ? '' : value;
+			}
+
+			else form.accResult.value = '';
+		});
+
+		//to check the type of the column;
+		let flag = 0;
+		for(const [index, report] of this.source.response.entries()) {
+
+			if(index > 10)
+				break;
+
+			if(isNaN(report.get(this.key))) {
+				flag = 1;
+				break;
+			}
+		}
+
+		if(flag)
+			form.querySelector('.accumulation-type').classList.add('hidden');
 
 		form.querySelector('.add-parameters').on('click', () => {
 			this.addParameter();
@@ -2924,20 +2967,14 @@ Visualization.list.set('table', class Table extends Visualization {
 			table = document.createElement('table'),
 			thead = document.createElement('thead'),
 			search = document.createElement('tr'),
-			accumulation = document.createElement('tr'),
 			headings = document.createElement('tr'),
 			rowCount = document.createElement('div');
 
 		search.classList.add('search');
-		accumulation.classList.add('accumulation');
 
 		for(const column of this.source.columns.list.values()) {
-			accumulation.appendChild(column.accumulation);
 			headings.appendChild(column.heading);
 		}
-
-		if(!this.hideFunctionBar)
-			thead.appendChild(accumulation);
 
 		if(!this.hideHeadingsBar)
 			thead.appendChild(headings);
