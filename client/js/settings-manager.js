@@ -525,7 +525,7 @@ SettingsManager.types.set('multiselect', class extends SettingsManagerType {
 
 	get value() {
 
-		return this.multiselect.value;
+		return this.multiple ? this.multiselect.value : this.multiselect.value[0];
 	}
 
 	set value(params) {
