@@ -110,7 +110,7 @@ exports.insert = class extends API {
 
 		let
 			values = {},
-			columns = ['name', 'parent', 'icon', 'roles', 'format', 'type'];
+			columns = ['name', 'parent', 'icon', 'roles', 'format', 'visibility'];
 
 		for (const key in this.request.body) {
 
