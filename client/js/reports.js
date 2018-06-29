@@ -702,7 +702,7 @@ class DataSource {
 
 		this.container.insertAdjacentHTML('beforeend', `
 			<pre class="warning">
-				<h2>No Data Found! :(</h2>
+				<h2>No Data Found!</h2>
 				<span>${message}</span>
 			</pre>
 		`);
