@@ -542,6 +542,9 @@ main .data-source.flush {
 			padding: 0;
 			height: 100%;
 		}
+		main .data-source .visualization.table .container {
+			overflow: initial;
+		}
 			.visualization > .container > .loading {
 				display: flex;
 				align-items: center;
