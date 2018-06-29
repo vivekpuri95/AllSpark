@@ -530,6 +530,9 @@ SettingsManager.types.set('multiselect', class extends SettingsManagerType {
 
 	set value(params) {
 
+		if(!Array.isArray(params))
+			params = [params];
+
 		this.multiselect.value = params;
 	}
 });
