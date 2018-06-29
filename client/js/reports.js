@@ -1291,7 +1291,7 @@ class DataSourceColumn {
 
 			<label class="show search-type">
 				<span>Search</span>
-				<div class="result-container search">
+				<div class="category-group search">
 					<select name="searchType"></select>
 					<input type="search" name="searchQuery">
 				</div>
@@ -1299,9 +1299,9 @@ class DataSourceColumn {
 
 			<label class="show accumulation-type">
 				<span>Accumulation</span>
-				<div class="result-container acc">
-					<select name="acc"></select>
-					<input type="text" name="accResult">
+				<div class="category-group">
+					<select name="accumulation"></select>
+					<input type="text" name="accumulationResult">
 				</div>
 			</label>
 
@@ -1399,22 +1399,22 @@ class DataSourceColumn {
 			form.searchType.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
 
 		for(const type of DataSourceColumn.accumulationTypes)
-			form.acc.insertAdjacentHTML('beforeend', `<option value="${type.name}">${type.name}</option>`);
+			form.accumulation.insertAdjacentHTML('beforeend', `<option value="${type.name}">${type.name}</option>`);
 
-		form.acc.on('change', () => {
+		form.accumulation.on('change', () => {
 
 			const
 				data = this.source.response,
-				accumulation = DataSourceColumn.accumulationTypes.filter(a => a.name == form.acc.value);
+				accumulation = DataSourceColumn.accumulationTypes.filter(a => a.name == form.accumulation.value);
 
-			if(form.acc.value && accumulation.length) {
+			if(form.accumulation.value && accumulation.length) {
 
 				const value = accumulation[0].apply(data, this.key);
 
-				form.accResult.value = value == 'NaN' ? '' : value;
+				form.accumulationResult.value = value == 'NaN' ? '' : value;
 			}
 
-			else form.accResult.value = '';
+			else form.accumulationResult.value = '';
 		});
 
 		//to check the type of the column;
