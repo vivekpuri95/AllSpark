@@ -474,48 +474,17 @@ main .data-source.flush {
 					opacity: 1;
 				}
 
-			main .data-source .column .blanket {
-				position: fixed;
-				top: 0;
-				bottom: 0;
-				left: 0;
-				right: 0;
-				background: rgba(0, 0, 0, 0.25);
-				z-index: 11;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-			}
-				main .data-source .column .blanket .block {
-					box-shadow: 0 0 100px rgba(0, 0, 0, 0.25);
-					max-height: 90%;
-					max-width: 100%;
-					flex-basis: 750px;
-					overflow: auto;
-					padding: 0;
-				}
-					main .data-source .column .blanket form .parameter-list {
-						display: grid;
-						grid-gap: calc(var(--gap) * 2);
-						padding-right: calc(var(--gap) * 2);
-					}
-					main .data-source .column .blanket form .parameter {
-						display: grid;
-						grid-template-columns: 1fr 1fr 1fr max-content;
-					}
-					main .data-source .column .blanket form .parameter .delete:hover {
-						background-color: #c11;
-						border-color: #c11;
-					}
-						main .data-source .column form h3 {
+						main .data-source .column form h3,
+						main .dialog-box form h3{
 							margin: 0;
 							padding: var(--gap) 10px;
 							background: var(--color-primary);
 							color: var(--color-primary-text);
 							position: sticky;
-							top: 0;
+							top: 0px;
 							font-weight: normal;
 							font-size: 100%;
+							z-index: 1;
 						}
 						main .data-source .column form label {
 							margin:  0 calc(var(--gap) * 2);
@@ -1107,3 +1076,46 @@ main .data-source.flush {
 			color: #666;
 			margin-top: 1px
 		}
+
+main .dialog-box-blanket.data-source-column form .parameter-list {
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+	padding-right: calc(var(--gap) * 2);
+}
+	main .dialog-box-blanket.data-source-column form .parameter {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr max-content;
+	}
+		main .dialog-box form .parameter .delete:hover {
+			background-color: #c11;
+			border-color: #c11;
+		}
+main .dialog-box-blanket.data-source-column .form {
+	padding: 0;
+}
+	main .dialog-box-blanket.data-source-column .form label {
+		margin-left: calc(var(--gap) * 2);
+	}
+		main .dialog-box-blanket.data-source-column .form label .color {
+			width: 100%;
+			padding: 0;
+		}
+	main .dialog-box-blanket.data-source-column .form .drilldown-dropdown {
+		max-width: initial;
+	}
+	main .dialog-box-blanket.data-source-column .form .form-footer {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		font-size: 110%;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	}
+		main .dialog-box-blanket.data-source-column .form .form-footer button {
+			padding: calc(var(--gap) * 2);
+			height: auto;
+			border-right: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border-bottom: 0;
+		}
+

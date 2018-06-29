@@ -274,7 +274,7 @@ class DataSource {
 		container.querySelector('.description .visible-to .count').on('click', () => {
 
 			if(!this.dialog)
-				this.dialog = new DialogBox(this);
+				this.dialog = new DialogBox();
 
 			this.dialog.heading = 'Users';
 
@@ -1152,120 +1152,7 @@ class DataSourceColumn {
 				<span class="color" style="background: ${this.color}"></span>
 				<span class="name">${this.name}</span>
 			</span>
-
-			<div class="blanket hidden">
-				<form class="block form">
-
-					<h3>Column Properties</h3>
-
-					<label>
-						<span>Key</span>
-						<input type="text" name="key" value="${this.key}" disabled readonly>
-					</label>
-
-					<label>
-						<span>Name</span>
-						<input type="text" name="name" value="${this.name}" >
-					</label>
-
-					<label class="show">
-						<span>Search</span>
-						<div class="search">
-							<select name="searchType"></select>
-							<input type="search" name="searchQuery">
-						</div>
-					</label>
-
-					<label>
-						<span>Type</span>
-						<select name="type">
-							<option value="string">String</option>
-							<option value="number">Number</option>
-							<option value="date">Date</option>
-						</select>
-					</label>
-
-					<label>
-						<span>Color</span>
-						<input type="color" name="color">
-					</label>
-
-					<label>
-						<span>Sort</span>
-						<select name="sort">
-							<option value="-1">None</option>
-							<option value="0">Descending</option>
-							<option value="1">Ascending</option>
-						</select>
-					</label>
-
-					<label>
-						<span>Formula</span>
-						<input type="text" name="formula">
-						<small></small>
-					</label>
-
-					<label>
-						<span>Prefix</span>
-						<input type="text" name="prefix">
-					</label>
-
-					<label>
-						<span>Postfix</span>
-						<input type="text" name="postfix">
-					</label>
-
-					<label>
-						<span>Disabled</span>
-						<select name="disabled">
-							<option value="0">No</option>
-							<option value="1">Yes</option>
-						</select>
-					</label>
-
-					<h3>Drill down</h3>
-
-					<label class="drilldown-dropdown">
-						<span>Report</span>
-					</label>
-
-					<label>
-						<span>Parameters</span>
-						<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
-					</label>
-
-					<div class="parameter-list"></div>
-
-					<footer class="show">
-
-						<button type="button" class="cancel">
-							<i class="far fa-times-circle"></i> Cancel
-						</button>
-
-						<button type="submit" class="apply">
-							<i class="fas fa-check"></i> Apply
-						</button>
-
-						<button type="button" class="save">
-							<i class="fa fa-save"></i> Save
-						</button>
-					</footer>
-				</form>
-			</div>
 		`;
-
-		this.blanket = container.querySelector('.blanket');
-		this.form = this.blanket.querySelector('.form');
-
-		const label = this.container.querySelector('.label');
-
-		this.form.elements.formula.on('keyup', async () => {
-
-			if(this.formulaTimeout)
-				clearTimeout(this.formulaTimeout);
-
-			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
-		});
 
 		if(user.privileges.has('report')) {
 
@@ -1275,6 +1162,7 @@ class DataSourceColumn {
 			edit.title = 'Edit Column';
 			edit.on('click', e => {
 				e.stopPropagation();
+
 				this.edit();
 			});
 
@@ -1282,43 +1170,6 @@ class DataSourceColumn {
 
 			this.container.querySelector('.label').appendChild(edit);
 		}
-
-		this.form.on('submit', async e => this.apply(e));
-
-		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
-
-		this.form.on('click', e => e.stopPropagation());
-
-		for(const [i, type] of DataSourceColumn.searchTypes.entries()) {
-
-			this.form.searchType.insertAdjacentHTML('beforeend', `
-				<option value="${i}">${type.name}</option>
-			`);
-		}
-
-		const sortedReports = Array.from(DataSource.list.values()).sort(function(a, b) {
-			const nameA = a.name.toUpperCase();
-			const nameB = b.name.toUpperCase();
-			if (nameA < nameB) {
-				return -1;
-			}
-			if (nameA > nameB) {
-				return 1;
-			}
-			return 0;
-		});
-
-		const list = [];
-
-		for(const report of sortedReports)
-			list.push({name: report.name, value: report.query_id});
-
-		this.drilldownQuery = new MultiSelect({datalist: list, multiple: false, expand: true});
-
-		this.form.querySelector('.drilldown-dropdown').appendChild(this.drilldownQuery.container);
-
-		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
-		this.updateDrilldownParamters();
 
 		let timeout;
 
@@ -1360,20 +1211,6 @@ class DataSourceColumn {
 			}, 300);
 		});
 
-		this.form.querySelector('.add-parameters').on('click', () => {
-			this.addParameter();
-			this.updateDrilldownParamters();
-		});
-
-		this.form.querySelector('.cancel').on('click', () => {
-			this.blanket.classList.add('hidden');
-
-			if(!this.form.parentElement.classList.contains('blanket'))
-				this.form.parentElement.classList.add('hidden')
-		});
-
-		this.form.querySelector('.save').on('click', () => this.save());
-
 		container.querySelector('.label').on('dblclick', async (e) => {
 
 			clearTimeout(timeout);
@@ -1398,7 +1235,7 @@ class DataSourceColumn {
 			this.source.columns.render();
 
 			await this.update();
-		})
+		});
 
 		this.setDragAndDrop();
 
@@ -1406,6 +1243,8 @@ class DataSourceColumn {
 	}
 
 	edit() {
+
+		this.drilldownDialog = this.drillDownDialogBox;
 
 		for(const key in this) {
 
@@ -1428,9 +1267,176 @@ class DataSourceColumn {
 			this.drilldownQuery.clear();
 		}
 
-		this.form.classList.remove('compact');
-		this.blanket.appendChild(this.form);
-		this.blanket.classList.remove('hidden');
+		this.drilldownDialog.body = this.form;
+		this.drilldownDialog.show();
+	}
+
+	get drillDownDialogBox() {
+
+		if(this.dialog)
+			return this.dialog;
+
+		const dialog = this.dialog = new DialogBox();
+		dialog.container.classList.add('data-source-column');
+		dialog.heading = 'Column Properties';
+
+		this.form = document.createElement('form');
+		this.form.classList.add('block', 'form');
+
+		this.form.innerHTML = `
+			<label>
+				<span>Key</span>
+				<input type="text" name="key" value="${this.key}" disabled readonly>
+			</label>
+
+			<label>
+				<span>Name</span>
+				<input type="text" name="name" value="${this.name}" >
+			</label>
+
+			<label class="show">
+				<span>Search</span>
+				<div class="search">
+					<select name="searchType"></select>
+					<input type="search" name="searchQuery">
+				</div>
+			</label>
+
+			<label>
+				<span>Type</span>
+				<select name="type">
+					<option value="string">String</option>
+					<option value="number">Number</option>
+					<option value="date">Date</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Color</span>
+				<input type="color" name="color" class="color">
+			</label>
+
+			<label>
+				<span>Sort</span>
+				<select name="sort">
+					<option value="-1">None</option>
+					<option value="0">Descending</option>
+					<option value="1">Ascending</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Formula</span>
+				<input type="text" name="formula">
+				<small></small>
+			</label>
+
+			<label>
+				<span>Prefix</span>
+				<input type="text" name="prefix">
+			</label>
+
+			<label>
+				<span>Postfix</span>
+				<input type="text" name="postfix">
+			</label>
+
+			<label>
+				<span>Disabled</span>
+				<select name="disabled">
+					<option value="0">No</option>
+					<option value="1">Yes</option>
+				</select>
+			</label>
+
+			<h3>Drill down</h3>
+
+			<label class="drilldown-dropdown">
+				<span>Report</span>
+			</label>
+
+			<label>
+				<span>Parameters</span>
+				<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
+			</label>
+
+			<div class="parameter-list"></div>
+
+			<footer class="form-footer">
+
+				<button type="button" class="cancel">
+					<i class="far fa-times-circle"></i> Cancel
+				</button>
+
+				<button type="submit" class="apply">
+					<i class="fas fa-check"></i> Apply
+				</button>
+
+				<button type="button" class="save">
+					<i class="fa fa-save"></i> Save
+				</button>
+			</footer>
+		`;
+
+		this.form.on('submit', async e => this.apply(e));
+
+		this.form.elements.formula.on('keyup', async () => {
+
+			if(this.formulaTimeout)
+				clearTimeout(this.formulaTimeout);
+
+			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
+		});
+
+		for(const [i, type] of DataSourceColumn.searchTypes.entries()) {
+
+			this.form.searchType.insertAdjacentHTML('beforeend', `
+							<option value="${i}">${type.name}</option>
+						`);
+		}
+
+		this.form.querySelector('.add-parameters').on('click', () => {
+			this.addParameter();
+			this.updateDrilldownParamters();
+		});
+
+		this.form.querySelector('.cancel').on('click', () => {
+
+			dialog.hide();
+
+			if(!this.form.parentElement.classList.contains('body'))
+				dialog.hide();
+		});
+
+		this.form.querySelector('.save').on('click', () => this.save());
+
+		const sortedReports = Array.from(DataSource.list.values()).sort(function(a, b) {
+			const nameA = a.name.toUpperCase();
+			const nameB = b.name.toUpperCase();
+			if (nameA < nameB) {
+				return -1;
+			}
+			if (nameA > nameB) {
+				return 1;
+			}
+			return 0;
+		});
+
+		const list = [];
+
+		for(const report of sortedReports)
+			list.push({name: report.name, value: report.query_id});
+
+		this.drilldownQuery = new MultiSelect({datalist: list, multiple: false, expand: true});
+
+		this.form.querySelector('.drilldown-dropdown').appendChild(this.drilldownQuery.container);
+
+		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
+		this.updateDrilldownParamters();
+
+		dialog.body = this.form;
+
+		return dialog;
 	}
 
 	addParameter(parameter = {}) {
@@ -1477,8 +1483,6 @@ class DataSourceColumn {
 		container.querySelector('.delete').on('click', () => {
 			parameterList.removeChild(container);
 		});
-
-		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
 	}
 
 	updateDrilldownParamters(updatingType) {
@@ -1557,14 +1561,14 @@ class DataSourceColumn {
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
 
-		if(!this.form.parentElement.classList.contains('blanket'))
-			this.form.parentElement.classList.add('hidden')
+		if(!this.form.parentElement.classList.contains('body'))
+			this.drilldownDialog.hide();
 
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
 		await this.source.visualizations.selected.render();
-		this.blanket.classList.add('hidden');
+		this.drilldownDialog.hide();
 	}
 
 	async save() {
@@ -1647,14 +1651,12 @@ class DataSourceColumn {
 		await API.call('reports/report/update', parameters, options);
 		await this.source.visualizations.selected.load();
 
-		this.blanket.classList.add('hidden');
+		this.drilldownDialog.hide();
 	}
 
 	async update() {
 
 		this.render();
-
-		this.blanket.classList.add('hidden');
 
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
