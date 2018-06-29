@@ -2745,6 +2745,10 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 						<span>Right Offset</span>
 						<input type="number" name="rightOffset">
 					</label>
+					
+					<label class="sub-reports">
+						<span>Sub-reports</span>
+					</label>
 
 					<label>
 						<span>
@@ -2760,6 +2764,25 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 				</div>
 			</div>
 		`;
+
+		const datalist = [];
+
+		for(const [i,v] of DataSource.list.entries()) {
+
+			const livenumberReports = v.visualizations.filter(x => x.type == 'livenumber')
+
+			if(livenumberReports.length && livenumberReports[0].visualization_id != this.visualization.visualization_id) {
+
+				datalist.push({
+					name: livenumberReports[0].name,
+					value: livenumberReports[0].visualization_id
+				});
+			}
+		}
+
+		const subreports = new MultiSelect({datalist: datalist, expand:true});
+
+		container.querySelector('.form .sub-reports').appendChild(subreports.container);
 
 		const
 			timingColumn = container.querySelector('select[name=timingColumn]'),
