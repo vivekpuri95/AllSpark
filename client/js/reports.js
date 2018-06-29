@@ -273,10 +273,10 @@ class DataSource {
 
 		container.querySelector('.description .visible-to .count').on('click', () => {
 
-			if(!this.dialog)
-				this.dialog = new DialogBox();
+			if(!this.dialogue)
+				this.dialogue = new DialogBox();
 
-			this.dialog.heading = 'Users';
+			this.dialogue.heading = 'Users';
 
 			const user_element = [];
 
@@ -289,8 +289,8 @@ class DataSource {
 				`);
 			}
 
-			this.dialog.body = `<ul class="user-list">${user_element.join('')}</ul>`;
-			this.dialog.show();
+			this.dialogue.body = `<ul class="user-list">${user_element.join('')}</ul>`;
+			this.dialogue.show();
 		});
 
 		container.querySelector('header .reload').on('click', () => {
@@ -1244,7 +1244,7 @@ class DataSourceColumn {
 
 	edit() {
 
-		this.drilldownDialog = this.drillDownDialogBox;
+		this.dialogueBox.body = this.form;
 
 		for(const key in this) {
 
@@ -1267,23 +1267,18 @@ class DataSourceColumn {
 			this.drilldownQuery.clear();
 		}
 
-		this.drilldownDialog.body = this.form;
-		this.drilldownDialog.show();
+		this.dialogueBox.show();
 	}
 
-	get drillDownDialogBox() {
+	get form() {
 
-		if(this.dialog)
-			return this.dialog;
+		if(this.formContainer)
+			return this.formContainer;
 
-		const dialog = this.dialog = new DialogBox();
-		dialog.container.classList.add('data-source-column');
-		dialog.heading = 'Column Properties';
+		const form = this.formContainer = document.createElement('form');
+		form.classList.add('block', 'form');
 
-		this.form = document.createElement('form');
-		this.form.classList.add('block', 'form');
-
-		this.form.innerHTML = `
+		form.innerHTML = `
 			<label>
 				<span>Key</span>
 				<input type="text" name="key" value="${this.key}" disabled readonly>
@@ -1362,7 +1357,7 @@ class DataSourceColumn {
 
 			<div class="parameter-list"></div>
 
-			<footer class="form-footer">
+			<footer class="form-footer show">
 
 				<button type="button" class="cancel">
 					<i class="far fa-times-circle"></i> Cancel
@@ -1378,47 +1373,60 @@ class DataSourceColumn {
 			</footer>
 		`;
 
-		this.form.on('submit', async e => this.apply(e));
+		form.on('submit', async e => this.apply(e));
+		form.on('click', async e => e.stopPropagation());
 
-		this.form.elements.formula.on('keyup', async () => {
+		form.elements.formula.on('keyup', async () => {
 
-			if(this.formulaTimeout)
-				clearTimeout(this.formulaTimeout);
+			if(formulaTimeout)
+				clearTimeout(formulaTimeout);
 
-			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
+			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		});
 
-		for(const [i, type] of DataSourceColumn.searchTypes.entries()) {
+		for(const [i, type] of DataSourceColumn.searchTypes.entries())
+			form.searchType.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
 
-			this.form.searchType.insertAdjacentHTML('beforeend', `
-							<option value="${i}">${type.name}</option>
-						`);
-		}
-
-		this.form.querySelector('.add-parameters').on('click', () => {
+		form.querySelector('.add-parameters').on('click', () => {
 			this.addParameter();
 			this.updateDrilldownParamters();
 		});
 
-		this.form.querySelector('.cancel').on('click', () => {
+		form.querySelector('.cancel').on('click', () => {
 
-			dialog.hide();
+			this.dialogueBox.hide();
 
-			if(!this.form.parentElement.classList.contains('body'))
-				dialog.hide();
+			if(!form.parentElement.classList.contains('body'))
+				form.parentElement.classList.add('hidden');
 		});
 
-		this.form.querySelector('.save').on('click', () => this.save());
+		form.querySelector('.save').on('click', () => this.save());
+
+		return form;
+	}
+
+	get dialogueBox() {
+
+		if(this.dialogueBoxObject)
+			return this.dialogueBoxObject;
+
+		const dialogue = this.dialogueBoxObject = new DialogBox();
+
+		dialogue.container.classList.add('data-source-column');
+		dialogue.heading = 'Column Properties';
 
 		const sortedReports = Array.from(DataSource.list.values()).sort(function(a, b) {
-			const nameA = a.name.toUpperCase();
-			const nameB = b.name.toUpperCase();
-			if (nameA < nameB) {
+
+			const
+				nameA = a.name.toUpperCase(),
+				nameB = b.name.toUpperCase();
+
+			if(nameA < nameB)
 				return -1;
-			}
-			if (nameA > nameB) {
+
+			if(nameA > nameB)
 				return 1;
-			}
+
 			return 0;
 		});
 
@@ -1434,9 +1442,9 @@ class DataSourceColumn {
 		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
 		this.updateDrilldownParamters();
 
-		dialog.body = this.form;
+		dialogue.body = this.form;
 
-		return dialog;
+		return dialogue;
 	}
 
 	addParameter(parameter = {}) {
@@ -1562,13 +1570,13 @@ class DataSourceColumn {
 		this.container.querySelector('.label .color').style.background = this.color;
 
 		if(!this.form.parentElement.classList.contains('body'))
-			this.drilldownDialog.hide();
+			this.form.parentElement.classList.add('hidden');
 
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
 		await this.source.visualizations.selected.render();
-		this.drilldownDialog.hide();
+		this.dialogueBox.hide();
 	}
 
 	async save() {
@@ -1651,7 +1659,7 @@ class DataSourceColumn {
 		await API.call('reports/report/update', parameters, options);
 		await this.source.visualizations.selected.load();
 
-		this.drilldownDialog.hide();
+		this.dialogueBox.hide();
 	}
 
 	async update() {
@@ -1814,55 +1822,6 @@ class DataSourceColumn {
 		destination.visualizations.selected.load();
 	}
 
-	get search() {
-
-		if(this.searchContainer)
-			return this.searchContainer;
-
-		const
-			container = this.searchContainer = document.createElement('th'),
-			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join('');
-
-		container.innerHTML = `
-			<div>
-				<select class="search-type">${searchTypes}</select>
-				<input type="search" class="query" placeholder="${this.name}">
-			</div>
-		`;
-
-		const
-			select = container.querySelector('.search-type'),
-			query = container.querySelector('.query');
-
-		select.on('change', () => {
-			this.searchType = select.value;
-			this.searchQuery = query.value;
-			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
-
-			for (const column of this.source.columns.values()) {
-				column.accumulation.run()
-			}
-
-			this.source.visualizations.selected.render();
-			setTimeout(() => select.focus());
-		});
-
-		query.on('keyup', () => {
-			this.searchType = select.value;
-			this.searchQuery = query.value;
-			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
-
-			for (const column of this.source.columns.values()) {
-				column.accumulation.run()
-			}
-
-			this.source.visualizations.selected.render();
-			setTimeout(() => query.focus());
-		});
-
-		return container;
-	}
-
 	get accumulation() {
 
 		if(this.accumulationContainer)
@@ -1954,6 +1913,8 @@ class DataSourceColumn {
 	}
 
 	popup(e) {
+
+		this.dialogueBox;
 
 		e.stopPropagation();
 
@@ -6210,8 +6171,9 @@ class Dataset extends MultiSelect {
 			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
 		}
 
-		super.datalist = values;
-		super.multiple = this.filter.multiple;
+		this.datalist = values;
+		this.multiple = this.filter.multiple;
+		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
 
 		return values;
 	}

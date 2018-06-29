@@ -1348,6 +1348,7 @@ class MultiSelect {
 				subtitle.innerHTML = row.subtitle;
 				text.appendChild(subtitle);
 			}
+
 			input.name = this.inputName;
 			input.value = row.value;
 			input.type = this.multiple ? 'checkbox' : 'radio';
@@ -1386,20 +1387,6 @@ class MultiSelect {
 			});
 
 			optionList.appendChild(label);
-		}
-
-	    if(this.multiple) {
-
-			if(!this.selectedValues.size)
-				this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
-		}
-		else {
-
-			if(this.selectedValues.size != 1) {
-
-				this.selectedValues.clear();
-				this.selectedValues.add(this.datalist[0].value.toString())
-			}
 		}
 
 		this.update();
