@@ -89,8 +89,8 @@ main .data-source.flush {
 		overflow: auto;
 		user-select: text;
 		font-family: inherit;
-		background: #EF9A9A;
-		color: #fff;
+		background: #f1f1f1;
+		color: #aaa;
 		flex: 1;
 		display: flex;
 		flex-direction: column;
@@ -98,13 +98,13 @@ main .data-source.flush {
 		align-items: center;
 	}
 		main .data-source > .warning h2 {
-			font-size: calc(15px + 1vw);
+			font-size: calc(15px + 0.8vw);
 			font-weight: normal;
 			margin: 10px 0;
 		}
 		main .data-source > .warning span {
 			font-size: calc(10px + 0.3vw);
-			color: #eee;
+			color: #bbb;
 		}
 	main .data-source > header {
 		display: flex;

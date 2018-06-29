@@ -732,8 +732,8 @@ class SettingsAccount {
 			{
 				key: 'top_nav_position',
 				type: 'multiselect',
-				name: 'Header Nav Position',
-				description: 'Position of top navigation bar (left or top)',
+				name: 'Top Navigation Bar Position',
+				description: 'The main navigation bar of the site',
 				datalist: [
 					{name: 'Top', value: 'top'},
 					{name: 'Left', value: 'left'},
@@ -741,10 +741,21 @@ class SettingsAccount {
 				multiple: false,
 			},
 			{
+				key: 'global_filters_position',
+				type: 'multiselect',
+				name: 'Global Filters Position',
+				description: 'Global Filters available on dashboards',
+				datalist: [
+					{name: 'Top', value: 'top'},
+					{name: 'Right', value: 'right'},
+				],
+				multiple: false,
+			},
+			{
 				key: 'pre_report_api',
 				type: 'string',
 				name: 'Pre Report API',
-				description: 'An API that is hit before any report is executed.',
+				description: 'An API that is hit before any report is executed',
 			},
 			{
 				key: 'load_saved_connection',
@@ -757,6 +768,11 @@ class SettingsAccount {
 				type: 'string',
 				name: 'Store Report Result Database',
 				description: 'The database where the report\'s result will be saved in',
+			},
+			{
+				key: 'enable_dashboard_share',
+				type: 'toggle',
+				name: 'Allow Users to share dashboard via email',
 			},
 			{
 				key: 'enable_account_signup',
@@ -795,7 +811,8 @@ class SettingsAccount {
 			},
 		];
 
-		const settingsContainer = new SettingsManager('account', this.account_id, settings_json)
+		const settingsContainer = new SettingsManager('account', this.account_id, settings_json);
+
 		await settingsContainer.load();
 
 		if(this.form.parentElement.querySelector('.settings-manager'))
@@ -809,7 +826,7 @@ class SettingsAccount {
 
 		this.form.removeEventListener('submit', SettingsAccount.submitEventListener);
 
-		this.form.on("submit", SettingsAccount.submitEventListener = async e => {
+		this.form.on('submit', SettingsAccount.submitEventListener = async e => {
 			await this.update(e);
 			await this.page.load();
 			await Sections.show('accounts-form');

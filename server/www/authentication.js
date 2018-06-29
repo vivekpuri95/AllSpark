@@ -149,23 +149,26 @@ exports.login = class extends API {
 
 		let parameters = new URLSearchParams;
 
-		const externalParameterKeys = (this.possibleAccounts[0]).settings.get("external_parameters") || [];
+		const externalParameterKeys = this.possibleAccounts[0].settings.get("external_parameters");
 
-		for (const key of externalParameterKeys) {
+		if(Array.isArray(externalParameterKeys)) {
 
-			const value = this.request.body[constants.external_parameter_prefix + key] || "";
+			for (const key of externalParameterKeys) {
 
-			if (Array.isArray(value)) {
+				const value = this.request.body[constants.external_parameter_prefix + key] || "";
 
-				for (const item of value) {
+				if (Array.isArray(value)) {
 
-					parameters.append(key, item);
+					for (const item of value) {
+
+						parameters.append(key, item);
+					}
 				}
-			}
 
-			else {
+				else {
 
-				parameters.append(key, value);
+					parameters.append(key, value);
+				}
 			}
 		}
 

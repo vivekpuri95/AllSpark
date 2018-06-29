@@ -702,7 +702,7 @@ class DataSource {
 
 		this.container.insertAdjacentHTML('beforeend', `
 			<pre class="warning">
-				<h2>No Data Found! :(</h2>
+				<h2>No Data Found!</h2>
 				<span>${message}</span>
 			</pre>
 		`);
@@ -5514,7 +5514,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		}
 
 		// Add the text
-		if(this.options.showValue == 'value') {
+		if(this.options && this.options.showValue == 'value') {
 
 			arcs.append('text')
 				.attr('transform', row => {
