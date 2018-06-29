@@ -409,7 +409,7 @@ main #reports > .list {
 				max-height: calc(100vh - 190px);
 			}
 			main .singleton .data-source .visualization.table {
-				max-height: calc(100vh - 180px);
+				max-height: calc(100vh - 200px);
 			}
 
 @media (max-width: 750px) {
