@@ -493,12 +493,12 @@ main .data-source.flush {
 						main .data-source .column form label.drilldown-dropdown {
 							max-width: 100%;
 						}
-							main .data-source .column form .search {
+							main .data-source .column form .category-group {
 								grid-template-columns: auto 200px;
 								display: grid;
 								grid-gap: calc(var(--gap));
 							}
-								main .data-source .column form .search input {
+								main .data-source .column form .category-group input {
 									flex: 1;
 									margin-left: calc(var(--gap) * 2);
 									width: calc(100% - 20px);
@@ -659,10 +659,10 @@ main .data-source.flush {
 				top: 0;
 			}
 			.visualization.table thead tr th.heading {
-				top: 30px;
+				top: 0;
 				background: var(--color-primary);
 				color: var(--color-primary-text);
-				padding: 0;
+				padding-right: 0;
 				height: 25px;
 			}
 			.visualization.table thead tr th.heading > div {
@@ -680,11 +680,10 @@ main .data-source.flush {
 					align-self: stretch;
 					opacity: 0;
 					transition: opacity var(--transition-duration);
-					margin-right: 10px;
+					margin-right: 5px;
 				}
 				.visualization.table thead tr th.heading:hover .filter-popup > span {
 					opacity: 1;
-					margin-right: 10px;
 				}
 				.visualization.table thead tr th.heading .filter-popup > span.open {
 					opacity: 1;
@@ -711,13 +710,13 @@ main .data-source.flush {
 						max-width: none;
 						margin: 0 calc(var(--gap) * 2);
 					}
-						.visualization.table thead tr th.heading .popup-dropdown .compact label .search {
+						.visualization.table thead tr th.heading .popup-dropdown .compact label .category-group {
 							display: grid;
 							grid-template-columns: 1fr 1fr;
 							grid-gap: calc(var(--gap) * 2);
 						}
-				.visualization.table thead .heading .compact label .search input,
-				.visualization.table thead .heading .compact label .search select {
+				.visualization.table thead .heading .compact label .category-group input,
+				.visualization.table thead .heading .compact label .category-group select {
 					margin-bottom: 0;
 					text-align: initial !important;
 				}
