@@ -99,11 +99,23 @@ a:active {
 	background: #cfc;
 }
 .warning {
-	background: #f77;
+	background: #faa;
 	color: #fff;
 }
 .warning.site-outdated {
 	text-align: center;
+	color: #fff;
+	padding: var(--gap);
+	cursor: pointer;
+	box-shadow: none;
+	transition: background var(--transition-duration),
+				box-shadow var(--transition-duration);
+}
+.warning.site-outdated:hover {
+	background: #f77;
+}
+.warning.site-outdated:active {
+	box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
 }
 .NA {
 	color: #666;
@@ -491,14 +503,6 @@ body {
 			.dialog-box header span.close:active {
 				box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.9)
 			}
-		.dialog-box footer {
-			background: var(--color-secondary);
-			color: var(--color-secondary-text);
-			position: sticky;
-			bottom: 0;
-			height: 40px;
-			z-index: 1;
-		}
 
 .global-search {
 	width: 100%;
