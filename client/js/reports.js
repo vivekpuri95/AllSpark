@@ -2559,7 +2559,7 @@ class LinearVisualization extends Visualization {
 		this.source.resetError();
 
 		if(!rows || !rows.length)
-			return this.source.error('No data found.');
+			return this.source.error();
 
 		if(!this.axes)
 			return this.source.error('Axes not defined.');
@@ -2674,7 +2674,7 @@ class LinearVisualization extends Visualization {
 			return;
 
 		if(!this.axes)
-			throw new Page.exception('Axes not defined! :(');
+			return this.source.error('Bottom axis not defined.');
 
 		this.columns = {};
 
@@ -2714,18 +2714,8 @@ class LinearVisualization extends Visualization {
 			.append('g')
 			.attr('class', 'chart');
 
-		if(!this.rows.length) {
-
-			return this.svg
-				.append('g')
-				.append('text')
-				.attr('x', (this.width / 2))
-				.attr('y', (this.height / 2))
-				.attr('text-anchor', 'middle')
-				.attr('class', 'NA')
-				.attr('fill', '#999')
-				.text(this.source.originalResponse.message || 'No data found! :(');
-		}
+		if(!this.rows.length)
+			return this.source.error();
 
 		if(this.rows.length != this.source.response.length) {
 
@@ -3035,7 +3025,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(!rows || !rows.length) {
+		if(!rows.length) {
 			table.insertAdjacentHTML('beforeend', `
 				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found! :('}</td></tr>
 			`);
@@ -3067,7 +3057,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		table.appendChild(tbody);
 		container.appendChild(table);
 
-		if(!this.hideRowSummary)
+		if(!this.hideRowSummary && rows.length)
 			container.appendChild(rowCount);
 	}
 });
@@ -3968,7 +3958,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		this.source.resetError();
 
 		if(!rows || !rows.length)
-			return this.source.error('No data found.');
+			return this.source.error();
 
 		if(!this.axes)
 			return this.source.error('Axes not defined.');

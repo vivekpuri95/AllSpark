@@ -374,14 +374,15 @@ body {
 			color: var(--color-primary-text);
 			font-size: 90%;
 		}
-      		main table thead tr th{
+			main table thead tr th {
 				padding: 5px 8px;
 				top: 0px;
 				z-index: 2;
+				font-weight: normal;
 				background: var(--color-primary);
 				color: var(--color-primary-text);
 			}
-      		main table thead th:last-child {
+			main table thead th:last-child {
 				border-right: 0;
 			}
 				main table thead .sort svg {

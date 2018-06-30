@@ -649,11 +649,10 @@ main .data-source.flush {
 		}
 			.visualization.table table {
 				caption-side: bottom;
-				margin-bottom:  24px;
 				background: #fff;
 			}
 			.visualization.table thead tr.accumulation {
-				background-color: #fff;
+				background: #fff;
 			}
 			.visualization.table thead tr.accumulation th {
 				top: 0;
@@ -1077,7 +1076,7 @@ main .data-source.flush {
 main .dialog-box-blanket.data-source-column form .parameter-list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
-	padding-right: calc(var(--gap) * 2);
+	padding: 0 calc(var(--gap) * 2);
 }
 	main .dialog-box-blanket.data-source-column form .parameter {
 		display: grid;
@@ -1088,7 +1087,7 @@ main .dialog-box-blanket.data-source-column form .parameter-list {
 			border-color: #c11;
 		}
 main .dialog-box-blanket.data-source-column .form {
-	padding: 0;
+	padding: calc(var(--gap) * 2) 0 0;
 }
 	main .dialog-box-blanket.data-source-column .form > label {
 		margin-left: calc(var(--gap) * 2);
