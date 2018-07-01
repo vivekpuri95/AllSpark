@@ -1059,6 +1059,10 @@ class DataSourceColumn {
 				apply: (q, v) => v.toString().toLowerCase().includes(q.toString().toLowerCase()),
 			},
 			{
+				name: 'Not Contains',
+				apply: (q, v) => !v.toString().toLowerCase().includes(q.toString().toLowerCase()),
+			},
+			{
 				name: 'Starts With',
 				apply: (q, v) => v.toString().toLowerCase().startsWith(q.toString().toLowerCase()),
 			},
@@ -1067,31 +1071,27 @@ class DataSourceColumn {
 				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
 			},
 			{
-				name: 'Not Contains',
-				apply: (q, v) => !v.toString().toLowerCase().includes(q.toString().toLowerCase()),
-			},
-			{
-				name: '=',
+				name: 'Equal To',
 				apply: (q, v) => v.toString().toLowerCase() == q.toString().toLowerCase(),
 			},
 			{
-				name: '!=',
+				name: 'Not Equal To',
 				apply: (q, v) => v.toString().toLowerCase() != q.toString().toLowerCase(),
 			},
 			{
-				name: '>',
+				name: 'Greater Than',
 				apply: (q, v) => v > q,
 			},
 			{
-				name: '<',
+				name: 'Less Than',
 				apply: (q, v) => v < q,
 			},
 			{
-				name: '>=',
+				name: 'Greater Than or Equal To',
 				apply: (q, v) => v >= q,
 			},
 			{
-				name: '<=',
+				name: 'Less Than or Equal To',
 				apply: (q, v) => v <= q,
 			},
 			{
@@ -1102,24 +1102,30 @@ class DataSourceColumn {
 
 		DataSourceColumn.accumulationTypes = [
 			{
-				name: 'sum',
+				name: 'Sum',
 				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0)),
 			},
 			{
-				name: 'average',
+				name: 'Average',
 				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0) / rows.length),
 			},
 			{
-				name: 'max',
+				name: 'Max',
 				apply: (rows, column) => Format.number(Math.max(...rows.map(r => r.get(column)))),
 			},
 			{
-				name: 'min',
+				name: 'Min',
 				apply: (rows, column) => Format.number(Math.min(...rows.map(r => r.get(column)))),
 			},
 			{
-				name: 'distinct',
+				name: 'Distinct Count',
 				apply: (rows, column) => Format.number(new Set(rows.map(r => r.get(column))).size),
+				string: true,
+			},
+			{
+				name: 'Distinct Values',
+				apply: (rows, column) => Array.from(new Set(rows.map(r => r.get(column)))).join(', '),
+				string: true,
 			},
 		];
 
@@ -1276,6 +1282,7 @@ class DataSourceColumn {
 			return this.formContainer;
 
 		const form = this.formContainer = document.createElement('form');
+
 		form.classList.add('block', 'form');
 
 		form.innerHTML = `
@@ -1300,8 +1307,10 @@ class DataSourceColumn {
 			<label class="show accumulation-type">
 				<span>Accumulation</span>
 				<div class="category-group">
-					<select name="accumulation"></select>
-					<input type="text" name="accumulationResult">
+					<select name="accumulation">
+						<option value=""></option>
+					</select>
+					<input type="text" name="accumulationResult" readonly>
 				</div>
 			</label>
 
@@ -1311,6 +1320,7 @@ class DataSourceColumn {
 					<option value="string">String</option>
 					<option value="number">Number</option>
 					<option value="date">Date</option>
+					<option value="html">HTML</option>
 				</select>
 			</label>
 
@@ -1365,7 +1375,7 @@ class DataSourceColumn {
 
 			<div class="parameter-list"></div>
 
-			<footer class="form-footer show">
+			<footer class="show">
 
 				<button type="button" class="cancel">
 					<i class="far fa-times-circle"></i> Cancel
@@ -1395,43 +1405,38 @@ class DataSourceColumn {
 			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		});
 
-		for(const [i, type] of DataSourceColumn.searchTypes.entries())
-			form.searchType.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		// To check the type of the column;
+		let string = false;
 
-		for(const type of DataSourceColumn.accumulationTypes)
-			form.accumulation.insertAdjacentHTML('beforeend', `<option value="${type.name}">${type.name}</option>`);
-
-		form.accumulation.on('change', () => {
-
-			const
-				data = this.source.response,
-				accumulation = DataSourceColumn.accumulationTypes.filter(a => a.name == form.accumulation.value);
-
-			if(form.accumulation.value && accumulation.length) {
-
-				const value = accumulation[0].apply(data, this.key);
-
-				form.accumulationResult.value = value == 'NaN' ? '' : value;
-			}
-
-			else form.accumulationResult.value = '';
-		});
-
-		//to check the type of the column;
-		let flag = 0;
 		for(const [index, report] of this.source.response.entries()) {
 
 			if(index > 10)
 				break;
 
 			if(isNaN(report.get(this.key))) {
-				flag = 1;
+				string = true;
 				break;
 			}
 		}
 
-		if(flag)
-			form.querySelector('.accumulation-type').classList.add('hidden');
+		for(const [i, type] of DataSourceColumn.searchTypes.entries())
+			form.searchType.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+
+		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
+
+			if(!string || type.string)
+				form.accumulation.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		}
+
+		form.accumulation.on('change', () => {
+
+			const accumulation = DataSourceColumn.accumulationTypes[form.accumulation.value];
+
+			if(form.accumulation.value && accumulation)
+				form.accumulationResult.value = accumulation.apply(this.source.response, this.key);
+
+			else form.accumulationResult.value = '';
+		});
 
 		form.querySelector('.add-parameters').on('click', () => {
 			this.addParameter();
@@ -1609,9 +1614,6 @@ class DataSourceColumn {
 
 		this.disabled = parseInt(this.disabled);
 
-		if(this.source.visualizations.selected.type == 'table')
-			this.headingContainer.classList.toggle('has-filter', this.searchQuery && this.searchQuery !== '')
-
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
 
@@ -1623,6 +1625,8 @@ class DataSourceColumn {
 
 		await this.source.visualizations.selected.render();
 		this.dialogueBox.hide();
+
+		debugger;
 	}
 
 	async save() {
@@ -1866,122 +1870,6 @@ class DataSourceColumn {
 		destination.container.querySelector('.drilldown').classList.remove('hidden');
 
 		destination.visualizations.selected.load();
-	}
-
-	get accumulation() {
-
-		if(this.accumulationContainer)
-			return this.accumulationContainer;
-
-		const
-			container = this.accumulationContainer = document.createElement('th'),
-			accumulationTypes = DataSourceColumn.accumulationTypes.map((type, i) => `
-				<option>${type.name}</option>
-			`).join('');
-
-		container.innerHTML = `
-			<div>
-				<select>
-					<option>&#402;</option>
-					${accumulationTypes}
-				</select>
-				<span class="result"></span>
-			</div>
-		`;
-
-		const
-			select = container.querySelector('select'),
-			result = container.querySelector('.result');
-
-		select.on('change', () => container.run());
-
-		container.run = () => {
-
-			const
-				data = this.source.response,
-				accumulation = DataSourceColumn.accumulationTypes.filter(a => a.name == select.value);
-
-			if(select.value && accumulation.length) {
-
-				const value = accumulation[0].apply(data, this.key);
-
-				result.textContent = value == 'NaN' ? '' : value;
-			}
-
-			else result.textContent = '';
-		}
-
-		return container;
-	}
-
-	get heading() {
-
-		if(this.headingContainer)
-			return this.headingContainer;
-
-		const container = this.headingContainer = document.createElement('th');
-
-		container.classList.add('heading');
-
-		container.innerHTML = `
-			<div>
-				<span class="name">
-					${this.drilldown && this.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
-					${this.name}
-				</span>
-				<div class="filter-popup"><span>&#9698;</span></div>
-				<div class="hidden popup-dropdown"></div>
-			</div>
-		`;
-
-		document.querySelector('body').on('click', () => {
-			container.querySelector('.popup-dropdown').classList.add('hidden')
-			container.querySelector('.filter-popup span').classList.remove('open');
-		});
-
-		container.on('click', () => {
-
-			if(parseInt(this.sort) == 1)
-				this.sort = 0;
-
-			else this.sort = 1;
-
-			this.source.columns.sortBy = this;
-			this.source.visualizations.selected.render();
-		});
-
-		container.querySelector('.filter-popup').on('click', (e) => this.popup(e));
-
-		if(this.searchQuery && this.searchQuery !== '')
-			container.classList.add('has-filter')
-
-		return container;
-	}
-
-	popup(e) {
-
-		this.dialogueBox;
-
-		e.stopPropagation();
-
-		for(const key in this) {
-
-			if(key in this.form)
-				this.form[key].value = this[key];
-		}
-
-		for(const node of this.headingContainer.parentElement.querySelectorAll('th')) {
-			node.querySelector('.popup-dropdown').classList.add('hidden');
-			node.querySelector('.filter-popup span').classList.remove('open');
-		}
-
-		e.currentTarget.querySelector('span').classList.add('open');
-
-		this.form.classList.add('compact');
-
-		this.headingContainer.querySelector('.popup-dropdown').appendChild(this.form);
-
-		this.headingContainer.querySelector('.popup-dropdown').classList.remove('hidden');
 	}
 }
 
@@ -2963,7 +2851,68 @@ Visualization.list.set('table', class Table extends Visualization {
 		search.classList.add('search');
 
 		for(const column of this.source.columns.list.values()) {
-			headings.appendChild(column.heading);
+
+			const container = document.createElement('th');
+
+			container.classList.add('heading');
+
+			container.innerHTML = `
+				<div>
+					<span class="name">
+						${column.drilldown && column.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
+						${column.name}
+					</span>
+					<div class="filter-popup"><span>&#9698;</span></div>
+					<div class="hidden popup-dropdown"></div>
+				</div>
+			`;
+
+			document.querySelector('body').on('click', () => {
+				container.querySelector('.popup-dropdown').classList.add('hidden')
+				container.querySelector('.filter-popup span').classList.remove('open');
+			});
+
+			container.on('click', () => {
+
+				if(parseInt(column.sort) == 1)
+					column.sort = 0;
+
+				else column.sort = 1;
+
+				column.source.columns.sortBy = column;
+				column.source.visualizations.selected.render();
+			});
+
+			container.querySelector('.filter-popup').on('click', e => {
+
+				column.dialogueBox;
+
+				e.stopPropagation();
+
+				for(const key in column) {
+
+					if(key in column.form)
+						column.form[key].value = column[key];
+				}
+
+				for(const node of container.parentElement.querySelectorAll('th')) {
+					node.querySelector('.popup-dropdown').classList.add('hidden');
+					node.querySelector('.filter-popup span').classList.remove('open');
+				}
+
+				e.currentTarget.querySelector('span').classList.add('open');
+
+				column.form.classList.add('compact');
+
+				container.querySelector('.popup-dropdown').appendChild(column.form);
+
+				container.querySelector('.popup-dropdown').classList.remove('hidden');
+			});
+
+			if(column.searchQuery && !column.searchQuery)
+				container.classList.add('has-filter');
+
+			headings.appendChild(container);
 		}
 
 		if(!this.hideHeadingsBar)
@@ -2985,7 +2934,11 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				const td = document.createElement('td');
 
-				td.textContent = row.get(key);
+				if(column.type == 'html') {
+					td.innerHTML = row.get(key);
+				}
+				else
+					td.textContent = row.get(key);
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
 

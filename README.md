@@ -1,4 +1,3 @@
-
 # AllSpark
 
 Add a SQL query or pass in an api and generate graphs, reports and other visualizations in seconds.

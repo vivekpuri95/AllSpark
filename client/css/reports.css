@@ -644,25 +644,16 @@ main .data-source.flush {
 			width: initial;
 			max-width: initial;
 			user-select: text;
-			border: solid #ddd;
-			border-width: 1px 0;
+			border-bottom: 1px solid #ddd;
 		}
 			.visualization.table table {
 				caption-side: bottom;
 				background: #fff;
 			}
-			.visualization.table thead tr.accumulation {
-				background: #fff;
-			}
-			.visualization.table thead tr.accumulation th {
-				top: 0;
-			}
 			.visualization.table thead tr th.heading {
-				top: 0;
 				background: var(--color-primary);
 				color: var(--color-primary-text);
 				padding-right: 0;
-				height: 25px;
 			}
 			.visualization.table thead tr th.heading > div {
 				display: flex;
@@ -672,27 +663,25 @@ main .data-source.flush {
 			}
 			.visualization.table thead tr th.heading .filter-popup {
 				width: 15px;
+				font-size: 70%;
+				margin-right: 5px;
 			}
 				.visualization.table thead tr th.heading .filter-popup > span {
 					transform: rotate(45deg);
-					font-size: 50%;
-					align-self: stretch;
 					opacity: 0;
 					transition: opacity var(--transition-duration);
-					margin-right: 5px;
 				}
-				.visualization.table thead tr th.heading:hover .filter-popup > span {
-					opacity: 1;
-				}
+				.visualization.table thead tr th.heading:hover .filter-popup > span,
 				.visualization.table thead tr th.heading .filter-popup > span.open {
 					opacity: 1;
 				}
 				.visualization.table thead tr th.heading.has-filter {
-					box-shadow: inset 0px -3px 0px 0px var(--color-accent);
+					box-shadow: inset 0px -4px 0px 0px var(--color-accent);
 				}
 				.visualization.table thead tr th.heading .popup-dropdown {
 					position: absolute;
-					top: 25px;
+					top: 100%;
+					left: 0;
 					color: #333;
 					width: 250px;
 					text-align: initial;
@@ -726,50 +715,6 @@ main .data-source.flush {
 					.visualization.table thead tr th.heading .popup-dropdown footer button:first-child {
 						border-left: 0;
 					}
-			.visualization.table thead tr.accumulation th {
-				background-color: #eee;
-				padding: 0;
-			}
-				.visualization.table thead tr.accumulation th:first-child {
-					border-left: 0;
-				}
-			.visualization.table thead tr.accumulation div {
-				display: flex;
-				margin-bottom: 5px;
-				background: #fff;
-				align-items: initial;
-				border-right: 1px solid #ccc;
-			}
-				.visualization.table thead tr.accumulation th:last-child div {
-					border-right: 0;
-				}
-					.visualization.table thead tr.accumulation select {
-						width: 80px;
-						z-index: 1;
-						margin-bottom: 0;
-						border: 0;
-						border-right: 1px dashed #ccc;
-						box-shadow: none;
-					}
-					.visualization.table thead tr.accumulation input {
-						min-width: 100px;
-						margin-bottom: 0;
-						border: 0;
-						box-shadow: none;
-					}
-					.visualization.table thead tr.accumulation span {
-						flex: 1;
-						color: #333;
-						min-width: 60px;
-						z-index: 1;
-						font-weight: bold;
-						padding: 4px 10px;
-						margin: 0;
-						cursor: initial;
-						display: flex;
-						justify-content: center;
-						align-items: center;
-					}
 			.visualization.table thead td {
 				padding: 0;
 				border: 0;
@@ -795,14 +740,13 @@ main .data-source.flush {
 				position: sticky;
 				cursor: pointer;
 				white-space: nowrap;
-				padding: 5px 10px;
+				padding: 6px 10px;
 				border: 0;
 				border-right: 1px solid #fff;
 				top: 0;
 			}
 				.visualization.table table thead th div {
 					display: flex;
-					/* align-items: center; */
 				}
 					.visualization.table table thead th span {
 						flex: 1;
@@ -1099,13 +1043,16 @@ main .dialog-box-blanket.data-source-column .form {
 	main .dialog-box-blanket.data-source-column .form .drilldown-dropdown {
 		max-width: initial;
 	}
-	main .dialog-box-blanket.data-source-column .form .form-footer {
+	main .dialog-box-blanket.data-source-column .form > footer {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
 		font-size: 110%;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		position: sticky;
+		bottom: 0;
+		z-index: 1;
 	}
-		main .dialog-box-blanket.data-source-column .form .form-footer button {
+		main .dialog-box-blanket.data-source-column .form > footer button {
 			padding: calc(var(--gap) * 2);
 			height: auto;
 			border-right: 0;
