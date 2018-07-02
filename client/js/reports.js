@@ -289,7 +289,7 @@ class DataSource {
 				`);
 			}
 
-			this.dialogue.body = `<ul class="user-list">${user_element.join('')}</ul>`;
+			this.dialogue.body.insertAdjacentHTML('beforeend', `<ul class="user-list">${user_element.join('')}</ul>`);
 			this.dialogue.show();
 		});
 
@@ -1285,7 +1285,7 @@ class DataSourceColumn {
 
 	edit() {
 
-		this.dialogueBox.body = this.form;
+		this.dialogueBox.body.appendChild(this.form);
 
 		for(const key in this) {
 
@@ -1530,7 +1530,7 @@ class DataSourceColumn {
 		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
 		this.updateDrilldownParamters();
 
-		dialogue.body = this.form;
+		dialogue.body.appendChild(this.form);
 
 		return dialogue;
 	}
@@ -5839,36 +5839,44 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			</div>
 		`;
 
+		if(this.subReports && this.subReports.length) {
+
+			this.container.style.cursor = 'pointer';
+		}
+
 		this.container.on('click', async () => {
 
-			if(!this.subReports)
+			if(!this.subReports && !this.subReports.length)
 				return;
 
+			this.subReportDialogBox.body.textContent = null;
 			this.subReportDialogBox.show();
 
-			const subReportsContainer = document.createElement('div');
-			subReportsContainer.classList.add('sub-reports')
+			let visualizations = [];
 
-			for(const [i,v] of DataSource.list.entries()) {
+			for(const [index, report] of DataSource.list.entries()) {
 
-				for(const visualization of v.visualizations) {
+				const selectedVisualizations = report.visualizations.filter(x => this.subReports.includes(x.visualization_id.toString()));
 
-					if(this.subReports.some(x => parseInt(x) == visualization.visualization_id)) {
+				visualizations = visualizations.concat(selectedVisualizations);
 
-						const report = new DataSource(v, this);
-						await report.fetch();
-
-						report.visualizations.selected.load();
-						report.visualizations.selected.render();
-
-						subReportsContainer.appendChild(report.container);
-					}
-				}
 			}
 
-			this.subReportDialogBox.body = subReportsContainer;
+			for(const visualization of visualizations) {
 
-		})
+				const query = DataSource.list.get(visualization.query_id);
+
+				const report = new DataSource(query, this);
+
+				var [selectedVisualization] = report.visualizations.filter(x => x.visualization_id == visualization.visualization_id);
+
+				report.visualizations.selected = selectedVisualization;
+
+				report.visualizations.selected.load();
+				this.subReportDialogBox.body.appendChild(report.container);
+			}
+
+		});
 
 		await this.source.fetch(options);
 

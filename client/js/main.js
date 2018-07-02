@@ -1169,23 +1169,9 @@ class DialogBox {
 		}
 	}
 
-	set body(dialogBody) {
+	get body() {
 
-		const body = this.container.querySelector('.dialog-box .body');
-
-		if(dialogBody instanceof HTMLElement) {
-
-			body.textContent = null;
-			body.appendChild(dialogBody);
-		}
-		else if(typeof dialogBody == 'string') {
-
-			body.innerHTML = dialogBody;
-		}
-		else {
-
-			throw Page.exception('Invalid body format');
-		}
+		return this.container.querySelector('.dialog-box .body');
 	}
 
 	hide() {
@@ -1326,6 +1312,7 @@ class MultiSelect {
 		optionList.textContent = null;
 
 		if(!this.datalist || !this.datalist.length) {
+
 			this.container.querySelector('input[type=search]').disabled = true;
 			optionList.innerHTML = '<div class="NA">No data found... :(</div>';
 			return;

@@ -2276,10 +2276,6 @@ class ReportVisualizationOptions {
 		for(const element of this.form.querySelectorAll('input, select'))
 			result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
 
-		if(this.subReports) {
-			result.subReports = this.subReports.value;
-		}
-
 		return result;
 	}
 }
@@ -2464,6 +2460,20 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	}
 }
 
+class ReportVisualizationLiveNumberOptions extends ReportVisualizationOptions {
+
+	get json() {
+
+		const result = super.json;
+
+		if(this.subReports) {
+			result.subReports = this.subReports.value;
+		}
+
+		return result;
+
+	}
+}
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
 
 ConfigureVisualization.types = new Map;
@@ -2711,7 +2721,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 	}
 });
 
-ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationOptions {
+ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationLiveNumberOptions {
 
 	get form() {
 
@@ -2771,16 +2781,17 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		const datalist = [];
 
-		for(const [i,v] of DataSource.list.entries()) {
+		for(const [index, report] of DataSource.list.entries()) {
 
-			const livenumberReports = v.visualizations.filter(x => x.type == 'livenumber' && x.visualization_id != this.visualization.visualization_id)
+			for(const visualisation of report.visualizations) {
 
-			if(livenumberReports.length) {
+				if(visualisation.type == 'livenumber') {
 
-				livenumberReports.map(x => datalist.push({
-					"name": x.name,
-					"value": x.visualization_id
-				}));
+					datalist.push({
+						'name': visualisation.name,
+						'value': visualisation.visualization_id
+					});
+				}
 			}
 		}
 
@@ -2805,14 +2816,10 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		for(const element of this.formContainer.querySelectorAll('select, input')) {
 
-			if(element.name.includes('multiselect')) {
-
-				this.subReports.value = (this.visualization.options && this.visualization.options.subReports) || [];
-				continue;
-			}
-
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
 		}
+
+		this.subReports.value = (this.visualization.options && this.visualization.options.subReports) || [];
 
 		this.stage.setupConfigurationSetions(container);
 

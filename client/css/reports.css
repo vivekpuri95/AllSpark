@@ -1064,17 +1064,15 @@ main .dialog-box-blanket.data-source-column .form {
 		}
 
 main .dialog-box-blanket.sub-reports-dialog .dialog-box {
-	max-width: 80%;
+	width: 80%;
 }
 	main .dialog-box-blanket.sub-reports-dialog .body {
 		padding: var(--gap) 0;
+		margin: 0 calc(var(--gap) * 2);
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-around;
 	}
-		main .dialog-box-blanket.sub-reports-dialog .sub-reports {
-			margin: 0 calc(var(--gap) * 2);
-			display: flex;
-			flex-wrap: wrap;
-			justify-content: space-around;
-		}
 		main .dialog-box-blanket.sub-reports-dialog .data-source {
 			width: 350px;
 			margin: var(--gap) 0;
