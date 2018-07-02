@@ -2754,7 +2754,7 @@ class LinearVisualization extends Visualization {
 							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
 							${column.name}
 						</span>
-						<span class="value">${row.get(key)}</span>
+						<span class="value">${Format.number(row.get(key))}</span>
 					</li>
 				`);
 			}
