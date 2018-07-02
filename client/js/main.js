@@ -209,9 +209,9 @@ Page.serviceWorker = class PageServiceWorker {
 			navigator.serviceWorker.controller.addEventListener('statechange', e => this.statechange(e));
 	}
 
-	statechange(event) {
+	statechange(event = {}) {
 
-		if(event.target.state != 'redundant')
+		if(event.target && event.target.state != 'redundant')
 			return;
 
 		setTimeout(() => {
@@ -220,9 +220,12 @@ Page.serviceWorker = class PageServiceWorker {
 
 			message.classList.add('warning', 'site-outdated');
 
-			message.innerHTML = `The site has been updated in the background. Please <a href="">reload</a> the page.`;
+			message.innerHTML = `The site has been updated in the background. Click here to reload the page.`;
 
-			message.querySelector('a').on('click', () => window.location.reload());
+			message.on('click', () => {
+				window.location.reload();
+				message.innerHTML = 'Reloading&hellip;';
+			});
 
 			this.page.container.parentElement.insertBefore(message, this.page.container);
 

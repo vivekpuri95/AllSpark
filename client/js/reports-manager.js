@@ -647,6 +647,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
 
+		this.container.querySelector('#added-by').textContent = null;
+
 		if(this.form.redis.value == 'custom')
 			this.form.is_redis.classList.remove('hidden');
 
@@ -2475,18 +2477,6 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 					<label>
 						<span>
-							<input type="checkbox" name="hideSearchBar">Hide Search Bar
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideFunctionBar">Hide Function Bar
-						</span>
-					</label>
-
-					<label>
-						<span>
 							<input type="checkbox" name="hideHeadingsBar">Hide Headings Bar
 						</span>
 					</label>
@@ -2688,25 +2678,6 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 					</label>
 
 					<label>
-						<span>Type</span>
-						<select name="valueType">
-							<option value="text">Text</option>
-							<option value="number">Number</option>
-							<option value="date">Date</option>
-						</select>
-					</label>
-
-					<label>
-						<span>Prefix</span>
-						<input type="text" name="prefix">
-					</label>
-
-					<label>
-						<span>Postfix</span>
-						<input type="text" name="postfix">
-					</label>
-
-					<label>
 						<span>
 							<input type="checkbox" name="hideLegend">Hide Legend
 						</span>
@@ -2755,16 +2726,6 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 					<label>
 						<span>Value Column</span>
 						<select name="valueColumn"></select>
-					</label>
-
-					<label>
-						<span>Prefix</span>
-						<input type="text" name="prefix">
-					</label>
-
-					<label>
-						<span>Postfix</span>
-						<input type="text" name="postfix">
 					</label>
 
 					<label>
