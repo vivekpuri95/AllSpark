@@ -649,6 +649,7 @@ main .data-source.flush {
 			.visualization.table table {
 				caption-side: bottom;
 				background: #fff;
+				margin-bottom: 25px;
 			}
 			.visualization.table thead tr th.heading {
 				background: var(--color-primary);
