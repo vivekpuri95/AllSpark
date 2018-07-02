@@ -5839,6 +5839,37 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			</div>
 		`;
 
+		this.container.on('click', async () => {
+
+			if(!this.subReports)
+				return;
+
+			this.subReportDialogBox.show();
+
+			const subReportsContainer = document.createElement('div');
+			subReportsContainer.classList.add('sub-reports')
+
+			for(const [i,v] of DataSource.list.entries()) {
+
+				for(const visualization of v.visualizations) {
+
+					if(this.subReports.some(x => parseInt(x) == visualization.visualization_id)) {
+
+						const report = new DataSource(v, this);
+						await report.fetch();
+
+						report.visualizations.selected.load();
+						report.visualizations.selected.render();
+
+						subReportsContainer.appendChild(report.container);
+					}
+				}
+			}
+
+			this.subReportDialogBox.body = subReportsContainer;
+
+		})
+
 		await this.source.fetch(options);
 
 		this.process();
@@ -5952,6 +5983,18 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			color = !color;
 
 		return color ? 'green' : 'red';
+	}
+
+	get subReportDialogBox() {
+
+		if(this.subReportsDialogBoxContainer)
+			return this.subReportsDialogBoxContainer;
+
+		const subReportDialog = this.subReportsDialogBoxContainer = new DialogBox();
+		subReportDialog.container.classList.add('sub-reports-dialog');
+		subReportDialog.heading = this.name;
+
+		return subReportDialog;
 	}
 });
 

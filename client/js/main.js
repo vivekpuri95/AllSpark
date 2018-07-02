@@ -1320,12 +1320,13 @@ class MultiSelect {
 		if(this.expand)
 			this.container.classList.add('expanded');
 
-		this.container.querySelector('input[type=search]').disabled = this.disabled;
+		this.container.querySelector('input[type=search]').disabled = this.disabled || false;
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
 
 		if(!this.datalist || !this.datalist.length) {
+			this.container.querySelector('input[type=search]').disabled = true;
 			optionList.innerHTML = '<div class="NA">No data found... :(</div>';
 			return;
 		}

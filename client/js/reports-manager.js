@@ -2276,6 +2276,10 @@ class ReportVisualizationOptions {
 		for(const element of this.form.querySelectorAll('input, select'))
 			result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
 
+		if(this.subReports) {
+			result.subReports = this.subReports.value;
+		}
+
 		return result;
 	}
 }
@@ -2769,20 +2773,20 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		for(const [i,v] of DataSource.list.entries()) {
 
-			const livenumberReports = v.visualizations.filter(x => x.type == 'livenumber')
+			const livenumberReports = v.visualizations.filter(x => x.type == 'livenumber' && x.visualization_id != this.visualization.visualization_id)
 
-			if(livenumberReports.length && livenumberReports[0].visualization_id != this.visualization.visualization_id) {
+			if(livenumberReports.length) {
 
-				datalist.push({
-					name: livenumberReports[0].name,
-					value: livenumberReports[0].visualization_id
-				});
+				livenumberReports.map(x => datalist.push({
+					"name": x.name,
+					"value": x.visualization_id
+				}));
 			}
 		}
 
-		const subreports = new MultiSelect({datalist: datalist, expand:true});
+		this.subReports = new MultiSelect({datalist: datalist, expand:true});
 
-		container.querySelector('.form .sub-reports').appendChild(subreports.container);
+		container.querySelector('.form .sub-reports').appendChild(this.subReports.container);
 
 		const
 			timingColumn = container.querySelector('select[name=timingColumn]'),
@@ -2799,8 +2803,16 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			`);
 		}
 
-		for(const element of this.formContainer.querySelectorAll('select, input'))
+		for(const element of this.formContainer.querySelectorAll('select, input')) {
+
+			if(element.name.includes('multiselect')) {
+
+				this.subReports.value = (this.visualization.options && this.visualization.options.subReports) || [];
+				continue;
+			}
+
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+		}
 
 		this.stage.setupConfigurationSetions(container);
 
