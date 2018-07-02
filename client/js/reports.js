@@ -2872,7 +2872,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			container = this.container.querySelector('.container'),
 			rows = this.source.response;
 
-		if(!rows.length)
+		if(!rows || !rows.length)
 			return this.source.error();
 
 		container.textContent = null;
@@ -5915,7 +5915,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const container = this.container.querySelector('.container');
 
 		container.innerHTML = `
-			<h5>${Format.number(this.center.value)}</h5>
+			<h5>${this.center.value}</h5>
 
 			<div class="left">
 				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
