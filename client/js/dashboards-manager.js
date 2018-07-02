@@ -212,7 +212,7 @@ class DashboardsDashboard {
 
 		this.multiselect = new MultiSelect({datalist, multiple: false});
 
-		this.multiselect.value = [this.parent.toString()];
+		this.multiselect.value = this.parent ? [this.parent.toString()] : [];
 
 		if(DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select'))
 			DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select').remove();
