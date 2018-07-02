@@ -100,8 +100,7 @@ class DataSource {
 		}
 
 		catch(e) {
-			this.error(JSON.stringify(e.message, 0, 4));
-			response = {};
+			return this.error(JSON.stringify(e.message, 0, 4));
 		}
 
 		if(parameters.get('download'))
@@ -493,6 +492,8 @@ class DataSource {
 
 	get response() {
 
+		this.resetError();
+
 		if(!this.originalResponse || !this.originalResponse.data)
 			return [];
 
@@ -504,6 +505,9 @@ class DataSource {
 			return [];
 
 		const data = this.transformations.run(this.originalResponse.data);
+
+		if(!this.columns.list.size)
+			return this.error();
 
 		for(const _row of data) {
 
@@ -697,6 +701,9 @@ class DataSource {
 	}
 
 	error(message = '') {
+
+		if(this.container.querySelector('pre.warning'))
+			return;
 
 		this.resetError();
 
@@ -947,18 +954,6 @@ class DataSourceRow extends Map {
 					this.skip = true;
 			}
 
-			if(column.source.columns.get(column.key).postfix)
-				row[key] = row[key] + column.source.columns.get(column.key).postfix;
-
-			if(column.source.columns.get(column.key).prefix)
-				row[key] = column.source.columns.get(column.key).prefix + row[key];
-
-			if(column.type == 'date')
-				row[key] = Format.date(row[key]);
-
-			else if(column.type == 'number')
-				row[key] = Format.number(row[key]);
-
 			this.set(key, row[key]);
 		}
 
@@ -971,6 +966,45 @@ class DataSourceRow extends Map {
 			this.set(key, value);
 
 		this.annotations = new Set();
+	}
+
+	/**
+	 * Get a user presentable value for a column in report.
+	 * We need a separate way to get this value because applying type information in a graph usually breaks the graphs.
+	 * So this value will only be used when showing the value to the user on screen and not to calculate the data.
+	 *
+	 * This will do things like
+	 * - Apply prefix/postfix.
+	 * - Apply date/number type formating.
+	 *
+	 * @param  string	key	The key whose value is needed.
+	 * @return string		The value of the column with it's type information applied to it.
+	 */
+	getTypedValue(key) {
+
+		if(!this.has(key))
+			return undefined;
+
+		if(!this.source.columns.has(key))
+			return undefined;
+
+		const column = this.source.columns.get(key);
+
+		let value = this.get(key);
+
+		if(column.type == 'date')
+			value = Format.date(value);
+
+		else if(column.type == 'number')
+			value = Format.number(value);
+
+		if(column.prefix)
+			value = column.prefix + value;
+
+		if(column.postfix)
+			value = value + column.postfix;
+
+		return value;
 	}
 }
 
@@ -1625,8 +1659,6 @@ class DataSourceColumn {
 
 		await this.source.visualizations.selected.render();
 		this.dialogueBox.hide();
-
-		debugger;
 	}
 
 	async save() {
@@ -2444,8 +2476,6 @@ class LinearVisualization extends Visualization {
 
 		const rows = this.source.response;
 
-		this.source.resetError();
-
 		if(!rows || !rows.length)
 			return this.source.error();
 
@@ -2699,7 +2729,7 @@ class LinearVisualization extends Visualization {
 
 			const tooltip = [];
 
-			for(const [key, value] of row) {
+			for(const [key, _] of row) {
 
 				if(key == that.axes.bottom.column)
 					continue;
@@ -2716,7 +2746,7 @@ class LinearVisualization extends Visualization {
 							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
 							${column.name}
 						</span>
-						<span class="value">${Format.number(value)}</span>
+						<span class="value">${row.getTypedValue(key)}</span>
 					</li>
 				`);
 			}
@@ -2800,6 +2830,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		this.rowLimit = 15;
 		this.rowLimitMultiplier = 1.75;
+		this.selectedRows = new Set;
 	}
 
 	async load(options = {}) {
@@ -2838,6 +2869,9 @@ Visualization.list.set('table', class Table extends Visualization {
 		const
 			container = this.container.querySelector('.container'),
 			rows = this.source.response;
+
+		if(!rows.length)
+			return this.source.error();
 
 		container.textContent = null;
 
@@ -2909,7 +2943,7 @@ Visualization.list.set('table', class Table extends Visualization {
 				container.querySelector('.popup-dropdown').classList.remove('hidden');
 			});
 
-			if(column.searchQuery && !column.searchQuery)
+			if(column.searchQuery && column.searchQuery)
 				container.classList.add('has-filter');
 
 			headings.appendChild(container);
@@ -2928,17 +2962,16 @@ Visualization.list.set('table', class Table extends Visualization {
 			if(position >= this.rowLimit)
 				break;
 
-			const tr = document.createElement('tr');
+			const tr = row.tr = document.createElement('tr');
 
 			for(const [key, column] of this.source.columns.list) {
 
 				const td = document.createElement('td');
 
-				if(column.type == 'html') {
-					td.innerHTML = row.get(key);
-				}
+				if(column.type == 'html')
+					td.innerHTML = row.getTypedValue(key);
 				else
-					td.textContent = row.get(key);
+					td.textContent = row.getTypedValue(key);
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
 
@@ -2951,7 +2984,16 @@ Visualization.list.set('table', class Table extends Visualization {
 				tr.appendChild(td);
 			}
 
-			tr.on('click', () => tr.classList.toggle('selected'));
+			tr.on('click', () => {
+
+				if(this.selectedRows.has(row))
+					this.selectedRows.delete(row);
+
+				else this.selectedRows.add(row);
+
+				tr.classList.toggle('selected');
+				this.renderRowSummary();
+			});
 
 			tbody.appendChild(tr);
 		}
@@ -2984,9 +3026,13 @@ Visualization.list.set('table', class Table extends Visualization {
 			`);
 		}
 
-		rowCount.classList.add('row-count');
+		rowCount.classList.add('row-summary');
 
 		rowCount.innerHTML = `
+			<span class="selected-rows hidden">
+				<span class="label">Selected:</span>
+				<strong title="Number of selected rows"></strong>
+			</span>
 			<span>
 				<span class="label">Showing:</span>
 				<strong title="Number of rows currently shown on screen">
@@ -3012,6 +3058,14 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		if(!this.hideRowSummary && rows.length)
 			container.appendChild(rowCount);
+	}
+
+	renderRowSummary() {
+
+		const container = this.container.querySelector('.row-summary .selected-rows');
+
+		container.classList.toggle('hidden', !this.selectedRows.size);
+		container.querySelector('strong').textContent = Format.number(this.selectedRows.size);
 	}
 });
 
@@ -3907,8 +3961,6 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 	draw() {
 
 		const rows = this.source.response;
-
-		this.source.resetError();
 
 		if(!rows || !rows.length)
 			return this.source.error();
@@ -5329,8 +5381,6 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 	render(options = {}) {
 
-		this.source.resetError();
-
 		this.rows = this.source.response;
 
 		this.height = this.container.clientHeight - 20;
@@ -5741,33 +5791,15 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		if(!response.has(this.options.column))
 			return this.source.error(`<em>${this.options.column}</em> column not found.`);
-
-		const value = response.get(this.options.column);
-
-		if(this.options.valueType == 'number' && isNaN(value))
-			return this.source.error('Invalid Number.');
-
-		if(this.options.valueType == 'date' && !Date.parse(value))
-			return this.source.error('Invalid Date.');
 	}
 
 	render(options = {}) {
 
 		const [response] = this.source.response;
 
-		let value = response.get(this.options.column);
+		let value = response.getTypedValue(this.options.column);
 
-		if(this.options.valueType == 'number')
-			value = Format.number(value);
-
-		if(this.options.valueType == 'date')
-			value = Format.date(value);
-
-		this.container.querySelector('.container').innerHTML = `
-			<div class="value">
-				${this.options.prefix || ''}${value}${this.options.postfix || ''}
-			</div>
-		`;
+		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 	}
 });
 
@@ -5849,17 +5881,27 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
 		};
 
-		if(dates.has(this.center.date))
-			this.center.value = dates.get(this.center.date).get(this.options.valueColumn);
+		let centerValue;
+
+		if(dates.has(this.center.date)) {
+			centerValue = dates.get(this.center.date).get(this.options.valueColumn);
+			this.center.value = dates.get(this.center.date).getTypedValue(this.options.valueColumn);
+		}
 
 		if(dates.has(this.left.date)) {
-			this.left.value = dates.get(this.left.date).get(this.options.valueColumn);
-			this.left.percentage = ((this.left.value - this.center.value) / this.left.value) * 100 * -1;
+
+			const value = dates.get(this.left.date).get(this.options.valueColumn);
+
+			this.left.percentage = ((value - centerValue) / value) * 100 * -1;
+			this.left.value = dates.get(this.left.date).getTypedValue(this.options.valueColumn);
 		}
 
 		if(dates.has(this.right.date)) {
-			this.right.value = dates.get(this.right.date).get(this.options.valueColumn);
-			this.right.percentage = ((this.right.value - this.center.value) / this.right.value) * 100 * -1;
+
+			const value = dates.get(this.right.date).get(this.options.valueColumn);
+
+			this.right.percentage = ((value - centerValue) / value) * 100 * -1;
+			this.right.value = dates.get(this.right.date).getTypedValue(this.options.valueColumn);
 		}
 	}
 
@@ -5871,12 +5913,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const container = this.container.querySelector('.container');
 
 		container.innerHTML = `
-			<h5>${this.options.prefix || ''}${Format.number(this.center.value)}${this.options.postfix || ''}</h5>
+			<h5>${Format.number(this.center.value)}</h5>
 
 			<div class="left">
 				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					${this.options.prefix || ''}${Format.number(this.left.value)}${this.options.postfix || ''}<br>
+					${this.left.value}<br>
 					<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
 				</span>
 			</div>
@@ -5884,7 +5926,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			<div class="right">
 				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					${this.options.prefix || ''}${Format.number(this.right.value)}${this.options.postfix || ''}<br>
+					${this.right.value}<br>
 					<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
 				</span>
 			</div>
