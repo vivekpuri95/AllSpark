@@ -34,7 +34,7 @@ class DataSource {
 			source.visualizations.push({ name: this.name, visualization_id: 0, type: 'table' });
 		}
 
-		source.visualizations = source.visualizations.filter(v => Visualizations.list.has(v.type));
+		source.visualizations = source.visualizations.filter(v => Visualization.list.has(v.type));
 
 		this.visualizations = source.visualizations.map(v => new (Visualization.list.get(v.type))(v, this));
 		this.postProcessors = new DataSourcePostProcessors(this);
