@@ -647,6 +647,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
 
+		this.container.querySelector('#added-by').textContent = null;
+
 		if(this.form.redis.value == 'custom')
 			this.form.is_redis.classList.remove('hidden');
 
