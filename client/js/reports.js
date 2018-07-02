@@ -1292,6 +1292,8 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
+		this.form.disabled.value = parseInt(this.disabled) || 0;
+
 		if(this.drilldown && this.drilldown.query_id) {
 
 			this.form.querySelector('.parameter-list').textContent = null;
@@ -1646,7 +1648,7 @@ class DataSourceColumn {
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
-		this.disabled = parseInt(this.disabled);
+		this.disabled = parseInt(this.disabled) || 0;
 
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
