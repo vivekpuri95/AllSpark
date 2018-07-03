@@ -148,6 +148,10 @@ main .data-source.flush {
 				text-align: center;
 				color: inherit;
 			}
+			main .data-source > header .actions .card-info {
+				cursor: pointer;
+				color: #999;
+			}
 			main .data-source > header .actions a {
 				opacity: 0;
 				transition: opacity var(--transition-duration);

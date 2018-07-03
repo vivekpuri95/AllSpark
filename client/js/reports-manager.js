@@ -2785,7 +2785,7 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 			for(const visualisation of report.visualizations) {
 
-				if(visualisation.type == 'livenumber') {
+				if(visualisation.type == 'livenumber' && visualisation.visualization_id != this.visualization.visualization_id) {
 
 					datalist.push({
 						'name': visualisation.name,

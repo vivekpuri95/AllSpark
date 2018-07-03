@@ -5842,6 +5842,14 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		if(this.subReports && this.subReports.length) {
 
 			this.container.style.cursor = 'pointer';
+
+			const actions = this.source.container.querySelector('header .actions');
+
+			actions.insertAdjacentHTML('beforeend', `
+				<span class="card-info" title="${this.subReports.length + (this.subReports.length > 1 ? ' sub-cards' : ' sub-card')}">
+					<i class="fas fa-ellipsis-h"></i>
+				</span>
+			`);
 		}
 
 		this.container.on('click', async () => {
@@ -5864,11 +5872,10 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			for(const visualization of visualizations) {
 
-				const query = DataSource.list.get(visualization.query_id);
-
-				const report = new DataSource(query, this);
-
-				var [selectedVisualization] = report.visualizations.filter(x => x.visualization_id == visualization.visualization_id);
+				const
+					query = DataSource.list.get(visualization.query_id),
+					report = new DataSource(query, this),
+					[selectedVisualization] = report.visualizations.filter(x => x.visualization_id == visualization.visualization_id);
 
 				report.visualizations.selected = selectedVisualization;
 

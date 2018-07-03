@@ -1215,7 +1215,7 @@ class MultiSelect {
 				</header>
 				<div class="list"></div>
 				<div class="no-matches NA hidden">No matches found! :(</div>
-				<footer></footer>
+				<footer class="hidden"></footer>
 			</div>
 		`;
 
@@ -1392,7 +1392,7 @@ class MultiSelect {
 			search = this.container.querySelector('input[type=search]'),
 			options = this.container.querySelector('.options');
 
-		if(!options)
+		if(!options || !this.datalist.length)
 			return;
 
 		for(const input of options.querySelectorAll('.list label input')) {
@@ -1415,7 +1415,10 @@ class MultiSelect {
 
 		search.placeholder = `Search... (${selected} selected)`;
 
-		options.querySelector('footer').innerHTML = `
+		const footer = options.querySelector('footer');
+
+		footer.classList.remove('hidden');
+		footer.innerHTML = `
 			<span>Total: <strong>${total}</strong></span>
 			<span>Showing: <strong>${total - hidden}</strong></span>
 			<span>Selected: <strong>${selected}</strong></span>
