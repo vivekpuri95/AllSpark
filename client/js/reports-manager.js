@@ -1442,6 +1442,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			this.form.appendChild(label);
 		}
 
+		if(!MetaData.visualizations.size)
+			this.form.innerHTML = `<div class="NA">No visualizations found :(</div>`;
+
 		this.form.on('submit', e => this.insert(e));
 	}
 

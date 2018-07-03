@@ -9,7 +9,7 @@ Page.class = class DashboardManager extends Page {
 		this.listContainer = this.container.querySelector('section#list');
 
 		this.listContainer.querySelector('#add-dashboard').on('click', () => {
-			DashboardsDashboard.add();
+			DashboardsDashboard.add(this);
 			history.pushState({id: 'add'}, '', `/dashboards-manager/add`);
 		});
 
@@ -140,6 +140,17 @@ class DashboardsDashboard {
 
 	static async add() {
 
+		const response = await API.call('dashboards/list');
+
+		const datalist = response.map(a => {return {name: a.name, value: a.id}});
+
+		DashboardsDashboard.multiselect = new MultiSelect({datalist, multiple: false});
+
+		if(DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select'))
+			DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select').remove();
+
+		DashboardsDashboard.container.querySelector('.parent-dashboard').appendChild(DashboardsDashboard.multiselect.container);
+
 		DashboardsDashboard.container.querySelector('h1').textContent = 'Add New Dashboard';
 
 		DashboardsDashboard.form.reset();
@@ -167,6 +178,7 @@ class DashboardsDashboard {
 
 		const parameters = {
 			format: DashboardsDashboard.editor.value,
+			parent: DashboardsDashboard.multiselect.value[0],
 		};
 
 		const response = await API.call('dashboards/insert', parameters, options);
@@ -196,6 +208,17 @@ class DashboardsDashboard {
 				element.value = this[element.name];
 		}
 
+		const datalist = this.page.response.map(a => {return {name: a.name, value: a.id}});
+
+		this.multiselect = new MultiSelect({datalist, multiple: false});
+
+		this.multiselect.value = this.parent ? [this.parent.toString()] : [];
+
+		if(DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select'))
+			DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select').remove();
+
+		DashboardsDashboard.container.querySelector('.parent-dashboard').appendChild(this.multiselect.container);
+
 		DashboardsDashboard.editor.value = JSON.stringify(this.format || {}, 0, 4) || '';
 
 		if(DashboardsDashboard.form_listener)
@@ -224,6 +247,7 @@ class DashboardsDashboard {
 		const parameters = {
 			id: this.id,
 			format: DashboardsDashboard.editor.value,
+			parent: this.multiselect.value[0],
 		};
 
 		const options = {

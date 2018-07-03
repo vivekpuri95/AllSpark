@@ -646,22 +646,13 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 						<input type="text" name="name" required>
 					</label>
 
-					<label>
+					<label class="parent-dashboard">
 						<span>Parent</span>
-						<input type="number" name="parent">
 					</label>
 
 					<label>
 						<span>Icon</span>
 						<input type="text" name="icon">
-					</label>
-
-					<label>
-						<span>Type</span>
-						<select name="visibility">
-							<option value="private">Private</option>
-							<option value="public">Public</option>
-						</select>
 					</label>
 				</form>
 
@@ -1525,11 +1516,6 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						<label>
 							<span>Authentication API</span>
 							<input type="text" name="auth_api">
-						</label>
-
-						<label id="format">
-							<span>Settings</span>
-							<textarea id="settings-format" name="settings"></textarea>
 						</label>
 					</form>
 				</section>
