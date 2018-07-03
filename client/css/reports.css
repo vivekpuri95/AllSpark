@@ -381,10 +381,9 @@ main .data-source.flush {
 		background: -webkit-linear-gradient(left, #eee, #ccc);
 		content: "\00a0\00a0\00a0\00a0\00a0";
 		position: sticky;
-		right: 0;
+		right: -5px;
 		margin-left: auto;
 		width: 50px;
-		display: none;
 	}
 	main .data-source > .columns::-webkit-scrollbar {
 		display: none;
