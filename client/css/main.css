@@ -598,7 +598,6 @@ body {
 		display: flex;
 		flex-direction: column;
 		border: 1px solid #ccc;
-		border-top: 0;
 		background: #fff;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		max-height: 250px;
@@ -606,6 +605,13 @@ body {
 		position: absolute;
 		z-index: 3;
 		overflow: auto;
+	}
+	.multi-select.top .options {
+		bottom: 100%;
+		border-bottom: 0;
+	}
+	.multi-select.bottom .options {
+		border-top: 0;
 	}
 	.multi-select.expanded .options {
 		position: initial;
