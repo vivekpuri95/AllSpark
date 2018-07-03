@@ -5854,7 +5854,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		this.container.on('click', async () => {
 
-			if(!this.subReports && !this.subReports.length)
+			if(!this.subReports || !this.subReports.length)
 				return;
 
 			this.subReportDialogBox.body.textContent = null;
