@@ -2318,12 +2318,12 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		this.stage.setupConfigurationSetions(container);
 
-		this.formContainer.axes = [];
+		this.formContainer.axes = new Set();
 
 		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : []) {
 
 			const axisForm = this.axis(axis);
-			this.formContainer.axes.push(axisForm);
+			this.formContainer.axes.add(axisForm);
 			container.querySelector('.axes').appendChild(axisForm);
 		}
 
@@ -2336,7 +2336,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		container.querySelector('.add-axis').on('click', () => {
 
 			const axisForm = this.axis();
-			this.formContainer.axes.push(axisForm);
+			this.formContainer.axes.add(axisForm);
 			container.querySelector('.axes').appendChild(axisForm);
 		});
 
@@ -2447,7 +2447,11 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		container.querySelector('select[name=position]').value = axis.position;
 		container.querySelector('select[name=format]').value = axis.format || '';
 
-		container.querySelector('.delete').on('click', () => container.parentElement && container.parentElement.removeChild(container));
+		container.querySelector('.delete').on('click', () => {
+
+			container.parentElement && container.parentElement.removeChild(container);
+			this.formContainer.axes.delete(container);
+		});
 
 		return container;
 	}
