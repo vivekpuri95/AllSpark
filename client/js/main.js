@@ -1220,8 +1220,19 @@ class MultiSelect {
 			</div>
 		`;
 
-		if(this.expand)
-		    this.container.querySelector('.options').classList.remove('hidden');
+		if(this.expand) {
+
+			this.container.querySelector('.options').classList.remove('hidden');
+			this.container.classList.add('expanded');
+		}
+
+		if(['top', 'bottom'].includes(this.optionsDropDownPosition)) {
+
+			this.container.classList.add(this.optionsDropDownPosition);
+		}
+		else {
+			this.container.classList.add('bottom');
+		}
 
 		this.render();
 
@@ -1303,11 +1314,6 @@ class MultiSelect {
 	}
 
 	render() {
-
-		if(this.expand)
-			this.container.classList.add('expanded');
-
-		this.optionsDropDownPosition == 'top' ? this.container.classList.add('top') : this.container.classList.remove('top');
 
 		this.container.querySelector('input[type=search]').disabled = this.disabled || false;
 
