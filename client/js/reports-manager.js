@@ -2460,6 +2460,20 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	}
 }
 
+class ReportVisualizationLiveNumberOptions extends ReportVisualizationOptions {
+
+	get json() {
+
+		const result = super.json;
+
+		if(this.subReports) {
+			result.subReports = this.subReports.value;
+		}
+
+		return result;
+
+	}
+}
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
 
 ConfigureVisualization.types = new Map;
@@ -2707,7 +2721,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 	}
 });
 
-ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationOptions {
+ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationLiveNumberOptions {
 
 	get form() {
 
@@ -2745,6 +2759,10 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 						<span>Right Offset</span>
 						<input type="number" name="rightOffset">
 					</label>
+					
+					<label class="sub-reports">
+						<span>Sub-reports</span>
+					</label>
 
 					<label>
 						<span>
@@ -2761,6 +2779,26 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			</div>
 		`;
 
+		const datalist = [];
+
+		for(const [index, report] of DataSource.list.entries()) {
+
+			for(const visualisation of report.visualizations) {
+
+				if(visualisation.type == 'livenumber' && visualisation.visualization_id != this.visualization.visualization_id) {
+
+					datalist.push({
+						'name': visualisation.name,
+						'value': visualisation.visualization_id
+					});
+				}
+			}
+		}
+
+		this.subReports = new MultiSelect({datalist: datalist, expand:true});
+
+		container.querySelector('.form .sub-reports').appendChild(this.subReports.container);
+
 		const
 			timingColumn = container.querySelector('select[name=timingColumn]'),
 			valueColumn = container.querySelector('select[name=valueColumn]');
@@ -2776,8 +2814,12 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			`);
 		}
 
-		for(const element of this.formContainer.querySelectorAll('select, input'))
+		for(const element of this.formContainer.querySelectorAll('select, input')) {
+
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+		}
+
+		this.subReports.value = (this.visualization.options && this.visualization.options.subReports) || [];
 
 		this.stage.setupConfigurationSetions(container);
 

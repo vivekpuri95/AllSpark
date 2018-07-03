@@ -289,7 +289,7 @@ class DataSource {
 				`);
 			}
 
-			this.dialogue.body = `<ul class="user-list">${user_element.join('')}</ul>`;
+			this.dialogue.body.insertAdjacentHTML('beforeend', `<ul class="user-list">${user_element.join('')}</ul>`);
 			this.dialogue.show();
 		});
 
@@ -1285,7 +1285,7 @@ class DataSourceColumn {
 
 	edit() {
 
-		this.dialogueBox.body = this.form;
+		this.dialogueBox.body.appendChild(this.form);
 
 		for(const key in this) {
 
@@ -1530,7 +1530,7 @@ class DataSourceColumn {
 		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
 		this.updateDrilldownParamters();
 
-		dialogue.body = this.form;
+		dialogue.body.appendChild(this.form);
 
 		return dialogue;
 	}
@@ -5839,6 +5839,52 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			</div>
 		`;
 
+		if(this.subReports && this.subReports.length) {
+
+			this.container.style.cursor = 'pointer';
+
+			const actions = this.source.container.querySelector('header .actions');
+
+			actions.insertAdjacentHTML('beforeend', `
+				<span class="card-info" title="${this.subReports.length + (this.subReports.length > 1 ? ' sub-cards' : ' sub-card')}">
+					<i class="fas fa-ellipsis-h"></i>
+				</span>
+			`);
+		}
+
+		this.container.on('click', async () => {
+
+			if(!this.subReports || !this.subReports.length)
+				return;
+
+			this.subReportDialogBox.body.textContent = null;
+			this.subReportDialogBox.show();
+
+			let visualizations = [];
+
+			for(const [index, report] of DataSource.list.entries()) {
+
+				const selectedVisualizations = report.visualizations.filter(x => this.subReports.includes(x.visualization_id.toString()));
+
+				visualizations = visualizations.concat(selectedVisualizations);
+
+			}
+
+			for(const visualization of visualizations) {
+
+				const
+					query = DataSource.list.get(visualization.query_id),
+					report = new DataSource(query, this),
+					[selectedVisualization] = report.visualizations.filter(x => x.visualization_id == visualization.visualization_id);
+
+				report.visualizations.selected = selectedVisualization;
+
+				report.visualizations.selected.load();
+				this.subReportDialogBox.body.appendChild(report.container);
+			}
+
+		});
+
 		await this.source.fetch(options);
 
 		this.process();
@@ -5952,6 +5998,18 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			color = !color;
 
 		return color ? 'green' : 'red';
+	}
+
+	get subReportDialogBox() {
+
+		if(this.subReportsDialogBoxContainer)
+			return this.subReportsDialogBoxContainer;
+
+		const subReportDialog = this.subReportsDialogBoxContainer = new DialogBox();
+		subReportDialog.container.classList.add('sub-reports-dialog');
+		subReportDialog.heading = this.name;
+
+		return subReportDialog;
 	}
 });
 

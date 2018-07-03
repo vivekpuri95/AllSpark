@@ -1169,23 +1169,9 @@ class DialogBox {
 		}
 	}
 
-	set body(dialogBody) {
+	get body() {
 
-		const body = this.container.querySelector('.dialog-box .body');
-
-		if(dialogBody instanceof HTMLElement) {
-
-			body.textContent = null;
-			body.appendChild(dialogBody);
-		}
-		else if(typeof dialogBody == 'string') {
-
-			body.innerHTML = dialogBody;
-		}
-		else {
-
-			throw Page.exception('Invalid body format');
-		}
+		return this.container.querySelector('.dialog-box .body');
 	}
 
 	hide() {
@@ -1229,7 +1215,7 @@ class MultiSelect {
 				</header>
 				<div class="list"></div>
 				<div class="no-matches NA hidden">No matches found! :(</div>
-				<footer></footer>
+				<footer class="hidden"></footer>
 			</div>
 		`;
 
@@ -1320,12 +1306,14 @@ class MultiSelect {
 		if(this.expand)
 			this.container.classList.add('expanded');
 
-		this.container.querySelector('input[type=search]').disabled = this.disabled;
+		this.container.querySelector('input[type=search]').disabled = this.disabled || false;
 
 		const optionList = this.container.querySelector('.options .list');
 		optionList.textContent = null;
 
 		if(!this.datalist || !this.datalist.length) {
+
+			this.container.querySelector('input[type=search]').disabled = true;
 			optionList.innerHTML = '<div class="NA">No data found... :(</div>';
 			return;
 		}
@@ -1404,7 +1392,7 @@ class MultiSelect {
 			search = this.container.querySelector('input[type=search]'),
 			options = this.container.querySelector('.options');
 
-		if(!options)
+		if(!options || !this.datalist.length)
 			return;
 
 		for(const input of options.querySelectorAll('.list label input')) {
@@ -1427,7 +1415,10 @@ class MultiSelect {
 
 		search.placeholder = `Search... (${selected} selected)`;
 
-		options.querySelector('footer').innerHTML = `
+		const footer = options.querySelector('footer');
+
+		footer.classList.remove('hidden');
+		footer.innerHTML = `
 			<span>Total: <strong>${total}</strong></span>
 			<span>Showing: <strong>${total - hidden}</strong></span>
 			<span>Selected: <strong>${selected}</strong></span>

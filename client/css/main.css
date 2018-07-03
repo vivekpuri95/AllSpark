@@ -476,7 +476,7 @@ body {
 		justify-self: center;
 		overflow: auto;
 	}
-		.dialog-box header {
+		.dialog-box > header {
 			display: flex;
 			background: var(--color-primary);
 			color: #fff;

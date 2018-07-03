@@ -148,6 +148,10 @@ main .data-source.flush {
 				text-align: center;
 				color: inherit;
 			}
+			main .data-source > header .actions .card-info {
+				cursor: pointer;
+				color: #999;
+			}
 			main .data-source > header .actions a {
 				opacity: 0;
 				transition: opacity var(--transition-duration);
@@ -377,10 +381,9 @@ main .data-source.flush {
 		background: -webkit-linear-gradient(left, #eee, #ccc);
 		content: "\00a0\00a0\00a0\00a0\00a0";
 		position: sticky;
-		right: 0;
+		right: -5px;
 		margin-left: auto;
 		width: 50px;
-		display: none;
 	}
 	main .data-source > .columns::-webkit-scrollbar {
 		display: none;
@@ -1063,3 +1066,18 @@ main .dialog-box-blanket.data-source-column .form {
 			border-bottom: 0;
 		}
 
+main .dialog-box-blanket.sub-reports-dialog .dialog-box {
+	width: 80%;
+}
+	main .dialog-box-blanket.sub-reports-dialog .body {
+		padding: var(--gap) 0;
+		margin: 0 calc(var(--gap) * 2);
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-around;
+	}
+		main .dialog-box-blanket.sub-reports-dialog .data-source {
+			width: 350px;
+			height: 250px;
+			margin: var(--gap) 0;
+		}
