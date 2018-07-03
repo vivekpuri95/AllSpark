@@ -30,9 +30,10 @@ class DataSource {
 		if(!source.visualizations)
 			source.visualizations = [];
 
-		if(!source.visualizations.filter(v => v.type == 'table').length) {
+		if(!source.visualizations.filter(v => v.type == 'table').length)
 			source.visualizations.push({ name: this.name, visualization_id: 0, type: 'table' });
-		}
+
+		source.visualizations = source.visualizations.filter(v => Visualization.list.has(v.type));
 
 		this.visualizations = source.visualizations.map(v => new (Visualization.list.get(v.type))(v, this));
 		this.postProcessors = new DataSourcePostProcessors(this);
@@ -2566,6 +2567,11 @@ class LinearVisualization extends Visualization {
 		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
 		this.width = this.container.clientWidth - this.axes.left.width - 40;
 
+		for(const row of rows) {
+			for(const [key, column] of row)
+				row.set(key, row.getTypedValue(key));
+		}
+
 		this.rows = rows;
 
 		window.addEventListener('resize', () => {
@@ -2600,7 +2606,7 @@ class LinearVisualization extends Visualization {
 
 		for(const row of this.rows) {
 
-			for(const [key, value] of row) {
+			for(const [key, _] of row) {
 
 				if(key == this.axes.bottom.column)
 					continue;
@@ -2620,7 +2626,7 @@ class LinearVisualization extends Visualization {
 
 				this.columns[key].push({
 					x: row.get(this.axes.bottom.column),
-					y: value,
+					y: row.get(key),
 					y1: this.axes.right ? row.get(this.axes.right.column) : null,
 					key,
 				});
@@ -2748,7 +2754,7 @@ class LinearVisualization extends Visualization {
 							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
 							${column.name}
 						</span>
-						<span class="value">${row.getTypedValue(key)}</span>
+						<span class="value">${Format.number(row.get(key))}</span>
 					</li>
 				`);
 			}
