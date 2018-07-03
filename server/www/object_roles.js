@@ -6,12 +6,12 @@ exports.insert = class extends API {
 
 		this.user.privilege.needs("administrator");
 
-		const expectedFields = ["owner", "owner_id", "target", "target_id"];
+		const expectedFields = ["owner", "owner_id", "target", "target_id", "category_id"];
 
-		this.assert(expectedFields.every(x => this.request.body[x]), "required data owner, ownerId, target, targetId, some are missing");
+		this.assert(expectedFields.every(x => this.request.body[x]), "required data owner, ownerId, target, category_id, targetId, some are missing");
 
 		return await this.mysql.query(
-			"insert ignore into tb_object_roles (owner, owner_id, target, target_id, account_id, added_by) values (?)",
+			"insert ignore into tb_object_roles (owner, owner_id, target, target_id, category_id, account_id, added_by) values (?)",
 			[expectedFields.map(x => this.request.body[x]).concat([this.account.account_id, this.user.user_id])],
 			"write"
 		);
@@ -61,6 +61,11 @@ exports.list = class extends API {
 
 	async list() {
 
+		if(this.request.query.owner && this.request.query.target) {
+
+			return await (new exports.get).get(this.account.account_id, this.request.query.owner, this.request.query.target, this.request.query.owner_id || 0, this.request.query.target_id || 0);
+		}
+
 		return await this.mysql.query(
 			"select * from tb_object_roles where account_id = ?",
 			[this.account.account_id]
@@ -98,3 +103,4 @@ exports.get = class extends API {
 		);
 	}
 };
+

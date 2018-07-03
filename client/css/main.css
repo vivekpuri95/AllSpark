@@ -686,3 +686,42 @@ body {
 			white-space: normal;
 			border-top: 1px dashed #999;
 		}
+#object-roles-form {
+	width: 100%;
+}
+	#add-object-role table {
+		width: 500px;
+
+	}
+
+	#object-roles-already-viewed {
+		max-height: 300px;
+		overflow: auto;
+	}
+
+	#object-roles-already-viewed thead th {
+		position: sticky;
+		top: 0;
+		white-space: nowrap;
+	}
+
+	#object-roles-already-viewed tfoot td {
+		position: sticky;
+		bottom: 0;
+		background: white;
+	}
+		#object-roles-already-viewed tfoot select,
+		#object-roles-already-viewed tfoot button {
+			width: 100%;
+		}
+
+#add-object-role {
+		display: flex;
+		width: 100%
+	}
+
+
+	#object-roles-multiselect-th {
+		min-width: 250px;
+	}
+

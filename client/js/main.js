@@ -1578,13 +1578,372 @@ class MultiSelect {
 	}
 }
 
+
+class ObjectRoles {
+
+	constructor(owner, owner_id, allowedTargets = []) {
+
+		this.targets = {
+			user: {
+				API: 'users/list',
+				name_fields: (user) => `${user.first_name} ${user.middle_name || ''} ${user.last_name}<br><span class="NA">${user.email}</span>`,
+				value_field: 'user_id',
+				data: [],
+				ignore_categories: true,
+			},
+
+			role: {
+				API: 'roles/list',
+				name_fields: (role) => role.name,
+				value_field: 'role_id',
+				data: [],
+			},
+		};
+
+		this.owner = owner;
+		this.ownerId = owner_id;
+		this.allowedTargets = allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets);
+	}
+
+	async load() {
+
+		this.data = [];
+		this.alreadyVisible = await API.call('object_roles/list');
+
+		this.alreadyVisible = this.alreadyVisible.filter(x =>
+			x.owner === this.owner
+			&& parseInt(x.owner_id) === parseInt(this.ownerId)
+			&& this.allowedTargets.includes(x.target)
+		);
+
+		for (const target of this.allowedTargets) {
+
+			const data = await API.call(this.targets[target].API);
+
+			this.targets[target].data = [];
+
+			for (const row of data) {
+
+				this.targets[target].data.push({
+					name: this.targets[target].name_fields(row),
+					value: row[this.targets[target].value_field || 'id'],
+				});
+			}
+		}
+
+		this.combine();
+		this.container;
+		this.shareButton;
+	}
+
+	render() {
+
+		if (!this.getContainer) {
+
+			this.container;
+		}
+
+		const alreadyViewedContainer = this.getContainer.querySelector('#object-roles-already-viewed');
+		alreadyViewedContainer.innerHTML = null;
+		alreadyViewedContainer.appendChild(this.alreadyViewedContainer);
+	}
+
+	get container() {
+
+		if (this.getContainer) {
+
+			return this.getContainer;
+		}
+
+		let form = document.createElement('form');
+		form.id = 'object-roles-form';
+
+		const container = document.createElement('div');
+		container.classList.add('object-roles');
+
+		const alreadyViewedContainer = this.alreadyViewedContainer;
+
+		container.appendChild(alreadyViewedContainer);
+
+		form.addEventListener("submit", (e) => this.insert(e));
+
+		form.appendChild(container);
+
+
+		this.getContainer = form;
+
+		return form;
+	}
+
+	selectDropDown(pairedData) {
+
+		this.selectedType = document.createElement('select');
+
+		for (const target of pairedData) {
+
+			const option = document.createElement('option');
+			option.value = target.value;
+			option.text = target.text;
+			this.selectedType.appendChild(option);
+		}
+
+		return this.selectedType;
+	}
+
+	get shareButton() {
+
+		if (this.button) {
+
+			return this.button;
+		}
+
+		const container = document.createElement('div');
+		container.classList.add('object-roles');
+		const button = document.createElement('button');
+		button.classList.add('share-button');
+		button.textContent = `Share ${this.owner}`;
+		container.appendChild(button);
+		this.button = container;
+
+
+		button.addEventListener('click', () => {
+
+			const dialougeBox = new DialogBox();
+			dialougeBox.heading = `Share this ${this.owner} with any ${this.joinToString()}`;
+			dialougeBox.body = this.container;
+			dialougeBox.show();
+		});
+
+		return this.button;
+	}
+
+	get alreadyViewedContainer() {
+
+		this.categoryMultiselect = this.selectDropDown([...MetaData.categories.values()].map(x => {
+
+			return {
+				value: x.category_id,
+				text: x.name,
+			}
+		}));
+
+		let container = document.createElement('div');
+		container.id = 'object-roles-already-viewed';
+
+		const table = document.createElement('table');
+
+		const thead = document.createElement('thead');
+		const tbody = document.createElement('tbody');
+		const tfoot = document.createElement('tfoot');
+
+		const submitButton = document.createElement('button');
+
+		submitButton.type = 'submit';
+		submitButton.setAttribute('form', 'object-roles-form');
+		submitButton.innerHTML = `<i class="fa fa-paper-plane"></i>`;
+
+		let tr = document.createElement('tr');
+		tr.innerHTML = `
+			<th>Shared With</th>
+			<th>Category</th>
+			<th>Name</th>
+			<th class="action">Delete</th>
+		`;
+		thead.appendChild(tr);
+		for (const row of this.alreadyVisible) {
+			const tr = document.createElement('tr');
+			tr.innerHTML = `
+				<td>${row.target.charAt(0).toUpperCase() + row.target.slice(1)}</td>
+				<td>${row.category.charAt(0).toUpperCase() + row.category.slice(1)}</td>
+				<td>${row.name}</td>
+				<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			`;
+			tbody.appendChild(tr);
+
+			tr.querySelector('.red').addEventListener('click', () => this.delete(row.id));
+		}
+
+		if (!this.alreadyVisible.length) {
+
+			tbody.innerHTML = '<tr class="NA"><td colspan="4">No data found! :(</td></tr>'
+		}
+
+		tr = document.createElement('tr');
+
+		const selectDropdownTd = document.createElement('td');
+
+		this.targetSelectDropdown = this.selectDropDown(this.allowedTargets.map(x => {
+
+			return {
+				value: x,
+				text: x.charAt(0).toUpperCase() + x.slice(1),
+			}
+		}));
+
+		if(this.targets[this.targetSelectDropdown.value].ignore_categories) {
+
+			this.categoryMultiselect.classList.add('hidden');
+			this.categoryMultiselect.value = 0;
+		}
+		else {
+
+			this.targetSelectDropdown.classList.remove('hidden');
+			this.categoryMultiselect.value = this.categoryMultiselect.options.length ? this.categoryMultiselect.options[0] : 0;
+			this.categoryMultiselect.text = this.categoryMultiselect.options.length ? this.categoryMultiselect.options[0].text : '';
+		}
+
+
+		selectDropdownTd.appendChild(this.targetSelectDropdown);
+
+		tr.appendChild(selectDropdownTd);
+
+		selectDropdownTd.addEventListener('change', (e) => {
+
+			this.multiSelect = new MultiSelect({
+				datalist: this.targets[this.targetSelectDropdown.value].data,
+				multiple: false,
+			});
+			this.getContainer.querySelector('#object-roles-multiselect-dorpdown').innerHTML = null;
+			this.getContainer.querySelector('#object-roles-multiselect-dorpdown').appendChild(this.multiSelect.container);
+
+			if(this.targets[e.target.value].ignore_categories) {
+				this.categoryMultiselect.classList.add('hidden');
+				this.categoryMultiselect.value = 0;
+			}
+			else {
+				this.categoryMultiselect.classList.remove('hidden');
+				this.categoryMultiselect.value = this.categoryMultiselect.options.length ? this.categoryMultiselect.options[0].value : 0;
+				this.categoryMultiselect.text = this.categoryMultiselect.options.length ? this.categoryMultiselect.options[0].text : '';
+			}
+		});
+
+		this.multiSelect = new MultiSelect({
+			datalist: this.targets[this.targetSelectDropdown.value].data,
+			multiple: false,
+		});
+
+		const categoryDropdownTd = document.createElement('td');
+		categoryDropdownTd.appendChild(this.categoryMultiselect);
+		tr.appendChild(categoryDropdownTd);
+
+		const multiSelectDropdownTd = document.createElement('td');
+		multiSelectDropdownTd.id = 'object-roles-multiselect-dorpdown';
+		multiSelectDropdownTd.appendChild(this.multiSelect.container);
+		tr.appendChild(multiSelectDropdownTd);
+
+
+		const addTd = document.createElement('td');
+		addTd.appendChild(submitButton);
+		tr.appendChild(addTd);
+
+		tfoot.appendChild(tr);
+
+		table.appendChild(thead);
+		table.appendChild(tbody);
+		table.appendChild(tfoot);
+
+		container.appendChild(table);
+
+		return container;
+	}
+
+	async insert(e) {
+		if (e && e.preventDefault) {
+
+			e.preventDefault();
+		}
+
+		if (
+			this.alreadyVisible.filter(x =>
+				x.owner == this.owner
+				&& x.owner_id == this.ownerId
+				&& x.target == this.selectedType.value
+				&& x.target_id == [...this.multiSelect.selectedValues][0]
+				&& x.category_id == (parseInt(this.categoryMultiselect.value) || null)
+			).length) {
+
+			window.alert('Already exists');
+			return;
+		}
+
+		const
+			currentParameters = {
+				owner_id: this.ownerId,
+				owner: this.owner,
+				target: this.selectedType.value,
+				target_id: [...this.multiSelect.selectedValues][0],
+				category_id: this.categoryMultiselect.value || null,
+			},
+
+			currentOptions = {
+				method: 'POST',
+			};
+
+		await API.call('object_roles/insert', currentParameters, currentOptions);
+		await this.load();
+		this.render();
+	}
+
+	async delete(id) {
+
+		const
+			currentParameters = {
+				id: id,
+			},
+
+			currentOptions = {
+				method: 'POST',
+			};
+
+		await API.call('object_roles/delete', currentParameters, currentOptions);
+		await this.load();
+		this.render();
+	}
+
+	combine() {
+
+		this.mapping = {};
+		for (const target of this.allowedTargets) {
+
+			for (const row of this.targets[target].data) {
+
+				if (!this.mapping[target]) {
+					this.mapping[target] = {};
+				}
+
+				this.mapping[target][row.value] = row;
+			}
+		}
+
+		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in this.mapping[row.target]);
+
+
+		for (const row of this.alreadyVisible) {
+
+			row.name = this.mapping[row.target][row.target_id].name;
+			row.category = (MetaData.categories.get(row.category_id) || {name: ''}).name
+		}
+	}
+
+	joinToString() {
+
+		if (this.allowedTargets.length === 1) {
+
+			return this.allowedTargets[0];
+		}
+
+		return `${this.allowedTargets.slice(0, -1).join(', ')} or ${this.allowedTargets[this.allowedTargets.length - 1]}.`;
+	}
+}
+
+
 if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {
 		this.addEventListener(name, fn);
 	}
 }
 
-MetaData.timeout = 5 * 60 * 1000;
+MetaData.timeout = 5 * 60 * 1000000;
 
 if(typeof window != 'undefined')
 	window.onerror = ErrorLogs.send;

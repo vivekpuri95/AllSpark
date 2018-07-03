@@ -56,9 +56,6 @@ exports.delete = class extends API {
 exports.test = class extends API {
 
 	async test() {
-
-		const d = require("../utils/auth").dashboard;
-
-		return await d(1, this.user);
+		return this.request.query || this.request.body;
 	}
 };
