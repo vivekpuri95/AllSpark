@@ -168,12 +168,12 @@ main .mailto-content {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	grid-gap: calc(var(--gap) * 2);
 }
-main #reports > .datasets {
+main #reports > .global-filters {
 	z-index: 7;
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }
-main #reports > .datasets.right {
+main #reports > .global-filters.right {
 	display: flex;
 	flex-direction: column;
 	position: fixed;
@@ -188,11 +188,11 @@ main #reports > .datasets.right {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	transform: translateX(260px);
 }
-main #reports > .datasets.right.show {
+main #reports > .global-filters.right.show {
 	transform: translateX(0px);
 	opacity: 1;
 }
-main #reports > .datasets.top {
+main #reports > .global-filters.top {
 	grid-auto-columns: max-content;
 	display: flex;
 	flex-wrap: wrap;
@@ -204,22 +204,22 @@ main #reports > .datasets.top {
 	z-index: 5;
 	background: #fff;
 }
-	main #reports > .datasets.top .head {
+	main #reports > .global-filters.top .head {
 		display: none;
 	}
-	main #reports > .datasets.top > * {
+	main #reports > .global-filters.top > * {
 		margin: var(--gap);
 	}
-	main #reports > .datasets.right > * {
+	main #reports > .global-filters.right > * {
 		padding: var(--gap) 0;
 		flex-shrink:  0;
 	}
-	main #reports > .datasets > .head {
+	main #reports > .global-filters > .head {
 		width: 100%;
 		display: flex;
 		align-items: center;
 	}
-	main #reports > .datasets > .heading {
+	main #reports > .global-filters > .heading {
 		border-bottom: 1px solid #ddd;
 		position: sticky;
 		top: 0;
@@ -227,43 +227,43 @@ main #reports > .datasets.top {
 		z-index: 1;
 		padding-top: var(--gap);
 	}
-		main #reports > .datasets > .head label {
+		main #reports > .global-filters > .head label {
 			grid-auto-flow: column;
 			font-size: 90%;
 			align-items: center;
 		}
-			main #reports > .datasets > .head.heading input[type=search] {
+			main #reports > .global-filters > .head.heading input[type=search] {
 				border: 0;
 				width: 100%;
 				outline: 0;
 			}
-			main #reports > .datasets > .head.heading svg {
+			main #reports > .global-filters > .head.heading svg {
 				color: #999;
 			}
-			main #reports > .datasets > .head .reload {
+			main #reports > .global-filters > .head .reload {
 				margin-left: auto;
 				width: 30px;
 				display: flex;
 				justify-content: center;
 			}
-			main #reports > .datasets > .head input[type=checkbox]:checked {
+			main #reports > .global-filters > .head input[type=checkbox]:checked {
 				color: var(--color-accent);
 				border: 3px solid blue;
 			}
-			main #reports > .datasets > .head .reload svg {
+			main #reports > .global-filters > .head .reload svg {
 				margin: 0;
 			}
-	main #reports > .datasets .dataset-container {
+	main #reports > .global-filters .dataset-container {
 		max-width: 100%;
 	}
-		main #reports > .datasets .dataset-container .other-dataset input {
+		main #reports > .global-filters .dataset-container .other-dataset input {
 			width: 100%;
 			position: relative;
 		}
-	main #reports > .datasets .no-results {
+	main #reports > .global-filters .no-results {
 		text-align: center;
 	}
-	main #reports > .datasets .apply {
+	main #reports > .global-filters .apply {
 		background: var(--color-accent);
 		color: var(--color-accent-text);
 		border-color: var(--color-accent);
@@ -272,7 +272,7 @@ main #reports > .datasets.top {
 					box-shadow var(--transition-duration),
 					color var(--transition-duration);
 	}
-	main #reports > .datasets.right .apply {
+	main #reports > .global-filters.right .apply {
 		font-size: 110%;
 		margin: auto 0 calc(var(--gap) * 2);
 		position: sticky;
@@ -280,7 +280,7 @@ main #reports > .datasets.top {
 		height: auto;
 		padding: 8px;
 	}
-	main #reports > .datasets .apply:hover {
+	main #reports > .global-filters .apply:hover {
 		background: var(--color-accent-text);
 		color: var(--color-accent);
 		cursor: pointer;

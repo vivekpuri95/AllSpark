@@ -755,12 +755,11 @@ class Dashboard {
 		}
 
 		try {
-			this.datasets = new DashboardDatasets(this);
+			this.datasets = new DashboardGlobalFilters(this);
 
 			await this.datasets.load();
 		}
 		catch (e) {
-
 			console.log(e);
 		}
 
@@ -1223,7 +1222,241 @@ class Dashboard {
 	}
 }
 
-class DashboardDatasets extends Map {
+class DashboardGlobalFilters extends Map {
+
+	constructor(dashboard) {
+
+		super();
+
+		this.dashboard = dashboard;
+		this.page = this.dashboard.page;
+		this.container = this.page.container.querySelector('#reports .global-filters');
+
+		this.container.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
+
+		let globalFilters = new Map;
+
+		for(const visualization of this.dashboard.visualizationList) {
+
+			for(const filter of visualization.filters.values()) {
+
+				if(globalFilters.has(filter.placeholder))
+					continue;
+
+				const gloablFilter = Object.assign({}, filter);
+
+				globalFilters.set(gloablFilter.placeholder, gloablFilter);
+
+				if(!gloablFilter.dataset)
+					continue;
+
+				gloablFilter.dataset = gloablFilter.dataset.id;
+
+				delete gloablFilter.source;
+			}
+		}
+
+		// Create a Map of different date filter pairs
+		const filterGroups = new Map;
+
+		// Place the date filters alongside their partners in the map
+		// The goal is to group together the start and end dates of any one filter name
+		for(const filter of globalFilters.values()) {
+
+			if(filter.type != 'date')
+				continue;
+
+			// Remove the 'start', 'end' and spaces to create a name that would (hopefuly) identify the filter pairs.
+			const name = filter.name.replace(/(start|end|\s)/ig, '');
+
+			if(!filterGroups.has(name))
+				filterGroups.set(name, []);
+
+			filterGroups.get(name).push(filter);
+		}
+
+		// Go through each filter group and sort by the name to bring start filter before the end.
+		// And also add them to the master global filter list to bring them together.
+		for(let filterGroup of filterGroups.values()) {
+
+			filterGroup = filterGroup.sort((a, b) => a.name.includes('start') ? -1 : 1);
+
+			for(const filter of filterGroup) {
+				globalFilters.delete(filter.placeholder);
+				globalFilters.set(filter.placeholder, filter);
+			}
+		}
+
+		for(const filter of globalFilters.values()) {
+
+			if(filter.dataset) {
+				this.set(filter.placeholder, new Dataset(filter.dataset, filter));
+				continue;
+			}
+
+			this.set(filter.id, new DashboardGlobalFilter(filter.id, dataset));
+		}
+	}
+
+	async load() {
+
+		await this.fetch();
+
+		await this.render();
+	}
+
+	async fetch() {
+
+		const promises = [];
+
+		for (const filter of this.values()) {
+
+			if(filter instanceof Dataset)
+				promises.push(filter.fetch());
+		}
+
+		await Promise.all(promises);
+	}
+
+	async render() {
+
+		const container = this.container;
+
+		container.textContent = null;
+
+		container.classList.remove('show');
+
+		if(!this.size)
+			return;
+
+		container.innerHTML = `
+			<div class="head heading">
+				<i class="fas fa-filter"></i>
+				<input type="search" placeholder="Global Filters" class="global-filter-search">
+			</div>
+			<div class="head">
+				<label><input type="checkbox" checked> Select All</label>
+				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
+			</div>
+			<div class="NA no-results hidden">No filters found! :(</div>
+		`;
+
+		const datasets = Array.from(this.values()).sort((a, b) => {
+
+			if (!a.order)
+				return 1;
+
+			if (!b.order)
+				return -1;
+
+			return a.order - b.order;
+		});
+
+		for (const dataset of datasets) {
+
+			const
+				label = document.createElement('label'),
+				input = document.createElement('select');
+
+			label.classList.add('dataset-container');
+
+			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
+
+			label.appendChild(dataset.container);
+
+			if(Dashboard.selectedValues.has(dataset.id))
+				dataset.value = Dashboard.selectedValues.get(dataset.id);
+
+			container.appendChild(label);
+		}
+
+		const searchInput = container.querySelector('.global-filter-search');
+
+		searchInput.on('keyup', () => {
+
+			for(const dataset of this.values()) {
+
+				dataset.container.parentElement.classList.remove('hidden');
+
+				if(!dataset.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
+					dataset.container.parentElement.classList.add('hidden');
+			}
+
+			container.querySelector('.no-results').classList.toggle('hidden', container.querySelector('.dataset-container:not(.hidden)'));
+		});
+
+		container.insertAdjacentHTML('beforeend', `
+			<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
+		`);
+
+		container.querySelector('button.apply').on('click', () => this.apply());
+		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
+
+		const input = container.querySelector('.head input[type=checkbox]');
+
+		input.on('change', () => {
+
+			input.checked ? this.all() : this.clear();
+		});
+	}
+
+	async apply(options = {}) {
+
+		for (const report of this.dashboard.visualizationList) {
+
+			let found = false;
+
+			for (const filter of report.filters.values()) {
+
+				if (!filter.dataset || !this.has(filter.dataset.id))
+					continue;
+
+				await filter.dataset.fetch();
+
+				filter.dataset.value = this.get(filter.dataset.id).value;
+
+				found = true;
+			}
+
+			if(found && this.page.loadedVisualizations.has(report))
+				report.visualizations.selected.load(options);
+
+			report.container.style.opacity = found ? 1 : 0.4;
+		}
+
+		Dashboard.selectedValues.clear();
+
+		for(const [id, dataset] of this)
+			Dashboard.selectedValues.set(id, dataset.value);
+	}
+
+	clear() {
+
+		for(const dataset of this.values()) {
+
+			if(dataset instanceof Dataset)
+				dataset.clear();
+		}
+	}
+
+	all() {
+
+		for(const dataset of this.values()) {
+
+			if(dataset instanceof Dataset)
+				dataset.all();
+		}
+	}
+}
+
+class DashboardGlobalFilter {
+
+	constructor(filter) {
+		Object.assign(this, filter);
+	}
+}
+
+class DashboardDatasets_ extends Map {
 
 	constructor(dashboard) {
 

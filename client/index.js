@@ -552,7 +552,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 					</label>
 					<button type="submit"><i class="fa fa-paper-plane"></i> Send</button>
 				</form>
-				<div class="datasets form"></div>
+				<div class="global-filters form"></div>
 
 				<div class="list"></div>
 				<div id="blanket" class="hidden"></div>
