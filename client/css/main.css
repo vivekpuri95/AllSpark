@@ -593,6 +593,7 @@ body {
 }
 	.multi-select > input {
 		width: 100%;
+		outline: 0;
 	}
 	.multi-select .options {
 		display: flex;
@@ -606,6 +607,11 @@ body {
 		position: absolute;
 		z-index: 3;
 		overflow: auto;
+	}
+	.multi-select.top .options {
+		bottom: 28px;
+		border-top: 1px solid #ccc;
+		border-bottom: 0;
 	}
 	.multi-select.expanded .options {
 		position: initial;
