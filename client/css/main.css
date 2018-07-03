@@ -608,7 +608,6 @@ body {
 	}
 	.multi-select.top .options {
 		bottom: 100%;
-		border-top: 1px solid #ccc;
 		border-bottom: 0;
 	}
 	.multi-select.bottom .options {

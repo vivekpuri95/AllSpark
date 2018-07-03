@@ -1187,12 +1187,12 @@ class DialogBox {
 
 class MultiSelect {
 
-	constructor({datalist, multiple = true, expand = false, position = 'bottom'} = {}) {
+	constructor({datalist, multiple = true, expand = false, dropDownPosition = 'bottom'} = {}) {
 
 		this.datalist = datalist;
 		this.multiple = multiple;
 		this.expand = expand;
-		this.optionsDropDownPosition = position;
+		this.dropDownPosition = ['top', 'bottom'].includes(dropDownPosition) ? dropDownPosition : 'bottom';
 
 		this.selectedValues = new Set();
 		this.inputName = 'multiselect-' + Math.floor(Math.random() * 10000);
@@ -1226,13 +1226,7 @@ class MultiSelect {
 			this.container.classList.add('expanded');
 		}
 
-		if(['top', 'bottom'].includes(this.optionsDropDownPosition)) {
-
-			this.container.classList.add(this.optionsDropDownPosition);
-		}
-		else {
-			this.container.classList.add('bottom');
-		}
+		this.container.classList.add(this.dropDownPosition);
 
 		this.render();
 
