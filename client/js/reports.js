@@ -841,10 +841,10 @@ class DataSourceFilter {
 			inputType = {
 				'datetime' : 'datetime-local',
 				'date' : 'date',
-				'string': 'string',
-				'column': 'column',
-				'text': 'text',
 				'month': 'month',
+				'number': 'number',
+				'text': 'text',
+				'column': 'text',
 				'hidden': 'hidden',
 			};
 
