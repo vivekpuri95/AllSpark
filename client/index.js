@@ -935,6 +935,11 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 										<span>Description</span>
 										<input type="text" name="description">
 									</label>
+									
+									<label>
+										<span>Order</span>
+										<input type="number" name="order">
+									</label>
 
 									<label>
 										<span>Default Value</span>

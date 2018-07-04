@@ -837,6 +837,9 @@ class DataSourceFilter {
 			return this.labelContainer;
 
 		const container = document.createElement('label');
+
+		container.style.order = this.order;
+
 		if (this.type == 'hidden')
 			container.classList.add('hidden');
 
