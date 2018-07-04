@@ -836,7 +836,7 @@ class DataSourceFilter {
 		if(this.labelContainer)
 			return this.labelContainer;
 
-		const
+    const
 			container = document.createElement('label'),
 			inputType = {
 				'datetime' : 'datetime-local',
@@ -847,6 +847,8 @@ class DataSourceFilter {
 				'column': 'text',
 				'hidden': 'hidden',
 			};
+    
+		container.style.order = this.order;
 
 		if (this.type == 'hidden')
 			container.classList.add('hidden');

@@ -5,7 +5,7 @@ exports.insert = class extends API {
     async insert() {
 
         let
-            values = {}, filter_cols = ['name', 'query_id', 'placeholder', 'description', 'default_value', 'is_multiple', 'offset', 'type', 'dataset', 'multiple'];
+            values = {}, filter_cols = ['name', 'query_id', 'placeholder', 'description', 'order', 'default_value', 'is_multiple', 'offset', 'type', 'dataset', 'multiple'];
 
         for(const key in this.request.body) {
             if(filter_cols.includes(key))
@@ -23,7 +23,7 @@ exports.update = class extends API {
     async update() {
 
         let
-            values = {}, filter_cols = ['name', 'query_id', 'placeholder', 'description', 'default_value', 'is_multiple', 'offset', 'type', 'dataset', 'multiple'];
+            values = {}, filter_cols = ['name', 'placeholder', 'description', 'order', 'default_value', 'is_multiple', 'offset', 'type', 'dataset', 'multiple'];
 
         for(const key in this.request.body) {
             if(filter_cols.includes(key))
