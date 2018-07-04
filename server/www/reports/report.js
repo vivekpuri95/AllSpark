@@ -41,15 +41,35 @@ exports.list = class extends API {
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 		]);
 
-		const response = [];
+		const response = [], reportFilters = {}, reportVisualizations = {};
+
+		for(const filter of results[1]) {
+
+			if(!(filter.query_id in reportFilters)) {
+
+				reportFilters[filter.query_id] = [];
+			}
+
+			reportFilters[filter.query_id].push(filter);
+		}
+
+		for(const visualization of results[2]) {
+
+			if(!(visualization.query_id in reportVisualizations)) {
+
+				reportVisualizations[visualization.query_id] = [];
+			}
+
+			reportVisualizations[visualization.query_id].push(visualization);
+		}
 
 		for (const row of results[0]) {
 
 			if ((await auth.report(row, this.user)).error)
 				continue;
 
-			row.filters = results[1].filter(filter => filter.query_id == row.query_id);
-			row.visualizations = results[2].filter(visualization => visualization.query_id == row.query_id);
+			row.filters = reportFilters[row.query_id] || [];
+			row.visualizations = reportVisualizations[row.query_id] || [];
 			row.href = `/report/${row.query_id}`;
 			row.superset = 'Reports';
 			response.push(row);

@@ -1226,13 +1226,14 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		tbody.textContent = null;
 
 		this.report.filters.sort((a, b) => {
-			a = MetaData.datasets.has(a.dataset) ? MetaData.datasets.get(a.dataset).order : 0;
-			b = MetaData.datasets.has(b.dataset) ? MetaData.datasets.get(b.dataset).order : 0;
+			a = a.order;
+			b = b.order;
 
-			if (!a)
-				return 1;
-			if (!b)
+			if (a < b)
 				return -1;
+
+			if (a > b)
+				return 1;
 
 			return a - b;
 		});
