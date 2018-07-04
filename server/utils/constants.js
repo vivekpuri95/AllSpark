@@ -41,5 +41,6 @@ exports.filterTypes = [
 	'Date',
 	'Month',
 	'Hidden',
-	'Column'
+	'Column',
+	'DateTime',
 ];
