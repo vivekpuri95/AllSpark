@@ -151,7 +151,7 @@ class report extends API {
 				filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
-				if (filter.value === new Date().toISOString().slice(0, 10)) {
+				if (filter.value >= new Date().toISOString().slice(0, 10)) {
 					this.has_today = true;
 
 				}
@@ -159,13 +159,23 @@ class report extends API {
 
 			if (filter.type == 'month') {
 
-				const date = new
-				Date();
+				const date = new Date();
 
 				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
-				if (filter.value === new Date().toISOString().slice(0, 7)) {
+				if (filter.value >= new Date().toISOString().slice(0, 7)) {
+
+					this.has_today = true;
+				}
+			}
+
+			if (filter.type == 'datetime') {
+
+				filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0,19);
+				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				if (filter.value >= new Date().toISOString().slice(0, 10)) {
 
 					this.has_today = true;
 				}
@@ -680,6 +690,7 @@ class Bigquery {
 			"date": "date",
 			"month": "integer",
 			"hidden": "string",
+			"datetime": "string"
 		};
 	}
 
