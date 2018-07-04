@@ -1649,6 +1649,13 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		else throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
 
+		const visualizationFilter = this.container.querySelector(".configuration-section.filters");
+
+		if(!this.report.filters.length) {
+
+			visualizationFilter.classList.add('hidden');
+		}
+
 		this.dashboards = new ReportVisualizationDashboards(this);
 
 		if(typeof this.visualization.options == 'string') {
@@ -1664,7 +1671,11 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization.options.transformations)
 			this.visualization.options.transformations = [];
 
+		if(!this.visualization.options.filters)
+			this.visualization.options.filters = this.report.filters;
+
 		this.transformations = new ReportTransformations(this.visualization, this);
+		this.reportVisualizationFilters =  new ReportVisualizationFilters(this.visualization, this);
 
 		localStorage.reportsPreviewDock = 'right';
 		await this.page.preview.load({
@@ -1673,6 +1684,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		});
 
 		this.transformations.load();
+		this.reportVisualizationFilters.load();
 
 		this.form.reset();
 
@@ -1714,6 +1726,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.visualization.options = this.optionsForm.json;
 
 		this.visualization.options.transformations = this.transformations.json;
+		this.visualization.options.filters = this.reportVisualizationFilters.json;
 
 		options.form.set('options', JSON.stringify(this.visualization.options));
 
@@ -1733,6 +1746,86 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		});
 	}
 });
+
+class ReportVisualizationFilters {
+
+	constructor(visualization, stage) {
+
+		this.visualization = visualization;
+		this.stage = stage;
+		this.page = this.stage.page;
+		this.container = this.stage.form.querySelector('.configuration-section.filters .form');
+	}
+
+	load() {
+
+		this.container.textContent = null;
+
+		this.visualizationFilters = new Map();
+
+		for(const filter of this.visualization.options.filters || this.stage.report.filters) {
+
+			const reportVisualizationFilter = new ReportVisualizationFilter(filter, this.stage);
+
+			this.visualizationFilters.set(filter.placeholder, reportVisualizationFilter);
+
+			this.container.appendChild(reportVisualizationFilter.container);
+		}
+
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const filter of this.visualizationFilters.values()) {
+
+			response.push(filter.json);
+		}
+
+		return response;
+
+	}
+}
+
+class ReportVisualizationFilter {
+
+	constructor(reportVisualizationFilter, stage) {
+
+		this.stage = stage;
+		this.page = this.stage.page;
+
+		for(const key in reportVisualizationFilter)
+			this[key] = reportVisualizationFilter[key];
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('label')
+
+		container.innerHTML = `
+				<span>${this.name}</span>
+				<input type="text" value="${this.default_value}">
+			`;
+
+		return container;
+
+	}
+
+	get json() {
+
+		return {
+			'name': this.name,
+			'default_value': this.container.querySelector('input').value,
+			'order': this.order
+		}
+
+	}
+
+}
 
 class ReportVisualizationDashboards extends Set {
 
