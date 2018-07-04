@@ -236,7 +236,7 @@ exports.login = class extends API {
 
 				const accountsObj = {};
 
-				for (const account of global.account) {
+				for (const account of global.accounts) {
 
 					accountsObj[account.account_id] = account;
 				}
