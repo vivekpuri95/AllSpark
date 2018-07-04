@@ -178,6 +178,9 @@ main .data-source.flush {
 		main .data-source .toolbar > * {
 			margin: 0 5px;
 		}
+			main .data-source .toolbar .right {
+				order: 2000;
+			}
 	main .data-source .toolbar.filters {
 		grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
 		background: rgba(255, 255, 255, 0.8);

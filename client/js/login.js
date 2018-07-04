@@ -236,7 +236,24 @@ Page.class = class Login extends Page {
 			await IndexedDb.instance.set('refresh_token', response.jwt);
 			this.cookies.set('refresh_token', response.jwt);
 
-			IndexedDb.instance.delete('account');
+			// If the login response has an external parameters flag then add their values to the stored external parameters.
+			if(response.external_parameters && Array.isArray(account.settings.get('external_parameters'))) {
+
+				const
+					storageList = await IndexedDb.instance.get('external_parameters') || {},
+					settingsList = account.settings.get('external_parameters');
+
+				for(const key in response) {
+
+					// Only save the value from login response if it's key was given in account settings
+					if(settingsList.includes(key))
+						storageList[key] = response[key];
+				}
+
+				await IndexedDb.instance.set('external_parameters', storageList);
+			}
+
+			await IndexedDb.instance.delete('account');
 
 			await Account.load();
 
