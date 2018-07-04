@@ -833,7 +833,7 @@ class DataSourceFilter {
 		DataSourceFilter.placeholderPrefix = 'param_';
 	}
 
-	constructor(filter, source) {
+	constructor(filter, source = null) {
 
 		for(const key in filter)
 			this[key] = filter[key];
@@ -853,9 +853,8 @@ class DataSourceFilter {
 		if(this.labelContainer)
 			return this.labelContainer;
 
-    const
-			container = document.createElement('label');
-    
+		const container = document.createElement('label');
+
 		container.style.order = this.order;
 
 		if (this.type == 'hidden')
@@ -911,6 +910,36 @@ class DataSourceFilter {
 			return this.dataset.value = value;
 
 		this.label.querySelector('input').value = value;
+	}
+
+	async fetch() {
+
+		await DataSource.load();
+
+		if(!this.query_id || !DataSource.list.has(this.query_id))
+			return [];
+
+		let
+			values,
+			timestamp;
+
+		const report = new DataSource(DataSource.list.get(this.query_id), window.page);
+
+		if(await IndexedDb.instance.has(`dataset.${this.query_id}`])
+			({values, timestamp} = await IndexedDb.instance.get(`dataset.${this.query_id}`]);
+
+		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
+
+			{data: values} = await report.fetch({download: true});
+
+			await IndexedDb.instance.set(`dataset.${this.query_id}`, {values, timestamp: Date.now()});
+		}
+
+		this.datalist = values;
+		this.multiple = this.filter.multiple;
+		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+
+		return values;
 	}
 }
 

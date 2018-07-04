@@ -1269,8 +1269,14 @@ class DashboardGlobalFilters extends Map {
 			// Remove the 'start', 'end' and spaces to create a name that would (hopefuly) identify the filter pairs.
 			const name = filter.name.replace(/(start|end|\s)/ig, '');
 
-			if(!filterGroups.has(name))
-				filterGroups.set(name, []);
+			if(!filterGroups.has(name)) {
+				filterGroups.set(name, [{
+					filter_id: Math.random(),
+					name: filter.name.replace(/(start|end)/ig, '') + 'Date Range',
+					placeholder: name + '_date_range',
+					type: 'daterange',
+				}]);
+			}
 
 			filterGroups.get(name).push(filter);
 		}
@@ -1279,7 +1285,17 @@ class DashboardGlobalFilters extends Map {
 		// And also add them to the master global filter list to bring them together.
 		for(let filterGroup of filterGroups.values()) {
 
-			filterGroup = filterGroup.sort((a, b) => a.name.includes('start') ? -1 : 1);
+			// Make sure the Date Range filter comes first, followed by start date and then finally the end date.
+			filterGroup = filterGroup.sort((a, b) => {
+
+				if(a.name.includes('start'))
+					return -1;
+
+				else if(a.name.includes('Date Range'))
+					return -1;
+
+				else return 1;
+			});
 
 			for(const filter of filterGroup) {
 				globalFilters.delete(filter.placeholder);
@@ -1287,15 +1303,8 @@ class DashboardGlobalFilters extends Map {
 			}
 		}
 
-		for(const filter of globalFilters.values()) {
-
-			if(filter.dataset) {
-				this.set(filter.placeholder, new Dataset(filter.dataset, filter));
-				continue;
-			}
-
-			this.set(filter.id, new DashboardGlobalFilter(filter.id, dataset));
-		}
+		for(const filter of globalFilters.values())
+			this.set(filter.placeholder, new DataSourceFilter(filter));
 	}
 
 	async load() {
@@ -1309,11 +1318,8 @@ class DashboardGlobalFilters extends Map {
 
 		const promises = [];
 
-		for (const filter of this.values()) {
-
-			if(filter instanceof Dataset)
-				promises.push(filter.fetch());
-		}
+		for(const filter of this.values())
+			promises.push(filter.fetch());
 
 		await Promise.all(promises);
 	}
@@ -1341,33 +1347,13 @@ class DashboardGlobalFilters extends Map {
 			<div class="NA no-results hidden">No filters found! :(</div>
 		`;
 
-		const datasets = Array.from(this.values()).sort((a, b) => {
+		for(const filter of this.values()) {
 
-			if (!a.order)
-				return 1;
+			// If this filter's value was set on some other dashboard
+			if(Dashboard.selectedValues.has(filter.placeholder))
+				filter.value = Dashboard.selectedValues.get(filter.placeholder);
 
-			if (!b.order)
-				return -1;
-
-			return a.order - b.order;
-		});
-
-		for (const dataset of datasets) {
-
-			const
-				label = document.createElement('label'),
-				input = document.createElement('select');
-
-			label.classList.add('dataset-container');
-
-			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
-
-			label.appendChild(dataset.container);
-
-			if(Dashboard.selectedValues.has(dataset.id))
-				dataset.value = Dashboard.selectedValues.get(dataset.id);
-
-			container.appendChild(label);
+			container.appendChild(filter.label);
 		}
 
 		const searchInput = container.querySelector('.global-filter-search');
@@ -1394,26 +1380,23 @@ class DashboardGlobalFilters extends Map {
 
 		const input = container.querySelector('.head input[type=checkbox]');
 
-		input.on('change', () => {
-
-			input.checked ? this.all() : this.clear();
-		});
+		input.on('change', () => input.checked ? this.all() : this.clear());
 	}
 
 	async apply(options = {}) {
 
-		for (const report of this.dashboard.visualizationList) {
+		for(const report of this.dashboard.visualizationList) {
 
 			let found = false;
 
-			for (const filter of report.filters.values()) {
+			for(const filter of report.filters.values()) {
 
-				if (!filter.dataset || !this.has(filter.dataset.id))
+				if(!this.has(filter.placeholder))
 					continue;
 
-				await filter.dataset.fetch();
+				await filter.fetch();
 
-				filter.dataset.value = this.get(filter.dataset.id).value;
+				filter.value = this.get(filter.placeholder).value;
 
 				found = true;
 			}
@@ -1426,26 +1409,21 @@ class DashboardGlobalFilters extends Map {
 
 		Dashboard.selectedValues.clear();
 
-		for(const [id, dataset] of this)
-			Dashboard.selectedValues.set(id, dataset.value);
+		// Save the value of each filter for use on other dashboards
+		for(const [placeholder, filter] of this)
+			Dashboard.selectedValues.set(placeholder, filter.value);
 	}
 
 	clear() {
 
-		for(const dataset of this.values()) {
-
-			if(dataset instanceof Dataset)
-				dataset.clear();
-		}
+		for(const dataset of this.values())
+			dataset.clear();
 	}
 
 	all() {
 
-		for(const dataset of this.values()) {
-
-			if(dataset instanceof Dataset)
-				dataset.all();
-		}
+		for(const dataset of this.values())
+			dataset.all();
 	}
 }
 
