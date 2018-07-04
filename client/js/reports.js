@@ -6177,7 +6177,7 @@ class OtherDataset {
 		});
 
 
-		if(this.name.includes('Date') && this.type == 'date') {
+		if(this.name.includes('Date') && this.filter.type == 'date') {
 
 			if(this.name.includes('Start'))
 				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
