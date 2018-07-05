@@ -1754,13 +1754,13 @@ class ReportVisualizationFilters extends Set{
 
 	load() {
 
+		this.container.textContent = null;
+
 		if(!this.size) {
 
 			this.container.textContent = 'No filters found!';
 			return;
 		}
-
-		this.container.textContent = null;
 
 		for(const filter of this.values()) {
 
