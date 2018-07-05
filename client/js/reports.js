@@ -50,6 +50,14 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
+			if(this.visualizations.selected.options && this.visualizations.selected.options.filters) {
+
+				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.placeholder == filter.placeholder);
+				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, visualization_filter.default_value);
+
+				continue;
+			}
+
 			if(filter.dataset && !filter.dataset.query_id) {
 
 				if(!filter.dataset.value && !filter.dataset.containerElement)

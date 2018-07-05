@@ -1820,7 +1820,8 @@ class ReportVisualizationFilter {
 		return {
 			'name': this.name,
 			'default_value': this.container.querySelector('input').value,
-			'order': this.order
+			'order': this.order,
+			'placeholder': this.placeholder
 		}
 
 	}
