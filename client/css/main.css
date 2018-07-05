@@ -648,9 +648,9 @@ body {
 				margin: 0;
 				max-width: inherit;
 				overflow: hidden;
-				transition: background var(--transition-duration),
-							box-shadow var(--transition-duration);
 				white-space: initial;
+				transition: background var(--transition-duration),
+				box-shadow var(--transition-duration);
 			}
 			.multi-select .options .list label:hover {
 				background: #ddd;
@@ -686,42 +686,36 @@ body {
 			white-space: normal;
 			border-top: 1px dashed #999;
 		}
-#object-roles-form {
-	width: 100%;
+
+.object-roles {
+	min-height: 300px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
 }
-	#add-object-role table {
-		width: 500px;
-
-	}
-
-	#object-roles-already-viewed {
-		max-height: 300px;
-		overflow: auto;
-	}
-
-	#object-roles-already-viewed thead th {
+.dialog-box .object-roles {
+	border-top: 1px solid white;
+}
+	.object-roles > table thead th {
 		position: sticky;
 		top: 0;
 		white-space: nowrap;
+		border-right: 1px solid #fff;
 	}
-
-	#object-roles-already-viewed tfoot td {
+	#object-roles-already-viewed thead th:last-child {
+		border: 0;
+	}
+	.object-roles > form {
+		width: 100%;
+		border-top: 1px solid #fff;
+		display: grid;
 		position: sticky;
 		bottom: 0;
-		background: white;
-	}
-		#object-roles-already-viewed tfoot select,
-		#object-roles-already-viewed tfoot button {
-			width: 100%;
-		}
-
-#add-object-role {
-		display: flex;
-		width: 100%
+		background: #fff;
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+		grid-auto-flow: column;
+		grid-gap: calc(var(--gap) * 2);
+		padding: calc(var(--gap) * 2);
 	}
 
-
-	#object-roles-multiselect-th {
-		min-width: 250px;
-	}
 

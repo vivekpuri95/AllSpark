@@ -1586,7 +1586,7 @@ class ObjectRoles {
 		this.targets = {
 			user: {
 				API: 'users/list',
-				name_fields: (user) => `${user.first_name} ${user.middle_name || ''} ${user.last_name}<br><span class="NA">${user.email}</span>`,
+				name_fields: (user) => `${user.first_name} ${user.middle_name || ''} ${user.last_name || ''}<br><span class="NA">${user.email}</span>`,
 				value_field: 'user_id',
 				data: [],
 				ignore_categories: true,
@@ -1631,6 +1631,15 @@ class ObjectRoles {
 			}
 		}
 
+		for (const target in this.targets) {
+
+			this.targets[target].multiSelect = new MultiSelect({
+				datalist: this.targets[target].data,
+				multiple: false,
+				dropDownPosition: 'top',
+			});
+		}
+
 		this.combine();
 		this.container;
 		this.shareButton;
@@ -1643,9 +1652,10 @@ class ObjectRoles {
 			this.container;
 		}
 
-		const alreadyViewedContainer = this.getContainer.querySelector('#object-roles-already-viewed');
+		const alreadyViewedContainer = this.getContainer.querySelector('.object-roles > table');
 		alreadyViewedContainer.innerHTML = null;
 		alreadyViewedContainer.appendChild(this.alreadyViewedContainer);
+		this.multiSelect.render();
 	}
 
 	get container() {
@@ -1655,24 +1665,89 @@ class ObjectRoles {
 			return this.getContainer;
 		}
 
-		let form = document.createElement('form');
-		form.id = 'object-roles-form';
-
 		const container = document.createElement('div');
 		container.classList.add('object-roles');
 
-		const alreadyViewedContainer = this.alreadyViewedContainer;
+		container.appendChild(this.alreadyViewedContainer);
+		container.appendChild(this.submitFormContainer);
 
-		container.appendChild(alreadyViewedContainer);
+		this.getContainer = container;
 
-		form.addEventListener("submit", (e) => this.insert(e));
+		return container;
+	}
 
-		form.appendChild(container);
+	get submitFormContainer() {
 
+		if (this.submitForm) {
 
-		this.getContainer = form;
+			return this.submitForm;
+		}
 
-		return form;
+		const form = document.createElement('form');
+
+		const submitButton = document.createElement('button');
+		submitButton.type = 'submit';
+		submitButton.innerHTML = `<i class="fa fa-paper-plane"></i>`;
+
+		this.categorySelect = this.selectDropDown([...MetaData.categories.values()].map(x => {
+
+			return {
+				value: x.category_id,
+				text: x.name,
+			}
+		}));
+
+		this.targetSelectDropdown = this.selectDropDown(this.allowedTargets.map(x => {
+
+			return {
+				value: x,
+				text: x.charAt(0).toUpperCase() + x.slice(1),
+			}
+		}));
+
+		this.multiSelect = this.targets[this.targetSelectDropdown.value].multiSelect;
+
+		if (this.targets[this.targetSelectDropdown.value].ignore_categories) {
+
+			this.categorySelect.classList.add('hidden');
+			this.categorySelect.value = 0;
+		}
+
+		else {
+
+			this.targetSelectDropdown.classList.remove('hidden');
+			this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0] : 0;
+			this.categorySelect.text = this.categorySelect.options.length ? this.categorySelect.options[0].text : '';
+		}
+
+		this.targetSelectDropdown.addEventListener('change', (e) => {
+
+			this.multiSelect.container.remove();
+
+			this.multiSelect = this.targets[e.target.value].multiSelect;
+			form.insertBefore(this.multiSelect.container, submitButton);
+
+			if (this.targets[e.target.value].ignore_categories) {
+
+				this.categorySelect.classList.add('hidden');
+				this.categorySelect.value = 0;
+			}
+			else {
+				this.categorySelect.classList.remove('hidden');
+				this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0].value : 0;
+				this.categorySelect.text = this.categorySelect.options.length ? this.categorySelect.options[0].text : '';
+			}
+		});
+
+		form.appendChild(this.targetSelectDropdown);
+		form.appendChild(this.categorySelect);
+		form.appendChild(this.multiSelect.container);
+		form.appendChild(submitButton);
+		form.addEventListener('submit', (e) => this.insert(e));
+
+		this.submitForm = form;
+
+		return form
 	}
 
 	selectDropDown(pairedData) {
@@ -1710,7 +1785,7 @@ class ObjectRoles {
 
 			const dialougeBox = new DialogBox();
 			dialougeBox.heading = `Share this ${this.owner} with any ${this.joinToString()}`;
-			dialougeBox.body = this.container;
+			dialougeBox.body.appendChild(this.container);
 			dialougeBox.show();
 		});
 
@@ -1719,47 +1794,34 @@ class ObjectRoles {
 
 	get alreadyViewedContainer() {
 
-		this.categoryMultiselect = this.selectDropDown([...MetaData.categories.values()].map(x => {
-
-			return {
-				value: x.category_id,
-				text: x.name,
-			}
-		}));
-
-		let container = document.createElement('div');
-		container.id = 'object-roles-already-viewed';
-
 		const table = document.createElement('table');
 
-		const thead = document.createElement('thead');
-		const tbody = document.createElement('tbody');
-		const tfoot = document.createElement('tfoot');
-
-		const submitButton = document.createElement('button');
-
-		submitButton.type = 'submit';
-		submitButton.setAttribute('form', 'object-roles-form');
-		submitButton.innerHTML = `<i class="fa fa-paper-plane"></i>`;
-
-		let tr = document.createElement('tr');
-		tr.innerHTML = `
-			<th>Shared With</th>
-			<th>Category</th>
-			<th>Name</th>
-			<th class="action">Delete</th>
+		table.innerHTML = `
+			<thead>
+				<tr>
+					<th>Shared With</th>
+					<th>Category</th>
+					<th>Name</th>
+					<th class="action">Delete</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
 		`;
-		thead.appendChild(tr);
+
+		const tbody = table.querySelector('tbody');
+
 		for (const row of this.alreadyVisible) {
+
 			const tr = document.createElement('tr');
+
 			tr.innerHTML = `
 				<td>${row.target.charAt(0).toUpperCase() + row.target.slice(1)}</td>
 				<td>${row.category.charAt(0).toUpperCase() + row.category.slice(1)}</td>
 				<td>${row.name}</td>
 				<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 			`;
-			tbody.appendChild(tr);
 
+			tbody.appendChild(tr);
 			tr.querySelector('.red').addEventListener('click', () => this.delete(row.id));
 		}
 
@@ -1768,83 +1830,7 @@ class ObjectRoles {
 			tbody.innerHTML = '<tr class="NA"><td colspan="4">No data found! :(</td></tr>'
 		}
 
-		tr = document.createElement('tr');
-
-		const selectDropdownTd = document.createElement('td');
-
-		this.targetSelectDropdown = this.selectDropDown(this.allowedTargets.map(x => {
-
-			return {
-				value: x,
-				text: x.charAt(0).toUpperCase() + x.slice(1),
-			}
-		}));
-
-		if(this.targets[this.targetSelectDropdown.value].ignore_categories) {
-
-			this.categoryMultiselect.classList.add('hidden');
-			this.categoryMultiselect.value = 0;
-		}
-		else {
-
-			this.targetSelectDropdown.classList.remove('hidden');
-			this.categoryMultiselect.value = this.categoryMultiselect.options.length ? this.categoryMultiselect.options[0] : 0;
-			this.categoryMultiselect.text = this.categoryMultiselect.options.length ? this.categoryMultiselect.options[0].text : '';
-		}
-
-
-		selectDropdownTd.appendChild(this.targetSelectDropdown);
-
-		tr.appendChild(selectDropdownTd);
-
-		selectDropdownTd.addEventListener('change', (e) => {
-
-			this.multiSelect = new MultiSelect({
-				datalist: this.targets[this.targetSelectDropdown.value].data,
-				multiple: false,
-			});
-			this.getContainer.querySelector('#object-roles-multiselect-dorpdown').innerHTML = null;
-			this.getContainer.querySelector('#object-roles-multiselect-dorpdown').appendChild(this.multiSelect.container);
-
-			if(this.targets[e.target.value].ignore_categories) {
-				this.categoryMultiselect.classList.add('hidden');
-				this.categoryMultiselect.value = 0;
-			}
-			else {
-				this.categoryMultiselect.classList.remove('hidden');
-				this.categoryMultiselect.value = this.categoryMultiselect.options.length ? this.categoryMultiselect.options[0].value : 0;
-				this.categoryMultiselect.text = this.categoryMultiselect.options.length ? this.categoryMultiselect.options[0].text : '';
-			}
-		});
-
-		this.multiSelect = new MultiSelect({
-			datalist: this.targets[this.targetSelectDropdown.value].data,
-			multiple: false,
-		});
-
-		const categoryDropdownTd = document.createElement('td');
-		categoryDropdownTd.appendChild(this.categoryMultiselect);
-		tr.appendChild(categoryDropdownTd);
-
-		const multiSelectDropdownTd = document.createElement('td');
-		multiSelectDropdownTd.id = 'object-roles-multiselect-dorpdown';
-		multiSelectDropdownTd.appendChild(this.multiSelect.container);
-		tr.appendChild(multiSelectDropdownTd);
-
-
-		const addTd = document.createElement('td');
-		addTd.appendChild(submitButton);
-		tr.appendChild(addTd);
-
-		tfoot.appendChild(tr);
-
-		table.appendChild(thead);
-		table.appendChild(tbody);
-		table.appendChild(tfoot);
-
-		container.appendChild(table);
-
-		return container;
+		return table;
 	}
 
 	async insert(e) {
@@ -1859,7 +1845,7 @@ class ObjectRoles {
 				&& x.owner_id == this.ownerId
 				&& x.target == this.selectedType.value
 				&& x.target_id == [...this.multiSelect.selectedValues][0]
-				&& x.category_id == (parseInt(this.categoryMultiselect.value) || null)
+				&& x.category_id == (parseInt(this.categorySelect.value) || null)
 			).length) {
 
 			window.alert('Already exists');
@@ -1872,7 +1858,7 @@ class ObjectRoles {
 				owner: this.owner,
 				target: this.selectedType.value,
 				target_id: [...this.multiSelect.selectedValues][0],
-				category_id: this.categoryMultiselect.value || null,
+				category_id: this.categorySelect.value || null,
 			},
 
 			currentOptions = {
@@ -1916,7 +1902,6 @@ class ObjectRoles {
 		}
 
 		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in this.mapping[row.target]);
-
 
 		for (const row of this.alreadyVisible) {
 
