@@ -1084,3 +1084,8 @@ main .dialog-box-blanket.sub-reports-dialog .dialog-box {
 			height: 250px;
 			margin: var(--gap) 0;
 		}
+
+main .configuration-section .filter-value label {
+	grid-template-columns: 1fr 1fr 1fr;
+	grid-gap: calc(var(--gap) * 3);
+}

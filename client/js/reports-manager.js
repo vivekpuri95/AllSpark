@@ -1737,7 +1737,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 	}
 });
 
-class ReportVisualizationFilters extends Set{
+class ReportVisualizationFilters extends Map {
 
 	constructor(stage) {
 
@@ -1745,10 +1745,11 @@ class ReportVisualizationFilters extends Set{
 
 		this.visualization = stage.visualization;
 		this.container = stage.container.querySelector('.configuration-section #filters');
+		this.stage = stage;
 
 		for(const filter of stage.report.filters) {
 
-			this.add(new ReportVisualizationFilter(filter, stage));
+			this.set(filter.filter_id, new ReportVisualizationFilter(filter, stage));
 		}
 	}
 
@@ -1762,9 +1763,34 @@ class ReportVisualizationFilters extends Set{
 			return;
 		}
 
+		this.container.innerHTML = `
+			<div>
+				<select class="filter-options">
+					<option value="-1">None</option>
+				</select>
+				<button type="button" class="add-filter">Add</button>
+			</div>
+			<div class="filter-value"></div>
+		`;
+
+		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
+
+			for(const filter of this.stage.visualization.options.filters) {
+
+				this.container.querySelector('.filter-value').appendChild(this.get(filter.filter_id).container);
+			}
+		}
+
+
+		const filterOptions = this.container.querySelector('.filter-options');
+		this.container.querySelector('.add-filter').on('click', () => {
+
+			this.container.querySelector('.filter-value').appendChild(this.get(parseInt(filterOptions.value)).container);
+		});
+
 		for(const filter of this.values()) {
 
-			this.container.appendChild(filter.container);
+			filterOptions.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
 		}
 
 	}
@@ -1797,21 +1823,28 @@ class ReportVisualizationFilter {
 
 	get container() {
 
-		if(this.containerElement)
+		if (this.containerElement)
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('label');
 
-		let visualizationValue;
+		let filter;
 
-		if(this.stage.visualization.options && this.stage.visualization.options.filters){
-			[visualizationValue] = this.stage.visualization.options.filters.filter(x => x.placeholder == this.placeholder);
+		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
+			[filter] = this.stage.visualization.options.filters.filter(x => x.filter_id == this.filter_id);
 		}
 
 		container.innerHTML = `
-				<span>${this.name}</span>
-				<input type="text" placeholder="${this.default_value}" value="${visualizationValue ? visualizationValue.default_value : ''}">
-			`;
+			<span>${this.name}</span>
+			<input type="text" placeholder="${this.default_value}" value="${filter ? filter.default_value : ''}">
+			<button class="delete">Delete</button>
+		`;
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.container.parentElement.removeChild(container);
+			this.containerElement = null;
+		});
 
 		return container;
 
@@ -1819,14 +1852,13 @@ class ReportVisualizationFilter {
 
 	get json() {
 
-		const value = this.container.querySelector('input').value;
-
-		if(value == '')
+		if(!this.containerElement) {
 			return;
+		}
 
 		return {
-			default_value: value,
-			placeholder: this.placeholder
+			default_value: this.container.querySelector('input').value,
+			filter_id: this.filter_id
 		};
 
 

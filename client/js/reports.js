@@ -52,7 +52,7 @@ class DataSource {
 
 			if(this.visualizations.selected.options && this.visualizations.selected.options.filters && !this.filters.containerElement) {
 
-				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.placeholder == filter.placeholder);
+				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.filter_id == filter.filter_id);
 
 				if(visualization_filter) {
 
@@ -854,7 +854,7 @@ class DataSourceFilter {
 			return this.labelContainer;
 
     const
-			container = document.createElement('label'),
+			container = document.createElement('label');
     
 		container.style.order = this.order;
 
