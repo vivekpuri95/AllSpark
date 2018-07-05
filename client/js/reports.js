@@ -855,15 +855,6 @@ class DataSourceFilter {
 
     const
 			container = document.createElement('label'),
-			inputType = {
-				'datetime' : 'datetime-local',
-				'date' : 'date',
-				'month': 'month',
-				'number': 'number',
-				'text': 'text',
-				'column': 'text',
-				'hidden': 'hidden',
-			};
     
 		container.style.order = this.order;
 
@@ -872,7 +863,7 @@ class DataSourceFilter {
 
 		let input = document.createElement('input');
 
-		input.type = inputType[this.type];
+		input.type = MetaData.filterTypes.get(this.type).input_type;
 		input.name = this.placeholder;
 
 		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')

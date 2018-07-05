@@ -1288,9 +1288,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const select = filterForm.querySelector('select[name="type"]');
 		select.textContent = null;
-		for (const type of MetaData.filterTypes) {
+		for (const type of MetaData.filterTypes.values()) {
 			select.insertAdjacentHTML('beforeend', `
-				<option value="${type.toLowerCase()}">${type}</option>
+				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
 		}
 
@@ -1335,9 +1335,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const select = this.filterForm.querySelector('select[name="type"]');
 		select.textContent = null;
-		for (const type of MetaData.filterTypes) {
+		for (const type of MetaData.filterTypes.values()) {
 			select.insertAdjacentHTML('beforeend', `
-				<option value="${type.toLowerCase()}">${type}</option>
+				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
 		}
 
