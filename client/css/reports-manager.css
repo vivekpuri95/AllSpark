@@ -390,7 +390,7 @@ main.preview-left #stages {
 
 #stage-configure-visualization.show {
 	display: grid;
-	grid-template-rows: max-content max-content max-content;
+	grid-template-rows: max-content max-content max-content max-content;
 	overflow: auto;
 }
 	#stage-configure-visualization .toolbar {

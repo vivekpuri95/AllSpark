@@ -1036,12 +1036,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 								</label>
 							</div>
 						</div>
-						
-						<div class="configuration-section filters">
-							<h3><i class="fas fa-angle-right"></i> Filters</h3>
-							<div class="form body">								
-							</div>						
-						</div>
 
 						<div class="options"></div>
 
@@ -1056,13 +1050,21 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						</h3>
 
 						<div class="body" id="transformations"></div>
-					</div>
+					</div>					
 
 					<div class="configuration-section">
 
 						<h3><i class="fas fa-angle-right"></i> Dashboards</h3>
 
 						<div class="body" id="dashboards"></div>
+					</div>
+					
+					<div class="configuration-section">
+					
+						<h3><i class="fas fa-angle-right"></i> Filters</h3>
+						
+						<div class="body form" id="filters"></div>
+												
 					</div>
 
 				</section>

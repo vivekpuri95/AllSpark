@@ -1649,13 +1649,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		else throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
 
-		const visualizationFilter = this.container.querySelector(".configuration-section.filters");
-
-		if(!this.report.filters.length) {
-
-			visualizationFilter.classList.add('hidden');
-		}
-
 		this.dashboards = new ReportVisualizationDashboards(this);
 
 		if(typeof this.visualization.options == 'string') {
@@ -1671,11 +1664,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization.options.transformations)
 			this.visualization.options.transformations = [];
 
-		if(!this.visualization.options.filters)
-			this.visualization.options.filters = this.report.filters;
-
 		this.transformations = new ReportTransformations(this.visualization, this);
-		this.reportVisualizationFilters =  new ReportVisualizationFilters(this.visualization, this);
+		this.reportVisualizationFilters =  new ReportVisualizationFilters(this);
 
 		localStorage.reportsPreviewDock = 'right';
 		await this.page.preview.load({
@@ -1747,29 +1737,34 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 	}
 });
 
-class ReportVisualizationFilters {
+class ReportVisualizationFilters extends Set{
 
-	constructor(visualization, stage) {
+	constructor(stage) {
 
-		this.visualization = visualization;
-		this.stage = stage;
-		this.page = this.stage.page;
-		this.container = this.stage.form.querySelector('.configuration-section.filters .form');
+		super();
+
+		this.visualization = stage.visualization;
+		this.container = stage.container.querySelector('.configuration-section #filters');
+
+		for(const filter of stage.report.filters) {
+
+			this.add(new ReportVisualizationFilter(filter, stage));
+		}
 	}
 
 	load() {
 
+		if(!this.size) {
+
+			this.container.textContent = 'No filters found!';
+			return;
+		}
+
 		this.container.textContent = null;
 
-		this.visualizationFilters = new Map();
+		for(const filter of this.values()) {
 
-		for(const filter of this.visualization.options.filters || this.stage.report.filters) {
-
-			const reportVisualizationFilter = new ReportVisualizationFilter(filter, this.stage);
-
-			this.visualizationFilters.set(filter.placeholder, reportVisualizationFilter);
-
-			this.container.appendChild(reportVisualizationFilter.container);
+			this.container.appendChild(filter.container);
 		}
 
 	}
@@ -1778,7 +1773,7 @@ class ReportVisualizationFilters {
 
 		const response = [];
 
-		for(const filter of this.visualizationFilters.values()) {
+		for(const filter of this.values()) {
 
 			response.push(filter.json);
 		}
@@ -1792,11 +1787,9 @@ class ReportVisualizationFilter {
 
 	constructor(reportVisualizationFilter, stage) {
 
-		this.stage = stage;
-		this.page = this.stage.page;
+		Object.assign(this, reportVisualizationFilter);
 
-		for(const key in reportVisualizationFilter)
-			this[key] = reportVisualizationFilter[key];
+		this.stage = stage;
 	}
 
 	get container() {
@@ -1804,11 +1797,17 @@ class ReportVisualizationFilter {
 		if(this.containerElement)
 			return this.containerElement;
 
-		const container = this.containerElement = document.createElement('label')
+		const container = this.containerElement = document.createElement('label');
+
+		let visualizationValue;
+
+		if(this.stage.visualization.options && this.stage.visualization.options.filters){
+			[visualizationValue] = this.stage.visualization.options.filters.filter(x => x.placeholder == this.placeholder);
+		}
 
 		container.innerHTML = `
 				<span>${this.name}</span>
-				<input type="text" value="${this.default_value}">
+				<input type="text" placeholder="${this.default_value}" value="${visualizationValue.default_value || ''}">
 			`;
 
 		return container;
@@ -1818,11 +1817,10 @@ class ReportVisualizationFilter {
 	get json() {
 
 		return {
-			'name': this.name,
-			'default_value': this.container.querySelector('input').value,
-			'order': this.order,
-			'placeholder': this.placeholder
-		}
+			default_value: this.container.querySelector('input').value,
+			placeholder: this.placeholder
+		};
+
 
 	}
 
