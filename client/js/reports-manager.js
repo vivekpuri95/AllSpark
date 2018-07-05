@@ -1775,6 +1775,9 @@ class ReportVisualizationFilters extends Set{
 
 		for(const filter of this.values()) {
 
+			if(!filter.json)
+				continue;
+
 			response.push(filter.json);
 		}
 
@@ -1807,7 +1810,7 @@ class ReportVisualizationFilter {
 
 		container.innerHTML = `
 				<span>${this.name}</span>
-				<input type="text" placeholder="${this.default_value}" value="${visualizationValue.default_value || ''}">
+				<input type="text" placeholder="${this.default_value}" value="${visualizationValue ? visualizationValue.default_value : ''}">
 			`;
 
 		return container;
@@ -1816,8 +1819,13 @@ class ReportVisualizationFilter {
 
 	get json() {
 
+		const value = this.container.querySelector('input').value;
+
+		if(value == '')
+			return;
+
 		return {
-			default_value: this.container.querySelector('input').value,
+			default_value: value,
 			placeholder: this.placeholder
 		};
 

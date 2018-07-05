@@ -54,13 +54,15 @@ class DataSource {
 
 				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.placeholder == filter.placeholder);
 
-				if(filter.dataset) {
+				if(visualization_filter) {
 
-					await filter.dataset.fetch();
-					filter.dataset.value = visualization_filter.default_value;
+					if (filter.dataset) {
+
+						await filter.dataset.fetch();
+						filter.dataset.value = visualization_filter.default_value || '';
+					}
+					parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, visualization_filter.default_value);
 				}
-
-				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, visualization_filter.default_value);
 
 				continue;
 			}
