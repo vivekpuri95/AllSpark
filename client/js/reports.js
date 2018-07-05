@@ -50,9 +50,16 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
-			if(this.visualizations.selected.options && this.visualizations.selected.options.filters) {
+			if(this.visualizations.selected.options && this.visualizations.selected.options.filters && !this.filters.containerElement) {
 
 				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.placeholder == filter.placeholder);
+
+				if(filter.dataset) {
+
+					await filter.dataset.fetch();
+					filter.dataset.value = visualization_filter.default_value;
+				}
+
 				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, visualization_filter.default_value);
 
 				continue;
@@ -6192,7 +6199,7 @@ class OtherDataset {
 			else
 				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
-			input.value = value;
+			input.value = this.value || value;
 			input.type = 'date';
 		}
 		else {
