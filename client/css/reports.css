@@ -1086,6 +1086,19 @@ main .dialog-box-blanket.sub-reports-dialog .dialog-box {
 		}
 
 main .configuration-section .filter-value label {
-	grid-template-columns: 1fr 1fr 1fr;
-	grid-gap: calc(var(--gap) * 3);
+	grid-template-columns: 150px max-content 50px;
+	grid-gap: calc(var(--gap) * 2);
+	max-width: 100%;
+	margin-bottom: 5px;
+}
+	main .configuration-section .filter-value label span {
+		border: 1px solid #ccc;
+		padding-left: var(--gap);
+		background: #eef;
+	}
+main .configuration-section .filter-options {
+	width: 250px;
+}
+main .configuration-section .add-filter {
+	margin-left: var(--gap);
 }

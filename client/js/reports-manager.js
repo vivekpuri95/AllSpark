@@ -1768,7 +1768,7 @@ class ReportVisualizationFilters extends Map {
 				<select class="filter-options">
 					<option value="-1">None</option>
 				</select>
-				<button type="button" class="add-filter">Add</button>
+				<button type="button" class="add-filter"><i class="fa fa-plus"></i> Add</button>
 			</div>
 			<div class="filter-value"></div>
 		`;
@@ -1777,13 +1777,20 @@ class ReportVisualizationFilters extends Map {
 
 			for(const filter of this.stage.visualization.options.filters) {
 
-				this.container.querySelector('.filter-value').appendChild(this.get(filter.filter_id).container);
+				const visualizationFilter = this.get(filter.filter_id);
+
+				visualizationFilter.filter_value = filter.default_value;
+
+				this.container.querySelector('.filter-value').appendChild(visualizationFilter.container);
 			}
 		}
 
 
 		const filterOptions = this.container.querySelector('.filter-options');
 		this.container.querySelector('.add-filter').on('click', () => {
+
+			if(filterOptions.value == -1)
+				return;
 
 			this.container.querySelector('.filter-value').appendChild(this.get(parseInt(filterOptions.value)).container);
 		});
@@ -1808,7 +1815,6 @@ class ReportVisualizationFilters extends Map {
 		}
 
 		return response;
-
 	}
 }
 
@@ -1828,16 +1834,10 @@ class ReportVisualizationFilter {
 
 		const container = this.containerElement = document.createElement('label');
 
-		let filter;
-
-		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
-			[filter] = this.stage.visualization.options.filters.filter(x => x.filter_id == this.filter_id);
-		}
-
 		container.innerHTML = `
 			<span>${this.name}</span>
-			<input type="text" placeholder="${this.default_value}" value="${filter ? filter.default_value : ''}">
-			<button class="delete">Delete</button>
+			<input type="text" placeholder="${this.default_value}" value="${this.filter_value || ''}">
+			<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 		`;
 
 		container.querySelector('.delete').on('click', () => {
@@ -1847,7 +1847,6 @@ class ReportVisualizationFilter {
 		});
 
 		return container;
-
 	}
 
 	get json() {
@@ -1860,10 +1859,7 @@ class ReportVisualizationFilter {
 			default_value: this.container.querySelector('input').value,
 			filter_id: this.filter_id
 		};
-
-
 	}
-
 }
 
 class ReportVisualizationDashboards extends Set {
