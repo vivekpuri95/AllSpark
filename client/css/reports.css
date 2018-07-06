@@ -1117,9 +1117,6 @@ main .configuration-section #filters {
 						margin: 0;
 					}
 
-	main .configuration-section .add-filter-form {
-		margin-top: calc(var(--gap) * 3);
-	}
 		main .configuration-section .filter-options {
 			width: 250px;
 		}

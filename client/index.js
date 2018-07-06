@@ -1063,7 +1063,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					
 						<h3><i class="fas fa-angle-right"></i> Filters</h3>
 						
-						<div class="body" id="filters"></div>
+						<div class="body form" id="filters"></div>
 												
 					</div>
 
