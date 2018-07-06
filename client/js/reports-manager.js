@@ -1842,9 +1842,6 @@ class ReportVisualizationFilters extends Map {
 
 		for(const filter of this.values()) {
 
-			if(!filter.json)
-				continue;
-
 			response.push(filter.json);
 		}
 
@@ -1900,10 +1897,6 @@ class ReportVisualizationFilter {
 	}
 
 	get json() {
-
-		if(!this.containerElement) {
-			return;
-		}
 
 		return {
 			default_value: this.container.querySelector('input').value,
