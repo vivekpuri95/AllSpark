@@ -2421,7 +2421,8 @@ class Axis {
 
 		this.axes = axes;
 
-		this.axes.columns = this.axes.stage.page.preview.report.columns;
+		if(!this.columns)
+			this.columns = [];
 	}
 
 	get container() {
@@ -2434,7 +2435,7 @@ class Axis {
 
 		container.classList.add('axis', 'subform');
 
-		for(const [key, column] of this.axes.columns)
+		for(const [key, column] of this.axes.stage.page.preview.report.columns)
 			datalist.push({name: column.name, value: key});
 
 		let usedColumns = [];
@@ -2443,8 +2444,6 @@ class Axis {
 
 			if(axis.position == this.position)
 				continue;
-
-			axis.columns = axis.columns ? axis.columns : [];
 
 			usedColumns = usedColumns.concat(axis.columns.map(x => x.key));
 		}
@@ -2506,8 +2505,7 @@ class Axis {
 
 			for(const axis of this.axes) {
 				for(const item of axis.container.multiSelectColumns.datalist) {
-					const a = freeColumns.map(c => c.value);
-					if(!a.includes(item.value) && !usedColumns.includes(item.value))
+					if(!freeColumns.some(c => c.value.includes(item.value)) && !usedColumns.includes(item.value))
 						freeColumns.push(item);
 				}
 			}
@@ -2527,25 +2525,13 @@ class Axis {
 				    }
 				}
 
-				const keyInDataList = newDataList.map(k => k.value);
-
 				for(const value of freeColumns) {
-					if(!keyInDataList.includes(value.value))
+					if(!newDataList.some(k => k.value.includes(value.value)))
 						newDataList.push(value);
 				}
 
-				if(axis.container.multiSelectColumns.datalist.length == newDataList.length) {
-					let check = 0;
-					for(const value1 of newDataList) {
-						for(const value2 of axis.container.multiSelectColumns.datalist) {
-						    if(value1.value == value2.value) {
-						        check++;
-						    }
-						}
-					}
-					if(check == newDataList.length)
-						continue;
-				}
+				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join())
+					continue;
 
 				axis.container.multiSelectColumns.datalist = newDataList;
 				axis.container.multiSelectColumns.render();
