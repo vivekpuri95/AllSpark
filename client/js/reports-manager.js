@@ -2344,19 +2344,19 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	}
 }
 
-class Axes {
+class Axes extends Set {
 
 	constructor(axes, stage) {
+		super();
+
 		this.stage = stage;
-		this.axes = new Set;
 		this.list = axes;
-		this.axes.clear();
+		this.clear();
 
 		this.columns = this.stage.page.preview.report.columns;
 
-		for(const axis of this.list) {
-			this.axes.add(new Axis(axis, this))
-		}
+		for(const axis of this.list)
+			this.add(new Axis(axis, this));
 	}
 
 	get container() {
@@ -2378,7 +2378,7 @@ class Axes {
 		container.querySelector('.add-axis').on('click', () => {
 
 			const axisForm = new Axis({}, this);
-			this.axes.add(axisForm);
+			this.add(axisForm);
 			container.querySelector('.axes').appendChild(axisForm.container);
 		});
 
@@ -2391,7 +2391,7 @@ class Axes {
 
 		this.addAxes.textContent = null;
 
-		for(const axis of this.axes) {
+		for(const axis of this) {
 			this.addAxes.appendChild(axis.container);
 		}
 	}
@@ -2400,7 +2400,7 @@ class Axes {
 
 		const response = [];
 
-		for(const axis of this.axes.values()) {
+		for(const axis of this.values()) {
 			response.push(axis.json);
 		}
 
@@ -2438,6 +2438,24 @@ class Axis {
 
 		for(const [key, column] of this.axes.columns)
 			datalist.push({name: column.name, value: key});
+
+		let usedColumns = {};
+
+		for(const axis of this.axes) {
+
+			if(!(axis.position in usedColumns))
+				usedColumns[axis.position] = [];
+
+			usedColumns[axis.position] = usedColumns[axis.position].concat(axis.columns.map(x => x.key));
+		}
+
+		for(const column in usedColumns) {
+
+			if(column == this.position)
+				continue;
+
+			datalist = datalist.filter(x => !usedColumns[column].includes(x.value));
+		}
 
 		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
 		const axisColumn = container.multiSelectColumns.container;
@@ -2481,6 +2499,75 @@ class Axis {
 			</label>
 		`;
 
+		container.multiSelectColumns.on('change', () => {
+
+			let
+				usedColumns = [],
+				freeColumns = [];
+
+			for(const axis of this.axes)
+				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
+
+			for(const axis of this.axes) {
+				for(const item of axis.container.multiSelectColumns.datalist) {
+					const a = freeColumns.map(c => c.value);
+					if(!axis.container.multiSelectColumns.value.includes(item.value) && !a.includes(item.value) && !usedColumns.includes(item.value))
+						freeColumns.push(item);
+				}
+			}
+
+			for(const axis of this.axes) {
+
+				if(axis == this)
+					continue;
+
+				const selected = axis.container.multiSelectColumns.value;
+
+				var new_dataList = [];
+
+				for(const data of axis.container.multiSelectColumns.datalist) {
+				    if(!usedColumns.includes(data.value) || selected.includes(data.value)) {
+				        new_dataList.push(data);
+				    }
+				}
+
+
+
+				const key_in_dataList = new_dataList.map(k => k.value);
+
+				for(const value of freeColumns) {
+					if(!key_in_dataList.includes(value.value))
+						new_dataList.push(value);
+				}
+
+				new_dataList = new_dataList.sort(function(a,b) {
+
+					if(a.value < b.value)
+						return -1;
+					if(a.value > b.value)
+						return 1;
+					return 0;
+				});
+
+				axis.container.multiSelectColumns.datalist = axis.container.multiSelectColumns.datalist.sort(function(a,b) {
+
+					if(a.value < b.value)
+						return -1;
+					if(a.value > b.value)
+						return 1;
+					return 0;
+				});
+
+
+				if(JSON.stringify(axis.container.multiSelectColumns.datalist) == JSON.stringify(new_dataList))
+					continue;
+
+				axis.container.multiSelectColumns.datalist = new_dataList;
+				axis.container.multiSelectColumns.render();
+			}
+
+		});
+
 		const restColumns = container.querySelector('.restcolumns');
 
 		restColumns.on('change', () => {
@@ -2488,10 +2575,8 @@ class Axis {
 			this.axes.restCheck(restColumns.checked);
 			axisColumn.classList.toggle('hidden');
 
-			if(restColumns.checked) {
-
+			if(restColumns.checked)
 				container.querySelector('.restCheck').classList.remove('hidden');
-			}
 		});
 
 		if(this.restcolumns) {
@@ -2508,7 +2593,7 @@ class Axis {
 		container.querySelector('.delete').on('click', () => {
 
 			container.parentElement && container.parentElement.removeChild(container);
-			this.axes.axes.delete(this);
+			this.axes.delete(this);
 			this.axes.render();
 		});
 
@@ -2517,20 +2602,16 @@ class Axis {
 
 	get json() {
 
-		const columns = [];
-
-		for(const option of this.container.multiSelectColumns.value)
-			columns.push({key: option});
-
 		return {
 			position: this.container.querySelector('select[name=position]').value,
 			label: this.container.querySelector('input[name=label]').value,
-			columns,
+			columns: this.container.multiSelectColumns.value.map(c => {return {key: c}}),
 			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
 			format: this.container.querySelector('select[name=format]').value,
 		};
 	}
 }
+
 class ReportVisualizationLiveNumberOptions extends ReportVisualizationOptions {
 
 	get json() {
