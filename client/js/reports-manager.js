@@ -1765,47 +1765,47 @@ class ReportVisualizationFilters extends Map {
 		}
 
 		this.container.innerHTML = `
-			<div class="filter-value hidden"></div>
-			<div class="add-filter-form">
-				<select class="filter-options"></select>
-				<button type="button" class="add-filter"><i class="fa fa-plus"></i> Add</button>
+			<div class="list hidden"></div>
+			<div class="add-filter">
+				<select></select>
+				<button type="button"><i class="fa fa-plus"></i> Add</button>
 			</div>
 		`;
 
 		this.optionValues = new Set();
 
-		const filterOptions = this.container.querySelector('.filter-options');
+		const filterOptions = this.container.querySelector('.add-filter > select');
 
 
 		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
 
-			const addFilterContainer = this.container.querySelector('.filter-value');
+			const addFilterContainer = this.container.querySelector('.list');
 
 			for(const filter of this.stage.visualization.options.filters) {
 
 				const visualizationFilter = this.get(filter.filter_id);
 
-				visualizationFilter.filter_value = filter.default_value;
+				visualizationFilter.default_value = filter.default_value;
 				addFilterContainer.appendChild(visualizationFilter.container);
 
 				addFilterContainer.classList.remove('hidden');
-				this.optionValues.add(filter.filter_id);
+				this.optionValues.add(filter.filter_id.toString());
 			}
 		}
 
 		this.updateFilterList();
 
-		this.container.querySelector('.add-filter').on('click', () => {
+		this.container.querySelector('.add-filter > button').on('click', () => {
 
-			const addFilterContainer = this.container.querySelector('.filter-value');
+			const addFilterContainer = this.container.querySelector('.list');
 
 			addFilterContainer.appendChild(this.get(parseInt(filterOptions.value)).container);
 			addFilterContainer.classList.remove('hidden');
 
-			this.optionValues.add(filterOptions.value);
+			this.optionValues.add(filterOptions.value.toString());
 
 			if(this.optionValues.size == this.size)
-				this.container.querySelector('.add-filter-form').classList.add('hidden');
+				this.container.querySelector('.add-filter').classList.add('hidden');
 
 			this.updateFilterList();
 		});
@@ -1813,11 +1813,11 @@ class ReportVisualizationFilters extends Map {
 
 	updateFilterList() {
 
-		const optionsList = this.container.querySelector('.filter-options');
+		const optionsList = this.container.querySelector('.add-filter > select');
 
 		optionsList.textContent = null;
 
-		for(const filter of this.values()) {
+		for(const filter of this.stage.report.filters) {
 
 			if(this.optionValues.has(filter.filter_id.toString()))
 				continue;
@@ -1847,9 +1847,10 @@ class ReportVisualizationFilter {
 
 	constructor(reportVisualizationFilter, stage) {
 
-		Object.assign(this, reportVisualizationFilter);
-
 		this.stage = stage;
+		this.reportFilter = reportVisualizationFilter;
+
+		this.filter_id = reportVisualizationFilter.filter_id;
 	}
 
 	get container() {
@@ -1862,11 +1863,11 @@ class ReportVisualizationFilter {
 		container.classList.add('filters');
 
 		container.innerHTML = `
-			<legend>${this.name}</legend>
+			<legend>${this.reportFilter.name}</legend>
 			<label>
 				<span>Default Value</span>
 				<div>
-					<input type="text" placeholder="${this.default_value}" value="${this.filter_value || ''}">
+					<input type="text" placeholder="${this.reportFilter.default_value}" value="${this.default_value || ''}">
 					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 				</div>
 			</label>
@@ -1878,9 +1879,9 @@ class ReportVisualizationFilter {
 			this.stage.reportVisualizationFilters.optionValues.delete(this.filter_id.toString());
 
 			if(!this.stage.reportVisualizationFilters.optionValues.size)
-				this.stage.reportVisualizationFilters.container.querySelector('.filter-value').classList.add('hidden');
+				this.stage.reportVisualizationFilters.container.querySelector('.list').classList.add('hidden');
 
-			this.stage.reportVisualizationFilters.container.querySelector('.add-filter-form').classList.remove('hidden');
+			this.stage.reportVisualizationFilters.container.querySelector('.add-filter').classList.remove('hidden');
 
 			this.containerElement = null;
 			this.stage.reportVisualizationFilters.updateFilterList();

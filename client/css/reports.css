@@ -1090,16 +1090,16 @@ main .configuration-section #filters {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	padding: calc(var(--gap) * 2);
 }
-	main .configuration-section #filters .filter-value {
+	main .configuration-section #filters .list {
 		display: grid;
 		grid-gap: calc(var(--gap) * 3);
 	}
-		main .configuration-section #filters .filter-value fieldset.filters {
+		main .configuration-section #filters .list fieldset.filters {
 			border: 1px solid #ccc;
 			background: #eef;
 			padding-top: calc(var(--gap) * 2);
 		}
-			main .configuration-section #filters .filter-value fieldset.filters legend {
+			main .configuration-section #filters .list fieldset.filters legend {
 				font-size: 90%;
 				border: 1px solid #ccc;
 				padding: 2px 8px;
@@ -1109,17 +1109,16 @@ main .configuration-section #filters {
 				background: #fff;
 				box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 			}
-
-				main .configuration-section #filters .filter-value fieldset.filters .delete {
+				main .configuration-section #filters .list fieldset.filters .delete {
 					margin-left: var(--gap);
 				}
-					main .configuration-section #filters .filter-value fieldset.filters .delete >svg {
+					main .configuration-section #filters .list fieldset.filters .delete >svg {
 						margin: 0;
 					}
 
-		main .configuration-section .filter-options {
-			width: 250px;
+		main .configuration-section .add-filter > select {
+			width: 200px;
 		}
-		main .configuration-section .add-filter {
+		main .configuration-section .add-filter > button {
 			margin-left: var(--gap);
 		}
