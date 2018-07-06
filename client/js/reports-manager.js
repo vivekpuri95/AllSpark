@@ -1760,12 +1760,13 @@ class ReportVisualizationFilters extends Map {
 		if(!this.size) {
 
 			this.container.textContent = 'No filters found!';
+			this.container.classList.add('NA');
 			return;
 		}
 
 		this.container.innerHTML = `
 			<div class="filter-value hidden"></div>
-			<div>
+			<div class="add-filter-form">
 				<select class="filter-options"></select>
 				<button type="button" class="add-filter"><i class="fa fa-plus"></i> Add</button>
 			</div>
@@ -1802,6 +1803,10 @@ class ReportVisualizationFilters extends Map {
 			addFilterContainer.classList.remove('hidden');
 
 			this.optionValues.add(filterOptions.value);
+
+			if(this.optionValues.size == this.size)
+				this.container.querySelector('.add-filter-form').classList.add('hidden');
+
 			this.updateFilterList();
 		});
 	}
@@ -1874,6 +1879,8 @@ class ReportVisualizationFilter {
 
 			if(!this.stage.reportVisualizationFilters.optionValues.size)
 				this.stage.reportVisualizationFilters.container.querySelector('.filter-value').classList.add('hidden');
+
+			this.stage.reportVisualizationFilters.container.querySelector('.add-filter-form').classList.remove('hidden');
 
 			this.containerElement = null;
 			this.stage.reportVisualizationFilters.updateFilterList();
