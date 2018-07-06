@@ -2353,8 +2353,6 @@ class Axes extends Set {
 		this.list = axes;
 		this.clear();
 
-		this.columns = this.stage.page.preview.report.columns;
-
 		for(const axis of this.list)
 			this.add(new Axis(axis, this));
 	}
@@ -2373,8 +2371,6 @@ class Axes extends Set {
 			</button>
 		`;
 
-		this.addAxes = container.querySelector('.axes');
-
 		container.querySelector('.add-axis').on('click', () => {
 
 			const axisForm = new Axis({}, this);
@@ -2389,10 +2385,11 @@ class Axes extends Set {
 
 	render() {
 
-		this.addAxes.textContent = null;
+		let addAxes = this.container.querySelector('.axes');
+		addAxes.textContent = null;
 
 		for(const axis of this) {
-			this.addAxes.appendChild(axis.container);
+			addAxes.appendChild(axis.container);
 		}
 	}
 
@@ -2423,6 +2420,8 @@ class Axis {
 			this[key] = axis[key]
 
 		this.axes = axes;
+
+		this.axes.columns = this.axes.stage.page.preview.report.columns;
 	}
 
 	get container() {
@@ -2430,31 +2429,29 @@ class Axis {
 		if(this.axisContainer)
 			return this.axisContainer;
 
-		let
-			container = this.axisContainer = document.createElement('div'),
-			datalist = [];
+		const container = this.axisContainer = document.createElement('div');
+		let datalist = [];
 
 		container.classList.add('axis', 'subform');
 
 		for(const [key, column] of this.axes.columns)
 			datalist.push({name: column.name, value: key});
 
-		let usedColumns = {};
+		let usedColumns = [];
 
 		for(const axis of this.axes) {
 
-			if(!(axis.position in usedColumns))
-				usedColumns[axis.position] = [];
-
-			usedColumns[axis.position] = usedColumns[axis.position].concat(axis.columns.map(x => x.key));
-		}
-
-		for(const column in usedColumns) {
-
-			if(column == this.position)
+			if(axis.position == this.position)
 				continue;
 
-			datalist = datalist.filter(x => !usedColumns[column].includes(x.value));
+			axis.columns = axis.columns ? axis.columns : [];
+
+			usedColumns = usedColumns.concat(axis.columns.map(x => x.key));
+		}
+
+		for(const column of usedColumns) {
+
+			datalist = datalist.filter(x => !column.includes(x.value));
 		}
 
 		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
@@ -2501,9 +2498,8 @@ class Axis {
 
 		container.multiSelectColumns.on('change', () => {
 
-			let
-				usedColumns = [],
-				freeColumns = [];
+			let usedColumns = [];
+			const freeColumns = [];
 
 			for(const axis of this.axes)
 				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
@@ -2511,7 +2507,7 @@ class Axis {
 			for(const axis of this.axes) {
 				for(const item of axis.container.multiSelectColumns.datalist) {
 					const a = freeColumns.map(c => c.value);
-					if(!axis.container.multiSelectColumns.value.includes(item.value) && !a.includes(item.value) && !usedColumns.includes(item.value))
+					if(!a.includes(item.value) && !usedColumns.includes(item.value))
 						freeColumns.push(item);
 				}
 			}
@@ -2523,46 +2519,35 @@ class Axis {
 
 				const selected = axis.container.multiSelectColumns.value;
 
-				var new_dataList = [];
+				var newDataList = [];
 
 				for(const data of axis.container.multiSelectColumns.datalist) {
 				    if(!usedColumns.includes(data.value) || selected.includes(data.value)) {
-				        new_dataList.push(data);
+				        newDataList.push(data);
 				    }
 				}
 
-
-
-				const key_in_dataList = new_dataList.map(k => k.value);
+				const keyInDataList = newDataList.map(k => k.value);
 
 				for(const value of freeColumns) {
-					if(!key_in_dataList.includes(value.value))
-						new_dataList.push(value);
+					if(!keyInDataList.includes(value.value))
+						newDataList.push(value);
 				}
 
-				new_dataList = new_dataList.sort(function(a,b) {
+				if(axis.container.multiSelectColumns.datalist.length == newDataList.length) {
+					let check = 0;
+					for(const value1 of newDataList) {
+						for(const value2 of axis.container.multiSelectColumns.datalist) {
+						    if(value1.value == value2.value) {
+						        check++;
+						    }
+						}
+					}
+					if(check == newDataList.length)
+						continue;
+				}
 
-					if(a.value < b.value)
-						return -1;
-					if(a.value > b.value)
-						return 1;
-					return 0;
-				});
-
-				axis.container.multiSelectColumns.datalist = axis.container.multiSelectColumns.datalist.sort(function(a,b) {
-
-					if(a.value < b.value)
-						return -1;
-					if(a.value > b.value)
-						return 1;
-					return 0;
-				});
-
-
-				if(JSON.stringify(axis.container.multiSelectColumns.datalist) == JSON.stringify(new_dataList))
-					continue;
-
-				axis.container.multiSelectColumns.datalist = new_dataList;
+				axis.container.multiSelectColumns.datalist = newDataList;
 				axis.container.multiSelectColumns.render();
 			}
 
