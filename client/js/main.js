@@ -675,7 +675,7 @@ class MetaData {
 		MetaData.roles = new Map;
 		MetaData.datasets = new Map;
 		MetaData.visualizations = new Map;
-		MetaData.filterTypes = new Set;
+		MetaData.filterTypes = new Map;
 		MetaData.features = new Set;
 
 		if(!user.id)
@@ -730,7 +730,7 @@ class MetaData {
 			MetaData.categories.set(category.category_id, category);
 		}
 
-		MetaData.filterTypes = new Set(metadata.filterTypes);
+		MetaData.filterTypes = new Map(metadata.filterTypes.map(x => [x.name.toLowerCase(), x]));
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
@@ -1282,7 +1282,7 @@ class MultiSelect {
 
 		for(const value of values) {
 			if(this.datalist && this.datalist.some(r => r.value == value))
-				this.selectedValues.add(value);
+				this.selectedValues.add(value.toString());
 		}
 
 		if(this.changeCallback)

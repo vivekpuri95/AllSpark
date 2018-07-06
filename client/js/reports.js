@@ -50,6 +50,23 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
+			if(this.visualizations.selected.options && this.visualizations.selected.options.filters && !this.filters.containerElement) {
+
+				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.filter_id == filter.filter_id);
+
+				if(visualization_filter) {
+
+					if (filter.dataset) {
+
+						await filter.dataset.fetch();
+						filter.dataset.value = visualization_filter.default_value || '';
+					}
+					parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, visualization_filter.default_value);
+				}
+
+				continue;
+			}
+
 			if(filter.dataset && !filter.dataset.query_id) {
 
 				if(!filter.dataset.value && !filter.dataset.containerElement)
@@ -837,16 +854,7 @@ class DataSourceFilter {
 			return this.labelContainer;
 
     const
-			container = document.createElement('label'),
-			inputType = {
-				'datetime' : 'datetime-local',
-				'date' : 'date',
-				'month': 'month',
-				'number': 'number',
-				'text': 'text',
-				'column': 'text',
-				'hidden': 'hidden',
-			};
+			container = document.createElement('label');
     
 		container.style.order = this.order;
 
@@ -855,7 +863,7 @@ class DataSourceFilter {
 
 		let input = document.createElement('input');
 
-		input.type = inputType[this.type];
+		input.type = MetaData.filterTypes.get(this.type).input_type;
 		input.name = this.placeholder;
 
 		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
@@ -6184,7 +6192,7 @@ class OtherDataset {
 			else
 				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
-			input.value = value;
+			input.value = this.value || value;
 			input.type = 'date';
 		}
 		else {

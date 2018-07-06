@@ -1288,9 +1288,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const select = filterForm.querySelector('select[name="type"]');
 		select.textContent = null;
-		for (const type of MetaData.filterTypes) {
+		for (const type of MetaData.filterTypes.values()) {
 			select.insertAdjacentHTML('beforeend', `
-				<option value="${type.toLowerCase()}">${type}</option>
+				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
 		}
 
@@ -1335,9 +1335,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const select = this.filterForm.querySelector('select[name="type"]');
 		select.textContent = null;
-		for (const type of MetaData.filterTypes) {
+		for (const type of MetaData.filterTypes.values()) {
 			select.insertAdjacentHTML('beforeend', `
-				<option value="${type.toLowerCase()}">${type}</option>
+				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
 		}
 
@@ -1665,6 +1665,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.visualization.options.transformations = [];
 
 		this.transformations = new ReportTransformations(this.visualization, this);
+		this.reportVisualizationFilters =  new ReportVisualizationFilters(this);
 
 		localStorage.reportsPreviewDock = 'right';
 		await this.page.preview.load({
@@ -1673,6 +1674,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		});
 
 		this.transformations.load();
+		this.reportVisualizationFilters.load();
 
 		this.form.reset();
 
@@ -1714,6 +1716,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.visualization.options = this.optionsForm.json;
 
 		this.visualization.options.transformations = this.transformations.json;
+		this.visualization.options.filters = this.reportVisualizationFilters.json;
 
 		options.form.set('options', JSON.stringify(this.visualization.options));
 
@@ -1733,6 +1736,161 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		});
 	}
 });
+
+class ReportVisualizationFilters extends Map {
+
+	constructor(stage) {
+
+		super();
+
+		this.visualization = stage.visualization;
+		this.container = stage.container.querySelector('.configuration-section #filters');
+		this.stage = stage;
+
+		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
+
+			for(const filter of this.stage.visualization.options.filters) {
+
+				const [filterObj] = this.stage.report.filters.filter(x => x.filter_id == filter.filter_id);
+
+				if(!filterObj)
+					continue;
+
+				this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, stage));
+			}
+		}
+	}
+
+	load() {
+
+		this.container.textContent = null;
+
+		if(!this.stage.report.filters.length) {
+
+			this.container.textContent = 'No filters found!';
+			this.container.classList.add('NA');
+			return;
+		}
+
+		this.container.innerHTML = `
+			<div class="list hidden"></div>
+			<form class="add-filter">
+				<select></select>
+				<button type="submit"><i class="fa fa-plus"></i> Add</button>
+			</form>
+		`;
+
+		const
+			filterOptions = this.container.querySelector('.add-filter > select'),
+			addFilterContainer = this.container.querySelector('.list');
+
+		for(const filter of this.values()) {
+
+			addFilterContainer.appendChild(filter.container);
+		}
+
+		this.updateFilterList();
+
+		this.container.querySelector('.add-filter').on('submit', (e) => {
+
+			e.preventDefault();
+
+			const
+				addFilterContainer = this.container.querySelector('.list'),
+				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
+
+			this.set(filter.filter_id, new ReportVisualizationFilter(
+				{filter_id: filter.filter_id, default_value: ''},
+				filter,
+				this.stage
+			));
+
+			addFilterContainer.appendChild(this.get(parseInt(filterOptions.value)).container);
+
+			this.updateFilterList();
+		});
+	}
+
+	updateFilterList() {
+
+		const optionsList = this.container.querySelector('.add-filter > select');
+
+		optionsList.textContent = null;
+
+		for(const filter of this.stage.report.filters) {
+
+			if(this.has(filter.filter_id))
+				continue;
+
+			optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
+		}
+
+		this.container.querySelector('.list').classList.toggle('hidden', !this.size);
+		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const filter of this.values()) {
+
+			response.push(filter.json);
+		}
+
+		return response;
+	}
+}
+
+class ReportVisualizationFilter {
+
+	constructor(reportVisualizationFilter, reportFilter, stage) {
+
+		this.stage = stage;
+		this.reportFilter = reportFilter;
+
+		Object.assign(this, reportVisualizationFilter);
+	}
+
+	get container() {
+
+		if (this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('fieldset');
+
+		container.classList.add('filters');
+
+		container.innerHTML = `
+			<legend>${this.reportFilter.name}</legend>
+			<label>
+				<span>Default Value</span>
+				<div>
+					<input type="text" placeholder="${this.reportFilter.default_value}" value="${this.default_value || ''}">
+					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+				</div>
+			</label>
+		`;
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.container.parentElement.removeChild(container);
+			this.stage.reportVisualizationFilters.delete(this.filter_id);
+
+			this.stage.reportVisualizationFilters.updateFilterList();
+		});
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			default_value: this.container.querySelector('input').value,
+			filter_id: this.filter_id
+		};
+	}
+}
 
 class ReportVisualizationDashboards extends Set {
 
