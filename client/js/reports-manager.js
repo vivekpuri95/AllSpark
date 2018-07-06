@@ -1756,7 +1756,7 @@ class ReportVisualizationFilters extends Map {
 				if(!filterObj)
 					continue;
 
-				this.set(filter.filter_id, new ReportVisualizationFilter(filterObj, stage));
+				this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, stage));
 			}
 		}
 	}
@@ -1780,22 +1780,13 @@ class ReportVisualizationFilters extends Map {
 			</form>
 		`;
 
-		const filterOptions = this.container.querySelector('.add-filter > select');
+		const
+			filterOptions = this.container.querySelector('.add-filter > select'),
+			addFilterContainer = this.container.querySelector('.list');
 
+		for(const filter of this.values()) {
 
-		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
-
-			const addFilterContainer = this.container.querySelector('.list');
-
-			for(const filter of this.stage.visualization.options.filters) {
-
-				const visualizationFilter = this.get(filter.filter_id);
-
-				visualizationFilter.default_value = filter.default_value;
-				addFilterContainer.appendChild(visualizationFilter.container);
-
-				addFilterContainer.classList.remove('hidden');
-			}
+			addFilterContainer.appendChild(filter.container);
 		}
 
 		this.updateFilterList();
@@ -1808,13 +1799,13 @@ class ReportVisualizationFilters extends Map {
 				addFilterContainer = this.container.querySelector('.list'),
 				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
 
-			this.set(filter.filter_id, new ReportVisualizationFilter(filter, this.stage));
+			this.set(filter.filter_id, new ReportVisualizationFilter(
+				{filter_id: filter.filter_id, default_value: ''},
+				filter,
+				this.stage
+			));
 
 			addFilterContainer.appendChild(this.get(parseInt(filterOptions.value)).container);
-			addFilterContainer.classList.remove('hidden');
-
-			if(this.size == this.stage.report.filters.length)
-				this.container.querySelector('.add-filter').classList.add('hidden');
 
 			this.updateFilterList();
 		});
@@ -1834,6 +1825,8 @@ class ReportVisualizationFilters extends Map {
 			optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
 		}
 
+		this.container.querySelector('.list').classList.toggle('hidden', !this.size);
+		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
 	}
 
 	get json() {
@@ -1851,12 +1844,12 @@ class ReportVisualizationFilters extends Map {
 
 class ReportVisualizationFilter {
 
-	constructor(reportVisualizationFilter, stage) {
+	constructor(reportVisualizationFilter, reportFilter, stage) {
 
 		this.stage = stage;
-		this.reportFilter = reportVisualizationFilter;
+		this.reportFilter = reportFilter;
 
-		this.filter_id = reportVisualizationFilter.filter_id;
+		Object.assign(this, reportVisualizationFilter);
 	}
 
 	get container() {
@@ -1884,12 +1877,6 @@ class ReportVisualizationFilter {
 			this.container.parentElement.removeChild(container);
 			this.stage.reportVisualizationFilters.delete(this.filter_id);
 
-			if(!this.stage.reportVisualizationFilters.size)
-				this.stage.reportVisualizationFilters.container.querySelector('.list').classList.add('hidden');
-
-			this.stage.reportVisualizationFilters.container.querySelector('.add-filter').classList.remove('hidden');
-
-			this.containerElement = null;
 			this.stage.reportVisualizationFilters.updateFilterList();
 		});
 
