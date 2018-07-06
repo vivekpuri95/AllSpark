@@ -2285,6 +2285,9 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	get form() {
 
+		if(this.formContainer)
+			return this.formContainer;
+
 		const container = this.formContainer = document.createElement('div');
 
 		container.classList.add('liner-visualization-options');
@@ -2292,12 +2295,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Axes</h3>
-				<div class="options form body">
-					<div class="axes"></div>
-					<button class="add-axis" type="button">
-						<i class="fa fa-plus"></i> Add New Axis
-					</button>
-				</div>
+				<div class="options form body axes-container"></div>
 			</div>
 
 			<div class="configuration-section">
@@ -2321,12 +2319,9 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		this.formContainer.axes = new Set();
 
-		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : []) {
+		this.axes = new Axes(this.visualization.options.axes, this);
 
-			const axisForm = this.axis(axis);
-			this.formContainer.axes.add(axisForm);
-			container.querySelector('.axes').appendChild(axisForm);
-		}
+		container.querySelector('.configuration-section .axes-container').appendChild(this.axes.container);
 
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
@@ -2334,63 +2329,139 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		if(this.visualization.options && this.visualization.options.showValues)
 			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
 
-		container.querySelector('.add-axis').on('click', () => {
-
-			const axisForm = this.axis();
-			this.formContainer.axes.add(axisForm);
-			container.querySelector('.axes').appendChild(axisForm);
-		});
-
 		return container;
 	}
 
 	get json() {
 
 		const response = {
-			axes: [],
+			axes: this.axes.json,
 			hideLegend: this.formContainer.querySelector('input[name=hideLegend]').checked,
 			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
 		};
 
-		for(const axis of this.formContainer.axes) {
+		return response;
+	}
+}
 
-			const columns = [];
+class Axes extends Set {
 
-			for(const option of axis.multiSelectColumns.value)
-				columns.push({key: option});
+	constructor(axes, stage) {
+		super();
 
-			response.axes.push({
-				position: axis.querySelector('select[name=position]').value,
-				label: axis.querySelector('input[name=label]').value,
-				columns,
-				restcolumns: axis.querySelector('input[name=restcolumns]').checked,
-				format: axis.querySelector('select[name=format]').value,
-			});
+		this.stage = stage;
+		this.list = axes;
+		this.clear();
+
+		for(const axis of this.list)
+			this.add(new Axis(axis, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('axis-container')
+		container.innerHTML = `
+			<div class="axes"></div>
+			<button class="add-axis" type="button">
+				<i class="fa fa-plus"></i> Add New Axis
+			</button>
+		`;
+
+		container.querySelector('.add-axis').on('click', () => {
+
+			const axisForm = new Axis({}, this);
+			this.add(axisForm);
+			container.querySelector('.axes').appendChild(axisForm.container);
+		});
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		let addAxes = this.container.querySelector('.axes');
+		addAxes.textContent = null;
+
+		for(const axis of this) {
+			addAxes.appendChild(axis.container);
+		}
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const axis of this.values()) {
+			response.push(axis.json);
 		}
 
 		return response;
 	}
 
-	axis(axis = {}) {
+	restCheck(action) {
 
-		const
-			container = document.createElement('div'),
-			datalist = [];
+		for(const rest of this.container.querySelectorAll('.restCheck')) {
+			rest.classList.toggle('hidden', action);
+		}
+	}
+ }
+
+class Axis {
+
+	constructor(axis, axes) {
+
+		for(const key in axis)
+			this[key] = axis[key]
+
+		this.axes = axes;
+
+		if(!this.columns)
+			this.columns = [];
+	}
+
+	get container() {
+
+		if(this.axisContainer)
+			return this.axisContainer;
+
+		const container = this.axisContainer = document.createElement('div');
+		let datalist = [];
 
 		container.classList.add('axis', 'subform');
 
-		for(const [key, column] of this.page.preview.report.columns)
+		for(const [key, column] of this.axes.stage.page.preview.report.columns)
 			datalist.push({name: column.name, value: key});
+
+		let usedColumns = [];
+
+		for(const axis of this.axes) {
+
+			if(axis.position == this.position)
+				continue;
+
+			usedColumns = usedColumns.concat(axis.columns.map(x => x.key));
+		}
+
+		for(const column of usedColumns) {
+
+			datalist = datalist.filter(x => !column.includes(x.value));
+		}
 
 		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
 		const axisColumn = container.multiSelectColumns.container;
 
-		container.multiSelectColumns.value = axis.columns ? axis.columns.map(x => x.key) : [];
+		container.multiSelectColumns.value = this.columns ? this.columns.map(x => x.key) : [];
 
 		container.innerHTML = `
 			<label>
 				<span>Position</span>
-				<select name="position" value="${axis.position}" required>
+				<select name="position" value="${this.position}" required>
 					<option value="top">Top</option>
 					<option value="right">Right</option>
 					<option value="bottom">Bottom</option>
@@ -2400,14 +2471,14 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			<label>
 				<span>Label</span>
-				<input type="text" name="label" value="${axis.label || ''}">
+				<input type="text" name="label" value="${this.label || ''}">
 			</label>
 
 			<label class="axis-column">
 				<span>Columns</span>
 			</label>
 
-			<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
+			<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${this.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 			<label>
 				<span>Format</span>
@@ -2424,44 +2495,91 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			</label>
 		`;
 
+		container.multiSelectColumns.on('change', () => {
+
+			let usedColumns = [];
+			const freeColumns = [];
+
+			for(const axis of this.axes)
+				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
+
+			for(const axis of this.axes) {
+				for(const item of axis.container.multiSelectColumns.datalist) {
+					if(!freeColumns.some(c => c.value.includes(item.value)) && !usedColumns.includes(item.value))
+						freeColumns.push(item);
+				}
+			}
+
+			for(const axis of this.axes) {
+
+				if(axis == this)
+					continue;
+
+				const selected = axis.container.multiSelectColumns.value;
+
+				var newDataList = [];
+
+				for(const data of axis.container.multiSelectColumns.datalist) {
+				    if(!usedColumns.includes(data.value) || selected.includes(data.value)) {
+				        newDataList.push(data);
+				    }
+				}
+
+				for(const value of freeColumns) {
+					if(!newDataList.some(k => k.value.includes(value.value)))
+						newDataList.push(value);
+				}
+
+				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join())
+					continue;
+
+				axis.container.multiSelectColumns.datalist = newDataList;
+				axis.container.multiSelectColumns.render();
+			}
+
+		});
+
 		const restColumns = container.querySelector('.restcolumns');
 
 		restColumns.on('change', () => {
 
-			this.restCheck(restColumns.checked);
+			this.axes.restCheck(restColumns.checked);
 			axisColumn.classList.toggle('hidden');
 
-			if(restColumns.checked) {
-
+			if(restColumns.checked)
 				container.querySelector('.restCheck').classList.remove('hidden');
-			}
 		});
 
-		if(axis.restcolumns) {
+		if(this.restcolumns) {
 
-			this.restCheck(true);
+			this.axes.restCheck(true);
 			axisColumn.classList.add('hidden');
 		}
 
 		container.querySelector('.axis-column').appendChild(axisColumn);
 
-		container.querySelector('select[name=position]').value = axis.position;
-		container.querySelector('select[name=format]').value = axis.format || '';
+		container.querySelector('select[name=position]').value = this.position;
+		container.querySelector('select[name=format]').value = this.format || '';
 
 		container.querySelector('.delete').on('click', () => {
 
 			container.parentElement && container.parentElement.removeChild(container);
-			this.formContainer.axes.delete(container);
+			this.axes.delete(this);
+			this.axes.render();
 		});
 
 		return container;
 	}
 
-	restCheck(action) {
+	get json() {
 
-		for(const rest of this.formContainer.querySelectorAll('.restCheck')) {
-			rest.classList.toggle('hidden', action);
-		}
+		return {
+			position: this.container.querySelector('select[name=position]').value,
+			label: this.container.querySelector('input[name=label]').value,
+			columns: this.container.multiSelectColumns.value.map(c => {return {key: c}}),
+			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
+			format: this.container.querySelector('select[name=format]').value,
+		};
 	}
 }
 
@@ -2476,7 +2594,6 @@ class ReportVisualizationLiveNumberOptions extends ReportVisualizationOptions {
 		}
 
 		return result;
-
 	}
 }
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
@@ -2764,7 +2881,7 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 						<span>Right Offset</span>
 						<input type="number" name="rightOffset">
 					</label>
-					
+
 					<label class="sub-reports">
 						<span>Sub-reports</span>
 					</label>
