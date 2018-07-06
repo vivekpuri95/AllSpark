@@ -935,7 +935,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 										<span>Description</span>
 										<input type="text" name="description">
 									</label>
-									
+
 									<label>
 										<span>Order</span>
 										<input type="number" name="order">
@@ -951,11 +951,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 										<input type="text" name="offset">
 									</label>
 
-									<label>
+									<label class="dataset">
 										<span>Dataset</span>
-										<select name="dataset">
-											<option value="">None</option>
-										</select>
 									</label>
 
 									<label>

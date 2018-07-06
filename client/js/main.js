@@ -348,7 +348,7 @@ class Cookies {
 	 * Gets the value of a cookie with the given name.
 	 *
 	 * @param  string	key	The name of the cookie whose value will be retured.
-	 * @return string	The	value of the cookie, null if not found.
+	 * @return string		The	value of the cookie, null if not found.
 	 */
 	get(key) {
 
@@ -1185,9 +1185,28 @@ class DialogBox {
 	}
 }
 
+/**
+ * A generic implementation for a multiple select dropdown.
+ *
+ * It has the following features.
+ *
+ * - Takes a list of possible values in a specific format [{name, value}]
+ * - Lets users select one or multiple of these values.
+ * - Provides a clean interface with a value getter and setter.
+ * - The input can be disabled as well.
+ */
 class MultiSelect {
 
-	constructor({datalist, multiple = true, expand = false, dropDownPosition = 'bottom'} = {}) {
+	/**
+	 * Create a new instance for the MultiSelect.
+	 *
+	 * @param  Array	options.datalist			The set of possible values for the MultiSelect.
+	 * @param  Boolean	options.multiple			Toggle for allowing the user to select multiple values.
+	 * @param  Boolean	options.expand				Wether the dropdown should float and show when needed or if it should take it's own place and always be visible.
+	 * @param  String	options.dropDownPosition	The position for the dropdown, can be 'top' or 'bottom'.
+	 * @return MultiSelect							The object reference for MultiSelect
+	 */
+	constructor({datalist = [], multiple = true, expand = false, dropDownPosition = 'bottom'} = {}) {
 
 		this.datalist = datalist;
 		this.multiple = multiple;
@@ -1198,6 +1217,11 @@ class MultiSelect {
 		this.inputName = 'multiselect-' + Math.floor(Math.random() * 10000);
 	}
 
+	/**
+	 * The main container of the MultiSelect.
+	 *
+	 * @return HTMLElement	A div that has the entire content.
+	 */
 	get container() {
 
 		if(this.containerElement)
@@ -1220,65 +1244,66 @@ class MultiSelect {
 			</div>
 		`;
 
+		const
+			options = container.querySelector('.options'),
+			search = container.querySelector('input[type=search]');
+
 		if(this.expand) {
 
-			this.container.querySelector('.options').classList.remove('hidden');
-			this.container.classList.add('expanded');
+			options.classList.remove('hidden');
+			container.classList.add('expanded');
 		}
 
-		this.container.classList.add(this.dropDownPosition);
+		container.classList.add(this.dropDownPosition);
 
 		this.render();
 
-		this.setEvents();
+		search.on('click', e => {
+
+			e.stopPropagation();
+
+			if(!container.classList.contains('expanded')) {
+
+				for(const option of document.querySelectorAll('.multi-select .options'))
+					option.classList.add('hidden');
+			}
+
+			options.classList.remove('hidden');
+		});
+
+		search.on('dblclick', () => {
+
+			if(!this.expand)
+				options.classList.add('hidden');
+		});
+
+		search.on('keyup', () => this.recalculate());
+
+		options.on('click', e => e.stopPropagation());
+		options.querySelector('header .all').on('click', () => this.all());
+		options.querySelector('header .clear').on('click', () => this.clear());
+
+		document.body.on('click', () => {
+
+			if(!this.expand)
+				options.classList.add('hidden');
+		});
 
 		return container;
 	}
 
-	setEvents() {
-
-		this.container.querySelector('input[type=search]').on('click', (e) => {
-
-			e.stopPropagation();
-
-			if(!this.container.classList.contains('expanded')) {
-
-				for(const option of document.querySelectorAll('.multi-select .options')) {
-					option.classList.add('hidden');
-				}
-			}
-
-			this.container.querySelector('.options').classList.remove('hidden');
-		});
-
-		this.container.querySelector('input[type=search]').on('dblclick', () => {
-
-		    if(this.expand)
-		        return;
-
-			this.container.querySelector('.options').classList.add('hidden');
-		});
-
-		document.body.on('click', () => {
-
-		    if(this.expand)
-		        return;
-
-			this.container.querySelector('.options').classList.add('hidden');
-		});
-
-		this.container.querySelector('.options').on('click', (e) => e.stopPropagation());
-
-		this.container.querySelector('input[type=search]').on('keyup', () => this.update());
-
-		this.container.querySelector('.options header .all').on('click', () => this.all());
-
-		this.container.querySelector('.options header .clear').on('click', () => this.clear());
-	}
-
-	set value(values) {
+	/**
+	 * Update the value of a MultiSelect.
+	 * This will also take care of updating the UI and fire any change callbacks if needed.
+	 *
+	 * @param  Array	values	The array of new values that must match the datalist.
+	 */
+	set value(values = []) {
 
 		this.selectedValues.clear();
+
+		if(!Array.isArray(values))
+			values = [values];
 
 		for(const value of values) {
 			if(this.datalist && this.datalist.some(r => r.value == value))
@@ -1288,25 +1313,40 @@ class MultiSelect {
 		if(this.changeCallback)
 			this.changeCallback();
 
-		this.update();
+		this.recalculate();
 	}
 
+	/**
+	 * Get the current value of the MultiSelect.
+	 *
+	 * @return Array	An array of 'value' properties of the datalist.
+	 */
 	get value() {
-
 		return Array.from(this.selectedValues);
 	}
 
+	/**
+	 * Change the disabled state of the MultiSelect.
+	 *
+	 * @param  boolean value The new state of the disabled property.
+	 */
 	set disabled(value) {
 
 		this._disabled = value;
 		this.render();
 	}
 
+	/**
+	 * Get the disabled status of the MultiSelect.
+	 */
 	get disabled() {
-
 		return this._disabled;
 	}
 
+	/**
+	 * Render the datalist to the MultiSelect.
+	 * Call this externally if you have just updated the datalist after object construction.
+	 */
 	render() {
 
 		this.container.querySelector('input[type=search]').disabled = this.disabled || false;
@@ -1315,8 +1355,6 @@ class MultiSelect {
 		optionList.textContent = null;
 
 		if(!this.datalist || !this.datalist.length) {
-
-			this.container.querySelector('input[type=search]').disabled = true;
 			optionList.innerHTML = '<div class="NA">No data found... :(</div>';
 			return;
 		}
@@ -1365,12 +1403,11 @@ class MultiSelect {
 				if(this.changeCallback)
 					this.changeCallback();
 
-				this.update();
+				this.recalculate();
 			});
 
-			if(this.disabled) {
-			    input.disabled = true;
-			}
+			if(this.disabled)
+				input.disabled = true;
 
 			label.on('dblclick', e => {
 
@@ -1383,10 +1420,13 @@ class MultiSelect {
 			optionList.appendChild(label);
 		}
 
-		this.update();
+		this.recalculate();
 	}
 
-	update() {
+	/**
+	 * Recalculate shown items from the datalist based on any value in search box and their summary numbers in the footer.
+	 */
+	recalculate() {
 
 		if(!this.containerElement)
 			return;
@@ -1395,7 +1435,7 @@ class MultiSelect {
 			search = this.container.querySelector('input[type=search]'),
 			options = this.container.querySelector('.options');
 
-		if(!options || !this.datalist.length)
+		if(!this.datalist.length)
 			return;
 
 		for(const input of options.querySelectorAll('.list label input')) {
@@ -1433,6 +1473,12 @@ class MultiSelect {
 			this.changeCallback();
 	}
 
+	/**
+	 * Assign a callback to the MultiSelect.
+	 *
+	 * @param  string	event		The type of event. Only 'change' supported for now.
+	 * @param  Function	callback	The callback to call when the selected value in the multiselect changes.
+	 */
 	on(event, callback) {
 
 		if(event != 'change')
@@ -1441,6 +1487,10 @@ class MultiSelect {
 		this.changeCallback = callback;
 	}
 
+	/**
+	 * Select all inputs of the MultiSelect, if applicable.
+	 * May not be applicable if multiple is set to false.
+	 */
 	all() {
 
 		if(!this.multiple || this.disabled || !this.datalist)
@@ -1451,20 +1501,23 @@ class MultiSelect {
 		if(this.changeCallback)
 			this.changeCallback();
 
-		this.update();
+		this.recalculate();
 	}
 
+	/**
+	 * Clear the MultiSelect.
+	 */
 	clear() {
 
-	    if(this.disabled)
-	        return;
+		if(this.disabled)
+			return;
 
 		this.selectedValues.clear();
 
 		if(this.changeCallback)
 			this.changeCallback();
 
-		this.update();
+		this.recalculate();
 	}
 }
 

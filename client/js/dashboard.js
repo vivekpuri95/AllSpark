@@ -151,7 +151,6 @@ Page.class = class Dashboards extends Page {
 
 		await this.renderNav(id);
 		if (loadReport) {
-
 			await this.report(id);
 		}
 
@@ -300,7 +299,7 @@ Page.class = class Dashboards extends Page {
 
 		for (const item of labels)
 			item.classList.remove("selected");
-	};
+	}
 
 	renderNav(id) {
 
@@ -487,11 +486,10 @@ Page.class = class Dashboards extends Page {
 
 		const promises = [];
 
-		for (const filter of report.filters.values()) {
+		for(const filter of report.filters.values()) {
 
-			if (filter.dataset) {
-
-				promises.push(filter.dataset.fetch());
+			if(filter.multiSelect) {
+				promises.push(filter.fetch());
 			}
 		}
 
@@ -660,7 +658,7 @@ class Dashboard {
 			container.classList.toggle('hidden');
 			sideButton.classList.toggle('selected');
 
-			const datasets = page.container.querySelector('#reports .datasets');
+			const datasets = page.container.querySelector('#reports .global-filters');
 
 			datasets.classList.toggle('show');
 
@@ -675,7 +673,7 @@ class Dashboard {
 			container.classList.add('hidden');
 			sideButton.classList.remove('selected');
 
-			const datasets = page.container.querySelector('#reports .datasets');
+			const datasets = page.container.querySelector('#reports .global-filters');
 
 			datasets.classList.toggle('show');
 
@@ -1256,53 +1254,6 @@ class DashboardGlobalFilters extends Map {
 			}
 		}
 
-		// Create a Map of different date filter pairs
-		const filterGroups = new Map;
-
-		// Place the date filters alongside their partners in the map
-		// The goal is to group together the start and end dates of any one filter name
-		for(const filter of globalFilters.values()) {
-
-			if(filter.type != 'date')
-				continue;
-
-			// Remove the 'start', 'end' and spaces to create a name that would (hopefuly) identify the filter pairs.
-			const name = filter.name.replace(/(start|end|\s)/ig, '');
-
-			if(!filterGroups.has(name)) {
-				filterGroups.set(name, [{
-					filter_id: Math.random(),
-					name: filter.name.replace(/(start|end)/ig, '') + 'Date Range',
-					placeholder: name + '_date_range',
-					type: 'daterange',
-				}]);
-			}
-
-			filterGroups.get(name).push(filter);
-		}
-
-		// Go through each filter group and sort by the name to bring start filter before the end.
-		// And also add them to the master global filter list to bring them together.
-		for(let filterGroup of filterGroups.values()) {
-
-			// Make sure the Date Range filter comes first, followed by start date and then finally the end date.
-			filterGroup = filterGroup.sort((a, b) => {
-
-				if(a.name.includes('start'))
-					return -1;
-
-				else if(a.name.includes('Date Range'))
-					return -1;
-
-				else return 1;
-			});
-
-			for(const filter of filterGroup) {
-				globalFilters.delete(filter.placeholder);
-				globalFilters.set(filter.placeholder, filter);
-			}
-		}
-
 		for(const filter of globalFilters.values())
 			this.set(filter.placeholder, new DataSourceFilter(filter));
 	}
@@ -1424,13 +1375,6 @@ class DashboardGlobalFilters extends Map {
 
 		for(const dataset of this.values())
 			dataset.all();
-	}
-}
-
-class DashboardGlobalFilter {
-
-	constructor(filter) {
-		Object.assign(this, filter);
 	}
 }
 

@@ -67,31 +67,16 @@ class DataSource {
 				continue;
 			}
 
-			if(filter.dataset && !filter.dataset.query_id) {
+			if(filter.multiSelect) {
 
-				if(!filter.dataset.value && !filter.dataset.containerElement)
-					filter.dataset.value = await filter.dataset.fetch();
+				await filter.fetch();
 
-				parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.dataset.value[0]);
-
-				continue;
-			}
-
-			if(filter.dataset && filter.dataset.query_id) {
-
-				if(!filter.dataset.value.length && !filter.dataset.containerElement)
-					filter.dataset.value = (await filter.dataset.fetch()).map(v => v.value);
-
-				for(const value of filter.dataset.value || [])
+				for(const value of filter.multiSelect.value) {
 					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, value);
-
-				continue;
+				}
 			}
 
-			if(this.filters.containerElement)
-				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, this.filters.container.elements[filter.placeholder].value);
-			else
-				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
+			else parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
 		}
 
 		const external_parameters = await IndexedDb.instance.get('external_parameters');
@@ -605,11 +590,11 @@ class DataSource {
 			}
 
 			const obj = {
-				columns		 :[...this.columns.entries()].map(x => x[0]),
-				visualization:this.visualizations.selected.type,
-				sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				token		 :await IndexedDb.instance.get('token'),
+				columns :[...this.columns.entries()].map(x => x[0]),
+				visualization: this.visualizations.selected.type,
+				sheet_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				file_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				token :await IndexedDb.instance.get('token'),
 				show_legends: !this.visualizations.selected.options.hideLegend || 0,
 				show_values: this.visualizations.selected.options.showValues || 0,
 				classic_pie: this.visualizations.selected.options.classicPie
@@ -792,7 +777,56 @@ class DataSourceFilters extends Map {
 		if(!this.source.filters || !this.source.filters.length)
 			return;
 
-		for(const filter of this.source.filters)
+		const filters = new Map(this.source.filters.map(f => [f.placeholder, f]));
+
+		// Create a Map of different date filter pairs
+		const filterGroups = new Map;
+
+		// Place the date filters alongside their partners in the map
+		// The goal is to group together the start and end dates of any one filter name
+		for(const filter of filters.values()) {
+
+			if(filter.type != 'date' && !filter.name.toLowerCase().includes('start') && !filter.name.toLowerCase().includes('end'))
+				continue;
+
+			// Remove the 'start', 'end' and spaces to create a name that would (hopefuly) identify the filter pairs.
+			const name = filter.name.replace(/(start|end)/ig, '').trim();
+
+			if(!filterGroups.has(name)) {
+				filterGroups.set(name, [{
+					filter_id: Math.random(),
+					name: filter.name.replace(/(start|end)/ig, '') + ' Date Range',
+					placeholder: name + '_date_range',
+					type: 'daterange',
+				}]);
+			}
+
+			filterGroups.get(name).push(filter);
+		}
+
+		// Go through each filter group and sort by the name to bring start filter before the end.
+		// And also add them to the master global filter list to bring them together.
+		for(let filterGroup of filterGroups.values()) {
+
+			// Make sure the Date Range filter comes first, followed by start date and then finally the end date.
+			filterGroup = filterGroup.sort((a, b) => {
+
+				if(a.name.includes('start'))
+					return -1;
+
+				else if(a.name.includes('Date Range'))
+					return -1;
+
+				else return 1;
+			});
+
+			for(const filter of filterGroup) {
+				filters.delete(filter.placeholder);
+				filters.set(filter.placeholder, filter);
+			}
+		}
+
+		for(const filter of filters.values())
 			this.set(filter.placeholder, new DataSourceFilter(filter, this.source));
 	}
 
@@ -811,10 +845,14 @@ class DataSourceFilters extends Map {
 		container.on('submit', e => {
 			e.preventDefault();
 			this.source.visualizations.selected.load();
+
+			const toggle = this.source.container.querySelector('.filters-toggle.selected');
+
+			if(toggle)
+				toggle.click();
 		});
 
 		container.insertAdjacentHTML('beforeend', `
-
 			<label class="right">
 				<span>&nbsp;</span>
 				<button type="submit">
@@ -835,17 +873,12 @@ class DataSourceFilter {
 
 	constructor(filter, source = null) {
 
-		for(const key in filter)
-			this[key] = filter[key];
+		Object.assign(this, filter);
 
-		this.source = source;
+		this.dataset1 = JSON.stringify(this.dataset);
 
-		if(this.dataset && MetaData.datasets.has(this.dataset)) {
-
-			this.dataset = !MetaData.datasets.get(this.dataset).query_id ? new OtherDataset(this.dataset, this) : new Dataset(this.dataset, this);
-		}
-
-		else this.dataset = null;
+		if(this.dataset && DataSource.list.has(this.dataset))
+			this.multiSelect = new MultiSelect({multiple: this.multiple});
 	}
 
 	get label() {
@@ -870,8 +903,8 @@ class DataSourceFilter {
 
 		input.value = this.value;
 
-		if(this.dataset)
-			input = this.dataset.container;
+		if(this.multiSelect)
+			input = this.multiSelect.container;
 
 		container.innerHTML = `<span>${this.name}<span>`;
 
@@ -882,8 +915,8 @@ class DataSourceFilter {
 
 	get value() {
 
-		if(this.dataset && this.dataset.query_id)
-			return this.dataset;
+		if(this.multiSelect)
+			return this.multiSelect.value;
 
 		if(this.labelContainer)
 			return this.label.querySelector('input').value;
@@ -906,8 +939,8 @@ class DataSourceFilter {
 
 	set value(value) {
 
-		if(this.dataset)
-			return this.dataset.value = value;
+		if(this.multiSelect)
+			return this.multiSelect.value = value;
 
 		this.label.querySelector('input').value = value;
 	}
@@ -916,28 +949,33 @@ class DataSourceFilter {
 
 		await DataSource.load();
 
-		if(!this.query_id || !DataSource.list.has(this.query_id))
+		if(!this.dataset || !this.multiSelect)
 			return [];
 
 		let
 			values,
 			timestamp;
 
-		const report = new DataSource(DataSource.list.get(this.query_id), window.page);
+		const report = new DataSource(DataSource.list.get(this.dataset), window.page);
 
-		if(await IndexedDb.instance.has(`dataset.${this.query_id}`])
-			({values, timestamp} = await IndexedDb.instance.get(`dataset.${this.query_id}`]);
+		if(Array.from(report.filters.values()).some(f => f.dataset == this.dataset))
+			return [];
+
+		if(await IndexedDb.instance.has(`dataset.${this.dataset}`))
+			({values, timestamp} = await IndexedDb.instance.get(`dataset.${this.dataset}`));
 
 		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
 
-			{data: values} = await report.fetch({download: true});
+			({data: values} = await report.fetch({download: true}));
 
-			await IndexedDb.instance.set(`dataset.${this.query_id}`, {values, timestamp: Date.now()});
+			await IndexedDb.instance.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
 		}
 
-		this.datalist = values;
-		this.multiple = this.filter.multiple;
-		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+		if(!this.multiSelect.datalist || !this.multiSelect.datalist.length) {
+			this.multiSelect.datalist = values;
+			this.multiSelect.multiple = this.multiple;
+			this.multiSelect.all();
+		}
 
 		return values;
 	}
