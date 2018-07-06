@@ -1747,9 +1747,17 @@ class ReportVisualizationFilters extends Map {
 		this.container = stage.container.querySelector('.configuration-section #filters');
 		this.stage = stage;
 
-		for(const filter of stage.report.filters) {
+		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
 
-			this.set(filter.filter_id, new ReportVisualizationFilter(filter, stage));
+			for(const filter of this.stage.visualization.options.filters) {
+
+				const [filterObj] = this.stage.report.filters.filter(x => x.filter_id == filter.filter_id);
+
+				if(!filterObj)
+					continue;
+
+				this.set(filter.filter_id, new ReportVisualizationFilter(filterObj, stage));
+			}
 		}
 	}
 
@@ -1757,7 +1765,7 @@ class ReportVisualizationFilters extends Map {
 
 		this.container.textContent = null;
 
-		if(!this.size) {
+		if(!this.stage.report.filters.length) {
 
 			this.container.textContent = 'No filters found!';
 			this.container.classList.add('NA');
@@ -1766,13 +1774,11 @@ class ReportVisualizationFilters extends Map {
 
 		this.container.innerHTML = `
 			<div class="list hidden"></div>
-			<div class="add-filter">
+			<form class="add-filter">
 				<select></select>
-				<button type="button"><i class="fa fa-plus"></i> Add</button>
-			</div>
+				<button type="submit"><i class="fa fa-plus"></i> Add</button>
+			</form>
 		`;
-
-		this.optionValues = new Set();
 
 		const filterOptions = this.container.querySelector('.add-filter > select');
 
@@ -1789,22 +1795,25 @@ class ReportVisualizationFilters extends Map {
 				addFilterContainer.appendChild(visualizationFilter.container);
 
 				addFilterContainer.classList.remove('hidden');
-				this.optionValues.add(filter.filter_id.toString());
 			}
 		}
 
 		this.updateFilterList();
 
-		this.container.querySelector('.add-filter > button').on('click', () => {
+		this.container.querySelector('.add-filter').on('submit', (e) => {
 
-			const addFilterContainer = this.container.querySelector('.list');
+			e.preventDefault();
+
+			const
+				addFilterContainer = this.container.querySelector('.list'),
+				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
+
+			this.set(filter.filter_id, new ReportVisualizationFilter(filter, this.stage));
 
 			addFilterContainer.appendChild(this.get(parseInt(filterOptions.value)).container);
 			addFilterContainer.classList.remove('hidden');
 
-			this.optionValues.add(filterOptions.value.toString());
-
-			if(this.optionValues.size == this.size)
+			if(this.size == this.stage.report.filters.length)
 				this.container.querySelector('.add-filter').classList.add('hidden');
 
 			this.updateFilterList();
@@ -1819,7 +1828,7 @@ class ReportVisualizationFilters extends Map {
 
 		for(const filter of this.stage.report.filters) {
 
-			if(this.optionValues.has(filter.filter_id.toString()))
+			if(this.has(filter.filter_id))
 				continue;
 
 			optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
@@ -1876,9 +1885,9 @@ class ReportVisualizationFilter {
 		container.querySelector('.delete').on('click', () => {
 
 			this.container.parentElement.removeChild(container);
-			this.stage.reportVisualizationFilters.optionValues.delete(this.filter_id.toString());
+			this.stage.reportVisualizationFilters.delete(this.filter_id);
 
-			if(!this.stage.reportVisualizationFilters.optionValues.size)
+			if(!this.stage.reportVisualizationFilters.size)
 				this.stage.reportVisualizationFilters.container.querySelector('.list').classList.add('hidden');
 
 			this.stage.reportVisualizationFilters.container.querySelector('.add-filter').classList.remove('hidden');
