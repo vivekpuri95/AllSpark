@@ -1151,19 +1151,19 @@ class DataSourceColumn {
 		DataSourceColumn.accumulationTypes = [
 			{
 				name: 'Sum',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0)),
+				apply: (rows, column) => Format.number(rows.reduce((c, r) => c + (parseFloat(r.get(column)) || 0), 0)),
 			},
 			{
 				name: 'Average',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0) / rows.length),
+				apply: (rows, column) => Format.number(rows.reduce((c, r) => c + (parseFloat(r.get(column)) || 0), 0) / rows.length),
 			},
 			{
 				name: 'Max',
-				apply: (rows, column) => Format.number(Math.max(...rows.map(r => r.get(column)))),
+				apply: (rows, column) => Format.number(Math.max(...rows.map(r => parseFloat(r.get(column)) || 0))),
 			},
 			{
 				name: 'Min',
-				apply: (rows, column) => Format.number(Math.min(...rows.map(r => r.get(column)))),
+				apply: (rows, column) => Format.number(Math.min(...rows.map(r => parseFloat(r.get(column)) || 0))),
 			},
 			{
 				name: 'Distinct Count',
@@ -2152,7 +2152,7 @@ class DataSourceTransformation {
 				switch(function_) {
 
 					case 'sum':
-						value = values.reduce((sum, value) => sum += parseFloat(value), 0);
+						value = values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
 						break;
 
 					case 'count':
@@ -2172,7 +2172,7 @@ class DataSourceTransformation {
 						break;
 
 					case 'average':
-						value = Math.floor(values.reduce((sum, value) => sum += parseFloat(value), 0) / values.length * 100) / 100;
+						value = Math.floor(values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0) / values.length * 100) / 100;
 						break;
 
 					case 'values':
