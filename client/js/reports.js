@@ -847,7 +847,7 @@ class DataSourceFilter {
 				'column': 'text',
 				'hidden': 'hidden',
 			};
-    
+
 		container.style.order = this.order;
 
 		if (this.type == 'hidden')
@@ -2064,17 +2064,11 @@ class DataSourceTransformation {
 
 	run(response = []) {
 
-		if(!response || !response.length || !this.rows || this.rows.length != 1)
+		if(!response || !response.length)
 			return response;
 
 		const
 			[{column: groupColumn}] = this.columns.length ? this.columns : [{}],
-			[{column: groupRow}] = this.rows;
-
-		if(!groupRow)
-			return response;
-
-		const
 			columns = new Set,
 			rows = new Map;
 
@@ -2088,10 +2082,17 @@ class DataSourceTransformation {
 
 		for(const responseRow of response) {
 
-			if(!rows.get(responseRow[groupRow]))
-				rows.set(responseRow[groupRow], new Map);
+			let key = {};
 
-			const row = rows.get(responseRow[groupRow]);
+			for(const row of this.rows)
+				key[row.column] = responseRow[row.column];
+
+			key = JSON.stringify(key);
+
+			if(!rows.get(key))
+				rows.set(key, new Map);
+
+			const row = rows.get(key);
 
 			if(groupColumn) {
 
@@ -2122,11 +2123,14 @@ class DataSourceTransformation {
 
 		const newResponse = [];
 
-		for(const [groupRowValue, row] of rows) {
+		for(const [key, row] of rows) {
 
-			const newRow = {};
+			const
+				newRow = {},
+				keys = JSON.parse(key);
 
-			newRow[groupRow] = groupRowValue;
+			for(const key in keys)
+				newRow[key] = keys[key];
 
 			for(const [groupColumnValue, values] of row) {
 
