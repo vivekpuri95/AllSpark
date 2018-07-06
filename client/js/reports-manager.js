@@ -1764,40 +1764,60 @@ class ReportVisualizationFilters extends Map {
 		}
 
 		this.container.innerHTML = `
+			<div class="filter-value hidden"></div>
 			<div>
-				<select class="filter-options">
-					<option value="-1">None</option>
-				</select>
+				<select class="filter-options"></select>
 				<button type="button" class="add-filter"><i class="fa fa-plus"></i> Add</button>
 			</div>
-			<div class="filter-value"></div>
 		`;
 
+		this.optionValues = new Set();
+
+		const filterOptions = this.container.querySelector('.filter-options');
+
+
 		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
+
+			const addFilterContainer = this.container.querySelector('.filter-value');
 
 			for(const filter of this.stage.visualization.options.filters) {
 
 				const visualizationFilter = this.get(filter.filter_id);
 
 				visualizationFilter.filter_value = filter.default_value;
+				addFilterContainer.appendChild(visualizationFilter.container);
 
-				this.container.querySelector('.filter-value').appendChild(visualizationFilter.container);
+				addFilterContainer.classList.remove('hidden');
+				this.optionValues.add(filter.filter_id);
 			}
 		}
 
+		this.updateFilterList();
 
-		const filterOptions = this.container.querySelector('.filter-options');
 		this.container.querySelector('.add-filter').on('click', () => {
 
-			if(filterOptions.value == -1)
-				return;
+			const addFilterContainer = this.container.querySelector('.filter-value');
 
-			this.container.querySelector('.filter-value').appendChild(this.get(parseInt(filterOptions.value)).container);
+			addFilterContainer.appendChild(this.get(parseInt(filterOptions.value)).container);
+			addFilterContainer.classList.remove('hidden');
+
+			this.optionValues.add(filterOptions.value);
+			this.updateFilterList();
 		});
+	}
+
+	updateFilterList() {
+
+		const optionsList = this.container.querySelector('.filter-options');
+
+		optionsList.textContent = null;
 
 		for(const filter of this.values()) {
 
-			filterOptions.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
+			if(this.optionValues.has(filter.filter_id.toString()))
+				continue;
+
+			optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
 		}
 
 	}
@@ -1832,18 +1852,31 @@ class ReportVisualizationFilter {
 		if (this.containerElement)
 			return this.containerElement;
 
-		const container = this.containerElement = document.createElement('label');
+		const container = this.containerElement = document.createElement('fieldset');
+
+		container.classList.add('filters');
 
 		container.innerHTML = `
-			<span>${this.name}</span>
-			<input type="text" placeholder="${this.default_value}" value="${this.filter_value || ''}">
-			<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+			<legend>${this.name}</legend>
+			<label>
+				<span>Default Value</span>
+				<div>
+					<input type="text" placeholder="${this.default_value}" value="${this.filter_value || ''}">
+					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+				</div>
+			</label>
 		`;
 
 		container.querySelector('.delete').on('click', () => {
 
 			this.container.parentElement.removeChild(container);
+			this.stage.reportVisualizationFilters.optionValues.delete(this.filter_id.toString());
+
+			if(!this.stage.reportVisualizationFilters.optionValues.size)
+				this.stage.reportVisualizationFilters.container.querySelector('.filter-value').classList.add('hidden');
+
 			this.containerElement = null;
+			this.stage.reportVisualizationFilters.updateFilterList();
 		});
 
 		return container;
