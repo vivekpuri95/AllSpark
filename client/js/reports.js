@@ -839,8 +839,14 @@ class DataSourceFilters extends Map {
 
 		container.classList.add('toolbar', 'form', 'filters');
 
-		for(const filter of this.values())
+		for(const filter of this.values()) {
+
+			filter.label.on('click', e => e.stopPropagation());
+
 			container.appendChild(filter.label);
+		}
+
+		container.on('click', () => this.source.container.querySelector('.filters-toggle').click());
 
 		container.on('submit', e => {
 			e.preventDefault();
