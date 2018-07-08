@@ -263,6 +263,9 @@ main #reports > .global-filters.top {
 	main #reports > .global-filters .no-results {
 		text-align: center;
 	}
+	main #reports > .global-filters.right > label {
+		max-width: initial;
+	}
 	main #reports > .global-filters .apply {
 		background: var(--color-accent);
 		color: var(--color-accent-text);

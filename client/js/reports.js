@@ -789,19 +789,23 @@ class DataSourceFilters extends Map {
 			if(filter.type != 'date' && !filter.name.toLowerCase().includes('start') && !filter.name.toLowerCase().includes('end'))
 				continue;
 
-			// Remove the 'start', 'end' and spaces to create a name that would (hopefuly) identify the filter pairs.
-			const name = filter.name.replace(/(start|end)/ig, '').trim();
+			// Remove the 'start', 'end', 'date' and spaces to create a name that would (hopefuly) identify the filter pairs.
+			const name = filter.name.replace(/(start|end|date)/ig, '').trim();
 
 			if(!filterGroups.has(name)) {
 				filterGroups.set(name, [{
 					filter_id: Math.random(),
-					name: filter.name.replace(/(start|end)/ig, '') + ' Date Range',
+					name: filter.name.replace(/(start|end|date)/ig, '') + ' Date Range',
 					placeholder: name + '_date_range',
 					type: 'daterange',
+					companions: [],
 				}]);
 			}
 
-			filterGroups.get(name).push(filter);
+			const group = filterGroups.get(name);
+
+			group[0].companions.push(filter);
+			group.push(filter);
 		}
 
 		// Go through each filter group and sort by the name to bring start filter before the end.
@@ -810,14 +814,7 @@ class DataSourceFilters extends Map {
 
 			// Make sure the Date Range filter comes first, followed by start date and then finally the end date.
 			filterGroup = filterGroup.sort((a, b) => {
-
-				if(a.name.includes('start'))
-					return -1;
-
-				else if(a.name.includes('Date Range'))
-					return -1;
-
-				else return 1;
+				return a.name.toLowerCase().includes('start') || a.type == 'daterange' ? -1 : 1;
 			});
 
 			for(const filter of filterGroup) {
@@ -827,7 +824,7 @@ class DataSourceFilters extends Map {
 		}
 
 		for(const filter of filters.values())
-			this.set(filter.placeholder, new DataSourceFilter(filter, this.source));
+			this.set(filter.placeholder, new DataSourceFilter(filter, this));
 	}
 
 	get container() {
@@ -846,8 +843,6 @@ class DataSourceFilters extends Map {
 			container.appendChild(filter.label);
 		}
 
-		container.on('click', () => this.source.container.querySelector('.filters-toggle').click());
-
 		container.on('submit', e => {
 			e.preventDefault();
 			this.source.visualizations.selected.load();
@@ -859,13 +854,16 @@ class DataSourceFilters extends Map {
 		});
 
 		container.insertAdjacentHTML('beforeend', `
-			<label class="right">
+			<label>
 				<span>&nbsp;</span>
 				<button type="submit">
 					<i class="fas fa-paper-plane"></i> Apply
 				</button>
 			</label>
 		`);
+
+		container.on('click', () => this.source.container.querySelector('.filters-toggle').click());
+		container.querySelector('button[type=submit]').on('click', e => e.stopPropagation());
 
 		return container;
 	}
@@ -877,14 +875,52 @@ class DataSourceFilter {
 		DataSourceFilter.placeholderPrefix = 'param_';
 	}
 
-	constructor(filter, source = null) {
+	constructor(filter, filters = null) {
 
 		Object.assign(this, filter);
 
-		this.dataset1 = JSON.stringify(this.dataset);
+		this.filters = filters;
 
 		if(this.dataset && DataSource.list.has(this.dataset))
 			this.multiSelect = new MultiSelect({multiple: this.multiple});
+
+		if(this.type != 'daterange')
+			return;
+
+		this.dateRanges = [
+			{
+				start: 0,
+				end: 0,
+				name: 'Today',
+			},
+			{
+				start: -1,
+				end: -1,
+				name: 'Yesterday',
+			},
+			{
+				start: -7,
+				end: 0,
+				name: 'Last 7 Days',
+			},
+			{
+				start: -30,
+				end: 0,
+				name: 'Last 30 Days',
+			},
+			{
+				start: -365,
+				end: 0,
+				name: 'Last Year',
+			},
+		];
+
+		if(account.settings.has('global_filters_date_ranges'))
+			this.dateRanges = account.settings.has('global_filters_date_ranges');
+
+		this.dateRanges.push({name: 'Custom'});
+
+		this.value = 0;
 	}
 
 	get label() {
@@ -896,27 +932,48 @@ class DataSourceFilter {
 
 		container.style.order = this.order;
 
-		if (this.type == 'hidden')
+		if(!MetaData.filterTypes.has(this.type))
+			return container;
+
+		if(this.type == 'hidden')
 			container.classList.add('hidden');
 
-		let input = document.createElement('input');
-
-		input.type = MetaData.filterTypes.get(this.type).input_type;
-		input.name = this.placeholder;
-
-		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
-			input.max = new Date().toISOString().substring(0, 10);
-
-		input.value = this.value;
+		let input;
 
 		if(this.multiSelect)
 			input = this.multiSelect.container;
 
-		container.innerHTML = `<span>${this.name}<span>`;
+		else if(this.type == 'daterange') {
 
+			input = document.createElement('select');
+
+			for(const [index, range] of this.dateRanges.entries())
+				input.insertAdjacentHTML('beforeend', `<option value="${index}">${range.name}</option>`);
+
+			input.value = this.value;
+
+			input.on('change', () => this.dateRangeUpdate());
+		}
+
+		else {
+
+			input = document.createElement('input');
+
+			input.type = MetaData.filterTypes.get(this.type).input_type;
+			input.name = this.placeholder;
+
+			input.value = this.value;
+		}
+
+		container.innerHTML = `<span>${this.name}<span>`;
 		container.appendChild(input);
 
-		return this.labelContainer = container;
+		// Timing of this is critical
+		this.labelContainer = container;
+
+		this.dateRangeUpdate();
+
+		return container;
 	}
 
 	get value() {
@@ -925,7 +982,7 @@ class DataSourceFilter {
 			return this.multiSelect.value;
 
 		if(this.labelContainer)
-			return this.label.querySelector('input').value;
+			return this.label.querySelector(this.type == 'daterange' ? 'select' : 'input').value;
 
 		let value = this.default_value;
 
@@ -948,15 +1005,24 @@ class DataSourceFilter {
 		if(this.multiSelect)
 			return this.multiSelect.value = value;
 
+		if(!this.labelContainer)
+			return this.default_value = value;
+
+		if(this.type == 'daterange') {
+			this.label.querySelector('select').value = value;
+			this.dateRangeUpdate();
+			return;
+		}
+
 		this.label.querySelector('input').value = value;
 	}
 
 	async fetch() {
 
-		await DataSource.load();
-
 		if(!this.dataset || !this.multiSelect)
 			return [];
+
+		await DataSource.load();
 
 		let
 			values,
@@ -984,6 +1050,33 @@ class DataSourceFilter {
 		}
 
 		return values;
+	}
+
+	dateRangeUpdate() {
+
+		if(this.type != 'daterange')
+			return;
+
+		const
+			select = this.label.querySelector('select'),
+			range = this.dateRanges[select.value];
+
+		// Show / hide other companion inputs depending on if custom was picked.
+		for(let companion of this.companions || []) {
+
+			companion = this.filters.get(companion.placeholder);
+
+			// If the option was the last one. We don't check the name because
+			// the user could have give a custom name in account settings.
+			companion.label.classList.toggle('hidden', select.value != this.dateRanges.length - 1);
+
+			const date = companion.name.toLowerCase().includes('start') ? range.start : range.end;
+
+			if(date === undefined)
+				continue;
+
+			companion.value = new Date(Date.now() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		}
 	}
 }
 
@@ -1597,7 +1690,7 @@ class DataSourceColumn {
 		dialogue.container.classList.add('data-source-column');
 		dialogue.heading = 'Column Properties';
 
-		const sortedReports = Array.from(DataSource.list.values()).sort(function(a, b) {
+		const sortedReports = Array.from(DataSource.list.values()).sort((a, b) => {
 
 			const
 				nameA = a.name.toUpperCase(),
@@ -2518,9 +2611,11 @@ class Visualization {
 
 		this.source = source;
 
-		try {
-			this.options = JSON.parse(this.options);
-		} catch(e) {}
+		if(this.options && typeof this.options == 'string') {
+			try {
+				this.options = JSON.parse(this.options);
+			} catch(e) {}
+		}
 
 		for(const key in this.options)
 			this[key] = this.options[key];

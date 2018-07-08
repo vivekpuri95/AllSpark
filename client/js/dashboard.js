@@ -1255,7 +1255,7 @@ class DashboardGlobalFilters extends Map {
 		}
 
 		for(const filter of globalFilters.values())
-			this.set(filter.placeholder, new DataSourceFilter(filter));
+			this.set(filter.placeholder, new DataSourceFilter(filter, this));
 	}
 
 	async load() {
@@ -1311,15 +1311,17 @@ class DashboardGlobalFilters extends Map {
 
 		searchInput.on('keyup', () => {
 
-			for(const dataset of this.values()) {
+			for(const filter of this.values()) {
 
-				dataset.container.parentElement.classList.remove('hidden');
+				filter.label.classList.remove('hidden');
 
-				if(!dataset.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
-					dataset.container.parentElement.classList.add('hidden');
+				if(!filter.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
+					filter.label.classList.add('hidden');
 			}
 
-			container.querySelector('.no-results').classList.toggle('hidden', container.querySelector('.dataset-container:not(.hidden)'));
+			const shown = container.querySelector(':scope > label:not(.hidden)');
+
+			container.querySelector('.no-results').classList.toggle('hidden', shown);
 		});
 
 		container.insertAdjacentHTML('beforeend', `
@@ -1375,206 +1377,6 @@ class DashboardGlobalFilters extends Map {
 
 		for(const dataset of this.values())
 			dataset.all();
-	}
-}
-
-class DashboardDatasets_ extends Map {
-
-	constructor(dashboard) {
-
-		super();
-
-		this.dashboard = dashboard;
-		this.page = this.dashboard.page;
-		this.container = this.page.container.querySelector('#reports .datasets');
-
-		this.container.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
-
-		const datasets = {};
-
-		for (const visualization of this.dashboard.visualizationList) {
-
-			for (const filter of visualization.filters.values()) {
-
-				if (!filter.dataset)
-					continue;
-
-				if (!datasets[filter.dataset.id]) {
-					datasets[filter.dataset.id] = {
-						id: filter.dataset.id,
-						multiple: true,
-						placeholder: `dataset-${filter.dataset.id}`,
-						query_id: filter.dataset.query_id,
-						default_value: filter.default_value,
-					}
-				}
-
-				if (!filter.multiple)
-					datasets[filter.dataset.id].multiple = false;
-			}
-		}
-
-		for (const dataset of Object.values(datasets)) {
-
-			if(!dataset.query_id) {
-
-				this.set(dataset.id, new OtherDataset(dataset.id, dataset))
-				continue;
-			}
-
-			this.set(dataset.id, new Dataset(dataset.id, dataset));
-		}
-	}
-
-	async load() {
-
-		await this.fetch();
-
-		await this.render();
-	}
-
-	async fetch() {
-
-		const promises = [];
-
-		for (const dataset of this.values())
-			promises.push(dataset.fetch());
-
-		await Promise.all(promises);
-	}
-
-	async render() {
-
-		const container = this.container;
-
-		container.textContent = null;
-
-		container.classList.remove('show');
-
-		if (!this.size)
-			return;
-
-		container.innerHTML = `
-			<div class="head heading">
-				<i class="fas fa-filter"></i>
-				<input type="search" placeholder="Global Filters" class="global-filter-search">
-			</div>
-			<div class="head">
-				<label><input type="checkbox" checked> Select All</label>
-				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
-			</div>
-			<div class="NA no-results hidden">No filters found! :(</div>
-		`;
-
-		const datasets = Array.from(this.values()).sort((a, b) => {
-
-			if (!a.order)
-				return 1;
-
-			if (!b.order)
-				return -1;
-
-			return a.order - b.order;
-		});
-
-		for (const dataset of datasets) {
-
-			const
-				label = document.createElement('label'),
-				input = document.createElement('select');
-
-			label.classList.add('dataset-container');
-
-			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
-
-			label.appendChild(dataset.container);
-
-			if(Dashboard.selectedValues.has(dataset.id))
-				dataset.value = Dashboard.selectedValues.get(dataset.id);
-
-			container.appendChild(label);
-		}
-
-		const searchInput = container.querySelector('.global-filter-search');
-
-		searchInput.on('keyup', () => {
-
-			for(const dataset of this.values()) {
-
-				dataset.container.parentElement.classList.remove('hidden');
-
-				if(!dataset.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
-					dataset.container.parentElement.classList.add('hidden');
-			}
-
-			container.querySelector('.no-results').classList.toggle('hidden', container.querySelector('.dataset-container:not(.hidden)'));
-		});
-
-		container.insertAdjacentHTML('beforeend', `
-			<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
-		`);
-
-		container.querySelector('button.apply').on('click', () => this.apply());
-		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
-
-		const input = container.querySelector('.head input[type=checkbox]');
-
-		input.on('change', () => {
-
-			input.checked ? this.all() : this.clear();
-		});
-	}
-
-	async apply(options = {}) {
-
-		for (const report of this.dashboard.visualizationList) {
-
-			let found = false;
-
-			for (const filter of report.filters.values()) {
-
-				if (!filter.dataset || !this.has(filter.dataset.id))
-					continue;
-
-				await filter.dataset.fetch();
-
-				filter.dataset.value = this.get(filter.dataset.id).value;
-
-				found = true;
-			}
-
-			if(found && this.page.loadedVisualizations.has(report))
-				report.visualizations.selected.load(options);
-
-			report.container.style.opacity = found ? 1 : 0.4;
-		}
-
-		Dashboard.selectedValues.clear();
-
-		for(const [id, dataset] of this)
-			Dashboard.selectedValues.set(id, dataset.value);
-	}
-
-	clear() {
-
-		for (const dataset of this.values()) {
-
-			if(dataset instanceof OtherDataset)
-				continue;
-
-			dataset.clear();
-		}
-	}
-
-	all() {
-
-		for (const dataset of this.values()) {
-
-			if(dataset instanceof OtherDataset)
-				continue;
-
-			dataset.all();
-		}
 	}
 }
 

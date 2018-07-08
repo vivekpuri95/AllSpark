@@ -38,30 +38,34 @@ exports.saveQueryResultTable = "tb_save_history";
 exports.filterTypes = [
 	{
 		name: 'Number',
-		input_type: 'number'
+		input_type: 'number',
 	},
 	{
 		name: 'Text',
-		input_type: 'text'
+		input_type: 'text',
 	},
 	{
 		name: 'Date',
-		input_type: 'date'
+		input_type: 'date',
 	},
 	{
 		name: 'Month',
-		input_type: 'month'
+		input_type: 'month',
 	},
 	{
 		name: 'Hidden',
-		input_type: 'hidden'
+		input_type: 'hidden',
 	},
 	{
 		name: 'Column',
-		input_type: 'text'
+		input_type: 'text',
 	},
 	{
 		name: 'DateTime',
-		input_type: 'datetime-local'
-	}
+		input_type: 'datetime-local',
+	},
+	{
+		name: 'DateRange',
+		input_type: '',
+	},
 ];

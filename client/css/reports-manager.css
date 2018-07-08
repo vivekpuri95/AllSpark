@@ -404,20 +404,29 @@ main.preview-left #stages {
 		margin-left: auto;
 	}
 	#stage-configure-visualization h3 {
+		color: #444;
 		border-bottom: 1px dashed #999;
 		cursor: pointer;
 		position: sticky;
 		top: 28px;
 		padding: var(--gap);
-		margin: calc(var(--gap) * 2) 0;
+		margin: var(--gap) 0 calc(var(--gap) * 2);
 		display: flex;
 		align-items: center;
-		font-size: 95%;
-		background: #fff;
+		font-size: 96%;
 		z-index: 1;
+		transition: color var(--transition-duration);
+	}
+	#stage-configure-visualization h3:hover {
+		color: inherit;
 	}
 		#stage-configure-visualization h3 > svg {
 			margin-right: var(--gap);
+			width: 10px;
+			transition: margin-right var(--transition-duration);
+		}
+		#stage-configure-visualization h3:hover > svg {
+			margin-right: calc(var(--gap) * 2);
 		}
 	#stage-configure-visualization h4 {
 		margin: 0 0 calc(var(--gap) * 2)
@@ -446,6 +455,10 @@ main.preview-left #stages {
 						padding: 3px 5px;
 					}
 	#stage-configure-visualization #configure-visualization-form {
+		display: flex;
+		flex-direction: column;
+	}
+	#stage-configure-visualization .liner-visualization-options {
 		display: flex;
 		flex-direction: column;
 	}
