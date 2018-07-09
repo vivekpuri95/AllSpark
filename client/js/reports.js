@@ -995,7 +995,12 @@ class DataSourceFilter {
 		if(this.labelContainer)
 			return this.labelContainer;
 
+<<<<<<< HEAD
 		const container = document.createElement('label');
+=======
+    const
+			container = document.createElement('label');
+>>>>>>> UI done
 
 		container.style.order = this.order;
 
@@ -1609,13 +1614,11 @@ class DataSourceColumn {
 				<input type="text" name="name" value="${this.name}" >
 			</label>
 
-			<label class="show search-type">
+			<div class="show searchContent">
 				<span>Search</span>
-				<div class="category-group search">
-					<select name="searchType"></select>
-					<input type="search" name="searchQuery">
-				</div>
-			</label>
+			</div>
+
+			<button class="show add-new-search"><i class="fa fa-plus"></i>Add New Search</button>
 
 			<label class="show accumulation-type">
 				<span>Accumulation</span>
@@ -1732,8 +1735,13 @@ class DataSourceColumn {
 			}
 		}
 
-		for(const [i, type] of DataSourceColumn.searchTypes.entries())
-			form.searchType.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		form.querySelector('.add-new-search').on('click', e => {
+
+			e.stopPropagation();
+			e.preventDefault();
+
+			form.querySelector('.searchContent').appendChild(this.searchBox());
+		});
 
 		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
 
@@ -1767,6 +1775,23 @@ class DataSourceColumn {
 		form.querySelector('.save').on('click', () => this.save());
 
 		return form;
+	}
+
+	searchBox(value = '') {
+		debugger;
+		const label = this.searchElement = document.createElement('label');
+		label.classList.add('search-type');
+		label.innerHTML = `
+			<div class="category-group search">
+				<select name="searchType"></select>
+				<input type="search" name="searchQuery">
+			</div>
+		`;
+
+		for(const [i, type] of DataSourceColumn.searchTypes.entries())
+			label.querySelector('select[name="searchType"]').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+
+		return label;
 	}
 
 	get dialogueBox() {

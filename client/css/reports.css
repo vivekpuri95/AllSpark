@@ -667,27 +667,27 @@ main .data-source.flush {
 			.visualization.table thead tr th.heading > div {
 				display: flex;
 			}
-			.visualization.table thead tr th.heading .compact > *:not(.show) {
+			.visualization.table thead .heading .compact > *:not(.show) {
 				display: none !important;
 			}
-			.visualization.table thead tr th.heading .filter-popup {
+			.visualization.table thead .heading .filter-popup {
 				width: 15px;
 				font-size: 70%;
 				margin-right: 5px;
 			}
-				.visualization.table thead tr th.heading .filter-popup > span {
+				.visualization.table thead .heading .filter-popup > span {
 					transform: rotate(45deg);
 					opacity: 0;
 					transition: opacity var(--transition-duration);
 				}
-				.visualization.table thead tr th.heading:hover .filter-popup > span,
-				.visualization.table thead tr th.heading .filter-popup > span.open {
+				.visualization.table thead .heading:hover .filter-popup > span,
+				.visualization.table thead .heading .filter-popup > span.open {
 					opacity: 1;
 				}
-				.visualization.table thead tr th.heading.has-filter {
+				.visualization.table thead .heading.has-filter {
 					box-shadow: inset 0px -4px 0px 0px var(--color-accent);
 				}
-				.visualization.table thead tr th.heading .popup-dropdown {
+				.visualization.table thead .heading .popup-dropdown {
 					position: absolute;
 					top: 100%;
 					left: 0;
@@ -698,16 +698,27 @@ main .data-source.flush {
 					background: #fff;
 					box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 				}
-				.visualization.table thead tr th.heading .popup-dropdown .form.compact {
+				.visualization.table thead .heading .popup-dropdown .form.compact {
 						padding: 0;
 						grid-gap: calc(var(--gap) * 2);
 						box-shadow: none;
 				}
-					.visualization.table thead tr th.heading .popup-dropdown .compact label {
+					.visualization.table thead .heading .popup-dropdown .compact .searchContent {
+						display: grid;
+						grid-gap: calc(var(--gap) * 2);
+					}
+						.visualization.table thead .heading .searchContent span {
+							margin-left: calc(var(--gap) * 2);
+						}
+					.visualization.table thead .heading .popup-dropdown .compact button.add-new-search {
+						margin-left: calc(var(--gap) * 2);
+						width: 70%;
+					}
+					.visualization.table thead .heading .popup-dropdown .compact label {
 						max-width: none;
 						margin: 0 calc(var(--gap) * 2);
 					}
-						.visualization.table thead tr th.heading .popup-dropdown .compact label .category-group {
+						.visualization.table thead .heading .popup-dropdown .compact label .category-group {
 							display: grid;
 							grid-template-columns: 1fr 1fr;
 							grid-gap: calc(var(--gap) * 2);
@@ -1042,6 +1053,15 @@ main .dialog-box-blanket.data-source-column form .parameter-list {
 main .dialog-box-blanket.data-source-column .form {
 	padding: calc(var(--gap) * 2) 0 0;
 }
+	main .dialog-box-blanket.data-source-column .form .searchContent {
+		display: grid;
+		grid-gap: calc(var(--gap) * 2);
+		margin-left: calc(var(--gap) * 2);
+	}
+	main .dialog-box-blanket.data-source-column .form .add-new-search {
+		margin-left: calc(var(--gap) * 2);
+		width: 20%;
+	}
 	main .dialog-box-blanket.data-source-column .form > label {
 		margin-left: calc(var(--gap) * 2);
 	}
