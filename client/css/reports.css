@@ -381,12 +381,13 @@ main .data-source.flush {
 		filter: blur(2px);
 	}
 	main .data-source > .columns.over-flow::after {
-		background: -webkit-linear-gradient(left, #eee, #ccc);
+		background: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.2));
 		content: "\00a0\00a0\00a0\00a0\00a0";
-		position: sticky;
-		right: -5px;
 		margin-left: auto;
-		width: 50px;
+		width: 10px;
+		right: 0;
+		height: inherit;
+		position: absolute;
 	}
 	main .data-source > .columns::-webkit-scrollbar {
 		display: none;
