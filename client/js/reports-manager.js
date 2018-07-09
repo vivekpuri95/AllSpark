@@ -1664,6 +1664,9 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization.options.transformations)
 			this.visualization.options.transformations = [];
 
+		if(!this.visualization.options.axes)
+			this.visualization.options.axes = [];
+
 		this.transformations = new ReportTransformations(this.visualization, this);
 		this.reportVisualizationFilters =  new ReportVisualizationFilters(this);
 
