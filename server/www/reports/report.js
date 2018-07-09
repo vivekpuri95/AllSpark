@@ -27,16 +27,16 @@ exports.list = class extends API {
 		if(this.request.body.search) {
 			query = query.concat(`
 				AND (
-					query_id LIKE '%${this.request.body.search}%'
-					OR name LIKE '%${this.request.body.search}%'
-					OR tags LIKE '%${this.request.body.search}%'
+					query_id LIKE ?
+					OR name LIKE ?
+					OR tags LIKE ?
 				)
 				LIMIT 10
 			`);
 		}
 
 		const results = await Promise.all([
-			this.mysql.query(query),
+			this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]),
 			this.mysql.query('SELECT * FROM tb_query_filters'),
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 		]);

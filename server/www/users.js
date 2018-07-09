@@ -105,19 +105,19 @@ exports.list = class extends API {
 			if(this.request.body.search) {
 				user_query = user_query.concat(`
 					AND  (
-						user_id LIKE '%${this.request.body.search}%'
-						OR phone LIKE '%${this.request.body.search}%'
-						OR email LIKE '%${this.request.body.search}%'
-						OR first_name LIKE '%${this.request.body.search}%'
-						OR middle_name LIKE '%${this.request.body.search}%'
-						OR last_name LIKE '%${this.request.body.search}%'
+						user_id LIKE ?
+						OR phone LIKE ?
+						OR email LIKE ?
+						OR first_name LIKE ?
+						OR middle_name LIKE ?
+						OR last_name LIKE ?
 					)
 					LIMIT 10
 				`);
 			}
 
 			results = await Promise.all([
-				this.mysql.query(user_query),
+				this.mysql.query(user_query, [this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search]),
 				this.mysql.query(role_query),
 				this.mysql.query(prv_query)
 			]);
