@@ -421,25 +421,29 @@ main.preview-left #stages {
 	#stage-configure-visualization h4 {
 		margin: 0 0 calc(var(--gap) * 2)
 	}
-	#stage-configure-visualization .axes {
+	#stage-configure-visualization .axis-container {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
 	}
-		#stage-configure-visualization .subform {
-			border-bottom: 1px solid #ccc;
+		#stage-configure-visualization .axes {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
-			padding: calc(var(--gap) * 2);
-			border: 1px solid #ccc;
-			background: #eef;
 		}
-			#stage-configure-visualization .subform select[multiple] {
-				height: 75px;
-				padding: 0
+			#stage-configure-visualization .subform {
+				border-bottom: 1px solid #ccc;
+				display: grid;
+				grid-gap: calc(var(--gap) * 2);
+				padding: calc(var(--gap) * 2);
+				border: 1px solid #ccc;
+				background: #eef;
 			}
-				#stage-configure-visualization .subform select[multiple] option {
-					padding: 3px 5px;
+				#stage-configure-visualization .subform select[multiple] {
+					height: 75px;
+					padding: 0
 				}
+					#stage-configure-visualization .subform select[multiple] option {
+						padding: 3px 5px;
+					}
 	#stage-configure-visualization #configure-visualization-form {
 		display: flex;
 		flex-direction: column;
