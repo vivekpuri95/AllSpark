@@ -766,8 +766,22 @@ class DataSource {
 	}
 }
 
+/**
+ * A group of DataSource filters.
+ * This class provides the container and a submit mechanism to load the report.
+ */
 class DataSourceFilters extends Map {
 
+	/**
+	 * Generate a list of DataSourceFilter objects in the ideal order. This does a few more things.
+	 *
+	 * - Group the date ranges together.
+	 * - Create a new date range filter to accompany any date range pairs.
+	 * - Generate the DataSourceFilter objects and attach them to the class with placeholder as the key.
+	 *
+	 * @param Array			filters	A list of filters and their properties.
+	 * @param DataSource	source	The owner DataSource object. Optional because we can have a filter list independently from the source.
+	 */
 	constructor(filters, source = null) {
 
 		super();
@@ -830,6 +844,12 @@ class DataSourceFilters extends Map {
 			this.set(filter.placeholder, new DataSourceFilter(filter, this));
 	}
 
+	/**
+	 * The main container of the filters.
+	 * This is a lazy loaded list of filter labels and the submit button.
+	 *
+	 * @return HTMLElement
+	 */
 	get container() {
 
 		if(this.containerElement)
@@ -868,6 +888,10 @@ class DataSourceFilters extends Map {
 		return container;
 	}
 
+	/**
+	 * Submit the filters values and load the report with the new data.
+	 * This only works whent the owner DataSorce object is passed in constructor.
+	 */
 	async apply() {
 
 		if(!this.source)
@@ -882,26 +906,26 @@ class DataSourceFilters extends Map {
 	}
 }
 
+/**
+ * The class representing one single DataSource filter. It has a few responsibilities.
+ *
+ * - Initialize the label container.
+ * - Act as a black box when dealing with fitler value. Lets the user set or get the currnet value of the
+ * 	 filter without worrying about the specifics like filter type, default value, current container initialization state etc.
+ * - Fetch the report data when the filter as a dataset report attached to it.
+ * - Handle special filter types like daterange that affect other filters.
+ */
 class DataSourceFilter {
 
+	/**
+	 * Set up some constant properties.
+	 */
 	static setup() {
+
 		DataSourceFilter.placeholderPrefix = 'param_';
 		DataSourceFilter.timeout = 5 * 60 * 1000;
-	}
 
-	constructor(filter, filters = null) {
-
-		Object.assign(this, filter);
-
-		this.filters = filters;
-
-		if(this.dataset && DataSource.list.has(this.dataset))
-			this.multiSelect = new MultiSelect({multiple: this.multiple});
-
-		if(this.type != 'daterange')
-			return;
-
-		this.dateRanges = [
+		DataSourceFilter.dateRanges = [
 			{
 				start: 0,
 				end: 0,
@@ -928,6 +952,21 @@ class DataSourceFilter {
 				name: 'Last Year',
 			},
 		];
+	}
+
+	constructor(filter, filters = null) {
+
+		Object.assign(this, filter);
+
+		this.filters = filters;
+
+		if(this.dataset && DataSource.list.has(this.dataset))
+			this.multiSelect = new MultiSelect({multiple: this.multiple});
+
+		if(this.type != 'daterange')
+			return;
+
+		this.dateRanges = DataSourceFilter.dateRanges;
 
 		if(account.settings.has('global_filters_date_ranges'))
 			this.dateRanges = account.settings.has('global_filters_date_ranges');

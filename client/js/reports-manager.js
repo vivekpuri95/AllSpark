@@ -1286,6 +1286,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		select.textContent = null;
 
 		for (const type of MetaData.filterTypes.values()) {
+
+			if(!type.input_type)
+				continue;
+
 			select.insertAdjacentHTML('beforeend', `
 				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
@@ -1337,7 +1341,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		select.textContent = null;
 
-		for (const type of MetaData.filterTypes.values()) {
+		for(const type of MetaData.filterTypes.values()) {
+
+			if(!type.input_type)
+				continue;
+
 			select.insertAdjacentHTML('beforeend', `
 				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
