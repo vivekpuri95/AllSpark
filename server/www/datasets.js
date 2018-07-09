@@ -25,14 +25,14 @@ exports.list = class extends API {
 		if(this.request.body.search) {
 			query = query.concat(`
 				AND (
-					id LIKE '%${this.request.body.search}%'
-					OR name LIKE '%${this.request.body.search}%'
+					id LIKE ?
+					OR name LIKE ?
 				)
 				LIMIT 10
 			`);
 		}
 
-		const result = await this.mysql.query(query);
+		const result = await this.mysql.query(query, [this.request.body.search, this.request.body.search]);
 
 		if(this.request.body.search) {
 

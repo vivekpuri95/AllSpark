@@ -9,7 +9,7 @@ exports.query = class extends API {
 	async query() {
 
 		this.request.body = {
-			search: this.request.query.text
+			search: `%${this.request.query.text}%`
 		};
 
 		const search_set = [users, dashboards, datasets, reports];
