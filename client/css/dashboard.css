@@ -169,12 +169,12 @@ main .mailto-content {
 	grid-gap: calc(var(--gap) * 2);
 }
 main #reports > .global-filters {
+	display: flex;
 	z-index: 7;
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }
 main #reports > .global-filters.right {
-	display: flex;
 	flex-direction: column;
 	position: fixed;
 	overflow: auto;
@@ -193,8 +193,6 @@ main #reports > .global-filters.right.show {
 	opacity: 1;
 }
 main #reports > .global-filters.top {
-	grid-auto-columns: max-content;
-	display: flex;
 	flex-wrap: wrap;
 	padding: 0 0 var(--gap) 0;
 	align-items:  flex-end;
@@ -263,31 +261,51 @@ main #reports > .global-filters.top {
 	main #reports > .global-filters .no-results {
 		text-align: center;
 	}
-	main #reports > .global-filters.right > label {
-		max-width: initial;
+	main #reports > .global-filters .filters {
+		display: flex;
+		flex-wrap: wrap;
 	}
-	main #reports > .global-filters .apply {
-		background: var(--color-accent);
-		color: var(--color-accent-text);
-		border-color: var(--color-accent);
-		letter-spacing: 1px;
-		transition: background var(--transition-duration),
-					box-shadow var(--transition-duration),
-					color var(--transition-duration);
+		main #reports > .global-filters .apply {
+			background: var(--color-accent);
+			color: var(--color-accent-text);
+			border-color: var(--color-accent);
+			letter-spacing: 1px;
+			transition: background var(--transition-duration),
+						box-shadow var(--transition-duration),
+						color var(--transition-duration);
+		}
+		main #reports > .global-filters .apply:hover {
+			background: var(--color-accent-text);
+			color: var(--color-accent);
+			cursor: pointer;
+		}
+	main #reports > .global-filters.right .filters {
+		flex-direction: column;
+		padding-top: 0;
 	}
-	main #reports > .global-filters.right .apply {
-		font-size: 110%;
-		margin: auto 0 calc(var(--gap) * 2);
-		position: sticky;
-		bottom: 0;
-		height: auto;
-		padding: 8px;
+		main #reports > .global-filters.right .filters label {
+			max-width: initial;
+			margin: 8px 0;
+		}
+		main #reports > .global-filters.right .filters label:last-child {
+			position: sticky;
+			bottom: 0;
+		}
+			main #reports > .global-filters.right .filters label:last-child > span {
+				display: none;
+			}
+		main #reports > .global-filters.right .filters .apply {
+			font-size: 110%;
+			height: auto;
+		}
+	main #reports > .global-filters.top .filters {
+		margin: 0;
+		padding: var(--gap) 0;
 	}
-	main #reports > .global-filters .apply:hover {
-		background: var(--color-accent-text);
-		color: var(--color-accent);
-		cursor: pointer;
-	}
+		main #reports > .global-filters.top .filters label {
+			max-width: initial;
+			margin: 0 var(--gap);
+		}
 
 main #reports > .list {
 	display: grid;

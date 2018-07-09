@@ -1220,42 +1220,39 @@ class Dashboard {
 	}
 }
 
-class DashboardGlobalFilters extends Map {
+class DashboardGlobalFilters extends DataSourceFilters {
 
 	constructor(dashboard) {
 
-		super();
+		const globalFilters = new Map;
 
-		this.dashboard = dashboard;
-		this.page = this.dashboard.page;
-		this.container = this.page.container.querySelector('#reports .global-filters');
-
-		this.container.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
-
-		let globalFilters = new Map;
-
-		for(const visualization of this.dashboard.visualizationList) {
+		for(const visualization of dashboard.visualizationList) {
 
 			for(const filter of visualization.filters.values()) {
 
-				if(globalFilters.has(filter.placeholder))
+				if(globalFilters.has(filter.placeholder) || ['hidden', 'daterange'].includes(filter.type))
 					continue;
 
-				const gloablFilter = Object.assign({}, filter);
+				const globalFilter = Object.assign({}, filter);
 
-				globalFilters.set(gloablFilter.placeholder, gloablFilter);
+				globalFilters.set(globalFilter.placeholder, globalFilter);
 
-				if(!gloablFilter.dataset)
+				if(!globalFilter.dataset)
 					continue;
 
-				gloablFilter.dataset = gloablFilter.dataset.id;
+				globalFilter.dataset = globalFilter.dataset.id;
 
-				delete gloablFilter.source;
+				delete globalFilter.source;
 			}
 		}
 
-		for(const filter of globalFilters.values())
-			this.set(filter.placeholder, new DataSourceFilter(filter, this));
+		super(Array.from(globalFilters.values()));
+
+		this.dashboard = dashboard;
+		this.page = this.dashboard.page;
+		this.globalFilterContainer = this.page.container.querySelector('#reports .global-filters');
+
+		this.globalFilterContainer.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
 	}
 
 	async load() {
@@ -1277,7 +1274,7 @@ class DashboardGlobalFilters extends Map {
 
 	async render() {
 
-		const container = this.container;
+		const container = this.globalFilterContainer;
 
 		container.textContent = null;
 
@@ -1298,14 +1295,7 @@ class DashboardGlobalFilters extends Map {
 			<div class="NA no-results hidden">No filters found! :(</div>
 		`;
 
-		for(const filter of this.values()) {
-
-			// If this filter's value was set on some other dashboard
-			if(Dashboard.selectedValues.has(filter.placeholder))
-				filter.value = Dashboard.selectedValues.get(filter.placeholder);
-
-			container.appendChild(filter.label);
-		}
+		container.appendChild(this.container);
 
 		const searchInput = container.querySelector('.global-filter-search');
 
@@ -1319,16 +1309,11 @@ class DashboardGlobalFilters extends Map {
 					filter.label.classList.add('hidden');
 			}
 
-			const shown = container.querySelector(':scope > label:not(.hidden)');
+			const shown = container.querySelectorAll('.filters > label:not(.hidden)');
 
-			container.querySelector('.no-results').classList.toggle('hidden', shown);
+			container.querySelector('.no-results').classList.toggle('hidden', shown.length > 1);
 		});
 
-		container.insertAdjacentHTML('beforeend', `
-			<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
-		`);
-
-		container.querySelector('button.apply').on('click', () => this.apply());
 		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
 
 		const input = container.querySelector('.head input[type=checkbox]');
@@ -1346,8 +1331,6 @@ class DashboardGlobalFilters extends Map {
 
 				if(!this.has(filter.placeholder))
 					continue;
-
-				await filter.fetch();
 
 				filter.value = this.get(filter.placeholder).value;
 
@@ -1369,14 +1352,18 @@ class DashboardGlobalFilters extends Map {
 
 	clear() {
 
-		for(const dataset of this.values())
-			dataset.clear();
+		for(const filter of this.values()) {
+			if(filter.multiSelect)
+				filter.multiSelect.clear();
+		}
 	}
 
 	all() {
 
-		for(const dataset of this.values())
-			dataset.all();
+		for(const filter of this.values()) {
+			if(filter.multiSelect)
+				filter.multiSelect.all();
+		}
 	}
 }
 
