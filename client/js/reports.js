@@ -966,7 +966,7 @@ class DataSourceFilter {
 		if(this.type != 'daterange')
 			return;
 
-		this.dateRanges = DataSourceFilter.dateRanges;
+		this.dateRanges = JSON.parse(JSON.stringify(DataSourceFilter.dateRanges));
 
 		if(account.settings.has('global_filters_date_ranges'))
 			this.dateRanges = account.settings.has('global_filters_date_ranges');
