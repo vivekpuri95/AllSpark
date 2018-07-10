@@ -964,6 +964,8 @@ class DataSourceFilter {
 		if(this.dataset && DataSource.list.has(this.dataset))
 			this.multiSelect = new MultiSelect({multiple: this.multiple});
 
+		this.valueHistory = [];
+
 		if(this.type != 'daterange')
 			return;
 
@@ -974,7 +976,6 @@ class DataSourceFilter {
 
 		this.dateRanges.push({name: 'Custom'});
 
-		this.valueHistory = [];
 		this.value = 0;
 	}
 
