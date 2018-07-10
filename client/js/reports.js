@@ -1232,12 +1232,6 @@ class DataSourceRow extends Map {
 				}
 			}
 
-			if(column.searchQuery && column.searchQuery !== '') {
-
-				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key] === null ? '' : row[key]))
-					this.skip = true;
-			}
-
 			this.set(key, row[key]);
 		}
 
