@@ -1620,13 +1620,13 @@ class DataSourceColumn {
 				<span>Search</span>
 			</div>
 
-			<button type="button" class="show search add-new-item"><i class="fa fa-plus"></i>Add New Search</button>
+			<button type="button" class="show search add-new-item"><i class="fa fa-plus"></i>Add New</button>
 
 			<div class="show category-content accumulationContent">
 				<span>Accumulation</span>
 			</div>
 
-			<button type="button" class="show accumulation add-new-item"><i class="fa fa-plus"></i>Add New Accumulation</button>
+			<button type="button" class="show accumulation add-new-item"><i class="fa fa-plus"></i>Add New</button>
 
 			<label>
 				<span>Type</span>
@@ -1739,7 +1739,7 @@ class DataSourceColumn {
 			form.querySelector('.searchContent').appendChild(this.searchBox(search));
 		}
 
-		form.querySelector('.search').on('click', e => {
+		form.querySelector('button.search').on('click', e => {
 
 			e.stopPropagation();
 			e.preventDefault();
@@ -1813,7 +1813,9 @@ class DataSourceColumn {
 			select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
 		}
 
-		label.querySelector('select').value = '0';
+		select.value = '0';
+
+		label.querySelector('input').value = DataSourceColumn.accumulationTypes[select.value].apply(this.source.response, this.key);
 
 		select.on('change', () => {
 
@@ -1991,6 +1993,12 @@ class DataSourceColumn {
 		this.searchQueries = [];
 
 		for(const node of this.form.querySelectorAll('.searchContent .search-type')) {
+
+			if(node.querySelector('input').value === '') {
+				node.remove();
+				continue;
+			}
+
 			this.searchQueries.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
 		}
 

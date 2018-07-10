@@ -672,7 +672,7 @@ main .data-source.flush {
 			}
 			.visualization.table thead .heading .filter-popup {
 				width: 15px;
-				font-size: 70%;
+				font-size: 60%;
 				margin-right: 5px;
 			}
 				.visualization.table thead .heading .filter-popup > span {
@@ -693,6 +693,7 @@ main .data-source.flush {
 					left: 0;
 					color: #333;
 					width: 250px;
+					max-height: 200px;
 					text-align: initial;
 					padding-top: calc(var(--gap) * 2);
 					background: #fff;
@@ -703,6 +704,7 @@ main .data-source.flush {
 						grid-gap: calc(var(--gap) * 2);
 						box-shadow: none;
 						width: 100%;
+						overflow: auto;
 				}
 					.visualization.table thead .heading .popup-dropdown .compact .category-content {
 						display: grid;
@@ -722,7 +724,7 @@ main .data-source.flush {
 							display: flex;
 						}
 							.compact label .category-group > * {
-								margin-right: var(--gap);
+								margin-right: calc(var(--gap) * 2);
 							}
 							.compact label .category-group > *:last-child {
 								margin-right: 0;
