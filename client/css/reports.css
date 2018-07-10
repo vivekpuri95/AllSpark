@@ -703,14 +703,14 @@ main .data-source.flush {
 						grid-gap: calc(var(--gap) * 2);
 						box-shadow: none;
 				}
-					.visualization.table thead .heading .popup-dropdown .compact .searchContent {
+					.visualization.table thead .heading .popup-dropdown .compact .category-content {
 						display: grid;
 						grid-gap: calc(var(--gap) * 2);
 					}
-						.visualization.table thead .heading .searchContent span {
+						.visualization.table thead .heading .category-content span {
 							margin-left: calc(var(--gap) * 2);
 						}
-					.visualization.table thead .heading .popup-dropdown .compact button.add-new-search {
+					.visualization.table thead .heading .popup-dropdown .compact button.add-new-item {
 						margin-left: calc(var(--gap) * 2);
 						width: 70%;
 					}
@@ -719,10 +719,20 @@ main .data-source.flush {
 						margin: 0 calc(var(--gap) * 2);
 					}
 						.visualization.table thead .heading .popup-dropdown .compact label .category-group {
-							display: grid;
-							grid-template-columns: 1fr 1fr 1fr;
-							grid-gap: calc(var(--gap) * 2);
+							display: flex;
 						}
+							.compact label .category-group > * {
+								margin-right: var(--gap);
+							}
+							.compact label .category-group > *:last-child {
+								margin-right: 0;
+							}
+							.compact label .category-group button:hover {
+								background: #c33;
+							}
+							.compact label .category-group button svg {
+								margin: 0;
+							}
 				.visualization.table thead .heading .compact label .category-group input,
 				.visualization.table thead .heading .compact label .category-group select {
 					margin-bottom: 0;
@@ -1053,14 +1063,14 @@ main .dialog-box-blanket.data-source-column form .parameter-list {
 main .dialog-box-blanket.data-source-column .form {
 	padding: calc(var(--gap) * 2) 0 0;
 }
-	main .dialog-box-blanket.data-source-column .form .searchContent {
+	main .dialog-box-blanket.data-source-column .form .category-content {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
 		margin-left: calc(var(--gap) * 2);
 	}
-	main .dialog-box-blanket.data-source-column .form .add-new-search {
+	main .dialog-box-blanket.data-source-column .form .add-new-item {
 		margin-left: calc(var(--gap) * 2);
-		width: 20%;
+		width: 30%;
 	}
 	main .dialog-box-blanket.data-source-column .form > label {
 		margin-left: calc(var(--gap) * 2);

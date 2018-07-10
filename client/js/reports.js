@@ -1616,21 +1616,17 @@ class DataSourceColumn {
 				<input type="text" name="name" value="${this.name}" >
 			</label>
 
-			<div class="show searchContent">
+			<div class="show category-content searchContent">
 				<span>Search</span>
 			</div>
 
-			<button type="button" class="show add-new-search"><i class="fa fa-plus"></i>Add New Search</button>
+			<button type="button" class="show search add-new-item"><i class="fa fa-plus"></i>Add New Search</button>
 
-			<label class="show accumulation-type">
+			<div class="show category-content accumulationContent">
 				<span>Accumulation</span>
-				<div class="category-group">
-					<select name="accumulation">
-						<option value=""></option>
-					</select>
-					<input type="text" name="accumulationResult" readonly>
-				</div>
-			</label>
+			</div>
+
+			<button type="button" class="show accumulation add-new-item"><i class="fa fa-plus"></i>Add New Accumulation</button>
 
 			<label>
 				<span>Type</span>
@@ -1737,11 +1733,13 @@ class DataSourceColumn {
 			}
 		}
 
+		this.searchQueries = this.searchQueries ? this.searchQueries : [];
+
 		for(const search of this.searchQueries) {
 			form.querySelector('.searchContent').appendChild(this.searchBox(search));
 		}
 
-		form.querySelector('.add-new-search').on('click', e => {
+		form.querySelector('.search').on('click', e => {
 
 			e.stopPropagation();
 			e.preventDefault();
@@ -1749,21 +1747,10 @@ class DataSourceColumn {
 			form.querySelector('.searchContent').appendChild(this.searchBox());
 		});
 
-		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
+		form.querySelector('.accumulation').on('click', e => {
 
-			if(!string || type.string)
-				form.accumulation.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
-		}
-
-		form.accumulation.on('change', () => {
-
-			const accumulation = DataSourceColumn.accumulationTypes[form.accumulation.value];
-
-			if(form.accumulation.value && accumulation)
-				form.accumulationResult.value = accumulation.apply(this.source.response, this.key);
-
-			else form.accumulationResult.value = '';
-		});
+			form.querySelector('.accumulationContent').appendChild(this.accumulationBox());
+		})
 
 		form.querySelector('.add-parameters').on('click', () => {
 			this.addParameter();
@@ -1791,14 +1778,14 @@ class DataSourceColumn {
 			<div class="category-group search">
 				<select class="searchType"></select>
 				<input type="search" class="searchQuery">
-				<button type="button" class="delete"><i class="fa fa-trash-alt"></i></button>
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
 			</div>
 		`;
 
 		for(const [i, type] of DataSourceColumn.searchTypes.entries())
 			label.querySelector('select.searchType').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
 
-		label.querySelector('select').value = value.name;
+		label.querySelector('select').value = value.name ? value.name : '0';
 		label.querySelector('input').value = value.value ? value.value : '';
 
 		label.querySelector('.delete').on('click', () => {
@@ -1806,6 +1793,43 @@ class DataSourceColumn {
 		})
 
 		return label;
+	}
+
+	accumulationBox() {
+
+		const label = document.createElement('label');
+		label.classList.add('accumulation-type');
+		label.innerHTML = `
+			<div class="category-group">
+				<select class="accumulation-content"></select>
+				<input type="text" name="accumulationResult" readonly>
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			</div>
+		`;
+
+		const select = label.querySelector('.accumulation-content');
+
+		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
+			select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		}
+
+		label.querySelector('select').value = '0';
+
+		select.on('change', () => {
+
+			const accumulation = DataSourceColumn.accumulationTypes[select.value];
+
+			if(select.value && accumulation)
+				label.querySelector('input').value = accumulation.apply(this.source.response, this.key);
+
+			else label.querySelector('input').value = '';
+		});
+
+		label.querySelector('.delete').on('click', () => {
+			label.remove();
+		});
+
+		return label
 	}
 
 	get dialogueBox() {
