@@ -3244,9 +3244,6 @@ Visualization.list.set('table', class Table extends Visualization {
 			container = this.container.querySelector('.container'),
 			rows = this.source.response;
 
-		if(!rows || !rows.length)
-			return this.source.error();
-
 		container.textContent = null;
 
 		const
