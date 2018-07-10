@@ -6,7 +6,9 @@ const config = require('config');
 const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
+const assert = require('assert');
 const fetch = require('node-fetch');
+const authLogin = require('../server/www/authentication').login;
 
 router.use(express.static('./client'));
 
@@ -210,37 +212,36 @@ router.get('/login', API.serve(class extends HTMLAPI {
 
 	async main() {
 
-		if(Array.isArray(this.account.settings.get('external_parameters'))) {
-
-			const
-				parameters = {},
-				options = {
-					method: 'POST',
-					headers: {
-						"Content-Type": "application/json; charset=utf-8",
-					}
-				};
+		if(Array.isArray(this.account.settings.get('external_parameters')) && this.request.query.external_parameters) {
 
 			for(const key of this.account.settings.get('external_parameters')) {
 
 				if(key in this.request.query)
-					parameters['ext_' + key] = this.request.query[key];
+					this.request.body['ext_' + key] = this.request.query[key];
 			}
 
-			parameters.account_id = this.account.account_id;
+			this.request.body.account_id = this.account.account_id;
 
-			options.body = JSON.stringify(parameters);
+			const loginObj = new authLogin();
 
-			const
-				url = `http://${this.account.url}/api/v2/authentication/login`,
-				response = await fetch(url, options);
+			loginObj.request = this.request;
+			loginObj.assert = (expression, message, statusCode) => {
+
+				return assert(expression,
+					JSON.stringify({
+						message: message,
+						status: statusCode,
+					}));
+			}
+
+			const response = await loginObj.login();
 
 			if(!response.jwt && response.length)
 				throw new Error("Error!!!");
 
 			this.response.setHeader('Set-Cookie', `refresh_token=${response.jwt}`);
 
-			this.response.redirect('/dashboard');
+			this.response.redirect('/dashboard/first');
 		}
 
 		return `
