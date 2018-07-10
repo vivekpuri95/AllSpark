@@ -887,11 +887,17 @@ class API extends AJAX {
 		let
 			getToken = true,
 			token = await IndexedDb.instance.get('token'),
+			has_external_parameters = await IndexedDb.instance.has('external_parameters'),
 			cookie_json = {};
 
 		for(const value of document.cookie.split(';')) {
 			const pair = value.split('=');
 			cookie_json[pair[0].trim()] = pair[1];
+		}
+
+		if(!has_external_parameters) {
+
+			await IndexedDb.instance.set('external_parameters', JSON.parse(cookie_json.external_parameters));
 		}
 
 		if(token) {

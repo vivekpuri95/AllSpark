@@ -214,10 +214,14 @@ router.get('/login', API.serve(class extends HTMLAPI {
 
 		if(Array.isArray(this.account.settings.get('external_parameters')) && this.request.query.external_parameters) {
 
+			const external_parameters = {};
+
 			for(const key of this.account.settings.get('external_parameters')) {
 
 				if(key in this.request.query)
 					this.request.body['ext_' + key] = this.request.query[key];
+
+				external_parameters[key] = this.request.query[key];
 			}
 
 			this.request.body.account_id = this.account.account_id;
@@ -239,7 +243,7 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			if(!response.jwt && response.length)
 				throw new Error("Error!!!");
 
-			this.response.setHeader('Set-Cookie', `refresh_token=${response.jwt}`);
+			this.response.setHeader('Set-Cookie', [`refresh_token=${response.jwt}`, `external_parameters=${JSON.stringify(external_parameters)}`]);
 
 			this.response.redirect('/dashboard/first');
 		}
