@@ -1221,10 +1221,18 @@ class DataSourceRow extends Map {
 				}
 			}
 
-			if(column.searchQuery && column.searchQuery !== '') {
+			if(column.searchQueries && column.searchQueries.length) {
+				for(const search of column.searchQueries) {
 
-				if(!row[key])
-					this.skip = true;
+					if(!row[key])
+						this.skip = true;
+
+					if(!DataSourceColumn.searchTypes[parseInt(search.name) || 0].apply(search.value, row[key] === null ? '' : row[key]))
+						this.skip = true;
+				}
+			}
+
+			if(column.searchQuery && column.searchQuery !== '') {
 
 				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key] === null ? '' : row[key]))
 					this.skip = true;
@@ -1618,7 +1626,7 @@ class DataSourceColumn {
 				<span>Search</span>
 			</div>
 
-			<button class="show add-new-search"><i class="fa fa-plus"></i>Add New Search</button>
+			<button type="button" class="show add-new-search"><i class="fa fa-plus"></i>Add New Search</button>
 
 			<label class="show accumulation-type">
 				<span>Accumulation</span>
@@ -1718,7 +1726,7 @@ class DataSourceColumn {
 			if(formulaTimeout)
 				clearTimeout(formulaTimeout);
 
-			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
+			formulaTimeout = setTimeout(() => this.validateFheadormula(), 200);
 		});
 
 		// To check the type of the column;
@@ -1733,6 +1741,10 @@ class DataSourceColumn {
 				string = true;
 				break;
 			}
+		}
+
+		for(const search of this.searchQueries) {
+			form.querySelector('.searchContent').appendChild(this.searchBox(search));
 		}
 
 		form.querySelector('.add-new-search').on('click', e => {
@@ -1777,19 +1789,27 @@ class DataSourceColumn {
 		return form;
 	}
 
-	searchBox(value = '') {
-		debugger;
-		const label = this.searchElement = document.createElement('label');
+	searchBox(value = {}) {
+
+		const label = document.createElement('label');
 		label.classList.add('search-type');
 		label.innerHTML = `
 			<div class="category-group search">
-				<select name="searchType"></select>
-				<input type="search" name="searchQuery">
+				<select class="searchType"></select>
+				<input type="search" class="searchQuery">
+				<button type="button" class="delete"><i class="fa fa-trash-alt"></i></button>
 			</div>
 		`;
 
 		for(const [i, type] of DataSourceColumn.searchTypes.entries())
-			label.querySelector('select[name="searchType"]').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+			label.querySelector('select.searchType').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+
+		label.querySelector('select').value = value.name;
+		label.querySelector('input').value = value.value ? value.value : '';
+
+		label.querySelector('.delete').on('click', () => {
+			label.remove();
+		})
 
 		return label;
 	}
@@ -1950,6 +1970,12 @@ class DataSourceColumn {
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
+		this.searchQueries = [];
+
+		for(const node of this.form.querySelectorAll('.searchContent .search-type')) {
+			this.searchQueries.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
+		}
+
 		this.disabled = parseInt(this.disabled) || 0;
 
 		this.container.querySelector('.label .name').textContent = this.name;
@@ -1983,6 +2009,12 @@ class DataSourceColumn {
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 		}
 
+		this.searchQueries = [];
+
+		for(const node of this.form.querySelectorAll('.searchContent .search-type')) {
+			this.searchQueries.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
+		}
+
 		for(const row of this.form.querySelectorAll('.parameter')) {
 
 			let param_json = {};
@@ -2009,7 +2041,7 @@ class DataSourceColumn {
 			disabled : this.disabled,
 			color : this.color,
 			searchType : this.searchType,
-			searchQuery : this.searchQuery,
+			searchQueries : this.searchQueries,
 			sort : this.sort,
 			prefix : this.prefix,
 			postfix : this.postfix,
@@ -3267,7 +3299,7 @@ Visualization.list.set('table', class Table extends Visualization {
 				container.querySelector('.popup-dropdown').classList.remove('hidden');
 			});
 
-			if(column.searchQuery && column.searchQuery)
+			if(column.searchQueries && column.searchQueries.length)
 				container.classList.add('has-filter');
 
 			headings.appendChild(container);
