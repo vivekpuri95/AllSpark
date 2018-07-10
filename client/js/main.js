@@ -886,7 +886,13 @@ class API extends AJAX {
 
 		let
 			getToken = true,
-			token = await IndexedDb.instance.get('token');
+			token = await IndexedDb.instance.get('token'),
+			cookie_json = {};
+
+		for(const value of document.cookie.split(';')) {
+			const pair = value.split('=');
+			cookie_json[pair[0].trim()] = pair[1];
+		}
 
 		if(token) {
 
@@ -900,8 +906,11 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken)
+		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken) {
+
+			await IndexedDb.instance.set('refresh_token', cookie_json.refresh_token);
 			return;
+		}
 
 		const
 			parameters = {

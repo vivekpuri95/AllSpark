@@ -6,6 +6,7 @@ const config = require('config');
 const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
+const fetch = require('node-fetch')
 
 router.use(express.static('./client'));
 
@@ -208,6 +209,40 @@ router.get('/login', API.serve(class extends HTMLAPI {
 	}
 
 	async main() {
+
+		if(Array.isArray(this.account.settings.get('external_parameters'))) {
+
+			const
+				parameters = {},
+				options = {
+					method: 'POST',
+					headers: {
+						"Content-Type": "application/json; charset=utf-8",
+					}
+				};
+
+			for(const key of this.account.settings.get('external_parameters')) {
+
+				if(key in this.request.query)
+					parameters['ext_' + key] = this.request.query[key];
+			}
+
+			parameters.account_id = this.account.account_id;
+
+			options.body = JSON.stringify(parameters);
+
+			const
+				url = `${this.account.url}/api/v2/authentication/login`,
+				response = await fetch(url, options);
+
+			if(!response.jwt && response.length)
+				throw new Error("Error!!!");
+
+			this.response.setHeader('Set-Cookie', `refresh_token=${response.jwt}`);
+
+			this.response.redirect('/dashboard');
+		}
+
 		return `
 			<div class="logo hidden">
 				<img src="" />
