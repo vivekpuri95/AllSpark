@@ -658,13 +658,13 @@ class Dashboard {
 			container.classList.toggle('hidden');
 			sideButton.classList.toggle('selected');
 
-			const datasets = page.container.querySelector('#reports .global-filters');
+			const globalFilters = page.container.querySelector('#reports .global-filters');
 
-			datasets.classList.toggle('show');
+			globalFilters.classList.toggle('show');
 
 			if(page.account.settings.get('global_filters_position') == 'top') {
-				datasets.classList.toggle('top');
-				datasets.classList.toggle('right');
+				globalFilters.classList.toggle('top');
+				globalFilters.classList.toggle('right');
 			}
 		});
 
@@ -673,13 +673,13 @@ class Dashboard {
 			container.classList.add('hidden');
 			sideButton.classList.remove('selected');
 
-			const datasets = page.container.querySelector('#reports .global-filters');
+			const globalFilters = page.container.querySelector('#reports .global-filters');
 
-			datasets.classList.toggle('show');
+			globalFilters.classList.toggle('show');
 
 			if(page.account.settings.get('global_filters_position') == 'top') {
-				datasets.classList.toggle('top');
-				datasets.classList.toggle('right');
+				globalFilters.classList.toggle('top');
+				globalFilters.classList.toggle('right');
 			}
 		});
 	}
@@ -736,7 +736,6 @@ class Dashboard {
 				grid-row: auto / span ${visualization.format.height || Dashboard.grid.rows};
 			`);
 
-
 			queryDataSource.selectedVisualization = queryDataSource.visualizations.filter(v =>
 
 				v.visualization_id === visualization.visualization_id
@@ -753,15 +752,15 @@ class Dashboard {
 		}
 
 		try {
-			this.datasets = new DashboardGlobalFilters(this);
+			this.globalFilters = new DashboardGlobalFilters(this);
 
-			await this.datasets.load();
+			await this.globalFilters.load();
 		}
 		catch (e) {
 			console.log(e);
 		}
 
-		if (!this.datasets.size)
+		if (!this.globalFilters.size)
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
@@ -835,7 +834,7 @@ class Dashboard {
 		if (this.format && this.format.category_id)
 			return;
 
-		if (!this.datasets.size)
+		if (!this.globalFilters.size)
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 
 		const dashboardName = this.page.container.querySelector('.dashboard-name');
@@ -948,8 +947,8 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if(Dashboard.selectedValues && Dashboard.selectedValues.size && this.datasets.size)
-			this.datasets.apply();
+		if(Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size)
+			this.globalFilters.apply();
 	}
 
 	edit() {
@@ -1253,6 +1252,12 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		this.globalFilterContainer = this.page.container.querySelector('#reports .global-filters');
 
 		this.globalFilterContainer.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
+
+		// Save the value of each filter for use on other dashboards
+		// if(Dashboard.selectedValues.size) {
+		// 	for(const [placeholder, filter] of this)
+		// 		filter.value = Dashboard.selectedValues.get(placeholder);
+		// }
 	}
 
 	async load() {

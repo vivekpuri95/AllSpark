@@ -53,16 +53,16 @@ exports.filterTypes = [
 		input_type: 'month',
 	},
 	{
+		name: 'DateTime',
+		input_type: 'datetime-local',
+	},
+	{
 		name: 'Hidden',
 		input_type: 'hidden',
 	},
 	{
 		name: 'Column',
 		input_type: 'text',
-	},
-	{
-		name: 'DateTime',
-		input_type: 'datetime-local',
 	},
 	{
 		name: 'DateRange',

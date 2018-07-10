@@ -56,15 +56,16 @@ class DataSource {
 
 				if(visualization_filter) {
 
-					if (filter.dataset) {
+					if(filter.dataset) {
 
 						await filter.dataset.fetch();
-						filter.dataset.value = visualization_filter.default_value || '';
+						filter.value = visualization_filter.default_value || '';
 					}
-					parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, visualization_filter.default_value);
-				}
 
-				continue;
+					parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, visualization_filter.default_value);
+
+					continue;
+				}
 			}
 
 			if(filter.multiSelect) {
@@ -973,6 +974,7 @@ class DataSourceFilter {
 
 		this.dateRanges.push({name: 'Custom'});
 
+		this.valueHistory = [];
 		this.value = 0;
 	}
 
@@ -1003,7 +1005,7 @@ class DataSourceFilter {
 			for(const [index, range] of this.dateRanges.entries())
 				input.insertAdjacentHTML('beforeend', `<option value="${index}">${range.name}</option>`);
 
-			input.value = this.value;
+			input.value = 'valueCache' in this ? this.valueCache : this.value;
 
 			input.on('change', () => this.dateRangeUpdate());
 		}
@@ -1015,7 +1017,7 @@ class DataSourceFilter {
 			input.type = MetaData.filterTypes.get(this.type).input_type;
 			input.name = this.placeholder;
 
-			input.value = this.value;
+			input.value = 'valueCache' in this ? this.valueCache : this.value;
 		}
 
 		container.innerHTML = `<span>${this.name}<span>`;
@@ -1025,6 +1027,9 @@ class DataSourceFilter {
 		this.labelContainer = container;
 
 		this.dateRangeUpdate();
+
+		// Empty the cached value which was recieved before the filter container was created.
+		delete this.valueCache;
 
 		return container;
 	}
@@ -1037,11 +1042,15 @@ class DataSourceFilter {
 		if(this.labelContainer)
 			return this.label.querySelector(this.type == 'daterange' ? 'select' : 'input').value;
 
+		// If a value was recieved before the container could be created
+		if('valueCache' in this)
+			return this.valueCache;
+
 		let value = this.default_value;
 
 		if(!isNaN(parseFloat(this.offset))) {
 
-			if(this.type == 'date')
+			if(this.type.includes('date'))
 				value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
 			if(this.type == 'month') {
@@ -1050,16 +1059,22 @@ class DataSourceFilter {
 			}
 		}
 
+		// If an offset and a default value was provided for the offset then create a new default value
+		if(this.type == 'datetime' && this.default_value && value)
+			value = value + 'T' + this.default_value;
+
 		return value;
 	}
 
 	set value(value) {
 
+		this.valueHistory.push(value);
+
 		if(this.multiSelect)
 			return this.multiSelect.value = value;
 
 		if(!this.labelContainer)
-			return this.default_value = value;
+			return this.valueCache = value;
 
 		if(this.type == 'daterange') {
 			this.label.querySelector('select').value = value;
@@ -1113,6 +1128,9 @@ class DataSourceFilter {
 		const
 			select = this.label.querySelector('select'),
 			range = this.dateRanges[select.value];
+
+		if(!range)
+			return;
 
 		// Show / hide other companion inputs depending on if custom was picked.
 		for(let companion of this.companions || []) {
