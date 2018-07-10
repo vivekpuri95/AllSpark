@@ -712,8 +712,7 @@ main .data-source.flush {
 							margin-left: calc(var(--gap) * 2);
 						}
 					.visualization.table thead .heading .popup-dropdown .compact button.add-new-item {
-						margin-left: calc(var(--gap) * 2);
-						width: 90%;
+						margin: 0 calc(var(--gap) * 2);
 					}
 					.visualization.table thead .heading .popup-dropdown .compact label {
 						max-width: none;
