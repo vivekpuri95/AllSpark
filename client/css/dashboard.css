@@ -283,15 +283,15 @@ main #reports > .global-filters.top {
 		flex-direction: column;
 		padding-top: 0;
 	}
-		main #reports > .global-filters.right .filters label {
+		main #reports > .global-filters.right .filters > label {
 			max-width: initial;
 			margin: 8px 0;
 		}
-		main #reports > .global-filters.right .filters label:last-child {
+		main #reports > .global-filters.right .filters > label:last-child {
 			position: sticky;
 			bottom: 0;
 		}
-			main #reports > .global-filters.right .filters label:last-child > span {
+			main #reports > .global-filters.right .filters > label:last-child > span {
 				display: none;
 			}
 		main #reports > .global-filters.right .filters .apply {
@@ -302,7 +302,7 @@ main #reports > .global-filters.top {
 		margin: 0;
 		padding: var(--gap) 0;
 	}
-		main #reports > .global-filters.top .filters label {
+		main #reports > .global-filters.top .filters > label {
 			max-width: initial;
 			margin: 0 var(--gap);
 		}

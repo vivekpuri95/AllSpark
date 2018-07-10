@@ -1233,16 +1233,16 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				if(globalFilters.has(filter.placeholder) || ['hidden', 'daterange'].includes(filter.type))
 					continue;
 
-				const globalFilter = Object.assign({}, filter);
-
-				globalFilters.set(globalFilter.placeholder, globalFilter);
-
-				if(!globalFilter.dataset)
-					continue;
-
-				globalFilter.dataset = globalFilter.dataset.id;
-
-				delete globalFilter.source;
+				globalFilters.set(filter.placeholder, {
+					name: filter.name,
+					placeholder: filter.placeholder,
+					default_value: filter.default_value,
+					dataset: filter.dataset,
+					multiple: filter.multiple,
+					offset: filter.offset,
+					order: filter.order,
+					type: filter.type,
+				});
 			}
 		}
 
