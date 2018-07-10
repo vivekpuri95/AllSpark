@@ -908,7 +908,9 @@ class API extends AJAX {
 
 		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken) {
 
-			await IndexedDb.instance.set('refresh_token', cookie_json.refresh_token);
+			if(cookie_json.refresh_token)
+				await IndexedDb.instance.set('refresh_token', cookie_json.refresh_token);
+
 			return;
 		}
 

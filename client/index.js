@@ -6,7 +6,7 @@ const config = require('config');
 const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
-const fetch = require('node-fetch')
+const fetch = require('node-fetch');
 
 router.use(express.static('./client'));
 
@@ -232,7 +232,7 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			options.body = JSON.stringify(parameters);
 
 			const
-				url = `${this.account.url}/api/v2/authentication/login`,
+				url = `http://${this.account.url}/api/v2/authentication/login`,
 				response = await fetch(url, options);
 
 			if(!response.jwt && response.length)
