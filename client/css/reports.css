@@ -702,6 +702,7 @@ main .data-source.flush {
 						padding: 0;
 						grid-gap: calc(var(--gap) * 2);
 						box-shadow: none;
+						width: 100%;
 				}
 					.visualization.table thead .heading .popup-dropdown .compact .category-content {
 						display: grid;
@@ -712,7 +713,7 @@ main .data-source.flush {
 						}
 					.visualization.table thead .heading .popup-dropdown .compact button.add-new-item {
 						margin-left: calc(var(--gap) * 2);
-						width: 70%;
+						width: 90%;
 					}
 					.visualization.table thead .heading .popup-dropdown .compact label {
 						max-width: none;
@@ -1070,7 +1071,7 @@ main .dialog-box-blanket.data-source-column .form {
 	}
 	main .dialog-box-blanket.data-source-column .form .add-new-item {
 		margin-left: calc(var(--gap) * 2);
-		width: 30%;
+		max-width: 200px;
 	}
 	main .dialog-box-blanket.data-source-column .form > label {
 		margin-left: calc(var(--gap) * 2);
