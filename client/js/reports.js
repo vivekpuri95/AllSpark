@@ -22,7 +22,7 @@ class DataSource {
 		this.tags = this.tags || '';
 		this.tags = this.tags.split(',').filter(a => a.trim());
 
-		this.filters = new DataSourceFilters(this);
+		this.filters = new DataSourceFilters(this.filters, this);
 		this.columns = new DataSourceColumns(this);
 		this.transformations = new DataSourceTransformations(this);
 		this.visualizations = [];
@@ -30,9 +30,10 @@ class DataSource {
 		if(!source.visualizations)
 			source.visualizations = [];
 
-		if(!source.visualizations.filter(v => v.type == 'table').length) {
-			source.visualizations.push({ name: 'Table', visualization_id: 0, type: 'table' });
-		}
+		if(!source.visualizations.filter(v => v.type == 'table').length)
+			source.visualizations.push({ name: this.name, visualization_id: 0, type: 'table' });
+
+		source.visualizations = source.visualizations.filter(v => Visualization.list.has(v.type));
 
 		this.visualizations = source.visualizations.map(v => new (Visualization.list.get(v.type))(v, this));
 		this.postProcessors = new DataSourcePostProcessors(this);
@@ -49,31 +50,34 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
-			if(filter.dataset && !filter.dataset.query_id) {
+			if(this.visualizations.selected && this.visualizations.selected.options && this.visualizations.selected.options.filters && !this.filters.containerElement) {
 
-				if(!filter.dataset.value && !filter.dataset.containerElement)
-					filter.dataset.value = await filter.dataset.fetch();
+				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.filter_id == filter.filter_id);
 
-				parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.dataset.value[0]);
+				if(visualization_filter) {
 
-				continue;
+					if(filter.dataset) {
+
+						await filter.dataset.fetch();
+						filter.value = visualization_filter.default_value || '';
+					}
+
+					parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, visualization_filter.default_value);
+
+					continue;
+				}
 			}
 
-			if(filter.dataset && filter.dataset.query_id) {
+			if(filter.multiSelect) {
 
-				if(!filter.dataset.value.length && !filter.dataset.containerElement)
-					filter.dataset.value = (await filter.dataset.fetch()).map(v => v.value);
+				await filter.fetch();
 
-				for(const value of filter.dataset.value || [])
+				for(const value of filter.multiSelect.value) {
 					parameters.append(DataSourceFilter.placeholderPrefix + filter.placeholder, value);
-
-				continue;
+				}
 			}
 
-			if(this.filters.containerElement)
-				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, this.filters.container.elements[filter.placeholder].value);
-			else
-				parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
+			else parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
 		}
 
 		const external_parameters = await IndexedDb.instance.get('external_parameters');
@@ -100,8 +104,7 @@ class DataSource {
 		}
 
 		catch(e) {
-			this.error(JSON.stringify(e.message, 0, 4));
-			response = {};
+			return this.error(JSON.stringify(e.message, 0, 4));
 		}
 
 		if(parameters.get('download'))
@@ -217,7 +220,7 @@ class DataSource {
 					</span>
 					<span class="right visible-to">
 						<span class="label">Visible To</span>
-						<span class="visible-length"></span>
+						<span class="count"></span>
 					</span>
 					<span>
 						<span class="label">Added By:</span>
@@ -231,12 +234,12 @@ class DataSource {
 			</div>
 		`;
 
-		if(user.privileges.has('reports'))
+		if(user.privileges.has('report'))
 			container.querySelector('header h2').insertAdjacentHTML('beforeend', ` <span class="id">#${this.query_id}</span>`);
 
 		document.querySelector('body').on('click', (e) => {
 			container.querySelector('.menu .download-btn .download-dropdown-content').classList.add('hidden');
-		this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
+			this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
 		})
 
 		container.querySelector('.menu .export-toggle').on('click', () => {
@@ -246,24 +249,37 @@ class DataSource {
 			this.visualizations.selected.render({resize: true});
 		});
 		container.querySelector('header .menu-toggle').on('click', () => {
+
 			container.querySelector('.menu').classList.toggle('hidden');
 			container.querySelector('header .menu-toggle').classList.toggle('selected');
+
+			container.querySelector('.description').classList.add('hidden');
+			container.querySelector('.description-toggle').classList.remove('selected');
+			container.querySelector('.query').classList.add('hidden');
+			container.querySelector('.query-toggle').classList.remove('selected');
+			container.querySelector('.filters-toggle').classList.remove('selected');
+
+			if(container.contains(this.filters.container))
+				container.removeChild(this.filters.container);
+
+			this.visualizations.selected.container.classList.remove('blur');
+			container.querySelector('.columns').classList.remove('blur');
 
 			this.visualizations.selected.render({resize: true});
 		});
 
-		if(user.privileges.has('reports')) {
+		if(user.privileges.has('report')) {
 			container.querySelector('.toolbar .expand-toggle').classList.remove('hidden');
 			container.querySelector('.toolbar .query-toggle').classList.remove('hidden');
 			container.querySelector('.description .footer').classList.remove('hidden');
 		}
 
-		container.querySelector('.description .visible-to').on('click', () => {
+		container.querySelector('.description .visible-to .count').on('click', () => {
 
-			if(!this.dialog)
-				this.dialog = new DialogBox(this);
+			if(!this.dialogue)
+				this.dialogue = new DialogBox();
 
-			this.dialog.heading = 'Users';
+			this.dialogue.heading = 'Users';
 
 			const user_element = [];
 
@@ -276,8 +292,8 @@ class DataSource {
 				`);
 			}
 
-			this.dialog.body = `<ul class="user-list">${user_element.join('')}</ul>`;
-			this.dialog.show();
+			this.dialogue.body.insertAdjacentHTML('beforeend', `<ul class="user-list">${user_element.join('')}</ul>`);
+			this.dialogue.show();
 		});
 
 		container.querySelector('header .reload').on('click', () => {
@@ -287,6 +303,8 @@ class DataSource {
 		container.querySelector('.menu .filters-toggle').on('click', () => {
 
 			container.querySelector('.filters-toggle').classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			container.querySelector('.columns').classList.toggle('blur');
 
 			if(container.contains(this.filters.container))
 				container.removeChild(this.filters.container);
@@ -312,15 +330,16 @@ class DataSource {
 		container.querySelector('.menu .description-toggle').on('click', async () => {
 
 			container.querySelector('.description').classList.toggle('hidden');
-
 			container.querySelector('.description-toggle').classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			container.querySelector('.columns').classList.toggle('blur');
 
 			this.visualizations.selected.render({resize: true});
 
-			if(user.privileges.has('administrator')) {
+			if(user.privileges.has('report')) {
 
 				await this.userList();
-				container.querySelector('.description .visible-length').textContent = `${this.visibleTo.length} people`;
+				container.querySelector('.description .count').textContent = `${this.visibleTo.length} people`;
 			}
 			else {
 				container.querySelector('.description .visible-to').classList.add('hidden');
@@ -331,6 +350,8 @@ class DataSource {
 
 			container.querySelector('.query').classList.toggle('hidden');
 			container.querySelector('.query-toggle').classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			container.querySelector('.columns').classList.toggle('blur');
 
 			this.visualizations.selected.render({resize: true});
 		});
@@ -475,6 +496,8 @@ class DataSource {
 
 	get response() {
 
+		this.resetError();
+
 		if(!this.originalResponse || !this.originalResponse.data)
 			return [];
 
@@ -482,7 +505,13 @@ class DataSource {
 
 		this.originalResponse.groupedAnnotations = new Map;
 
+		if(!Array.isArray(this.originalResponse.data))
+			return [];
+
 		const data = this.transformations.run(this.originalResponse.data);
+
+		if(!this.columns.list.size)
+			return this.error();
 
 		for(const _row of data) {
 
@@ -499,8 +528,10 @@ class DataSource {
 			response.sort((a, b) => {
 
 				const
-					first = a.get(this.columns.sortBy.key).toString().toLowerCase(),
-					second = b.get(this.columns.sortBy.key).toString().toLowerCase();
+					firstValue = a.get(this.columns.sortBy.key),
+					secondValue = b.get(this.columns.sortBy.key),
+					first = (firstValue === null ? '' : firstValue).toString().toLowerCase(),
+					second = (secondValue === null ? '' : secondValue).toString().toLowerCase();
 
 				let result = 0;
 
@@ -560,16 +591,17 @@ class DataSource {
 			}
 
 			const obj = {
-				columns		 :[...this.columns.entries()].map(x => x[0]),
-				visualization:this.visualizations.selected.type,
-				sheet_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				file_name	 :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				token		 :await IndexedDb.instance.get('token'),
+				columns :[...this.columns.entries()].map(x => x[0]),
+				visualization: this.visualizations.selected.type,
+				sheet_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				file_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
+				token :await IndexedDb.instance.get('token'),
 				show_legends: !this.visualizations.selected.options.hideLegend || 0,
 				show_values: this.visualizations.selected.options.showValues || 0,
+				classic_pie: this.visualizations.selected.options.classicPie
 			};
 
-			for(const axis of this.visualizations.selected.options.axes) {
+			for(const axis of this.visualizations.selected.options.axes || []) {
 				if(axis.columns.length)
 					obj[axis.position] = axis.columns[0].key;
 			}
@@ -672,12 +704,18 @@ class DataSource {
 		this.visualizations.selected.container.classList.remove('hidden');
 	}
 
-	error(message) {
+	error(message = '') {
+
+		if(this.container.querySelector('pre.warning'))
+			return;
 
 		this.resetError();
 
 		this.container.insertAdjacentHTML('beforeend', `
-			<pre class="warning">${message}</pre>
+			<pre class="warning">
+				<h2>No Data Found!</h2>
+				<span>${message}</span>
+			</pre>
 		`);
 
 		this.visualizations.selected.container.classList.add('hidden');
@@ -729,21 +767,90 @@ class DataSource {
 	}
 }
 
+/**
+ * A group of DataSource filters.
+ * This class provides the container and a submit mechanism to load the report.
+ */
 class DataSourceFilters extends Map {
 
-	constructor(source) {
+	/**
+	 * Generate a list of DataSourceFilter objects in the ideal order. This does a few more things.
+	 *
+	 * - Group the date ranges together.
+	 * - Create a new date range filter to accompany any date range pairs.
+	 * - Generate the DataSourceFilter objects and attach them to the class with placeholder as the key.
+	 *
+	 * @param Array			filters	A list of filters and their properties.
+	 * @param DataSource	source	The owner DataSource object. Optional because we can have a filter list independently from the source.
+	 */
+	constructor(filters, source = null) {
 
 		super();
 
 		this.source = source;
 
-		if(!this.source.filters || !this.source.filters.length)
+		if(!filters || !filters.length)
 			return;
 
-		for(const filter of this.source.filters)
-			this.set(filter.placeholder, new DataSourceFilter(filter, this.source));
+		filters = new Map(filters.map(f => [f.placeholder, f]));
+
+		// Create a Map of different date filter pairs
+		const filterGroups = new Map;
+
+		// Place the date filters alongside their partners in the map
+		// The goal is to group together the start and end dates of any one filter name
+		for(const filter of filters.values()) {
+
+			if(filter.type != 'date' || (!filter.name.toLowerCase().includes('start') && !filter.name.toLowerCase().includes('end')))
+				continue;
+
+			// Remove the 'start', 'end', 'date' and spaces to create a name that would (hopefuly) identify the filter pairs.
+			const name = filter.name.replace(/(start|end|date)/ig, '').trim();
+
+			if(!filterGroups.has(name)) {
+				filterGroups.set(name, [{
+					filter_id: Math.random(),
+					name: filter.name.replace(/(start|end|date)/ig, '') + ' Date Range',
+					placeholder: name + '_date_range',
+					type: 'daterange',
+					companions: [],
+				}]);
+			}
+
+			const group = filterGroups.get(name);
+
+			group[0].companions.push(filter);
+			group.push(filter);
+		}
+
+		// Remove any groups that don't have a start and end date (only)
+		for(const [name, group] of filterGroups)
+
+		// Go through each filter group and sort by the name to bring start filter before the end.
+		// And also add them to the master global filter list to bring them together.
+		for(let filterGroup of filterGroups.values()) {
+
+			// Make sure the Date Range filter comes first, followed by start date and then finally the end date.
+			filterGroup = filterGroup.sort((a, b) => {
+				return a.name.toLowerCase().includes('start') || a.type == 'daterange' ? -1 : 1;
+			});
+
+			for(const filter of filterGroup) {
+				filters.delete(filter.placeholder);
+				filters.set(filter.placeholder, filter);
+			}
+		}
+
+		for(const filter of filters.values())
+			this.set(filter.placeholder, new DataSourceFilter(filter, this));
 	}
 
+	/**
+	 * The main container of the filters.
+	 * This is a lazy loaded list of filter labels and the submit button.
+	 *
+	 * @return HTMLElement
+	 */
 	get container() {
 
 		if(this.containerElement)
@@ -753,47 +860,123 @@ class DataSourceFilters extends Map {
 
 		container.classList.add('toolbar', 'form', 'filters');
 
-		for(const filter of this.values())
+		for(const filter of this.values()) {
+
+			filter.label.on('click', e => e.stopPropagation());
+
 			container.appendChild(filter.label);
+		}
 
 		container.on('submit', e => {
 			e.preventDefault();
-			this.source.visualizations.selected.load();
+			this.apply();
 		});
 
 		container.insertAdjacentHTML('beforeend', `
-
-			<label class="right">
+			<label>
 				<span>&nbsp;</span>
-				<button type="submit">
-					<i class="fa fa-sync"></i> Submit
+				<button type="submit" class="apply">
+					<i class="fas fa-paper-plane"></i> Apply
 				</button>
 			</label>
 		`);
 
+		if(this.source)
+			container.on('click', () => this.source.container.querySelector('.filters-toggle').click());
+
+		container.querySelector('.apply').on('click', e => e.stopPropagation());
+
 		return container;
+	}
+
+	/**
+	 * Submit the filters values and load the report with the new data.
+	 * This only works whent the owner DataSorce object is passed in constructor.
+	 */
+	async apply() {
+
+		if(!this.source)
+			return;
+
+		this.source.visualizations.selected.load();
+
+		const toggle = this.source.container.querySelector('.filters-toggle.selected');
+
+		if(toggle)
+			toggle.click();
 	}
 }
 
+/**
+ * The class representing one single DataSource filter. It has a few responsibilities.
+ *
+ * - Initialize the label container.
+ * - Act as a black box when dealing with fitler value. Lets the user set or get the currnet value of the
+ * 	 filter without worrying about the specifics like filter type, default value, current container initialization state etc.
+ * - Fetch the report data when the filter as a dataset report attached to it.
+ * - Handle special filter types like daterange that affect other filters.
+ */
 class DataSourceFilter {
 
+	/**
+	 * Set up some constant properties.
+	 */
 	static setup() {
+
 		DataSourceFilter.placeholderPrefix = 'param_';
+		DataSourceFilter.timeout = 5 * 60 * 1000;
+
+		DataSourceFilter.dateRanges = [
+			{
+				start: 0,
+				end: 0,
+				name: 'Today',
+			},
+			{
+				start: -1,
+				end: -1,
+				name: 'Yesterday',
+			},
+			{
+				start: -7,
+				end: 0,
+				name: 'Last 7 Days',
+			},
+			{
+				start: -30,
+				end: 0,
+				name: 'Last 30 Days',
+			},
+			{
+				start: -365,
+				end: 0,
+				name: 'Last Year',
+			},
+		];
 	}
 
-	constructor(filter, source) {
+	constructor(filter, filters = null) {
 
-		for(const key in filter)
-			this[key] = filter[key];
+		Object.assign(this, filter);
 
-		this.source = source;
+		this.filters = filters;
 
-		if(this.dataset && MetaData.datasets.has(this.dataset)) {
+		if(this.dataset && DataSource.list.has(this.dataset))
+			this.multiSelect = new MultiSelect({multiple: this.multiple});
 
-			this.dataset = !MetaData.datasets.get(this.dataset).query_id ? new OtherDataset(this.dataset, this) : new Dataset(this.dataset, this);
-		}
+		this.valueHistory = [];
 
-		else this.dataset = null;
+		if(this.type != 'daterange')
+			return;
+
+		this.dateRanges = JSON.parse(JSON.stringify(DataSourceFilter.dateRanges));
+
+		if(account.settings.has('global_filters_date_ranges'))
+			this.dateRanges = account.settings.has('global_filters_date_ranges');
+
+		this.dateRanges.push({name: 'Custom'});
+
+		this.value = 0;
 	}
 
 	get label() {
@@ -802,42 +985,73 @@ class DataSourceFilter {
 			return this.labelContainer;
 
 		const container = document.createElement('label');
-		if (this.type == 'hidden')
+
+		container.style.order = this.order;
+
+		if(!MetaData.filterTypes.has(this.type))
+			return container;
+
+		if(this.type == 'hidden')
 			container.classList.add('hidden');
 
-		let input = document.createElement('input');
+		let input;
 
-		input.type = this.type;
-		input.name = this.placeholder;
+		if(this.multiSelect)
+			input = this.multiSelect.container;
 
-		if(input.name.toLowerCase() == 'sdate' || input.name.toLowerCase() == 'edate')
-			input.max = new Date().toISOString().substring(0, 10);
+		else if(this.type == 'daterange') {
 
-		input.value = this.value;
+			input = document.createElement('select');
 
-		if(this.dataset)
-			input = this.dataset.container;
+			for(const [index, range] of this.dateRanges.entries())
+				input.insertAdjacentHTML('beforeend', `<option value="${index}">${range.name}</option>`);
+
+			input.value = 'valueCache' in this ? this.valueCache : this.value;
+
+			input.on('change', () => this.dateRangeUpdate());
+		}
+
+		else {
+
+			input = document.createElement('input');
+
+			input.type = MetaData.filterTypes.get(this.type).input_type;
+			input.name = this.placeholder;
+
+			input.value = 'valueCache' in this ? this.valueCache : this.value;
+		}
 
 		container.innerHTML = `<span>${this.name}<span>`;
-
 		container.appendChild(input);
 
-		return this.labelContainer = container;
+		// Timing of this is critical
+		this.labelContainer = container;
+
+		this.dateRangeUpdate();
+
+		// Empty the cached value which was recieved before the filter container was created.
+		delete this.valueCache;
+
+		return container;
 	}
 
 	get value() {
 
-		if(this.dataset && this.dataset.query_id)
-			return this.dataset;
+		if(this.multiSelect)
+			return this.multiSelect.value;
 
 		if(this.labelContainer)
-			return this.label.querySelector('input').value;
+			return this.label.querySelector(this.type == 'daterange' ? 'select' : 'input').value;
+
+		// If a value was recieved before the container could be created
+		if('valueCache' in this)
+			return this.valueCache;
 
 		let value = this.default_value;
 
 		if(!isNaN(parseFloat(this.offset))) {
 
-			if(this.type == 'date')
+			if(this.type.includes('date'))
 				value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 
 			if(this.type == 'month') {
@@ -846,15 +1060,95 @@ class DataSourceFilter {
 			}
 		}
 
+		// If an offset and a default value was provided for the offset then create a new default value
+		if(this.type == 'datetime' && this.default_value && value)
+			value = value + 'T' + this.default_value;
+
 		return value;
 	}
 
 	set value(value) {
 
-		if(this.dataset)
-			return this.dataset.value = value;
+		this.valueHistory.push(value);
+
+		if(this.multiSelect)
+			return this.multiSelect.value = value;
+
+		if(!this.labelContainer)
+			return this.valueCache = value;
+
+		if(this.type == 'daterange') {
+			this.label.querySelector('select').value = value;
+			this.dateRangeUpdate();
+			return;
+		}
 
 		this.label.querySelector('input').value = value;
+	}
+
+	async fetch() {
+
+		if(!this.dataset || !this.multiSelect)
+			return [];
+
+		await DataSource.load();
+
+		let
+			values,
+			timestamp;
+
+		const report = new DataSource(DataSource.list.get(this.dataset), window.page);
+
+		if(Array.from(report.filters.values()).some(f => f.dataset == this.dataset))
+			return [];
+
+		if(await IndexedDb.instance.has(`dataset.${this.dataset}`))
+			({values, timestamp} = await IndexedDb.instance.get(`dataset.${this.dataset}`));
+
+		if(!timestamp || Date.now() - timestamp > DataSourceFilter.timeout) {
+
+			({data: values} = await report.fetch({download: true}));
+
+			await IndexedDb.instance.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
+		}
+
+		if(!this.multiSelect.datalist || !this.multiSelect.datalist.length) {
+			this.multiSelect.datalist = values;
+			this.multiSelect.multiple = this.multiple;
+			this.multiSelect.all();
+		}
+
+		return values;
+	}
+
+	dateRangeUpdate() {
+
+		if(this.type != 'daterange')
+			return;
+
+		const
+			select = this.label.querySelector('select'),
+			range = this.dateRanges[select.value];
+
+		if(!range)
+			return;
+
+		// Show / hide other companion inputs depending on if custom was picked.
+		for(let companion of this.companions || []) {
+
+			companion = this.filters.get(companion.placeholder);
+
+			// If the option was the last one. We don't check the name because
+			// the user could have give a custom name in account settings.
+			companion.label.classList.toggle('hidden', select.value != this.dateRanges.length - 1);
+
+			const date = companion.name.toLowerCase().includes('start') ? range.start : range.end;
+
+			if(date === undefined)
+				continue;
+
+			companion.value = new Date(Date.now() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+		}
 	}
 }
 
@@ -920,18 +1214,6 @@ class DataSourceRow extends Map {
 					this.skip = true;
 			}
 
-			if(column.source.columns.get(column.key).postfix)
-				row[key] = row[key] + column.source.columns.get(column.key).postfix;
-
-			if(column.source.columns.get(column.key).prefix)
-				row[key] = column.source.columns.get(column.key).prefix + row[key];
-
-			if(column.type == 'date')
-				row[key] = Format.date(row[key]);
-
-			else if(column.type == 'number')
-				row[key] = Format.number(row[key]);
-
 			this.set(key, row[key]);
 		}
 
@@ -944,6 +1226,45 @@ class DataSourceRow extends Map {
 			this.set(key, value);
 
 		this.annotations = new Set();
+	}
+
+	/**
+	 * Get a user presentable value for a column in report.
+	 * We need a separate way to get this value because applying type information in a graph usually breaks the graphs.
+	 * So this value will only be used when showing the value to the user on screen and not to calculate the data.
+	 *
+	 * This will do things like
+	 * - Apply prefix/postfix.
+	 * - Apply date/number type formating.
+	 *
+	 * @param  string	key	The key whose value is needed.
+	 * @return string		The value of the column with it's type information applied to it.
+	 */
+	getTypedValue(key) {
+
+		if(!this.has(key))
+			return undefined;
+
+		if(!this.source.columns.has(key))
+			return undefined;
+
+		const column = this.source.columns.get(key);
+
+		let value = this.get(key);
+
+		if(column.type == 'date')
+			value = Format.date(value);
+
+		else if(column.type == 'number')
+			value = Format.number(value);
+
+		if(column.prefix)
+			value = column.prefix + value;
+
+		if(column.postfix)
+			value = value + column.postfix;
+
+		return value;
 	}
 }
 
@@ -1036,27 +1357,35 @@ class DataSourceColumn {
 				apply: (q, v) => !v.toString().toLowerCase().includes(q.toString().toLowerCase()),
 			},
 			{
-				name: '=',
+				name: 'Starts With',
+				apply: (q, v) => v.toString().toLowerCase().startsWith(q.toString().toLowerCase()),
+			},
+			{
+				name: 'Ends With',
+				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
+			},
+			{
+				name: 'Equal To',
 				apply: (q, v) => v.toString().toLowerCase() == q.toString().toLowerCase(),
 			},
 			{
-				name: '!=',
+				name: 'Not Equal To',
 				apply: (q, v) => v.toString().toLowerCase() != q.toString().toLowerCase(),
 			},
 			{
-				name: '>',
+				name: 'Greater Than',
 				apply: (q, v) => v > q,
 			},
 			{
-				name: '<',
+				name: 'Less Than',
 				apply: (q, v) => v < q,
 			},
 			{
-				name: '>=',
+				name: 'Greater Than or Equal To',
 				apply: (q, v) => v >= q,
 			},
 			{
-				name: '<=',
+				name: 'Less Than or Equal To',
 				apply: (q, v) => v <= q,
 			},
 			{
@@ -1067,24 +1396,30 @@ class DataSourceColumn {
 
 		DataSourceColumn.accumulationTypes = [
 			{
-				name: 'sum',
+				name: 'Sum',
 				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0)),
 			},
 			{
-				name: 'average',
+				name: 'Average',
 				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0) / rows.length),
 			},
 			{
-				name: 'max',
+				name: 'Max',
 				apply: (rows, column) => Format.number(Math.max(...rows.map(r => r.get(column)))),
 			},
 			{
-				name: 'min',
+				name: 'Min',
 				apply: (rows, column) => Format.number(Math.min(...rows.map(r => r.get(column)))),
 			},
 			{
-				name: 'distinct',
+				name: 'Distinct Count',
 				apply: (rows, column) => Format.number(new Set(rows.map(r => r.get(column))).size),
+				string: true,
+			},
+			{
+				name: 'Distinct Values',
+				apply: (rows, column) => Array.from(new Set(rows.map(r => r.get(column)))).join(', '),
+				string: true,
 			},
 		];
 
@@ -1117,120 +1452,7 @@ class DataSourceColumn {
 				<span class="color" style="background: ${this.color}"></span>
 				<span class="name">${this.name}</span>
 			</span>
-
-			<div class="blanket hidden">
-				<form class="block form">
-
-					<h3>Column Properties</h3>
-
-					<label>
-						<span>Key</span>
-						<input type="text" name="key" value="${this.key}" disabled readonly>
-					</label>
-
-					<label>
-						<span>Name</span>
-						<input type="text" name="name" value="${this.name}" >
-					</label>
-
-					<label>
-						<span>Search</span>
-						<div class="search">
-							<select name="searchType"></select>
-							<input type="search" name="searchQuery">
-						</div>
-					</label>
-
-					<label>
-						<span>Type</span>
-						<select name="type">
-							<option value="string">String</option>
-							<option value="number">Number</option>
-							<option value="date">Date</option>
-						</select>
-					</label>
-
-					<label>
-						<span>Color</span>
-						<input type="color" name="color">
-					</label>
-
-					<label>
-						<span>Sort</span>
-						<select name="sort">
-							<option value="-1">None</option>
-							<option value="0">Descending</option>
-							<option value="1">Ascending</option>
-						</select>
-					</label>
-
-					<label>
-						<span>Formula</span>
-						<input type="text" name="formula">
-						<small></small>
-					</label>
-
-					<label>
-						<span>Prefix</span>
-						<input type="text" name="prefix">
-					</label>
-
-					<label>
-						<span>Postfix</span>
-						<input type="text" name="postfix">
-					</label>
-
-					<label>
-						<span>Disabled</span>
-						<select name="disabled">
-							<option value="0">No</option>
-							<option value="1">Yes</option>
-						</select>
-					</label>
-
-					<h3>Drill down</h3>
-
-					<label class="drilldown-dropdown">
-						<span>Report</span>
-					</label>
-
-					<label>
-						<span>Parameters</span>
-						<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
-					</label>
-
-					<div class="parameter-list"></div>
-
-					<footer>
-
-						<button type="button" class="cancel">
-							<i class="far fa-times-circle"></i> Cancel
-						</button>
-
-						<button type="button" class="apply">
-							<i class="fas fa-check"></i> Apply
-						</button>
-
-						<button type="submit">
-							<i class="fa fa-save"></i> Save
-						</button>
-					</footer>
-				</form>
-			</div>
 		`;
-
-		this.blanket = container.querySelector('.blanket');
-		this.form = this.blanket.querySelector('.form');
-
-		const label = this.container.querySelector('.label');
-
-		this.form.elements.formula.on('keyup', async () => {
-
-			if(this.formulaTimeout)
-				clearTimeout(this.formulaTimeout);
-
-			this.formulaTimeout = setTimeout(() => this.validateFormula(), 200);
-		});
 
 		if(user.privileges.has('report')) {
 
@@ -1240,6 +1462,7 @@ class DataSourceColumn {
 			edit.title = 'Edit Column';
 			edit.on('click', e => {
 				e.stopPropagation();
+
 				this.edit();
 			});
 
@@ -1247,43 +1470,6 @@ class DataSourceColumn {
 
 			this.container.querySelector('.label').appendChild(edit);
 		}
-
-		this.form.on('submit', async e => this.save(e));
-
-		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
-
-		this.form.on('click', e => e.stopPropagation());
-
-		for(const [i, type] of DataSourceColumn.searchTypes.entries()) {
-
-			this.form.searchType.insertAdjacentHTML('beforeend', `
-				<option value="${i}">${type.name}</option>
-			`);
-		}
-
-		const sortedReports = Array.from(DataSource.list.values()).sort(function(a, b) {
-			const nameA = a.name.toUpperCase();
-			const nameB = b.name.toUpperCase();
-			if (nameA < nameB) {
-				return -1;
-			}
-			if (nameA > nameB) {
-				return 1;
-			}
-			return 0;
-		});
-
-		const list = [];
-
-		for(const report of sortedReports)
-			list.push({name: report.name, value: report.query_id});
-
-		this.drilldownQuery = new MultiSelect({datalist: list, multiple: false, expand: true});
-
-		this.form.querySelector('.drilldown-dropdown').appendChild(this.drilldownQuery.container);
-
-		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
-		this.updateDrilldownParamters();
 
 		let timeout;
 
@@ -1325,14 +1511,6 @@ class DataSourceColumn {
 			}, 300);
 		});
 
-		this.form.querySelector('.add-parameters').on('click', () => {
-			this.addParameter();
-			this.updateDrilldownParamters();
-		});
-
-		this.form.querySelector('.cancel').on('click', () => this.blanket.classList.add('hidden'));
-		this.form.querySelector('.apply').on('click', () => this.apply());
-
 		container.querySelector('.label').on('dblclick', async (e) => {
 
 			clearTimeout(timeout);
@@ -1357,7 +1535,7 @@ class DataSourceColumn {
 			this.source.columns.render();
 
 			await this.update();
-		})
+		});
 
 		this.setDragAndDrop();
 
@@ -1366,11 +1544,15 @@ class DataSourceColumn {
 
 	edit() {
 
+		this.dialogueBox.body.appendChild(this.form);
+
 		for(const key in this) {
 
 			if(key in this.form)
 				this.form[key].value = this[key];
 		}
+
+		this.form.disabled.value = parseInt(this.disabled) || 0;
 
 		if(this.drilldown && this.drilldown.query_id) {
 
@@ -1387,7 +1569,229 @@ class DataSourceColumn {
 			this.drilldownQuery.clear();
 		}
 
-		this.blanket.classList.remove('hidden');
+		this.dialogueBox.show();
+	}
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const form = this.formContainer = document.createElement('form');
+
+		form.classList.add('block', 'form');
+
+		form.innerHTML = `
+			<label>
+				<span>Key</span>
+				<input type="text" name="key" value="${this.key}" disabled readonly>
+			</label>
+
+			<label>
+				<span>Name</span>
+				<input type="text" name="name" value="${this.name}" >
+			</label>
+
+			<label class="show search-type">
+				<span>Search</span>
+				<div class="category-group search">
+					<select name="searchType"></select>
+					<input type="search" name="searchQuery">
+				</div>
+			</label>
+
+			<label class="show accumulation-type">
+				<span>Accumulation</span>
+				<div class="category-group">
+					<select name="accumulation">
+						<option value=""></option>
+					</select>
+					<input type="text" name="accumulationResult" readonly>
+				</div>
+			</label>
+
+			<label>
+				<span>Type</span>
+				<select name="type">
+					<option value="string">String</option>
+					<option value="number">Number</option>
+					<option value="date">Date</option>
+					<option value="html">HTML</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Color</span>
+				<input type="color" name="color" class="color">
+			</label>
+
+			<label>
+				<span>Sort</span>
+				<select name="sort">
+					<option value="-1">None</option>
+					<option value="0">Descending</option>
+					<option value="1">Ascending</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Formula</span>
+				<input type="text" name="formula">
+				<small></small>
+			</label>
+
+			<label>
+				<span>Prefix</span>
+				<input type="text" name="prefix">
+			</label>
+
+			<label>
+				<span>Postfix</span>
+				<input type="text" name="postfix">
+			</label>
+
+			<label>
+				<span>Disabled</span>
+				<select name="disabled">
+					<option value="0">No</option>
+					<option value="1">Yes</option>
+				</select>
+			</label>
+
+			<h3>Drill down</h3>
+
+			<label class="drilldown-dropdown">
+				<span>Report</span>
+			</label>
+
+			<label>
+				<span>Parameters</span>
+				<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
+			</label>
+
+			<div class="parameter-list"></div>
+
+			<footer class="show">
+
+				<button type="button" class="cancel">
+					<i class="far fa-times-circle"></i> Cancel
+				</button>
+
+				<button type="submit" class="apply">
+					<i class="fas fa-check"></i> Apply
+				</button>
+
+				<button type="button" class="save">
+					<i class="fa fa-save"></i> Save
+				</button>
+			</footer>
+		`;
+
+		form.on('submit', async e => this.apply(e));
+		form.on('click', async e => e.stopPropagation());
+
+		if(!user.privileges.has('report'))
+			form.querySelector('footer .save').classList.add('hidden');
+
+		form.elements.formula.on('keyup', async () => {
+
+			if(formulaTimeout)
+				clearTimeout(formulaTimeout);
+
+			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
+		});
+
+		// To check the type of the column;
+		let string = false;
+
+		for(const [index, report] of this.source.response.entries()) {
+
+			if(index > 10)
+				break;
+
+			if(isNaN(report.get(this.key))) {
+				string = true;
+				break;
+			}
+		}
+
+		for(const [i, type] of DataSourceColumn.searchTypes.entries())
+			form.searchType.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+
+		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
+
+			if(!string || type.string)
+				form.accumulation.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		}
+
+		form.accumulation.on('change', () => {
+
+			const accumulation = DataSourceColumn.accumulationTypes[form.accumulation.value];
+
+			if(form.accumulation.value && accumulation)
+				form.accumulationResult.value = accumulation.apply(this.source.response, this.key);
+
+			else form.accumulationResult.value = '';
+		});
+
+		form.querySelector('.add-parameters').on('click', () => {
+			this.addParameter();
+			this.updateDrilldownParamters();
+		});
+
+		form.querySelector('.cancel').on('click', () => {
+
+			this.dialogueBox.hide();
+
+			if(!form.parentElement.classList.contains('body'))
+				form.parentElement.classList.add('hidden');
+		});
+
+		form.querySelector('.save').on('click', () => this.save());
+
+		return form;
+	}
+
+	get dialogueBox() {
+
+		if(this.dialogueBoxObject)
+			return this.dialogueBoxObject;
+
+		const dialogue = this.dialogueBoxObject = new DialogBox();
+
+		dialogue.container.classList.add('data-source-column');
+		dialogue.heading = 'Column Properties';
+
+		const sortedReports = Array.from(DataSource.list.values()).sort((a, b) => {
+
+			const
+				nameA = a.name.toUpperCase(),
+				nameB = b.name.toUpperCase();
+
+			if(nameA < nameB)
+				return -1;
+
+			if(nameA > nameB)
+				return 1;
+
+			return 0;
+		});
+
+		const list = [];
+
+		for(const report of sortedReports)
+			list.push({name: report.name, value: report.query_id});
+
+		this.drilldownQuery = new MultiSelect({datalist: list, multiple: false, expand: true});
+
+		this.form.querySelector('.drilldown-dropdown').appendChild(this.drilldownQuery.container);
+
+		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
+		this.updateDrilldownParamters();
+
+		dialogue.body.appendChild(this.form);
+
+		return dialogue;
 	}
 
 	addParameter(parameter = {}) {
@@ -1434,8 +1838,6 @@ class DataSourceColumn {
 		container.querySelector('.delete').on('click', () => {
 			parameterList.removeChild(container);
 		});
-
-		this.blanket.on('click', () => this.blanket.classList.add('hidden'));
 	}
 
 	updateDrilldownParamters(updatingType) {
@@ -1498,25 +1900,30 @@ class DataSourceColumn {
 		this.form.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
 	}
 
-	async apply() {
+	async apply(e) {
+
+		if(e)
+			e.preventDefault();
 
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
+		this.disabled = parseInt(this.disabled) || 0;
+
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
+
+		if(!this.form.parentElement.classList.contains('body'))
+			this.form.parentElement.classList.add('hidden');
 
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
 		await this.source.visualizations.selected.render();
-		this.blanket.classList.add('hidden');
+		this.dialogueBox.hide();
 	}
 
-	async save(e) {
-
-		if(e)
-			e.preventDefault();
+	async save() {
 
 		if(!this.source.format)
 			this.source.format = {};
@@ -1529,8 +1936,10 @@ class DataSourceColumn {
 			updated = 0,
 			json_param = [];
 
-		for(const element of this.form.elements)
+		for(const element of this.form.elements) {
+
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+		}
 
 		for(const row of this.form.querySelectorAll('.parameter')) {
 
@@ -1594,14 +2003,12 @@ class DataSourceColumn {
 		await API.call('reports/report/update', parameters, options);
 		await this.source.visualizations.selected.load();
 
-		this.blanket.classList.add('hidden');
+		this.dialogueBox.hide();
 	}
 
 	async update() {
 
 		this.render();
-
-		this.blanket.classList.add('hidden');
 
 		this.source.columns.render();
 		await this.source.visualizations.selected.render();
@@ -1757,125 +2164,6 @@ class DataSourceColumn {
 		destination.container.querySelector('.drilldown').classList.remove('hidden');
 
 		destination.visualizations.selected.load();
-	}
-
-	get search() {
-
-		if(this.searchContainer)
-			return this.searchContainer;
-
-		const
-			container = this.searchContainer = document.createElement('th'),
-			searchTypes = DataSourceColumn.searchTypes.map((type, i) => `<option value="${i}">${type.name}</option>`).join('');
-
-		container.innerHTML = `
-			<div>
-				<select class="search-type">${searchTypes}</select>
-				<input type="search" class="query" placeholder="${this.name}">
-			</div>
-		`;
-
-		const
-			select = container.querySelector('.search-type'),
-			query = container.querySelector('.query');
-
-		select.on('change', () => {
-			this.searchType = select.value;
-			this.searchQuery = query.value;
-			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
-
-			for (const column of this.source.columns.values()) {
-				column.accumulation.run()
-			}
-
-			this.source.visualizations.selected.render();
-			setTimeout(() => select.focus());
-		});
-
-		query.on('keyup', () => {
-			this.searchType = select.value;
-			this.searchQuery = query.value;
-			this.filtered = this.searchQuery !== null && this.searchQuery !== '';
-
-			for (const column of this.source.columns.values()) {
-				column.accumulation.run()
-			}
-
-			this.source.visualizations.selected.render();
-			setTimeout(() => query.focus());
-		});
-
-		return container;
-	}
-
-	get accumulation() {
-
-		if(this.accumulationContainer)
-			return this.accumulationContainer;
-
-		const
-			container = this.accumulationContainer = document.createElement('th'),
-			accumulationTypes = DataSourceColumn.accumulationTypes.map((type, i) => `
-				<option>${type.name}</option>
-			`).join('');
-
-		container.innerHTML = `
-			<div>
-				<select>
-					<option>&#402;</option>
-					${accumulationTypes}
-				</select>
-				<span class="result"></span>
-			</div>
-		`;
-
-		const
-			select = container.querySelector('select'),
-			result = container.querySelector('.result');
-
-		select.on('change', () => container.run());
-
-		container.run = () => {
-
-			const
-				data = this.source.response,
-				accumulation = DataSourceColumn.accumulationTypes.filter(a => a.name == select.value);
-
-			if(select.value && accumulation.length) {
-
-				const value = accumulation[0].apply(data, this.key);
-
-				result.textContent = value == 'NaN' ? '' : value;
-			}
-
-			else result.textContent = '';
-		}
-
-		return container;
-	}
-
-	get heading() {
-
-		if(this.headingContainer)
-			return this.headingContainer;
-
-		const container = this.headingContainer = document.createElement('th');
-
-		container.classList.add('heading');
-
-		container.innerHTML = `
-			${this.drilldown && this.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
-			<span class="name">${this.name}</span>
-			<span class="sort"><i class="fa fa-sort"></i></span>
-		`;
-
-		container.on('click', () => {
-			this.source.columns.sortBy = this;
-			this.sort = !this.sort;
-			this.source.visualizations.selected.render();
-		});
-
-		return container;
 	}
 }
 
@@ -2395,9 +2683,11 @@ class Visualization {
 
 		this.source = source;
 
-		try {
-			this.options = JSON.parse(this.options);
-		} catch(e) {}
+		if(this.options && typeof this.options == 'string') {
+			try {
+				this.options = JSON.parse(this.options);
+			} catch(e) {}
+		}
 
 		for(const key in this.options)
 			this[key] = this.options[key];
@@ -2451,10 +2741,10 @@ class LinearVisualization extends Visualization {
 		const rows = this.source.response;
 
 		if(!rows || !rows.length)
-			return this.source.error('No data found! :(');
+			return this.source.error();
 
 		if(!this.axes)
-			return this.source.error('Axes not defined! :(');
+			return this.source.error('Axes not defined.');
 
 		for(const axis of this.axes) {
 
@@ -2473,35 +2763,35 @@ class LinearVisualization extends Visualization {
 		}
 
 		if(!this.axes.bottom)
-			return this.source.error('Bottom axis not defined! :(');
+			return this.source.error('Bottom axis not defined.');
 
 		if(!this.axes.left)
-			return this.source.error('Left axis not defined! :(');
+			return this.source.error('Left axis not defined.');
 
 		if(!this.axes.bottom.columns.length)
-			return this.source.error('Bottom axis requires exactly one column! :(');
+			return this.source.error('Bottom axis requires exactly one column.');
 
 		if(!this.axes.left.columns.length)
-			return this.source.error('Left axis requires atleast one column! :(');
+			return this.source.error('Left axis requires atleast one column.');
 
 		if(this.axes.bottom.columns.length > 1)
-			return this.source.error('Bottom axis cannot has more than one column! :(');
+			return this.source.error('Bottom axis cannot has more than one column.');
 
 		for(const column of this.axes.bottom.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :(`);
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.`);
 		}
 
 		for(const column of this.axes.left.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Left axis column <em>${column.key}</em> not found! :(`);
+				return this.source.error(`Left axis column <em>${column.key}</em> not found.`);
 		}
 
 		for(const bottom of this.axes.bottom.columns) {
 			for(const left of this.axes.left.columns) {
 
 				if(bottom.key == left.key)
-					return this.source.error(`Column <em>${bottom.key}</em> cannot be on both axis! :(`);
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on both axis.`);
 			}
 		}
 
@@ -2515,6 +2805,17 @@ class LinearVisualization extends Visualization {
 			column.render();
 		}
 
+		for(const column of this.axes.bottom.columns) {
+			if(!this.source.columns.get(column.key))
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.`);
+		}
+
+		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Bottom axis requires atleast one column.');
+
+		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Left axis requires atleast one column.');
+
 		this.axes.bottom.height = 25;
 		this.axes.left.width = 50;
 
@@ -2526,6 +2827,11 @@ class LinearVisualization extends Visualization {
 
 		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
 		this.width = this.container.clientWidth - this.axes.left.width - 40;
+
+		for(const row of rows) {
+			for(const [key, column] of row)
+				row.set(key, row.getTypedValue(key));
+		}
 
 		this.rows = rows;
 
@@ -2555,13 +2861,13 @@ class LinearVisualization extends Visualization {
 			return;
 
 		if(!this.axes)
-			throw new Page.exception('Axes not defined! :(');
+			return this.source.error('Bottom axis not defined.');
 
 		this.columns = {};
 
 		for(const row of this.rows) {
 
-			for(const [key, value] of row) {
+			for(const [key, _] of row) {
 
 				if(key == this.axes.bottom.column)
 					continue;
@@ -2581,7 +2887,7 @@ class LinearVisualization extends Visualization {
 
 				this.columns[key].push({
 					x: row.get(this.axes.bottom.column),
-					y: value,
+					y: row.get(key),
 					y1: this.axes.right ? row.get(this.axes.right.column) : null,
 					key,
 				});
@@ -2595,18 +2901,8 @@ class LinearVisualization extends Visualization {
 			.append('g')
 			.attr('class', 'chart');
 
-		if(!this.rows.length) {
-
-			return this.svg
-				.append('g')
-				.append('text')
-				.attr('x', (this.width / 2))
-				.attr('y', (this.height / 2))
-				.attr('text-anchor', 'middle')
-				.attr('class', 'NA')
-				.attr('fill', '#999')
-				.text(this.source.originalResponse.message || 'No data found! :(');
-		}
+		if(!this.rows.length)
+			return this.source.error();
 
 		if(this.rows.length != this.source.response.length) {
 
@@ -2702,12 +2998,15 @@ class LinearVisualization extends Visualization {
 
 			const tooltip = [];
 
-			for(const [key, value] of row) {
+			for(const [key, _] of row) {
 
 				if(key == that.axes.bottom.column)
 					continue;
 
 				const column = row.source.columns.get(key);
+
+				if(column.disabled)
+					continue;
 
 				tooltip.push(`
 					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
@@ -2716,7 +3015,7 @@ class LinearVisualization extends Visualization {
 							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
 							${column.name}
 						</span>
-						<span class="value">${Format.number(value)}</span>
+						<span class="value">${Format.number(row.get(key))}</span>
 					</li>
 				`);
 			}
@@ -2800,6 +3099,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		this.rowLimit = 15;
 		this.rowLimitMultiplier = 1.75;
+		this.selectedRows = new Set;
 	}
 
 	async load(options = {}) {
@@ -2839,31 +3139,84 @@ Visualization.list.set('table', class Table extends Visualization {
 			container = this.container.querySelector('.container'),
 			rows = this.source.response;
 
+		if(!rows || !rows.length)
+			return this.source.error();
+
 		container.textContent = null;
 
 		const
 			table = document.createElement('table'),
 			thead = document.createElement('thead'),
 			search = document.createElement('tr'),
-			accumulation = document.createElement('tr'),
 			headings = document.createElement('tr'),
 			rowCount = document.createElement('div');
 
 		search.classList.add('search');
-		accumulation.classList.add('accumulation');
 
 		for(const column of this.source.columns.list.values()) {
 
-			search.appendChild(column.search);
-			accumulation.appendChild(column.accumulation);
-			headings.appendChild(column.heading);
+			const container = document.createElement('th');
+
+			container.classList.add('heading');
+
+			container.innerHTML = `
+				<div>
+					<span class="name">
+						${column.drilldown && column.drilldown.query_id ? '<span class="drilldown"><i class="fas fa-angle-double-down"></i></span>' : ''}
+						${column.name}
+					</span>
+					<div class="filter-popup"><span>&#9698;</span></div>
+					<div class="hidden popup-dropdown"></div>
+				</div>
+			`;
+
+			document.querySelector('body').on('click', () => {
+				container.querySelector('.popup-dropdown').classList.add('hidden')
+				container.querySelector('.filter-popup span').classList.remove('open');
+			});
+
+			container.on('click', () => {
+
+				if(parseInt(column.sort) == 1)
+					column.sort = 0;
+
+				else column.sort = 1;
+
+				column.source.columns.sortBy = column;
+				column.source.visualizations.selected.render();
+			});
+
+			container.querySelector('.filter-popup').on('click', e => {
+
+				column.dialogueBox;
+
+				e.stopPropagation();
+
+				for(const key in column) {
+
+					if(key in column.form)
+						column.form[key].value = column[key];
+				}
+
+				for(const node of container.parentElement.querySelectorAll('th')) {
+					node.querySelector('.popup-dropdown').classList.add('hidden');
+					node.querySelector('.filter-popup span').classList.remove('open');
+				}
+
+				e.currentTarget.querySelector('span').classList.add('open');
+
+				column.form.classList.add('compact');
+
+				container.querySelector('.popup-dropdown').appendChild(column.form);
+
+				container.querySelector('.popup-dropdown').classList.remove('hidden');
+			});
+
+			if(column.searchQuery && column.searchQuery)
+				container.classList.add('has-filter');
+
+			headings.appendChild(container);
 		}
-
-		if(!this.hideSearchBar)
-			thead.appendChild(search);
-
-		if(!this.hideFunctionBar)
-			thead.appendChild(accumulation);
 
 		if(!this.hideHeadingsBar)
 			thead.appendChild(headings);
@@ -2878,13 +3231,16 @@ Visualization.list.set('table', class Table extends Visualization {
 			if(position >= this.rowLimit)
 				break;
 
-			const tr = document.createElement('tr');
+			const tr = row.tr = document.createElement('tr');
 
 			for(const [key, column] of this.source.columns.list) {
 
 				const td = document.createElement('td');
 
-				td.textContent = row.get(key);
+				if(column.type == 'html')
+					td.innerHTML = row.getTypedValue(key);
+				else
+					td.textContent = row.getTypedValue(key);
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
 
@@ -2897,7 +3253,16 @@ Visualization.list.set('table', class Table extends Visualization {
 				tr.appendChild(td);
 			}
 
-			tr.on('click', () => tr.classList.toggle('selected'));
+			tr.on('click', () => {
+
+				if(this.selectedRows.has(row))
+					this.selectedRows.delete(row);
+
+				else this.selectedRows.add(row);
+
+				tr.classList.toggle('selected');
+				this.renderRowSummary();
+			});
 
 			tbody.appendChild(tr);
 		}
@@ -2924,15 +3289,19 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(!rows || !rows.length) {
+		if(!rows.length) {
 			table.insertAdjacentHTML('beforeend', `
 				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found! :('}</td></tr>
 			`);
 		}
 
-		rowCount.classList.add('row-count');
+		rowCount.classList.add('row-summary');
 
 		rowCount.innerHTML = `
+			<span class="selected-rows hidden">
+				<span class="label">Selected:</span>
+				<strong title="Number of selected rows"></strong>
+			</span>
 			<span>
 				<span class="label">Showing:</span>
 				<strong title="Number of rows currently shown on screen">
@@ -2956,8 +3325,16 @@ Visualization.list.set('table', class Table extends Visualization {
 		table.appendChild(tbody);
 		container.appendChild(table);
 
-		if(!this.hideRowSummary)
+		if(!this.hideRowSummary && rows.length)
 			container.appendChild(rowCount);
+	}
+
+	renderRowSummary() {
+
+		const container = this.container.querySelector('.row-summary .selected-rows');
+
+		container.classList.toggle('hidden', !this.selectedRows.size);
+		container.querySelector('strong').textContent = Format.number(this.selectedRows.size);
 	}
 });
 
@@ -2968,9 +3345,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'line');
 		container.innerHTML = `
@@ -3242,9 +3617,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'bubble');
 
@@ -3387,13 +3760,24 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
 				.attr('cy', d => this.y(d.y));
 
+			if(this.options.showValues) {
+				this.svg
+					.selectAll('dot')
+					.data(column)
+					.enter()
+					.append('text')
+					.attr('x', d => this.x(d.x) + this.axes.left.width - (d.y1.toString().length * 4))
+					.attr('y', d => this.y(d.y) + 6)
+					.text(d => d.y1);
+			}
+
 			if(!options.resize) {
 
 				dots = dots
 					.attr('r', d => 0)
 					.transition()
 					.duration(Visualization.animationDuration)
-					.ease('quad-in');
+					.ease('elastic');
 			}
 
 			dots
@@ -3409,9 +3793,7 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'scatter');
 		container.innerHTML = `
@@ -3541,7 +3923,8 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 		// For each line appending the circle at each point
 		for(const column of this.columns) {
 
-			this.svg.selectAll('dot')
+			this.svg
+				.selectAll('dot')
 				.data(column)
 				.enter()
 				.append('circle')
@@ -3551,6 +3934,17 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
 				.attr('cy', d => this.y(d.y))
+
+			if(this.options.showValues) {
+				this.svg
+					.selectAll('dot')
+					.data(column)
+					.enter()
+					.append('text')
+					.attr('x', d => this.x(d.x) + this.axes.left.width - ((d.x + ', ' + d.y).toString().length * 3))
+					.attr('y', d => this.y(d.y) - 12)
+					.text(d => d.x + ', ' + d.y);
+			}
 		}
 
 		container
@@ -3580,9 +3974,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'bar');
 		container.innerHTML = `
@@ -3802,9 +4194,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'dualaxisbar');
 		container.innerHTML = `
@@ -3842,45 +4232,45 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		const rows = this.source.response;
 
 		if(!rows || !rows.length)
-			return this.source.error('No data found! :(');
+			return this.source.error();
 
 		if(!this.axes)
-			return this.source.error('Axes not defined! :(');
+			return this.source.error('Axes not defined.');
 
 		if(!this.axes.bottom)
-			return this.source.error('Bottom axis not defined! :(');
+			return this.source.error('Bottom axis not defined.');
 
 		if(!this.axes.left)
-			return this.source.error('Left axis not defined! :(');
+			return this.source.error('Left axis not defined.');
 
 		if(!this.axes.right)
-			return this.source.error('Right axis not defined! :(');
+			return this.source.error('Right axis not defined.');
 
 		if(!this.axes.bottom.columns.length)
-			return this.source.error('Bottom axis requires exactly one column! :(');
+			return this.source.error('Bottom axis requires exactly one column.');
 
 		if(!this.axes.left.columns.length)
-			return this.source.error('Left axis requires atleast one column! :(');
+			return this.source.error('Left axis requires atleast one column.');
 
 		if(!this.axes.right.columns.length)
-			return this.source.error('Right axis requires atleast one column! :(');
+			return this.source.error('Right axis requires atleast one column.');
 
 		if(this.axes.bottom.columns.length > 1)
-			return this.source.error('Bottom axis cannot has more than one column! :(');
+			return this.source.error('Bottom axis cannot has more than one column.');
 
 		for(const column of this.axes.bottom.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Bottom axis column <em>${column.key}</em> not found! :()`);
+				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.)`);
 		}
 
 		for(const column of this.axes.left.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Left axis column <em>${column.key}</em> not found! :(`);
+				return this.source.error(`Left axis column <em>${column.key}</em> not found.`);
 		}
 
 		for(const column of this.axes.right.columns) {
 			if(!this.source.columns.get(column.key))
-				return this.source.error(`Right axis column <em>${column.key}</em> not found! :(`);
+				return this.source.error(`Right axis column <em>${column.key}</em> not found.`);
 		}
 
 		for(const bottom of this.axes.bottom.columns) {
@@ -3888,15 +4278,24 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			for(const left of this.axes.left.columns) {
 
 				if(bottom.key == left.key)
-					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis! :(`);
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis.`);
 			}
 
 			for(const right of this.axes.right.columns) {
 
 				if(bottom.key == right.key)
-					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis! :(`);
+					return this.source.error(`Column <em>${bottom.key}</em> cannot be on two axis.`);
 			}
 		}
+
+		if(this.axes.bottom.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Bottom axis requires atleast one column.');
+
+		if(this.axes.left.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Left axis requires atleast one column.');
+
+		if(this.axes.right.columns.every(c => this.source.columns.get(c.key).disabled))
+			return this.source.error('Right axis requires atleast one column.');
 
 		for(const [key, column] of this.source.columns) {
 
@@ -4006,18 +4405,8 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 			.append('g')
 			.attr('class', 'chart');
 
-		if(!this.rows.length) {
-
-			return this.svg
-				.append('g')
-				.append('text')
-				.attr('x', (this.width / 2))
-				.attr('y', (this.height / 2))
-				.attr('text-anchor', 'middle')
-				.attr('class', 'NA')
-				.attr('fill', '#999')
-				.text(this.source.originalResponse.message || 'No data found! :(');
-		}
+		if(!this.rows.length)
+			return this.source.error();
 
 		if(this.rows.length != this.source.response.length) {
 
@@ -4383,9 +4772,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'stacked');
 		container.innerHTML = `
@@ -4528,7 +4915,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 			 let values;
 
-			if(this.options.showValues) {
+		if(this.options.showValues) {
 
 			values = this.svg
 				.append('g')
@@ -4558,8 +4945,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 					else
 						return Format.number(cell.y)
 				});
-			}
-
+		}
 
 		if(!options.resize) {
 
@@ -4601,9 +4987,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'area');
 		container.innerHTML = `
@@ -4674,6 +5058,9 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			for(const [name, value] of row) {
 
 				if(name == this.axes.bottom.column)
+					continue;
+
+				if(this.source.columns.get(name).disabled)
 					continue;
 
 				total += parseFloat(value) || 0;
@@ -4865,9 +5252,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'funnel');
 		container.innerHTML = `
@@ -5207,9 +5592,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'pie');
 		container.innerHTML = `
@@ -5289,8 +5672,8 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		container.selectAll('*').remove();
 
-		if(!this.rows || !this.rows.length)
-			return;
+		if(!this.rows || !this.rows.length || !this.rows[0].size)
+			return this.source.error();
 
 		const
 			[row] = this.rows,
@@ -5298,7 +5681,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			sum = Array.from(row.values()).reduce((sum, value) => sum + value, 0);
 
 		for(const [name, value] of this.rows[0])
-			data.push({name, value, percentage: Math.floor(value / sum * 1000) / 10});
+			data.push({name, value, percentage: Math.floor((value / sum) * 10000) / 100});
 
 		const
 
@@ -5308,11 +5691,11 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 			arc = d3.svg.arc()
 				.outerRadius(radius)
-				.innerRadius(radius - 75),
+				.innerRadius(this.options && this.options.classicPie ? 0 : radius - 75),
 
 			arcHover = d3.svg.arc()
 				.outerRadius(radius + 10)
-				.innerRadius(radius - 75),
+				.innerRadius(this.options && this.options.classicPie ? 0 : radius - 75),
 
 			arcs = container
 				.append('svg')
@@ -5394,7 +5777,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		}
 
 		// Add the text
-		if(!this.hideNumber) {
+		if(this.options && this.options.showValue == 'value') {
 
 			arcs.append('text')
 				.attr('transform', row => {
@@ -5406,8 +5789,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				.text(row => Format.number(row.data.value));
 		}
 
-		// Add the text
-		if(!this.hidePercentage) {
+		else {
 
 			arcs.append('text')
 				.attr('transform', row => {
@@ -5458,9 +5840,26 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			markers = [],
 			response = this.source.response;
 
+		if(!this.options)
+			return this.source.error('Options not defined.');
+
+		if(!this.options.latitude)
+			return this.source.error('Latitude Column not defined.');
+
+		if(!this.source.columns.has(this.options.latitude))
+			return this.source.error(`Latitude Column '${this.options.latitude}' not found.`);
+
+		if(!this.options.longitude)
+			return this.source.error('Longitude Column not defined.');
+
+		if(!this.source.columns.has(this.options.longitude))
+			return this.source.error(`Longitude Column '${this.options.longitude}' not found.`);
+
+		const zoom = parseInt(this.options.initialZoom) || 12;
+
 		// If the maps object wasn't already initialized
 		if(!this.map)
-			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), { zoom: 12 });
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {zoom});
 
 		// If the clustered object wasn't already initialized
 		if(!this.clusterer)
@@ -5471,8 +5870,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			markers.push(
 				new google.maps.Marker({
 					position: {
-						lat: parseFloat(row.get('lat')),
-						lng: parseFloat(row.get('lng')),
+						lat: parseFloat(row.get(this.options.latitude)),
+						lng: parseFloat(row.get(this.options.longitude)),
 					},
 				})
 			);
@@ -5491,8 +5890,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		// Point the map to location's center
 		this.map.panTo({
-			lat: parseFloat(response[0].get('lat')),
-			lng: parseFloat(response[0].get('lng')),
+			lat: parseFloat(this.options.initialLatitude || response[0].get(this.options.latitude)),
+			lng: parseFloat(this.options.initialLongitude || response[0].get(this.options.longitude)),
 		});
 	}
 });
@@ -5653,38 +6052,23 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		const [response] = this.source.response;
 
-		if(!this.column)
-			return this.source.error('Value column not selected! :(');
+		if(!this.options.column)
+			return this.source.error('Value column not selected.');
 
-		if(!response.has(this.column))
-			return this.source.error(`<em>${this.column}</em> column not found! :(`);
+		if(!response)
+			return this.source.error('Invalid Response.');
 
-		const value = response.get(this.column);
-
-		if(this.valueType == 'number' && isNaN(value))
-			return this.source.error('Invalid Number! :(');
-
-		if(this.valueType == 'date' && !Date.parse(value))
-			return this.source.error('Invalid Date! :(');
+		if(!response.has(this.options.column))
+			return this.source.error(`<em>${this.options.column}</em> column not found.`);
 	}
 
 	render(options = {}) {
 
 		const [response] = this.source.response;
 
-		let value = response.get(this.column);
+		let value = response.getTypedValue(this.options.column);
 
-		if(this.valueType == 'number')
-			value = Format.number(value);
-
-		if(this.valueType == 'date')
-			value = Format.date(value);
-
-		this.container.querySelector('.container').innerHTML = `
-			<div class="value">
-				${this.prefix || ''}${value}${this.postfix || ''}
-			</div>
-		`;
+		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
 	}
 });
 
@@ -5716,6 +6100,52 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			</div>
 		`;
 
+		if(this.subReports && this.subReports.length) {
+
+			this.container.style.cursor = 'pointer';
+
+			const actions = this.source.container.querySelector('header .actions');
+
+			actions.insertAdjacentHTML('beforeend', `
+				<span class="card-info" title="${this.subReports.length + (this.subReports.length > 1 ? ' sub-cards' : ' sub-card')}">
+					<i class="fas fa-ellipsis-h"></i>
+				</span>
+			`);
+		}
+
+		this.container.on('click', async () => {
+
+			if(!this.subReports || !this.subReports.length)
+				return;
+
+			this.subReportDialogBox.body.textContent = null;
+			this.subReportDialogBox.show();
+
+			let visualizations = [];
+
+			for(const [index, report] of DataSource.list.entries()) {
+
+				const selectedVisualizations = report.visualizations.filter(x => this.subReports.includes(x.visualization_id.toString()));
+
+				visualizations = visualizations.concat(selectedVisualizations);
+
+			}
+
+			for(const visualization of visualizations) {
+
+				const
+					query = DataSource.list.get(visualization.query_id),
+					report = new DataSource(query, this),
+					[selectedVisualization] = report.visualizations.filter(x => x.visualization_id == visualization.visualization_id);
+
+				report.visualizations.selected = selectedVisualization;
+
+				report.visualizations.selected.load();
+				this.subReportDialogBox.body.appendChild(report.container);
+			}
+
+		});
+
 		await this.source.fetch(options);
 
 		this.process();
@@ -5725,94 +6155,94 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	process() {
 
-		if(!this.timingColumn)
-			return this.source.error('Timing column not selected! :(');
+		if(!this.options.timingColumn)
+			return this.source.error('Timing column not selected.');
 
-		if(!this.valueColumn)
-			return this.source.error('Value column not selected! :(');
+		if(!this.options.valueColumn)
+			return this.source.error('Value column not selected.');
 
 		const dates = new Map;
 
 		for(const row of this.source.response) {
 
-			if(!row.has(this.timingColumn))
-				return this.source.error(`Timing column '${this.timingColumn}' not found! :(`);
+			if(!row.has(this.options.timingColumn))
+				return this.source.error(`Timing column '${this.options.timingColumn}' not found.`);
 
-			if(!row.has(this.valueColumn))
-				return this.source.error(`Value column '${this.valueColumn}' not found! :(`);
+			if(!row.has(this.options.valueColumn))
+				return this.source.error(`Value column '${this.options.valueColumn}' not found.`);
 
-			if(!Date.parse(row.get(this.timingColumn)))
-				return this.source.error(`Timing column value '${row.get(this.timingColumn)}' is not a valid date! :(`);
+			if(!Date.parse(row.get(this.options.timingColumn)))
+				return this.source.error(`Timing column value '${row.get(this.options.timingColumn)}' is not a valid date.`);
 
-			dates.set(Date.parse(new Date(row.get(this.timingColumn)).toISOString().substring(0, 10)), row);
+			dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
 
-		const
-			center = Date.parse(new Date(Date.now() - ((this.centerOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			left = Date.parse(new Date(Date.now() - ((this.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-			right = Date.parse(new Date(Date.now() - ((this.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10));
+		let today = new Date();
 
-		this.center = {value: 0};
-		this.right = {value: 0};
-		this.left = {value: 0};
+		today = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes(), today.getSeconds()));
 
-		if(dates.has(center)) {
+		this.center = {
+			value: 0,
+			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
+		};
 
-			const row = dates.get(center);
+		this.right = {
+			value: 0,
+			date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+		};
 
-			this.center = {
-				value: row.get(this.valueColumn),
-			};
+		this.left = {
+			value: 0,
+			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+		};
+
+		let centerValue;
+
+		if(dates.has(this.center.date)) {
+			centerValue = dates.get(this.center.date).get(this.options.valueColumn);
+			this.center.value = dates.get(this.center.date).getTypedValue(this.options.valueColumn);
 		}
 
-		if(dates.has(left)) {
+		if(dates.has(this.left.date)) {
 
-			const
-				row = dates.get(left),
-				value = row.get(this.valueColumn);
+			const value = dates.get(this.left.date).get(this.options.valueColumn);
 
-			this.left = {
-				value: row.get(this.valueColumn),
-				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
-			};
+			this.left.percentage = ((value - centerValue) / value) * 100 * -1;
+			this.left.value = dates.get(this.left.date).getTypedValue(this.options.valueColumn);
 		}
 
-		if(dates.has(right)) {
+		if(dates.has(this.right.date)) {
 
-			const
-				row = dates.get(right),
-				value = row.get(this.valueColumn);
+			const value = dates.get(this.right.date).get(this.options.valueColumn);
 
-			this.right = {
-				value: row.get(this.valueColumn),
-				percentage: Math.round(((value - this.center.value) / value) * 100 * -1),
-			};
+			this.right.percentage = ((value - centerValue) / value) * 100 * -1;
+			this.right.value = dates.get(this.right.date).getTypedValue(this.options.valueColumn);
 		}
 	}
 
 	render(options = {}) {
 
 		if(!this.center)
-			return this.source.error(`Center column not defined! :(`);
+			return this.source.error(`Center column not defined.`);
 
 		const container = this.container.querySelector('.container');
 
 		container.innerHTML = `
-			<h5>${this.prefix || ''}${Format.number(this.center.value)}${this.postfix || ''}</h5>
+			<h5>${this.center.value}</h5>
 
 			<div class="left">
 				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					${this.prefix || ''}${Format.number(this.left.value)}${this.postfix || ''}<br>
-					<small>${Format.number(this.leftOffset)} days ago</small>
+					${this.left.value}<br>
+					<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
 				</span>
 			</div>
 
 			<div class="right">
 				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					${this.prefix || ''}${Format.number(this.right.value)}${this.postfix || ''}<br>
-					<small>${Format.number(this.rightOffset)} days ago</small>
+					${this.right.value}<br>
+					<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
 				</span>
 			</div>
 		`;
@@ -5830,6 +6260,18 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		return color ? 'green' : 'red';
 	}
+
+	get subReportDialogBox() {
+
+		if(this.subReportsDialogBoxContainer)
+			return this.subReportsDialogBoxContainer;
+
+		const subReportDialog = this.subReportsDialogBoxContainer = new DialogBox();
+		subReportDialog.container.classList.add('sub-reports-dialog');
+		subReportDialog.heading = this.name;
+
+		return subReportDialog;
+	}
 });
 
 Visualization.list.set('json', class JSONVisualization extends Visualization {
@@ -5839,9 +6281,7 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('div');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'json');
 		container.innerHTML = `
@@ -5871,6 +6311,42 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
 
 		this.editor.editor.getSession().setMode('ace/mode/json');
+	}
+});
+
+Visualization.list.set('html', class JSONVisualization extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('visualization', 'html');
+		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
+
+		if(this.options.hideHeader)
+			this.source.container.querySelector('header').classList.add('hidden');
+
+		if(this.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
+
+		this.source.container.classList.add('flush');
+
+		return container;
+	}
+
+	async load(options = {}) {
+
+		super.render(options);
+		this.render(options);
+	}
+
+	render(options = {}) {
+
+		if(this.options.hideLegend)
+			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 });
 
@@ -5913,175 +6389,6 @@ class Tooltip {
 	}
 }
 
-class OtherDataset {
-
-	constructor(id, filter) {
-
-		if(!MetaData.datasets.has(id))
-			throw new Page.exception('Invalid dataset id! :(');
-
-		const dataset = MetaData.datasets.get(id);
-
-		for(const key in dataset)
-			this[key] = dataset[key];
-
-		this.filter = filter;
-	}
-
-	get container() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('other-dataset');
-
-		container.innerHTML = `
-			<input name="${this.filter.placeholder}">
-		`;
-
-		let value = null;
-		const input = container.querySelector('input');
-
-		input.on('change', () => {
-
-			this.value = input.value;
-		});
-
-
-		if(this.name.includes('Date')) {
-
-			if(this.name.includes('Start'))
-				value = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-			else
-				value = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-
-			input.value = value;
-			input.type = 'date';
-		}
-		else {
-
-			input.type = 'text';
-			input.value = this.filter.default_value;
-		}
-
-		this.datasetValue = [input.value];
-
-		return container;
-	}
-
-
-	async fetch() {
-
-		if(this.name.includes('Date')) {
-
-			return this.name.includes('Start') ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10) : new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-		}
-
-		return [""];
-	}
-
-	set value(value) {
-
-		if(!Array.isArray(value))
-			value = [value];
-
-		this.datasetValue = value;
-	}
-
-	get value() {
-
-		return this.datasetValue;
-	}
-
-}
-
-class Dataset extends MultiSelect {
-
-	constructor(id, filter) {
-
-		super();
-
-		if(!MetaData.datasets.has(id))
-			throw new Page.exception('Invalid dataset id! :(');
-
-		const dataset = MetaData.datasets.get(id);
-
-		for(const key in dataset)
-			this[key] = dataset[key];
-
-		this.filter = filter;
-	}
-
-	async fetch() {
-
-		if(!this.query_id)
-			return [];
-
-		let
-			values,
-			timestamp;
-
-		const parameters = {
-			id: this.id,
-		};
-
-		const external_parameters = await IndexedDb.instance.get('external_parameters');
-
-		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
-
-			for(const key of account.settings.get('external_parameters')) {
-
-				if(key in external_parameters)
-					parameters[DataSourceFilter.placeholderPrefix + key] = external_parameters[key];
-			}
-		}
-
-		try {
-			({values, timestamp} = JSON.parse(localStorage[`dataset.${this.id}`]));
-		} catch(e) {}
-
-		if(!timestamp || Date.now() - timestamp > Dataset.timeout) {
-
-			({data: values} = await API.call('datasets/values', parameters));
-
-			localStorage[`dataset.${this.id}`] = JSON.stringify({values, timestamp: Date.now()});
-		}
-
-		super.datalist = values;
-		super.multiple = this.filter.multiple;
-
-		return values;
-	}
-
-	set value(source) {
-
-		if(Array.isArray(source)) {
-			super.value = source;
-			return;
-		}
-
-		if(!source.container) {
-
-			super.value = [source];
-			return;
-		}
-
-		if(!source.container.querySelector('.options')) {
-			this.container.querySelector('input').value = source.container.querySelector('input').value;
-			return;
-		}
-
-		super.value = Array.from(source.selectedValues);
-	}
-
-	get value() {
-
-		return Array.from(this.selectedValues);
-	}
-}
-
-Dataset.timeout = 5 * 60 * 1000;
 Visualization.animationDuration = 750;
 
 DataSourceFilter.setup();

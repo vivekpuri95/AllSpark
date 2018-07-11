@@ -341,7 +341,7 @@ SettingsManager.types.set('toggle', class extends SettingsManagerType {
 
 	get value() {
 
-		return this.container.querySelector('select').value;
+		return parseInt(this.container.querySelector('select').value);
 	}
 
 	set value(param) {
@@ -525,10 +525,13 @@ SettingsManager.types.set('multiselect', class extends SettingsManagerType {
 
 	get value() {
 
-		return this.multiselect.value;
+		return this.multiple ? this.multiselect.value : this.multiselect.value[0];
 	}
 
 	set value(params) {
+
+		if(!Array.isArray(params))
+			params = [params];
 
 		this.multiselect.value = params;
 	}

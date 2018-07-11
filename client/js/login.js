@@ -195,6 +195,12 @@ Page.class = class Login extends Page {
 				method: 'POST',
 			};
 
+		if(account.auth_api) {
+			parameters.external_parameters = 1;
+			parameters.ext_email = this.container.querySelector('#accept-email input').value;
+			parameters.ext_password = this.container.querySelector('#accept-password input[type=password]').value;
+		}
+
 		this.authenticate(parameters, options);
 
 		Sections.show('accept-password');
@@ -230,7 +236,24 @@ Page.class = class Login extends Page {
 			await IndexedDb.instance.set('refresh_token', response.jwt);
 			this.cookies.set('refresh_token', response.jwt);
 
-			IndexedDb.instance.delete('account');
+			// If the login response has an external parameters flag then add their values to the stored external parameters.
+			if(response.external_parameters && Array.isArray(account.settings.get('external_parameters'))) {
+
+				const
+					storageList = await IndexedDb.instance.get('external_parameters') || {},
+					settingsList = account.settings.get('external_parameters');
+
+				for(const key in response) {
+
+					// Only save the value from login response if it's key was given in account settings
+					if(settingsList.includes(key))
+						storageList[key] = response[key];
+				}
+
+				await IndexedDb.instance.set('external_parameters', storageList);
+			}
+
+			await IndexedDb.instance.delete('account');
 
 			await Account.load();
 
@@ -243,6 +266,7 @@ Page.class = class Login extends Page {
 
 		} catch(error) {
 			this.message(error.message || error, 'warning');
+			this.container.querySelector('#loading').classList.add('hidden');
 		}
 	}
 

@@ -149,25 +149,30 @@ exports.login = class extends API {
 
 		let parameters = new URLSearchParams;
 
-		const externalParameterKeys = (this.possibleAccounts[0]).settings.get("external_parameters");
+		const externalParameterKeys = this.possibleAccounts[0].settings.get("external_parameters");
 
-		for (const key of externalParameterKeys) {
+		if(Array.isArray(externalParameterKeys)) {
 
-			const value = this.request.body[constants.external_parameter_prefix + key];
+			for (const key of externalParameterKeys) {
 
-			if (Array.isArray(value)) {
+				const value = this.request.body[constants.external_parameter_prefix + key] || "";
 
-				for (const item of value) {
+				if (Array.isArray(value)) {
 
-					parameters.append(key, item);
+					for (const item of value) {
+
+						parameters.append(key, item);
+					}
+				}
+
+				else {
+
+					parameters.append(key, value);
 				}
 			}
-
-			else {
-
-				parameters.append(key, value);
-			}
 		}
+
+		parameters.append('account_id', this.request.body.account_id || 0);
 
 		let url = this.possibleAccounts[0].auth_api + "?" + parameters;
 
@@ -175,6 +180,11 @@ exports.login = class extends API {
 
 			let authAPIResponse = await fetch(url, {"method": "GET"});
 			authAPIResponse = (await authAPIResponse.json()).data;
+
+			if(!(authAPIResponse && authAPIResponse.userDetails)) {
+
+				throw({message: "User not found"});
+			}
 			this.userDetails = authAPIResponse.userDetails;
 
 			await account.loadAccounts();
@@ -228,7 +238,7 @@ exports.login = class extends API {
 
 				const accountsObj = {};
 
-				for (const account of global.account) {
+				for (const account of global.accounts) {
 
 					accountsObj[account.account_id] = account;
 				}

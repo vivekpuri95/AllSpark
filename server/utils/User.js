@@ -25,7 +25,7 @@ function privilege(userObj) {
 
 			if (privilegeName === "superadmin") {
 
-				return userObj.privileges.filter(x => x.name == privilegeName).length;
+				return userObj.privileges.filter(x => x.privilege_name == privilegeName).length;
 			}
 
 			if (userObj.error) {
@@ -38,7 +38,7 @@ function privilege(userObj) {
 
 			for (const userPrivilege of userObj.privileges) {
 
-				if ((userPrivilege.name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && (categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id) || ignoreCategoryFlag)) {
+				if ((userPrivilege.privilege_name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && (categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id) || ignoreCategoryFlag)) {
 
 					return true;
 				}

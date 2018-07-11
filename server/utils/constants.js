@@ -36,10 +36,36 @@ exports.saveQueryResultDb = "save_history";
 exports.saveQueryResultTable = "tb_save_history";
 
 exports.filterTypes = [
-	'Number',
-	'Text',
-	'Date',
-	'Month',
-	'Hidden',
-	'Column'
+	{
+		name: 'Number',
+		input_type: 'number',
+	},
+	{
+		name: 'Text',
+		input_type: 'text',
+	},
+	{
+		name: 'Date',
+		input_type: 'date',
+	},
+	{
+		name: 'Month',
+		input_type: 'month',
+	},
+	{
+		name: 'DateTime',
+		input_type: 'datetime-local',
+	},
+	{
+		name: 'Hidden',
+		input_type: 'hidden',
+	},
+	{
+		name: 'Column',
+		input_type: 'text',
+	},
+	{
+		name: 'DateRange',
+		input_type: '',
+	},
 ];

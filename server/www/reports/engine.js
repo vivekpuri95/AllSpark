@@ -119,8 +119,8 @@ class report extends API {
 
 				this.filters.push({
 					placeholder: key,
-					value: preReportApiDetails[key] ?  preReportApiDetails[key].toString() : '',
-					default_value: preReportApiDetails[key] ?  preReportApiDetails[key].toString() : '',
+					value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
+					default_value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
 				})
 			}
 		}
@@ -151,7 +151,7 @@ class report extends API {
 				filter.default_value = new Date(Date.now() + filter.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
-				if (filter.value === new Date().toISOString().slice(0, 10)) {
+				if (filter.value >= new Date().toISOString().slice(0, 10)) {
 					this.has_today = true;
 
 				}
@@ -159,13 +159,23 @@ class report extends API {
 
 			if (filter.type == 'month') {
 
-				const date = new
-				Date();
+				const date = new Date();
 
 				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
-				if (filter.value === new Date().toISOString().slice(0, 7)) {
+				if (filter.value >= new Date().toISOString().slice(0, 7)) {
+
+					this.has_today = true;
+				}
+			}
+
+			if (filter.type == 'datetime') {
+
+				filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0,19);
+				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				if (filter.value >= new Date().toISOString().slice(0, 10)) {
 
 					this.has_today = true;
 				}
@@ -477,7 +487,7 @@ class SQL {
 }
 
 
-class MySQL extends SQL{
+class MySQL extends SQL {
 
 	constructor(reportObj, filters = [], token = null) {
 
@@ -497,7 +507,7 @@ class MySQL extends SQL{
 }
 
 
-class MSSQL extends SQL{
+class MSSQL extends SQL {
 
 	constructor(reportObj, filters = [], token = null) {
 
@@ -680,6 +690,7 @@ class Bigquery {
 			"date": "date",
 			"month": "integer",
 			"hidden": "string",
+			"datetime": "string"
 		};
 	}
 
@@ -813,6 +824,9 @@ class ReportEngine extends API {
 			query = this.parameters.request;
 
 			data = await data.json();
+
+			if (data && Array.isArray(data.data))
+				data = data.data;
 		}
 
 		return {
@@ -920,6 +934,8 @@ class download extends API {
 		this.assert(commonFun.isJson(excel_visualization), "excel_visualization format issue");
 
 		// queryData = JSON.parse(queryData);
+		excel_visualization = JSON.parse(excel_visualization);
+
 		const fileName = `${this.request.body.file_name}_${(new Date().toISOString()).substring(0, 10)}_${(this.user || {}).user_id || ''}`;
 		const requestObj = {
 			data_obj: [
@@ -932,11 +948,11 @@ class download extends API {
 							x1: {name: this.request.body.top},
 							y1: {name: this.request.body.right},
 							cols: this.request.body.columns,
-							type: JSON.parse(excel_visualization),
+							type: !this.request.body.classic_pie && excel_visualization.type == 'pie' ? {"type": "doughnut"} : excel_visualization,
 						}
 					},
-					sheet_name: this.request.body.sheet_name.slice(0, 20),
-					file_name: fileName.slice(0, 20),
+					sheet_name: this.request.body.sheet_name.slice(0, 22) + "...",
+					file_name: fileName.slice(0, 22) + "...",
 					show_legends: this.request.body.show_legends,
 					show_values: this.request.body.show_values,
 				},
