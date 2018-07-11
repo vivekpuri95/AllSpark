@@ -895,7 +895,7 @@ class API extends AJAX {
 			cookie_json[pair[0].trim()] = pair[1];
 		}
 
-		if(!has_external_parameters) {
+		if(!has_external_parameters && cookie_json.external_parameters) {
 
 			await IndexedDb.instance.set('external_parameters', JSON.parse(cookie_json.external_parameters));
 		}
