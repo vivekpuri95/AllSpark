@@ -151,7 +151,6 @@ Page.class = class Dashboards extends Page {
 
 		await this.renderNav(id);
 		if (loadReport) {
-
 			await this.report(id);
 		}
 
@@ -300,7 +299,7 @@ Page.class = class Dashboards extends Page {
 
 		for (const item of labels)
 			item.classList.remove("selected");
-	};
+	}
 
 	renderNav(id) {
 
@@ -487,11 +486,10 @@ Page.class = class Dashboards extends Page {
 
 		const promises = [];
 
-		for (const filter of report.filters.values()) {
+		for(const filter of report.filters.values()) {
 
-			if (filter.dataset) {
-
-				promises.push(filter.dataset.fetch());
+			if(filter.multiSelect) {
+				promises.push(filter.fetch());
 			}
 		}
 
@@ -660,13 +658,13 @@ class Dashboard {
 			container.classList.toggle('hidden');
 			sideButton.classList.toggle('selected');
 
-			const datasets = page.container.querySelector('#reports .datasets');
+			const globalFilters = page.container.querySelector('#reports .global-filters');
 
-			datasets.classList.toggle('show');
+			globalFilters.classList.toggle('show');
 
 			if(page.account.settings.get('global_filters_position') == 'top') {
-				datasets.classList.toggle('top');
-				datasets.classList.toggle('right');
+				globalFilters.classList.toggle('top');
+				globalFilters.classList.toggle('right');
 			}
 		});
 
@@ -675,13 +673,13 @@ class Dashboard {
 			container.classList.add('hidden');
 			sideButton.classList.remove('selected');
 
-			const datasets = page.container.querySelector('#reports .datasets');
+			const globalFilters = page.container.querySelector('#reports .global-filters');
 
-			datasets.classList.toggle('show');
+			globalFilters.classList.toggle('show');
 
 			if(page.account.settings.get('global_filters_position') == 'top') {
-				datasets.classList.toggle('top');
-				datasets.classList.toggle('right');
+				globalFilters.classList.toggle('top');
+				globalFilters.classList.toggle('right');
 			}
 		});
 	}
@@ -738,7 +736,6 @@ class Dashboard {
 				grid-row: auto / span ${visualization.format.height || Dashboard.grid.rows};
 			`);
 
-
 			queryDataSource.selectedVisualization = queryDataSource.visualizations.filter(v =>
 
 				v.visualization_id === visualization.visualization_id
@@ -755,16 +752,15 @@ class Dashboard {
 		}
 
 		try {
-			this.datasets = new DashboardDatasets(this);
+			this.globalFilters = new DashboardGlobalFilters(this);
 
-			await this.datasets.load();
+			await this.globalFilters.load();
 		}
 		catch (e) {
-
 			console.log(e);
 		}
 
-		if (!this.datasets.size)
+		if (!this.globalFilters.size)
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
@@ -838,7 +834,7 @@ class Dashboard {
 		if (this.format && this.format.category_id)
 			return;
 
-		if (!this.datasets.size)
+		if (!this.globalFilters.size)
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 
 		const dashboardName = this.page.container.querySelector('.dashboard-name');
@@ -951,8 +947,8 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if(Dashboard.selectedValues && Dashboard.selectedValues.size && this.datasets.size)
-			this.datasets.apply();
+		if(Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size)
+			this.globalFilters.apply();
 	}
 
 	edit() {
@@ -1223,52 +1219,45 @@ class Dashboard {
 	}
 }
 
-class DashboardDatasets extends Map {
+class DashboardGlobalFilters extends DataSourceFilters {
 
 	constructor(dashboard) {
 
-		super();
+		const globalFilters = new Map;
+
+		for(const visualization of dashboard.visualizationList) {
+
+			for(const filter of visualization.filters.values()) {
+
+				if(globalFilters.has(filter.placeholder) || ['hidden', 'daterange'].includes(filter.type))
+					continue;
+
+				globalFilters.set(filter.placeholder, {
+					name: filter.name,
+					placeholder: filter.placeholder,
+					default_value: filter.default_value,
+					dataset: filter.dataset,
+					multiple: filter.multiple,
+					offset: filter.offset,
+					order: filter.order,
+					type: filter.type,
+				});
+			}
+		}
+
+		super(Array.from(globalFilters.values()));
 
 		this.dashboard = dashboard;
 		this.page = this.dashboard.page;
-		this.container = this.page.container.querySelector('#reports .datasets');
+		this.globalFilterContainer = this.page.container.querySelector('#reports .global-filters');
 
-		this.container.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
+		this.globalFilterContainer.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
 
-		const datasets = {};
-
-		for (const visualization of this.dashboard.visualizationList) {
-
-			for (const filter of visualization.filters.values()) {
-
-				if (!filter.dataset)
-					continue;
-
-				if (!datasets[filter.dataset.id]) {
-					datasets[filter.dataset.id] = {
-						id: filter.dataset.id,
-						multiple: true,
-						placeholder: `dataset-${filter.dataset.id}`,
-						query_id: filter.dataset.query_id,
-						default_value: filter.default_value,
-					}
-				}
-
-				if (!filter.multiple)
-					datasets[filter.dataset.id].multiple = false;
-			}
-		}
-
-		for (const dataset of Object.values(datasets)) {
-
-			if(!dataset.query_id) {
-
-				this.set(dataset.id, new OtherDataset(dataset.id, dataset))
-				continue;
-			}
-
-			this.set(dataset.id, new Dataset(dataset.id, dataset));
-		}
+		// Save the value of each filter for use on other dashboards
+		// if(Dashboard.selectedValues.size) {
+		// 	for(const [placeholder, filter] of this)
+		// 		filter.value = Dashboard.selectedValues.get(placeholder);
+		// }
 	}
 
 	async load() {
@@ -1282,21 +1271,21 @@ class DashboardDatasets extends Map {
 
 		const promises = [];
 
-		for (const dataset of this.values())
-			promises.push(dataset.fetch());
+		for(const filter of this.values())
+			promises.push(filter.fetch());
 
 		await Promise.all(promises);
 	}
 
 	async render() {
 
-		const container = this.container;
+		const container = this.globalFilterContainer;
 
 		container.textContent = null;
 
 		container.classList.remove('show');
 
-		if (!this.size)
+		if(!this.size)
 			return;
 
 		container.innerHTML = `
@@ -1311,79 +1300,44 @@ class DashboardDatasets extends Map {
 			<div class="NA no-results hidden">No filters found! :(</div>
 		`;
 
-		const datasets = Array.from(this.values()).sort((a, b) => {
-
-			if (!a.order)
-				return 1;
-
-			if (!b.order)
-				return -1;
-
-			return a.order - b.order;
-		});
-
-		for (const dataset of datasets) {
-
-			const
-				label = document.createElement('label'),
-				input = document.createElement('select');
-
-			label.classList.add('dataset-container');
-
-			label.insertAdjacentHTML('beforeend', `<span>${dataset.name}</span>`);
-
-			label.appendChild(dataset.container);
-
-			if(Dashboard.selectedValues.has(dataset.id))
-				dataset.value = Dashboard.selectedValues.get(dataset.id);
-
-			container.appendChild(label);
-		}
+		container.appendChild(this.container);
 
 		const searchInput = container.querySelector('.global-filter-search');
 
 		searchInput.on('keyup', () => {
 
-			for(const dataset of this.values()) {
+			for(const filter of this.values()) {
 
-				dataset.container.parentElement.classList.remove('hidden');
+				filter.label.classList.remove('hidden');
 
-				if(!dataset.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
-					dataset.container.parentElement.classList.add('hidden');
+				if(!filter.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
+					filter.label.classList.add('hidden');
 			}
 
-			container.querySelector('.no-results').classList.toggle('hidden', container.querySelector('.dataset-container:not(.hidden)'));
+			const shown = container.querySelectorAll('.filters > label:not(.hidden)');
+
+			container.querySelector('.no-results').classList.toggle('hidden', shown.length > 1);
 		});
 
-		container.insertAdjacentHTML('beforeend', `
-			<button class="apply" title="Apply Filters"><i class="fas fa-paper-plane"></i> Apply</button>
-		`);
-
-		container.querySelector('button.apply').on('click', () => this.apply());
 		container.querySelector('button.reload').on('click', () => this.apply({cached: 0}));
 
 		const input = container.querySelector('.head input[type=checkbox]');
 
-		input.on('change', () => {
-
-			input.checked ? this.all() : this.clear();
-		});
+		input.on('change', () => input.checked ? this.all() : this.clear());
 	}
 
 	async apply(options = {}) {
 
-		for (const report of this.dashboard.visualizationList) {
+		for(const report of this.dashboard.visualizationList) {
 
 			let found = false;
 
-			for (const filter of report.filters.values()) {
+			for(const filter of report.filters.values()) {
 
-				if (!filter.dataset || !this.has(filter.dataset.id))
+				if(!this.has(filter.placeholder))
 					continue;
 
-				await filter.dataset.fetch();
-
-				filter.dataset.value = this.get(filter.dataset.id).value;
+				filter.value = this.get(filter.placeholder).value;
 
 				found = true;
 			}
@@ -1396,29 +1350,24 @@ class DashboardDatasets extends Map {
 
 		Dashboard.selectedValues.clear();
 
-		for(const [id, dataset] of this)
-			Dashboard.selectedValues.set(id, dataset.value);
+		// Save the value of each filter for use on other dashboards
+		for(const [placeholder, filter] of this)
+			Dashboard.selectedValues.set(placeholder, filter.value);
 	}
 
 	clear() {
 
-		for (const dataset of this.values()) {
-
-			if(dataset instanceof OtherDataset)
-				continue;
-
-			dataset.clear();
+		for(const filter of this.values()) {
+			if(filter.multiSelect)
+				filter.multiSelect.clear();
 		}
 	}
 
 	all() {
 
-		for (const dataset of this.values()) {
-
-			if(dataset instanceof OtherDataset)
-				continue;
-
-			dataset.all();
+		for(const filter of this.values()) {
+			if(filter.multiSelect)
+				filter.multiSelect.all();
 		}
 	}
 }

@@ -748,11 +748,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.filterForm = this.container.querySelector('#filters form');
 
-		for(const dataset of MetaData.datasets.values()) {
-			this.filterForm.dataset.insertAdjacentHTML('beforeend', `
-				<option value="${dataset.id}">${dataset.name}</option>
-			`);
-		}
+		this.filterForm.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
+		this.filterForm.querySelector('label.dataset').appendChild(this.filterForm.datasetMultiSelect.container);
 
 		this.schemas = new Map;
 
@@ -1244,21 +1241,15 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			let datasetName = '';
 
-			if(filter.dataset && MetaData.datasets.has(filter.dataset)) {
+			if(filter.dataset && DataSource.list.has(filter.dataset)) {
 
-				const
-					dataset = MetaData.datasets.get(filter.dataset),
-					report = DataSource.list.get(dataset.query_id);
+				const dataset = DataSource.list.get(filter.dataset);
 
-				if(report) {
-					datasetName = `
-						<a href="/report/${dataset.query_id}" target="_blank" title="${DataSource.list.get(dataset.query_id).name}">
-							${dataset.name}
-						</a>
-					`;
-				}
-
-				else datasetName = dataset.name;
+				datasetName = `
+					<a href="/report/${dataset.query_id}" target="_blank" title="${DataSource.list.get(dataset.query_id).name}">
+						${dataset.name}
+					</a>
+				`;
 			}
 
 			row.innerHTML = `
@@ -1277,18 +1268,28 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		}
 
 		if(!this.report.filters.length)
-			tbody.innerHTML = `<tr class="NA"><td>No filters added yet! :(</td></tr>`
+			tbody.innerHTML = `<tr class="NA"><td>No filters added yet! :(</td></tr>`;
+
+		this.filterForm.datasetMultiSelect.datalist = Array.from(DataSource.list.values()).filter(r => r.query_id != this.report.query_id).map(r => {return {name: r.name, value: r.query_id}});
+		this.filterForm.datasetMultiSelect.render();
 	}
 
 	addFilter() {
 
 		const filterForm = this.container.querySelector('#filter-form');
+
 		filterForm.classList.remove('hidden');
 		this.container.querySelector('#filter-list').classList.add('hidden');
 
 		const select = filterForm.querySelector('select[name="type"]');
+
 		select.textContent = null;
+
 		for (const type of MetaData.filterTypes.values()) {
+
+			if(!type.input_type)
+				continue;
+
 			select.insertAdjacentHTML('beforeend', `
 				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
@@ -1296,6 +1297,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
 		this.filterForm.on('submit', this.filterForm.listener = e => this.insertFilter(e));
+
+		this.filterForm.datasetMultiSelect.clear();
 
 		this.filterForm.reset();
 
@@ -1309,7 +1312,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const
 			parameters = {
-				query_id: this.report.query_id
+				query_id: this.report.query_id,
+				dataset: this.filterForm.datasetMultiSelect.value[0] || '',
 			},
 			options = {
 				method: 'POST',
@@ -1334,8 +1338,14 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.filterForm.reset();
 
 		const select = this.filterForm.querySelector('select[name="type"]');
+
 		select.textContent = null;
-		for (const type of MetaData.filterTypes.values()) {
+
+		for(const type of MetaData.filterTypes.values()) {
+
+			if(!type.input_type)
+				continue;
+
 			select.insertAdjacentHTML('beforeend', `
 				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
@@ -1345,6 +1355,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			if(key in this.filterForm)
 				this.filterForm[key].value = filter[key];
 		}
+
+		this.filterForm.datasetMultiSelect.value = filter.dataset;
 
 		this.filterForm.name.focus();
 	}
@@ -1356,7 +1368,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const
 			parameters = {
-				filter_id: filter.filter_id
+				filter_id: filter.filter_id,
+				dataset: this.filterForm.datasetMultiSelect.value[0] || '',
 			},
 			options = {
 				method: 'POST',

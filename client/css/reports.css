@@ -90,6 +90,7 @@ main .data-source.flush {
 		user-select: text;
 		font-family: inherit;
 		background: #f1f1f1;
+		box-shadow: none;
 		color: #aaa;
 		flex: 1;
 		display: flex;
