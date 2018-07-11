@@ -1120,8 +1120,21 @@ class Editor {
 	}
 }
 
+/**
+ * A generic implementation for a modal box.
+ *
+ * It has the following features.
+ *
+ * - Lets users set the heading, body content and footer of the dialog.
+ * - Provides a clean interface with user controlled show and hide features.
+ */
 class DialogBox {
 
+	/**
+	 * The main container of the Dialog Box.
+	 *
+	 * @return HTMLElement	A div that has the entire content.
+	 */
 	get container() {
 
 		if(this.containerElement)
@@ -1150,6 +1163,10 @@ class DialogBox {
 		return container;
 	}
 
+	/**
+	 * Update the heading of the dialog box
+	 * @param dialogHeading The new heading
+	 */
 	set heading(dialogHeading) {
 
 		const heading = this.container.querySelector('.dialog-box header h3');
@@ -1169,16 +1186,26 @@ class DialogBox {
 		}
 	}
 
+	/**
+	 *
+	 * @returns reference to the dialog box body container to set the content of the dialog box.
+	 */
 	get body() {
 
 		return this.container.querySelector('.dialog-box .body');
 	}
 
+	/**
+	 * Hides the dialog box container
+	 */
 	hide() {
 
 		this.container.classList.add('hidden');
 	}
 
+	/**
+	 * Displays the dialog box container
+	 */
 	show() {
 
 		this.container.classList.remove('hidden');
@@ -1269,6 +1296,7 @@ class MultiSelect {
 			}
 
 			options.classList.remove('hidden');
+			this.container.querySelector('input[type=search]').placeholder = 'Search...';
 		});
 
 		search.on('dblclick', () => {
@@ -1287,6 +1315,9 @@ class MultiSelect {
 
 			if(!this.expand)
 				options.classList.add('hidden');
+
+			search.value = "";
+			this.recalculate();
 		});
 
 		return container;
@@ -1433,7 +1464,8 @@ class MultiSelect {
 
 		const
 			search = this.container.querySelector('input[type=search]'),
-			options = this.container.querySelector('.options');
+			options = this.container.querySelector('.options'),
+			inputValues = [];
 
 		if(!this.datalist.length)
 			return;
@@ -1449,6 +1481,9 @@ class MultiSelect {
 
 			input.parentElement.classList.toggle('hidden', hide);
 			input.parentElement.classList.toggle('selected', input.checked);
+
+			if(input.checked)
+				inputValues.push(this.datalist.filter(x => x.value == parseInt(input.value))[0].name);
 		}
 
 		const
@@ -1456,7 +1491,14 @@ class MultiSelect {
 			hidden = options.querySelectorAll('.list label.hidden').length,
 			selected = options.querySelectorAll('.list input:checked').length;
 
-		search.placeholder = `Search... (${selected} selected)`;
+		let searchPlaceholder;
+
+		if(inputValues.length && options.classList.contains('hidden')) {
+
+			searchPlaceholder = inputValues.length > 1 ? `${inputValues[0]} and ${inputValues.length - 1} more...` : `${inputValues[0]}`
+		}
+
+		search.placeholder = `${searchPlaceholder || 'Search...'}` ;
 
 		const footer = options.querySelector('footer');
 
