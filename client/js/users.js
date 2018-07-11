@@ -242,8 +242,8 @@ class UserManage {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.email}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			<td class="action green" title="Edit">Edit</i></td>
+			<td class="action red" title="Delete">Delete</td>
 		`;
 
 		this.container.querySelector('.green').on('click', () => {
