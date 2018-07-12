@@ -1402,11 +1402,11 @@ class DataSourceColumn {
 		DataSourceColumn.accumulationTypes = [
 			{
 				name: 'Sum',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0)),
+				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)) || 0, 0)),
 			},
 			{
 				name: 'Average',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0) / rows.length),
+				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)) || 0, 0) / rows.length),
 			},
 			{
 				name: 'Max',
