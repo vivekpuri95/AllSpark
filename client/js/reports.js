@@ -2991,9 +2991,9 @@ class LinearVisualization extends Visualization {
 				return;
 			}
 
-			const row = that.rows[parseInt((mouse[0] - that.axes.left.width) / (that.width / that.rows.length))];
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
 
-			if(!row)
+ 			if(!row)
 				return;
 
 			const tooltip = [];
@@ -3410,21 +3410,18 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			max = null,
 			min = null;
 
-		for(const row of this.rows) {
+		for(const column of this.columns) {
 
-			for(const [name, value] of row) {
-
-				if(name == this.axes.bottom.column)
-					continue;
+			for(const row of column) {
 
 				if(max == null)
-					max = Math.ceil(value);
+					max = Math.ceil(row.y);
 
 				if(min == null)
-					min = Math.floor(value);
+					min = Math.floor(row.y);
 
-				max = Math.max(max, Math.floor(value) || 0);
-				min = Math.min(min, Math.ceil(value) || 0);
+				max = Math.max(max, Math.floor(row.y) || 0);
+				min = Math.min(min, Math.ceil(row.y) || 0);
 			}
 		}
 
@@ -3857,21 +3854,18 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 			max = null,
 			min = null;
 
-		for(const row of this.rows) {
+		for(const column of this.columns) {
 
-			for(const [name, value] of row) {
-
-				if(name == this.axes.bottom.column)
-					continue;
+			for(const row of column) {
 
 				if(max == null)
-					max = Math.ceil(value);
+					max = Math.ceil(row.y);
 
 				if(min == null)
-					min = Math.floor(value);
+					min = Math.floor(row.y);
 
-				max = Math.max(max, Math.ceil(value) || 0);
-				min = Math.min(min, Math.floor(value) || 0);
+				max = Math.max(max, Math.floor(row.y) || 0);
+				min = Math.min(min, Math.ceil(row.y) || 0);
 			}
 		}
 
@@ -4038,15 +4032,18 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			max = 0,
 			min = 0;
 
-		for(const row of this.rows) {
+		for(const column of this.columns) {
 
-			for(const [key, value] of row) {
+			for(const row of column) {
 
-				if(!this.axes.left.columns.some(c => c.key == key))
-					continue;
+				if(max == null)
+					max = Math.ceil(row.y);
 
-				max = Math.max(max, Math.ceil(value) || 0);
-				min = Math.min(min, Math.ceil(value) || 0);
+				if(min == null)
+					min = Math.floor(row.y);
+
+				max = Math.max(max, Math.floor(row.y) || 0);
+				min = Math.min(min, Math.ceil(row.y) || 0);
 			}
 		}
 
