@@ -995,12 +995,7 @@ class DataSourceFilter {
 		if(this.labelContainer)
 			return this.labelContainer;
 
-<<<<<<< HEAD
 		const container = document.createElement('label');
-=======
-    const
-			container = document.createElement('label');
->>>>>>> UI done
 
 		container.style.order = this.order;
 
