@@ -2927,7 +2927,16 @@ class LinearVisualization extends Visualization {
 
 			// Click on reset zoom function
 			resetZoom.on('click', () => {
-				this.rows = this.source.response;
+
+				const rows = this.source.response;
+
+				for(const row of rows) {
+					for(const [key, column] of row)
+						row.set(key, row.getTypedValue(key));
+				}
+
+				this.rows = rows;
+
 				this.plot();
 			});
 		}
