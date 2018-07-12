@@ -246,6 +246,7 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			this.response.setHeader('Set-Cookie', [`refresh_token=${response.jwt}`, `external_parameters=${JSON.stringify(external_parameters)}`]);
 
 			this.response.redirect('/dashboard/first');
+			throw({"pass": true});
 		}
 
 		return `

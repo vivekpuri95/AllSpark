@@ -888,16 +888,17 @@ class API extends AJAX {
 			getToken = true,
 			token = await IndexedDb.instance.get('token'),
 			has_external_parameters = await IndexedDb.instance.has('external_parameters'),
-			cookie_json = {};
+			cookie = new Cookies();
 
-		for(const value of document.cookie.split(';')) {
-			const pair = value.split('=');
-			cookie_json[pair[0].trim()] = pair[1];
+		if(!has_external_parameters && cookie.has('external_parameters')) {
+
+			await IndexedDb.instance.set('external_parameters', JSON.parse(cookie.get('external_parameters')));
 		}
 
-		if(!has_external_parameters && cookie_json.external_parameters) {
+		if(cookie.get('refresh_token')) {
 
-			await IndexedDb.instance.set('external_parameters', JSON.parse(cookie_json.external_parameters));
+			await IndexedDb.instance.set('refresh_token', cookie.get('refresh_token'));
+			cookie.set('refresh_token', '');
 		}
 
 		if(token) {
@@ -913,9 +914,6 @@ class API extends AJAX {
 		}
 
 		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken) {
-
-			if(cookie_json.refresh_token)
-				await IndexedDb.instance.set('refresh_token', cookie_json.refresh_token);
 
 			return;
 		}
