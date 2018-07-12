@@ -1304,6 +1304,9 @@ class MultiSelect {
 
 			if(!this.expand)
 				options.classList.add('hidden');
+
+			search.value = '';
+			this.recalculate();
 		});
 
 		search.on('keyup', () => this.recalculate());
@@ -1317,7 +1320,7 @@ class MultiSelect {
 			if(!this.expand)
 				options.classList.add('hidden');
 
-			search.value = "";
+			search.value = '';
 			this.recalculate();
 		});
 
@@ -1438,6 +1441,7 @@ class MultiSelect {
 				this.recalculate();
 			});
 
+			row.input = input;
 			if(this.disabled)
 				input.disabled = true;
 
@@ -1465,41 +1469,34 @@ class MultiSelect {
 
 		const
 			search = this.container.querySelector('input[type=search]'),
-			options = this.container.querySelector('.options'),
-			inputValues = [];
+			options = this.container.querySelector('.options');
 
 		if(!this.datalist.length)
 			return;
 
-		for(const input of options.querySelectorAll('.list label input')) {
+		for(const row of this.datalist) {
 
-			input.checked = this.selectedValues.has(input.value);
+			row.input.checked = this.selectedValues.has(row.input.value);
 
 			let hide = false;
 
-			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+			if(search.value && !row.name.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
 				hide = true;
 
-			input.parentElement.classList.toggle('hidden', hide);
-			input.parentElement.classList.toggle('selected', input.checked);
-
-			if(input.checked)
-				inputValues.push(this.datalist.filter(x => x.value == parseInt(input.value))[0].name);
+			row.input.parentElement.classList.toggle('hidden', hide);
+			row.input.parentElement.classList.toggle('selected', row.input.checked);
 		}
 
 		const
 			total = options.querySelectorAll('.list label').length,
 			hidden = options.querySelectorAll('.list label.hidden').length,
-			selected = options.querySelectorAll('.list input:checked').length;
+			selected = options.querySelectorAll('.list input:checked').length,
+			firstSelected = options.querySelector('.list label.selected div > span');
 
-		let searchPlaceholder;
+		search.placeholder = 'Search...';
 
-		if(inputValues.length && options.classList.contains('hidden')) {
-
-			searchPlaceholder = inputValues.length > 1 ? `${inputValues[0]} and ${inputValues.length - 1} more...` : `${inputValues[0]}`
-		}
-
-		search.placeholder = `${searchPlaceholder || 'Search...'}` ;
+		if(firstSelected && options.classList.contains('hidden'))
+			search.placeholder = selected > 1 ? `${firstSelected.textContent} and ${selected - 1} more` : firstSelected.textContent;
 
 		const footer = options.querySelector('footer');
 
