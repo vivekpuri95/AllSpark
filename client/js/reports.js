@@ -948,6 +948,11 @@ class DataSourceFilter {
 				name: 'Last 30 Days',
 			},
 			{
+				start: -90,
+				end: 0,
+				name: 'Last 90 days',
+			},
+			{
 				start: -365,
 				end: 0,
 				name: 'Last Year',
