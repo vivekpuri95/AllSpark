@@ -948,6 +948,11 @@ class DataSourceFilter {
 				name: 'Last 30 Days',
 			},
 			{
+				start: -90,
+				end: 0,
+				name: 'Last 90 days',
+			},
+			{
 				start: -365,
 				end: 0,
 				name: 'Last Year',
@@ -1397,11 +1402,11 @@ class DataSourceColumn {
 		DataSourceColumn.accumulationTypes = [
 			{
 				name: 'Sum',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0)),
+				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)) || 0, 0)),
 			},
 			{
 				name: 'Average',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0) / rows.length),
+				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)) || 0, 0) / rows.length),
 			},
 			{
 				name: 'Max',
@@ -2927,7 +2932,16 @@ class LinearVisualization extends Visualization {
 
 			// Click on reset zoom function
 			resetZoom.on('click', () => {
-				this.rows = this.source.response;
+
+				const rows = this.source.response;
+
+				for(const row of rows) {
+					for(const [key, column] of row)
+						row.set(key, row.getTypedValue(key));
+				}
+
+				this.rows = rows;
+
 				this.plot();
 			});
 		}
@@ -2991,9 +3005,9 @@ class LinearVisualization extends Visualization {
 				return;
 			}
 
-			const row = that.rows[parseInt((mouse[0] - that.axes.left.width) / (that.width / that.rows.length))];
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
 
-			if(!row)
+ 			if(!row)
 				return;
 
 			const tooltip = [];
@@ -3410,21 +3424,18 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			max = null,
 			min = null;
 
-		for(const row of this.rows) {
+		for(const column of this.columns) {
 
-			for(const [name, value] of row) {
-
-				if(name == this.axes.bottom.column)
-					continue;
+			for(const row of column) {
 
 				if(max == null)
-					max = Math.ceil(value);
+					max = Math.ceil(row.y);
 
 				if(min == null)
-					min = Math.floor(value);
+					min = Math.floor(row.y);
 
-				max = Math.max(max, Math.floor(value) || 0);
-				min = Math.min(min, Math.ceil(value) || 0);
+				max = Math.max(max, Math.floor(row.y) || 0);
+				min = Math.min(min, Math.ceil(row.y) || 0);
 			}
 		}
 
@@ -3857,21 +3868,18 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 			max = null,
 			min = null;
 
-		for(const row of this.rows) {
+		for(const column of this.columns) {
 
-			for(const [name, value] of row) {
-
-				if(name == this.axes.bottom.column)
-					continue;
+			for(const row of column) {
 
 				if(max == null)
-					max = Math.ceil(value);
+					max = Math.ceil(row.y);
 
 				if(min == null)
-					min = Math.floor(value);
+					min = Math.floor(row.y);
 
-				max = Math.max(max, Math.ceil(value) || 0);
-				min = Math.min(min, Math.floor(value) || 0);
+				max = Math.max(max, Math.floor(row.y) || 0);
+				min = Math.min(min, Math.ceil(row.y) || 0);
 			}
 		}
 
@@ -4038,15 +4046,18 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			max = 0,
 			min = 0;
 
-		for(const row of this.rows) {
+		for(const column of this.columns) {
 
-			for(const [key, value] of row) {
+			for(const row of column) {
 
-				if(!this.axes.left.columns.some(c => c.key == key))
-					continue;
+				if(max == null)
+					max = Math.ceil(row.y);
 
-				max = Math.max(max, Math.ceil(value) || 0);
-				min = Math.min(min, Math.ceil(value) || 0);
+				if(min == null)
+					min = Math.floor(row.y);
+
+				max = Math.max(max, Math.floor(row.y) || 0);
+				min = Math.min(min, Math.ceil(row.y) || 0);
 			}
 		}
 
@@ -4837,7 +4848,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			let total = 0;
 
 			for(const [name, value] of row) {
-				if(name != this.axes.bottom.column)
+				if(this.axes.left.columns.some(c => c.key == name))
 					total += parseFloat(value) || 0;
 			}
 
