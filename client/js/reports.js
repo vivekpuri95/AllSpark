@@ -1221,8 +1221,8 @@ class DataSourceRow extends Map {
 				}
 			}
 
-			if(column.searchQueries && column.searchQueries.length) {
-				for(const search of column.searchQueries) {
+			if(column.filters && column.filters.length) {
+				for(const search of column.filters) {
 
 					if(!row[key])
 						this.skip = true;
@@ -1616,13 +1616,13 @@ class DataSourceColumn {
 				<input type="text" name="name" value="${this.name}" >
 			</label>
 
-			<div class="show category-content searchContent">
+			<div class="show filters">
 				<span>Search</span>
 			</div>
 
 			<button type="button" class="show search add-new-item"><i class="fa fa-plus"></i>Add New</button>
 
-			<div class="show category-content accumulationContent">
+			<div class="show accumulations">
 				<span>Accumulation</span>
 			</div>
 
@@ -1716,41 +1716,23 @@ class DataSourceColumn {
 			if(formulaTimeout)
 				clearTimeout(formulaTimeout);
 
-			formulaTimeout = setTimeout(() => this.validateFheadormula(), 200);
+			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		});
 
-		// To check the type of the column;
-		let string = false;
+		this.filters = this.filters ? this.filters : [];
 
-		for(const [index, report] of this.source.response.entries()) {
-
-			if(index > 10)
-				break;
-
-			if(isNaN(report.get(this.key))) {
-				string = true;
-				break;
-			}
-		}
-
-		this.searchQueries = this.searchQueries ? this.searchQueries : [];
-
-		for(const search of this.searchQueries) {
-			form.querySelector('.searchContent').appendChild(this.searchBox(search));
+		for(const search of this.filters) {
+			form.querySelector('.filters').appendChild(this.searchBox(search));
 		}
 
 		form.querySelector('button.search').on('click', e => {
-
-			e.stopPropagation();
-			e.preventDefault();
-
-			form.querySelector('.searchContent').appendChild(this.searchBox());
+			form.querySelector('.filters').appendChild(this.searchBox());
 		});
 
 		form.querySelector('.accumulation').on('click', e => {
 
-			form.querySelector('.accumulationContent').appendChild(this.accumulationBox());
-		})
+			form.querySelector('.accumulations').appendChild(this.accumulationBox());
+		});
 
 		form.querySelector('.add-parameters').on('click', () => {
 			this.addParameter();
@@ -1785,12 +1767,12 @@ class DataSourceColumn {
 		for(const [i, type] of DataSourceColumn.searchTypes.entries())
 			label.querySelector('select.searchType').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
 
-		label.querySelector('select').value = value.name ? value.name : '0';
-		label.querySelector('input').value = value.value ? value.value : '';
+		label.querySelector('select').value = value.name || '0';
+		label.querySelector('input').value = value.value || '';
 
 		label.querySelector('.delete').on('click', () => {
 			label.remove();
-		})
+		});
 
 		return label;
 	}
@@ -1807,13 +1789,30 @@ class DataSourceColumn {
 			</div>
 		`;
 
+		// To check the type of the column;
+
+		let string = false;
+
+		for(const [index, report] of this.source.response.entries()) {
+
+			if(index > 10)
+				break;
+
+			if(isNaN(report.get(this.key))) {
+				string = true;
+				break;
+			}
+		}
+
 		const select = label.querySelector('.accumulation-content');
 
 		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
-			select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+
+			if(!string || type.string)
+				select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
 		}
 
-		select.value = '0';
+		select.querySelector('option').selected = true;
 
 		label.querySelector('input').value = DataSourceColumn.accumulationTypes[select.value].apply(this.source.response, this.key);
 
@@ -1821,7 +1820,7 @@ class DataSourceColumn {
 
 			const accumulation = DataSourceColumn.accumulationTypes[select.value];
 
-			if(select.value && accumulation)
+			if(accumulation)
 				label.querySelector('input').value = accumulation.apply(this.source.response, this.key);
 
 			else label.querySelector('input').value = '';
@@ -1990,16 +1989,16 @@ class DataSourceColumn {
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
-		this.searchQueries = [];
+		this.filters = [];
 
-		for(const node of this.form.querySelectorAll('.searchContent .search-type')) {
+		for(const node of this.form.querySelectorAll('.filters .search-type')) {
 
 			if(node.querySelector('input').value === '') {
 				node.remove();
 				continue;
 			}
 
-			this.searchQueries.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
+			this.filters.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
 		}
 
 		this.disabled = parseInt(this.disabled) || 0;
@@ -2035,10 +2034,10 @@ class DataSourceColumn {
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 		}
 
-		this.searchQueries = [];
+		this.filters = [];
 
-		for(const node of this.form.querySelectorAll('.searchContent .search-type')) {
-			this.searchQueries.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
+		for(const node of this.form.querySelectorAll('.filters .search-type')) {
+			this.filters.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
 		}
 
 		for(const row of this.form.querySelectorAll('.parameter')) {
@@ -2067,7 +2066,7 @@ class DataSourceColumn {
 			disabled : this.disabled,
 			color : this.color,
 			searchType : this.searchType,
-			searchQueries : this.searchQueries,
+			filters : this.filters,
 			sort : this.sort,
 			prefix : this.prefix,
 			postfix : this.postfix,
@@ -3322,7 +3321,7 @@ Visualization.list.set('table', class Table extends Visualization {
 				container.querySelector('.popup-dropdown').classList.remove('hidden');
 			});
 
-			if(column.searchQueries && column.searchQueries.length)
+			if(column.filters && column.filters.length)
 				container.classList.add('has-filter');
 
 			headings.appendChild(container);

@@ -706,11 +706,13 @@ main .data-source.flush {
 						width: 100%;
 						overflow: auto;
 				}
-					.visualization.table thead .heading .popup-dropdown .compact .category-content {
+					.visualization.table thead .heading .popup-dropdown .compact .filters,
+					.visualization.table thead .heading .popup-dropdown .compact .accumulations {
 						display: grid;
 						grid-gap: calc(var(--gap) * 2);
 					}
-						.visualization.table thead .heading .category-content span {
+						.visualization.table thead .heading .filters span,
+						.visualization.table thead .heading .accumulations span {
 							margin-left: calc(var(--gap) * 2);
 						}
 					.visualization.table thead .heading .popup-dropdown .compact button.add-new-item {
@@ -721,14 +723,10 @@ main .data-source.flush {
 						margin: 0 calc(var(--gap) * 2);
 					}
 						.visualization.table thead .heading .popup-dropdown .compact label .category-group {
-							display: flex;
+							display: grid;
+							grid-template-columns: 1fr 1fr max-content;
+							grid-gap: calc(var(--gap)*2);
 						}
-							.compact label .category-group > * {
-								margin-right: calc(var(--gap) * 2);
-							}
-							.compact label .category-group > *:last-child {
-								margin-right: 0;
-							}
 							.compact label .category-group button:hover {
 								background: #c33;
 							}
@@ -1065,7 +1063,8 @@ main .dialog-box-blanket.data-source-column form .parameter-list {
 main .dialog-box-blanket.data-source-column .form {
 	padding: calc(var(--gap) * 2) 0 0;
 }
-	main .dialog-box-blanket.data-source-column .form .category-content {
+	main .dialog-box-blanket.data-source-column .form .filters,
+	main .dialog-box-blanket.data-source-column .form .accumulations {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
 		margin-left: calc(var(--gap) * 2);
