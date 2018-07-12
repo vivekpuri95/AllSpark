@@ -1714,7 +1714,7 @@ class DataSourceColumn {
 			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		});
 
-		this.filters = this.filters ? this.filters : [];
+		this.filters = this.filters ? this.filters : [{name:'', value:''}];
 
 		for(const search of this.filters) {
 			form.querySelector('.filters').appendChild(this.searchBox(search));
@@ -1723,6 +1723,8 @@ class DataSourceColumn {
 		form.querySelector('button.search').on('click', e => {
 			form.querySelector('.filters').appendChild(this.searchBox());
 		});
+
+		form.querySelector('.accumulations').appendChild(this.accumulationBox());
 
 		form.querySelector('.accumulation').on('click', e => {
 
@@ -1986,12 +1988,15 @@ class DataSourceColumn {
 
 		this.filters = [];
 
-		for(const node of this.form.querySelectorAll('.filters .search-type')) {
+		for(const [i,node] of this.form.querySelectorAll('.filters .search-type').entries()) {
+
+			if(!i)
+				continue;
 
 			if(node.querySelector('input').value === '') {
 				node.remove();
 				continue;
-			}
+			};
 
 			this.filters.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
 		}
