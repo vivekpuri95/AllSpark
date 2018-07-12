@@ -7,7 +7,6 @@ const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
 const assert = require('assert');
-const fetch = require('node-fetch');
 const authLogin = require('../server/www/authentication').login;
 
 router.use(express.static('./client'));
