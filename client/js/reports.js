@@ -4834,7 +4834,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			let total = 0;
 
 			for(const [name, value] of row) {
-				if(name != this.axes.bottom.column)
+				if(this.axes.left.columns.some(c => c.key == name))
 					total += parseFloat(value) || 0;
 			}
 
