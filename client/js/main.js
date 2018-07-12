@@ -1133,7 +1133,7 @@ class DialogBox {
 	/**
 	 * The main container of the Dialog Box.
 	 *
-	 * @return HTMLElement	A div that has the entire content.
+	 * @return	HTMLElement	A div that has the entire content.
 	 */
 	get container() {
 
@@ -1165,7 +1165,8 @@ class DialogBox {
 
 	/**
 	 * Update the heading of the dialog box
-	 * @param dialogHeading The new heading
+	 *
+	 * @param	dialogHeading	The new heading
 	 */
 	set heading(dialogHeading) {
 
@@ -1188,7 +1189,7 @@ class DialogBox {
 
 	/**
 	 *
-	 * @returns reference to the dialog box body container to set the content of the dialog box.
+	 * @return HTMLElement	reference to the dialog box body container to set the content of the dialog box.
 	 */
 	get body() {
 
