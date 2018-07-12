@@ -1615,13 +1615,13 @@ class DataSourceColumn {
 				<span>Search</span>
 			</div>
 
-			<button type="button" class="show search add-new-item"><i class="fa fa-plus"></i>Add New</button>
+			<button type="button" class="show add-search add-new-item"><i class="fa fa-plus"></i>Add New</button>
 
 			<div class="show accumulations">
 				<span>Accumulation</span>
 			</div>
 
-			<button type="button" class="show accumulation add-new-item"><i class="fa fa-plus"></i>Add New</button>
+			<button type="button" class="show add-accumulation add-new-item"><i class="fa fa-plus"></i>Add New</button>
 
 			<label>
 				<span>Type</span>
@@ -1720,13 +1720,13 @@ class DataSourceColumn {
 			form.querySelector('.filters').appendChild(this.searchBox(search));
 		}
 
-		form.querySelector('button.search').on('click', e => {
+		form.querySelector('.add-search').on('click', e => {
 			form.querySelector('.filters').appendChild(this.searchBox());
 		});
 
 		form.querySelector('.accumulations').appendChild(this.accumulationBox());
 
-		form.querySelector('.accumulation').on('click', e => {
+		form.querySelector('.add-accumulation').on('click', e => {
 
 			form.querySelector('.accumulations').appendChild(this.accumulationBox());
 		});
@@ -1988,9 +1988,9 @@ class DataSourceColumn {
 
 		this.filters = [];
 
-		for(const [i,node] of this.form.querySelectorAll('.filters .search-type').entries()) {
+		for(const [index,node] of this.form.querySelectorAll('.filters .search-type').entries()) {
 
-			if(!i)
+			if(node.querySelector('input').value === '' && !index)
 				continue;
 
 			if(node.querySelector('input').value === '') {

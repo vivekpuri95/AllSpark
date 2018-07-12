@@ -715,7 +715,8 @@ main .data-source.flush {
 						.visualization.table thead .heading .accumulations span {
 							margin-left: calc(var(--gap) * 2);
 						}
-					.visualization.table thead .heading .popup-dropdown .compact button.add-new-item {
+					.visualization.table thead .heading .popup-dropdown .compact button.add-search,
+					.visualization.table thead .heading .popup-dropdown .compact button.add-accumulation {
 						margin: 0 calc(var(--gap) * 2);
 					}
 					.visualization.table thead .heading .popup-dropdown .compact label {
@@ -1069,7 +1070,8 @@ main .dialog-box-blanket.data-source-column .form {
 		grid-gap: calc(var(--gap) * 2);
 		margin-left: calc(var(--gap) * 2);
 	}
-	main .dialog-box-blanket.data-source-column .form .add-new-item {
+	main .dialog-box-blanket.data-source-column .form .add-search,
+	main .dialog-box-blanket.data-source-column .form .add-accumulation {
 		margin-left: calc(var(--gap) * 2);
 		max-width: 200px;
 	}
