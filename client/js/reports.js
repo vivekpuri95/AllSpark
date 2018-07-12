@@ -6648,11 +6648,9 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 	render(options = {}) {
 
-		this.editor = new Editor(this.container);
+		this.editor = new Editor(this.container, 'json');
 
 		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
-
-		this.editor.editor.getSession().setMode('ace/mode/json');
 	}
 });
 

@@ -994,7 +994,15 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const source = this.page.connections.get(parseInt(this.report.connection_name));
 
-		if(!source || !['mysql', 'pgsql', 'bigquery', 'file', 'mssql'].includes(source.type)) {
+
+		this.container.querySelector('#mongo-collection-name').classList.toggle('hidden', source.type !== 'mongo');
+
+		if(source.type === 'mongo') {
+
+			this.editor.mode('javascript');
+		}
+
+		if(!source || !['mysql', 'pgsql', 'bigquery', 'file', 'mssql', 'mongo'].includes(source.type)) {
 			this.form.querySelector('#query').classList.add('hidden');
 			this.form.querySelector('#api').classList.remove('hidden');
 		}

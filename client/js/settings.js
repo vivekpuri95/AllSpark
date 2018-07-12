@@ -235,8 +235,7 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 			Sections.show('accounts-list');
 		});
 
-		SettingsAccount.editor = new Editor(this.form.querySelector("#settings-format"));
-		SettingsAccount.editor.editor.getSession().setMode('ace/mode/json');
+		SettingsAccount.editor = new Editor(this.form.querySelector("#settings-format"), 'json');
 	}
 
 	async load() {

@@ -1267,13 +1267,13 @@ class Sections {
 
 class Editor {
 
-	constructor(container) {
+	constructor(container, type='sql') {
 
 		this.container = container;
 		this.editor = ace.edit(container);
 
 		this.editor.setTheme('ace/theme/monokai');
-		this.editor.getSession().setMode('ace/mode/sql');
+		this.editor.getSession().setMode(`ace/mode/${type}`);
 		this.editor.setFontSize(16);
 		this.editor.$blockScrolling = Infinity;
 	}
@@ -1298,6 +1298,11 @@ class Editor {
 
 	set value(value) {
 		this.editor.setValue(value || '', 1);
+	}
+
+	mode(type) {
+
+		this.editor.getSession().setMode(`ace/mode/${type}`);
 	}
 }
 

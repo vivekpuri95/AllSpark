@@ -803,7 +803,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									</select>
 								</label>
 							</div>
-
+							
 							<label>
 								<span>Category</span>
 								<select name="category_id"></select>
@@ -881,6 +881,11 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 						<form id="define-report-form">
 
+							<label class="hidden" id="mongo-collection-name">
+								<span>Collection Name</span>
+								<input type="text" name="collection_name">
+							</label>
+							
 							<div id="query" class="hidden">
 								<div id="editor"></div>
 							</div>

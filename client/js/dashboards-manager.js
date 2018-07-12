@@ -130,9 +130,7 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.container.querySelector('#back').on('click', page.back);
 
-		DashboardsDashboard.editor = new Editor(DashboardsDashboard.container.querySelector('#dashboard-format'));
-
-		DashboardsDashboard.editor.editor.getSession().setMode('ace/mode/json');
+		DashboardsDashboard.editor = new Editor(DashboardsDashboard.container.querySelector('#dashboard-format'), 'json');
 
 	}
 

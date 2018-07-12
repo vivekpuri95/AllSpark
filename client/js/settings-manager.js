@@ -408,10 +408,7 @@ SettingsManager.types.set('code', class extends SettingsManagerType {
 		this.div.querySelector('.edit').classList.add('hidden');
 		this.div.querySelector('.click-to-edit').classList.add('hidden');
 
-		this.editor = new Editor(document.createElement('div'));
-
-		if(this.mode)
-			this.editor.editor.getSession().setMode(`ace/mode/${this.mode}`);
+		this.editor = new Editor(document.createElement('div', this.mode));
 
 		this.div.appendChild(this.editor.container);
 
@@ -467,9 +464,7 @@ SettingsManager.types.set('json', class extends SettingsManagerType {
 		this.div.querySelector('.edit').classList.add('hidden');
 		this.div.querySelector('.click-to-edit').classList.add('hidden');
 
-		this.editor = new Editor(document.createElement('div'));
-
-		this.editor.editor.getSession().setMode(`ace/mode/json`);
+		this.editor = new Editor(document.createElement('div'), 'json');
 
 		this.div.appendChild(this.editor.container);
 

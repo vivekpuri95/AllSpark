@@ -213,7 +213,8 @@ exports.insert = class extends API {
 				'refresh_rate',
 				'roles',
 				'format',
-				'connection_name'
+				'connection_name',
+				'collection_name',
 			];
 
 		for (const key in this.request.body) {

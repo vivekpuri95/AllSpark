@@ -6,6 +6,7 @@ const account = require('../onServerStart');
 const mysql = require("../utils/mysql");
 const mssql = require("../utils/mssql");
 const postgres = require("../utils/pgsql");
+const mongo = require("../utils/mongo");
 
 (async () => {
 
@@ -15,6 +16,7 @@ const postgres = require("../utils/pgsql");
 	await mysql.crateExternalPool();
 	await mssql.crateExternalPool();
 	await postgres.crateExternalPool();
+	await mongo.crateExternalPool();
 
 })();
 

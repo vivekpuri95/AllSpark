@@ -31,7 +31,6 @@ function privilege(userObj) {
 			if (userObj.error) {
 
 				throw(userObj.message);
-
 			}
 
 			const ignoreCategoryFlag = constants.privilege.ignore_category.includes(privilegeName);
