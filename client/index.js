@@ -6,7 +6,6 @@ const config = require('config');
 const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
-const assert = require('assert');
 const authLogin = require('../server/www/authentication').login;
 
 router.use(express.static('./client'));
@@ -228,19 +227,11 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			const loginObj = new authLogin();
 
 			loginObj.request = this.request;
-			loginObj.assert = (expression, message, statusCode) => {
-
-				return assert(expression,
-					JSON.stringify({
-						message: message,
-						status: statusCode,
-					}));
-			}
 
 			const response = await loginObj.login();
 
 			if(!response.jwt && response.length)
-				throw new Error("Error!!!");
+				throw new Error("User not found!!!");
 
 			this.response.setHeader('Set-Cookie', [`refresh_token=${response.jwt}`, `external_parameters=${JSON.stringify(external_parameters)}`]);
 

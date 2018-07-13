@@ -89,7 +89,6 @@ class API {
 
 				obj.request = request;
 				obj.response = response;
-				obj.assert = assertExpression;
 
 				const token = request.query.token || request.body.token;
 
@@ -236,15 +235,15 @@ class API {
 			});
 		});
 	}
-}
 
-function assertExpression(expression, message, statusCode) {
+	assert(expression, message, statusCode) {
 
-	return assert(expression,
-		JSON.stringify({
-			message: message,
-			status: statusCode,
-		}));
+		return assert(expression,
+			JSON.stringify({
+				message: message,
+				status: statusCode,
+			}));
+	}
 }
 
 API.Exception = class {

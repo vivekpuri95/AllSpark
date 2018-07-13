@@ -890,9 +890,10 @@ class API extends AJAX {
 			has_external_parameters = await IndexedDb.instance.has('external_parameters'),
 			cookie = new Cookies();
 
-		if(!has_external_parameters && cookie.has('external_parameters')) {
+		if(!has_external_parameters && cookie.get('external_parameters')) {
 
 			await IndexedDb.instance.set('external_parameters', JSON.parse(cookie.get('external_parameters')));
+			cookie.set('external_parameters', '');
 		}
 
 		if(cookie.get('refresh_token')) {
@@ -913,10 +914,8 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken) {
-
+		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken)
 			return;
-		}
 
 		const
 			parameters = {
