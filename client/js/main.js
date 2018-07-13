@@ -158,7 +158,7 @@ class Page {
 			if(!e.altKey)
 				return;
 
-			if(e.key == 'k' && document.querySelector('html > head link[href^="/css/custom.css"]'))
+			if(['k', 'KeyK'].e.key && document.querySelector('html > head link[href^="/css/custom.css"]'))
 				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
 		});
 	}
