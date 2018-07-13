@@ -608,7 +608,7 @@ class User {
 		return window.user = new User(user);
 	}
 
-	static async logout({next, callback, redirect = true}) {
+	static async logout({next, callback, redirect = true} = {}) {
 
 		const parameters = new URLSearchParams();
 
