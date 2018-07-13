@@ -83,7 +83,6 @@ Page.class = class Dashboards extends Page {
 				icon: "fas fa-globe"
 			};
 
-
 		for (const dashboard of dashboards) {
 
 			if ((dashboard.added_by === user.user_id || dashboard.added_by === null) && dashboard.visibility === "private" && dashboard.parent === null) {

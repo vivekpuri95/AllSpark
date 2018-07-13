@@ -305,7 +305,7 @@ exports.refresh = class extends API {
 
 			Object.assign(loginObj, this);
 
-			loginObj.request.body.account_id = this.account.account_id;
+			loginObj.request.body.account_id = userDetail.account_id;
 
 			await loginObj.requestAuthAPI();
 
