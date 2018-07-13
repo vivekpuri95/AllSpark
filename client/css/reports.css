@@ -693,7 +693,7 @@ main .data-source.flush {
 					left: 0;
 					color: #333;
 					width: 250px;
-					max-height: 200px;
+					max-height: 250px;
 					text-align: initial;
 					padding-top: calc(var(--gap) * 2);
 					background: #fff;
@@ -713,11 +713,14 @@ main .data-source.flush {
 					}
 						.visualization.table thead .heading .filters span,
 						.visualization.table thead .heading .accumulations span {
-							margin-left: calc(var(--gap) * 2);
+							margin: 0 calc(var(--gap) * 2);
+							display: flex;
+							align-items: center;
 						}
 					.visualization.table thead .heading .popup-dropdown .compact button.add-search,
 					.visualization.table thead .heading .popup-dropdown .compact button.add-accumulation {
-						margin: 0 calc(var(--gap) * 2);
+						margin-left: auto;
+						border: 0;
 					}
 					.visualization.table thead .heading .popup-dropdown .compact label {
 						max-width: none;
@@ -731,7 +734,7 @@ main .data-source.flush {
 							.compact label .category-group button:hover {
 								background: #c33;
 							}
-							.compact label .category-group button svg {
+							.compact button svg {
 								margin: 0;
 							}
 				.visualization.table thead .heading .compact label .category-group input,

@@ -1612,16 +1612,12 @@ class DataSourceColumn {
 			</label>
 
 			<div class="show filters">
-				<span>Search</span>
+				<span>Search <button type="button" class="show add-search add-new-item"><i class="fa fa-plus"></i></button> </span>
 			</div>
-
-			<button type="button" class="show add-search add-new-item"><i class="fa fa-plus"></i>Add New</button>
 
 			<div class="show accumulations">
-				<span>Accumulation</span>
+				<span>Accumulation <button type="button" class="show add-accumulation add-new-item"><i class="fa fa-plus"></i></button></span>
 			</div>
-
-			<button type="button" class="show add-accumulation add-new-item"><i class="fa fa-plus"></i>Add New</button>
 
 			<label>
 				<span>Type</span>
