@@ -32,13 +32,13 @@ class Page {
 		await User.load();
 		await MetaData.load();
 
-		if(account && account.auth_api) {
+		if(window.account && account.auth_api) {
 
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
 			if(account && parameters.get('external_parameters') && Array.isArray(account.settings.get('external_parameters'))) {
 
-				User.logout(undefined, async () => {
+				User.logout({callback: async () => {
 
 					const parameters_ = {};
 
@@ -46,7 +46,7 @@ class Page {
 						parameters_[key] = value;
 
 					await IndexedDb.instance.set('external_parameters', parameters_);
-				});
+				}});
 			}
 		}
 
@@ -57,7 +57,7 @@ class Page {
 
 		const header = document.querySelector('body > header');
 
-		if(account) {
+		if(window.account) {
 
 			if(account.settings.get('hideHeader')) {
 				header.classList.add('hidden');
@@ -84,7 +84,7 @@ class Page {
 
 		const nav_container = header.querySelector('nav');
 
-		if(account && account.settings.get('top_nav_position') == 'left') {
+		if(window.account && account.settings.get('top_nav_position') == 'left') {
 
 			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
 
@@ -608,7 +608,7 @@ class User {
 		return window.user = new User(user);
 	}
 
-	static async logout(next, callback) {
+	static async logout({next, callback, redirect = true}) {
 
 		const parameters = new URLSearchParams();
 
@@ -622,7 +622,8 @@ class User {
 		if(callback)
 			await callback();
 
-		window.location = '/login?'+parameters.toString();
+		if(redirect)
+			window.location = '/login?'+parameters.toString();
 	}
 
 	constructor(user) {
@@ -802,7 +803,7 @@ class AJAX {
 		AJAXLoader.hide();
 
 		if(response.status == 401)
-			return User.logout();
+			return User.logout({redirect: options.redirectOnLogout});
 
 		return await response.json();
 	}
@@ -922,9 +923,10 @@ class API extends AJAX {
 			},
 			options = {
 				method: 'POST',
+				redirectOnLogout: false,
 			};
 
-		if(account && account.auth_api && Array.isArray(account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
+		if(window.account && account.auth_api && Array.isArray(account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
 
 			const external_parameters = await IndexedDb.instance.get('external_parameters');
 
