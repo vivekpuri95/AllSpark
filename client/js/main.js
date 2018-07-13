@@ -22,7 +22,7 @@ class Page {
 
 		Page.render();
 
-		Page.listenAccessToken();
+		Page.setupShortcuts();
 	}
 
 	static async load() {
@@ -151,16 +151,16 @@ class Page {
 		}
 	}
 
-	static listenAccessToken() {
+	static setupShortcuts() {
+
 		document.on('keyup', e => {
-			if(e.altKey && e.keyCode == 69) {
-				const value = prompt('Enter the Token.');
 
-				if(!value)
-					return;
+			if(!e.altKey)
+				return;
 
-				location.reload();
-			}
+			// Alt + K
+			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]'))
+				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
 		});
 	}
 
