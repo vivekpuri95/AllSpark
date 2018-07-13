@@ -6,6 +6,7 @@ const config = require('config');
 const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
+const authLogin = require('../server/www/authentication').login;
 
 router.use(express.static('./client'));
 
@@ -208,6 +209,36 @@ router.get('/login', API.serve(class extends HTMLAPI {
 	}
 
 	async main() {
+
+		if(Array.isArray(this.account.settings.get('external_parameters')) && this.request.query.external_parameters) {
+
+			const external_parameters = {};
+
+			for(const key of this.account.settings.get('external_parameters')) {
+
+				if(key in this.request.query)
+					this.request.body['ext_' + key] = this.request.query[key];
+
+				external_parameters[key] = this.request.query[key];
+			}
+
+			this.request.body.account_id = this.account.account_id;
+
+			const loginObj = new authLogin();
+
+			loginObj.request = this.request;
+
+			const response = await loginObj.login();
+
+			if(!response.jwt && response.length)
+				throw new Error("User not found!!!");
+
+			this.response.setHeader('Set-Cookie', [`refresh_token=${response.jwt}`, `external_parameters=${JSON.stringify(external_parameters)}`]);
+
+			this.response.redirect('/dashboard/first');
+			throw({"pass": true});
+		}
+
 		return `
 			<div class="logo hidden">
 				<img src="" />
