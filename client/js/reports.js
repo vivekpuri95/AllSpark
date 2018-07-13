@@ -2154,10 +2154,8 @@ class DataSourceColumn {
 			parameter.selectedValue = value;
 		}
 
-		destination.drilldown = {
-			...this.drilldown,
-			parent: this.source,
-		};
+		destination.drilldown = Object.assign({}, this.drilldown);
+		destination.drilldown.parent = this.source;
 
 		destination.container.setAttribute('style', this.source.container.getAttribute('style'));
 
@@ -2315,7 +2313,7 @@ class DataSourceTransformation {
 
 	run(response = []) {
 
-		if(!response || !response.length)
+		if(!response || !response.length || !this.rows || this.rows.length != 1)
 			return response;
 
 		const
