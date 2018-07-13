@@ -1133,8 +1133,21 @@ class Editor {
 	}
 }
 
+/**
+ * A generic implementation for a modal box.
+ *
+ * It has the following features.
+ *
+ * - Lets users set the heading, body content and footer of the dialog.
+ * - Provides a clean interface with user controlled show and hide features.
+ */
 class DialogBox {
 
+	/**
+	 * The main container of the Dialog Box.
+	 *
+	 * @return	HTMLElement	A div that has the entire content.
+	 */
 	get container() {
 
 		if(this.containerElement)
@@ -1163,6 +1176,11 @@ class DialogBox {
 		return container;
 	}
 
+	/**
+	 * Update the heading of the dialog box
+	 *
+	 * @param	dialogHeading	The new heading
+	 */
 	set heading(dialogHeading) {
 
 		const heading = this.container.querySelector('.dialog-box header h3');
@@ -1182,16 +1200,26 @@ class DialogBox {
 		}
 	}
 
+	/**
+	 *
+	 * @return HTMLElement	reference to the dialog box body container to set the content of the dialog box.
+	 */
 	get body() {
 
 		return this.container.querySelector('.dialog-box .body');
 	}
 
+	/**
+	 * Hides the dialog box container
+	 */
 	hide() {
 
 		this.container.classList.add('hidden');
 	}
 
+	/**
+	 * Displays the dialog box container
+	 */
 	show() {
 
 		this.container.classList.remove('hidden');
@@ -1282,12 +1310,16 @@ class MultiSelect {
 			}
 
 			options.classList.remove('hidden');
+			this.container.querySelector('input[type=search]').placeholder = 'Search...';
 		});
 
 		search.on('dblclick', () => {
 
 			if(!this.expand)
 				options.classList.add('hidden');
+
+			search.value = '';
+			this.recalculate();
 		});
 
 		search.on('keyup', () => this.recalculate());
@@ -1300,6 +1332,9 @@ class MultiSelect {
 
 			if(!this.expand)
 				options.classList.add('hidden');
+
+			search.value = '';
+			this.recalculate();
 		});
 
 		return container;
@@ -1419,6 +1454,7 @@ class MultiSelect {
 				this.recalculate();
 			});
 
+			row.input = input;
 			if(this.disabled)
 				input.disabled = true;
 
@@ -1451,25 +1487,29 @@ class MultiSelect {
 		if(!this.datalist.length)
 			return;
 
-		for(const input of options.querySelectorAll('.list label input')) {
+		for(const row of this.datalist) {
 
-			input.checked = this.selectedValues.has(input.value);
+			row.input.checked = this.selectedValues.has(row.input.value);
 
 			let hide = false;
 
-			if(search.value && !input.parentElement.textContent.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+			if(search.value && !row.name.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
 				hide = true;
 
-			input.parentElement.classList.toggle('hidden', hide);
-			input.parentElement.classList.toggle('selected', input.checked);
+			row.input.parentElement.classList.toggle('hidden', hide);
+			row.input.parentElement.classList.toggle('selected', row.input.checked);
 		}
 
 		const
 			total = options.querySelectorAll('.list label').length,
 			hidden = options.querySelectorAll('.list label.hidden').length,
-			selected = options.querySelectorAll('.list input:checked').length;
+			selected = options.querySelectorAll('.list input:checked').length,
+			firstSelected = options.querySelector('.list label.selected div > span');
 
-		search.placeholder = `Search... (${selected} selected)`;
+		search.placeholder = 'Search...';
+
+		if(firstSelected && options.classList.contains('hidden'))
+			search.placeholder = selected > 1 ? `${firstSelected.textContent} and ${selected - 1} more` : firstSelected.textContent;
 
 		const footer = options.querySelector('footer');
 
