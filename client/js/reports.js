@@ -1803,6 +1803,8 @@ class DataSourceColumn {
 
 		const select = label.querySelector('.accumulation-content');
 
+		select.insertAdjacentHTML('beforeend', `<option value="-1">Select</option>`);
+
 		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
 
 			if(!string || type.string)
@@ -1811,7 +1813,8 @@ class DataSourceColumn {
 
 		select.querySelector('option').selected = true;
 
-		label.querySelector('input').value = DataSourceColumn.accumulationTypes[select.value].apply(this.source.response, this.key);
+		if(select.value != '-1')
+			label.querySelector('input').value = DataSourceColumn.accumulationTypes[select.value].apply(this.source.response, this.key);
 
 		select.on('change', () => {
 
