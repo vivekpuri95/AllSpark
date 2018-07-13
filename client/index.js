@@ -552,7 +552,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 					</label>
 					<button type="submit"><i class="fa fa-paper-plane"></i> Send</button>
 				</form>
-				<div class="datasets form"></div>
+				<div class="global-filters form"></div>
 
 				<div class="list"></div>
 				<div id="blanket" class="hidden"></div>
@@ -935,7 +935,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 										<span>Description</span>
 										<input type="text" name="description">
 									</label>
-									
+
 									<label>
 										<span>Order</span>
 										<input type="number" name="order">
@@ -951,11 +951,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 										<input type="text" name="offset">
 									</label>
 
-									<label>
+									<label class="dataset">
 										<span>Dataset</span>
-										<select name="dataset">
-											<option value="">None</option>
-										</select>
 									</label>
 
 									<label>
@@ -1050,13 +1047,21 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						</h3>
 
 						<div class="body" id="transformations"></div>
-					</div>
+					</div>					
 
 					<div class="configuration-section">
 
 						<h3><i class="fas fa-angle-right"></i> Dashboards</h3>
 
 						<div class="body" id="dashboards"></div>
+					</div>
+					
+					<div class="configuration-section">
+					
+						<h3><i class="fas fa-angle-right"></i> Filters</h3>
+						
+						<div class="body form" id="filters"></div>
+												
 					</div>
 
 				</section>

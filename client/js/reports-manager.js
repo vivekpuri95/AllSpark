@@ -748,11 +748,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.filterForm = this.container.querySelector('#filters form');
 
-		for(const dataset of MetaData.datasets.values()) {
-			this.filterForm.dataset.insertAdjacentHTML('beforeend', `
-				<option value="${dataset.id}">${dataset.name}</option>
-			`);
-		}
+		this.filterForm.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
+		this.filterForm.querySelector('label.dataset').appendChild(this.filterForm.datasetMultiSelect.container);
 
 		this.schemas = new Map;
 
@@ -1244,21 +1241,15 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			let datasetName = '';
 
-			if(filter.dataset && MetaData.datasets.has(filter.dataset)) {
+			if(filter.dataset && DataSource.list.has(filter.dataset)) {
 
-				const
-					dataset = MetaData.datasets.get(filter.dataset),
-					report = DataSource.list.get(dataset.query_id);
+				const dataset = DataSource.list.get(filter.dataset);
 
-				if(report) {
-					datasetName = `
-						<a href="/report/${dataset.query_id}" target="_blank" title="${DataSource.list.get(dataset.query_id).name}">
-							${dataset.name}
-						</a>
-					`;
-				}
-
-				else datasetName = dataset.name;
+				datasetName = `
+					<a href="/report/${dataset.query_id}" target="_blank" title="${DataSource.list.get(dataset.query_id).name}">
+						${dataset.name}
+					</a>
+				`;
 			}
 
 			row.innerHTML = `
@@ -1277,25 +1268,37 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		}
 
 		if(!this.report.filters.length)
-			tbody.innerHTML = `<tr class="NA"><td>No filters added yet! :(</td></tr>`
+			tbody.innerHTML = `<tr class="NA"><td>No filters added yet! :(</td></tr>`;
+
+		this.filterForm.datasetMultiSelect.datalist = Array.from(DataSource.list.values()).filter(r => r.query_id != this.report.query_id).map(r => {return {name: r.name, value: r.query_id}});
+		this.filterForm.datasetMultiSelect.render();
 	}
 
 	addFilter() {
 
 		const filterForm = this.container.querySelector('#filter-form');
+
 		filterForm.classList.remove('hidden');
 		this.container.querySelector('#filter-list').classList.add('hidden');
 
 		const select = filterForm.querySelector('select[name="type"]');
+
 		select.textContent = null;
-		for (const type of MetaData.filterTypes) {
+
+		for (const type of MetaData.filterTypes.values()) {
+
+			if(!type.input_type)
+				continue;
+
 			select.insertAdjacentHTML('beforeend', `
-				<option value="${type.toLowerCase()}">${type}</option>
+				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
 		}
 
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
 		this.filterForm.on('submit', this.filterForm.listener = e => this.insertFilter(e));
+
+		this.filterForm.datasetMultiSelect.clear();
 
 		this.filterForm.reset();
 
@@ -1309,7 +1312,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const
 			parameters = {
-				query_id: this.report.query_id
+				query_id: this.report.query_id,
+				dataset: this.filterForm.datasetMultiSelect.value[0] || '',
 			},
 			options = {
 				method: 'POST',
@@ -1334,10 +1338,16 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.filterForm.reset();
 
 		const select = this.filterForm.querySelector('select[name="type"]');
+
 		select.textContent = null;
-		for (const type of MetaData.filterTypes) {
+
+		for(const type of MetaData.filterTypes.values()) {
+
+			if(!type.input_type)
+				continue;
+
 			select.insertAdjacentHTML('beforeend', `
-				<option value="${type.toLowerCase()}">${type}</option>
+				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
 		}
 
@@ -1345,6 +1355,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			if(key in this.filterForm)
 				this.filterForm[key].value = filter[key];
 		}
+
+		this.filterForm.datasetMultiSelect.value = filter.dataset;
 
 		this.filterForm.name.focus();
 	}
@@ -1356,7 +1368,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const
 			parameters = {
-				filter_id: filter.filter_id
+				filter_id: filter.filter_id,
+				dataset: this.filterForm.datasetMultiSelect.value[0] || '',
 			},
 			options = {
 				method: 'POST',
@@ -1664,7 +1677,11 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization.options.transformations)
 			this.visualization.options.transformations = [];
 
+		if(!this.visualization.options.axes)
+			this.visualization.options.axes = [];
+
 		this.transformations = new ReportTransformations(this.visualization, this);
+		this.reportVisualizationFilters =  new ReportVisualizationFilters(this);
 
 		localStorage.reportsPreviewDock = 'right';
 		await this.page.preview.load({
@@ -1673,6 +1690,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		});
 
 		this.transformations.load();
+		this.reportVisualizationFilters.load();
 
 		this.form.reset();
 
@@ -1714,6 +1732,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.visualization.options = this.optionsForm.json;
 
 		this.visualization.options.transformations = this.transformations.json;
+		this.visualization.options.filters = this.reportVisualizationFilters.json;
 
 		options.form.set('options', JSON.stringify(this.visualization.options));
 
@@ -1733,6 +1752,161 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		});
 	}
 });
+
+class ReportVisualizationFilters extends Map {
+
+	constructor(stage) {
+
+		super();
+
+		this.visualization = stage.visualization;
+		this.container = stage.container.querySelector('.configuration-section #filters');
+		this.stage = stage;
+
+		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
+
+			for(const filter of this.stage.visualization.options.filters) {
+
+				const [filterObj] = this.stage.report.filters.filter(x => x.filter_id == filter.filter_id);
+
+				if(!filterObj)
+					continue;
+
+				this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, stage));
+			}
+		}
+	}
+
+	load() {
+
+		this.container.textContent = null;
+
+		if(!this.stage.report.filters.length) {
+
+			this.container.textContent = 'No filters found!';
+			this.container.classList.add('NA');
+			return;
+		}
+
+		this.container.innerHTML = `
+			<div class="list hidden"></div>
+			<form class="add-filter">
+				<select></select>
+				<button type="submit"><i class="fa fa-plus"></i> Add</button>
+			</form>
+		`;
+
+		const
+			filterOptions = this.container.querySelector('.add-filter > select'),
+			addFilterContainer = this.container.querySelector('.list');
+
+		for(const filter of this.values()) {
+
+			addFilterContainer.appendChild(filter.container);
+		}
+
+		this.updateFilterList();
+
+		this.container.querySelector('.add-filter').on('submit', (e) => {
+
+			e.preventDefault();
+
+			const
+				addFilterContainer = this.container.querySelector('.list'),
+				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
+
+			this.set(filter.filter_id, new ReportVisualizationFilter(
+				{filter_id: filter.filter_id, default_value: ''},
+				filter,
+				this.stage
+			));
+
+			addFilterContainer.appendChild(this.get(parseInt(filterOptions.value)).container);
+
+			this.updateFilterList();
+		});
+	}
+
+	updateFilterList() {
+
+		const optionsList = this.container.querySelector('.add-filter > select');
+
+		optionsList.textContent = null;
+
+		for(const filter of this.stage.report.filters) {
+
+			if(this.has(filter.filter_id))
+				continue;
+
+			optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
+		}
+
+		this.container.querySelector('.list').classList.toggle('hidden', !this.size);
+		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const filter of this.values()) {
+
+			response.push(filter.json);
+		}
+
+		return response;
+	}
+}
+
+class ReportVisualizationFilter {
+
+	constructor(reportVisualizationFilter, reportFilter, stage) {
+
+		this.stage = stage;
+		this.reportFilter = reportFilter;
+
+		Object.assign(this, reportVisualizationFilter);
+	}
+
+	get container() {
+
+		if (this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('fieldset');
+
+		container.classList.add('filters');
+
+		container.innerHTML = `
+			<legend>${this.reportFilter.name}</legend>
+			<label>
+				<span>Default Value</span>
+				<div>
+					<input type="text" placeholder="${this.reportFilter.default_value}" value="${this.default_value || ''}">
+					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+				</div>
+			</label>
+		`;
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.container.parentElement.removeChild(container);
+			this.stage.reportVisualizationFilters.delete(this.filter_id);
+
+			this.stage.reportVisualizationFilters.updateFilterList();
+		});
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			default_value: this.container.querySelector('input').value,
+			filter_id: this.filter_id
+		};
+	}
+}
 
 class ReportVisualizationDashboards extends Set {
 
@@ -2285,6 +2459,9 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	get form() {
 
+		if(this.formContainer)
+			return this.formContainer;
+
 		const container = this.formContainer = document.createElement('div');
 
 		container.classList.add('liner-visualization-options');
@@ -2292,12 +2469,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Axes</h3>
-				<div class="options form body">
-					<div class="axes"></div>
-					<button class="add-axis" type="button">
-						<i class="fa fa-plus"></i> Add New Axis
-					</button>
-				</div>
+				<div class="options form body axes-container"></div>
 			</div>
 
 			<div class="configuration-section">
@@ -2321,12 +2493,9 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		this.formContainer.axes = new Set();
 
-		for(const axis of this.visualization.options ? this.visualization.options.axes || [] : []) {
+		this.axes = new Axes(this.visualization.options.axes, this);
 
-			const axisForm = this.axis(axis);
-			this.formContainer.axes.add(axisForm);
-			container.querySelector('.axes').appendChild(axisForm);
-		}
+		container.querySelector('.configuration-section .axes-container').appendChild(this.axes.container);
 
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
@@ -2334,63 +2503,139 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		if(this.visualization.options && this.visualization.options.showValues)
 			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
 
-		container.querySelector('.add-axis').on('click', () => {
-
-			const axisForm = this.axis();
-			this.formContainer.axes.add(axisForm);
-			container.querySelector('.axes').appendChild(axisForm);
-		});
-
 		return container;
 	}
 
 	get json() {
 
 		const response = {
-			axes: [],
+			axes: this.axes.json,
 			hideLegend: this.formContainer.querySelector('input[name=hideLegend]').checked,
 			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
 		};
 
-		for(const axis of this.formContainer.axes) {
+		return response;
+	}
+}
 
-			const columns = [];
+class Axes extends Set {
 
-			for(const option of axis.multiSelectColumns.value)
-				columns.push({key: option});
+	constructor(axes, stage) {
+		super();
 
-			response.axes.push({
-				position: axis.querySelector('select[name=position]').value,
-				label: axis.querySelector('input[name=label]').value,
-				columns,
-				restcolumns: axis.querySelector('input[name=restcolumns]').checked,
-				format: axis.querySelector('select[name=format]').value,
-			});
+		this.stage = stage;
+		this.list = axes;
+		this.clear();
+
+		for(const axis of this.list)
+			this.add(new Axis(axis, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('axis-container')
+		container.innerHTML = `
+			<div class="axes"></div>
+			<button class="add-axis" type="button">
+				<i class="fa fa-plus"></i> Add New Axis
+			</button>
+		`;
+
+		container.querySelector('.add-axis').on('click', () => {
+
+			const axisForm = new Axis({}, this);
+			this.add(axisForm);
+			container.querySelector('.axes').appendChild(axisForm.container);
+		});
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		let addAxes = this.container.querySelector('.axes');
+		addAxes.textContent = null;
+
+		for(const axis of this) {
+			addAxes.appendChild(axis.container);
+		}
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const axis of this.values()) {
+			response.push(axis.json);
 		}
 
 		return response;
 	}
 
-	axis(axis = {}) {
+	restCheck(action) {
 
-		const
-			container = document.createElement('div'),
-			datalist = [];
+		for(const rest of this.container.querySelectorAll('.restCheck')) {
+			rest.classList.toggle('hidden', action);
+		}
+	}
+ }
+
+class Axis {
+
+	constructor(axis, axes) {
+
+		for(const key in axis)
+			this[key] = axis[key]
+
+		this.axes = axes;
+
+		if(!this.columns)
+			this.columns = [];
+	}
+
+	get container() {
+
+		if(this.axisContainer)
+			return this.axisContainer;
+
+		const container = this.axisContainer = document.createElement('div');
+		let datalist = [];
 
 		container.classList.add('axis', 'subform');
 
-		for(const [key, column] of this.page.preview.report.columns)
+		for(const [key, column] of this.axes.stage.page.preview.report.columns)
 			datalist.push({name: column.name, value: key});
+
+		let usedColumns = [];
+
+		for(const axis of this.axes) {
+
+			if(axis.position == this.position)
+				continue;
+
+			usedColumns = usedColumns.concat(axis.columns.map(x => x.key));
+		}
+
+		for(const column of usedColumns) {
+
+			datalist = datalist.filter(x => !column.includes(x.value));
+		}
 
 		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
 		const axisColumn = container.multiSelectColumns.container;
 
-		container.multiSelectColumns.value = axis.columns ? axis.columns.map(x => x.key) : [];
+		container.multiSelectColumns.value = this.columns ? this.columns.map(x => x.key) : [];
 
 		container.innerHTML = `
 			<label>
 				<span>Position</span>
-				<select name="position" value="${axis.position}" required>
+				<select name="position" value="${this.position}" required>
 					<option value="top">Top</option>
 					<option value="right">Right</option>
 					<option value="bottom">Bottom</option>
@@ -2400,14 +2645,14 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			<label>
 				<span>Label</span>
-				<input type="text" name="label" value="${axis.label || ''}">
+				<input type="text" name="label" value="${this.label || ''}">
 			</label>
 
 			<label class="axis-column">
 				<span>Columns</span>
 			</label>
 
-			<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${axis.restcolumns ? 'checked' : ''}> Rest</span></label>
+			<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${this.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 			<label>
 				<span>Format</span>
@@ -2424,44 +2669,91 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			</label>
 		`;
 
+		container.multiSelectColumns.on('change', () => {
+
+			let usedColumns = [];
+			const freeColumns = [];
+
+			for(const axis of this.axes)
+				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
+
+			for(const axis of this.axes) {
+				for(const item of axis.container.multiSelectColumns.datalist) {
+					if(!freeColumns.some(c => c.value.includes(item.value)) && !usedColumns.includes(item.value))
+						freeColumns.push(item);
+				}
+			}
+
+			for(const axis of this.axes) {
+
+				if(axis == this)
+					continue;
+
+				const selected = axis.container.multiSelectColumns.value;
+
+				var newDataList = [];
+
+				for(const data of axis.container.multiSelectColumns.datalist) {
+				    if(!usedColumns.includes(data.value) || selected.includes(data.value)) {
+				        newDataList.push(data);
+				    }
+				}
+
+				for(const value of freeColumns) {
+					if(!newDataList.some(k => k.value.includes(value.value)))
+						newDataList.push(value);
+				}
+
+				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join())
+					continue;
+
+				axis.container.multiSelectColumns.datalist = newDataList;
+				axis.container.multiSelectColumns.render();
+			}
+
+		});
+
 		const restColumns = container.querySelector('.restcolumns');
 
 		restColumns.on('change', () => {
 
-			this.restCheck(restColumns.checked);
+			this.axes.restCheck(restColumns.checked);
 			axisColumn.classList.toggle('hidden');
 
-			if(restColumns.checked) {
-
+			if(restColumns.checked)
 				container.querySelector('.restCheck').classList.remove('hidden');
-			}
 		});
 
-		if(axis.restcolumns) {
+		if(this.restcolumns) {
 
-			this.restCheck(true);
+			this.axes.restCheck(true);
 			axisColumn.classList.add('hidden');
 		}
 
 		container.querySelector('.axis-column').appendChild(axisColumn);
 
-		container.querySelector('select[name=position]').value = axis.position;
-		container.querySelector('select[name=format]').value = axis.format || '';
+		container.querySelector('select[name=position]').value = this.position;
+		container.querySelector('select[name=format]').value = this.format || '';
 
 		container.querySelector('.delete').on('click', () => {
 
 			container.parentElement && container.parentElement.removeChild(container);
-			this.formContainer.axes.delete(container);
+			this.axes.delete(this);
+			this.axes.render();
 		});
 
 		return container;
 	}
 
-	restCheck(action) {
+	get json() {
 
-		for(const rest of this.formContainer.querySelectorAll('.restCheck')) {
-			rest.classList.toggle('hidden', action);
-		}
+		return {
+			position: this.container.querySelector('select[name=position]').value,
+			label: this.container.querySelector('input[name=label]').value,
+			columns: this.container.multiSelectColumns.value.map(c => {return {key: c}}),
+			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
+			format: this.container.querySelector('select[name=format]').value,
+		};
 	}
 }
 
@@ -2476,7 +2768,6 @@ class ReportVisualizationLiveNumberOptions extends ReportVisualizationOptions {
 		}
 
 		return result;
-
 	}
 }
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
@@ -2764,7 +3055,7 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 						<span>Right Offset</span>
 						<input type="number" name="rightOffset">
 					</label>
-					
+
 					<label class="sub-reports">
 						<span>Sub-reports</span>
 					</label>

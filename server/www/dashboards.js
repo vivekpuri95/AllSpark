@@ -13,15 +13,15 @@ exports.list = class extends API {
 		if(this.request.body.search) {
 			query = query.concat(`
 				AND (
-					id LIKE '%${this.request.body.search}%'
-					OR name LIKE '%${this.request.body.search}%'
-					OR visibility LIKE '%${this.request.body.search}%'
+					id LIKE ?
+					OR name LIKE ?
+					OR visibility LIKE ?
 				)
 				LIMIT 10
 			`);
 		}
 
-		let dashboards = this.mysql.query(query);
+		let dashboards = this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]);
 
 		let sharedDashboards = this.mysql.query(
 			"select ud.* from tb_user_dashboard ud join tb_dashboards d on d.id = ud.dashboard_id where d.status = 1 and account_id = ?",
