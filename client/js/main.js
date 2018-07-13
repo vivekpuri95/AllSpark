@@ -172,7 +172,7 @@ class Page {
 		this.user = window.user;
 		this.metadata = window.MetaData;
 		this.indexedDb = IndexedDb.instance;
-		this.cookies = new Cookies();
+		this.cookies = Cookies;
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
@@ -329,7 +329,7 @@ class Cookies {
 	 * @param  string	Value	The value of the cookie being set.
 	 * @return boolean			The status of the set request.
 	 */
-	set(key, value) {
+	static set(key, value) {
 		document.cookie = `${key}=${encodeURIComponent(value)}`;
 		return true;
 	}
@@ -340,7 +340,7 @@ class Cookies {
 	 * @param  string	key	The name of the cookie whose existance is being questioned
 	 * @return boolean		Returns true if the cookie exists, false otherwise
 	 */
-	has(key) {
+	static has(key) {
 		return new Boolean(document.cookie.split(';').filter(c => c.includes(`${key}=`)).length);
 	}
 
@@ -350,7 +350,7 @@ class Cookies {
 	 * @param  string	key	The name of the cookie whose value will be retured.
 	 * @return string		The	value of the cookie, null if not found.
 	 */
-	get(key) {
+	static get(key) {
 
 		// TODO: Handle the prefix bug, (both foo and barfoo will be matched with current approach)
 		const [cookie] = document.cookie.split(';').filter(c => c.includes(`${key}=`));
@@ -887,19 +887,18 @@ class API extends AJAX {
 		let
 			getToken = true,
 			token = await IndexedDb.instance.get('token'),
-			has_external_parameters = await IndexedDb.instance.has('external_parameters'),
-			cookie = new Cookies();
+			has_external_parameters = await IndexedDb.instance.has('external_parameters');
 
-		if(!has_external_parameters && cookie.get('external_parameters')) {
+		if(!has_external_parameters && Cookies.get('external_parameters')) {
 
-			await IndexedDb.instance.set('external_parameters', JSON.parse(cookie.get('external_parameters')));
-			cookie.set('external_parameters', '');
+			await IndexedDb.instance.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
+			Cookies.set('external_parameters', '');
 		}
 
-		if(cookie.get('refresh_token')) {
+		if(Cookies.get('refresh_token')) {
 
-			await IndexedDb.instance.set('refresh_token', cookie.get('refresh_token'));
-			cookie.set('refresh_token', '');
+			await IndexedDb.instance.set('refresh_token', Cookies.get('refresh_token'));
+			Cookies.set('refresh_token', '');
 		}
 
 		if(token) {
@@ -941,7 +940,7 @@ class API extends AJAX {
 		const response = await API.call('authentication/refresh', parameters, options);
 
 		await IndexedDb.instance.set('token', response);
-		new Cookies().set('token', response);
+		Cookies.set('token', response);
 
 		Page.load();
 	}
