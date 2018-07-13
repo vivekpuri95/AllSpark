@@ -80,9 +80,9 @@ Page.class = class Dashboards extends Page {
 				icon: "fas fa-globe"
 			};
 
-		Object.assign(privateDashboard, JSON.parse(JSON.stringify(privateDashboard)));
-		Object.assign(sharedWithMeDashboard, JSON.parse(JSON.stringify(sharedWithMeDashboard)));
-		Object.assign(publicDashboard, JSON.parse(JSON.stringify(publicDashboard)));
+		Object.assign(privateDashboard, JSON.parse(JSON.stringify(dummyDashboard)));
+		Object.assign(sharedWithMeDashboard, JSON.parse(JSON.stringify(dummyDashboard)));
+		Object.assign(publicDashboard, JSON.parse(JSON.stringify(dummyDashboard)));
 
 		for (const dashboard of dashboards) {
 
