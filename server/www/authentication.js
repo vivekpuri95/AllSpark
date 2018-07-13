@@ -276,6 +276,7 @@ exports.login = class extends API {
 		const obj = {
 			user_id: this.userDetails.user_id,
 			email: this.userDetails.email,
+			account_id: this.userDetails.account_id,
 		};
 
 		const finalObj = {
@@ -301,6 +302,8 @@ exports.refresh = class extends API {
 			this.possibleAccounts = [this.account];
 
 			const loginObj = new exports.login();
+
+			loginObj.request.body.account_id = this.account.account_id;
 
 			Object.assign(loginObj, this);
 
