@@ -326,27 +326,6 @@ main .data-source.flush {
 		main .data-source > .share-link input {
 			width: 100%;
 		}
-	main .data-source .column .blanket .form > footer,
-	.visualization.table thead tr th.heading .compact footer {
-		display: flex;
-		flex-direction: row;
-		position: sticky;
-		font-size: 110%;
-		bottom: 0;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-	}
-		main .data-source .column .blanket > .form footer button {
-			padding: calc(var(--gap) * 2);
-			height: auto;
-			border-right: 0;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex: 1;
-		}
-		main .data-source .column .blanket > .form footer button:first-child {
-			border-left: 0;
-		}
 	main .data-source > .drilldown {
 		margin-top: calc(var(--gap) * 2);
 		display: grid;
@@ -699,56 +678,6 @@ main .data-source.flush {
 					background: #fff;
 					box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 				}
-				.visualization.table thead .heading .popup-dropdown .form.compact {
-						padding: 0;
-						grid-gap: calc(var(--gap) * 2);
-						box-shadow: none;
-						width: 100%;
-						overflow: auto;
-				}
-					.visualization.table thead .heading .popup-dropdown .compact .filters,
-					.visualization.table thead .heading .popup-dropdown .compact .accumulations {
-						display: grid;
-						grid-gap: calc(var(--gap) * 2);
-					}
-						.visualization.table thead .heading .filters span,
-						.visualization.table thead .heading .accumulations span {
-							margin: 0 calc(var(--gap) * 2);
-							display: flex;
-							align-items: center;
-						}
-					.visualization.table thead .heading .popup-dropdown .compact button.add-search,
-					.visualization.table thead .heading .popup-dropdown .compact button.add-accumulation {
-						margin-left: auto;
-						border: 0;
-					}
-					.visualization.table thead .heading .popup-dropdown .compact label {
-						max-width: none;
-						margin: 0 calc(var(--gap) * 2);
-					}
-						.visualization.table thead .heading .popup-dropdown .compact label .category-group {
-							display: grid;
-							grid-template-columns: 1fr 1fr max-content;
-							grid-gap: calc(var(--gap)*2);
-						}
-							.compact label .category-group button:hover {
-								background: #c33;
-							}
-							.compact button svg {
-								margin: 0;
-							}
-				.visualization.table thead .heading .compact label .category-group input,
-				.visualization.table thead .heading .compact label .category-group select {
-					margin-bottom: 0;
-					text-align: initial !important;
-				}
- 				.visualization.table thead tr th.heading .popup-dropdown footer button {
-					 border-right: 0;
-					 flex: 1;
-				}
-					.visualization.table thead tr th.heading .popup-dropdown footer button:first-child {
-						border-left: 0;
-					}
 			.visualization.table thead td {
 				padding: 0;
 				border: 0;
@@ -779,7 +708,7 @@ main .data-source.flush {
 				border-right: 1px solid #fff;
 				top: 0;
 			}
-				.visualization.table table thead th div {
+				.visualization.table table thead th > div {
 					display: flex;
 				}
 					.visualization.table table thead th span {
@@ -1051,12 +980,12 @@ main .data-source.flush {
 			margin-top: 1px
 		}
 
-main .dialog-box-blanket.data-source-column form .parameter-list {
+main .data-source-column form .parameter-list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2);
 }
-	main .dialog-box-blanket.data-source-column form .parameter {
+	main .data-source-column form .parameter {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr max-content;
 	}
@@ -1064,60 +993,109 @@ main .dialog-box-blanket.data-source-column form .parameter-list {
 			background-color: #c11;
 			border-color: #c11;
 		}
-main .dialog-box-blanket.data-source-column .form {
+main .column-form {
 	padding: calc(var(--gap) * 2) 0 0;
 }
-	main .dialog-box-blanket.data-source-column .form .filters,
-	main .dialog-box-blanket.data-source-column .form .accumulations {
+main .column-form.compact {
+	padding: 0;
+	grid-gap: calc(var(--gap) * 2);
+	box-shadow: none;
+	width: 100%;
+	overflow: auto;
+}
+	main .column-form .filters,
+	main .column-form .accumulations {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
+		margin: 0 calc(var(--gap) * 2);
+	}
+		main .column-form .filters span,
+		main .column-form .accumulations span {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+			main .column-form .filters .add-filter,
+			main .column-form .accumulations .add-accumulation {
+				border: 0;
+				height: auto;
+				width: 36px;
+			}
+				main .column-form .filters .add-filter svg,
+				main .column-form .accumulations .add-accumulation svg,
+				main .column-form .delete svg {
+					margin: 0;
+				}
+		main .column-form.compact label {
+			max-width: none;
+			margin: 0;
+		}
+			main .column-form label .category-group {
+				display: grid;
+				grid-template-columns: 1fr 1fr max-content;
+				grid-gap: calc(var(--gap) * 2);
+			}
+				main .column-form label .category-group button:hover {
+					background: #c33;
+				}
+					main .column-form label .category-group button svg {
+						margin: 0;
+					}
+				main .column-form:not(.compact) label .category-group select {
+					width: 100px;
+				}
+				main .column-form label .category-group input,
+				main .column-form label .category-group select {
+					margin-bottom: 0;
+					text-align: initial !important;
+				}
+	main .column-form > label {
 		margin-left: calc(var(--gap) * 2);
 	}
-	main .dialog-box-blanket.data-source-column .form .add-search,
-	main .dialog-box-blanket.data-source-column .form .add-accumulation {
-		margin-left: calc(var(--gap) * 2);
-		max-width: 200px;
-	}
-	main .dialog-box-blanket.data-source-column .form > label {
-		margin-left: calc(var(--gap) * 2);
-	}
-		main .dialog-box-blanket.data-source-column .form > label .color {
+		main .column-form > label .color {
 			width: 100%;
 			padding: 0;
 		}
-	main .dialog-box-blanket.data-source-column .form .drilldown-dropdown {
+	main .column-form .drilldown-dropdown {
 		max-width: initial;
 	}
-	main .dialog-box-blanket.data-source-column .form > footer {
+	main .column-form > footer {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
-		font-size: 110%;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		position: sticky;
 		bottom: 0;
+		font-size: 110%;
 		z-index: 1;
 	}
-		main .dialog-box-blanket.data-source-column .form > footer button {
+		main .column-form > footer button {
 			padding: calc(var(--gap) * 2);
 			height: auto;
 			border-right: 0;
+			border-bottom: 0;
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			border-bottom: 0;
+			flex: 1;
+		}
+		main .column-form.compact > footer button {
+			padding: calc(var(--gap));
+		}
+		main .column-form > footer button:first-child {
+			border-left: 0;
 		}
 
-main .dialog-box-blanket.sub-reports-dialog .dialog-box {
+main .sub-reports-dialog .dialog-box {
 	width: 80%;
 }
-	main .dialog-box-blanket.sub-reports-dialog .body {
+	main .sub-reports-dialog .body {
 		padding: var(--gap) 0;
 		margin: 0 calc(var(--gap) * 2);
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: space-around;
 	}
-		main .dialog-box-blanket.sub-reports-dialog .data-source {
+		main .sub-reports-dialog .data-source {
 			width: 350px;
 			height: 250px;
 			margin: var(--gap) 0;

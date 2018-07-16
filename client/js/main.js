@@ -633,7 +633,7 @@ class User {
 
 		this.id = this.user_id;
 		this.privileges = new UserPrivileges(this);
-		this.roles = new UserPrivileges(this);
+		this.roles = new UserRoles(this);
 	}
 }
 

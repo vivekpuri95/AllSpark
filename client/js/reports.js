@@ -1480,8 +1480,10 @@ class DataSourceColumn {
 			edit.classList.add('edit-column');
 			edit.title = 'Edit Column';
 			edit.on('click', e => {
+
 				e.stopPropagation();
 
+				this.form.classList.remove('compact');
 				this.edit();
 			});
 
@@ -1598,7 +1600,7 @@ class DataSourceColumn {
 
 		const form = this.formContainer = document.createElement('form');
 
-		form.classList.add('block', 'form');
+		form.classList.add('block', 'form', 'column-form');
 
 		form.innerHTML = `
 			<label>
@@ -1612,7 +1614,7 @@ class DataSourceColumn {
 			</label>
 
 			<div class="show filters">
-				<span>Search <button type="button" class="show add-search add-new-item"><i class="fa fa-plus"></i></button> </span>
+				<span>Search <button type="button" class="show add-filter add-new-item"><i class="fa fa-plus"></i></button></span>
 			</div>
 
 			<div class="show accumulations">
@@ -1716,7 +1718,7 @@ class DataSourceColumn {
 			form.querySelector('.filters').appendChild(this.searchBox(search));
 		}
 
-		form.querySelector('.add-search').on('click', e => {
+		form.querySelector('.add-filter').on('click', e => {
 			form.querySelector('.filters').appendChild(this.searchBox());
 		});
 
@@ -1747,9 +1749,11 @@ class DataSourceColumn {
 
 	searchBox(value = {}) {
 
-		const label = document.createElement('label');
-		label.classList.add('search-type');
-		label.innerHTML = `
+		const container = document.createElement('label');
+
+		container.classList.add('search-type');
+
+		container.innerHTML = `
 			<div class="category-group search">
 				<select class="searchType"></select>
 				<input type="search" class="searchQuery">
@@ -1758,23 +1762,23 @@ class DataSourceColumn {
 		`;
 
 		for(const [i, type] of DataSourceColumn.searchTypes.entries())
-			label.querySelector('select.searchType').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
 
-		label.querySelector('select').value = value.name || '0';
-		label.querySelector('input').value = value.value || '';
+		container.querySelector('select').value = value.name || '0';
+		container.querySelector('input').value = value.value || '';
 
-		label.querySelector('.delete').on('click', () => {
-			label.remove();
-		});
+		container.querySelector('.delete').on('click', () => container.remove());
 
-		return label;
+		return container;
 	}
 
 	accumulationBox() {
 
-		const label = document.createElement('label');
-		label.classList.add('accumulation-type');
-		label.innerHTML = `
+		const container = document.createElement('label');
+
+		container.classList.add('accumulation-type');
+
+		container.innerHTML = `
 			<div class="category-group">
 				<select class="accumulation-content"></select>
 				<input type="text" name="accumulationResult" readonly>
@@ -1782,8 +1786,7 @@ class DataSourceColumn {
 			</div>
 		`;
 
-		// To check the type of the column;
-
+		// To check the type of the column
 		let string = false;
 
 		for(const [index, report] of this.source.response.entries()) {
@@ -1797,7 +1800,7 @@ class DataSourceColumn {
 			}
 		}
 
-		const select = label.querySelector('.accumulation-content');
+		const select = container.querySelector('.accumulation-content');
 
 		select.insertAdjacentHTML('beforeend', `<option value="-1">Select</option>`);
 
@@ -1810,23 +1813,21 @@ class DataSourceColumn {
 		select.querySelector('option').selected = true;
 
 		if(select.value != '-1')
-			label.querySelector('input').value = DataSourceColumn.accumulationTypes[select.value].apply(this.source.response, this.key);
+			container.querySelector('input').value = DataSourceColumn.accumulationTypes[select.value].apply(this.source.response, this.key);
 
 		select.on('change', () => {
 
 			const accumulation = DataSourceColumn.accumulationTypes[select.value];
 
 			if(accumulation)
-				label.querySelector('input').value = accumulation.apply(this.source.response, this.key);
+				container.querySelector('input').value = accumulation.apply(this.source.response, this.key);
 
-			else label.querySelector('input').value = '';
+			else container.querySelector('input').value = '';
 		});
 
-		label.querySelector('.delete').on('click', () => {
-			label.remove();
-		});
+		container.querySelector('.delete').on('click', () => container.remove());
 
-		return label
+		return container
 	}
 
 	get dialogueBox() {
