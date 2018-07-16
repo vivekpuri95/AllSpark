@@ -1612,7 +1612,7 @@ class ObjectRoles {
 		const listRequestParams = new URLSearchParams();
 		listRequestParams.append('owner', this.owner);
 
-		for(const target of this.allowedTargets) {
+		for (const target of this.allowedTargets) {
 
 			listRequestParams.append('target[]', target);
 		}

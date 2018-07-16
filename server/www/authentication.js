@@ -151,7 +151,7 @@ exports.login = class extends API {
 
 		const externalParameterKeys = this.possibleAccounts[0].settings.get("external_parameters");
 
-		if(Array.isArray(externalParameterKeys)) {
+		if (Array.isArray(externalParameterKeys)) {
 
 			for (const key of externalParameterKeys) {
 

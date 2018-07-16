@@ -61,7 +61,7 @@ exports.list = class extends API {
 
 	async list() {
 
-		if(this.request.query.owner && this.request.query.target) {
+		if (this.request.query.owner && this.request.query.target) {
 
 			return await (new exports.get).get(this.account.account_id, this.request.query.owner, this.request.query.target, this.request.query.owner_id || 0, this.request.query.target_id || 0);
 		}
@@ -87,7 +87,7 @@ exports.get = class extends API {
 			return "account Id not found";
 		}
 
-		if(!Array.isArray(target)) {
+		if (!Array.isArray(target)) {
 
 			target = [target]
 		}

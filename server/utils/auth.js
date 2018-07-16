@@ -77,9 +77,9 @@ class Authenticate {
 			reportObject.roles = roles;
 		}
 
-		if(!reportDashboardRoles) {
+		if (!reportDashboardRoles) {
 
-			reportDashboardRoles =await mysql.query(`
+			reportDashboardRoles = await mysql.query(`
 					SELECT
 						o.*
 					FROM
@@ -122,13 +122,13 @@ class Authenticate {
 		}
 
 
-		for(const row of reportDashboardRoles) {
+		for (const row of reportDashboardRoles) {
 
 			const objectRoles = [[row.account_id, row.category_id, row.target_id]];
 
 			const authResponse = commonFun.authenticatePrivileges(userPrivileges, objectRoles);
 
-			if(!authResponse.error) {
+			if (!authResponse.error) {
 
 				return authResponse
 			}
@@ -247,7 +247,7 @@ class Authenticate {
 				`,
 			[dashboard_id],);
 
-		if(!dashboardQueryList.length) {
+		if (!dashboardQueryList.length) {
 
 			return {
 				error: false,
@@ -259,12 +259,12 @@ class Authenticate {
 
 		const reportRoleMapping = {};
 
-		for(const row of reportRoles) {
+		for (const row of reportRoles) {
 
-			if(!reportRoleMapping[row.query_id]) {
+			if (!reportRoleMapping[row.query_id]) {
 
 				reportRoleMapping[row.query_id] = {
-					roles : [],
+					roles: [],
 					category_id: [],
 				};
 
@@ -275,7 +275,7 @@ class Authenticate {
 
 		for (const query of dashboardQueryList) {
 
-			if(!reportRoleMapping[query.query_id]) {
+			if (!reportRoleMapping[query.query_id]) {
 
 				query.roles = constants.adminRole;
 				query.category_id = constants.adminCategory;
