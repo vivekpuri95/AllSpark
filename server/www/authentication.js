@@ -172,7 +172,7 @@ exports.login = class extends API {
 			}
 		}
 
-		parameters.append('account_id', this.request.body.account_id || 0);
+		parameters.append('account_id', this.possibleAccounts.length > 1 ? 0 : (this.request.body.account_id || 0));
 
 		let url = this.possibleAccounts[0].auth_api + "?" + parameters;
 
