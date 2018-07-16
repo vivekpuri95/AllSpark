@@ -85,11 +85,6 @@ Page.class = class Dashboards extends Page {
 
 		for (const dashboard of dashboards) {
 
-			if(!dashboard.visualizations.some(x => DataSource.list.has(x.query_id)) || !(dashboard.format && dashboard.format.category_id)) {
-
-				continue;
-			}
-
 			if ((dashboard.added_by === user.user_id || dashboard.added_by === null) && dashboard.visibility === "private" && dashboard.parent === null) {
 
 				dashboard.parent = privateDashboard.id;
