@@ -85,7 +85,7 @@ Page.class = class Dashboards extends Page {
 
 		for (const dashboard of dashboards) {
 
-			if(!dashboard.visualizations.some(x => DataSource.list.has(x.query_id)) && !(dashboard.format && dashboard.format.category_id)) {
+			if(!dashboard.visualizations.some(x => DataSource.list.has(x.query_id)) || !(dashboard.format && dashboard.format.category_id)) {
 
 				continue;
 			}
