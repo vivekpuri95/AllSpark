@@ -1687,7 +1687,7 @@ class ObjectRoles {
 
 		const submitButton = document.createElement('button');
 		submitButton.type = 'submit';
-		submitButton.innerHTML = `<i class="fa fa-paper-plane"></i>`;
+		submitButton.innerHTML = `<i class="fa fa-paper-plane"></i> Share`;
 
 		this.categorySelect = this.selectDropDown([...MetaData.categories.values()].map(x => {
 
@@ -1845,7 +1845,7 @@ class ObjectRoles {
 				&& x.owner_id == this.ownerId
 				&& x.target == this.selectedType.value
 				&& x.target_id == [...this.multiSelect.selectedValues][0]
-				&& x.category_id == (parseInt(this.categorySelect.value) || null)
+				&& x.category_id == (parseInt(this.categorySelect.value) || 0)
 			).length) {
 
 			window.alert('Already exists');

@@ -688,21 +688,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 				</form>
 
 				<h2 class="share-heading">Share dashboards</h2>
-
-				<form class="block form" id="dashboard_share">
-					<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add Users</button>
-				</form>
-
-				<table class="block user-dashboard">
-					<thead>
-						<tr>
-							<th class="thin">User Id</th>
-							<th>Name</th>
-							<th class="action">Action</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
+				<div id="share-dashboards"></div>
 			</section>
 		`;
 	}

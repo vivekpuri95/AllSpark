@@ -363,15 +363,16 @@ exports.refresh = class extends API {
 					JOIN
 						tb_users u
 						ON u.user_id = obr.owner_id
+						AND u.account_id = obr.account_id
 					WHERE 
 						OWNER = "user"
 						AND target = "role"
 						AND u.status = 1
 						AND u.user_id = ?
 						AND u.account_id = ?
-						AND obr.account_id = ?
+						
 			   `,
-			[user.user_id, user.account_id, user.user_id, user.account_id, user.account_id]
+			[user.user_id, user.account_id, user.user_id, user.account_id,]
 		);
 
 		const privileges = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {

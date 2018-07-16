@@ -35,14 +35,16 @@ class Authenticate {
                 		FROM
                 			tb_visualization_dashboard vd
                 		JOIN
-                			tb_user_dashboard ud
-                			USING(dashboard_id)
+                			tb_object_roles r
+                			ON vd.dashboard_id = r.owner_id
                 		JOIN
                 			tb_query_visualizations qv
                 			USING(visualization_id)
                 		WHERE
-                			user_id = ?
+                			target_id = ?
                 			AND query_id = ?
+                			AND OWNER = 'dashboard'
+                			AND target = 'user'
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id
@@ -177,13 +179,15 @@ class Authenticate {
 				SELECT
 					*
 				FROM
-					tb_dashboards d 
-				LEFT JOIN 
-					tb_user_dashboard ud 
-				ON
-					d.id = ud.dashboard_id
-					AND user_id = ?
-				WHERE
+					tb_dashboards d
+				LEFT JOIN
+					tb_object_roles r
+					ON r.owner_id = d.id
+					AND OWNER = 'dashboard'
+					AND target = 'user'
+					AND owner_id = ?
+					AND (category_id <= 0 OR category_id IS NULL)
+				WHERE 
 					d.id = ?
 				`,
 			[userObj.user_id, dashboard.id,]
@@ -202,7 +206,7 @@ class Authenticate {
 			};
 		}
 
-		if (dashboardUserPrivileges.user_id) {
+		if (dashboardUserPrivileges.target_id) {
 
 			return {
 				error: false,
