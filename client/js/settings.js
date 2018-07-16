@@ -81,6 +81,52 @@ class SettingPage {
 
 Settings.list = new Map;
 
+Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
+
+	get name() {
+		return 'Global Filters';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.global-filters-page');
+		this.form = this.container.querySelector('section#global-filters-form form');
+
+		this.container.querySelector('section#global-filters-list #add-global-filter').on('click', () => GlobalFilter.add(this));
+
+		this.container.querySelector('#global-filters-form #cancel-form').on('click', () => {
+			Sections.show('global-filters-list');
+		});
+	}
+
+	async load() {
+
+		const response = await API.call('global_filters/list');
+
+		this.list = new Map;
+
+		for (const data of response)
+			this.list.set(data.id, new GlobalFilter(data, this));
+
+		await this.render();
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#global-filters-list table tbody')
+		container.textContent = null;
+
+		if (!this.list.size)
+			container.innerHTML = '<tr class="NA"><td colspan="5">No rows found :(</td></tr>'
+
+		for (const globalFilter of this.list.values()) {
+			container.appendChild(globalFilter.row);
+		}
+
+		await Sections.show('global-filters-list');
+	}
+});
+
 Settings.list.set('datasets', class Datasets extends SettingPage {
 
 	get name() {
@@ -1167,5 +1213,123 @@ class SettingsCategory {
 		this.container.querySelector('.red').on('click', () => this.delete());
 
 		return this.container;
+	}
+}
+
+class GlobalFilter {
+
+	constructor(globalFilter, globalFilters) {
+
+		for (const key in globalFilter)
+			this[key] = globalFilter[key];
+
+		this.globalFilters = globalFilters;
+	}
+
+	static add(globalFilters) {
+
+		globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Add new Dataset';
+		globalFilters.form.reset();
+
+		globalFilters.form.removeEventListener('submit', GlobalFilter.submitListener);
+
+		globalFilters.form.on('submit', GlobalFilter.submitListener = e => GlobalFilter.insert(e, globalFilters));
+
+		Sections.show('global-filters-form');
+
+		globalFilters.form.focus();
+	}
+
+	static async insert(e, globalFilters) {
+
+		e.preventDefault();
+
+		const options = {
+			method: 'POST',
+			form: new FormData(globalFilters.form),
+		}
+
+		const response = await API.call('global_filters/insert', {}, options);
+
+		await globalFilters.load();
+
+		await globalFilters.list.get(response.insertId).edit();
+	}
+
+	get row() {
+
+		if (this.container)
+			return this.container;
+
+		this.container = document.createElement('tr');
+
+		this.container.innerHTML = `
+			<td>${this.id}</td>
+			<td>${this.account_id}</td>
+			<td>${this.name}</td>
+			<td>${this.placeholder}</td>
+			<td>${this.default_value}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		this.container.querySelector('.green').on('click', () => this.edit());
+
+		this.container.querySelector('.red').on('click', () => this.delete());
+
+		return this.container;
+	}
+
+	async edit() {
+
+		this.globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Edit ' + this.name;
+		this.globalFilters.form.reset();
+
+		this.globalFilters.form.name.value = this.name;
+		this.globalFilters.form.placeholder.value = this.placeholder;
+		this.globalFilters.form.default_value.value = this.default_value;
+
+		this.globalFilters.form.removeEventListener('submit', GlobalFilter.submitListener);
+		this.globalFilters.form.on('submit', GlobalFilter.submitListener = e => this.update(e));
+
+		await Sections.show('global-filters-form');
+	}
+
+	async update(e) {
+
+		e.preventDefault();
+
+		const parameter = {
+			id: this.id,
+		}
+
+		const options = {
+			method: 'POST',
+			form: new FormData(this.globalFilters.form),
+		}
+
+		await API.call('global_filters/update', parameter, options);
+
+		await this.globalFilters.load();
+
+		this.globalFilters.list.get(this.id).edit();
+		await Sections.show('global-filters-form');
+		this.globalFilters.list.get(this.id).edit();
+	}
+
+	async delete() {
+
+		if (!confirm('Are you sure?'))
+			return;
+
+		const options = {
+			method: 'POST',
+		}
+		const parameter = {
+			id: this.id,
+		}
+
+		await API.call('global_filters/delete', parameter, options);
+		await this.globalFilters.load();
 	}
 }

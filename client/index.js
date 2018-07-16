@@ -1316,6 +1316,60 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		return `
 			<nav></nav>
 
+			<div class="setting-page global-filters-page hidden">
+				<section class="section" id="global-filters-list">
+
+					<h1>Manage Datasets</h1>
+
+					<header class="toolbar">
+						<button id="add-global-filter"><i class="fa fa-plus"></i> Add New Global Filter</button>
+					</header>
+
+					<table class="block">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>Account ID</th>
+								<th>Name</th>
+								<th>Placeholder</th>
+								<th>Default Value</th>
+								<th class="action">Edit</th>
+								<th class="action">Delete</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</section>
+
+				<section class="section" id="global-filters-form">
+
+					<h1></h1>
+
+					<header class="toolbar">
+						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+						<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
+					</header>
+
+					<form class="block form" id="user-form">
+
+						<label>
+							<span>Name</span>
+							<input type="text" name="name" required>
+						</label>
+
+						<label>
+							<span>Placeholder</span>
+							<input type="text" name="placeholder" required>
+						</label>
+
+						<label>
+							<span>Default Value</span>
+							<input type="text" name="default_value">
+						</label>
+					</form>
+				</section>
+			</div>
+
 			<div class="setting-page datasets-page hidden">
 				<section class="section" id="datasets-list">
 
