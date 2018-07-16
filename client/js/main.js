@@ -834,6 +834,7 @@ class MetaData {
 		MetaData.visualizations = new Map;
 		MetaData.filterTypes = new Map;
 		MetaData.features = new Set;
+		MetaData.globalFilters = new Set;
 
 		if(!user.id)
 			return;
@@ -895,6 +896,7 @@ class MetaData {
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
+		MetaData.globalFilters = new Map(metadata.globalFilters.map(d => [d.id, d]));
 	}
 }
 

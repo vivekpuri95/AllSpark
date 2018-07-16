@@ -1319,7 +1319,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 			<div class="setting-page global-filters-page hidden">
 				<section class="section" id="global-filters-list">
 
-					<h1>Manage Datasets</h1>
+					<h1>Manage Global Filters</h1>
 
 					<header class="toolbar">
 						<button id="add-global-filter"><i class="fa fa-plus"></i> Add New Global Filter</button>
@@ -1333,6 +1333,10 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 								<th>Name</th>
 								<th>Placeholder</th>
 								<th>Default Value</th>
+								<th>Type</th>
+								<th>Multiple</th>
+								<th>Offset</th>
+								<th>Dataset</th>
 								<th class="action">Edit</th>
 								<th class="action">Delete</th>
 							</tr>
@@ -1366,64 +1370,32 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 							<span>Default Value</span>
 							<input type="text" name="default_value">
 						</label>
-					</form>
-				</section>
-			</div>
-
-			<div class="setting-page datasets-page hidden">
-				<section class="section" id="datasets-list">
-
-					<h1>Manage Datasets</h1>
-
-					<header class="toolbar">
-						<button id="add-datset"><i class="fa fa-plus"></i> Add New Dataset</button>
-					</header>
-
-					<table class="block">
-						<thead>
-							<tr>
-								<th>ID</th>
-								<th>Name</th>
-								<th>Category</th>
-								<th>Query id</th>
-								<th>Order</th>
-								<th class="action">Edit</th>
-								<th class="action">Delete</th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-				</section>
-
-				<section class="section" id="datasets-form">
-
-					<h1></h1>
-
-					<header class="toolbar">
-						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
-						<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
-					</header>
-
-					<form class="block form" id="user-form">
 
 						<label>
-							<span>Name</span>
-							<input type="text" name="name" required>
+							<span>Type</span>
+							<select name="type">
+								<option value="text">Text</option>
+								<option value="number">Number</option>
+								<option value="date">Date</option>
+								<option value="month">Month</option>
+								<option value="hidden">Hidden</option>
+								<option value="column">Column</option>
+								<option value="datetime">Datetime</option>
+							</select>
 						</label>
 
 						<label>
-							<span>Category</span>
-							<select name="category_id"></select>
+							<span>Multiple</span>
+							<input type="text" name="multiple" placeholder="multiple">
 						</label>
 
 						<label>
-							<span>Query Id</span>
-							<input type="number" name="query_id">
+							<span>Offset</span>
+							<input type="number" name="offset" placeholder="Offset">
 						</label>
 
-						<label>
-							<span>Order</span>
-							<input type="number" name="order">
+						<label class="datasets">
+							<span>Dataset</span>
 						</label>
 					</form>
 				</section>

@@ -127,58 +127,6 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 	}
 });
 
-Settings.list.set('datasets', class Datasets extends SettingPage {
-
-	get name() {
-		return 'Datasets';
-	}
-
-	setup() {
-
-		this.container = this.page.querySelector('.datasets-page');
-		this.form = this.container.querySelector('section#datasets-form form');
-
-		for (const data of MetaData.categories.values()) {
-			this.form.category_id.insertAdjacentHTML('beforeend', `
-				<option value="${data.category_id}">${data.name}</option>
-			`);
-		}
-
-		this.container.querySelector('section#datasets-list #add-datset').on('click', () => SettingsDataset.add(this));
-
-		this.container.querySelector('#datasets-form #cancel-form').on('click', () => {
-			Sections.show('datasets-list');
-		});
-	}
-
-	async load() {
-
-		const response = await API.call('datasets/list');
-
-		this.list = new Map;
-
-		for (const data of response)
-			this.list.set(data.id, new SettingsDataset(data, this));
-
-		await this.render();
-	}
-
-	async render() {
-
-		const container = this.container.querySelector('#datasets-list table tbody')
-		container.textContent = null;
-
-		if (!this.list.size)
-			container.innerHTML = '<tr class="NA"><td colspan="10">No rows found :(</td></tr>'
-
-		for (const dataset of this.list.values()) {
-			container.appendChild(dataset.row);
-		}
-
-		await Sections.show('datasets-list');
-	}
-});
-
 Settings.list.set('privileges', class Privileges extends SettingPage {
 
 	get name() {
@@ -355,125 +303,6 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		await Sections.show('category-list');
 	}
 });
-
-class SettingsDataset {
-
-	constructor(dataset, datasets) {
-
-		for (const key in dataset)
-			this[key] = dataset[key];
-
-		this.datasets = datasets;
-	}
-
-	static add(datasets) {
-
-		datasets.container.querySelector('#datasets-form h1').textContent = 'Add new Dataset';
-		datasets.form.reset();
-
-		datasets.form.removeEventListener('submit', SettingsDataset.submitListener);
-
-		datasets.form.on('submit', SettingsDataset.submitListener = e => SettingsDataset.insert(e, datasets));
-
-		Sections.show('datasets-form');
-
-		datasets.form.focus();
-	}
-
-	static async insert(e, datasets) {
-
-		e.preventDefault();
-
-		const options = {
-			method: 'POST',
-			form: new FormData(datasets.form),
-		}
-
-		const response = await API.call('datasets/insert', {}, options);
-
-		await datasets.load();
-
-		await datasets.list.get(response.insertId).edit();
-	}
-
-	get row() {
-
-		if (this.container)
-			return this.container;
-
-		this.container = document.createElement('tr');
-
-		this.container.innerHTML = `
-			<td>${this.id}</td>
-			<td>${this.name}</td>
-			<td>${this.category_id && MetaData.categories.has(this.category_id) ? MetaData.categories.get(this.category_id).name : ''}</td>
-			<td><a href="/report/${this.query_id}" target="_blank">${this.query_id}</td>
-			<td>${this.order || ''}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
-		`;
-
-		this.container.querySelector('.green').on('click', () => this.edit());
-
-		this.container.querySelector('.red').on('click', () => this.delete());
-
-		return this.container;
-	}
-
-	async edit() {
-
-		this.datasets.container.querySelector('#datasets-form h1').textContent = 'Edit ' + this.name;
-		this.datasets.form.reset();
-
-		this.datasets.form.name.value = this.name;
-		this.datasets.form.category_id.value = this.category_id;
-		this.datasets.form.query_id.value = this.query_id;
-		this.datasets.form.order.value = this.order;
-
-		this.datasets.form.removeEventListener('submit', SettingsDataset.submitListener);
-		this.datasets.form.on('submit', SettingsDataset.submitListener = e => this.update(e));
-
-		await Sections.show('datasets-form');
-	}
-
-	async update(e) {
-
-		e.preventDefault();
-
-		const parameter = {
-			id: this.id,
-		}
-
-		const options = {
-			method: 'POST',
-			form: new FormData(this.datasets.form),
-		}
-
-		await API.call('datasets/update', parameter, options);
-
-		await this.datasets.load();
-
-		this.datasets.list.get(this.id).edit();
-		await Sections.show('datasets-form');
-		this.datasets.list.get(this.id).edit();
-	}
-
-	async delete() {
-
-		if (!confirm('Are you sure?'))
-			return;
-
-		const options = {
-			method: 'POST',
-		}
-		const parameter = {
-			id: this.id,
-		}
-
-		await API.call('datasets/delete', parameter, options);
-		await this.datasets.load();
-	}
-}
 
 class SettingsPrivilege {
 
@@ -1228,7 +1057,19 @@ class GlobalFilter {
 
 	static add(globalFilters) {
 
-		globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Add new Dataset';
+		const datalist = [];
+
+		if(globalFilters.form.querySelector('.multi-select'))
+			globalFilters.form.querySelector('.multi-select').remove();
+
+		for(const data of MetaData.datasets.values())
+			datalist.push({name: data.name, value: data.id});
+
+		globalFilters.multiselect = new MultiSelect({datalist, multiple: false});
+
+		globalFilters.form.querySelector('.datasets').appendChild(globalFilters.multiselect.container);
+
+		globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Add new Global Filter';
 		globalFilters.form.reset();
 
 		globalFilters.form.removeEventListener('submit', GlobalFilter.submitListener);
@@ -1249,7 +1090,7 @@ class GlobalFilter {
 			form: new FormData(globalFilters.form),
 		}
 
-		const response = await API.call('global_filters/insert', {}, options);
+		const response = await API.call('global_filters/insert', {dataset: globalFilters.multiselect.value}, options);
 
 		await globalFilters.load();
 
@@ -1269,6 +1110,10 @@ class GlobalFilter {
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
 			<td>${this.default_value}</td>
+			<td>${this.type}</td>
+			<td>${this.multiple}</td>
+			<td>${this.offset}</td>
+			<td>${MetaData.datasets.get(this.dataset) ? MetaData.datasets.get(this.dataset).name : ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -1282,12 +1127,29 @@ class GlobalFilter {
 
 	async edit() {
 
+		const datalist = [];
+
+		if(this.globalFilters.form.querySelector('.multi-select'))
+			this.globalFilters.form.querySelector('.multi-select').remove();
+
+		for(const data of MetaData.datasets.values())
+			datalist.push({name: data.name, value: data.id});
+
+		this.multiselect = new MultiSelect({datalist, multiple: false});
+		this.multiselect.value = this.dataset;
+
+		this.globalFilters.form.querySelector('.datasets').appendChild(this.multiselect.container);
+
 		this.globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Edit ' + this.name;
+
 		this.globalFilters.form.reset();
 
 		this.globalFilters.form.name.value = this.name;
 		this.globalFilters.form.placeholder.value = this.placeholder;
 		this.globalFilters.form.default_value.value = this.default_value;
+		this.globalFilters.form.type.value = this.type;
+		this.globalFilters.form.multiple.value = this.multiple;
+		this.globalFilters.form.offset.value = this.offset;
 
 		this.globalFilters.form.removeEventListener('submit', GlobalFilter.submitListener);
 		this.globalFilters.form.on('submit', GlobalFilter.submitListener = e => this.update(e));
@@ -1301,6 +1163,7 @@ class GlobalFilter {
 
 		const parameter = {
 			id: this.id,
+			dataset: this.multiselect.value,
 		}
 
 		const options = {
