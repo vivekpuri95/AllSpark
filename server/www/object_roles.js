@@ -87,6 +87,13 @@ exports.get = class extends API {
 			return "account Id not found";
 		}
 
+		if(!Array.isArray(target)) {
+
+			target = [target]
+		}
+
+		this.assert(target.length, "Target not found for object roles");
+
 		return await this.mysql.query(`
 			SELECT
 				*
@@ -95,7 +102,7 @@ exports.get = class extends API {
 			where
 				owner = ?
 				and (owner_id in (?) or (0) in (?))
-				and target = ?
+				and target in (?)
 				and (target_id in (?) or (0) in (?))
 				and (account_id = ? or ? = 0) 
 			`,

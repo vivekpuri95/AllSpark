@@ -1586,15 +1586,16 @@ class ObjectRoles {
 		this.targets = {
 			user: {
 				API: 'users/list',
-				name_fields: (user) => `${user.first_name} ${user.middle_name || ''} ${user.last_name || ''}<br><span class="NA">${user.email}</span>`,
+				name_fields: ['first_name', 'middle_name', 'last_name'],
 				value_field: 'user_id',
+				subtitle: 'email',
 				data: [],
 				ignore_categories: true,
 			},
 
 			role: {
 				API: 'roles/list',
-				name_fields: (role) => role.name,
+				name_fields: ['name'],
 				value_field: 'role_id',
 				data: [],
 			},
@@ -1608,13 +1609,15 @@ class ObjectRoles {
 	async load() {
 
 		this.data = [];
-		this.alreadyVisible = await API.call('object_roles/list');
+		const listRequestParams = new URLSearchParams();
+		listRequestParams.append('owner', this.owner);
 
-		this.alreadyVisible = this.alreadyVisible.filter(x =>
-			x.owner === this.owner
-			&& parseInt(x.owner_id) === parseInt(this.ownerId)
-			&& this.allowedTargets.includes(x.target)
-		);
+		for(const target of this.allowedTargets) {
+
+			listRequestParams.append('target[]', target);
+		}
+
+		this.alreadyVisible = await API.call('object_roles/list', listRequestParams.toString());
 
 		for (const target of this.allowedTargets) {
 
@@ -1625,8 +1628,9 @@ class ObjectRoles {
 			for (const row of data) {
 
 				this.targets[target].data.push({
-					name: this.targets[target].name_fields(row),
+					name: this.targets[target].name_fields.map(x => row[x]).filter(x => x).join(' '),
 					value: row[this.targets[target].value_field || 'id'],
+					subtitle: row[this.targets[target].subtitle],
 				});
 			}
 		}
@@ -1774,17 +1778,23 @@ class ObjectRoles {
 
 		const container = document.createElement('div');
 		container.classList.add('object-roles');
+
 		const button = document.createElement('button');
 		button.classList.add('share-button');
 		button.textContent = `Share ${this.owner}`;
+
 		container.appendChild(button);
 		this.button = container;
 
 
 		button.addEventListener('click', () => {
 
+			const heading = this.allowedTargets.length === 1 ?
+				this.allowedTargets[0] :
+				`${this.allowedTargets.slice(0, -1).join(', ')} or ${this.allowedTargets[this.allowedTargets.length - 1]}.`;
+
 			const dialougeBox = new DialogBox();
-			dialougeBox.heading = `Share this ${this.owner} with any ${this.joinToString()}`;
+			dialougeBox.heading = `Share this ${this.owner} with any ${heading}`;
 			dialougeBox.body.appendChild(this.container);
 			dialougeBox.show();
 		});
@@ -1909,16 +1919,6 @@ class ObjectRoles {
 			row.category = (MetaData.categories.get(row.category_id) || {name: ''}).name
 		}
 	}
-
-	joinToString() {
-
-		if (this.allowedTargets.length === 1) {
-
-			return this.allowedTargets[0];
-		}
-
-		return `${this.allowedTargets.slice(0, -1).join(', ')} or ${this.allowedTargets[this.allowedTargets.length - 1]}.`;
-	}
 }
 
 
@@ -1928,7 +1928,7 @@ if(typeof Node != 'undefined') {
 	}
 }
 
-MetaData.timeout = 5 * 60 * 1000000;
+MetaData.timeout = 5 * 60 * 1000;
 
 if(typeof window != 'undefined')
 	window.onerror = ErrorLogs.send;
