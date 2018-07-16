@@ -10,6 +10,7 @@ const constants = require("../utils/constants");
 const account = require('../onServerStart');
 const fetch = require('node-fetch');
 const URLSearchParams = require('url').URLSearchParams;
+const redis = require("../utils/redis").Redis;
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -203,6 +204,19 @@ exports.login = class extends API {
 	}
 
 	async login() {
+
+
+		const redisHash = crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')
+		const redisResult = await redis.get(redisHash);
+
+		if(redisResult) {
+
+			throw("Failure, please try again :(");
+		}
+
+		await redis.set(redisHash, 1);
+
+		await redis.expire(redisHash, 3);
 
 		this.load();
 
