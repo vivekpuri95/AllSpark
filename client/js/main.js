@@ -914,8 +914,10 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken)
+		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken || API.refreshToken.lastCheck > Date.now() - 2 * 1000)
 			return;
+
+		API.refreshToken.lastCheck = Date.now();
 
 		const
 			parameters = {
