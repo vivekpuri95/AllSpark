@@ -102,7 +102,7 @@ exports.list = class extends API {
 
 		for (const row of results[0]) {
 
-			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
+			row.roles = ((reportRoleMapping[row.query_id] || {}).roles || [null]).join(", ");
 			row.category_id = ((reportRoleMapping[row.query_id] || {}).category_id || [null])[0];
 
 			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
