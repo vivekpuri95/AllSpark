@@ -99,9 +99,9 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 
 		const datalist = Array.from(DataSource.list.values()).map(r => {return {name: r.name, value: r.query_id}});
 
-		this.multiselect =  new MultiSelect({datalist, dropDownPosition: 'top', multiple: false});
+		this.datasetsMultiselect =  new MultiSelect({datalist, dropDownPosition: 'top', multiple: false});
 
-		this.form.querySelector('.datasets').appendChild(this.multiselect.container);
+		this.form.querySelector('.datasets').appendChild(this.datasetsMultiselect.container);
 
 		this.container.querySelector('section#global-filters-list #add-global-filter').on('click', () => GlobalFilter.add(this));
 
@@ -1076,7 +1076,7 @@ class GlobalFilter {
 
 		const datalist = [];
 
-		globalFilters.multiselect.clear();
+		globalFilters.datasetsMultiselect.clear();
 
 		globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Add new Global Filter';
 		globalFilters.form.reset();
@@ -1099,7 +1099,7 @@ class GlobalFilter {
 			form: new FormData(globalFilters.form),
 		}
 
-		const response = await API.call('global-filters/insert', {dataset: globalFilters.multiselect.value}, options);
+		const response = await API.call('global-filters/insert', {dataset: globalFilters.datasetsMultiselect.value}, options);
 
 		await globalFilters.load();
 
@@ -1122,7 +1122,7 @@ class GlobalFilter {
 			<td>${this.type}</td>
 			<td>${this.multiple}</td>
 			<td>${this.offset}</td>
-			<td>${dataset ? dataset.name : ''}</td>
+			<td><a target="_blank" href="/report/${this.dataset}">${dataset ? dataset.name : ''}</a></td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -1145,7 +1145,7 @@ class GlobalFilter {
 				element.value = this[element.name];
 		}
 
-		this.globalFilters.multiselect.value = this.dataset.toString();
+		this.globalFilters.datasetsMultiselect.value = this.dataset;
 
 		this.globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Edit ' + this.name;
 
@@ -1162,7 +1162,7 @@ class GlobalFilter {
 		const
 			parameter = {
 				id: this.id,
-				dataset: this.globalFilters.multiselect.value,
+				dataset: this.globalFilters.datasetsMultiselect.value,
 			},
 			options = {
 				method: 'POST',
@@ -1174,7 +1174,6 @@ class GlobalFilter {
 		await this.globalFilters.load();
 
 		this.globalFilters.list.get(this.id).edit();
-		await Sections.show('global-filters-form');
 	}
 
 	async delete() {
