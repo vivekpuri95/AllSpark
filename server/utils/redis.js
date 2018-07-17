@@ -21,7 +21,7 @@ class Redis {
 	static async get(keyPattern) {
 
 		const getPromisified = promisify(redis_client.get).bind(redis_client);
-		console.log("getting key: ", keyPattern);
+		// console.log("getting key: ", keyPattern);
 
 		return await getPromisified(keyPattern);
 	}
@@ -37,7 +37,7 @@ class Redis {
 	static async set(key, value) {
 
 		const setPromisified = promisify(redis_client.set).bind(redis_client);
-		console.log("string in redis key:", key);
+		// console.log("string in redis key:", key);
 
 		return await setPromisified(key, value);
 	}
