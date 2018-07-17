@@ -2649,6 +2649,8 @@ class Axis {
 			datalist = datalist.filter(x => !column.includes(x.value));
 		}
 
+		this.position = this.position || 'top';
+
 		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
 		const axisColumn = container.multiSelectColumns.container;
 
@@ -2657,7 +2659,7 @@ class Axis {
 		container.innerHTML = `
 			<label>
 				<span>Position</span>
-				<select name="position" value="${this.position || 'top'}" required>
+				<select name="position" value="${this.position}" required>
 					<option value="top">Top</option>
 					<option value="right">Right</option>
 					<option value="bottom">Bottom</option>
