@@ -179,12 +179,16 @@ exports.login = class extends API {
 		try {
 
 			let authAPIResponse = await fetch(url, {"method": "GET"});
-			authAPIResponse = (await authAPIResponse.json()).data;
+			let status = authAPIResponse.status;
 
-			if(!(authAPIResponse && authAPIResponse.userDetails)) {
+			authAPIResponse = await authAPIResponse.json();
 
-				throw({message: "User not found"});
+			if(!(authAPIResponse.data && authAPIResponse.data.userDetails)) {
+
+				throw({message: authAPIResponse.message, status: status});
 			}
+
+			authAPIResponse = authAPIResponse.data;
 			this.userDetails = authAPIResponse.userDetails;
 
 			await account.loadAccounts();
@@ -194,7 +198,7 @@ exports.login = class extends API {
 		}
 		catch (e) {
 
-			throw new API.Exception(400, e.message);
+			this.assert(false, e.message, e.status);
 		}
 	}
 
