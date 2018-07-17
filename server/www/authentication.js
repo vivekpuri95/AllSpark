@@ -179,11 +179,13 @@ exports.login = class extends API {
 		try {
 
 			let authAPIResponse = await fetch(url, {"method": "GET"});
+			let status = authAPIResponse.status;
+
 			authAPIResponse = await authAPIResponse.json();
 
 			if(!(authAPIResponse.data && authAPIResponse.data.userDetails)) {
 
-				throw({message: authAPIResponse.message});
+				throw({message: authAPIResponse.message, status: status});
 			}
 
 			authAPIResponse = authAPIResponse.data;
@@ -196,7 +198,7 @@ exports.login = class extends API {
 		}
 		catch (e) {
 
-			throw new API.Exception(400, e.message);
+			this.assert(false, e.message, e.status);
 		}
 	}
 
