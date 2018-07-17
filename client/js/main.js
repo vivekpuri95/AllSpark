@@ -797,7 +797,7 @@ class AJAX {
 		}
 		catch(e) {
 			AJAXLoader.hide();
-			throw new API.Exception(e.status, 'API Execution Failed');
+			throw new API.Exception(e.status || e.message || e, 'API Execution Failed');
 		}
 
 		AJAXLoader.hide();
