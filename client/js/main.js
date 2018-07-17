@@ -26,8 +26,7 @@ class Page {
 	}
 
 	static async load() {
-
-		await IndexedDb.load();
+		await Storage.load();
 		await Account.load();
 		await User.load();
 		await MetaData.load();
@@ -45,7 +44,7 @@ class Page {
 					for(const [key, value] of parameters)
 						parameters_[key] = value;
 
-					await IndexedDb.instance.set('external_parameters', parameters_);
+					await Storage.set('external_parameters', parameters_);
 				}});
 			}
 		}
@@ -237,8 +236,17 @@ Page.serviceWorker = class PageServiceWorker {
 	}
 }
 
+/**
+ * A generic key value store that uses IndexedDb.
+ *
+ * Has support for basic Map based functions and gives
+ * access to the database instance for further interaction.
+ */
 class IndexedDb {
 
+	/**
+	 * Set up the database connection if not done already.
+	 */
 	static async load() {
 
 		if(IndexedDb.instance)
@@ -249,15 +257,25 @@ class IndexedDb {
 		await IndexedDb.instance.open();
 	}
 
+	/**
+	 * Save a page's reference for use later.
+	 *
+	 * @param  Page	page	May be used to reference the current page.
+	 */
 	constructor(page) {
 		this.page = page;
 	}
 
+	/**
+	 * Open a database connection.
+	 *
+	 * @return Promise	Resolves when the connection is established successfuly.
+	 */
 	open() {
 
 		return new Promise((resolve, reject) => {
 
-			this.request = indexedDB.open('MainDb', 1);
+ 			this.request = indexedDB.open('MainDb', 1);
 
 			this.request.onupgradeneeded = e => this.setup(e.target.result);
 			this.request.onsuccess = e => {
@@ -268,14 +286,29 @@ class IndexedDb {
 				resolve();
 			};
 
-			this.request.onerror = reject;
+			this.request.onerror = e => {
+				reject();
+			};
 		});
 	}
 
+	/**
+	 * Set up the connection once it's created for the first time.
+	 *
+	 * This creates a store called MainStore that's the sole sotore that stores any data.
+	 *
+	 * @param  object	db	The database instance.
+	 */
 	setup(db) {
 		db.createObjectStore('MainStore', {keyPath: 'key'});
 	}
 
+	/**
+	 * Check if a key exists in the IndexedDb's main store.
+	 *
+	 * @param  string	key	The key to check.
+	 * @return Promise		Resolves with true if the key exists, false otherwise.
+	 */
 	has(key) {
 
 		return new Promise((resolve, reject) => {
@@ -287,6 +320,12 @@ class IndexedDb {
 		});
 	}
 
+	/**
+	 * Get the value stored at a specified key in the main store.
+	 *
+	 * @param  string	key	The key whose value will be fetched.
+	 * @return Promise		Resolves with the value stored in the mian store.
+	 */
 	get(key) {
 
 		return new Promise((resolve, reject) => {
@@ -298,6 +337,13 @@ class IndexedDb {
 		});
 	}
 
+	/**
+	 * Set the value at a specified key in the main store.
+	 *
+	 * @param string	key		The key of the new value.
+	 * @param Object	value	Value for the key being passed.
+	 * @return Promise			Resolves with the result when saved. Rejects otherwise.
+	 */
 	set(key, value) {
 
 		return new Promise((resolve, reject) => {
@@ -309,6 +355,12 @@ class IndexedDb {
 		});
 	}
 
+	/**
+	 * Delete the value stored at the specified key.
+	 *
+	 * @param  String	key	The key that will be deleted.
+	 * @return Promise		That resolves when the item is successfuly deleted.
+	 */
 	delete(key) {
 
 		return new Promise((resolve, reject) => {
@@ -363,6 +415,102 @@ class Cookies {
 			return null;
 
 		return decodeURIComponent(cookie.split('=')[1]);
+	}
+}
+
+/**
+ * A generic storage API to store data throughout the project.
+ * It switches the storage medium depending on the available media.
+ * If IndexedDb is available that will be used. LocalStorage is used otherwise.
+ */
+class Storage {
+
+	/**
+	 * Set up the storage media.
+	 * IndexedDb mostly.
+	 *
+	 * @return Promise	That resolves when the setup is complete.
+	 */
+	static async load() {
+
+		try {
+			await IndexedDb.load();
+		} catch(e) {
+			Storage.localStorage = true;
+		}
+	}
+
+	/**
+	 * Check if a key exists.
+	 *
+	 * @param  string	key	The key to check form.
+	 * @return Boolean		True if found, false otherwise.
+	 */
+	static async has(key) {
+
+		if(Storage.localStorage)
+			return key in localStorage;
+
+		else return await IndexedDb.instance.has(key);
+	}
+
+	/**
+	 * Get a key's value.
+	 * It takes care of encoding the data if needed (LocalSotorage).
+	 *
+	 * @param  string	key	The key whose value is being fetched.
+	 * @return Object		The value for the key.
+	 */
+	static async get(key) {
+
+		if(!await Storage.has(key))
+			return undefined;
+
+		if(!Storage.localStorage)
+			return await IndexedDb.instance.get(key);
+
+		try {
+			return JSON.parse(localStorage[key]);
+		} catch(e) {}
+
+		return undefined;
+	}
+
+	/**
+	 * Save a value at the specified key.
+	 *
+	 * @param string	key		The key that is being set.
+	 * @param object	value	The value for the given key.
+	 */
+	static async set(key, value) {
+
+		if(Storage.localStorage)
+			return localStorage[key] = JSON.stringify(value);
+
+		return await IndexedDb.instance.set(key, value);
+	}
+
+	/**
+	 * Delete a key's value.
+	 * @param string	key	The key whose data is bieng deleted.
+	 */
+	static async delete(key) {
+
+		if(Storage.localStorage)
+			return delete localStorage[key];
+
+		return await IndexedDb.instance.delete(key);
+	}
+
+	/**
+	 * Clear the storage completely.
+	 */
+	static async clear() {
+
+		localStorage.clear();
+
+		if(!Storage.localStorage)
+			await IndexedDb.instance.db.transaction('MainStore', 'readwrite').objectStore('MainStore').clear();
 	}
 }
 
@@ -568,18 +716,18 @@ class Account {
 
 	static async fetch() {
 
-		if(await IndexedDb.instance.has('account'))
-			return await IndexedDb.instance.get('account');
+		if(await Storage.has('account'))
+			return await Storage.get('account');
 
 		try {
 
-			await IndexedDb.instance.set('account', await API.call('accounts/get'));
+			await Storage.set('account', await API.call('accounts/get'));
 
 		} catch(e) {
 			return null;
 		}
 
-		return await IndexedDb.instance.get('account');
+		return await Storage.get('account');
 	}
 
 	constructor(account) {
@@ -603,7 +751,7 @@ class User {
 
 		let user = null;
 
-		const token = await IndexedDb.instance.get('token');
+		const token = await Storage.get('token');
 
 		try {
 			user = JSON.parse(atob(token.split('.')[1]));
@@ -616,9 +764,7 @@ class User {
 
 		const parameters = new URLSearchParams();
 
-		localStorage.clear();
-
-		await IndexedDb.instance.db.transaction('MainStore', 'readwrite').objectStore('MainStore').clear();
+		await Storage.clear();
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
@@ -626,8 +772,10 @@ class User {
 		if(callback)
 			await callback();
 
-		for(const registration of await navigator.serviceWorker.getRegistrations())
-			registration.unregister();
+		if(navigator.serviceWorker) {
+			for(const registration of await navigator.serviceWorker.getRegistrations())
+				registration.unregister();
+		}
 
 		if(redirect)
 			window.location = '/login?'+parameters.toString();
@@ -704,9 +852,13 @@ class MetaData {
 			({metadata, timestamp} = JSON.parse(localStorage.metadata));
 		} catch(e) {}
 
+		if(await Storage.has('metadata'))
+			({metadata, timestamp} = JSON.parse(localStorage.metadata));
+
 		if(!timestamp || Date.now() - timestamp > MetaData.timeout) {
 			metadata = await API.call('users/metadata');
-			localStorage.metadata = JSON.stringify({metadata, timestamp: Date.now()});
+
+			await Storage.set('metadata', {metadata, timestamp: Date.now()})
 		}
 
 		return metadata;
@@ -768,7 +920,7 @@ class ErrorLogs {
 		try {
 			await API.call('errors/log',params, options);
 		}
-		catch (e) {
+		catch(e) {
 			console.log('Failed to log error', e);
 			return;
 		}
@@ -783,11 +935,16 @@ class AJAX {
 
 		AJAXLoader.show();
 
-		parameters = new URLSearchParams(parameters);
+		const params = new URLSearchParams(parameters);
+
+		if(typeof parameters == 'object') {
+			for(const key in parameters)
+				params.set(key, parameters[key]);
+		}
 
 		if(options.method == 'POST') {
 
-			options.body = parameters.toString();
+			options.body = params.toString();
 
 			options.headers = {
 				'Content-Type': 'application/x-www-form-urlencoded',
@@ -795,7 +952,7 @@ class AJAX {
 		}
 
 		else
-			url += '?' + parameters.toString();
+			url += '?' + params.toString();
 
 		let response = null;
 
@@ -831,7 +988,7 @@ class API extends AJAX {
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
-		const token = await IndexedDb.instance.get('token');
+		const token = await Storage.get('token');
 
 		if(token) {
 
@@ -891,21 +1048,20 @@ class API extends AJAX {
 	}
 
 	static async refreshToken() {
-
 		let
 			getToken = true,
-			token = await IndexedDb.instance.get('token'),
-			has_external_parameters = await IndexedDb.instance.has('external_parameters');
+			token = await Storage.get('token'),
+			has_external_parameters = await Storage.has('external_parameters');
 
 		if(!has_external_parameters && Cookies.get('external_parameters')) {
 
-			await IndexedDb.instance.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
+			await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
 			Cookies.set('external_parameters', '');
 		}
 
 		if(Cookies.get('refresh_token')) {
 
-			await IndexedDb.instance.set('refresh_token', Cookies.get('refresh_token'));
+			await Storage.set('refresh_token', Cookies.get('refresh_token'));
 			Cookies.set('refresh_token', '');
 		}
 
@@ -921,23 +1077,23 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken || API.refreshToken.lastCheck > Date.now() - 2 * 1000)
+		if(!(await Storage.has('refresh_token')) || !getToken || API.refreshToken.lastCheck > Date.now() - 2 * 1000)
 			return;
 
 		API.refreshToken.lastCheck = Date.now();
 
 		const
 			parameters = {
-				refresh_token: await IndexedDb.instance.get('refresh_token'),
+				refresh_token: await Storage.get('refresh_token'),
 			},
 			options = {
 				method: 'POST',
 				redirectOnLogout: false,
 			};
 
-		if(window.account && account.auth_api && Array.isArray(account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
+		if(window.account && account.auth_api && Array.isArray(account.settings.get('external_parameters')) && await Storage.get('external_parameters')) {
 
-			const external_parameters = await IndexedDb.instance.get('external_parameters');
+			const external_parameters = await Storage.get('external_parameters');
 
 			for(const key of account.settings.get('external_parameters')) {
 
@@ -950,7 +1106,7 @@ class API extends AJAX {
 
 		const response = await API.call('authentication/refresh', parameters, options);
 
-		await IndexedDb.instance.set('token', response);
+		await Storage.set('token', response);
 		Cookies.set('token', response);
 
 		Page.load();
