@@ -209,7 +209,8 @@ class API {
 				message: e.message || e.sqlMessage,
 				url: obj.request.url,
 				description: JSON.stringify(e),
-				type: "server"
+				type: "server",
+				user_agent: obj.request.get('user-agent'),
 			};
 
 			await errorLogs.insert(error);
