@@ -1075,6 +1075,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							<i class="fas fa-angle-right"></i>
 							Transformations
 							<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
+							<span class="count transformation"></span>
 						</h3>
 
 						<div class="body" id="transformations"></div>
@@ -1082,14 +1083,14 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 					<div class="configuration-section">
 
-						<h3><i class="fas fa-angle-right"></i> Dashboards</h3>
+						<h3><i class="fas fa-angle-right"></i> Dashboards <span class="count"></span></h3>
 
 						<div class="body" id="dashboards"></div>
 					</div>
 					
 					<div class="configuration-section">
 					
-						<h3><i class="fas fa-angle-right"></i> Filters</h3>
+						<h3><i class="fas fa-angle-right"></i> Filters <span class="count"></span></h3>
 						
 						<div class="body form" id="filters"></div>
 												
