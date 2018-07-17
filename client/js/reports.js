@@ -3321,7 +3321,7 @@ Visualization.list.set('table', class Table extends Visualization {
 				container.querySelector('.popup-dropdown').classList.remove('hidden');
 			});
 
-			if(column.filters && column.filters.length)
+			if(column.filters && column.filters.length && !column.filters.some(f => f.value == ''))
 				container.classList.add('has-filter');
 
 			headings.appendChild(container);

@@ -652,10 +652,10 @@ main .data-source.flush {
 			.visualization.table thead .heading .filter-popup {
 				width: 15px;
 				font-size: 60%;
+				transform: rotate(45deg);
 				margin-right: 5px;
 			}
 				.visualization.table thead .heading .filter-popup > span {
-					transform: rotate(45deg);
 					opacity: 0;
 					transition: opacity var(--transition-duration);
 				}
