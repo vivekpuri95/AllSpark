@@ -415,6 +415,7 @@ main.preview-left #stages {
 		align-items: center;
 		font-size: 96%;
 		z-index: 1;
+		background: #fff;
 		transition: color var(--transition-duration);
 	}
 	#stage-configure-visualization h3:hover {

@@ -1037,6 +1037,7 @@ main .column-form.compact {
 			}
 				main .column-form label .category-group button:hover {
 					background: #c33;
+					border-color: transparent;
 				}
 					main .column-form label .category-group button svg {
 						margin: 0;
@@ -1128,7 +1129,7 @@ main .configuration-section #filters {
 				main .configuration-section #filters .list fieldset.filters .delete {
 					margin-left: var(--gap);
 				}
-					main .configuration-section #filters .list fieldset.filters .delete >svg {
+					main .configuration-section #filters .list fieldset.filters .delete > svg {
 						margin: 0;
 					}
 
