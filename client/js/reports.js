@@ -2812,6 +2812,11 @@ class LinearVisualization extends Visualization {
 			column.render();
 		}
 
+		const colummnContainer = this.source.container.querySelector('.columns');
+
+		if (colummnContainer.classList.contains("over-flow") && colummnContainer.offsetWidth >= colummnContainer.scrollWidth)
+			colummnContainer.classList.remove('over-flow');
+
 		for(const column of this.axes.bottom.columns) {
 			if(!this.source.columns.get(column.key))
 				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.`);
