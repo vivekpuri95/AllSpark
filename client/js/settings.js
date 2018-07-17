@@ -1,41 +1,45 @@
 class Settings extends Page {
 
 	constructor() {
-		super();
 
-		const nav = this.container.querySelector('nav');
+		(async() => {
 
-		for (const [key, settings] of Settings.list) {
+			super();
 
-			if(key == 'accounts' && !this.user.privileges.has('superadmin'))
-				continue;
+			const nav = this.container.querySelector('nav');
 
-			const setting = new settings(this.container);
+			for (const [key, settings] of Settings.list) {
 
-			const a = document.createElement('a');
+				if(key == 'accounts' && !this.user.privileges.has('superadmin'))
+					continue;
 
-			a.textContent = setting.name;
+				const setting = new settings(this.container);
 
-			a.on('click', async () => {
+				const a = document.createElement('a');
 
-				await Storage.set('settingsCurrentTab', setting.name);
+				a.textContent = setting.name;
 
-				for (const a of nav.querySelectorAll('a.selected'))
-					a.classList.remove('selected');
+				a.on('click', async () => {
 
-				for (const a of this.container.querySelectorAll('.setting-page'))
-					a.classList.add('hidden');
+					await Storage.set('settingsCurrentTab', setting.name);
 
-				a.classList.add('selected');
-				setting.setup();
-				setting.load();
-				setting.container.classList.remove('hidden');
-			});
+					for (const a of nav.querySelectorAll('a.selected'))
+						a.classList.remove('selected');
 
-			nav.appendChild(a);
-		}
+					for (const a of this.container.querySelectorAll('.setting-page'))
+						a.classList.add('hidden');
 
-		this.loadDefault();
+					a.classList.add('selected');
+					setting.setup();
+					setting.load();
+					setting.container.classList.remove('hidden');
+				});
+
+				nav.appendChild(a);
+			}
+
+			await this.loadDefault();
+		})();
 	}
 
 	async loadDefault() {
@@ -51,9 +55,8 @@ class Settings extends Page {
 					byDefault = a;
 			}
 		}
-		else {
+		else
 			byDefault = this.container.querySelector('nav a');
-		}
 
 		byDefault.classList.add('selected');
 
@@ -62,7 +65,7 @@ class Settings extends Page {
 			const setting = new settings(this.container);
 
 			if (byDefault.textContent == setting.name) {
-				setting.setup();
+				await setting.setup();
 				setting.load();
 				setting.container.classList.remove('hidden');
 			}
@@ -92,11 +95,9 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		this.container = this.page.querySelector('.global-filters-page');
 		this.form = this.container.querySelector('section#global-filters-form form');
 
-		const datasourceResponse = await API.call('reports/report/list');
+		await DataSource.load();
 
-		this.dataScouceList = new Map(datasourceResponse.map(report => [report.query_id, report]));
-
-		const datalist = Array.from(this.dataScouceList.values()).map(r => {return {name: r.name, value: r.query_id}});
+		const datalist = Array.from(DataSource.list.values()).map(r => {return {name: r.name, value: r.query_id}});
 
 		this.multiselect =  new MultiSelect({datalist, dropDownPosition: 'top', multiple: false});
 
@@ -1110,7 +1111,7 @@ class GlobalFilter {
 		if (this.container)
 			return this.container;
 
-		const dataset = Array.from(this.globalFilters.dataScouceList.values()).filter(r => r.query_id == this.dataset)[0];
+		const dataset = Array.from(DataSource.list.values()).filter(r => r.query_id == this.dataset)[0];
 		this.container = document.createElement('tr');
 
 		this.container.innerHTML = `
