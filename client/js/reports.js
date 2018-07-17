@@ -1317,8 +1317,7 @@ class DataSourceColumns extends Map {
 		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
-		if (container.offsetWidth < container.scrollWidth)
-			container.classList.add('over-flow');
+		this.overFlow();
 	}
 
 	get list() {
@@ -1332,6 +1331,13 @@ class DataSourceColumns extends Map {
 		}
 
 		return result;
+	}
+
+	overFlow() {
+
+		const container = this.source.container.querySelector('.columns');
+
+		container.classList.toggle('over-flow', container.offsetWidth < container.scrollWidth);
 	}
 }
 
@@ -2817,6 +2823,8 @@ class LinearVisualization extends Visualization {
 			column.disabled = true;
 			column.render();
 		}
+
+		this.source.columns.overFlow();
 
 		for(const column of this.axes.bottom.columns) {
 			if(!this.source.columns.get(column.key))
