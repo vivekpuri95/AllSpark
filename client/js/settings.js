@@ -87,10 +87,20 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		return 'Global Filters';
 	}
 
-	setup() {
+	async setup() {
 
 		this.container = this.page.querySelector('.global-filters-page');
 		this.form = this.container.querySelector('section#global-filters-form form');
+
+		const datasourceResponse = await API.call('reports/report/list');
+
+		this.dataScouceList = new Map(datasourceResponse.map(report => [report.query_id, report]));
+
+		const datalist = Array.from(this.dataScouceList.values()).map(r => {return {name: r.name, value: r.query_id}});
+
+		this.multiselect =  new MultiSelect({datalist, dropDownPosition: 'top', multiple: false});
+
+		this.form.querySelector('.datasets').appendChild(this.multiselect.container);
 
 		this.container.querySelector('section#global-filters-list #add-global-filter').on('click', () => GlobalFilter.add(this));
 
@@ -1065,15 +1075,7 @@ class GlobalFilter {
 
 		const datalist = [];
 
-		if(globalFilters.form.querySelector('.multi-select'))
-			globalFilters.form.querySelector('.multi-select').remove();
-
-		for(const data of MetaData.datasets.values())
-			datalist.push({name: data.name, value: data.id});
-
-		globalFilters.multiselect = new MultiSelect({datalist, multiple: false});
-
-		globalFilters.form.querySelector('.datasets').appendChild(globalFilters.multiselect.container);
+		globalFilters.multiselect.clear();
 
 		globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Add new Global Filter';
 		globalFilters.form.reset();
@@ -1108,6 +1110,7 @@ class GlobalFilter {
 		if (this.container)
 			return this.container;
 
+		const dataset = Array.from(this.globalFilters.dataScouceList.values()).filter(r => r.query_id == this.dataset)[0];
 		this.container = document.createElement('tr');
 
 		this.container.innerHTML = `
@@ -1118,7 +1121,7 @@ class GlobalFilter {
 			<td>${this.type}</td>
 			<td>${this.multiple}</td>
 			<td>${this.offset}</td>
-			<td>${MetaData.datasets.get(this.dataset) ? MetaData.datasets.get(this.dataset).name : ''}</td>
+			<td>${dataset ? dataset.name : ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -1136,20 +1139,15 @@ class GlobalFilter {
 
 		this.globalFilters.form.reset();
 
-		for(const element of this.globalFilters.form.elements) {
-			element.value = this[element.name];
-		}
+		this.globalFilters.form.name.value = this.name;
+		this.globalFilters.form.placeholder.value = this.placeholder;
+ 		this.globalFilters.form.default_value.value = this.default_value;
+		this.globalFilters.form.type.value = this.type;
+		this.globalFilters.form.multiple.value = this.multiple;
+		this.globalFilters.form.offset.value = this.offset;
 
-		if(this.globalFilters.form.querySelector('.multi-select'))
-			this.globalFilters.form.querySelector('.multi-select').remove();
 
-		for(const data of MetaData.datasets.values())
-			datalist.push({name: data.name, value: data.id});
-
-		this.multiselect = new MultiSelect({datalist, multiple: false});
-		this.multiselect.value = this.dataset;
-
-		this.globalFilters.form.querySelector('.datasets').appendChild(this.multiselect.container);
+		this.globalFilters.multiselect.value = this.dataset.toString();
 
 		this.globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Edit ' + this.name;
 
@@ -1166,7 +1164,7 @@ class GlobalFilter {
 		const
 			parameter = {
 				id: this.id,
-				dataset: this.multiselect.value,
+				dataset: this.globalFilters.multiselect.value,
 			},
 			options = {
 				method: 'POST',
