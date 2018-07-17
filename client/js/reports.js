@@ -1216,13 +1216,15 @@ class DataSourceRow extends Map {
 				}
 			}
 
-			if(column.searchQuery && column.searchQuery !== '') {
+			if(column.filters && column.filters.length) {
+				for(const search of column.filters) {
 
-				if(!row[key])
-					this.skip = true;
+					if(!row[key])
+						this.skip = true;
 
-				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key] === null ? '' : row[key]))
-					this.skip = true;
+					if(!DataSourceColumn.searchTypes[parseInt(search.name) || 0].apply(search.value, row[key] === null ? '' : row[key]))
+						this.skip = true;
+				}
 			}
 
 			this.set(key, row[key]);
@@ -1478,8 +1480,10 @@ class DataSourceColumn {
 			edit.classList.add('edit-column');
 			edit.title = 'Edit Column';
 			edit.on('click', e => {
+
 				e.stopPropagation();
 
+				this.form.classList.remove('compact');
 				this.edit();
 			});
 
@@ -1596,7 +1600,7 @@ class DataSourceColumn {
 
 		const form = this.formContainer = document.createElement('form');
 
-		form.classList.add('block', 'form');
+		form.classList.add('block', 'form', 'column-form');
 
 		form.innerHTML = `
 			<label>
@@ -1609,23 +1613,13 @@ class DataSourceColumn {
 				<input type="text" name="name" value="${this.name}" >
 			</label>
 
-			<label class="show search-type">
-				<span>Search</span>
-				<div class="category-group search">
-					<select name="searchType"></select>
-					<input type="search" name="searchQuery">
-				</div>
-			</label>
+			<div class="show filters">
+				<span>Search <button type="button" class="show add-filter add-new-item"><i class="fa fa-plus"></i></button></span>
+			</div>
 
-			<label class="show accumulation-type">
-				<span>Accumulation</span>
-				<div class="category-group">
-					<select name="accumulation">
-						<option value=""></option>
-					</select>
-					<input type="text" name="accumulationResult" readonly>
-				</div>
-			</label>
+			<div class="show accumulations">
+				<span>Accumulation <button type="button" class="show add-accumulation add-new-item"><i class="fa fa-plus"></i></button></span>
+			</div>
 
 			<label>
 				<span>Type</span>
@@ -1718,37 +1712,21 @@ class DataSourceColumn {
 			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		});
 
-		// To check the type of the column;
-		let string = false;
+		this.filters = this.filters ? this.filters : [{name:'', value:''}];
 
-		for(const [index, report] of this.source.response.entries()) {
-
-			if(index > 10)
-				break;
-
-			if(isNaN(report.get(this.key))) {
-				string = true;
-				break;
-			}
+		for(const search of this.filters) {
+			form.querySelector('.filters').appendChild(this.searchBox(search));
 		}
 
-		for(const [i, type] of DataSourceColumn.searchTypes.entries())
-			form.searchType.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		form.querySelector('.add-filter').on('click', e => {
+			form.querySelector('.filters').appendChild(this.searchBox());
+		});
 
-		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
+		form.querySelector('.accumulations').appendChild(this.accumulationBox());
 
-			if(!string || type.string)
-				form.accumulation.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
-		}
+		form.querySelector('.add-accumulation').on('click', e => {
 
-		form.accumulation.on('change', () => {
-
-			const accumulation = DataSourceColumn.accumulationTypes[form.accumulation.value];
-
-			if(form.accumulation.value && accumulation)
-				form.accumulationResult.value = accumulation.apply(this.source.response, this.key);
-
-			else form.accumulationResult.value = '';
+			form.querySelector('.accumulations').appendChild(this.accumulationBox());
 		});
 
 		form.querySelector('.add-parameters').on('click', () => {
@@ -1767,6 +1745,89 @@ class DataSourceColumn {
 		form.querySelector('.save').on('click', () => this.save());
 
 		return form;
+	}
+
+	searchBox(value = {}) {
+
+		const container = document.createElement('label');
+
+		container.classList.add('search-type');
+
+		container.innerHTML = `
+			<div class="category-group search">
+				<select class="searchType"></select>
+				<input type="search" class="searchQuery">
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			</div>
+		`;
+
+		for(const [i, type] of DataSourceColumn.searchTypes.entries())
+			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+
+		container.querySelector('select').value = value.name || '0';
+		container.querySelector('input').value = value.value || '';
+
+		container.querySelector('.delete').on('click', () => container.remove());
+
+		return container;
+	}
+
+	accumulationBox() {
+
+		const container = document.createElement('label');
+
+		container.classList.add('accumulation-type');
+
+		container.innerHTML = `
+			<div class="category-group">
+				<select class="accumulation-content"></select>
+				<input type="text" name="accumulationResult" readonly>
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			</div>
+		`;
+
+		// To check the type of the column
+		let string = false;
+
+		for(const [index, report] of this.source.response.entries()) {
+
+			if(index > 10)
+				break;
+
+			if(isNaN(report.get(this.key))) {
+				string = true;
+				break;
+			}
+		}
+
+		const select = container.querySelector('.accumulation-content');
+
+		select.insertAdjacentHTML('beforeend', `<option value="-1">Select</option>`);
+
+		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
+
+			if(!string || type.string)
+				select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		}
+
+		select.querySelector('option').selected = true;
+
+		if(select.value != '-1')
+			container.querySelector('input').value = DataSourceColumn.accumulationTypes[select.value].apply(this.source.response, this.key);
+
+		select.on('change', () => {
+
+			const accumulation = DataSourceColumn.accumulationTypes[select.value];
+
+			if(accumulation)
+				container.querySelector('input').value = accumulation.apply(this.source.response, this.key);
+
+			else container.querySelector('input').value = '';
+		});
+
+		container.querySelector('.delete').on('click', () => container.remove());
+
+		return container
 	}
 
 	get dialogueBox() {
@@ -1925,6 +1986,21 @@ class DataSourceColumn {
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
+		this.filters = [];
+
+		for(const [index,node] of this.form.querySelectorAll('.filters .search-type').entries()) {
+
+			if(node.querySelector('input').value === '' && !index)
+				continue;
+
+			if(node.querySelector('input').value === '') {
+				node.remove();
+				continue;
+			};
+
+			this.filters.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
+		}
+
 		this.disabled = parseInt(this.disabled) || 0;
 
 		this.container.querySelector('.label .name').textContent = this.name;
@@ -1958,6 +2034,12 @@ class DataSourceColumn {
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 		}
 
+		this.filters = [];
+
+		for(const node of this.form.querySelectorAll('.filters .search-type')) {
+			this.filters.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
+		}
+
 		for(const row of this.form.querySelectorAll('.parameter')) {
 
 			let param_json = {};
@@ -1984,7 +2066,7 @@ class DataSourceColumn {
 			disabled : this.disabled,
 			color : this.color,
 			searchType : this.searchType,
-			searchQuery : this.searchQuery,
+			filters : this.filters,
 			sort : this.sort,
 			prefix : this.prefix,
 			postfix : this.postfix,
@@ -3169,9 +3251,6 @@ Visualization.list.set('table', class Table extends Visualization {
 			container = this.container.querySelector('.container'),
 			rows = this.source.response;
 
-		if(!rows || !rows.length)
-			return this.source.error();
-
 		container.textContent = null;
 
 		const
@@ -3242,7 +3321,7 @@ Visualization.list.set('table', class Table extends Visualization {
 				container.querySelector('.popup-dropdown').classList.remove('hidden');
 			});
 
-			if(column.searchQuery && column.searchQuery)
+			if(column.filters && column.filters.length && !column.filters.some(f => f.value == ''))
 				container.classList.add('has-filter');
 
 			headings.appendChild(container);
