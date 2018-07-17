@@ -94,6 +94,12 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 
 		this.container.querySelector('section#global-filters-list #add-global-filter').on('click', () => GlobalFilter.add(this));
 
+		const select = this.form.querySelector('select[name="type"]');
+
+		for(const type of MetaData.filterTypes.values()) {
+			select.insertAdjacentHTML('beforeend', `<option value="${type.input_type}">${type.name}</option>`);
+		};
+
 		this.container.querySelector('#global-filters-form #cancel-form').on('click', () => {
 			Sections.show('global-filters-list');
 		});
@@ -101,7 +107,7 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 
 	async load() {
 
-		const response = await API.call('global_filters/list');
+		const response = await API.call('global-filters/list');
 
 		this.list = new Map;
 
@@ -1090,7 +1096,7 @@ class GlobalFilter {
 			form: new FormData(globalFilters.form),
 		}
 
-		const response = await API.call('global_filters/insert', {dataset: globalFilters.multiselect.value}, options);
+		const response = await API.call('global-filters/insert', {dataset: globalFilters.multiselect.value}, options);
 
 		await globalFilters.load();
 
@@ -1106,7 +1112,6 @@ class GlobalFilter {
 
 		this.container.innerHTML = `
 			<td>${this.id}</td>
-			<td>${this.account_id}</td>
 			<td>${this.name}</td>
 			<td>${this.placeholder}</td>
 			<td>${this.default_value}</td>
@@ -1129,6 +1134,12 @@ class GlobalFilter {
 
 		const datalist = [];
 
+		this.globalFilters.form.reset();
+
+		for(const element of this.globalFilters.form.elements) {
+			element.value = this[element.name];
+		}
+
 		if(this.globalFilters.form.querySelector('.multi-select'))
 			this.globalFilters.form.querySelector('.multi-select').remove();
 
@@ -1142,15 +1153,6 @@ class GlobalFilter {
 
 		this.globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Edit ' + this.name;
 
-		this.globalFilters.form.reset();
-
-		this.globalFilters.form.name.value = this.name;
-		this.globalFilters.form.placeholder.value = this.placeholder;
-		this.globalFilters.form.default_value.value = this.default_value;
-		this.globalFilters.form.type.value = this.type;
-		this.globalFilters.form.multiple.value = this.multiple;
-		this.globalFilters.form.offset.value = this.offset;
-
 		this.globalFilters.form.removeEventListener('submit', GlobalFilter.submitListener);
 		this.globalFilters.form.on('submit', GlobalFilter.submitListener = e => this.update(e));
 
@@ -1161,23 +1163,22 @@ class GlobalFilter {
 
 		e.preventDefault();
 
-		const parameter = {
-			id: this.id,
-			dataset: this.multiselect.value,
-		}
+		const
+			parameter = {
+				id: this.id,
+				dataset: this.multiselect.value,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.globalFilters.form),
+			};
 
-		const options = {
-			method: 'POST',
-			form: new FormData(this.globalFilters.form),
-		}
-
-		await API.call('global_filters/update', parameter, options);
+		await API.call('global-filters/update', parameter, options);
 
 		await this.globalFilters.load();
 
 		this.globalFilters.list.get(this.id).edit();
 		await Sections.show('global-filters-form');
-		this.globalFilters.list.get(this.id).edit();
 	}
 
 	async delete() {
@@ -1185,14 +1186,15 @@ class GlobalFilter {
 		if (!confirm('Are you sure?'))
 			return;
 
-		const options = {
-			method: 'POST',
-		}
-		const parameter = {
-			id: this.id,
-		}
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				id: this.id,
+			};
 
-		await API.call('global_filters/delete', parameter, options);
+		await API.call('global-filters/delete', parameter, options);
 		await this.globalFilters.load();
 	}
 }

@@ -1329,7 +1329,6 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						<thead>
 							<tr>
 								<th>ID</th>
-								<th>Account ID</th>
 								<th>Name</th>
 								<th>Placeholder</th>
 								<th>Default Value</th>
@@ -1373,15 +1372,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 						<label>
 							<span>Type</span>
-							<select name="type">
-								<option value="text">Text</option>
-								<option value="number">Number</option>
-								<option value="date">Date</option>
-								<option value="month">Month</option>
-								<option value="hidden">Hidden</option>
-								<option value="column">Column</option>
-								<option value="datetime">Datetime</option>
-							</select>
+							<select name="type"></select>
 						</label>
 
 						<label>

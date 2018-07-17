@@ -1183,7 +1183,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 			for(const filter of visualization.filters.values()) {
 
-				if(!Array.from(MetaData.globalFilters).some(a => a[1].placeholder == filter.placeholder))
+				if(!Array.from(MetaData.globalFilters.values()).some(a => a.placeholder.includes(filter.placeholder)))
 					continue;
 
 				globalFilters.set(filter.placeholder, {
