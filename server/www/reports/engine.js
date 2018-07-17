@@ -323,7 +323,7 @@ class report extends API {
 
 		switch (this.reportObj.type.toLowerCase()) {
 
-			case "mysqll":
+			case "mysql":
 				preparedRequest = new MySQL(this.reportObj, this.filters, this.request.body.token);
 				break;
 			case "mssql":
