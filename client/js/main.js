@@ -161,6 +161,10 @@ class Page {
 			// Alt + K
 			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]'))
 				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
+
+			// Alt + L
+			if(e.keyCode == 76)
+				User.logout();
 		});
 	}
 
@@ -621,6 +625,9 @@ class User {
 
 		if(callback)
 			await callback();
+
+		for(const registration of await navigator.serviceWorker.getRegistrations())
+			registration.unregister();
 
 		if(redirect)
 			window.location = '/login?'+parameters.toString();
