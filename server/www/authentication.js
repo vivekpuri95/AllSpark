@@ -179,12 +179,14 @@ exports.login = class extends API {
 		try {
 
 			let authAPIResponse = await fetch(url, {"method": "GET"});
-			authAPIResponse = (await authAPIResponse.json()).data;
+			authAPIResponse = await authAPIResponse.json();
 
-			if(!(authAPIResponse && authAPIResponse.userDetails)) {
+			if(!(authAPIResponse.data && authAPIResponse.data.userDetails)) {
 
-				throw({message: "User not found"});
+				throw({message: authAPIResponse.message});
 			}
+
+			authAPIResponse = authAPIResponse.data;
 			this.userDetails = authAPIResponse.userDetails;
 
 			await account.loadAccounts();
