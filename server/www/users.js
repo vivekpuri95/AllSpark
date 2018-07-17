@@ -267,6 +267,10 @@ exports.metadata = class extends API {
 			[this.account.account_id]
 		);
 
+		for(const data of metadata.globalFilters) {
+			data.placeholder = data.placeholder.split(',');
+		}
+
 		metadata.filterTypes = constants.filterTypes;
 
 		metadata.sourceTypes = await this.mysql.query(`
