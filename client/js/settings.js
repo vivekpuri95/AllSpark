@@ -1139,13 +1139,10 @@ class GlobalFilter {
 
 		this.globalFilters.form.reset();
 
-		this.globalFilters.form.name.value = this.name;
-		this.globalFilters.form.placeholder.value = this.placeholder;
- 		this.globalFilters.form.default_value.value = this.default_value;
-		this.globalFilters.form.type.value = this.type;
-		this.globalFilters.form.multiple.value = this.multiple;
-		this.globalFilters.form.offset.value = this.offset;
-
+		for(const element of this.globalFilters.form.elements) {
+			if(this[element.name])
+				element.value = this[element.name];
+		}
 
 		this.globalFilters.multiselect.value = this.dataset.toString();
 

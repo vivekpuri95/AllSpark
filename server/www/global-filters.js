@@ -1,6 +1,6 @@
 const API = require('../utils/api');
 
-class Global_filters extends API {
+class GlobalFilters extends API {
 
 	async list() {
 		const result = await this.mysql.query(`SELECT * FROM tb_global_filters WHERE account_id = ?`, [this.account.account_id]);
@@ -64,7 +64,7 @@ class Global_filters extends API {
 	}
 };
 
-exports.list = Global_filters;
-exports.insert = Global_filters;
-exports.update = Global_filters;
-exports.delete = Global_filters;
+exports.list = GlobalFilters;
+exports.insert = GlobalFilters;
+exports.update = GlobalFilters;
+exports.delete = GlobalFilters;
