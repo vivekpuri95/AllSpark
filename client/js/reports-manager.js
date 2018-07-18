@@ -587,6 +587,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.form = this.container.querySelector('form');
 		this.form.save = this.container.querySelector('.toolbar button[type=submit]');
+		this.shareContainer = this.container.querySelector('#share-report');
 
 		for(const element of this.form.elements)
 			element.on('change', () => this.form.save.classList.add('unsaved'));
@@ -646,6 +647,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
+		this.shareContainer.innerHTML = `<div class="NA">You can share the dashboard once the report is added.</div>`;
 
 		this.container.querySelector('#added-by').textContent = null;
 
@@ -709,6 +711,13 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.redis.value = this.report.is_redis || 0;
 			this.form.is_redis.classList.add('hidden');
 		}
+
+		const share = new ObjectRoles('report', this.report.query_id);
+
+		await share.load();
+
+		this.shareContainer.textContent = null;
+		this.shareContainer.appendChild(share.container);
 	}
 
 	async update(e) {
