@@ -39,9 +39,14 @@ class DataSource {
 		this.postProcessors = new DataSourcePostProcessors(this);
 	}
 
-	async fetch(parameters = {}) {
+	async fetch(_parameters = {}) {
 
-		parameters = new URLSearchParams(parameters);
+		const parameters = new URLSearchParams(_parameters);
+
+		if(typeof _parameters == 'object') {
+			for(const key in _parameters)
+				parameters.set(key, _parameters[key]);
+		}
 
 		parameters.set('query_id', this.query_id);
 
@@ -80,7 +85,7 @@ class DataSource {
 			else parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
 		}
 
-		const external_parameters = await IndexedDb.instance.get('external_parameters');
+		const external_parameters = await Storage.get('external_parameters');
 
 		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
 
@@ -601,7 +606,7 @@ class DataSource {
 				visualization: this.visualizations.selected.type,
 				sheet_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				file_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				token :await IndexedDb.instance.get('token'),
+				token :await Storage.get('token'),
 				show_legends: !this.visualizations.selected.options.hideLegend || 0,
 				show_values: this.visualizations.selected.options.showValues || 0,
 				classic_pie: this.visualizations.selected.options.classicPie
@@ -1113,14 +1118,16 @@ class DataSourceFilter {
 		if(Array.from(report.filters.values()).some(f => f.dataset == this.dataset))
 			return [];
 
-		if(await IndexedDb.instance.has(`dataset.${this.dataset}`))
-			({values, timestamp} = await IndexedDb.instance.get(`dataset.${this.dataset}`));
+		if(await Storage.has(`dataset.${this.dataset}`))
+			({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
 
 		if(!timestamp || Date.now() - timestamp > DataSourceFilter.timeout) {
 
-			({data: values} = await report.fetch({download: true}));
+			const
+				response = await report.fetch({download: true}),
+				values = response.data;
 
-			await IndexedDb.instance.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
+			await Storage.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
 		}
 
 		if(!this.multiSelect.datalist || !this.multiSelect.datalist.length) {

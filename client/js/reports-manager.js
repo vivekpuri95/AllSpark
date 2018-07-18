@@ -110,13 +110,13 @@ class ReportsMangerPreview {
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
-		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'right';
+		let position = this.docks ? this.docks.value : await Storage.get('reportsPreviewDock') || 'right';
 		this.page.container.classList.add('preview-' + position);
 
 		await this.report.visualizations.selected.load();
 
-		this.renderDocks();
-		this.move();
+		await this.renderDocks();
+		await this.move();
 	}
 
 	set hidden(hidden) {
@@ -128,7 +128,7 @@ class ReportsMangerPreview {
 		return this.container.classList.contains('hidden');
 	}
 
-	renderDocks() {
+	async renderDocks() {
 
 		this.docks = document.createElement('select');
 
@@ -138,26 +138,26 @@ class ReportsMangerPreview {
 			<option value="left">Left</option>
 		`);
 
-		this.docks.value = localStorage.reportsPreviewDock || 'right';
+		this.docks.value = await Storage.get('reportsPreviewDock') || 'right';
 
-		localStorage.reportsPreviewDock = this.docks.value;
+		await Storage.set('reportsPreviewDock', this.docks.value);
 
-		this.docks.on('change', () => {
-			localStorage.reportsPreviewDock = this.docks.value;
-			this.move();
+		this.docks.on('change', async () => {
+			await Storage.set('reportsPreviewDock', this.docks.value);
+			await this.move();
 		});
 
 		this.report.container.querySelector('.menu').appendChild(this.docks);
 	}
 
-	move() {
+	async move() {
 
 		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
 
 		if(this.hidden || !this.report)
 			return;
 
-		let position = localStorage.reportsPreviewDock || 'right';
+		let position = await Storage.get('reportsPreviewDock') || 'right';
 
 		this.page.container.classList.add('preview-' + position);
 
@@ -868,13 +868,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.editor.editor.resize();
 	}
 
-	load() {
+	async load() {
 
 		this.report = this.selectedReport;
 
 		this.page.stages.get('configure-visualization').disabled = true;
 
-		localStorage.reportsPreviewDock = 'bottom';
+		await Storage.set('reportsPreviewDock', 'bottom');
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
@@ -1683,7 +1683,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.transformations = new ReportTransformations(this.visualization, this);
 		this.reportVisualizationFilters =  new ReportVisualizationFilters(this);
 
-		localStorage.reportsPreviewDock = 'right';
+		await Storage.set('reportsPreviewDock', 'right');
+
 		await this.page.preview.load({
 			query_id: this.report.query_id,
 			visualization_id: this.visualization.visualization_id,

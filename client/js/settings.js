@@ -16,9 +16,9 @@ class Settings extends Page {
 
 			a.textContent = setting.name;
 
-			a.on('click', () => {
+			a.on('click', async () => {
 
-				localStorage.settingsCurrentTab = setting.name;
+				await Storage.set('settingsCurrentTab', setting.name);
 
 				for (const a of nav.querySelectorAll('a.selected'))
 					a.classList.remove('selected');
@@ -37,10 +37,12 @@ class Settings extends Page {
 
 		let byDefault;
 
-		if(localStorage.settingsCurrentTab) {
+		if(await Storage.has('settingsCurrentTab')) {
+
+			const tab = await Storage.get('settingsCurrentTab');
 
 			for(const a of this.container.querySelectorAll('nav a')) {
-				if(a.textContent == localStorage.settingsCurrentTab)
+				if(a.textContent == tab)
 					byDefault = a;
 			}
 		}
