@@ -198,11 +198,11 @@ class Authenticate {
 
 		dashboardUserPrivileges = dashboardUserPrivileges[0];
 
-		if (dashboardUserPrivileges.visibility === "private" && dashboardUserPrivileges.added_by === userObj.user_id) {
+		if (dashboardUserPrivileges.added_by === userObj.user_id) {
 
 			return {
 				error: false,
-				message: "Private dashboard created by the current user.",
+				message: "Dashboard created by the current user.",
 			};
 		}
 
@@ -242,7 +242,7 @@ class Authenticate {
 					USING(query_id)
 				WHERE
 					vd.dashboard_id = ?
-					AND q.is_enabled = 1 
+					AND q.is_enabled = 1 g
 					AND q.is_deleted = 0
 				`,
 			[dashboard_id],);

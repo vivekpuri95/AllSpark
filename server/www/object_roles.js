@@ -75,7 +75,7 @@ exports.list = class extends API {
 
 exports.get = class extends API {
 
-	async get(accountId, owner, target, ownerId = 0, targetId = 0,) {
+	async get(accountId, owner, target, ownerId = 0, targetId = 0, categoryId = 0) {
 
 		if (Object.keys(this.request || []).length) {
 
@@ -92,6 +92,11 @@ exports.get = class extends API {
 			target = [target]
 		}
 
+		if (!Array.isArray(categoryId)) {
+
+			categoryId = [categoryId]
+		}
+
 		this.assert(target.length, "Target not found for object roles");
 
 		return await this.mysql.query(`
@@ -104,9 +109,10 @@ exports.get = class extends API {
 				and (owner_id in (?) or (0) in (?))
 				and target in (?)
 				and (target_id in (?) or (0) in (?))
-				and (account_id = ? or ? = 0) 
+				and (account_id = ? or ? = 0)
+				and (category_id in (?) or 0 in (?))
 			`,
-			[owner, ownerId, ownerId, target, targetId, targetId, accountId, accountId]
+			[owner, ownerId, ownerId, target, targetId, targetId, accountId, accountId, categoryId, categoryId],
 		);
 	}
 };

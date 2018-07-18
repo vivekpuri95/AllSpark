@@ -23,21 +23,15 @@ exports.list = class extends API {
 
 		let dashboards = this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]);
 
-		let sharedDashboards = this.mysql.query(
-			"SELECT owner_id AS dasbboard_id, target_id AS user_id FROM tb_object_roles WHERE OWNER = 'dashboard' AND target = 'role' AND account_id = ?",
-			[this.account.account_id]
-		);
-
 		let visualizationDashboards = this.mysql.query(
 			"select vd.*, query_id from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id join tb_query q  using(query_id) where d.status = 1 and d.account_id = ? and q.is_enabled = 1 and q.is_deleted = 0",
 			[this.account.account_id]
 		);
 
-		const dashboardDetails = await Promise.all([dashboards, sharedDashboards, visualizationDashboards]);
+		const dashboardDetails = await Promise.all([dashboards, visualizationDashboards]);
 
 		dashboards = dashboardDetails[0];
-		sharedDashboards = dashboardDetails[1];
-		visualizationDashboards = dashboardDetails[2];
+		visualizationDashboards = dashboardDetails[1];
 
 		const dashboardObject = {};
 
@@ -51,17 +45,7 @@ exports.list = class extends API {
 				dashboard.format = [];
 			}
 
-			dashboardObject[dashboard.id] = {...dashboard, shared_user: [], visualizations: []}
-		}
-
-		for (const sharedDashboard of sharedDashboards) {
-
-			if (!dashboardObject[sharedDashboard.dashboard_id]) {
-
-				continue;
-			}
-
-			dashboardObject[sharedDashboard.dashboard_id].shared_user.push(sharedDashboard);
+			dashboardObject[dashboard.id] = {...dashboard, visualizations: []}
 		}
 
 		for (const queryDashboard of visualizationDashboards) {
@@ -96,21 +80,6 @@ exports.list = class extends API {
 
 			dashboardObject[d].href = `/dashboard/${dashboardObject[d].id}`;
 			dashboardObject[d].superset = 'Dashboards';
-		}
-
-		const filterDashboards = [];
-
-		for(const dashboard of Object.values(dashboardObject)) {
-
-			if(dashboard.visibility === "private" && !(dashboard.added_by === this.user.user_id || dashboard.shared_user.some(x => x.user_id === this.user.user_id))) {
-
-				filterDashboards.push(dashboard.id);
-			}
-		}
-
-		for(const dashboard of filterDashboards) {
-
-			delete dashboardObject[dashboard];
 		}
 
 		return Object.values(dashboardObject);
@@ -221,4 +190,4 @@ exports.updateFormat = class extends API {
 		return 'format updated!';
 	}
 
-}
+};
