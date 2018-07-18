@@ -242,7 +242,7 @@ class Authenticate {
 					USING(query_id)
 				WHERE
 					vd.dashboard_id = ?
-					AND q.is_enabled = 1 g
+					AND q.is_enabled = 1
 					AND q.is_deleted = 0
 				`,
 			[dashboard_id],);
