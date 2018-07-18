@@ -1102,14 +1102,14 @@ main .sub-reports-dialog .dialog-box {
 			margin: var(--gap) 0;
 		}
 
-main .configuration-section .count{
+main .configuration-section .count {
 	color: #bbb;
 	font-size: 90%;
 	margin-left: auto;
 	font-weight: normal;
 	letter-spacing: 0.25px;
 }
-main .configuration-section .count.transformation{
+main .configuration-section .count.transformation {
 	margin-left: 3px;
 }
 main .configuration-section #filters {
