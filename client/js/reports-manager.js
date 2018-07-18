@@ -868,7 +868,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.editor.editor.resize();
 	}
 
-	load() {
+	async load() {
 
 		this.report = this.selectedReport;
 
