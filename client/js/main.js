@@ -850,7 +850,9 @@ class MetaData {
 			timestamp;
 
 		if(await Storage.has('metadata')) {
-			({metadata, timestamp} = (await Storage.get('metadata'))) || {};
+			try {
+				({metadata, timestamp} = (await Storage.get('metadata')) || {});
+			} catch(e) {}
 		}
 
 		if(!timestamp || Date.now() - timestamp > MetaData.timeout) {
