@@ -26,6 +26,7 @@ class Page {
 	}
 
 	static async load() {
+
 		await Storage.load();
 		await Account.load();
 		await User.load();
@@ -848,14 +849,12 @@ class MetaData {
 			metadata,
 			timestamp;
 
-		try {
-			({metadata, timestamp} = JSON.parse(localStorage.metadata));
-		} catch(e) {}
-
-		if(await Storage.has('metadata'))
-			({metadata, timestamp} = JSON.parse(localStorage.metadata));
+		if(await Storage.has('metadata')) {
+			({metadata, timestamp} = await Storage.set('metadata'));
+		}
 
 		if(!timestamp || Date.now() - timestamp > MetaData.timeout) {
+
 			metadata = await API.call('users/metadata');
 
 			await Storage.set('metadata', {metadata, timestamp: Date.now()})
