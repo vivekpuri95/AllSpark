@@ -44,6 +44,7 @@ main form#dashboard_share {
 
 main h2.share-heading {
 	padding-top: 15px;
+	margin-bottom: calc(var(--gap) * 2);
 }
 
 main table.user-dashboard {

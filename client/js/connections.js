@@ -160,6 +160,13 @@ class DataConnection {
 		DataConnection.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
 		DataConnection.form.on('submit', DataConnection.submitListener = e => this.update(e));
 
+		this.objectRoles = new ObjectRoles('connection', this.id, ['user', 'role']);
+		await this.objectRoles.load();
+
+		this.page.container.querySelector('#share-connections').innerHTML = null;
+
+		this.page.container.querySelector('#share-connections').appendChild(this.objectRoles.container);
+
 		DataConnection.container.querySelector('.test-result').classList.add('hidden');
 
 		const test = DataConnection.container.querySelector('.toolbar #test-connection');
