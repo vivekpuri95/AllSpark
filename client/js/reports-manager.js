@@ -1748,6 +1748,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		await DataSource.load(true);
 
 		this.load();
+
+		this.page.stages.get('pick-visualization').switcher.querySelector('small').textContent = this.form.name.value;
 	}
 
 	async preview() {
@@ -1774,10 +1776,6 @@ class ReportVisualizationFilters extends Map {
 		this.stage = stage;
 
 		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
-
-			this.container.parentElement.querySelector('h3 .count').innerHTML = `
-				${this.visualization.options.filters.length ? this.visualization.options.filters.length + 'filter' + (this.visualization.options.filters.length == 1 ? ' added' : 's added') : ''}
-			`;
 
 			for(const filter of this.stage.visualization.options.filters) {
 
@@ -1857,6 +1855,10 @@ class ReportVisualizationFilters extends Map {
 
 		this.container.querySelector('.list').classList.toggle('hidden', !this.size);
 		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
+
+		this.container.parentElement.querySelector('h3 .count').innerHTML = `
+				${this.size ? this.size + ' filter' + (this.size == 1 ? ' added' : 's added') : ''}
+		`;
 	}
 
 	get json() {
@@ -2153,10 +2155,6 @@ class ReportTransformations extends Set {
 
 		const preview = this.container.parentElement.querySelector('h3 #transformations-preview');
 
-		this.container.parentElement.querySelector('h3 .count').innerHTML = `
-			${this.visualization.options.transformations.length ? this.visualization.options.transformations.length + ' transformation' + (this.visualization.options.transformations.length == 1 ? ' applied' : 's applied') : ''}
-		`;
-
 		preview.removeEventListener('click', ReportTransformations.previewListener);
 		preview.on('click', ReportTransformations.previewListener = e => {
 			e.stopPropagation();
@@ -2196,9 +2194,19 @@ class ReportTransformations extends Set {
 
 			this.add(transformation);
 			this.container.insertBefore(transformation.container, addNew);
+			this.transformationCount();
 
 			this.preview();
 		});
+
+		this.transformationCount();
+	}
+
+	transformationCount() {
+
+		this.container.parentElement.querySelector('h3 .count').innerHTML = `
+			${this.size ? this.size + ' transformation' + (this.size == 1 ? ' applied' : 's applied') : ''}
+		`;
 	}
 
 	get json() {
@@ -2490,7 +2498,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		container.innerHTML = `
 			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Axes <span class="count">${this.visualization.options.axes.length ? this.visualization.options.axes.length + ' axes added' : ''}</span></h3>
+				<h3><i class="fas fa-angle-right"></i> Axes <span class="count"></span></h3>
 				<div class="options form body axes-container"></div>
 			</div>
 
@@ -2571,7 +2579,7 @@ class Axes extends Set {
 
 			const axisForm = new Axis({}, this);
 			this.add(axisForm);
-			container.querySelector('.axes').appendChild(axisForm.container);
+			this.render();
 		});
 
 		this.render();
@@ -2583,6 +2591,8 @@ class Axes extends Set {
 
 		let addAxes = this.container.querySelector('.axes');
 		addAxes.textContent = null;
+
+		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' axes added' : ''}`;
 
 		for(const axis of this) {
 			addAxes.appendChild(axis.container);
