@@ -5,6 +5,7 @@ const sql = require('mysql');
 const mssql = require('../utils/mssql');
 const {Client} = require('pg');
 const Sequelize = require('sequelize');
+const auth = require('../utils/auth');
 
 
 exports.insert = class extends API {
@@ -51,10 +52,21 @@ exports.insert = class extends API {
 exports.list = class extends API {
 
 	async list() {
-		return await this.mysql.query(
-			'SELECT * FROM tb_credentials WHERE account_id = ? AND status = 1',
-			[this.account.account_id]
-		);
+
+		const
+			response =[],
+			connections =  await this.mysql.query(
+				'SELECT * FROM tb_credentials WHERE account_id = ? AND status = 1',
+				[this.account.account_id]
+			);
+
+		for(const row of connections) {
+
+			if(!(await auth.connection(row, this.user)).error)
+				response.push(row);
+		}
+
+		return response;
 	}
 }
 
@@ -63,6 +75,9 @@ exports.delete = class extends API {
 	async delete() {
 
 		this.user.privilege.needs('connection');
+
+		const authResponse = await auth.connection(this.request.body.id, this.user);
+		this.assert(!authResponse.error, authResponse.message);
 
 		const response = await this.mysql.query(
 			'UPDATE tb_credentials SET status = 0 WHERE id = ? AND account_id = ?',
@@ -90,6 +105,9 @@ exports.delete = class extends API {
 exports.update = class extends API {
 
 	async update() {
+
+		const authResponse = await auth.connection(this.request.body.id, this.user);
+		this.assert(!authResponse.error, authResponse.message);
 
 		let id = this.request.body['id'];
 
@@ -125,6 +143,9 @@ exports.update = class extends API {
 exports.testConnections = class extends API {
 
 	async testConnections() {
+
+		const authResponse = await auth.connection(this.request.body.id, this.user);
+		this.assert(!authResponse.error, authResponse.message);
 
 		let conConfig = await this.mysql.query(
 			'SELECT * FROM tb_credentials WHERE id = ?',
@@ -267,6 +288,10 @@ testClasses.set("mssql",
 exports.schema = class extends API {
 
 	async schema() {
+
+		const authResponse = await auth.connection(this.request.query.id, this.user);
+		this.assert(!authResponse.error, authResponse.message);
+
 
 		const databases = [];
 

@@ -77,6 +77,14 @@ class Authenticate {
 			reportObject.roles = roles;
 		}
 
+		if((await Authenticate.connection(reportObject.connection_name, userJWTObject)).error) {
+
+			return {
+				error: true,
+				message: 'Connection error'
+			};
+		}
+
 		if (!reportDashboardRoles) {
 
 			reportDashboardRoles = await mysql.query(`
@@ -299,6 +307,81 @@ class Authenticate {
 			error: false,
 			message: "Privileged user.",
 		}
+	}
+
+	static async connection(connectionObj, user) {
+
+		if (!(user.roles && user.roles.length)) {
+
+			return {
+				error: true,
+				message: "User does not have any role.",
+			}
+		}
+
+		const objRole = new getRole();
+
+		let userPrivileges = [], connectionRoles, userConnections;
+
+		if(parseInt(connectionObj)) {
+
+			connectionObj = await mysql.query(`SELECT * FROM tb_credentials WHERE id = ? AND status = 1`, [connectionObj]);
+
+			connectionObj = connectionObj[0];
+
+			if(!connectionObj) {
+
+				return {
+					"error": true,
+					"message": 'Connection does not exist'
+				};
+			}
+		}
+
+		user.roles && user.roles.map(x => {
+			userPrivileges.push([x.account_id, x.category_id, x.role]);
+		});
+
+		if(connectionObj.added_by == user.user_id) {
+
+			return {
+				error: false,
+				message: "Private connection created by the current user.",
+			};
+		}
+
+		[userConnections, connectionRoles] = await Promise.all([
+			objRole.get(connectionObj.account_id, 'connection', 'user', connectionObj.id),
+			objRole.get(connectionObj.account_id, 'connection', 'role', connectionObj.id,)
+		]);
+		connectionRoles = connectionRoles.map(x => [x.account_id, x.category_id, x.target_id]);
+
+		if(userConnections[0].target_id) {
+
+			return {
+				error: false,
+				message: "Connection shared with the current user.",
+			}
+		}
+
+		for (const row of connectionRoles) {
+
+			let authResponse = await commonFun.authenticatePrivileges(userPrivileges, [row]);
+
+			if (!authResponse.error) {
+
+				return {
+					error: false,
+					message: "Connection shared with the role and category of current user.",
+				}
+			}
+		}
+
+		return {
+			error: true,
+			message: 'User not authenticated!'
+		}
+
 	}
 }
 
