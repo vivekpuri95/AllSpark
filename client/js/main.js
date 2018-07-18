@@ -1115,7 +1115,7 @@ class API extends AJAX {
 
 API.Exception = class {
 
-	constructor(response) {
+	constructor(response = {}) {
 		this.status = response.status;
 		this.message = response.message;
 	}
