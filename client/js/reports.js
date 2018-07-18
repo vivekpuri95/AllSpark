@@ -39,9 +39,14 @@ class DataSource {
 		this.postProcessors = new DataSourcePostProcessors(this);
 	}
 
-	async fetch(parameters = {}) {
+	async fetch(_parameters = {}) {
 
-		parameters = new URLSearchParams(parameters);
+		const parameters = new URLSearchParams(_parameters);
+
+		if(typeof _parameters == 'object') {
+			for(const key in _parameters)
+				parameters.set(key, _parameters[key]);
+		}
 
 		parameters.set('query_id', this.query_id);
 

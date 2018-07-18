@@ -932,20 +932,20 @@ class ErrorLogs {
 
 class AJAX {
 
-	static async call(url, parameters, options = {}) {
+	static async call(url, _parameters, options = {}) {
 
 		AJAXLoader.show();
 
-		const params = new URLSearchParams(parameters);
+		const parameters = new URLSearchParams(_parameters);
 
-		if(typeof parameters == 'object') {
-			for(const key in parameters)
-				params.set(key, parameters[key]);
+		if(typeof _parameters == 'object') {
+			for(const key in _parameters)
+				parameters.set(key, _parameters[key]);
 		}
 
 		if(options.method == 'POST') {
 
-			options.body = params.toString();
+			options.body = parameters.toString();
 
 			options.headers = {
 				'Content-Type': 'application/x-www-form-urlencoded',
@@ -953,7 +953,7 @@ class AJAX {
 		}
 
 		else
-			url += '?' + params.toString();
+			url += '?' + parameters.toString();
 
 		let response = null;
 
