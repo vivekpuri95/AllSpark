@@ -1009,11 +1009,14 @@ main .column-form.compact {
 		grid-gap: calc(var(--gap) * 2);
 		margin: 0 calc(var(--gap) * 2);
 	}
-		main .column-form .filters span,
-		main .column-form .accumulations span {
+		main .column-form .filters > span,
+		main .column-form .accumulations > span {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
+			font-weight: bold;
+			font-size: 90%;
+			color: #444;
 		}
 			main .column-form .filters .add-filter,
 			main .column-form .accumulations .add-accumulation {

@@ -31,7 +31,6 @@ Page.class = class DashboardManager extends Page {
 		});
 
 		DashboardsDashboard.setup(this);
-		//DashboardsShare.setup(this);
 
 		(async () => {
 
@@ -135,7 +134,6 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.editor.editor.getSession().setMode('ace/mode/json');
 
-		//DashboardsShare.form = DashboardsDashboard.container.querySelector('#dashboard_share');
 	}
 
 	static async add() {
@@ -196,14 +194,13 @@ class DashboardsDashboard {
 			this[key] = data[key];
 
 		this.page = page;
-		//this.dashboardShare = new DashboardsShare(this);
 	}
 
 	async edit() {
 
 		DashboardsDashboard.container.querySelector('h1').textContent = 'Edit ' + this.name;
 
-		this.objectRoles = new ObjectRoles('dashboard', this.id, ['user', 'role']);
+		this.objectRoles = new ObjectRoles('dashboard', this.id);
 
 		await this.objectRoles.load();
 
@@ -233,8 +230,6 @@ class DashboardsDashboard {
 			DashboardsDashboard.form.removeEventListener('submit', DashboardsDashboard.form_listener);
 
 		DashboardsDashboard.form.on('submit', DashboardsDashboard.form_listener = async e => this.update(e));
-
-		//this.dashboardShare.load();
 
 		await Sections.show('form');
 

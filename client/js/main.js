@@ -1742,7 +1742,6 @@ class MultiSelect {
 	}
 }
 
-
 class ObjectRoles {
 
 	constructor(owner, owner_id, allowedTargets = []) {
@@ -1768,16 +1767,18 @@ class ObjectRoles {
 		this.owner = owner;
 		this.ownerId = owner_id;
 		this.allowedTargets = allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets);
+		this.alreadyVisible = [];
 	}
 
 	async load() {
 
 		this.data = [];
+
 		const listRequestParams = new URLSearchParams();
+
 		listRequestParams.append('owner', this.owner);
 
 		for (const target of this.allowedTargets) {
-
 			listRequestParams.append('target[]', target);
 		}
 
@@ -1815,10 +1816,8 @@ class ObjectRoles {
 
 	render() {
 
-		if (!this.getContainer) {
-
+		if(!this.getContainer)
 			this.container;
-		}
 
 		const table = this.getContainer.querySelector('.object-roles > table');
 		table.innerHTML = null;
@@ -1828,12 +1827,11 @@ class ObjectRoles {
 
 	get container() {
 
-		if (this.getContainer) {
-
+		if(this.getContainer)
 			return this.getContainer;
-		}
 
 		const container = document.createElement('div');
+
 		container.classList.add('object-roles');
 
 		container.appendChild(this.table);
@@ -1846,10 +1844,8 @@ class ObjectRoles {
 
 	get form() {
 
-		if (this.submitForm) {
-
+		if(this.submitForm)
 			return this.submitForm;
-		}
 
 		const form = document.createElement('form');
 
@@ -1982,7 +1978,7 @@ class ObjectRoles {
 
 		const tbody = table.querySelector('tbody');
 
-		for (const row of this.alreadyVisible) {
+		for(const row of this.alreadyVisible) {
 
 			const tr = document.createElement('tr');
 
@@ -1997,17 +1993,15 @@ class ObjectRoles {
 			tr.querySelector('.red').addEventListener('click', () => this.delete(row.id));
 		}
 
-		if (!this.alreadyVisible.length) {
-
-			tbody.innerHTML = '<tr class="NA"><td colspan="4">No data found! :(</td></tr>'
-		}
+		if(!this.alreadyVisible.length)
+			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet! :(</td></tr>'
 
 		return table;
 	}
 
 	async insert(e) {
-		if (e && e.preventDefault) {
 
+		if (e && e.preventDefault) {
 			e.preventDefault();
 		}
 
@@ -2039,13 +2033,13 @@ class ObjectRoles {
 
 		await API.call('object_roles/insert', parameters, options);
 		await this.load();
+
 		this.render();
 	}
 
 	async delete(id) {
 
 		if (!confirm('Are you sure?')) {
-
 			return;
 		}
 
@@ -2087,7 +2081,6 @@ class ObjectRoles {
 		}
 	}
 }
-
 
 if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {
