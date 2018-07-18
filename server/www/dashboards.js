@@ -24,7 +24,7 @@ exports.list = class extends API {
 		let dashboards = this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]);
 
 		let sharedDashboards = this.mysql.query(
-			"select ud.* from tb_user_dashboard ud join tb_dashboards d on d.id = ud.dashboard_id where d.status = 1 and account_id = ?",
+			"SELECT owner_id AS dasbboard_id, target_id AS user_id FROM tb_object_roles WHERE OWNER = 'dashboard' AND target = 'role' AND account_id = ?",
 			[this.account.account_id]
 		);
 
@@ -96,6 +96,21 @@ exports.list = class extends API {
 
 			dashboardObject[d].href = `/dashboard/${dashboardObject[d].id}`;
 			dashboardObject[d].superset = 'Dashboards';
+		}
+
+		const filterDashboards = [];
+
+		for(const dashboard of Object.values(dashboardObject)) {
+
+			if(dashboard.visibility === "private" && !(dashboard.added_by === this.user.user_id || dashboard.shared_user.some(x => x.user_id === this.user.user_id))) {
+
+				filterDashboards.push(dashboard.id);
+			}
+		}
+
+		for(const dashboard of filterDashboards) {
+
+			delete dashboardObject[dashboard];
 		}
 
 		return Object.values(dashboardObject);

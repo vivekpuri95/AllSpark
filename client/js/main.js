@@ -76,7 +76,7 @@ class Page {
 		Page.navList = [
 			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
 			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
-			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
+			{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
 			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
 			{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
 			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
@@ -1577,6 +1577,353 @@ class MultiSelect {
 		this.recalculate();
 	}
 }
+
+
+class ObjectRoles {
+
+	constructor(owner, owner_id, allowedTargets = []) {
+
+		this.targets = {
+			user: {
+				API: 'users/list',
+				name_fields: ['first_name', 'middle_name', 'last_name'],
+				value_field: 'user_id',
+				subtitle: 'email',
+				data: [],
+				ignore_categories: true,
+			},
+
+			role: {
+				API: 'roles/list',
+				name_fields: ['name'],
+				value_field: 'role_id',
+				data: [],
+			},
+		};
+
+		this.owner = owner;
+		this.ownerId = owner_id;
+		this.allowedTargets = allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets);
+	}
+
+	async load() {
+
+		this.data = [];
+		const listRequestParams = new URLSearchParams();
+		listRequestParams.append('owner', this.owner);
+
+		for (const target of this.allowedTargets) {
+
+			listRequestParams.append('target[]', target);
+		}
+
+		this.alreadyVisible = await API.call('object_roles/list', listRequestParams.toString());
+
+		for (const target of this.allowedTargets) {
+
+			const data = await API.call(this.targets[target].API);
+
+			this.targets[target].data = [];
+
+			for (const row of data) {
+
+				this.targets[target].data.push({
+					name: this.targets[target].name_fields.map(x => row[x]).filter(x => x).join(' '),
+					value: row[this.targets[target].value_field || 'id'],
+					subtitle: row[this.targets[target].subtitle],
+				});
+			}
+		}
+
+		for (const target in this.targets) {
+
+			this.targets[target].multiSelect = new MultiSelect({
+				datalist: this.targets[target].data,
+				multiple: false,
+				dropDownPosition: 'top',
+			});
+		}
+
+		this.combine();
+		this.container;
+		this.shareButton;
+	}
+
+	render() {
+
+		if (!this.getContainer) {
+
+			this.container;
+		}
+
+		const table = this.getContainer.querySelector('.object-roles > table');
+		table.innerHTML = null;
+		table.appendChild(this.table);
+		this.multiSelect.render();
+	}
+
+	get container() {
+
+		if (this.getContainer) {
+
+			return this.getContainer;
+		}
+
+		const container = document.createElement('div');
+		container.classList.add('object-roles');
+
+		container.appendChild(this.table);
+		container.appendChild(this.form);
+
+		this.getContainer = container;
+
+		return container;
+	}
+
+	get form() {
+
+		if (this.submitForm) {
+
+			return this.submitForm;
+		}
+
+		const form = document.createElement('form');
+
+		const submitButton = document.createElement('button');
+		submitButton.type = 'submit';
+		submitButton.innerHTML = `<i class="fa fa-paper-plane"></i> Share`;
+
+		this.categorySelect = this.selectDropDown([...MetaData.categories.values()].map(x => {
+
+			return {
+				value: x.category_id,
+				text: x.name,
+			}
+		}));
+
+		this.targetSelectDropdown = this.selectDropDown(this.allowedTargets.map(x => {
+
+			return {
+				value: x,
+				text: x.charAt(0).toUpperCase() + x.slice(1),
+			}
+		}));
+
+		this.multiSelect = this.targets[this.targetSelectDropdown.value].multiSelect;
+
+		if (this.targets[this.targetSelectDropdown.value].ignore_categories) {
+
+			this.categorySelect.classList.add('hidden');
+			this.categorySelect.value = 0;
+		}
+
+		else {
+
+			this.targetSelectDropdown.classList.remove('hidden');
+			this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0] : 0;
+		}
+
+		this.targetSelectDropdown.addEventListener('change', (e) => {
+
+			this.multiSelect.container.remove();
+
+			this.multiSelect = this.targets[e.target.value].multiSelect;
+			form.insertBefore(this.multiSelect.container, submitButton);
+
+			if (this.targets[e.target.value].ignore_categories) {
+
+				this.categorySelect.classList.add('hidden');
+				this.categorySelect.value = 0;
+			}
+			else {
+				this.categorySelect.classList.remove('hidden');
+				this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0].value : 0;
+			}
+		});
+
+		form.appendChild(this.targetSelectDropdown);
+		form.appendChild(this.categorySelect);
+		form.appendChild(this.multiSelect.container);
+		form.appendChild(submitButton);
+		form.addEventListener('submit', (e) => this.insert(e));
+
+		this.submitForm = form;
+
+		return form
+	}
+
+	selectDropDown(pairedData) {
+
+		this.selectedType = document.createElement('select');
+
+		for (const target of pairedData) {
+
+			const option = document.createElement('option');
+			option.value = target.value;
+			option.text = target.text;
+			this.selectedType.appendChild(option);
+		}
+
+		return this.selectedType;
+	}
+
+	get shareButton() {
+
+		if (this.button) {
+
+			return this.button;
+		}
+
+		const container = document.createElement('div');
+		container.classList.add('object-roles');
+
+		const button = document.createElement('button');
+		button.classList.add('share-button');
+		button.textContent = `Share ${this.owner}`;
+
+		container.appendChild(button);
+		this.button = container;
+
+
+		button.addEventListener('click', () => {
+
+			const heading = this.allowedTargets.length === 1 ?
+				this.allowedTargets[0] :
+				`${this.allowedTargets.slice(0, -1).join(', ')} or ${this.allowedTargets[this.allowedTargets.length - 1]}.`;
+
+			const dialougeBox = new DialogBox();
+			dialougeBox.heading = `Share this ${this.owner} with any ${heading}`;
+			dialougeBox.body.appendChild(this.container);
+			dialougeBox.show();
+		});
+
+		return this.button;
+	}
+
+	get table() {
+
+		const table = document.createElement('table');
+
+		table.innerHTML = `
+			<thead>
+				<tr>
+					<th>Shared With</th>
+					<th>Category</th>
+					<th>Name</th>
+					<th class="action">Delete</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		`;
+
+		const tbody = table.querySelector('tbody');
+
+		for (const row of this.alreadyVisible) {
+
+			const tr = document.createElement('tr');
+
+			tr.innerHTML = `
+				<td>${row.target.charAt(0).toUpperCase() + row.target.slice(1)}</td>
+				<td>${row.category.charAt(0).toUpperCase() + row.category.slice(1)}</td>
+				<td>${row.name}</td>
+				<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			`;
+
+			tbody.appendChild(tr);
+			tr.querySelector('.red').addEventListener('click', () => this.delete(row.id));
+		}
+
+		if (!this.alreadyVisible.length) {
+
+			tbody.innerHTML = '<tr class="NA"><td colspan="4">No data found! :(</td></tr>'
+		}
+
+		return table;
+	}
+
+	async insert(e) {
+		if (e && e.preventDefault) {
+
+			e.preventDefault();
+		}
+
+		if (
+			this.alreadyVisible.filter(x =>
+				x.owner == this.owner
+				&& x.owner_id == this.ownerId
+				&& x.target == this.selectedType.value
+				&& x.target_id == [...this.multiSelect.selectedValues][0]
+				&& x.category_id == (parseInt(this.categorySelect.value) || 0)
+			).length) {
+
+			window.alert('Already exists');
+			return;
+		}
+
+		const
+			parameters = {
+				owner_id: this.ownerId,
+				owner: this.owner,
+				target: this.selectedType.value,
+				target_id: [...this.multiSelect.selectedValues][0],
+				category_id: this.categorySelect.value || null,
+			},
+
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('object_roles/insert', parameters, options);
+		await this.load();
+		this.render();
+	}
+
+	async delete(id) {
+
+		if (!confirm('Are you sure?')) {
+
+			return;
+		}
+
+		const
+			parameters = {
+				id: id,
+			},
+
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('object_roles/delete', parameters, options);
+		await this.load();
+		this.render();
+	}
+
+	combine() {
+
+		this.mapping = {};
+		for (const target of this.allowedTargets) {
+
+			for (const row of this.targets[target].data) {
+
+				if (!this.mapping[target]) {
+					this.mapping[target] = {};
+				}
+
+				this.mapping[target][row.value] = row;
+			}
+		}
+
+		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in this.mapping[row.target]);
+
+		for (const row of this.alreadyVisible) {
+
+			row.name = this.mapping[row.target][row.target_id].name;
+			row.category = (MetaData.categories.get(row.category_id) || {name: ''}).name
+		}
+	}
+}
+
 
 if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {

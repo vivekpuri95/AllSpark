@@ -31,7 +31,7 @@ Page.class = class DashboardManager extends Page {
 		});
 
 		DashboardsDashboard.setup(this);
-		DashboardsShare.setup(this);
+		//DashboardsShare.setup(this);
 
 		(async () => {
 
@@ -135,7 +135,7 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.editor.editor.getSession().setMode('ace/mode/json');
 
-		DashboardsShare.form = DashboardsDashboard.container.querySelector('#dashboard_share');
+		//DashboardsShare.form = DashboardsDashboard.container.querySelector('#dashboard_share');
 	}
 
 	static async add() {
@@ -196,12 +196,20 @@ class DashboardsDashboard {
 			this[key] = data[key];
 
 		this.page = page;
-		this.dashboardShare = new DashboardsShare(this);
+		//this.dashboardShare = new DashboardsShare(this);
 	}
 
 	async edit() {
 
 		DashboardsDashboard.container.querySelector('h1').textContent = 'Edit ' + this.name;
+
+		this.objectRoles = new ObjectRoles('dashboard', this.id, ['user', 'role']);
+
+		await this.objectRoles.load();
+
+		this.page.container.querySelector('#share-dashboards').innerHTML = null;
+
+		this.page.container.querySelector('#share-dashboards').appendChild(this.objectRoles.container);
 
 		for(const element of DashboardsDashboard.form.elements) {
 			if(this[element.name])
@@ -226,7 +234,7 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.form.on('submit', DashboardsDashboard.form_listener = async e => this.update(e));
 
-		this.dashboardShare.load();
+		//this.dashboardShare.load();
 
 		await Sections.show('form');
 
@@ -305,156 +313,5 @@ class DashboardsDashboard {
 		this.container.querySelector('.red').on('click', async() => this.delete());
 
 		return this.container;
-	}
-}
-
-class DashboardsShare {
-
-	constructor(page) {
-
-		this.userDashboardList = new Map();
-
-		for(const key in page)
-			this[key] = page[key];
-	}
-
-	static async setup(page) {
-
-		DashboardsShare.page = page;
-		DashboardsShare.userList = await API.call('users/list');
-
-		DashboardsShare.userMultiList = new MultiSelect({datalist: [], multiple: true});
-
-		DashboardsShare.form.insertBefore(
-			this.userMultiList.container,
-			DashboardsShare.form.querySelector('.add_user')
-		);
-	}
-
-	async load() {
-
-		const
-			parameters = {
-				id : this.id,
-			},
-			options = {
-				method : 'GET',
-			},
-			multiSelectData = [];
-
-		this.userDashboardResponse = await API.call('user/dashboards/list', parameters, options);
-
-		const userDashboard = new Map(this.userDashboardResponse.map(user => [user.user_id, user]));
-
-		for( const users of DashboardsShare.userList) {
-
-			if(!userDashboard.has(users.user_id)) {
-				multiSelectData.push({
-					value: users.user_id,
-					name : users.name,
-					subtitle: users.email
-				});
-			}
-		}
-
-		DashboardsShare.userMultiList.datalist = multiSelectData;
-		DashboardsShare.userMultiList.render();
-
-		if(DashboardsShare.form_listener)
-			DashboardsShare.form.removeEventListener('submit', DashboardsShare.form_listener);
-
-		DashboardsShare.form.on('submit', DashboardsShare.form_listener = e => this.add(e));
-
-		this.process();
-		this.render();
-	}
-
-	process() {
-
-		this.userDashboardList.clear();
-
-		for(const ud of this.userDashboardResponse)
-			this.userDashboardList.set(ud.id, new UserDashboard(ud, this));
-	}
-
-	render() {
-
-		const container = this.page.container.querySelector('table.user-dashboard tbody');
-
-		container.textContent = null;
-
-		for(const [index, ud] of this.userDashboardList)
-			container.appendChild(ud.row);
-
-		if(!this.userDashboardList.size)
-			container.insertAdjacentHTML('beforeend', `<tr class="NA"><td colspan="2">Not shared to any user! :(</td></tr>`);
-	}
-
-	async add(e) {
-
-		e.preventDefault();
-
-		let users = new URLSearchParams();
-
-		users.set('dashboard_id', this.id);
-
-		for(const option of DashboardsShare.userMultiList.value) {
-
-			users.append('user_id', option);
-		}
-
-		const
-			options = {
-				method: 'POST',
-			};
-
-		await API.call('user/dashboards/insert', users.toString(), options);
-		await this.load();
-	}
-}
-
-class UserDashboard {
-
-	constructor(data, page) {
-
-		for(const key in data)
-			this[key] = data[key];
-
-		this.page = page;
-	}
-
-	get row() {
-
-		if(this.container)
-			return this.container;
-
-		this.container = document.createElement('tr');
-
-		this.container.innerHTML = `
-			<td>${this.user_id}</td>
-			<td>${this.first_name.concat(' ', this.last_name)}</a></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
-		`;
-
-		this.container.querySelector('.red').on('click', async() => this.delete());
-
-		return this.container;
-	}
-
-	async delete() {
-
-		if(!confirm('Are you sure?!'))
-			return;
-
-		const
-			parameters = {
-				id : this.id,
-			},
-			options = {
-				method : 'POST',
-			};
-
-		await API.call('user/dashboards/delete', parameters, options);
-		await this.page.load();
 	}
 }
