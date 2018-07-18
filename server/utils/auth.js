@@ -351,12 +351,12 @@ class Authenticate {
 		}
 
 		[userConnections, connectionRoles] = await Promise.all([
-			objRole.get(connectionObj.account_id, 'connection', 'user', connectionObj.id),
+			objRole.get(connectionObj.account_id, 'connection', 'user', connectionObj.id, user.user_id),
 			objRole.get(connectionObj.account_id, 'connection', 'role', connectionObj.id,)
 		]);
 		connectionRoles = connectionRoles.map(x => [x.account_id, x.category_id, x.target_id]);
 
-		if(userConnections[0].target_id) {
+		if(userConnections[0]) {
 
 			return {
 				error: false,
