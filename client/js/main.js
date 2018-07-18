@@ -1656,9 +1656,9 @@ class ObjectRoles {
 			this.container;
 		}
 
-		const alreadyViewedContainer = this.getContainer.querySelector('.object-roles > table');
-		alreadyViewedContainer.innerHTML = null;
-		alreadyViewedContainer.appendChild(this.alreadyViewedContainer);
+		const table = this.getContainer.querySelector('.object-roles > table');
+		table.innerHTML = null;
+		table.appendChild(this.table);
 		this.multiSelect.render();
 	}
 
@@ -1672,15 +1672,15 @@ class ObjectRoles {
 		const container = document.createElement('div');
 		container.classList.add('object-roles');
 
-		container.appendChild(this.alreadyViewedContainer);
-		container.appendChild(this.submitFormContainer);
+		container.appendChild(this.table);
+		container.appendChild(this.form);
 
 		this.getContainer = container;
 
 		return container;
 	}
 
-	get submitFormContainer() {
+	get form() {
 
 		if (this.submitForm) {
 
@@ -1721,7 +1721,6 @@ class ObjectRoles {
 
 			this.targetSelectDropdown.classList.remove('hidden');
 			this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0] : 0;
-			this.categorySelect.text = this.categorySelect.options.length ? this.categorySelect.options[0].text : '';
 		}
 
 		this.targetSelectDropdown.addEventListener('change', (e) => {
@@ -1739,7 +1738,6 @@ class ObjectRoles {
 			else {
 				this.categorySelect.classList.remove('hidden');
 				this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0].value : 0;
-				this.categorySelect.text = this.categorySelect.options.length ? this.categorySelect.options[0].text : '';
 			}
 		});
 
@@ -1802,7 +1800,7 @@ class ObjectRoles {
 		return this.button;
 	}
 
-	get alreadyViewedContainer() {
+	get table() {
 
 		const table = document.createElement('table');
 
@@ -1863,7 +1861,7 @@ class ObjectRoles {
 		}
 
 		const
-			currentParameters = {
+			parameters = {
 				owner_id: this.ownerId,
 				owner: this.owner,
 				target: this.selectedType.value,
@@ -1871,27 +1869,32 @@ class ObjectRoles {
 				category_id: this.categorySelect.value || null,
 			},
 
-			currentOptions = {
+			options = {
 				method: 'POST',
 			};
 
-		await API.call('object_roles/insert', currentParameters, currentOptions);
+		await API.call('object_roles/insert', parameters, options);
 		await this.load();
 		this.render();
 	}
 
 	async delete(id) {
 
+		if (!confirm('Are you sure?')) {
+
+			return;
+		}
+
 		const
-			currentParameters = {
+			parameters = {
 				id: id,
 			},
 
-			currentOptions = {
+			options = {
 				method: 'POST',
 			};
 
-		await API.call('object_roles/delete', currentParameters, currentOptions);
+		await API.call('object_roles/delete', parameters, options);
 		await this.load();
 		this.render();
 	}
