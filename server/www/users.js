@@ -68,7 +68,7 @@ exports.list = class extends API {
 
 	async list() {
 
-		if(!this.request.body.user_id) {
+		if (!this.request.body.user_id) {
 			this.user.privilege.needs('user');
 		}
 
@@ -85,24 +85,36 @@ exports.list = class extends API {
 					account_id = ${this.account.account_id}
 					AND status = 1
 			`,
-			role_query = `SELECT id, user_id, category_id, role_id FROM tb_user_roles`,
+			role_query = `
+				SELECT
+					id,
+					owner_id as user_id,
+					category_id,
+					target_id as role_id
+				FROM
+					tb_object_roles
+				WHERE
+					owner = "user"
+					and target = "role"
+					and account_id = ${this.account.account_id}
+				`,
 			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`;
 		if (this.request.body.user_id) {
 
 			user_query = user_query.concat(` AND user_id = ${this.request.body.user_id}`);
-			role_query = role_query.concat(` WHERE user_id = ${this.request.body.user_id}`);
+			role_query = role_query.concat(` AND owner_id = ${this.request.body.user_id}`);
 			prv_query = prv_query.concat(` WHERE user_id = ${this.request.body.user_id}`);
 
 			results = await Promise.all([
 				this.mysql.query(user_query),
-				this.mysql.query(role_query),
+				this.mysql.query(role_query, [this.account.account_id]),
 				this.mysql.query(prv_query)
 			]);
 
 		}
 		else {
 
-			if(this.request.body.search) {
+			if (this.request.body.search) {
 				user_query = user_query.concat(`
 					AND  (
 						user_id LIKE ?

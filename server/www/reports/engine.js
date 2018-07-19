@@ -14,6 +14,7 @@ const fetch = require('node-fetch');
 const URLSearchParams = require('url').URLSearchParams;
 const fs = require("fs");
 const userQueryLogs = require("../accounts").userQueryLogs;
+const getRole = require("../object_roles").get;
 
 // prepare the raw data
 class report extends API {
@@ -26,6 +27,8 @@ class report extends API {
 			this.filterList = filterList;
 			this.reportId = reportObj.query_id;
 		}
+
+		const objRole = new getRole();
 
 		let reportDetails = [
 
@@ -55,7 +58,9 @@ class report extends API {
 				[this.user.user_id, this.reportId, this.account.account_id, this.account.account_id],
 			),
 
-			this.mysql.query(`select * from tb_query_filters where query_id = ?`, [this.reportId])
+			this.mysql.query(`select * from tb_query_filters where query_id = ?`, [this.reportId]),
+
+			objRole.get(this.account.account_id, "query", "role", this.reportId,)
 		];
 
 		reportDetails = await Promise.all(reportDetails);
@@ -63,6 +68,9 @@ class report extends API {
 
 		this.reportObj = reportDetails[0][0];
 		this.filters = reportDetails[1] || [];
+
+		this.reportObj.roles = [...new Set(reportDetails[2].map(x => x.target_id))];
+		this.reportObj.category_id = [...new Set(reportDetails[2].map(x => x.category_id))];
 
 		let [preReportApi] = await this.mysql.query(
 			`select value from tb_settings where owner = 'account' and profile = 'pre_report_api' and account_id = ?`,

@@ -688,21 +688,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 				</form>
 
 				<h2 class="share-heading">Share dashboards</h2>
-
-				<form class="block form" id="dashboard_share">
-					<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add Users</button>
-				</form>
-
-				<table class="block user-dashboard">
-					<thead>
-						<tr>
-							<th class="thin">User Id</th>
-							<th>Name</th>
-							<th class="action">Action</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
+				<div id="share-dashboards"></div>
 			</section>
 		`;
 	}
@@ -874,6 +860,9 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</label>
 						</div>
 					</form>
+
+					<h2>Share Report</h2>
+					<div id="share-report"></div>
 				</section>
 
 				<section class="section" id="stage-define-report">
@@ -989,8 +978,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									<label>
 										<span>Multiple</span>
 										<select name="multiple" required>
-											<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
-											<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
+											<option value="0">No</option>
+											<option value="1">Yes</option>
 										</select>
 									</label>
 								</form>
@@ -1079,7 +1068,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						</h3>
 
 						<div class="body" id="transformations"></div>
-					</div>					
+					</div>
 
 					<div class="configuration-section">
 
@@ -1087,13 +1076,13 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 						<div class="body" id="dashboards"></div>
 					</div>
-					
+
 					<div class="configuration-section">
 					
 						<h3><i class="fas fa-angle-right"></i> Filters <span class="count"></span></h3>
 						
 						<div class="body form" id="filters"></div>
-												
+
 					</div>
 
 				</section>

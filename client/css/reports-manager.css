@@ -147,6 +147,9 @@ main.preview-left #stages {
 		margin: 5px;
 		flex: 1;
 	}
+#stage-configure-report > h2 {
+	margin: calc(var(--gap) * 2) 0;
+}
 
 #stage-pick-report table {
 	background: #fff;

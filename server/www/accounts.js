@@ -307,7 +307,15 @@ exports.signup = class extends API {
 
 
 		await Promise.all([
-			this.mysql.query(`INSERT INTO tb_user_roles (user_id, category_id, role_id) VALUES (?, ?, ?)`,[user.insertId, account_res.category_id, account_res.role_id],'write'),
+			this.mysql.query(
+				`INSERT INTO 
+					tb_object_roles 
+					(account_id, owner, owner_id, target, target_id, category_id) 
+					VALUES (?, ?, ?)
+				`,
+				[account_res.account_id, "user", user.insertId, "role", account_res.role_id, account_res.category_id]
+				,'write'
+			),
 			this.mysql.query(`INSERT INTO tb_user_privilege (user_id, category_id, privilege_id) VALUES (?, ?, 1)`,[user.insertId, account_res.category_id],'write'),
 		]);
 

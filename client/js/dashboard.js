@@ -46,66 +46,10 @@ Page.class = class Dashboards extends Page {
 		const dashboards = await API.call('dashboards/list'); //get dashboard list
 		this.list = new Map;
 
-		const dummyDashboard = {
-			"id": -1,
-			"account_id": account.account_id,
-			"name": "dummy",
-			"parent": null,
-			"icon": null,
-			"status": 1,
-			"visibility": "public",
-			"added_by": null,
-			"roles": null,
-			"format": {},
-			"created_at": "",
-			"updated_at": "",
-			"shared_user": [],
-			"visualizations": []
-		};
-
-		const
-			privateDashboard = {
-				...JSON.parse(JSON.stringify(dummyDashboard)),
-				name: "Private Dashboards",
-				id: -1,
-				icon: "fas fa-user-secret"
-			},
-			sharedWithMeDashboard = {
-				...JSON.parse(JSON.stringify(dummyDashboard)),
-				name: "Shared With Me",
-				id: -2,
-				icon: "fas fa-user-plus"
-			},
-			publicDashboard = {
-				...JSON.parse(JSON.stringify(dummyDashboard)),
-				name: "Public Dashboards",
-				id: -3,
-				icon: "fas fa-globe"
-			};
-
 		for (const dashboard of dashboards) {
-
-			if ((dashboard.added_by === user.user_id || dashboard.added_by === null) && dashboard.visibility === "private" && dashboard.parent === null) {
-
-				dashboard.parent = privateDashboard.id;
-			}
-
-			else if (dashboard.added_by !== user.user_id && dashboard.visibility === "private" && dashboard.parent === null) {
-
-				dashboard.parent = sharedWithMeDashboard.id;
-			}
-
-			else if (dashboard.parent === null) {
-				dashboard.parent = publicDashboard.id;
-			}
 
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 		}
-
-		this.list.set(publicDashboard.id, new Dashboard(publicDashboard, this));
-		this.list.set(privateDashboard.id, new Dashboard(privateDashboard, this));
-		this.list.set(sharedWithMeDashboard.id, new Dashboard(sharedWithMeDashboard, this));
-
 		// manage hierarchy
 
 		for (const dashboard of this.list.values()) {

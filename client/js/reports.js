@@ -39,9 +39,14 @@ class DataSource {
 		this.postProcessors = new DataSourcePostProcessors(this);
 	}
 
-	async fetch(parameters = {}) {
+	async fetch(_parameters = {}) {
 
-		parameters = new URLSearchParams(parameters);
+		const parameters = new URLSearchParams(_parameters);
+
+		if(typeof _parameters == 'object') {
+			for(const key in _parameters)
+				parameters.set(key, _parameters[key]);
+		}
 
 		parameters.set('query_id', this.query_id);
 
@@ -58,7 +63,7 @@ class DataSource {
 
 					if(filter.dataset) {
 
-						await filter.dataset.fetch();
+						await filter.fetch();
 						filter.value = visualization_filter.default_value || '';
 					}
 
@@ -80,7 +85,7 @@ class DataSource {
 			else parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
 		}
 
-		const external_parameters = await IndexedDb.instance.get('external_parameters');
+		const external_parameters = await Storage.get('external_parameters');
 
 		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
 
@@ -455,7 +460,7 @@ class DataSource {
 				const title = [];
 
 				for(const p of source.drilldown.parameters)
-					title.push(`${p.value}: ${p.selectedValue instanceof Dataset ? p.selectedValue.value : p.selectedValue}`);
+					title.push(`${source.drilldown.parent.filters.has(p.placeholder) ? source.drilldown.parent.filters.get(p.placeholder).name : p.placeholder}: ${p.selectedValue}`);
 
 				link.title = title.join('\n');
 
@@ -601,7 +606,7 @@ class DataSource {
 				visualization: this.visualizations.selected.type,
 				sheet_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				file_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				token :await IndexedDb.instance.get('token'),
+				token :await Storage.get('token'),
 				show_legends: !this.visualizations.selected.options.hideLegend || 0,
 				show_values: this.visualizations.selected.options.showValues || 0,
 				classic_pie: this.visualizations.selected.options.classicPie
@@ -1113,14 +1118,16 @@ class DataSourceFilter {
 		if(Array.from(report.filters.values()).some(f => f.dataset == this.dataset))
 			return [];
 
-		if(await IndexedDb.instance.has(`dataset.${this.dataset}`))
-			({values, timestamp} = await IndexedDb.instance.get(`dataset.${this.dataset}`));
+		if(await Storage.has(`dataset.${this.dataset}`))
+			({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
 
 		if(!timestamp || Date.now() - timestamp > DataSourceFilter.timeout) {
 
-			({data: values} = await report.fetch({download: true}));
+			const
+				response = await report.fetch({download: true}),
+				values = response.data;
 
-			await IndexedDb.instance.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
+			await Storage.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
 		}
 
 		if(!this.multiSelect.datalist || !this.multiSelect.datalist.length) {
@@ -2072,7 +2079,7 @@ class DataSourceColumn {
 			postfix : this.postfix,
 			formula : this.formula,
 			drilldown : {
-				query_id : this.drilldownQuery.value[0],
+				query_id : parseInt(this.drilldownQuery.value[0]) || 0,
 				parameters : json_param
 			}
 		};
@@ -2216,15 +2223,7 @@ class DataSourceColumn {
 
 		destination = new DataSource(destination);
 
-		const destinationDatasets = [];
-
-		for(const filter of destination.filters.values()) {
-
-			if(filter.dataset)
-				destinationDatasets.push(filter.dataset.fetch());
-		}
-
-		await Promise.all(destinationDatasets);
+		await Promise.all(Array.from(destination.filters.values()).map(f => f.fetch()));
 
 		for(const parameter of this.drilldown.parameters) {
 

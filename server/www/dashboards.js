@@ -23,21 +23,15 @@ exports.list = class extends API {
 
 		let dashboards = this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]);
 
-		let sharedDashboards = this.mysql.query(
-			"select ud.* from tb_user_dashboard ud join tb_dashboards d on d.id = ud.dashboard_id where d.status = 1 and account_id = ?",
-			[this.account.account_id]
-		);
-
 		let visualizationDashboards = this.mysql.query(
 			"select vd.*, query_id from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id join tb_query q  using(query_id) where d.status = 1 and d.account_id = ? and q.is_enabled = 1 and q.is_deleted = 0",
 			[this.account.account_id]
 		);
 
-		const dashboardDetails = await Promise.all([dashboards, sharedDashboards, visualizationDashboards]);
+		const dashboardDetails = await Promise.all([dashboards, visualizationDashboards]);
 
 		dashboards = dashboardDetails[0];
-		sharedDashboards = dashboardDetails[1];
-		visualizationDashboards = dashboardDetails[2];
+		visualizationDashboards = dashboardDetails[1];
 
 		const dashboardObject = {};
 
@@ -51,17 +45,7 @@ exports.list = class extends API {
 				dashboard.format = [];
 			}
 
-			dashboardObject[dashboard.id] = {...dashboard, shared_user: [], visualizations: []}
-		}
-
-		for (const sharedDashboard of sharedDashboards) {
-
-			if (!dashboardObject[sharedDashboard.dashboard_id]) {
-
-				continue;
-			}
-
-			dashboardObject[sharedDashboard.dashboard_id].shared_user.push(sharedDashboard);
+			dashboardObject[dashboard.id] = {...dashboard, visualizations: []}
 		}
 
 		for (const queryDashboard of visualizationDashboards) {
@@ -206,4 +190,4 @@ exports.updateFormat = class extends API {
 		return 'format updated!';
 	}
 
-}
+};
