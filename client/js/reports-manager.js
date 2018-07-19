@@ -89,7 +89,7 @@ class ReportsMangerPreview {
 			return this.report = false;
 
 		this.report = JSON.parse(JSON.stringify(DataSource.list.get(options.query_id)));
-		this.report.visualizations = this.report.visualizations.filter(f => options.visualization_id ? f.visualization_id == options.visualization_id : f.type == 'table');
+		this.report.visualizations = this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table');
 
 		if(options.query && options.query != this.report.query) {
 			this.report.query = options.query;
@@ -99,8 +99,11 @@ class ReportsMangerPreview {
 		if(options.visualizationOptions)
 			this.report.visualizations[0].options = options.visualizationOptions;
 
-		if(options.visualizationType)
-			this.report.visualizations[0].type = options.visualizationType;
+		if(options.visualization && options.visualization.type)
+			this.report.visualizations[0].type = options.visualization.type;
+
+		if(options.visualization && options.visualization.name)
+			this.report.visualizations[0].name = options.visualization.name;
 
 		this.report = new DataSource(this.report);
 
@@ -1557,7 +1560,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 				this.page.preview.load({
 					query_id: this.report.query_id,
-					visualization_id: visualization.visualization_id,
+					visualization: {
+						id: visualization.visualization_id
+					},
 				});
 			});
 
@@ -1696,7 +1701,9 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		await this.page.preview.load({
 			query_id: this.report.query_id,
-			visualization_id: this.visualization.visualization_id,
+			visualization: {
+				id: this.visualization.visualization_id
+			},
 		});
 
 		this.transformations.load();
@@ -1751,14 +1758,19 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		await DataSource.load(true);
 
 		this.load();
+
+		this.page.stages.get('pick-visualization').switcher.querySelector('small').textContent = this.form.name.value;
 	}
 
 	async preview() {
 		this.page.preview.load({
 			query_id: this.report.query_id,
-			visualization_id: this.visualization.visualization_id,
 			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json},
-			visualizationType: this.form.type.value,
+			visualization: {
+				id: this.visualization.visualization_id,
+				type: this.form.type.value,
+				name: this.form.name.value
+			}
 		});
 	}
 });
@@ -1853,6 +1865,10 @@ class ReportVisualizationFilters extends Map {
 
 		this.container.querySelector('.list').classList.toggle('hidden', !this.size);
 		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
+
+		this.container.parentElement.querySelector('h3 .count').innerHTML = `
+				${this.size ? this.size + ' filter' + (this.size == 1 ? ' added' : 's added') : ''}
+		`;
 	}
 
 	get json() {
@@ -1971,6 +1987,8 @@ class ReportVisualizationDashboards extends Set {
 
 		if(!this.size)
 			this.container.innerHTML = `<div class="NA">No dashboard added yet! :'(</div>`;
+
+		this.container.parentElement.querySelector('h3 .count').innerHTML = `${this.size ? 'Added to ' + this.size + ' dashboard' + (this.size == 1 ? '' : 's') : ''}` ;
 
 		this.container.insertAdjacentHTML('beforeend', `
 
@@ -2186,9 +2204,19 @@ class ReportTransformations extends Set {
 
 			this.add(transformation);
 			this.container.insertBefore(transformation.container, addNew);
+			this.transformationCount();
 
 			this.preview();
 		});
+
+		this.transformationCount();
+	}
+
+	transformationCount() {
+
+		this.container.parentElement.querySelector('h3 .count').innerHTML = `
+			${this.size ? this.size + ' transformation' + (this.size == 1 ? ' applied' : 's applied') : ''}
+		`;
 	}
 
 	get json() {
@@ -2227,7 +2255,9 @@ class ReportTransformations extends Set {
 
 		this.page.preview.load({
 			query_id: this.stage.report.query_id,
-			visualization_id: report.transformationVisualization.visualization_id,
+			visualization: {
+				id: report.transformationVisualization.visualization_id
+			},
 		});
 	}
 }
@@ -2478,7 +2508,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		container.innerHTML = `
 			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Axes</h3>
+				<h3><i class="fas fa-angle-right"></i> Axes <span class="count"></span></h3>
 				<div class="options form body axes-container"></div>
 			</div>
 
@@ -2559,7 +2589,7 @@ class Axes extends Set {
 
 			const axisForm = new Axis({}, this);
 			this.add(axisForm);
-			container.querySelector('.axes').appendChild(axisForm.container);
+			this.render();
 		});
 
 		this.render();
@@ -2571,6 +2601,8 @@ class Axes extends Set {
 
 		let addAxes = this.container.querySelector('.axes');
 		addAxes.textContent = null;
+
+		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' axes added' : ''}`;
 
 		for(const axis of this) {
 			addAxes.appendChild(axis.container);
@@ -2636,6 +2668,8 @@ class Axis {
 
 			datalist = datalist.filter(x => !column.includes(x.value));
 		}
+
+		this.position = this.position || 'top';
 
 		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
 		const axisColumn = container.multiSelectColumns.container;

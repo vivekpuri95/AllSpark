@@ -1105,6 +1105,16 @@ main .sub-reports-dialog .dialog-box {
 			margin: var(--gap) 0;
 		}
 
+main .configuration-section .count {
+	color: #bbb;
+	font-size: 90%;
+	margin-left: auto;
+	font-weight: normal;
+	letter-spacing: 0.25px;
+}
+main .configuration-section .count.transformation {
+	margin-left: 3px;
+}
 main .configuration-section #filters {
 	background: #fff;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
