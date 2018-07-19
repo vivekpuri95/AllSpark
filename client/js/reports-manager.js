@@ -358,6 +358,13 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		for(const report of this.reports) {
 
+			const connection = this.page.connections.get(parseInt(this.report.connection_name));
+
+			if(!connection)
+				continue;
+
+			report.connectionType = new ReportConnectionType.list.get(connection.type)();
+
 			const row = document.createElement('tr');
 
 			let tags = report.tags ? report.tags.split(',') : [];
@@ -372,11 +379,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				return a;
 			});
 
-			let connection = this.page.connections.get(parseInt(report.connection_name)) || '';
-
-			if(connection)
-				connection = `${connection.connection_name} (${connection.type})`;
-
 			row.innerHTML = `
 				<td>${report.query_id}</td>
 				<td>
@@ -385,7 +387,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 					</a>
 				</td>
 				<td>${report.description || ''}</td>
-				<td>${connection}</td>
+				<td>${connection.connection_name} (${connection.type})</td>
 				<td class="tags"></td>
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
@@ -859,6 +861,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				exec: () => this.preview(),
 			});
 		});
+
+		ReportConnectionType.setup(this);
 	}
 
 	get url() {
@@ -1781,6 +1785,45 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			}
 		});
 	}
+});
+
+class ReportConnectionType {
+
+	static setup(stage) {
+		ReportConnectionType.editor = new Editor(stage.form.querySelector('#editor'));
+	}
+
+	constructor(stage) {
+
+		this.report = stage.report;
+		this.stage = stage;
+	}
+
+	get form() {
+		return document.createElement('div');
+	}
+
+	get json() {
+		return {};
+	}
+}
+
+ReportConnectionType.list = new Map();
+
+ReportConnectionType.list.set('mysql', class ReportConnectionMysql extends ReportConnectionType {
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		const form = document.createElement('div');
+
+
+
+		return form;
+	}
+
 });
 
 class ReportVisualizationFilters extends Map {
@@ -2822,6 +2865,7 @@ class ReportVisualizationLiveNumberOptions extends ReportVisualizationOptions {
 		return result;
 	}
 }
+
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
 
 ConfigureVisualization.types = new Map;

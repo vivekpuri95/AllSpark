@@ -1301,7 +1301,6 @@ class Editor {
 	}
 
 	mode(type) {
-
 		this.editor.getSession().setMode(`ace/mode/${type}`);
 	}
 }
