@@ -1,4 +1,4 @@
-"use strict";
+	"use strict";
 
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
@@ -38,7 +38,7 @@ exports.list = class extends API {
 			JOIN
 				tb_object_roles o
 				ON o.owner_id = vd.dashboard_id
-			
+
 			WHERE
 				o.owner = "dashboard"
 				AND o.target = "role"
@@ -106,7 +106,7 @@ exports.list = class extends API {
 			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
 
 			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
-
+				console.log(await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || []));
 				continue;
 			}
 

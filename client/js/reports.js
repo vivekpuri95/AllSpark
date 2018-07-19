@@ -1229,7 +1229,7 @@ class DataSourceRow extends Map {
 					if(!row[key])
 						this.skip = true;
 
-					if(!DataSourceColumn.searchTypes[parseInt(search.name) || 0].apply(search.value, row[key] === null ? '' : row[key]))
+					if(!DataSourceColumnFilter.searchTypes[parseInt(search.name) || 0].apply(search.value, row[key] === null ? '' : row[key]))
 						this.skip = true;
 				}
 			}
@@ -1350,30 +1350,75 @@ class DataSourceColumns extends Map {
 	}
 }
 
-class DataSourceColumn {
+class DataSourceColumnFilters {
 
-	constructor(column, source) {
+	constructor(column) {
 
-		DataSourceColumn.colors = [
-			'#8595e1',
-			'#ef6692',
-			'#d6bcc0',
-			'#ffca05',
-			'#8dd593',
-			'#ff8b75',
-			'#2a0f54',
-			'#d33f6a',
-			'#f0b98d',
-			'#6c54b5',
-			'#bb7784',
-			'#b5bbe3',
-			'#0c8765',
-			'#ef9708',
-			'#1abb9c',
-			'#9da19c',
-		];
+		this.column = column;
+		this.filters = this.column.filters && this.column.filters.length ? this.column.filters : [{name:'0', value:''}];
 
-		DataSourceColumn.searchTypes = [
+		this.list = new Set;
+
+		for(const filter of this.filters)
+			this.list.add(new DataSourceColumnFilter(filter, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('show', 'filters');
+
+		container.innerHTML = `
+			<span>
+				Search
+				<button type="button" class="show add-filter add-new-item"><i class="fa fa-plus"></i></button>
+			</span>
+			<div class="filter-container"></div>
+		`;
+
+		container.querySelector('button.add-filter').on('click', () => {
+
+			this.list.add(new DataSourceColumnFilter({name:'0', value:''}, this));
+			this.render();
+		});
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		const div = this.container.querySelector('.filter-container');
+
+		div.textContent = null;
+
+		for(const filter of this.list)
+			div.appendChild(filter.container);
+	}
+
+	get json() {
+
+		const json = [];
+
+		for(const filter of this.list) {
+			if(filter.json.value != '')
+				json.push(filter.json)
+		}
+
+		return json;
+	}
+}
+
+class DataSourceColumnFilter {
+
+	static setup() {
+
+		DataSourceColumnFilter.searchTypes = [
 			{
 				name: 'Contains',
 				apply: (q, v) => v.toString().toLowerCase().includes(q.toString().toLowerCase()),
@@ -1419,8 +1464,110 @@ class DataSourceColumn {
 				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
 			},
 		];
+	}
 
-		DataSourceColumn.accumulationTypes = [
+	constructor(filter, filters) {
+
+		for(const key in filter)
+		 	this[key] = filter[key];
+
+		 this.filters = filters;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('label');
+
+		container.classList.add('search-type');
+
+		container.innerHTML = `
+			<div class="category-group search">
+				<select class="searchType"></select>
+				<input type="search" class="searchQuery">
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			</div>
+		`;
+
+		for(const [i, type] of DataSourceColumnFilter.searchTypes.entries())
+			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+
+		container.querySelector('select').value = this.name;
+		container.querySelector('input').value = this.value;
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.filters.list.delete(this);
+			this.filters.render();
+		});
+
+		return container;
+	}
+
+	get json() {
+
+		return {name: this.container.querySelector('select').value, value: this.container.querySelector('input').value};
+	}
+}
+
+class DataSourceColumnAccumulations {
+
+	constructor(column) {
+
+		this.column = column;
+		this.accumulations =[{name:'', value:''}];
+		this.list = new Set;
+
+		for(const accumulation of this.accumulations)
+			this.list.add(new DataSourceColumnAccumulation(accumulation, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('show', 'accumulations');
+
+		container.innerHTML = `
+			<span>
+				Accumulation
+				<button type="button" class="show add-accumulation add-new-item"><i class="fa fa-plus"></i></button>
+			</span>
+			<div class="accumulation-container"></div>
+		`;
+
+		container.querySelector('button.add-accumulation').on('click', () => {
+
+			this.list.add(new DataSourceColumnAccumulation({name:'', value:''}, this));
+			this.render();
+		});
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		const div = this.container.querySelector('.accumulation-container');
+
+		div.textContent = null;
+
+		for(const accumulation of this.list)
+			div.appendChild(accumulation.container);
+	}
+}
+
+class DataSourceColumnAccumulation {
+
+	static setup() {
+
+		DataSourceColumnAccumulation.accumulationTypes = [
 			{
 				name: 'Sum',
 				apply: (rows, column) => Format.number(rows.reduce((c, r) => c + (parseFloat(r.get(column)) || 0), 0)),
@@ -1448,6 +1595,108 @@ class DataSourceColumn {
 				string: true,
 			},
 		];
+	}
+
+	constructor(accumulation, accumulations) {
+
+		for(const key in accumulation)
+		 	this[key] = accumulation[key];
+
+		 this.accumulations = accumulations;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('label');
+
+		container.classList.add('accumulation-type');
+
+		container.innerHTML = `
+			<div class="category-group">
+				<select class="accumulation-content"></select>
+				<input type="text" readonly>
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			</div>
+		`;
+
+		// To check the type of the column
+		let string = false;
+
+		for(const [index, report] of this.accumulations.column.source.response.entries()) {
+
+			if(index > 10)
+				break;
+
+			if(isNaN(report.get(this.accumulations.column.key))) {
+				string = true;
+				break;
+			}
+		}
+
+		const select = container.querySelector('.accumulation-content');
+
+		select.insertAdjacentHTML('beforeend', `<option value="-1">Select</option>`);
+
+		for(const [i, type] of DataSourceColumnAccumulation.accumulationTypes.entries()) {
+
+			if(!string || type.string)
+				select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		}
+
+		select.querySelector('option').selected = true;
+
+		if(select.value != '-1')
+			this.run();
+
+		select.on('change', () => this.run());
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.accumulations.list.delete(this);
+			this.accumulations.render();
+		});
+
+		return container
+	}
+
+	run() {
+
+		const select = this.container.querySelector('select');
+
+		const accumulation = DataSourceColumnAccumulation.accumulationTypes[select.value];
+
+		if(accumulation)
+			this.container.querySelector('input').value = accumulation.apply(this.accumulations.column.source.response, this.accumulations.column.key);
+
+		else this.container.querySelector('input').value = '';
+	}
+}
+
+class DataSourceColumn {
+
+	constructor(column, source) {
+
+		DataSourceColumn.colors = [
+			'#8595e1',
+			'#ef6692',
+			'#d6bcc0',
+			'#ffca05',
+			'#8dd593',
+			'#ff8b75',
+			'#2a0f54',
+			'#d33f6a',
+			'#f0b98d',
+			'#6c54b5',
+			'#bb7784',
+			'#b5bbe3',
+			'#0c8765',
+			'#ef9708',
+			'#1abb9c',
+			'#9da19c',
+		];
 
 		this.key = column;
 		this.source = source;
@@ -1462,6 +1711,9 @@ class DataSourceColumn {
 			for(const key in format || {})
 				this[key] = format[key];
 		}
+
+		this.columnFilters = new DataSourceColumnFilters(this);
+		this.columnAccumulations = new DataSourceColumnAccumulations(this);
 	}
 
 	get container() {
@@ -1620,15 +1872,7 @@ class DataSourceColumn {
 				<input type="text" name="name" value="${this.name}" >
 			</label>
 
-			<div class="show filters">
-				<span>Search <button type="button" class="show add-filter add-new-item"><i class="fa fa-plus"></i></button></span>
-			</div>
-
-			<div class="show accumulations">
-				<span>Accumulation <button type="button" class="show add-accumulation add-new-item"><i class="fa fa-plus"></i></button></span>
-			</div>
-
-			<label>
+			<label class="columnType">
 				<span>Type</span>
 				<select name="type">
 					<option value="string">String</option>
@@ -1719,22 +1963,8 @@ class DataSourceColumn {
 			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		});
 
-		this.filters = this.filters ? this.filters : [{name:'', value:''}];
-
-		for(const search of this.filters) {
-			form.querySelector('.filters').appendChild(this.searchBox(search));
-		}
-
-		form.querySelector('.add-filter').on('click', e => {
-			form.querySelector('.filters').appendChild(this.searchBox());
-		});
-
-		form.querySelector('.accumulations').appendChild(this.accumulationBox());
-
-		form.querySelector('.add-accumulation').on('click', e => {
-
-			form.querySelector('.accumulations').appendChild(this.accumulationBox());
-		});
+		form.insertBefore(this.columnFilters.container,form.querySelector('.columnType'));
+		form.insertBefore(this.columnAccumulations.container,form.querySelector('.columnType'));
 
 		form.querySelector('.add-parameters').on('click', () => {
 			this.addParameter();
@@ -1752,89 +1982,6 @@ class DataSourceColumn {
 		form.querySelector('.save').on('click', () => this.save());
 
 		return form;
-	}
-
-	searchBox(value = {}) {
-
-		const container = document.createElement('label');
-
-		container.classList.add('search-type');
-
-		container.innerHTML = `
-			<div class="category-group search">
-				<select class="searchType"></select>
-				<input type="search" class="searchQuery">
-				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
-			</div>
-		`;
-
-		for(const [i, type] of DataSourceColumn.searchTypes.entries())
-			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
-
-		container.querySelector('select').value = value.name || '0';
-		container.querySelector('input').value = value.value || '';
-
-		container.querySelector('.delete').on('click', () => container.remove());
-
-		return container;
-	}
-
-	accumulationBox() {
-
-		const container = document.createElement('label');
-
-		container.classList.add('accumulation-type');
-
-		container.innerHTML = `
-			<div class="category-group">
-				<select class="accumulation-content"></select>
-				<input type="text" name="accumulationResult" readonly>
-				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
-			</div>
-		`;
-
-		// To check the type of the column
-		let string = false;
-
-		for(const [index, report] of this.source.response.entries()) {
-
-			if(index > 10)
-				break;
-
-			if(isNaN(report.get(this.key))) {
-				string = true;
-				break;
-			}
-		}
-
-		const select = container.querySelector('.accumulation-content');
-
-		select.insertAdjacentHTML('beforeend', `<option value="-1">Select</option>`);
-
-		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
-
-			if(!string || type.string)
-				select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
-		}
-
-		select.querySelector('option').selected = true;
-
-		if(select.value != '-1')
-			container.querySelector('input').value = DataSourceColumn.accumulationTypes[select.value].apply(this.source.response, this.key);
-
-		select.on('change', () => {
-
-			const accumulation = DataSourceColumn.accumulationTypes[select.value];
-
-			if(accumulation)
-				container.querySelector('input').value = accumulation.apply(this.source.response, this.key);
-
-			else container.querySelector('input').value = '';
-		});
-
-		container.querySelector('.delete').on('click', () => container.remove());
-
-		return container
 	}
 
 	get dialogueBox() {
@@ -1993,20 +2140,7 @@ class DataSourceColumn {
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
-		this.filters = [];
-
-		for(const [index,node] of this.form.querySelectorAll('.filters .search-type').entries()) {
-
-			if(node.querySelector('input').value === '' && !index)
-				continue;
-
-			if(node.querySelector('input').value === '') {
-				node.remove();
-				continue;
-			};
-
-			this.filters.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
-		}
+		this.filters = this.columnFilters.json;
 
 		this.disabled = parseInt(this.disabled) || 0;
 
@@ -2041,11 +2175,7 @@ class DataSourceColumn {
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 		}
 
-		this.filters = [];
-
-		for(const node of this.form.querySelectorAll('.filters .search-type')) {
-			this.filters.push({name: node.querySelector('select').value, value: node.querySelector('input').value})
-		}
+		this.filters = this.columnFilters.json;
 
 		for(const row of this.form.querySelectorAll('.parameter')) {
 
@@ -3319,6 +3449,15 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				container.querySelector('.popup-dropdown').classList.remove('hidden');
 			});
+
+			const accumulations = column.form.querySelectorAll('.accumulation-type');
+
+			if(column.columnAccumulations.list.size) {
+
+				for(const accumulation of column.columnAccumulations.list) {
+					accumulation.run();
+				}
+			}
 
 			if(column.filters && column.filters.length && !column.filters.some(f => f.value == ''))
 				container.classList.add('has-filter');
@@ -6497,3 +6636,5 @@ class Tooltip {
 Visualization.animationDuration = 750;
 
 DataSourceFilter.setup();
+DataSourceColumnFilter.setup();
+DataSourceColumnAccumulation.setup();
