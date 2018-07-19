@@ -458,7 +458,7 @@ Page.class = class Dashboards extends Page {
 };
 
 class Dashboard {
-
+	//............
 	constructor(dashboardObject, page) {
 
 		this.page = page;
@@ -482,6 +482,7 @@ class Dashboard {
 		Dashboard.screenHeightOffset = 2 * screen.availHeight;
 	}
 
+	//.......
 	get export() {
 		const data = {
 			dashboard: {
@@ -586,6 +587,7 @@ class Dashboard {
 		return container;
 	}
 
+	//.....................
 	static setup(page) {
 
 		Dashboard.grid = {
@@ -636,6 +638,7 @@ class Dashboard {
 		return visualizationList.sort((v1, v2) => v1.format.position - v2.format.position);
 	}
 
+	//.....................
 	async load() {
 
 		if (this.format && this.format.category_id) {
