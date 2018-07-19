@@ -1350,17 +1350,17 @@ class DataSourceColumns extends Map {
 	}
 }
 
-class DataSourceColumnFilters {
+class DataSourceColumnFilters extends Set {
 
 	constructor(column) {
 
+		super();
+
 		this.column = column;
-		this.filters = this.column.filters && this.column.filters.length ? this.column.filters : [{name:'0', value:''}];
+		const filters = this.column.filters && this.column.filters.length ? this.column.filters : [{name: '0', value: ''}];
 
-		this.list = new Set;
-
-		for(const filter of this.filters)
-			this.list.add(new DataSourceColumnFilter(filter, this));
+		for(const filter of filters)
+			this.add(new DataSourceColumnFilter(filter, this));
 	}
 
 	get container() {
@@ -1377,12 +1377,12 @@ class DataSourceColumnFilters {
 				Search
 				<button type="button" class="show add-filter add-new-item"><i class="fa fa-plus"></i></button>
 			</span>
-			<div class="filter-container"></div>
+			<div class="list"></div>
 		`;
 
 		container.querySelector('button.add-filter').on('click', () => {
 
-			this.list.add(new DataSourceColumnFilter({name:'0', value:''}, this));
+			this.add(new DataSourceColumnFilter({name: '0', value: ''}, this));
 			this.render();
 		});
 
@@ -1397,17 +1397,21 @@ class DataSourceColumnFilters {
 
 		div.textContent = null;
 
-		for(const filter of this.list)
+		for(const filter of this)
 			div.appendChild(filter.container);
+
+		if(!this.size) {
+			div.innerHTML = '<div class="NA">No Filters Added :(</div>'
+		}
 	}
 
 	get json() {
 
 		const json = [];
 
-		for(const filter of this.list) {
+		for(const filter of this) {
 			if(filter.json.value != '')
-				json.push(filter.json)
+				json.push(filter.json);
 		}
 
 		return json;
@@ -1468,8 +1472,7 @@ class DataSourceColumnFilter {
 
 	constructor(filter, filters) {
 
-		for(const key in filter)
-		 	this[key] = filter[key];
+		Object.assign(this, filter);
 
 		 this.filters = filters;
 	}
@@ -1491,15 +1494,20 @@ class DataSourceColumnFilter {
 			</div>
 		`;
 
-		for(const [i, type] of DataSourceColumnFilter.searchTypes.entries())
-			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		for(const [i, type] of DataSourceColumnFilter.searchTypes.entries()) {
+			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `
+				<option value="${i}">
+					${type.name}
+				</option>
+			`);
+		}
 
 		container.querySelector('select').value = this.name;
 		container.querySelector('input').value = this.value;
 
 		container.querySelector('.delete').on('click', () => {
 
-			this.filters.list.delete(this);
+			this.filters.delete(this);
 			this.filters.render();
 		});
 
@@ -1512,16 +1520,17 @@ class DataSourceColumnFilter {
 	}
 }
 
-class DataSourceColumnAccumulations {
+class DataSourceColumnAccumulations extends Set {
 
 	constructor(column) {
 
+		super();
+
 		this.column = column;
 		this.accumulations =[{name:'', value:''}];
-		this.list = new Set;
 
 		for(const accumulation of this.accumulations)
-			this.list.add(new DataSourceColumnAccumulation(accumulation, this));
+			this.add(new DataSourceColumnAccumulation(accumulation, this));
 	}
 
 	get container() {
@@ -1538,12 +1547,12 @@ class DataSourceColumnAccumulations {
 				Accumulation
 				<button type="button" class="show add-accumulation add-new-item"><i class="fa fa-plus"></i></button>
 			</span>
-			<div class="accumulation-container"></div>
+			<div class="list"></div>
 		`;
 
 		container.querySelector('button.add-accumulation').on('click', () => {
 
-			this.list.add(new DataSourceColumnAccumulation({name:'', value:''}, this));
+			this.add(new DataSourceColumnAccumulation({name:'', value:''}, this));
 			this.render();
 		});
 
@@ -1558,8 +1567,12 @@ class DataSourceColumnAccumulations {
 
 		div.textContent = null;
 
-		for(const accumulation of this.list)
+		for(const accumulation of this)
 			div.appendChild(accumulation.container);
+
+		if(!this.size) {
+			div.innerHTML = '<div class="NA">No Accumulation Added :(</div>'
+		}
 	}
 }
 
@@ -1599,10 +1612,9 @@ class DataSourceColumnAccumulation {
 
 	constructor(accumulation, accumulations) {
 
-		for(const key in accumulation)
-		 	this[key] = accumulation[key];
+		Object.assign(this, accumulation);
 
-		 this.accumulations = accumulations;
+		this.accumulations = accumulations;
 	}
 
 	get container() {
@@ -1655,7 +1667,7 @@ class DataSourceColumnAccumulation {
 
 		container.querySelector('.delete').on('click', () => {
 
-			this.accumulations.list.delete(this);
+			this.accumulations.delete(this);
 			this.accumulations.render();
 		});
 
@@ -1963,8 +1975,8 @@ class DataSourceColumn {
 			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		});
 
-		form.insertBefore(this.columnFilters.container,form.querySelector('.columnType'));
-		form.insertBefore(this.columnAccumulations.container,form.querySelector('.columnType'));
+		form.insertBefore(this.columnFilters.container, form.querySelector('.columnType'));
+		form.insertBefore(this.columnAccumulations.container, form.querySelector('.columnType'));
 
 		form.querySelector('.add-parameters').on('click', () => {
 			this.addParameter();
@@ -3452,9 +3464,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 			const accumulations = column.form.querySelectorAll('.accumulation-type');
 
-			if(column.columnAccumulations.list.size) {
+			if(column.columnAccumulations.size) {
 
-				for(const accumulation of column.columnAccumulations.list) {
+				for(const accumulation of column.columnAccumulations) {
 					accumulation.run();
 				}
 			}

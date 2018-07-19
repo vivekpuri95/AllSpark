@@ -105,8 +105,9 @@ exports.list = class extends API {
 			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
 			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
 
-			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error)
+			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
 				continue;
+			}
 
 			row.filters = results[1].filter(filter => filter.query_id === row.query_id);
 			row.visualizations = results[2].filter(visualization => visualization.query_id === row.query_id);
