@@ -327,7 +327,7 @@ main .data-source.flush {
 			width: 100%;
 		}
 	main .data-source > .drilldown {
-		margin-top: calc(var(--gap) * 2);
+		margin: calc(var(--gap) * 2);
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(0, auto));
 		justify-content: flex-start;

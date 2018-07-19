@@ -460,7 +460,7 @@ class DataSource {
 				const title = [];
 
 				for(const p of source.drilldown.parameters)
-					title.push(`${p.value}: ${p.selectedValue}`);
+					title.push(`${source.drilldown.parent.filters.has(p.placeholder) ? source.drilldown.parent.filters.has(p.placeholder).name : p.placeholder}: ${p.selectedValue}`);
 
 				link.title = title.join('\n');
 
