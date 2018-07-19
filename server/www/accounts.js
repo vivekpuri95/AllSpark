@@ -111,7 +111,7 @@ exports.get = class extends API {
 		delete account.value;
 		delete account.profile;
 
-		return account;
+		return {...account, url: account.url.split(',').filter(x => x.trim())};
 	}
 };
 

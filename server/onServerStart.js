@@ -50,7 +50,7 @@ async function loadAccounts() {
 			accounts[account.account_id] = {
 				account_id: account.account_id,
 				name: account.name,
-				url: account.url,
+				url: account.url.split(',').filter(x => x.trim()),
 				icon: account.icon,
 				logo: account.logo,
 				auth_api: account.auth_api

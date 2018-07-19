@@ -112,7 +112,7 @@ class API {
 				if(!obj.account) {
 					for(const account of global.accounts) {
 
-						if(account.url == host) {
+						if(account.url.includes(host)) {
 
 							obj.account = account;
 							break;
