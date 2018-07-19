@@ -63,7 +63,7 @@ class DataSource {
 
 					if(filter.dataset) {
 
-						await filter.dataset.fetch();
+						await filter.fetch();
 						filter.value = visualization_filter.default_value || '';
 					}
 
@@ -2223,15 +2223,7 @@ class DataSourceColumn {
 
 		destination = new DataSource(destination);
 
-		const destinationDatasets = [];
-
-		for(const filter of destination.filters.values()) {
-
-			if(filter.dataset)
-				destinationDatasets.push(filter.dataset.fetch());
-		}
-
-		await Promise.all(destinationDatasets);
+		await Promise.all(Array.from(destination.filters.values()).map(f => f.fetch()));
 
 		for(const parameter of this.drilldown.parameters) {
 
