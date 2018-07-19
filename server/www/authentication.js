@@ -140,7 +140,7 @@ exports.login = class extends API {
 
 		else {
 
-			this.possibleAccounts = global.accounts.filter(x => x.url === this.request.hostname);
+			this.possibleAccounts = global.accounts.filter(x => x.url.includes(this.request.hostname));
 		}
 
 		this.authResponseObj = {};
