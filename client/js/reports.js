@@ -2079,7 +2079,7 @@ class DataSourceColumn {
 			postfix : this.postfix,
 			formula : this.formula,
 			drilldown : {
-				query_id : this.drilldownQuery.value[0],
+				query_id : parseInt(this.drilldownQuery.value[0]) || 0,
 				parameters : json_param
 			}
 		};
