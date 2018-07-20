@@ -34,3 +34,9 @@ main #form .filter {
 .form-container .NA {
 	margin: 5px;
 }
+main table .search-bar th {
+	background: #fff;
+}
+	main table .search-bar th input {
+		width: 100%;
+	}

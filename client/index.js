@@ -1078,9 +1078,9 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					</div>
 
 					<div class="configuration-section">
-					
+
 						<h3><i class="fas fa-angle-right"></i> Filters <span class="count"></span></h3>
-						
+
 						<div class="body form" id="filters"></div>
 
 					</div>
@@ -1115,10 +1115,11 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 
 				<table class="block">
 					<thead>
-						<tr>
-							<th>ID</th>
-							<th>Name</th>
-							<th>Email</th>
+						<tr class="search-bar"></tr>
+						<tr class="thead-bar">
+							<th data-key="id" class="thin">ID</th>
+							<th data-key="name">Name</th>
+							<th data-key="email">Email</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>
