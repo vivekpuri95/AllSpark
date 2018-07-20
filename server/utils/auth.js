@@ -339,7 +339,7 @@ class Authenticate {
 		}
 
 		user.roles && user.roles.map(x => {
-			userPrivileges.push([x.account_id, x.category_id, x.role]);
+			userPrivileges.push([user.account_id, x.category_id, x.role]);
 		});
 
 		if(connectionObj.added_by == user.user_id) {
