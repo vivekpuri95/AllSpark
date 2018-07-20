@@ -36,6 +36,7 @@ main #form .filter {
 }
 main table .search-bar th {
 	background: #fff;
+	padding: calc(var(--gap) * 2) var(--gap);
 }
 	main table .search-bar th input {
 		width: 100%;
