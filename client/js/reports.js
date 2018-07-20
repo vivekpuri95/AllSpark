@@ -1681,7 +1681,10 @@ class DataSourceColumn {
 
 		this.drilldownQuery.on('change', () => {
 
-			this.drilldownParameters.load(true)
+			if(this.drilldownQuery.value.length && parseInt(this.drilldownQuery.value[0]) != this.drilldown.query_id)
+				this.drilldownParameters.clear();
+
+			this.drilldownParameters.load()
 		});
 
 		dialogue.body.appendChild(this.form);
@@ -1976,9 +1979,6 @@ class DataSourceColumnDrilldownParameters extends Set {
 	}
 
 	load() {
-
-		if(this.column.drilldownQuery.value.length && parseInt(this.column.drilldownQuery.value[0]) != this.column.drilldown.query_id)
-			this.clear();
 
 		const
 			parameterList = this.container.querySelector('.parameter-list'),
