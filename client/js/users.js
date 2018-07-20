@@ -84,6 +84,9 @@ class Users extends Page {
 
 		for(const user of list)
 			Users.contaier.appendChild(user.row);
+
+		if(!list.length)
+			Users.contaier.innerHTML = '<td colspan="5" class="NA">No rows found :(</td>'
 	}
 
 	static loadState(state) {
