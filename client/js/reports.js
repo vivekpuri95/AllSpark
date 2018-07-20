@@ -1393,7 +1393,7 @@ class DataSourceColumnFilters extends Set {
 
 	render() {
 
-		const div = this.container.querySelector('.filter-container');
+		const div = this.container.querySelector('.list');
 
 		div.textContent = null;
 
@@ -1563,7 +1563,7 @@ class DataSourceColumnAccumulations extends Set {
 
 	render() {
 
-		const div = this.container.querySelector('.accumulation-container');
+		const div = this.container.querySelector('.list');
 
 		div.textContent = null;
 

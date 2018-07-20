@@ -1008,8 +1008,8 @@ main .column-form.compact {
 		margin: 0 calc(var(--gap) * 2);
 		max-width: 200px;
 	}
-		main .column-form .filters .filter-container,
-		main .column-form .accumulations .accumulation-container {
+		main .column-form .filters .list,
+		main .column-form .accumulations .list {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 		}
