@@ -1679,7 +1679,10 @@ class DataSourceColumn {
 
 		this.form.insertBefore(this.drilldownParameters.container, this.form.querySelector('.drilldown-dropdown').nextElementSibling);
 
-		this.drilldownQuery.on('change', () => this.drilldownParameters.load());
+		this.drilldownQuery.on('change', () => {
+
+			this.drilldownParameters.load(true)
+		});
 
 		dialogue.body.appendChild(this.form);
 
@@ -1937,9 +1940,9 @@ class DataSourceColumnDrilldownParameters extends Set {
 
 		this.column.drilldown = this.column.drilldown || {};
 
-		for(const param of this.column.drilldown.parameters || []) {
+		for(const paramter of this.column.drilldown.parameters || []) {
 
-			this.add(new DataSourceColumnDrilldownParameter(param, this));
+			this.add(new DataSourceColumnDrilldownParameter(paramter, this));
 		}
 	}
 
@@ -1974,22 +1977,26 @@ class DataSourceColumnDrilldownParameters extends Set {
 
 	load() {
 
-		const parameterList = this.container.querySelector('.parameter-list');
+		if(this.column.drilldownQuery.value.length && parseInt(this.column.drilldownQuery.value[0]) != this.column.drilldown.query_id)
+			this.clear();
+
+		const
+			parameterList = this.container.querySelector('.parameter-list'),
+			report = DataSource.list.get(parseInt(this.column.drilldownQuery.value[0]));
 
 		parameterList.textContent = null;
 
 		if(!this.size) {
 
-			parameterList.classList.add('NA');
-			parameterList.textContent = 'No parameters added';
-			this.update();
+			parameterList.innerHTML = '<div class="NA">No parameters added.</div>';
+		}
+		else {
 
-			return;
+			for(const paramter of this.values())
+				parameterList.appendChild(paramter.container);
 		}
 
-		for(const param of this.values())
-			parameterList.appendChild(param.container);
-
+		this.container.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
 		this.update();
 
 	}
@@ -2007,11 +2014,10 @@ class DataSourceColumnDrilldownParameters extends Set {
 				parameter.update(updatingType);
 			}
 		}
+		else {
 
-		else parameterList.textContent = null;
-
-		parameterList.classList.toggle('hidden', !report || !report.filters.length);
-		this.container.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
+			parameterList.innerHTML = '<div class="NA">No filters present in the selected report.</div>';
+		}
 	}
 
 	get json() {
@@ -2033,9 +2039,9 @@ class DataSourceColumnDrilldownParameter {
 
 	constructor(parameter, columnDrillDown) {
 
-		this.columnDrilldown = columnDrillDown;
-
 		Object.assign(this, parameter);
+
+		this.columnDrilldown = columnDrillDown;
 	}
 
 	get container() {
@@ -2043,7 +2049,7 @@ class DataSourceColumnDrilldownParameter {
 		if(this.containerElement)
 			return this.containerElement;
 
-		const container = this.containerElement =document.createElement('div');
+		const container = this.containerElement = document.createElement('div');
 
 		container.innerHTML = `
 			<label>
