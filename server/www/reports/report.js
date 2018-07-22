@@ -163,7 +163,7 @@ exports.update = class extends API {
 				'refresh_rate',
 				'roles',
 				'format',
-				'connection_name'
+				'connection_name',
 			];
 
 		for (const key in this.request.body) {
@@ -222,7 +222,6 @@ exports.insert = class extends API {
 				'roles',
 				'format',
 				'connection_name',
-				'collection_name',
 			];
 
 		for (const key in this.request.body) {
