@@ -141,21 +141,26 @@ exports.update = class extends API {
 
 		this.user.privilege.needs('dashboard');
 
-		const
-			values = {},
-			columns = ['name', 'parent', 'icon', 'roles', 'type', 'visibility'];
-
-		for (const key in this.request.body) {
-
-			if (columns.includes(key)) {
-
-				values[key] = this.request.body[key] || null;
-			}
-		}
-
 		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
 
 		this.assert(!authResponse.error, authResponse.message);
+
+		const
+			values = {},
+			columns = ['name', 'parent', 'icon', 'roles', 'type', 'format', 'visibility'];
+
+		for(const key in this.request.body) {
+
+			if(columns.includes(key))
+				values[key] = this.request.body[key] || null;
+		}
+
+		try {
+			JSON.parse(values.format);
+		}
+		catch(e) {
+			this.assert(false, 'Invalid format! :(');
+		}
 
 		return await this.mysql.query(
 			'UPDATE tb_dashboards SET ? WHERE id = ? AND account_id = ?',
@@ -163,31 +168,4 @@ exports.update = class extends API {
 			'write'
 		);
 	}
-};
-
-exports.updateFormat = class extends API {
-
-	async updateFormat() {
-
-		let format;
-		try {
-
-			format =  JSON.parse(this.request.body.format);
-		}
-		catch (e) {
-			return
-		}
-
-		for(const report of format.reports) {
-
-			await this.mysql.query(
-				`UPDATE tb_visualization_dashboard SET format = ? where id = ?`,
-				[JSON.stringify(report.format), report.id],
-				'write'
-			);
-		}
-
-		return 'format updated!';
-	}
-
 };

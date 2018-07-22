@@ -35,6 +35,11 @@ class Settings extends Page {
 			nav.appendChild(a);
 		}
 
+		this.loadDefault();
+	}
+
+	async loadDefault() {
+
 		let byDefault;
 
 		if(await Storage.has('settingsCurrentTab')) {
@@ -231,22 +236,17 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 
 		this.container.querySelector('section#accounts-list #add-account').on('click', () => SettingsAccount.add(this));
 
-		this.container.querySelector('#accounts-form #cancel-form').on('click', () => {
-			Sections.show('accounts-list');
-		});
-
-		SettingsAccount.editor = new Editor(this.form.querySelector("#settings-format"), 'json');
+		this.container.querySelector('#accounts-form #cancel-form').on('click', () => Sections.show('accounts-list'));
 	}
 
 	async load() {
 
-		const list = await API.call("accounts/list");
+		const list = await API.call('accounts/list');
+
 		this.list = new Map;
 
-		for(const account of list) {
-
+		for(const account of list)
 			this.list.set(account.account_id, new SettingsAccount(account, this));
-		}
 
 		await this.render();
 	}
@@ -254,17 +254,14 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 	async render() {
 
 		const container = this.container.querySelector('#accounts-list table tbody');
-		container.innerHTML = "";
 
-		if(!this.list.size) {
+		container.textContent = null;
 
+		if(!this.list.size)
 			container.innerHTML = '<div class="NA">No Account found :(</div>';
-		}
 
-		for(const account of this.list.values()) {
-
+		for(const account of this.list.values())
 			container.appendChild(account.row);
-		}
 
 		await Sections.show('accounts-list');
 	}
@@ -273,7 +270,6 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 Settings.list.set('categories', class Categories extends SettingPage {
 
 	get name() {
-
 		return 'Categories';
 	}
 
@@ -305,7 +301,7 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		container.textContent = null;
 
 		if(!this.list.size)
-			container.innerHTML = '<div class="NA">No rows found :(</div>'
+			container.innerHTML = '<div class="NA">No rows found :(</div>';
 
 		for(const category of this.list.values())
 			container.appendChild(category.row);
@@ -671,7 +667,6 @@ class SettingsAccount {
 		SettingsAccount.form = page.form.querySelector('#account-form');
 
 		SettingsAccount.form.reset();
-		SettingsAccount.editor.value = '';
 
 		SettingsAccount.form.logo.src = '';
 		SettingsAccount.form.querySelector('#logo').classList.add('hidden');
@@ -681,7 +676,7 @@ class SettingsAccount {
 
 		page.form.querySelector('#cancel-form').on('click', () => {
 			SettingsAccount.form.removeEventListener('submit', SettingsAccount.submitEventListener);
-			Sections.show('accounts-list')
+			Sections.show('accounts-list');
 		});
 
 		await Sections.show('accounts-form');
@@ -721,8 +716,6 @@ class SettingsAccount {
 			if(input.name in this)
 				input.value = this[input.name];
 		}
-
-		SettingsAccount.editor.value = JSON.stringify(this.settings, 0, 4) || '';
 
 		const features = new AccountsFeatures(this);
 

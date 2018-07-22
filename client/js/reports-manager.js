@@ -91,9 +91,9 @@ class ReportsMangerPreview {
 		this.report = JSON.parse(JSON.stringify(DataSource.list.get(options.query_id)));
 		this.report.visualizations = this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table');
 
-		if(options.query && options.query != this.report.query) {
-			this.report.query = options.query;
-			this.report.queryOverride = true;
+		if(options.definition && options.definition != this.report.definition) {
+			this.report.definition = options.definition;
+			this.report.definitionOverride = true;
 		}
 
 		if(options.visualizationOptions)
@@ -108,7 +108,7 @@ class ReportsMangerPreview {
 		this.report = new DataSource(this.report);
 
 		this.report.container;
-		this.report.visualizations.selected.container.classList.toggle('unsaved', this.report.queryOverride ? 1 : 0);
+		this.report.visualizations.selected.container.classList.toggle('unsaved', this.report.definitionOverride ? 1 : 0);
 
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
@@ -259,12 +259,26 @@ class ReportsMangerStage {
 
 			for(const _report of DataSource.list.values()) {
 
-				if(_report.visualizations.filter(v => v.visualization_id == id).length)
-					report = _report;
+				if(_report.visualizations.some(v => v.visualization_id == id))
+					report = JSON.parse(JSON.stringify(_report));
 			}
 		}
 
-		else report = DataSource.list.get(id);
+		else if(DataSource.list.has(id))
+			report = JSON.parse(JSON.stringify(DataSource.list.get(id)));
+
+		if(report) {
+
+			const connection = this.page.connections.get(parseInt(report.connection_name));
+
+			if(!connection)
+				throw new Page.Exception('Report connection not found! :(');
+
+			if(!ReportConnection.types.has(connection.type))
+				throw new Page.Exception('Invalid report connection type! :(');
+
+			report.connection = new (ReportConnection.types.get(connection.type))(report, this);
+		}
 
 		return report;
 	}
@@ -358,12 +372,10 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		for(const report of this.reports) {
 
-			const connection = this.page.connections.get(parseInt(this.report.connection_name));
+			const connection = this.page.connections.get(parseInt(report.connection_name));
 
 			if(!connection)
 				continue;
-
-			report.connectionType = new ReportConnectionType.list.get(connection.type)();
 
 			const row = document.createElement('tr');
 
@@ -757,21 +769,30 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.title = 'Define Report\'s Data';
 		this.description = 'The report\'s SQL query or API';
 
-		this.form = this.container.querySelector('form');
-		this.form.save = this.container.querySelector('.toolbar button[type=submit]');
-
 		this.filterForm = this.container.querySelector('#filters form');
 
 		this.filterForm.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
 		this.filterForm.querySelector('label.dataset').appendChild(this.filterForm.datasetMultiSelect.container);
 
 		this.schemas = new Map;
+		this.schemaLists = new Map;
 
-		const schemaToggle = this.container.querySelector('#schema-toggle')
+		const schemaToggle = this.container.querySelector('#schema-toggle');
 
 		schemaToggle.on('click', () => {
+
 			schemaToggle.classList.toggle('selected');
-			this.container.querySelector('#schema').classList.toggle('hidden');
+
+			const container = this.container.querySelector('#schema')
+
+			container.classList.toggle('hidden');
+
+			// Render the schema to the UI if the schema panel isn't hidden
+			if(container.classList.contains('hidden'))
+				return;
+
+			container.textContent = null;
+			container.appendChild(this.schema);
 		});
 
 		const filtersToggle = this.container.querySelector('#filters-toggle')
@@ -791,7 +812,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.page.preview.hidden = previewToggle.classList.contains('selected');
 			previewToggle.classList.toggle('selected');
 
-			this.editor.editor.resize();
+			if(this.report.connection.editor)
+				this.report.connection.editor.editor.resize();
 		});
 
 		this.editReportData = new EditReportData();
@@ -805,17 +827,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			editDataToggle.classList.toggle('selected');
 			this.editReportData.container.classList.toggle('hidden', !editDataToggle.classList.contains('selected'));
-			this.form.classList.toggle('hidden');
+			this.report.connection.form.classList.toggle('hidden');
 
 			if(!this.editReportData.container.classList.contains('hidden'))
 				await this.editReportData.load(this.report.query_id);
 		});
-
-		this.uploadFile = new UploadFile(this);
-
-		this.uploadFile.on('upload', () => this.container.querySelector('#edit-data-toggle').click());
-
-		this.form.appendChild(this.uploadFile.container);
 
 		this.container.querySelector('#add-filter').on('click', () => this.addFilter());
 
@@ -825,44 +841,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		});
 
 		this.container.querySelector('#run').on('click', () => this.preview());
-
-		this.editor = new Editor(this.form.querySelector('#editor'));
-
-		this.editor.editor.getSession().on('change', () => {
-
-			if(!this.report)
-				return;
-
-			this.filterSuggestions();
-
-			this.form.save.classList.toggle('unsaved', this.editor.value != this.report.query);
-		});
-
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.preview(),
-			});
-		});
-
-		ReportConnectionType.setup(this);
 	}
 
 	get url() {
@@ -871,8 +849,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	async preview() {
 
+		const definition = JSON.stringify(this.report.connection.json.query);
+
+		if(this.report.connection.editor && this.report.connection.editor.editor.getSelectedText())
+			definition.query = this.report.connection.editor.editor.getSelectedText();
+
 		const options = {
-			query: this.editor.editor.getSelectedText() || this.editor.value,
+			definition,
 			query_id: this.report.query_id,
 			position: 'bottom',
 		};
@@ -881,7 +864,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.page.preview.hidden = false;
 		this.container.querySelector('#preview-toggle').classList.add('selected');
-		this.editor.editor.resize();
+
+		if(this.report.connection.editor)
+			this.report.connection.editor.editor.resize();
 	}
 
 	async load() {
@@ -895,43 +880,17 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
 
-		const connection = this.page.connections.get(parseInt(this.report.connection_name));
+		if(this.container.querySelector('#define-report-form'))
+			this.container.querySelector('#define-report-form').remove();
 
-		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
-		this.form.querySelector('#query').classList.toggle('hidden', connection.type != 'query');
-		this.form.querySelector('.upload-file').classList.toggle('hidden', connection.type != 'file');
-
-		this.form.removeEventListener('submit', this.form.listener);
-		this.form.on('submit', this.form.listener = e => this.update(e));
-
-		this.form.reset();
-		this.form.save.classList.remove('unsaved');
+		this.container.querySelector('#define-report-parts').appendChild(this.report.connection.form);
 
 		this.container.querySelector('#edit-data-toggle').classList.toggle('hidden', !this.report.load_saved);
-		this.uploadFile.message();
 
-		this.editor.editor.focus();
+		if(this.report.connection.editor)
+			this.report.connection.editor.editor.focus();
 
-		for (const key in this.report) {
-
-			if (key == 'url_options') {
-
-				let urlOptions;
-
-				try {
-					urlOptions = JSON.parse(this.report[key]);
-				}
-				catch(e) {}
-
-				this.form.elements.method.value = urlOptions ? urlOptions.method : '';
-			}
-			else if (this.form.elements[key])
-				this.form.elements[key].value = this.report[key];
-		}
-
-		this.editor.value = this.report.query;
-
-		this.schema();
+		this.loadSchema();
 		this.filters();
 
 		this.container.querySelector('#filter-form').classList.add('hidden');
@@ -948,9 +907,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const
 			parameters = {
 				query_id: this.report.query_id,
-				query: this.editor.value,
-				url_options: JSON.stringify({method: this.form.method.value}),
-				url: this.form.url.value,
+				definition: JSON.stringify(this.report.connection.json),
 			},
 			options = {
 				method: 'POST',
@@ -965,7 +922,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	filterSuggestions() {
 
-		let placeholders = this.editor.value.match(/{{([a-zA-Z0-9_-]*)}}/g) || [];
+		// If the connection type doesn't have an editor (API, CSV, etc)
+		if(!this.report.connection.editor)
+			return;
+
+		let placeholders = this.report.connection.editor.value.match(/{{([a-zA-Z0-9_-]*)}}/g) || [];
 
 		placeholders = new Set(placeholders.map(a => a.match('{{(.*)}}')[1]));
 
@@ -994,52 +955,26 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		else missingContainer.classList.add('hidden');
 	}
 
-	async schema() {
+	async loadSchema() {
 
-		const source = this.page.connections.get(parseInt(this.report.connection_name));
+		// Load and save the schema if we haven't already
+		if(!this.schemas.has(this.report.connection_name)) {
 
-
-		this.container.querySelector('#mongo-collection-name').classList.toggle('hidden', source.type !== 'mongo');
-
-		if(source.type === 'mongo') {
-
-			this.editor.mode('javascript');
+			try {
+				this.schemas.set(this.report.connection_name, await API.call('credentials/schema', { id: this.report.connection_name }));
+			} catch(e) {
+				return;
+			}
 		}
 
-		if(!source || !['mysql', 'pgsql', 'bigquery', 'file', 'mssql', 'mongo'].includes(source.type)) {
-			this.form.querySelector('#query').classList.add('hidden');
-			this.form.querySelector('#api').classList.remove('hidden');
-		}
-
-		else if(source.type === 'file')
-			this.uploadFile.container.classList.remove('hidden');
-
-		else {
-			this.form.querySelector('#query').classList.remove('hidden');
-			this.form.querySelector('#api').classList.add('hidden');
-		}
-
-		if(this.schemas.has(this.report.connection_name))
-			return this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
-
-		let response = null;
-
-		const container = this.container.querySelector('#schema');
-
-		try {
-			response = await API.call('credentials/schema', { id: this.report.connection_name });
-		} catch(e) {
-			container.innerHTML = `<div class="NA">Failed to load Schema! :(</div>`;
-			return;
-		}
-
+		// Prepare a schema list in CodeEditor friendly format
 		const
+			response = this.schemas.get(this.report.connection_name),
 			schema = mysqlKeywords.map(k => {return {
 				name: k,
 				value: k,
 				meta: 'MySQL Keyword',
-			}}),
-			databases = document.createElement('ul');
+			}});
 
 		if(this.report) {
 
@@ -1051,19 +986,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				});
 			}
 		}
-
-		container.textContent = null;
-
-		const
-			search = document.createElement('input'),
-			that = this;
-
-		search.type = 'search';
-		search.placeholder = 'Search...';
-
-		search.on('keyup', () => renderList());
-
-		container.appendChild(search);
 
 		for(const database of response) {
 
@@ -1092,10 +1014,51 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			}
 		}
 
-		this.schemas.set(this.report.connection_name, schema);
+		// Attach the schema list to the CodeEditor's autocomplete.
+		if(this.report.connection.editor)
+			this.report.connection.editor.setAutoComplete(schema);
+	}
 
-		container.appendChild(databases);
+	/**
+	 * Return a div with search input and the schema list for the current report's connection.
+	 * We're doing this separately because rendering the UI is a huge cost on the UI thread. And we want to do this on-demand.
+	 *
+	 * @return HTMLElement	The fragement with the components of the schema UI.
+	 */
+	get schema() {
 
+		if(this.schemaLists.has(this.report.connection_name))
+			return this.schemaLists.get(this.report.connection_name);
+
+		const container = document.createElement('div');
+
+		// If the schema hasn't loaded yet or if it failed to load
+		if(!this.schemas.has(this.report.connection_name)) {
+
+			const div = document.createElement('div');
+
+			div.classList.add('NA');
+			div.innerHTML = 'Failed to load Schema! :(';
+
+			container.appendChild(div);
+
+			return container;
+		}
+
+		const
+			response = this.schemas.get(this.report.connection_name),
+			databases = document.createElement('ul'),
+			search = document.createElement('input'),
+			that = this;
+
+		search.type = 'search';
+		search.placeholder = 'Search...';
+
+		search.on('keyup', () => renderList());
+
+		container.appendChild(search);
+
+		// A separate function because we want to do this on both the search input and on UI load.
 		const renderList = () => {
 
 			databases.textContent = null;
@@ -1142,7 +1105,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 						`;
 
 						li.querySelector('.name').on('click', () => {
-							that.editor.editor.getSession().insert(that.editor.editor.getCursorPosition(), column.name);
+
+							if(that.report.connection.editor)
+								that.report.connection.editor.getSession().insert(that.report.connection.editor.getCursorPosition(), column.name);
 						});
 
 						columns.appendChild(li);
@@ -1237,7 +1202,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		renderList();
 
-		this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
+		container.appendChild(databases);
+
+		this.schemaLists.set(this.report.connection_name, container);
+
+		return container;
 	}
 
 	filters() {
@@ -1787,20 +1756,26 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 	}
 });
 
-class ReportConnectionType {
+class ReportConnection {
 
-	static setup(stage) {
-		ReportConnectionType.editor = new Editor(stage.form.querySelector('#editor'));
-	}
+	constructor(report, stage) {
 
-	constructor(stage) {
-
-		this.report = stage.report;
+		this.report = report;
 		this.stage = stage;
 	}
 
 	get form() {
-		return document.createElement('div');
+
+		if(this.formElement)
+			return this.formElement;
+
+		const form = this.formElement = document.createElement('form');
+
+		form.id = 'define-report-form';
+
+		form.on('submit', e => this.stage.update(e));
+
+		return form;
 	}
 
 	get json() {
@@ -1808,22 +1783,521 @@ class ReportConnectionType {
 	}
 }
 
-ReportConnectionType.list = new Map();
+ReportConnection.types = new Map();
 
-ReportConnectionType.list.set('mysql', class ReportConnectionMysql extends ReportConnectionType {
+ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage) {
+
+		super(report, stage);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+		});
+	}
 
 	get form() {
 
 		if(this.formElement)
 			return this.formElement;
 
-		const form = document.createElement('div');
+		super.form.appendChild(this.editor.container);
 
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
 
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
+ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage) {
+
+		super(report, stage);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+		});
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.appendChild(this.editor.container);
+
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
+ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage) {
+
+		super(report, stage);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+		});
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.appendChild(this.editor.container);
+
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
+ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnection {
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.classList.add('form');
+
+		super.form.innerHTML = `
+
+			<label>
+				<span>URL</span>
+				<input type="url" name="url">
+			</label>
+
+			<label>
+				<span>Method</span>
+				<select name="method">
+					<option>GET</option>
+					<option>POST</option>
+				</select>
+			</label>
+		`;
+
+		// Set the vlues from report definition
+		for(const key in this.report.definition || {}) {
+			if(key in super.form.elements)
+				super.form.elements[key].value = this.report.definition[key];
+		}
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			url: this.form.url.value,
+			method: this.form.method.value,
+		};
+	}
+});
+
+/**
+ * Upload a CSV, TSV or JSON data file from the user into a report.
+ */
+ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConnection {
+
+	/**
+	 * The upload-file container element.
+	 * This also acts as a drop surface and a way to give user feedback on the upload status.
+	 *
+	 * @return HTMLElement
+	 */
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		const form = super.form;
+
+		form.classList.add('upload-file');
+
+		form.innerHTML = `
+			<input type="file" accept=".xlsx, .xls, .csv, .tsv, .json" class="hidden">
+			<h2>Drop File Here</h2>
+			<small>Or click to upload&hellip;</small>
+			<div class="message hidden"></div>
+		`;
+
+		const input = form.querySelector('input');
+
+		input.on('change', e => {
+			if(e.target.files.length)
+				this.upload(e.target.files[0]);
+		});
+
+		form.on('click', () => input.click());
+
+		form.on('dragenter', e => e.preventDefault());
+
+		form.on('dragover', e => {
+
+			e.preventDefault();
+
+			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
+				return this.message('Please upload a valid file.', 'warning');
+
+			if(e.dataTransfer.items.length > 1)
+				return this.message('Please upload only one file.', 'warning');
+
+			form.classList.add('drag-over');
+
+			this.message('Drop to upload one file.', 'notice');
+		});
+
+		form.on('dragleave', () => {
+
+			this.message();
+			form.classList.remove('drag-over');
+		});
+
+		form.on('drop', e => {
+
+			e.preventDefault();
+
+			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
+				return this.message('Please upload a valid file', 'warning');
+
+			if(e.dataTransfer.items.length > 1)
+				return this.message('Please upload only one file', 'warning');
+
+			form.classList.remove('drag-over');
+
+			const [file] = e.dataTransfer.files;
+
+			this.upload(file);
+		});
 
 		return form;
 	}
 
+	/**
+	 * Attach an event listener on the upload instance.
+	 *
+	 * @param string	event		The event type (eg. upload)
+	 * @param Function	callback	The callback function to call when the event happens.
+	 */
+	on(event, callback) {
+
+		if(event == 'upload')
+			this.onUpload = callback;
+
+		else throw new Page.exception(`Invalid event File Upload event type ${event}! :(`);
+	}
+
+	/**
+	 * Upload a file's data to the report.
+	 *
+	 * @param File	The File object for the file that is being uploaded.
+	 */
+	upload(file) {
+
+		if(!this.stage.report.load_saved)
+			return this.message('This report doesn\'t have \'Store Result\' property enabled! :(', 'warning');
+
+		this.message(`Uploading ${file.name}`, 'notice');
+
+		const fileReader = new FileReader();
+
+		let separator = ',';
+
+		if(file.name.endsWith('.tsv'))
+			separator = '\t';
+
+		fileReader.onload = async e => {
+
+			if(!e.target.result.trim())
+				return this.message('Uploaded file is empty', 'warning');
+
+			const
+				parameter = {
+					data: this.toJSON(e.target.result.trim(), separator),
+					query_id: this.stage.report.query_id,
+				},
+				options = {
+					method: 'POST',
+				};
+
+			try {
+				await API.call('reports/engine/report', parameter, options);
+			} catch(e) {
+				this.message(e.message, 'warning');
+			}
+
+			if(this.onUpload)
+				this.onUpload();
+
+			this.message('Upload Complete', 'notice');
+		};
+
+		fileReader.readAsText(file);
+	}
+
+	/**
+	 * Convert a file input to JSON.
+	 * This will handle types of input like JSON, CSV or TSV.
+	 *
+	 * @param  string	input		The input string that needs to be converted.
+	 * @param  string	separator	The column separator to use.
+	 * @return string				The stringified JSON that was extracted from the input.
+	 */
+	toJSON(input, separator = ',') {
+
+		try {
+			return JSON.stringify(JSON.parse(input));
+		} catch(e) {}
+
+		const
+			lines = input.split('\n'),
+			result = [],
+			headers = split(lines[0]);
+
+		for(const line of lines.slice(1)) {
+
+			const row = {};
+
+			for(const [index, cell] of split(line).entries())
+				row[headers[index]] = cell;
+
+			result.push(row);
+		}
+
+		function split(string) {
+
+			for (var splitString = string.split(separator), len = splitString.length - 1, tl; len >= 0; len--) {
+
+				if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
+
+					if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
+
+						splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
+					}
+
+					else if (len) {
+						splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(separator));
+					}
+
+					else splitString = splitString.shift().split(separator).concat(splitString);
+				}
+
+				else splitString[len].replace(/""/g, '"');
+			}
+
+			for(let [index, element] of splitString.entries()) {
+
+				if(element.split(',').length === 1 && element.startsWith('"')) {
+
+					splitString[index] = element.replace(/"/g, '');
+				}
+			}
+
+			return splitString.map(v => v.trim());
+		}
+
+		return JSON.stringify(result);
+	}
+
+	/**
+	 * Show a message to the user on the file upload window with give color.
+	 *
+	 * @param  string	body	The message body.
+	 * @param  string	type	The type of the message (notice, warning or nothing)
+	 */
+	message(body = '', type = null) {
+
+		const form = this.form.querySelector('.message');
+
+		form.classList.remove('notice', 'warning');
+		form.classList.toggle('hidden', !body);
+		this.form.querySelector('h2').classList.toggle('hidden', body);
+		this.form.querySelector('small').classList.toggle('hidden', body);
+
+		if(type)
+			form.classList.add(type);
+
+		form.innerHTML = body;
+	}
+});
+
+ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage) {
+
+		super(report, stage);
+
+		this.editor = new CodeEditor({mode: 'javascript'});
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+		});
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.classList.add('form');
+
+		super.form.innerHTML = `
+
+			<label>
+				<span>Collection Name</span>
+				<input type="text" name="collection_name">
+			</label>
+
+			<label class="mongo-query">
+				<span>Query</span>
+			</label>
+		`;
+
+		// Set the vlues from report definition
+		for(const key in this.report.definition || {}) {
+			if(key in super.form.elements)
+				super.form.elements[key].value = this.report.definition[key];
+		}
+
+		super.form.querySelector('label.mongo-query').appendChild(this.editor.container)
+
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			collection_name: this.form.collection_name.value,
+			query: this.editor.value,
+		};
+	}
 });
 
 class ReportVisualizationFilters extends Map {
@@ -3285,245 +3759,6 @@ const mysqlKeywords = [
 	'DATE_FORMAT',
 	'USING',
 ];
-
-/**
- * Upload a CSV, TSV or JSON data file from the user into a report.
- */
-class UploadFile {
-
-	/**
-	 * Save a few things at the begining.
-	 *
-	 * @param  ReportsManagerStage	stage	The stage that own the instance.
-	 * @return UploadFile
-	 */
-	constructor(stage, afterUpload) {
-
-		this.stage = stage;
-		this.page = stage.page;
-	}
-
-	/**
-	 * The upload-file container element.
-	 * This also acts as a drop surface and a way to give user feedback on the upload status.
-	 *
-	 * @return HTMLElement
-	 */
-	get container() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		const container = this.containerElement = document.createElement('div');
-
-		container.classList.add('upload-file');
-
-		container.innerHTML = `
-			<input type="file" accept=".xlsx, .xls, .csv, .tsv, .json" class="hidden">
-			<h2>Drop File Here</h2>
-			<small>Or click to upload&hellip;</small>
-			<div class="message hidden"></div>
-		`;
-
-		const input = container.querySelector('input');
-
-		input.on('change', e => {
-			if(e.target.files.length)
-				this.upload(e.target.files[0]);
-		});
-
-		container.on('click', () => input.click());
-
-		container.on('dragenter', e => e.preventDefault());
-
-		container.on('dragover', e => {
-
-			e.preventDefault();
-
-			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
-				return this.message('Please upload a valid file.', 'warning');
-
-			if(e.dataTransfer.items.length > 1)
-				return this.message('Please upload only one file.', 'warning');
-
-			container.classList.add('drag-over');
-
-			this.message('Drop to upload one file.', 'notice');
-		});
-
-		container.on('dragleave', () => {
-
-			this.message();
-			container.classList.remove('drag-over');
-		});
-
-		container.on('drop', e => {
-
-			e.preventDefault();
-
-			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
-				return this.message('Please upload a valid file', 'warning');
-
-			if(e.dataTransfer.items.length > 1)
-				return this.message('Please upload only one file', 'warning');
-
-			container.classList.remove('drag-over');
-
-			const [file] = e.dataTransfer.files;
-
-			this.upload(file);
-		});
-
-		return container;
-	}
-
-	/**
-	 * Attach an event listener on the upload instance.
-	 *
-	 * @param string	event		The event type (eg. upload)
-	 * @param Function	callback	The callback function to call when the event happens.
-	 */
-	on(event, callback) {
-
-		if(event == 'upload')
-			this.onUpload = callback;
-
-		else throw new Page.exception(`Invalid event File Upload event type ${event}! :(`);
-	}
-
-	/**
-	 * Upload a file's data to the report.
-	 *
-	 * @param File	The File object for the file that is being uploaded.
-	 */
-	upload(file) {
-
-		if(!this.stage.report.load_saved)
-			return this.message('This report doesn\'t have \'Store Result\' property enabled! :(', 'warning');
-
-		this.message(`Uploading ${file.name}`, 'notice');
-
-		const fileReader = new FileReader();
-
-		let separator = ',';
-
-		if(file.name.endsWith('.tsv'))
-			separator = '\t';
-
-		fileReader.onload = async e => {
-
-			if(!e.target.result.trim())
-				return this.message('Uploaded file is empty', 'warning');
-
-			const
-				parameter = {
-					data: this.toJSON(e.target.result.trim(), separator),
-					query_id: this.stage.report.query_id,
-				},
-				options = {
-					method: 'POST',
-				};
-
-			try {
-				await API.call('reports/engine/report', parameter, options);
-			} catch(e) {
-				this.message(e.message, 'warning');
-			}
-
-			if(this.onUpload)
-				this.onUpload();
-
-			this.message('Upload Complete', 'notice');
-		};
-
-		fileReader.readAsText(file);
-	}
-
-	/**
-	 * Convert a file input to JSON.
-	 * This will handle types of input like JSON, CSV or TSV.
-	 *
-	 * @param  string	input		The input string that needs to be converted.
-	 * @param  string	separator	The column separator to use.
-	 * @return string				The stringified JSON that was extracted from the input.
-	 */
-	toJSON(input, separator = ',') {
-
-		try {
-			return JSON.stringify(JSON.parse(input));
-		} catch(e) {}
-
-		const
-			lines = input.split('\n'),
-			result = [],
-			headers = split(lines[0]);
-
-		for(const line of lines.slice(1)) {
-
-			const row = {};
-
-			for(const [index, cell] of split(line).entries())
-				row[headers[index]] = cell;
-
-			result.push(row);
-		}
-
-		function split(string) {
-
-			for (var splitString = string.split(separator), len = splitString.length - 1, tl; len >= 0; len--) {
-
-				if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
-
-					if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
-
-						splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
-					}
-
-					else if (len) {
-						splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(separator));
-					}
-
-					else splitString = splitString.shift().split(separator).concat(splitString);
-				}
-
-				else splitString[len].replace(/""/g, '"');
-			}
-
-			for(let [index, element] of splitString.entries()) {
-
-				if(element.split(',').length === 1 && element.startsWith('"')) {
-
-					splitString[index] = element.replace(/"/g, '');
-				}
-			}
-
-			return splitString.map(v => v.trim());
-		}
-
-		return JSON.stringify(result);
-	}
-
-	/**
-	 * Show a message to the user on the file upload window with give color.
-	 *
-	 * @param  string	body	The message body.
-	 * @param  string	type	The type of the message (notice, warning or nothing)
-	 */
-	message(body = '', type = null) {
-
-		const container = this.container.querySelector('.message');
-
-		container.classList.remove('notice', 'warning');
-		container.classList.toggle('hidden', !body);
-		this.container.querySelector('h2').classList.toggle('hidden', body);
-		this.container.querySelector('small').classList.toggle('hidden', body);
-
-		if(type)
-			container.classList.add(type);
-
-		container.innerHTML = body;
-	}
-}
 
 /**
  * Let the user edit a report's saved data.

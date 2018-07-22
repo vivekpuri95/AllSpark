@@ -207,16 +207,16 @@ exports.login = class extends API {
 
 
 		const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
-		const redisResult = await redis.get(redisHash);
+		const redisResult = 0//await redis.get(redisHash);
 
 		if(redisResult) {
 
 			throw("Failure, please try again :(");
 		}
 
-		await redis.set(redisHash, 1);
+		// await redis.set(redisHash, 1);
 
-		await redis.expire(redisHash, 3);
+		// await redis.expire(redisHash, 3);
 
 		this.load();
 
@@ -359,7 +359,7 @@ exports.refresh = class extends API {
 
 				UNION ALL
 
-				SELECT 
+				SELECT
 						'roles' AS 'owner',
 						user_id,
 						IF(r.is_admin = 1, 0, role_id) AS owner_id,
@@ -378,13 +378,13 @@ exports.refresh = class extends API {
 						tb_users u
 						ON u.user_id = obr.owner_id
 						AND u.account_id = obr.account_id
-					WHERE 
+					WHERE
 						OWNER = "user"
 						AND target = "role"
 						AND u.status = 1
 						AND u.user_id = ?
 						AND u.account_id = ?
-						
+
 			   `,
 			[user.user_id, user.account_id, user.user_id, user.account_id,]
 		);

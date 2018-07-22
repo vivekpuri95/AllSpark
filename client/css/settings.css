@@ -26,6 +26,7 @@ main {
 		}
 	main #account-form label img {
 		border: 1px solid #ccc;
+		padding: var(--gap);
 	}
 main .feature-form h3 {
 	border-bottom: 1px dashed #999;
