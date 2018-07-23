@@ -664,16 +664,12 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		e.preventDefault();
 
-		const
-			parameters = {
-				roles: Array.from(this.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.form),
-			};
+		const options = {
+			method: 'POST',
+			form: new FormData(this.form),
+		};
 
-		const response = await API.call('reports/report/insert', parameters, options);
+		const response = await API.call('reports/report/insert', {}, options);
 
 		await DataSource.load(true);
 
@@ -730,7 +726,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		const
 			parameters = {
 				query_id: this.report.query_id,
-				roles: Array.from(this.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
 			},
 			options = {
 				method: 'POST',
