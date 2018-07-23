@@ -6,6 +6,7 @@ Page.class = class Dashboards extends Page {
 
 		this.list = new Map;
 		this.loadedVisualizations = new Map;
+		this.nav = document.querySelector('main > nav');
 
 		this.listContainer = this.container.querySelector('section#list');
 		this.reports = this.container.querySelector('section#reports');
@@ -39,7 +40,16 @@ Page.class = class Dashboards extends Page {
 
 		for (const dashboard of dashboards) {
 
+			dashboard.children = new Set;
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
+		}
+
+		for (const dashboard of dashboards) {
+
+			if (parseInt(dashboard.parent)) {
+
+				dashboard.children.add(this.list.get(dashboard.parent).id);
+			}
 		}
 	}
 
@@ -53,12 +63,28 @@ Page.class = class Dashboards extends Page {
 
 	}
 
-	async sync(dashboardId) {
+	async sync(params) {
 
+		if (params.nav) {
+
+			for (const dashboard of this.list.values()) {
+
+				if (!params.dashboard || !dashboard.id === params.dashboard) {
+
+					dashboard.menuItem.querySelector('submenu').classList.add('hidden');
+				}
+			}
+		}
+
+		if (params.dashboard) {
+
+			await this.list.get(params.dashboard).load();
+			await this.list.get(params.dashboard).render();
+		}
 
 	}
-
-};
+}
+;
 
 
 class Dashboard {
@@ -142,7 +168,7 @@ class Dashboard {
 
 	get menuItem() {
 
-		if(this.menuContainer) {
+		if (this.menuContainer) {
 
 			return this.menuContainer;
 		}
@@ -179,9 +205,20 @@ class Dashboard {
 			${this.children.size ? '<div class="submenu hidden"></div>' : ''}
 		`;
 
+		const submenu = container.querySelector('.submenu');
 
+		for (const child of this.children.values()) {
+
+			submenu.appendChild(child.menuItem);
+		}
+
+		container.querySelector('.label').addEventListener('click', () => {
+
+			this.page.sync({dashboard: this.id, nav: true,});
+		});
 
 		this.menuContainer = container;
+
 	}
 
 	childrenVisualizations(dashboard) {
@@ -350,7 +387,7 @@ class Dashboard {
 
 		const mailto = Dashboard.toolbar.querySelector('#mailto');
 
-		if(this.page.account.settings.get('enable_dashboard_share'))
+		if (this.page.account.settings.get('enable_dashboard_share'))
 			mailto.classList.remove('hidden');
 
 		if (Dashboard.mail_listener)
