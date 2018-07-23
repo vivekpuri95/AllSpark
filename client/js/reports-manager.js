@@ -888,6 +888,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const
 			parameters = {
 				query_id: this.report.query_id,
+				query: this.report.connection.json.query,
 				definition: JSON.stringify(this.report.connection.json),
 			},
 			options = {
