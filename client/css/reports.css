@@ -983,6 +983,7 @@ main .data-source-column form .parameter-list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2);
+	margin-top: 10px;
 }
 	main .data-source-column form .parameter {
 		display: grid;
@@ -992,6 +993,9 @@ main .data-source-column form .parameter-list {
 			background-color: #c11;
 			border-color: #c11;
 		}
+	main .data-source-column form .drilldown-parameters > label {
+		margin-left: calc(var(--gap) * 2);
+	}
 main .column-form {
 	padding: calc(var(--gap) * 2) 0 0;
 }

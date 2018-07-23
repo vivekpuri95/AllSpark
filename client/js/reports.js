@@ -1507,22 +1507,15 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		this.form.disabled.value = parseInt(this.disabled) || 0;
-
 		if(this.drilldown && this.drilldown.query_id) {
 
-			this.form.querySelector('.parameter-list').textContent = null;
-
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
-
-			for(const param of this.drilldown.parameters || [])
-				this.addParameter(param);
-
-			this.updateDrilldownParamters();
 		}
 		else {
 			this.drilldownQuery.clear();
 		}
+
+		this.form.disabled.value = parseInt(this.disabled) || 0;
 
 		this.dialogueBox.show();
 	}
@@ -1598,15 +1591,8 @@ class DataSourceColumn {
 			<h3>Drill down</h3>
 
 			<label class="drilldown-dropdown">
-				<span>Report</span>
+				<span>Destination Report</span>
 			</label>
-
-			<label>
-				<span>Parameters</span>
-				<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
-			</label>
-
-			<div class="parameter-list"></div>
 
 			<footer class="show">
 
@@ -1640,11 +1626,6 @@ class DataSourceColumn {
 
 		form.insertBefore(this.columnFilters.container, form.querySelector('.columnType'));
 		form.insertBefore(this.columnAccumulations.container, form.querySelector('.columnType'));
-
-		form.querySelector('.add-parameters').on('click', () => {
-			this.addParameter();
-			this.updateDrilldownParamters();
-		});
 
 		form.querySelector('.cancel').on('click', () => {
 
@@ -1693,118 +1674,22 @@ class DataSourceColumn {
 
 		this.form.querySelector('.drilldown-dropdown').appendChild(this.drilldownQuery.container);
 
-		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
-		this.updateDrilldownParamters();
+
+		this.drilldownParameters = new DataSourceColumnDrilldownParameters(this);
+
+		this.form.insertBefore(this.drilldownParameters.container, this.form.querySelector('.drilldown-dropdown').nextElementSibling);
+
+		this.drilldownQuery.on('change', () => {
+
+			if(this.drilldownQuery.value.length && parseInt(this.drilldownQuery.value[0]) != this.drilldown.query_id)
+				this.drilldownParameters.clear();
+
+			this.drilldownParameters.load()
+		});
 
 		dialogue.body.appendChild(this.form);
 
 		return dialogue;
-	}
-
-	addParameter(parameter = {}) {
-
-		const container = document.createElement('div');
-
-		container.innerHTML = `
-			<label>
-				<span>Filter</span>
-				<select name="placeholder" value="${parameter.placeholder || ''}"></select>
-			</label>
-
-			<label>
-				<span>Type</span>
-				<select name="type" value="${parameter.type || ''}">
-					<option value="column">Column</option>
-					<option value="filter">Filter</option>
-					<option value="static">Custom</option>
-				</select>
-			</label>
-
-			<label>
-				<span>Value</span>
-				<select name="value" value="${parameter.value || ''}"></select>
-				<input name="value" value="${parameter.value || ''}" class="hidden">
-			</label>
-
-			<label>
-				<span>&nbsp;</span>
-				<button type="button" class="delete">
-					<i class="far fa-trash-alt"></i> Delete
-				</button>
-			</label>
-		`;
-
-		container.classList.add('parameter');
-
-		const parameterList = this.form.querySelector('.parameter-list');
-
-		parameterList.appendChild(container);
-
-		container.querySelector('select[name=type]').on('change', () => this.updateDrilldownParamters(true));
-
-		container.querySelector('.delete').on('click', () => {
-			parameterList.removeChild(container);
-		});
-	}
-
-	updateDrilldownParamters(updatingType) {
-
-		const
-			parameterList = this.form.querySelector('.parameter-list'),
-			parameters = parameterList.querySelectorAll('.parameter'),
-			report = DataSource.list.get(parseInt(this.drilldownQuery.value[0]));
-
-		if(report && report.filters.length) {
-
-			for(const parameter of parameters) {
-
-				const
-					placeholder = parameter.querySelector('select[name=placeholder]'),
-					type = parameter.querySelector('select[name=type]');
-				let value = parameter.querySelector('select[name=value]');
-
-				value.classList.remove('hidden');
-				parameter.querySelector('input[name=value]').classList.add('hidden');
-
-				placeholder.textContent = null;
-
-				for(const filter of report.filters)
-					placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
-
-				if(placeholder.getAttribute('value'))
-					placeholder.value = placeholder.getAttribute('value');
-
-				if(!updatingType && type.getAttribute('value'))
-					type.value = type.getAttribute('value');
-
-				value.textContent = null;
-
-				if(type.value == 'column') {
-
-					for(const column of this.source.columns.list.values())
-						value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
-				}
-
-				else if(type.value == 'filter') {
-
-					for(const filter of this.source.filters.values())
-						value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
-				}
-				else {
-					value.classList.add('hidden');
-					value = parameter.querySelector('input[name=value]');
-					value.classList.remove('hidden');
-				}
-
-				if(value.getAttribute('value'))
-					value.value = value.getAttribute('value');
-			}
-		}
-
-		else parameterList.textContent = null;
-
-		parameterList.classList.toggle('hidden', !parameters.length || !report || !report.filters.length);
-		this.form.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
 	}
 
 	async apply(e) {
@@ -1842,8 +1727,7 @@ class DataSourceColumn {
 
 		let
 			response,
-			updated = 0,
-			json_param = [];
+			updated = 0;
 
 		for(const element of this.form.elements) {
 
@@ -1851,25 +1735,6 @@ class DataSourceColumn {
 		}
 
 		this.filters = this.columnFilters.json;
-
-		for(const row of this.form.querySelectorAll('.parameter')) {
-
-			let param_json = {};
-
-			for(const select of row.querySelectorAll('select')) {
-
-				param_json[select.name] = select.value;
-
-				if(select.name == 'type' && select.value == 'static') {
-
-					const input = row.querySelector('input');
-					param_json[input.name] = input.value;
-					break;
-				}
-			}
-
-			json_param.push(param_json);
-		}
 
 		response = {
 			key : this.key,
@@ -1885,7 +1750,7 @@ class DataSourceColumn {
 			formula : this.formula,
 			drilldown : {
 				query_id : parseInt(this.drilldownQuery.value[0]) || 0,
-				parameters : json_param
+				parameters : this.drilldownParameters.json
 			}
 		};
 
@@ -2065,6 +1930,226 @@ class DataSourceColumn {
 		destination.container.querySelector('.drilldown').classList.remove('hidden');
 
 		destination.visualizations.selected.load();
+	}
+}
+
+class DataSourceColumnDrilldownParameters extends Set {
+
+	constructor(column) {
+
+		super();
+
+		this.column = column;
+
+		this.column.drilldown = this.column.drilldown || {};
+
+		for(const paramter of this.column.drilldown.parameters || []) {
+
+			this.add(new DataSourceColumnDrilldownParameter(paramter, this));
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('drilldown-parameters');
+
+		container.innerHTML = `
+			<label>
+				<span>Parameters</span>
+				<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
+			</label>
+			<div class="parameter-list"></div>
+		`;
+
+		container.querySelector('.add-parameters').on('click', () => {
+
+			this.add(new DataSourceColumnDrilldownParameter({}, this));
+			this.load();
+		});
+
+		this.load();
+
+		return container;
+
+	}
+
+	load() {
+
+		const
+			parameterList = this.container.querySelector('.parameter-list'),
+			report = DataSource.list.get(parseInt(this.column.drilldownQuery.value[0]));
+
+		parameterList.textContent = null;
+
+		if(!this.size) {
+
+			parameterList.innerHTML = '<div class="NA">No parameters added.</div>';
+		}
+		else {
+
+			for(const paramter of this.values())
+				parameterList.appendChild(paramter.container);
+		}
+
+		this.container.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
+		this.update();
+
+	}
+
+	update(updatingType) {
+
+		const
+			parameterList = this.container.querySelector('.parameter-list'),
+			report = DataSource.list.get(parseInt(this.column.drilldownQuery.value[0]));
+
+		if(report && report.filters.length) {
+
+			for(const parameter of this.values()) {
+
+				parameter.update(updatingType);
+			}
+		}
+		else {
+
+			parameterList.innerHTML = '<div class="NA">No filters present in the selected report.</div>';
+		}
+	}
+
+	get json() {
+
+		const json = [];
+
+		for(const parameter of this.values()) {
+
+			json.push(parameter.json)
+
+		}
+
+		return json;
+	}
+
+}
+
+class DataSourceColumnDrilldownParameter {
+
+	constructor(parameter, columnDrillDown) {
+
+		Object.assign(this, parameter);
+
+		this.columnDrilldown = columnDrillDown;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.innerHTML = `
+			<label>
+				<span>Destination Filter</span>
+				<select name="placeholder" value="${this.placeholder || ''}"></select>
+			</label>
+
+			<label>
+				<span>Source Type</span>
+				<select name="type" value="${this.type || ''}">
+					<option value="column">Column</option>
+					<option value="filter">Filter</option>
+					<option value="static">Custom</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Source Value</span>
+				<select name="value" value="${this.value || ''}"></select>
+				<input name="value" value="${this.value || ''}" class="hidden">
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button type="button" class="delete">
+					<i class="far fa-trash-alt"></i> Delete
+				</button>
+			</label>
+		`;
+
+		container.classList.add('parameter');
+
+		container.querySelector('select[name=type]').on('change', () => this.update(true));
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.columnDrilldown.delete(this);
+			this.columnDrilldown.load();
+		});
+
+		return container;
+
+	}
+
+	update(updatingType) {
+
+		const
+			placeholder = this.container.querySelector('select[name=placeholder]'),
+			type = this.container.querySelector('select[name=type]'),
+			report = DataSource.list.get(parseInt(this.columnDrilldown.column.drilldownQuery.value[0]));
+
+		let
+			value = this.container.querySelector('select[name=value]'),
+			placeholderValue = placeholder.value || placeholder.getAttribute('value');
+
+		value.classList.remove('hidden');
+		this.container.querySelector('input[name=value]').classList.add('hidden');
+
+
+		placeholder.textContent = null;
+
+		for(const filter of report.filters)
+			placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+
+		if(placeholderValue)
+			placeholder.value = placeholderValue;
+
+		if(!updatingType && type.getAttribute('value'))
+			type.value = type.getAttribute('value');
+
+		value.textContent = null;
+
+		if(type.value == 'column') {
+
+			for(const column of this.columnDrilldown.column.source.columns.list.values())
+				value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+		}
+
+		else if(type.value == 'filter') {
+
+			for(const filter of this.columnDrilldown.column.source.filters.values())
+				value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+		}
+		else {
+			value.classList.add('hidden');
+			value = this.container.querySelector('input[name=value]');
+			value.classList.remove('hidden');
+		}
+
+		if(value.getAttribute('value'))
+			value.value = value.getAttribute('value');
+	}
+
+	get json() {
+
+		return {
+			placeholder: this.container.querySelector('select[name=placeholder]').value,
+			type: this.container.querySelector('select[name=type]').value,
+			value: this.container.querySelector('select[name=value]').classList.contains('hidden') ? this.container.querySelector('input[name=value]').value : this.container.querySelector('select[name=value]').value
+		}
 	}
 }
 
@@ -6644,6 +6729,7 @@ class Tooltip {
 		container.classList.add('hidden');
 	}
 }
+
 
 Visualization.animationDuration = 750;
 
