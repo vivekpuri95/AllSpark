@@ -688,7 +688,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 				</form>
 
 				<h2 class="share-heading">Share dashboards</h2>
-				<div id="share-dashboards"></div>
+				<div id="share-dashboards" class="NA">You can share dashboards after adding one.</div>
 			</section>
 		`;
 	}
@@ -1318,6 +1318,9 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 
 					<div id="details"></div>
 				</form>
+				
+				<h2 class="share-heading">Share connections</h2>
+				<div id="share-connections" class="NA">You can share connections after adding one.</div>
 			</section>
 		`;
 	}
