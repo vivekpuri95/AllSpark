@@ -5,6 +5,7 @@ const sql = require('mysql');
 const mssql = require('../utils/mssql');
 const {Client} = require('pg');
 const Sequelize = require('sequelize');
+const {MongoClient} = require('mongodb');
 const auth = require('../utils/auth');
 
 
@@ -282,6 +283,28 @@ testClasses.set("mssql",
 			}
 
 			return result[0].status || 0;
+		}
+	}
+);
+
+testClasses.set("mongo",
+	class {
+		constructor(credential) {
+			this.credential = credential
+		}
+
+		async checkPulse() {
+
+			const connectionString = `mongodb://${this.credential.user ? this.credential.user + ':' + this.credential.password + '@': ''}${this.credential.host}:${this.credential.port || 27017}/${this.credential.db}`;
+
+			try {
+				let db = (await MongoClient.connect(connectionString, {useNewUrlParser: true})).db(this.credential.db);
+				return 1;
+			}
+			catch (e) {
+				console.log(e);
+				return 0
+			}
 		}
 	}
 );
