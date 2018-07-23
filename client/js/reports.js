@@ -1125,12 +1125,11 @@ class DataSourceFilter {
 
 			const
 				response = await report.fetch({download: true}),
-				data = response.data;
-			await Storage.set(`dataset.${this.dataset}`, {data, timestamp: Date.now()});
-
-			({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
-
+				values = response.data;
+			await Storage.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
 		}
+
+		({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
 
 		if(!this.multiSelect.datalist || !this.multiSelect.datalist.length) {
 			this.multiSelect.datalist = values;
