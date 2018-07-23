@@ -27,37 +27,6 @@ exports.insert = class extends API {
 
 };
 
-exports.fillQueryDefinition = class extends API {
-
-    async fillQueryDefinition() {
-
-        for(const report of await this.mysql.query('SELECT query_id, url, url_options, query FROM tb_query')) {
-
-            let definition = null;
-
-            if(report.url) {
-
-                try {
-                    report.url_options = JSON.parse(report.url_options);
-                    definition = JSON.stringify({
-                        url: report.url,
-                        method: report.url_options.method,
-                    });
-                } catch(e) {}
-            }
-
-            else if(report.query) {
-            	definition = JSON.stringify({
-                    query: report.query,
-                })
-            }
-
-            console.log(definition);
-            await this.mysql.query('update tb_query SET definition = ? WHERE query_id = ?', [definition, report.query_id])
-        }
-    }
-}
-
 exports.delete = class extends API {
 
 	async delete() {
