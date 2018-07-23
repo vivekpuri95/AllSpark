@@ -377,7 +377,7 @@ exports.userPrvList = class extends API {
 		}// User Details
 
 
-		const reportDetails = await this.mysql.query(`
+			const reportDetails = await this.mysql.query(`
 				SELECT
                   q.*
                 FROM

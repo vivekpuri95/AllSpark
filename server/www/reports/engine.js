@@ -553,16 +553,16 @@ class APIRequest {
 
 		this.prepareQuery();
 
-		if (this.urlOptions.method === "GET") {
+		if (this.definition.method === "GET") {
 
 			return {
-				request: [this.url, {...this.urlOptions}],
+				request: [this.url, {...this.definition}],
 				type: "api",
 			}
 		}
 
 		return {
-			request: [this.url, {body: this.parameters, ...this.urlOptions}],
+			request: [this.url, {body: this.parameters, ...this.definition}],
 			type: "api",
 		}
 	}
@@ -590,7 +590,7 @@ class APIRequest {
 
 		try {
 
-			this.urlOptions = JSON.parse(this.reportObj.url_options);
+			this.definition = JSON.parse(this.reportObj.definition);
 		}
 
 		catch (e) {
@@ -607,13 +607,12 @@ class APIRequest {
 
 		this.url = this.reportObj.url;
 
-		if (this.urlOptions.method === 'GET') {
+		if (this.definition.method === 'GET') {
 
 			this.url += "?" + parameters;
 		}
 
 		this.parameters = parameters;
-
 	}
 }
 
@@ -790,6 +789,8 @@ class Mongo {
 	constructor(reportObj) {
 
 		this.reportObj = reportObj;
+
+		reportObj.definition = JSON.parse(reportObj.definition);
 	}
 
 	get finalQuery() {
@@ -798,7 +799,7 @@ class Mongo {
 
 		return {
 			type: "mongo",
-			request: [this.reportObj.query, this.reportObj.collection_name, this.reportObj.connection_name]
+			request: [this.reportObj.query, this.reportObj.definition.collection_name, this.reportObj.connection_name]
 		}
 	}
 
@@ -814,7 +815,7 @@ class Mongo {
 
 		this.reportObj.query = sandbox.x;
 
-		if(!(this.reportObj.collection_name && this.reportObj.query)) {
+		if(!(this.reportObj.definition.collection_name && this.reportObj.query)) {
 
 			throw("something missing in collection and aggregate query");
 		}
