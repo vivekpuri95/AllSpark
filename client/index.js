@@ -685,6 +685,10 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 						<span>Icon</span>
 						<input type="text" name="icon">
 					</label>
+
+					<label id="format">
+						<span>Format</span>
+					</label>
 				</form>
 
 				<h2 class="share-heading">Share dashboards</h2>
@@ -805,11 +809,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</div>
 
 							<label>
-								<span>Category</span>
-								<select name="category_id"></select>
-							</label>
-
-							<label>
 								<span>Description</span>
 								<textarea name="description"></textarea>
 							</label>
@@ -821,10 +820,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						</div>
 
 						<div class="form">
-							<label>
-								<span>Roles</span>
-								<select name="roles" required id="roles"></select>
-							</label>
 
 							<label>
 								<span>Refresh Rate (Seconds)</span>
@@ -879,28 +874,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div id="define-report-parts">
 						<div id="schema" class="hidden"></div>
 
-						<form id="define-report-form">
-
-							<div id="query" class="hidden">
-								<div id="editor"></div>
-							</div>
-
-							<div id="api" class="hidden">
-
-								<label>
-									<span>URL</span>
-									<input type="url" name="url">
-								</label>
-
-								<label>
-									<span>Method</span>
-									<select name="method">
-										<option>GET</option>
-										<option>POST</option>
-									</select>
-								</label>
-							</div>
-						</form>
+						<form id="define-report-form"></form>
 
 						<div id="filters" class="hidden">
 
@@ -1318,7 +1292,7 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 
 					<div id="details"></div>
 				</form>
-				
+
 				<h2 class="share-heading">Share connections</h2>
 				<div id="share-connections" class="NA">You can share connections after adding one.</div>
 			</section>

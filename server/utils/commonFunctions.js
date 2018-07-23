@@ -1,5 +1,3 @@
-const {redis} = require('./redis');
-const moment = require('moment-timezone').tz.setDefault("Asia/Kolkata");
 const bcrypt = require('bcryptjs');
 const constants = require('./constants');
 const jwt = require('jsonwebtoken');
@@ -19,38 +17,6 @@ function promiseParallelLimit(limit, funcs) {
 				Promise.all(batch).then(Array.prototype.concat.bind(result))),
 		Promise.resolve([]));
 }
-
-
-function merge_overlapping_intervals(intervals) {
-	const ans = [];
-	intervals.sort((x, y) => x[0] - y[0]);
-
-	let start = intervals[0][0];
-	let end = intervals[0][1];
-
-	for (let i = 1; i < intervals.length; i++) {
-
-		if (end > intervals[i][1]) {
-			continue;
-		}
-
-		if (intervals[i][0] > end) {
-
-			ans.push([start, end]);
-			start = intervals[i][0];
-			end = intervals[i][1];
-		}
-
-		else {
-
-			end = intervals[i][1];
-		}
-	}
-
-	ans.push([start, end]);
-	return ans
-}
-
 
 function isJson(str) {
 	try {
@@ -239,6 +205,34 @@ function getIndicesOf(searchStr, str, caseSensitive = 1) {
 	return indices;
 }
 
+
+function flattenObject(init, lkey = '') {
+
+	let ret = {};
+
+	for (const rkey in init) {
+
+		const val = init[rkey];
+
+		if (Array.isArray(val)) {
+
+			ret[lkey + rkey] = val.join();
+		}
+
+		else if (val.__proto__.constructor.name === 'Object') {
+
+			Object.assign(ret, flattenObject(val, lkey + rkey + '_'));
+		}
+
+		else {
+
+			ret[lkey + rkey] = val;
+		}
+	}
+
+	return ret;
+}
+
 exports.isJson = isJson;
 exports.makeBcryptHash = makeBcryptHash;
 exports.verifyBcryptHash = verifyBcryptHash;
@@ -249,3 +243,4 @@ exports.listOfArrayToMatrix = listOfArrayToMatrix;
 exports.authenticatePrivileges = authenticatePrivileges;
 exports.promiseParallelLimit = promiseParallelLimit;
 exports.getIndicesOf = getIndicesOf;
+exports.flattenObject = flattenObject;

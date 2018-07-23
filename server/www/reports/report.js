@@ -114,6 +114,12 @@ exports.list = class extends API {
 			row.href = `/report/${row.query_id}`;
 			row.superset = 'Reports';
 
+			try {
+				row.definition = JSON.parse(row.definition);
+			} catch(e) {
+				row.definition = {};
+			}
+
 			response.push(row);
 
 			try {
@@ -143,6 +149,7 @@ exports.update = class extends API {
 				'name',
 				'source',
 				'query',
+				'definition',
 				'url',
 				'url_options',
 				'category_id',
@@ -156,7 +163,7 @@ exports.update = class extends API {
 				'refresh_rate',
 				'roles',
 				'format',
-				'connection_name'
+				'connection_name',
 			];
 
 		for (const key in this.request.body) {
@@ -200,6 +207,7 @@ exports.insert = class extends API {
 				'name',
 				'source',
 				'query',
+				'definition',
 				'url',
 				'url_options',
 				'category_id',
@@ -213,7 +221,7 @@ exports.insert = class extends API {
 				'refresh_rate',
 				'roles',
 				'format',
-				'connection_name'
+				'connection_name',
 			];
 
 		for (const key in this.request.body) {
@@ -369,7 +377,7 @@ exports.userPrvList = class extends API {
 		}// User Details
 
 
-		const reportDetails = await this.mysql.query(`
+			const reportDetails = await this.mysql.query(`
 				SELECT
                   q.*
                 FROM

@@ -359,7 +359,7 @@ exports.refresh = class extends API {
 
 				UNION ALL
 
-				SELECT 
+				SELECT
 						'roles' AS 'owner',
 						user_id,
 						IF(r.is_admin = 1, 0, role_id) AS owner_id,
@@ -378,13 +378,13 @@ exports.refresh = class extends API {
 						tb_users u
 						ON u.user_id = obr.owner_id
 						AND u.account_id = obr.account_id
-					WHERE 
+					WHERE
 						OWNER = "user"
 						AND target = "role"
 						AND u.status = 1
 						AND u.user_id = ?
 						AND u.account_id = ?
-						
+
 			   `,
 			[user.user_id, user.account_id, user.user_id, user.account_id,]
 		);

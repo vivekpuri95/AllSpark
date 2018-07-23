@@ -130,10 +130,8 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.container.querySelector('#back').on('click', page.back);
 
-		DashboardsDashboard.editor = new Editor(DashboardsDashboard.container.querySelector('#dashboard-format'));
-
-		DashboardsDashboard.editor.editor.getSession().setMode('ace/mode/json');
-
+		DashboardsDashboard.editor = new CodeEditor({mode: 'json'});
+		DashboardsDashboard.form.querySelector('label#format').appendChild(DashboardsDashboard.editor.container);
 	}
 
 	static async add() {
@@ -250,7 +248,7 @@ class DashboardsDashboard {
 		const parameters = {
 			id: this.id,
 			format: DashboardsDashboard.editor.value,
-			parent: this.multiselect.value[0],
+			parent: this.multiselect.value[0] || '',
 		};
 
 		const options = {

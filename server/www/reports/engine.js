@@ -4,6 +4,7 @@ const dbConfig = require('config').get("sql_db");
 const promisify = require('util').promisify;
 const bigQuery = require('../../utils/bigquery').BigQuery;
 const constants = require("../../utils/constants");
+const vm = require('vm');
 const crypto = require('crypto');
 const request = require("request");
 const auth = require('../../utils/auth');
@@ -13,6 +14,7 @@ const config = require("config");
 const fetch = require('node-fetch');
 const URLSearchParams = require('url').URLSearchParams;
 const fs = require("fs");
+const mongoConnecter = require("../../utils/mongo").Mongo.query;
 const userQueryLogs = require("../accounts").userQueryLogs;
 const getRole = require("../object_roles").get;
 
@@ -55,7 +57,7 @@ class report extends API {
 					AND c.account_id = ?
 					AND c.status = 1`,
 
-				[this.user.user_id, this.reportId, this.account.account_id, this.account.account_id],
+				[this.user.user_id || 1, this.reportId, this.account.account_id, this.account.account_id],
 			),
 
 			this.mysql.query(`select * from tb_query_filters where query_id = ?`, [this.reportId]),
@@ -346,6 +348,9 @@ class report extends API {
 			case "bigquery":
 				preparedRequest = new Bigquery(this.reportObj, this.filters, this.request.body.token);
 				break;
+			case "mongo":
+				preparedRequest = new Mongo(this.reportObj);
+				break;
 			case "file":
 				this.assert(false, 'No data found in the file. Please upload some data first.');
 				break;
@@ -548,16 +553,16 @@ class APIRequest {
 
 		this.prepareQuery();
 
-		if (this.urlOptions.method === "GET") {
+		if (this.definition.method === "GET") {
 
 			return {
-				request: [this.url, {...this.urlOptions}],
+				request: [this.url, {...this.definition}],
 				type: "api",
 			}
 		}
 
 		return {
-			request: [this.url, {body: this.parameters, ...this.urlOptions}],
+			request: [this.url, {body: this.parameters, ...this.definition}],
 			type: "api",
 		}
 	}
@@ -585,7 +590,7 @@ class APIRequest {
 
 		try {
 
-			this.urlOptions = JSON.parse(this.reportObj.url_options);
+			this.definition = JSON.parse(this.reportObj.definition);
 		}
 
 		catch (e) {
@@ -602,13 +607,12 @@ class APIRequest {
 
 		this.url = this.reportObj.url;
 
-		if (this.urlOptions.method === 'GET') {
+		if (this.definition.method === 'GET') {
 
 			this.url += "?" + parameters;
 		}
 
 		this.parameters = parameters;
-
 	}
 }
 
@@ -780,6 +784,46 @@ class Bigquery {
 }
 
 
+class Mongo {
+
+	constructor(reportObj) {
+
+		this.reportObj = reportObj;
+
+		reportObj.definition = JSON.parse(reportObj.definition);
+	}
+
+	get finalQuery() {
+
+		this.prepareQuery;
+
+		return {
+			type: "mongo",
+			request: [this.reportObj.query, this.reportObj.definition.collection_name, this.reportObj.connection_name]
+		}
+	}
+
+	get prepareQuery() {
+
+		const sandbox = { x: 1 };
+
+		vm.createContext(sandbox);
+
+		const code = `x = ${this.reportObj.query}`;
+
+		vm.runInContext(code, sandbox);
+
+		this.reportObj.query = sandbox.x;
+
+		if(!(this.reportObj.definition.collection_name && this.reportObj.query)) {
+
+			throw("something missing in collection and aggregate query");
+		}
+	}
+
+}
+
+
 class ReportEngine extends API {
 
 	constructor(parameters) {
@@ -792,6 +836,7 @@ class ReportEngine extends API {
 			api: fetch,
 			bigquery: bigQuery.call,
 			mssql: this.mssql.query,
+			mongo: mongoConnecter,
 		};
 
 		this.parameters = parameters || {};
@@ -837,6 +882,11 @@ class ReportEngine extends API {
 				data = data.data;
 		}
 
+		else if (this.parameters.type === "mongo") {
+
+			query = this.parameters.request[0];
+		}
+
 		return {
 			data: data,
 			runtime: (Date.now() - this.executionTimeStart),
@@ -870,7 +920,7 @@ class ReportEngine extends API {
 					)
 				VALUES
 					(?,?,?,?,?,?,?,?)`,
-				[query_id, query, result_query, executionTime, type, userId, is_redis, rows],
+				[query_id, typeof query == 'object' ? JSON.stringify(query) : query, result_query, executionTime, type, userId, is_redis, rows],
 				"write"
 			);
 		}

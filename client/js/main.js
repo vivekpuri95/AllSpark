@@ -1265,17 +1265,44 @@ class Sections {
 	}
 }
 
-class Editor {
+class CodeEditor {
 
-	constructor(container) {
+	constructor({mode = null}) {
 
-		this.container = container;
-		this.editor = ace.edit(container);
+		if(!window.ace)
+			throw Page.Exception('Ace editor not available! :(');
 
-		this.editor.setTheme('ace/theme/monokai');
-		this.editor.getSession().setMode('ace/mode/sql');
-		this.editor.setFontSize(16);
-		this.editor.$blockScrolling = Infinity;
+		this.mode = mode;
+	}
+
+	get container() {
+		return this.editor.container;
+	}
+
+	get editor() {
+
+		if(this.instance)
+			return this.instance;
+
+		const editor = this.instance = ace.edit(document.createElement('div'));
+
+		editor.setTheme('ace/theme/monokai');
+
+		editor.setFontSize(16);
+		editor.$blockScrolling = Infinity;
+
+		if(this.mode)
+			editor.getSession().setMode(`ace/mode/${this.mode}`);
+
+		return editor;
+	}
+
+	get value() {
+		return this.editor.getValue();
+	}
+
+	set value(value) {
+		this.editor.setValue(value || '', 1);
 	}
 
 	setAutoComplete(list) {
@@ -1290,14 +1317,6 @@ class Editor {
 			enableBasicAutocompletion: true,
 			enableLiveAutocompletion: true,
 		});
-	}
-
-	get value() {
-		return this.editor.getValue();
-	}
-
-	set value(value) {
-		this.editor.setValue(value || '', 1);
 	}
 }
 
@@ -1777,6 +1796,7 @@ class ObjectRoles {
 		const listRequestParams = new URLSearchParams();
 
 		listRequestParams.append('owner', this.owner);
+		listRequestParams.append('owner_id', this.ownerId);
 
 		for (const target of this.allowedTargets) {
 			listRequestParams.append('target[]', target);
