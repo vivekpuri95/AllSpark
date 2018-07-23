@@ -1118,9 +1118,6 @@ class DataSourceFilter {
 		if(Array.from(report.filters.values()).some(f => f.dataset == this.dataset))
 			return [];
 
-		if(await Storage.has(`dataset.${this.dataset}`))
-			({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
-
 		if(!timestamp || Date.now() - timestamp > DataSourceFilter.timeout) {
 
 			const
@@ -1129,6 +1126,9 @@ class DataSourceFilter {
 
 			await Storage.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
 		}
+
+		if(await Storage.has(`dataset.${this.dataset}`))
+			({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
 
 		if(!this.multiSelect.datalist || !this.multiSelect.datalist.length) {
 			this.multiSelect.datalist = values;
