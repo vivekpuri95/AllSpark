@@ -34,3 +34,10 @@ main #form .filter {
 .form-container .NA {
 	margin: 5px;
 }
+main table .search-bar th {
+	background: #fff;
+	padding: calc(var(--gap) * 2) var(--gap);
+}
+	main table .search-bar th input {
+		width: 100%;
+	}
