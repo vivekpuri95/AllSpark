@@ -1276,6 +1276,9 @@ class DataSourceRow extends Map {
 		if(column.type == 'date')
 			value = Format.date(value);
 
+		if(column.type == 'datetime')
+			value = Format.time(value);
+
 		else if(column.type == 'number')
 			value = Format.number(value);
 
@@ -1547,6 +1550,7 @@ class DataSourceColumn {
 					<option value="string">String</option>
 					<option value="number">Number</option>
 					<option value="date">Date</option>
+					<option value="datetime">Date Time</option>
 					<option value="html">HTML</option>
 				</select>
 			</label>
