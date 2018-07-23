@@ -830,7 +830,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	async preview() {
 
-		const definition = JSON.stringify(this.report.connection.json);
+		const definition = this.report.connection.json;
 
 		if(this.report.connection.editor && this.report.connection.editor.editor.getSelectedText())
 			definition.query = this.report.connection.editor.editor.getSelectedText();
@@ -838,7 +838,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const options = {
 			query_id: this.report.query_id,
 			query: definition.query,
-			definition,
+			definition: JSON.stringify(definition),
 			position: 'bottom',
 		};
 
