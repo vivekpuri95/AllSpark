@@ -621,20 +621,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			if(!this.form.is_redis.classList.contains('hidden'))
 				this.form.is_redis.focus();
 		});
-
-		for(const category of MetaData.categories.values()) {
-
-			this.form.category_id.insertAdjacentHTML('beforeend', `
-				<option value="${category.category_id}">${category.name}</option>
-			`);
-		}
-
-		for(const role of MetaData.roles.values()) {
-
-			this.form.roles.insertAdjacentHTML('beforeend', `
-				<option value="${role.role_id}">${role.name}</option>
-			`);
-		}
 	}
 
 	get url() {

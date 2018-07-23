@@ -809,11 +809,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</div>
 
 							<label>
-								<span>Category</span>
-								<select name="category_id"></select>
-							</label>
-
-							<label>
 								<span>Description</span>
 								<textarea name="description"></textarea>
 							</label>
@@ -825,10 +820,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						</div>
 
 						<div class="form">
-							<label>
-								<span>Roles</span>
-								<select name="roles" required id="roles"></select>
-							</label>
 
 							<label>
 								<span>Refresh Rate (Seconds)</span>
@@ -1301,7 +1292,7 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 
 					<div id="details"></div>
 				</form>
-				
+
 				<h2 class="share-heading">Share connections</h2>
 				<div id="share-connections" class="NA">You can share connections after adding one.</div>
 			</section>
