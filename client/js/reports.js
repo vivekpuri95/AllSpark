@@ -1118,16 +1118,18 @@ class DataSourceFilter {
 		if(Array.from(report.filters.values()).some(f => f.dataset == this.dataset))
 			return [];
 
-		if(await Storage.has(`dataset.${this.dataset}`))
+		if (await Storage.has(`dataset.${this.dataset}`))
 			({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
 
 		if(!timestamp || Date.now() - timestamp > DataSourceFilter.timeout) {
 
 			const
 				response = await report.fetch({download: true}),
-				values = response.data;
+				data = response.data;
+			await Storage.set(`dataset.${this.dataset}`, {data, timestamp: Date.now()});
 
-			await Storage.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
+			({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
+
 		}
 
 		if(!this.multiSelect.datalist || !this.multiSelect.datalist.length) {
