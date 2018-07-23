@@ -1010,7 +1010,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<div class="configuration-section">
 							<h3><i class="fas fa-angle-right"></i> General</h3>
 
-							<div class="form body">
+							<div class="form subform body">
 								<label>
 									<span>Name</span>
 									<input type="text" name="name" required>

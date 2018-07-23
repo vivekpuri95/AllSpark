@@ -447,22 +447,41 @@ main.preview-left #stages {
 	#stage-configure-visualization h4 {
 		margin: 0 0 calc(var(--gap) * 2)
 	}
-	#stage-configure-visualization .axis-container {
+	#stage-configure-visualization fieldset {
+		border: 1px solid #ccc;
+		background: #eef;
+		padding-top: calc(var(--gap) * 2);
+		margin: 0;
+	}
+		#stage-configure-visualization fieldset legend {
+			font-size: 90%;
+			border: 1px solid #ccc;
+			padding: 2px 8px;
+			border-radius: 5px;
+			color: #999;
+			letter-spacing: 0.5px;
+			background: #fff;
+			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
+		}
+	#stage-configure-visualization .subform {
+		border-bottom: 1px solid #ccc;
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
+		padding: calc(var(--gap) * 2);
+		border: 1px solid #ccc;
+		background: #eef;
+		box-shadow: none;
+	}
+
+	#stage-configure-visualization .axes-container {
+		display: grid;
+		grid-gap: calc(var(--gap) * 2);
+		padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0
 	}
 		#stage-configure-visualization .axes {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 		}
-			#stage-configure-visualization .subform {
-				border-bottom: 1px solid #ccc;
-				display: grid;
-				grid-gap: calc(var(--gap) * 2);
-				padding: calc(var(--gap) * 2);
-				border: 1px solid #ccc;
-				background: #eef;
-			}
 				#stage-configure-visualization .subform select[multiple] {
 					height: 75px;
 					padding: 0
@@ -491,33 +510,31 @@ main.preview-left #stages {
 		}
 	#stage-configure-visualization #transformations {
 		display: grid;
-		grid-template-columns: 1fr;
 		grid-gap: calc(var(--gap) * 2);
-		background: #fff;
-		padding: calc(var(--gap) * 2);
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+		padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
 	}
 		#stage-configure-visualization #transformations .transformation {
 			display: grid;
 			grid-template-columns: 1fr 1fr 1fr;
 			grid-gap: calc(var(--gap) * 2);
 			align-items: flex-start;
-			border-bottom: 1px solid #ddd;
-			padding-bottom:  calc(var(--gap) * 2);
 		}
-		#stage-configure-visualization #transformations .transformation > div {
-			display: grid;
-			grid-template-columns: 1fr;
-			grid-gap: calc(var(--gap) * 2);
-		}
-			#stage-configure-visualization #transformations .transformation h4 {
-				margin: 0;
-				border-bottom: 1px dashed #ccc;
-				padding-bottom: var(--gap);
-				font-size: 90%;
+			#stage-configure-visualization #transformations .transformation > div {
+				display: grid;
+				grid-template-columns: 1fr;
+				grid-gap: calc(var(--gap) * 2);
 			}
-		#stage-configure-visualization #transformations .add-new-transformation {
-			max-width: fit-content;
+				#stage-configure-visualization #transformations .transformation h4 {
+					margin: 0;
+					border-bottom: 1px dashed #ccc;
+					padding-bottom: var(--gap);
+					font-size: 90%;
+				}
+		#stage-configure-visualization #transformations .add-transformation .form {
+			grid-template-columns: minmax(max-content, 200px) max-content;
+			background: transparent;
+			padding: 0;
+			grid-gap: calc(var(--gap) * 2);
 		}
 		#stage-configure-visualization #transformations .transformation .row,
 		#stage-configure-visualization #transformations .transformation .column,
@@ -534,37 +551,74 @@ main.preview-left #stages {
 		#stage-configure-visualization #transformations .transformation .value button svg {
 			margin: 0;
 		}
-		#stage-configure-visualization #dashboards {
-			display: grid;
-			grid-gap: calc(var(--gap)*2);
-			padding: 10px;
-			background: #fff;
+	#stage-configure-visualization #dashboards {
+		display: grid;
+		grid-gap: calc(var(--gap) * 2);
+		padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
+	}
+		#stage-configure-visualization #dashboards .add-dashboard .form {
+			grid-template-columns: max-content max-content max-content;
+			background: transparent;
+			padding: 0;
+			grid-gap: calc(var(--gap) * 2);
 		}
-			#stage-configure-visualization #dashboards .options .delete:hover,
-			#stage-configure-visualization #dashboards .dashboard-action .delete:hover {
-				background: #c33;
-				border: 0;
-			}
-			#stage-configure-visualization #dashboards .view-dashboard {
-				font-size: 90%;
+		#stage-configure-visualization #dashboards .options .delete:hover,
+		#stage-configure-visualization #dashboards .dashboard-action .delete:hover {
+			background: #c33;
+			border: 0;
+		}
+		#stage-configure-visualization #dashboards .view-dashboard {
+			font-size: 90%;
+			margin-left: var(--gap);
+		}
+		#stage-configure-visualization #dashboards .dashboard-action {
+			display: grid;
+			max-width: 200px;
+			grid-template-columns: 1fr 1fr;
+			grid-gap: calc(var(--gap) * 2);
+		}
+	#stage-configure-visualization #dashboards select {
+		width: 100%;
+	}
+
+	#stage-configure-visualization .configuration-section > h3 .count {
+		color: #bbb;
+		font-size: 90%;
+		margin-left: auto;
+		font-weight: normal;
+		letter-spacing: 0.25px;
+	}
+	#stage-configure-visualization .configuration-section > h3 .count.transformation {
+		margin-left: 3px;
+	}
+	#stage-configure-visualization #filters {
+		padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
+	}
+		#stage-configure-visualization #filters .list {
+			display: grid;
+			grid-gap: calc(var(--gap) * 3);
+		}
+			#stage-configure-visualization #filters .list .delete {
 				margin-left: var(--gap);
 			}
-			#stage-configure-visualization #dashboards .dashboard-action {
-				display: grid;
-				max-width: 200px;
-				grid-template-columns: 1fr 1fr;
-				grid-gap: calc(var(--gap) * 2);
-			}
-		#stage-configure-visualization #dashboards select {
-			width: 100%;
+				#stage-configure-visualization #filters .list .delete > svg {
+					margin: 0;
+				}
+
+		#stage-configure-visualization #filters .add-filter .form {
+			grid-template-columns: minmax(max-content, 200px) max-content;
+			background: transparent;
+			padding: 0;
+			grid-gap: calc(var(--gap) * 2);
 		}
-	.configuration-section .body .subform {
+
+	.configuration-section .form {
 		box-shadow: none;
 	}
-	.configuration-section span {
-		display: flex;
-		align-items: center;
-	}
+		.configuration-section .form label span {
+			display: flex;
+			align-items: center;
+		}
 
 #add-visualization-picker {
 	grid-column: 1 / 3;
