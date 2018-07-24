@@ -1226,10 +1226,10 @@ class DataSourceRow extends Map {
 
 			if(column.filters && column.filters.length) {
 
-				if(search.value === '')
-					continue;
-
 				for(const search of column.filters) {
+
+					if(search.value === '')
+						continue;
 
 					if(!row[key])
 						this.skip = true;
