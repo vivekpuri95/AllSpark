@@ -601,7 +601,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 					<span class="text">
 						Env: <span class="strong">${this.env.name}</span>
 						Branch: <span class="strong">${this.env.branch}</span>
-						Last deployed: <span title="${this.env.deployed_on}" class="strong">${this.env.deployed_on}</span>
+						Last deployed: <span title="${this.env.deployed_on}" class="strong deploy-time">${this.env.deployed_on}</span>
 					</span>
 					<i class="fas fa-exclamation-circle"></i>
 				</div>
