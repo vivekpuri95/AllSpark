@@ -15,7 +15,7 @@ const child_process = require('child_process');
 
 const env = {
 	name: process.env.NODE_ENV,
-	deployed_on: new Date().toISOString().substring(0, 19).replace('T', ' '),
+	deployed_on: new Date(),
 	gitChecksum: child_process.execSync('git rev-parse --short HEAD').toString().trim(),
 	branch: child_process.execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
 };
