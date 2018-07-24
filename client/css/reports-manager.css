@@ -406,7 +406,7 @@ main.preview-left #stages {
 
 #stage-configure-visualization.show {
 	display: grid;
-	grid-template-rows: max-content max-content max-content max-content;
+	grid-template-rows: repeat(4, max-content);
 	overflow: auto;
 }
 	#stage-configure-visualization .toolbar {
@@ -428,7 +428,8 @@ main.preview-left #stages {
 		margin: var(--gap) 0 calc(var(--gap) * 2);
 		display: flex;
 		align-items: center;
-		font-size: 96%;
+		font-size: 100%;
+		font-weight: normal;
 		z-index: 1;
 		background: #fff;
 		transition: color var(--transition-duration);
@@ -450,16 +451,16 @@ main.preview-left #stages {
 	#stage-configure-visualization fieldset {
 		border: 1px solid #ccc;
 		background: #eef;
-		padding-top: calc(var(--gap) * 2);
+		padding: calc(var(--gap) * 2);
 		margin: 0;
+		border-radius: 3px;
 	}
 		#stage-configure-visualization fieldset legend {
 			font-size: 90%;
 			border: 1px solid #ccc;
 			padding: 2px 8px;
 			border-radius: 5px;
-			color: #999;
-			letter-spacing: 0.5px;
+			color: #888;
 			background: #fff;
 			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 		}
@@ -471,24 +472,19 @@ main.preview-left #stages {
 		border: 1px solid #ccc;
 		background: #eef;
 		box-shadow: none;
+		border-radius: 3px;
 	}
 
-	#stage-configure-visualization .axes-container {
-		display: grid;
-		grid-gap: calc(var(--gap) * 2);
-		padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0
+	#stage-configure-visualization .axes {
 	}
-		#stage-configure-visualization .axes {
-			display: grid;
+		#stage-configure-visualization .axes .form {
+			background: transparent;
+			padding: 0;
+		}
+		#stage-configure-visualization .axes .add-axis .form {
+			grid-template-columns: minmax(max-content, 200px) max-content;
 			grid-gap: calc(var(--gap) * 2);
 		}
-				#stage-configure-visualization .subform select[multiple] {
-					height: 75px;
-					padding: 0
-				}
-					#stage-configure-visualization .subform select[multiple] option {
-						padding: 3px 5px;
-					}
 	#stage-configure-visualization #configure-visualization-form {
 		display: flex;
 		flex-direction: column;
@@ -509,9 +505,6 @@ main.preview-left #stages {
 			margin: 0;
 		}
 	#stage-configure-visualization #transformations {
-		display: grid;
-		grid-gap: calc(var(--gap) * 2);
-		padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
 	}
 		#stage-configure-visualization #transformations .transformation {
 			display: grid;
@@ -552,34 +545,43 @@ main.preview-left #stages {
 			margin: 0;
 		}
 	#stage-configure-visualization #dashboards {
-		display: grid;
-		grid-gap: calc(var(--gap) * 2);
-		padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
 	}
+		#stage-configure-visualization #dashboards .form {
+			grid-template-columns: repeat(5, max-content);
+			grid-gap: calc(var(--gap) * 2);
+		}
 		#stage-configure-visualization #dashboards .add-dashboard .form {
-			grid-template-columns: max-content max-content max-content;
+			grid-template-columns: repeat(3, max-content);
 			background: transparent;
 			padding: 0;
-			grid-gap: calc(var(--gap) * 2);
 		}
-		#stage-configure-visualization #dashboards .options .delete:hover,
-		#stage-configure-visualization #dashboards .dashboard-action .delete:hover {
+		#stage-configure-visualization #dashboards .delete:hover {
 			background: #c33;
-			border: 0;
+			border-color: transparent;
 		}
-		#stage-configure-visualization #dashboards .view-dashboard {
-			font-size: 90%;
-			margin-left: var(--gap);
+			#stage-configure-visualization #dashboards .delete > svg,
+			#stage-configure-visualization #dashboards .view-dashboard > svg {
+				margin: 0;
+			}
+		#stage-configure-visualization #dashboards select {
+			width: 100%;
 		}
-		#stage-configure-visualization #dashboards .dashboard-action {
-			display: grid;
-			max-width: 200px;
-			grid-template-columns: 1fr 1fr;
-			grid-gap: calc(var(--gap) * 2);
-		}
-	#stage-configure-visualization #dashboards select {
-		width: 100%;
+
+	#stage-configure-visualization #filters {
 	}
+		#stage-configure-visualization #filters .form {
+			grid-template-columns: minmax(max-content, 200px) max-content;
+			background: transparent;
+			grid-gap: calc(var(--gap) * 2);
+			padding: 0;
+		}
+		#stage-configure-visualization #filters .delete:hover {
+			border-color: transparent;
+			background: #c33;
+		}
+			#stage-configure-visualization #filters .delete > svg {
+				margin: 0;
+			}
 
 	#stage-configure-visualization .configuration-section > h3 .count {
 		color: #bbb;
@@ -591,34 +593,23 @@ main.preview-left #stages {
 	#stage-configure-visualization .configuration-section > h3 .count.transformation {
 		margin-left: 3px;
 	}
-	#stage-configure-visualization #filters {
-		padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
-	}
-		#stage-configure-visualization #filters .list {
-			display: grid;
-			grid-gap: calc(var(--gap) * 3);
-		}
-			#stage-configure-visualization #filters .list .delete {
-				margin-left: var(--gap);
-			}
-				#stage-configure-visualization #filters .list .delete > svg {
-					margin: 0;
-				}
-
-		#stage-configure-visualization #filters .add-filter .form {
-			grid-template-columns: minmax(max-content, 200px) max-content;
-			background: transparent;
-			padding: 0;
-			grid-gap: calc(var(--gap) * 2);
-		}
-
-	.configuration-section .form {
+	#stage-configure-visualization .configuration-section .form {
 		box-shadow: none;
 	}
-		.configuration-section .form label span {
+		#stage-configure-visualization .configuration-section .form label span {
 			display: flex;
 			align-items: center;
 		}
+		#stage-configure-visualization .configuration-section .body {
+			display: grid;
+			grid-gap: calc(var(--gap) * 2);
+			padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
+		}
+			#stage-configure-visualization .configuration-section .body > .NA {
+				background: #efefef;
+				border: 1px solid #ccc;
+				padding: calc(var(--gap) * 2);
+			}
 
 #add-visualization-picker {
 	grid-column: 1 / 3;

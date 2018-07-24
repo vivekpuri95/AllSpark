@@ -78,6 +78,8 @@ class ReportsMangerPreview {
 
 		this.page = page;
 		this.container = this.page.container.querySelector('#preview');
+
+		this.position = 'right';
 	}
 
 	async load(options = {}) {
@@ -113,15 +115,15 @@ class ReportsMangerPreview {
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
-		let position = this.docks ? this.docks.value : await Storage.get('reportsPreviewDock') || 'right';
-		this.page.container.classList.add('preview-' + position);
+		this.page.container.classList.add('preview-' + this.position);
 
 		await this.report.visualizations.selected.load();
-		await this.renderDocks();
-		await this.move();
+
+		this.move({render: false});
 	}
 
 	set hidden(hidden) {
+
 		this.container.classList.toggle('hidden', hidden);
 		this.move();
 	}
@@ -130,40 +132,27 @@ class ReportsMangerPreview {
 		return this.container.classList.contains('hidden');
 	}
 
-	async renderDocks() {
+	set position(position) {
 
-		this.docks = document.createElement('select');
-
-		this.docks.insertAdjacentHTML('beforeend', `
-			<option value="right">Right</option>
-			<option value="bottom">Bottom</option>
-			<option value="left">Left</option>
-		`);
-
-		this.docks.value = await Storage.get('reportsPreviewDock') || 'right';
-
-		await Storage.set('reportsPreviewDock', this.docks.value);
-
-		this.docks.on('change', async () => {
-			await Storage.set('reportsPreviewDock', this.docks.value);
-			await this.move();
-		});
-
-		this.report.container.querySelector('.menu').appendChild(this.docks);
+		this._position = position;
+		this.move();
 	}
 
-	async move() {
+	get position() {
+		return this._position;
+	}
 
-		let position = await Storage.get('reportsPreviewDock') || 'right';
+	async move({render = true} = {}) {
 
 		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
 
 		if(this.hidden || !this.report)
 			return;
 
-		this.page.container.classList.add('preview-' + position);
+		this.page.container.classList.add('preview-' + this.position);
 
-		this.report.visualizations.selected.render();
+		if(render)
+			this.report.visualizations.selected.render({resize: true});
 	}
 }
 
@@ -223,15 +212,19 @@ class ReportsMangerStage {
 			report = this.selectedReport;
 
 		if(report) {
-			reportName.textContent = report ? report.name + ` #${report.query_id}` : 'Add New Report';
 
-			const id = parseInt(location.pathname.split('/').pop());
-			let visualization;
+			reportName.textContent = report ? `${report.name} #${report.query_id}` : 'Add New Report';
 
-			if(location.pathname.includes('/configure-visualization'))
+			let visualization,
+				id = parseInt(location.pathname.split('/').pop())
+
+			if(this.page.stages.get('configure-visualization').lastSelectedVisualizationId)
+				id = this.page.stages.get('configure-visualization').lastSelectedVisualizationId;
+
+			if(id)
 				[visualization] = report.visualizations.filter(v => v.visualization_id == id)
 
-			visualizationsName.textContent = visualization ? visualization.name : 'Add or Edit a Visualization';
+			visualizationsName.textContent = visualization ? `${visualization.name} #${visualization.visualization_id}` : 'Add or Edit a Visualization';
 		}
 
 		this.load();
@@ -362,6 +355,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 	}
 
 	async load() {
+
+		this.page.stages.get('configure-visualization').lastSelectedVisualizationId = null;
 
 		const
 			theadSearch = document.querySelectorAll('.column-search'),
@@ -789,8 +784,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			if(!this.page.preview.report)
 				return this.preview();
 
-			this.page.preview.hidden = previewToggle.classList.contains('selected');
 			previewToggle.classList.toggle('selected');
+			this.page.preview.hidden = !previewToggle.classList.contains('selected');
 
 			if(this.report.connection.editor)
 				this.report.connection.editor.editor.resize();
@@ -838,7 +833,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			query_id: this.report.query_id,
 			query: definition.query,
 			definition: JSON.stringify(definition),
-			position: 'bottom',
 		};
 
 		await this.page.preview.load(options);
@@ -854,9 +848,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.report = this.selectedReport;
 
-		this.page.stages.get('configure-visualization').disabled = true;
-
-		await Storage.set('reportsPreviewDock', 'bottom');
+		if(!this.page.stages.get('configure-visualization').lastSelectedVisualizationId)
+			this.page.stages.get('configure-visualization').disabled = true;
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
@@ -873,6 +866,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.loadSchema();
 		this.filters();
+
+		this.page.preview.position = 'bottom';
+		this.container.querySelector('#preview-toggle').classList.toggle('selected', !this.page.preview.hidden);
 
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
@@ -1491,8 +1487,10 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		this.report = this.selectedReport;
 
-		this.page.stages.get('configure-visualization').disabled = true;
 		this.page.preview.hidden = true;
+
+		if(!this.page.stages.get('configure-visualization').lastSelectedVisualizationId)
+			this.page.stages.get('configure-visualization').disabled = true;
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
@@ -1502,6 +1500,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		tbody.textContent = null;
 
 		for(const visualization of this.report.visualizations) {
+
+			if(!visualization.visualization_id)
+				continue;
 
 			const row = document.createElement('tr');
 
@@ -1534,6 +1535,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				window.history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
 
 				this.page.stages.get('configure-visualization').disabled = false;
+				this.page.stages.get('configure-visualization').lastSelectedVisualizationId = visualization.visualization_id;
 
 				this.page.load();
 			});
@@ -1545,6 +1547,8 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		if(!this.report.visualizations.length)
 			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found! :(</td></tr>';
+
+		this.page.preview.position = 'right';
 	}
 });
 
@@ -1622,12 +1626,19 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
 
+		let visualization_id = window.location.pathname.split('/').pop();
+
 		if(!window.location.pathname.includes('configure-visualization')) {
-			this.container.classList.add('hidden');
-			return;
+
+			if(!this.lastSelectedVisualizationId)
+				return this.container.classList.add('hidden');
+
+			visualization_id = this.lastSelectedVisualizationId;
+
+			window.history.pushState({}, '', `/reports/${this.url}`);
 		}
 
-		this.container.classList.remove('hidden');
+		this.lastSelectedVisualizationId = visualization_id;
 
 		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
 
@@ -1672,7 +1683,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		options.textContent = null;
 
-		await Storage.set('reportsPreviewDock', 'right');
+		this.page.preview.position = 'right';
 
 		await this.page.preview.load({
 			query_id: this.report.query_id,
@@ -2303,22 +2314,7 @@ class Axes extends Set {
 
 		const container = this.containerElement = document.createElement('div');
 
-		container.classList.add('options', 'form', 'body', 'axes-container');
-
-		container.innerHTML = `
-			<div class="axes"></div>
-			<button class="add-axis" type="button">
-				<i class="fa fa-plus"></i> Add New Axis
-			</button>
-		`;
-
-		container.querySelector('.add-axis').on('click', () => {
-
-			const axisForm = new Axis({}, this);
-
-			this.add(axisForm);
-			this.render();
-		});
+		container.classList.add('options', 'form', 'body', 'axes');
 
 		this.render();
 
@@ -2327,14 +2323,43 @@ class Axes extends Set {
 
 	render() {
 
-		let axes = this.container.querySelector('.axes');
-
-		axes.textContent = null;
+		this.container.textContent = null;
 
 		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' axes added' : ''}`;
 
 		for(const axis of this)
-			axes.appendChild(axis.container);
+			this.container.appendChild(axis.container);
+
+		if(!this.size)
+			this.container.innerHTML = '<div class="NA">No axes added yet! :(</div>';
+
+		this.container.insertAdjacentHTML('beforeend', `
+
+			<div class="add-axis">
+				<fieldset>
+					<legend>Add Axis</legend>
+					<div class="form">
+
+						<label>
+							<span>Position</span>
+							<select name="position" value="${this.position}" required>
+								<option value="bottom">Bottom</option>
+								<option value="left">Left</option>
+								<option value="top">Top</option>
+								<option value="right">Right</option>
+							</select>
+						</label>
+
+						<label>
+							<span>&nbsp;</span>
+							<button type="button"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</div>
+				</fieldset>
+			</div>
+		`);
+
+		this.container.querySelector('.add-axis button[type=button]').on('click', e => this.insert(e));
 	}
 
 	get json() {
@@ -2351,6 +2376,16 @@ class Axes extends Set {
 
 		for(const rest of this.container.querySelectorAll('.restCheck'))
 			rest.classList.toggle('hidden', action);
+	}
+
+	insert(e) {
+
+		e.preventDefault();
+
+		const position = this.container.querySelector('.add-axis select').value;
+
+		this.add(new Axis({position}, this));
+		this.render();
 	}
 }
 
@@ -2375,7 +2410,7 @@ class Axis {
 		const container = this.axisContainer = document.createElement('div');
 		let datalist = [];
 
-		container.classList.add('axis', 'subform');
+		container.classList.add('axis');
 
 		for(const [key, column] of this.axes.stage.page.preview.report.columns)
 			datalist.push({name: column.name, value: key});
@@ -2402,40 +2437,38 @@ class Axis {
 		container.multiSelectColumns.value = this.columns ? this.columns.map(x => x.key) : [];
 
 		container.innerHTML = `
-			<label>
-				<span>Position</span>
-				<select name="position" value="${this.position}" required>
-					<option value="top">Top</option>
-					<option value="right">Right</option>
-					<option value="bottom">Bottom</option>
-					<option value="left">Left</option>
-				</select>
-			</label>
 
-			<label>
-				<span>Label</span>
-				<input type="text" name="label" value="${this.label || ''}">
-			</label>
+			<fieldset>
+				<legend>${this.position[0].toUpperCase() + this.position.slice(1)} Axis</legend>
 
-			<label class="axis-column">
-				<span>Columns</span>
-			</label>
+				<div class="form">
 
-			<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${this.restcolumns ? 'checked' : ''}> Rest</span></label>
+					<label>
+						<span>Label</span>
+						<input type="text" name="label" value="${this.label || ''}">
+					</label>
 
-			<label>
-				<span>Format</span>
-				<select name="format">
-					<option value="">None</option>
-					<option value="s">SI</option>
-				</select>
-			</label>
+					<label class="axis-column">
+						<span>Columns</span>
+					</label>
 
-			<label>
-				<button class="delete" type="button">
-					<i class="far fa-trash-alt"></i> Delete
-				</button>
-			</label>
+					<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${this.restcolumns ? 'checked' : ''}> Rest</span></label>
+
+					<label>
+						<span>Format</span>
+						<select name="format">
+							<option value="">None</option>
+							<option value="s">SI</option>
+						</select>
+					</label>
+
+					<label>
+						<button class="delete" type="button">
+							<i class="far fa-trash-alt"></i> Delete
+						</button>
+					</label>
+				</div>
+			</fieldset>
 		`;
 
 		container.multiSelectColumns.on('change', () => {
@@ -2501,12 +2534,9 @@ class Axis {
 
 		container.querySelector('.axis-column').appendChild(axisColumn);
 
-		container.querySelector('select[name=position]').value = this.position;
 		container.querySelector('select[name=format]').value = this.format || '';
 
 		container.querySelector('.delete').on('click', () => {
-
-			container.parentElement && container.parentElement.removeChild(container);
 			this.axes.delete(this);
 			this.axes.render();
 		});
@@ -2517,7 +2547,7 @@ class Axis {
 	get json() {
 
 		return {
-			position: this.container.querySelector('select[name=position]').value,
+			position: this.position,
 			label: this.container.querySelector('input[name=label]').value,
 			columns: this.container.multiSelectColumns.value.map(c => {return {key: c}}),
 			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
@@ -2567,17 +2597,19 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="options form body">
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
-					<label>
-						<span>
-							<input type="checkbox" name="showValues">Show Values
-						</span>
-					</label>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+						<label>
+							<span>
+								<input type="checkbox" name="showValues">Show Values
+							</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		`;
@@ -2611,20 +2643,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	}
 }
 
-class ReportVisualizationLiveNumberOptions extends ReportVisualizationOptions {
-
-	get json() {
-
-		const result = super.json;
-
-		if(this.subReports) {
-			result.subReports = this.subReports.value;
-		}
-
-		return result;
-	}
-}
-
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
 
 ConfigureVisualization.types = new Map;
@@ -2641,25 +2659,26 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="body form">
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>
+								<input type="checkbox" name="hideHeadingsBar">Hide Headings Bar
+							</span>
+						</label>
 
-					<label>
-						<span>
-							<input type="checkbox" name="hideHeadingsBar">Hide Headings Bar
-						</span>
-					</label>
+						<label>
+							<span>
+								<input type="checkbox" name="hideRowSummary">Hide Row Summary
+							</span>
+						</label>
 
-					<label>
-						<span>
-							<input type="checkbox" name="hideRowSummary">Hide Row Summary
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		`;
@@ -2706,27 +2725,28 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="body form">
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Show</span>
+							<select name="showValue">
+								<option value="value">Value</option>
+								<option value="percentage">Percentage</option>
+							</select>
+						</label>
 
-					<label>
-						<span>Show</span>
-						<select name="showValue">
-							<option value="value">Value</option>
-							<option value="percentage">Percentage</option>
-						</select>
-					</label>
+						<label>
+							<span>
+								<input type="checkbox" name="classicPie">Classic Pie
+							</span>
+						</label>
 
-					<label>
-						<span>
-							<input type="checkbox" name="classicPie">Classic Pie
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		`;
@@ -2755,44 +2775,45 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="form body">
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Latitude Column</span>
+							<select name="latitude"></select>
+						</label>
 
-					<label>
-						<span>Latitude Column</span>
-						<select name="latitude"></select>
-					</label>
+						<label>
+							<span>Longitude Column</span>
+							<select name="longitude"></select>
+						</label>
 
-					<label>
-						<span>Longitude Column</span>
-						<select name="longitude"></select>
-					</label>
+						<label>
+							<span>Initial Zoom</span>
+							<input type="number" step="1" name="initialZoom" min="1" max="25">
+						</label>
 
-					<label>
-						<span>Initial Zoom</span>
-						<input type="number" step="1" name="initialZoom" min="1" max="25">
-					</label>
+						<label>
+							<span>Initial Latitude</span>
+							<input type="text" name="initialLatitude">
+						</label>
 
-					<label>
-						<span>Initial Latitude</span>
-						<input type="text" name="initialLatitude">
-					</label>
+						<label>
+							<span>Initial Longitude</span>
+							<input type="text" name="initialLongitude">
+						</label>
 
-					<label>
-						<span>Initial Longitude</span>
-						<input type="text" name="initialLongitude">
-					</label>
+						<label class="hidden">
+							<span>
+								<input type="checkbox" name="disableClustring">Disable Clustring
+							</span>
+						</label>
 
-					<label class="hidden">
-						<span>
-							<input type="checkbox" name="disableClustring">Disable Clustring
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		`;
@@ -2839,17 +2860,19 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="body form">
-					<label>
-						<span>Column</span>
-						<select name="column"></select>
-					</label>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Column</span>
+							<select name="column"></select>
+						</label>
 
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		`;
@@ -2872,7 +2895,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 	}
 });
 
-ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationLiveNumberOptions {
+ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationOptions {
 
 	get form() {
 
@@ -2884,48 +2907,49 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="form body">
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Timing Column</span>
+							<select name="timingColumn"></select>
+						</label>
 
-					<label>
-						<span>Timing Column</span>
-						<select name="timingColumn"></select>
-					</label>
+						<label>
+							<span>Value Column</span>
+							<select name="valueColumn"></select>
+						</label>
 
-					<label>
-						<span>Value Column</span>
-						<select name="valueColumn"></select>
-					</label>
+						<label>
+							<span>Center Offset</span>
+							<input type="number" name="centerOffset">
+						</label>
 
-					<label>
-						<span>Center Offset</span>
-						<input type="number" name="centerOffset">
-					</label>
+						<label>
+							<span>Left Offset</span>
+							<input type="number" name="leftOffset">
+						</label>
 
-					<label>
-						<span>Left Offset</span>
-						<input type="number" name="leftOffset">
-					</label>
+						<label>
+							<span>Right Offset</span>
+							<input type="number" name="rightOffset">
+						</label>
 
-					<label>
-						<span>Right Offset</span>
-						<input type="number" name="rightOffset">
-					</label>
+						<label class="sub-reports">
+							<span>Sub-reports</span>
+						</label>
 
-					<label class="sub-reports">
-						<span>Sub-reports</span>
-					</label>
+						<label>
+							<span>
+								<input type="checkbox" name="invertValues">Invert Values
+							</span>
+						</label>
 
-					<label>
-						<span>
-							<input type="checkbox" name="invertValues">Invert Values
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		`;
@@ -2976,6 +3000,17 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		return container;
 	}
+
+	get json() {
+
+		const result = super.json;
+
+		if(this.subReports) {
+			result.subReports = this.subReports.value;
+		}
+
+		return result;
+	}
 });
 
 ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisualizationOptions {
@@ -2990,19 +3025,20 @@ ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisuali
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="form body">
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>
+								<input type="checkbox" name="hideHeader">Hide Header
+							</span>
+						</label>
 
-					<label>
-						<span>
-							<input type="checkbox" name="hideHeader">Hide Header
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		`;
@@ -3076,7 +3112,6 @@ class ReportTransformations extends Set {
 			<form class="add-transformation">
 				<fieldset>
 					<legend>Add Transformation</legend>
-
 					<div class="form">
 
 						<label>
@@ -3098,7 +3133,7 @@ class ReportTransformations extends Set {
 		for(const [key, type] of this.types)
 			select.insertAdjacentHTML('beforeend', `<option value="${key}">${type.name}</option>`);
 
-		this.container.querySelector('.add-transformation').on('submit', () => this.insert());
+		this.container.querySelector('.add-transformation').on('submit', e => this.insert(e));
 
 		this.container.parentElement.querySelector('h3 .count').innerHTML = `
 			${this.size ? this.size + ' transformation' + (this.size == 1 ? ' applied' : 's applied') : ''}
@@ -3153,7 +3188,9 @@ class ReportTransformations extends Set {
 		this.container.innerHTML = '<div class="NA">Loading&hellip;</div>';
 	}
 
-	insert() {
+	insert(e) {
+
+		e.preventDefault();
 
 		const type = this.container.querySelector('.add-transformation select').value;
 
@@ -3234,12 +3271,10 @@ class ReportTransformation {
 
 		container.innerHTML	= `
 			<legend>${this.stage.transformations.types.get(this.type).name}</legend>
-			<div></div>
+			<div class="transformation"></div>
 		`;
 
 		const div = container.querySelector('div');
-
-		div.classList.add('transformation');
 
 		div.appendChild(rows);
 		div.appendChild(columns);
@@ -3451,7 +3486,6 @@ class ReportVisualizationDashboards extends Set {
 			<form class="add-dashboard">
 				<fieldset>
 					<legend>Add Dashboard</legend>
-
 					<div class="form">
 						<label>
 							<span>Dashboard</span>
@@ -3460,7 +3494,7 @@ class ReportVisualizationDashboards extends Set {
 
 						<label>
 							<span>Position</span>
-							<input name="position" placeholder="Position" type="number">
+							<input name="position type="number">
 						</label>
 
 						<label>
@@ -3540,7 +3574,7 @@ class ReportVisualizationDashboard {
 		form.innerHTML = `
 			<label>
 				<span>Dashboard</span>
-				<div><select name="dashboard_id"></select> <a target="_blank" class="view-dashboard">View</a></div>
+				<select name="dashboard_id"></select>
 			</label>
 
 			<label>
@@ -3548,15 +3582,20 @@ class ReportVisualizationDashboard {
 				<input type="number" name="position" value="${this.visualization.format.position || ''}">
 			</label>
 
-			<div class="dashboard-action">
-				<label>
-					<button type="submit"><i class="fa fa-save"></i> Save</button>
-				</label>
+			<label>
+				<span>&nbsp;</span>
+				<button type="submit"><i class="fa fa-save"></i> Save</button>
+			</label>
 
-				<label>
-					<button type="button" class="delete"><i class="far fa-trash-alt"></i> Delete</button>
-				</label>
-			</div>
+			<label>
+				<span>&nbsp;</span>
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button type="button" class="view-dashboard"><i class="fas fa-external-link-alt"></i></button>
+			</label>
 		`;
 
 		if(this.stage.dashboards.response) {
@@ -3570,9 +3609,8 @@ class ReportVisualizationDashboard {
 			}
 		}
 
-		form.dashboard_id.on('change', () => form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value);
 		form.dashboard_id.value = this.visualization.dashboard_id;
-		form.querySelector('.view-dashboard').href = '/dashboard/' + (this.visualization.dashboard_id);
+		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + (form.dashboard_id.value)));
 
 		form.querySelector('.delete').on('click', () => this.delete());
 
@@ -3648,16 +3686,16 @@ class ReportVisualizationFilters extends Map {
 
 		this.container.textContent = null;
 
-		if(!this.stage.report.filters.length) {
+		if(!this.stage.report.filters.length)
+			return this.container.innerHTML = '<div class="NA">No filters found!</div>';
 
-			this.container.textContent = 'No filters found!';
-			this.container.classList.add('NA');
-			return;
-		}
+		for(const filter of this.values())
+			this.container.appendChild(filter.container);
 
-		this.container.innerHTML = `
+		if(!this.size)
+			this.container.innerHTML = '<div class="NA">No filters added yet! :(</div>';
 
-			<div class="list hidden"></div>
+		this.container.insertAdjacentHTML('beforeend', `
 
 			<form class="add-filter">
 				<fieldset>
@@ -3677,40 +3715,7 @@ class ReportVisualizationFilters extends Map {
 					</div>
 				</fieldset>
 			</form>
-		`;
-
-		const
-			filterOptions = this.container.querySelector('.add-filter select'),
-			addFilterContainer = this.container.querySelector('.list');
-
-		for(const filter of this.values()) {
-
-			addFilterContainer.appendChild(filter.container);
-		}
-
-		this.updateFilterList();
-
-		this.container.querySelector('.add-filter').on('submit', (e) => {
-
-			e.preventDefault();
-
-			const
-				addFilterContainer = this.container.querySelector('.list'),
-				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
-
-			this.set(filter.filter_id, new ReportVisualizationFilter(
-				{filter_id: filter.filter_id, default_value: ''},
-				filter,
-				this.stage
-			));
-
-			addFilterContainer.appendChild(this.get(parseInt(filterOptions.value)).container);
-
-			this.updateFilterList();
-		});
-	}
-
-	updateFilterList() {
+		`);
 
 		const optionsList = this.container.querySelector('.add-filter select');
 
@@ -3718,18 +3723,32 @@ class ReportVisualizationFilters extends Map {
 
 		for(const filter of this.stage.report.filters) {
 
-			if(this.has(filter.filter_id))
-				continue;
-
-			optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
+			if(!this.has(filter.filter_id))
+				optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
 		}
 
-		this.container.querySelector('.list').classList.toggle('hidden', !this.size);
 		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
 
 		this.container.parentElement.querySelector('h3 .count').innerHTML = `
-				${this.size ? this.size + ' filter' + (this.size == 1 ? ' added' : 's added') : ''}
+			${this.size ? this.size + ' filter' + (this.size == 1 ? ' added' : 's added') : ''}
 		`;
+
+		this.container.querySelector('.add-filter').on('submit', (e) => {
+
+			e.preventDefault();
+
+			const
+				filterOptions = this.container.querySelector('.add-filter select'),
+				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
+
+			this.set(filter.filter_id, new ReportVisualizationFilter(
+				{filter_id: filter.filter_id, default_value: ''},
+				filter,
+				this.stage,
+			));
+
+			this.load();
+		});
 	}
 
 	get json() {
@@ -3770,13 +3789,19 @@ class ReportVisualizationFilter {
 
 		container.innerHTML = `
 			<legend>${this.reportFilter.name}</legend>
-			<label>
-				<span>Default Value</span>
-				<div>
+
+			<div class="form">
+				<label>
+					<span>Default Value</span>
 					<input type="text" placeholder="${this.reportFilter.default_value}" value="${this.default_value || ''}">
+				</label>
+
+				<label>
+
+					<span>&nbsp;</span>
 					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
-				</div>
-			</label>
+				</label>
+			</div>
 		`;
 
 		container.querySelector('.delete').on('click', () => {
@@ -3784,7 +3809,7 @@ class ReportVisualizationFilter {
 			this.container.parentElement.removeChild(container);
 			this.stage.reportVisualizationFilters.delete(this.filter_id);
 
-			this.stage.reportVisualizationFilters.updateFilterList();
+			this.stage.reportVisualizationFilters.load();
 		});
 
 		return container;

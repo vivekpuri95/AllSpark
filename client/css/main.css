@@ -32,6 +32,9 @@ button {
 				box-shadow var(--transition-duration),
 				border var(--transition-duration);
 }
+textarea {
+	border: 1px solid #ccc;
+}
 input[type=button],
 input[type=reset],
 input[type=submit],
