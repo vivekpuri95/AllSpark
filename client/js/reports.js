@@ -1748,7 +1748,7 @@ class DataSourceColumn {
 		response = {
 			key : this.key,
 			name : this.name,
-			type : this.type,
+			type : this.form.querySelector('.columnType select').value,
 			disabled : this.disabled,
 			color : this.color,
 			searchType : this.searchType,
@@ -6504,6 +6504,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	process() {
+
+		if(!this.options)
+			return this.source.error('Visualization configuration not set.');
 
 		if(!this.options.timingColumn)
 			return this.source.error('Timing column not selected.');
