@@ -1225,6 +1225,10 @@ class DataSourceRow extends Map {
 			}
 
 			if(column.filters && column.filters.length) {
+
+				if(search.value === '')
+					continue;
+
 				for(const search of column.filters) {
 
 					if(!row[key])
