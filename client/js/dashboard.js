@@ -5,12 +5,19 @@ Page.class = class Dashboards extends Page {
 		super();
 
 		Dashboard.setup(this);
+
+		this.list = new Map;
+		this.loadedVisualizations = new Map;
+		this.nav = document.querySelector('main > nav');
+
 		this.listContainer = this.container.querySelector('section#list');
 		this.reports = this.container.querySelector('section#reports');
 		this.listContainer.form = this.listContainer.querySelector('.form.toolbar');
 
-		if(this.account.settings.get('disable_footer'))
+		if (this.account.settings.get('disable_footer')) {
+
 			this.container.parentElement.querySelector('main > footer').classList.add('hidden');
+		}
 
 		else  {
 			const deployTime = this.container.parentElement.querySelector('main > footer .deploy-time')
@@ -18,16 +25,18 @@ Page.class = class Dashboards extends Page {
 		}
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
-			await Sections.show('list');
+
 			this.renderList();
+			await Sections.show('list');
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
-		this.list = new Map;
 		this.loadedVisualizations = new Set;
 
-		for (const category of MetaData.categories.values())
+		for (const category of MetaData.categories.values()) {
+
 			this.listContainer.form.category.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
+		}
 
 		this.listContainer.form.category.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
@@ -40,72 +49,110 @@ Page.class = class Dashboards extends Page {
 
 			await this.load();
 
-			if(window.innerWidth <= 750)
+			if (window.innerWidth <= 750)
 				this.collapseNav();
 		})();
 	}
 
 	async load(state) {
 
-		await DataSource.load(); //get report list
-		const dashboards = await API.call('dashboards/list'); //get dashboard list
-		this.list = new Map;
+		await DataSource.load();
 
-		for (const dashboard of dashboards) {
+		const
+			dashboardList = await API.call('dashboards/list'),
+			currentId = state ? state.filter : parseInt(window.location.pathname.split('/').pop()),
+			[loadReport] = window.location.pathname.split('/').filter(x => x === "report");
 
+		for (const dashboard of dashboardList) {
+
+			dashboard.children = new Set;
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 		}
-		// manage hierarchy
 
-		for (const dashboard of this.list.values()) {
+		for (const dashboard of dashboardList) {
 
-			if (dashboard.parent && this.list.has(dashboard.parent)) {
+			if (parseInt(dashboard.parent)) {
 
-				(this.list.get(dashboard.parent)).children.add(dashboard);
+				dashboard.children.add(this.list.get(dashboard.parent).id);
 			}
 		}
-
-		const id = state ? state.filter : parseInt(window.location.pathname.split('/').pop());
 
 		if (window.location.pathname.split('/').pop() === "first") {
 
-			this.renderNav();
+			this.sync(0);
 
-			let item = this.container.querySelector("nav .item:not(.hidden)");
+			//recursively click on dashboard tree
 
-			if (!item) {
+			let dashboardReference = this.container.querySelector('nav .item:not(.hidden)');
+
+			if (!dashboardReference) {
+
 				this.renderList();
-				return await Sections.show("list");
+				return await Sections.show('list')
 			}
 
-			while (item.querySelector(".submenu")) {
+			while (dashboardReference.querySelector('.submenu:not(.hidden)')) {
 
-				item.querySelector(".label").click();
-				item = item.querySelector(".submenu")
+				dashboardReference.querySelector('.label').click();
+				dashboardReference = dashboardReference.querySelector('.submenu');
 			}
 
-			item.querySelector(".label").click();
-			return;
+			return dashboardReference.querySelector('.label').click();
 		}
 
-		if (!id) {
+		this.sync(0);
 
-			this.renderList();
-			this.renderNav();
+		if (!currentId) {
+
 			return await Sections.show("list");
 		}
 
-		const [loadReport] = window.location.pathname.split('/').filter(x => x === "report");
-
-		await this.renderNav(id);
 		if (loadReport) {
-			await this.report(id);
+
+			return await this.report(id);
 		}
 
 		else {
 
-			await this.list.get(id).load();
-			await this.list.get(id).render();
+			return this.sync(currentId, false)
+		}
+	}
+
+
+	sync(dashboardId, nav = true) {
+
+		if (dashboardId) {
+
+			this.list.get(dashboardId).load();
+			this.list.get(dashboardId).render();
+		}
+
+		else {
+
+			this.renderList();
+			this.renderNav();
+		}
+
+		if (nav) {
+			// collapse all dashboard hirarchy if no dashboard id found.
+			let parentDashboards = this.parents(dashboardId || 0).map(x => `dashboard-${x}`);
+
+			for (const label of this.nav.querySelectorAll('.label')) {
+
+				const submenu = label.parentElement.querySelector('.submenu');
+
+				if (submenu) {
+
+					submenu.classList.add('hidden');
+				}
+				//arrow revert
+			}
+
+			for (const element of parentDashboards) {
+
+				const submenu = this.nav.querySelector(`#${element}`).parentElement.querySelector('.submenu');
+				submenu.classList.remove('hidden');
+			}
 		}
 	}
 
@@ -196,7 +243,7 @@ Page.class = class Dashboards extends Page {
 				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
 			`;
 
-			for(const tag of tags)
+			for (const tag of tags)
 				tr.querySelector('.tags').appendChild(tag);
 
 			tr.querySelector('.link').on('click', e => e.stopPropagation());
@@ -252,7 +299,7 @@ Page.class = class Dashboards extends Page {
 	renderNav(id) {
 
 		const
-			showLabelIds = this.parentList(id).map(x => x),
+			showLabelIds = this.parents(id).map(x => x),
 			nav = document.querySelector('main > nav');
 
 		nav.textContent = null;
@@ -282,7 +329,7 @@ Page.class = class Dashboards extends Page {
 
 				if (dashboard.name.toLowerCase().includes(searchItem.toLowerCase())) {
 
-					matching = matching.concat(this.parentList(dashboard.id).map(x => '#dashboard-' + x));
+					matching = matching.concat(this.parents(dashboard.id).map(x => '#dashboard-' + x));
 					nav.querySelector("#dashboard-" + dashboard.id).parentNode.querySelector(".label").classList.add("selected")
 				}
 			}
@@ -326,23 +373,23 @@ Page.class = class Dashboards extends Page {
 						currentDashboard = currentDashboard.pop();
 						currentDashboard = nav.querySelector(`#dashboard-${currentDashboard}`);
 
-						if(currentDashboard)
+						if (currentDashboard)
 							currentDashboard.classList.add("selected");
 					}
 				});
 
 				if (showLabelIds.includes(dashboard.id)) {
 
-					for(const elem of menuItem.querySelectorAll(".submenu")) {
+					for (const elem of menuItem.querySelectorAll(".submenu")) {
 
 						elem.classList.remove("hidden");
 					}
 
-					for(const elem of menuItem.querySelectorAll(".label")) {
+					for (const elem of menuItem.querySelectorAll(".label")) {
 
 						const angle = elem.querySelector(".angle");
 
-						if(angle) {
+						if (angle) {
 
 							angle.classList.add("down");
 						}
@@ -364,7 +411,7 @@ Page.class = class Dashboards extends Page {
 
 		nav.querySelector('.collapse-panel').on('click', () => this.collapseNav());
 
-		if(!nav.children.length)
+		if (!nav.children.length)
 			nav.innerHTML = `<div class="NA">No dashboards found!</div>`;
 	}
 
@@ -393,7 +440,7 @@ Page.class = class Dashboards extends Page {
 		}
 	}
 
-	parentList(id) {
+	parents(id) {
 
 		let dashboard = this.list.get(id);
 
@@ -437,9 +484,9 @@ Page.class = class Dashboards extends Page {
 
 		const promises = [];
 
-		for(const filter of report.filters.values()) {
+		for (const filter of report.filters.values()) {
 
-			if(filter.multiSelect) {
+			if (filter.multiSelect) {
 				promises.push(filter.fetch());
 			}
 		}
@@ -464,11 +511,11 @@ class Dashboard {
 		this.page = page;
 		this.children = new Set;
 
-		this.parentList = new Set;
+		this.parents = new Set;
 
 		if (this.parent) {
 
-			this.parentList.add(this.parent);
+			this.parents.add(this.parent);
 		}
 
 		Object.assign(this, dashboardObject);
@@ -611,7 +658,7 @@ class Dashboard {
 
 			globalFilters.classList.toggle('show');
 
-			if(page.account.settings.get('global_filters_position') == 'top') {
+			if (page.account.settings.get('global_filters_position') == 'top') {
 				globalFilters.classList.toggle('top');
 				globalFilters.classList.toggle('right');
 			}
@@ -626,7 +673,7 @@ class Dashboard {
 
 			globalFilters.classList.toggle('show');
 
-			if(page.account.settings.get('global_filters_position') == 'top') {
+			if (page.account.settings.get('global_filters_position') == 'top') {
 				globalFilters.classList.toggle('top');
 				globalFilters.classList.toggle('right');
 			}
@@ -893,7 +940,7 @@ class Dashboard {
 
 		const mailto = Dashboard.toolbar.querySelector('#mailto');
 
-		if(this.page.account.settings.get('enable_dashboard_share'))
+		if (this.page.account.settings.get('enable_dashboard_share'))
 			mailto.classList.remove('hidden');
 
 		if (Dashboard.mail_listener)
@@ -904,7 +951,7 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if(Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size)
+		if (Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size)
 			this.globalFilters.apply();
 	}
 
@@ -922,7 +969,7 @@ class Dashboard {
 
 			report.selectedVisualization = selectedVisualizationProperties
 
-			if(!report.format)
+			if (!report.format)
 				report.format = {};
 
 			report.format.format = selectedVisualizationProperties.format;
@@ -1182,9 +1229,9 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		const globalFilters = new Map;
 
-		for(const visualization of dashboard.visualizationList) {
+		for (const visualization of dashboard.visualizationList) {
 
-			for(const filter of visualization.filters.values()) {
+			for (const filter of visualization.filters.values()) {
 
 				if(!Array.from(MetaData.globalFilters.values()).some(a => a.placeholder.includes(filter.placeholder)))
 					continue;
@@ -1232,7 +1279,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		const promises = [];
 
-		for(const filter of this.values())
+		for (const filter of this.values())
 			promises.push(filter.fetch());
 
 		await Promise.all(promises);
@@ -1247,7 +1294,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		container.classList.remove('show');
 		container.classList.toggle('hidden', !this.size);
 
-		if(!this.size)
+		if (!this.size)
 			return;
 
 		container.innerHTML = `
@@ -1268,11 +1315,11 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		searchInput.on('keyup', () => {
 
-			for(const filter of this.values()) {
+			for (const filter of this.values()) {
 
 				filter.label.classList.remove('hidden');
 
-				if(!filter.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
+				if (!filter.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
 					filter.label.classList.add('hidden');
 			}
 
@@ -1290,11 +1337,11 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 	async apply(options = {}) {
 
-		for(const report of this.dashboard.visualizationList) {
+		for (const report of this.dashboard.visualizationList) {
 
 			let found = false;
 
-			for(const filter of report.filters.values()) {
+			for (const filter of report.filters.values()) {
 
 				if(!Array.from(this.values()).some(gfl => gfl.placeholders.includes(filter.placeholder)))
 					continue;
@@ -1304,7 +1351,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				found = true;
 			}
 
-			if(found && this.page.loadedVisualizations.has(report))
+			if (found && this.page.loadedVisualizations.has(report))
 				report.visualizations.selected.load(options);
 
 			report.container.style.opacity = found ? 1 : 0.4;
@@ -1313,22 +1360,22 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		Dashboard.selectedValues.clear();
 
 		// Save the value of each filter for use on other dashboards
-		for(const [placeholder, filter] of this)
+		for (const [placeholder, filter] of this)
 			Dashboard.selectedValues.set(placeholder, filter.value);
 	}
 
 	clear() {
 
-		for(const filter of this.values()) {
-			if(filter.multiSelect)
+		for (const filter of this.values()) {
+			if (filter.multiSelect)
 				filter.multiSelect.clear();
 		}
 	}
 
 	all() {
 
-		for(const filter of this.values()) {
-			if(filter.multiSelect)
+		for (const filter of this.values()) {
+			if (filter.multiSelect)
 				filter.multiSelect.all();
 		}
 	}

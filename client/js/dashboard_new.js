@@ -55,33 +55,265 @@ Page.class = class Dashboards extends Page {
 
 	async nav() {
 
+		let search = this.nav.querySelector('dashboard-search');
+
+		search.on('keyup', () => {
+
+			const searchItem = search.querySelector("input[name='search']").value;
+
+			this.sync(0);
+
+			if (!searchItem.length) {
+
+				return this.sync(0);
+			}
+
+			let matchingIds = [];
+
+			for (const dashboard of this.list.values()) {
+
+				if (dashboard.name.toLowerCase().includes(searchItem.toLowerCase())) {
+
+					matchingIds = matchingIds.concat(this.parentList(dashboard.id).map(x => '#dashboard-' + x));
+					this.nav.querySelector("#dashboard-" + dashboard.id).parentNode.querySelector(".label").classList.add("selected")
+				}
+			}
+			let toShowItems = [];
+
+			try {
+				toShowItems = this.nav.querySelectorAll([...new Set(matchingIds)].join(", "));
+			}
+			catch (e) {
+			}
+
+			for (const item of toShowItems) {
+
+				const hasHidden = item.parentNode.querySelector(".submenu");
+
+				if (hasHidden) {
+
+					hasHidden.classList.remove("hidden");
+				}
+
+				item.querySelector(".angle") ? item.querySelector(".angle").classList.add("down") : {};
+			}
+		});
+
+		for (const dashboard of this.list.values()) {
+
+			if (!dashboard.parent) {
+
+				let menuItem = dashboard.menuItem;
+				menuItem.classList.add("parentDashboard");
+				const label = menuItem.querySelector(".label");
+
+				label.on("click", () => {
+
+					this.closeOtherDropDowns(label.id, nav);
+
+					let currentDashboard = window.location.pathname.split("/");
+
+					if (currentDashboard.includes("dashboard")) {
+
+						currentDashboard = currentDashboard.pop();
+						currentDashboard = nav.querySelector(`#dashboard-${currentDashboard}`);
+
+						if (currentDashboard)
+							currentDashboard.classList.add("selected");
+					}
+				});
+
+				if (showLabelIds.includes(dashboard.id)) {
+
+					for (const elem of menuItem.querySelectorAll(".submenu")) {
+
+						elem.classList.remove("hidden");
+					}
+
+					for (const elem of menuItem.querySelectorAll(".label")) {
+
+						const angle = elem.querySelector(".angle");
+
+						if (angle) {
+
+							angle.classList.add("down");
+						}
+					}
+				}
+
+				nav.appendChild(menuItem);
+			}
+		}
+
+		nav.insertAdjacentHTML('beforeend', `
+			<footer>
+				<div class="collapse-panel">
+					<span class="left"><i class="fa fa-angle-double-left"></i></span>
+					<span class="right hidden"><i class="fa fa-angle-double-right"></i></span>
+				</div>
+			</footer>
+		`);
+
+		nav.querySelector('.collapse-panel').on('click', () => this.collapseNav());
+
+		if (!nav.children.length)
+			nav.innerHTML = `<div class="NA">No dashboards found!</div>`;
 
 	}
 
 	renderList() {
 
+		const
+			thead = this.listContainer.querySelector('thead'),
+			tbody = this.listContainer.querySelector('tbody');
 
-	}
+		tbody.textContent = null;
 
-	async sync(params) {
+		thead.innerHTML = `
+			<tr>
+				<th>ID</th>
+				<th>Title</th>
+				<th>Description</th>
+				<th>Tags</th>
+				<th>Category</th>
+				<th>Visualizations</th>
+			</tr>
+		`;
 
-		if (params.nav) {
+		for (const report of DataSource.list.values()) {
 
-			for (const dashboard of this.list.values()) {
+			if (!report.is_enabled || report.is_deleted) {
 
-				if (!params.dashboard || !dashboard.id === params.dashboard) {
+				continue;
+			}
 
-					dashboard.menuItem.querySelector('submenu').classList.add('hidden');
+			if (this.listContainer.form.category.value && report.category_id != this.listContainer.form.category.value) {
+
+				continue;
+			}
+
+			if (this.listContainer.form.search.value) {
+
+				let found = false;
+
+				const searchItems = this.listContainer.form.search.value.split(" ").filter(x => x).slice(0, 5);
+
+
+				for (const searchItem of searchItems) {
+
+					const searchableText = report.query_id + " " + report.name + " " + report.description + " " + report.tags;
+
+					found = searchableText.toLowerCase().includes(searchItem.toLowerCase());
+
+					if (found) {
+
+						break;
+					}
+				}
+
+				if (!found) {
+
+					continue;
 				}
 			}
+
+			const tr = document.createElement('tr');
+
+			let description = report.description ? report.description.split(' ').slice(0, 20) : [];
+
+			if (description.length === 20) {
+
+				description.push('&hellip;');
+			}
+
+			let tags = report.tags ? report.tags.split(',') : [];
+
+			tags = tags.map(tag => {
+
+				const a = document.createElement('a');
+				a.classList.add('tag');
+				a.textContent = tag.trim();
+
+				a.on('click', e => this.tagSearch(e));
+
+				return a;
+			});
+
+			tr.innerHTML = `
+				<td>${report.query_id}</td>
+				<td><a href="/report/${report.query_id}" target="_blank" class="link">${report.name}</a></td>
+				<td>${description.join(' ') || ''}</td>
+				<td class="tags"></td>
+				<td>${MetaData.categories.has(report.category_id) && MetaData.categories.get(report.category_id).name || ''}</td>
+				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
+			`;
+
+			for (const tag of tags)
+				tr.querySelector('.tags').appendChild(tag);
+
+			tr.querySelector('.link').on('click', e => e.stopPropagation());
+
+			tr.on('click', async () => {
+				this.report(report.query_id);
+				history.pushState({filter: report.query_id}, '', `/report/${report.query_id}`);
+			});
+
+			tbody.appendChild(tr);
 		}
 
-		if (params.dashboard) {
+		if (!tbody.children.length)
+			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found! :(</td></tr>`;
+	}
 
-			await this.list.get(params.dashboard).load();
-			await this.list.get(params.dashboard).render();
+	sync(dashboardId, nav = true) {
+
+		if (dashboardId) {
+
+			this.list.get(dashboardId).load();
+			this.list.get(dashboardId).render();
 		}
 
+		if (nav) {
+
+			let parentDashboards = this.parents(dashboardId || 0).map(x => `dashboard-${x}`);
+
+			for (const label of this.nav.querySelectorAll('.label')) {
+
+				label.parentElement.querySelector('.submenu').classList.add('hidden');
+				//arrow revert
+			}
+
+			for (const element of parentDashboards) {
+
+				const submenu = this.nav.querySelector(`#${element}`).parentElement.querySelector('.submenu');
+				submenu.classList.remove('hidden');
+			}
+		}
+	}
+
+	parents(id) {
+
+		let dashboard = this.list.get(id);
+
+		const parents = [id];
+
+		if (!dashboard) {
+
+			return [];
+		}
+
+		if (!dashboard.parent) {
+
+			return parents
+		}
+
+		while (dashboard.parent) {
+
+			parents.push(dashboard.parent);
+			dashboard = this.list.get(dashboard.parent);
+		}
+
+		return parents;
 	}
 }
 ;
@@ -214,7 +446,7 @@ class Dashboard {
 
 		container.querySelector('.label').addEventListener('click', () => {
 
-			this.page.sync({dashboard: this.id, nav: true,});
+			this.page.sync(this.id);
 		});
 
 		this.menuContainer = container;
