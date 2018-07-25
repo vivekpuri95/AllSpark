@@ -3494,7 +3494,7 @@ class ReportVisualizationDashboards extends Set {
 
 						<label>
 							<span>Position</span>
-							<input name="position type="number">
+							<input name="position" type="number">
 						</label>
 
 						<label>
