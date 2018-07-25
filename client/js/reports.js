@@ -3611,8 +3611,14 @@ Visualization.list.set('table', class Table extends Visualization {
 				else this.selectedRows.add(row);
 
 				tr.classList.toggle('selected');
+
 				this.renderRowSummary();
 			});
+
+			if(!options.resize) {
+				tr.classList.add('initial');
+				setTimeout(() => window.requestAnimationFrame(() => tr.classList.remove('initial')), position * 50);
+			}
 
 			tbody.appendChild(tr);
 		}
@@ -3633,7 +3639,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 			tr.on('click', () => {
 				this.rowLimit = Math.ceil(this.rowLimit * this.rowLimitMultiplier);
-				this.source.visualizations.selected.render();
+				this.source.visualizations.selected.render({resize: true});
 			});
 
 			tbody.appendChild(tr);
@@ -3680,6 +3686,9 @@ Visualization.list.set('table', class Table extends Visualization {
 	}
 
 	renderRowSummary() {
+
+		if(this.hideRowSummary)
+			return;
 
 		const container = this.container.querySelector('.row-summary .selected-rows');
 
