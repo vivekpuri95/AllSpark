@@ -605,7 +605,7 @@ class APIRequest {
 			parameters.append("token", this.token);
 		}
 
-		this.url = this.reportObj.url;
+		this.url = this.definition.url;
 
 		if (this.definition.method === 'GET') {
 
