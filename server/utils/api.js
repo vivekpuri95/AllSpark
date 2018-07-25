@@ -15,7 +15,7 @@ const child_process = require('child_process');
 
 const env = {
 	name: process.env.NODE_ENV,
-	deployed_on: new Date().toISOString().substring(0, 19).replace('T', ' '),
+	deployed_on: new Date(),
 	gitChecksum: child_process.execSync('git rev-parse --short HEAD').toString().trim(),
 	branch: child_process.execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
 };
@@ -89,7 +89,6 @@ class API {
 
 				obj.request = request;
 				obj.response = response;
-				obj.assert = assertExpression;
 
 				const token = request.query.token || request.body.token;
 
@@ -113,7 +112,7 @@ class API {
 				if(!obj.account) {
 					for(const account of global.accounts) {
 
-						if(account.url == host) {
+						if(account.url.includes(host)) {
 
 							obj.account = account;
 							break;
@@ -210,7 +209,8 @@ class API {
 				message: e.message || e.sqlMessage,
 				url: obj.request.url,
 				description: JSON.stringify(e),
-				type: "server"
+				type: "server",
+				user_agent: obj.request.get('user-agent'),
 			};
 
 			await errorLogs.insert(error);
@@ -236,15 +236,15 @@ class API {
 			});
 		});
 	}
-}
 
-function assertExpression(expression, message, statusCode) {
+	assert(expression, message, statusCode) {
 
-	return assert(expression,
-		JSON.stringify({
-			message: message,
-			status: statusCode,
-		}));
+		return assert(expression,
+			JSON.stringify({
+				message: message,
+				status: statusCode,
+			}));
+	}
 }
 
 API.Exception = class {

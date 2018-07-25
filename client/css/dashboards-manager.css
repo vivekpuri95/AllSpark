@@ -27,25 +27,6 @@ main #form .report {
 				margin: 0;
 			}
 
-main form#dashboard_share {
-	margin-top: 10px;
-	display: flex;
-}
-	main form#dashboard_share .multi-select {
-		width: 20%;
-	}
-	main form#dashboard_share button {
-		margin-left: 10px;
-		margin-top: auto;
-	}
-		main form#dashboard_share button > svg {
-			margin-right: 0px;
-		}
-
 main h2.share-heading {
-	padding-top: 15px;
-}
-
-main table.user-dashboard {
-	margin-top: 10px;
+	margin: calc(var(--gap) * 2) 0;
 }

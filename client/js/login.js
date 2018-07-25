@@ -46,7 +46,7 @@ Page.class = class Login extends Page {
 	 */
 	async bypassLogin() {
 
-		if(!this.account.auth_api || !(await IndexedDb.instance.get('external_parameters')))
+		if(!this.account.auth_api || !(await Storage.get('external_parameters')))
 			return this.acceptEmail();
 
 		Sections.show('loading');
@@ -217,9 +217,9 @@ Page.class = class Login extends Page {
 
 		try {
 
-			if(Array.isArray(this.account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
+			if(Array.isArray(this.account.settings.get('external_parameters')) && await Storage.get('external_parameters')) {
 
-				const external_parameters = await IndexedDb.instance.get('external_parameters');
+				const external_parameters = await Storage.get('external_parameters');
 
 				for(const key of this.account.settings.get('external_parameters')) {
 
@@ -233,14 +233,14 @@ Page.class = class Login extends Page {
 			if(!response.jwt && response.length)
 				return this.message('Ambigious email! :(', 'warning');
 
-			await IndexedDb.instance.set('refresh_token', response.jwt);
+			await Storage.set('refresh_token', response.jwt);
 			this.cookies.set('refresh_token', response.jwt);
 
 			// If the login response has an external parameters flag then add their values to the stored external parameters.
 			if(response.external_parameters && Array.isArray(account.settings.get('external_parameters'))) {
 
 				const
-					storageList = await IndexedDb.instance.get('external_parameters') || {},
+					storageList = await Storage.get('external_parameters') || {},
 					settingsList = account.settings.get('external_parameters');
 
 				for(const key in response) {
@@ -250,10 +250,10 @@ Page.class = class Login extends Page {
 						storageList[key] = response[key];
 				}
 
-				await IndexedDb.instance.set('external_parameters', storageList);
+				await Storage.set('external_parameters', storageList);
 			}
 
-			await IndexedDb.instance.delete('account');
+			await Storage.delete('account');
 
 			await Account.load();
 

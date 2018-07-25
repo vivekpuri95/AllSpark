@@ -23,6 +23,24 @@ class Users extends Page {
 	static async setup(page) {
 
 		Users.contaier = page.container.querySelector('section#list table tbody');
+		Users.thead = page.container.querySelector('section#list table thead');
+
+		for(const thead of Users.thead.querySelectorAll('.thead-bar th')) {
+
+			if(thead.classList.contains('action'))
+				continue;
+
+			const th = document.createElement('th');
+			th.classList.add('search');
+
+			th.innerHTML = `
+				<input type="text" placeholder="Search ${thead.textContent}" data-key="${thead.dataset.key}">
+			`;
+
+			th.on('keyup', () => Users.search());
+
+			Users.thead.querySelector('.search-bar').appendChild(th);
+		}
 	}
 
 	static async load() {
@@ -31,15 +49,44 @@ class Users extends Page {
 
 		Users.list = users.map(user => new UserManage(user));
 
-		Users.render();
+		Users.render(Users.list);
 	}
 
-	static render() {
+	static search() {
+
+		const searchQuery = Users.thead.querySelectorAll('.search-bar input');
+
+		const list = Users.list.filter(user => {
+
+			for(const input of searchQuery) {
+
+				const query = input.value.toLowerCase();
+
+				if(!query)
+					continue;
+
+				const value = user[input.dataset.key].toString().toLowerCase();
+
+				if(!value.includes(query))
+					return false;
+			}
+			return true;
+		});
+
+		Users.render(list);
+	}
+
+	static render(list) {
 
 		Users.contaier.textContent = null;
 
-		for(const user of Users.list)
+		const searchQueries = Users.thead.querySelectorAll('.search-bar th');
+
+		for(const user of list)
 			Users.contaier.appendChild(user.row);
+
+		if(!list.length)
+			Users.contaier.innerHTML = '<td colspan="5" class="NA">No rows found :(</td>'
 	}
 
 	static loadState(state) {
@@ -234,7 +281,7 @@ class UserManage {
 	get row() {
 
 		if(this.container)
-			return this.contaier;
+			return this.container;
 
 		this.container = document.createElement('tr');
 
@@ -242,8 +289,8 @@ class UserManage {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.email}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			<td class="action green" title="Edit">Edit</i></td>
+			<td class="action red" title="Delete">Delete</td>
 		`;
 
 		this.container.querySelector('.green').on('click', () => {

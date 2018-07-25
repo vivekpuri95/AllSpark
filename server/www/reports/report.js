@@ -2,8 +2,7 @@
 
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
-const User = require('../../utils/User');
-const redis = require('../../utils/redis').Redis;
+const role = new (require("../object_roles")).get();
 
 exports.list = class extends API {
 
@@ -24,7 +23,30 @@ exports.list = class extends API {
 				and q.account_id = ${this.account.account_id}
         `;
 
-		if(this.request.body.search) {
+		const dashboardRoleQuery = `
+			SELECT
+				q.query_id,
+				o.*
+			FROM
+				tb_query q
+			JOIN
+				tb_query_visualizations qv
+				USING(query_id)
+			JOIN
+				tb_visualization_dashboard vd
+				USING(visualization_id)
+			JOIN
+				tb_object_roles o
+				ON o.owner_id = vd.dashboard_id
+
+			WHERE
+				o.owner = "dashboard"
+				AND o.target = "role"
+				AND q.is_enabled = 1
+				AND q.is_deleted = 0
+		`;
+
+		if (this.request.body.search) {
 			query = query.concat(`
 				AND (
 					query_id LIKE ?
@@ -39,44 +61,74 @@ exports.list = class extends API {
 			this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]),
 			this.mysql.query('SELECT * FROM tb_query_filters'),
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
+			this.mysql.query(dashboardRoleQuery),
 		]);
 
-		const response = [], reportFilters = {}, reportVisualizations = {};
+		const reportRoles = await role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],);
 
-		for(const filter of results[1]) {
+		const reportRoleMapping = {};
 
-			if(!(filter.query_id in reportFilters)) {
 
-				reportFilters[filter.query_id] = [];
+		for (const row of reportRoles) {
+
+			if (!reportRoleMapping[row.owner_id]) {
+
+				reportRoleMapping[row.owner_id] = {
+					roles: [],
+					category_id: [],
+					dashboard_roles: [],
+				};
+
+				reportRoleMapping[row.owner_id].roles.push(row.target_id);
+				reportRoleMapping[row.owner_id].category_id.push(row.category_id);
 			}
-
-			reportFilters[filter.query_id].push(filter);
 		}
 
-		for(const visualization of results[2]) {
+		for(const queryDashboardRole of results[3]) {
 
-			if(!(visualization.query_id in reportVisualizations)) {
+			if(!reportRoleMapping[queryDashboardRole.query_id]) {
 
-				reportVisualizations[visualization.query_id] = [];
+				reportRoleMapping[queryDashboardRole.query_id] = {
+					roles: null,
+					category_id: null,
+					dashboard_roles: [],
+				};
 			}
 
-			reportVisualizations[visualization.query_id].push(visualization);
+			reportRoleMapping[queryDashboardRole.query_id].dashboard_roles.push(queryDashboardRole);
 		}
+
+		const response = [];
 
 		for (const row of results[0]) {
 
-			if ((await auth.report(row, this.user)).error)
-				continue;
+			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
+			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
 
-			row.filters = reportFilters[row.query_id] || [];
-			row.visualizations = reportVisualizations[row.query_id] || [];
+			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
+				continue;
+			}
+
+			row.filters = results[1].filter(filter => filter.query_id === row.query_id);
+			row.visualizations = results[2].filter(visualization => visualization.query_id === row.query_id);
 			row.href = `/report/${row.query_id}`;
 			row.superset = 'Reports';
+
+			try {
+				row.definition = JSON.parse(row.definition);
+			} catch(e) {
+				row.definition = {};
+			}
+
 			response.push(row);
 
 			try {
+
 				row.format = row.format ? JSON.parse(row.format) : null;
-			} catch (e) {
+			}
+
+			catch (e) {
+
 				row.format = null;
 			}
 		}
@@ -97,6 +149,7 @@ exports.update = class extends API {
 				'name',
 				'source',
 				'query',
+				'definition',
 				'url',
 				'url_options',
 				'category_id',
@@ -110,7 +163,7 @@ exports.update = class extends API {
 				'refresh_rate',
 				'roles',
 				'format',
-				'connection_name'
+				'connection_name',
 			];
 
 		for (const key in this.request.body) {
@@ -124,7 +177,7 @@ exports.update = class extends API {
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;
 
-		if(values.hasOwnProperty("format")) {
+		if (values.hasOwnProperty("format")) {
 
 			try {
 
@@ -154,6 +207,7 @@ exports.insert = class extends API {
 				'name',
 				'source',
 				'query',
+				'definition',
 				'url',
 				'url_options',
 				'category_id',
@@ -167,7 +221,7 @@ exports.insert = class extends API {
 				'refresh_rate',
 				'roles',
 				'format',
-				'connection_name'
+				'connection_name',
 			];
 
 		for (const key in this.request.body) {
@@ -231,23 +285,26 @@ exports.userPrvList = class extends API {
                     u.user_id,
                     concat_ws(" ",first_name, middle_name, last_name) AS \`name\`,
                     email,
-                    IF(r.is_admin = 1, 0, ur.role_id) AS owner_id,
+                    IF(r.is_admin = 1, 0, r.role_id) AS owner_id,
                     r.name AS role_name,
-                    IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
+                    IF(c.is_admin = 1, 0, c.category_id) AS category_id,
                     c.name AS category_name
                FROM
-                    tb_user_roles ur
+                    tb_object_roles o
                JOIN
                     tb_users u
-                    USING(user_id)
+                    ON u.user_id = o.owner_id
                JOIN
                     tb_categories c
                     USING(category_id)
                JOIN
                     tb_roles r
-                    USING(role_id)
+                    ON r.role_id = o.target_id
                WHERE
                     u.account_id = ?
+                    AND o.account_id = ?
+                    AND o.owner = "user"
+                    AND o.target = "role"
                     AND u.status = 1
                ) user
                LEFT  JOIN
@@ -279,13 +336,12 @@ exports.userPrvList = class extends API {
                    ) user_query
                USING(user_id)
 		`,
-			[this.account.account_id, this.account.account_id, reportId, reportId]);
-
+			[this.account.account_id, this.account.account_id, this.account.account_id, reportId, reportId]);
 
 
 		const userObj = {};
 
-		for(const row of users) {
+		for (const row of users) {
 
 			if (!userObj[row.user_id]) {
 
@@ -331,25 +387,23 @@ exports.userPrvList = class extends API {
                     AND is_enabled = 1
                     AND is_deleted = 0
                     AND account_id = ?`,
-				[reportId, this.account.account_id]
-			);
+			[reportId, this.account.account_id]
+		);
 
-			//queryDetails
+		//queryDetails
 
 
-			for(const user in userObj) {
+		for (const user in userObj) {
 
-				const authResponse = await auth.report({...reportDetails[0], flag: userObj[user].flag}, userObj[user]);
-				if(!authResponse.error) {
+			const authResponse = await auth.report({...reportDetails[0], flag: userObj[user].flag}, userObj[user]);
+			if (!authResponse.error) {
 
-					delete userObj[user].roles;
-					delete userObj[user].privileges;
-					privilegedUsers.push({...userObj[user], reason: authResponse.message});
-				}
+				delete userObj[user].roles;
+				delete userObj[user].privileges;
+				privilegedUsers.push({...userObj[user], reason: authResponse.message});
 			}
+		}
 		return privilegedUsers;
 
 	}
-
-
 };

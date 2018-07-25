@@ -22,31 +22,31 @@ class Page {
 
 		Page.render();
 
-		Page.listenAccessToken();
+		Page.setupShortcuts();
 	}
 
 	static async load() {
 
-		await IndexedDb.load();
+		await Storage.load();
 		await Account.load();
 		await User.load();
 		await MetaData.load();
 
-		if(account && account.auth_api) {
+		if(window.account && account.auth_api) {
 
 			const parameters = new URLSearchParams(window.location.search.slice(1));
 
 			if(account && parameters.get('external_parameters') && Array.isArray(account.settings.get('external_parameters'))) {
 
-				User.logout(undefined, async () => {
+				User.logout({callback: async () => {
 
 					const parameters_ = {};
 
 					for(const [key, value] of parameters)
 						parameters_[key] = value;
 
-					await IndexedDb.instance.set('external_parameters', parameters_);
-				});
+					await Storage.set('external_parameters', parameters_);
+				}});
 			}
 		}
 
@@ -57,7 +57,7 @@ class Page {
 
 		const header = document.querySelector('body > header');
 
-		if(account) {
+		if(window.account) {
 
 			if(account.settings.get('hideHeader')) {
 				header.classList.add('hidden');
@@ -76,7 +76,7 @@ class Page {
 		Page.navList = [
 			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
 			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
-			{url: '/reports', name: 'Reports', privilege: 'reports', icon: 'fa fa-database'},
+			{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
 			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
 			{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
 			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
@@ -84,7 +84,7 @@ class Page {
 
 		const nav_container = header.querySelector('nav');
 
-		if(account && account.settings.get('top_nav_position') == 'left') {
+		if(window.account && account.settings.get('top_nav_position') == 'left') {
 
 			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
 
@@ -151,16 +151,20 @@ class Page {
 		}
 	}
 
-	static listenAccessToken() {
+	static setupShortcuts() {
+
 		document.on('keyup', e => {
-			if(e.altKey && e.keyCode == 69) {
-				const value = prompt('Enter the Token.');
 
-				if(!value)
-					return;
+			if(!e.altKey)
+				return;
 
-				location.reload();
-			}
+			// Alt + K
+			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]'))
+				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
+
+			// Alt + L
+			if(e.keyCode == 76)
+				User.logout();
 		});
 	}
 
@@ -172,7 +176,7 @@ class Page {
 		this.user = window.user;
 		this.metadata = window.MetaData;
 		this.indexedDb = IndexedDb.instance;
-		this.cookies = new Cookies();
+		this.cookies = Cookies;
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
@@ -233,8 +237,17 @@ Page.serviceWorker = class PageServiceWorker {
 	}
 }
 
+/**
+ * A generic key value store that uses IndexedDb.
+ *
+ * Has support for basic Map based functions and gives
+ * access to the database instance for further interaction.
+ */
 class IndexedDb {
 
+	/**
+	 * Set up the database connection if not done already.
+	 */
 	static async load() {
 
 		if(IndexedDb.instance)
@@ -245,15 +258,25 @@ class IndexedDb {
 		await IndexedDb.instance.open();
 	}
 
+	/**
+	 * Save a page's reference for use later.
+	 *
+	 * @param  Page	page	May be used to reference the current page.
+	 */
 	constructor(page) {
 		this.page = page;
 	}
 
+	/**
+	 * Open a database connection.
+	 *
+	 * @return Promise	Resolves when the connection is established successfuly.
+	 */
 	open() {
 
 		return new Promise((resolve, reject) => {
 
-			this.request = indexedDB.open('MainDb', 1);
+ 			this.request = indexedDB.open('MainDb', 1);
 
 			this.request.onupgradeneeded = e => this.setup(e.target.result);
 			this.request.onsuccess = e => {
@@ -264,14 +287,29 @@ class IndexedDb {
 				resolve();
 			};
 
-			this.request.onerror = reject;
+			this.request.onerror = e => {
+				reject();
+			};
 		});
 	}
 
+	/**
+	 * Set up the connection once it's created for the first time.
+	 *
+	 * This creates a store called MainStore that's the sole sotore that stores any data.
+	 *
+	 * @param  object	db	The database instance.
+	 */
 	setup(db) {
 		db.createObjectStore('MainStore', {keyPath: 'key'});
 	}
 
+	/**
+	 * Check if a key exists in the IndexedDb's main store.
+	 *
+	 * @param  string	key	The key to check.
+	 * @return Promise		Resolves with true if the key exists, false otherwise.
+	 */
 	has(key) {
 
 		return new Promise((resolve, reject) => {
@@ -283,6 +321,12 @@ class IndexedDb {
 		});
 	}
 
+	/**
+	 * Get the value stored at a specified key in the main store.
+	 *
+	 * @param  string	key	The key whose value will be fetched.
+	 * @return Promise		Resolves with the value stored in the mian store.
+	 */
 	get(key) {
 
 		return new Promise((resolve, reject) => {
@@ -294,6 +338,13 @@ class IndexedDb {
 		});
 	}
 
+	/**
+	 * Set the value at a specified key in the main store.
+	 *
+	 * @param string	key		The key of the new value.
+	 * @param Object	value	Value for the key being passed.
+	 * @return Promise			Resolves with the result when saved. Rejects otherwise.
+	 */
 	set(key, value) {
 
 		return new Promise((resolve, reject) => {
@@ -305,6 +356,12 @@ class IndexedDb {
 		});
 	}
 
+	/**
+	 * Delete the value stored at the specified key.
+	 *
+	 * @param  String	key	The key that will be deleted.
+	 * @return Promise		That resolves when the item is successfuly deleted.
+	 */
 	delete(key) {
 
 		return new Promise((resolve, reject) => {
@@ -329,7 +386,7 @@ class Cookies {
 	 * @param  string	Value	The value of the cookie being set.
 	 * @return boolean			The status of the set request.
 	 */
-	set(key, value) {
+	static set(key, value) {
 		document.cookie = `${key}=${encodeURIComponent(value)}`;
 		return true;
 	}
@@ -340,7 +397,7 @@ class Cookies {
 	 * @param  string	key	The name of the cookie whose existance is being questioned
 	 * @return boolean		Returns true if the cookie exists, false otherwise
 	 */
-	has(key) {
+	static has(key) {
 		return new Boolean(document.cookie.split(';').filter(c => c.includes(`${key}=`)).length);
 	}
 
@@ -350,7 +407,7 @@ class Cookies {
 	 * @param  string	key	The name of the cookie whose value will be retured.
 	 * @return string		The	value of the cookie, null if not found.
 	 */
-	get(key) {
+	static get(key) {
 
 		// TODO: Handle the prefix bug, (both foo and barfoo will be matched with current approach)
 		const [cookie] = document.cookie.split(';').filter(c => c.includes(`${key}=`));
@@ -359,6 +416,102 @@ class Cookies {
 			return null;
 
 		return decodeURIComponent(cookie.split('=')[1]);
+	}
+}
+
+/**
+ * A generic storage API to store data throughout the project.
+ * It switches the storage medium depending on the available media.
+ * If IndexedDb is available that will be used. LocalStorage is used otherwise.
+ */
+class Storage {
+
+	/**
+	 * Set up the storage media.
+	 * IndexedDb mostly.
+	 *
+	 * @return Promise	That resolves when the setup is complete.
+	 */
+	static async load() {
+
+		try {
+			await IndexedDb.load();
+		} catch(e) {
+			Storage.localStorage = true;
+		}
+	}
+
+	/**
+	 * Check if a key exists.
+	 *
+	 * @param  string	key	The key to check form.
+	 * @return Boolean		True if found, false otherwise.
+	 */
+	static async has(key) {
+
+		if(Storage.localStorage)
+			return key in localStorage;
+
+		else return await IndexedDb.instance.has(key);
+	}
+
+	/**
+	 * Get a key's value.
+	 * It takes care of encoding the data if needed (LocalSotorage).
+	 *
+	 * @param  string	key	The key whose value is being fetched.
+	 * @return Object		The value for the key.
+	 */
+	static async get(key) {
+
+		if(!await Storage.has(key))
+			return undefined;
+
+		if(!Storage.localStorage)
+			return await IndexedDb.instance.get(key);
+
+		try {
+			return JSON.parse(localStorage[key]);
+		} catch(e) {}
+
+		return undefined;
+	}
+
+	/**
+	 * Save a value at the specified key.
+	 *
+	 * @param string	key		The key that is being set.
+	 * @param object	value	The value for the given key.
+	 */
+	static async set(key, value) {
+
+		if(Storage.localStorage)
+			return localStorage[key] = JSON.stringify(value);
+
+		return await IndexedDb.instance.set(key, value);
+	}
+
+	/**
+	 * Delete a key's value.
+	 * @param string	key	The key whose data is bieng deleted.
+	 */
+	static async delete(key) {
+
+		if(Storage.localStorage)
+			return delete localStorage[key];
+
+		return await IndexedDb.instance.delete(key);
+	}
+
+	/**
+	 * Clear the storage completely.
+	 */
+	static async clear() {
+
+		localStorage.clear();
+
+		if(!Storage.localStorage)
+			await IndexedDb.instance.db.transaction('MainStore', 'readwrite').objectStore('MainStore').clear();
 	}
 }
 
@@ -564,18 +717,18 @@ class Account {
 
 	static async fetch() {
 
-		if(await IndexedDb.instance.has('account'))
-			return await IndexedDb.instance.get('account');
+		if(await Storage.has('account'))
+			return await Storage.get('account');
 
 		try {
 
-			await IndexedDb.instance.set('account', await API.call('accounts/get'));
+			await Storage.set('account', await API.call('accounts/get'));
 
 		} catch(e) {
 			return null;
 		}
 
-		return await IndexedDb.instance.get('account');
+		return await Storage.get('account');
 	}
 
 	constructor(account) {
@@ -599,7 +752,7 @@ class User {
 
 		let user = null;
 
-		const token = await IndexedDb.instance.get('token');
+		const token = await Storage.get('token');
 
 		try {
 			user = JSON.parse(atob(token.split('.')[1]));
@@ -608,13 +761,11 @@ class User {
 		return window.user = new User(user);
 	}
 
-	static async logout(next, callback) {
+	static async logout({next, callback, redirect = true} = {}) {
 
 		const parameters = new URLSearchParams();
 
-		localStorage.clear();
-
-		await IndexedDb.instance.db.transaction('MainStore', 'readwrite').objectStore('MainStore').clear();
+		await Storage.clear();
 
 		if(next)
 			parameters.set('continue', window.location.pathname + window.location.search);
@@ -622,7 +773,13 @@ class User {
 		if(callback)
 			await callback();
 
-		window.location = '/login?'+parameters.toString();
+		if(navigator.serviceWorker) {
+			for(const registration of await navigator.serviceWorker.getRegistrations())
+				registration.unregister();
+		}
+
+		if(redirect)
+			window.location = '/login?'+parameters.toString();
 	}
 
 	constructor(user) {
@@ -632,7 +789,7 @@ class User {
 
 		this.id = this.user_id;
 		this.privileges = new UserPrivileges(this);
-		this.roles = new UserPrivileges(this);
+		this.roles = new UserRoles(this);
 	}
 }
 
@@ -692,13 +849,17 @@ class MetaData {
 			metadata,
 			timestamp;
 
-		try {
-			({metadata, timestamp} = JSON.parse(localStorage.metadata));
-		} catch(e) {}
+		if(await Storage.has('metadata')) {
+			try {
+				({metadata, timestamp} = (await Storage.get('metadata')) || {});
+			} catch(e) {}
+		}
 
 		if(!timestamp || Date.now() - timestamp > MetaData.timeout) {
+
 			metadata = await API.call('users/metadata');
-			localStorage.metadata = JSON.stringify({metadata, timestamp: Date.now()});
+
+			await Storage.set('metadata', {metadata, timestamp: Date.now()})
 		}
 
 		return metadata;
@@ -760,7 +921,7 @@ class ErrorLogs {
 		try {
 			await API.call('errors/log',params, options);
 		}
-		catch (e) {
+		catch(e) {
 			console.log('Failed to log error', e);
 			return;
 		}
@@ -771,11 +932,16 @@ class ErrorLogs {
 
 class AJAX {
 
-	static async call(url, parameters, options = {}) {
+	static async call(url, _parameters, options = {}) {
 
 		AJAXLoader.show();
 
-		parameters = new URLSearchParams(parameters);
+		const parameters = new URLSearchParams(_parameters);
+
+		if(typeof _parameters == 'object') {
+			for(const key in _parameters)
+				parameters.set(key, _parameters[key]);
+		}
 
 		if(options.method == 'POST') {
 
@@ -796,13 +962,13 @@ class AJAX {
 		}
 		catch(e) {
 			AJAXLoader.hide();
-			throw new API.Exception(e.status, 'API Execution Failed');
+			throw new API.Exception(e.status || e.message || e, 'API Execution Failed');
 		}
 
 		AJAXLoader.hide();
 
 		if(response.status == 401)
-			return User.logout();
+			return User.logout({redirect: options.redirectOnLogout});
 
 		return await response.json();
 	}
@@ -823,7 +989,7 @@ class API extends AJAX {
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
-		const token = await IndexedDb.instance.get('token');
+		const token = await Storage.get('token');
 
 		if(token) {
 
@@ -883,10 +1049,22 @@ class API extends AJAX {
 	}
 
 	static async refreshToken() {
-
 		let
 			getToken = true,
-			token = await IndexedDb.instance.get('token');
+			token = await Storage.get('token'),
+			has_external_parameters = await Storage.has('external_parameters');
+
+		if(!has_external_parameters && Cookies.get('external_parameters')) {
+
+			await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
+			Cookies.set('external_parameters', '');
+		}
+
+		if(Cookies.get('refresh_token')) {
+
+			await Storage.set('refresh_token', Cookies.get('refresh_token'));
+			Cookies.set('refresh_token', '');
+		}
 
 		if(token) {
 
@@ -900,20 +1078,23 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!(await IndexedDb.instance.has('refresh_token')) || !getToken)
+		if(!(await Storage.has('refresh_token')) || !getToken || API.refreshToken.lastCheck > Date.now() - 2 * 1000)
 			return;
+
+		API.refreshToken.lastCheck = Date.now();
 
 		const
 			parameters = {
-				refresh_token: await IndexedDb.instance.get('refresh_token'),
+				refresh_token: await Storage.get('refresh_token'),
 			},
 			options = {
 				method: 'POST',
+				redirectOnLogout: false,
 			};
 
-		if(account && account.auth_api && Array.isArray(account.settings.get('external_parameters')) && await IndexedDb.instance.get('external_parameters')) {
+		if(window.account && account.auth_api && Array.isArray(account.settings.get('external_parameters')) && await Storage.get('external_parameters')) {
 
-			const external_parameters = await IndexedDb.instance.get('external_parameters');
+			const external_parameters = await Storage.get('external_parameters');
 
 			for(const key of account.settings.get('external_parameters')) {
 
@@ -926,8 +1107,8 @@ class API extends AJAX {
 
 		const response = await API.call('authentication/refresh', parameters, options);
 
-		await IndexedDb.instance.set('token', response);
-		new Cookies().set('token', response);
+		await Storage.set('token', response);
+		Cookies.set('token', response);
 
 		Page.load();
 	}
@@ -935,7 +1116,7 @@ class API extends AJAX {
 
 API.Exception = class {
 
-	constructor(response) {
+	constructor(response = {}) {
 		this.status = response.status;
 		this.message = response.message;
 	}
@@ -1084,17 +1265,44 @@ class Sections {
 	}
 }
 
-class Editor {
+class CodeEditor {
 
-	constructor(container) {
+	constructor({mode = null}) {
 
-		this.container = container;
-		this.editor = ace.edit(container);
+		if(!window.ace)
+			throw Page.exception('Ace editor not available! :(');
 
-		this.editor.setTheme('ace/theme/monokai');
-		this.editor.getSession().setMode('ace/mode/sql');
-		this.editor.setFontSize(16);
-		this.editor.$blockScrolling = Infinity;
+		this.mode = mode;
+	}
+
+	get container() {
+		return this.editor.container;
+	}
+
+	get editor() {
+
+		if(this.instance)
+			return this.instance;
+
+		const editor = this.instance = ace.edit(document.createElement('div'));
+
+		editor.setTheme('ace/theme/monokai');
+
+		editor.setFontSize(16);
+		editor.$blockScrolling = Infinity;
+
+		if(this.mode)
+			editor.getSession().setMode(`ace/mode/${this.mode}`);
+
+		return editor;
+	}
+
+	get value() {
+		return this.editor.getValue();
+	}
+
+	set value(value) {
+		this.editor.setValue(value || '', 1);
 	}
 
 	setAutoComplete(list) {
@@ -1109,14 +1317,6 @@ class Editor {
 			enableBasicAutocompletion: true,
 			enableLiveAutocompletion: true,
 		});
-	}
-
-	get value() {
-		return this.editor.getValue();
-	}
-
-	set value(value) {
-		this.editor.setValue(value || '', 1);
 	}
 }
 
@@ -1471,7 +1671,7 @@ class MultiSelect {
 			search = this.container.querySelector('input[type=search]'),
 			options = this.container.querySelector('.options');
 
-		if(!this.datalist.length)
+		if(!this.datalist && !this.datalist.length)
 			return;
 
 		for(const row of this.datalist) {
@@ -1558,6 +1758,347 @@ class MultiSelect {
 			this.changeCallback();
 
 		this.recalculate();
+	}
+}
+
+class ObjectRoles {
+
+	constructor(owner, owner_id, allowedTargets = []) {
+
+		this.targets = {
+			user: {
+				API: 'users/list',
+				name_fields: ['first_name', 'middle_name', 'last_name'],
+				value_field: 'user_id',
+				subtitle: 'email',
+				data: [],
+				ignore_categories: true,
+			},
+
+			role: {
+				API: 'roles/list',
+				name_fields: ['name'],
+				value_field: 'role_id',
+				data: [],
+			},
+		};
+
+		this.owner = owner;
+		this.ownerId = owner_id;
+		this.allowedTargets = allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets);
+		this.alreadyVisible = [];
+	}
+
+	async load() {
+
+		this.data = [];
+
+		const listRequestParams = new URLSearchParams();
+
+		listRequestParams.append('owner', this.owner);
+		listRequestParams.append('owner_id', this.ownerId);
+
+		for (const target of this.allowedTargets) {
+			listRequestParams.append('target[]', target);
+		}
+
+		this.alreadyVisible = await API.call('object_roles/list', listRequestParams.toString());
+
+		for (const target of this.allowedTargets) {
+
+			const data = await API.call(this.targets[target].API);
+
+			this.targets[target].data = [];
+
+			for (const row of data) {
+
+				this.targets[target].data.push({
+					name: this.targets[target].name_fields.map(x => row[x]).filter(x => x).join(' '),
+					value: row[this.targets[target].value_field || 'id'],
+					subtitle: row[this.targets[target].subtitle],
+				});
+			}
+		}
+
+		for (const target in this.targets) {
+
+			this.targets[target].multiSelect = new MultiSelect({
+				datalist: this.targets[target].data,
+				multiple: false,
+				dropDownPosition: 'top',
+			});
+		}
+
+		this.combine();
+		this.container;
+		this.shareButton;
+	}
+
+	render() {
+
+		if(!this.getContainer)
+			this.container;
+
+		const table = this.getContainer.querySelector('.object-roles > table');
+		table.innerHTML = null;
+		table.appendChild(this.table);
+		this.multiSelect.render();
+	}
+
+	get container() {
+
+		if(this.getContainer)
+			return this.getContainer;
+
+		const container = document.createElement('div');
+
+		container.classList.add('object-roles');
+
+		container.appendChild(this.table);
+		container.appendChild(this.form);
+
+		this.getContainer = container;
+
+		return container;
+	}
+
+	get form() {
+
+		if(this.submitForm)
+			return this.submitForm;
+
+		const form = document.createElement('form');
+
+		const submitButton = document.createElement('button');
+		submitButton.type = 'submit';
+		submitButton.innerHTML = `<i class="fa fa-paper-plane"></i> Share`;
+
+		this.categorySelect = this.selectDropDown([...MetaData.categories.values()].map(x => {
+
+			return {
+				value: x.category_id,
+				text: x.name,
+			}
+		}));
+
+		this.targetSelectDropdown = this.selectDropDown(this.allowedTargets.map(x => {
+
+			return {
+				value: x,
+				text: x.charAt(0).toUpperCase() + x.slice(1),
+			}
+		}));
+
+		this.multiSelect = this.targets[this.targetSelectDropdown.value].multiSelect;
+
+		if (this.targets[this.targetSelectDropdown.value].ignore_categories) {
+
+			this.categorySelect.classList.add('hidden');
+			this.categorySelect.value = 0;
+		}
+
+		else {
+
+			this.targetSelectDropdown.classList.remove('hidden');
+			this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0] : 0;
+		}
+
+		this.targetSelectDropdown.addEventListener('change', (e) => {
+
+			this.multiSelect.container.remove();
+
+			this.multiSelect = this.targets[e.target.value].multiSelect;
+			form.insertBefore(this.multiSelect.container, submitButton);
+
+			if (this.targets[e.target.value].ignore_categories) {
+
+				this.categorySelect.classList.add('hidden');
+				this.categorySelect.value = 0;
+			}
+			else {
+				this.categorySelect.classList.remove('hidden');
+				this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0].value : 0;
+			}
+		});
+
+		form.appendChild(this.targetSelectDropdown);
+		form.appendChild(this.categorySelect);
+		form.appendChild(this.multiSelect.container);
+		form.appendChild(submitButton);
+		form.addEventListener('submit', (e) => this.insert(e));
+
+		this.submitForm = form;
+
+		return form
+	}
+
+	selectDropDown(pairedData) {
+
+		this.selectedType = document.createElement('select');
+
+		for (const target of pairedData) {
+
+			const option = document.createElement('option');
+			option.value = target.value;
+			option.text = target.text;
+			this.selectedType.appendChild(option);
+		}
+
+		return this.selectedType;
+	}
+
+	get shareButton() {
+
+		if (this.button) {
+
+			return this.button;
+		}
+
+		const container = document.createElement('div');
+		container.classList.add('object-roles');
+
+		const button = document.createElement('button');
+		button.classList.add('share-button');
+		button.textContent = `Share ${this.owner}`;
+
+		container.appendChild(button);
+		this.button = container;
+
+
+		button.addEventListener('click', () => {
+
+			const heading = this.allowedTargets.length === 1 ?
+				this.allowedTargets[0] :
+				`${this.allowedTargets.slice(0, -1).join(', ')} or ${this.allowedTargets[this.allowedTargets.length - 1]}.`;
+
+			const dialougeBox = new DialogBox();
+			dialougeBox.heading = `Share this ${this.owner} with any ${heading}`;
+			dialougeBox.body.appendChild(this.container);
+			dialougeBox.show();
+		});
+
+		return this.button;
+	}
+
+	get table() {
+
+		const table = document.createElement('table');
+
+		table.innerHTML = `
+			<thead>
+				<tr>
+					<th>Shared With</th>
+					<th>Category</th>
+					<th>Name</th>
+					<th class="action">Delete</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		`;
+
+		const tbody = table.querySelector('tbody');
+
+		for(const row of this.alreadyVisible) {
+
+			const tr = document.createElement('tr');
+
+			tr.innerHTML = `
+				<td>${row.target.charAt(0).toUpperCase() + row.target.slice(1)}</td>
+				<td>${row.category.charAt(0).toUpperCase() + row.category.slice(1)}</td>
+				<td>${row.name}</td>
+				<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			`;
+
+			tbody.appendChild(tr);
+			tr.querySelector('.red').addEventListener('click', () => this.delete(row.id));
+		}
+
+		if(!this.alreadyVisible.length)
+			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet! :(</td></tr>'
+
+		return table;
+	}
+
+	async insert(e) {
+
+		if (e && e.preventDefault) {
+			e.preventDefault();
+		}
+
+		if (
+			this.alreadyVisible.filter(x =>
+				x.owner == this.owner
+				&& x.owner_id == this.ownerId
+				&& x.target == this.selectedType.value
+				&& x.target_id == [...this.multiSelect.selectedValues][0]
+				&& x.category_id == (parseInt(this.categorySelect.value) || 0)
+			).length) {
+
+			window.alert('Already exists');
+			return;
+		}
+
+		const
+			parameters = {
+				owner_id: this.ownerId,
+				owner: this.owner,
+				target: this.selectedType.value,
+				target_id: [...this.multiSelect.selectedValues][0],
+				category_id: this.categorySelect.value || null,
+			},
+
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('object_roles/insert', parameters, options);
+		await this.load();
+
+		this.render();
+	}
+
+	async delete(id) {
+
+		if (!confirm('Are you sure?')) {
+			return;
+		}
+
+		const
+			parameters = {
+				id: id,
+			},
+
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('object_roles/delete', parameters, options);
+		await this.load();
+		this.render();
+	}
+
+	combine() {
+
+		this.mapping = {};
+		for (const target of this.allowedTargets) {
+
+			for (const row of this.targets[target].data) {
+
+				if (!this.mapping[target]) {
+					this.mapping[target] = {};
+				}
+
+				this.mapping[target][row.value] = row;
+			}
+		}
+
+		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in this.mapping[row.target]);
+
+		for (const row of this.alreadyVisible) {
+
+			row.name = this.mapping[row.target][row.target_id].name;
+			row.category = (MetaData.categories.get(row.category_id) || {name: ''}).name
+		}
 	}
 }
 

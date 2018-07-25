@@ -160,6 +160,13 @@ class DataConnection {
 		DataConnection.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
 		DataConnection.form.on('submit', DataConnection.submitListener = e => this.update(e));
 
+		this.objectRoles = new ObjectRoles('connection', this.id, ['user', 'role']);
+		await this.objectRoles.load();
+
+		this.page.container.querySelector('#share-connections').innerHTML = null;
+
+		this.page.container.querySelector('#share-connections').appendChild(this.objectRoles.container);
+
 		DataConnection.container.querySelector('.test-result').classList.add('hidden');
 
 		const test = DataConnection.container.querySelector('.toolbar #test-connection');
@@ -449,6 +456,55 @@ DataConnection.types.set('file', class {
 
 	static get details() {
 		return JSON.stringify({});
+	}
+});
+
+DataConnection.types.set('mongo', class {
+
+	static render(connections = {}) {
+
+		DataConnection.form.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span class="password">Password <a class="show-password">Show</a></span>
+				<input type="password" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+
+			<label>
+				<span>Database</span>
+				<input type="text" name="db" value="${connections.db || ''}">
+			</label>
+		`;
+
+		DataConnection.form.password.on('click', () => {
+			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password': 'text';
+		});
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: DataConnection.form.user.value,
+			password: DataConnection.form.password.value,
+			host: DataConnection.form.host.value,
+			port: DataConnection.form.port.value,
+			db: DataConnection.form.db.value,
+		});
 	}
 });
 

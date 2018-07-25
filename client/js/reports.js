@@ -39,9 +39,14 @@ class DataSource {
 		this.postProcessors = new DataSourcePostProcessors(this);
 	}
 
-	async fetch(parameters = {}) {
+	async fetch(_parameters = {}) {
 
-		parameters = new URLSearchParams(parameters);
+		const parameters = new URLSearchParams(_parameters);
+
+		if(typeof _parameters == 'object') {
+			for(const key in _parameters)
+				parameters.set(key, _parameters[key]);
+		}
 
 		parameters.set('query_id', this.query_id);
 
@@ -58,7 +63,7 @@ class DataSource {
 
 					if(filter.dataset) {
 
-						await filter.dataset.fetch();
+						await filter.fetch();
 						filter.value = visualization_filter.default_value || '';
 					}
 
@@ -80,7 +85,7 @@ class DataSource {
 			else parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, filter.value);
 		}
 
-		const external_parameters = await IndexedDb.instance.get('external_parameters');
+		const external_parameters = await Storage.get('external_parameters');
 
 		if(Array.isArray(account.settings.get('external_parameters')) && external_parameters) {
 
@@ -104,7 +109,13 @@ class DataSource {
 		}
 
 		catch(e) {
-			return this.error(JSON.stringify(e.message, 0, 4));
+
+			let message = e.message;
+
+			message = message.replace('You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use', '');
+
+			this.error(JSON.stringify(message, 0, 4));
+			throw e;
 		}
 
 		if(parameters.get('download'))
@@ -449,7 +460,7 @@ class DataSource {
 				const title = [];
 
 				for(const p of source.drilldown.parameters)
-					title.push(`${p.value}: ${p.selectedValue instanceof Dataset ? p.selectedValue.value : p.selectedValue}`);
+					title.push(`${source.drilldown.parent.filters.has(p.placeholder) ? source.drilldown.parent.filters.get(p.placeholder).name : p.placeholder}: ${p.selectedValue}`);
 
 				link.title = title.join('\n');
 
@@ -595,7 +606,7 @@ class DataSource {
 				visualization: this.visualizations.selected.type,
 				sheet_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				file_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				token :await IndexedDb.instance.get('token'),
+				token :await Storage.get('token'),
 				show_legends: !this.visualizations.selected.options.hideLegend || 0,
 				show_values: this.visualizations.selected.options.showValues || 0,
 				classic_pie: this.visualizations.selected.options.classicPie
@@ -948,6 +959,11 @@ class DataSourceFilter {
 				name: 'Last 30 Days',
 			},
 			{
+				start: -90,
+				end: 0,
+				name: 'Last 90 days',
+			},
+			{
 				start: -365,
 				end: 0,
 				name: 'Last Year',
@@ -1102,15 +1118,18 @@ class DataSourceFilter {
 		if(Array.from(report.filters.values()).some(f => f.dataset == this.dataset))
 			return [];
 
-		if(await IndexedDb.instance.has(`dataset.${this.dataset}`))
-			({values, timestamp} = await IndexedDb.instance.get(`dataset.${this.dataset}`));
+		if (await Storage.has(`dataset.${this.dataset}`))
+			({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
 
 		if(!timestamp || Date.now() - timestamp > DataSourceFilter.timeout) {
 
-			({data: values} = await report.fetch({download: true}));
-
-			await IndexedDb.instance.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
+			const
+				response = await report.fetch({download: true}),
+				values = response.data;
+			await Storage.set(`dataset.${this.dataset}`, {values, timestamp: Date.now()});
 		}
+
+		({values, timestamp} = await Storage.get(`dataset.${this.dataset}`));
 
 		if(!this.multiSelect.datalist || !this.multiSelect.datalist.length) {
 			this.multiSelect.datalist = values;
@@ -1205,13 +1224,19 @@ class DataSourceRow extends Map {
 				}
 			}
 
-			if(column.searchQuery && column.searchQuery !== '') {
+			if(column.filters && column.filters.length) {
 
-				if(!row[key])
-					this.skip = true;
+				for(const search of column.filters) {
 
-				if(!DataSourceColumn.searchTypes[parseInt(column.searchType) || 0].apply(column.searchQuery, row[key] === null ? '' : row[key]))
-					this.skip = true;
+					if(search.value === '')
+						continue;
+
+					if(!row[key])
+						this.skip = true;
+
+					if(!DataSourceColumnFilter.searchTypes[parseInt(search.name) || 0].apply(search.value, row[key] === null ? '' : row[key]))
+						this.skip = true;
+				}
 			}
 
 			this.set(key, row[key]);
@@ -1254,6 +1279,9 @@ class DataSourceRow extends Map {
 
 		if(column.type == 'date')
 			value = Format.date(value);
+
+		if(column.type == 'datetime')
+			value = Format.time(value);
 
 		else if(column.type == 'number')
 			value = Format.number(value);
@@ -1306,8 +1334,7 @@ class DataSourceColumns extends Map {
 		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
-		if (container.offsetWidth < container.scrollWidth)
-			container.classList.add('over-flow');
+		this.overFlow();
 	}
 
 	get list() {
@@ -1321,6 +1348,13 @@ class DataSourceColumns extends Map {
 		}
 
 		return result;
+	}
+
+	overFlow() {
+
+		const container = this.source.container.querySelector('.columns');
+
+		container.classList.toggle('over-flow', container.offsetWidth < container.scrollWidth);
 	}
 }
 
@@ -1347,82 +1381,6 @@ class DataSourceColumn {
 			'#9da19c',
 		];
 
-		DataSourceColumn.searchTypes = [
-			{
-				name: 'Contains',
-				apply: (q, v) => v.toString().toLowerCase().includes(q.toString().toLowerCase()),
-			},
-			{
-				name: 'Not Contains',
-				apply: (q, v) => !v.toString().toLowerCase().includes(q.toString().toLowerCase()),
-			},
-			{
-				name: 'Starts With',
-				apply: (q, v) => v.toString().toLowerCase().startsWith(q.toString().toLowerCase()),
-			},
-			{
-				name: 'Ends With',
-				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
-			},
-			{
-				name: 'Equal To',
-				apply: (q, v) => v.toString().toLowerCase() == q.toString().toLowerCase(),
-			},
-			{
-				name: 'Not Equal To',
-				apply: (q, v) => v.toString().toLowerCase() != q.toString().toLowerCase(),
-			},
-			{
-				name: 'Greater Than',
-				apply: (q, v) => v > q,
-			},
-			{
-				name: 'Less Than',
-				apply: (q, v) => v < q,
-			},
-			{
-				name: 'Greater Than or Equal To',
-				apply: (q, v) => v >= q,
-			},
-			{
-				name: 'Less Than or Equal To',
-				apply: (q, v) => v <= q,
-			},
-			{
-				name: 'Regular Expression',
-				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
-			},
-		];
-
-		DataSourceColumn.accumulationTypes = [
-			{
-				name: 'Sum',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0)),
-			},
-			{
-				name: 'Average',
-				apply: (rows, column) => Format.number(rows.reduce((c, v) => c + parseFloat(v.get(column)), 0) / rows.length),
-			},
-			{
-				name: 'Max',
-				apply: (rows, column) => Format.number(Math.max(...rows.map(r => r.get(column)))),
-			},
-			{
-				name: 'Min',
-				apply: (rows, column) => Format.number(Math.min(...rows.map(r => r.get(column)))),
-			},
-			{
-				name: 'Distinct Count',
-				apply: (rows, column) => Format.number(new Set(rows.map(r => r.get(column))).size),
-				string: true,
-			},
-			{
-				name: 'Distinct Values',
-				apply: (rows, column) => Array.from(new Set(rows.map(r => r.get(column)))).join(', '),
-				string: true,
-			},
-		];
-
 		this.key = column;
 		this.source = source;
 		this.name = this.key.split('_').filter(w => w.trim()).map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
@@ -1436,6 +1394,9 @@ class DataSourceColumn {
 			for(const key in format || {})
 				this[key] = format[key];
 		}
+
+		this.columnFilters = new DataSourceColumnFilters(this);
+		this.columnAccumulations = new DataSourceColumnAccumulations(this);
 	}
 
 	get container() {
@@ -1461,8 +1422,10 @@ class DataSourceColumn {
 			edit.classList.add('edit-column');
 			edit.title = 'Edit Column';
 			edit.on('click', e => {
+
 				e.stopPropagation();
 
+				this.form.classList.remove('compact');
 				this.edit();
 			});
 
@@ -1552,22 +1515,15 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		this.form.disabled.value = parseInt(this.disabled) || 0;
-
 		if(this.drilldown && this.drilldown.query_id) {
 
-			this.form.querySelector('.parameter-list').textContent = null;
-
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
-
-			for(const param of this.drilldown.parameters || [])
-				this.addParameter(param);
-
-			this.updateDrilldownParamters();
 		}
 		else {
 			this.drilldownQuery.clear();
 		}
+
+		this.form.disabled.value = parseInt(this.disabled) || 0;
 
 		this.dialogueBox.show();
 	}
@@ -1579,7 +1535,7 @@ class DataSourceColumn {
 
 		const form = this.formContainer = document.createElement('form');
 
-		form.classList.add('block', 'form');
+		form.classList.add('block', 'form', 'column-form');
 
 		form.innerHTML = `
 			<label>
@@ -1592,30 +1548,13 @@ class DataSourceColumn {
 				<input type="text" name="name" value="${this.name}" >
 			</label>
 
-			<label class="show search-type">
-				<span>Search</span>
-				<div class="category-group search">
-					<select name="searchType"></select>
-					<input type="search" name="searchQuery">
-				</div>
-			</label>
-
-			<label class="show accumulation-type">
-				<span>Accumulation</span>
-				<div class="category-group">
-					<select name="accumulation">
-						<option value=""></option>
-					</select>
-					<input type="text" name="accumulationResult" readonly>
-				</div>
-			</label>
-
-			<label>
+			<label class="columnType">
 				<span>Type</span>
 				<select name="type">
 					<option value="string">String</option>
 					<option value="number">Number</option>
 					<option value="date">Date</option>
+					<option value="datetime">Date Time</option>
 					<option value="html">HTML</option>
 				</select>
 			</label>
@@ -1661,15 +1600,8 @@ class DataSourceColumn {
 			<h3>Drill down</h3>
 
 			<label class="drilldown-dropdown">
-				<span>Report</span>
+				<span>Destination Report</span>
 			</label>
-
-			<label>
-				<span>Parameters</span>
-				<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
-			</label>
-
-			<div class="parameter-list"></div>
 
 			<footer class="show">
 
@@ -1701,43 +1633,8 @@ class DataSourceColumn {
 			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
 		});
 
-		// To check the type of the column;
-		let string = false;
-
-		for(const [index, report] of this.source.response.entries()) {
-
-			if(index > 10)
-				break;
-
-			if(isNaN(report.get(this.key))) {
-				string = true;
-				break;
-			}
-		}
-
-		for(const [i, type] of DataSourceColumn.searchTypes.entries())
-			form.searchType.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
-
-		for(const [i, type] of DataSourceColumn.accumulationTypes.entries()) {
-
-			if(!string || type.string)
-				form.accumulation.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
-		}
-
-		form.accumulation.on('change', () => {
-
-			const accumulation = DataSourceColumn.accumulationTypes[form.accumulation.value];
-
-			if(form.accumulation.value && accumulation)
-				form.accumulationResult.value = accumulation.apply(this.source.response, this.key);
-
-			else form.accumulationResult.value = '';
-		});
-
-		form.querySelector('.add-parameters').on('click', () => {
-			this.addParameter();
-			this.updateDrilldownParamters();
-		});
+		form.insertBefore(this.columnFilters.container, form.querySelector('.columnType'));
+		form.insertBefore(this.columnAccumulations.container, form.querySelector('.columnType'));
 
 		form.querySelector('.cancel').on('click', () => {
 
@@ -1786,118 +1683,22 @@ class DataSourceColumn {
 
 		this.form.querySelector('.drilldown-dropdown').appendChild(this.drilldownQuery.container);
 
-		this.drilldownQuery.on('change', () => this.updateDrilldownParamters());
-		this.updateDrilldownParamters();
+
+		this.drilldownParameters = new DataSourceColumnDrilldownParameters(this);
+
+		this.form.insertBefore(this.drilldownParameters.container, this.form.querySelector('.drilldown-dropdown').nextElementSibling);
+
+		this.drilldownQuery.on('change', () => {
+
+			if(this.drilldownQuery.value.length && parseInt(this.drilldownQuery.value[0]) != this.drilldown.query_id)
+				this.drilldownParameters.clear();
+
+			this.drilldownParameters.load()
+		});
 
 		dialogue.body.appendChild(this.form);
 
 		return dialogue;
-	}
-
-	addParameter(parameter = {}) {
-
-		const container = document.createElement('div');
-
-		container.innerHTML = `
-			<label>
-				<span>Filter</span>
-				<select name="placeholder" value="${parameter.placeholder || ''}"></select>
-			</label>
-
-			<label>
-				<span>Type</span>
-				<select name="type" value="${parameter.type || ''}">
-					<option value="column">Column</option>
-					<option value="filter">Filter</option>
-					<option value="static">Custom</option>
-				</select>
-			</label>
-
-			<label>
-				<span>Value</span>
-				<select name="value" value="${parameter.value || ''}"></select>
-				<input name="value" value="${parameter.value || ''}" class="hidden">
-			</label>
-
-			<label>
-				<span>&nbsp;</span>
-				<button type="button" class="delete">
-					<i class="far fa-trash-alt"></i> Delete
-				</button>
-			</label>
-		`;
-
-		container.classList.add('parameter');
-
-		const parameterList = this.form.querySelector('.parameter-list');
-
-		parameterList.appendChild(container);
-
-		container.querySelector('select[name=type]').on('change', () => this.updateDrilldownParamters(true));
-
-		container.querySelector('.delete').on('click', () => {
-			parameterList.removeChild(container);
-		});
-	}
-
-	updateDrilldownParamters(updatingType) {
-
-		const
-			parameterList = this.form.querySelector('.parameter-list'),
-			parameters = parameterList.querySelectorAll('.parameter'),
-			report = DataSource.list.get(parseInt(this.drilldownQuery.value[0]));
-
-		if(report && report.filters.length) {
-
-			for(const parameter of parameters) {
-
-				const
-					placeholder = parameter.querySelector('select[name=placeholder]'),
-					type = parameter.querySelector('select[name=type]');
-				let value = parameter.querySelector('select[name=value]');
-
-				value.classList.remove('hidden');
-				parameter.querySelector('input[name=value]').classList.add('hidden');
-
-				placeholder.textContent = null;
-
-				for(const filter of report.filters)
-					placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
-
-				if(placeholder.getAttribute('value'))
-					placeholder.value = placeholder.getAttribute('value');
-
-				if(!updatingType && type.getAttribute('value'))
-					type.value = type.getAttribute('value');
-
-				value.textContent = null;
-
-				if(type.value == 'column') {
-
-					for(const column of this.source.columns.list.values())
-						value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
-				}
-
-				else if(type.value == 'filter') {
-
-					for(const filter of this.source.filters.values())
-						value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
-				}
-				else {
-					value.classList.add('hidden');
-					value = parameter.querySelector('input[name=value]');
-					value.classList.remove('hidden');
-				}
-
-				if(value.getAttribute('value'))
-					value.value = value.getAttribute('value');
-			}
-		}
-
-		else parameterList.textContent = null;
-
-		parameterList.classList.toggle('hidden', !parameters.length || !report || !report.filters.length);
-		this.form.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
 	}
 
 	async apply(e) {
@@ -1907,6 +1708,8 @@ class DataSourceColumn {
 
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
+
+		this.filters = this.columnFilters.json;
 
 		this.disabled = parseInt(this.disabled) || 0;
 
@@ -1933,48 +1736,28 @@ class DataSourceColumn {
 
 		let
 			response,
-			updated = 0,
-			json_param = [];
+			updated = 0;
 
-		for(const element of this.form.elements) {
-
+		for(const element of this.form.elements)
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
-		}
 
-		for(const row of this.form.querySelectorAll('.parameter')) {
-
-			let param_json = {};
-
-			for(const select of row.querySelectorAll('select')) {
-
-				param_json[select.name] = select.value;
-
-				if(select.name == 'type' && select.value == 'static') {
-
-					const input = row.querySelector('input');
-					param_json[input.name] = input.value;
-					break;
-				}
-			}
-
-			json_param.push(param_json);
-		}
+		this.filters = this.columnFilters.json;
 
 		response = {
 			key : this.key,
 			name : this.name,
-			type : this.type,
+			type : this.form.querySelector('.columnType select').value,
 			disabled : this.disabled,
 			color : this.color,
 			searchType : this.searchType,
-			searchQuery : this.searchQuery,
+			filters : this.filters,
 			sort : this.sort,
 			prefix : this.prefix,
 			postfix : this.postfix,
 			formula : this.formula,
 			drilldown : {
-				query_id : this.drilldownQuery.value[0],
-				parameters : json_param
+				query_id : parseInt(this.drilldownQuery.value[0]) || 0,
+				parameters : this.drilldownParameters.json
 			}
 		};
 
@@ -2117,15 +1900,7 @@ class DataSourceColumn {
 
 		destination = new DataSource(destination);
 
-		const destinationDatasets = [];
-
-		for(const filter of destination.filters.values()) {
-
-			if(filter.dataset)
-				destinationDatasets.push(filter.dataset.fetch());
-		}
-
-		await Promise.all(destinationDatasets);
+		await Promise.all(Array.from(destination.filters.values()).map(f => f.fetch()));
 
 		for(const parameter of this.drilldown.parameters) {
 
@@ -2149,10 +1924,8 @@ class DataSourceColumn {
 			parameter.selectedValue = value;
 		}
 
-		destination.drilldown = {
-			...this.drilldown,
-			parent: this.source,
-		};
+		destination.drilldown = Object.assign({}, this.drilldown);
+		destination.drilldown.parent = this.source;
 
 		destination.container.setAttribute('style', this.source.container.getAttribute('style'));
 
@@ -2164,6 +1937,562 @@ class DataSourceColumn {
 		destination.container.querySelector('.drilldown').classList.remove('hidden');
 
 		destination.visualizations.selected.load();
+	}
+}
+
+class DataSourceColumnDrilldownParameters extends Set {
+
+	constructor(column) {
+
+		super();
+
+		this.column = column;
+
+		this.column.drilldown = this.column.drilldown || {};
+
+		for(const paramter of this.column.drilldown.parameters || []) {
+
+			this.add(new DataSourceColumnDrilldownParameter(paramter, this));
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('drilldown-parameters');
+
+		container.innerHTML = `
+			<label>
+				<span>Parameters</span>
+				<button type="button" class="add-parameters"><i class="fa fa-plus"></i> Add New</button>
+			</label>
+			<div class="parameter-list"></div>
+		`;
+
+		container.querySelector('.add-parameters').on('click', () => {
+
+			this.add(new DataSourceColumnDrilldownParameter({}, this));
+			this.load();
+		});
+
+		this.load();
+
+		return container;
+
+	}
+
+	load() {
+
+		const
+			parameterList = this.container.querySelector('.parameter-list'),
+			report = DataSource.list.get(parseInt(this.column.drilldownQuery.value[0]));
+
+		parameterList.textContent = null;
+
+		if(!this.size) {
+
+			parameterList.innerHTML = '<div class="NA">No parameters added.</div>';
+		}
+		else {
+
+			for(const paramter of this.values())
+				parameterList.appendChild(paramter.container);
+		}
+
+		this.container.querySelector('.add-parameters').parentElement.classList.toggle('hidden', !report || !report.filters.length);
+		this.update();
+
+	}
+
+	update(updatingType) {
+
+		const
+			parameterList = this.container.querySelector('.parameter-list'),
+			report = DataSource.list.get(parseInt(this.column.drilldownQuery.value[0]));
+
+		if(report && report.filters.length) {
+
+			for(const parameter of this.values()) {
+
+				parameter.update(updatingType);
+			}
+		}
+		else {
+
+			parameterList.innerHTML = '<div class="NA">No filters present in the selected report.</div>';
+		}
+	}
+
+	get json() {
+
+		const json = [];
+
+		for(const parameter of this.values()) {
+
+			json.push(parameter.json)
+
+		}
+
+		return json;
+	}
+}
+
+class DataSourceColumnDrilldownParameter {
+
+	constructor(parameter, columnDrillDown) {
+
+		Object.assign(this, parameter);
+
+		this.columnDrilldown = columnDrillDown;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.innerHTML = `
+			<label>
+				<span>Destination Filter</span>
+				<select name="placeholder" value="${this.placeholder || ''}"></select>
+			</label>
+
+			<label>
+				<span>Source Type</span>
+				<select name="type" value="${this.type || ''}">
+					<option value="column">Column</option>
+					<option value="filter">Filter</option>
+					<option value="static">Custom</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Source Value</span>
+				<select name="value" value="${this.value || ''}"></select>
+				<input name="value" value="${this.value || ''}" class="hidden">
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button type="button" class="delete">
+					<i class="far fa-trash-alt"></i> Delete
+				</button>
+			</label>
+		`;
+
+		container.classList.add('parameter');
+
+		container.querySelector('select[name=type]').on('change', () => this.update(true));
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.columnDrilldown.delete(this);
+			this.columnDrilldown.load();
+		});
+
+		return container;
+
+	}
+
+	update(updatingType) {
+
+		const
+			placeholder = this.container.querySelector('select[name=placeholder]'),
+			type = this.container.querySelector('select[name=type]'),
+			report = DataSource.list.get(parseInt(this.columnDrilldown.column.drilldownQuery.value[0]));
+
+		let
+			value = this.container.querySelector('select[name=value]'),
+			placeholderValue = placeholder.value || placeholder.getAttribute('value');
+
+		value.classList.remove('hidden');
+		this.container.querySelector('input[name=value]').classList.add('hidden');
+
+
+		placeholder.textContent = null;
+
+		for(const filter of report.filters)
+			placeholder.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+
+		if(placeholderValue)
+			placeholder.value = placeholderValue;
+
+		if(!updatingType && type.getAttribute('value'))
+			type.value = type.getAttribute('value');
+
+		value.textContent = null;
+
+		if(type.value == 'column') {
+
+			for(const column of this.columnDrilldown.column.source.columns.list.values())
+				value.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+		}
+
+		else if(type.value == 'filter') {
+
+			for(const filter of this.columnDrilldown.column.source.filters.values())
+				value.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+		}
+		else {
+			value.classList.add('hidden');
+			value = this.container.querySelector('input[name=value]');
+			value.classList.remove('hidden');
+		}
+
+		if(value.getAttribute('value'))
+			value.value = value.getAttribute('value');
+	}
+
+	get json() {
+
+		return {
+			placeholder: this.container.querySelector('select[name=placeholder]').value,
+			type: this.container.querySelector('select[name=type]').value,
+			value: this.container.querySelector('select[name=value]').classList.contains('hidden') ? this.container.querySelector('input[name=value]').value : this.container.querySelector('select[name=value]').value
+		}
+	}
+}
+
+class DataSourceColumnFilters extends Set {
+
+	constructor(column) {
+
+		super();
+
+		this.column = column;
+		const filters = this.column.filters && this.column.filters.length ? this.column.filters : [{name: '0', value: ''}];
+
+		for(const filter of filters)
+			this.add(new DataSourceColumnFilter(filter, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('show', 'filters');
+
+		container.innerHTML = `
+			<span>
+				Search
+				<button type="button" class="show add-filter add-new-item"><i class="fa fa-plus"></i></button>
+			</span>
+			<div class="list"></div>
+		`;
+
+		container.querySelector('button.add-filter').on('click', () => {
+
+			this.add(new DataSourceColumnFilter({name: '0', value: ''}, this));
+			this.render();
+		});
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		const div = this.container.querySelector('.list');
+
+		div.textContent = null;
+
+		for(const filter of this)
+			div.appendChild(filter.container);
+
+		if(!this.size) {
+			div.innerHTML = '<div class="NA">No Filters Added :(</div>'
+		}
+	}
+
+	get json() {
+
+		const json = [];
+
+		for(const filter of this) {
+			if(filter.json.value != '')
+				json.push(filter.json);
+		}
+
+		return json;
+	}
+}
+
+class DataSourceColumnFilter {
+
+	static setup() {
+
+		DataSourceColumnFilter.searchTypes = [
+			{
+				name: 'Contains',
+				apply: (q, v) => v.toString().toLowerCase().includes(q.toString().toLowerCase()),
+			},
+			{
+				name: 'Not Contains',
+				apply: (q, v) => !v.toString().toLowerCase().includes(q.toString().toLowerCase()),
+			},
+			{
+				name: 'Starts With',
+				apply: (q, v) => v.toString().toLowerCase().startsWith(q.toString().toLowerCase()),
+			},
+			{
+				name: 'Ends With',
+				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
+			},
+			{
+				name: 'Equal To',
+				apply: (q, v) => v.toString().toLowerCase() == q.toString().toLowerCase(),
+			},
+			{
+				name: 'Not Equal To',
+				apply: (q, v) => v.toString().toLowerCase() != q.toString().toLowerCase(),
+			},
+			{
+				name: 'Greater Than',
+				apply: (q, v) => v > q,
+			},
+			{
+				name: 'Less Than',
+				apply: (q, v) => v < q,
+			},
+			{
+				name: 'Greater Than or Equal To',
+				apply: (q, v) => v >= q,
+			},
+			{
+				name: 'Less Than or Equal To',
+				apply: (q, v) => v <= q,
+			},
+			{
+				name: 'Regular Expression',
+				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
+			},
+		];
+	}
+
+	constructor(filter, filters) {
+
+		Object.assign(this, filter);
+
+		 this.filters = filters;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('label');
+
+		container.classList.add('search-type');
+
+		container.innerHTML = `
+			<div class="category-group search">
+				<select class="searchType"></select>
+				<input type="search" class="searchQuery">
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			</div>
+		`;
+
+		for(const [i, type] of DataSourceColumnFilter.searchTypes.entries()) {
+			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `
+				<option value="${i}">
+					${type.name}
+				</option>
+			`);
+		}
+
+		container.querySelector('select').value = this.name;
+		container.querySelector('input').value = this.value;
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.filters.delete(this);
+			this.filters.render();
+		});
+
+		return container;
+	}
+
+	get json() {
+
+		return {name: this.container.querySelector('select').value, value: this.container.querySelector('input').value};
+	}
+}
+
+class DataSourceColumnAccumulations extends Set {
+
+	constructor(column) {
+
+		super();
+
+		this.column = column;
+		this.accumulations =[{name:'', value:''}];
+
+		for(const accumulation of this.accumulations)
+			this.add(new DataSourceColumnAccumulation(accumulation, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('show', 'accumulations');
+
+		container.innerHTML = `
+			<span>
+				Accumulation
+				<button type="button" class="show add-accumulation add-new-item"><i class="fa fa-plus"></i></button>
+			</span>
+			<div class="list"></div>
+		`;
+
+		container.querySelector('button.add-accumulation').on('click', () => {
+
+			this.add(new DataSourceColumnAccumulation({name:'', value:''}, this));
+			this.render();
+		});
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		const div = this.container.querySelector('.list');
+
+		div.textContent = null;
+
+		for(const accumulation of this)
+			div.appendChild(accumulation.container);
+
+		if(!this.size) {
+			div.innerHTML = '<div class="NA">No Accumulation Added :(</div>'
+		}
+	}
+}
+
+class DataSourceColumnAccumulation {
+
+	static setup() {
+
+		DataSourceColumnAccumulation.accumulationTypes = [
+			{
+				name: 'Sum',
+				apply: (rows, column) => Format.number(rows.reduce((c, r) => c + (parseFloat(r.get(column)) || 0), 0)),
+			},
+			{
+				name: 'Average',
+				apply: (rows, column) => Format.number(rows.reduce((c, r) => c + (parseFloat(r.get(column)) || 0), 0) / rows.length),
+			},
+			{
+				name: 'Max',
+				apply: (rows, column) => Format.number(Math.max(...rows.map(r => parseFloat(r.get(column)) || 0))),
+			},
+			{
+				name: 'Min',
+				apply: (rows, column) => Format.number(Math.min(...rows.map(r => parseFloat(r.get(column)) || 0))),
+			},
+			{
+				name: 'Distinct Count',
+				apply: (rows, column) => Format.number(new Set(rows.map(r => r.get(column))).size),
+				string: true,
+			},
+			{
+				name: 'Distinct Values',
+				apply: (rows, column) => Array.from(new Set(rows.map(r => r.get(column)))).join(', '),
+				string: true,
+			},
+		];
+	}
+
+	constructor(accumulation, accumulations) {
+
+		Object.assign(this, accumulation);
+
+		this.accumulations = accumulations;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('label');
+
+		container.classList.add('accumulation-type');
+
+		container.innerHTML = `
+			<div class="category-group">
+				<select class="accumulation-content"></select>
+				<input type="text" readonly>
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			</div>
+		`;
+
+		// To check the type of the column
+		let string = false;
+
+		for(const [index, report] of this.accumulations.column.source.response.entries()) {
+
+			if(index > 10)
+				break;
+
+			if(isNaN(report.get(this.accumulations.column.key))) {
+				string = true;
+				break;
+			}
+		}
+
+		const select = container.querySelector('.accumulation-content');
+
+		select.insertAdjacentHTML('beforeend', `<option value="-1">Select</option>`);
+
+		for(const [i, type] of DataSourceColumnAccumulation.accumulationTypes.entries()) {
+
+			if(!string || type.string)
+				select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
+		}
+
+		select.querySelector('option').selected = true;
+
+		if(select.value != '-1')
+			this.run();
+
+		select.on('change', () => this.run());
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.accumulations.delete(this);
+			this.accumulations.render();
+		});
+
+		return container
+	}
+
+	run() {
+
+		const select = this.container.querySelector('select');
+
+		const accumulation = DataSourceColumnAccumulation.accumulationTypes[select.value];
+
+		if(accumulation)
+			this.container.querySelector('input').value = accumulation.apply(this.accumulations.column.source.response, this.accumulations.column.key);
+
+		else this.container.querySelector('input').value = '';
 	}
 }
 
@@ -2315,12 +2644,6 @@ class DataSourceTransformation {
 
 		const
 			[{column: groupColumn}] = this.columns.length ? this.columns : [{}],
-			[{column: groupRow}] = this.rows;
-
-		if(!groupRow)
-			return response;
-
-		const
 			columns = new Set,
 			rows = new Map;
 
@@ -2334,10 +2657,17 @@ class DataSourceTransformation {
 
 		for(const responseRow of response) {
 
-			if(!rows.get(responseRow[groupRow]))
-				rows.set(responseRow[groupRow], new Map);
+			let key = {};
 
-			const row = rows.get(responseRow[groupRow]);
+			for(const row of this.rows)
+				key[row.column] = responseRow[row.column];
+
+			key = JSON.stringify(key);
+
+			if(!rows.get(key))
+				rows.set(key, new Map);
+
+			const row = rows.get(key);
 
 			if(groupColumn) {
 
@@ -2368,11 +2698,14 @@ class DataSourceTransformation {
 
 		const newResponse = [];
 
-		for(const [groupRowValue, row] of rows) {
+		for(const [key, row] of rows) {
 
-			const newRow = {};
+			const
+				newRow = {},
+				keys = JSON.parse(key);
 
-			newRow[groupRow] = groupRowValue;
+			for(const key in keys)
+				newRow[key] = keys[key];
 
 			for(const [groupColumnValue, values] of row) {
 
@@ -2394,7 +2727,7 @@ class DataSourceTransformation {
 				switch(function_) {
 
 					case 'sum':
-						value = values.reduce((sum, value) => sum += parseFloat(value), 0);
+						value = values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
 						break;
 
 					case 'count':
@@ -2414,7 +2747,7 @@ class DataSourceTransformation {
 						break;
 
 					case 'average':
-						value = Math.floor(values.reduce((sum, value) => sum += parseFloat(value), 0) / values.length * 100) / 100;
+						value = Math.floor(values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0) / values.length * 100) / 100;
 						break;
 
 					case 'values':
@@ -2805,6 +3138,8 @@ class LinearVisualization extends Visualization {
 			column.render();
 		}
 
+		this.source.columns.overFlow();
+
 		for(const column of this.axes.bottom.columns) {
 			if(!this.source.columns.get(column.key))
 				return this.source.error(`Bottom axis column <em>${column.key}</em> not found.`);
@@ -2927,7 +3262,16 @@ class LinearVisualization extends Visualization {
 
 			// Click on reset zoom function
 			resetZoom.on('click', () => {
-				this.rows = this.source.response;
+
+				const rows = this.source.response;
+
+				for(const row of rows) {
+					for(const [key, column] of row)
+						row.set(key, row.getTypedValue(key));
+				}
+
+				this.rows = rows;
+
 				this.plot();
 			});
 		}
@@ -2991,9 +3335,9 @@ class LinearVisualization extends Visualization {
 				return;
 			}
 
-			const row = that.rows[parseInt((mouse[0] - that.axes.left.width) / (that.width / that.rows.length))];
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
 
-			if(!row)
+ 			if(!row)
 				return;
 
 			const tooltip = [];
@@ -3139,9 +3483,6 @@ Visualization.list.set('table', class Table extends Visualization {
 			container = this.container.querySelector('.container'),
 			rows = this.source.response;
 
-		if(!rows || !rows.length)
-			return this.source.error();
-
 		container.textContent = null;
 
 		const
@@ -3212,7 +3553,16 @@ Visualization.list.set('table', class Table extends Visualization {
 				container.querySelector('.popup-dropdown').classList.remove('hidden');
 			});
 
-			if(column.searchQuery && column.searchQuery)
+			const accumulations = column.form.querySelectorAll('.accumulation-type');
+
+			if(column.columnAccumulations.size) {
+
+				for(const accumulation of column.columnAccumulations) {
+					accumulation.run();
+				}
+			}
+
+			if(column.filters && column.filters.length && !column.filters.some(f => f.value == ''))
 				container.classList.add('has-filter');
 
 			headings.appendChild(container);
@@ -3410,21 +3760,18 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 			max = null,
 			min = null;
 
-		for(const row of this.rows) {
+		for(const column of this.columns) {
 
-			for(const [name, value] of row) {
-
-				if(name == this.axes.bottom.column)
-					continue;
+			for(const row of column) {
 
 				if(max == null)
-					max = Math.ceil(value);
+					max = Math.ceil(row.y);
 
 				if(min == null)
-					min = Math.floor(value);
+					min = Math.floor(row.y);
 
-				max = Math.max(max, Math.floor(value) || 0);
-				min = Math.min(min, Math.ceil(value) || 0);
+				max = Math.max(max, Math.floor(row.y) || 0);
+				min = Math.min(min, Math.ceil(row.y) || 0);
 			}
 		}
 
@@ -3857,21 +4204,18 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 			max = null,
 			min = null;
 
-		for(const row of this.rows) {
+		for(const column of this.columns) {
 
-			for(const [name, value] of row) {
-
-				if(name == this.axes.bottom.column)
-					continue;
+			for(const row of column) {
 
 				if(max == null)
-					max = Math.ceil(value);
+					max = Math.ceil(row.y);
 
 				if(min == null)
-					min = Math.floor(value);
+					min = Math.floor(row.y);
 
-				max = Math.max(max, Math.ceil(value) || 0);
-				min = Math.min(min, Math.floor(value) || 0);
+				max = Math.max(max, Math.floor(row.y) || 0);
+				min = Math.min(min, Math.ceil(row.y) || 0);
 			}
 		}
 
@@ -4038,15 +4382,18 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 			max = 0,
 			min = 0;
 
-		for(const row of this.rows) {
+		for(const column of this.columns) {
 
-			for(const [key, value] of row) {
+			for(const row of column) {
 
-				if(!this.axes.left.columns.some(c => c.key == key))
-					continue;
+				if(max == null)
+					max = Math.ceil(row.y);
 
-				max = Math.max(max, Math.ceil(value) || 0);
-				min = Math.min(min, Math.ceil(value) || 0);
+				if(min == null)
+					min = Math.floor(row.y);
+
+				max = Math.max(max, Math.floor(row.y) || 0);
+				min = Math.min(min, Math.ceil(row.y) || 0);
 			}
 		}
 
@@ -4837,7 +5184,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 			let total = 0;
 
 			for(const [name, value] of row) {
-				if(name != this.axes.bottom.column)
+				if(this.axes.left.columns.some(c => c.key == name))
 					total += parseFloat(value) || 0;
 			}
 
@@ -6155,6 +6502,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	process() {
 
+		if(!this.options)
+			return this.source.error('Visualization configuration not set.');
+
 		if(!this.options.timingColumn)
 			return this.source.error('Timing column not selected.');
 
@@ -6306,11 +6656,13 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 	render(options = {}) {
 
-		this.editor = new Editor(this.container);
+		this.editor = new CodeEditor({mode: 'json'});
 
 		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
+		this.editor.editor.setReadOnly(true);
 
-		this.editor.editor.getSession().setMode('ace/mode/json');
+		this.container.textContent = null;
+		this.container.appendChild(this.editor.container);
 	}
 });
 
@@ -6389,6 +6741,9 @@ class Tooltip {
 	}
 }
 
+
 Visualization.animationDuration = 750;
 
 DataSourceFilter.setup();
+DataSourceColumnFilter.setup();
+DataSourceColumnAccumulation.setup();

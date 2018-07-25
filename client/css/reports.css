@@ -326,29 +326,8 @@ main .data-source.flush {
 		main .data-source > .share-link input {
 			width: 100%;
 		}
-	main .data-source .column .blanket .form > footer,
-	.visualization.table thead tr th.heading .compact footer {
-		display: flex;
-		flex-direction: row;
-		position: sticky;
-		font-size: 110%;
-		bottom: 0;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-	}
-		main .data-source .column .blanket > .form footer button {
-			padding: calc(var(--gap) * 2);
-			height: auto;
-			border-right: 0;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			flex: 1;
-		}
-		main .data-source .column .blanket > .form footer button:first-child {
-			border-left: 0;
-		}
 	main .data-source > .drilldown {
-		margin-top: calc(var(--gap) * 2);
+		margin: calc(var(--gap) * 2);
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(0, auto));
 		justify-content: flex-start;
@@ -644,6 +623,9 @@ main .data-source.flush {
 		main .data-source .visualization.json {
 			background: #272822;
 		}
+			main .data-source .visualization.json .ace_editor {
+				height: 100%;
+			}
 		main .data-source .visualization.html {
 			background: transparent;
 		}
@@ -667,27 +649,27 @@ main .data-source.flush {
 			.visualization.table thead tr th.heading > div {
 				display: flex;
 			}
-			.visualization.table thead tr th.heading .compact > *:not(.show) {
+			.visualization.table thead .heading .compact > *:not(.show) {
 				display: none !important;
 			}
-			.visualization.table thead tr th.heading .filter-popup {
+			.visualization.table thead .heading .filter-popup {
 				width: 15px;
-				font-size: 70%;
+				font-size: 60%;
+				transform: rotate(45deg);
 				margin-right: 5px;
 			}
-				.visualization.table thead tr th.heading .filter-popup > span {
-					transform: rotate(45deg);
+				.visualization.table thead .heading .filter-popup > span {
 					opacity: 0;
 					transition: opacity var(--transition-duration);
 				}
-				.visualization.table thead tr th.heading:hover .filter-popup > span,
-				.visualization.table thead tr th.heading .filter-popup > span.open {
+				.visualization.table thead .heading:hover .filter-popup > span,
+				.visualization.table thead .heading .filter-popup > span.open {
 					opacity: 1;
 				}
-				.visualization.table thead tr th.heading.has-filter {
+				.visualization.table thead .heading.has-filter {
 					box-shadow: inset 0px -4px 0px 0px var(--color-accent);
 				}
-				.visualization.table thead tr th.heading .popup-dropdown {
+				.visualization.table thead .heading .popup-dropdown {
 					position: absolute;
 					top: 100%;
 					left: 0;
@@ -698,32 +680,6 @@ main .data-source.flush {
 					background: #fff;
 					box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 				}
-				.visualization.table thead tr th.heading .popup-dropdown .form.compact {
-						padding: 0;
-						grid-gap: calc(var(--gap) * 2);
-						box-shadow: none;
-				}
-					.visualization.table thead tr th.heading .popup-dropdown .compact label {
-						max-width: none;
-						margin: 0 calc(var(--gap) * 2);
-					}
-						.visualization.table thead tr th.heading .popup-dropdown .compact label .category-group {
-							display: grid;
-							grid-template-columns: 1fr 1fr;
-							grid-gap: calc(var(--gap) * 2);
-						}
-				.visualization.table thead .heading .compact label .category-group input,
-				.visualization.table thead .heading .compact label .category-group select {
-					margin-bottom: 0;
-					text-align: initial !important;
-				}
- 				.visualization.table thead tr th.heading .popup-dropdown footer button {
-					 border-right: 0;
-					 flex: 1;
-				}
-					.visualization.table thead tr th.heading .popup-dropdown footer button:first-child {
-						border-left: 0;
-					}
 			.visualization.table thead td {
 				padding: 0;
 				border: 0;
@@ -754,7 +710,7 @@ main .data-source.flush {
 				border-right: 1px solid #fff;
 				top: 0;
 			}
-				.visualization.table table thead th div {
+				.visualization.table table thead th > div {
 					display: flex;
 				}
 					.visualization.table table thead th span {
@@ -1026,12 +982,13 @@ main .data-source.flush {
 			margin-top: 1px
 		}
 
-main .dialog-box-blanket.data-source-column form .parameter-list {
+main .data-source-column form .parameter-list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2);
+	margin-top: 10px;
 }
-	main .dialog-box-blanket.data-source-column form .parameter {
+	main .data-source-column form .parameter {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr max-content;
 	}
@@ -1039,88 +996,121 @@ main .dialog-box-blanket.data-source-column form .parameter-list {
 			background-color: #c11;
 			border-color: #c11;
 		}
-main .dialog-box-blanket.data-source-column .form {
-	padding: calc(var(--gap) * 2) 0 0;
-}
-	main .dialog-box-blanket.data-source-column .form > label {
+	main .data-source-column form .drilldown-parameters > label {
 		margin-left: calc(var(--gap) * 2);
 	}
-		main .dialog-box-blanket.data-source-column .form > label .color {
+main .column-form {
+	padding: calc(var(--gap) * 2) 0 0;
+}
+main .column-form.compact {
+	padding: 0;
+	grid-gap: calc(var(--gap) * 2);
+	box-shadow: none;
+	width: 100%;
+	overflow: auto;
+	max-height: 200px;
+}
+	main .column-form .filters,
+	main .column-form .accumulations {
+		margin: 0 calc(var(--gap) * 2);
+	}
+		main .column-form .filters .list,
+		main .column-form .accumulations .list {
+			display: grid;
+			grid-gap: calc(var(--gap) * 2);
+		}
+		main .column-form .filters span,
+		main .column-form .accumulations span {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			font-weight: bold;
+			font-size: 90%;
+			color: #444;
+		}
+			main .column-form .filters .add-filter,
+			main .column-form .accumulations .add-accumulation {
+				border: 0;
+				height: auto;
+				width: 36px;
+			}
+				main .column-form .filters .add-filter svg,
+				main .column-form .accumulations .add-accumulation svg,
+				main .column-form .delete svg {
+					margin: 0;
+				}
+		main .column-form.compact label {
+			max-width: none;
+			margin: 0;
+		}
+			main .column-form label .category-group {
+				display: grid;
+				grid-template-columns: 1fr 1fr max-content;
+				grid-gap: calc(var(--gap) * 2);
+			}
+				main .column-form label .category-group button:hover {
+					background: #c33;
+					border-color: transparent;
+				}
+					main .column-form label .category-group button svg {
+						margin: 0;
+					}
+				main .column-form:not(.compact) label .category-group select {
+					width: 100px;
+				}
+				main .column-form label .category-group input,
+				main .column-form label .category-group select {
+					margin-bottom: 0;
+					text-align: initial !important;
+				}
+	main .column-form > label {
+		margin-left: calc(var(--gap) * 2);
+	}
+		main .column-form > label .color {
 			width: 100%;
 			padding: 0;
 		}
-	main .dialog-box-blanket.data-source-column .form .drilldown-dropdown {
+	main .column-form .drilldown-dropdown {
 		max-width: initial;
 	}
-	main .dialog-box-blanket.data-source-column .form > footer {
+	main .column-form > footer {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
-		font-size: 110%;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		position: sticky;
 		bottom: 0;
+		font-size: 110%;
 		z-index: 1;
 	}
-		main .dialog-box-blanket.data-source-column .form > footer button {
+		main .column-form > footer button {
 			padding: calc(var(--gap) * 2);
 			height: auto;
 			border-right: 0;
+			border-bottom: 0;
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			border-bottom: 0;
+			flex: 1;
+		}
+		main .column-form.compact > footer button {
+			padding: calc(var(--gap));
+		}
+		main .column-form > footer button:first-child {
+			border-left: 0;
 		}
 
-main .dialog-box-blanket.sub-reports-dialog .dialog-box {
+main .sub-reports-dialog .dialog-box {
 	width: 80%;
 }
-	main .dialog-box-blanket.sub-reports-dialog .body {
+	main .sub-reports-dialog .body {
 		padding: var(--gap) 0;
 		margin: 0 calc(var(--gap) * 2);
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: space-around;
 	}
-		main .dialog-box-blanket.sub-reports-dialog .data-source {
+		main .sub-reports-dialog .data-source {
 			width: 350px;
 			height: 250px;
 			margin: var(--gap) 0;
-		}
-
-main .configuration-section #filters {
-	background: #fff;
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-	padding: calc(var(--gap) * 2);
-}
-	main .configuration-section #filters .list {
-		display: grid;
-		grid-gap: calc(var(--gap) * 3);
-	}
-		main .configuration-section #filters .list fieldset.filters {
-			border: 1px solid #ccc;
-			background: #eef;
-			padding-top: calc(var(--gap) * 2);
-		}
-			main .configuration-section #filters .list fieldset.filters legend {
-				font-size: 90%;
-				border: 1px solid #ccc;
-				padding: 2px 8px;
-				border-radius: 5px;
-				color: #999;
-				letter-spacing: 0.5px;
-				background: #fff;
-				box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
-			}
-				main .configuration-section #filters .list fieldset.filters .delete {
-					margin-left: var(--gap);
-				}
-					main .configuration-section #filters .list fieldset.filters .delete >svg {
-						margin: 0;
-					}
-
-		main .configuration-section .add-filter > select {
-			width: 200px;
-		}
-		main .configuration-section .add-filter > button {
-			margin-left: var(--gap);
 		}

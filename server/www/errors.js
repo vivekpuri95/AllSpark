@@ -12,6 +12,7 @@ exports.log = class extends API {
 			url : this.request.body.url,
 			description : this.request.body.description,
 			type : this.request.body.type,
+			user_agent: this.request.get('user-agent'),
 		};
 
 		return await errorLogs.insert(error);

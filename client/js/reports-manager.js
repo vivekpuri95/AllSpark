@@ -78,6 +78,8 @@ class ReportsMangerPreview {
 
 		this.page = page;
 		this.container = this.page.container.querySelector('#preview');
+
+		this.position = 'right';
 	}
 
 	async load(options = {}) {
@@ -89,37 +91,39 @@ class ReportsMangerPreview {
 			return this.report = false;
 
 		this.report = JSON.parse(JSON.stringify(DataSource.list.get(options.query_id)));
-		this.report.visualizations = this.report.visualizations.filter(f => options.visualization_id ? f.visualization_id == options.visualization_id : f.type == 'table');
+		this.report.visualizations = this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table');
 
-		if(options.query && options.query != this.report.query) {
-			this.report.query = options.query;
-			this.report.queryOverride = true;
+		if(options.definition && options.definition != this.report.definition) {
+			this.report.definition = options.definition;
+			this.report.definitionOverride = true;
 		}
 
 		if(options.visualizationOptions)
 			this.report.visualizations[0].options = options.visualizationOptions;
 
-		if(options.visualizationType)
-			this.report.visualizations[0].type = options.visualizationType;
+		if(options.visualization && options.visualization.type)
+			this.report.visualizations[0].type = options.visualization.type;
+
+		if(options.visualization && options.visualization.name)
+			this.report.visualizations[0].name = options.visualization.name;
 
 		this.report = new DataSource(this.report);
 
 		this.report.container;
-		this.report.visualizations.selected.container.classList.toggle('unsaved', this.report.queryOverride ? 1 : 0);
+		this.report.visualizations.selected.container.classList.toggle('unsaved', this.report.definitionOverride ? 1 : 0);
 
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
-		let position = this.docks ? this.docks.value : localStorage.reportsPreviewDock || 'right';
-		this.page.container.classList.add('preview-' + position);
+		this.page.container.classList.add('preview-' + this.position);
 
 		await this.report.visualizations.selected.load();
 
-		this.renderDocks();
-		this.move();
+		this.move({render: false});
 	}
 
 	set hidden(hidden) {
+
 		this.container.classList.toggle('hidden', hidden);
 		this.move();
 	}
@@ -128,40 +132,27 @@ class ReportsMangerPreview {
 		return this.container.classList.contains('hidden');
 	}
 
-	renderDocks() {
+	set position(position) {
 
-		this.docks = document.createElement('select');
-
-		this.docks.insertAdjacentHTML('beforeend', `
-			<option value="right">Right</option>
-			<option value="bottom">Bottom</option>
-			<option value="left">Left</option>
-		`);
-
-		this.docks.value = localStorage.reportsPreviewDock || 'right';
-
-		localStorage.reportsPreviewDock = this.docks.value;
-
-		this.docks.on('change', () => {
-			localStorage.reportsPreviewDock = this.docks.value;
-			this.move();
-		});
-
-		this.report.container.querySelector('.menu').appendChild(this.docks);
+		this._position = position;
+		this.move();
 	}
 
-	move() {
+	get position() {
+		return this._position;
+	}
+
+	async move({render = true} = {}) {
 
 		this.page.container.classList.remove('preview-top', 'preview-right', 'preview-bottom', 'preview-left');
 
 		if(this.hidden || !this.report)
 			return;
 
-		let position = localStorage.reportsPreviewDock || 'right';
+		this.page.container.classList.add('preview-' + this.position);
 
-		this.page.container.classList.add('preview-' + position);
-
-		this.report.visualizations.selected.render();
+		if(render)
+			this.report.visualizations.selected.render({resize: true});
 	}
 }
 
@@ -221,15 +212,19 @@ class ReportsMangerStage {
 			report = this.selectedReport;
 
 		if(report) {
-			reportName.textContent = report ? report.name + ` #${report.query_id}` : 'Add New Report';
 
-			const id = parseInt(location.pathname.split('/').pop());
-			let visualization;
+			reportName.textContent = report ? `${report.name} #${report.query_id}` : 'Add New Report';
 
-			if(location.pathname.includes('/configure-visualization'))
+			let visualization,
+				id = parseInt(location.pathname.split('/').pop())
+
+			if(this.page.stages.get('configure-visualization').lastSelectedVisualizationId)
+				id = this.page.stages.get('configure-visualization').lastSelectedVisualizationId;
+
+			if(id)
 				[visualization] = report.visualizations.filter(v => v.visualization_id == id)
 
-			visualizationsName.textContent = visualization ? visualization.name : 'Add or Edit a Visualization';
+			visualizationsName.textContent = visualization ? `${visualization.name} #${visualization.visualization_id}` : 'Add or Edit a Visualization';
 		}
 
 		this.load();
@@ -256,12 +251,26 @@ class ReportsMangerStage {
 
 			for(const _report of DataSource.list.values()) {
 
-				if(_report.visualizations.filter(v => v.visualization_id == id).length)
-					report = _report;
+				if(_report.visualizations.some(v => v.visualization_id == id))
+					report = JSON.parse(JSON.stringify(_report));
 			}
 		}
 
-		else report = DataSource.list.get(id);
+		else if(DataSource.list.has(id))
+			report = JSON.parse(JSON.stringify(DataSource.list.get(id)));
+
+		if(report) {
+
+			const connection = this.page.connections.get(parseInt(report.connection_name));
+
+			if(!connection)
+				throw new Page.exception('Report connection not found! :(');
+
+			if(!ReportConnection.types.has(connection.type))
+				throw new Page.exception('Invalid report connection type! :(');
+
+			report.connection = new (ReportConnection.types.get(connection.type))(report, this);
+		}
 
 		return report;
 	}
@@ -347,6 +356,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 	async load() {
 
+		this.page.stages.get('configure-visualization').lastSelectedVisualizationId = null;
+
 		const
 			theadSearch = document.querySelectorAll('.column-search'),
 			tbody = this.container.querySelector('tbody');
@@ -354,6 +365,11 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		tbody.textContent = null;
 
 		for(const report of this.reports) {
+
+			const connection = this.page.connections.get(parseInt(report.connection_name));
+
+			if(!connection)
+				continue;
 
 			const row = document.createElement('tr');
 
@@ -369,11 +385,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				return a;
 			});
 
-			let connection = this.page.connections.get(parseInt(report.connection_name)) || '';
-
-			if(connection)
-				connection = `${connection.connection_name} (${connection.type})`;
-
 			row.innerHTML = `
 				<td>${report.query_id}</td>
 				<td>
@@ -382,7 +393,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 					</a>
 				</td>
 				<td>${report.description || ''}</td>
-				<td>${connection}</td>
+				<td>${connection.connection_name} (${connection.type})</td>
 				<td class="tags"></td>
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
@@ -587,6 +598,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.form = this.container.querySelector('form');
 		this.form.save = this.container.querySelector('.toolbar button[type=submit]');
+		this.shareContainer = this.container.querySelector('#share-report');
 
 		for(const element of this.form.elements)
 			element.on('change', () => this.form.save.classList.add('unsaved'));
@@ -603,20 +615,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			if(!this.form.is_redis.classList.contains('hidden'))
 				this.form.is_redis.focus();
 		});
-
-		for(const category of MetaData.categories.values()) {
-
-			this.form.category_id.insertAdjacentHTML('beforeend', `
-				<option value="${category.category_id}">${category.name}</option>
-			`);
-		}
-
-		for(const role of MetaData.roles.values()) {
-
-			this.form.roles.insertAdjacentHTML('beforeend', `
-				<option value="${role.role_id}">${role.name}</option>
-			`);
-		}
 	}
 
 	get url() {
@@ -646,6 +644,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.form.reset();
 		this.form.save.classList.remove('unsaved');
+		this.shareContainer.innerHTML = `<div class="NA">You can share the dashboard once the report is added.</div>`;
 
 		this.container.querySelector('#added-by').textContent = null;
 
@@ -659,16 +658,12 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		e.preventDefault();
 
-		const
-			parameters = {
-				roles: Array.from(this.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.form),
-			};
+		const options = {
+			method: 'POST',
+			form: new FormData(this.form),
+		};
 
-		const response = await API.call('reports/report/insert', parameters, options);
+		const response = await API.call('reports/report/insert', {}, options);
 
 		await DataSource.load(true);
 
@@ -709,6 +704,13 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.redis.value = this.report.is_redis || 0;
 			this.form.is_redis.classList.add('hidden');
 		}
+
+		const share = new ObjectRoles('report', this.report.query_id);
+
+		await share.load();
+
+		this.shareContainer.textContent = null;
+		this.shareContainer.appendChild(share.container);
 	}
 
 	async update(e) {
@@ -718,7 +720,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		const
 			parameters = {
 				query_id: this.report.query_id,
-				roles: Array.from(this.form.querySelector('#roles').selectedOptions).map(a => a.value).join(),
 			},
 			options = {
 				method: 'POST',
@@ -743,21 +744,30 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.title = 'Define Report\'s Data';
 		this.description = 'The report\'s SQL query or API';
 
-		this.form = this.container.querySelector('form');
-		this.form.save = this.container.querySelector('.toolbar button[type=submit]');
-
 		this.filterForm = this.container.querySelector('#filters form');
 
 		this.filterForm.datasetMultiSelect = new MultiSelect({dropDownPosition: 'top', multiple: false});
 		this.filterForm.querySelector('label.dataset').appendChild(this.filterForm.datasetMultiSelect.container);
 
 		this.schemas = new Map;
+		this.schemaLists = new Map;
 
-		const schemaToggle = this.container.querySelector('#schema-toggle')
+		const schemaToggle = this.container.querySelector('#schema-toggle');
 
 		schemaToggle.on('click', () => {
+
 			schemaToggle.classList.toggle('selected');
-			this.container.querySelector('#schema').classList.toggle('hidden');
+
+			const container = this.container.querySelector('#schema')
+
+			container.classList.toggle('hidden');
+
+			// Render the schema to the UI if the schema panel isn't hidden
+			if(container.classList.contains('hidden'))
+				return;
+
+			container.textContent = null;
+			container.appendChild(this.schema);
 		});
 
 		const filtersToggle = this.container.querySelector('#filters-toggle')
@@ -774,10 +784,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			if(!this.page.preview.report)
 				return this.preview();
 
-			this.page.preview.hidden = previewToggle.classList.contains('selected');
 			previewToggle.classList.toggle('selected');
+			this.page.preview.hidden = !previewToggle.classList.contains('selected');
 
-			this.editor.editor.resize();
+			if(this.report.connection.editor)
+				this.report.connection.editor.editor.resize();
 		});
 
 		this.editReportData = new EditReportData();
@@ -791,17 +802,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			editDataToggle.classList.toggle('selected');
 			this.editReportData.container.classList.toggle('hidden', !editDataToggle.classList.contains('selected'));
-			this.form.classList.toggle('hidden');
+			this.report.connection.form.classList.toggle('hidden');
 
 			if(!this.editReportData.container.classList.contains('hidden'))
 				await this.editReportData.load(this.report.query_id);
 		});
-
-		this.uploadFile = new UploadFile(this);
-
-		this.uploadFile.on('upload', () => this.container.querySelector('#edit-data-toggle').click());
-
-		this.form.appendChild(this.uploadFile.container);
 
 		this.container.querySelector('#add-filter').on('click', () => this.addFilter());
 
@@ -811,42 +816,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		});
 
 		this.container.querySelector('#run').on('click', () => this.preview());
-
-		this.editor = new Editor(this.form.querySelector('#editor'));
-
-		this.editor.editor.getSession().on('change', () => {
-
-			if(!this.report)
-				return;
-
-			this.filterSuggestions();
-
-			this.form.save.classList.toggle('unsaved', this.editor.value != this.report.query);
-		});
-
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.preview(),
-			});
-		});
 	}
 
 	get url() {
@@ -855,68 +824,51 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	async preview() {
 
+		const definition = this.report.connection.json;
+
+		if(this.report.connection.editor && this.report.connection.editor.editor.getSelectedText())
+			definition.query = this.report.connection.editor.editor.getSelectedText();
+
 		const options = {
-			query: this.editor.editor.getSelectedText() || this.editor.value,
 			query_id: this.report.query_id,
-			position: 'bottom',
+			query: definition.query,
+			definition: JSON.stringify(definition),
 		};
 
 		await this.page.preview.load(options);
 
 		this.page.preview.hidden = false;
 		this.container.querySelector('#preview-toggle').classList.add('selected');
-		this.editor.editor.resize();
+
+		if(this.report.connection.editor)
+			this.report.connection.editor.editor.resize();
 	}
 
-	load() {
+	async load() {
 
 		this.report = this.selectedReport;
 
-		this.page.stages.get('configure-visualization').disabled = true;
-
-		localStorage.reportsPreviewDock = 'bottom';
+		if(!this.page.stages.get('configure-visualization').lastSelectedVisualizationId)
+			this.page.stages.get('configure-visualization').disabled = true;
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
 
-		const connection = this.page.connections.get(parseInt(this.report.connection_name));
+		if(this.container.querySelector('#define-report-form'))
+			this.container.querySelector('#define-report-form').remove();
 
-		this.form.querySelector('#api').classList.toggle('hidden', connection.type != 'api');
-		this.form.querySelector('#query').classList.toggle('hidden', connection.type != 'query');
-		this.form.querySelector('.upload-file').classList.toggle('hidden', connection.type != 'file');
-
-		this.form.removeEventListener('submit', this.form.listener);
-		this.form.on('submit', this.form.listener = e => this.update(e));
-
-		this.form.reset();
-		this.form.save.classList.remove('unsaved');
+		this.container.querySelector('#define-report-parts').appendChild(this.report.connection.form);
 
 		this.container.querySelector('#edit-data-toggle').classList.toggle('hidden', !this.report.load_saved);
-		this.uploadFile.message();
 
-		this.editor.editor.focus();
+		if(this.report.connection.editor)
+			this.report.connection.editor.editor.focus();
 
-		for (const key in this.report) {
-
-			if (key == 'url_options') {
-
-				let urlOptions;
-
-				try {
-					urlOptions = JSON.parse(this.report[key]);
-				}
-				catch(e) {}
-
-				this.form.elements.method.value = urlOptions ? urlOptions.method : '';
-			}
-			else if (this.form.elements[key])
-				this.form.elements[key].value = this.report[key];
-		}
-
-		this.editor.value = this.report.query;
-
-		this.schema();
+		this.loadSchema();
 		this.filters();
+
+		this.page.preview.position = 'bottom';
+		this.container.querySelector('#preview-toggle').classList.toggle('selected', !this.page.preview.hidden);
 
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
@@ -932,9 +884,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const
 			parameters = {
 				query_id: this.report.query_id,
-				query: this.editor.value,
-				url_options: JSON.stringify({method: this.form.method.value}),
-				url: this.form.url.value,
+				query: this.report.connection.json.query,
+				definition: JSON.stringify(this.report.connection.json),
 			},
 			options = {
 				method: 'POST',
@@ -949,7 +900,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	filterSuggestions() {
 
-		let placeholders = this.editor.value.match(/{{([a-zA-Z0-9_-]*)}}/g) || [];
+		// If the connection type doesn't have an editor (API, CSV, etc)
+		if(!this.report.connection.editor)
+			return;
+
+		let placeholders = this.report.connection.editor.value.match(/{{([a-zA-Z0-9_-]*)}}/g) || [];
 
 		placeholders = new Set(placeholders.map(a => a.match('{{(.*)}}')[1]));
 
@@ -978,44 +933,26 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		else missingContainer.classList.add('hidden');
 	}
 
-	async schema() {
+	async loadSchema() {
 
-		const source = this.page.connections.get(parseInt(this.report.connection_name));
+		// Load and save the schema if we haven't already
+		if(!this.schemas.has(this.report.connection_name)) {
 
-		if(!source || !['mysql', 'pgsql', 'bigquery', 'file', 'mssql'].includes(source.type)) {
-			this.form.querySelector('#query').classList.add('hidden');
-			this.form.querySelector('#api').classList.remove('hidden');
+			try {
+				this.schemas.set(this.report.connection_name, await API.call('credentials/schema', { id: this.report.connection_name }));
+			} catch(e) {
+				return;
+			}
 		}
 
-		else if(source.type === 'file')
-			this.uploadFile.container.classList.remove('hidden');
-
-		else {
-			this.form.querySelector('#query').classList.remove('hidden');
-			this.form.querySelector('#api').classList.add('hidden');
-		}
-
-		if(this.schemas.has(this.report.connection_name))
-			return this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
-
-		let response = null;
-
-		const container = this.container.querySelector('#schema');
-
-		try {
-			response = await API.call('credentials/schema', { id: this.report.connection_name });
-		} catch(e) {
-			container.innerHTML = `<div class="NA">Failed to load Schema! :(</div>`;
-			return;
-		}
-
+		// Prepare a schema list in CodeEditor friendly format
 		const
+			response = this.schemas.get(this.report.connection_name),
 			schema = mysqlKeywords.map(k => {return {
 				name: k,
 				value: k,
 				meta: 'MySQL Keyword',
-			}}),
-			databases = document.createElement('ul');
+			}});
 
 		if(this.report) {
 
@@ -1027,19 +964,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				});
 			}
 		}
-
-		container.textContent = null;
-
-		const
-			search = document.createElement('input'),
-			that = this;
-
-		search.type = 'search';
-		search.placeholder = 'Search...';
-
-		search.on('keyup', () => renderList());
-
-		container.appendChild(search);
 
 		for(const database of response) {
 
@@ -1068,10 +992,51 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			}
 		}
 
-		this.schemas.set(this.report.connection_name, schema);
+		// Attach the schema list to the CodeEditor's autocomplete.
+		if(this.report.connection.editor)
+			this.report.connection.editor.setAutoComplete(schema);
+	}
 
-		container.appendChild(databases);
+	/**
+	 * Return a div with search input and the schema list for the current report's connection.
+	 * We're doing this separately because rendering the UI is a huge cost on the UI thread. And we want to do this on-demand.
+	 *
+	 * @return HTMLElement	The fragement with the components of the schema UI.
+	 */
+	get schema() {
 
+		if(this.schemaLists.has(this.report.connection_name))
+			return this.schemaLists.get(this.report.connection_name);
+
+		const container = document.createElement('div');
+
+		// If the schema hasn't loaded yet or if it failed to load
+		if(!this.schemas.has(this.report.connection_name)) {
+
+			const div = document.createElement('div');
+
+			div.classList.add('NA');
+			div.innerHTML = 'Failed to load Schema! :(';
+
+			container.appendChild(div);
+
+			return container;
+		}
+
+		const
+			response = this.schemas.get(this.report.connection_name),
+			databases = document.createElement('ul'),
+			search = document.createElement('input'),
+			that = this;
+
+		search.type = 'search';
+		search.placeholder = 'Search...';
+
+		search.on('keyup', () => renderList());
+
+		container.appendChild(search);
+
+		// A separate function because we want to do this on both the search input and on UI load.
 		const renderList = () => {
 
 			databases.textContent = null;
@@ -1118,7 +1083,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 						`;
 
 						li.querySelector('.name').on('click', () => {
-							that.editor.editor.getSession().insert(that.editor.editor.getCursorPosition(), column.name);
+
+							if(that.report.connection.editor)
+								that.report.connection.editor.getSession().insert(that.report.connection.editor.getCursorPosition(), column.name);
 						});
 
 						columns.appendChild(li);
@@ -1213,7 +1180,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		renderList();
 
-		this.editor.setAutoComplete(this.schemas.get(this.report.connection_name));
+		container.appendChild(databases);
+
+		this.schemaLists.set(this.report.connection_name, container);
+
+		return container;
 	}
 
 	filters() {
@@ -1516,8 +1487,10 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		this.report = this.selectedReport;
 
-		this.page.stages.get('configure-visualization').disabled = true;
 		this.page.preview.hidden = true;
+
+		if(!this.page.stages.get('configure-visualization').lastSelectedVisualizationId)
+			this.page.stages.get('configure-visualization').disabled = true;
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
@@ -1527,6 +1500,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		tbody.textContent = null;
 
 		for(const visualization of this.report.visualizations) {
+
+			if(!visualization.visualization_id)
+				continue;
 
 			const row = document.createElement('tr');
 
@@ -1548,7 +1524,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 				this.page.preview.load({
 					query_id: this.report.query_id,
-					visualization_id: visualization.visualization_id,
+					visualization: {
+						id: visualization.visualization_id
+					},
 				});
 			});
 
@@ -1557,6 +1535,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				window.history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
 
 				this.page.stages.get('configure-visualization').disabled = false;
+				this.page.stages.get('configure-visualization').lastSelectedVisualizationId = visualization.visualization_id;
 
 				this.page.load();
 			});
@@ -1568,6 +1547,8 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		if(!this.report.visualizations.length)
 			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found! :(</td></tr>';
+
+		this.page.preview.position = 'right';
 	}
 });
 
@@ -1645,12 +1626,19 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
 
+		let visualization_id = window.location.pathname.split('/').pop();
+
 		if(!window.location.pathname.includes('configure-visualization')) {
-			this.container.classList.add('hidden');
-			return;
-		} else {
-			this.container.classList.remove('hidden');
+
+			if(!this.lastSelectedVisualizationId)
+				return this.container.classList.add('hidden');
+
+			visualization_id = this.lastSelectedVisualizationId;
+
+			window.history.pushState({}, '', `/reports/${this.url}`);
 		}
+
+		this.lastSelectedVisualizationId = visualization_id;
 
 		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
 
@@ -1661,8 +1649,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.optionsForm = new (ConfigureVisualization.types.get(this.visualization.type))(this.visualization, this.page, this);
 
 		else throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
-
-		this.dashboards = new ReportVisualizationDashboards(this);
 
 		if(typeof this.visualization.options == 'string') {
 
@@ -1680,19 +1666,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization.options.axes)
 			this.visualization.options.axes = [];
 
+		this.dashboards = new ReportVisualizationDashboards(this);
 		this.transformations = new ReportTransformations(this.visualization, this);
 		this.reportVisualizationFilters =  new ReportVisualizationFilters(this);
 
-		localStorage.reportsPreviewDock = 'right';
-		await this.page.preview.load({
-			query_id: this.report.query_id,
-			visualization_id: this.visualization.visualization_id,
-		});
-
-		this.transformations.load();
-		this.reportVisualizationFilters.load();
-
 		this.form.reset();
+		this.dashboards.clear();
+		this.transformations.clear();
+		this.reportVisualizationFilters.clear();
 
 		this.form.name.value = this.visualization.name;
 		this.form.type.value = this.visualization.type;
@@ -1702,9 +1683,20 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		options.textContent = null;
 
-		options.appendChild(this.optionsForm.form);
+		this.page.preview.position = 'right';
+
+		await this.page.preview.load({
+			query_id: this.report.query_id,
+			visualization: {
+				id: this.visualization.visualization_id
+			},
+		});
 
 		this.dashboards.load();
+		this.transformations.load();
+		this.reportVisualizationFilters.load();
+
+		options.appendChild(this.optionsForm.form);
 
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 
@@ -1741,159 +1733,868 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		await DataSource.load(true);
 
 		this.load();
+
+		this.page.stages.get('pick-visualization').switcher.querySelector('small').textContent = this.form.name.value;
 	}
 
 	async preview() {
 		this.page.preview.load({
 			query_id: this.report.query_id,
-			visualization_id: this.visualization.visualization_id,
 			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json},
-			visualizationType: this.form.type.value,
+			visualization: {
+				id: this.visualization.visualization_id,
+				type: this.form.type.value,
+				name: this.form.name.value
+			}
 		});
 	}
 });
 
-class ReportVisualizationFilters extends Map {
+class ReportConnection {
 
-	constructor(stage) {
+	constructor(report, stage) {
 
-		super();
-
-		this.visualization = stage.visualization;
-		this.container = stage.container.querySelector('.configuration-section #filters');
+		this.report = report;
 		this.stage = stage;
-
-		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
-
-			for(const filter of this.stage.visualization.options.filters) {
-
-				const [filterObj] = this.stage.report.filters.filter(x => x.filter_id == filter.filter_id);
-
-				if(!filterObj)
-					continue;
-
-				this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, stage));
-			}
-		}
 	}
 
-	load() {
+	get form() {
 
-		this.container.textContent = null;
+		if(this.formElement)
+			return this.formElement;
 
-		if(!this.stage.report.filters.length) {
+		const form = this.formElement = document.createElement('form');
 
-			this.container.textContent = 'No filters found!';
-			this.container.classList.add('NA');
-			return;
-		}
+		form.id = 'define-report-form';
 
-		this.container.innerHTML = `
-			<div class="list hidden"></div>
-			<form class="add-filter">
-				<select></select>
-				<button type="submit"><i class="fa fa-plus"></i> Add</button>
-			</form>
-		`;
+		form.on('submit', e => this.stage.update(e));
 
-		const
-			filterOptions = this.container.querySelector('.add-filter > select'),
-			addFilterContainer = this.container.querySelector('.list');
+		return form;
+	}
 
-		for(const filter of this.values()) {
+	get json() {
+		return {};
+	}
+}
 
-			addFilterContainer.appendChild(filter.container);
-		}
+ReportConnection.types = new Map();
 
-		this.updateFilterList();
+ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportConnection {
 
-		this.container.querySelector('.add-filter').on('submit', (e) => {
+	constructor(report, stage) {
 
-			e.preventDefault();
+		super(report, stage);
 
-			const
-				addFilterContainer = this.container.querySelector('.list'),
-				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
+		this.editor = new CodeEditor({mode: 'sql'});
 
-			this.set(filter.filter_id, new ReportVisualizationFilter(
-				{filter_id: filter.filter_id, default_value: ''},
-				filter,
-				this.stage
-			));
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-			addFilterContainer.appendChild(this.get(parseInt(filterOptions.value)).container);
+		setTimeout(() => {
 
-			this.updateFilterList();
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
 		});
 	}
 
-	updateFilterList() {
+	get form() {
 
-		const optionsList = this.container.querySelector('.add-filter > select');
+		if(this.formElement)
+			return this.formElement;
 
-		optionsList.textContent = null;
+		super.form.appendChild(this.editor.container);
 
-		for(const filter of this.stage.report.filters) {
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
 
-			if(this.has(filter.filter_id))
-				continue;
+		return super.form;
+	}
 
-			optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
+ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage) {
+
+		super(report, stage);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+		});
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.appendChild(this.editor.container);
+
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
+ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage) {
+
+		super(report, stage);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+		});
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.appendChild(this.editor.container);
+
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
+ReportConnection.types.set('bigquery', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage) {
+
+		super(report, stage);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+		});
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.appendChild(this.editor.container);
+
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
+ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnection {
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.classList.add('form');
+
+		super.form.innerHTML = `
+
+			<label>
+				<span>URL</span>
+				<input type="url" name="url">
+			</label>
+
+			<label>
+				<span>Method</span>
+				<select name="method">
+					<option>GET</option>
+					<option>POST</option>
+				</select>
+			</label>
+		`;
+
+		// Set the vlues from report definition
+		for(const key in this.report.definition || {}) {
+			if(key in super.form.elements)
+				super.form.elements[key].value = this.report.definition[key];
 		}
 
-		this.container.querySelector('.list').classList.toggle('hidden', !this.size);
-		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			url: this.form.url.value,
+			method: this.form.method.value,
+		};
+	}
+});
+
+/**
+ * Upload a CSV, TSV or JSON data file from the user into a report.
+ */
+ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConnection {
+
+	/**
+	 * The upload-file container element.
+	 * This also acts as a drop surface and a way to give user feedback on the upload status.
+	 *
+	 * @return HTMLElement
+	 */
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		const form = super.form;
+
+		form.classList.add('upload-file');
+
+		form.innerHTML = `
+			<input type="file" accept=".xlsx, .xls, .csv, .tsv, .json" class="hidden">
+			<h2>Drop File Here</h2>
+			<small>Or click to upload&hellip;</small>
+			<div class="message hidden"></div>
+		`;
+
+		const input = form.querySelector('input');
+
+		input.on('change', e => {
+			if(e.target.files.length)
+				this.upload(e.target.files[0]);
+		});
+
+		form.on('click', () => input.click());
+
+		form.on('dragenter', e => e.preventDefault());
+
+		form.on('dragover', e => {
+
+			e.preventDefault();
+
+			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
+				return this.message('Please upload a valid file.', 'warning');
+
+			if(e.dataTransfer.items.length > 1)
+				return this.message('Please upload only one file.', 'warning');
+
+			form.classList.add('drag-over');
+
+			this.message('Drop to upload one file.', 'notice');
+		});
+
+		form.on('dragleave', () => {
+
+			this.message();
+			form.classList.remove('drag-over');
+		});
+
+		form.on('drop', e => {
+
+			e.preventDefault();
+
+			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
+				return this.message('Please upload a valid file', 'warning');
+
+			if(e.dataTransfer.items.length > 1)
+				return this.message('Please upload only one file', 'warning');
+
+			form.classList.remove('drag-over');
+
+			const [file] = e.dataTransfer.files;
+
+			this.upload(file);
+		});
+
+		return form;
+	}
+
+	/**
+	 * Attach an event listener on the upload instance.
+	 *
+	 * @param string	event		The event type (eg. upload)
+	 * @param Function	callback	The callback function to call when the event happens.
+	 */
+	on(event, callback) {
+
+		if(event == 'upload')
+			this.onUpload = callback;
+
+		else throw new Page.exception(`Invalid event File Upload event type ${event}! :(`);
+	}
+
+	/**
+	 * Upload a file's data to the report.
+	 *
+	 * @param File	The File object for the file that is being uploaded.
+	 */
+	upload(file) {
+
+		if(!this.stage.report.load_saved)
+			return this.message('This report doesn\'t have \'Store Result\' property enabled! :(', 'warning');
+
+		this.message(`Uploading ${file.name}`, 'notice');
+
+		const fileReader = new FileReader();
+
+		let separator = ',';
+
+		if(file.name.endsWith('.tsv'))
+			separator = '\t';
+
+		fileReader.onload = async e => {
+
+			if(!e.target.result.trim())
+				return this.message('Uploaded file is empty', 'warning');
+
+			const
+				parameter = {
+					data: this.toJSON(e.target.result.trim(), separator),
+					query_id: this.stage.report.query_id,
+				},
+				options = {
+					method: 'POST',
+				};
+
+			try {
+				await API.call('reports/engine/report', parameter, options);
+			} catch(e) {
+				this.message(e.message, 'warning');
+			}
+
+			if(this.onUpload)
+				this.onUpload();
+
+			this.message('Upload Complete', 'notice');
+		};
+
+		fileReader.readAsText(file);
+	}
+
+	/**
+	 * Convert a file input to JSON.
+	 * This will handle types of input like JSON, CSV or TSV.
+	 *
+	 * @param  string	input		The input string that needs to be converted.
+	 * @param  string	separator	The column separator to use.
+	 * @return string				The stringified JSON that was extracted from the input.
+	 */
+	toJSON(input, separator = ',') {
+
+		try {
+			return JSON.stringify(JSON.parse(input));
+		} catch(e) {}
+
+		const
+			lines = input.split('\n'),
+			result = [],
+			headers = split(lines[0]);
+
+		for(const line of lines.slice(1)) {
+
+			const row = {};
+
+			for(const [index, cell] of split(line).entries())
+				row[headers[index]] = cell;
+
+			result.push(row);
+		}
+
+		function split(string) {
+
+			for (var splitString = string.split(separator), len = splitString.length - 1, tl; len >= 0; len--) {
+
+				if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
+
+					if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
+
+						splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
+					}
+
+					else if (len) {
+						splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(separator));
+					}
+
+					else splitString = splitString.shift().split(separator).concat(splitString);
+				}
+
+				else splitString[len].replace(/""/g, '"');
+			}
+
+			for(let [index, element] of splitString.entries()) {
+
+				if(element.split(',').length === 1 && element.startsWith('"')) {
+
+					splitString[index] = element.replace(/"/g, '');
+				}
+			}
+
+			return splitString.map(v => v.trim());
+		}
+
+		return JSON.stringify(result);
+	}
+
+	/**
+	 * Show a message to the user on the file upload window with give color.
+	 *
+	 * @param  string	body	The message body.
+	 * @param  string	type	The type of the message (notice, warning or nothing)
+	 */
+	message(body = '', type = null) {
+
+		const form = this.form.querySelector('.message');
+
+		form.classList.remove('notice', 'warning');
+		form.classList.toggle('hidden', !body);
+		this.form.querySelector('h2').classList.toggle('hidden', body);
+		this.form.querySelector('small').classList.toggle('hidden', body);
+
+		if(type)
+			form.classList.add(type);
+
+		form.innerHTML = body;
+	}
+});
+
+ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage) {
+
+		super(report, stage);
+
+		this.editor = new CodeEditor({mode: 'javascript'});
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+		});
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.classList.add('form');
+
+		super.form.innerHTML = `
+
+			<label>
+				<span>Collection Name</span>
+				<input type="text" name="collection_name">
+			</label>
+
+			<label class="mongo-query">
+				<span>Query</span>
+			</label>
+		`;
+
+		// Set the vlues from report definition
+		for(const key in this.report.definition || {}) {
+			if(key in super.form.elements)
+				super.form.elements[key].value = this.report.definition[key];
+		}
+
+		super.form.querySelector('label.mongo-query').appendChild(this.editor.container)
+
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			collection_name: this.form.collection_name.value,
+			query: this.editor.value,
+		};
+	}
+});
+
+class Axes extends Set {
+
+	constructor(axes, stage) {
+		super();
+
+		this.stage = stage;
+		this.list = axes;
+		this.clear();
+
+		for(const axis of this.list)
+			this.add(new Axis(axis, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('options', 'form', 'body', 'axes');
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		this.container.textContent = null;
+
+		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' axes added' : ''}`;
+
+		for(const axis of this)
+			this.container.appendChild(axis.container);
+
+		if(!this.size)
+			this.container.innerHTML = '<div class="NA">No axes added yet! :(</div>';
+
+		this.container.insertAdjacentHTML('beforeend', `
+
+			<div class="add-axis">
+				<fieldset>
+					<legend>Add Axis</legend>
+					<div class="form">
+
+						<label>
+							<span>Position</span>
+							<select name="position" value="${this.position}" required>
+								<option value="bottom">Bottom</option>
+								<option value="left">Left</option>
+								<option value="top">Top</option>
+								<option value="right">Right</option>
+							</select>
+						</label>
+
+						<label>
+							<span>&nbsp;</span>
+							<button type="button"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</div>
+				</fieldset>
+			</div>
+		`);
+
+		this.container.querySelector('.add-axis button[type=button]').on('click', e => this.insert(e));
 	}
 
 	get json() {
 
 		const response = [];
 
-		for(const filter of this.values()) {
-
-			response.push(filter.json);
-		}
+		for(const axis of this.values())
+			response.push(axis.json);
 
 		return response;
 	}
+
+	restCheck(action) {
+
+		for(const rest of this.container.querySelectorAll('.restCheck'))
+			rest.classList.toggle('hidden', action);
+	}
+
+	insert(e) {
+
+		e.preventDefault();
+
+		const position = this.container.querySelector('.add-axis select').value;
+
+		this.add(new Axis({position}, this));
+		this.render();
+	}
 }
 
-class ReportVisualizationFilter {
+class Axis {
 
-	constructor(reportVisualizationFilter, reportFilter, stage) {
+	constructor(axis, axes) {
 
-		this.stage = stage;
-		this.reportFilter = reportFilter;
+		for(const key in axis)
+			this[key] = axis[key]
 
-		Object.assign(this, reportVisualizationFilter);
+		this.axes = axes;
+
+		if(!this.columns)
+			this.columns = [];
 	}
 
 	get container() {
 
-		if (this.containerElement)
-			return this.containerElement;
+		if(this.axisContainer)
+			return this.axisContainer;
 
-		const container = this.containerElement = document.createElement('fieldset');
+		const container = this.axisContainer = document.createElement('div');
+		let datalist = [];
 
-		container.classList.add('filters');
+		container.classList.add('axis');
+
+		for(const [key, column] of this.axes.stage.page.preview.report.columns)
+			datalist.push({name: column.name, value: key});
+
+		let usedColumns = [];
+
+		for(const axis of this.axes) {
+
+			if(axis.position == this.position)
+				continue;
+
+			usedColumns = usedColumns.concat(axis.columns.map(x => x.key));
+		}
+
+		for(const column of usedColumns)
+			datalist = datalist.filter(x => !column.includes(x.value));
+
+		this.position = this.position || 'top';
+
+		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
+
+		const axisColumn = container.multiSelectColumns.container;
+
+		container.multiSelectColumns.value = this.columns ? this.columns.map(x => x.key) : [];
 
 		container.innerHTML = `
-			<legend>${this.reportFilter.name}</legend>
-			<label>
-				<span>Default Value</span>
-				<div>
-					<input type="text" placeholder="${this.reportFilter.default_value}" value="${this.default_value || ''}">
-					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+
+			<fieldset>
+				<legend>${this.position[0].toUpperCase() + this.position.slice(1)} Axis</legend>
+
+				<div class="form">
+
+					<label>
+						<span>Label</span>
+						<input type="text" name="label" value="${this.label || ''}">
+					</label>
+
+					<label class="axis-column">
+						<span>Columns</span>
+					</label>
+
+					<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${this.restcolumns ? 'checked' : ''}> Rest</span></label>
+
+					<label>
+						<span>Format</span>
+						<select name="format">
+							<option value="">None</option>
+							<option value="s">SI</option>
+						</select>
+					</label>
+
+					<label>
+						<button class="delete" type="button">
+							<i class="far fa-trash-alt"></i> Delete
+						</button>
+					</label>
 				</div>
-			</label>
+			</fieldset>
 		`;
 
+		container.multiSelectColumns.on('change', () => {
+
+			let usedColumns = [];
+			const freeColumns = [];
+
+			for(const axis of this.axes)
+				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
+
+			for(const axis of this.axes) {
+				for(const item of axis.container.multiSelectColumns.datalist) {
+					if(!freeColumns.some(c => c.value.includes(item.value)) && !usedColumns.includes(item.value))
+						freeColumns.push(item);
+				}
+			}
+
+			for(const axis of this.axes) {
+
+				if(axis == this)
+					continue;
+
+				const selected = axis.container.multiSelectColumns.value;
+
+				var newDataList = [];
+
+				for(const data of axis.container.multiSelectColumns.datalist) {
+				    if(!usedColumns.includes(data.value) || selected.includes(data.value)) {
+				        newDataList.push(data);
+				    }
+				}
+
+				for(const value of freeColumns) {
+					if(!newDataList.some(k => k.value.includes(value.value)))
+						newDataList.push(value);
+				}
+
+				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join())
+					continue;
+
+				axis.container.multiSelectColumns.datalist = newDataList;
+				axis.container.multiSelectColumns.render();
+			}
+
+		});
+
+		const restColumns = container.querySelector('.restcolumns');
+
+		restColumns.on('change', () => {
+
+			this.axes.restCheck(restColumns.checked);
+			axisColumn.classList.toggle('hidden');
+
+			if(restColumns.checked)
+				container.querySelector('.restCheck').classList.remove('hidden');
+		});
+
+		if(this.restcolumns) {
+
+			this.axes.restCheck(true);
+			axisColumn.classList.add('hidden');
+		}
+
+		container.querySelector('.axis-column').appendChild(axisColumn);
+
+		container.querySelector('select[name=format]').value = this.format || '';
+
 		container.querySelector('.delete').on('click', () => {
-
-			this.container.parentElement.removeChild(container);
-			this.stage.reportVisualizationFilters.delete(this.filter_id);
-
-			this.stage.reportVisualizationFilters.updateFilterList();
+			this.axes.delete(this);
+			this.axes.render();
 		});
 
 		return container;
@@ -1902,227 +2603,510 @@ class ReportVisualizationFilter {
 	get json() {
 
 		return {
-			default_value: this.container.querySelector('input').value,
-			filter_id: this.filter_id
+			position: this.position,
+			label: this.container.querySelector('input[name=label]').value,
+			columns: this.container.multiSelectColumns.value.map(c => {return {key: c}}),
+			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
+			format: this.container.querySelector('select[name=format]').value,
 		};
 	}
 }
 
-class ReportVisualizationDashboards extends Set {
+class ReportVisualizationOptions {
 
-	constructor(stage) {
-
-		super();
-
+	constructor(visualization, page, stage) {
+		this.visualization = visualization;
+		this.page = page;
 		this.stage = stage;
-
-		this.container = this.stage.container.querySelector('#dashboards');
-		this.addForm = this.container.querySelector('#add-dashboard');
 	}
 
-	async load() {
-
-		await this.fetch();
-
-		this.process();
-
-		this.render();
+	get form() {
+		return document.createElement('form');
 	}
 
-	async fetch() {
-		this.response = await API.call('dashboards/list')
-	}
+	get json() {
 
-	process() {
+		const result = {};
 
-		this.response = new Map(this.response.map(d => [d.id, d]));
+		for(const element of this.form.querySelectorAll('input, select'))
+			result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
 
-		this.clear();
-
-		for(const dashboard of this.response.values()) {
-
-			if(!dashboard.format)
-				dashboard.format = {};
-
-			for(const report of dashboard.format.reports || []) {
-
-				if(this.stage.visualization.visualization_id == report.visualization_id)
-					this.add(new ReportVisualizationDashboard(dashboard, this.stage));
-			}
-		}
-	}
-
-	render() {
-
-		this.container.textContent = null;
-
-		for(const dashboard of this)
-			this.container.appendChild(dashboard.form);
-
-		if(!this.size)
-			this.container.innerHTML = `<div class="NA">No dashboard added yet! :'(</div>`;
-
-		this.container.insertAdjacentHTML('beforeend', `
-
-			<form id="add-dashboard" class="subform form">
-
-				<label>
-					<span>Dashboard</span>
-					<select name="dashboard_id"></select>
-				</label>
-
-				<label>
-					<span>Position</span>
-					<input name="position" placeholder="Position" type="number">
-				</label>
-
-				<label>
-					<button type="submit"><i class="fa fa-plus"></i> Add</button>
-				</label>
-			</form>
-		`);
-
-		const form = this.container.querySelector('#add-dashboard');
-
-		for(const dashboard of this.response.values()) {
-
-			form.dashboard_id.insertAdjacentHTML('beforeend',`
-				<option value=${dashboard.id}>
-					${dashboard.name} ${this.response.has(dashboard.parent) ? `(parent: ${this.response.get(dashboard.parent).name})` : ''}
-				</option>
-			`);
-		}
-
-		form.on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
-	}
-
-	static async insert(e, stage) {
-
-		e.preventDefault();
-
-		const form = stage.dashboards.container.querySelector('#add-dashboard');
-
-		if(Array.from(stage.dashboards).some(d => d.id == form.dashboard_id.value))
-			return alert('Cannot add a visualization to a dashboard more than once!');
-
-		const
-			option = {
-				method: 'POST',
-			},
-			parameters = {
-				dashboard_id: form.dashboard_id.value,
-				visualization_id: stage.visualization.visualization_id,
-				format: JSON.stringify({position: parseInt(form.position.value)})
-			};
-
-		await API.call('reports/dashboard/insert', parameters, option);
-		await stage.dashboards.load();
+		return result;
 	}
 }
 
-class ReportVisualizationDashboard {
-
-	constructor(dashboard, stage) {
-
-		this.stage = stage;
-
-		for(const key in dashboard)
-			this[key] = dashboard[key];
-
-		[this.visualization] = this.format.reports.filter(v => v.visualization_id == this.stage.visualization.visualization_id);
-	}
+class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 	get form() {
 
 		if(this.formContainer)
 			return this.formContainer;
 
-		const form = this.formContainer = document.createElement('form');
+		const container = this.formContainer = document.createElement('div');
 
-		form.classList.add('subform', 'form');
+		container.classList.add('liner-visualization-options');
 
-		form.innerHTML = `
-			<label>
-				<span>Dashboard</span>
-				<div><select name="dashboard_id"></select> <a target="_blank" class="view-dashboard">View</a></div>
-			</label>
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Axes <span class="count"></span></h3>
+			</div>
 
-			<label>
-				<span>Position</span>
-				<input type="number" name="position" value="${this.visualization.format.position || ''}">
-			</label>
-
-			<div class="dashboard-action">
-				<label>
-					<button type="submit"><i class="fa fa-save"></i> Save</button>
-				</label>
-
-				<label>
-					<button type="button" class="delete"><i class="far fa-trash-alt"></i> Delete</button>
-				</label>
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+						<label>
+							<span>
+								<input type="checkbox" name="showValues">Show Values
+							</span>
+						</label>
+					</div>
+				</div>
 			</div>
 		`;
 
-		if(this.stage.dashboards.response) {
-			for(const dashboard of this.stage.dashboards.response.values()) {
+		this.formContainer.axes = new Set();
 
-				form.dashboard_id.insertAdjacentHTML('beforeend',`
-					<option value=${dashboard.id}>
-						${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
-					</option>
-				`);
+		this.axes = new Axes(this.visualization.options.axes, this);
+
+		container.querySelector('.configuration-section').appendChild(this.axes.container);
+
+		this.stage.setupConfigurationSetions(container);
+
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+
+		if(this.visualization.options && this.visualization.options.showValues)
+			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			axes: this.axes.json,
+			hideLegend: this.formContainer.querySelector('input[name=hideLegend]').checked,
+			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
+		};
+
+		return response;
+	}
+}
+
+const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
+
+ConfigureVisualization.types = new Map;
+
+ConfigureVisualization.types.set('table', class TableOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>
+								<input type="checkbox" name="hideHeadingsBar">Hide Headings Bar
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideRowSummary">Hide Row Summary
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+});
+
+ConfigureVisualization.types.set('line', class LineOptions extends ReportVisualizationLinearOptions {
+});
+
+ConfigureVisualization.types.set('scatter', class ScatterOptions extends ReportVisualizationLinearOptions {
+});
+
+ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVisualizationLinearOptions {
+});
+
+ConfigureVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {
+});
+
+ConfigureVisualization.types.set('dualaxisbar', class DualAxisBarOptions extends ReportVisualizationLinearOptions {
+});
+
+ConfigureVisualization.types.set('stacked', class StackedOptions extends ReportVisualizationLinearOptions {
+});
+
+ConfigureVisualization.types.set('area', class AreaOptions extends ReportVisualizationLinearOptions {
+});
+
+ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Show</span>
+							<select name="showValue">
+								<option value="value">Value</option>
+								<option value="percentage">Percentage</option>
+							</select>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="classicPie">Classic Pie
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+});
+
+ConfigureVisualization.types.set('funnel', class FunnelOptions extends ReportVisualizationOptions {
+});
+
+ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if (this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Latitude Column</span>
+							<select name="latitude"></select>
+						</label>
+
+						<label>
+							<span>Longitude Column</span>
+							<select name="longitude"></select>
+						</label>
+
+						<label>
+							<span>Initial Zoom</span>
+							<input type="number" step="1" name="initialZoom" min="1" max="25">
+						</label>
+
+						<label>
+							<span>Initial Latitude</span>
+							<input type="text" name="initialLatitude">
+						</label>
+
+						<label>
+							<span>Initial Longitude</span>
+							<input type="text" name="initialLongitude">
+						</label>
+
+						<label class="hidden">
+							<span>
+								<input type="checkbox" name="disableClustring">Disable Clustring
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		const
+			latitude = container.querySelector('select[name=latitude]'),
+			longitude = container.querySelector('select[name=longitude]');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			latitude.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			longitude.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+});
+
+ConfigureVisualization.types.set('cohort', class CohortOptions extends ReportVisualizationOptions {
+});
+
+ConfigureVisualization.types.set('json', class JSONOptions extends ReportVisualizationOptions {
+});
+
+ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Column</span>
+							<select name="column"></select>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		const columnSelect = container.querySelector('select[name=column]');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			columnSelect.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+});
+
+ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if (this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Timing Column</span>
+							<select name="timingColumn"></select>
+						</label>
+
+						<label>
+							<span>Value Column</span>
+							<select name="valueColumn"></select>
+						</label>
+
+						<label>
+							<span>Center Offset</span>
+							<input type="number" name="centerOffset">
+						</label>
+
+						<label>
+							<span>Left Offset</span>
+							<input type="number" name="leftOffset">
+						</label>
+
+						<label>
+							<span>Right Offset</span>
+							<input type="number" name="rightOffset">
+						</label>
+
+						<label class="sub-reports">
+							<span>Sub-reports</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="invertValues">Invert Values
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		const datalist = [];
+
+		for(const [index, report] of DataSource.list.entries()) {
+
+			for(const visualisation of report.visualizations) {
+
+				if(visualisation.type == 'livenumber' && visualisation.visualization_id != this.visualization.visualization_id) {
+
+					datalist.push({
+						'name': visualisation.name,
+						'value': visualisation.visualization_id
+					});
+				}
 			}
 		}
 
-		form.dashboard_id.on('change', () => form.querySelector('.view-dashboard').href = '/dashboard/' + form.dashboard_id.value);
-		form.dashboard_id.value = this.visualization.dashboard_id;
-		form.querySelector('.view-dashboard').href = '/dashboard/' + (this.visualization.dashboard_id);
+		this.subReports = new MultiSelect({datalist: datalist, expand:true});
 
-		form.querySelector('.delete').on('click', () => this.delete());
-
-		form.on('submit', async e => this.update(e))
-
-		return form;
-	}
-
-	async delete() {
-
-		if(!confirm('Are you sure?'))
-			return;
+		container.querySelector('.form .sub-reports').appendChild(this.subReports.container);
 
 		const
-			option = {
-				method: 'POST',
-			},
-			parameters = {
-				id: this.visualization.id,
-			};
+			timingColumn = container.querySelector('select[name=timingColumn]'),
+			valueColumn = container.querySelector('select[name=valueColumn]');
 
-		await API.call('reports/dashboard/delete', parameters, option);
-		await this.stage.dashboards.load();
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			timingColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			valueColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of this.formContainer.querySelectorAll('select, input')) {
+
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+		}
+
+		this.subReports.value = (this.visualization.options && this.visualization.options.subReports) || [];
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
 	}
 
-	async update(e) {
+	get json() {
 
-		e.preventDefault();
+		const result = super.json;
 
-		this.visualization.format.position = parseInt(this.form.position.value);
+		if(this.subReports) {
+			result.subReports = this.subReports.value;
+		}
 
-		const
-			option = {
-				method: 'POST',
-			},
-			parameters = {
-				id: this.visualization.id,
-				dashboard_id: this.form.dashboard_id.value,
-				visualization_id: this.visualization.visualization_id,
-				format: JSON.stringify(this.visualization.format)
-			};
-
-		await API.call('reports/dashboard/update', parameters, option);
-		await this.stage.dashboards.load();
+		return result;
 	}
-}
+});
+
+ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if (this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>
+								<input type="checkbox" name="hideHeader">Hide Header
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend">Hide Legend
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		for(const element of this.formContainer.querySelectorAll('select, input'))
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+
+		this.stage.setupConfigurationSetions(container);
+
+		return container;
+	}
+});
 
 class ReportTransformations extends Set {
 
@@ -2138,47 +3122,78 @@ class ReportTransformations extends Set {
 		const preview = this.container.parentElement.querySelector('h3 #transformations-preview');
 
 		preview.removeEventListener('click', ReportTransformations.previewListener);
+
 		preview.on('click', ReportTransformations.previewListener = e => {
 			e.stopPropagation();
 			this.preview();
 		});
+
+		this.types = new Map([
+			['pivot', {name: 'Pivot Table'}],
+			['filter', {name: 'Filter'}],
+			['stream', {name: 'Stream'}],
+		]);
 	}
 
 	load() {
 
-		this.container.textContent = null;
+		this.process();
+
+		this.render();
+	}
+
+	process() {
+
+		this.clear();
 
 		if(!this.visualization.options)
 			return;
 
-		this.clear();
+		for(const transformation_ of this.visualization.options.transformations || [])
+			this.add(new ReportTransformation(transformation_, this.stage));
+	}
 
-		for(const transformation_ of this.visualization.options.transformations || []) {
+	render() {
 
-			const transformation = new ReportTransformation(transformation_, this.stage);
+		this.container.textContent = null;
 
+		for(const transformation of this)
 			this.container.appendChild(transformation.container);
 
-			this.add(transformation);
-		}
+		if(!this.size)
+			this.container.innerHTML = '<div class="NA">No transformation added yet! :(</div>';
 
 		this.container.insertAdjacentHTML('beforeend', `
-			<button type="button" class="add-new-transformation">
-				<i class="fa fa-plus"></i> Add New Transformation
-			</button>
+
+			<form class="add-transformation">
+				<fieldset>
+					<legend>Add Transformation</legend>
+					<div class="form">
+
+						<label>
+							<span>Type</span>
+							<select name="type"></select>
+						</label>
+
+						<label>
+							<span>&nbsp;</span>
+							<button type="submit"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</div>
+				</fieldset>
+			</form>
 		`);
 
-		const addNew = this.container.querySelector('.add-new-transformation');
+		const select = this.container.querySelector('.add-transformation select');
 
-		addNew.on('click', () => {
+		for(const [key, type] of this.types)
+			select.insertAdjacentHTML('beforeend', `<option value="${key}">${type.name}</option>`);
 
-			const transformation = new ReportTransformation({}, this.stage);
+		this.container.querySelector('.add-transformation').on('submit', e => this.insert(e));
 
-			this.add(transformation);
-			this.container.insertBefore(transformation.container, addNew);
-
-			this.preview();
-		});
+		this.container.parentElement.querySelector('h3 .count').innerHTML = `
+			${this.size ? this.size + ' transformation' + (this.size == 1 ? ' applied' : 's applied') : ''}
+		`;
 	}
 
 	get json() {
@@ -2217,8 +3232,28 @@ class ReportTransformations extends Set {
 
 		this.page.preview.load({
 			query_id: this.stage.report.query_id,
-			visualization_id: report.transformationVisualization.visualization_id,
+			visualization: {
+				id: report.transformationVisualization.visualization_id
+			},
 		});
+	}
+
+	clear() {
+
+		super.clear();
+		this.container.innerHTML = '<div class="NA">Loading&hellip;</div>';
+	}
+
+	insert(e) {
+
+		e.preventDefault();
+
+		const type = this.container.querySelector('.add-transformation select').value;
+
+		this.add(new ReportTransformation({type}, this.stage));
+
+		this.render();
+		this.preview();
 	}
 }
 
@@ -2231,6 +3266,9 @@ class ReportTransformation {
 
 		for(const key in transformation)
 			this[key] = transformation[key];
+
+		if(!this.stage.transformations.types.has(this.type))
+			throw new Page.exception(`Invalid transformation type ${this.type}! :(`);
 	}
 
 	get container() {
@@ -2239,12 +3277,12 @@ class ReportTransformation {
 			return this.containerElement;
 
 		const
-			container = this.containerElement = document.createElement('div'),
+			container = this.containerElement = document.createElement('fieldset'),
 			rows = document.createElement('div'),
 			columns = document.createElement('div'),
 			values = document.createElement('div');
 
-		container.classList.add('transformation');
+		container.classList.add('subform', 'form');
 
 		rows.classList.add('rows');
 		columns.classList.add('columns');
@@ -2287,9 +3325,16 @@ class ReportTransformation {
 
 		values.appendChild(addValue);
 
-		container.appendChild(rows);
-		container.appendChild(columns);
-		container.appendChild(values);
+		container.innerHTML	= `
+			<legend>${this.stage.transformations.types.get(this.type).name}</legend>
+			<div class="transformation"></div>
+		`;
+
+		const div = container.querySelector('div');
+
+		div.appendChild(rows);
+		div.appendChild(columns);
+		div.appendChild(values);
 
 		return container;
 	}
@@ -2432,314 +3477,395 @@ class ReportTransformation {
 	}
 }
 
-class ReportVisualizationOptions {
+class ReportVisualizationDashboards extends Set {
 
-	constructor(visualization, page, stage) {
-		this.visualization = visualization;
-		this.page = page;
+	constructor(stage) {
+
+		super();
+
 		this.stage = stage;
+
+		this.container = this.stage.container.querySelector('#dashboards');
+		this.addForm = this.container.querySelector('.add-dashboard');
 	}
 
-	get form() {
-		return document.createElement('form');
+	async load(options) {
+
+		await this.fetch(options);
+
+		this.process();
+
+		this.render();
 	}
 
-	get json() {
+	async fetch({force = false} = {}) {
 
-		const result = {};
+		if(ReportVisualizationDashboards.response && !force)
+			return this.response = ReportVisualizationDashboards.response;
 
-		for(const element of this.form.querySelectorAll('input, select'))
-			result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+		ReportVisualizationDashboards.response = this.response = await API.call('dashboards/list');
+	}
 
-		return result;
+	process() {
+
+		this.response = new Map(this.response.map(d => [d.id, d]));
+
+		this.clear();
+
+		for(const dashboard of this.response.values()) {
+
+			if(!dashboard.format)
+				dashboard.format = {};
+
+			for(const report of dashboard.format.reports || []) {
+
+				if(this.stage.visualization.visualization_id == report.visualization_id)
+					this.add(new ReportVisualizationDashboard(dashboard, this.stage));
+			}
+		}
+	}
+
+	render() {
+
+		this.container.textContent = null;
+
+		for(const dashboard of this)
+			this.container.appendChild(dashboard.form);
+
+		if(!this.size)
+			this.container.innerHTML = '<div class="NA">No dashboard added yet! :(</div>';
+
+		this.container.parentElement.querySelector('h3 .count').innerHTML = `${this.size ? 'Added to ' + this.size + ' dashboard' + (this.size == 1 ? '' : 's') : ''}` ;
+
+		this.container.insertAdjacentHTML('beforeend', `
+
+			<form class="add-dashboard">
+				<fieldset>
+					<legend>Add Dashboard</legend>
+					<div class="form">
+						<label>
+							<span>Dashboard</span>
+							<select name="dashboard_id"></select>
+						</label>
+
+						<label>
+							<span>Position</span>
+							<input name="position" type="number">
+						</label>
+
+						<label>
+							<span>&nbsp;</span>
+							<button type="submit"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</div>
+				</fieldset>
+			</form>
+		`);
+
+		const form = this.container.querySelector('.add-dashboard');
+
+		for(const dashboard of this.response.values()) {
+
+			form.dashboard_id.insertAdjacentHTML('beforeend',`
+				<option value=${dashboard.id}>
+					${dashboard.name} ${this.response.has(dashboard.parent) ? `(parent: ${this.response.get(dashboard.parent).name})` : ''}
+				</option>
+			`);
+		}
+
+		form.on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
+	}
+
+	clear() {
+
+		super.clear();
+		this.container.innerHTML = '<div class="NA">Loading&hellip;</div>';
+	}
+
+	static async insert(e, stage) {
+
+		e.preventDefault();
+
+		const form = stage.dashboards.container.querySelector('.add-dashboard');
+
+		if(Array.from(stage.dashboards).some(d => d.id == form.dashboard_id.value))
+			return alert('Cannot add a visualization to a dashboard more than once!');
+
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				dashboard_id: form.dashboard_id.value,
+				visualization_id: stage.visualization.visualization_id,
+				format: JSON.stringify({position: parseInt(form.position.value)})
+			};
+
+		await API.call('reports/dashboard/insert', parameters, option);
+		await stage.dashboards.load({force: true});
 	}
 }
 
-class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
+class ReportVisualizationDashboard {
+
+	constructor(dashboard, stage) {
+
+		this.stage = stage;
+
+		for(const key in dashboard)
+			this[key] = dashboard[key];
+
+		[this.visualization] = this.format.reports.filter(v => v.visualization_id == this.stage.visualization.visualization_id);
+	}
 
 	get form() {
 
 		if(this.formContainer)
 			return this.formContainer;
 
-		const container = this.formContainer = document.createElement('div');
+		const form = this.formContainer = document.createElement('form');
 
-		container.classList.add('liner-visualization-options');
+		form.classList.add('subform', 'form');
 
-		container.innerHTML = `
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Axes</h3>
-				<div class="options form body axes-container"></div>
-			</div>
+		form.innerHTML = `
+			<label>
+				<span>Dashboard</span>
+				<select name="dashboard_id"></select>
+			</label>
 
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="options form body">
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
-					<label>
-						<span>
-							<input type="checkbox" name="showValues">Show Values
-						</span>
-					</label>
-				</div>
-			</div>
+			<label>
+				<span>Position</span>
+				<input type="number" name="position" value="${this.visualization.format.position || ''}">
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button type="submit"><i class="fa fa-save"></i> Save</button>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button type="button" class="view-dashboard"><i class="fas fa-external-link-alt"></i></button>
+			</label>
 		`;
 
-		this.stage.setupConfigurationSetions(container);
+		if(this.stage.dashboards.response) {
+			for(const dashboard of this.stage.dashboards.response.values()) {
 
-		this.formContainer.axes = new Set();
+				form.dashboard_id.insertAdjacentHTML('beforeend',`
+					<option value=${dashboard.id}>
+						${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
+					</option>
+				`);
+			}
+		}
 
-		this.axes = new Axes(this.visualization.options.axes, this);
+		form.dashboard_id.value = this.visualization.dashboard_id;
+		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + (form.dashboard_id.value)));
 
-		container.querySelector('.configuration-section .axes-container').appendChild(this.axes.container);
+		form.querySelector('.delete').on('click', () => this.delete());
 
-		if(this.visualization.options && this.visualization.options.hideLegend)
-			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+		form.on('submit', async e => this.update(e))
 
-		if(this.visualization.options && this.visualization.options.showValues)
-			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
-
-		return container;
+		return form;
 	}
 
-	get json() {
+	async delete() {
 
-		const response = {
-			axes: this.axes.json,
-			hideLegend: this.formContainer.querySelector('input[name=hideLegend]').checked,
-			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
-		};
+		if(!confirm('Are you sure?'))
+			return;
 
-		return response;
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				id: this.visualization.id,
+			};
+
+		await API.call('reports/dashboard/delete', parameters, option);
+		await this.stage.dashboards.load({force: true});
+	}
+
+	async update(e) {
+
+		e.preventDefault();
+
+		this.visualization.format.position = parseInt(this.form.position.value);
+
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				id: this.visualization.id,
+				dashboard_id: this.form.dashboard_id.value,
+				visualization_id: this.visualization.visualization_id,
+				format: JSON.stringify(this.visualization.format)
+			};
+
+		await API.call('reports/dashboard/update', parameters, option);
+		await this.stage.dashboards.load({force: true});
 	}
 }
 
-class Axes extends Set {
+class ReportVisualizationFilters extends Map {
 
-	constructor(axes, stage) {
+	constructor(stage) {
+
 		super();
 
+		this.visualization = stage.visualization;
+		this.container = stage.container.querySelector('.configuration-section #filters');
 		this.stage = stage;
-		this.list = axes;
-		this.clear();
 
-		for(const axis of this.list)
-			this.add(new Axis(axis, this));
+		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
+
+			for(const filter of this.stage.visualization.options.filters) {
+
+				const [filterObj] = this.stage.report.filters.filter(x => x.filter_id == filter.filter_id);
+
+				if(!filterObj)
+					continue;
+
+				this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, stage));
+			}
+		}
 	}
 
-	get container() {
+	load() {
 
-		if(this.containerElement)
-			return this.containerElement;
+		this.container.textContent = null;
 
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('axis-container')
-		container.innerHTML = `
-			<div class="axes"></div>
-			<button class="add-axis" type="button">
-				<i class="fa fa-plus"></i> Add New Axis
-			</button>
+		if(!this.stage.report.filters.length)
+			return this.container.innerHTML = '<div class="NA">No filters found!</div>';
+
+		for(const filter of this.values())
+			this.container.appendChild(filter.container);
+
+		if(!this.size)
+			this.container.innerHTML = '<div class="NA">No filters added yet! :(</div>';
+
+		this.container.insertAdjacentHTML('beforeend', `
+
+			<form class="add-filter">
+				<fieldset>
+					<legend>Add Filter</legend>
+
+					<div class="form">
+
+						<label>
+							<span>Name</span>
+							<select></select>
+						</label>
+
+						<label>
+							<span>&nbsp;</span>
+							<button type="submit"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</div>
+				</fieldset>
+			</form>
+		`);
+
+		const optionsList = this.container.querySelector('.add-filter select');
+
+		optionsList.textContent = null;
+
+		for(const filter of this.stage.report.filters) {
+
+			if(!this.has(filter.filter_id))
+				optionsList.insertAdjacentHTML('beforeend', `<option value="${filter.filter_id}">${filter.name}</option>`);
+		}
+
+		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
+
+		this.container.parentElement.querySelector('h3 .count').innerHTML = `
+			${this.size ? this.size + ' filter' + (this.size == 1 ? ' added' : 's added') : ''}
 		`;
 
-		container.querySelector('.add-axis').on('click', () => {
+		this.container.querySelector('.add-filter').on('submit', (e) => {
 
-			const axisForm = new Axis({}, this);
-			this.add(axisForm);
-			container.querySelector('.axes').appendChild(axisForm.container);
+			e.preventDefault();
+
+			const
+				filterOptions = this.container.querySelector('.add-filter select'),
+				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
+
+			this.set(filter.filter_id, new ReportVisualizationFilter(
+				{filter_id: filter.filter_id, default_value: ''},
+				filter,
+				this.stage,
+			));
+
+			this.load();
 		});
-
-		this.render();
-
-		return container;
-	}
-
-	render() {
-
-		let addAxes = this.container.querySelector('.axes');
-		addAxes.textContent = null;
-
-		for(const axis of this) {
-			addAxes.appendChild(axis.container);
-		}
 	}
 
 	get json() {
 
 		const response = [];
 
-		for(const axis of this.values()) {
-			response.push(axis.json);
+		for(const filter of this.values()) {
+
+			response.push(filter.json);
 		}
 
 		return response;
 	}
 
-	restCheck(action) {
+	clear() {
 
-		for(const rest of this.container.querySelectorAll('.restCheck')) {
-			rest.classList.toggle('hidden', action);
-		}
+		super.clear();
+		this.container.innerHTML = `<div class="NA">Loading&hellip;</div>`;
 	}
- }
+}
 
-class Axis {
+class ReportVisualizationFilter {
 
-	constructor(axis, axes) {
+	constructor(reportVisualizationFilter, reportFilter, stage) {
 
-		for(const key in axis)
-			this[key] = axis[key]
+		this.stage = stage;
+		this.reportFilter = reportFilter;
 
-		this.axes = axes;
-
-		if(!this.columns)
-			this.columns = [];
+		Object.assign(this, reportVisualizationFilter);
 	}
 
 	get container() {
 
-		if(this.axisContainer)
-			return this.axisContainer;
+		if (this.containerElement)
+			return this.containerElement;
 
-		const container = this.axisContainer = document.createElement('div');
-		let datalist = [];
-
-		container.classList.add('axis', 'subform');
-
-		for(const [key, column] of this.axes.stage.page.preview.report.columns)
-			datalist.push({name: column.name, value: key});
-
-		let usedColumns = [];
-
-		for(const axis of this.axes) {
-
-			if(axis.position == this.position)
-				continue;
-
-			usedColumns = usedColumns.concat(axis.columns.map(x => x.key));
-		}
-
-		for(const column of usedColumns) {
-
-			datalist = datalist.filter(x => !column.includes(x.value));
-		}
-
-		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
-		const axisColumn = container.multiSelectColumns.container;
-
-		container.multiSelectColumns.value = this.columns ? this.columns.map(x => x.key) : [];
+		const container = this.containerElement = document.createElement('fieldset');
 
 		container.innerHTML = `
-			<label>
-				<span>Position</span>
-				<select name="position" value="${this.position}" required>
-					<option value="top">Top</option>
-					<option value="right">Right</option>
-					<option value="bottom">Bottom</option>
-					<option value="left">Left</option>
-				</select>
-			</label>
+			<legend>${this.reportFilter.name}</legend>
 
-			<label>
-				<span>Label</span>
-				<input type="text" name="label" value="${this.label || ''}">
-			</label>
+			<div class="form">
+				<label>
+					<span>Default Value</span>
+					<input type="text" placeholder="${this.reportFilter.default_value}" value="${this.default_value || ''}">
+				</label>
 
-			<label class="axis-column">
-				<span>Columns</span>
-			</label>
+				<label>
 
-			<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${this.restcolumns ? 'checked' : ''}> Rest</span></label>
-
-			<label>
-				<span>Format</span>
-				<select name="format">
-					<option value="">None</option>
-					<option value="s">SI</option>
-				</select>
-			</label>
-
-			<label>
-				<button class="delete" type="button">
-					<i class="far fa-trash-alt"></i> Delete
-				</button>
-			</label>
+					<span>&nbsp;</span>
+					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+				</label>
+			</div>
 		`;
-
-		container.multiSelectColumns.on('change', () => {
-
-			let usedColumns = [];
-			const freeColumns = [];
-
-			for(const axis of this.axes)
-				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
-
-			for(const axis of this.axes) {
-				for(const item of axis.container.multiSelectColumns.datalist) {
-					if(!freeColumns.some(c => c.value.includes(item.value)) && !usedColumns.includes(item.value))
-						freeColumns.push(item);
-				}
-			}
-
-			for(const axis of this.axes) {
-
-				if(axis == this)
-					continue;
-
-				const selected = axis.container.multiSelectColumns.value;
-
-				var newDataList = [];
-
-				for(const data of axis.container.multiSelectColumns.datalist) {
-				    if(!usedColumns.includes(data.value) || selected.includes(data.value)) {
-				        newDataList.push(data);
-				    }
-				}
-
-				for(const value of freeColumns) {
-					if(!newDataList.some(k => k.value.includes(value.value)))
-						newDataList.push(value);
-				}
-
-				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join())
-					continue;
-
-				axis.container.multiSelectColumns.datalist = newDataList;
-				axis.container.multiSelectColumns.render();
-			}
-
-		});
-
-		const restColumns = container.querySelector('.restcolumns');
-
-		restColumns.on('change', () => {
-
-			this.axes.restCheck(restColumns.checked);
-			axisColumn.classList.toggle('hidden');
-
-			if(restColumns.checked)
-				container.querySelector('.restCheck').classList.remove('hidden');
-		});
-
-		if(this.restcolumns) {
-
-			this.axes.restCheck(true);
-			axisColumn.classList.add('hidden');
-		}
-
-		container.querySelector('.axis-column').appendChild(axisColumn);
-
-		container.querySelector('select[name=position]').value = this.position;
-		container.querySelector('select[name=format]').value = this.format || '';
 
 		container.querySelector('.delete').on('click', () => {
 
-			container.parentElement && container.parentElement.removeChild(container);
-			this.axes.delete(this);
-			this.axes.render();
+			this.container.parentElement.removeChild(container);
+			this.stage.reportVisualizationFilters.delete(this.filter_id);
+
+			this.stage.reportVisualizationFilters.load();
 		});
 
 		return container;
@@ -2748,418 +3874,11 @@ class Axis {
 	get json() {
 
 		return {
-			position: this.container.querySelector('select[name=position]').value,
-			label: this.container.querySelector('input[name=label]').value,
-			columns: this.container.multiSelectColumns.value.map(c => {return {key: c}}),
-			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
-			format: this.container.querySelector('select[name=format]').value,
+			default_value: this.container.querySelector('input').value,
+			filter_id: this.filter_id
 		};
 	}
 }
-
-class ReportVisualizationLiveNumberOptions extends ReportVisualizationOptions {
-
-	get json() {
-
-		const result = super.json;
-
-		if(this.subReports) {
-			result.subReports = this.subReports.value;
-		}
-
-		return result;
-	}
-}
-const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
-
-ConfigureVisualization.types = new Map;
-
-ConfigureVisualization.types.set('table', class TableOptions extends ReportVisualizationOptions {
-
-	get form() {
-
-		if(this.formContainer)
-			return this.formContainer;
-
-		const container = this.formContainer = document.createElement('div');
-
-		container.innerHTML = `
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="body form">
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideHeadingsBar">Hide Headings Bar
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideRowSummary">Hide Row Summary
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
-				</div>
-			</div>
-		`;
-
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
-
-		this.stage.setupConfigurationSetions(container);
-
-		return container;
-	}
-});
-
-ConfigureVisualization.types.set('line', class LineOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('scatter', class ScatterOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('dualaxisbar', class DualAxisBarOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('stacked', class StackedOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('area', class AreaOptions extends ReportVisualizationLinearOptions {
-});
-
-ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualizationOptions {
-
-	get form() {
-
-		if(this.formContainer)
-			return this.formContainer;
-
-		const container = this.formContainer = document.createElement('div');
-
-		container.innerHTML = `
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="body form">
-
-					<label>
-						<span>Show</span>
-						<select name="showValue">
-							<option value="value">Value</option>
-							<option value="percentage">Percentage</option>
-						</select>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="classicPie">Classic Pie
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
-				</div>
-			</div>
-		`;
-
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
-
-		this.stage.setupConfigurationSetions(container);
-
-		return container;
-	}
-});
-
-ConfigureVisualization.types.set('funnel', class FunnelOptions extends ReportVisualizationOptions {
-});
-
-ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends ReportVisualizationOptions {
-
-	get form() {
-
-		if (this.formContainer)
-			return this.formContainer;
-
-		const container = this.formContainer = document.createElement('div');
-
-		container.innerHTML = `
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="form body">
-
-					<label>
-						<span>Latitude Column</span>
-						<select name="latitude"></select>
-					</label>
-
-					<label>
-						<span>Longitude Column</span>
-						<select name="longitude"></select>
-					</label>
-
-					<label>
-						<span>Initial Zoom</span>
-						<input type="number" step="1" name="initialZoom" min="1" max="25">
-					</label>
-
-					<label>
-						<span>Initial Latitude</span>
-						<input type="text" name="initialLatitude">
-					</label>
-
-					<label>
-						<span>Initial Longitude</span>
-						<input type="text" name="initialLongitude">
-					</label>
-
-					<label class="hidden">
-						<span>
-							<input type="checkbox" name="disableClustring">Disable Clustring
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
-				</div>
-			</div>
-		`;
-
-		const
-			latitude = container.querySelector('select[name=latitude]'),
-			longitude = container.querySelector('select[name=longitude]');
-
-		for(const [key, column] of this.page.preview.report.columns) {
-
-			latitude.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-
-			longitude.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-		}
-
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
-
-		this.stage.setupConfigurationSetions(container);
-
-		return container;
-	}
-});
-
-ConfigureVisualization.types.set('cohort', class CohortOptions extends ReportVisualizationOptions {
-});
-
-ConfigureVisualization.types.set('json', class JSONOptions extends ReportVisualizationOptions {
-});
-
-ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportVisualizationOptions {
-
-	get form() {
-
-		if(this.formContainer)
-			return this.formContainer;
-
-		const container = this.formContainer = document.createElement('div');
-
-		container.innerHTML = `
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="body form">
-					<label>
-						<span>Column</span>
-						<select name="column"></select>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
-				</div>
-			</div>
-		`;
-
-		const columnSelect = container.querySelector('select[name=column]');
-
-		for(const [key, column] of this.page.preview.report.columns) {
-
-			columnSelect.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-		}
-
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
-
-		this.stage.setupConfigurationSetions(container);
-
-		return container;
-	}
-});
-
-ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends ReportVisualizationLiveNumberOptions {
-
-	get form() {
-
-		if (this.formContainer)
-			return this.formContainer;
-
-		const container = this.formContainer = document.createElement('div');
-
-		container.innerHTML = `
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="form body">
-
-					<label>
-						<span>Timing Column</span>
-						<select name="timingColumn"></select>
-					</label>
-
-					<label>
-						<span>Value Column</span>
-						<select name="valueColumn"></select>
-					</label>
-
-					<label>
-						<span>Center Offset</span>
-						<input type="number" name="centerOffset">
-					</label>
-
-					<label>
-						<span>Left Offset</span>
-						<input type="number" name="leftOffset">
-					</label>
-
-					<label>
-						<span>Right Offset</span>
-						<input type="number" name="rightOffset">
-					</label>
-
-					<label class="sub-reports">
-						<span>Sub-reports</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="invertValues">Invert Values
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
-				</div>
-			</div>
-		`;
-
-		const datalist = [];
-
-		for(const [index, report] of DataSource.list.entries()) {
-
-			for(const visualisation of report.visualizations) {
-
-				if(visualisation.type == 'livenumber' && visualisation.visualization_id != this.visualization.visualization_id) {
-
-					datalist.push({
-						'name': visualisation.name,
-						'value': visualisation.visualization_id
-					});
-				}
-			}
-		}
-
-		this.subReports = new MultiSelect({datalist: datalist, expand:true});
-
-		container.querySelector('.form .sub-reports').appendChild(this.subReports.container);
-
-		const
-			timingColumn = container.querySelector('select[name=timingColumn]'),
-			valueColumn = container.querySelector('select[name=valueColumn]');
-
-		for(const [key, column] of this.page.preview.report.columns) {
-
-			timingColumn.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-
-			valueColumn.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-		}
-
-		for(const element of this.formContainer.querySelectorAll('select, input')) {
-
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
-		}
-
-		this.subReports.value = (this.visualization.options && this.visualization.options.subReports) || [];
-
-		this.stage.setupConfigurationSetions(container);
-
-		return container;
-	}
-});
-
-ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisualizationOptions {
-
-	get form() {
-
-		if (this.formContainer)
-			return this.formContainer;
-
-		const container = this.formContainer = document.createElement('div');
-
-		container.innerHTML = `
-			<div class="configuration-section">
-				<h3><i class="fas fa-angle-right"></i> Options</h3>
-				<div class="form body">
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideHeader">Hide Header
-						</span>
-					</label>
-
-					<label>
-						<span>
-							<input type="checkbox" name="hideLegend">Hide Legend
-						</span>
-					</label>
-				</div>
-			</div>
-		`;
-
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
-
-		this.stage.setupConfigurationSetions(container);
-
-		return container;
-	}
-});
 
 const mysqlKeywords = [
 	'SELECT',
@@ -3189,245 +3908,6 @@ const mysqlKeywords = [
 	'DATE_FORMAT',
 	'USING',
 ];
-
-/**
- * Upload a CSV, TSV or JSON data file from the user into a report.
- */
-class UploadFile {
-
-	/**
-	 * Save a few things at the begining.
-	 *
-	 * @param  ReportsManagerStage	stage	The stage that own the instance.
-	 * @return UploadFile
-	 */
-	constructor(stage, afterUpload) {
-
-		this.stage = stage;
-		this.page = stage.page;
-	}
-
-	/**
-	 * The upload-file container element.
-	 * This also acts as a drop surface and a way to give user feedback on the upload status.
-	 *
-	 * @return HTMLElement
-	 */
-	get container() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		const container = this.containerElement = document.createElement('div');
-
-		container.classList.add('upload-file');
-
-		container.innerHTML = `
-			<input type="file" accept=".xlsx, .xls, .csv, .tsv, .json" class="hidden">
-			<h2>Drop File Here</h2>
-			<small>Or click to upload&hellip;</small>
-			<div class="message hidden"></div>
-		`;
-
-		const input = container.querySelector('input');
-
-		input.on('change', e => {
-			if(e.target.files.length)
-				this.upload(e.target.files[0]);
-		});
-
-		container.on('click', () => input.click());
-
-		container.on('dragenter', e => e.preventDefault());
-
-		container.on('dragover', e => {
-
-			e.preventDefault();
-
-			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
-				return this.message('Please upload a valid file.', 'warning');
-
-			if(e.dataTransfer.items.length > 1)
-				return this.message('Please upload only one file.', 'warning');
-
-			container.classList.add('drag-over');
-
-			this.message('Drop to upload one file.', 'notice');
-		});
-
-		container.on('dragleave', () => {
-
-			this.message();
-			container.classList.remove('drag-over');
-		});
-
-		container.on('drop', e => {
-
-			e.preventDefault();
-
-			if(!e.dataTransfer.types || !e.dataTransfer.types.includes('Files'))
-				return this.message('Please upload a valid file', 'warning');
-
-			if(e.dataTransfer.items.length > 1)
-				return this.message('Please upload only one file', 'warning');
-
-			container.classList.remove('drag-over');
-
-			const [file] = e.dataTransfer.files;
-
-			this.upload(file);
-		});
-
-		return container;
-	}
-
-	/**
-	 * Attach an event listener on the upload instance.
-	 *
-	 * @param string	event		The event type (eg. upload)
-	 * @param Function	callback	The callback function to call when the event happens.
-	 */
-	on(event, callback) {
-
-		if(event == 'upload')
-			this.onUpload = callback;
-
-		else throw new Page.exception(`Invalid event File Upload event type ${event}! :(`);
-	}
-
-	/**
-	 * Upload a file's data to the report.
-	 *
-	 * @param File	The File object for the file that is being uploaded.
-	 */
-	upload(file) {
-
-		if(!this.stage.report.load_saved)
-			return this.message('This report doesn\'t have \'Store Result\' property enabled! :(', 'warning');
-
-		this.message(`Uploading ${file.name}`, 'notice');
-
-		const fileReader = new FileReader();
-
-		let separator = ',';
-
-		if(file.name.endsWith('.tsv'))
-			separator = '\t';
-
-		fileReader.onload = async e => {
-
-			if(!e.target.result.trim())
-				return this.message('Uploaded file is empty', 'warning');
-
-			const
-				parameter = {
-					data: this.toJSON(e.target.result.trim(), separator),
-					query_id: this.stage.report.query_id,
-				},
-				options = {
-					method: 'POST',
-				};
-
-			try {
-				await API.call('reports/engine/report', parameter, options);
-			} catch(e) {
-				this.message(e.message, 'warning');
-			}
-
-			if(this.onUpload)
-				this.onUpload();
-
-			this.message('Upload Complete', 'notice');
-		};
-
-		fileReader.readAsText(file);
-	}
-
-	/**
-	 * Convert a file input to JSON.
-	 * This will handle types of input like JSON, CSV or TSV.
-	 *
-	 * @param  string	input		The input string that needs to be converted.
-	 * @param  string	separator	The column separator to use.
-	 * @return string				The stringified JSON that was extracted from the input.
-	 */
-	toJSON(input, separator = ',') {
-
-		try {
-			return JSON.stringify(JSON.parse(input));
-		} catch(e) {}
-
-		const
-			lines = input.split('\n'),
-			result = [],
-			headers = split(lines[0]);
-
-		for(const line of lines.slice(1)) {
-
-			const row = {};
-
-			for(const [index, cell] of split(line).entries())
-				row[headers[index]] = cell;
-
-			result.push(row);
-		}
-
-		function split(string) {
-
-			for (var splitString = string.split(separator), len = splitString.length - 1, tl; len >= 0; len--) {
-
-				if (splitString[len].replace(/"\s+$/, '"').charAt(splitString[len].length - 1) === '"') {
-
-					if ((tl = splitString[len].replace(/^\s+"/, '"')).length > 1 && tl.charAt(0) === '"') {
-
-						splitString[len] = splitString[len].replace(/^\s*"|"\s*$/g, '').replace(/""/g, '"');
-					}
-
-					else if (len) {
-						splitString.splice(len - 1, 2, [splitString[len - 1], splitString[len]].join(separator));
-					}
-
-					else splitString = splitString.shift().split(separator).concat(splitString);
-				}
-
-				else splitString[len].replace(/""/g, '"');
-			}
-
-			for(let [index, element] of splitString.entries()) {
-
-				if(element.split(',').length === 1 && element.startsWith('"')) {
-
-					splitString[index] = element.replace(/"/g, '');
-				}
-			}
-
-			return splitString.map(v => v.trim());
-		}
-
-		return JSON.stringify(result);
-	}
-
-	/**
-	 * Show a message to the user on the file upload window with give color.
-	 *
-	 * @param  string	body	The message body.
-	 * @param  string	type	The type of the message (notice, warning or nothing)
-	 */
-	message(body = '', type = null) {
-
-		const container = this.container.querySelector('.message');
-
-		container.classList.remove('notice', 'warning');
-		container.classList.toggle('hidden', !body);
-		this.container.querySelector('h2').classList.toggle('hidden', body);
-		this.container.querySelector('small').classList.toggle('hidden', body);
-
-		if(type)
-			container.classList.add(type);
-
-		container.innerHTML = body;
-	}
-}
 
 /**
  * Let the user edit a report's saved data.

@@ -22,3 +22,7 @@ section#list h1:last-of-type {
 		color: #666;
 		font-weight: normal;
 	}
+main h2.share-heading {
+	padding-top: 15px;
+	margin-bottom: calc(var(--gap) * 2);
+}

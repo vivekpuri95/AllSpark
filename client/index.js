@@ -6,6 +6,7 @@ const config = require('config');
 const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
+const authLogin = require('../server/www/authentication').login;
 
 router.use(express.static('./client'));
 
@@ -208,6 +209,36 @@ router.get('/login', API.serve(class extends HTMLAPI {
 	}
 
 	async main() {
+
+		if(Array.isArray(this.account.settings.get('external_parameters')) && this.request.query.external_parameters) {
+
+			const external_parameters = {};
+
+			for(const key of this.account.settings.get('external_parameters')) {
+
+				if(key in this.request.query)
+					this.request.body['ext_' + key] = this.request.query[key];
+
+				external_parameters[key] = this.request.query[key];
+			}
+
+			this.request.body.account_id = this.account.account_id;
+
+			const loginObj = new authLogin();
+
+			loginObj.request = this.request;
+
+			const response = await loginObj.login();
+
+			if(!response.jwt && response.length)
+				throw new Error("User not found!!!");
+
+			this.response.setHeader('Set-Cookie', [`refresh_token=${response.jwt}`, `external_parameters=${JSON.stringify(external_parameters)}`]);
+
+			this.response.redirect('/dashboard/first');
+			throw({"pass": true});
+		}
+
 		return `
 			<div class="logo hidden">
 				<img src="" />
@@ -570,7 +601,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 					<span class="text">
 						Env: <span class="strong">${this.env.name}</span>
 						Branch: <span class="strong">${this.env.branch}</span>
-						Last deployed: <span title="${this.env.deployed_on}" class="strong">${this.env.deployed_on}</span>
+						Last deployed: <span title="${this.env.deployed_on}" class="strong deploy-time">${this.env.deployed_on}</span>
 					</span>
 					<i class="fas fa-exclamation-circle"></i>
 				</div>
@@ -654,24 +685,14 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 						<span>Icon</span>
 						<input type="text" name="icon">
 					</label>
+
+					<label id="format">
+						<span>Format</span>
+					</label>
 				</form>
 
 				<h2 class="share-heading">Share dashboards</h2>
-
-				<form class="block form" id="dashboard_share">
-					<button type="submit" class="add_user"><i class="fa fa-plus"></i> Add Users</button>
-				</form>
-
-				<table class="block user-dashboard">
-					<thead>
-						<tr>
-							<th class="thin">User Id</th>
-							<th>Name</th>
-							<th class="action">Action</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
+				<div id="share-dashboards" class="NA">You can share dashboards after adding one.</div>
 			</section>
 		`;
 	}
@@ -788,11 +809,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</div>
 
 							<label>
-								<span>Category</span>
-								<select name="category_id"></select>
-							</label>
-
-							<label>
 								<span>Description</span>
 								<textarea name="description"></textarea>
 							</label>
@@ -804,10 +820,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						</div>
 
 						<div class="form">
-							<label>
-								<span>Roles</span>
-								<select name="roles" required id="roles"></select>
-							</label>
 
 							<label>
 								<span>Refresh Rate (Seconds)</span>
@@ -843,6 +855,9 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</label>
 						</div>
 					</form>
+
+					<h2>Share Report</h2>
+					<div id="share-report"></div>
 				</section>
 
 				<section class="section" id="stage-define-report">
@@ -859,28 +874,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div id="define-report-parts">
 						<div id="schema" class="hidden"></div>
 
-						<form id="define-report-form">
-
-							<div id="query" class="hidden">
-								<div id="editor"></div>
-							</div>
-
-							<div id="api" class="hidden">
-
-								<label>
-									<span>URL</span>
-									<input type="url" name="url">
-								</label>
-
-								<label>
-									<span>Method</span>
-									<select name="method">
-										<option>GET</option>
-										<option>POST</option>
-									</select>
-								</label>
-							</div>
-						</form>
+						<form id="define-report-form"></form>
 
 						<div id="filters" class="hidden">
 
@@ -958,8 +952,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									<label>
 										<span>Multiple</span>
 										<select name="multiple" required>
-											<option value="0" ${!this.multiple ? 'selected' : ''}">No</option>
-											<option value="1" ${this.multiple ? 'selected' : ''}">Yes</option>
+											<option value="0">No</option>
+											<option value="1">Yes</option>
 										</select>
 									</label>
 								</form>
@@ -1016,21 +1010,23 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<div class="configuration-section">
 							<h3><i class="fas fa-angle-right"></i> General</h3>
 
-							<div class="form body">
-								<label>
-									<span>Name</span>
-									<input type="text" name="name" required>
-								</label>
+							<div class="body">
+								<div class="form subform">
+									<label>
+										<span>Name</span>
+										<input type="text" name="name" required>
+									</label>
 
-								<label>
-									<span>Visualization Type</span>
-									<select name="type" required></select>
-								</label>
+									<label>
+										<span>Visualization Type</span>
+										<select name="type" required></select>
+									</label>
 
-								<label>
-									<span>Description</span>
-									<textarea  name="description" rows="4" cols="50"></textarea>
-								</label>
+									<label>
+										<span>Description</span>
+										<textarea  name="description" rows="4" cols="50"></textarea>
+									</label>
+								</div>
 							</div>
 						</div>
 
@@ -1044,24 +1040,25 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							<i class="fas fa-angle-right"></i>
 							Transformations
 							<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
+							<span class="count transformation"></span>
 						</h3>
 
 						<div class="body" id="transformations"></div>
-					</div>					
+					</div>
 
 					<div class="configuration-section">
 
-						<h3><i class="fas fa-angle-right"></i> Dashboards</h3>
+						<h3><i class="fas fa-angle-right"></i> Dashboards <span class="count"></span></h3>
 
 						<div class="body" id="dashboards"></div>
 					</div>
-					
+
 					<div class="configuration-section">
-					
-						<h3><i class="fas fa-angle-right"></i> Filters</h3>
-						
-						<div class="body form" id="filters"></div>
-												
+
+						<h3><i class="fas fa-angle-right"></i> Filters <span class="count"></span></h3>
+
+						<div class="body" id="filters"></div>
+
 					</div>
 
 				</section>
@@ -1094,10 +1091,11 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 
 				<table class="block">
 					<thead>
-						<tr>
-							<th>ID</th>
-							<th>Name</th>
-							<th>Email</th>
+						<tr class="search-bar"></tr>
+						<tr class="thead-bar">
+							<th data-key="id" class="thin">ID</th>
+							<th data-key="name">Name</th>
+							<th data-key="email">Email</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>
@@ -1296,6 +1294,9 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 
 					<div id="details"></div>
 				</form>
+
+				<h2 class="share-heading">Share connections</h2>
+				<div id="share-connections" class="NA">You can share connections after adding one.</div>
 			</section>
 		`;
 	}
