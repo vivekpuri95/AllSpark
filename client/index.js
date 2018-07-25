@@ -601,7 +601,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 					<span class="text">
 						Env: <span class="strong">${this.env.name}</span>
 						Branch: <span class="strong">${this.env.branch}</span>
-						Last deployed: <span title="${this.env.deployed_on}" class="strong">${this.env.deployed_on}</span>
+						Last deployed: <span title="${this.env.deployed_on}" class="strong deploy-time">${this.env.deployed_on}</span>
 					</span>
 					<i class="fas fa-exclamation-circle"></i>
 				</div>
@@ -1010,21 +1010,23 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<div class="configuration-section">
 							<h3><i class="fas fa-angle-right"></i> General</h3>
 
-							<div class="form body">
-								<label>
-									<span>Name</span>
-									<input type="text" name="name" required>
-								</label>
+							<div class="body">
+								<div class="form subform">
+									<label>
+										<span>Name</span>
+										<input type="text" name="name" required>
+									</label>
 
-								<label>
-									<span>Visualization Type</span>
-									<select name="type" required></select>
-								</label>
+									<label>
+										<span>Visualization Type</span>
+										<select name="type" required></select>
+									</label>
 
-								<label>
-									<span>Description</span>
-									<textarea  name="description" rows="4" cols="50"></textarea>
-								</label>
+									<label>
+										<span>Description</span>
+										<textarea  name="description" rows="4" cols="50"></textarea>
+									</label>
+								</div>
 							</div>
 						</div>
 
@@ -1055,7 +1057,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 						<h3><i class="fas fa-angle-right"></i> Filters <span class="count"></span></h3>
 
-						<div class="body form" id="filters"></div>
+						<div class="body" id="filters"></div>
 
 					</div>
 

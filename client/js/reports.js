@@ -1738,10 +1738,8 @@ class DataSourceColumn {
 			response,
 			updated = 0;
 
-		for(const element of this.form.elements) {
-
+		for(const element of this.form.elements)
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
-		}
 
 		this.filters = this.columnFilters.json;
 
@@ -2041,7 +2039,6 @@ class DataSourceColumnDrilldownParameters extends Set {
 
 		return json;
 	}
-
 }
 
 class DataSourceColumnDrilldownParameter {

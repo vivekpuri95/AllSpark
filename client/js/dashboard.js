@@ -12,6 +12,11 @@ Page.class = class Dashboards extends Page {
 		if(this.account.settings.get('disable_footer'))
 			this.container.parentElement.querySelector('main > footer').classList.add('hidden');
 
+		else  {
+			const deployTime = this.container.parentElement.querySelector('main > footer .deploy-time')
+			deployTime.textContent = Format.time(deployTime.textContent);
+		}
+
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 			await Sections.show('list');
 			this.renderList();
