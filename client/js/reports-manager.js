@@ -264,10 +264,10 @@ class ReportsMangerStage {
 			const connection = this.page.connections.get(parseInt(report.connection_name));
 
 			if(!connection)
-				throw new Page.Exception('Report connection not found! :(');
+				throw new Page.exception('Report connection not found! :(');
 
 			if(!ReportConnection.types.has(connection.type))
-				throw new Page.Exception('Invalid report connection type! :(');
+				throw new Page.exception('Invalid report connection type! :(');
 
 			report.connection = new (ReportConnection.types.get(connection.type))(report, this);
 		}
@@ -1947,6 +1947,62 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 	}
 });
 
+ReportConnection.types.set('bigquery', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage) {
+
+		super(report, stage);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+		});
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.appendChild(this.editor.container);
+
+		if(this.report.definition)
+			this.editor.value = this.report.definition.query;
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
 ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnection {
 
 	get form() {
@@ -3494,7 +3550,7 @@ class ReportVisualizationDashboards extends Set {
 
 						<label>
 							<span>Position</span>
-							<input name="position type="number">
+							<input name="position" type="number">
 						</label>
 
 						<label>
