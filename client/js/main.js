@@ -1270,7 +1270,7 @@ class CodeEditor {
 	constructor({mode = null}) {
 
 		if(!window.ace)
-			throw Page.Exception('Ace editor not available! :(');
+			throw Page.exception('Ace editor not available! :(');
 
 		this.mode = mode;
 	}
