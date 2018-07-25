@@ -672,7 +672,7 @@ main .data-source.flush {
 				.visualization.table thead .heading .popup-dropdown {
 					position: absolute;
 					top: 100%;
-					right: 0;
+					left: 0;
 					color: #333;
 					width: 250px;
 					text-align: initial;
