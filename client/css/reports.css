@@ -672,9 +672,9 @@ main .data-source.flush {
 				.visualization.table thead .heading .popup-dropdown {
 					position: absolute;
 					top: 100%;
-					left: 0;
+					right: 0;
 					color: #333;
-					width: 200px;
+					width: 250px;
 					text-align: initial;
 					padding-top: calc(var(--gap) * 2);
 					background: #fff;
@@ -1013,7 +1013,6 @@ main .column-form.compact {
 	main .column-form .filters,
 	main .column-form .accumulations {
 		margin: 0 calc(var(--gap) * 2);
-		max-width: 200px;
 	}
 		main .column-form .filters .list,
 		main .column-form .accumulations .list {
