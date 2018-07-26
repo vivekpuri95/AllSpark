@@ -427,8 +427,11 @@ Page.class = class Dashboards extends Page {
 		this.loadedVisualizations.clear();
 		this.loadedVisualizations.add(report);
 
-		const dashboardName = this.container.querySelector('.dashboard-name');
-		dashboardName.classList.add('hidden');
+		report.container.removeAttribute('style');
+		container.classList.add('singleton');
+		Dashboard.toolbar.classList.add('hidden');
+		this.container.querySelector('.dashboard-name').classList.add('hidden');
+		this.container.querySelector('.global-filters').classList.add('hidden');
 
 		container.textContent = null;
 
@@ -442,10 +445,6 @@ Page.class = class Dashboards extends Page {
 		}
 
 		await Promise.all(promises);
-
-		report.container.removeAttribute('style');
-		container.classList.add('singleton');
-		Dashboard.toolbar.classList.add('hidden');
 
 		report.container.querySelector('.menu').classList.remove('hidden');
 		report.container.querySelector('.menu-toggle').classList.add('selected');
