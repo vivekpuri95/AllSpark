@@ -6440,9 +6440,11 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const container = this.containerElement = document.createElement('section');
 
 		container.classList.add('visualization', 'livenumber');
+		container.id = `visualization-${this.id}`;
 
 		container.innerHTML = `
 			<div class="container"></div>
+			<div class="graph"></div>
 		`;
 
 		return container;
@@ -6585,12 +6587,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const container = this.container.querySelector('.container');
 
 		container.innerHTML = `
-			<h5></h5>
+			<h5>${this.dates.get(this.center.date).getTypedValue(this.options.valueColumn)}</h5>
 
 			<div class="left">
 				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					<span class="value-left"><span><br>
+					<span class="value-left">${this.dates.get(this.left.date).getTypedValue(this.options.valueColumn)}<span><br>
 					<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
 				</span>
 			</div>
@@ -6598,15 +6600,24 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			<div class="right">
 				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					<span class="value-right"><span><br>
+					<span class="value-right">${this.dates.get(this.right.date).getTypedValue(this.options.valueColumn)}<span><br>
 					<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
 				</span>
 			</div>
 		`;
 
-		this.center.container = container.querySelector('h5');
-		this.left.container = container.querySelector('.value-left');
-		this.right.container = container.querySelector('.value-right');
+		if(!options.resize)
+			this.animate(options);
+
+		if(this.options.showGraph)
+			this.plotGraph(options);
+	}
+
+	animate(options) {
+
+		this.center.container = this.container.querySelector('h5');
+		this.left.container = this.container.querySelector('.value-left');
+		this.right.container = this.container.querySelector('.value-right');
 
 		const
 			duration = Visualization.animationDuration * 2 / 1000,
@@ -6631,6 +6642,90 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		};
 
 		count(1);
+	}
+
+	plotGraph(options) {
+
+		const margin = {top: 30, right: 20, bottom: 30, left: 50};
+
+		const container = d3.selectAll(`#visualization-${this.id} .graph`);
+
+		container.selectAll('*').remove();
+
+		if(!this.width) {
+			this.width = this.container.clientWidth - margin.left - margin.right;
+			this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
+		}
+
+		const data = [];
+
+		for(const row of this.dates.values()) {
+			data.push({
+				date: Format.date(row.get('date')),
+				value: row.get(this.options.valueColumn),
+			});
+		}
+
+		const x = d3.scale.ordinal().rangePoints([0, this.width], 0.1, 0);
+		const y = d3.scale.linear().range([this.height, 0]);
+
+		const yAxis = d3.svg.axis()
+			.scale(y)
+			.orient('left');
+
+		yAxis.tickFormat(d3.format('s'));
+
+		x.domain(data.map(d => d.date));
+		y.domain([0, d3.max(data, d => d.value)]);
+
+		const valueline = d3.svg.line()
+			.x(d => x(d.date))
+			.y(d => y(d.value));
+
+		const svg = container
+			.append('svg')
+				.attr('width', this.width + margin.left + margin.right)
+				.attr('height', this.height + margin.top + margin.bottom)
+			.append('g')
+				.attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+		svg.append('path')
+			.attr('class', 'line')
+			.attr('d', valueline(data))
+			.attr('stroke', this.source.columns.get(this.options.valueColumn).color);
+
+		svg.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis);
+
+		if(!options.resize) {
+
+			const
+				path = svg.selectAll('path')[0][0],
+				length = path.getTotalLength();
+
+			path.style.strokeDasharray = length + ' ' + length;
+			path.style.strokeDashoffset = length;
+			path.getBoundingClientRect();
+
+			path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+			path.style.strokeDashoffset = '0';
+		}
+
+		window.addEventListener('resize', () => {
+
+			const
+				width = this.container.clientWidth - margin.left - margin.right,
+				height = this.container.clientHeight - margin.top - margin.bottom - 10;
+
+			if(this.width != width || this.height != height) {
+
+				this.width = width;
+				this.height = height;
+
+				this.plotGraph({resize: true});
+			}
+		});
 	}
 
 	getColor(percentage) {

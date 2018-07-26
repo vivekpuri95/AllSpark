@@ -956,9 +956,10 @@ main .data-source.flush {
 		justify-content: center;
 		align-items: center;
 		font-weight: normal;
+		z-index: 1;
 	}
 	.visualization.livenumber .container .left {
-		border-right: 1px solid #ccc;
+		border-right: 1px solid #999;
 	}
 	.visualization.livenumber .container .left,
 	.visualization.livenumber .container .right {
@@ -968,7 +969,7 @@ main .data-source.flush {
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		border-top: 1px solid #ccc;
+		border-top: 1px solid #999;
 		padding: calc(var(--gap) * 2);
 	}
 		.visualization.livenumber .container .red {
@@ -990,6 +991,23 @@ main .data-source.flush {
 		.visualization.livenumber .container .right .value small {
 			color: #666;
 			margin-top: 1px
+		}
+	.visualization.livenumber .graph {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		opacity: 0.4;
+		filter: blur(1px);
+	}
+		.visualization.livenumber .graph svg .line {
+			fill: none;
+			transition: stroke-width var(--transition-duration);
+			stroke-width: 5px;
+		}
+		.visualization.livenumber .graph svg .y .domain {
+			display: none;
 		}
 
 main .data-source-column form .parameter-list {

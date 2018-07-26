@@ -3002,6 +3002,12 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 						<label>
 							<span>
+								<input type="checkbox" name="showGraph">Show Graph
+							</span>
+						</label>
+
+						<label>
+							<span>
 								<input type="checkbox" name="hideLegend">Hide Legend
 							</span>
 						</label>
