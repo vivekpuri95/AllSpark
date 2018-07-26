@@ -308,7 +308,7 @@ class DataSource {
 		});
 
 		container.querySelector('header .reload').on('click', () => {
-			this.visualizations.selected.load(true);
+			this.visualizations.selected.load();
 		});
 
 		container.querySelector('.menu .filters-toggle').on('click', () => {
@@ -6454,11 +6454,14 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		super.render(options);
 
+		this.source.columns.render();
+
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
+		this.container.querySelector('.graph').textContent = null;
 
 		if(this.subReports && this.subReports.length) {
 
@@ -6503,7 +6506,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				report.visualizations.selected.load();
 				this.subReportDialogBox.body.appendChild(report.container);
 			}
-
 		});
 
 		await this.source.fetch(options);
@@ -6549,33 +6551,43 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
 		};
 
-		this.right = {
-			value: 0,
-			date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-		};
-
-		this.left = {
-			value: 0,
-			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-		};
-
 		if(this.dates.has(this.center.date))
 			this.center.value = this.dates.get(this.center.date).get(this.options.valueColumn);
 
-		if(this.dates.has(this.left.date)) {
+		if(this.options.rightOffset != '') {
 
-			const value = this.dates.get(this.left.date).get(this.options.valueColumn);
+			this.right = {
+				value: 0,
+				date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			};
 
-			this.left.percentage = ((value - this.center.value) / value) * 100 * -1;
-			this.left.value = value;
+			if(this.dates.has(this.right.date)) {
+
+				const value = this.dates.get(this.right.date).get(this.options.valueColumn);
+
+				this.right.percentage = ((value - this.center.value) / value) * 100 * -1;
+				this.right.value = value;
+			}
+
+			else delete this.right;
 		}
 
-		if(this.dates.has(this.right.date)) {
+		if(this.options.leftOffset != '') {
 
-			const value = this.dates.get(this.right.date).get(this.options.valueColumn);
+			this.left = {
+				value: 0,
+				date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			};
 
-			this.right.percentage = ((value - this.center.value) / value) * 100 * -1;
-			this.right.value = value;
+			if(this.dates.has(this.left.date)) {
+
+				const value = this.dates.get(this.left.date).get(this.options.valueColumn);
+
+				this.left.percentage = ((value - this.center.value) / value) * 100 * -1;
+				this.left.value = value;
+			}
+
+			else delete this.left;
 		}
 	}
 
@@ -6586,25 +6598,38 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		const container = this.container.querySelector('.container');
 
-		container.innerHTML = `
-			<h5>${this.dates.get(this.center.date).getTypedValue(this.options.valueColumn)}</h5>
+		container.innerHTML = `<h5>${this.dates.get(this.center.date).getTypedValue(this.options.valueColumn)}</h5>`;
+		this.center.container = this.container.querySelector('h5');
 
-			<div class="left">
-				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
-				<span class="value">
-					<span class="value-left">${this.dates.get(this.left.date).getTypedValue(this.options.valueColumn)}<span><br>
-					<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
-				</span>
-			</div>
+		if(this.left) {
 
-			<div class="right">
-				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
-				<span class="value">
-					<span class="value-right">${this.dates.get(this.right.date).getTypedValue(this.options.valueColumn)}<span><br>
-					<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
-				</span>
-			</div>
-		`;
+			container.insertAdjacentHTML('beforeend', `
+				<div class="left">
+					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
+					<span class="value">
+						<span class="value-left">${this.dates.get(this.left.date).getTypedValue(this.options.valueColumn)}<span><br>
+						<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
+					</span>
+				</div>
+			`);
+
+			this.left.container = this.container.querySelector('.value-left');
+		}
+
+		if(this.right) {
+
+			container.insertAdjacentHTML('beforeend', `
+				<div class="right">
+					<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
+					<span class="value">
+						<span class="value-right">${this.dates.get(this.right.date).getTypedValue(this.options.valueColumn)}<span><br>
+						<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
+					</span>
+				</div>
+			`);
+
+			this.right.container = this.container.querySelector('.value-right');
+		}
 
 		if(!options.resize)
 			this.animate(options);
@@ -6614,10 +6639,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	}
 
 	animate(options) {
-
-		this.center.container = this.container.querySelector('h5');
-		this.left.container = this.container.querySelector('.value-left');
-		this.right.container = this.container.querySelector('.value-right');
 
 		const
 			duration = Visualization.animationDuration * 2 / 1000,
@@ -6636,10 +6657,14 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			for(const position of ['center', 'left', 'right']) {
 
+				if(!this[position])
+					continue;
+
 				values[position] = (this[position].value / jumps) * jump;
 
 				if(this[position].value % 1 == 0)
 					values[position] = Math.floor(values[position]);
+
 				this[position].container.textContent = this.dates.get(this[position].date).getTypedValue(this.options.valueColumn, values[position]);
 			}
 		};
@@ -6664,7 +6689,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		for(const row of this.dates.values()) {
 			data.push({
-				date: Format.date(row.get('date')),
+				date: Format.date(row.get(this.options.timingColumn)),
 				value: row.get(this.options.valueColumn),
 			});
 		}
@@ -6679,7 +6704,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		yAxis.tickFormat(d3.format('s'));
 
 		x.domain(data.map(d => d.date));
-		y.domain([0, d3.max(data, d => d.value)]);
+		y.domain([d3.min(data, d => d.value), d3.max(data, d => d.value)]);
 
 		const valueline = d3.svg.line()
 			.x(d => x(d.date))

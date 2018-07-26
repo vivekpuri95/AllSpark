@@ -746,7 +746,7 @@ main .data-source.flush {
 			text-align: center;
 		}
 		.visualization.table table tbody tr.initial {
-			transform: translateY(-10px) translateX(20px);
+			transform: translateY(-10px);
 			opacity: 0;
 		}
 			.visualization.table table tbody tr td.drilldown {
