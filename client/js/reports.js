@@ -6491,7 +6491,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				const selectedVisualizations = report.visualizations.filter(x => this.subReports.includes(x.visualization_id.toString()));
 
 				visualizations = visualizations.concat(selectedVisualizations);
-
 			}
 
 			for(const visualization of visualizations) {
@@ -6697,12 +6696,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const x = d3.scale.ordinal().rangePoints([0, this.width], 0.1, 0);
 		const y = d3.scale.linear().range([this.height, 0]);
 
-		const yAxis = d3.svg.axis()
-			.scale(y)
-			.orient('left');
-
-		yAxis.tickFormat(d3.format('s'));
-
 		x.domain(data.map(d => d.date));
 		y.domain([d3.min(data, d => d.value), d3.max(data, d => d.value)]);
 
@@ -6722,9 +6715,18 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			.attr('d', valueline(data))
 			.attr('stroke', this.source.columns.get(this.options.valueColumn).color);
 
-		svg.append('g')
-			.attr('class', 'y axis')
-			.call(yAxis);
+		if(!this.options.hideYAxis) {
+
+			const yAxis = d3.svg.axis()
+				.scale(y)
+				.orient('left');
+
+			yAxis.tickFormat(d3.format('s'));
+
+			svg.append('g')
+				.attr('class', 'y axis')
+				.call(yAxis);
+		}
 
 		if(!options.resize) {
 

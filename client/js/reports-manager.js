@@ -3008,6 +3008,12 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 						<label>
 							<span>
+								<input type="checkbox" name="hideYAxis">Hide Graph's Y Axis Graph
+							</span>
+						</label>
+
+						<label>
+							<span>
 								<input type="checkbox" name="hideLegend">Hide Legend
 							</span>
 						</label>
