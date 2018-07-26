@@ -1262,10 +1262,11 @@ class DataSourceRow extends Map {
 	 * - Apply prefix/postfix.
 	 * - Apply date/number type formating.
 	 *
-	 * @param  string	key	The key whose value is needed.
-	 * @return string		The value of the column with it's type information applied to it.
+	 * @param  string	key		The key whose value is needed.
+	 * @param  string	value	An optional value, can be used to format this value with given key's settings.
+	 * @return string			The value of the column with it's type information applied to it.
 	 */
-	getTypedValue(key) {
+	getTypedValue(key, value = null) {
 
 		if(!this.has(key))
 			return undefined;
@@ -1275,7 +1276,8 @@ class DataSourceRow extends Map {
 
 		const column = this.source.columns.get(key);
 
-		let value = this.get(key);
+		if(!value)
+			value = this.get(key);
 
 		if(column.type == 'date')
 			value = Format.date(value);
@@ -6520,7 +6522,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		if(!this.options.valueColumn)
 			return this.source.error('Value column not selected.');
 
-		const dates = new Map;
+		this.dates = new Map;
 
 		for(const row of this.source.response) {
 
@@ -6533,7 +6535,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			if(!Date.parse(row.get(this.options.timingColumn)))
 				return this.source.error(`Timing column value '${row.get(this.options.timingColumn)}' is not a valid date.`);
 
-			dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
+			this.dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
 
 		let today = new Date();
@@ -6555,27 +6557,23 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
 		};
 
-		let centerValue;
+		if(this.dates.has(this.center.date))
+			this.center.value = this.dates.get(this.center.date).get(this.options.valueColumn);
 
-		if(dates.has(this.center.date)) {
-			centerValue = dates.get(this.center.date).get(this.options.valueColumn);
-			this.center.value = dates.get(this.center.date).getTypedValue(this.options.valueColumn);
+		if(this.dates.has(this.left.date)) {
+
+			const value = this.dates.get(this.left.date).get(this.options.valueColumn);
+
+			this.left.percentage = ((value - this.center.value) / value) * 100 * -1;
+			this.left.value = value;
 		}
 
-		if(dates.has(this.left.date)) {
+		if(this.dates.has(this.right.date)) {
 
-			const value = dates.get(this.left.date).get(this.options.valueColumn);
+			const value = this.dates.get(this.right.date).get(this.options.valueColumn);
 
-			this.left.percentage = ((value - centerValue) / value) * 100 * -1;
-			this.left.value = dates.get(this.left.date).getTypedValue(this.options.valueColumn);
-		}
-
-		if(dates.has(this.right.date)) {
-
-			const value = dates.get(this.right.date).get(this.options.valueColumn);
-
-			this.right.percentage = ((value - centerValue) / value) * 100 * -1;
-			this.right.value = dates.get(this.right.date).getTypedValue(this.options.valueColumn);
+			this.right.percentage = ((value - this.center.value) / value) * 100 * -1;
+			this.right.value = value;
 		}
 	}
 
@@ -6587,12 +6585,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const container = this.container.querySelector('.container');
 
 		container.innerHTML = `
-			<h5>${this.center.value}</h5>
+			<h5></h5>
 
 			<div class="left">
 				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					${this.left.value}<br>
+					<span class="value-left"><span><br>
 					<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
 				</span>
 			</div>
@@ -6600,11 +6598,39 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			<div class="right">
 				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 				<span class="value">
-					${this.right.value}<br>
+					<span class="value-right"><span><br>
 					<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
 				</span>
 			</div>
 		`;
+
+		this.center.container = container.querySelector('h5');
+		this.left.container = container.querySelector('.value-left');
+		this.right.container = container.querySelector('.value-right');
+
+		const
+			duration = Visualization.animationDuration * 2 / 1000,
+			jumpsPerSecond = 20,
+			jumps = Math.floor(duration * jumpsPerSecond),
+			values = {
+				center: 0,
+				left: 0,
+				right: 0,
+			};
+
+		const count = jump => {
+
+			if(jump < jumps)
+				setTimeout(() => window.requestAnimationFrame(() => count(jump + 1)), duration / jumps);
+
+			for(const position of ['center', 'left', 'right']) {
+
+				values[position] = (this[position].value / jumps) * jump;
+				this[position].container.textContent = this.dates.get(this[position].date).getTypedValue(this.options.valueColumn, values[position]);
+			}
+		};
+
+		count(1);
 	}
 
 	getColor(percentage) {
