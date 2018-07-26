@@ -732,12 +732,22 @@ main .data-source.flush {
 						opacity: 1;
 						margin-left: auto;
 					}
+		.visualization.table table tbody tr {
+			transform: translateY(0);
+			opacity: 1;
+			transition: transform var(--transition-duration),
+						opacity var(--transition-duration);
+		}
 		.visualization.table table tr.selected {
 			background: #ddf;
 			color: var(--theme-light-text);
 		}
 		.visualization.table table tr.NA {
 			text-align: center;
+		}
+		.visualization.table table tbody tr.initial {
+			transform: translateY(-10px) translateX(20px);
+			opacity: 0;
 		}
 			.visualization.table table tbody tr td.drilldown {
 				cursor: pointer;
