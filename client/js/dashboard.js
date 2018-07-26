@@ -427,8 +427,11 @@ Page.class = class Dashboards extends Page {
 		this.loadedVisualizations.clear();
 		this.loadedVisualizations.add(report);
 
-		const dashboardName = this.container.querySelector('.dashboard-name');
-		dashboardName.classList.add('hidden');
+		report.container.removeAttribute('style');
+		container.classList.add('singleton');
+		Dashboard.toolbar.classList.add('hidden');
+		this.container.querySelector('.dashboard-name').classList.add('hidden');
+		this.container.querySelector('.global-filters').classList.add('hidden');
 
 		container.textContent = null;
 
@@ -442,10 +445,6 @@ Page.class = class Dashboards extends Page {
 		}
 
 		await Promise.all(promises);
-
-		report.container.removeAttribute('style');
-		container.classList.add('singleton');
-		Dashboard.toolbar.classList.add('hidden');
 
 		report.container.querySelector('.menu').classList.remove('hidden');
 		report.container.querySelector('.menu-toggle').classList.add('selected');
@@ -786,10 +785,17 @@ class Dashboard {
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 
 		const dashboardName = this.page.container.querySelector('.dashboard-name');
-		dashboardName.innerHTML = this.name;
+
+		dashboardName.innerHTML = `
+			${this.name}
+			<div>
+				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
+			</div>
+		`;
+
 		dashboardName.classList.remove('hidden');
 
-		Dashboard.toolbar.classList.remove('hidden');
+		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
 
 		await Sections.show('reports');
 
@@ -1201,11 +1207,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		this.globalFilterContainer.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
 
-		// Save the value of each filter for use on other dashboards
-		// if(Dashboard.selectedValues.size) {
-		// 	for(const [placeholder, filter] of this)
-		// 		filter.value = Dashboard.selectedValues.get(placeholder);
-		// }
+		this.page.container.removeEventListener('scroll', DashboardGlobalFilters.scrollListener);
+		this.page.container.addEventListener('scroll', DashboardGlobalFilters.scrollListener = e => {
+			this.globalFilterContainer.classList.toggle('scrolled', this.page.container.scrollTop > 45);
+		}, {passive: true});
 	}
 
 	async load() {
@@ -1232,6 +1237,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		container.textContent = null;
 
 		container.classList.remove('show');
+		container.classList.toggle('hidden', !this.size);
 
 		if(!this.size)
 			return;

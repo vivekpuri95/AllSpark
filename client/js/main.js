@@ -1049,6 +1049,7 @@ class API extends AJAX {
 	}
 
 	static async refreshToken() {
+
 		let
 			getToken = true,
 			token = await Storage.get('token'),
@@ -1203,7 +1204,7 @@ class Format {
 		};
 
 		if(!Format.date.formatter)
-			Format.date.formatter = new Intl.DateTimeFormat('en-IN', options);
+			Format.date.formatter = new Intl.DateTimeFormat(undefined, options);
 
 		if(typeof date == 'string')
 			date = Date.parse(date);
@@ -1228,7 +1229,7 @@ class Format {
 		};
 
 		if(!Format.time.formatter)
-			Format.time.formatter = new Intl.DateTimeFormat('en-IN', options);
+			Format.time.formatter = new Intl.DateTimeFormat(undefined, options);
 
 		if(typeof time == 'string')
 			time = Date.parse(time);
@@ -1245,7 +1246,7 @@ class Format {
 	static number(number) {
 
 		if(!Format.number.formatter)
-			Format.number.formatter = new Intl.NumberFormat('en-IN', {maximumFractionDigits: 2});
+			Format.number.formatter = new Intl.NumberFormat(undefined, {maximumFractionDigits: 2});
 
 		return Format.number.formatter.format(number);
 	}

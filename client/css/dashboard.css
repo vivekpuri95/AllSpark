@@ -145,12 +145,56 @@ main > nav::-webkit-scrollbar-track {
 			background: rgba(0, 0, 0, 0.15);
 		}
 
-main .section h1.dashboard-name {
+main #reports.show {
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+	grid-template-rows: max-content max-content max-content;
+}
+
+main #reports > h1.dashboard-name {
 	border: 0;
 	font-size: 150%;
 	border-bottom:  1px dashed #ccc;
 	font-weight: normal;
+	display: flex;
+	justify-content: space-between;
 }
+	main #reports > h1.dashboard-name > div {
+		display: flex;
+		opacity: 0;
+		transition: opacity var(--transition-duration);
+	}
+	main #reports > h1.dashboard-name:hover > div {
+		opacity: 1;
+	}
+		main #reports > h1.dashboard-name > div span {
+			font-size: 70%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			width: 25px;
+			transition: background var(--transition-duration),
+						color var(--transition-duration);
+		}
+		main #reports > h1.dashboard-name > div span:hover {
+			background: var(--color-accent);
+			color: var(--color-accent-text);
+			cursor: pointer;
+		}
+
+main #reports > .toolbar {
+	align-items: flex-end;
+	background: transparent;
+	padding: 0;
+}
+	main #reports > .toolbar input[name=date-range] {
+		width: 250px;
+		text-align: center;
+		letter-spacing: 0.5px;
+	}
+	main #reports > .toolbar label select {
+		max-width: 200px;
+	}
 
 main #mailto.selected {
 	background: var(--color-accent);
@@ -194,13 +238,19 @@ main #reports > .global-filters.right.show {
 }
 main #reports > .global-filters.top {
 	flex-wrap: wrap;
-	padding: 0 0 var(--gap) 0;
-	align-items:  flex-end;
-	margin: 0 calc(var(--gap) * -1) calc(var(--gap) * 2);
+	padding: 0;
+	align-items: flex-end;
+	margin: 0 calc(var(--gap) * -1);
 	position: sticky;
 	top: 0;
 	z-index: 5;
 	background: #fff;
+	transition: padding var(--transition-duration),
+				box-shadow var(--transition-duration);
+}
+main #reports > .global-filters.top.scrolled {
+	padding: calc(var(--gap) * 2) var(--gap);
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 	main #reports > .global-filters.top .head {
 		display: none;
@@ -300,7 +350,7 @@ main #reports > .global-filters.top {
 		}
 	main #reports > .global-filters.top .filters {
 		margin: 0;
-		padding: var(--gap) 0;
+		padding: 0;
 	}
 		main #reports > .global-filters.top .filters > label {
 			max-width: initial;
@@ -313,23 +363,11 @@ main #reports > .list {
 	grid-auto-rows: calc(50px - (var(--gap) * 4));
 	grid-gap: calc(var(--gap) * 5);
 	align-items: start;
-	z-index: 20;
+	z-index: 4;
 }
 	main #reports > .list .NA.no-reports {
 		grid-column: 1 / span all;
 	}
-	main #reports > .toolbar {
-		align-items: flex-end;
-		background: transparent;
-	}
-		main #reports > .toolbar input[name=date-range] {
-			width: 250px;
-			text-align: center;
-			letter-spacing: 0.5px;
-		}
-		main #reports > .toolbar label select {
-			max-width: 200px;
-		}
 	main #reports .list .data-source {
 		grid-column: auto / span 16;
 		grid-row: auto / span 2;

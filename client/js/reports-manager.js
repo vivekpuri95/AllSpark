@@ -94,6 +94,7 @@ class ReportsMangerPreview {
 		this.report.visualizations = this.report.visualizations.filter(f => options.visualization ? f.visualization_id == options.visualization.id : f.type == 'table');
 
 		if(options.definition && options.definition != this.report.definition) {
+			this.report.query = options.definition.query;
 			this.report.definition = options.definition;
 			this.report.definitionOverride = true;
 		}
@@ -831,8 +832,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const options = {
 			query_id: this.report.query_id,
-			query: definition.query,
-			definition: JSON.stringify(definition),
+			definition: definition,
 		};
 
 		await this.page.preview.load(options);
@@ -2997,6 +2997,18 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 						<label>
 							<span>
 								<input type="checkbox" name="invertValues">Invert Values
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showGraph">Show Graph
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideYAxis">Hide Graph's Y Axis Graph
 							</span>
 						</label>
 

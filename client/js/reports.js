@@ -50,8 +50,8 @@ class DataSource {
 
 		parameters.set('query_id', this.query_id);
 
-		if(this.queryOverride)
-			parameters.set('query', this.query);
+		if(this.definitionOverride)
+			parameters.set('query', this.definition.query);
 
 		for(const filter of this.filters.values()) {
 
@@ -308,7 +308,7 @@ class DataSource {
 		});
 
 		container.querySelector('header .reload').on('click', () => {
-			this.visualizations.selected.load(true);
+			this.visualizations.selected.load();
 		});
 
 		container.querySelector('.menu .filters-toggle').on('click', () => {
@@ -1262,10 +1262,11 @@ class DataSourceRow extends Map {
 	 * - Apply prefix/postfix.
 	 * - Apply date/number type formating.
 	 *
-	 * @param  string	key	The key whose value is needed.
-	 * @return string		The value of the column with it's type information applied to it.
+	 * @param  string	key		The key whose value is needed.
+	 * @param  string	value	An optional value, can be used to format this value with given key's settings.
+	 * @return string			The value of the column with it's type information applied to it.
 	 */
-	getTypedValue(key) {
+	getTypedValue(key, value = null) {
 
 		if(!this.has(key))
 			return undefined;
@@ -1275,7 +1276,8 @@ class DataSourceRow extends Map {
 
 		const column = this.source.columns.get(key);
 
-		let value = this.get(key);
+		if(!value)
+			value = this.get(key);
 
 		if(column.type == 'date')
 			value = Format.date(value);
@@ -6438,9 +6440,11 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const container = this.containerElement = document.createElement('section');
 
 		container.classList.add('visualization', 'livenumber');
+		container.id = `visualization-${this.id}`;
 
 		container.innerHTML = `
 			<div class="container"></div>
+			<div class="graph"></div>
 		`;
 
 		return container;
@@ -6450,11 +6454,14 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		super.render(options);
 
+		this.source.columns.render();
+
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
+		this.container.querySelector('.graph').textContent = null;
 
 		if(this.subReports && this.subReports.length) {
 
@@ -6484,7 +6491,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				const selectedVisualizations = report.visualizations.filter(x => this.subReports.includes(x.visualization_id.toString()));
 
 				visualizations = visualizations.concat(selectedVisualizations);
-
 			}
 
 			for(const visualization of visualizations) {
@@ -6499,7 +6505,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				report.visualizations.selected.load();
 				this.subReportDialogBox.body.appendChild(report.container);
 			}
-
 		});
 
 		await this.source.fetch(options);
@@ -6520,7 +6525,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		if(!this.options.valueColumn)
 			return this.source.error('Value column not selected.');
 
-		const dates = new Map;
+		this.dates = new Map;
 
 		for(const row of this.source.response) {
 
@@ -6533,7 +6538,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			if(!Date.parse(row.get(this.options.timingColumn)))
 				return this.source.error(`Timing column value '${row.get(this.options.timingColumn)}' is not a valid date.`);
 
-			dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
+			this.dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
 
 		let today = new Date();
@@ -6545,37 +6550,43 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
 		};
 
-		this.right = {
-			value: 0,
-			date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-		};
+		if(this.dates.has(this.center.date))
+			this.center.value = this.dates.get(this.center.date).get(this.options.valueColumn);
 
-		this.left = {
-			value: 0,
-			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-		};
+		if(this.options.rightOffset != '') {
 
-		let centerValue;
+			this.right = {
+				value: 0,
+				date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			};
 
-		if(dates.has(this.center.date)) {
-			centerValue = dates.get(this.center.date).get(this.options.valueColumn);
-			this.center.value = dates.get(this.center.date).getTypedValue(this.options.valueColumn);
+			if(this.dates.has(this.right.date)) {
+
+				const value = this.dates.get(this.right.date).get(this.options.valueColumn);
+
+				this.right.percentage = ((value - this.center.value) / value) * 100 * -1;
+				this.right.value = value;
+			}
+
+			else delete this.right;
 		}
 
-		if(dates.has(this.left.date)) {
+		if(this.options.leftOffset != '') {
 
-			const value = dates.get(this.left.date).get(this.options.valueColumn);
+			this.left = {
+				value: 0,
+				date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			};
 
-			this.left.percentage = ((value - centerValue) / value) * 100 * -1;
-			this.left.value = dates.get(this.left.date).getTypedValue(this.options.valueColumn);
-		}
+			if(this.dates.has(this.left.date)) {
 
-		if(dates.has(this.right.date)) {
+				const value = this.dates.get(this.left.date).get(this.options.valueColumn);
 
-			const value = dates.get(this.right.date).get(this.options.valueColumn);
+				this.left.percentage = ((value - this.center.value) / value) * 100 * -1;
+				this.left.value = value;
+			}
 
-			this.right.percentage = ((value - centerValue) / value) * 100 * -1;
-			this.right.value = dates.get(this.right.date).getTypedValue(this.options.valueColumn);
+			else delete this.left;
 		}
 	}
 
@@ -6586,25 +6597,165 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		const container = this.container.querySelector('.container');
 
-		container.innerHTML = `
-			<h5>${this.center.value}</h5>
+		container.innerHTML = `<h5>${this.dates.get(this.center.date).getTypedValue(this.options.valueColumn)}</h5>`;
+		this.center.container = this.container.querySelector('h5');
 
-			<div class="left">
-				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
-				<span class="value">
-					${this.left.value}<br>
-					<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
-				</span>
-			</div>
+		if(this.left) {
 
-			<div class="right">
-				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
-				<span class="value">
-					${this.right.value}<br>
-					<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
-				</span>
-			</div>
-		`;
+			container.insertAdjacentHTML('beforeend', `
+				<div class="left">
+					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
+					<span class="value">
+						<span class="value-left">${this.dates.get(this.left.date).getTypedValue(this.options.valueColumn)}<span><br>
+						<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
+					</span>
+				</div>
+			`);
+
+			this.left.container = this.container.querySelector('.value-left');
+		}
+
+		if(this.right) {
+
+			container.insertAdjacentHTML('beforeend', `
+				<div class="right">
+					<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
+					<span class="value">
+						<span class="value-right">${this.dates.get(this.right.date).getTypedValue(this.options.valueColumn)}<span><br>
+						<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
+					</span>
+				</div>
+			`);
+
+			this.right.container = this.container.querySelector('.value-right');
+		}
+
+		if(!options.resize)
+			this.animate(options);
+
+		if(this.options.showGraph)
+			this.plotGraph(options);
+	}
+
+	animate(options) {
+
+		const
+			duration = Visualization.animationDuration * 2 / 1000,
+			jumpsPerSecond = 20,
+			jumps = Math.floor(duration * jumpsPerSecond),
+			values = {
+				center: 0,
+				left: 0,
+				right: 0,
+			};
+
+		const count = jump => {
+
+			if(jump < jumps)
+				setTimeout(() => window.requestAnimationFrame(() => count(jump + 1)), duration / jumps);
+
+			for(const position of ['center', 'left', 'right']) {
+
+				if(!this[position])
+					continue;
+
+				values[position] = (this[position].value / jumps) * jump;
+
+				if(this[position].value % 1 == 0)
+					values[position] = Math.floor(values[position]);
+
+				this[position].container.textContent = this.dates.get(this[position].date).getTypedValue(this.options.valueColumn, values[position]);
+			}
+		};
+
+		count(1);
+	}
+
+	plotGraph(options) {
+
+		const margin = {top: 30, right: 20, bottom: 30, left: 50};
+
+		const container = d3.selectAll(`#visualization-${this.id} .graph`);
+
+		container.selectAll('*').remove();
+
+		if(!this.width) {
+			this.width = this.container.clientWidth - margin.left - margin.right;
+			this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
+		}
+
+		const data = [];
+
+		for(const row of this.dates.values()) {
+			data.push({
+				date: Format.date(row.get(this.options.timingColumn)),
+				value: row.get(this.options.valueColumn),
+			});
+		}
+
+		const x = d3.scale.ordinal().rangePoints([0, this.width], 0.1, 0);
+		const y = d3.scale.linear().range([this.height, 0]);
+
+		x.domain(data.map(d => d.date));
+		y.domain([d3.min(data, d => d.value), d3.max(data, d => d.value)]);
+
+		const valueline = d3.svg.line()
+			.x(d => x(d.date))
+			.y(d => y(d.value));
+
+		const svg = container
+			.append('svg')
+				.attr('width', this.width + margin.left + margin.right)
+				.attr('height', this.height + margin.top + margin.bottom)
+			.append('g')
+				.attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+		svg.append('path')
+			.attr('class', 'line')
+			.attr('d', valueline(data))
+			.attr('stroke', this.source.columns.get(this.options.valueColumn).color);
+
+		if(!this.options.hideYAxis) {
+
+			const yAxis = d3.svg.axis()
+				.scale(y)
+				.orient('left');
+
+			yAxis.tickFormat(d3.format('s'));
+
+			svg.append('g')
+				.attr('class', 'y axis')
+				.call(yAxis);
+		}
+
+		if(!options.resize) {
+
+			const
+				path = svg.selectAll('path')[0][0],
+				length = path.getTotalLength();
+
+			path.style.strokeDasharray = length + ' ' + length;
+			path.style.strokeDashoffset = length;
+			path.getBoundingClientRect();
+
+			path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+			path.style.strokeDashoffset = '0';
+		}
+
+		window.addEventListener('resize', () => {
+
+			const
+				width = this.container.clientWidth - margin.left - margin.right,
+				height = this.container.clientHeight - margin.top - margin.bottom - 10;
+
+			if(this.width != width || this.height != height) {
+
+				this.width = width;
+				this.height = height;
+
+				this.plotGraph({resize: true});
+			}
+		});
 	}
 
 	getColor(percentage) {
