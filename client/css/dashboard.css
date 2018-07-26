@@ -145,6 +145,12 @@ main > nav::-webkit-scrollbar-track {
 			background: rgba(0, 0, 0, 0.15);
 		}
 
+main #reports.show {
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+	grid-template-rows: max-content max-content max-content;
+}
+
 main #reports > h1.dashboard-name {
 	border: 0;
 	font-size: 150%;
@@ -198,10 +204,6 @@ main .mailto-content {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 	grid-gap: calc(var(--gap) * 2);
 }
-main #reports.show {
-	display: grid;
-	grid-gap: calc(var(--gap) * 2);
-}
 main #reports > .global-filters {
 	display: flex;
 	z-index: 7;
@@ -228,13 +230,19 @@ main #reports > .global-filters.right.show {
 }
 main #reports > .global-filters.top {
 	flex-wrap: wrap;
-	padding: 0 0 var(--gap) 0;
-	align-items:  flex-end;
+	padding: 0;
+	align-items: flex-end;
 	margin: 0 calc(var(--gap) * -1);
 	position: sticky;
 	top: 0;
 	z-index: 5;
 	background: #fff;
+	transition: padding var(--transition-duration),
+				box-shadow var(--transition-duration);
+}
+main #reports > .global-filters.top.scrolled {
+	padding: calc(var(--gap) * 2) var(--gap);
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 	main #reports > .global-filters.top .head {
 		display: none;
@@ -334,7 +342,7 @@ main #reports > .global-filters.top {
 		}
 	main #reports > .global-filters.top .filters {
 		margin: 0;
-		padding: var(--gap) 0;
+		padding: 0;
 	}
 		main #reports > .global-filters.top .filters > label {
 			max-width: initial;

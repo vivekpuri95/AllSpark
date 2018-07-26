@@ -1207,11 +1207,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		this.globalFilterContainer.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
 
-		// Save the value of each filter for use on other dashboards
-		// if(Dashboard.selectedValues.size) {
-		// 	for(const [placeholder, filter] of this)
-		// 		filter.value = Dashboard.selectedValues.get(placeholder);
-		// }
+		this.page.container.removeEventListener('scroll', DashboardGlobalFilters.scrollListener);
+		this.page.container.addEventListener('scroll', DashboardGlobalFilters.scrollListener = e => {
+			this.globalFilterContainer.classList.toggle('scrolled', this.page.container.scrollTop > 45);
+		}, {passive: true});
 	}
 
 	async load() {
@@ -1238,6 +1237,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		container.textContent = null;
 
 		container.classList.remove('show');
+		container.classList.toggle('hidden', !this.size);
 
 		if(!this.size)
 			return;

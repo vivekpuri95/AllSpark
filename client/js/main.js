@@ -1049,6 +1049,7 @@ class API extends AJAX {
 	}
 
 	static async refreshToken() {
+
 		let
 			getToken = true,
 			token = await Storage.get('token'),
