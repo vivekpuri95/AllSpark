@@ -167,20 +167,20 @@ main #reports > h1.dashboard-name {
 	main #reports > h1.dashboard-name:hover > div {
 		opacity: 1;
 	}
-	main #reports > h1.dashboard-name > div span {
-		font-size: 70%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		width: 25px;
-		transition: background var(--transition-duration),
-					color var(--transition-duration);
-	}
-	main #reports > h1.dashboard-name > div span:hover {
-		background: var(--color-accent);
-		color: var(--color-accent-text);
-		cursor: pointer;
-	}
+		main #reports > h1.dashboard-name > div span {
+			font-size: 70%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			width: 25px;
+			transition: background var(--transition-duration),
+						color var(--transition-duration);
+		}
+		main #reports > h1.dashboard-name > div span:hover {
+			background: var(--color-accent);
+			color: var(--color-accent-text);
+			cursor: pointer;
+		}
 
 main #reports > .toolbar {
 	align-items: flex-end;
