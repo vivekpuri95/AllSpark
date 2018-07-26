@@ -159,7 +159,15 @@ main #reports > h1.dashboard-name {
 	display: flex;
 	justify-content: space-between;
 }
-	main #reports > h1.dashboard-name .toggle-dashboard-toolbar {
+	main #reports > h1.dashboard-name > div {
+		display: flex;
+		opacity: 0;
+		transition: opacity var(--transition-duration);
+	}
+	main #reports > h1.dashboard-name:hover > div {
+		opacity: 1;
+	}
+	main #reports > h1.dashboard-name > div span {
 		font-size: 70%;
 		display: flex;
 		justify-content: center;
@@ -168,7 +176,7 @@ main #reports > h1.dashboard-name {
 		transition: background var(--transition-duration),
 					color var(--transition-duration);
 	}
-	main #reports > h1.dashboard-name .toggle-dashboard-toolbar:hover {
+	main #reports > h1.dashboard-name > div span:hover {
 		background: var(--color-accent);
 		color: var(--color-accent-text);
 		cursor: pointer;

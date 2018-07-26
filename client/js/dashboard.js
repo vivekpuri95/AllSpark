@@ -789,13 +789,14 @@ class Dashboard {
 
 		dashboardName.innerHTML = `
 			${this.name}
-			<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
+			<div>
+				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
+			</div>
 		`;
 
 		dashboardName.classList.remove('hidden');
-		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => {
-			Dashboard.toolbar.classList.toggle('hidden');
-		});
+
+		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
 
 		await Sections.show('reports');
 
