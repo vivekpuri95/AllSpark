@@ -6637,6 +6637,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			for(const position of ['center', 'left', 'right']) {
 
 				values[position] = (this[position].value / jumps) * jump;
+
+				if(this[position].value % 1 == 0)
+					values[position] = Math.floor(values[position]);
 				this[position].container.textContent = this.dates.get(this[position].date).getTypedValue(this.options.valueColumn, values[position]);
 			}
 		};
