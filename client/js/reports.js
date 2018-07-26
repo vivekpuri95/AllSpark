@@ -50,8 +50,8 @@ class DataSource {
 
 		parameters.set('query_id', this.query_id);
 
-		if(this.queryOverride)
-			parameters.set('query', this.query);
+		if(this.definitionOverride)
+			parameters.set('query', this.definition.query);
 
 		for(const filter of this.filters.values()) {
 
