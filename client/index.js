@@ -522,12 +522,13 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 
 		return `
 			<nav>
-				<div class="NA"><i class="fa fa-spinner fa-spin"></i></div>
-				<label class="dashboard-search">
-					<input type="search" name="search" placeholder="Search..." >
-				</label>
+				<div>
+					<label class="dashboard-search">
+						<input type="search" name="search" placeholder="Search..." >
+					</label>
+				</div>
+				<div class="dashboard-hierarchy"></div>
 			</nav>
-
 			<section class="section" id="list">
 				<h2>${this.request.params.type}</h2>
 
