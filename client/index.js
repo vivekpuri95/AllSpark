@@ -541,7 +541,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 
 				<h1 class="dashboard-name"></h1>
 
-				<div class="toolbar form">
+				<div class="toolbar form hidden">
 
 					<button id="back">
 						<i class="fa fa-arrow-left"></i>
