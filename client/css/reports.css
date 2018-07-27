@@ -816,7 +816,16 @@ main .data-source.flush {
 					padding: calc(var(--gap) * 2);
 					display: flex;
 					justify-content: space-between;
+					align-items: center;
 				}
+					.visualization.spatial-map .columns-toggle .columns .column .name {
+						display: flex;
+						flex-direction: column;
+						width: 100%;
+					}
+					.visualization.spatial-map .columns-toggle .columns .column .type {
+						color: #aaa;
+					}
 				.visualization.spatial-map .columns-toggle .columns .column:hover {
 					background-color: #eee;
 					cursor: pointer;

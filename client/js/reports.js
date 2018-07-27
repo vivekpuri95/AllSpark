@@ -6208,7 +6208,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			mapColumn.classList.add('column');
 
 			mapColumn.innerHTML = `
-				<span>${map.name}</span>
+				<span class="name">${map.name} <span class="type">${map.map_type}</span></span>
 				<input type="checkbox" name="visible_layers" checked>
 			`;
 
