@@ -46,6 +46,22 @@ class ReportsManger extends Page {
 	}
 
 	process() {
+
+		const connections = new Map;
+
+		for(const connection of this.connections) {
+
+			for(const feature of MetaData.features.values()) {
+
+				if(feature.slug == connection.type && feature.type == 'source')
+					connection.feature = feature;
+			}
+
+			if(!connection.feature)
+				continue;
+
+			connections.set(connections.id, connection);
+		}
 		this.connections = new Map(this.connections.map(c => [c.id, c]));
 	}
 
@@ -394,7 +410,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 					</a>
 				</td>
 				<td>${report.description || ''}</td>
-				<td>${connection.connection_name} (${connection.type})</td>
+				<td>${connection.connection_name} (${connection.feature.name})</td>
 				<td class="tags"></td>
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
@@ -628,7 +644,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 			for(const connection of this.page.connections.values()) {
 				this.form.connection_name.insertAdjacentHTML('beforeend',
-					`<option value="${connection.id}">${connection.connection_name} (${connection.type})</option>`
+					`<option value="${connection.id}">${connection.connection_name} (${connection.feature.name})</option>`
 				)
 			}
 		}
