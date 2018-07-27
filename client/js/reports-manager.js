@@ -1411,10 +1411,29 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 			label.innerHTML = `
 				<figure>
-					<img src="${visualization.image}"></img>
-					<figcaption><input type="radio" name="type" value="${visualization.slug}">&nbsp; ${visualization.name}</figcaption>
+					<img alt="${visualization.name}">
+					<span class="loader"><i class="fa fa-spinner fa-spin"></i></span>
+					<span class="NA hidden">Preview not available! :(</span>
+					<figcaption>${visualization.name}</figcaption>
 				</figure>
 			`;
+
+			const
+				img = label.querySelector('img'),
+				loader = label.querySelector('.loader'),
+				NA = label.querySelector('.NA');
+
+			img.on('load', () => {
+				img.classList.add('show');
+				loader.classList.add('hidden');
+			});
+
+			img.on('error', () => {
+				NA.classList.remove('hidden');
+				loader.classList.add('hidden');
+			});
+
+			img.src = visualization.image;
 
 			label.on('click', () => {
 
@@ -1423,7 +1442,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 				label.querySelector('figure').classList.add('selected');
 
-				setTimeout(() => this.insert());
+				this.insert(visualization);
 			});
 
 			this.form.appendChild(label);
@@ -1437,13 +1456,13 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		return `${this.key}/${this.report.query_id}`;
 	}
 
-	async insert() {
+	async insert(visualization) {
 
 		const
 			parameters = {
 				query_id: this.report.query_id,
 				name: this.report.name,
-				type: this.form.type.value,
+				type: visualization.slug,
 			},
 			options = {
 				method: 'POST',
