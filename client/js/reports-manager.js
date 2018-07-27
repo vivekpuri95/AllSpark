@@ -1422,6 +1422,8 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 					this.form.querySelector('figure.selected').classList.remove('selected');
 
 				label.querySelector('figure').classList.add('selected');
+
+				setTimeout(() => this.insert());
 			});
 
 			this.form.appendChild(label);
@@ -1429,18 +1431,13 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		if(!MetaData.visualizations.size)
 			this.form.innerHTML = `<div class="NA">No visualizations found :(</div>`;
-
-		this.form.on('submit', e => this.insert(e));
 	}
 
 	get url() {
 		return `${this.key}/${this.report.query_id}`;
 	}
 
-	async insert(e) {
-
-		if(e)
-			e.preventDefault();
+	async insert() {
 
 		const
 			parameters = {
