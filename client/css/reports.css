@@ -781,6 +781,52 @@ main .data-source.flush {
 		.visualization.spatial-map .container {
 			height: 500px;
 		}
+		.visualization.spatial-map .columns-toggle {
+			background: #fff;
+			height: 28px;
+			width: 28px;
+			position: absolute;
+			bottom: 128px;
+			right: 10px;
+			border-radius: 2px;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		}
+			.visualization.spatial-map .columns-toggle .arrow {
+				cursor: pointer;
+				width: 100%;
+				height: 100%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: #666;
+				font-size: 18px;
+			}
+			.visualization.spatial-map .columns-toggle .columns {
+				bottom: 100%;
+				max-height: 200px;
+				width: 150px;
+				position: absolute;
+				right: 0;
+				background: #fff;
+				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+				overflow: auto;
+				padding: 5px 0;
+			}
+				.visualization.spatial-map .columns-toggle .columns .column {
+					padding: calc(var(--gap) * 2);
+					display: flex;
+					justify-content: space-between;
+				}
+				.visualization.spatial-map .columns-toggle .columns .column:hover {
+					background-color: #eee;
+					cursor: pointer;
+				}
+				.visualization.spatial-map .columns-toggle .columns .column.disabled {
+					color: #999;
+				}
+				.visualization.spatial-map .columns-toggle .columns .column input {
+					cursor: pointer;
+				}
 		.visualization.cohort {
 			overflow: auto;
 		}

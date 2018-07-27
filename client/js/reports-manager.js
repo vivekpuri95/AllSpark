@@ -544,7 +544,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				a = a[this.sort.column] || '';
 				b = b[this.sort.column] || '';
 
-				if(typeof a == 'string') {
+				if(typeof a == 'string' && typeof b == 'string') {
 					a = a.toUpperCase();
 					b = b.toUpperCase();
 				}
@@ -2731,6 +2731,246 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	}
 }
 
+class MapLayers extends Set {
+
+	constructor(maps, stage) {
+
+		super();
+
+		this.stage = stage;
+
+		for(const map of maps)
+			this.add(new MapLayer(map, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('options', 'form', 'body', 'maps');
+
+		this.render();
+
+		return container;
+
+	}
+
+	render() {
+
+		this.container.textContent = null;
+
+		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' map layer' + ( this.size == 1 ? ' added' :'s added') : ''}`;
+
+		if (!this.size)
+			this.container.innerHTML = '<div class="NA">No maps added yet! :(</div>';
+
+		for(const map of this) {
+
+			this.container.appendChild(map.container);
+		}
+
+		this.container.insertAdjacentHTML('beforeend', `
+
+			<div class="add-map">
+				<fieldset>
+					<legend>Add Map</legend>
+					<div class="form">
+
+						<label>
+							<span>Map Type</span>
+							<select name="position" value="clusters" required>
+								<option value="clusters">Clusters</option>
+								<option value="heatmap">Heat Map</option>
+								<!--<option value="scattermap">Scatter Map</option>-->
+								<!--<option value="bubblemap">Bubble Map</option>-->
+							</select>
+						</label>
+
+						<label>
+							<span>&nbsp;</span>
+							<button type="button"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</div>
+				</fieldset>
+			</div>
+		`);
+
+		this.container.querySelector('.add-map button[type=button]').on('click', () => {
+
+			const map_type = this.container.querySelector('.add-map select').value;
+
+			this.add(new MapLayer({map_type}, this));
+			this.render();
+		});
+
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const map of this.values()) {
+			response.push(map.json);
+		}
+
+		return response;
+
+	}
+
+}
+
+class MapLayer {
+
+	constructor(map, maps) {
+
+		Object.assign(this, map);
+
+		this.maps = maps;
+	}
+
+	get container() {
+
+		if(this.mapContainer)
+			return this.mapContainer;
+
+		const container = this.mapContainer = document.createElement('div');
+
+		container.classList.add('map');
+
+		container.innerHTML = `
+			<fieldset>
+				<legend>${this.map_type.slice(0, 1).toUpperCase() + this.map_type.slice(1)}</legend>
+				<div class="form">
+					<label>
+						<span>Name</span>
+						<input type="text" name="name">
+					</label>
+					
+					<label>
+						<span>Latitude Column</span>
+						<select name="latitude"></select>
+					</label>
+					
+					<label>
+						<span>Longitude Column</span>
+						<select name="longitude"></select>
+					</label>
+					
+					<label>
+						<button class="delete" type="button">
+							<i class="far fa-trash-alt"></i> Delete
+						</button>
+					</label>
+				</div>
+			</fieldset>
+		`;
+
+		const
+			latitude = container.querySelector('select[name=latitude]'),
+			longitude = container.querySelector('select[name=longitude]');
+
+		let extraColumn;
+
+		if(this.map_type == 'heatmap') {
+
+			this.loadHeatMapForm();
+
+			extraColumn = container.querySelector('select[name=weight]');
+		}
+		else if (this.map_type == 'scattermap') {
+
+			this.loadScattermapForm();
+
+			extraColumn = container.querySelector('select[name=color]')
+		}
+
+		for(const [key, column] of this.maps.stage.page.preview.report.columns) {
+
+			latitude.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			longitude.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			if(extraColumn)
+				extraColumn.insertAdjacentHTML('beforeend', `
+					<option value="${key}">${column.name}</option>
+				`);
+		}
+
+		for(const element of this.container.querySelectorAll('select, input')) {
+
+			if(this[element.name])
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
+		}
+
+		container.querySelector('.delete').on('click', () => {
+
+			container.parentElement && container.parentElement.removeChild(container);
+			this.maps.delete(this);
+			this.maps.render();
+		});
+
+		return container;
+	}
+
+	loadHeatMapForm() {
+
+		this.container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
+			<label class="weight">
+				<span>Weight Column</span>
+				<select name="weight">
+					<option value=""></option>
+				</select>
+			</label>
+			
+			<label class="opacity">
+				<span>Opacity <span class="value">${this.opacity || 0.6}</span></span>
+				<input type="range" name="opacity" min="0" max="1" step="0.01">
+			</label>
+		`);
+
+		this.container.querySelector('.opacity input').on('input', () => {
+
+			this.container.querySelector('.opacity .value').textContent = this.container.querySelector('.opacity input').value;
+		});
+	}
+
+	loadScattermapForm() {
+
+		this.container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
+			<label class="weight">
+				<span>Color Column</span>
+				<select name="color">
+					<option value=""></option>
+				</select>
+			</label>
+		`);
+	}
+
+	get json() {
+
+		const response = {
+			map_type: this.map_type
+		};
+
+		for(const element of this.container.querySelectorAll('select, input')) {
+
+			if(element.parentElement.classList.contains('hidden'))
+				continue;
+
+			response[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+		}
+
+		return response;
+	}
+}
+
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
 
 ConfigureVisualization.types = new Map;
@@ -2855,47 +3095,36 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 
 	get form() {
 
-		if (this.formContainer)
+		if(this.formContainer)
 			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('div');
+		let theme;
 
 		container.innerHTML = `
 			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Map Layers <span class="count"></span></h3>
+			</div>
+			
+			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
-					<div class="form subform">
+					<div class="form subform map-options">						
 						<label>
-							<span>Latitude Column</span>
-							<select name="latitude"></select>
+							<span>Zoom</span>
+							<input type="number" step="1" name="zoom" min="1" max="25">
 						</label>
-
+						
 						<label>
-							<span>Longitude Column</span>
-							<select name="longitude"></select>
+							<span>Center Latitude</span>
+							<input type="text" name="centerLatitude">
 						</label>
-
+						
 						<label>
-							<span>Initial Zoom</span>
-							<input type="number" step="1" name="initialZoom" min="1" max="25">
+							<span>Center Longitude</span>
+							<input type="text" name="centerLongitude">
 						</label>
-
-						<label>
-							<span>Initial Latitude</span>
-							<input type="text" name="initialLatitude">
-						</label>
-
-						<label>
-							<span>Initial Longitude</span>
-							<input type="text" name="initialLongitude">
-						</label>
-
-						<label class="hidden">
-							<span>
-								<input type="checkbox" name="disableClustring">Disable Clustring
-							</span>
-						</label>
-
+						
 						<label>
 							<span>
 								<input type="checkbox" name="hideLegend">Hide Legend
@@ -2904,29 +3133,57 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 					</div>
 				</div>
 			</div>
+			
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Themes</h3>
+				<div class="body">
+					<div class="form subform map-themes"></div>
+				</div>
+			</div>
 		`;
 
-		const
-			latitude = container.querySelector('select[name=latitude]'),
-			longitude = container.querySelector('select[name=longitude]');
+		this.maps = new MapLayers(this.visualization.options.maps || [], this);
 
-		for(const [key, column] of this.page.preview.report.columns) {
-
-			latitude.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-
-			longitude.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-		}
-
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
+		container.querySelector('.configuration-section').appendChild(this.maps.container);
 
 		this.stage.setupConfigurationSetions(container);
 
+		const mapOptions = container.querySelector('.map-options');
+
+		if(this.visualization.options) {
+
+			for(const element of mapOptions.querySelectorAll('select, input')) {
+
+				if(!this.visualization.options[element.name])
+					continue;
+
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options[element.name];
+			}
+
+			theme = this.visualization.options.theme;
+		}
+
+		this.theme = new Themes(this);
+
+		container.querySelector('.map-themes').appendChild(this.theme.container);
+
 		return container;
+
+	}
+
+	get json() {
+
+		const
+			mapOptions = this.formContainer.querySelector('.map-options'),
+			response = {
+				maps: this.maps.json,
+				theme: this.theme.value
+			};
+
+		for (const element of mapOptions.querySelectorAll('select, input'))
+			response[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+
+		return response;
 	}
 });
 

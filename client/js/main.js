@@ -834,6 +834,7 @@ class MetaData {
 		MetaData.visualizations = new Map;
 		MetaData.filterTypes = new Map;
 		MetaData.features = new Set;
+		MetaData.googleMapThemes = new Map;
 
 		if(!user.id)
 			return;
@@ -891,6 +892,7 @@ class MetaData {
 			MetaData.categories.set(category.category_id, category);
 		}
 
+		MetaData.spatialMapThemes =  new Map(metadata.spatialMapThemes.map(x => [x.name, JSON.parse(x.theme)]));
 		MetaData.filterTypes = new Map(metadata.filterTypes.map(x => [x.name.toLowerCase(), x]));
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));

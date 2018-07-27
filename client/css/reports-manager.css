@@ -475,13 +475,23 @@ main.preview-left #stages {
 		border-radius: 3px;
 	}
 
-	#stage-configure-visualization .axes {
+	#stage-configure-visualization .axes,
+	#stage-configure-visualization .maps {
 	}
-		#stage-configure-visualization .axes .form {
+		#stage-configure-visualization .axes .form,
+		#stage-configure-visualization .maps .form {
 			background: transparent;
 			padding: 0;
 		}
-		#stage-configure-visualization .axes .add-axis .form {
+			#stage-configure-visualization .maps .form .opacity > span {
+				justify-content: space-between;
+			}
+			#stage-configure-visualization .maps .form .opacity > span .value {
+				font-weight: normal;
+				color: #999;
+			}
+		#stage-configure-visualization .axes .add-axis .form,
+		#stage-configure-visualization .maps .add-map .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;
 			grid-gap: calc(var(--gap) * 2);
 		}
@@ -610,6 +620,62 @@ main.preview-left #stages {
 				border: 1px solid #ccc;
 				padding: calc(var(--gap) * 2);
 			}
+	#stage-configure-visualization .configuration-section .theme-list {
+		padding: 10px;
+		list-style-type: none;
+		font-size: 90%;
+		font-weight: bold;
+		color: #444;
+		margin: 0;
+		display: grid;
+		grid-template-columns: max-content max-content max-content;
+		grid-gap: calc(var(--gap) * 4);
+		position: relative;
+		justify-content: space-around;
+	}
+		#stage-configure-visualization .configuration-section .theme-list .theme {
+			display: flex;
+			justify-content: center;
+			cursor: pointer;
+			height: 140px;
+			width: 160px;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+		}
+		#stage-configure-visualization .configuration-section .theme-list .theme:hover {
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+			transform: perspective(500px) translatez(30px)
+		}
+		#stage-configure-visualization .configuration-section .theme-list .theme.selected {
+			border: 1px solid #80b7fa;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		}
+			#stage-configure-visualization .configuration-section .theme-list .theme .name {
+				position: absolute;
+				font-size: 120%;
+				letter-spacing: 0.5px;
+				font-weight: normal;
+				margin-top: 115px;
+				color: #7d7d7d;
+			}
+			#stage-configure-visualization .configuration-section .theme-list .theme-image {
+				overflow: hidden;
+			}
+				#stage-configure-visualization .configuration-section .theme-list .theme-image .road {
+					height: 10px;
+					transform: rotate(27deg);
+					width: 153px;
+					margin: 18px;
+				}
+				#stage-configure-visualization .configuration-section .theme-list .theme-image .water {
+					height: 16px;
+					margin-top: 20px;
+				}
+				#stage-configure-visualization .configuration-section .theme-list .theme-image .park {
+					height: 20px;
+					transform: rotate(28deg);
+					width: 250px;
+					margin-left: -65px;
+				}
 
 #add-visualization-picker {
 	grid-column: 1 / 3;

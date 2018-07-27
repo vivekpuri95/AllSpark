@@ -6163,14 +6163,22 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		this.options.maps = this.options.maps || [];
+
+		this.visibleLayers = new Set(this.options.maps.map(x => x));
+
+	}
+
 	get container() {
 
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('section');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'spatial-map');
 
@@ -6178,81 +6186,182 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			<div class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
+			<div class="columns-toggle">
+				<div class="columns hidden"></div>
+				<span class="arrow up" title="Plotted Layers"><i class="fas fa-angle-up"></i></span>
+				<span class="arrow down hidden" title="Collapse"><i class="fas fa-angle-down"></i></span>
+			</div>
 		`;
+
+		const mapColumns = container.querySelector('.columns-toggle');
+
+		mapColumns.on('click', () => {
+
+			mapColumns.querySelector('.arrow.up').classList.toggle('hidden');
+			mapColumns.querySelector('.arrow.down').classList.toggle('hidden');
+			mapColumns.querySelector('.columns').classList.toggle('hidden');
+		});
+
+		for(const map of this.options.maps) {
+
+			const mapColumn = document.createElement('div');
+			mapColumn.classList.add('column');
+
+			mapColumn.innerHTML = `
+				<span>${map.name}</span>
+				<input type="checkbox" name="visible_layers" checked>
+			`;
+
+			mapColumn.on('click', e => e.stopPropagation());
+
+			const visibleCheck = mapColumn.querySelector('input[name=visible_layers]');
+
+			visibleCheck.on('change', e => {
+
+				mapColumn.classList.toggle('disabled');
+
+				if(visibleCheck.checked)
+					this.visibleLayers.add(map);
+				else
+					this.visibleLayers.delete(map);
+
+				this.render();
+			});
+
+			container.querySelector('.columns-toggle .columns').appendChild(mapColumn);
+		}
 
 		return container;
 	}
 
 	async load(options = {}) {
 
-		super.render();
+		super.render(options);
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		this.render();
 	}
 
-	render() {
-
-		const
-			markers = [],
-			response = this.source.response;
+	async render() {
 
 		if(!this.options)
-			return this.source.error('Options not defined.');
+			return this.source.error('Maps not defined');
 
-		if(!this.options.latitude)
-			return this.source.error('Latitude Column not defined.');
+		if(!this.options.maps || !this.options.maps.length)
+			return this.source.error('Maps not defined.');
 
-		if(!this.source.columns.has(this.options.latitude))
-			return this.source.error(`Latitude Column '${this.options.latitude}' not found.`);
+		const zoom = parseInt(this.options.zoom) || 12;
 
-		if(!this.options.longitude)
-			return this.source.error('Longitude Column not defined.');
-
-		if(!this.source.columns.has(this.options.longitude))
-			return this.source.error(`Longitude Column '${this.options.longitude}' not found.`);
-
-		const zoom = parseInt(this.options.initialZoom) || 12;
-
-		// If the maps object wasn't already initialized
 		if(!this.map)
-			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {zoom});
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {
+				zoom,
+				center: {
+					lat: parseFloat(this.options.centerLatitude) || this.source.response[0].get(this.options.maps[0].latitude),
+					lng: parseFloat(this.options.centerLongitude) || this.source.response[0].get(this.options.maps[0].longitude)
+				}
+			});
 
-		// If the clustered object wasn't already initialized
-		if(!this.clusterer)
-			this.clusterer = new MarkerClusterer(this.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+		this.map.set('styles', MetaData.spatialMapThemes.get(this.theme) || []);
 
-		// Add the marker to the markers array
-		for(const row of response) {
+		for(const map of this.options.maps) {
+
+			if(!map.latitude)
+				return this.source.error('Latitude Column not defined.');
+
+			if(!this.source.columns.has(map.latitude))
+				return this.source.error(`Latitude Column '${map.latitude}' not found.`);
+
+			if(!map.longitude)
+				return this.source.error('Longitude Column not defined.');
+
+			if(!this.source.columns.has(map.longitude))
+				return this.source.error(`Longitude Column '${map.longitude}' not found.`);
+
+			map.map_type == 'heatmap' ? this.plotHeatMap(map) : this.plotCluster(map);
+		}
+
+	}
+
+	plotHeatMap(map) {
+
+		if(!this.visibleLayers.has(map)) {
+
+			if(this.heatmap) {
+
+				this.heatmap.setMap(null);
+				this.heatmap = null;
+			}
+
+			return;
+		}
+
+		if(this.heatmap)
+			return;
+
+		const points = [];
+
+		for(const point of this.source.response) {
+
+			if(map.weight) {
+
+				points.push({
+					location: new google.maps.LatLng(point.get(map.latitude), point.get(map.longitude)),
+					weight: point.get(map.weight)
+				});
+
+				continue;
+			}
+
+			points.push(new google.maps.LatLng(point.get(map.latitude), point.get(map.longitude)));
+		}
+
+		this.heatmap = new google.maps.visualization.HeatmapLayer({
+			data: points,
+			map: this.map,
+			radius: parseFloat(map.radius) || 15,
+			opacity: parseFloat(map.opacity) || 0.6
+		});
+	}
+
+	plotCluster(map) {
+
+		if(!this.visibleLayers.has(map)) {
+
+			if(this.clusterer) {
+
+				this.clusterer.clearMarkers();
+				this.clusterer = null;
+			}
+
+			return;
+		}
+
+		if(this.clusterer)
+			return;
+
+		const markers = [];
+
+		this.clusterer = new MarkerClusterer(this.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+
+		for(const row of this.source.response) {
 			markers.push(
 				new google.maps.Marker({
 					position: {
-						lat: parseFloat(row.get(this.options.latitude)),
-						lng: parseFloat(row.get(this.options.longitude)),
+						lat: parseFloat(row.get(map.latitude)),
+						lng: parseFloat(row.get(map.longitude)),
 					},
 				})
 			);
 		}
 
-		if(!this.markers || this.markers.length != markers.length) {
+		this.markers = markers;
 
-			// Empty the map
-			this.clusterer.clearMarkers();
+		this.clusterer.clearMarkers();
+		this.clusterer.addMarkers(this.markers);
 
-			// Load the markers
-			this.clusterer.addMarkers(markers);
-
-			this.markers = markers;
-		}
-
-		// Point the map to location's center
-		this.map.panTo({
-			lat: parseFloat(this.options.initialLatitude || response[0].get(this.options.latitude)),
-			lng: parseFloat(this.options.initialLongitude || response[0].get(this.options.longitude)),
-		});
 	}
-});
+})
 
 Visualization.list.set('cohort', class Cohort extends Visualization {
 
@@ -6862,6 +6971,102 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 });
+
+class Themes {
+
+	constructor(visualization) {
+
+		Object.assign(this, visualization);
+
+		this.selectedTheme = this.visualization && this.visualization.options && this.visualization.options.theme ? this.visualization.options.theme : 'standard';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('theme-list');
+
+		for(const theme of MetaData.spatialMapThemes.keys()) {
+
+			const themeContainer = document.createElement('span');
+
+			themeContainer.classList.add('theme');
+
+			themeContainer.innerHTML = `
+				<div class="name">${theme}</div>
+			`;
+
+			if(this.selectedTheme == theme)
+				themeContainer.classList.add('selected');
+
+			themeContainer.insertBefore(this.getImage(theme), themeContainer.querySelector('.name'));
+
+			themeContainer.on('click', () => {
+
+				for(const element of container.querySelectorAll('.theme')) {
+
+					element.classList.remove('selected');
+				}
+
+				this.selectedTheme = themeContainer.querySelector('.name').textContent;
+				themeContainer.classList.add('selected');
+			});
+
+			container.appendChild(themeContainer);
+		}
+
+		return container;
+
+	}
+
+	get value() {
+
+		return this.selectedTheme;
+	}
+
+	getImage(theme) {
+
+		const
+			image = document.createElement('div'),
+			colors = MetaData.spatialMapThemes.get(theme);
+
+		image.classList.add('theme-image', 'image-container');
+
+		image.innerHTML = `
+			<div class="road"></div>
+			<div class="water"></div>
+			<div class="park"></div>
+		`;
+
+		if(!colors.length) {
+
+			image.style.background = '#fff';
+			image.querySelector('.road').style.background = '#ededed';
+			image.querySelector('.water').style.background = '#aadaff';
+			image.querySelector('.park').style.background = '#c0ecae';
+		}
+		else {
+
+			image.style.background = colors[0].stylers[0].color;
+
+			const
+				[roadColor] = colors.filter(x => x.featureType == "road"),
+				[waterColor] = colors.filter(x => x.featureType == "water"),
+				[parkColor] = colors.filter(x => x.featureType == 'poi.park');
+
+			image.querySelector('.road').style.background = roadColor.stylers[0].color;
+			image.querySelector('.water').style.background = waterColor.stylers[0].color;
+			image.querySelector('.park').style.background = parkColor.stylers[0].color;
+		}
+
+		return image;
+	}
+
+}
 
 class Tooltip {
 
