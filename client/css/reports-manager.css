@@ -626,32 +626,55 @@ main.preview-left #stages {
 		justify-content: center;
 		cursor: pointer;
 		width: 350px;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		transform: perspective(500px) translatez(0);
 		transition: box-shadow var(--transition-duration),
 					transform var(--transition-duration);
 	}
 
 	#add-visualization-form figure:hover {
-		box-shadow: 0 0 50px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
 		transform: perspective(500px) translatez(30px);
 	}
-		#add-visualization-form img {
+		#add-visualization-form img,
+		#add-visualization-form .NA,
+		#add-visualization-form .loader {
 			height: auto;
 			width: 100%;
-			margin-bottom: var(--gap);
-			background: #fff;
+			height: 233.33px;
+		}
+		#add-visualization-form img {
+			opacity: 0;
+			transition: opacity var(--transition-duration);
+		}
+		#add-visualization-form img.show {
+			opacity: 1;
+		}
+		#add-visualization-form .loader {
+			font-size: 200%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: #8d6e63;
+			position: absolute;
+			top: 0;
+		}
+		#add-visualization-form .NA {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: #8d6e63;
+			font-size: 110%;
+			position: absolute;
+			top: 0;
 		}
 		#add-visualization-form figcaption {
-			background: #ddf;
+			background: #D7CCC8;
 			width: 100%;
-			padding: 5px;
+			padding: calc(var(--gap) * 2);
 			text-align: center;
 			transition: background var(--transition-duration);
-		}
-		#add-visualization-form figure.selected figcaption {
-			background: var(--color-selected);
-			color: var(--color-selected-text);
+			font-size: 125%;
 		}
 
 main.preview-top #preview {
