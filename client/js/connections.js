@@ -466,6 +466,17 @@ DataConnection.types.set('api', class {
 	}
 });
 
+DataConnection.types.set('bigquery', class {
+
+	static render(connections = {}) {
+		DataConnection.form.querySelector('#details').innerHTML = null;
+	}
+
+	static get details() {
+		return JSON.stringify({});
+	}
+});
+
 DataConnection.types.set('file', class {
 
 	static render(connections = {}) {
