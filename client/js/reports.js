@@ -6567,8 +6567,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				this.right.percentage = ((value - this.center.value) / value) * 100 * -1;
 				this.right.value = value;
 			}
-
-			else delete this.right;
 		}
 
 		if(this.options.leftOffset != '') {
@@ -6585,8 +6583,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				this.left.percentage = ((value - this.center.value) / value) * 100 * -1;
 				this.left.value = value;
 			}
-
-			else delete this.left;
 		}
 	}
 
@@ -6597,7 +6593,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		const container = this.container.querySelector('.container');
 
-		container.innerHTML = `<h5>${this.dates.get(this.center.date).getTypedValue(this.options.valueColumn)}</h5>`;
+		container.innerHTML = `<h5>${this.dates.get(this.center.date) ? this.dates.get(this.center.date).getTypedValue(this.options.valueColumn) : ''}</h5>`;
 		this.center.container = this.container.querySelector('h5');
 
 		if(this.left) {
@@ -6606,7 +6602,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				<div class="left">
 					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 					<span class="value">
-						<span class="value-left">${this.dates.get(this.left.date).getTypedValue(this.options.valueColumn)}<span><br>
+						<span class="value-left">${this.dates.get(this.left.date) ? this.dates.get(this.left.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
 						<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
 					</span>
 				</div>
@@ -6621,7 +6617,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				<div class="right">
 					<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 					<span class="value">
-						<span class="value-right">${this.dates.get(this.right.date).getTypedValue(this.options.valueColumn)}<span><br>
+						<span class="value-right">${this.dates.get(this.right.date) ? this.dates.get(this.right.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
 						<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
 					</span>
 				</div>
@@ -6656,7 +6652,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			for(const position of ['center', 'left', 'right']) {
 
-				if(!this[position])
+				if(!this[position] || !this.dates.has(this[position].date))
 					continue;
 
 				values[position] = (this[position].value / jumps) * jump;
