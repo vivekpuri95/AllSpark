@@ -1079,10 +1079,8 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!(await Storage.has('refresh_token')) || !getToken || API.refreshToken.lastCheck > Date.now() - 2 * 1000)
+		if(!(await Storage.has('refresh_token')) || !getToken)
 			return;
-
-		API.refreshToken.lastCheck = Date.now();
 
 		const
 			parameters = {
@@ -1154,8 +1152,8 @@ class AJAXLoader {
 		container.classList.add('show');
 		container.classList.remove('hidden');
 
-		if(AJAXLoader.timeout)
-			clearTimeout(AJAXLoader.timeout);
+		clearTimeout(AJAXLoader.timeout);
+		clearTimeout(AJAXLoader.timeoutHidden);
 	}
 
 	/**
@@ -1174,9 +1172,12 @@ class AJAXLoader {
 		if(!container || AJAXLoader.count)
 			return;
 
-		container.classList.remove('show');
+		AJAXLoader.timeout = setTimeout(() => {
 
-		AJAXLoader.timeout = setTimeout(() => container.classList.add('hidden'), 300);
+			container.classList.remove('show');
+
+			AJAXLoader.timeoutHidden = setTimeout(() => container.classList.add('hidden'), 300);
+		}, 100);
 	}
 
 	static animateEllipses() {
