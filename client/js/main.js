@@ -1317,7 +1317,6 @@ class CodeEditor {
 
 		this.editor.setOptions({
 			enableBasicAutocompletion: true,
-			enableLiveAutocompletion: true,
 		});
 	}
 }
