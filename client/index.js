@@ -68,20 +68,31 @@ class HTMLAPI extends API {
 					${ga}
 				</head>
 				<body>
+
 					<div id="ajax-working"></div>
+
 					<header>
-						<div class="logo-container">
+						<a class="logo" href="/dashboard/first"><img></a>
 
-							<div class="left-menu-toggle hidden">
-								<i class="fas fa-bars"></i>
+						<div class="nav-container">
+
+							<nav></nav>
+
+							<span class="user-toggle"></span>
+
+							<div class="user-popup hidden">
+								<span class="name"></span>
+								<span class="email"></span>
+								<span class="profile-link">
+
+								</span>
+								<span class="logout">Logout</span>
 							</div>
-
-							<a class="logo" href="/dashboard/first"><img></a>
 						</div>
 
-						<nav class="hidden"></nav>
+						<div class="menu-toggle"><i class="fas fa-bars"></i></div>
 					</header>
-					<div class="nav-blanket"></div>
+
 					<main>
 						${await this.main() || ''}
 					</main>

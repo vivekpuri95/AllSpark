@@ -362,6 +362,7 @@ main #reports > .list {
 	grid-gap: calc(var(--gap) * 5);
 	align-items: start;
 	z-index: 4;
+	width: 100%;
 }
 	main #reports > .list .NA.no-reports {
 		grid-column: 1 / span all;
