@@ -133,11 +133,6 @@ main > nav::-webkit-scrollbar-track {
 			padding: 12px 0;
 			justify-content: center;
 			width: 100%;
-			color: #fff;
-		}
-	 	main > nav footer .collapse-panel {
-			padding: calc(var(--gap) * 2);
-			color: #ccc;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
@@ -510,9 +505,7 @@ main table tbody tr .tag {
 main > footer {
 	grid-column: 2 / -1;
 	z-index: 5;
-	background: var(--color-primary);
 	display: flex;
-	color: #ccc;
 	padding: calc(var(--gap) );
 	justify-content: center;
 	font-size: 80%;
@@ -520,7 +513,7 @@ main > footer {
 	position: relative;
 }
 	main footer.site-footer .strong {
-		color: var(--color-primary-text);
+		color: #333;
 		letter-spacing: 0.5px;
 	}
 	main footer > .env {
