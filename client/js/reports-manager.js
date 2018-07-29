@@ -3538,12 +3538,6 @@ class ReportTransformations extends Set {
 			e.stopPropagation();
 			this.preview();
 		});
-
-		this.types = new Map([
-			['pivot', {name: 'Pivot Table'}],
-			['filter', {name: 'Filter'}],
-			['stream', {name: 'Stream'}],
-		]);
 	}
 
 	load() {
@@ -3560,8 +3554,11 @@ class ReportTransformations extends Set {
 		if(!this.visualization.options)
 			return;
 
-		for(const transformation_ of this.visualization.options.transformations || [])
-			this.add(new ReportTransformation(transformation_, this.stage));
+		for(const transformation of this.visualization.options.transformations || []) {
+
+			if(ReportTransformation.types.has(transformation.type))
+				this.add(new (ReportTransformation.types.get(transformation.type))(transformation, this.stage));
+		}
 	}
 
 	render() {
@@ -3597,8 +3594,8 @@ class ReportTransformations extends Set {
 
 		const select = this.container.querySelector('.add-transformation select');
 
-		for(const [key, type] of this.types)
-			select.insertAdjacentHTML('beforeend', `<option value="${key}">${type.name}</option>`);
+		for(const [key, type] of ReportTransformation.types)
+			select.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
 
 		this.container.querySelector('.add-transformation').on('submit', e => this.insert(e));
 
@@ -3661,7 +3658,7 @@ class ReportTransformations extends Set {
 
 		const type = this.container.querySelector('.add-transformation select').value;
 
-		this.add(new ReportTransformation({type}, this.stage));
+		this.add(new (ReportTransformation.types.get(type))({type}, this.stage));
 
 		this.render();
 		this.preview();
@@ -3675,11 +3672,19 @@ class ReportTransformation {
 		this.stage = stage;
 		this.page = this.stage.page;
 
-		for(const key in transformation)
-			this[key] = transformation[key];
+		Object.assign(this, transformation);
 
-		if(!this.stage.transformations.types.has(this.type))
+		if(!ReportTransformation.types.has(this.type))
 			throw new Page.exception(`Invalid transformation type ${this.type}! :(`);
+	}
+}
+
+ReportTransformation.types = new Map;
+
+ReportTransformation.types.set('pivot', class ReportTransformationPivot extends ReportTransformation {
+
+	get name() {
+		return 'Pivot Table';
 	}
 
 	get container() {
@@ -3737,7 +3742,7 @@ class ReportTransformation {
 		values.appendChild(addValue);
 
 		container.innerHTML	= `
-			<legend>${this.stage.transformations.types.get(this.type).name}</legend>
+			<legend>${this.name}</legend>
 			<div class="transformation"></div>
 		`;
 
@@ -3886,7 +3891,114 @@ class ReportTransformation {
 
 		return container;
 	}
-}
+});
+
+ReportTransformation.types.set('filters', class ReportTransformationFilters extends ReportTransformation {
+
+	get name() {
+		return 'Filters';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const
+			container = this.containerElement = document.createElement('fieldset'),
+			filters = document.createElement('div');
+
+		container.classList.add('subform', 'form');
+
+		filters.classList.add('filters');
+
+		for(const filter of this.filters || [])
+			filters.appendChild(this.filter(filter));
+
+		const addFilter = document.createElement('button');
+
+		addFilter.type = 'button';
+		addFilter.innerHTML = `<i class="fa fa-plus"></i> Add New Filter`;
+		addFilter.on('click', () => filters.insertBefore(this.filter(), addFilter));
+
+		filters.appendChild(addFilter);
+
+		container.innerHTML	= `
+			<legend>${this.name}</legend>
+			<div class="transformation"></div>
+		`;
+
+		container.querySelector('.transformation').appendChild(filters);
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			type: 'filters',
+			filters: [],
+		};
+
+		for(const filter of this.container.querySelectorAll('.filter')) {
+			response.filters.push({
+				column: filter.querySelector('select[name=column]').value,
+				function: filter.querySelector('select[name=function]').value,
+				value: filter.querySelector('input[name=value]').value,
+			});
+		}
+
+		if(!response.filters.length)
+			return null;
+
+		return response;
+	}
+
+	filter(filter = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('filter');
+
+		if(this.page.preview.report.originalResponse) {
+
+			container.innerHTML = `
+				<select name="column"></select>
+				<select name="function"></select>
+				<input type="text" name="value">
+			`;
+
+			const
+				columnSelect = container.querySelector('select[name=column]'),
+				functionSelect = container.querySelector('select[name=function]'),
+				valueInput = container.querySelector('input[name=value]');
+
+			for(const column in this.page.preview.report.originalResponse.data[0])
+				columnSelect.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+			columnSelect.value = filter.column;
+
+			for(const fn of DataSourceColumnFilter.searchTypes)
+				functionSelect.insertAdjacentHTML('beforeend', `<option value="${fn.slug}">${fn.name}</option>`);
+
+			functionSelect.value = filter.function;
+
+			valueInput.value = filter.value || '';
+
+		} else {
+			container.innerHTML = `<input type="text" name="column" value="${filter.column || ''}">`;
+		}
+
+		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
+
+		container.querySelector('button').on('click', e => {
+			e.stopPropagation();
+			container.remove();
+		});
+
+		return container;
+	}
+});
 
 class ReportVisualizationDashboards extends Set {
 

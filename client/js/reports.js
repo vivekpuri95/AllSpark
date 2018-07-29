@@ -2270,18 +2270,22 @@ class DataSourceColumnFilter {
 
 		DataSourceColumnFilter.searchTypes = [
 			{
+				slug: 'contains',
 				name: 'Contains',
 				apply: (q, v) => v.toString().toLowerCase().includes(q.toString().toLowerCase()),
 			},
 			{
+				slug: 'notcontains',
 				name: 'Not Contains',
 				apply: (q, v) => !v.toString().toLowerCase().includes(q.toString().toLowerCase()),
 			},
 			{
+				slug: 'startswith',
 				name: 'Starts With',
 				apply: (q, v) => v.toString().toLowerCase().startsWith(q.toString().toLowerCase()),
 			},
 			{
+				slug: 'endswith',
 				name: 'Ends With',
 				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
 			},
@@ -2428,27 +2432,33 @@ class DataSourceColumnAccumulation {
 
 		DataSourceColumnAccumulation.accumulationTypes = [
 			{
+				slug: 'sum',
 				name: 'Sum',
 				apply: (rows, column) => Format.number(rows.reduce((c, r) => c + (parseFloat(r.get(column)) || 0), 0)),
 			},
 			{
+				slug: 'average',
 				name: 'Average',
 				apply: (rows, column) => Format.number(rows.reduce((c, r) => c + (parseFloat(r.get(column)) || 0), 0) / rows.length),
 			},
 			{
+				slug: 'max',
 				name: 'Max',
 				apply: (rows, column) => Format.number(Math.max(...rows.map(r => parseFloat(r.get(column)) || 0))),
 			},
 			{
+				slug: 'min',
 				name: 'Min',
 				apply: (rows, column) => Format.number(Math.min(...rows.map(r => parseFloat(r.get(column)) || 0))),
 			},
 			{
+				slug: 'distinctcount',
 				name: 'Distinct Count',
 				apply: (rows, column) => Format.number(new Set(rows.map(r => r.get(column))).size),
 				string: true,
 			},
 			{
+				slug: 'distinctvalues',
 				name: 'Distinct Values',
 				apply: (rows, column) => Array.from(new Set(rows.map(r => r.get(column)))).join(', '),
 				string: true,
@@ -2647,8 +2657,11 @@ class DataSourceTransformations extends Set {
 			visualization = this.source.visualizations.selected,
 			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
 
-		for(const transformation of transformations)
-			this.add(new DataSourceTransformation(transformation, this.source));
+		for(const transformation of transformations) {
+
+			if(DataSourceTransformation.types.has(transformation.type))
+				this.add(new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source));
+		}
 
 		response = JSON.parse(JSON.stringify(response));
 
@@ -2670,9 +2683,13 @@ class DataSourceTransformation {
 
 		this.source = source;
 
-		for(const key in transformation)
-			this[key] = transformation[key];
+		Object.assign(this, transformation);
 	}
+}
+
+DataSourceTransformation.types = new Map;
+
+DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot extends DataSourceTransformation {
 
 	run(response = []) {
 
@@ -2807,7 +2824,20 @@ class DataSourceTransformation {
 
 		return newResponse;
 	}
-}
+});
+
+DataSourceTransformation.types.set('filters', class DataSourceTransformationPivot extends DataSourceTransformation {
+
+	run(response = []) {
+
+		if(!response || !response.length || !this.filters || this.filters.length != 1)
+			return response;
+
+
+		const newResponse = response;
+		return newResponse;
+	}
+});
 
 DataSourcePostProcessors.processors = new Map;
 
