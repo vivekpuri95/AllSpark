@@ -2251,31 +2251,31 @@ class DataSourceColumnFilter {
 				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
 			},
 			{
-				name: 'Equal To',
+				name: '=',
 				apply: (q, v) => v.toString().toLowerCase() == q.toString().toLowerCase(),
 			},
 			{
-				name: 'Not Equal To',
+				name: '!=',
 				apply: (q, v) => v.toString().toLowerCase() != q.toString().toLowerCase(),
 			},
 			{
-				name: 'Greater Than',
+				name: '>',
 				apply: (q, v) => v > q,
 			},
 			{
-				name: 'Less Than',
+				name: '<',
 				apply: (q, v) => v < q,
 			},
 			{
-				name: 'Greater Than or Equal To',
+				name: '>=',
 				apply: (q, v) => v >= q,
 			},
 			{
-				name: 'Less Than or Equal To',
+				name: '<=',
 				apply: (q, v) => v <= q,
 			},
 			{
-				name: 'Regular Expression',
+				name: 'RegExp',
 				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
 			},
 		];
@@ -5797,7 +5797,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.data([poly2, poly1])
 				.enter().append("polygon")
 				.attr('points', d =>  d.map(d => [d.x, d.y].join()).join(' '))
-				.attr('fill', '#f1f1f1');
+				.attr('fill', '#fff');
 
 			//selecting all the paths
 			var path = svg.selectAll('rect'),
@@ -6813,6 +6813,8 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 	render(options = {}) {
 
 		this.editor = new CodeEditor({mode: 'json'});
+
+		this.editor.editor.setTheme('ace/theme/clouds');
 
 		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
 		this.editor.editor.setReadOnly(true);

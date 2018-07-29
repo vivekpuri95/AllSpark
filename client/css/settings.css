@@ -39,9 +39,10 @@ main .settings-manager {
 	display: grid;
 	grid-template-columns: 300px auto;
 	margin-top: calc(var(--gap) * 2);
+	background: #fff;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 	main .settings-manager > aside {
-		border: 1px solid #ccc;
 		display: flex;
 		flex-direction: column;
 	}
@@ -60,15 +61,14 @@ main .settings-manager {
 		main .settings-manager > aside footer {
 			display: flex;
 			margin-top: auto;
-			border-top: 1px dashed #999;
+			border-top: 1px solid #ccc;
 		}
 			main .settings-manager aside form {
 				grid-template-columns: 1fr 1fr;
 				grid-gap: calc(var(--gap) * 2);
 			}
 	main .settings-manager .profile {
-		border: 1px solid #ccc;
-		border-left: 0;
+		border-left: 1px solid #ccc;
 		max-height: 600px;
 		overflow: auto;
 	}
