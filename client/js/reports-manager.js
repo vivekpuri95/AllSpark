@@ -2777,7 +2777,7 @@ class SpatialMapOptionsLayers extends Set {
 
 			<div class="add-layer">
 				<fieldset>
-					<legend>Add Layer</legend>
+					<legend>Add New Layer</legend>
 					<div class="form">
 
 						<label>
