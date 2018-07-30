@@ -2961,9 +2961,6 @@ class MapLayer {
 
 		for(const element of this.container.querySelectorAll('select, input')) {
 
-			if(element.parentElement.classList.contains('hidden'))
-				continue;
-
 			response[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
 		}
 

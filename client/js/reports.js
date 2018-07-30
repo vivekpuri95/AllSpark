@@ -6204,7 +6204,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		for(const map of this.options.maps) {
 
-			const mapColumn = document.createElement('div');
+			const mapColumn = document.createElement('label');
 			mapColumn.classList.add('column');
 
 			mapColumn.innerHTML = `
