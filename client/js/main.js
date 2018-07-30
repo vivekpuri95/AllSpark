@@ -834,7 +834,7 @@ class MetaData {
 		MetaData.visualizations = new Map;
 		MetaData.filterTypes = new Map;
 		MetaData.features = new Set;
-		MetaData.googleMapThemes = new Map;
+		MetaData.spatialMapThemes = new Map;
 
 		if(!user.id)
 			return;

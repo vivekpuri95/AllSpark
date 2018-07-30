@@ -2731,7 +2731,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	}
 }
 
-class MapLayers extends Set {
+class SpatialMapLayers extends Set {
 
 	constructor(maps, stage) {
 
@@ -2740,7 +2740,7 @@ class MapLayers extends Set {
 		this.stage = stage;
 
 		for(const map of maps)
-			this.add(new (MapLayer.types.get(map.map_type))(map, this));
+			this.add(new (SpatialMapLayer.types.get(map.map_type))(map, this));
 	}
 
 	get container() {
@@ -2802,7 +2802,7 @@ class MapLayers extends Set {
 
 			const map_type = this.container.querySelector('.add-map select').value;
 
-			this.add(new (MapLayer.types.get(map_type))({map_type}, this));
+			this.add(new (SpatialMapLayer.types.get(map_type))({map_type}, this));
 			this.render();
 		});
 
@@ -2822,7 +2822,7 @@ class MapLayers extends Set {
 
 }
 
-class MapLayer {
+class SpatialMapLayer {
 
 	constructor(map, maps) {
 
@@ -2908,12 +2908,12 @@ class MapLayer {
 	}
 }
 
-MapLayer.types = new Map();
+SpatialMapLayer.types = new Map();
 
-MapLayer.types.set('clusters', class ClusterMapLayer extends MapLayer {
+SpatialMapLayer.types.set('clusters', class ClusterMapLayer extends SpatialMapLayer {
 });
 
-MapLayer.types.set('heatmap', class HeatMapLayer extends MapLayer {
+SpatialMapLayer.types.set('heatmap', class HeatMapLayer extends SpatialMapLayer {
 
 	get container() {
 
@@ -2974,7 +2974,7 @@ MapLayer.types.set('heatmap', class HeatMapLayer extends MapLayer {
 	}
 });
 
-MapLayer.types.set('scattermap', class ScatterMapLayer extends MapLayer {
+SpatialMapLayer.types.set('scattermap', class ScatterMapLayer extends SpatialMapLayer {
 
 	get container() {
 
@@ -3025,7 +3025,7 @@ MapLayer.types.set('scattermap', class ScatterMapLayer extends MapLayer {
 	}
 });
 
-MapLayer.types.set('bubblemap', class BubbleMapLayer extends MapLayer {
+SpatialMapLayer.types.set('bubblemap', class BubbleMapLayer extends SpatialMapLayer {
 
 	get container() {
 
@@ -3203,7 +3203,7 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 			</div>
 		`;
 
-		this.maps = new MapLayers(this.visualization.options.maps || [], this);
+		this.maps = new SpatialMapLayers(this.visualization.options.maps || [], this);
 
 		container.querySelector('.configuration-section').appendChild(this.maps.container);
 
@@ -3224,7 +3224,7 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 			theme = this.visualization.options.theme;
 		}
 
-		this.theme = new Themes(this);
+		this.theme = new SpatialMapThemes(this);
 
 		container.querySelector('.map-themes').appendChild(this.theme.container);
 
