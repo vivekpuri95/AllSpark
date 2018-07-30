@@ -476,22 +476,22 @@ main.preview-left #stages {
 	}
 
 	#stage-configure-visualization .axes,
-	#stage-configure-visualization .maps {
+	#stage-configure-visualization .layers {
 	}
 		#stage-configure-visualization .axes .form,
-		#stage-configure-visualization .maps .form {
+		#stage-configure-visualization .layers .form {
 			background: transparent;
 			padding: 0;
 		}
-			#stage-configure-visualization .maps .form .opacity > span {
+			#stage-configure-visualization .layers .form .opacity > span {
 				justify-content: space-between;
 			}
-			#stage-configure-visualization .maps .form .opacity > span .value {
+			#stage-configure-visualization .layers .form .opacity > span .value {
 				font-weight: normal;
 				color: #999;
 			}
 		#stage-configure-visualization .axes .add-axis .form,
-		#stage-configure-visualization .maps .add-map .form {
+		#stage-configure-visualization .layers .add-layer .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;
 			grid-gap: calc(var(--gap) * 2);
 		}

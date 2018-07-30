@@ -6167,23 +6167,12 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		super(visualization, source);
 
-		this.maps = new Set();
+		if(!this.options) {
 
-		this.visibleLayers = new Set();
-
-		for(const layer of this.options.maps) {
-
-			let layerObj;
-
-			if(layer.map_type == 'heatmap')
-				layerObj = new HeatMap(layer, this);
-			else if(layer.map_type == 'clusters')
-				layerObj = new Clusters(layer, this);
-			else if(layer.map_type == 'scattermap')
-				layerObj = new ScatterMap(layer, this);
-
-			this.maps.add(layerObj);
+			this.options = {maps: []};
 		}
+
+		this.mapLayers = new SpatialMapLayers(this.options.maps || [], this)
 
 	}
 
@@ -6200,52 +6189,9 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			<div class="container">
 				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
 			</div>
-			<div class="columns-toggle">
-				<div class="columns hidden"></div>
-				<span class="arrow up" title="Plotted Layers"><i class="fas fa-angle-up"></i></span>
-				<span class="arrow down hidden" title="Collapse"><i class="fas fa-angle-down"></i></span>
-			</div>
 		`;
 
-		const columnsToggle = container.querySelector('.columns-toggle');
-
-		columnsToggle.on('click', () => {
-
-			columnsToggle.querySelector('.arrow.up').classList.toggle('hidden');
-			columnsToggle.querySelector('.arrow.down').classList.toggle('hidden');
-			columnsToggle.querySelector('.columns').classList.toggle('hidden');
-		});
-
-		for(const map of this.maps.values()) {
-
-			this.visibleLayers.add(map);
-
-			const mapColumn = document.createElement('label');
-			mapColumn.classList.add('column');
-
-			mapColumn.innerHTML = `
-				<span class="name">${map.name} <span class="type">${map.map_type}</span></span>
-				<input type="checkbox" name="visible_layers" checked>
-			`;
-
-			mapColumn.on('click', e => e.stopPropagation());
-
-			const visibleCheck = mapColumn.querySelector('input[name=visible_layers]');
-
-			visibleCheck.on('change', e => {
-
-				mapColumn.classList.toggle('disabled');
-
-				if(visibleCheck.checked)
-					this.visibleLayers.add(map);
-				else
-					this.visibleLayers.delete(map);
-
-				this.render();
-			});
-
-			container.querySelector('.columns-toggle .columns').appendChild(mapColumn);
-		}
+		container.appendChild(this.mapLayers.container);
 
 		return container;
 	}
@@ -6262,10 +6208,10 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 	async render() {
 
 		if(!this.options)
-			return this.source.error('Maps not defined');
+			return this.source.error('Map layers not defined');
 
 		if(!this.options.maps || !this.options.maps.length)
-			return this.source.error('Maps not defined.');
+			return this.source.error('Map layers not defined.');
 
 		const zoom = parseInt(this.options.zoom) || 12;
 
@@ -6280,22 +6226,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		this.map.set('styles', MetaData.spatialMapThemes.get(this.theme) || []);
 
-		for(const map of this.maps.values()) {
-
-			if(!map.latitude)
-				return this.source.error('Latitude Column not defined.');
-
-			if(!this.source.columns.has(map.latitude))
-				return this.source.error(`Latitude Column '${map.latitude}' not found.`);
-
-			if(!map.longitude)
-				return this.source.error('Longitude Column not defined.');
-
-			if(!this.source.columns.has(map.longitude))
-				return this.source.error(`Longitude Column '${map.longitude}' not found.`);
-
-			this.visibleLayers.has(map) ? map.plot() : map.clear();
-		}
+		this.mapLayers.render();
 
 	}
 })
@@ -6909,14 +6840,122 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 	}
 });
 
-class HeatMap {
+class SpatialMapLayers extends Set {
 
-	constructor(layer, visualization) {
+	constructor(layers, visualization) {
+
+		super();
+
+		this.visualization = visualization;
+		this.visible =  new Set();
+
+		for(const layer of layers) {
+
+			this.add(new (SpatialMapLayer.types.get(layer.type))(layer, this));
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('columns-toggle');
+
+		container.innerHTML = `
+			<div class="columns hidden"></div>
+			<span class="arrow up" title="Plotted Layers"><i class="fas fa-angle-up"></i></span>
+			<span class="arrow down hidden" title="Collapse"><i class="fas fa-angle-down"></i></span>
+		`;
+
+		container.on('click', () => {
+
+			container.querySelector('.arrow.up').classList.toggle('hidden');
+			container.querySelector('.arrow.down').classList.toggle('hidden');
+			container.querySelector('.columns').classList.toggle('hidden');
+		});
+
+		for(const layer of this.values()) {
+
+			this.visible.add(layer);
+			container.querySelector('.columns').appendChild(layer.container);
+		}
+
+		return container;
+	}
+
+	render() {
+
+		for(const layer of this.values()) {
+
+			if(!layer.latitude)
+				return this.source.error('Latitude Column not defined.');
+
+			if(!this.visualization.source.columns.has(layer.latitude))
+				return this.source.error(`Latitude Column '${layer.latitude}' not found.`);
+
+			if(!layer.longitude)
+				return this.source.error('Longitude Column not defined.');
+
+			if(!this.visualization.source.columns.has(layer.longitude))
+				return this.source.error(`Longitude Column '${layer.longitude}' not found.`);
+
+			this.visible.has(layer) ? layer.plot() : layer.clear();
+		}
+	}
+
+}
+
+class SpatialMapLayer {
+
+	constructor(layer, layers) {
 
 		Object.assign(this, layer);
 
-		this.visualization = visualization;
+		this.layers = layers;
 	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('label');
+
+		container.classList.add('column');
+
+		container.innerHTML = `
+				<span class="name">${this.layer_name} <span class="type">${this.type}</span></span>
+				<input type="checkbox" name="visible_layers" checked>
+			`;
+
+		container.on('click', e => e.stopPropagation());
+
+		const visibleCheck = container.querySelector('input[name=visible_layers]');
+
+		visibleCheck.on('change', e => {
+
+			container.classList.toggle('disabled');
+
+			if(visibleCheck.checked)
+				this.layers.visible.add(this);
+			else
+				this.layers.visible.delete(this);
+
+			this.layers.visualization.render();
+		});
+
+		return container;
+
+	}
+
+}
+
+SpatialMapLayer.types = new Map();
+
+SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 
 	plot() {
 
@@ -6925,7 +6964,7 @@ class HeatMap {
 
 		const points = [];
 
-		for(const point of this.visualization.source.response) {
+		for(const point of this.layers.visualization.source.response) {
 
 			if(this.weight) {
 
@@ -6942,7 +6981,7 @@ class HeatMap {
 
 		this.heatmap = new google.maps.visualization.HeatmapLayer({
 			data: points,
-			map: this.visualization.map,
+			map: this.layers.visualization.map,
 			radius: parseFloat(this.radius) || 15,
 			opacity: parseFloat(this.opacity) || 0.6
 		});
@@ -6956,17 +6995,9 @@ class HeatMap {
 			this.heatmap = null;
 		}
 	}
-}
+});
 
-class Clusters {
-
-	constructor(layer, visualization) {
-
-		Object.assign(this, layer);
-
-		this.visualization = visualization;
-
-	}
+SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer {
 
 	plot() {
 
@@ -6975,9 +7006,9 @@ class Clusters {
 
 		const markers = [];
 
-		this.clusterer = new MarkerClusterer(this.visualization.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+		this.clusterer = new MarkerClusterer(this.layers.visualization.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
 
-		for(const row of this.visualization.source.response) {
+		for(const row of this.layers.visualization.source.response) {
 			markers.push(
 				new google.maps.Marker({
 					position: {
@@ -7002,29 +7033,21 @@ class Clusters {
 			this.clusterer = null;
 		}
 	}
-}
+});
 
-class ScatterMap {
+SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer {
 
-	constructor(layer, visualization) {
-
-		Object.assign(this, layer);
-
-		this.visualization = visualization;
+	plot() {
 
 	}
-}
 
-class BubbleMap {
-
-	constructor(layer, visualization) {
-
-		Object.assign(this, layer);
-
-		this.visualization = visualization;
+	clear() {
 
 	}
-}
+});
+
+SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
+});
 
 class SpatialMapThemes {
 

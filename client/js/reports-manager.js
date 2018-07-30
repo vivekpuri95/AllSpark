@@ -544,10 +544,11 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				a = a[this.sort.column] || '';
 				b = b[this.sort.column] || '';
 
-				if(typeof a == 'string' && typeof b == 'string') {
+				if(typeof a == 'string')
 					a = a.toUpperCase();
+
+				if(typeof b == 'string')
 					b = b.toUpperCase();
-				}
 
 				else if(a instanceof Array) {
 					a = a.length;
@@ -2731,16 +2732,16 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	}
 }
 
-class SpatialMapLayers extends Set {
+class SpatialMapOptionsLayers extends Set {
 
-	constructor(maps, stage) {
+	constructor(layers, stage) {
 
 		super();
 
 		this.stage = stage;
 
-		for(const map of maps)
-			this.add(new (SpatialMapLayer.types.get(map.map_type))(map, this));
+		for(const layer of layers)
+			this.add(new (SpatialMapOptionsLayer.types.get(layer.type))(layer, this));
 	}
 
 	get container() {
@@ -2750,7 +2751,7 @@ class SpatialMapLayers extends Set {
 
 		const container = this.containerElement = document.createElement('div');
 
-		container.classList.add('options', 'form', 'body', 'maps');
+		container.classList.add('options', 'form', 'body', 'layers');
 
 		this.render();
 
@@ -2765,24 +2766,24 @@ class SpatialMapLayers extends Set {
 		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' map layer' + ( this.size == 1 ? ' added' :'s added') : ''}`;
 
 		if (!this.size)
-			this.container.innerHTML = '<div class="NA">No maps added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No layers added yet! :(</div>';
 
-		for(const map of this) {
+		for(const layer of this) {
 
-			this.container.appendChild(map.container);
+			this.container.appendChild(layer.container);
 		}
 
 		this.container.insertAdjacentHTML('beforeend', `
 
-			<div class="add-map">
+			<div class="add-layer">
 				<fieldset>
-					<legend>Add Map</legend>
+					<legend>Add Layer</legend>
 					<div class="form">
 
 						<label>
-							<span>Map Type</span>
-							<select name="position" value="clusters" required>
-								<option value="clusters">Clusters</option>
+							<span>Type</span>
+							<select name="position" value="clustermap" required>
+								<option value="clustermap">Cluster Map</option>
 								<option value="heatmap">Heat Map</option>
 								<!--<option value="scattermap">Scatter Map</option>-->
 								<!--<option value="bubblemap">Bubble Map</option>-->
@@ -2798,11 +2799,11 @@ class SpatialMapLayers extends Set {
 			</div>
 		`);
 
-		this.container.querySelector('.add-map button[type=button]').on('click', () => {
+		this.container.querySelector('.add-layer button[type=button]').on('click', () => {
 
-			const map_type = this.container.querySelector('.add-map select').value;
+			const type = this.container.querySelector('.add-layer select').value;
 
-			this.add(new (SpatialMapLayer.types.get(map_type))({map_type}, this));
+			this.add(new (SpatialMapOptionsLayer.types.get(type))({type}, this));
 			this.render();
 		});
 
@@ -2812,8 +2813,8 @@ class SpatialMapLayers extends Set {
 
 		const response = [];
 
-		for(const map of this.values()) {
-			response.push(map.json);
+		for(const layer of this.values()) {
+			response.push(layer.json);
 		}
 
 		return response;
@@ -2822,31 +2823,31 @@ class SpatialMapLayers extends Set {
 
 }
 
-class SpatialMapLayer {
+class SpatialMapOptionsLayer {
 
-	constructor(map, maps) {
+	constructor(layer, layers) {
 
-		Object.assign(this, map);
+		Object.assign(this, layer);
 
-		this.maps = maps;
+		this.layers = layers;
 	}
 
 	get container() {
 
-		if(this.mapContainer)
-			return this.mapContainer;
+		if(this.layerContainer)
+			return this.layerContainer;
 
-		const container = this.mapContainer = document.createElement('div');
+		const container = this.layerContainer = document.createElement('div');
 
-		container.classList.add('map');
+		container.classList.add('layer');
 
 		container.innerHTML = `
 			<fieldset>
-				<legend>${this.map_type.slice(0, 1).toUpperCase() + this.map_type.slice(1)}</legend>
+				<legend>${this.type.slice(0, 1).toUpperCase() + this.type.slice(1)}</legend>
 				<div class="form">
 					<label>
 						<span>Name</span>
-						<input type="text" name="name">
+						<input type="text" name="layer_name">
 					</label>
 					
 					<label>
@@ -2872,7 +2873,7 @@ class SpatialMapLayer {
 			latitude = container.querySelector('select[name=latitude]'),
 			longitude = container.querySelector('select[name=longitude]');
 
-		for(const [key, column] of this.maps.stage.page.preview.report.columns) {
+		for(const [key, column] of this.layers.stage.page.preview.report.columns) {
 
 			latitude.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
@@ -2886,9 +2887,15 @@ class SpatialMapLayer {
 		container.querySelector('.delete').on('click', () => {
 
 			container.parentElement && container.parentElement.removeChild(container);
-			this.maps.delete(this);
-			this.maps.render();
+			this.layers.delete(this);
+			this.layers.render();
 		});
+
+		for(const element of container.querySelectorAll('select, input')) {
+
+			if(this[element.name])
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
+		}
 
 		return container;
 	}
@@ -2896,7 +2903,7 @@ class SpatialMapLayer {
 	get json() {
 
 		const response = {
-			map_type: this.map_type
+			type: this.type
 		};
 
 		for(const element of this.container.querySelectorAll('select, input')) {
@@ -2908,12 +2915,12 @@ class SpatialMapLayer {
 	}
 }
 
-SpatialMapLayer.types = new Map();
+SpatialMapOptionsLayer.types = new Map();
 
-SpatialMapLayer.types.set('clusters', class ClusterMapLayer extends SpatialMapLayer {
+SpatialMapOptionsLayer.types.set('clustermap', class ClusterMapLayer extends SpatialMapOptionsLayer {
 });
 
-SpatialMapLayer.types.set('heatmap', class HeatMapLayer extends SpatialMapLayer {
+SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMapOptionsLayer {
 
 	get container() {
 
@@ -2943,7 +2950,7 @@ SpatialMapLayer.types.set('heatmap', class HeatMapLayer extends SpatialMapLayer 
 
 		const weight = container.querySelector('select[name=weight]');
 
-		for(const [key, column] of this.maps.stage.page.preview.report.columns) {
+		for(const [key, column] of this.layers.stage.page.preview.report.columns) {
 
 			weight.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
@@ -2956,25 +2963,17 @@ SpatialMapLayer.types.set('heatmap', class HeatMapLayer extends SpatialMapLayer 
 				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
 		}
 
+		if(this.weight)
+			container.querySelector('select[name=weight]').value = this.weight;
+
+		if(this.opacity)
+			container.querySelector('input[name=opacity]').value = this.opacity;
+
 		return container;
-	}
-
-	get json() {
-
-		const response = {
-			map_type: this.map_type
-		};
-
-		for(const element of this.container.querySelectorAll('select, input')) {
-
-			response[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
-		}
-
-		return response;
 	}
 });
 
-SpatialMapLayer.types.set('scattermap', class ScatterMapLayer extends SpatialMapLayer {
+SpatialMapOptionsLayer.types.set('scattermap', class ScatterMapLayer extends SpatialMapOptionsLayer {
 
 	get container() {
 
@@ -2994,38 +2993,21 @@ SpatialMapLayer.types.set('scattermap', class ScatterMapLayer extends SpatialMap
 
 		const color = container.querySelector('select[name=color]');
 
-		for(const [key, column] of this.maps.stage.page.preview.report.columns) {
+		for(const [key, column] of this.layers.stage.page.preview.report.columns) {
 
 			color.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
 		}
 
-		for(const element of container.querySelectorAll('select, input')) {
-
-			if(this[element.name])
-				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
-		}
+		if(this.color)
+			container.querySelector('select[name=color]').value = this.color;
 
 		return container;
 	}
-
-	get json() {
-
-		const response = {
-			map_type: this.map_type
-		};
-
-		for(const element of this.container.querySelectorAll('select, input')) {
-
-			response[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
-		}
-
-		return response;
-	}
 });
 
-SpatialMapLayer.types.set('bubblemap', class BubbleMapLayer extends SpatialMapLayer {
+SpatialMapOptionsLayer.types.set('bubblemap', class BubbleMapLayer extends SpatialMapOptionsLayer {
 
 	get container() {
 
@@ -3203,7 +3185,7 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 			</div>
 		`;
 
-		this.maps = new SpatialMapLayers(this.visualization.options.maps || [], this);
+		this.maps = new SpatialMapOptionsLayers(this.visualization.options.maps || [], this);
 
 		container.querySelector('.configuration-section').appendChild(this.maps.container);
 
