@@ -1378,7 +1378,10 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 						<label>
 							<span>Multiple</span>
-							<input type="text" name="multiple" placeholder="multiple">
+							<select name="multiple">
+								<option value="0">No</option>
+								<option value="1">Yes</option>
+							</select>
 						</label>
 
 						<label>

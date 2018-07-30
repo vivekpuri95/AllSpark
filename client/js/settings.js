@@ -1120,8 +1120,8 @@ class GlobalFilter {
 			<td>${this.placeholder}</td>
 			<td>${this.default_value}</td>
 			<td>${this.type}</td>
-			<td>${this.multiple}</td>
-			<td>${this.offset}</td>
+			<td>${this.multiple ? 'Yes' : 'No'}</td>
+			<td>${this.offset || ''}</td>
 			<td><a target="_blank" href="/report/${this.dataset}">${dataset ? dataset.name : ''}</a></td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
