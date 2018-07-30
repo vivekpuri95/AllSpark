@@ -6469,11 +6469,16 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			const actions = this.source.container.querySelector('header .actions');
 
-			actions.insertAdjacentHTML('beforeend', `
-				<span class="card-info" title="${this.subReports.length + (this.subReports.length > 1 ? ' sub-cards' : ' sub-card')}">
-					<i class="fas fa-ellipsis-h"></i>
-				</span>
-			`);
+			const card_info = this.source.container.querySelector('header .actions .card-info');
+
+			if(!card_info) {
+
+				actions.insertAdjacentHTML('beforeend', `
+					<span class="card-info" title="${this.subReports.length + (this.subReports.length > 1 ? ' sub-cards' : ' sub-card')}">
+						<i class="fas fa-ellipsis-h"></i>
+					</span>
+				`);
+			}
 		}
 
 		this.container.on('click', async () => {
