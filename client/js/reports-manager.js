@@ -2740,7 +2740,7 @@ class MapLayers extends Set {
 		this.stage = stage;
 
 		for(const map of maps)
-			this.add(new MapLayer(map, this));
+			this.add(new (MapLayer.types.get(map.map_type))(map, this));
 	}
 
 	get container() {
@@ -2802,7 +2802,7 @@ class MapLayers extends Set {
 
 			const map_type = this.container.querySelector('.add-map select').value;
 
-			this.add(new MapLayer({map_type}, this));
+			this.add(new (MapLayer.types.get(map_type))({map_type}, this));
 			this.render();
 		});
 
@@ -2872,21 +2872,6 @@ class MapLayer {
 			latitude = container.querySelector('select[name=latitude]'),
 			longitude = container.querySelector('select[name=longitude]');
 
-		let extraColumn;
-
-		if(this.map_type == 'heatmap') {
-
-			this.loadHeatMapForm();
-
-			extraColumn = container.querySelector('select[name=weight]');
-		}
-		else if (this.map_type == 'scattermap') {
-
-			this.loadScattermapForm();
-
-			extraColumn = container.querySelector('select[name=color]')
-		}
-
 		for(const [key, column] of this.maps.stage.page.preview.report.columns) {
 
 			latitude.insertAdjacentHTML('beforeend', `
@@ -2896,17 +2881,6 @@ class MapLayer {
 			longitude.insertAdjacentHTML('beforeend', `
 				<option value="${key}">${column.name}</option>
 			`);
-
-			if(extraColumn)
-				extraColumn.insertAdjacentHTML('beforeend', `
-					<option value="${key}">${column.name}</option>
-				`);
-		}
-
-		for(const element of container.querySelectorAll('select, input')) {
-
-			if(this[element.name])
-				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
 		}
 
 		container.querySelector('.delete').on('click', () => {
@@ -2917,40 +2891,6 @@ class MapLayer {
 		});
 
 		return container;
-	}
-
-	loadHeatMapForm() {
-
-		this.container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
-			<label class="weight">
-				<span>Weight Column</span>
-				<select name="weight">
-					<option value=""></option>
-				</select>
-			</label>
-			
-			<label class="opacity">
-				<span>Opacity <span class="value">${this.opacity || 0.6}</span></span>
-				<input type="range" name="opacity" min="0" max="1" step="0.01">
-			</label>
-		`);
-
-		this.container.querySelector('.opacity input').on('input', () => {
-
-			this.container.querySelector('.opacity .value').textContent = this.container.querySelector('.opacity input').value;
-		});
-	}
-
-	loadScattermapForm() {
-
-		this.container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
-			<label class="weight">
-				<span>Color Column</span>
-				<select name="color">
-					<option value=""></option>
-				</select>
-			</label>
-		`);
 	}
 
 	get json() {
@@ -2967,6 +2907,130 @@ class MapLayer {
 		return response;
 	}
 }
+
+MapLayer.types = new Map();
+
+MapLayer.types.set('clusters', class ClusterMapLayer extends MapLayer {
+});
+
+MapLayer.types.set('heatmap', class HeatMapLayer extends MapLayer {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = super.container;
+
+		container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
+			<label>
+				<span>Weight Column</span>
+				<select name="weight">
+					<option value=""></option>
+				</select>
+			</label>
+			
+			<label class="opacity">
+				<span>Opacity <span class="value">${this.opacity || 0.6}</span></span>
+				<input type="range" name="opacity" min="0" max="1" step="0.01">
+			</label>
+		`);
+
+		container.querySelector('.opacity input').on('input', () => {
+
+			container.querySelector('.opacity .value').textContent = container.querySelector('.opacity input').value;
+		});
+
+		const weight = container.querySelector('select[name=weight]');
+
+		for(const [key, column] of this.maps.stage.page.preview.report.columns) {
+
+			weight.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of container.querySelectorAll('select, input')) {
+
+			if(this[element.name])
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
+		}
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			map_type: this.map_type
+		};
+
+		for(const element of this.container.querySelectorAll('select, input')) {
+
+			response[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+		}
+
+		return response;
+	}
+});
+
+MapLayer.types.set('scattermap', class ScatterMapLayer extends MapLayer {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = super.container;
+
+		container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
+			<label>
+				<span>Color Column</span>
+				<select name="color">
+					<option value=""></option>
+				</select>
+			</label>
+		`);
+
+		const color = container.querySelector('select[name=color]');
+
+		for(const [key, column] of this.maps.stage.page.preview.report.columns) {
+
+			color.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of container.querySelectorAll('select, input')) {
+
+			if(this[element.name])
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
+		}
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			map_type: this.map_type
+		};
+
+		for(const element of this.container.querySelectorAll('select, input')) {
+
+			response[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+		}
+
+		return response;
+	}
+});
+
+MapLayer.types.set('bubblemap', class BubbleMapLayer extends MapLayer {
+
+	get container() {
+
+	}
+});
 
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
 
