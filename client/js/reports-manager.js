@@ -2903,7 +2903,7 @@ class MapLayer {
 				`);
 		}
 
-		for(const element of this.container.querySelectorAll('select, input')) {
+		for(const element of container.querySelectorAll('select, input')) {
 
 			if(this[element.name])
 				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];

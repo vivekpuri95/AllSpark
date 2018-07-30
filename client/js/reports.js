@@ -6167,7 +6167,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		super(visualization, source);
 
-		this.options.maps = this.options.maps || [];
+		this.options.maps = this.options && this.options.maps ? this.options.maps : [];
 
 		this.visibleLayers = new Set(this.options.maps.map(x => x));
 
