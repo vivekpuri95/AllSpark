@@ -174,7 +174,7 @@ class DashboardsDashboard {
 
 		const parameters = {
 			format: DashboardsDashboard.editor.value,
-			parent: DashboardsDashboard.multiselect.value[0],
+			parent: DashboardsDashboard.multiselect.value[0] || '',
 		};
 
 		const response = await API.call('dashboards/insert', parameters, options);
