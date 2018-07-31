@@ -1101,7 +1101,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 						li.querySelector('.name').on('click', () => {
 
 							if(that.report.connection.editor)
-								that.report.connection.editor.getSession().insert(that.report.connection.editor.getCursorPosition(), column.name);
+								that.report.connection.editor.editor.getSession().insert(that.report.connection.editor.editor.getCursorPosition(), column.name);
 						});
 
 						columns.appendChild(li);
