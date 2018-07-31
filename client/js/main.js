@@ -1207,12 +1207,52 @@ class Format {
 		return Format.date.formatter.format(date);
 	}
 
-	static time(time) {
+	static month(month) {
 
 		const options = {
 			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
+			month: 'short'
+		};
+
+		if(!Format.month.formatter)
+			Format.month.formatter = new Intl.DateTimeFormat(undefined, options);
+
+		if(typeof month == 'string')
+			month = Date.parse(month);
+
+		if(typeof month == 'object' && month)
+			month = month.getTime();
+
+		if(!month)
+			return '';
+
+		return Format.month.formatter.format(month);
+	}
+
+	static year(year) {
+
+		const options = {
+			year: 'numeric'
+		};
+
+		if(!Format.year.formatter)
+			Format.year.formatter = new Intl.DateTimeFormat(undefined, options);
+
+		if(typeof year == 'string')
+			year = Date.parse(year);
+
+		if(typeof year == 'object' && year)
+			year = year.getTime();
+
+		if(!year)
+			return '';
+
+		return Format.year.formatter.format(year);
+	}
+
+	static time(time) {
+
+		const options = {
 			hour: 'numeric',
 			minute: 'numeric'
 		};
@@ -1230,6 +1270,31 @@ class Format {
 			return '';
 
 		return Format.time.formatter.format(time);
+	}
+
+	static dateTime(dateTime) {
+
+		const options = {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: 'numeric'
+		};
+
+		if(!Format.dateTime.formatter)
+			Format.dateTime.formatter = new Intl.DateTimeFormat(undefined, options);
+
+		if(typeof dateTime == 'string')
+			dateTime = Date.parse(dateTime);
+
+		if(typeof dateTime == 'object' && dateTime)
+			dateTime = dateTime.getTime();
+
+		if(!dateTime)
+			return '';
+
+		return Format.dateTime.formatter.format(dateTime);
 	}
 
 	static number(number) {
