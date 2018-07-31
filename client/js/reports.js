@@ -6187,9 +6187,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			this.options = {layers: []};
 		}
 
-		this.mapLayers = new SpatialMapLayers(this.options.layers || [], this);
-		this.themeObj = new SpatialMapThemes(this);
-
+		this.layers = new SpatialMapLayers(this.options.layers || [], this);
+		this.theme = new SpatialMapThemes(this);
 	}
 
 	get container() {
@@ -6207,7 +6206,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			</div>
 		`;
 
-		container.appendChild(this.mapLayers.container);
+		container.appendChild(this.layers.container);
 
 		return container;
 	}
@@ -6229,9 +6228,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 		if(!this.options.layers || !this.options.layers.length)
 			return this.source.error('Map layers not defined.');
 
-		const
-			zoom = this.options.zoom || 12,
-			themeConfig = this.themeObj.get(this.theme).config;
+		const zoom = this.options.zoom || 12;
 
 		this.rows = this.source.response;
 
@@ -6244,9 +6241,9 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 				}
 			});
 
-		this.map.set('styles', themeConfig || []);
+		this.map.set('styles', this.theme.get(this.options.theme).config || []);
 
-		this.mapLayers.render();
+		this.layers.render();
 
 	}
 })
@@ -6972,50 +6969,56 @@ class SpatialMapLayer {
 		return container;
 
 	}
-
 }
 
 SpatialMapLayer.types = new Map();
 
 SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 
-	plot() {
+	constructor(layer, layers) {
 
-		if(this.heatmap)
-			return;
-
-		const points = [];
-
-		for(const point of this.layers.visualization.rows) {
-
-			if(this.weight) {
-
-				points.push({
-					location: new google.maps.LatLng(point.get(this.latitude), point.get(this.longitude)),
-					weight: point.get(this.weight)
-				});
-
-				continue;
-			}
-
-			points.push(new google.maps.LatLng(point.get(this.latitude), point.get(this.longitude)));
-		}
+		super(layer, layers);
 
 		this.heatmap = new google.maps.visualization.HeatmapLayer({
-			data: points,
-			map: this.layers.visualization.map,
 			radius: this.radius || 15,
 			opacity: this.opacity || 0.6
 		});
 	}
 
+	plot() {
+
+		if(this.heatmap.getMap())
+			return;
+
+		this.heatmap.setData(this.markers);
+		this.heatmap.setMap(this.layers.visualization.map);
+	}
+
 	clear() {
 
-		if(this.heatmap) {
+		this.heatmap.setMap(null);
+	}
 
-			this.heatmap.setMap(null);
-			this.heatmap = null;
+	get markers() {
+
+		const markers = [];
+
+		for(const row of this.layers.visualization.rows) {
+
+			if(this.weight) {
+
+				markers.push({
+					location: new google.maps.LatLng(row.get(this.latitude), row.get(this.longitude)),
+					weight: row.get(this.weight)
+				});
+
+				continue;
+			}
+
+			markers.push(new google.maps.LatLng(row.get(this.latitude), row.get(this.longitude)));
 		}
+
+		return markers
 	}
 });
 
@@ -7026,9 +7029,21 @@ SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer
 		if(this.clusterer)
 			return;
 
-		const markers = [];
+		this.clusterer = new MarkerClusterer(this.layers.visualization.map, this.markers, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+	}
 
-		this.clusterer = new MarkerClusterer(this.layers.visualization.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+	clear() {
+
+		if(this.clusterer) {
+
+			this.clusterer.clearMarkers();
+			this.clusterer = null;
+		}
+	}
+
+	get markers() {
+
+		const markers = [];
 
 		for(const row of this.layers.visualization.rows) {
 			markers.push(
@@ -7041,19 +7056,7 @@ SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer
 			);
 		}
 
-		this.markers = markers;
-
-		this.clusterer.clearMarkers();
-		this.clusterer.addMarkers(this.markers);
-	}
-
-	clear() {
-
-		if(this.clusterer) {
-
-			this.clusterer.clearMarkers();
-			this.clusterer = null;
-		}
+		return markers;
 	}
 });
 
@@ -7061,10 +7064,58 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 	plot() {
 
+		if(!this.existingMarkers)
+			this.existingMarkers = this.markers;
+
+		for(const marker of this.existingMarkers) {
+
+			if(marker.getMap())
+				continue;
+
+			marker.setMap(this.layers.visualization.map);
+			marker.setTitle("marker title");
+		}
 	}
 
 	clear() {
 
+		for(const marker of this.existingMarkers) {
+
+			marker.setMap(null);
+		}
+	}
+
+	get markers() {
+
+		if(!this.color)
+			return;
+
+		const
+			markerColor = ['blue', 'green', 'red', 'orange', 'pink', 'yellow'],
+			urlPrefix = 'http://maps.google.com/mapfiles/ms/icons/',
+			markers = [];
+
+		let uniqueFields;
+
+		uniqueFields = this.layers.visualization.rows.map(x => x.get(this.color));
+		uniqueFields = Array.from(new Set(uniqueFields));
+
+		for(const row of this.layers.visualization.rows) {
+
+			row.set('color', markerColor[uniqueFields.indexOf(row.get(this.color)) % markerColor.length]);
+
+			markers.push(
+				new google.maps.Marker({
+					position: {
+						lat: row.get(this.latitude),
+						lng: row.get(this.longitude),
+					},
+					icon: urlPrefix + (row.get('color') || 'red') + '.png'
+				})
+			);
+		}
+
+		return markers;
 	}
 });
 
@@ -7126,8 +7177,8 @@ class SpatialMapTheme {
 		container.classList.add('theme');
 
 		container.innerHTML = `
-				<div class="name">${this.name}</div>
-			`;
+			<div class="name">${this.name}</div>
+		`;
 
 		if(this.themes.selected == this.name)
 			container.classList.add('selected');
@@ -7173,8 +7224,8 @@ class SpatialMapTheme {
 			image.style.background = this.config[0].stylers[0].color;
 
 			const
-				[roadColor] = this.config.filter(x => x.featureType == "road"),
-				[waterColor] = this.config.filter(x => x.featureType == "water"),
+				[roadColor] = this.config.filter(x => x.featureType == 'road'),
+				[waterColor] = this.config.filter(x => x.featureType == 'water'),
 				[parkColor] = this.config.filter(x => x.featureType == 'poi.park');
 
 			image.querySelector('.road').style.background = roadColor.stylers[0].color;

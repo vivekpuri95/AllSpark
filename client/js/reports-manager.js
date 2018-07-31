@@ -2783,7 +2783,7 @@ class SpatialMapOptionsLayers extends Set {
 							<select name="position" value="clustermap" required>
 								<option value="clustermap">Cluster Map</option>
 								<option value="heatmap">Heat Map</option>
-								<!--<option value="scattermap">Scatter Map</option>-->
+								<option value="scattermap">Scatter Map</option>
 								<!--<option value="bubblemap">Bubble Map</option>-->
 							</select>
 						</label>
