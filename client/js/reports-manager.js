@@ -544,11 +544,10 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				a = a[this.sort.column] || '';
 				b = b[this.sort.column] || '';
 
-				if(typeof a == 'string') {
+				if(typeof a == 'string')
 					a = a.toUpperCase();
+				else if(typeof b == 'string')
 					b = b.toUpperCase();
-				}
-
 				else if(a instanceof Array) {
 					a = a.length;
 					b = b.length;
@@ -2731,6 +2730,294 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 	}
 }
 
+class SpatialMapOptionsLayers extends Set {
+
+	constructor(layers, stage) {
+
+		super();
+
+		this.stage = stage;
+
+		for(const layer of layers)
+			this.add(new (SpatialMapOptionsLayer.types.get(layer.type))(layer, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('options', 'form', 'body', 'layers');
+
+		this.render();
+
+		return container;
+
+	}
+
+	render() {
+
+		this.container.textContent = null;
+
+		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' map layer' + ( this.size == 1 ? ' added' :'s added') : ''}`;
+
+		if (!this.size)
+			this.container.innerHTML = '<div class="NA">No layers added yet! :(</div>';
+
+		for(const layer of this) {
+
+			this.container.appendChild(layer.container);
+		}
+
+		this.container.insertAdjacentHTML('beforeend', `
+
+			<div class="add-layer">
+				<fieldset>
+					<legend>Add New Layer</legend>
+					<div class="form">
+
+						<label>
+							<span>Type</span>
+							<select name="position" value="clustermap" required>
+								<option value="clustermap">Cluster Map</option>
+								<option value="heatmap">Heat Map</option>
+								<!--<option value="scattermap">Scatter Map</option>-->
+								<!--<option value="bubblemap">Bubble Map</option>-->
+							</select>
+						</label>
+
+						<label>
+							<span>&nbsp;</span>
+							<button type="button"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</div>
+				</fieldset>
+			</div>
+		`);
+
+		this.container.querySelector('.add-layer button[type=button]').on('click', () => {
+
+			const type = this.container.querySelector('.add-layer select').value;
+
+			this.add(new (SpatialMapOptionsLayer.types.get(type))({type}, this));
+			this.render();
+		});
+
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const layer of this.values()) {
+			response.push(layer.json);
+		}
+
+		return response;
+
+	}
+
+}
+
+class SpatialMapOptionsLayer {
+
+	constructor(layer, layers) {
+
+		Object.assign(this, layer);
+
+		this.layers = layers;
+	}
+
+	get container() {
+
+		if(this.layerContainer)
+			return this.layerContainer;
+
+		const container = this.layerContainer = document.createElement('div');
+
+		container.classList.add('layer');
+
+		container.innerHTML = `
+			<fieldset>
+				<legend>${this.type.slice(0, 1).toUpperCase() + this.type.slice(1)}</legend>
+				<div class="form">
+					<label>
+						<span>Name</span>
+						<input type="text" name="layer_name">
+					</label>
+					
+					<label>
+						<span>Latitude Column</span>
+						<select name="latitude"></select>
+					</label>
+					
+					<label>
+						<span>Longitude Column</span>
+						<select name="longitude"></select>
+					</label>
+					
+					<label>
+						<button class="delete" type="button">
+							<i class="far fa-trash-alt"></i> Delete
+						</button>
+					</label>
+				</div>
+			</fieldset>
+		`;
+
+		const
+			latitude = container.querySelector('select[name=latitude]'),
+			longitude = container.querySelector('select[name=longitude]');
+
+		for(const [key, column] of this.layers.stage.page.preview.report.columns) {
+
+			latitude.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			longitude.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		container.querySelector('.delete').on('click', () => {
+
+			container.parentElement && container.parentElement.removeChild(container);
+			this.layers.delete(this);
+			this.layers.render();
+		});
+
+		for(const element of container.querySelectorAll('select, input')) {
+
+			if(this[element.name])
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
+		}
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			type: this.type
+		};
+
+		for(const element of this.container.querySelectorAll('select, input')) {
+
+			if(element.type == 'checkbox')
+
+				response[element.name] = element.checked;
+			else {
+
+				response[element.name] = element.type == 'number' || element.type == 'range' ? parseFloat(element.value) : element.value;
+			}
+		}
+
+		return response;
+	}
+}
+
+SpatialMapOptionsLayer.types = new Map();
+
+SpatialMapOptionsLayer.types.set('clustermap', class ClusterMapLayer extends SpatialMapOptionsLayer {
+});
+
+SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMapOptionsLayer {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = super.container;
+
+		container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
+			<label>
+				<span>Weight Column</span>
+				<select name="weight">
+					<option value=""></option>
+				</select>
+			</label>
+			
+			<label class="opacity">
+				<span>Opacity <span class="value">${this.opacity || 0.6}</span></span>
+				<input type="range" name="opacity" min="0" max="1" step="0.01">
+			</label>
+		`);
+
+		container.querySelector('.opacity input').on('input', () => {
+
+			container.querySelector('.opacity .value').textContent = container.querySelector('.opacity input').value;
+		});
+
+		const weight = container.querySelector('select[name=weight]');
+
+		for(const [key, column] of this.layers.stage.page.preview.report.columns) {
+
+			weight.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of container.querySelectorAll('select, input')) {
+
+			if(this[element.name])
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
+		}
+
+		if(this.weight)
+			container.querySelector('select[name=weight]').value = this.weight;
+
+		if(this.opacity)
+			container.querySelector('input[name=opacity]').value = this.opacity;
+
+		return container;
+	}
+});
+
+SpatialMapOptionsLayer.types.set('scattermap', class ScatterMapLayer extends SpatialMapOptionsLayer {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = super.container;
+
+		container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
+			<label>
+				<span>Color Column</span>
+				<select name="color">
+					<option value=""></option>
+				</select>
+			</label>
+		`);
+
+		const color = container.querySelector('select[name=color]');
+
+		for(const [key, column] of this.layers.stage.page.preview.report.columns) {
+
+			color.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		if(this.color)
+			container.querySelector('select[name=color]').value = this.color;
+
+		return container;
+	}
+});
+
+SpatialMapOptionsLayer.types.set('bubblemap', class BubbleMapLayer extends SpatialMapOptionsLayer {
+
+	get container() {
+
+	}
+});
+
 const ConfigureVisualization = ReportsManger.stages.get('configure-visualization');
 
 ConfigureVisualization.types = new Map;
@@ -2855,47 +3142,35 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 
 	get form() {
 
-		if (this.formContainer)
+		if(this.formContainer)
 			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('div');
 
 		container.innerHTML = `
 			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Map Layers <span class="count"></span></h3>
+			</div>
+			
+			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
-					<div class="form subform">
+					<div class="form subform map-options">						
 						<label>
-							<span>Latitude Column</span>
-							<select name="latitude"></select>
+							<span>Zoom</span>
+							<input type="number" step="1" name="zoom" min="1" max="25">
 						</label>
-
+						
 						<label>
-							<span>Longitude Column</span>
-							<select name="longitude"></select>
+							<span>Center Latitude</span>
+							<input type="number" name="centerLatitude">
 						</label>
-
+						
 						<label>
-							<span>Initial Zoom</span>
-							<input type="number" step="1" name="initialZoom" min="1" max="25">
+							<span>Center Longitude</span>
+							<input type="number" name="centerLongitude">
 						</label>
-
-						<label>
-							<span>Initial Latitude</span>
-							<input type="text" name="initialLatitude">
-						</label>
-
-						<label>
-							<span>Initial Longitude</span>
-							<input type="text" name="initialLongitude">
-						</label>
-
-						<label class="hidden">
-							<span>
-								<input type="checkbox" name="disableClustring">Disable Clustring
-							</span>
-						</label>
-
+						
 						<label>
 							<span>
 								<input type="checkbox" name="hideLegend">Hide Legend
@@ -2904,29 +3179,63 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 					</div>
 				</div>
 			</div>
+			
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Themes</h3>
+				<div class="body">
+					<div class="form subform map-themes"></div>
+				</div>
+			</div>
 		`;
 
-		const
-			latitude = container.querySelector('select[name=latitude]'),
-			longitude = container.querySelector('select[name=longitude]');
+		this.layers = new SpatialMapOptionsLayers(this.visualization.options.layers || [], this);
 
-		for(const [key, column] of this.page.preview.report.columns) {
-
-			latitude.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-
-			longitude.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
-		}
-
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
+		container.querySelector('.configuration-section').appendChild(this.layers.container);
 
 		this.stage.setupConfigurationSetions(container);
 
+		const mapOptions = container.querySelector('.map-options');
+
+		if(this.visualization.options) {
+
+			for(const element of mapOptions.querySelectorAll('select, input')) {
+
+				if(!this.visualization.options[element.name])
+					continue;
+
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options[element.name];
+			}
+		}
+
+		this.themes = new SpatialMapThemes(this.visualization);
+
+		container.querySelector('.map-themes').appendChild(this.themes.container);
+
 		return container;
+
+	}
+
+	get json() {
+
+		const
+			mapOptions = this.formContainer.querySelector('.map-options'),
+			response = {
+				layers: this.layers.json,
+				theme: this.themes.selected
+			};
+
+		for (const element of mapOptions.querySelectorAll('select, input')) {
+
+			if(element.type == 'checkbox')
+
+				response[element.name] = element.checked;
+			else {
+
+				response[element.name] = element.type == 'number' ? parseFloat(element.value) : element.value;
+			}
+		}
+
+		return response;
 	}
 });
 

@@ -512,8 +512,8 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 			'/js/reports.js',
 			'/js/dashboard.js',
 
-			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
 			'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU&libraries=visualization" defer f="',
 
 			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 		]);
@@ -726,8 +726,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
-			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
 			'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU&libraries=visualization" defer f="',
 
 			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 		]);

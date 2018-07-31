@@ -6164,14 +6164,26 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		if(!this.options) {
+
+			this.options = {layers: []};
+		}
+
+		this.mapLayers = new SpatialMapLayers(this.options.layers || [], this);
+		this.themeObj = new SpatialMapThemes(this);
+
+	}
+
 	get container() {
 
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('section');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'spatial-map');
 
@@ -6181,79 +6193,49 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			</div>
 		`;
 
+		container.appendChild(this.mapLayers.container);
+
 		return container;
 	}
 
 	async load(options = {}) {
 
-		super.render();
+		super.render(options);
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		this.render();
 	}
 
-	render() {
-
-		const
-			markers = [],
-			response = this.source.response;
+	async render() {
 
 		if(!this.options)
-			return this.source.error('Options not defined.');
+			return this.source.error('Map layers not defined');
 
-		if(!this.options.latitude)
-			return this.source.error('Latitude Column not defined.');
+		if(!this.options.layers || !this.options.layers.length)
+			return this.source.error('Map layers not defined.');
 
-		if(!this.source.columns.has(this.options.latitude))
-			return this.source.error(`Latitude Column '${this.options.latitude}' not found.`);
+		const
+			zoom = this.options.zoom || 12,
+			themeConfig = this.themeObj.get(this.theme).config;
 
-		if(!this.options.longitude)
-			return this.source.error('Longitude Column not defined.');
+		this.rows = this.source.response;
 
-		if(!this.source.columns.has(this.options.longitude))
-			return this.source.error(`Longitude Column '${this.options.longitude}' not found.`);
-
-		const zoom = parseInt(this.options.initialZoom) || 12;
-
-		// If the maps object wasn't already initialized
 		if(!this.map)
-			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {zoom});
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {
+				zoom,
+				center: {
+					lat: this.options.centerLatitude || this.rows[0].get(this.options.layers[0].latitude),
+					lng: this.options.centerLongitude || this.rows[0].get(this.options.layers[0].longitude)
+				}
+			});
 
-		// If the clustered object wasn't already initialized
-		if(!this.clusterer)
-			this.clusterer = new MarkerClusterer(this.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+		this.map.set('styles', themeConfig || []);
 
-		// Add the marker to the markers array
-		for(const row of response) {
-			markers.push(
-				new google.maps.Marker({
-					position: {
-						lat: parseFloat(row.get(this.options.latitude)),
-						lng: parseFloat(row.get(this.options.longitude)),
-					},
-				})
-			);
-		}
+		this.mapLayers.render();
 
-		if(!this.markers || this.markers.length != markers.length) {
-
-			// Empty the map
-			this.clusterer.clearMarkers();
-
-			// Load the markers
-			this.clusterer.addMarkers(markers);
-
-			this.markers = markers;
-		}
-
-		// Point the map to location's center
-		this.map.panTo({
-			lat: parseFloat(this.options.initialLatitude || response[0].get(this.options.latitude)),
-			lng: parseFloat(this.options.initialLongitude || response[0].get(this.options.longitude)),
-		});
 	}
-});
+})
 
 Visualization.list.set('cohort', class Cohort extends Visualization {
 
@@ -6865,6 +6847,331 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 });
+
+class SpatialMapLayers extends Set {
+
+	constructor(layers, visualization) {
+
+		super();
+
+		this.visualization = visualization;
+		this.visible =  new Set();
+
+		for(const layer of layers) {
+
+			this.add(new (SpatialMapLayer.types.get(layer.type))(layer, this));
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('columns-toggle');
+
+		container.innerHTML = `
+			<div class="columns hidden"></div>
+			<span class="arrow up" title="Plotted Layers"><i class="fas fa-angle-up"></i></span>
+			<span class="arrow down hidden" title="Collapse"><i class="fas fa-angle-down"></i></span>
+		`;
+
+		container.on('click', () => {
+
+			container.querySelector('.arrow.up').classList.toggle('hidden');
+			container.querySelector('.arrow.down').classList.toggle('hidden');
+			container.querySelector('.columns').classList.toggle('hidden');
+		});
+
+		for(const layer of this.values()) {
+
+			this.visible.add(layer);
+			container.querySelector('.columns').appendChild(layer.container);
+		}
+
+		return container;
+	}
+
+	render() {
+
+		for(const layer of this.values()) {
+
+			if(!layer.latitude)
+				return this.source.error('Latitude Column not defined.');
+
+			if(!this.visualization.source.columns.has(layer.latitude))
+				return this.source.error(`Latitude Column '${layer.latitude}' not found.`);
+
+			if(!layer.longitude)
+				return this.source.error('Longitude Column not defined.');
+
+			if(!this.visualization.source.columns.has(layer.longitude))
+				return this.source.error(`Longitude Column '${layer.longitude}' not found.`);
+
+			this.visible.has(layer) ? layer.plot() : layer.clear();
+		}
+	}
+
+}
+
+class SpatialMapLayer {
+
+	constructor(layer, layers) {
+
+		Object.assign(this, layer);
+
+		this.layers = layers;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('label');
+
+		container.classList.add('column');
+
+		container.innerHTML = `
+				<span class="name">${this.layer_name} <span class="type">${this.type}</span></span>
+				<input type="checkbox" name="visible_layers" checked>
+			`;
+
+		container.on('click', e => e.stopPropagation());
+
+		const visibleCheck = container.querySelector('input[name=visible_layers]');
+
+		visibleCheck.on('change', e => {
+
+			container.classList.toggle('disabled');
+
+			if(visibleCheck.checked)
+				this.layers.visible.add(this);
+			else
+				this.layers.visible.delete(this);
+
+			this.layers.render();
+		});
+
+		return container;
+
+	}
+
+}
+
+SpatialMapLayer.types = new Map();
+
+SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
+
+	plot() {
+
+		if(this.heatmap)
+			return;
+
+		const points = [];
+
+		for(const point of this.layers.visualization.rows) {
+
+			if(this.weight) {
+
+				points.push({
+					location: new google.maps.LatLng(point.get(this.latitude), point.get(this.longitude)),
+					weight: point.get(this.weight)
+				});
+
+				continue;
+			}
+
+			points.push(new google.maps.LatLng(point.get(this.latitude), point.get(this.longitude)));
+		}
+
+		this.heatmap = new google.maps.visualization.HeatmapLayer({
+			data: points,
+			map: this.layers.visualization.map,
+			radius: this.radius || 15,
+			opacity: this.opacity || 0.6
+		});
+	}
+
+	clear() {
+
+		if(this.heatmap) {
+
+			this.heatmap.setMap(null);
+			this.heatmap = null;
+		}
+	}
+});
+
+SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer {
+
+	plot() {
+
+		if(this.clusterer)
+			return;
+
+		const markers = [];
+
+		this.clusterer = new MarkerClusterer(this.layers.visualization.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+
+		for(const row of this.layers.visualization.rows) {
+			markers.push(
+				new google.maps.Marker({
+					position: {
+						lat: row.get(this.latitude),
+						lng: row.get(this.longitude),
+					},
+				})
+			);
+		}
+
+		this.markers = markers;
+
+		this.clusterer.clearMarkers();
+		this.clusterer.addMarkers(this.markers);
+	}
+
+	clear() {
+
+		if(this.clusterer) {
+
+			this.clusterer.clearMarkers();
+			this.clusterer = null;
+		}
+	}
+});
+
+SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer {
+
+	plot() {
+
+	}
+
+	clear() {
+
+	}
+});
+
+SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
+});
+
+class SpatialMapThemes extends Map {
+
+	constructor(visualization) {
+
+		super();
+
+		this.visualization = visualization;
+
+		for(const theme of MetaData.spatialMapThemes.keys()) {
+
+			this.set(theme, new SpatialMapTheme({name: theme, config: MetaData.spatialMapThemes.get(theme)}, this))
+		}
+
+		this.selected = this.visualization && this.visualization.options && this.visualization.options.theme ? this.visualization.options.theme : 'Standard';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('theme-list');
+
+		for(const theme of this.values()) {
+
+			container.appendChild(theme.container);
+		}
+
+		return container;
+
+	}
+
+}
+
+class SpatialMapTheme {
+
+	constructor(theme, themes) {
+
+		Object.assign(this, theme);
+
+		this.themes = themes;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.conatinerElement;
+
+		const container = this.containerElement = document.createElement('span');
+
+		container.classList.add('theme');
+
+		container.innerHTML = `
+				<div class="name">${this.name}</div>
+			`;
+
+		if(this.themes.selected == this.name)
+			container.classList.add('selected');
+
+		container.insertBefore(this.image, container.querySelector('.name'));
+
+		container.on('click', () => {
+
+			for(const element of container.parentNode.querySelectorAll('.theme')) {
+
+				element.classList.remove('selected');
+			}
+
+			this.themes.selected = container.querySelector('.name').textContent;
+			container.classList.add('selected');
+		});
+
+		return container;
+	}
+
+	get image() {
+
+		const
+			image = document.createElement('div');
+
+		image.classList.add('theme-image', 'image-container');
+
+		image.innerHTML = `
+			<div class="road"></div>
+			<div class="water"></div>
+			<div class="park"></div>
+		`;
+
+		if(!this.config.length) {
+
+			image.style.background = '#fff';
+			image.querySelector('.road').style.background = '#ededed';
+			image.querySelector('.water').style.background = '#aadaff';
+			image.querySelector('.park').style.background = '#c0ecae';
+		}
+		else {
+
+			image.style.background = this.config[0].stylers[0].color;
+
+			const
+				[roadColor] = this.config.filter(x => x.featureType == "road"),
+				[waterColor] = this.config.filter(x => x.featureType == "water"),
+				[parkColor] = this.config.filter(x => x.featureType == 'poi.park');
+
+			image.querySelector('.road').style.background = roadColor.stylers[0].color;
+			image.querySelector('.water').style.background = waterColor.stylers[0].color;
+			image.querySelector('.park').style.background = parkColor.stylers[0].color;
+		}
+
+		return image;
+	}
+
+}
 
 class Tooltip {
 
