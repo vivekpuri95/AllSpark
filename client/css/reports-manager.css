@@ -104,7 +104,7 @@ main.preview-bottom {
 
 main .form {
 	background: #fff;
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
 #stages {
@@ -153,7 +153,7 @@ main.preview-left #stages {
 
 #stage-pick-report table {
 	background: #fff;
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 	#stage-pick-report table thead tr th {
 		position: sticky;
@@ -202,7 +202,7 @@ main.preview-left #stages {
 		height: 100%;
 	}
 		#stage-define-report #schema {
-			overflow: hidden;
+			overflow: auto;
 			font-weight: normal;
 			height: 100%;
 			position: relative;
@@ -223,13 +223,15 @@ main.preview-left #stages {
 				width: 100%;
 				border: 0;
 				border-bottom: 1px solid #ccc;
-				background: #fff;
+				position: sticky;
+				top: 0;
+				z-index: 1;
 			}
 			#stage-define-report #schema ul {
 				padding: 0;
 				list-style: none;
 				margin: 0;
-				overflow: auto;
+				/* overflow: auto; */
 			}
 			#stage-define-report #schema ul ul {
 				border-left: 1px dashed #999;
@@ -305,10 +307,6 @@ main.preview-left #stages {
 			transition: background var(--transition-duration),
 						box-shadow var(--transition-duration),
 						color var(--transition-duration);
-		}
-		#stage-define-report .upload-file:hover {
-			background: #ccc;
-			color: #666;
 		}
 		#stage-define-report .upload-file:active {
 			box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.15);
@@ -414,6 +412,7 @@ main.preview-left #stages {
 		position: sticky;
 		top: 0;
 		z-index: 2;
+		background: #eee;
 	}
 	#stage-configure-visualization .toolbar .right {
 		margin-left: auto;
@@ -431,7 +430,7 @@ main.preview-left #stages {
 		font-size: 100%;
 		font-weight: normal;
 		z-index: 1;
-		background: #fff;
+		background: #eee;
 		transition: color var(--transition-duration);
 	}
 	#stage-configure-visualization h3:hover {
@@ -449,11 +448,12 @@ main.preview-left #stages {
 		margin: 0 0 calc(var(--gap) * 2)
 	}
 	#stage-configure-visualization fieldset {
-		border: 1px solid #ccc;
-		background: #eef;
+		background: #fff;
 		padding: calc(var(--gap) * 2);
 		margin: 0;
 		border-radius: 3px;
+		border: 0;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
 		#stage-configure-visualization fieldset legend {
 			font-size: 90%;
@@ -465,13 +465,10 @@ main.preview-left #stages {
 			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 		}
 	#stage-configure-visualization .subform {
-		border-bottom: 1px solid #ccc;
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
 		padding: calc(var(--gap) * 2);
-		border: 1px solid #ccc;
-		background: #eef;
-		box-shadow: none;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		border-radius: 3px;
 	}
 
@@ -603,7 +600,7 @@ main.preview-left #stages {
 	#stage-configure-visualization .configuration-section > h3 .count.transformation {
 		margin-left: 3px;
 	}
-	#stage-configure-visualization .configuration-section .form {
+	#stage-configure-visualization .configuration-section fieldset .form {
 		box-shadow: none;
 	}
 		#stage-configure-visualization .configuration-section .form label span {
@@ -614,11 +611,13 @@ main.preview-left #stages {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 			padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
+			background: #eee;
 		}
 			#stage-configure-visualization .configuration-section .body > .NA {
-				background: #efefef;
-				border: 1px solid #ccc;
+				background: #fff;
 				padding: calc(var(--gap) * 2);
+				box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+				border-radius: 3px;
 			}
 	#stage-configure-visualization .configuration-section .theme-list {
 		padding: 10px;

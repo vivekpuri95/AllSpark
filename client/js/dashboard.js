@@ -1183,19 +1183,24 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 			for(const filter of visualization.filters.values()) {
 
-				if(globalFilters.has(filter.placeholder) || ['hidden', 'daterange'].includes(filter.type))
+				if(!Array.from(MetaData.globalFilters.values()).some(a => a.placeholder.includes(filter.placeholder)))
 					continue;
 
-				globalFilters.set(filter.placeholder, {
-					name: filter.name,
-					placeholder: filter.placeholder,
-					default_value: filter.default_value,
-					dataset: filter.dataset,
-					multiple: filter.multiple,
-					offset: filter.offset,
-					order: filter.order,
-					type: filter.type,
-				});
+				const globalFilter = Array.from(MetaData.globalFilters.values()).filter(a => a.placeholder.includes(filter.placeholder));
+
+				for(const value of globalFilter) {
+					globalFilters.set(value.placeholder, {
+						name: value.name,
+						placeholder: value.placeholder[0],
+						placeholders: value.placeholder,
+						default_value: value.default_value,
+						dataset: value.dataset,
+						multiple: value.multiple,
+						offset: value.offset,
+						order: value.order,
+						type: value.type,
+					});
+				}
 			}
 		}
 
@@ -1288,10 +1293,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 			for(const filter of report.filters.values()) {
 
-				if(!this.has(filter.placeholder))
+				if(!Array.from(this.values()).some(gfl => gfl.placeholders.includes(filter.placeholder)))
 					continue;
 
-				filter.value = this.get(filter.placeholder).value;
+				filter.value = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))[0].value;
 
 				found = true;
 			}

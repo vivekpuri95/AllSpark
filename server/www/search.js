@@ -1,7 +1,6 @@
 const API = require('../utils/api');
 const users = require('./users').list;
 const dashboards = require('./dashboards').list;
-const datasets = require('./datasets').list;
 const reports = require('./reports/report').list;
 
 exports.query = class extends API {

@@ -19,10 +19,6 @@ class Page {
 		AJAXLoader.setup();
 
 		await Page.load();
-
-		Page.render();
-
-		Page.setupShortcuts();
 	}
 
 	static async load() {
@@ -53,9 +49,40 @@ class Page {
 		await API.refreshToken();
 	}
 
-	static render() {
+	constructor() {
 
-		const header = document.querySelector('body > header');
+		this.container = document.querySelector('main');
+
+		this.account = window.account;
+		this.user = window.user;
+		this.metadata = window.MetaData;
+		this.indexedDb = IndexedDb.instance;
+		this.cookies = Cookies;
+
+		this.serviceWorker = new Page.serviceWorker(this);
+		this.webWorker = new Page.webWorker(this);
+
+		this.renderPage();
+		this.shortcuts();
+	}
+
+	renderPage() {
+
+		const
+			navList = [
+				{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+				{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
+				{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
+				{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
+				{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
+				{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+			],
+			header = document.querySelector('body > header'),
+			navContainer = header.querySelector('.nav-container'),
+			nav = header.querySelector('nav'),
+			userPopup = header.querySelector('.user-popup'),
+			userToggle = header.querySelector('.user-toggle'),
+			menuToggle = header.querySelector('.menu-toggle');
 
 		if(window.account) {
 
@@ -73,64 +100,44 @@ class Page {
 			document.title = account.name;
 		}
 
-		Page.navList = [
-			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
-			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
-			{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
-			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
-			{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
-			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
-		];
+		userToggle.innerHTML = '<i class="fa fa-user"></i>&nbsp; '+ this.user.name;
 
-		const nav_container = header.querySelector('nav');
+		header.querySelector('.name').innerHTML = this.user.name;
+		header.querySelector('.email').innerHTML = this.user.email;
+		header.querySelector('.profile-link').innerHTML = `<a href="/user/profile/${this.user.user_id}">Profile</a>`;
 
-		if(window.account && account.settings.get('top_nav_position') == 'left') {
-
-			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
-
-			nav_container.classList.add('left');
-		};
-
-		header.querySelector('.left-menu-toggle').on('click', () => {
-
-			header.querySelector('.left-menu-toggle').classList.toggle('selected');
-			nav_container.classList.toggle('show');
-			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		userToggle.on('click', e => {
+			e.stopPropagation();
+			userPopup.classList.toggle('hidden');
+			userToggle.classList.toggle('selected');
 		});
 
-		document.querySelector('.nav-blanket').on('click', () => {
-			header.querySelector('.left-menu-toggle').classList.toggle('selected');
-			nav_container.classList.toggle('show');
-			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		document.body.on('click', () => {
+			userPopup.classList.add('hidden');
+			userToggle.classList.remove('selected');
+			navContainer.classList.remove('show');
+			menuToggle.classList.remove('selected');
 		});
 
-		nav_container.classList.remove('hidden');
-
-		header.insertAdjacentHTML('beforeend', `
-			<span class="user-name"></span>
-			<span class="logout">
-				<i class="fa fa-power-off"></i>&nbsp;
-				Logout
-			</span>
-		`);
-
-		const user_name = header.querySelector('.user-name');
-
-		if(user.id) {
-
-			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
-			const search = new GlobalSearch().container;
-			search.classList.add('search-header');
-			header.insertBefore(search, user_name);
-		}
+		userPopup.on('click', e => e.stopPropagation());
+		navContainer.on('click', e => e.stopPropagation());
 		header.querySelector('.logout').on('click', () => User.logout());
 
-		for(const item of Page.navList) {
+		menuToggle.on('click', e => {
+			e.stopPropagation();
+			navContainer.classList.toggle('show');
+			menuToggle.classList.toggle('selected');
+		});
+
+		if(user.id)
+			navContainer.insertBefore(new GlobalSearch().container, header.querySelector('.user-toggle'));
+
+		for(const item of navList) {
 
 			if(!window.user || !user.privileges.has(item.privilege))
 				continue;
 
-			nav_container.insertAdjacentHTML('beforeend',`
+			nav.insertAdjacentHTML('beforeend',`
 				<a href='${item.url}'>
 					<i class="${item.icon}"></i>&nbsp;
 					${item.name}
@@ -138,20 +145,13 @@ class Page {
 			`);
 		}
 
-		for(const item of nav_container.querySelectorAll('a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname)) {
-				user_name.classList.remove('selected');
+		for(const item of nav.querySelectorAll('a')) {
+			if(window.location.pathname.startsWith(new URL(item.href).pathname))
 				item.classList.add('selected');
-			}
-		}
-
-		if(window.location.pathname.includes('/user/profile')) {
-			Array.from(nav_container.querySelectorAll('a')).map(items => items.classList.remove('selected'));
-			user_name.querySelector('a').classList.add('selected');
 		}
 	}
 
-	static setupShortcuts() {
+	shortcuts() {
 
 		document.on('keyup', e => {
 
@@ -166,20 +166,6 @@ class Page {
 			if(e.keyCode == 76)
 				User.logout();
 		});
-	}
-
-	constructor() {
-
-		this.container = document.querySelector('main');
-
-		this.account = window.account;
-		this.user = window.user;
-		this.metadata = window.MetaData;
-		this.indexedDb = IndexedDb.instance;
-		this.cookies = Cookies;
-
-		this.serviceWorker = new Page.serviceWorker(this);
-		this.webWorker = new Page.webWorker(this);
 	}
 }
 
@@ -830,11 +816,11 @@ class MetaData {
 		MetaData.categories = new Map;
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
-		MetaData.datasets = new Map;
 		MetaData.visualizations = new Map;
 		MetaData.filterTypes = new Map;
 		MetaData.features = new Set;
 		MetaData.spatialMapThemes = new Map;
+		MetaData.globalFilters = new Set;
 
 		if(!user.id)
 			return;
@@ -895,8 +881,8 @@ class MetaData {
 		MetaData.spatialMapThemes =  new Map(metadata.spatialMapThemes.map(x => [x.name, JSON.parse(x.theme)]));
 		MetaData.filterTypes = new Map(metadata.filterTypes.map(x => [x.name.toLowerCase(), x]));
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
-		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
+		MetaData.globalFilters = new Map(metadata.globalFilters.map(d => [d.id, d]));
 	}
 }
 

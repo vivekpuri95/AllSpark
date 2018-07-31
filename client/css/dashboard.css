@@ -6,9 +6,6 @@ main {
 main.collapsed-grid {
 	grid-template-columns: 60px calc(100% - 60px) !important;
 }
-main label {
-	font-weight: normal;
-}
 main > nav {
 	display: flex;
 	flex-direction: column;
@@ -17,17 +14,20 @@ main > nav {
 	overflow-y: auto;
 	z-index: 6;
 	height: calc(100vh - 50px);
-	background: var(--color-primary);
-	color: var(--color-primary-text);
+	border-right: 1px solid #ccc
+	
 }
-	main > nav .dashboard-search input {
-		background: rgba(255, 255, 255, 0.1) !important;
-		border: 0 !important;
-		width: 100%;
-		height: 35px !important;
-		color: #fff;
-		outline: none;
+	main > nav .dashboard-search {
+		/* border-bottom: 1px solid #ccc; */
+		box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
 	}
+		main > nav .dashboard-search input[type=search] {
+			background: transparent;
+			border: 0 !important;
+			width: 100%;
+			height: 35px !important;
+			outline: none;
+		}
 	main > nav .collapse {
 		margin-top: auto;
 	}
@@ -92,20 +92,19 @@ main > nav::-webkit-scrollbar-track {
 		border-radius: 0;
 		font: inherit;
 		vertical-align: inherit;
-		color: var(--color-primary-text);
 		transition: background var(--transition-duration),
 					box-shadow var(--transition-duration);
 	}
 	main > nav .label:hover {
 		text-decoration: none;
-		background: rgba(0, 0, 0, 0.3);
+		background: rgba(0, 0, 0, 0.2);
 	}
 	main > nav .label:active {
 		box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
 	}
 	main > nav .label.selected {
-		background: rgba(0, 0, 0, 0.3);
-		box-shadow: inset 5px 0px 0 var(--color-accent);
+		background: rgba(0, 0, 0, 0.15);
+		box-shadow: inset 6px 0px 0 var(--color-primary);
 	}
 		main > nav .submenu .label {
 			padding-left: 40px;
@@ -134,11 +133,6 @@ main > nav::-webkit-scrollbar-track {
 			padding: 12px 0;
 			justify-content: center;
 			width: 100%;
-			color: #fff;
-		}
-	 	main > nav footer .collapse-panel {
-			padding: calc(var(--gap) * 2);
-			color: #ccc;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
@@ -148,6 +142,7 @@ main > nav::-webkit-scrollbar-track {
 main #reports.show {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
+	padding: calc(var(--gap) * 2) calc(var(--gap) * 3);
 	grid-template-rows: max-content max-content max-content;
 }
 
@@ -238,18 +233,16 @@ main #reports > .global-filters.right.show {
 }
 main #reports > .global-filters.top {
 	flex-wrap: wrap;
-	padding: 0;
+	padding: 0 calc(var(--gap) * 2);
 	align-items: flex-end;
-	margin: 0 calc(var(--gap) * -1);
+	margin: 0 calc(var(--gap) * -3);
 	position: sticky;
 	top: 0;
+	background: #eee;
 	z-index: 5;
-	background: #fff;
-	transition: padding var(--transition-duration),
-				box-shadow var(--transition-duration);
 }
 main #reports > .global-filters.top.scrolled {
-	padding: calc(var(--gap) * 2) var(--gap);
+	padding: calc(var(--gap) * 2);
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 	main #reports > .global-filters.top .head {
@@ -364,6 +357,7 @@ main #reports > .list {
 	grid-gap: calc(var(--gap) * 5);
 	align-items: start;
 	z-index: 4;
+	width: 100%;
 }
 	main #reports > .list .NA.no-reports {
 		grid-column: 1 / span all;
@@ -511,9 +505,7 @@ main table tbody tr .tag {
 main > footer {
 	grid-column: 2 / -1;
 	z-index: 5;
-	background: var(--color-primary);
 	display: flex;
-	color: #ccc;
 	padding: calc(var(--gap) );
 	justify-content: center;
 	font-size: 80%;
@@ -521,7 +513,7 @@ main > footer {
 	position: relative;
 }
 	main footer.site-footer .strong {
-		color: var(--color-primary-text);
+		color: #333;
 		letter-spacing: 0.5px;
 	}
 	main footer > .env {

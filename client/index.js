@@ -68,20 +68,31 @@ class HTMLAPI extends API {
 					${ga}
 				</head>
 				<body>
+
 					<div id="ajax-working"></div>
+
 					<header>
-						<div class="logo-container">
+						<a class="logo" href="/dashboard/first"><img></a>
 
-							<div class="left-menu-toggle hidden">
-								<i class="fas fa-bars"></i>
+						<div class="nav-container">
+
+							<nav></nav>
+
+							<span class="user-toggle"></span>
+
+							<div class="user-popup hidden">
+								<span class="name"></span>
+								<span class="email"></span>
+								<span class="profile-link">
+
+								</span>
+								<span class="logout">Logout</span>
 							</div>
-
-							<a class="logo" href="/dashboard/first"><img></a>
 						</div>
 
-						<nav class="hidden"></nav>
+						<div class="menu-toggle"><i class="fas fa-bars"></i></div>
 					</header>
-					<div class="nav-blanket"></div>
+
 					<main>
 						${await this.main() || ''}
 					</main>
@@ -1308,6 +1319,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		super();
 
 		this.stylesheets.push('/css/settings.css');
+		this.scripts.push('/js/reports.js');
 		this.scripts.push('/js/settings.js');
 		this.scripts.push('/js/settings-manager.js');
 	}
@@ -1316,13 +1328,13 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		return `
 			<nav></nav>
 
-			<div class="setting-page datasets-page hidden">
-				<section class="section" id="datasets-list">
+			<div class="setting-page global-filters-page hidden">
+				<section class="section" id="global-filters-list">
 
-					<h1>Manage Datasets</h1>
+					<h1>Manage Global Filters</h1>
 
 					<header class="toolbar">
-						<button id="add-datset"><i class="fa fa-plus"></i> Add New Dataset</button>
+						<button id="add-global-filter"><i class="fa fa-plus"></i> Add New Global Filter</button>
 					</header>
 
 					<table class="block">
@@ -1330,9 +1342,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 							<tr>
 								<th>ID</th>
 								<th>Name</th>
-								<th>Category</th>
-								<th>Query id</th>
-								<th>Order</th>
+								<th>Placeholder</th>
+								<th>Default Value</th>
+								<th>Type</th>
+								<th>Multiple</th>
+								<th>Offset</th>
+								<th>Dataset</th>
 								<th class="action">Edit</th>
 								<th class="action">Delete</th>
 							</tr>
@@ -1341,7 +1356,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					</table>
 				</section>
 
-				<section class="section" id="datasets-form">
+				<section class="section" id="global-filters-form">
 
 					<h1></h1>
 
@@ -1358,18 +1373,35 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label>
-							<span>Category</span>
-							<select name="category_id"></select>
+							<span>Placeholder</span>
+							<input type="text" name="placeholder" required>
 						</label>
 
 						<label>
-							<span>Query Id</span>
-							<input type="number" name="query_id">
+							<span>Default Value</span>
+							<input type="text" name="default_value">
 						</label>
 
 						<label>
-							<span>Order</span>
-							<input type="number" name="order">
+							<span>Type</span>
+							<select name="type"></select>
+						</label>
+
+						<label>
+							<span>Multiple</span>
+							<select name="multiple">
+								<option value="0">No</option>
+								<option value="1">Yes</option>
+							</select>
+						</label>
+
+						<label>
+							<span>Offset</span>
+							<input type="number" name="offset" placeholder="Offset">
+						</label>
+
+						<label class="datasets">
+							<span>Dataset</span>
 						</label>
 					</form>
 				</section>
