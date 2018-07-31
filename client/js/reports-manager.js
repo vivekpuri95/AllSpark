@@ -546,10 +546,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 				if(typeof a == 'string')
 					a = a.toUpperCase();
-
-				if(typeof b == 'string')
+				else if(typeof b == 'string')
 					b = b.toUpperCase();
-
 				else if(a instanceof Array) {
 					a = a.length;
 					b = b.length;
@@ -3165,12 +3163,12 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 						
 						<label>
 							<span>Center Latitude</span>
-							<input type="text" name="centerLatitude">
+							<input type="number" name="centerLatitude">
 						</label>
 						
 						<label>
 							<span>Center Longitude</span>
-							<input type="text" name="centerLongitude">
+							<input type="number" name="centerLongitude">
 						</label>
 						
 						<label>
