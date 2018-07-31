@@ -262,10 +262,14 @@ exports.metadata = class extends API {
 			[this.account.account_id]
 		);
 
-		metadata.datasets = await this.mysql.query(
-			'SELECT * FROM tb_datasets WHERE account_id = ?',
+		metadata.globalFilters = await this.mysql.query(
+			'SELECT * FROM tb_global_filters WHERE account_id = ? AND is_enabled = 1',
 			[this.account.account_id]
 		);
+
+		for(const data of metadata.globalFilters) {
+			data.placeholder = data.placeholder.split(',');
+		}
 
 		metadata.filterTypes = constants.filterTypes;
 

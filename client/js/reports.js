@@ -823,6 +823,7 @@ class DataSourceFilters extends Map {
 					filter_id: Math.random(),
 					name: filter.name.replace(/(start|end|date)/ig, '') + ' Date Range',
 					placeholder: name + '_date_range',
+					placeholders: [],
 					type: 'daterange',
 					companions: [],
 				}]);
