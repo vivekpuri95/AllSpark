@@ -6169,10 +6169,11 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		if(!this.options) {
 
-			this.options = {maps: []};
+			this.options = {layers: []};
 		}
 
-		this.mapLayers = new SpatialMapLayers(this.options.maps || [], this)
+		this.mapLayers = new SpatialMapLayers(this.options.layers || [], this);
+		this.themeObj = new SpatialMapThemes(this);
 
 	}
 
@@ -6210,21 +6211,25 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 		if(!this.options)
 			return this.source.error('Map layers not defined');
 
-		if(!this.options.maps || !this.options.maps.length)
+		if(!this.options.layers || !this.options.layers.length)
 			return this.source.error('Map layers not defined.');
 
-		const zoom = parseInt(this.options.zoom) || 12;
+		const
+			zoom = this.options.zoom || 12,
+			themeConfig = this.themeObj.get(this.theme).config;
+
+		this.rows = this.source.response;
 
 		if(!this.map)
 			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {
 				zoom,
 				center: {
-					lat: parseFloat(this.options.centerLatitude) || this.source.response[0].get(this.options.maps[0].latitude),
-					lng: parseFloat(this.options.centerLongitude) || this.source.response[0].get(this.options.maps[0].longitude)
+					lat: this.options.centerLatitude || this.rows[0].get(this.options.layers[0].latitude),
+					lng: this.options.centerLongitude || this.rows[0].get(this.options.layers[0].longitude)
 				}
 			});
 
-		this.map.set('styles', MetaData.spatialMapThemes.get(this.theme) || []);
+		this.map.set('styles', themeConfig || []);
 
 		this.mapLayers.render();
 
@@ -6944,7 +6949,7 @@ class SpatialMapLayer {
 			else
 				this.layers.visible.delete(this);
 
-			this.layers.visualization.render();
+			this.layers.render();
 		});
 
 		return container;
@@ -6964,7 +6969,7 @@ SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 
 		const points = [];
 
-		for(const point of this.layers.visualization.source.response) {
+		for(const point of this.layers.visualization.rows) {
 
 			if(this.weight) {
 
@@ -6982,8 +6987,8 @@ SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 		this.heatmap = new google.maps.visualization.HeatmapLayer({
 			data: points,
 			map: this.layers.visualization.map,
-			radius: parseFloat(this.radius) || 15,
-			opacity: parseFloat(this.opacity) || 0.6
+			radius: this.radius || 15,
+			opacity: this.opacity || 0.6
 		});
 	}
 
@@ -7008,12 +7013,12 @@ SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer
 
 		this.clusterer = new MarkerClusterer(this.layers.visualization.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
 
-		for(const row of this.layers.visualization.source.response) {
+		for(const row of this.layers.visualization.rows) {
 			markers.push(
 				new google.maps.Marker({
 					position: {
-						lat: parseFloat(row.get(this.latitude)),
-						lng: parseFloat(row.get(this.longitude)),
+						lat: row.get(this.latitude),
+						lng: row.get(this.longitude),
 					},
 				})
 			);
@@ -7049,13 +7054,20 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 });
 
-class SpatialMapThemes {
+class SpatialMapThemes extends Map {
 
 	constructor(visualization) {
 
-		Object.assign(this, visualization);
+		super();
 
-		this.selectedTheme = this.visualization && this.visualization.options && this.visualization.options.theme ? this.visualization.options.theme : 'standard';
+		this.visualization = visualization;
+
+		for(const theme of MetaData.spatialMapThemes.keys()) {
+
+			this.set(theme, new SpatialMapTheme({name: theme, config: MetaData.spatialMapThemes.get(theme)}, this))
+		}
+
+		this.selected = this.visualization && this.visualization.options && this.visualization.options.theme ? this.visualization.options.theme : 'Standard';
 	}
 
 	get container() {
@@ -7067,49 +7079,62 @@ class SpatialMapThemes {
 
 		container.classList.add('theme-list');
 
-		for(const theme of MetaData.spatialMapThemes.keys()) {
+		for(const theme of this.values()) {
 
-			const themeContainer = document.createElement('span');
-
-			themeContainer.classList.add('theme');
-
-			themeContainer.innerHTML = `
-				<div class="name">${theme}</div>
-			`;
-
-			if(this.selectedTheme == theme)
-				themeContainer.classList.add('selected');
-
-			themeContainer.insertBefore(this.getImage(theme), themeContainer.querySelector('.name'));
-
-			themeContainer.on('click', () => {
-
-				for(const element of container.querySelectorAll('.theme')) {
-
-					element.classList.remove('selected');
-				}
-
-				this.selectedTheme = themeContainer.querySelector('.name').textContent;
-				themeContainer.classList.add('selected');
-			});
-
-			container.appendChild(themeContainer);
+			container.appendChild(theme.container);
 		}
 
 		return container;
 
 	}
 
-	get value() {
+}
 
-		return this.selectedTheme;
+class SpatialMapTheme {
+
+	constructor(theme, themes) {
+
+		Object.assign(this, theme);
+
+		this.themes = themes;
 	}
 
-	getImage(theme) {
+	get container() {
+
+		if(this.containerElement)
+			return this.conatinerElement;
+
+		const container = this.containerElement = document.createElement('span');
+
+		container.classList.add('theme');
+
+		container.innerHTML = `
+				<div class="name">${this.name}</div>
+			`;
+
+		if(this.themes.selected == this.name)
+			container.classList.add('selected');
+
+		container.insertBefore(this.image, container.querySelector('.name'));
+
+		container.on('click', () => {
+
+			for(const element of container.parentNode.querySelectorAll('.theme')) {
+
+				element.classList.remove('selected');
+			}
+
+			this.themes.selected = container.querySelector('.name').textContent;
+			container.classList.add('selected');
+		});
+
+		return container;
+	}
+
+	get image() {
 
 		const
-			image = document.createElement('div'),
-			colors = MetaData.spatialMapThemes.get(theme);
+			image = document.createElement('div');
 
 		image.classList.add('theme-image', 'image-container');
 
@@ -7119,7 +7144,7 @@ class SpatialMapThemes {
 			<div class="park"></div>
 		`;
 
-		if(!colors.length) {
+		if(!this.config.length) {
 
 			image.style.background = '#fff';
 			image.querySelector('.road').style.background = '#ededed';
@@ -7128,12 +7153,12 @@ class SpatialMapThemes {
 		}
 		else {
 
-			image.style.background = colors[0].stylers[0].color;
+			image.style.background = this.config[0].stylers[0].color;
 
 			const
-				[roadColor] = colors.filter(x => x.featureType == "road"),
-				[waterColor] = colors.filter(x => x.featureType == "water"),
-				[parkColor] = colors.filter(x => x.featureType == 'poi.park');
+				[roadColor] = this.config.filter(x => x.featureType == "road"),
+				[waterColor] = this.config.filter(x => x.featureType == "water"),
+				[parkColor] = this.config.filter(x => x.featureType == 'poi.park');
 
 			image.querySelector('.road').style.background = roadColor.stylers[0].color;
 			image.querySelector('.water').style.background = waterColor.stylers[0].color;

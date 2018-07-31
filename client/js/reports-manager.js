@@ -2908,7 +2908,13 @@ class SpatialMapOptionsLayer {
 
 		for(const element of this.container.querySelectorAll('select, input')) {
 
-			response[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+			if(element.type == 'checkbox')
+
+				response[element.name] = element.checked;
+			else {
+
+				response[element.name] = element.type == 'number' || element.type == 'range' ? parseFloat(element.value) : element.value;
+			}
 		}
 
 		return response;
@@ -3142,7 +3148,6 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('div');
-		let theme;
 
 		container.innerHTML = `
 			<div class="configuration-section">
@@ -3185,9 +3190,9 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 			</div>
 		`;
 
-		this.maps = new SpatialMapOptionsLayers(this.visualization.options.maps || [], this);
+		this.layers = new SpatialMapOptionsLayers(this.visualization.options.layers || [], this);
 
-		container.querySelector('.configuration-section').appendChild(this.maps.container);
+		container.querySelector('.configuration-section').appendChild(this.layers.container);
 
 		this.stage.setupConfigurationSetions(container);
 
@@ -3202,13 +3207,11 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 
 				element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options[element.name];
 			}
-
-			theme = this.visualization.options.theme;
 		}
 
-		this.theme = new SpatialMapThemes(this);
+		this.themes = new SpatialMapThemes(this.visualization);
 
-		container.querySelector('.map-themes').appendChild(this.theme.container);
+		container.querySelector('.map-themes').appendChild(this.themes.container);
 
 		return container;
 
@@ -3219,12 +3222,20 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 		const
 			mapOptions = this.formContainer.querySelector('.map-options'),
 			response = {
-				maps: this.maps.json,
-				theme: this.theme.value
+				layers: this.layers.json,
+				theme: this.themes.selected
 			};
 
-		for (const element of mapOptions.querySelectorAll('select, input'))
-			response[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+		for (const element of mapOptions.querySelectorAll('select, input')) {
+
+			if(element.type == 'checkbox')
+
+				response[element.name] = element.checked;
+			else {
+
+				response[element.name] = element.type == 'number' ? parseFloat(element.value) : element.value;
+			}
+		}
 
 		return response;
 	}
