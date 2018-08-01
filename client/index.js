@@ -327,7 +327,7 @@ router.get('/login/forgot', API.serve(class extends HTMLAPI {
 				<img src="" />
 			</div>
 
-			<form class="form">
+			<form class="form forgot">
 
 				<label>
 					<span>Email</span>
@@ -364,7 +364,7 @@ router.get('/login/reset', API.serve(class extends HTMLAPI {
 				<img src="" />
 			</div>
 
-			<form class="form">
+			<form class="form reset">
 
 				<label>
 					<span>New Password</span>
