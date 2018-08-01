@@ -21,6 +21,11 @@ Page.class = class Login extends Page {
 		if(!this.account)
 			return this.message('Account not found! :(', 'warning');
 
+		const urlSearchParam = new URLSearchParams(window.location.search);
+
+		if(urlSearchParam.has('passwordReset') && urlSearchParam.get('passwordReset') == 'true')
+			this.message('Password reset successful', 'notice');
+
 		document.querySelector('body > header').classList.add('hidden');
 
 		const logo = this.container.querySelector('.logo img');
