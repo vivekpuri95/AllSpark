@@ -1257,7 +1257,17 @@ class DataSourceRow extends Map {
 					if(!row[key])
 						this.skip = true;
 
-					if(!DataSourceColumnFilter.searchTypes[parseInt(search.name) || 0].apply(search.value, row[key] === null ? '' : row[key]))
+					if(!search.slug)
+						continue;
+
+					// Look for a filter with the selected filter's slug
+					const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == search.slug);
+
+					if(!filter)
+						continue;
+
+					// Apply the filter. It checks if a row passes a filter or not.
+					if(!filter.apply(search.value, row[key] === null ? '' : row[key]))
 						this.skip = true;
 				}
 			}
@@ -2268,7 +2278,7 @@ class DataSourceColumnFilter {
 
 	static setup() {
 
-		DataSourceColumnFilter.searchTypes = [
+		DataSourceColumnFilter.types = [
 			{
 				slug: 'contains',
 				name: 'Contains',
@@ -2290,30 +2300,37 @@ class DataSourceColumnFilter {
 				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
 			},
 			{
+				slug: 'equalto',
 				name: '=',
 				apply: (q, v) => v.toString().toLowerCase() == q.toString().toLowerCase(),
 			},
 			{
+				slug: 'notequalto',
 				name: '!=',
 				apply: (q, v) => v.toString().toLowerCase() != q.toString().toLowerCase(),
 			},
 			{
+				slug: 'greaterthan',
 				name: '>',
 				apply: (q, v) => v > q,
 			},
 			{
+				slug: 'lessthan',
 				name: '<',
 				apply: (q, v) => v < q,
 			},
 			{
+				slug: 'greaterthanequalsto',
 				name: '>=',
 				apply: (q, v) => v >= q,
 			},
 			{
+				slug: 'lessthanequalto',
 				name: '<=',
 				apply: (q, v) => v <= q,
 			},
 			{
+				slug: 'regularexpression',
 				name: 'RegExp',
 				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
 			},
@@ -2344,15 +2361,17 @@ class DataSourceColumnFilter {
 			</div>
 		`;
 
-		for(const [i, type] of DataSourceColumnFilter.searchTypes.entries()) {
+		for(const filter of DataSourceColumnFilter.types) {
 			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `
-				<option value="${i}">
-					${type.name}
+				<option value="${filter.slug}">
+					${filter.name}
 				</option>
 			`);
 		}
 
-		container.querySelector('select').value = this.name;
+		if(this.slug)
+			container.querySelector('select').value = this.slug;
+
 		container.querySelector('input').value = this.value;
 
 		container.querySelector('.delete').on('click', () => {
@@ -2366,7 +2385,10 @@ class DataSourceColumnFilter {
 
 	get json() {
 
-		return {name: this.container.querySelector('select').value, value: this.container.querySelector('input').value};
+		return {
+			slug: this.container.querySelector('select').value,
+			value: this.container.querySelector('input').value,
+		};
 	}
 }
 
@@ -2830,11 +2852,33 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationPivo
 
 	run(response = []) {
 
-		if(!response || !response.length || !this.filters || this.filters.length != 1)
+		if(!response || !response.length || !this.filters || !this.filters.length)
 			return response;
 
+		const newResponse = [];
 
-		const newResponse = response;
+		for(const row of response) {
+
+			let status = true;
+
+			for(const _filter of this.filters) {
+
+				const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == _filter.type);
+
+				if(!filter)
+					continue;
+
+				if((!_filter.column in row))
+					continue;
+
+				if(!filter.apply(_filter.value, row[_filter.column]))
+					status = false;
+			}
+
+			if(status)
+				newResponse.push(row);
+		}
+
 		return newResponse;
 	}
 });
@@ -3236,6 +3280,7 @@ class LinearVisualization extends Visualization {
 		}
 
 		this.rows = rows;
+		this.originalLength = rows.length;
 
 		window.addEventListener('resize', () => {
 
@@ -3306,7 +3351,7 @@ class LinearVisualization extends Visualization {
 		if(!this.rows.length)
 			return this.source.error();
 
-		if(this.rows.length != this.source.response.length) {
+		if(this.rows.length != this.originalLength) {
 
 			// Reset Zoom Button
 			const resetZoom = this.svg.append('g')
