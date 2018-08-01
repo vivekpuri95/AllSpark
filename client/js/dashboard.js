@@ -107,6 +107,9 @@ Page.class = class Dashboards extends Page {
 
 		if (dashboardId && reloadDashboard) {
 
+			this.nav.classList.remove('show');
+			this.container.querySelector('.nav-blanket').classList.add('hidden');
+
 			(async () => {
 				this.loadedVisualizations.clear();
 				history.pushState({
