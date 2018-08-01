@@ -1042,7 +1042,7 @@ main .data-source.flush {
 			color: #191;
 		}
 		.visualization.livenumber .container h6 {
-			font-size: calc(10px + .75vw);
+			font-size: calc(18px + .2vw);
 			margin: 0 0 var(--gap) 0;
 			font-weight: normal;
 			transition: filter var(--transition-duration);
