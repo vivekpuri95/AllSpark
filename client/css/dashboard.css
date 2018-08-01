@@ -5,7 +5,7 @@ main {
 }
 
 .dashboard-sidebar {
-	opacity: 0;
+	display: none;
 	padding: 0 calc(var(--gap) * 2);
 }
 
@@ -445,12 +445,12 @@ main #reports > .list {
 	main {
 
 		grid-template-columns: 1fr;
-		/*position: relative;*/
 	}
 
 	.dashboard-sidebar {
 
 		opacity: 1;
+		display: block;
 	}
 
 		main > nav {

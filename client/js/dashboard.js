@@ -19,7 +19,7 @@ Page.class = class Dashboards extends Page {
 		p.innerHTML = `<i class="fa fa-bars" aria-hidden="true"></i>`;
 		document.querySelector('header').insertAdjacentElement('afterbegin', p);
 
-		p.on('click', () => this.navbar.collapseNav());
+		p.on('click', () => this.nav.classList.toggle('show-nav'));
 
 		if (this.account.settings.get('disable_footer')) {
 
@@ -90,13 +90,16 @@ Page.class = class Dashboards extends Page {
 		return parents;
 	}
 
-	sync(dashboardId, renderNav = false, updateNav = true, reloadDashboard = true) {
+	sync({dashboardId = 0, renderNav = false, updateNav = true, reloadDashboard = true} = {}) {
 
 		if (dashboardId && reloadDashboard) {
 
 			(async () => {
 				this.loadedVisualizations.clear();
-				history.pushState({filter: dashboardId, type: 'dashboard'}, '', `/dashboard/${dashboardId}`);
+				history.pushState({
+					filter: dashboardId,
+					type: 'dashboard'
+				}, '', `/dashboard/${dashboardId}`);
 				await this.list.get(dashboardId).load();
 				await this.list.get(dashboardId).render();
 			})()
@@ -299,7 +302,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 
-		this.sync(0, false);
+		this.sync({dashboardId: 0});
 
 		if (!currentId) {
 
@@ -313,7 +316,7 @@ Page.class = class Dashboards extends Page {
 
 		else {
 
-			return this.sync(currentId, true, false);
+			return this.sync({dashboardId: currentId, renderNav: true, updateNav: false});
 		}
 	}
 
@@ -863,7 +866,7 @@ class Dashboard {
 
 		await Sections.show('reports');
 
-		this.page.sync(this.id, false, true, false);
+		this.page.sync({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
 
 		const main = document.querySelector('main');
 
@@ -1046,11 +1049,16 @@ class Navbar {
 
 			const searchItem = search.querySelector("input[name='search']").value;
 
-			this.page.sync(0, true);
+			this.page.sync({dashboardId: 0, renderNav: true});
 
 			if (!searchItem.length) {
 
-				return this.page.sync(this.page.currentDashboard, true, true, false);
+				return this.page.sync({
+					dashboardId: this.page.currentDashboard,
+					renderNav: true,
+					updateNav: true,
+					reloadDashboard: false
+				});
 			}
 
 			let matching = [];
@@ -1088,15 +1096,6 @@ class Navbar {
 				item.querySelector('.angle') ? item.querySelector('.angle').classList.add('down') : {};
 			}
 		}, {passive: true});
-	}
-
-	collapseNav() {
-
-		this.page.nav.classList.toggle('show-nav');
-		//
-		// const toggle = this.page.nav.querySelector('.collapse-panel');
-		//
-		// toggle.querySelector('.left').classList.toggle('hidden');
 	}
 }
 
@@ -1156,13 +1155,15 @@ class Nav {
 
 		container.querySelector('.label').on('click', () => {
 
-			console.log('hererererer');
-
-			this.page.sync(this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0, false, false);
+			this.page.sync({
+				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0,
+				renderNav: false,
+				updateNav: false
+			});
 
 			if (this.dashboard.page.container.querySelector('nav.collapsed')) {
 
-				this.dashboard.page.sync(this.dashboard.id);
+				this.dashboard.page.sync({dashboardId: this.dashboard.id});
 			}
 
 			if (this.dashboard.children.size) {
