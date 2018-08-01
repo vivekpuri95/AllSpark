@@ -1070,7 +1070,7 @@ class DataSourceFilter {
 
 			if(this.type.includes('date')) {
 				const today = new Date();
-				value = new Date(Date.nowUTC() + (this.offset * 60 * 60 * 1000)).toISOString().substring(0, 10);
+				value = new Date(Date.nowUTC() + (this.offset * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10);
 			}
 
 			if(this.type == 'month') {
