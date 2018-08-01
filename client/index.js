@@ -90,7 +90,7 @@ class HTMLAPI extends API {
 							</div>
 						</div>
 
-						<div class="menu-toggle"><i class="fas fa-bars"></i></div>
+						<div class="menu-toggle"><i class="fas fa-chevron-down"></i></div>
 					</header>
 
 					<main>
@@ -522,14 +522,12 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 
 		return `
 			<nav>
-				<div>
-					<label class="dashboard-search">
-						<input type="search" name="search" placeholder="Search..." >
-					</label>
-				</div>
+				<label class="dashboard-search">
+					<input type="search" name="search" placeholder="Search..." >
+				</label>
 				<div class="dashboard-hierarchy"></div>
 			</nav>
-			<div class="dashboard-blanket hidden"></div>
+			<div class="nav-blanket hidden"></div>
 			<section class="section" id="list">
 				<h2>${this.request.params.type}</h2>
 

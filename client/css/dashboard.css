@@ -4,9 +4,26 @@ main {
 	grid-template-columns: 220px calc(100% - 220px);
 }
 
-.dashboard-sidebar {
+header > .nav-toggle {
 	display: none;
-	padding: 0 calc(var(--gap) * 2);
+	padding: 15px 20px;
+	color: var(--color-primary-text);
+	transition: background var(--transition-duration);
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+}
+
+header > .nav-toggle:hover {
+	text-decoration: none;
+	background: rgba(255, 255, 255, 0.3);
+	cursor: pointer;
+	transition: box-shadow var(--transition-duration);
+}
+
+header > .nav-toggle:active {
+	background: rgba(255, 255, 255, 0.3);
+	box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 }
 
 main > nav {
@@ -20,6 +37,10 @@ main > nav {
 	border-right: 1px solid #ccc
 
 }
+	main > nav.show {
+		transform: translateX(0px);
+		opacity: 1;
+	}
 	main > nav .dashboard-search {
 		box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
 	}
@@ -129,7 +150,12 @@ main #reports > h1.dashboard-name {
 	display: flex;
 	justify-content: space-between;
 }
-	main #reports > h1.dashboard-name > div {
+main #reports > h1.dashboard-name > span {
+	display: grid;
+	grid-auto-flow: column;
+	grid-gap: calc(var(--gap) * 2);
+}
+main #reports > h1.dashboard-name > div {
 		display: flex;
 		opacity: 0;
 		transition: opacity var(--transition-duration);
@@ -442,19 +468,14 @@ main #reports > .list {
 
 @media (max-width: 750px) {
 
-	main {
+	header .nav-toggle {
+		display: flex;
+	}
 
+	main {
 		grid-template-columns: 1fr;
 	}
-
-	.dashboard-sidebar {
-
-		opacity: 1;
-		display: block;
-	}
-
 		main > nav {
-
 			position: fixed;
 			width: 220px;
 			transform: translateX(-220px);
@@ -462,31 +483,27 @@ main #reports > .list {
 			left: 0;
 			opacity: 0;
 			background: #eee;
-			transition: transform 200ms,
-						opacity 200ms;
+			transition: transform var(--transition-duration),
+						opacity var(--transition-duration);
 		}
 
 		main #reports {
-
 			grid-column: 1 / 3;
 			grid-row: 1;
 		}
 
 			main #reports > .list {
-
 				display: flex;
 				flex-direction: column;
 			}
 				main #reports > .list .data-source {
-
-					width: 100%;
 					margin: calc(var(--gap) * 2) 0;
-					height: 450px;
+					width: calc(100vw - calc(var(--gap) * 6));
+					height: 300px;
 				}
 }
 
 main .dashboard-blanket {
-
 	background: rgba(0, 0, 0, 0.25);
 	position: absolute;
 	bottom: 0;
@@ -494,12 +511,6 @@ main .dashboard-blanket {
 	top: 0;
 	left: 0;
 	z-index: 5;
-}
-
-main .show-nav {
-
-	transform: translateX(0px);
-	opacity: 1;
 }
 
 main #reports > .NA {
@@ -527,7 +538,7 @@ main table tbody tr .tag {
 	font-size: 80%;
 }
 main > footer {
-	grid-column: 2 / -1;
+	grid-column: 1 / -1;
 	z-index: 5;
 	display: flex;
 	padding: calc(var(--gap) );

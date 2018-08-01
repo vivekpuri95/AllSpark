@@ -318,7 +318,7 @@ body {
 					margin: 10px 20px;
 				}
 			body > header .menu-toggle {
-				display: block;
+				display: flex;
 			}
 		}
 

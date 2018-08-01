@@ -14,22 +14,24 @@ Page.class = class Dashboards extends Page {
 		this.reports = this.container.querySelector('section#reports');
 		this.listContainer.form = this.listContainer.querySelector('.form.toolbar');
 
-		const p = document.createElement('p');
-		p.classList.add('dashboard-sidebar');
-		p.innerHTML = `<i class="fa fa-bars" aria-hidden="true"></i>`;
-		document.querySelector('header').insertAdjacentElement('afterbegin', p);
+		const navToggle = document.createElement('span');
+		navToggle.classList.add('nav-toggle');
+		navToggle.innerHTML = `<i class="fa fa-bars"></i>`;
+		document.querySelector('header').insertAdjacentElement('afterbegin', navToggle);
 
-		const dashboardBlanket = this.container.querySelector('.dashboard-blanket');
+		const navBlanket = this.container.querySelector('.nav-blanket');
 
-		p.on('click', () => {
-			this.nav.classList.toggle('show-nav');
-			dashboardBlanket.classList.toggle('hidden');
+		navToggle.on('click', () => {
+			this.nav.classList.toggle('show');
+			navBlanket.classList.toggle('hidden');
+			navToggle.classList.toggle('selected');
 		});
 
-		dashboardBlanket.on('click' , () => {
+		navBlanket.on('click' , () => {
 
-			this.nav.classList.toggle('show-nav');
-			dashboardBlanket.classList.toggle('hidden');
+			this.nav.classList.remove('show');
+			navBlanket.classList.add('hidden');
+			navToggle.classList.remove('selected');
 		});
 
 		if (this.account.settings.get('disable_footer')) {
@@ -200,7 +202,7 @@ Page.class = class Dashboards extends Page {
 
 				for (const searchItem of searchItems) {
 
-					const searchableText = report.query_id + '' + report.name + '' + report.description + '' + report.tags;
+					const searchableText = report.query_id + ' ' + report.name + ' ' + report.description + ' ' + report.tags;
 
 					found = searchableText.toLowerCase().includes(searchItem.toLowerCase());
 
@@ -870,7 +872,10 @@ class Dashboard {
 		}
 
 		const dashboardName = this.page.container.querySelector('.dashboard-name');
-		dashboardName.innerHTML = this.name;
+		dashboardName.innerHTML = `
+			<span>${this.page.parents(this.id).map(x => this.page.list.get(x).name).join(`<span class="NA">&rsaquo;</span>`)}</span>
+		`;
+
 		dashboardName.classList.remove('hidden');
 
 		Dashboard.toolbar.classList.remove('hidden');
