@@ -2784,7 +2784,7 @@ class SpatialMapOptionsLayers extends Set {
 								<option value="clustermap">Cluster Map</option>
 								<option value="heatmap">Heat Map</option>
 								<option value="scattermap">Scatter Map</option>
-								<!--<option value="bubblemap">Bubble Map</option>-->
+								<option value="bubblemap">Bubble Map</option>
 							</select>
 						</label>
 
@@ -3005,7 +3005,7 @@ SpatialMapOptionsLayer.types.set('scattermap', class ScatterMapLayer extends Spa
 		}
 
 		if(this.color)
-			container.querySelector('select[name=color]').value = this.color;
+			color.value = this.color;
 
 		return container;
 	}
@@ -3015,6 +3015,49 @@ SpatialMapOptionsLayer.types.set('bubblemap', class BubbleMapLayer extends Spati
 
 	get container() {
 
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = super.container;
+
+		container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
+			<label>
+				<span>Color Column</span>
+				<select name="color">
+					<option value=""></option>
+				</select>
+			</label>
+			
+			<label>
+				<span>Radius Column</span>
+				<select name="radius">
+					<option value=""></option>
+				</select>
+			</label>
+		`);
+
+		const
+			radius = container.querySelector('select[name=radius]'),
+			color = container.querySelector('select[name=color]');
+
+		for(const [key, column] of this.layers.stage.page.preview.report.columns) {
+
+			radius.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			color.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		if(this.radius)
+			radius.value = this.radius;
+
+		if(this.color)
+			color.value = this.color;
+
+		return container;
 	}
 });
 

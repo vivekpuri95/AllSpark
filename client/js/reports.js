@@ -7070,7 +7070,6 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 				continue;
 
 			marker.setMap(this.layers.visualization.map);
-			marker.setTitle("marker title");
 		}
 	}
 
@@ -7090,7 +7089,7 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 		const markers = this.existingMarkers = [];
 
 		const
-			markerColor = ['red', 'blue', 'green', 'orange', 'pink', 'yellow'],
+			markerColor = ['red', 'blue', 'green', 'orange', 'pink', 'yellow', 'purple'],
 			urlPrefix = 'http://maps.google.com/mapfiles/ms/icons/';
 
 		let uniqueFields = [];
@@ -7105,15 +7104,32 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 			row.set('color', markerColor[uniqueFields.indexOf(row.get(this.color)) % markerColor.length]);
 
-			markers.push(
-				new google.maps.Marker({
-					position: {
-						lat: row.get(this.latitude),
-						lng: row.get(this.longitude),
-					},
-					icon: urlPrefix + (row.get('color') || 'red') + '-dot.png'
-				})
-			);
+			const infoContent = `lat: ${row.get(this.latitude)}<br>long: ${row.get(this.longitude)}`;
+
+			const infoPopUp = new google.maps.InfoWindow({
+				content: infoContent
+			});
+
+			const markerObj = new google.maps.Marker({
+				position: {
+					lat: row.get(this.latitude),
+					lng: row.get(this.longitude),
+				},
+				icon: urlPrefix + (row.get('color') || 'red') + '-dot.png',
+				title: 'Marker Title',
+			});
+
+			markerObj.addListener('mouseover', () => {
+
+				infoPopUp.open(this.layers.visualization.map, markerObj);
+			});
+
+			markerObj.addListener('mouseout', () => {
+
+				infoPopUp.close();
+			});
+
+			markers.push(markerObj);
 		}
 
 		return markers;
@@ -7121,6 +7137,61 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 });
 
 SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
+
+	plot() {
+
+		for(const marker of this.markers) {
+
+			if(marker.getMap())
+				continue;
+
+			marker.setMap(this.layers.visualization.map);
+		}
+	}
+
+	clear() {
+
+		for(const marker of this.markers) {
+
+			marker.setMap(null);
+		}
+	}
+
+	get markers() {
+
+		if(this.existingMarkers)
+			return this.existingMarkers;
+
+		const markers = this.existingMarkers = [];
+
+		let uniqueFields = [];
+
+		if(this.color) {
+
+			uniqueFields = this.layers.visualization.rows.map(x => x.get(this.color));
+			uniqueFields = Array.from(new Set(uniqueFields));
+		}
+
+		for(const row of this.layers.visualization.rows) {
+
+			row.set('color', DataSourceColumn.colors[uniqueFields.indexOf(row.get(this.color)) % DataSourceColumn.colors.length] || DataSourceColumn.colors[0]);
+
+			markers.push(new google.maps.Circle({
+				radius: Math.sqrt(row.get(this.latitude)) * 100,
+				center: {
+					lat: row.get(this.latitude),
+					lng: row.get(this.longitude),
+				},
+				strokeColor: row.get('color'),
+				strokeOpacity: 0.8,
+				strokeWeight: 2,
+				fillColor: row.get('color'),
+				fillOpacity: 0.35,
+			}));
+		}
+
+		return markers;
+	}
 });
 
 class SpatialMapThemes extends Map {
