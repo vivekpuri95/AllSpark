@@ -7064,10 +7064,7 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 	plot() {
 
-		if(!this.existingMarkers)
-			this.existingMarkers = this.markers;
-
-		for(const marker of this.existingMarkers) {
+		for(const marker of this.markers) {
 
 			if(marker.getMap())
 				continue;
@@ -7079,7 +7076,7 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 	clear() {
 
-		for(const marker of this.existingMarkers) {
+		for(const marker of this.markers) {
 
 			marker.setMap(null);
 		}
@@ -7087,18 +7084,22 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 	get markers() {
 
-		if(!this.color)
-			return;
+		if(this.existingMarkers)
+			return this.existingMarkers;
+
+		const markers = this.existingMarkers = [];
 
 		const
-			markerColor = ['blue', 'green', 'red', 'orange', 'pink', 'yellow'],
-			urlPrefix = 'http://maps.google.com/mapfiles/ms/icons/',
-			markers = [];
+			markerColor = ['red', 'blue', 'green', 'orange', 'pink', 'yellow'],
+			urlPrefix = 'http://maps.google.com/mapfiles/ms/icons/';
 
-		let uniqueFields;
+		let uniqueFields = [];
 
-		uniqueFields = this.layers.visualization.rows.map(x => x.get(this.color));
-		uniqueFields = Array.from(new Set(uniqueFields));
+		if(this.color) {
+
+			uniqueFields = this.layers.visualization.rows.map(x => x.get(this.color));
+			uniqueFields = Array.from(new Set(uniqueFields));
+		}
 
 		for(const row of this.layers.visualization.rows) {
 
@@ -7110,7 +7111,7 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 						lat: row.get(this.latitude),
 						lng: row.get(this.longitude),
 					},
-					icon: urlPrefix + (row.get('color') || 'red') + '.png'
+					icon: urlPrefix + (row.get('color') || 'red') + '-dot.png'
 				})
 			);
 		}
