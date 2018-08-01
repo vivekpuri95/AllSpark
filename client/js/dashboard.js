@@ -19,7 +19,18 @@ Page.class = class Dashboards extends Page {
 		p.innerHTML = `<i class="fa fa-bars" aria-hidden="true"></i>`;
 		document.querySelector('header').insertAdjacentElement('afterbegin', p);
 
-		p.on('click', () => this.nav.classList.toggle('show-nav'));
+		const dashboardBlanket = this.container.querySelector('.dashboard-blanket');
+
+		p.on('click', () => {
+			this.nav.classList.toggle('show-nav');
+			dashboardBlanket.classList.toggle('hidden');
+		});
+
+		dashboardBlanket.on('click' , () => {
+
+			this.nav.classList.toggle('show-nav');
+			dashboardBlanket.classList.toggle('hidden');
+		});
 
 		if (this.account.settings.get('disable_footer')) {
 
@@ -311,7 +322,7 @@ Page.class = class Dashboards extends Page {
 
 		if (loadReport) {
 
-			return await this.report(id);
+			return await this.report(currentId);
 		}
 
 		else {

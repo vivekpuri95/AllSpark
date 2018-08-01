@@ -529,6 +529,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 				</div>
 				<div class="dashboard-hierarchy"></div>
 			</nav>
+			<div class="dashboard-blanket hidden"></div>
 			<section class="section" id="list">
 				<h2>${this.request.params.type}</h2>
 
