@@ -741,7 +741,7 @@ class User {
 		const token = await Storage.get('token');
 
 		try {
-			user = JSON.parse(atob(token.split('.')[1]));
+			user = JSON.parse(atob(token.body.split('.')[1]));
 		} catch(e) {}
 
 		return window.user = new User(user);
