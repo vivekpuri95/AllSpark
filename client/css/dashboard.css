@@ -159,6 +159,7 @@ main #reports > h1.dashboard-name::-webkit-scrollbar {
 		display: grid;
 		grid-auto-flow: column;
 		grid-gap: calc(var(--gap) * 2);
+		white-space: nowrap;
 	}
 	main #reports > h1.dashboard-name > div {
 			display: flex;
