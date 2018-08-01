@@ -27,7 +27,7 @@ Page.class = class Dashboards extends Page {
 			navToggle.classList.toggle('selected');
 		});
 
-		navBlanket.on('click' , () => {
+		navBlanket.on('click', () => {
 
 			this.nav.classList.remove('show');
 			navBlanket.classList.add('hidden');
@@ -40,7 +40,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 
-		else  {
+		else {
 			const deployTime = this.container.parentElement.querySelector('main > footer .deploy-time')
 			deployTime.textContent = Format.dateTime(deployTime.textContent);
 		}
@@ -1231,23 +1231,28 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		const globalFilters = new Map;
 
-		for (const visualization of dashboard.visibleVisuliaztions) {
+		for (const visualization of dashboard.visualizationList) {
 
 			for (const filter of visualization.filters.values()) {
 
-				if (globalFilters.has(filter.placeholder) || ['hidden', 'daterange'].includes(filter.type))
+				if (!Array.from(MetaData.globalFilters.values()).some(a => a.placeholder.includes(filter.placeholder)))
 					continue;
 
-				globalFilters.set(filter.placeholder, {
-					name: filter.name,
-					placeholder: filter.placeholder,
-					default_value: filter.default_value,
-					dataset: filter.dataset,
-					multiple: filter.multiple,
-					offset: filter.offset,
-					order: filter.order,
-					type: filter.type,
-				});
+				const globalFilter = Array.from(MetaData.globalFilters.values()).filter(a => a.placeholder.includes(filter.placeholder));
+
+				for (const value of globalFilter) {
+					globalFilters.set(value.placeholder, {
+						name: value.name,
+						placeholder: value.placeholder[0],
+						placeholders: value.placeholder,
+						default_value: value.default_value,
+						dataset: value.dataset,
+						multiple: value.multiple,
+						offset: value.offset,
+						order: value.order,
+						type: value.type,
+					});
+				}
 			}
 		}
 
@@ -1259,11 +1264,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		this.globalFilterContainer.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
 
-		// Save the value of each filter for use on other dashboards
-		// if(Dashboard.selectedValues.size) {
-		// 	for(const [placeholder, filter] of this)
-		// 		filter.value = Dashboard.selectedValues.get(placeholder);
-		// }
+		this.page.container.removeEventListener('scroll', DashboardGlobalFilters.scrollListener);
+		this.page.container.addEventListener('scroll', DashboardGlobalFilters.scrollListener = e => {
+			this.globalFilterContainer.classList.toggle('scrolled', this.page.container.scrollTop > 45);
+		}, {passive: true});
 	}
 
 	async load() {
@@ -1290,6 +1294,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		container.textContent = null;
 
 		container.classList.remove('show');
+		container.classList.toggle('hidden', !this.size);
 
 		if (!this.size)
 			return;
@@ -1334,16 +1339,16 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 	async apply(options = {}) {
 
-		for (const report of this.dashboard.visibleVisuliaztions) {
+		for (const report of this.dashboard.visualizationList) {
 
 			let found = false;
 
 			for (const filter of report.filters.values()) {
 
-				if (!this.has(filter.placeholder))
+				if (!Array.from(this.values()).some(gfl => gfl.placeholders.includes(filter.placeholder)))
 					continue;
 
-				filter.value = this.get(filter.placeholder).value;
+				filter.value = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))[0].value;
 
 				found = true;
 			}
