@@ -3373,7 +3373,8 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 					datalist.push({
 						'name': visualisation.name,
-						'value': visualisation.visualization_id
+						'value': visualisation.visualization_id,
+						'subtitle': `${report.name} #${report.query_id}`,
 					});
 				}
 			}
