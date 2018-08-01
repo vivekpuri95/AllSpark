@@ -1165,7 +1165,7 @@ class Nav {
 		const submenu = container.querySelector('.submenu');
 
 		for (const child of this.dashboard.children.values()) {
-			console.log(child.menuItem)
+
 			submenu.appendChild(this.page.navbar.list.get(child.id).menuItem);
 		}
 
