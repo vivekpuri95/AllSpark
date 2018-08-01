@@ -3943,7 +3943,7 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 		for(const filter of this.container.querySelectorAll('.filter')) {
 			response.filters.push({
 				column: filter.querySelector('select[name=column]').value,
-				function: filter.querySelector('select[name=function]').value,
+				type: filter.querySelector('select[name=type]').value,
 				value: filter.querySelector('input[name=value]').value,
 			});
 		}
@@ -3964,13 +3964,13 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 			container.innerHTML = `
 				<select name="column"></select>
-				<select name="function"></select>
+				<select name="type"></select>
 				<input type="text" name="value">
 			`;
 
 			const
 				columnSelect = container.querySelector('select[name=column]'),
-				functionSelect = container.querySelector('select[name=function]'),
+				typeSelect = container.querySelector('select[name=type]'),
 				valueInput = container.querySelector('input[name=value]');
 
 			for(const column in this.page.preview.report.originalResponse.data[0])
@@ -3979,9 +3979,9 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 			columnSelect.value = filter.column;
 
 			for(const filter of DataSourceColumnFilter.types)
-				functionSelect.insertAdjacentHTML('beforeend', `<option value="${filter.slug}">${filter.name}</option>`);
+				typeSelect.insertAdjacentHTML('beforeend', `<option value="${filter.slug}">${filter.name}</option>`);
 
-			functionSelect.value = filter.function;
+			typeSelect.value = filter.type;
 
 			valueInput.value = filter.value || '';
 
