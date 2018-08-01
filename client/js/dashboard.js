@@ -14,6 +14,13 @@ Page.class = class Dashboards extends Page {
 		this.reports = this.container.querySelector('section#reports');
 		this.listContainer.form = this.listContainer.querySelector('.form.toolbar');
 
+		const p = document.createElement('p');
+		p.classList.add('dashboard-sidebar');
+		p.innerHTML = `<i class="fa fa-bars" aria-hidden="true"></i>`;
+		document.querySelector('header').insertAdjacentElement('afterbegin', p);
+
+		p.on('click', () => this.navbar.collapseNav());
+
 		if (this.account.settings.get('disable_footer')) {
 
 			this.container.parentElement.querySelector('main > footer').classList.add('hidden');
@@ -45,12 +52,11 @@ Page.class = class Dashboards extends Page {
 			this.load(e.state)
 		});
 
+		this.navbar = new Navbar([], this);
+
 		(async () => {
 
 			await this.load();
-
-			if (window.innerWidth <= 750)
-				this.collapseNav();
 		})();
 	}
 
@@ -99,7 +105,7 @@ Page.class = class Dashboards extends Page {
 		if (renderNav) {
 
 			this.renderList();
-			this.renderNav();
+			this.navbar.render();
 		}
 
 		if (updateNav) {
@@ -244,114 +250,6 @@ Page.class = class Dashboards extends Page {
 			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found! :(</td></tr>`;
 	}
 
-	renderNav() {
-
-		const search = this.nav.querySelector('.dashboard-search');
-		const dashboardHirachy = this.nav.querySelector('.dashboard-hierarchy');
-
-		dashboardHirachy.innerHTML = null;
-		for (const dashboard of this.list.values()) {
-
-			if (!dashboard.parent) {
-
-				let menuItem = dashboard.menuItem;
-				menuItem.classList.add('parentDashboard');
-
-				dashboardHirachy.appendChild(menuItem);
-			}
-		}
-
-
-		this.nav.insertAdjacentHTML('beforeend', `
-
-			<footer>
-				<div class="collapse-panel">
-					<span class="left"><i class="fa fa-angle-double-left"></i></span>
-					<span class="right hidden"><i class="fa fa-angle-double-right"></i></span>
-				</div>
-			</footer>
-		`);
-
-		this.nav.querySelector('.collapse-panel').on('click', () => this.collapseNav());
-
-		if (!this.nav.children.length)
-			this.nav.innerHTML = `<div class="NA">No dashboards found!</div>`;
-
-		search.removeEventListener('keyup', this.navSearch);
-
-		search.on('keyup', this.navSearch = () => {
-
-			const searchItem = search.querySelector("input[name='search']").value;
-
-			this.sync(0, true);
-
-			if (!searchItem.length) {
-
-				return this.sync(this.currentDashboard, true, true, false);
-			}
-
-			let matching = [];
-
-			for (const dashboard of this.list.values()) {
-
-				if (dashboard.name.toLowerCase().includes(searchItem.toLowerCase())) {
-
-					matching = matching.concat(this.parents(dashboard.id).map(x => '#dashboard-' + x));
-
-					const re = new RegExp(searchItem, 'ig');
-
-					this.nav.querySelector('#dashboard-' + dashboard.id).innerHTML = dashboard.name.replace(re, '<mark>$&</mark>');
-				}
-			}
-
-			let toShowItems = [];
-
-			try {
-
-				toShowItems = this.nav.querySelectorAll([...new Set(matching)].join(', '));
-			}
-			catch (e) {
-			}
-
-			for (const item of toShowItems) {
-
-				const submenu = item.parentNode.querySelector('.submenu');
-
-				if (submenu) {
-
-					submenu.classList.remove('hidden');
-				}
-
-				item.querySelector('.angle') ? item.querySelector('.angle').classList.add('down') : {};
-			}
-		});
-	}
-
-	collapseNav() {
-
-		const nav = document.querySelector('main > nav');
-
-		nav.classList.toggle('collapsed');
-
-		const
-			toggle = nav.querySelector('.collapse-panel'),
-			right = toggle.querySelector('.right');
-
-		right.classList.toggle('hidden');
-		toggle.querySelector('.left').classList.toggle('hidden');
-
-		this.container.classList.toggle('collapsed-grid');
-
-		for (const item of nav.querySelectorAll('.item')) {
-
-			if (!right.hidden)
-				item.classList.remove('list-open');
-
-			if (!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
-				item.querySelector('.label .name').classList.toggle('hidden');
-		}
-	}
-
 	async load(state) {
 
 		await DataSource.load();
@@ -375,9 +273,13 @@ Page.class = class Dashboards extends Page {
 			}
 		}
 
+		this.navbar = new Navbar(this.list, this);
+
+		this.navbar.render();
+
 		if (window.location.pathname.split('/').pop() === 'first') {
 
-			this.renderNav();
+			this.navbar.render();
 
 			let dashboardReference = this.container.querySelector('nav .item:not(.hidden)');
 
@@ -501,78 +403,6 @@ class Dashboard {
 		return data;
 	}
 
-	get menuItem() {
-
-		const
-			container = this.container = document.createElement('div'),
-			allVisualizations = this.childrenVisualizations(this);
-
-		let icon;
-
-		if (this.icon && this.icon.startsWith('http')) {
-			icon = `<img src="${this.icon}" height="20" width="20">`;
-		}
-
-		else if (this.icon && this.icon.startsWith('fa')) {
-			icon = `<i class="${this.icon}"></i>`
-		}
-		else
-			icon = '';
-
-		container.classList.add('item');
-
-		if (!allVisualizations.length && (!this.format || !parseInt(this.format.category_id))) {
-
-			container.classList.add('hidden');
-		}
-
-		container.innerHTML = `
-			<div class="label" id=${"dashboard-" + this.id}>
-				${icon}
-				<span class="name">${this.name}</span>
-				${this.children.size ? '<span class="angle"><i class="fa fa-angle-right"></i></span>' : ''}
-			</div>
-			${this.children.size ? '<div class="submenu hidden"></div>' : ''}
-		`;
-
-		const submenu = container.querySelector('.submenu');
-
-		for (const child of this.children.values()) {
-
-			submenu.appendChild(child.menuItem);
-		}
-
-		container.querySelector('.label').on('click', () => {
-
-			this.page.sync(this.visualizations.length ? this.id : 0, false, false);
-
-			if (this.page.container.querySelector('nav.collapsed')) {
-
-				this.page.sync(this.id);
-			}
-
-			if (this.children.size) {
-
-				container.querySelector('.angle').classList.toggle('down');
-				submenu.classList.toggle('hidden');
-			}
-
-		});
-
-		if (this.children.size) {
-
-			container.querySelector('.angle').on('click', (e) => {
-
-				e.stopPropagation();
-				container.querySelector('.angle').classList.toggle('down');
-
-				container.parentElement.querySelector('.submenu').classList.toggle('hidden');
-			})
-		}
-
-		return container;
-	}
-
 	static setup(page) {
 
 		Dashboard.grid = {
@@ -683,25 +513,6 @@ class Dashboard {
 
 			a.click();
 		})
-	}
-
-	childrenVisualizations(dashboard) {
-		let visibleVisuliaztions = [];
-
-
-		function getChildrenVisualizations(dashboard) {
-
-			visibleVisuliaztions = visibleVisuliaztions.concat([...dashboard.visualizations]);
-
-			for (const child of dashboard.children.values()) {
-
-				getChildrenVisualizations(child);
-			}
-		}
-
-		getChildrenVisualizations(dashboard);
-
-		return visibleVisuliaztions;
 	}
 
 	edit() {
@@ -1173,6 +984,227 @@ class Dashboard {
 			};
 
 		await API.call('reports/dashboard/update', parameters, options);
+	}
+}
+
+class Navbar {
+
+	constructor(dashboards, page) {
+
+		this.dashboards = dashboards;
+		this.page = page;
+
+		this.list = new Map;
+
+		if (this.dashboards.values()) {
+
+			for (const dashboard of this.dashboards.values()) {
+
+				if (!dashboard.parent) {
+
+					this.list.set(dashboard.id, new Nav(dashboard.id, dashboard));
+				}
+			}
+
+			for (const dashboard of dashboards.values()) {
+
+				this.list.set(dashboard.id, new Nav(dashboard, this.page));
+			}
+		}
+	}
+
+	render() {
+
+		const dashboardHirachy = this.page.nav.querySelector('.dashboard-hierarchy');
+		const search = this.page.nav.querySelector('.dashboard-search');
+
+		dashboardHirachy.textContent = null;
+
+		for (const dashboardItem of this.list.values()) {
+
+			if (!dashboardItem.dashboard.parent) {
+
+				dashboardHirachy.append(dashboardItem.menuItem);
+			}
+		}
+
+		if (this.page.nav.querySelector('footer')) {
+
+			this.page.nav.querySelector('footer').remove();
+		}
+
+		this.page.nav.insertAdjacentHTML('beforeend', `
+			<footer>
+				<div class="collapse-panel">
+				</div>
+			</footer>
+		`);
+
+		search.removeEventListener('keyup', this.navSearch);
+
+		search.on('keyup', this.navSearch = () => {
+
+			const searchItem = search.querySelector("input[name='search']").value;
+
+			this.page.sync(0, true);
+
+			if (!searchItem.length) {
+
+				return this.page.sync(this.page.currentDashboard, true, true, false);
+			}
+
+			let matching = [];
+
+			for (const dashboard of this.dashboards.values()) {
+
+				if (dashboard.name.toLowerCase().includes(searchItem.toLowerCase())) {
+
+					matching = matching.concat(this.page.parents(dashboard.id).map(x => '#dashboard-' + x));
+
+					const re = new RegExp(searchItem, 'ig');
+
+					this.page.nav.querySelector('#dashboard-' + dashboard.id).innerHTML = dashboard.name.replace(re, '<mark>$&</mark>');
+				}
+			}
+
+			let toShowItems = [];
+
+			try {
+
+				toShowItems = this.page.nav.querySelectorAll([...new Set(matching)].join(', '));
+			}
+			catch (e) {
+			}
+
+			for (const item of toShowItems) {
+
+				const submenu = item.parentNode.querySelector('.submenu');
+
+				if (submenu) {
+
+					submenu.classList.remove('hidden');
+				}
+
+				item.querySelector('.angle') ? item.querySelector('.angle').classList.add('down') : {};
+			}
+		}, {passive: true});
+	}
+
+	collapseNav() {
+
+		this.page.nav.classList.toggle('show-nav');
+		//
+		// const toggle = this.page.nav.querySelector('.collapse-panel');
+		//
+		// toggle.querySelector('.left').classList.toggle('hidden');
+	}
+}
+
+class Nav {
+
+	constructor(dashboard, page) {
+
+		this.dashboard = dashboard;
+		this.page = page;
+	}
+
+	get menuItem() {
+
+		const
+			container = this.container = document.createElement('div'),
+			allVisualizations = this.childrenVisualizations(this.dashboard);
+
+		let icon;
+
+		if (this.dashboard.icon && this.dashboard.icon.startsWith('http')) {
+
+			icon = `<img src="${this.dashboard.icon}" height="20" width="20">`;
+		}
+
+		else if (this.dashboard.icon && this.dashboard.icon.startsWith('fa')) {
+
+			icon = `<i class="${this.dashboard.icon}"></i>`
+		}
+
+		else {
+
+			icon = '';
+		}
+
+		container.classList.add('item');
+
+		if (!allVisualizations.length && (!this.dashboard.format || !parseInt(this.dashboard.format.category_id))) {
+
+			container.classList.add('hidden');
+		}
+
+		container.innerHTML = `
+			<div class="label" id=${'dashboard-' + this.dashboard.id}>
+				${icon}
+				<span class="name">${this.dashboard.name}</span>
+				${this.dashboard.children.size ? '<span class="angle"><i class="fa fa-angle-right"></i></span>' : ''}
+			</div>
+			${this.dashboard.children.size ? '<div class="submenu hidden"></div>' : ''}
+		`;
+
+		const submenu = container.querySelector('.submenu');
+
+		for (const child of this.dashboard.children.values()) {
+			console.log(child.menuItem)
+			submenu.appendChild(this.page.navbar.list.get(child.id).menuItem);
+		}
+
+		container.querySelector('.label').on('click', () => {
+
+			console.log('hererererer');
+
+			this.page.sync(this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0, false, false);
+
+			if (this.dashboard.page.container.querySelector('nav.collapsed')) {
+
+				this.dashboard.page.sync(this.dashboard.id);
+			}
+
+			if (this.dashboard.children.size) {
+
+				container.querySelector('.angle').classList.toggle('down');
+				submenu.classList.toggle('hidden');
+			}
+
+		});
+
+		if (this.dashboard.children.size) {
+
+			container.querySelector('.angle').on('click', (e) => {
+
+				e.stopPropagation();
+				container.querySelector('.angle').classList.toggle('down');
+
+				container.parentElement.querySelector('.submenu').classList.toggle('hidden');
+			})
+		}
+
+		return container;
+
+	}
+
+	childrenVisualizations(dashboard) {
+		let visibleVisuliaztions = [];
+
+
+		function getChildrenVisualizations(dashboard) {
+
+			visibleVisuliaztions = visibleVisuliaztions.concat([...dashboard.visualizations]);
+
+			for (const child of dashboard.children.values()) {
+
+				getChildrenVisualizations(child);
+			}
+		}
+
+		getChildrenVisualizations(dashboard);
+
+		return visibleVisuliaztions;
 	}
 }
 
