@@ -708,7 +708,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			Added by
 			<strong><a href="/user/profile/${this.report.added_by}" target="_blank">${this.report.added_by_name || 'Unknown User'}</a></strong>
 			on
-			<strong>${Format.time(this.report.created_at)}</strong>
+			<strong>${Format.dateTime(this.report.created_at)}</strong>
 		`;
 
 		if(this.report.is_redis > 0) {
@@ -2847,17 +2847,17 @@ class SpatialMapOptionsLayer {
 						<span>Name</span>
 						<input type="text" name="layer_name">
 					</label>
-					
+
 					<label>
 						<span>Latitude Column</span>
 						<select name="latitude"></select>
 					</label>
-					
+
 					<label>
 						<span>Longitude Column</span>
 						<select name="longitude"></select>
 					</label>
-					
+
 					<label>
 						<button class="delete" type="button">
 							<i class="far fa-trash-alt"></i> Delete
@@ -2940,7 +2940,7 @@ SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMa
 					<option value=""></option>
 				</select>
 			</label>
-			
+
 			<label class="opacity">
 				<span>Opacity <span class="value">${this.opacity || 0.6}</span></span>
 				<input type="range" name="opacity" min="0" max="1" step="0.01">
@@ -3151,26 +3151,26 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Map Layers <span class="count"></span></h3>
 			</div>
-			
+
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
-					<div class="form subform map-options">						
+					<div class="form subform map-options">
 						<label>
 							<span>Zoom</span>
 							<input type="number" step="1" name="zoom" min="1" max="25">
 						</label>
-						
+
 						<label>
 							<span>Center Latitude</span>
 							<input type="number" name="centerLatitude">
 						</label>
-						
+
 						<label>
 							<span>Center Longitude</span>
 							<input type="number" name="centerLongitude">
 						</label>
-						
+
 						<label>
 							<span>
 								<input type="checkbox" name="hideLegend">Hide Legend
@@ -3179,7 +3179,7 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 					</div>
 				</div>
 			</div>
-			
+
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Themes</h3>
 				<div class="body">
