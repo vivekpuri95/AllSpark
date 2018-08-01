@@ -14,7 +14,7 @@ Page.class = class Dashboards extends Page {
 
 		else  {
 			const deployTime = this.container.parentElement.querySelector('main > footer .deploy-time')
-			deployTime.textContent = Format.time(deployTime.textContent);
+			deployTime.textContent = Format.dateTime(deployTime.textContent);
 		}
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {

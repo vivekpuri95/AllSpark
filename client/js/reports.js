@@ -606,7 +606,7 @@ class DataSource {
 				visualization: this.visualizations.selected.type,
 				sheet_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				file_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				token :await Storage.get('token'),
+				token : (await Storage.get('token')).body,
 				show_legends: !this.visualizations.selected.options.hideLegend || 0,
 				show_values: this.visualizations.selected.options.showValues || 0,
 				classic_pie: this.visualizations.selected.options.classicPie
@@ -1068,8 +1068,10 @@ class DataSourceFilter {
 
 		if(!isNaN(parseFloat(this.offset))) {
 
-			if(this.type.includes('date'))
-				value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			if(this.type.includes('date')) {
+				const today = new Date();
+				value = new Date(Date.nowUTC() + (this.offset * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10);
+			}
 
 			if(this.type == 'month') {
 				const date = new Date();

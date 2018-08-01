@@ -741,7 +741,7 @@ class User {
 		const token = await Storage.get('token');
 
 		try {
-			user = JSON.parse(atob(token.split('.')[1]));
+			user = JSON.parse(atob(token.body.split('.')[1]));
 		} catch(e) {}
 
 		return window.user = new User(user);
@@ -979,13 +979,13 @@ class API extends AJAX {
 
 		const token = await Storage.get('token');
 
-		if(token) {
+		if(token && token.body) {
 
 			if(typeof parameters == 'string')
-				parameters += '&token='+token;
+				parameters += '&token='+token.body;
 
 			else
-				parameters.token = token;
+				parameters.token = token.body;
 		}
 
 		// If a form id was supplied, then also load the data from that form
@@ -1055,13 +1055,16 @@ class API extends AJAX {
 			Cookies.set('refresh_token', '');
 		}
 
-		if(token) {
+		if(token && token.body) {
 
 			try {
 
-				const user = JSON.parse(atob(token.split('.')[1]));
+				const user = JSON.parse(atob(token.body.split('.')[1]));
 
-				if(user.exp && user.exp * 1000 > Date.now())
+				// If the token is about to expire in next few seconds then let it refresh.
+				// We're using the difference of expiry and creation here to supportcasses
+				// where users manually change system time and local UTC time gets out of sync with remote UTC time.
+				if(Date.now() - token.timestamp + 2000 < (user.exp - user.iat) * 1000)
 					getToken = false;
 
 			} catch(e) {}
@@ -1094,8 +1097,15 @@ class API extends AJAX {
 
 		const response = await API.call('authentication/refresh', parameters, options);
 
-		await Storage.set('token', response);
-		Cookies.set('token', response);
+		token = {
+
+			// Save the time we got the token, we can use this later to check if it's about to expire
+			timestamp: Date.now(),
+			body: response
+		};
+
+		await Storage.set('token', token);
+		Cookies.set('token', token);
 
 		Page.load();
 	}
@@ -2160,6 +2170,17 @@ if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {
 		this.addEventListener(name, fn);
 	}
+}
+
+Date.nowUTC = function() {
+
+	const today = new Date();
+
+	return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes(), today.getSeconds())).getTime();
+}
+
+Date.prototype.getTimeUTC = function() {
+	return new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate(), this.getHours(), this.getMinutes(), this.getSeconds())).getTime();
 }
 
 MetaData.timeout = 5 * 60 * 1000;

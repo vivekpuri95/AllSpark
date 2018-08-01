@@ -15,7 +15,7 @@ main > nav {
 	z-index: 6;
 	height: calc(100vh - 50px);
 	border-right: 1px solid #ccc
-	
+
 }
 	main > nav .dashboard-search {
 		/* border-bottom: 1px solid #ccc; */
@@ -53,7 +53,7 @@ main > nav.collapsed .selected {
 		left: 100%;
 		width: 220px;
 		top: 0;
-		background: var(--color-primary);
+		background: #eee;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
 	}
 		nav > .item > .collapsed-submenu-bar .label {
