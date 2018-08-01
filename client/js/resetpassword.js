@@ -43,8 +43,7 @@ Page.class = class ResetPassword extends Page {
 
 			const response = await API.call('authentication/reset', parameters, options);
 
-			this.message.classList.add('notice');
-			this.message.textContent = response;
+			window.location = '/login?passwordReset=true'
 		}
 
 		catch(error) {
