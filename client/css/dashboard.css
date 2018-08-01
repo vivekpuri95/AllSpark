@@ -149,34 +149,39 @@ main #reports > h1.dashboard-name {
 	font-weight: normal;
 	display: flex;
 	justify-content: space-between;
+	max-width: 100%;
+    overflow: auto;
 }
-main #reports > h1.dashboard-name > span {
-	display: grid;
-	grid-auto-flow: column;
-	grid-gap: calc(var(--gap) * 2);
+main #reports > h1.dashboard-name::-webkit-scrollbar {
+	display: none;
 }
-main #reports > h1.dashboard-name > div {
-		display: flex;
-		opacity: 0;
-		transition: opacity var(--transition-duration);
+	main #reports > h1.dashboard-name > span {
+		display: grid;
+		grid-auto-flow: column;
+		grid-gap: calc(var(--gap) * 2);
 	}
-	main #reports > h1.dashboard-name:hover > div {
-		opacity: 1;
-	}
-		main #reports > h1.dashboard-name > div span {
-			font-size: 70%;
+	main #reports > h1.dashboard-name > div {
 			display: flex;
-			justify-content: center;
-			align-items: center;
-			width: 25px;
-			transition: background var(--transition-duration),
-						color var(--transition-duration);
+			opacity: 0;
+			transition: opacity var(--transition-duration);
 		}
-		main #reports > h1.dashboard-name > div span:hover {
-			background: var(--color-accent);
-			color: var(--color-accent-text);
-			cursor: pointer;
+		main #reports > h1.dashboard-name:hover > div {
+			opacity: 1;
 		}
+			main #reports > h1.dashboard-name > div span {
+				font-size: 70%;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				width: 25px;
+				transition: background var(--transition-duration),
+							color var(--transition-duration);
+			}
+			main #reports > h1.dashboard-name > div span:hover {
+				background: var(--color-accent);
+				color: var(--color-accent-text);
+				cursor: pointer;
+			}
 
 main #reports > .toolbar {
 	align-items: flex-end;

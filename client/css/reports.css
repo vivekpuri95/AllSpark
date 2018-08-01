@@ -1010,7 +1010,7 @@ main .data-source.flush {
 	flex-wrap: wrap;
 }
 	.visualization.livenumber .container h5 {
-		font-size: calc(14px + 3vw);
+		font-size: calc(40px + 1vw);
 		flex: 1 1 100%;
 		margin: 0;
 		height: 55%;
