@@ -872,13 +872,16 @@ class Dashboard {
 		}
 
 		const dashboardName = this.page.container.querySelector('.dashboard-name');
+
 		dashboardName.innerHTML = `
 			<span>${this.page.parents(this.id).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
+			<div>
+				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
+			</div>
 		`;
 
 		dashboardName.classList.remove('hidden');
-
-		Dashboard.toolbar.classList.remove('hidden');
+		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
 
 		await Sections.show('reports');
 

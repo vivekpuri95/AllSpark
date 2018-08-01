@@ -710,6 +710,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			on
 			<strong>${Format.dateTime(this.report.created_at)}</strong>
 		`;
+		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
 
 		if(this.report.is_redis > 0) {
 			this.form.redis.value = 'custom';
