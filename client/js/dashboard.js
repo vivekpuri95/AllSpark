@@ -873,7 +873,7 @@ class Dashboard {
 
 		const dashboardName = this.page.container.querySelector('.dashboard-name');
 		dashboardName.innerHTML = `
-			<span>${this.page.parents(this.id).map(x => this.page.list.get(x).name).join(`<span class="NA">&rsaquo;</span>`)}</span>
+			<span>${this.page.parents(this.id).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
 		`;
 
 		dashboardName.classList.remove('hidden');

@@ -483,6 +483,8 @@ main #reports > .list {
 			left: 0;
 			opacity: 0;
 			background: #eee;
+			border: 0;
+			box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
 			transition: transform var(--transition-duration),
 						opacity var(--transition-duration);
 		}
