@@ -1231,7 +1231,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		const globalFilters = new Map;
 
-		for (const visualization of dashboard.visualizationList) {
+		for (const visualization of dashboard.visualizations) {
 
 			for (const filter of visualization.filters.values()) {
 
