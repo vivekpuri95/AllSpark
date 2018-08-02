@@ -6440,8 +6440,8 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		container.id = `visualization-${this.id}`;
 
 		container.innerHTML = `
-			<div class="container"></div>
 			<div class="graph"></div>
+			<div class="container"></div>
 		`;
 
 		return container;
@@ -6605,7 +6605,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 					<span class="value">
 						<span class="value-left">${this.dates.get(this.left.date) ? this.dates.get(this.left.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
-						<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
+						<small title="${Format.date(this.left.date)}">
+							${Format.number(this.options.leftOffset)} ${this.options.leftOffset == '1'? 'day' : 'days'} ago
+						</small>
 					</span>
 				</div>
 			`);
@@ -6620,7 +6622,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 					<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 					<span class="value">
 						<span class="value-right">${this.dates.get(this.right.date) ? this.dates.get(this.right.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
-						<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
+						<small title="${Format.date(this.right.date)}">
+							${Format.number(this.options.rightOffset)} day${this.options.rightOffset == '1'? '' : 's'} ago
+						</small>
 					</span>
 				</div>
 			`);

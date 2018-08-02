@@ -1033,6 +1033,7 @@ main .data-source.flush {
 		align-items: center;
 		border-top: 1px solid #999;
 		padding: calc(var(--gap) * 2);
+		position: relative;
 	}
 		.visualization.livenumber .container .red {
 			color: #a00;
@@ -1044,15 +1045,43 @@ main .data-source.flush {
 			font-size: calc(10px + .75vw);
 			margin: 0 0 var(--gap) 0;
 			font-weight: normal;
+			transition: filter var(--transition-duration);
 		}
 		.visualization.livenumber .container .left .value,
 		.visualization.livenumber .container .right .value {
 			text-align: center;
 		}
+		.visualization.livenumber .container .left .value-left,
+		.visualization.livenumber .container .right .value-right {
+			transition: filter var(--transition-duration);
+		}
+		.visualization.livenumber .container .left:hover h6,
+		.visualization.livenumber .container .right:hover h6,
+		.visualization.livenumber .container .left:hover .value-left,
+		.visualization.livenumber .container .right:hover .value-right {
+			opacity: 0.6;
+			filter: blur(1.5px);
+		}
 		.visualization.livenumber .container .left .value small,
 		.visualization.livenumber .container .right .value small {
-			color: #666;
-			margin-top: 1px
+			margin-top: 1px;
+			opacity: 0;
+			display: flex;
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			right: 0;
+			left: 0;
+			align-items: center;
+			justify-content: center;
+			font-size: 125%;
+			font-weight: bold;
+			color: #333;
+			transition: opacity var(--transition-duration);
+		}
+		.visualization.livenumber .container .left:hover .value small,
+		.visualization.livenumber .container .right:hover .value small {
+			opacity: 1;
 		}
 	.visualization.livenumber .graph {
 		position: absolute;
