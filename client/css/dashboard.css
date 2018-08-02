@@ -127,11 +127,12 @@ main > nav::-webkit-scrollbar-track {
 	main > nav footer {
 		margin-top: auto;
 	}
-		.collapsed-grid .collapse-panel {
+		main > nav footer .collapse-panel {
 			display: flex;
 			padding: 12px 0;
 			justify-content: center;
 			width: 100%;
+			color: #999;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;

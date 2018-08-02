@@ -1089,7 +1089,7 @@ main .data-source.flush {
 		right: 0;
 		bottom: 0;
 		left: 0;
-		filter: blur(2.5px);
+		filter: blur(3px);
 	}
 		.visualization.livenumber .graph svg .line {
 			fill: none;
