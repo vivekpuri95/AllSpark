@@ -1051,13 +1051,13 @@ main .data-source.flush {
 		.visualization.livenumber .container .right .value {
 			text-align: center;
 		}
-		.visualization.livenumber .container .left .value-left ,
+		.visualization.livenumber .container .left .value-left,
 		.visualization.livenumber .container .right .value-right {
 			transition: filter var(--transition-duration);
 		}
 		.visualization.livenumber .container .left:hover h6,
 		.visualization.livenumber .container .right:hover h6,
-		.visualization.livenumber .container .left:hover .value-left ,
+		.visualization.livenumber .container .left:hover .value-left,
 		.visualization.livenumber .container .right:hover .value-right {
 			opacity: 0.6;
 			filter: blur(1.5px);
