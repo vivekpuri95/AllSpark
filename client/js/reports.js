@@ -6188,7 +6188,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 		}
 
 		this.layers = new SpatialMapLayers(this.options.layers || [], this);
-		this.theme = new SpatialMapThemes(this);
+		this.themes = new SpatialMapThemes(this);
 	}
 
 	get container() {
@@ -6241,7 +6241,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 				}
 			});
 
-		this.map.set('styles', this.theme.get(this.options.theme).config || []);
+		this.map.set('styles', this.themes.get(this.options.theme).config || []);
 
 		this.layers.render();
 
@@ -7104,7 +7104,18 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 			row.set('color', markerColor[uniqueFields.indexOf(row.get(this.color)) % markerColor.length]);
 
-			const infoContent = `lat: ${row.get(this.latitude)}<br>long: ${row.get(this.longitude)}`;
+			const infoContent = `
+				<div>
+					<table style="border: none;">
+						<tr>
+							<td>${this.color.slice(0, 1).toUpperCase() + this.color.slice(1)}</td>
+							<td>${row.get(this.color) || ''}</td>
+						</tr>
+					</table>
+					<hr>
+					<span style="color: #888">Latitude: ${row.get(this.latitude)}, Longitude: ${row.get(this.longitude)}</span>	
+				</div>
+			`;
 
 			const infoPopUp = new google.maps.InfoWindow({
 				content: infoContent
@@ -7116,7 +7127,7 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 					lng: row.get(this.longitude),
 				},
 				icon: urlPrefix + (row.get('color') || 'red') + '-dot.png',
-				title: 'Marker Title',
+				title: row.get(this.color),
 			});
 
 			markerObj.addListener('mouseover', () => {
