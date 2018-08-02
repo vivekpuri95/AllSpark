@@ -2891,8 +2891,8 @@ class SpatialMapOptionsLayer {
 
 		for(const element of container.querySelectorAll('select, input')) {
 
-			if(this[element.type == 'select-one' ? element.name.concat('Column') : element.name])
-				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.type == 'select-one' ? element.name.concat('Column') : element.name] ;
+			if(this[element.tagName == 'SELECT' ? element.name.concat('Column') : element.name])
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.tagName == 'SELECT' ? element.name.concat('Column') : element.name] ;
 		}
 
 		return container;
@@ -2910,7 +2910,7 @@ class SpatialMapOptionsLayer {
 
 				response[element.name] = element.checked;
 			}
-			else if (element.type == 'select-one') {
+			else if (element.tagName == 'SELECT') {
 
 				response[element.name.concat('Column')] = element.value;
 			}
@@ -2945,6 +2945,11 @@ SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMa
 					<option value=""></option>
 				</select>
 			</label>
+			
+			<label>
+				<span>Radius</span>
+				<input type="number" name="radius">
+			</label>
 
 			<label class="opacity">
 				<span>Opacity <span class="value">${this.opacity || 0.6}</span></span>
@@ -2971,6 +2976,9 @@ SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMa
 
 		if(this.opacity)
 			container.querySelector('input[name=opacity]').value = this.opacity;
+
+		if(this.radius)
+			container.querySelector('input[name=radius]').value = this.radius;
 
 		return container;
 	}

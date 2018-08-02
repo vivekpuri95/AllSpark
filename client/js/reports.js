@@ -6980,7 +6980,7 @@ SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 		super(layer, layers);
 
 		this.heatmap = new google.maps.visualization.HeatmapLayer({
-			radius: this.radiusColumn || 15,
+			radius: this.radius || 15,
 			opacity: this.opacity || 0.6
 		});
 	}
@@ -7115,9 +7115,7 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 				</div>
 			`;
 
-			const infoPopUp = new google.maps.InfoWindow({
-				content: infoContent
-			});
+			let infoPopUp;
 
 			const markerObj = new google.maps.Marker({
 				position: {
@@ -7129,6 +7127,10 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 			});
 
 			markerObj.addListener('mouseover', () => {
+
+				infoPopUp = new google.maps.InfoWindow({
+					content: infoContent
+				});
 
 				infoPopUp.open(this.layers.visualization.map, markerObj);
 			});
@@ -7171,7 +7173,19 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 		if(this.existingMarkers)
 			return this.existingMarkers;
 
-		const markers = this.existingMarkers = [];
+		const
+			markers = this.existingMarkers = [],
+			possibleRadiusValues = this.layers.visualization.rows.map(x => x.get(this.radiusColumn)),
+			range = {
+				source: {
+					min: Math.min(...possibleRadiusValues),
+					max: Math.max(...possibleRadiusValues),
+				},
+				target: {
+					min: 100,
+					max: 2000000,
+				},
+			};
 
 		let uniqueFields = [];
 
@@ -7186,7 +7200,7 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 			const color = DataSourceColumn.colors[uniqueFields.indexOf(row.get(this.colorColumn)) % DataSourceColumn.colors.length] || DataSourceColumn.colors[0];
 
 			markers.push(new google.maps.Circle({
-				radius: (((row.get(this.radiusColumn) - 0) / 10000000) * (2000000 - 100)) + 100,
+				radius: (((row.get(this.radiusColumn) - range.source.min) / range.source.max) * (range.target.max - range.target.min)) + range.target.min,
 				center: {
 					lat: row.get(this.latitudeColumn),
 					lng: row.get(this.longitudeColumn),
