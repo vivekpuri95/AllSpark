@@ -18,7 +18,6 @@ main > nav {
 
 }
 	main > nav .dashboard-search {
-		/* border-bottom: 1px solid #ccc; */
 		box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
 	}
 		main > nav .dashboard-search input[type=search] {
@@ -104,7 +103,7 @@ main > nav::-webkit-scrollbar-track {
 	}
 	main > nav .label.selected {
 		background: rgba(0, 0, 0, 0.15);
-		box-shadow: inset 6px 0px 0 var(--color-primary);
+		box-shadow: inset 6px 0px 0 var(--color-accent);
 	}
 		main > nav .submenu .label {
 			padding-left: 40px;

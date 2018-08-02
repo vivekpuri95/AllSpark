@@ -1377,7 +1377,7 @@ class DataSourceColumn {
 	constructor(column, source) {
 
 		DataSourceColumn.colors = [
-			'#8595e1',
+			'#3e7adc',
 			'#ef6692',
 			'#d6bcc0',
 			'#ffca05',
@@ -7117,7 +7117,7 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 						</tr>
 					</table>
 					<hr>
-					<span style="color: #888">Latitude: ${row.get(this.latitudeColumn)}, Longitude: ${row.get(this.longitudeColumn)}</span>	
+					<span style="color: #888">Latitude: ${row.get(this.latitudeColumn)}, Longitude: ${row.get(this.longitudeColumn)}</span>
 				</div>
 			`;
 

@@ -114,9 +114,7 @@ main .data-source.flush {
 		overflow: auto;
 		white-space: nowrap;
 		padding: var(--gap) calc(var(--gap) * 2);
-		background: var(--color-primary);
-		color: var(--color-primary-text);
-		/* border-bottom:  1px solid #ddd; */
+		border-bottom:  1px solid #ddd;
 	}
 	main .data-source > header::-webkit-scrollbar {
 		display: none;
@@ -945,7 +943,7 @@ main .data-source.flush {
 	fill: none;
 	stroke: steelblue;
 	transition: stroke-width var(--transition-duration);
-	stroke-width: 1.5px;
+	stroke-width: 2px;
 }
 
 .visualization .container > svg .line-hover {
