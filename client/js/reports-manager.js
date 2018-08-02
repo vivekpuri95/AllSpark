@@ -2783,8 +2783,8 @@ class SpatialMapOptionsLayers extends Set {
 							<select name="position" value="clustermap" required>
 								<option value="clustermap">Cluster Map</option>
 								<option value="heatmap">Heat Map</option>
-								<!--<option value="scattermap">Scatter Map</option>-->
-								<!--<option value="bubblemap">Bubble Map</option>-->
+								<option value="scattermap">Scatter Map</option>
+								<option value="bubblemap">Bubble Map</option>
 							</select>
 						</label>
 
@@ -2891,8 +2891,8 @@ class SpatialMapOptionsLayer {
 
 		for(const element of container.querySelectorAll('select, input')) {
 
-			if(this[element.name])
-				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
+			if(this[element.tagName == 'SELECT' ? element.name.concat('Column') : element.name])
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.tagName == 'SELECT' ? element.name.concat('Column') : element.name] ;
 		}
 
 		return container;
@@ -2906,9 +2906,14 @@ class SpatialMapOptionsLayer {
 
 		for(const element of this.container.querySelectorAll('select, input')) {
 
-			if(element.type == 'checkbox')
+			if(element.type == 'checkbox') {
 
 				response[element.name] = element.checked;
+			}
+			else if (element.tagName == 'SELECT') {
+
+				response[element.name.concat('Column')] = element.value;
+			}
 			else {
 
 				response[element.name] = element.type == 'number' || element.type == 'range' ? parseFloat(element.value) : element.value;
@@ -2940,6 +2945,11 @@ SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMa
 					<option value=""></option>
 				</select>
 			</label>
+			
+			<label>
+				<span>Radius</span>
+				<input type="number" name="radius">
+			</label>
 
 			<label class="opacity">
 				<span>Opacity <span class="value">${this.opacity || 0.6}</span></span>
@@ -2961,17 +2971,14 @@ SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMa
 			`);
 		}
 
-		for(const element of container.querySelectorAll('select, input')) {
-
-			if(this[element.name])
-				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
-		}
-
-		if(this.weight)
-			container.querySelector('select[name=weight]').value = this.weight;
+		if(this.weightColumn)
+			container.querySelector('select[name=weight]').value = this.weightColumn;
 
 		if(this.opacity)
 			container.querySelector('input[name=opacity]').value = this.opacity;
+
+		if(this.radius)
+			container.querySelector('input[name=radius]').value = this.radius;
 
 		return container;
 	}
@@ -3004,8 +3011,8 @@ SpatialMapOptionsLayer.types.set('scattermap', class ScatterMapLayer extends Spa
 			`);
 		}
 
-		if(this.color)
-			container.querySelector('select[name=color]').value = this.color;
+		if(this.colorColumn)
+			color.value = this.colorColumn;
 
 		return container;
 	}
@@ -3015,6 +3022,47 @@ SpatialMapOptionsLayer.types.set('bubblemap', class BubbleMapLayer extends Spati
 
 	get container() {
 
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = super.container;
+
+		container.querySelector('.delete').parentNode.insertAdjacentHTML('beforebegin', `
+			<label>
+				<span>Color Column</span>
+				<select name="color">
+					<option value=""></option>
+				</select>
+			</label>
+			
+			<label>
+				<span>Radius Column</span>
+				<select name="radius"></select>
+			</label>
+		`);
+
+		const
+			radius = container.querySelector('select[name=radius]'),
+			color = container.querySelector('select[name=color]');
+
+		for(const [key, column] of this.layers.stage.page.preview.report.columns) {
+
+			radius.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			color.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		if(this.radiusColumn)
+			radius.value = this.radiusColumn;
+
+		if(this.colorColumn)
+			color.value = this.colorColumn;
+
+		return container;
 	}
 });
 
@@ -3226,9 +3274,10 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 
 		for (const element of mapOptions.querySelectorAll('select, input')) {
 
-			if(element.type == 'checkbox')
+			if(element.type == 'checkbox') {
 
 				response[element.name] = element.checked;
+			}
 			else {
 
 				response[element.name] = element.type == 'number' ? parseFloat(element.value) : element.value;

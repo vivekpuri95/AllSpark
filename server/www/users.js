@@ -291,7 +291,7 @@ exports.metadata = class extends API {
 
 		metadata.features = await this.mysql.query('SELECT * from tb_features');
 
-		metadata.spatialMapThemes = await this.mysql.query('select * from tb_google_map_themes');
+		metadata.spatialMapThemes = await this.mysql.query('select * from tb_spatial_map_themes');
 
 		return metadata;
 	}
