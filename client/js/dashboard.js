@@ -138,38 +138,23 @@ Page.class = class Dashboards extends Page {
 
 				const submenu = label.parentElement.querySelector('.submenu');
 
-				if (submenu && !parentDashboards.includes(label.id)) {
+				if (submenu) {
 
 					submenu.classList.add('hidden');
-					label.querySelector('.angle') && label.querySelector('.angle').classList.remove('down');
 				}
 
 				label.classList.remove('selected');
 				label.parentElement.classList.remove('list-open');
-
 			}
 
-			if (dashboardId && this.list.get(dashboardId).children.size) {
+			for (const element of parentDashboards) {
 
-				for (const element of parentDashboards) {
+				const label = this.nav.querySelector(`#${element}`);
+				const submenu = label.parentElement.querySelector('.submenu');
 
-					const label = this.nav.querySelector(`#${element}`);
-					const submenu = label.parentElement.querySelector('.submenu');
-
-					submenu && submenu.classList.toggle('hidden');
-					label && label.classList.toggle('selected');
-					submenu && label.parentElement.classList.toggle('list-open');
-					label.querySelector('.angle').classList.toggle('down');
-				}
-			}
-
-			if(dashboardId && !this.list.get(dashboardId).children.size) {
-
-				for(const element of parentDashboards) {
-
-					this.nav.querySelector(`#${element}`).classList.add('selected');
-					this.nav.querySelector(`#${element}`).querySelector('submenu') && this.nav.querySelector(`#${element}`).querySelector('submenu').classList.remove('hidden');
-				}
+				submenu && submenu.classList.remove('hidden');
+				label && label.classList.add('selected');
+				submenu && label.parentElement.classList.add('list-open');
 			}
 		}
 	}
@@ -1208,6 +1193,13 @@ class Nav {
 
 				this.dashboard.page.sync({dashboardId: this.dashboard.id});
 			}
+
+			if (this.dashboard.children.size) {
+
+				container.querySelector('.angle').classList.toggle('down');
+				submenu.classList.toggle('hidden');
+			}
+
 		});
 
 		if (this.dashboard.children.size) {
