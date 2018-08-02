@@ -37,33 +37,36 @@ main > nav {
 	border-right: 1px solid #ccc
 
 }
-	main > nav.show {
-		transform: translateX(0px);
-		opacity: 1;
-	}
-	main > nav .dashboard-search {
-		box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
-	}
-		main > nav .dashboard-search input[type=search] {
-			background: transparent;
-			border: 0 !important;
-			width: 100%;
-			height: 35px !important;
-			outline: none;
-		}
-	main > nav .collapse {
-		margin-top: auto;
-	}
-		main > nav .collapse .name {
-			color: #ccc;
-			margin: 0 auto;
-		}
-		nav > .item .left span {
-			padding: 0 5px;
-		}
-		nav > .item.list-open {
-			box-shadow: inset 10px 0px 0 var(--color-accent);
-		}
+
+main > nav.show {
+	transform: translateX(0px) !important;
+	opacity: 1 !important;
+}
+main > nav .dashboard-search {
+	/* border-bottom: 1px solid #ccc; */
+	box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
+}
+main > nav .dashboard-search input[type=search] {
+	background: transparent;
+	border: 0 !important;
+	width: 100%;
+	height: 35px !important;
+	outline: none;
+}
+main > nav .collapse {
+	margin-top: auto;
+}
+main > nav .collapse .name {
+	color: #ccc;
+	margin: 0 auto;
+}
+nav > .item .left span {
+	padding: 0 5px;
+}
+nav > .item.list-open {
+	box-shadow: inset 10px 0px 0 var(--color-accent);
+}
+
 main > nav::-webkit-scrollbar {
 	background: var(--color-secondary);
 	width: 8px;
@@ -509,6 +512,28 @@ main #reports > .list {
 					width: calc(100vw - calc(var(--gap) * 6));
 					height: 300px;
 				}
+}
+
+body.floating main  {
+	grid-template-columns: 1fr;
+}
+
+body.floating main  nav {
+	position: fixed;
+	width: 220px;
+	transform: translateX(-220px);
+	top: 50px;
+	left: 0;
+	opacity: 0;
+	background: #eee;
+	border: 0;
+	box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
+	transition: transform var(--transition-duration),
+	opacity var(--transition-duration);
+}
+
+body.floating header > .nav-toggle  {
+	display: flex;
 }
 
 main .nav-blanket {

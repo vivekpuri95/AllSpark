@@ -9,6 +9,7 @@ Page.class = class Dashboards extends Page {
 		this.list = new Map;
 		this.loadedVisualizations = new Set;
 		this.nav = document.querySelector('main > nav');
+		//document.querySelector('body').classList.add('floating');
 
 		this.listContainer = this.container.querySelector('section#list');
 		this.reports = this.container.querySelector('section#reports');
@@ -25,6 +26,7 @@ Page.class = class Dashboards extends Page {
 			this.nav.classList.toggle('show');
 			navBlanket.classList.toggle('hidden');
 			navToggle.classList.toggle('selected');
+			//document.querySelector('body').classList.remove('floating');
 		});
 
 		navBlanket.on('click', () => {
@@ -32,6 +34,7 @@ Page.class = class Dashboards extends Page {
 			this.nav.classList.remove('show');
 			navBlanket.classList.add('hidden');
 			navToggle.classList.remove('selected');
+			//document.querySelector('body').classList.remove('floating');
 		});
 
 		if (this.account.settings.get('disable_footer')) {
@@ -135,23 +138,38 @@ Page.class = class Dashboards extends Page {
 
 				const submenu = label.parentElement.querySelector('.submenu');
 
-				if (submenu) {
+				if (submenu && !parentDashboards.includes(label.id)) {
 
 					submenu.classList.add('hidden');
+					label.querySelector('.angle') && label.querySelector('.angle').classList.remove('down');
 				}
 
 				label.classList.remove('selected');
 				label.parentElement.classList.remove('list-open');
+
 			}
 
-			for (const element of parentDashboards) {
+			if (dashboardId && this.list.get(dashboardId).children.size) {
 
-				const label = this.nav.querySelector(`#${element}`);
-				const submenu = label.parentElement.querySelector('.submenu');
+				for (const element of parentDashboards) {
 
-				submenu && submenu.classList.remove('hidden');
-				label && label.classList.add('selected');
-				submenu && label.parentElement.classList.add('list-open');
+					const label = this.nav.querySelector(`#${element}`);
+					const submenu = label.parentElement.querySelector('.submenu');
+
+					submenu && submenu.classList.toggle('hidden');
+					label && label.classList.toggle('selected');
+					submenu && label.parentElement.classList.toggle('list-open');
+					label.querySelector('.angle').classList.toggle('down');
+				}
+			}
+
+			if(dashboardId && !this.list.get(dashboardId).children.size) {
+
+				for(const element of parentDashboards) {
+
+					this.nav.querySelector(`#${element}`).classList.add('selected');
+					this.nav.querySelector(`#${element}`).querySelector('submenu') && this.nav.querySelector(`#${element}`).querySelector('submenu').classList.remove('hidden');
+				}
 			}
 		}
 	}
@@ -1061,6 +1079,7 @@ class Navbar {
 		this.page.nav.insertAdjacentHTML('beforeend', `
 			<footer>
 				<div class="collapse-panel">
+					<span class="left"><i class="fa fa-angle-double-left"></i></span>
 				</div>
 			</footer>
 		`);
@@ -1118,6 +1137,8 @@ class Navbar {
 				item.querySelector('.angle') ? item.querySelector('.angle').classList.add('down') : {};
 			}
 		}, {passive: true});
+
+		this.page.nav.querySelector('.collapse-panel').on('click', () => document.querySelector('body').classList.toggle('floating'));
 	}
 }
 
@@ -1187,13 +1208,6 @@ class Nav {
 
 				this.dashboard.page.sync({dashboardId: this.dashboard.id});
 			}
-
-			if (this.dashboard.children.size) {
-
-				container.querySelector('.angle').classList.toggle('down');
-				submenu.classList.toggle('hidden');
-			}
-
 		});
 
 		if (this.dashboard.children.size) {
