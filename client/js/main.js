@@ -1681,7 +1681,7 @@ class MultiSelect {
 			}
 
 			input.name = this.inputName;
-			input.value = row.value;
+			input.value = row.value == null ? '' : row.value;
 			input.type = this.multiple ? 'checkbox' : 'radio';
 
 			label.appendChild(input);
