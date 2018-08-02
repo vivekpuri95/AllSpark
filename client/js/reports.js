@@ -6236,8 +6236,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {
 				zoom,
 				center: {
-					lat: this.options.centerLatitude || this.rows[0].get(this.options.layers[0].latitudeColumn),
-					lng: this.options.centerLongitude || this.rows[0].get(this.options.layers[0].longitudeColumn)
+					lat: this.options.centerLatitude || parseFloat(this.rows[0].get(this.options.layers[0].latitudeColumn)),
+					lng: this.options.centerLongitude || parseFloat(this.rows[0].get(this.options.layers[0].longitudeColumn))
 				}
 			});
 
@@ -6910,16 +6910,16 @@ class SpatialMapLayers extends Set {
 		for(const layer of this.values()) {
 
 			if(!layer.latitudeColumn)
-				return this.source.error('Latitude Column not defined.');
+				return this.visualization.source.error('Latitude Column not defined.');
 
 			if(!this.visualization.source.columns.has(layer.latitudeColumn))
-				return this.source.error(`Latitude Column '${layer.latitudeColumn}' not found.`);
+				return this.visualization.source.error(`Latitude Column '${layer.latitudeColumn}' not found.`);
 
 			if(!layer.longitudeColumn)
-				return this.source.error('Longitude Column not defined.');
+				return this.visualization.source.error('Longitude Column not defined.');
 
 			if(!this.visualization.source.columns.has(layer.longitudeColumn))
-				return this.source.error(`Longitude Column '${layer.longitudeColumn}' not found.`);
+				return this.visualization.source.error(`Longitude Column '${layer.longitudeColumn}' not found.`);
 
 			this.visible.has(layer) ? layer.plot() : layer.clear();
 		}
@@ -7008,14 +7008,16 @@ SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 			if(this.weightColumn) {
 
 				markers.push({
-					location: new google.maps.LatLng(row.get(this.latitudeColumn), row.get(this.longitudeColumn)),
-					weight: row.get(this.weightColumn)
+					location: new google.maps.LatLng(parseFloat(row.get(this.latitudeColumn)), parseFloat(row.get(this.longitudeColumn))),
+					weight: parseFloat(row.get(this.weightColumn))
 				});
 
 				continue;
 			}
 
-			markers.push(new google.maps.LatLng(row.get(this.latitudeColumn), row.get(this.longitudeColumn)));
+			markers.push(
+				new google.maps.LatLng(parseFloat(row.get(this.latitudeColumn)), parseFloat(row.get(this.longitudeColumn)))
+			);
 		}
 
 		return markers
@@ -7049,8 +7051,8 @@ SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer
 			markers.push(
 				new google.maps.Marker({
 					position: {
-						lat: row.get(this.latitudeColumn),
-						lng: row.get(this.longitudeColumn),
+						lat: parseFloat(row.get(this.latitudeColumn)),
+						lng: parseFloat(row.get(this.longitudeColumn)),
 					},
 				})
 			);
@@ -7119,8 +7121,8 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 			const markerObj = new google.maps.Marker({
 				position: {
-					lat: row.get(this.latitudeColumn),
-					lng: row.get(this.longitudeColumn),
+					lat: parseFloat(row.get(this.latitudeColumn)),
+					lng: parseFloat(row.get(this.longitudeColumn)),
 				},
 				icon: urlPrefix + (markerColor[uniqueFields.indexOf(row.get(this.colorColumn)) % markerColor.length] || 'red') + '-dot.png',
 				title: row.get(this.colorColumn).toString(),
@@ -7175,7 +7177,7 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 
 		const
 			markers = this.existingMarkers = [],
-			possibleRadiusValues = this.layers.visualization.rows.map(x => x.get(this.radiusColumn)),
+			possibleRadiusValues = this.layers.visualization.rows.map(x => parseFloat(x.get(this.radiusColumn))),
 			range = {
 				source: {
 					min: Math.min(...possibleRadiusValues),
@@ -7197,13 +7199,18 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 
 		for(const row of this.layers.visualization.rows) {
 
+			const markerRadius = parseFloat(row.get(this.radiusColumn));
+
+			if(!markerRadius)
+				return this.layers.visualization.source.error('Radius column must contain numerical values');
+
 			const color = DataSourceColumn.colors[uniqueFields.indexOf(row.get(this.colorColumn)) % DataSourceColumn.colors.length] || DataSourceColumn.colors[0];
 
 			markers.push(new google.maps.Circle({
-				radius: (((row.get(this.radiusColumn) - range.source.min) / range.source.max) * (range.target.max - range.target.min)) + range.target.min,
+				radius: (((markerRadius - range.source.min) / range.source.max) * (range.target.max - range.target.min)) + range.target.min,
 				center: {
-					lat: row.get(this.latitudeColumn),
-					lng: row.get(this.longitudeColumn),
+					lat: parseFloat(row.get(this.latitudeColumn)),
+					lng: parseFloat(row.get(this.longitudeColumn)),
 				},
 				strokeColor: color,
 				strokeOpacity: 0.8,
