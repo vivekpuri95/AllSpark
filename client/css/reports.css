@@ -1062,6 +1062,7 @@ main .data-source.flush {
 			color: #666;
 			margin-top: 1px;
 			opacity: 0;
+			display: none;
 		}
 		.visualization.livenumber .container .left:hover .value small,
 		.visualization.livenumber .container .right:hover .value small {

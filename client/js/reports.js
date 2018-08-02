@@ -6605,7 +6605,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
 					<span class="value">
 						<span class="value-left">${this.dates.get(this.left.date) ? this.dates.get(this.left.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
-						<small class="hidden" title="${Format.date(this.left.date)}">
+						<small title="${Format.date(this.left.date)}">
 							${Format.number(this.options.leftOffset)} ${Format.number(this.options.leftOffset) == '1'? 'day' : 'days'} ago
 						</small>
 					</span>
@@ -6622,7 +6622,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 					<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
 					<span class="value">
 						<span class="value-right">${this.dates.get(this.right.date) ? this.dates.get(this.right.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
-						<small class="hidden" title="${Format.date(this.right.date)}">
+						<small title="${Format.date(this.right.date)}">
 							${Format.number(this.options.rightOffset)} ${Format.number(this.options.rightOffset) == '1'? 'day' : 'days'} ago
 						</small>
 					</span>
