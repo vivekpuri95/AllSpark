@@ -6236,8 +6236,8 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {
 				zoom,
 				center: {
-					lat: this.options.centerLatitude || this.rows[0].get(this.options.layers[0].latitude),
-					lng: this.options.centerLongitude || this.rows[0].get(this.options.layers[0].longitude)
+					lat: this.options.centerLatitude || this.rows[0].get(this.options.layers[0].latitudeColumn),
+					lng: this.options.centerLongitude || this.rows[0].get(this.options.layers[0].longitudeColumn)
 				}
 			});
 
@@ -6909,17 +6909,17 @@ class SpatialMapLayers extends Set {
 
 		for(const layer of this.values()) {
 
-			if(!layer.latitude)
+			if(!layer.latitudeColumn)
 				return this.source.error('Latitude Column not defined.');
 
-			if(!this.visualization.source.columns.has(layer.latitude))
-				return this.source.error(`Latitude Column '${layer.latitude}' not found.`);
+			if(!this.visualization.source.columns.has(layer.latitudeColumn))
+				return this.source.error(`Latitude Column '${layer.latitudeColumn}' not found.`);
 
-			if(!layer.longitude)
+			if(!layer.longitudeColumn)
 				return this.source.error('Longitude Column not defined.');
 
-			if(!this.visualization.source.columns.has(layer.longitude))
-				return this.source.error(`Longitude Column '${layer.longitude}' not found.`);
+			if(!this.visualization.source.columns.has(layer.longitudeColumn))
+				return this.source.error(`Longitude Column '${layer.longitudeColumn}' not found.`);
 
 			this.visible.has(layer) ? layer.plot() : layer.clear();
 		}
@@ -6980,7 +6980,7 @@ SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 		super(layer, layers);
 
 		this.heatmap = new google.maps.visualization.HeatmapLayer({
-			radius: this.radius || 15,
+			radius: this.radiusColumn || 15,
 			opacity: this.opacity || 0.6
 		});
 	}
@@ -7005,17 +7005,17 @@ SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 
 		for(const row of this.layers.visualization.rows) {
 
-			if(this.weight) {
+			if(this.weightColumn) {
 
 				markers.push({
-					location: new google.maps.LatLng(row.get(this.latitude), row.get(this.longitude)),
-					weight: row.get(this.weight)
+					location: new google.maps.LatLng(row.get(this.latitudeColumn), row.get(this.longitudeColumn)),
+					weight: row.get(this.weightColumn)
 				});
 
 				continue;
 			}
 
-			markers.push(new google.maps.LatLng(row.get(this.latitude), row.get(this.longitude)));
+			markers.push(new google.maps.LatLng(row.get(this.latitudeColumn), row.get(this.longitudeColumn)));
 		}
 
 		return markers
@@ -7049,8 +7049,8 @@ SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer
 			markers.push(
 				new google.maps.Marker({
 					position: {
-						lat: row.get(this.latitude),
-						lng: row.get(this.longitude),
+						lat: row.get(this.latitudeColumn),
+						lng: row.get(this.longitudeColumn),
 					},
 				})
 			);
@@ -7064,12 +7064,12 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 	plot() {
 
+		const map = this.markers[0].getMap();
+
 		for(const marker of this.markers) {
 
-			if(marker.getMap())
-				continue;
-
-			marker.setMap(this.layers.visualization.map);
+			if(!map)
+				marker.setMap(this.layers.visualization.map);
 		}
 	}
 
@@ -7094,26 +7094,24 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 		let uniqueFields = [];
 
-		if(this.color) {
+		if(this.colorColumn) {
 
-			uniqueFields = this.layers.visualization.rows.map(x => x.get(this.color));
+			uniqueFields = this.layers.visualization.rows.map(x => x.get(this.colorColumn));
 			uniqueFields = Array.from(new Set(uniqueFields));
 		}
 
 		for(const row of this.layers.visualization.rows) {
 
-			row.set('color', markerColor[uniqueFields.indexOf(row.get(this.color)) % markerColor.length]);
-
 			const infoContent = `
 				<div>
 					<table style="border: none;">
 						<tr>
-							<td>${this.color.slice(0, 1).toUpperCase() + this.color.slice(1)}</td>
-							<td>${row.get(this.color) || ''}</td>
+							<td>${this.colorColumn.slice(0, 1).toUpperCase() + this.colorColumn.slice(1)}</td>
+							<td>${row.get(this.colorColumn) || ''}</td>
 						</tr>
 					</table>
 					<hr>
-					<span style="color: #888">Latitude: ${row.get(this.latitude)}, Longitude: ${row.get(this.longitude)}</span>	
+					<span style="color: #888">Latitude: ${row.get(this.latitudeColumn)}, Longitude: ${row.get(this.longitudeColumn)}</span>	
 				</div>
 			`;
 
@@ -7123,11 +7121,11 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 
 			const markerObj = new google.maps.Marker({
 				position: {
-					lat: row.get(this.latitude),
-					lng: row.get(this.longitude),
+					lat: row.get(this.latitudeColumn),
+					lng: row.get(this.longitudeColumn),
 				},
-				icon: urlPrefix + (row.get('color') || 'red') + '-dot.png',
-				title: row.get(this.color),
+				icon: urlPrefix + (markerColor[uniqueFields.indexOf(row.get(this.colorColumn)) % markerColor.length] || 'red') + '-dot.png',
+				title: row.get(this.colorColumn).toString(),
 			});
 
 			markerObj.addListener('mouseover', () => {
@@ -7151,12 +7149,12 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 
 	plot() {
 
+		const map = this.markers[0].getMap();
+
 		for(const marker of this.markers) {
 
-			if(marker.getMap())
-				continue;
-
-			marker.setMap(this.layers.visualization.map);
+			if(!map)
+				marker.setMap(this.layers.visualization.map);
 		}
 	}
 
@@ -7177,26 +7175,26 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 
 		let uniqueFields = [];
 
-		if(this.color) {
+		if(this.colorColumn) {
 
-			uniqueFields = this.layers.visualization.rows.map(x => x.get(this.color));
+			uniqueFields = this.layers.visualization.rows.map(x => x.get(this.colorColumn));
 			uniqueFields = Array.from(new Set(uniqueFields));
 		}
 
 		for(const row of this.layers.visualization.rows) {
 
-			row.set('color', DataSourceColumn.colors[uniqueFields.indexOf(row.get(this.color)) % DataSourceColumn.colors.length] || DataSourceColumn.colors[0]);
+			const color = DataSourceColumn.colors[uniqueFields.indexOf(row.get(this.colorColumn)) % DataSourceColumn.colors.length] || DataSourceColumn.colors[0];
 
 			markers.push(new google.maps.Circle({
-				radius: Math.sqrt(row.get(this.latitude)) * 100,
+				radius: (((row.get(this.radiusColumn) - 0) / 10000000) * (2000000 - 100)) + 100,
 				center: {
-					lat: row.get(this.latitude),
-					lng: row.get(this.longitude),
+					lat: row.get(this.latitudeColumn),
+					lng: row.get(this.longitudeColumn),
 				},
-				strokeColor: row.get('color'),
+				strokeColor: color,
 				strokeOpacity: 0.8,
 				strokeWeight: 2,
-				fillColor: row.get('color'),
+				fillColor: color,
 				fillOpacity: 0.35,
 			}));
 		}

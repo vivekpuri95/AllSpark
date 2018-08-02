@@ -2891,8 +2891,8 @@ class SpatialMapOptionsLayer {
 
 		for(const element of container.querySelectorAll('select, input')) {
 
-			if(this[element.name])
-				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
+			if(this[element.type == 'select-one' ? element.name.concat('Column') : element.name])
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.type == 'select-one' ? element.name.concat('Column') : element.name] ;
 		}
 
 		return container;
@@ -2906,9 +2906,14 @@ class SpatialMapOptionsLayer {
 
 		for(const element of this.container.querySelectorAll('select, input')) {
 
-			if(element.type == 'checkbox')
+			if(element.type == 'checkbox') {
 
 				response[element.name] = element.checked;
+			}
+			else if (element.type == 'select-one') {
+
+				response[element.name.concat('Column')] = element.value;
+			}
 			else {
 
 				response[element.name] = element.type == 'number' || element.type == 'range' ? parseFloat(element.value) : element.value;
@@ -2961,14 +2966,8 @@ SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMa
 			`);
 		}
 
-		for(const element of container.querySelectorAll('select, input')) {
-
-			if(this[element.name])
-				element[element.type == 'checkbox' ? 'checked' : 'value'] = this[element.name];
-		}
-
-		if(this.weight)
-			container.querySelector('select[name=weight]').value = this.weight;
+		if(this.weightColumn)
+			container.querySelector('select[name=weight]').value = this.weightColumn;
 
 		if(this.opacity)
 			container.querySelector('input[name=opacity]').value = this.opacity;
@@ -3004,8 +3003,8 @@ SpatialMapOptionsLayer.types.set('scattermap', class ScatterMapLayer extends Spa
 			`);
 		}
 
-		if(this.color)
-			color.value = this.color;
+		if(this.colorColumn)
+			color.value = this.colorColumn;
 
 		return container;
 	}
@@ -3030,9 +3029,7 @@ SpatialMapOptionsLayer.types.set('bubblemap', class BubbleMapLayer extends Spati
 			
 			<label>
 				<span>Radius Column</span>
-				<select name="radius">
-					<option value=""></option>
-				</select>
+				<select name="radius"></select>
 			</label>
 		`);
 
@@ -3051,11 +3048,11 @@ SpatialMapOptionsLayer.types.set('bubblemap', class BubbleMapLayer extends Spati
 			`);
 		}
 
-		if(this.radius)
-			radius.value = this.radius;
+		if(this.radiusColumn)
+			radius.value = this.radiusColumn;
 
-		if(this.color)
-			color.value = this.color;
+		if(this.colorColumn)
+			color.value = this.colorColumn;
 
 		return container;
 	}
@@ -3269,9 +3266,10 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 
 		for (const element of mapOptions.querySelectorAll('select, input')) {
 
-			if(element.type == 'checkbox')
+			if(element.type == 'checkbox') {
 
 				response[element.name] = element.checked;
+			}
 			else {
 
 				response[element.name] = element.type == 'number' ? parseFloat(element.value) : element.value;
