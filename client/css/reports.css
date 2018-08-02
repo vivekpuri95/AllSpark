@@ -1060,13 +1060,13 @@ main .data-source.flush {
 		right: 0;
 		bottom: 0;
 		left: 0;
-		opacity: 0.4;
-		filter: blur(1px);
+		opacity: 0.8;
+		filter: blur(1.5px);
 	}
 		.visualization.livenumber .graph svg .line {
 			fill: none;
 			transition: stroke-width var(--transition-duration);
-			stroke-width: 5px;
+			stroke-width: 2px;
 		}
 		.visualization.livenumber .graph svg .y .domain {
 			display: none;
