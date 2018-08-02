@@ -3,9 +3,9 @@
 :root {
 	--color-primary: #2a313f;
 	--color-primary-text: #fff;
-	--color-secondary: #ddd;
-	--color-secondary-text: #333;
-	--color-accent:  #1abb9c;
+	--color-secondary: #3e7adc;
+	--color-secondary-text: #fff;
+	--color-accent: #3e7adc;
 	--color-accent-text: #fff;
 	--color-selected: #fff59d;
 	--color-selected-text: inherit;
@@ -150,8 +150,8 @@ body {
 		letter-spacing: 1px;
 		transition: opacity var(--transition-duration);
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-		background: var(--color-accent);
-		color: var(--color-accent-text);
+		background: var(--color-accent-text);
+		color: var(--color-accent);
 		width: 80px;
 		z-index: 11;
 	}
@@ -167,8 +167,8 @@ body {
 		transition: background var(--transition-duration);
 	}
 	body > header {
-		background: var(--color-primary);
-		color: var(--color-primary-text);
+		background: var(--color-secondary);
+		color: var(--color-secondary-text);
 		display: flex;
 		position: sticky;
 		top: 0;
@@ -196,7 +196,7 @@ body {
 		body > header .nav-container {
 			display: flex;
 			width: 100%;
-			background: var(--color-primary);
+			background: var(--color-secondary);
 		}
 			body > header nav {
 				display: flex;
@@ -206,7 +206,7 @@ body {
 			body > header .user-toggle,
 			body > header .menu-toggle {
 				display: flex;
-				color: var(--color-primary-text);
+				color: var(--color-secondary-text);
 				padding: 15px 20px;
 				letter-spacing: 1px;
 				transition: background var(--transition-duration);
