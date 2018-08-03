@@ -6480,6 +6480,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			if(!this.subReports || !this.subReports.length)
 				return;
 
+			if(this.subReportsLoaded) {
+
+				this.subReportDialogBox.show();
+				return;
+			}
+
 			this.subReportDialogBox.body.textContent = null;
 			this.subReportDialogBox.show();
 
@@ -6504,6 +6510,8 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				report.visualizations.selected.load();
 				this.subReportDialogBox.body.appendChild(report.container);
 			}
+
+			this.subReportsLoaded = true;
 		});
 
 		await this.source.fetch(options);

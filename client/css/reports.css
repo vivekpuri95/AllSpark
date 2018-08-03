@@ -153,6 +153,8 @@ main .data-source.flush {
 			main .data-source > header .actions .card-info {
 				cursor: pointer;
 				color: #999;
+				padding: 4px 0;
+				width: 12px;
 			}
 			main .data-source > header .actions a {
 				opacity: 0;
@@ -1219,7 +1221,7 @@ main .column-form.compact {
 		}
 
 main .sub-reports-dialog .dialog-box {
-	width: 80%;
+	width: 50%;
 }
 	main .sub-reports-dialog .body {
 		padding: var(--gap) 0;
