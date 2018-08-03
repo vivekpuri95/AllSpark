@@ -108,6 +108,9 @@ main .data-source.flush {
 			font-size: calc(10px + 0.3vw);
 			color: #bbb;
 		}
+		main .data-source > .warning span.retry:hover {
+			cursor: pointer;
+		}
 	main .data-source > header {
 		display: flex;
 		align-items: center;

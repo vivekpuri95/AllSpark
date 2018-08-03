@@ -958,7 +958,7 @@ class AJAX {
 		if(response.status == 401)
 			return User.logout({redirect: options.redirectOnLogout});
 
-		return await response.json();
+		return response.headers.get("content-type").includes('json') ? await response.json() : await response.text();
 	}
 }
 
@@ -1114,8 +1114,9 @@ class API extends AJAX {
 API.Exception = class {
 
 	constructor(response = {}) {
-		this.status = response.status;
-		this.message = response.message;
+
+		this.status = response.status || '';
+		this.message = response.message || response;
 	}
 }
 
