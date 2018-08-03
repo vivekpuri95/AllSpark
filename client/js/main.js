@@ -1803,7 +1803,7 @@ class MultiSelect {
 		if(!this.multiple || this.disabled || !this.datalist)
 			return;
 
-		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+		this.datalist.map(obj => this.selectedValues.add(obj.value ? obj.value.toString() : ''));
 
 		if(this.changeCallback)
 			this.changeCallback();
