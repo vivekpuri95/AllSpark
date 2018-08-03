@@ -320,6 +320,10 @@ body {
 			body > header .menu-toggle {
 				display: flex;
 			}
+			main .dialog-box {
+				width: calc(100% - calc(var(--gap) * 3));
+				max-height: calc(100% - calc(var(--gap) * 10));
+			}
 		}
 
 	main {
