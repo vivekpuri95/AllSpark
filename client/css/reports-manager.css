@@ -501,7 +501,7 @@ main.preview-left #stages {
 				color: #999;
 			}
 			#stage-configure-visualization .layers .form .gradient {
-				grid-template-columns: 220px 220px;
+				grid-template-columns: 230px 230px;
 				display: grid;
 				grid-gap: calc(var(--gap) * 3);
 			}
@@ -509,7 +509,7 @@ main.preview-left #stages {
 					height: 15px;
 					cursor: pointer;
 					margin: 4px 0;
-					box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+					box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 				}
 		#stage-configure-visualization .axes .add-axis .form,
 		#stage-configure-visualization .layers .add-layer .form {
@@ -670,13 +670,13 @@ main.preview-left #stages {
 		}
 		#stage-configure-visualization .configuration-section .theme-list .theme:hover,
 		#stage-configure-visualization .layers .form .gradient div:hover {
-			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 			transform: perspective(500px) translatez(30px)
 		}
 		#stage-configure-visualization .configuration-section .theme-list .theme.selected,
 		#stage-configure-visualization .layers .form .gradient div.selected {
 			border: 1px solid #80b7fa;
-			box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
 		}
 			#stage-configure-visualization .configuration-section .theme-list .theme .name {
 				position: absolute;

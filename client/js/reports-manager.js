@@ -3415,6 +3415,8 @@ SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMa
 
 		for(const gradient in SpatialMapLayer.types.get('heatmap').gradient) {
 
+			this.selectedGradient = this.gradient || 'standard';
+
 			const gradDiv = document.createElement('div');
 			gradDiv.classList.add(gradient);
 
@@ -3440,7 +3442,7 @@ SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMa
 				gradDiv.classList.add('selected');
 			});
 
-			if(gradient == this.gradient)
+			if(gradient == this.selectedGradient)
 				gradDiv.classList.add('selected');
 
 			container.querySelector('.gradient').appendChild(gradDiv);
