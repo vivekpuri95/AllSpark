@@ -68,7 +68,7 @@ nav > .item.list-open {
 }
 
 main > nav::-webkit-scrollbar {
-	background: var(--color-secondary);
+	background: #fff;
 	width: 8px;
 }
 main > nav::-webkit-scrollbar-thumb {

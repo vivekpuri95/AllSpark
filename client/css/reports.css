@@ -470,8 +470,8 @@ main .data-source.flush {
 						main .dialog-box form h3{
 							margin: 0;
 							padding: var(--gap) 10px;
-							background: var(--color-primary);
-							color: var(--color-primary-text);
+							background: var(--color-secondary);
+							color: var(--color-secondary-text);
 							position: sticky;
 							top: 0px;
 							font-weight: normal;
@@ -1221,6 +1221,7 @@ main .column-form.compact {
 
 main .sub-reports-dialog .dialog-box {
 	width: 50%;
+	background: #eee;
 }
 	main .sub-reports-dialog .body {
 		padding: calc(var(--gap) * 2) 0;
