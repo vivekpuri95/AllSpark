@@ -6680,7 +6680,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	plotGraph(options) {
 
-		const margin = {top: 30, right: 20, bottom: 30, left: 50};
+		const margin = {top: 30, right: 20, bottom: 30, left: 20};
 
 		const container = d3.selectAll(`#visualization-${this.id} .graph`);
 
@@ -6721,19 +6721,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			.attr('class', 'line')
 			.attr('d', valueline(data))
 			.attr('stroke', this.source.columns.get(this.options.valueColumn).color);
-
-		if(!this.options.hideYAxis) {
-
-			const yAxis = d3.svg.axis()
-				.scale(y)
-				.orient('left');
-
-			yAxis.tickFormat(d3.format('s'));
-
-			svg.append('g')
-				.attr('class', 'y axis')
-				.call(yAxis);
-		}
 
 		if(!options.resize) {
 

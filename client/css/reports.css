@@ -1010,7 +1010,7 @@ main .data-source.flush {
 	flex-wrap: wrap;
 }
 	.visualization.livenumber .container h5 {
-		font-size: calc(40px + 1vw);
+		font-size: calc(35px + 1vw);
 		flex: 1 1 100%;
 		margin: 0;
 		height: 55%;
@@ -1036,10 +1036,10 @@ main .data-source.flush {
 		position: relative;
 	}
 		.visualization.livenumber .container .red {
-			color: #a00;
+			color: #db4437;
 		}
 		.visualization.livenumber .container .green {
-			color: #191;
+			color: #2c9d58;
 		}
 		.visualization.livenumber .container h6 {
 			font-size: calc(18px + .2vw);

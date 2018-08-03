@@ -1200,6 +1200,7 @@ class Format {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric',
+			timeZone: 'UTC',
 		};
 
 		if(!Format.date.formatter)
@@ -1221,7 +1222,8 @@ class Format {
 
 		const options = {
 			year: 'numeric',
-			month: 'short'
+			month: 'short',
+			timeZone: 'UTC',
 		};
 
 		if(!Format.month.formatter)
@@ -1242,7 +1244,8 @@ class Format {
 	static year(year) {
 
 		const options = {
-			year: 'numeric'
+			year: 'numeric',
+			timeZone: 'UTC',
 		};
 
 		if(!Format.year.formatter)

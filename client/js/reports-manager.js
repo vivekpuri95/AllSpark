@@ -717,7 +717,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			on
 			<strong>${Format.dateTime(this.report.created_at)}</strong>
 		`;
-		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
 
 		if(this.report.is_redis > 0) {
 			this.form.redis.value = 'custom';
@@ -2953,7 +2952,7 @@ SpatialMapOptionsLayer.types.set('heatmap', class HeatMapLayer extends SpatialMa
 					<option value=""></option>
 				</select>
 			</label>
-			
+
 			<label>
 				<span>Radius</span>
 				<input type="number" name="radius">
@@ -3042,7 +3041,7 @@ SpatialMapOptionsLayer.types.set('bubblemap', class BubbleMapLayer extends Spati
 					<option value=""></option>
 				</select>
 			</label>
-			
+
 			<label>
 				<span>Radius Column</span>
 				<select name="radius"></select>
@@ -3401,12 +3400,6 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 						<label>
 							<span>
 								<input type="checkbox" name="showGraph">Show Graph
-							</span>
-						</label>
-
-						<label>
-							<span>
-								<input type="checkbox" name="hideYAxis">Hide Graph's Y Axis Graph
 							</span>
 						</label>
 

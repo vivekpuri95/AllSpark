@@ -551,9 +551,7 @@ body {
 	.global-search > input.search-input {
 		width: 100%;
 		border-radius: 5px;
-		background: rgba(255, 255, 255, 0.15) !important;
 		border: 0px !important;
-		color: #fff;
 		align-self: center;
 	}
 	.global-search > input.search-input.bottom-border {
