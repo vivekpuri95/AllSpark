@@ -516,7 +516,7 @@ body {
 	}
 		.dialog-box > header {
 			display: flex;
-			background: var(--color-primary);
+			background: var(--color-secondary);
 			color: #fff;
 			position: sticky;
 			top: 0;

@@ -728,7 +728,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.is_redis.classList.add('hidden');
 		}
 
-		const share = new ObjectRoles('report', this.report.query_id);
+		const share = new ObjectRoles('query', this.report.query_id);
 
 		await share.load();
 
