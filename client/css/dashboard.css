@@ -126,18 +126,25 @@ main > nav::-webkit-scrollbar-track {
 			}
 	main > nav footer {
 		margin-top: auto;
+		color: #666;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 	}
 		main > nav footer .collapse-panel {
-			display: flex;
-			padding: 12px 0;
-			justify-content: center;
-			width: 100%;
-			color: #999;
+			padding: 12px;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
 			background: rgba(0, 0, 0, 0.15);
 		}
+		main > nav footer .powered-by {
+			padding: 12px;
+			font-size: 80%;
+		}
+			main > nav footer .powered-by a {
+				color: #333;
+			}
 
 main #reports.show {
 	display: grid;
@@ -574,7 +581,7 @@ main > footer {
 	grid-column: 1 / -1;
 	z-index: 5;
 	display: flex;
-	padding: calc(var(--gap) );
+	padding: calc(var(--gap));
 	justify-content: center;
 	font-size: 80%;
 	margin-top: auto;

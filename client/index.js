@@ -525,7 +525,20 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 				<label class="dashboard-search">
 					<input type="search" name="search" placeholder="Search..." >
 				</label>
+
 				<div class="dashboard-hierarchy"></div>
+
+				<footer>
+
+					<div class="collapse-panel">
+						<span class="left"><i class="fa fa-angle-double-left"></i></span>
+					</div>
+
+					<span class="powered-by ${this.account.settings.get('disable_powered_by') ? 'hidden' : ''}">
+						Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
+						<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
+					</span>
+				</footer>
 			</nav>
 			<div class="nav-blanket hidden"></div>
 			<section class="section" id="list">
@@ -606,10 +619,6 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 			</section>
 
 			<footer class="site-footer">
-				<span class="${this.account.settings.get('disable_powered_by') ? 'hidden' : ''}">
-					Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
-					<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
-				</span><span>&nbsp;</span>
 				<div class="env">
 					<span class="text">
 						Env: <span class="strong">${this.env.name}</span>
@@ -830,7 +839,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 								<span>Tags (Comma Separated)</span>
 								<input type="text" name="tags">
 							</label>
-							
+
 							<label>
 								<span>Category</span>
 								<select name="category_id"></select>

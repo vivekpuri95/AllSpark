@@ -42,11 +42,15 @@ Page.class = class Dashboards extends Page {
 			this.container.parentElement.querySelector('main > footer').classList.add('hidden');
 		}
 
-
 		else {
 			const deployTime = this.container.parentElement.querySelector('main > footer .deploy-time')
 			deployTime.textContent = Format.dateTime(deployTime.textContent);
 		}
+
+		if (this.account.settings.get('disable_powered_by'))
+			this.nav.querySelector('footer').classList.add('hidden');
+
+		this.nav.querySelector('.collapse-panel').on('click', () => document.querySelector('body').classList.toggle('floating'));
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
@@ -54,7 +58,6 @@ Page.class = class Dashboards extends Page {
 			await Sections.show('list');
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
-
 
 		for (const category of MetaData.categories.values()) {
 
@@ -1056,19 +1059,6 @@ class Navbar {
 			}
 		}
 
-		if (this.page.nav.querySelector('footer')) {
-
-			this.page.nav.querySelector('footer').remove();
-		}
-
-		this.page.nav.insertAdjacentHTML('beforeend', `
-			<footer>
-				<div class="collapse-panel">
-					<span class="left"><i class="fa fa-angle-double-left"></i></span>
-				</div>
-			</footer>
-		`);
-
 		search.removeEventListener('keyup', this.navSearch);
 
 		search.on('keyup', this.navSearch = () => {
@@ -1122,8 +1112,6 @@ class Navbar {
 				item.querySelector('.angle') ? item.querySelector('.angle').classList.add('down') : {};
 			}
 		}, {passive: true});
-
-		this.page.nav.querySelector('.collapse-panel').on('click', () => document.querySelector('body').classList.toggle('floating'));
 	}
 }
 
