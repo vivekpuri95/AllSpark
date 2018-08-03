@@ -108,7 +108,7 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		const select = this.form.querySelector('select[name="type"]');
 
 		for(const type of MetaData.filterTypes.values()) {
-			select.insertAdjacentHTML('beforeend', `<option value="${type.input_type}">${type.name}</option>`);
+			select.insertAdjacentHTML('beforeend', `<option value="${type.name.toLowerCase()}">${type.name}</option>`);
 		};
 
 		this.container.querySelector('#global-filters-form #cancel-form').on('click', () => {
