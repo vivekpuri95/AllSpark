@@ -3604,10 +3604,58 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				const td = document.createElement('td');
 
-				if(column.type == 'html')
-					td.innerHTML = row.getTypedValue(key);
-				else
-					td.textContent = row.getTypedValue(key);
+				td.innerHTML = '<span class="value"></span>';
+
+				const tdValue = td.querySelector('.value');
+				let obj;
+
+				try {
+					obj = JSON.parse(row.getTypedValue(key));
+				}
+				catch(e) {}
+
+				if(column.type == 'html') {
+
+					tdValue.innerHTML = row.getTypedValue(key);
+				}
+				else if(obj && typeof obj == 'object') {
+
+					tdValue.textContent = Array.isArray(obj) ? `[Array: ${obj.length}]` : `{Object: ${Object.keys(obj).length}}`;
+
+					td.on('click', e => {
+
+						tdValue.classList.add('hidden');
+
+						if(td.jsonInfo) {
+
+							td.appendChild(td.jsonInfo);
+							return;
+						}
+
+						td.jsonInfo = document.createElement('div');
+						td.jsonInfo.classList.add('json-info');
+
+						td.jsonInfo.innerHTML = `
+							<span class="close" title="Close"><i class="fa fa-times"></i></span>
+							<pre>${JSON.stringify(obj, null, '\t')}</pre>
+						`;
+
+						td.jsonInfo.on('click', e => e.stopPropagation());
+
+						td.jsonInfo.querySelector('.close').on('click', e => {
+
+							e.stopPropagation();
+							td.jsonInfo.parentElement.removeChild(td.jsonInfo);
+							tdValue.classList.remove('hidden');
+						});
+
+						td.appendChild(td.jsonInfo);
+					});
+				}
+				else {
+
+					tdValue.textContent = row.getTypedValue(key);
+				}
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
 

@@ -536,6 +536,23 @@ main .data-source.flush {
 		main .data-source .visualization.table .container {
 			overflow: initial;
 		}
+			main .data-source .visualization.table .container .json-info {
+				margin: 0;
+			}
+				main .data-source .visualization.table .container .json-info span {
+					position: absolute;
+					right: 5px;
+					top: 10px;
+					cursor: pointer;
+					padding: 0 5px;
+					display: none;
+				}
+				main .data-source .visualization.table .container .json-info:hover span{
+					display: initial;
+				}
+				main .data-source .visualization.table .container .json-info pre {
+					margin: 0;
+				}
 			.visualization > .container > .loading {
 				display: flex;
 				align-items: center;
