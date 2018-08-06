@@ -405,6 +405,8 @@ class Dashboard {
 		};
 
 		Dashboard.screenHeightOffset = 2 * screen.availHeight;
+
+		this.load();
 	}
 
 	get export() {
@@ -799,7 +801,7 @@ class Dashboard {
 
 			this.page.renderList();
 
-			await Sections.show('list');
+			Sections.show('list');
 
 			//removing selected from other containers
 			for (const element of this.page.container.querySelectorAll('.selected') || []) {
@@ -1211,7 +1213,7 @@ class Nav {
 
 		function getChildrenVisualizations(dashboard) {
 
-			visibleVisuliaztions = visibleVisuliaztions.concat([...dashboard.visualizations]);
+			visibleVisuliaztions = visibleVisuliaztions.concat([...dashboard.visibleVisuliaztions]);
 
 			for (const child of dashboard.children.values()) {
 
