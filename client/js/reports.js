@@ -742,13 +742,11 @@ class DataSource {
 		`);
 
 		if(retry) {
-			const span = this.container.querySelector('.warning span');
-			span.classList.add('retry');
 
-			span.on('click', () => {
+			const pre = this.container.querySelector('.warning');
+			pre.classList.add('retry');
 
-				this.visualizations.selected.load();
-			});
+			pre.on('click', () => this.visualizations.selected.load());
 		};
 
 		this.visualizations.selected.container.classList.add('hidden');

@@ -958,7 +958,7 @@ class AJAX {
 		if(response.status == 401)
 			return User.logout({redirect: options.redirectOnLogout});
 
-		return response.headers.get("content-type").includes('json') ? await response.json() : await response.text();
+		return response.headers.get('content-type').includes('json') ? await response.json() : await response.text();
 	}
 }
 
