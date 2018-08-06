@@ -257,7 +257,7 @@ body {
 					width: 100%;
 				}
 				body > header .user-popup .email {
-					color: #ccc;
+					color: #999;
 					width: 100%;
 					margin-bottom: calc(var(--gap) * 2);
 					user-select: text;
@@ -268,8 +268,7 @@ body {
 				body > header .user-popup .logout {
 					margin: var(--gap) 0 0 var(--gap);
 				}
-				body > header .user-popup .profile-link:hover a,
-				body > header .user-popup .logout:hover {
+				body > header .user-popup a:hover {
 					text-decoration: underline;
 					cursor: pointer;
 				}
@@ -309,9 +308,12 @@ body {
 					width: 100%;
 					border-bottom: 1px dashed #999;
 				}
-				body > header .user-popup a {
-					color: #fff;
-				}
+					body > header .user-popup a {
+						color: #fff;
+					}
+					body > header .user-popup .email {
+						color: #ccc;
+					}
 				body > header .global-search {
 					order: 1;
 					width: calc(100% - 40px);

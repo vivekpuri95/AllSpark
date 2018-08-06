@@ -82,7 +82,8 @@ class Page {
 			nav = header.querySelector('nav'),
 			userPopup = header.querySelector('.user-popup'),
 			userToggle = header.querySelector('.user-toggle'),
-			menuToggle = header.querySelector('.menu-toggle');
+			menuToggle = header.querySelector('.menu-toggle'),
+			profileLink = document.createElement('a');
 
 		if(window.account) {
 
@@ -102,9 +103,13 @@ class Page {
 
 		userToggle.innerHTML = '<i class="fa fa-user"></i>&nbsp; '+ this.user.name;
 
+		profileLink.textContent = 'Profile';
+		profileLink.href = `/user/profile/${this.user.user_id}`;
+		profileLink.classList.add('profile-link');
+
 		header.querySelector('.name').innerHTML = this.user.name;
 		header.querySelector('.email').innerHTML = this.user.email;
-		header.querySelector('.profile-link').innerHTML = `<a href="/user/profile/${this.user.user_id}">Profile</a>`;
+		header.querySelector('.user-popup').insertBefore(profileLink, header.querySelector('.logout'));
 
 		userToggle.on('click', e => {
 			e.stopPropagation();

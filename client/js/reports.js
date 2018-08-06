@@ -6854,10 +6854,10 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		container.classList.add('visualization', 'html');
 		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
 
-		if(this.options.hideHeader)
+		if(this.options && this.options.hideHeader)
 			this.source.container.querySelector('header').classList.add('hidden');
 
-		if(this.options.hideLegend)
+		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
 		this.source.container.classList.add('flush');
@@ -6873,7 +6873,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 	render(options = {}) {
 
-		if(this.options.hideLegend)
+		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 	}
 });
