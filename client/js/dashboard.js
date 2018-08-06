@@ -100,7 +100,7 @@ Page.class = class Dashboards extends Page {
 			return parents
 		}
 
-		while (dashboard.parent) {
+		while (dashboard && dashboard.parent) {
 
 			parents.push(dashboard.parent);
 			dashboard = this.list.get(dashboard.parent);
@@ -298,6 +298,21 @@ Page.class = class Dashboards extends Page {
 			}
 		}
 
+		const emptyDashboards = [];
+
+		for(const dashboard of this.list.values()) {
+
+			if(dashboard.visibleVisuliaztions.size === 0) {
+
+				emptyDashboards.push(this.parents(dashboard.id));
+			}
+		}
+
+		for(const dashboard of emptyDashboards) {
+
+			this.list.delete(dashboard);
+		}
+
 		this.navbar = new Navbar(this.list, this);
 
 		this.navbar.render();
@@ -406,7 +421,48 @@ class Dashboard {
 
 		Dashboard.screenHeightOffset = 2 * screen.availHeight;
 
-		this.load();
+		this.visibleVisuliaztions = new Set;
+
+		this.visualizations = Dashboard.sortVisualizations(this.visualizations);
+
+		this.resetSideButton();
+
+		for (const visualization of this.visualizations) {
+
+			if (!visualization.format) {
+
+				visualization.format = {};
+			}
+
+			if (!DataSource.list.has(visualization.query_id)) {
+
+				continue;
+			}
+
+			const dataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))), this.page);
+
+			dataSource.container.setAttribute('style', `
+				order: ${visualization.format.position || 0};
+				grid-column: auto / span ${visualization.format.width || Dashboard.grid.columns};
+				grid-row: auto / span ${visualization.format.height || Dashboard.grid.rows};
+			`);
+
+			dataSource.selectedVisualization = dataSource.visualizations.filter(v =>
+
+				v.visualization_id === visualization.visualization_id
+			);
+
+			if (!dataSource.selectedVisualization.length) {
+
+				continue;
+			}
+
+			dataSource.selectedVisualization = dataSource.selectedVisualization[0];
+
+			this.visibleVisuliaztions.add(dataSource);
+
+			dataSource.container.appendChild(dataSource.selectedVisualization.container);
+		}
 	}
 
 	get export() {
@@ -550,7 +606,7 @@ class Dashboard {
 
 		edit.classList.add('hidden');
 
-		for (let report of this.page.loadedVisualizations) {
+		for (let {query: report} of this.page.loadedVisualizations) {
 
 			const [selectedVisualizationProperties] = this.page.list.get(this.id).visualizations.filter(x => x.visualization_id === report.selectedVisualization.visualization_id);
 
@@ -801,7 +857,7 @@ class Dashboard {
 
 			this.page.renderList();
 
-			Sections.show('list');
+			await Sections.show('list');
 
 			//removing selected from other containers
 			for (const element of this.page.container.querySelectorAll('.selected') || []) {
@@ -813,49 +869,6 @@ class Dashboard {
 		}
 
 		//no need for dashboard.format
-
-		this.visibleVisuliaztions = new Set;
-
-		this.visualizations = Dashboard.sortVisualizations(this.visualizations);
-
-		this.resetSideButton();
-
-		for (const visualization of this.visualizations) {
-
-			if (!visualization.format) {
-
-				visualization.format = {};
-			}
-
-			if (!DataSource.list.has(visualization.query_id)) {
-
-				continue;
-			}
-
-			const dataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))), this.page);
-
-			dataSource.container.setAttribute('style', `
-				order: ${visualization.format.position || 0};
-				grid-column: auto / span ${visualization.format.width || Dashboard.grid.columns};
-				grid-row: auto / span ${visualization.format.height || Dashboard.grid.rows};
-			`);
-
-			dataSource.selectedVisualization = dataSource.visualizations.filter(v =>
-
-				v.visualization_id === visualization.visualization_id
-			);
-
-			if (!dataSource.selectedVisualization.length) {
-
-				continue;
-			}
-
-			dataSource.selectedVisualization = dataSource.selectedVisualization[0];
-
-			this.visibleVisuliaztions.add(dataSource);
-
-			dataSource.container.appendChild(dataSource.selectedVisualization.container);
-		}
 
 		try {
 			this.globalFilters = new DashboardGlobalFilters(this);
