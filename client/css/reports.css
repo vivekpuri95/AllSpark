@@ -108,6 +108,13 @@ main .data-source.flush {
 			font-size: calc(10px + 0.3vw);
 			color: #bbb;
 		}
+		main .data-source > .warning.retry:hover {
+			cursor: pointer;
+			background: rgba(255, 0, 0, 0.15);
+		}
+		main .data-source > .warning.retry:active {
+			box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.15);
+		}
 	main .data-source > header {
 		display: flex;
 		align-items: center;
@@ -470,8 +477,8 @@ main .data-source.flush {
 						main .dialog-box form h3{
 							margin: 0;
 							padding: var(--gap) 10px;
-							background: var(--color-primary);
-							color: var(--color-primary-text);
+							background: var(--color-secondary);
+							color: var(--color-secondary-text);
 							position: sticky;
 							top: 0px;
 							font-weight: normal;
@@ -1010,7 +1017,7 @@ main .data-source.flush {
 	flex-wrap: wrap;
 }
 	.visualization.livenumber .container h5 {
-		font-size: calc(14px + 3vw);
+		font-size: calc(35px + 1vw);
 		flex: 1 1 100%;
 		margin: 0;
 		height: 55%;
@@ -1036,13 +1043,13 @@ main .data-source.flush {
 		position: relative;
 	}
 		.visualization.livenumber .container .red {
-			color: #a00;
+			color: #db4437;
 		}
 		.visualization.livenumber .container .green {
-			color: #191;
+			color: #2c9d58;
 		}
 		.visualization.livenumber .container h6 {
-			font-size: calc(10px + .75vw);
+			font-size: calc(18px + .2vw);
 			margin: 0 0 var(--gap) 0;
 			font-weight: normal;
 			transition: filter var(--transition-duration);
@@ -1089,8 +1096,7 @@ main .data-source.flush {
 		right: 0;
 		bottom: 0;
 		left: 0;
-		opacity: 0.8;
-		filter: blur(1.5px);
+		filter: blur(3px);
 	}
 		.visualization.livenumber .graph svg .line {
 			fill: none;
@@ -1222,16 +1228,19 @@ main .column-form.compact {
 
 main .sub-reports-dialog .dialog-box {
 	width: 50%;
+	background: #eee;
 }
 	main .sub-reports-dialog .body {
-		padding: var(--gap) 0;
+		padding: calc(var(--gap) * 2) 0;
 		margin: 0 calc(var(--gap) * 2);
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: space-around;
 	}
 		main .sub-reports-dialog .data-source {
-			width: 350px;
-			height: 250px;
-			margin: var(--gap) 0;
+			min-width: 150px;
+			max-width: 350px;
+			width: 100%;
+			height: 200px;
+			margin: calc(var(--gap) * 3) 0;
 		}

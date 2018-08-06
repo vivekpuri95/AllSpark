@@ -104,18 +104,41 @@ class DataSource {
 
 		this.resetError();
 
+		if(this.refresh_rate) {
+
+			clearTimeout(this.refreshRateTimeout);
+
+			this.refreshRateTimeout = setTimeout(() => {
+				if(this.containerElement && document.body.contains(this.container))
+					this.visualizations.selected.load();
+			}, this.refresh_rate * 1000);
+		}
+
 		try {
 			response = await API.call('reports/engine/report', parameters.toString(), options);
 		}
 
 		catch(e) {
 
+			response = {};
+
 			let message = e.message;
 
-			message = message.replace('You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use', '');
+			try {
 
-			this.error(JSON.stringify(message, 0, 4));
-			throw e;
+				JSON.parse(message);
+
+				message = message.replace('You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use', '');
+				this.error(JSON.stringify(message, 0, 4));
+
+				throw e;
+			}
+			catch(e) {
+
+				this.error('Click here to retry', {retry: true});
+
+				throw e;
+			}
 		}
 
 		if(parameters.get('download'))
@@ -152,18 +175,7 @@ class DataSource {
 
 		this.columns.update();
 		this.postProcessors.update();
-
 		this.render();
-
-		if(this.refresh_rate) {
-
-			clearTimeout(this.refreshRateTimeout);
-
-			this.refreshRateTimeout = setTimeout(() => {
-				if(this.containerElement && document.body.contains(this.container))
-					this.visualizations.selected.load();
-			}, this.refresh_rate * 1000);
-		}
 	}
 
 	get container() {
@@ -715,7 +727,7 @@ class DataSource {
 		this.visualizations.selected.container.classList.remove('hidden');
 	}
 
-	error(message = '') {
+	error(message = '', {retry = false} = {}) {
 
 		if(this.container.querySelector('pre.warning'))
 			return;
@@ -728,6 +740,14 @@ class DataSource {
 				<span>${message}</span>
 			</pre>
 		`);
+
+		if(retry) {
+
+			const pre = this.container.querySelector('.warning');
+			pre.classList.add('retry');
+
+			pre.on('click', () => this.visualizations.selected.load());
+		};
 
 		this.visualizations.selected.container.classList.add('hidden');
 	}
@@ -6680,7 +6700,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	plotGraph(options) {
 
-		const margin = {top: 30, right: 20, bottom: 30, left: 50};
+		const margin = {top: 30, right: 20, bottom: 30, left: 20};
 
 		const container = d3.selectAll(`#visualization-${this.id} .graph`);
 
@@ -6721,19 +6741,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			.attr('class', 'line')
 			.attr('d', valueline(data))
 			.attr('stroke', this.source.columns.get(this.options.valueColumn).color);
-
-		if(!this.options.hideYAxis) {
-
-			const yAxis = d3.svg.axis()
-				.scale(y)
-				.orient('left');
-
-			yAxis.tickFormat(d3.format('s'));
-
-			svg.append('g')
-				.attr('class', 'y axis')
-				.call(yAxis);
-		}
 
 		if(!options.resize) {
 

@@ -5,29 +5,64 @@ Page.class = class Dashboards extends Page {
 		super();
 
 		Dashboard.setup(this);
+
+		this.list = new Map;
+		this.loadedVisualizations = new Set;
+		this.nav = document.querySelector('main > nav');
+		//document.querySelector('body').classList.add('floating');
+
 		this.listContainer = this.container.querySelector('section#list');
 		this.reports = this.container.querySelector('section#reports');
 		this.listContainer.form = this.listContainer.querySelector('.form.toolbar');
 
-		if(this.account.settings.get('disable_footer'))
-			this.container.parentElement.querySelector('main > footer').classList.add('hidden');
+		const navToggle = document.createElement('span');
+		navToggle.classList.add('nav-toggle');
+		navToggle.innerHTML = `<i class="fa fa-bars"></i>`;
+		document.querySelector('header').insertAdjacentElement('afterbegin', navToggle);
 
-		else  {
+		const navBlanket = this.container.querySelector('.nav-blanket');
+
+		navToggle.on('click', () => {
+			this.nav.classList.toggle('show');
+			navBlanket.classList.toggle('hidden');
+			navToggle.classList.toggle('selected');
+			//document.querySelector('body').classList.remove('floating');
+		});
+
+		navBlanket.on('click', () => {
+
+			this.nav.classList.remove('show');
+			navBlanket.classList.add('hidden');
+			navToggle.classList.remove('selected');
+			//document.querySelector('body').classList.remove('floating');
+		});
+
+		if (this.account.settings.get('disable_footer')) {
+
+			this.container.parentElement.querySelector('main > footer').classList.add('hidden');
+		}
+
+		else {
 			const deployTime = this.container.parentElement.querySelector('main > footer .deploy-time')
 			deployTime.textContent = Format.dateTime(deployTime.textContent);
 		}
 
+		if (this.account.settings.get('disable_powered_by'))
+			this.nav.querySelector('footer').classList.add('hidden');
+
+		this.nav.querySelector('.collapse-panel').on('click', () => document.querySelector('body').classList.toggle('floating'));
+
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
-			await Sections.show('list');
+
 			this.renderList();
+			await Sections.show('list');
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
-		this.list = new Map;
-		this.loadedVisualizations = new Set;
+		for (const category of MetaData.categories.values()) {
 
-		for (const category of MetaData.categories.values())
 			this.listContainer.form.category.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
+		}
 
 		this.listContainer.form.category.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
@@ -36,77 +71,104 @@ Page.class = class Dashboards extends Page {
 			this.load(e.state)
 		});
 
+		this.navbar = new Navbar([], this);
+
 		(async () => {
 
 			await this.load();
-
-			if(window.innerWidth <= 750)
-				this.collapseNav();
 		})();
 	}
 
-	async load(state) {
+	get currentDashboard() {
 
-		await DataSource.load(); //get report list
-		const dashboards = await API.call('dashboards/list'); //get dashboard list
-		this.list = new Map;
+		return parseInt(window.location.pathname.split('/').includes('dashboard') ? window.location.pathname.split('/').pop() : 0);
+	}
 
-		for (const dashboard of dashboards) {
+	parents(id) {
 
-			this.list.set(dashboard.id, new Dashboard(dashboard, this));
-		}
-		// manage hierarchy
+		let dashboard = this.list.get(id);
 
-		for (const dashboard of this.list.values()) {
+		const parents = [id];
 
-			if (dashboard.parent && this.list.has(dashboard.parent)) {
+		if (!dashboard) {
 
-				(this.list.get(dashboard.parent)).children.add(dashboard);
-			}
+			return [];
 		}
 
-		const id = state ? state.filter : parseInt(window.location.pathname.split('/').pop());
+		if (!dashboard.parent) {
 
-		if (window.location.pathname.split('/').pop() === "first") {
-
-			this.renderNav();
-
-			let item = this.container.querySelector("nav .item:not(.hidden)");
-
-			if (!item) {
-				this.renderList();
-				return await Sections.show("list");
-			}
-
-			while (item.querySelector(".submenu")) {
-
-				item.querySelector(".label").click();
-				item = item.querySelector(".submenu")
-			}
-
-			item.querySelector(".label").click();
-			return;
+			return parents
 		}
 
-		if (!id) {
+		while (dashboard.parent) {
+
+			parents.push(dashboard.parent);
+			dashboard = this.list.get(dashboard.parent);
+		}
+
+		return parents;
+	}
+
+	sync({dashboardId = 0, renderNav = false, updateNav = true, reloadDashboard = true} = {}) {
+
+		if (dashboardId && reloadDashboard) {
+
+			this.nav.classList.remove('show');
+			this.container.querySelector('.nav-blanket').classList.add('hidden');
+
+			(async () => {
+				this.loadedVisualizations.clear();
+				history.pushState({
+					filter: dashboardId,
+					type: 'dashboard'
+				}, '', `/dashboard/${dashboardId}`);
+				await this.list.get(dashboardId).load();
+				await this.list.get(dashboardId).render();
+			})()
+		}
+
+		if (renderNav) {
 
 			this.renderList();
-			this.renderNav();
-			return await Sections.show("list");
+			this.navbar.render();
 		}
 
-		const [loadReport] = window.location.pathname.split('/').filter(x => x === "report");
+		if (updateNav) {
 
-		await this.renderNav(id);
-		if (loadReport) {
-			await this.report(id);
+			let parentDashboards = this.parents(dashboardId || 0).map(x => `dashboard-${x}`);
+
+			for (const label of this.nav.querySelectorAll('.label')) {
+
+				const submenu = label.parentElement.querySelector('.submenu');
+
+				if (submenu) {
+
+					submenu.classList.add('hidden');
+				}
+
+				label.classList.remove('selected');
+				label.parentElement.classList.remove('list-open');
+			}
+
+			for (const element of parentDashboards) {
+
+				const label = this.nav.querySelector(`#${element}`);
+				const submenu = label.parentElement.querySelector('.submenu');
+
+				submenu && submenu.classList.remove('hidden');
+				label && label.classList.add('selected');
+				submenu && label.parentElement.classList.add('list-open');
+			}
 		}
+	}
 
-		else {
+	tagSearch(e) {
 
-			await this.list.get(id).load();
-			await this.list.get(id).render();
-		}
+		e.stopPropagation();
+
+		this.listContainer.form.search.value = e.currentTarget.textContent;
+
+		this.renderList();
 	}
 
 	renderList() {
@@ -144,12 +206,12 @@ Page.class = class Dashboards extends Page {
 
 				let found = false;
 
-				const searchItems = this.listContainer.form.search.value.split(" ").filter(x => x).slice(0, 5);
+				const searchItems = this.listContainer.form.search.value.split('').filter(x => x).slice(0, 5);
 
 
 				for (const searchItem of searchItems) {
 
-					const searchableText = report.query_id + " " + report.name + " " + report.description + " " + report.tags;
+					const searchableText = report.query_id + ' ' + report.name + ' ' + report.description + ' ' + report.tags;
 
 					found = searchableText.toLowerCase().includes(searchItem.toLowerCase());
 
@@ -196,7 +258,7 @@ Page.class = class Dashboards extends Page {
 				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
 			`;
 
-			for(const tag of tags)
+			for (const tag of tags)
 				tr.querySelector('.tags').appendChild(tag);
 
 			tr.querySelector('.link').on('click', e => e.stopPropagation());
@@ -213,209 +275,71 @@ Page.class = class Dashboards extends Page {
 			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found! :(</td></tr>`;
 	}
 
-	tagSearch(e) {
+	async load(state) {
 
-		e.stopPropagation();
-
-		this.listContainer.form.search.value = e.currentTarget.textContent;
-
-		this.renderList();
-	}
-
-	closeOtherDropDowns(id, container) {
-
-		const parents = container.querySelectorAll(".parentDashboard");
-
-		for (const item of parents) {
-
-			if (item.querySelector(".label").id === id) {
-
-				continue;
-			}
-
-			const submenu = item.querySelector(".submenu");
-
-			if (submenu) {
-
-				submenu.classList.add("hidden");
-			}
-
-			item.querySelector(".angle") ? item.querySelector(".angle").classList.remove("down") : {}
-		}
-
-		const labels = container.querySelectorAll(".label");
-
-		for (const item of labels)
-			item.classList.remove("selected");
-	}
-
-	renderNav(id) {
+		await DataSource.load();
 
 		const
-			showLabelIds = this.parentList(id).map(x => x),
-			nav = document.querySelector('main > nav');
+			dashboardList = await API.call('dashboards/list'),
+			currentId = state ? state.filter : parseInt(window.location.pathname.split('/').pop()),
+			[loadReport] = window.location.pathname.split('/').filter(x => x === 'report');
 
-		nav.textContent = null;
+		for (const dashboard of dashboardList) {
 
-		const search = document.createElement('label');
-
-		search.classList.add('dashboard-search');
-
-		search.innerHTML = `<input type="search" name="search" placeholder="Search..." >`;
-
-		nav.appendChild(search);
-
-		search.on('keyup', () => {
-
-			const searchItem = search.querySelector("input[name='search']").value;
-
-			this.closeOtherDropDowns('', nav);
-
-			if (!searchItem.length) {
-
-				return this.closeOtherDropDowns('', nav);
-			}
-
-			let matching = [];
-
-			for (const dashboard of this.list.values()) {
-
-				if (dashboard.name.toLowerCase().includes(searchItem.toLowerCase())) {
-
-					matching = matching.concat(this.parentList(dashboard.id).map(x => '#dashboard-' + x));
-					nav.querySelector("#dashboard-" + dashboard.id).parentNode.querySelector(".label").classList.add("selected")
-				}
-			}
-			let toShowItems = [];
-
-			try {
-				toShowItems = nav.querySelectorAll([...new Set(matching)].join(", "));
-			}
-			catch (e) {
-			}
-
-			for (const item of toShowItems) {
-
-				const hasHidden = item.parentNode.querySelector(".submenu");
-
-				if (hasHidden) {
-
-					hasHidden.classList.remove("hidden");
-				}
-
-				item.querySelector(".angle") ? item.querySelector(".angle").classList.add("down") : {};
-			}
-		});
+			dashboard.children = new Set;
+			this.list.set(dashboard.id, new Dashboard(dashboard, this));
+		}
 
 		for (const dashboard of this.list.values()) {
 
-			if (!dashboard.parent) {
+			if (dashboard.parent && this.list.has(dashboard.parent)) {
 
-				let menuItem = dashboard.menuItem;
-				menuItem.classList.add("parentDashboard");
-				const label = menuItem.querySelector(".label");
-
-				label.on("click", () => {
-
-					this.closeOtherDropDowns(label.id, nav);
-
-					let currentDashboard = window.location.pathname.split("/");
-
-					if (currentDashboard.includes("dashboard")) {
-
-						currentDashboard = currentDashboard.pop();
-						currentDashboard = nav.querySelector(`#dashboard-${currentDashboard}`);
-
-						if(currentDashboard)
-							currentDashboard.classList.add("selected");
-					}
-				});
-
-				if (showLabelIds.includes(dashboard.id)) {
-
-					for(const elem of menuItem.querySelectorAll(".submenu")) {
-
-						elem.classList.remove("hidden");
-					}
-
-					for(const elem of menuItem.querySelectorAll(".label")) {
-
-						const angle = elem.querySelector(".angle");
-
-						if(angle) {
-
-							angle.classList.add("down");
-						}
-					}
-				}
-
-				nav.appendChild(menuItem);
+				(this.list.get(dashboard.parent)).children.add(dashboard);
 			}
 		}
 
-		nav.insertAdjacentHTML('beforeend', `
-			<footer>
-				<div class="collapse-panel">
-					<span class="left"><i class="fa fa-angle-double-left"></i></span>
-					<span class="right hidden"><i class="fa fa-angle-double-right"></i></span>
-				</div>
-			</footer>
-		`);
+		this.navbar = new Navbar(this.list, this);
 
-		nav.querySelector('.collapse-panel').on('click', () => this.collapseNav());
+		this.navbar.render();
 
-		if(!nav.children.length)
-			nav.innerHTML = `<div class="NA">No dashboards found!</div>`;
-	}
+		if (window.location.pathname.split('/').pop() === 'first') {
 
-	collapseNav() {
+			this.navbar.render();
 
-		const nav = document.querySelector('main > nav');
+			let dashboardReference = this.container.querySelector('nav .item:not(.hidden)');
 
-		nav.classList.toggle('collapsed');
+			if (!dashboardReference) {
 
-		const
-			toggle = nav.querySelector('.collapse-panel'),
-			right = toggle.querySelector('.right');
+				this.renderList();
+				return await Sections.show('list')
+			}
 
-		right.classList.toggle('hidden');
-		toggle.querySelector('.left').classList.toggle('hidden');
+			while (dashboardReference.querySelector('.submenu:not(.hidden)')) {
 
-		this.container.classList.toggle('collapsed-grid');
+				dashboardReference.querySelector('.label').click();
+				dashboardReference = dashboardReference.querySelector('.submenu');
+			}
 
-		for (const item of nav.querySelectorAll('.item')) {
-
-			if (!right.hidden)
-				item.classList.remove('list-open');
-
-			if (!item.querySelector('.label .name').parentElement.parentElement.parentElement.className.includes('submenu'))
-				item.querySelector('.label .name').classList.toggle('hidden');
-		}
-	}
-
-	parentList(id) {
-
-		let dashboard = this.list.get(id);
-
-		const parents = [id];
-
-		if (!dashboard) {
-
-			return [];
+			return dashboardReference.querySelector('.label').click();
 		}
 
-		if (!dashboard.parent) {
 
-			return parents
+		this.sync({dashboardId: 0});
+
+		if (!currentId) {
+
+			return await Sections.show('list');
 		}
 
-		while (dashboard.parent) {
+		if (loadReport) {
 
-			parents.push(dashboard.parent);
-			dashboard = this.list.get(dashboard.parent);
+			return await this.report(currentId);
 		}
 
-		return parents;
+		else {
+
+			return this.sync({dashboardId: currentId, renderNav: true, updateNav: false});
+		}
 	}
 
 	async report(id) {
@@ -427,24 +351,25 @@ Page.class = class Dashboards extends Page {
 		this.loadedVisualizations.clear();
 		this.loadedVisualizations.add(report);
 
-		report.container.removeAttribute('style');
-		container.classList.add('singleton');
-		Dashboard.toolbar.classList.add('hidden');
-		this.container.querySelector('.dashboard-name').classList.add('hidden');
-		this.container.querySelector('.global-filters').classList.add('hidden');
+		const dashboardName = this.container.querySelector('.dashboard-name');
+		dashboardName.classList.add('hidden');
 
 		container.textContent = null;
 
 		const promises = [];
 
-		for(const filter of report.filters.values()) {
+		for (const filter of report.filters.values()) {
 
-			if(filter.multiSelect) {
+			if (filter.multiSelect) {
 				promises.push(filter.fetch());
 			}
 		}
 
 		await Promise.all(promises);
+
+		report.container.removeAttribute('style');
+		container.classList.add('singleton');
+		Dashboard.toolbar.classList.add('hidden');
 
 		report.container.querySelector('.menu').classList.remove('hidden');
 		report.container.querySelector('.menu-toggle').classList.add('selected');
@@ -464,11 +389,11 @@ class Dashboard {
 		this.page = page;
 		this.children = new Set;
 
-		this.parentList = new Set;
+		this.parents = new Set;
 
 		if (this.parent) {
 
-			this.parentList.add(this.parent);
+			this.parents.add(this.parent);
 		}
 
 		Object.assign(this, dashboardObject);
@@ -503,89 +428,6 @@ class Dashboard {
 		return data;
 	}
 
-	get menuItem() {
-
-		if (this.container)
-			return this.container;
-
-		const
-			container = this.container = document.createElement('div'),
-			allVisualizations = this.childrenVisualizations(this);
-
-		let icon;
-
-		if (this.icon && this.icon.startsWith('http')) {
-			icon = `<img src="${this.icon}" height="20" width="20">`;
-		}
-
-		else if (this.icon && this.icon.startsWith('fa')) {
-			icon = `<i class="${this.icon}"></i>`
-		}
-		else
-			icon = '';
-
-		container.classList.add('item');
-
-		if (!allVisualizations.length && (!this.format || !parseInt(this.format.category_id))) {
-
-			container.classList.add('hidden');
-		}
-
-		container.innerHTML = `
-			<div class="label" id=${"dashboard-" + this.id}>
-				${icon}
-				<span class="name">${this.name}</span>
-				${this.children.size ? '<span class="angle"><i class="fa fa-angle-right"></i></span>' : ''}
-			</div>
-			${this.children.size ? '<div class="submenu hidden"></div>' : ''}
-		`;
-
-		const submenu = container.querySelector('.submenu');
-
-		container.querySelector('.label').on('click', () => {
-
-			if (this.page.container.querySelector('nav.collapsed')) {
-
-				for (const item of container.parentElement.querySelectorAll('.item')) {
-
-					item.classList.remove('list-open');
-
-					if (item == container) {
-
-						container.classList.add('list-open');
-						continue;
-					}
-
-					if (item.querySelector('.submenu')) {
-
-						item.querySelector('.angle').classList.add('down');
-						item.querySelector('.submenu').classList.add('hidden');
-					}
-				}
-			}
-
-			if (this.children.size) {
-
-				container.querySelector('.angle').classList.toggle('down');
-				submenu.classList.toggle('hidden');
-			}
-
-			else {
-
-				history.pushState({filter: this.id, type: 'dashboard'}, '', `/dashboard/${this.id}`);
-				this.load();
-				this.render();
-			}
-		});
-
-		for (const child of this.children.values()) {
-
-			submenu.appendChild(child.menuItem);
-		}
-
-		return container;
-	}
-
 	static setup(page) {
 
 		Dashboard.grid = {
@@ -609,7 +451,7 @@ class Dashboard {
 
 			globalFilters.classList.toggle('show');
 
-			if(page.account.settings.get('global_filters_position') == 'top') {
+			if (page.account.settings.get('global_filters_position') == 'top') {
 				globalFilters.classList.toggle('top');
 				globalFilters.classList.toggle('right');
 			}
@@ -624,103 +466,44 @@ class Dashboard {
 
 			globalFilters.classList.toggle('show');
 
-			if(page.account.settings.get('global_filters_position') == 'top') {
+			if (page.account.settings.get('global_filters_position') == 'top') {
 				globalFilters.classList.toggle('top');
 				globalFilters.classList.toggle('right');
 			}
 		});
 	}
 
-	static sortVisualizations(visualizationList) {
+	static sortVisualizations(visibleVisuliaztions) {
 
-		return visualizationList.sort((v1, v2) => v1.format.position - v2.format.position);
+		return visibleVisuliaztions.sort((v1, v2) => v1.format.position - v2.format.position);
 	}
 
-	async load() {
+	lazyLoad(resize, offset = Dashboard.screenHeightOffset) {
 
-		if (this.format && this.format.category_id) {
+		const visitedVisualizations = new Set;
 
-			this.page.listContainer.form.category.value = this.format.category_id;
+		for (const [visualization_id, visualization] of this.visualizationTrack) {
 
-			this.page.renderList();
+			//const visualization_id = visualization.visualization_id;
 
-			await Sections.show('list');
+			if ((parseInt(visualization.position) < this.maxScrollHeightAchieved + offset) && !visualization.loaded) {
 
-			//removing selected from other containers
-			for (const element of this.page.container.querySelectorAll(".selected") || []) {
+				visualization.query.selectedVisualization.load();
+				visualization.loaded = true;
+				this.page.loadedVisualizations.add(visualization);
 
-				element.classList.remove("selected");
+				visitedVisualizations.add(visualization_id);
 			}
 
-			return this.page.container.querySelector("#dashboard-" + this.id).parentNode.querySelector(".label").classList.add("selected");
+			if (visualization.loaded) {
+
+				visitedVisualizations.add(visualization_id);
+			}
 		}
 
-		//no need for dashboard.format
+		for (const visualizationId of visitedVisualizations.values()) {
 
-		this.visualizationList = new Set;
-
-		this.visualizations = Dashboard.sortVisualizations(this.visualizations);
-
-		this.resetSideButton();
-
-		for (const visualization of this.visualizations) {
-
-			if (!visualization.format) {
-
-				visualization.format = {};
-			}
-
-			if (!DataSource.list.has(visualization.query_id)) {
-
-				continue;
-			}
-
-			const queryDataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))), this.page);
-
-			queryDataSource.container.setAttribute('style', `
-				order: ${visualization.format.position || 0};
-				grid-column: auto / span ${visualization.format.width || Dashboard.grid.columns};
-				grid-row: auto / span ${visualization.format.height || Dashboard.grid.rows};
-			`);
-
-			queryDataSource.selectedVisualization = queryDataSource.visualizations.filter(v =>
-
-				v.visualization_id === visualization.visualization_id
-			);
-
-			if (!queryDataSource.selectedVisualization.length) {
-
-				continue;
-			}
-
-			queryDataSource.selectedVisualization = queryDataSource.selectedVisualization[0];
-
-			this.visualizationList.add(queryDataSource);
-		}
-
-		try {
-			this.globalFilters = new DashboardGlobalFilters(this);
-
-			await this.globalFilters.load();
-		}
-		catch (e) {
-			console.log(e);
-		}
-
-		if (!this.globalFilters.size)
-			this.page.container.querySelector('#reports .side').classList.add('hidden');
-	}
-
-	loadVisitedVisualizations(heightScrolled, resize, offset = Dashboard.screenHeightOffset) {
-
-		for (const visualization in this.visualizationsPositionObject) {
-
-			if ((parseInt(this.visualizationsPositionObject[visualization].position) < heightScrolled + offset) && !this.visualizationsPositionObject[visualization].loaded) {
-
-				this.page.loadedVisualizations.add(this.visualizationsPositionObject[visualization].report);
-				this.visualizationsPositionObject[visualization].report.selectedVisualization.load(resize);
-				this.visualizationsPositionObject[visualization].loaded = true;
-			}
+			this.visualizationTrack.delete(visualizationId);
 		}
 	}
 
@@ -757,154 +540,6 @@ class Dashboard {
 		})
 	}
 
-	childrenVisualizations(dashboard) {
-		let visualizationList = [];
-
-
-		function getChildrenVisualizations(dashboard) {
-
-			visualizationList = visualizationList.concat([...dashboard.visualizations]);
-
-			for (const child of dashboard.children.values()) {
-
-				getChildrenVisualizations(child);
-			}
-		}
-
-		getChildrenVisualizations(dashboard);
-
-		return visualizationList;
-	}
-
-	async render(resize) {
-
-		if (this.format && this.format.category_id)
-			return;
-
-		if (!this.globalFilters.size)
-			this.page.container.querySelector('#reports .side').classList.add('hidden');
-
-		const dashboardName = this.page.container.querySelector('.dashboard-name');
-
-		dashboardName.innerHTML = `
-			${this.name}
-			<div>
-				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
-			</div>
-		`;
-
-		dashboardName.classList.remove('hidden');
-
-		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
-
-		await Sections.show('reports');
-
-		const menuElement = this.page.container.querySelector('#dashboard-' + this.id);
-
-		for (const element of this.page.container.querySelectorAll('.label'))
-			element.classList.remove('selected');
-
-		if (menuElement)
-			menuElement.classList.add('selected');
-
-		const mainObject = document.querySelector('main');
-
-		this.visualizationsPositionObject = {};
-
-		Dashboard.container.textContent = null;
-
-		for (const queryDataSource of this.visualizationList) {
-
-			queryDataSource.container.appendChild(queryDataSource.selectedVisualization.container);
-
-			Dashboard.container.appendChild(queryDataSource.container);
-
-			Dashboard.container.classList.remove('singleton');
-
-			this.visualizationsPositionObject[queryDataSource.selectedVisualization.visualization_id] = ({
-				position: queryDataSource.container.getBoundingClientRect().y,
-				loaded: false,
-				report: queryDataSource
-			});
-		}
-
-		let maxScrollHeightAchieved = Math.max(Dashboard.screenHeightOffset, mainObject.scrollTop);
-
-		this.loadVisitedVisualizations(maxScrollHeightAchieved, resize);
-
-		mainObject.addEventListener("scroll", () => {
-
-				for (const queryDataSource of this.visualizationList) {
-
-					this.visualizationsPositionObject[queryDataSource.selectedVisualization.visualization_id].position = queryDataSource.container.getBoundingClientRect().y;
-				}
-
-				maxScrollHeightAchieved = Math.max(mainObject.scrollTop, maxScrollHeightAchieved);
-				this.loadVisitedVisualizations(maxScrollHeightAchieved, resize,);
-
-			}, {
-				passive: true
-			}
-		);
-
-		if (!this.page.loadedVisualizations.size)
-			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
-
-		if (this.page.user.privileges.has('report')) {
-
-			const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
-
-			edit.classList.remove('hidden');
-			edit.innerHTML = `<i class="fa fa-edit"></i> Edit`;
-
-			edit.removeEventListener('click', Dashboard.toolbar.editListener);
-
-			edit.on('click', Dashboard.toolbar.editListener = () => {
-				this.edit()
-			});
-
-			if (Dashboard.editing)
-				edit.click();
-
-			const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
-			exportButton.classList.remove('hidden');
-
-			exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
-
-			exportButton.on('click', Dashboard.toolbar.exportListener = () => {
-				const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.export));
-
-				const downloadAnchor = document.createElement('a');
-				downloadAnchor.setAttribute('href', jsonFile);
-				downloadAnchor.setAttribute('download', 'dashboard.json');
-				downloadAnchor.click();
-			});
-
-			const configure = Dashboard.toolbar.querySelector('#configure');
-			configure.on('click', () => location.href = `/dashboards-manager/${this.id}`);
-			configure.classList.remove('hidden');
-		}
-
-		Dashboard.toolbar.querySelector('#mailto').classList.remove('selected');
-		this.page.reports.querySelector('.mailto-content').classList.add('hidden');
-
-		const mailto = Dashboard.toolbar.querySelector('#mailto');
-
-		if(this.page.account.settings.get('enable_dashboard_share'))
-			mailto.classList.remove('hidden');
-
-		if (Dashboard.mail_listener)
-			mailto.removeEventListener('click', Dashboard.mail_listener);
-
-		mailto.on('click', Dashboard.mail_listener = () => {
-			mailto.classList.toggle('selected');
-			this.mailto();
-		});
-
-		if(Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size)
-			this.globalFilters.apply();
-	}
-
 	edit() {
 
 		Dashboard.editing = true;
@@ -919,7 +554,7 @@ class Dashboard {
 
 			report.selectedVisualization = selectedVisualizationProperties
 
-			if(!report.format)
+			if (!report.format)
 				report.format = {};
 
 			report.format.format = selectedVisualizationProperties.format;
@@ -1156,6 +791,216 @@ class Dashboard {
 		}
 	}
 
+	async load() {
+
+		if (this.format && this.format.category_id) {
+
+			this.page.listContainer.form.category.value = this.format.category_id;
+
+			this.page.renderList();
+
+			await Sections.show('list');
+
+			//removing selected from other containers
+			for (const element of this.page.container.querySelectorAll('.selected') || []) {
+
+				element.classList.remove('selected');
+			}
+
+			return this.page.container.querySelector('#dashboard-' + this.id).parentNode.querySelector('.label').classList.add('selected');
+		}
+
+		//no need for dashboard.format
+
+		this.visibleVisuliaztions = new Set;
+
+		this.visualizations = Dashboard.sortVisualizations(this.visualizations);
+
+		this.resetSideButton();
+
+		for (const visualization of this.visualizations) {
+
+			if (!visualization.format) {
+
+				visualization.format = {};
+			}
+
+			if (!DataSource.list.has(visualization.query_id)) {
+
+				continue;
+			}
+
+			const dataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))), this.page);
+
+			dataSource.container.setAttribute('style', `
+				order: ${visualization.format.position || 0};
+				grid-column: auto / span ${visualization.format.width || Dashboard.grid.columns};
+				grid-row: auto / span ${visualization.format.height || Dashboard.grid.rows};
+			`);
+
+			dataSource.selectedVisualization = dataSource.visualizations.filter(v =>
+
+				v.visualization_id === visualization.visualization_id
+			);
+
+			if (!dataSource.selectedVisualization.length) {
+
+				continue;
+			}
+
+			dataSource.selectedVisualization = dataSource.selectedVisualization[0];
+
+			this.visibleVisuliaztions.add(dataSource);
+
+			dataSource.container.appendChild(dataSource.selectedVisualization.container);
+		}
+
+		try {
+			this.globalFilters = new DashboardGlobalFilters(this);
+
+			await this.globalFilters.load();
+		}
+		catch (e) {
+			console.log(e);
+		}
+
+		if (!this.globalFilters.size)
+			this.page.container.querySelector('#reports .side').classList.add('hidden');
+	}
+
+	async render(resize) {
+
+		if (this.format && this.format.category_id) {
+
+			return;
+		}
+
+		if (!this.globalFilters.size) {
+
+			this.page.container.querySelector('#reports .side').classList.add('hidden');
+		}
+
+		const dashboardName = this.page.container.querySelector('.dashboard-name');
+
+		dashboardName.innerHTML = `
+			<span>${this.page.parents(this.id).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
+			<div>
+				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
+			</div>
+		`;
+
+		dashboardName.classList.remove('hidden');
+		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
+
+		await Sections.show('reports');
+
+		this.page.sync({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
+
+		const main = document.querySelector('main');
+
+		this.visualizationTrack = new Map;
+
+		Dashboard.container.textContent = null;
+
+		for (const queryDataSource of this.visibleVisuliaztions) {
+
+			queryDataSource.container.appendChild(queryDataSource.selectedVisualization.container);
+
+			Dashboard.container.appendChild(queryDataSource.container);
+
+			Dashboard.container.classList.remove('singleton');
+
+			this.visualizationTrack.set(queryDataSource.selectedVisualization.visualization_id, ({
+				position: queryDataSource.container.getBoundingClientRect().y,
+				query: queryDataSource,
+				loaded: false,
+			}));
+		}
+
+		this.maxScrollHeightAchieved = Math.max(Dashboard.screenHeightOffset, main.scrollTop);
+
+		this.lazyLoad(this.maxScrollHeightAchieved, resize);
+
+		main.addEventListener('scroll', () => {
+
+				for (const queryDataSource of this.visibleVisuliaztions) {
+
+					if (this.visualizationTrack.get(queryDataSource.selectedVisualization.visualization_id)) {
+
+						this.visualizationTrack.get(queryDataSource.selectedVisualization.visualization_id).position = queryDataSource.container.getBoundingClientRect().y;
+					}
+				}
+
+				this.maxScrollHeightAchieved = Math.max(main.scrollTop, this.maxScrollHeightAchieved);
+				this.lazyLoad(resize,);
+
+			}, {
+				passive: true
+			}
+		);
+
+		if (!this.page.loadedVisualizations.size) {
+
+			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
+		}
+
+		if (this.page.user.privileges.has('report')) {
+
+			const edit = Dashboard.toolbar.querySelector('#edit-dashboard');
+
+			edit.classList.remove('hidden');
+			edit.innerHTML = `<i class="fa fa-edit"></i> Edit`;
+
+			edit.removeEventListener('click', Dashboard.toolbar.editListener);
+
+			edit.on('click', Dashboard.toolbar.editListener = () => {
+				this.edit()
+			});
+
+			if (Dashboard.editing) {
+
+				edit.click();
+			}
+
+			const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
+			exportButton.classList.remove('hidden');
+
+			exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
+
+			exportButton.on('click', Dashboard.toolbar.exportListener = () => {
+				const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.export));
+
+				const downloadAnchor = document.createElement('a');
+				downloadAnchor.setAttribute('href', jsonFile);
+				downloadAnchor.setAttribute('download', 'dashboard.json');
+				downloadAnchor.click();
+			});
+
+			const configure = Dashboard.toolbar.querySelector('#configure');
+			configure.on('click', () => location.href = `/dashboards-manager/${this.id}`);
+			configure.classList.remove('hidden');
+		}
+
+		Dashboard.toolbar.querySelector('#mailto').classList.remove('selected');
+		this.page.reports.querySelector('.mailto-content').classList.add('hidden');
+
+		const mailto = Dashboard.toolbar.querySelector('#mailto');
+
+		if (this.page.account.settings.get('enable_dashboard_share'))
+			mailto.classList.remove('hidden');
+
+		if (Dashboard.mail_listener)
+			mailto.removeEventListener('click', Dashboard.mail_listener);
+
+		mailto.on('click', Dashboard.mail_listener = () => {
+			mailto.classList.toggle('selected');
+			this.mailto();
+		});
+
+		if (Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size)
+			this.globalFilters.apply();
+	}
+
 	async save(format, id) {
 
 		Dashboard.editing = false;
@@ -1173,22 +1018,229 @@ class Dashboard {
 	}
 }
 
+class Navbar {
+
+	constructor(dashboards, page) {
+
+		this.dashboards = dashboards;
+		this.page = page;
+
+		this.list = new Map;
+
+		if (this.dashboards.values()) {
+
+			for (const dashboard of this.dashboards.values()) {
+
+				if (!dashboard.parent) {
+
+					this.list.set(dashboard.id, new Nav(dashboard.id, dashboard));
+				}
+			}
+
+			for (const dashboard of dashboards.values()) {
+
+				this.list.set(dashboard.id, new Nav(dashboard, this.page));
+			}
+		}
+	}
+
+	render() {
+
+		const dashboardHirachy = this.page.nav.querySelector('.dashboard-hierarchy');
+		const search = this.page.nav.querySelector('.dashboard-search');
+
+		dashboardHirachy.textContent = null;
+
+		for (const dashboardItem of this.list.values()) {
+
+			if (!dashboardItem.dashboard.parent) {
+
+				dashboardHirachy.append(dashboardItem.menuItem);
+			}
+		}
+
+		search.removeEventListener('keyup', this.navSearch);
+
+		search.on('keyup', this.navSearch = () => {
+
+			const searchItem = search.querySelector("input[name='search']").value;
+
+			this.page.sync({dashboardId: 0, renderNav: true});
+
+			if (!searchItem.length) {
+
+				return this.page.sync({
+					dashboardId: this.page.currentDashboard,
+					renderNav: true,
+					updateNav: true,
+					reloadDashboard: false
+				});
+			}
+
+			let matching = [];
+
+			for (const dashboard of this.dashboards.values()) {
+
+				if (dashboard.name.toLowerCase().includes(searchItem.toLowerCase())) {
+
+					matching = matching.concat(this.page.parents(dashboard.id).map(x => '#dashboard-' + x));
+
+					const re = new RegExp(searchItem, 'ig');
+
+					this.page.nav.querySelector('#dashboard-' + dashboard.id).innerHTML = dashboard.name.replace(re, '<mark>$&</mark>');
+				}
+			}
+
+			let toShowItems = [];
+
+			try {
+
+				toShowItems = this.page.nav.querySelectorAll([...new Set(matching)].join(', '));
+			}
+			catch (e) {
+			}
+
+			for (const item of toShowItems) {
+
+				const submenu = item.parentNode.querySelector('.submenu');
+
+				if (submenu) {
+
+					submenu.classList.remove('hidden');
+				}
+
+				item.querySelector('.angle') ? item.querySelector('.angle').classList.add('down') : {};
+			}
+		}, {passive: true});
+	}
+}
+
+class Nav {
+
+	constructor(dashboard, page) {
+
+		this.dashboard = dashboard;
+		this.page = page;
+	}
+
+	get menuItem() {
+
+		const
+			container = this.container = document.createElement('div'),
+			allVisualizations = this.childrenVisualizations(this.dashboard);
+
+		let icon;
+
+		if (this.dashboard.icon && this.dashboard.icon.startsWith('http')) {
+
+			icon = `<img src="${this.dashboard.icon}" height="20" width="20">`;
+		}
+
+		else if (this.dashboard.icon && this.dashboard.icon.startsWith('fa')) {
+
+			icon = `<i class="${this.dashboard.icon}"></i>`
+		}
+
+		else {
+
+			icon = '';
+		}
+
+		container.classList.add('item');
+
+		if (!allVisualizations.length && (!this.dashboard.format || !parseInt(this.dashboard.format.category_id))) {
+
+			container.classList.add('hidden');
+		}
+
+		container.innerHTML = `
+			<div class="label" id=${'dashboard-' + this.dashboard.id}>
+				${icon}
+				<span class="name">${this.dashboard.name}</span>
+				${this.dashboard.children.size ? '<span class="angle"><i class="fa fa-angle-right"></i></span>' : ''}
+			</div>
+			${this.dashboard.children.size ? '<div class="submenu hidden"></div>' : ''}
+		`;
+
+		const submenu = container.querySelector('.submenu');
+
+		for (const child of this.dashboard.children.values()) {
+
+			submenu.appendChild(this.page.navbar.list.get(child.id).menuItem);
+		}
+
+		container.querySelector('.label').on('click', () => {
+
+			this.page.sync({
+				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0,
+				renderNav: false,
+				updateNav: false
+			});
+
+			if (this.dashboard.page.container.querySelector('nav.collapsed')) {
+
+				this.dashboard.page.sync({dashboardId: this.dashboard.id});
+			}
+
+			if (this.dashboard.children.size) {
+
+				container.querySelector('.angle').classList.toggle('down');
+				submenu.classList.toggle('hidden');
+			}
+
+		});
+
+		if (this.dashboard.children.size) {
+
+			container.querySelector('.angle').on('click', (e) => {
+
+				e.stopPropagation();
+				container.querySelector('.angle').classList.toggle('down');
+
+				container.parentElement.querySelector('.submenu').classList.toggle('hidden');
+			})
+		}
+
+		return container;
+
+	}
+
+	childrenVisualizations(dashboard) {
+		let visibleVisuliaztions = [];
+
+
+		function getChildrenVisualizations(dashboard) {
+
+			visibleVisuliaztions = visibleVisuliaztions.concat([...dashboard.visualizations]);
+
+			for (const child of dashboard.children.values()) {
+
+				getChildrenVisualizations(child);
+			}
+		}
+
+		getChildrenVisualizations(dashboard);
+
+		return visibleVisuliaztions;
+	}
+}
+
 class DashboardGlobalFilters extends DataSourceFilters {
 
 	constructor(dashboard) {
 
 		const globalFilters = new Map;
 
-		for(const visualization of dashboard.visualizationList) {
+		for (const visualization of dashboard.visibleVisuliaztions) {
 
-			for(const filter of visualization.filters.values()) {
+			for (const filter of visualization.filters.values()) {
 
-				if(!Array.from(MetaData.globalFilters.values()).some(a => a.placeholder.includes(filter.placeholder)))
+				if (!Array.from(MetaData.globalFilters.values()).some(a => a.placeholder.includes(filter.placeholder)))
 					continue;
 
 				const globalFilter = Array.from(MetaData.globalFilters.values()).filter(a => a.placeholder.includes(filter.placeholder));
 
-				for(const value of globalFilter) {
+				for (const value of globalFilter) {
 					globalFilters.set(value.placeholder, {
 						name: value.name,
 						placeholder: value.placeholder[0],
@@ -1229,7 +1281,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		const promises = [];
 
-		for(const filter of this.values())
+		for (const filter of this.values())
 			promises.push(filter.fetch());
 
 		await Promise.all(promises);
@@ -1244,7 +1296,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		container.classList.remove('show');
 		container.classList.toggle('hidden', !this.size);
 
-		if(!this.size)
+		if (!this.size)
 			return;
 
 		container.innerHTML = `
@@ -1265,11 +1317,11 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		searchInput.on('keyup', () => {
 
-			for(const filter of this.values()) {
+			for (const filter of this.values()) {
 
 				filter.label.classList.remove('hidden');
 
-				if(!filter.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
+				if (!filter.name.toLowerCase().trim().includes(searchInput.value.toLowerCase().trim()))
 					filter.label.classList.add('hidden');
 			}
 
@@ -1287,13 +1339,13 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 	async apply(options = {}) {
 
-		for(const report of this.dashboard.visualizationList) {
+		for (const report of this.dashboard.visibleVisuliaztions) {
 
 			let found = false;
 
-			for(const filter of report.filters.values()) {
+			for (const filter of report.filters.values()) {
 
-				if(!Array.from(this.values()).some(gfl => gfl.placeholders.includes(filter.placeholder)))
+				if (!Array.from(this.values()).some(gfl => gfl.placeholders.includes(filter.placeholder)))
 					continue;
 
 				filter.value = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))[0].value;
@@ -1301,7 +1353,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				found = true;
 			}
 
-			if(found && this.page.loadedVisualizations.has(report))
+			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
 				report.visualizations.selected.load(options);
 
 			report.container.style.opacity = found ? 1 : 0.4;
@@ -1310,22 +1362,22 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		Dashboard.selectedValues.clear();
 
 		// Save the value of each filter for use on other dashboards
-		for(const [placeholder, filter] of this)
+		for (const [placeholder, filter] of this)
 			Dashboard.selectedValues.set(placeholder, filter.value);
 	}
 
 	clear() {
 
-		for(const filter of this.values()) {
-			if(filter.multiSelect)
+		for (const filter of this.values()) {
+			if (filter.multiSelect)
 				filter.multiSelect.clear();
 		}
 	}
 
 	all() {
 
-		for(const filter of this.values()) {
-			if(filter.multiSelect)
+		for (const filter of this.values()) {
+			if (filter.multiSelect)
 				filter.multiSelect.all();
 		}
 	}

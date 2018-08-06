@@ -90,7 +90,7 @@ class HTMLAPI extends API {
 							</div>
 						</div>
 
-						<div class="menu-toggle"><i class="fas fa-bars"></i></div>
+						<div class="menu-toggle"><i class="fas fa-chevron-down"></i></div>
 					</header>
 
 					<main>
@@ -522,9 +522,25 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 
 		return `
 			<nav>
-				<div class="NA"><i class="fa fa-spinner fa-spin"></i></div>
-			</nav>
+				<label class="dashboard-search">
+					<input type="search" name="search" placeholder="Search..." >
+				</label>
 
+				<div class="dashboard-hierarchy"></div>
+
+				<footer>
+
+					<div class="collapse-panel">
+						<span class="left"><i class="fa fa-angle-double-left"></i></span>
+					</div>
+
+					<span class="powered-by ${this.account.settings.get('disable_powered_by') ? 'hidden' : ''}">
+						Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
+						<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
+					</span>
+				</footer>
+			</nav>
+			<div class="nav-blanket hidden"></div>
 			<section class="section" id="list">
 				<h2>${this.request.params.type}</h2>
 
@@ -603,10 +619,6 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 			</section>
 
 			<footer class="site-footer">
-				<span class="${this.account.settings.get('disable_powered_by') ? 'hidden' : ''}">
-					Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
-					<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
-				</span><span>&nbsp;</span>
 				<div class="env">
 					<span class="text">
 						Env: <span class="strong">${this.env.name}</span>
@@ -826,6 +838,11 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							<label>
 								<span>Tags (Comma Separated)</span>
 								<input type="text" name="tags">
+							</label>
+
+							<label>
+								<span>Category</span>
+								<select name="category_id"></select>
 							</label>
 						</div>
 

@@ -257,7 +257,7 @@ body {
 					width: 100%;
 				}
 				body > header .user-popup .email {
-					color: #999;
+					color: #ccc;
 					width: 100%;
 					margin-bottom: calc(var(--gap) * 2);
 					user-select: text;
@@ -283,7 +283,7 @@ body {
 			body > header .nav-container {
 				display: none;
 				flex-direction: column;
-				background: var(--color-primary);
+				background: var(--color-secondary);
 				position: absolute;
 				top: 100%;
 			}
@@ -318,7 +318,11 @@ body {
 					margin: 10px 20px;
 				}
 			body > header .menu-toggle {
-				display: block;
+				display: flex;
+			}
+			main .dialog-box {
+				width: calc(100% - calc(var(--gap) * 3)) !important;
+				max-height: calc(100% - calc(var(--gap) * 10));
 			}
 		}
 
@@ -505,7 +509,7 @@ body {
 	justify-content: center;
 }
 	.dialog-box {
-		background: var(--color-primary-text);
+		background: #fff;
 		box-shadow: 0 0 100px rgba(0, 0, 0, 0.25);
 		position: fixed;
 		max-height: 80%;
@@ -516,12 +520,12 @@ body {
 	}
 		.dialog-box > header {
 			display: flex;
-			background: var(--color-primary);
+			background: var(--color-secondary);
 			color: #fff;
 			position: sticky;
 			top: 0;
 			justify-content: space-between;
-			z-index: 1;
+			z-index: 2;
 		}
 			.dialog-box header h3 {
 				margin: 5px;
@@ -551,9 +555,7 @@ body {
 	.global-search > input.search-input {
 		width: 100%;
 		border-radius: 5px;
-		background: rgba(255, 255, 255, 0.15) !important;
 		border: 0px !important;
-		color: #fff;
 		align-self: center;
 	}
 	.global-search > input.search-input.bottom-border {

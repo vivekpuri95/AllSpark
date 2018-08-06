@@ -11,7 +11,7 @@ exports.query = class extends API {
 			search: `%${this.request.query.text}%`
 		};
 
-		const search_set = [users, dashboards, datasets, reports];
+		const search_set = [users, dashboards, reports];
 		let response = [];
 
 		for(const item of search_set) {
