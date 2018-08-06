@@ -83,10 +83,7 @@ class HTMLAPI extends API {
 							<div class="user-popup hidden">
 								<span class="name"></span>
 								<span class="email"></span>
-								<span class="profile-link">
-
-								</span>
-								<span class="logout">Logout</span>
+								<a href="" class="logout">Logout</a>
 							</div>
 						</div>
 
