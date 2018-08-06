@@ -141,7 +141,12 @@ exports.update = class extends API {
 
 	async update() {
 
-		this.user.privilege.needs('report');
+		const categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
+
+		for(const category of categories || [0]) {
+
+			this.user.privilege.needs('report', category);
+		}
 
 		let
 			values = {},
@@ -172,7 +177,6 @@ exports.update = class extends API {
 
 				values[key] = this.request.body[key];
 			}
-
 		}
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;
