@@ -637,7 +637,7 @@ main .data-source.flush {
 				height: 100%;
 			}
 		main .data-source .visualization.html {
-			background: transparent;
+			background: #eee;
 		}
 		main .data-source .visualization.table {
 			overflow: auto;
