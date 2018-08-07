@@ -6875,6 +6875,8 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
+
+		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
 	}
 });
 
