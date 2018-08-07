@@ -84,6 +84,7 @@ main .data-source:not(.flush):hover {
 }
 main .data-source.flush {
 	box-shadow: none;
+	background: #eee;
 }
 	main .data-source > .warning {
 		margin: 0;
@@ -636,9 +637,6 @@ main .data-source.flush {
 			main .data-source .visualization.json .ace_editor {
 				height: 100%;
 			}
-		main .data-source .visualization.html {
-			background: #eee;
-		}
 		main .data-source .visualization.table {
 			overflow: auto;
 			width: initial;
