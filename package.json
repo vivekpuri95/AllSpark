@@ -19,7 +19,6 @@
     "express": "~4.15.5",
     "google-cloud": "^0.57.0",
     "googleapis": "^32.0.0",
-    "ip": "^1.1.5",
     "jade": "~1.11.0",
     "jsonwebtoken": "^8.1.1",
     "mailer": "^0.6.7",
