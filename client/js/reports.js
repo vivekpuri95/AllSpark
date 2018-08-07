@@ -3604,9 +3604,6 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				const td = document.createElement('td');
 
-				td.innerHTML = '<span class="value"></span>';
-
-				const tdValue = td.querySelector('.value');
 				let obj;
 
 				try {
@@ -3616,45 +3613,57 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				if(column.type == 'html') {
 
-					tdValue.innerHTML = row.getTypedValue(key);
+					td.innerHTML = row.getTypedValue(key);
 				}
 				else if(obj && typeof obj == 'object') {
 
-					tdValue.textContent = Array.isArray(obj) ? `[Array: ${obj.length}]` : `{Object: ${Object.keys(obj).length}}`;
+					td.innerHTML = `
+						<span class="value">${Array.isArray(obj) ? '[ Array: ' + obj.length + ' ]' : '{ Object: ' + Object.keys(obj).length + ' }'}</span>
+					`;
 
-					td.on('click', e => {
+					td.classList.add('json-info');
+
+					const tdValue = td.querySelector('.value');
+
+					td.on('click', () => {
 
 						tdValue.classList.add('hidden');
 
-						if(td.jsonInfo) {
+						if(td.editorContainer) {
 
-							td.appendChild(td.jsonInfo);
+							td.appendChild(td.editorContainer);
 							return;
 						}
 
-						td.jsonInfo = document.createElement('div');
-						td.jsonInfo.classList.add('json-info');
+						td.editorContainer = document.createElement('div');
 
-						td.jsonInfo.innerHTML = `
+						td.editorContainer.innerHTML = `
 							<span class="close" title="Close"><i class="fa fa-times"></i></span>
-							<pre>${JSON.stringify(obj, null, '\t')}</pre>
 						`;
 
-						td.jsonInfo.on('click', e => e.stopPropagation());
+						const editor = new CodeEditor({mode: 'json'});
 
-						td.jsonInfo.querySelector('.close').on('click', e => {
+						editor.editor.setTheme('ace/theme/clouds');
+						td.editorContainer.appendChild(editor.container);
+
+						editor.container.classList.add('json');
+						editor.value = JSON.stringify(obj, 0 , 4);
+
+						td.editorContainer.on('click', e => e.stopPropagation());
+
+						td.editorContainer.querySelector('.close').on('click', e => {
 
 							e.stopPropagation();
-							td.jsonInfo.parentElement.removeChild(td.jsonInfo);
+							td.editorContainer.parentElement.removeChild(td.editorContainer);
 							tdValue.classList.remove('hidden');
 						});
 
-						td.appendChild(td.jsonInfo);
+						td.appendChild(td.editorContainer);
 					});
 				}
 				else {
 
-					tdValue.textContent = row.getTypedValue(key);
+					td.textContent = row.getTypedValue(key);
 				}
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
