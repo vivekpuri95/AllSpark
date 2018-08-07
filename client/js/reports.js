@@ -7146,7 +7146,6 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 					lng: parseFloat(row.get(this.longitudeColumn)),
 				},
 				icon: urlPrefix + (markerColor[uniqueFields.indexOf(row.get(this.colorColumn)) % markerColor.length] || 'red') + '-dot.png',
-				title: row.get(this.colorColumn).toString(),
 			});
 
 			markerObj.addListener('mouseover', () => {
@@ -7222,7 +7221,7 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 
 			const markerRadius = parseFloat(row.get(this.radiusColumn));
 
-			if(!markerRadius)
+			if(!markerRadius && markerRadius != 0)
 				return this.layers.visualization.source.error('Radius column must contain numerical values');
 
 			const color = DataSourceColumn.colors[uniqueFields.indexOf(row.get(this.colorColumn)) % DataSourceColumn.colors.length] || DataSourceColumn.colors[0];
