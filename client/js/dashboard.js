@@ -206,7 +206,7 @@ Page.class = class Dashboards extends Page {
 
 				let found = false;
 
-				const searchItems = this.listContainer.form.search.value.split('').filter(x => x).slice(0, 5);
+				const searchItems = this.listContainer.form.search.value.split(' ').filter(x => x).slice(0, 5);
 
 
 				for (const searchItem of searchItems) {

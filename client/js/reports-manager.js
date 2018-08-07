@@ -1723,6 +1723,9 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.page.preview.position = 'right';
 
+		this.dashboards.load();
+		this.reportVisualizationFilters.load();
+
 		await this.page.preview.load({
 			query_id: this.report.query_id,
 			visualization: {
@@ -1730,9 +1733,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			},
 		});
 
-		this.dashboards.load();
 		this.transformations.load();
-		this.reportVisualizationFilters.load();
 
 		options.appendChild(this.optionsForm.form);
 
