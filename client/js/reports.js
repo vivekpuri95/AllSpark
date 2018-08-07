@@ -3604,21 +3604,16 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				const td = document.createElement('td');
 
-				let obj;
-
-				try {
-					obj = JSON.parse(row.getTypedValue(key));
-				}
-				catch(e) {}
+				let rowJson = row.get(key);
 
 				if(column.type == 'html') {
 
 					td.innerHTML = row.getTypedValue(key);
 				}
-				else if(obj && typeof obj == 'object') {
+				else if(rowJson && typeof rowJson == 'object') {
 
 					td.innerHTML = `
-						<span class="value">${Array.isArray(obj) ? '[ Array: ' + obj.length + ' ]' : '{ Object: ' + Object.keys(obj).length + ' }'}</span>
+						<span class="value">${Array.isArray(rowJson) ? '[ Array: ' + rowJson.length + ' ]' : '{ Object: ' + Object.keys(rowJson).length + ' }'}</span>
 					`;
 
 					td.classList.add('json');
@@ -3646,14 +3641,14 @@ Visualization.list.set('table', class Table extends Visualization {
 						editor.editor.setTheme('ace/theme/clouds');
 						td.editorContainer.appendChild(editor.container);
 
-						editor.value = JSON.stringify(obj, 0 , 4);
+						editor.value = JSON.stringify(rowJson, 0 , 4);
 
 						td.editorContainer.on('click', e => e.stopPropagation());
 
 						td.editorContainer.querySelector('.close').on('click', e => {
 
 							e.stopPropagation();
-							td.editorContainer.parentElement.removeChild(td.editorContainer);
+							td.editorContainer.remove();
 							tdValue.classList.remove('hidden');
 						});
 

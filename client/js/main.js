@@ -1345,10 +1345,7 @@ class CodeEditor {
 
 	get container() {
 
-		if(this.containerElement)
-			return this.containerElement;
-
-		const container = this.containerElement = this.editor.container;
+		const container = this.editor.container;
 		container.classList.add('code-editor');
 
 		return container;

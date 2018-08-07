@@ -546,28 +546,29 @@ main .data-source.flush {
 				cursor: pointer;
 				background: #ccf;
 			}
-			main .data-source .visualization.table .container td:active {
+			main .data-source .visualization.table .container td.json:active {
 				box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
 			}
-				main .data-source .visualization.table .container td.json > div:hover .close {
-					opacity: 1;
-				}
 				main .data-source .visualization.table .container .code-editor {
 					margin: 0;
 					height: 250px;
 				}
-				main .data-source .visualization.table .container .close {
+				main .data-source .visualization.table .container td.json .close {
 					color: rgba(0, 0, 0, 0.5);
 					position: absolute;
 					cursor: pointer;
-					top: 5px;
+					top: 8px;
 					z-index: 2;
-					right: 5px;
+					right: 18px;
 					opacity: 0;
 					padding: 2px 4px;
-					transition: opacity var(--transition-duration);
+					transition: opacity var(--transition-duration),
+								color var(--transition-duration);
 				}
-				main .data-source .visualization.table .container .close:hover {
+				main .data-source .visualization.table .container td.json > div:hover .close {
+					opacity: 1;
+				}
+				main .data-source .visualization.table .container td.json .close:hover {
 					color: #333;
 					opacity: 1;
 				}
