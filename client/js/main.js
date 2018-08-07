@@ -1350,7 +1350,11 @@ class CodeEditor {
 	}
 
 	get container() {
-		return this.editor.container;
+
+		const container = this.editor.container;
+		container.classList.add('code-editor');
+
+		return container;
 	}
 
 	get editor() {

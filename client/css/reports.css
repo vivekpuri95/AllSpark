@@ -544,6 +544,42 @@ main .data-source.flush {
 		main .data-source .visualization.table .container {
 			overflow: initial;
 		}
+			main .data-source .visualization.table .container td.json {
+				color: #666;
+				padding: 4px;
+				user-select: none;
+				transition: background var(--transition-duration);
+			}
+			main .data-source .visualization.table .container td.json:hover {
+				cursor: pointer;
+				background: #ccf;
+			}
+			main .data-source .visualization.table .container td.json:active {
+				box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+			}
+				main .data-source .visualization.table .container .code-editor {
+					margin: 0;
+					height: 250px;
+				}
+				main .data-source .visualization.table .container td.json .close {
+					color: rgba(0, 0, 0, 0.5);
+					position: absolute;
+					cursor: pointer;
+					top: 8px;
+					z-index: 2;
+					right: 18px;
+					opacity: 0;
+					padding: 2px 4px;
+					transition: opacity var(--transition-duration),
+								color var(--transition-duration);
+				}
+				main .data-source .visualization.table .container td.json > div:hover .close {
+					opacity: 1;
+				}
+				main .data-source .visualization.table .container td.json .close:hover {
+					color: #333;
+					opacity: 1;
+				}
 			.visualization > .container > .loading {
 				display: flex;
 				align-items: center;

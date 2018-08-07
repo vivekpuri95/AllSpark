@@ -3624,10 +3624,61 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				const td = document.createElement('td');
 
-				if(column.type == 'html')
+				let rowJson = row.get(key);
+
+				if(column.type == 'html') {
+
 					td.innerHTML = row.getTypedValue(key);
-				else
+				}
+				else if(rowJson && typeof rowJson == 'object') {
+
+					td.innerHTML = `
+						<span class="value">${Array.isArray(rowJson) ? '[ Array: ' + rowJson.length + ' ]' : '{ Object: ' + Object.keys(rowJson).length + ' }'}</span>
+					`;
+
+					td.classList.add('json');
+
+					const tdValue = td.querySelector('.value');
+
+					td.on('click', () => {
+
+						tdValue.classList.add('hidden');
+
+						if(td.editorContainer) {
+
+							td.appendChild(td.editorContainer);
+							return;
+						}
+
+						td.editorContainer = document.createElement('div');
+
+						td.editorContainer.innerHTML = `
+							<span class="close" title="Close"><i class="fa fa-times"></i></span>
+						`;
+
+						const editor = new CodeEditor({mode: 'json'});
+
+						editor.editor.setTheme('ace/theme/clouds');
+						td.editorContainer.appendChild(editor.container);
+
+						editor.value = JSON.stringify(rowJson, 0 , 4);
+
+						td.editorContainer.on('click', e => e.stopPropagation());
+
+						td.editorContainer.querySelector('.close').on('click', e => {
+
+							e.stopPropagation();
+							td.editorContainer.remove();
+							tdValue.classList.remove('hidden');
+						});
+
+						td.appendChild(td.editorContainer);
+					});
+				}
+				else {
+
 					td.textContent = row.getTypedValue(key);
+				}
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
 
