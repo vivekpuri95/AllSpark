@@ -329,7 +329,7 @@ Page.class = class Dashboards extends Page {
 				return await Sections.show('list')
 			}
 
-			while (dashboardReference.querySelector('.submenu:not(.hidden)')) {
+			while (dashboardReference.querySelector('.submenu')) {
 
 				dashboardReference.querySelector('.label').click();
 				dashboardReference = dashboardReference.querySelector('.submenu');
