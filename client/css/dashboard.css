@@ -84,6 +84,10 @@ main > nav::-webkit-scrollbar-track {
 		main > nav .NA svg {
 			font-size: 175%;
 		}
+	main > nav .dashboard-hierarchy {
+		display: flex;
+		flex-direction: column;
+	}
 	main > nav .label {
 		display: flex;
 		padding: 12px;
@@ -105,25 +109,29 @@ main > nav::-webkit-scrollbar-track {
 		background: rgba(0, 0, 0, 0.15);
 		box-shadow: inset 6px 0px 0 var(--color-accent);
 	}
-		main > nav .submenu .label {
-			padding-left: 40px;
+		main > nav .submenu {
+			display: flex;
+			flex-direction: column;
 		}
-		main > nav .submenu .submenu .label {
-			padding-left: 60px;
-		}
-		main > nav .submenu .submenu .submenu .label {
-			padding-left: 90px;
-		}
-			main > nav .item .label .name {
-				margin-left: 8px;
+			main > nav .submenu .label {
+				padding-left: 40px;
 			}
-			main > nav .item .label .angle {
-				transition: transform var(--transition-duration);
-				margin-left: auto;
+			main > nav .submenu .submenu .label {
+				padding-left: 60px;
 			}
-			main > nav .item .label .angle.down {
-				transform: rotate(90deg);
+			main > nav .submenu .submenu .submenu .label {
+				padding-left: 90px;
 			}
+				main > nav .item .label .name {
+					margin-left: 8px;
+				}
+				main > nav .item .label .angle {
+					transition: transform var(--transition-duration);
+					margin-left: auto;
+				}
+				main > nav .item .label .angle.down {
+					transform: rotate(90deg);
+				}
 	main > nav footer {
 		margin-top: auto;
 		color: #666;
