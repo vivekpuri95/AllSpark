@@ -212,7 +212,7 @@ class API {
 				session;
 
 			try {
-				session = JSON.parse(atob(obj.request.body.refresh_token.split('.')[1]));
+				session = JSON.parse(atob(obj.request.body.refresh_token.split('.')[1])).sessionId;
 			}
 			catch(e){}
 
@@ -230,7 +230,7 @@ class API {
 				type: "server",
 				user_agent: obj.request.get('user-agent'),
 				status: status || e.status,
-				session_id: session.sessionId,
+				session_id: session,
 			};
 
 			await errorLogs.insert(error);

@@ -11,7 +11,7 @@ const account = require('../onServerStart');
 const fetch = require('node-fetch');
 const URLSearchParams = require('url').URLSearchParams;
 const redis = require("../utils/redis").Redis;
-let sessionLogs = require("../utils/sessions").sessions;
+const sessionLogs = require("../utils/sessions").sessions;
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -298,7 +298,7 @@ exports.login = class extends API {
 
 		const expiryTime = Date.now() + parseInt(this.userDetails.ttl || 7) * 86400;
 
-		const session_ohj = {
+		const session_obj = {
 			user_id: this.userDetails.user_id,
 			type: 'login',
 			expire_time: expiryTime,
@@ -312,7 +312,7 @@ exports.login = class extends API {
 		let sessionId = [];
 
 		try{
-			await sessionLogs.insert(session_ohj);
+			await sessionLogs.insert(session_obj);
 		}
 		catch(e){}
 

@@ -18,10 +18,12 @@ class Sessions {
 			const check_token = await commonFun.verifyJWT(params.refresh_token);
 
 			if(check_token.error && check_token.message != 'jwt expired')
-				return;
+				return 'Token expired';
 
-			params.user_id = check_token.user_id;
-			params.session_id = check_token.sessionId;
+			const token_details = JSON.parse(atob(obj.request.body.refresh_token.split('.')[1]))
+
+			params.user_id = token_details.user_id;
+			params.session_id = token_details.sessionId;
 		}
 
 		delete(params['refresh_token']);
