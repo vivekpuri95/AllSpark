@@ -671,7 +671,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 							<th>Name</th>
 							<th>Parent</th>
 							<th>Icon</th>
-							<th>Visibility</th>
+							<th>Order</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>
@@ -703,6 +703,11 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 					<label>
 						<span>Icon</span>
 						<input type="text" name="icon">
+					</label>
+
+					<label>
+						<span>Order</span>
+						<input type="number" min="0" step="1" name="order">
 					</label>
 
 					<label id="format">

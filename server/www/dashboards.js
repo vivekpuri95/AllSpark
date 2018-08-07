@@ -1,10 +1,7 @@
 const API = require('../utils/api');
 const auth = require('../utils/auth');
 
-//update delete current dashboard dekh ke
-
-
-exports.list = class extends API {
+class Dashboard extends API {
 
 	async list() {
 
@@ -15,7 +12,6 @@ exports.list = class extends API {
 				AND (
 					id LIKE ?
 					OR name LIKE ?
-					OR visibility LIKE ?
 				)
 				LIMIT 10
 			`);
@@ -68,25 +64,12 @@ exports.list = class extends API {
 
 		for(const d in dashboardObject) {
 
-			const formatObject = [];
-
-			for(const queryVisualization of dashboardObject[d].visualizations) {
-
-				formatObject.push({...queryVisualization, ...queryVisualization.format})
-			}
-
-			if(formatObject.length)
-				dashboardObject[d].format = {reports: formatObject};
-
 			dashboardObject[d].href = `/dashboard/${dashboardObject[d].id}`;
 			dashboardObject[d].superset = 'Dashboards';
 		}
 
 		return Object.values(dashboardObject);
 	}
-};
-
-exports.insert = class extends API {
 
 	async insert() {
 
@@ -94,7 +77,7 @@ exports.insert = class extends API {
 
 		let
 			values = {},
-			columns = ['name', 'parent', 'icon', 'roles', 'format', 'visibility'];
+			columns = ['name', 'parent', 'icon', 'roles', 'order', 'format'];
 
 		for (const key in this.request.body) {
 
@@ -110,32 +93,6 @@ exports.insert = class extends API {
 
 		return await this.mysql.query('INSERT INTO tb_dashboards SET ? ', [values], 'write');
 	}
-};
-
-exports.delete = class extends API {
-
-	async delete() {
-
-		this.user.privilege.needs('dashboard');
-
-		const mandatoryData = ["id"];
-
-		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
-
-		const authResponse = auth.dashboard(this.request.body.id, this.user);
-
-		this.assert(!authResponse.error, authResponse.message);
-
-		return await this.mysql.query(
-			'UPDATE tb_dashboards SET status = 0 WHERE id = ? AND account_id = ?',
-			[this.request.body.id, this.account.account_id],
-			'write'
-		);
-	}
-};
-
-
-exports.update = class extends API {
 
 	async update() {
 
@@ -147,7 +104,7 @@ exports.update = class extends API {
 
 		const
 			values = {},
-			columns = ['name', 'parent', 'icon', 'roles', 'type', 'format', 'visibility'];
+			columns = ['name', 'parent', 'icon', 'roles', 'type', 'order', 'format'];
 
 		for(const key in this.request.body) {
 
@@ -168,4 +125,28 @@ exports.update = class extends API {
 			'write'
 		);
 	}
-};
+
+	async delete() {
+
+		this.user.privilege.needs('dashboard');
+
+		const mandatoryData = ["id"];
+
+		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
+
+		const authResponse = auth.dashboard(this.request.body.id, this.user);
+
+		this.assert(!authResponse.error, authResponse.message);
+
+		return await this.mysql.query(
+			'UPDATE tb_dashboards SET status = 0 WHERE id = ? AND account_id = ?',
+			[this.request.body.id, this.account.account_id],
+			'write'
+		);
+	}
+}
+
+exports.list = Dashboard;
+exports.insert = Dashboard;
+exports.delete = Dashboard;
+exports.update = Dashboard;
