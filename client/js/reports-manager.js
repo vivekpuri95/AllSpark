@@ -3921,7 +3921,7 @@ class ReportVisualizationDashboards extends Set {
 			if(!dashboard.format)
 				dashboard.format = {};
 
-			for(const report of dashboard.format.reports || []) {
+			for(const report of dashboard.visualizations || []) {
 
 				if(this.stage.visualization.visualization_id == report.visualization_id)
 					this.add(new ReportVisualizationDashboard(dashboard, this.stage));
@@ -4019,7 +4019,7 @@ class ReportVisualizationDashboard {
 		for(const key in dashboard)
 			this[key] = dashboard[key];
 
-		[this.visualization] = this.format.reports.filter(v => v.visualization_id == this.stage.visualization.visualization_id);
+		[this.visualization] = this.visualizations.filter(v => v.visualization_id == this.stage.visualization.visualization_id);
 	}
 
 	get form() {
