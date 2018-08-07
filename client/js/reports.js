@@ -517,7 +517,7 @@ class DataSource {
 		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
-	get response() {
+	async response() {
 
 		this.resetError();
 
@@ -531,7 +531,7 @@ class DataSource {
 		if(!Array.isArray(this.originalResponse.data))
 			return [];
 
-		const data = this.transformations.run(this.originalResponse.data);
+		const data = await this.transformations.run(this.originalResponse.data);
 
 		if(!this.columns.list.size)
 			return this.error();
@@ -602,7 +602,7 @@ class DataSource {
 
 			const response = [];
 
-			for(const row of this.response) {
+			for(const row of await this.response()) {
 
 				const temp = {};
 				const arr = [...row];
@@ -634,7 +634,9 @@ class DataSource {
 
 		else if(what.mode == 'filtered-csv') {
 
-			for(const row of this.response) {
+			const response = await this.response();
+
+			for(const row of response) {
 
 				const line = [];
 
@@ -644,7 +646,7 @@ class DataSource {
 				str.push(line.join());
 			}
 
-			str = Array.from(this.response[0].keys()).join() + '\r\n' + str.join('\r\n');
+			str = Array.from(response[0].keys()).join() + '\r\n' + str.join('\r\n');
 
 			what.mode = 'csv';
 		}
@@ -2512,29 +2514,12 @@ class DataSourceColumnAccumulation {
 			</div>
 		`;
 
-		// To check the type of the column
-		let string = false;
-
-		for(const [index, report] of this.accumulations.column.source.response.entries()) {
-
-			if(index > 10)
-				break;
-
-			if(isNaN(report.get(this.accumulations.column.key))) {
-				string = true;
-				break;
-			}
-		}
-
 		const select = container.querySelector('.accumulation-content');
 
 		select.insertAdjacentHTML('beforeend', `<option value="-1">Select</option>`);
 
-		for(const [i, type] of DataSourceColumnAccumulation.accumulationTypes.entries()) {
-
-			if(!string || type.string)
-				select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
-		}
+		for(const [i, type] of DataSourceColumnAccumulation.accumulationTypes.entries())
+			select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
 
 		select.querySelector('option').selected = true;
 
@@ -2552,14 +2537,14 @@ class DataSourceColumnAccumulation {
 		return container
 	}
 
-	run() {
+	async run() {
 
 		const select = this.container.querySelector('select');
 
 		const accumulation = DataSourceColumnAccumulation.accumulationTypes[select.value];
 
 		if(accumulation)
-			this.container.querySelector('input').value = accumulation.apply(this.accumulations.column.source.response, this.accumulations.column.key);
+			this.container.querySelector('input').value = accumulation.apply(await this.accumulations.column.source.response(), this.accumulations.column.key);
 
 		else this.container.querySelector('input').value = '';
 	}
@@ -2671,7 +2656,7 @@ class DataSourceTransformations extends Set {
 		this.source = source;
 	}
 
-	run(response) {
+	async run(response) {
 
 		this.clear();
 
@@ -2688,7 +2673,7 @@ class DataSourceTransformations extends Set {
 		response = JSON.parse(JSON.stringify(response));
 
 		for(const transformation of this)
-			response = transformation.run(response);
+			response = await transformation.run(response);
 
 		if(this.size) {
 			this.source.columns.update(response);
@@ -2713,7 +2698,7 @@ DataSourceTransformation.types = new Map;
 
 DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot extends DataSourceTransformation {
 
-	run(response = []) {
+	async run(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -2850,7 +2835,7 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 
 DataSourceTransformation.types.set('filters', class DataSourceTransformationPivot extends DataSourceTransformation {
 
-	run(response = []) {
+	async run(response = []) {
 
 		if(!response || !response.length || !this.filters || !this.filters.length)
 			return response;
@@ -2863,7 +2848,7 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationPivo
 
 			for(const _filter of this.filters) {
 
-				const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == _filter.type);
+				const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == _filter.function);
 
 				if(!filter)
 					continue;
@@ -2880,6 +2865,141 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationPivo
 		}
 
 		return newResponse;
+	}
+});
+
+DataSourceTransformation.types.set('stream', class DataSourceTransformationPivot extends DataSourceTransformation {
+
+	async run(response = []) {
+
+		if(!response || !response.length)
+			return response;
+
+		if(!this.visualization_id)
+			return this.source.error('Stream visualization not selected!');
+
+		let report = null;
+
+		for(const _report of DataSource.list.values()) {
+
+			const [visualization] = _report.visualizations.filter(v => v.visualization_id == this.visualization_id);
+
+			if(!visualization)
+				continue;
+
+			report = new DataSource(_report);
+			break;
+		}
+
+		if(!report)
+			return this.source.error('Stream visualization not found!');
+
+		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id)
+
+		await report.fetch();
+
+		const streamResponse = await report.response();
+
+		const
+			newResponse = [],
+			newColumns = Array.from(streamResponse[0].keys()),
+			filters = {};
+
+		for(const filter of DataSourceColumnFilter.types)
+			filters[filter.slug] = filter;
+
+		for(const row of response) {
+
+			for(const newColumn of newColumns) {
+
+				// If the stream's column doesn't exists in base report then add it
+				if(!(newColumn in row))
+					row[newColumn] = [];
+			}
+
+			for(const streamRow of streamResponse) {
+
+				let matched = true;
+
+				for(const join of this.joins) {
+
+					if(!filters[join.function].apply(row[join.sourceColumn], streamRow.get(join.streamColumn))) {
+						matched = false;
+						break
+					}
+				}
+
+				if(!matched)
+					continue;
+
+				for(const [key, value] of streamRow) {
+
+					const array = row[key];
+
+					if(Array.isArray(array))
+						array.push(value);
+				}
+			}
+
+			for(const key in row) {
+
+				const [column] = this.columns.filter(c => c.column == key);
+
+				if(!column) {
+					delete row[key];
+					continue;
+				}
+
+				const values = row[key];
+
+				if(!Array.isArray(values))
+					continue;
+
+				let value = null;
+
+				switch(column.function) {
+
+					case 'sum':
+						value = values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
+						break;
+
+					case 'count':
+						value = values.length;
+						break;
+
+					case 'distinctcount':
+						value = new Set(values).size;
+						break;
+
+					case 'max':
+						value = Math.max(...values);
+						break;
+
+					case 'min':
+						value = Math.min(...values);
+						break;
+
+					case 'average':
+						value = Math.floor(values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0) / values.length * 100) / 100;
+						break;
+
+					case 'values':
+						value = values.join(', ');
+						break;
+
+					case 'distinctvalues':
+						value = Array.from(new Set(values)).join(', ');
+						break;
+
+					default:
+						value = values.length;
+				}
+
+				row[key] = value;
+			}
+		}
+
+		return response;
 	}
 });
 
@@ -3180,9 +3300,9 @@ class LinearVisualization extends Visualization {
 		}
 	}
 
-	draw() {
+	async draw() {
 
-		const rows = this.source.response;
+		const rows = await this.source.response();
 
 		if(!rows || !rows.length)
 			return this.source.error();
@@ -3373,9 +3493,9 @@ class LinearVisualization extends Visualization {
 				.text('Reset Zoom');
 
 			// Click on reset zoom function
-			resetZoom.on('click', () => {
+			resetZoom.on('click', async () => {
 
-				const rows = this.source.response;
+				const rows = await this.source.response();
 
 				for(const row of rows) {
 					for(const [key, column] of row)
@@ -3570,7 +3690,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
 	get container() {
@@ -3591,11 +3711,11 @@ Visualization.list.set('table', class Table extends Visualization {
 		return container;
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
 		const
 			container = this.container.querySelector('.container'),
-			rows = this.source.response;
+			rows = await this.source.response();
 
 		container.textContent = null;
 
@@ -4512,7 +4632,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.source.response;
+		await this.source.response();
 
 		this.render(options);
 	}
@@ -4748,9 +4868,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		}
 	}
 
-	draw() {
+	async draw() {
 
-		const rows = this.source.response;
+		const rows = await this.source.response();
 
 		if(!rows || !rows.length)
 			return this.source.error();
@@ -4862,13 +4982,13 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		});
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
 		this.draw();
-		this.plot(options);
+		await this.plot(options);
 	}
 
-	plot(options = {})  {
+	async plot(options = {})  {
 
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
@@ -4929,7 +5049,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		if(!this.rows.length)
 			return this.source.error();
 
-		if(this.rows.length != this.source.response.length) {
+		if(this.rows.length != (await this.source.response()).length) {
 
 			// Reset Zoom Button
 			const resetZoom = this.svg.append('g')
@@ -4951,8 +5071,8 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				.text('Reset Zoom');
 
 			// Click on reset zoom function
-			resetZoom.on('click', () => {
-				this.rows = this.source.response;
+			resetZoom.on('click', async () => {
+				this.rows = await this.source.response();
 				this.plot();
 			});
 		}
@@ -5793,14 +5913,14 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
 		const
 			series = [],
-			rows = this.source.response;
+			rows = await this.source.response();
 
 		if(rows.length > 1) {
 
@@ -6135,7 +6255,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		this.process();
 
-		this.render(options);
+		await this.render(options);
 	}
 
 	process() {
@@ -6169,9 +6289,9 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			visualizationToggle.value = this.source.visualizations.indexOf(this);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.rows = this.source.response;
+		this.rows = await this.source.response();
 
 		this.height = this.container.clientHeight - 20;
 		this.width = this.container.clientWidth - 20;
@@ -6365,7 +6485,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		await this.source.fetch(options);
 
-		this.render();
+		await this.render();
 	}
 
 	async render() {
@@ -6378,7 +6498,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		const zoom = this.options.zoom || 12;
 
-		this.rows = this.source.response;
+		this.rows = await this.source.response();
 
 		if(!this.map)
 			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {
@@ -6426,31 +6546,33 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 		await this.source.fetch(options);
 
-		this.process();
-		this.render(options);
+		await this.process();
+		await this.render(options);
 	}
 
-	process() {
+	async process() {
 
 		this.max = 0;
 
-		this.source.response.pop();
+		const response = await this.source.response();
 
-		for(const row of this.source.response) {
+		response.pop();
+
+		for(const row of response) {
 
 			for(const column of row.get('data') || [])
 				this.max = Math.max(this.max, column.count);
 		}
 	}
 
-	render() {
+	async render() {
 
 		const
 			container = this.container.querySelector('.container'),
 			table = document.createElement('table'),
 			tbody = document.createElement('tbody'),
 			type = this.source.filters.get('type').label.querySelector('input').value,
-			response = this.source.response;
+			response = await this.source.response();
 
 		container.textContent = null;
 
@@ -6543,14 +6665,14 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		await this.source.fetch(options);
 
-		this.process();
+		await this.process();
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	process() {
+	async process() {
 
-		const [response] = this.source.response;
+		const [response] = await this.source.response();
 
 		if(!this.options.column)
 			return this.source.error('Value column not selected.');
@@ -6562,9 +6684,9 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			return this.source.error(`<em>${this.options.column}</em> column not found.`);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		const [response] = this.source.response;
+		const [response] = await this.source.response();
 
 		let value = response.getTypedValue(this.options.column);
 
@@ -6664,12 +6786,12 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		await this.source.fetch(options);
 
-		this.process();
+		await this.process();
 
 		this.render(options);
 	}
 
-	process() {
+	async process() {
 
 		if(!this.options)
 			return this.source.error('Visualization configuration not set.');
@@ -6682,7 +6804,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		this.dates = new Map;
 
-		for(const row of this.source.response) {
+		for(const row of await this.source.response()) {
 
 			if(!row.has(this.options.timingColumn))
 				return this.source.error(`Timing column '${this.options.timingColumn}' not found.`);
@@ -7092,7 +7214,6 @@ class SpatialMapLayers extends Set {
 			this.visible.has(layer) ? layer.plot() : layer.clear();
 		}
 	}
-
 }
 
 class SpatialMapLayer {
@@ -7424,7 +7545,6 @@ class SpatialMapThemes extends Map {
 		return container;
 
 	}
-
 }
 
 class SpatialMapTheme {
@@ -7504,7 +7624,6 @@ class SpatialMapTheme {
 
 		return image;
 	}
-
 }
 
 class Tooltip {
@@ -7545,7 +7664,6 @@ class Tooltip {
 		container.classList.add('hidden');
 	}
 }
-
 
 Visualization.animationDuration = 750;
 

@@ -3437,7 +3437,7 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			}
 		}
 
-		this.subReports = new MultiSelect({datalist: datalist, expand:true});
+		this.subReports = new MultiSelect({datalist: datalist, expand: true});
 
 		container.querySelector('.form .sub-reports').appendChild(this.subReports.container);
 
@@ -3692,6 +3692,9 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 		if(this.containerElement)
 			return this.containerElement;
 
+		if(!this.page.preview.report.originalResponse)
+			return this.containerElement;
+
 		const
 			container = this.containerElement = document.createElement('fieldset'),
 			rows = document.createElement('div'),
@@ -3743,14 +3746,14 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		container.innerHTML	= `
 			<legend>${this.name}</legend>
-			<div class="transformation"></div>
+			<div class="transformation pivot"></div>
 		`;
 
-		const div = container.querySelector('div');
+		const transformation = container.querySelector('.transformation');
 
-		div.appendChild(rows);
-		div.appendChild(columns);
-		div.appendChild(values);
+		transformation.appendChild(rows);
+		transformation.appendChild(columns);
+		transformation.appendChild(values);
 
 		return container;
 	}
@@ -3779,7 +3782,8 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 		for(const value of this.container.querySelectorAll('.value')) {
 			response.values.push({
 				column: value.querySelector('*[name=column]').value,
-				function: value.querySelector('select[name=function]').value
+				function: value.querySelector('select[name=function]').value,
+				name: value.querySelector('input[name=name]').value
 			});
 		}
 
@@ -3793,22 +3797,16 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		const container = document.createElement('div');
 
-		container.classList.add('row');
+		container.classList.add('form-row', 'row');
 
-		if(this.page.preview.report.originalResponse) {
+		container.innerHTML = `<select name="column"></select>`;
 
-			container.innerHTML = `<select name="column"></select>`;
+		const select = container.querySelector('select');
 
-			const select = container.querySelector('select');
+		for(const column in this.page.preview.report.originalResponse.data[0])
+			select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
-			for(const column in this.page.preview.report.originalResponse.data[0])
-				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-			select.value = row.column;
-
-		} else {
-			container.innerHTML = `<input type="text" name="column" value="${row.column || ''}">`;
-		}
+		select.value = row.column;
 
 		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
 
@@ -3824,22 +3822,16 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		const container = document.createElement('div');
 
-		container.classList.add('column');
+		container.classList.add('form-row', 'column');
 
-		if(this.page.preview.report.originalResponse) {
+		container.innerHTML = `<select name="column"></select>`;
 
-			container.innerHTML = `<select name="column"></select>`;
+		const select = container.querySelector('select');
 
-			const select = container.querySelector('select');
+		for(const column in this.page.preview.report.originalResponse.data[0])
+			select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
-			for(const column in this.page.preview.report.originalResponse.data[0])
-				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-			select.value = column.column;
-
-		} else {
-			container.innerHTML = `<input type="text" name="column" value="${column.column || ''}">`;
-		}
+		select.value = column.column;
 
 		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
 
@@ -3852,23 +3844,16 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		const container = document.createElement('div');
 
-		container.classList.add('value');
+		container.classList.add('form-row', 'value');
 
+		container.innerHTML = `<select name="column"></select>`;
 
-		if(this.page.preview.report.originalResponse) {
+		const select = container.querySelector('select');
 
-			container.innerHTML = `<select name="column"></select>`;
+		for(const column in this.page.preview.report.originalResponse.data[0])
+			select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
-			const select = container.querySelector('select');
-
-			for(const column in this.page.preview.report.originalResponse.data[0])
-				select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-			select.value = value.column;
-
-		} else {
-			container.innerHTML = `<input type="text" name="column" value="${value.column || ''}">`;
-		}
+		select.value = value.column;
 
 		container.insertAdjacentHTML('beforeend',`
 			<select name="function">
@@ -3881,6 +3866,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 				<option value="min">Min</option>
 				<option value="average">Average</option>
 			</select>
+			<input type="text" name="name" value="${value.name || ''}" placeholder="Name">
 			<button type="button"><i class="far fa-trash-alt"></i></button>
 		`);
 
@@ -3904,6 +3890,9 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 		if(this.containerElement)
 			return this.containerElement;
 
+		if(!this.page.preview.report.originalResponse)
+			return this.containerElement;
+
 		const
 			container = this.containerElement = document.createElement('fieldset'),
 			filters = document.createElement('div');
@@ -3925,7 +3914,7 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 		container.innerHTML	= `
 			<legend>${this.name}</legend>
-			<div class="transformation"></div>
+			<div class="transformation filters"></div>
 		`;
 
 		container.querySelector('.transformation').appendChild(filters);
@@ -3943,7 +3932,7 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 		for(const filter of this.container.querySelectorAll('.filter')) {
 			response.filters.push({
 				column: filter.querySelector('select[name=column]').value,
-				type: filter.querySelector('select[name=type]').value,
+				function: filter.querySelector('select[name=function]').value,
 				value: filter.querySelector('input[name=value]').value,
 			});
 		}
@@ -3958,36 +3947,30 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 		const container = document.createElement('div');
 
-		container.classList.add('filter');
+		container.classList.add('form-row', 'filter');
 
-		if(this.page.preview.report.originalResponse) {
+		container.innerHTML = `
+			<select name="column"></select>
+			<select name="function"></select>
+			<input type="text" name="value">
+		`;
 
-			container.innerHTML = `
-				<select name="column"></select>
-				<select name="type"></select>
-				<input type="text" name="value">
-			`;
+		const
+			columnSelect = container.querySelector('select[name=column]'),
+			functionSelect = container.querySelector('select[name=function]'),
+			valueInput = container.querySelector('input[name=value]');
 
-			const
-				columnSelect = container.querySelector('select[name=column]'),
-				typeSelect = container.querySelector('select[name=type]'),
-				valueInput = container.querySelector('input[name=value]');
+		for(const column in this.page.preview.report.originalResponse.data[0])
+			columnSelect.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
 
-			for(const column in this.page.preview.report.originalResponse.data[0])
-				columnSelect.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+		columnSelect.value = filter.column;
 
-			columnSelect.value = filter.column;
+		for(const filter of DataSourceColumnFilter.types)
+			functionSelect.insertAdjacentHTML('beforeend', `<option value="${filter.slug}">${filter.name}</option>`);
 
-			for(const filter of DataSourceColumnFilter.types)
-				typeSelect.insertAdjacentHTML('beforeend', `<option value="${filter.slug}">${filter.name}</option>`);
+		functionSelect.value = filter.function;
 
-			typeSelect.value = filter.type;
-
-			valueInput.value = filter.value || '';
-
-		} else {
-			container.innerHTML = `<input type="text" name="column" value="${filter.column || ''}">`;
-		}
+		valueInput.value = filter.value || '';
 
 		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
 
@@ -3995,6 +3978,196 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 			e.stopPropagation();
 			container.remove();
 		});
+
+		return container;
+	}
+});
+
+ReportTransformation.types.set('stream', class ReportTransformationFilters extends ReportTransformation {
+
+	get name() {
+		return 'Stream';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		if(!this.page.preview.report.originalResponse)
+			return this.containerElement;
+
+		const
+			container = this.containerElement = document.createElement('fieldset'),
+			joins = document.createElement('div'),
+			columns = document.createElement('div'),
+			reports = [];
+
+		container.classList.add('subform', 'form');
+
+		joins.classList.add('joins');
+		columns.classList.add('columns');
+
+		joins.innerHTML = `<h4>Join On</h4>`;
+		columns.innerHTML = `<h4>Columns</h4>`;
+
+		for(const join of this.joins || [])
+			joins.appendChild(this.join(join));
+
+		const addJoin = document.createElement('button');
+
+		addJoin.type = 'button';
+		addJoin.innerHTML = `<i class="fa fa-plus"></i> Add New Join`;
+		addJoin.on('click', () => joins.insertBefore(this.join(), addJoin));
+
+		joins.appendChild(addJoin);
+
+		for(const column of this.columns || [])
+			columns.appendChild(this.column(column));
+
+		const addColumn = document.createElement('button');
+
+		addColumn.type = 'button';
+		addColumn.innerHTML = `<i class="fa fa-plus"></i> Add New Column`;
+		addColumn.on('click', () => columns.insertBefore(this.column(), addColumn));
+
+		columns.appendChild(addColumn);
+
+		container.innerHTML	= `
+			<legend>${this.name}</legend>
+			<div class="transformation stream">
+				<div class="visualization">
+					<h4>Columns</h4>
+				</div>
+			</div>
+		`;
+
+		const
+			transformation = container.querySelector('.transformation'),
+			datalist = [];
+
+		for(const [index, report] of DataSource.list.entries()) {
+
+			for(const visualisation of report.visualizations) {
+
+				if(visualisation.visualization_id != this.stage.visualization.visualization_id) {
+
+					datalist.push({
+						'name': visualisation.name,
+						'value': visualisation.visualization_id,
+						'subtitle': `${report.name} #${report.query_id}`,
+					});
+				}
+			}
+		}
+
+		this.visualizations = new MultiSelect({datalist: datalist, multiple: false});
+
+		this.visualizations.value = this.visualization_id;
+
+		transformation.querySelector('.visualization').appendChild(this.visualizations.container);
+		transformation.appendChild(joins);
+		transformation.appendChild(columns);
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			type: 'stream',
+			visualization_id: this.visualizations.value[0],
+			joins: [],
+			columns: [],
+		};
+
+		for(const join of this.container.querySelectorAll('.join')) {
+			response.joins.push({
+				sourceColumn: join.querySelector('select[name=sourceColumn]').value,
+				function: join.querySelector('select[name=function]').value,
+				streamColumn: join.querySelector('input[name=streamColumn]').value,
+			});
+		}
+
+		for(const column of this.container.querySelectorAll('.column')) {
+			response.columns.push({
+				column: column.querySelector('input[name=column]').value,
+				function: column.querySelector('select[name=function]').value,
+				name: column.querySelector('input[name=name]').value,
+			});
+		}
+
+		if(!response.columns.length)
+			return null;
+
+		return response;
+	}
+
+	join(join = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('form-row', 'join');
+
+		container.innerHTML = `
+			<select name="sourceColumn"></select>
+			<select name="function"></select>
+			<input type="text" name="streamColumn" placeholder="Stream Column">
+		`;
+
+		const
+			sourceColumnSelect = container.querySelector('select[name=sourceColumn]'),
+			functionSelect = container.querySelector('select[name=function]'),
+			streamColumnInput = container.querySelector('input[name=streamColumn]');
+
+		for(const column in this.page.preview.report.originalResponse.data[0])
+			sourceColumnSelect.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+
+		sourceColumnSelect.value = join.sourceColumn;
+
+		for(const filter of DataSourceColumnFilter.types)
+			functionSelect.insertAdjacentHTML('beforeend', `<option value="${filter.slug}">${filter.name}</option>`);
+
+		functionSelect.value = join.function;
+
+		streamColumnInput.value = join.streamColumn || '';
+
+		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
+
+		container.querySelector('button').on('click', e => {
+			e.stopPropagation();
+			container.remove();
+		});
+
+		return container;
+	}
+
+	column(column = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('form-row', 'column');
+
+		container.insertAdjacentHTML('beforeend',`
+			<input type="text" name="column" value="${column.column || ''}" placeholder="Column">
+			<select name="function">
+				<option value="sum">Sum</option>
+				<option value="count">Count</option>
+				<option value="distinctcount">Distinct Count</option>
+				<option value="values">Values</option>
+				<option value="distinctvalues">Distinct Values</option>
+				<option value="max">Max</option>
+				<option value="min">Min</option>
+				<option value="average">Average</option>
+			</select>
+			<input type="text" name="name" value="${column.name || ''}" placeholder="Name">
+			<button type="button"><i class="far fa-trash-alt"></i></button>
+		`);
+
+		if(column.function)
+			container.querySelector('select[name=function]').value = column.function;
+
+		container.querySelector('button').on('click', () => container.remove());
 
 		return container;
 	}
@@ -4489,7 +4662,7 @@ class EditReportData {
 		this.datasource = new DataSource(DataSource.list.get(query_id));
 
 		await this.datasource.fetch();
-		this.data = this.datasource.response;
+		this.data = await this.datasource.response();
 
 		this.rows = [];
 

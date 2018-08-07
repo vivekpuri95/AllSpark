@@ -534,28 +534,30 @@ main.preview-left #stages {
 					padding-bottom: var(--gap);
 					font-size: 90%;
 				}
+
+			#stage-configure-visualization #transformations .transformation .form-row {
+				display: grid;
+				grid-auto-flow: column;
+				grid-gap: calc(var(--gap) * 2);
+			}
+			#stage-configure-visualization #transformations .transformation .form-row button svg {
+				margin: 0;
+			}
+				#stage-configure-visualization #transformations .transformation input[type=text] {
+					width: 100px;
+				}
+			#stage-configure-visualization #transformations .transformation button {
+				white-space: nowrap;
+			}
+			#stage-configure-visualization #transformations .transformation.stream .joins,
+			#stage-configure-visualization #transformations .transformation.stream .columns {
+				grid-row: 2;
+			}
 		#stage-configure-visualization #transformations .add-transformation .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;
 			background: transparent;
 			padding: 0;
 			grid-gap: calc(var(--gap) * 2);
-		}
-		#stage-configure-visualization #transformations .transformation .row,
-		#stage-configure-visualization #transformations .transformation .column,
-		#stage-configure-visualization #transformations .transformation .value,
-		#stage-configure-visualization #transformations .transformation .filter {
-			display: grid;
-			grid-auto-flow: column;
-			grid-gap: calc(var(--gap) * 2);
-		}
-		#stage-configure-visualization #transformations .transformation button {
-			white-space: nowrap;
-		}
-		#stage-configure-visualization #transformations .transformation .row button svg,
-		#stage-configure-visualization #transformations .transformation .column button svg,
-		#stage-configure-visualization #transformations .transformation .value button svg,
-		#stage-configure-visualization #transformations .transformation .filter button svg {
-			margin: 0;
 		}
 	#stage-configure-visualization #dashboards {
 	}
