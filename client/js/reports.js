@@ -3621,7 +3621,7 @@ Visualization.list.set('table', class Table extends Visualization {
 						<span class="value">${Array.isArray(obj) ? '[ Array: ' + obj.length + ' ]' : '{ Object: ' + Object.keys(obj).length + ' }'}</span>
 					`;
 
-					td.classList.add('json-info');
+					td.classList.add('json');
 
 					const tdValue = td.querySelector('.value');
 
@@ -3646,7 +3646,6 @@ Visualization.list.set('table', class Table extends Visualization {
 						editor.editor.setTheme('ace/theme/clouds');
 						td.editorContainer.appendChild(editor.container);
 
-						editor.container.classList.add('json');
 						editor.value = JSON.stringify(obj, 0 , 4);
 
 						td.editorContainer.on('click', e => e.stopPropagation());

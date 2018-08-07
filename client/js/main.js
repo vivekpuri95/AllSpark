@@ -1344,7 +1344,14 @@ class CodeEditor {
 	}
 
 	get container() {
-		return this.editor.container;
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = this.editor.container;
+		container.classList.add('code-editor');
+
+		return container;
 	}
 
 	get editor() {

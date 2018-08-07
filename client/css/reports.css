@@ -536,36 +536,40 @@ main .data-source.flush {
 		main .data-source .visualization.table .container {
 			overflow: initial;
 		}
-			main .data-source .visualization.table .container td.json-info:hover {
+			main .data-source .visualization.table .container td.json {
+				color: #666;
+				padding: 4px;
+				user-select: none;
+				transition: background var(--transition-duration);
+			}
+			main .data-source .visualization.table .container td.json:hover {
 				cursor: pointer;
 				background: #ccf;
 			}
 			main .data-source .visualization.table .container td:active {
 				box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
 			}
-				main .data-source .visualization.table .container td.json-info > div:hover .close {
-					display: initial;
+				main .data-source .visualization.table .container td.json > div:hover .close {
+					opacity: 1;
 				}
-				main .data-source .visualization.table .container .json {
+				main .data-source .visualization.table .container .code-editor {
 					margin: 0;
 					height: 250px;
 				}
 				main .data-source .visualization.table .container .close {
-					color: #333;
+					color: rgba(0, 0, 0, 0.5);
 					position: absolute;
 					cursor: pointer;
-					top: 8px;
+					top: 5px;
 					z-index: 2;
-					right: 8px;
-					display: none;
+					right: 5px;
+					opacity: 0;
 					padding: 2px 4px;
+					transition: opacity var(--transition-duration);
 				}
 				main .data-source .visualization.table .container .close:hover {
-					color: #fff;
-					background: rgba(0, 0, 0, 0.5);
-				}
-				main .data-source .visualization.table .container .close:active {
-					box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+					color: #333;
+					opacity: 1;
 				}
 			.visualization > .container > .loading {
 				display: flex;
