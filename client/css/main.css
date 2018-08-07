@@ -142,7 +142,7 @@ body {
 	body > #ajax-working {
 		position: fixed;
 		top: 10px;
-		left: calc(50% - 80px);
+		left: calc(50% - 40px);
 		opacity: 0;
 		user-select: none;
 		padding: 5px 10px;
@@ -279,6 +279,9 @@ body {
 
 		@media (max-width: 750px) {
 
+			body > header .logo {
+				margin-left: auto;
+			}
 			body > header .nav-container {
 				display: none;
 				flex-direction: column;
@@ -293,6 +296,7 @@ body {
 					flex-direction: column;
 					order: 3;
 					margin: 0;
+					padding: calc(var(--gap) * 2) 0;
 				}
 				body > header .user-toggle {
 					display: none;
