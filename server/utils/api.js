@@ -12,6 +12,8 @@ const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
 const msssql = require("./mssql").MsSql;
 const child_process = require('child_process');
+let sessionLogs = require("./sessions").sessions;
+const atob = require('atob');
 
 const env = {
 	name: process.env.NODE_ENV,
@@ -139,6 +141,7 @@ class API {
 				}
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
+
 					throw new API.Exception(401, 'User Not Authenticated! :(');
 				}
 
@@ -203,6 +206,21 @@ class API {
 	static async errorMessage(e, obj) {
 
 		try {
+
+			let
+				status,
+				session;
+
+			try {
+				session = JSON.parse(atob(obj.request.body.refresh_token.split('.')[1]));
+			}
+			catch(e){}
+
+			try {
+				status = JSON.parse(e.message).status;
+			}
+			catch(e){}
+
 			const error = {
 				account_id: obj.account.account_id,
 				user_id: obj.user.user_id,
@@ -211,6 +229,8 @@ class API {
 				description: JSON.stringify(e),
 				type: "server",
 				user_agent: obj.request.get('user-agent'),
+				status: status || e.status,
+				session_id: session.sessionId,
 			};
 
 			await errorLogs.insert(error);

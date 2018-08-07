@@ -11,6 +11,7 @@ const account = require('../onServerStart');
 const fetch = require('node-fetch');
 const URLSearchParams = require('url').URLSearchParams;
 const redis = require("../utils/redis").Redis;
+let sessionLogs = require("../utils/sessions").sessions;
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -293,14 +294,37 @@ exports.login = class extends API {
 
 		this.assert(this.userDetails && this.userDetails.user_id, "user not found while loading user's details");
 
+		const user_agent = new commonFun.UserAgent(this.request.get('user-agent'));
+
+		const expiryTime = Date.now() + parseInt(this.userDetails.ttl || 7) * 86400;
+
+		const session_ohj = {
+			user_id: this.userDetails.user_id,
+			type: 'login',
+			expire_time: expiryTime,
+			description: 'Login',
+			user_agent: this.request.get('user-agent'),
+			os: user_agent.os,
+			browser: user_agent.browser,
+			ip: this.request.connection.remoteAddress,
+		}
+
+		let sessionId = [];
+
+		try{
+			await sessionLogs.insert(session_ohj);
+		}
+		catch(e){}
+
 		const obj = {
 			user_id: this.userDetails.user_id,
 			email: this.userDetails.email,
 			account_id: this.userDetails.account_id,
+			sessionId: sessionId.insertId,
 		};
 
 		const finalObj = {
-			jwt: commonFun.makeJWT(obj, parseInt(this.userDetails.ttl || 7) * 86400),
+			jwt: commonFun.makeJWT(obj, expiryTime),
 		};
 
 		Object.assign(finalObj, this.authResponseObj);

@@ -233,6 +233,61 @@ function flattenObject(init, lkey = '') {
 	return ret;
 }
 
+class UserAgent {
+
+	constructor(userAgent) {
+
+		this.userAgent = userAgent.toLowerCase();
+	}
+
+	get os() {
+
+		if(this.userAgent.includes('linux')) {
+
+			return 'linux';
+		}
+
+		else if(this.userAgent.includes('macintosh')) {
+
+			return 'macintosh';
+		}
+
+		else if(this.userAgent.includes('windows')) {
+
+			return 'windows';
+		}
+
+		else {
+
+			return 'others';
+		}
+	}
+
+	get browser() {
+
+		if(this.userAgent.includes('chrome')) {
+
+			return 'chrome';
+		}
+
+		else if (this.userAgent.includes('firefox')) {
+
+			return 'firefox';
+		}
+
+		else if(this.userAgent.includes('safari') && !this.userAgent.includes('chrome')) {
+
+			return 'safari';
+		}
+
+		else {
+
+			return 'others';
+		}
+	}
+}
+
+exports.UserAgent = UserAgent;
 exports.isJson = isJson;
 exports.makeBcryptHash = makeBcryptHash;
 exports.verifyBcryptHash = verifyBcryptHash;
