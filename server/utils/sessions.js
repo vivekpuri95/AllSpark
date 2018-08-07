@@ -20,7 +20,7 @@ class Sessions {
 			if(check_token.error && check_token.message != 'jwt expired')
 				return 'Token expired';
 
-			const token_details = JSON.parse(atob(obj.request.body.refresh_token.split('.')[1]))
+			const token_details = JSON.parse(atob(params.refresh_token.split('.')[1]))
 
 			params.user_id = token_details.user_id;
 			params.session_id = token_details.sessionId;
