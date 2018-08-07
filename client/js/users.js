@@ -25,6 +25,10 @@ class Users extends Page {
 		Users.contaier = page.container.querySelector('section#list table tbody');
 		Users.thead = page.container.querySelector('section#list table thead');
 
+		Users.userSearch = page.container.querySelector('section#list .user-search');
+
+		Users.userSearch.querySelector('select[name=search_with]').on('change', () => this.loadSearchParams());
+
 		for(const thead of Users.thead.querySelectorAll('.thead-bar th')) {
 
 			if(thead.classList.contains('action'))
@@ -102,6 +106,28 @@ class Users extends Page {
 			return user[0].edit();
 
 		Sections.show('list');
+	}
+
+	loadSearchParams() {
+
+		const param_value = Users.userSearch.querySelector('select[name=search_with]');
+
+		if(param_value == 'category') {
+
+		}
+		else {
+
+			Users.userSearch.querySelector('.params').insertAdjacentHTML('beforeend', `
+				<select name="${param_value}"></select>
+			`);
+
+			if(param_value == 'privilege') {
+
+			}
+			else if(param_value == 'role') {
+
+			}
+		}
 	}
 }
 

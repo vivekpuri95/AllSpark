@@ -1117,6 +1117,20 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 				<header class="toolbar">
 					<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
 				</header>
+                
+                <div class="user-search">
+                	<div>
+                		<span>Search by</span>
+                		<select name="search_with" value="category">
+                			<option value="category">Category</option>
+                			<option value="role">Role</option>
+                			<option value="privilege">Privilege</option>
+                		</select>
+                	</div>
+                	<div class="params">
+                		<select name="category"></select>
+                	</div>
+                </div>
 
 				<table class="block">
 					<thead>
