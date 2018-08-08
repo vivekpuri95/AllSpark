@@ -27,7 +27,14 @@ class Users extends Page {
 
 		Users.userSearch = page.container.querySelector('section#list .user-search');
 
-		Users.userSearch.querySelector('select[name=search_with]').on('change', () => this.loadSearchParams());
+		Users.userSearch.querySelector('select[name=search_with]').on('change', () => {
+
+			const paramValue = Users.userSearch.querySelector('select[name=search_with]').value;
+
+			Users.userSearch.querySelector('.params .role').classList.toggle('hidden', paramValue == 'privilege' || paramValue == 'category');
+			Users.userSearch.querySelector('.params .privilege').classList.toggle('hidden', paramValue == 'role' || paramValue == 'category');
+
+		});
 
 		for(const thead of Users.thead.querySelectorAll('.thead-bar th')) {
 
@@ -45,6 +52,8 @@ class Users extends Page {
 
 			Users.thead.querySelector('.search-bar').appendChild(th);
 		}
+
+		Users.loadSearchParams();
 	}
 
 	static async load() {
@@ -108,26 +117,74 @@ class Users extends Page {
 		Sections.show('list');
 	}
 
-	loadSearchParams() {
+	static loadSearchParams() {
 
-		const param_value = Users.userSearch.querySelector('select[name=search_with]');
+		const
+			container = Users.userSearch.querySelector('.params'),
+			categoryDatalist =  [],
+			privilegeDatalist = [],
+			roleDatalist = [];
 
-		if(param_value == 'category') {
-
+		for(const category of MetaData.categories.values()) {
+			categoryDatalist.push({
+				name: category.name,
+				value:category.category_id
+			});
 		}
-		else {
 
-			Users.userSearch.querySelector('.params').insertAdjacentHTML('beforeend', `
-				<select name="${param_value}"></select>
-			`);
-
-			if(param_value == 'privilege') {
-
-			}
-			else if(param_value == 'role') {
-
-			}
+		for(const privilege of MetaData.privileges.values()) {
+			privilegeDatalist.push({
+				name: privilege.name,
+				value: privilege.privilege_id
+			})
 		}
+
+		for(const role of MetaData.roles.values()) {
+			roleDatalist.push({
+				name: role.name,
+				value: role.role_id
+			})
+		}
+
+		Users.category = new MultiSelect({datalist: categoryDatalist, expand: true});
+		Users.privilege = new MultiSelect({datalist: privilegeDatalist, expand: true});
+		Users.role = new MultiSelect({datalist: roleDatalist, expand: true});
+
+		container.querySelector('.category').appendChild(Users.category.container);
+		container.querySelector('.privilege').appendChild(Users.privilege.container);
+		container.querySelector('.role').appendChild(Users.role.container);
+
+		container.querySelector('button[name=apply]').on('click', () => Users.globalSearch());
+	}
+
+	static async globalSearch() {
+
+		const parameters = new URLSearchParams();
+
+		parameters.set('search_with', Users.userSearch.querySelector('select[name=search_with]').value);
+
+		for(const value of Users.category.value)
+			parameters.append('category_id', value);
+
+		if(parameters.get('search_with') == 'privilege') {
+
+			for(const value of Users.privilege.value)
+				parameters.append('privilege_id', value);
+		}
+
+		if(parameters.get('search_with') == 'role') {
+
+			for(const value of Users.role.value)
+				parameters.append('role_id', value);
+		}
+
+		const
+			data = await API.call('search/user_search', parameters.toString()),
+			filteredUsers = Users.list.filter(x => data.some( y => y == x.user_id));
+
+		console.log(data, '.............', filteredUsers);
+
+		Users.render(filteredUsers);
 	}
 }
 

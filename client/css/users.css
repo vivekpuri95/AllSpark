@@ -41,3 +41,21 @@ main table .search-bar th {
 	main table .search-bar th input {
 		width: 100%;
 	}
+main .user-search {
+	margin-bottom: calc(var(--gap) * 2);
+	padding: var(--gap) 0;
+}
+	main .user-search > div {
+		padding: 5px 10px;
+	}
+		main .user-search > div > select {
+			margin-left: var(--gap);
+		}
+	main .user-search .params {
+		grid-template-columns: 200px 200px 200px;
+		/* align-items: end; */
+	}
+		main .user-search .params button {
+			cursor: pointer;
+			margin-top: auto;
+		}

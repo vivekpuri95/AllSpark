@@ -1118,7 +1118,7 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 					<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
 				</header>
                 
-                <div class="user-search">
+                <div class="user-search block">
                 	<div>
                 		<span>Search by</span>
                 		<select name="search_with" value="category">
@@ -1127,8 +1127,17 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
                 			<option value="privilege">Privilege</option>
                 		</select>
                 	</div>
-                	<div class="params">
-                		<select name="category"></select>
+                	<div class="params form">
+                		<label class="category">
+                			<span>Category</span>
+                		</label>
+                		<label class="hidden privilege">
+                			<span>Privilege</span>
+                		</label>
+                		<label class="hidden role">
+                			<span>Role</span>
+                		</label>
+                		<button name="apply">Apply</button>
                 	</div>
                 </div>
 
