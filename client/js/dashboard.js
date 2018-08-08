@@ -410,7 +410,7 @@ class Dashboard {
 			rowHeight: 50,
 		};
 
-		Dashboard.screenHeightOffset = 2 * screen.availHeight;
+		Dashboard.screenHeightOffset = 1.5 * screen.availHeight;
 
 		this.visibleVisuliaztions = new Set;
 
