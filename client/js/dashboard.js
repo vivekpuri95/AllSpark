@@ -26,7 +26,7 @@ Page.class = class Dashboards extends Page {
 			this.nav.classList.toggle('show');
 			navBlanket.classList.toggle('hidden');
 			navToggle.classList.toggle('selected');
-			//document.querySelector('body').classList.remove('floating');
+			this.sync()
 		});
 
 		navBlanket.on('click', () => {
@@ -34,13 +34,17 @@ Page.class = class Dashboards extends Page {
 			this.nav.classList.remove('show');
 			navBlanket.classList.add('hidden');
 			navToggle.classList.remove('selected');
-			//document.querySelector('body').classList.remove('floating');
+			this.sync();
+		});
+
+		this.nav.querySelector('.collapse-panel').on('click', () => {
+
+			document.querySelector('body').classList.toggle('floating');
+			this.sync();
 		});
 
 		if (this.account.settings.get('disable_powered_by'))
 			this.nav.querySelector('footer').classList.add('hidden');
-
-		this.nav.querySelector('.collapse-panel').on('click', () => document.querySelector('body').classList.toggle('floating'));
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
@@ -99,7 +103,7 @@ Page.class = class Dashboards extends Page {
 		return parents;
 	}
 
-	sync({dashboardId = 0, renderNav = false, updateNav = true, reloadDashboard = true} = {}) {
+	render({dashboardId = 0, renderNav = false, updateNav = true, reloadDashboard = true} = {}) {
 
 		if (dashboardId && reloadDashboard) {
 
@@ -150,6 +154,34 @@ Page.class = class Dashboards extends Page {
 				submenu && label.parentElement.classList.add('list-open');
 			}
 		}
+	}
+
+	sync() {
+
+		this.collapsePanel = this.collapsePanel || this.nav.querySelector('.collapse-panel');
+		this.navToggle = this.navToggle || document.querySelector('header > .nav-toggle');
+		const blanket = this.container.querySelector('.nav-blanket');
+
+		const showing = this.nav.classList.contains('show');
+		const body = document.querySelector('body');
+		const floating = body.classList.contains('floating');
+
+
+		if (showing && floating) {
+
+			blanket.classList.remove('hidden');
+		}
+
+		else if (showing && !floating) {
+
+			blanket.classList.add('hidden');
+		}
+
+		else if (!showing) {
+
+			blanket.classList.add('hidden');
+		}
+
 	}
 
 	tagSearch(e) {
@@ -290,15 +322,15 @@ Page.class = class Dashboards extends Page {
 
 		const emptyDashboards = [];
 
-		for(const dashboard of this.list.values()) {
+		for (const dashboard of this.list.values()) {
 
-			if(dashboard.visibleVisuliaztions.size === 0) {
+			if (dashboard.visibleVisuliaztions.size === 0) {
 
 				emptyDashboards.push(this.parents(dashboard.id));
 			}
 		}
 
-		for(const dashboard of emptyDashboards) {
+		for (const dashboard of emptyDashboards) {
 
 			this.list.delete(dashboard);
 		}
@@ -329,7 +361,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 
-		this.sync({dashboardId: 0});
+		this.render({dashboardId: 0});
 
 		if (!currentId) {
 
@@ -343,7 +375,7 @@ Page.class = class Dashboards extends Page {
 
 		else {
 
-			return this.sync({dashboardId: currentId, renderNav: true, updateNav: false});
+			return this.render({dashboardId: currentId, renderNav: true, updateNav: false});
 		}
 	}
 
@@ -900,7 +932,7 @@ class Dashboard {
 
 		await Sections.show('reports');
 
-		this.page.sync({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
+		this.page.render({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
 
 		const main = document.querySelector('main');
 
@@ -929,7 +961,9 @@ class Dashboard {
 
 		this.lazyLoad(this.maxScrollHeightAchieved, resize);
 
-		document.addEventListener('scroll', () => {
+		document.addEventListener('scroll',
+
+			() => {
 
 				for (const queryDataSource of this.visibleVisuliaztions) {
 
@@ -1073,11 +1107,11 @@ class Navbar {
 
 			const searchItem = search.querySelector("input[name='search']").value;
 
-			this.page.sync({dashboardId: 0, renderNav: true});
+			this.page.render({dashboardId: 0, renderNav: true});
 
 			if (!searchItem.length) {
 
-				return this.page.sync({
+				return this.page.render({
 					dashboardId: this.page.currentDashboard,
 					renderNav: true,
 					updateNav: true,
@@ -1179,7 +1213,7 @@ class Nav {
 
 		container.querySelector('.label').on('click', () => {
 
-			this.page.sync({
+			this.page.render({
 				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0,
 				renderNav: false,
 				updateNav: false
@@ -1187,7 +1221,7 @@ class Nav {
 
 			if (this.dashboard.page.container.querySelector('nav.collapsed')) {
 
-				this.dashboard.page.sync({dashboardId: this.dashboard.id});
+				this.dashboard.page.render({dashboardId: this.dashboard.id});
 			}
 
 			if (this.dashboard.children.size) {
