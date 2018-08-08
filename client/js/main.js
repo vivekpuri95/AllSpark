@@ -1067,9 +1067,9 @@ class API extends AJAX {
 				const user = JSON.parse(atob(token.body.split('.')[1]));
 
 				// If the token is about to expire in next few seconds then let it refresh.
-				// We're using the difference of expiry and creation here to supportcasses
+				// We're using the difference of expiry and creation here to support casses
 				// where users manually change system time and local UTC time gets out of sync with remote UTC time.
-				if(Date.now() - token.timestamp + 2000 < (user.exp - user.iat) * 1000)
+				if(Date.now() - token.timestamp + 10000 < (user.exp - user.iat) * 1000)
 					getToken = false;
 
 			} catch(e) {}
