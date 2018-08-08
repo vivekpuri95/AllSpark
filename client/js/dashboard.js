@@ -927,7 +927,7 @@ class Dashboard {
 
 		this.lazyLoad(this.maxScrollHeightAchieved, resize);
 
-		main.addEventListener('scroll', () => {
+		document.addEventListener('scroll', () => {
 
 				for (const queryDataSource of this.visibleVisuliaztions) {
 

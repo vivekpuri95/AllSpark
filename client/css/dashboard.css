@@ -42,8 +42,11 @@ main > nav.show {
 	opacity: 1 !important;
 }
 main > nav .dashboard-search {
-	/* border-bottom: 1px solid #ccc; */
 	box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
+	position: sticky;
+	top: 0;
+	background: #fff;
+
 }
 main > nav .dashboard-search input[type=search] {
 	background: transparent;
