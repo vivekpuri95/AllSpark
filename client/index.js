@@ -57,7 +57,7 @@ class HTMLAPI extends API {
 			<html lang="en">
 				<head>
 					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<meta name="theme-color" content="#fff">
+					<meta name="theme-color" content="#2a313f">
 					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
 
@@ -65,7 +65,6 @@ class HTMLAPI extends API {
 					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>').join('')}
 
 					<link rel="manifest" href="/manifest.webmanifest">
-					<meta name="theme-color" content="#2a313f">
 					${ga}
 				</head>
 				<body>
