@@ -26,7 +26,7 @@ Page.class = class Dashboards extends Page {
 			this.nav.classList.toggle('show');
 			navBlanket.classList.toggle('hidden');
 			navToggle.classList.toggle('selected');
-			this.sync()
+			this.sync();
 		});
 
 		navBlanket.on('click', () => {
@@ -40,6 +40,7 @@ Page.class = class Dashboards extends Page {
 		this.nav.querySelector('.collapse-panel').on('click', () => {
 
 			document.querySelector('body').classList.toggle('floating');
+			this.nav.classList.remove('show');
 			this.sync();
 		});
 
@@ -163,25 +164,16 @@ Page.class = class Dashboards extends Page {
 		const blanket = this.container.querySelector('.nav-blanket');
 
 		const showing = this.nav.classList.contains('show');
-		const body = document.querySelector('body');
-		const floating = body.classList.contains('floating');
 
-
-		if (showing && floating) {
+		if (showing) {
 
 			blanket.classList.remove('hidden');
-		}
-
-		else if (showing && !floating) {
-
-			blanket.classList.add('hidden');
 		}
 
 		else if (!showing) {
 
 			blanket.classList.add('hidden');
 		}
-
 	}
 
 	tagSearch(e) {
