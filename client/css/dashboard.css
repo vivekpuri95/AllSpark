@@ -132,8 +132,13 @@ main > nav::-webkit-scrollbar-track {
 					margin-left: 8px;
 				}
 				main > nav .item .label .angle {
-					transition: transform var(--transition-duration);
 					margin-left: auto;
+					opacity: 0;
+					transition: transform var(--transition-duration),
+								opacity var(--transition-duration);
+				}
+				main > nav .item .label:hover .angle {
+					opacity: 1;
 				}
 				main > nav .item .label .angle.down {
 					transform: rotate(90deg);
