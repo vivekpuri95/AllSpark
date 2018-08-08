@@ -534,6 +534,9 @@ main #reports > .list {
 					main #reports > .list .visualization {
 						height: 275px;
 					}
+					main #reports > .list .visualization.livenumber {
+						height: 200px;
+					}
 					main #reports > .list .visualization.html {
 						height: auto;
 					}
