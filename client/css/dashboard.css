@@ -489,10 +489,12 @@ main #reports > .list {
 	}
 		main #reports .list.singleton {
 			display: initial;
+			grid-row: 1 / 4;
+			height: calc(100vh - 65px);
 		}
-		main .singleton .data-source .visualization {
-			max-height: 500px;
-		}
+			main .singleton .data-source .visualization {
+				max-height: 400px;
+			}
 			main .singleton .data-source .visualization.spatial-map {
 				max-height: calc(100vh - 190px);
 			}

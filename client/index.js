@@ -57,7 +57,7 @@ class HTMLAPI extends API {
 			<html lang="en">
 				<head>
 					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<meta name="theme-color" content="#2a313f">
+					<meta name="theme-color" content="#3e7adc">
 					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
 
