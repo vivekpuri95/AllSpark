@@ -925,6 +925,8 @@ class Dashboard {
 
 		this.maxScrollHeightAchieved = Math.max(Dashboard.screenHeightOffset, main.scrollTop);
 
+		await API.refreshToken();
+
 		this.lazyLoad(this.maxScrollHeightAchieved, resize);
 
 		document.addEventListener('scroll', () => {
