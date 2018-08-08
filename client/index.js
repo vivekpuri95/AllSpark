@@ -65,6 +65,7 @@ class HTMLAPI extends API {
 					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>').join('')}
 
 					<link rel="manifest" href="/manifest.webmanifest">
+					<meta name="theme-color" content="#2a313f">
 					${ga}
 				</head>
 				<body>

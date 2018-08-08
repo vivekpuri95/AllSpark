@@ -70,6 +70,10 @@ nav > .item.list-open {
 main > nav::-webkit-scrollbar {
 	background: #fff;
 	width: 8px;
+	display: none;
+}
+main > nav:hover::-webkit-scrollbar {
+	display: block;
 }
 main > nav::-webkit-scrollbar-thumb {
 	background: var(--color-accent);
@@ -142,14 +146,14 @@ main > nav::-webkit-scrollbar-track {
 		min-height: max-content;
 	}
 		main > nav footer .collapse-panel {
-			padding: 12px;
+			padding: 10px;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
 			background: rgba(0, 0, 0, 0.15);
 		}
 		main > nav footer .powered-by {
-			padding: 12px;
+			padding: 10px 5px;
 			font-size: 80%;
 			text-align: center;
 			flex: 1;
@@ -605,6 +609,8 @@ main > footer {
 	font-size: 80%;
 	margin-top: auto;
 	position: relative;
+	height: 20px;
+	align-items: center;
 }
 	main footer.site-footer .strong {
 		color: #333;
