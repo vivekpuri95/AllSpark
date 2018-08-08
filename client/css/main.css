@@ -126,7 +126,6 @@ a:active {
 }
 
 html, body {
-	height: 100%;
 	font-family: 'Roboto', sans-serif;
 }
 
@@ -181,6 +180,7 @@ body {
 	}
 		body > header .logo {
 			width: 220px;
+			min-width: 220px;
 			display: flex;
 			overflow: hidden;
 			align-items: center;
@@ -190,8 +190,8 @@ body {
 			background: none;
 		}
 			body > header .logo img {
-				max-width: 90%;
-				height: 85%;
+				max-width: 85%;
+				height: 80%;
 			}
 		body > header .nav-container {
 			display: flex;
@@ -333,9 +333,7 @@ body {
 		}
 
 	main {
-		height: 100%;
 		background: #eee;
-		overflow: auto;
 	}
 
 	main .block {
@@ -504,7 +502,7 @@ body {
 
 .dialog-box-blanket {
 	background: rgba(0, 0, 0, 0.25);
-	position: absolute;
+	position: fixed;
 	bottom: 0;
 	right: 0;
 	top: 0;

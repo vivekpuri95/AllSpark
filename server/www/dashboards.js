@@ -68,7 +68,7 @@ class Dashboard extends API {
 			dashboardObject[d].superset = 'Dashboards';
 		}
 
-		return Object.values(dashboardObject);
+		return Object.values(dashboardObject).sort((x, y) => x.order - y.order);
 	}
 
 	async insert() {

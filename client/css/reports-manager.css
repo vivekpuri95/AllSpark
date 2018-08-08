@@ -1,9 +1,13 @@
+html, body {
+	height: 100%;
+}
 main {
 	display: grid;
 	grid-template-rows: max-content 1fr;
 	grid-template-columns: 1fr 1fr 1fr;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2);
+	height: 100%;
 }
 main.preview-bottom {
 	grid-template-rows: max-content calc(60vh - 155px) 40vh;

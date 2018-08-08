@@ -30,12 +30,11 @@ main > nav {
 	display: flex;
 	flex-direction: column;
 	position: sticky;
-	top: 0;
+	top: 50px;
 	overflow-y: auto;
 	z-index: 7;
 	height: calc(100vh - 50px);
 	border-right: 1px solid #ccc
-
 }
 
 main > nav.show {
@@ -70,6 +69,10 @@ nav > .item.list-open {
 main > nav::-webkit-scrollbar {
 	background: #fff;
 	width: 8px;
+	display: none;
+}
+main > nav:hover::-webkit-scrollbar {
+	display: block;
 }
 main > nav::-webkit-scrollbar-thumb {
 	background: var(--color-accent);
@@ -87,6 +90,8 @@ main > nav::-webkit-scrollbar-track {
 	main > nav .dashboard-hierarchy {
 		display: flex;
 		flex-direction: column;
+		min-height: max-content;
+		margin-bottom: 10px;
 	}
 	main > nav .label {
 		display: flex;
@@ -126,8 +131,13 @@ main > nav::-webkit-scrollbar-track {
 					margin-left: 8px;
 				}
 				main > nav .item .label .angle {
-					transition: transform var(--transition-duration);
 					margin-left: auto;
+					opacity: 0;
+					transition: transform var(--transition-duration),
+								opacity var(--transition-duration);
+				}
+				main > nav .item .label:hover .angle {
+					opacity: 1;
 				}
 				main > nav .item .label .angle.down {
 					transform: rotate(90deg);
@@ -136,19 +146,21 @@ main > nav::-webkit-scrollbar-track {
 		margin-top: auto;
 		color: #666;
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
+		min-height: max-content;
 	}
 		main > nav footer .collapse-panel {
-			padding: 12px;
+			padding: 10px;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
 			background: rgba(0, 0, 0, 0.15);
 		}
 		main > nav footer .powered-by {
-			padding: 12px;
+			padding: 10px 5px;
 			font-size: 80%;
+			text-align: center;
+			flex: 1;
 		}
 			main > nav footer .powered-by a {
 				color: #333;
@@ -409,7 +421,7 @@ main #reports > .list {
 	}
 
 	main #reports .side {
-		position: absolute;
+		position: fixed;
 		bottom: 18px;
 		right: 18px;
 		width: 40px;
@@ -481,16 +493,22 @@ main #reports > .list {
 	}
 		main #reports .list.singleton {
 			display: initial;
+			grid-row: 1 / 4;
+			padding: calc(var(--gap)) 0;
+			height: calc(100vh - 70px);
 		}
-		main .singleton .data-source .visualization {
-			max-height: 500px;
-		}
-			main .singleton .data-source .visualization.spatial-map {
-				max-height: calc(100vh - 190px);
+			main #reports .list.singleton .list {
+				padding: var(--gap) 0;
 			}
-			main .singleton .data-source .visualization.table {
-				max-height: calc(100vh - 200px);
-			}
+				main .singleton .data-source .visualization {
+					max-height: 400px;
+				}
+				main .singleton .data-source .visualization.spatial-map {
+					max-height: calc(100vh - 190px);
+				}
+				main .singleton .data-source .visualization.table {
+					max-height: calc(100vh - 200px);
+				}
 
 @media (max-width: 750px) {
 
@@ -508,7 +526,7 @@ main #reports > .list {
 			top: 50px;
 			left: 0;
 			opacity: 0;
-			background: #eee;
+			background: #fff;
 			border: 0;
 			box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
 			transition: transform var(--transition-duration),
@@ -526,8 +544,16 @@ main #reports > .list {
 				main #reports > .list .data-source {
 					margin: calc(var(--gap) * 2) 0;
 					width: calc(100vw - calc(var(--gap) * 6));
-					height: 300px;
 				}
+					main #reports > .list .visualization {
+						height: 275px;
+					}
+					main #reports > .list .visualization.livenumber {
+						height: 200px;
+					}
+					main #reports > .list .visualization.html {
+						height: auto;
+					}
 }
 
 body.floating header > .nav-toggle  {
@@ -552,7 +578,7 @@ body.floating main  {
 
 main .nav-blanket {
 	background: rgba(0, 0, 0, 0.25);
-	position: absolute;
+	position: fixed;
 	bottom: 0;
 	right: 0;
 	top: 0;
@@ -565,7 +591,7 @@ main #reports > .NA {
 }
 main #reports #blanket {
 	background: rgba(0, 0, 0, 0.25);
-	position: absolute;
+	position: fixed;
 	bottom: 0;
 	right: 0;
 	top: 0;
@@ -584,34 +610,3 @@ main table tbody tr .tag {
 	border-radius: 2px;
 	font-size: 80%;
 }
-main > footer {
-	grid-column: 1 / -1;
-	z-index: 5;
-	display: flex;
-	padding: calc(var(--gap));
-	justify-content: center;
-	font-size: 80%;
-	margin-top: auto;
-	position: relative;
-}
-	main footer.site-footer .strong {
-		color: #333;
-		letter-spacing: 0.5px;
-	}
-	main footer > .env {
-		position: absolute;
-		right: 5px;
-		white-space: nowrap;
-		overflow: hidden;
-	}
-	main footer > .env:hover {
-		width: initial;
-	}
-		main footer > .env .text {
-			font-size: 90%;
-			margin-right: 5px;
-			display: none;
-		}
-		main footer > .env:hover .text {
-			display: initial;
-		}

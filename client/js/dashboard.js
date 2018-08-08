@@ -37,16 +37,6 @@ Page.class = class Dashboards extends Page {
 			//document.querySelector('body').classList.remove('floating');
 		});
 
-		if (this.account.settings.get('disable_footer')) {
-
-			this.container.parentElement.querySelector('main > footer').classList.add('hidden');
-		}
-
-		else {
-			const deployTime = this.container.parentElement.querySelector('main > footer .deploy-time')
-			deployTime.textContent = Format.dateTime(deployTime.textContent);
-		}
-
 		if (this.account.settings.get('disable_powered_by'))
 			this.nav.querySelector('footer').classList.add('hidden');
 
@@ -385,6 +375,7 @@ Page.class = class Dashboards extends Page {
 		report.container.removeAttribute('style');
 		container.classList.add('singleton');
 		Dashboard.toolbar.classList.add('hidden');
+		this.container.querySelector('#reports .global-filters').classList.add('hidden');
 
 		report.container.querySelector('.menu').classList.remove('hidden');
 		report.container.querySelector('.menu-toggle').classList.add('selected');
@@ -1162,8 +1153,6 @@ class Nav {
 		}
 
 		container.classList.add('item');
-
-		container.style.order = this.dashboard.order || 0;
 
 		if (!allVisualizations.length && (!this.dashboard.format || !parseInt(this.dashboard.format.category_id))) {
 
