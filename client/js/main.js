@@ -773,7 +773,7 @@ class User {
 		try {
 
 			const
-				parameter = {
+				parameters = {
 					user_id: user.user_id,
 					type: 'logout',
 					description: 'Logout from UI.',
@@ -782,7 +782,7 @@ class User {
 					method: 'POST',
 				};
 
-			API.call('sessionLogs/insert', parameter, options);
+			API.call('session-logs/insert', parameters, options);
 		}
 		catch(e) {}
 
@@ -1021,7 +1021,7 @@ class API extends AJAX {
 
 		if(refresh_token) {
 			if(typeof parameters == 'string')
-				parameters+= '&refresh_token='+refresh_token;
+				parameters += '&refresh_token='+refresh_token;
 			else
 				parameters.refresh_token = refresh_token;
 		}
