@@ -103,6 +103,7 @@ class API {
 					obj.user = new User(userDetails);
 				}
 
+
 				let host = request.headers.host.split(':')[0];
 
 				for(const account of global.accounts) {
@@ -209,10 +210,10 @@ class API {
 
 			let
 				status,
-				session;
+				details;
 
 			try {
-				session = JSON.parse(atob(obj.request.body.refresh_token.split('.')[1])).sessionId;
+				details = JSON.parse(atob(obj.request.body.refresh_token.split('.')[1]));
 			}
 			catch(e){}
 
@@ -222,15 +223,15 @@ class API {
 			catch(e){}
 
 			const error = {
-				account_id: obj.account.account_id,
-				user_id: obj.user.user_id,
+				account_id: details.account_id,
+				user_id: details.user_id,
 				message: e.message || e.sqlMessage,
 				url: obj.request.url,
 				description: JSON.stringify(e),
 				type: "server",
 				user_agent: obj.request.get('user-agent'),
 				status: status || e.status,
-				session_id: session,
+				session_id: details.sessionId,
 			};
 
 			await errorLogs.insert(error);

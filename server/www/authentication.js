@@ -296,7 +296,7 @@ exports.login = class extends API {
 
 		const user_agent = new commonFun.UserAgent(this.request.get('user-agent'));
 
-		const expiryTime = Date.now() + parseInt(this.userDetails.ttl || 7) * 86400;
+		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 7) * 86400);
 
 		const session_obj = {
 			user_id: this.userDetails.user_id,
@@ -312,7 +312,7 @@ exports.login = class extends API {
 		let sessionId = [];
 
 		try{
-			await sessionLogs.insert(session_obj);
+			sessionId = await sessionLogs.insert(session_obj);
 		}
 		catch(e){}
 
@@ -449,6 +449,6 @@ exports.refresh = class extends API {
 				category_id: constants.adminCategory[0],
 			})
 		}
-		return commonFun.makeJWT(obj, 5 * 60);
+		return commonFun.makeJWT(obj, Math.floor(Date.now() / 1000) + (5 * 60));
 	}
 }
