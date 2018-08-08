@@ -30,12 +30,11 @@ main > nav {
 	display: flex;
 	flex-direction: column;
 	position: sticky;
-	top: 0;
+	top: 50px;
 	overflow-y: auto;
 	z-index: 7;
 	height: calc(100vh - 50px);
 	border-right: 1px solid #ccc
-
 }
 
 main > nav.show {
@@ -422,7 +421,7 @@ main #reports > .list {
 	}
 
 	main #reports .side {
-		position: absolute;
+		position: fixed;
 		bottom: 18px;
 		right: 18px;
 		width: 40px;
@@ -527,7 +526,7 @@ main #reports > .list {
 			top: 50px;
 			left: 0;
 			opacity: 0;
-			background: #eee;
+			background: #fff;
 			border: 0;
 			box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
 			transition: transform var(--transition-duration),
@@ -579,7 +578,7 @@ body.floating main  {
 
 main .nav-blanket {
 	background: rgba(0, 0, 0, 0.25);
-	position: absolute;
+	position: fixed;
 	bottom: 0;
 	right: 0;
 	top: 0;
@@ -592,7 +591,7 @@ main #reports > .NA {
 }
 main #reports #blanket {
 	background: rgba(0, 0, 0, 0.25);
-	position: absolute;
+	position: fixed;
 	bottom: 0;
 	right: 0;
 	top: 0;
