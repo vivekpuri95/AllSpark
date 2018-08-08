@@ -495,17 +495,21 @@ main #reports > .list {
 		main #reports .list.singleton {
 			display: initial;
 			grid-row: 1 / 4;
-			height: calc(100vh - 65px);
+			padding: calc(var(--gap)) 0;
+			height: calc(100vh - 70px);
 		}
-			main .singleton .data-source .visualization {
-				max-height: 400px;
+			main #reports .list.singleton .list {
+				padding: var(--gap) 0;
 			}
-			main .singleton .data-source .visualization.spatial-map {
-				max-height: calc(100vh - 190px);
-			}
-			main .singleton .data-source .visualization.table {
-				max-height: calc(100vh - 200px);
-			}
+				main .singleton .data-source .visualization {
+					max-height: 400px;
+				}
+				main .singleton .data-source .visualization.spatial-map {
+					max-height: calc(100vh - 190px);
+				}
+				main .singleton .data-source .visualization.table {
+					max-height: calc(100vh - 200px);
+				}
 
 @media (max-width: 750px) {
 
@@ -607,36 +611,3 @@ main table tbody tr .tag {
 	border-radius: 2px;
 	font-size: 80%;
 }
-main > footer {
-	grid-column: 1 / -1;
-	z-index: 5;
-	display: flex;
-	padding: calc(var(--gap));
-	justify-content: center;
-	font-size: 80%;
-	margin-top: auto;
-	position: relative;
-	height: 20px;
-	align-items: center;
-}
-	main footer.site-footer .strong {
-		color: #333;
-		letter-spacing: 0.5px;
-	}
-	main footer > .env {
-		position: absolute;
-		right: 5px;
-		white-space: nowrap;
-		overflow: hidden;
-	}
-	main footer > .env:hover {
-		width: initial;
-	}
-		main footer > .env .text {
-			font-size: 90%;
-			margin-right: 5px;
-			display: none;
-		}
-		main footer > .env:hover .text {
-			display: initial;
-		}

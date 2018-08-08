@@ -614,17 +614,6 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 					<i class="fas fa-filter"></i>
 				</button>
 			</section>
-
-			<footer class="site-footer">
-				<div class="env">
-					<span class="text">
-						Env: <span class="strong">${this.env.name}</span>
-						Branch: <span class="strong">${this.env.branch}</span>
-						Last deployed: <span title="${this.env.deployed_on}" class="strong deploy-time">${this.env.deployed_on}</span>
-					</span>
-					<i class="fas fa-exclamation-circle"></i>
-				</div>
-			</footer>
 		`;
 	}
 }));

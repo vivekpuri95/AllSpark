@@ -37,16 +37,6 @@ Page.class = class Dashboards extends Page {
 			//document.querySelector('body').classList.remove('floating');
 		});
 
-		if (this.account.settings.get('disable_footer')) {
-
-			this.container.parentElement.querySelector('main > footer').classList.add('hidden');
-		}
-
-		else {
-			const deployTime = this.container.parentElement.querySelector('main > footer .deploy-time')
-			deployTime.textContent = Format.dateTime(deployTime.textContent);
-		}
-
 		if (this.account.settings.get('disable_powered_by'))
 			this.nav.querySelector('footer').classList.add('hidden');
 
