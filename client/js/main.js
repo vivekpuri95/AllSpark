@@ -142,6 +142,7 @@ class Page {
 
 		userPopup.on('click', e => e.stopPropagation());
 		navContainer.on('click', e => e.stopPropagation());
+
 		header.querySelector('.logout').on('click', () => User.logout());
 
 		menuToggle.on('click', e => {
@@ -1021,7 +1022,7 @@ class API extends AJAX {
 
 		if(refresh_token) {
 			if(typeof parameters == 'string')
-				parameters += '&refresh_token='+refresh_token.body;
+				parameters += '&refresh_token='+refresh_token;
 			else
 				parameters.refresh_token = refresh_token;
 		}

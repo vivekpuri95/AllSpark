@@ -1,5 +1,6 @@
 const API = require('../utils/api');
 const commonFun = require('../utils/commonFunctions');
+const dbConfig = require('config').get("sql_db");
 const atob = require('atob');
 
 class SessionLogs extends API {
@@ -12,6 +13,8 @@ class SessionLogs extends API {
 	};
 
 	async insert() {
+
+		const db = dbConfig.write.database.concat('_logs');
 
 		const user_agent = new commonFun.UserAgent(this.request.get('user-agent'));
 
@@ -42,8 +45,8 @@ class SessionLogs extends API {
 		delete(params['refresh_token']);
 
 		const result = await this.mysql.query(
-			`INSERT INTO tb_sessions SET ?`,
-			[params],
+			`INSERT INTO ??.tb_sessions SET ?`,
+			[db, params],
 			'write'
 		);
 

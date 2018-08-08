@@ -314,7 +314,7 @@ exports.login = class extends API {
 		let sessionId = [];
 
 		try{
-			sessionId = await sessionLogs.insert(session_obj);
+			sessionId = await sessionLogs.insert();
 		}
 		catch(e){}
 
