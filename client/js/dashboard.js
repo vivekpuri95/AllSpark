@@ -1163,8 +1163,6 @@ class Nav {
 
 		container.classList.add('item');
 
-		container.style.order = this.dashboard.order || 0;
-
 		if (!allVisualizations.length && (!this.dashboard.format || !parseInt(this.dashboard.format.category_id))) {
 
 			container.classList.add('hidden');

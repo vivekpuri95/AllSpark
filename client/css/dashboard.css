@@ -87,6 +87,8 @@ main > nav::-webkit-scrollbar-track {
 	main > nav .dashboard-hierarchy {
 		display: flex;
 		flex-direction: column;
+		min-height: max-content;
+		margin-bottom: 10px;
 	}
 	main > nav .label {
 		display: flex;
@@ -136,8 +138,8 @@ main > nav::-webkit-scrollbar-track {
 		margin-top: auto;
 		color: #666;
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
+		min-height: max-content;
 	}
 		main > nav footer .collapse-panel {
 			padding: 12px;
@@ -149,6 +151,8 @@ main > nav::-webkit-scrollbar-track {
 		main > nav footer .powered-by {
 			padding: 12px;
 			font-size: 80%;
+			text-align: center;
+			flex: 1;
 		}
 			main > nav footer .powered-by a {
 				color: #333;
@@ -526,8 +530,13 @@ main #reports > .list {
 				main #reports > .list .data-source {
 					margin: calc(var(--gap) * 2) 0;
 					width: calc(100vw - calc(var(--gap) * 6));
-					height: 300px;
 				}
+					main #reports > .list .visualization {
+						height: 275px;
+					}
+					main #reports > .list .visualization.html {
+						height: auto;
+					}
 }
 
 body.floating header > .nav-toggle  {
