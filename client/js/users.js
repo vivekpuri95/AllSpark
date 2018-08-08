@@ -27,31 +27,14 @@ class Users extends Page {
 
 		Users.userSearch = page.container.querySelector('section#list .user-search');
 
-		Users.userSearch.querySelector('select[name=search_with]').on('change', () => {
+		Users.userSearch.querySelector('select[name=search_by]').on('change', () => {
 
-			const paramValue = Users.userSearch.querySelector('select[name=search_with]').value;
+			const paramValue = Users.userSearch.querySelector('select[name=search_by]').value;
 
-			Users.userSearch.querySelector('.params .role').classList.toggle('hidden', paramValue == 'privilege' || paramValue == 'category');
-			Users.userSearch.querySelector('.params .privilege').classList.toggle('hidden', paramValue == 'role' || paramValue == 'category');
+			Users.userSearch.querySelector('.role').classList.toggle('hidden', paramValue == 'privilege' || paramValue == 'category');
+			Users.userSearch.querySelector('.privilege').classList.toggle('hidden', paramValue == 'role' || paramValue == 'category');
 
 		});
-
-		for(const thead of Users.thead.querySelectorAll('.thead-bar th')) {
-
-			if(thead.classList.contains('action'))
-				continue;
-
-			const th = document.createElement('th');
-			th.classList.add('search');
-
-			th.innerHTML = `
-				<input type="text" placeholder="Search ${thead.textContent}" data-key="${thead.dataset.key}">
-			`;
-
-			th.on('keyup', () => Users.search());
-
-			Users.thead.querySelector('.search-bar').appendChild(th);
-		}
 
 		Users.loadSearchParams();
 	}
@@ -120,7 +103,6 @@ class Users extends Page {
 	static loadSearchParams() {
 
 		const
-			container = Users.userSearch.querySelector('.params'),
 			categoryDatalist =  [],
 			privilegeDatalist = [],
 			roleDatalist = [];
@@ -146,33 +128,43 @@ class Users extends Page {
 			})
 		}
 
-		Users.category = new MultiSelect({datalist: categoryDatalist, expand: true});
-		Users.privilege = new MultiSelect({datalist: privilegeDatalist, expand: true});
-		Users.role = new MultiSelect({datalist: roleDatalist, expand: true});
+		Users.category = new MultiSelect({datalist: categoryDatalist});
+		Users.privilege = new MultiSelect({datalist: privilegeDatalist});
+		Users.role = new MultiSelect({datalist: roleDatalist});
 
-		container.querySelector('.category').appendChild(Users.category.container);
-		container.querySelector('.privilege').appendChild(Users.privilege.container);
-		container.querySelector('.role').appendChild(Users.role.container);
+		Users.userSearch.querySelector('.category').appendChild(Users.category.container);
+		Users.userSearch.querySelector('.privilege').appendChild(Users.privilege.container);
+		Users.userSearch.querySelector('.role').appendChild(Users.role.container);
 
-		container.querySelector('button[name=apply]').on('click', () => Users.globalSearch());
+		Users.userSearch.querySelector('button[name=apply]').on('click', () => Users.globalSearch());
 	}
 
 	static async globalSearch() {
 
 		const parameters = new URLSearchParams();
 
-		parameters.set('search_with', Users.userSearch.querySelector('select[name=search_with]').value);
+		for(const element of Users.userSearch.querySelectorAll('input, select'))
+			parameters.set(element.name, element.value);
+
+		if(!Users.category.value.length)
+			parameters.set('category_id' , 0);
 
 		for(const value of Users.category.value)
 			parameters.append('category_id', value);
 
-		if(parameters.get('search_with') == 'privilege') {
+		if(parameters.get('search_by') == 'privilege') {
+
+			if(!Users.privilege.value.length)
+				parameters.set('privilege_id', 0);
 
 			for(const value of Users.privilege.value)
 				parameters.append('privilege_id', value);
 		}
 
-		if(parameters.get('search_with') == 'role') {
+		if(parameters.get('search_by') == 'role') {
+
+			if(!Users.role.value.length)
+				parameters.set('role_id' , 0);
 
 			for(const value of Users.role.value)
 				parameters.append('role_id', value);
@@ -181,8 +173,6 @@ class Users extends Page {
 		const
 			data = await API.call('search/user_search', parameters.toString()),
 			filteredUsers = Users.list.filter(x => data.some( y => y == x.user_id));
-
-		console.log(data, '.............', filteredUsers);
 
 		Users.render(filteredUsers);
 	}
@@ -372,6 +362,7 @@ class UserManage {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.email}</td>
+			<td>2018-01-01</td>
 			<td class="action green" title="Edit">Edit</i></td>
 			<td class="action red" title="Delete">Delete</td>
 		`;

@@ -40,8 +40,6 @@ exports.user_search = class extends API {
 
 		this.user.privilege.needs('user');
 
-		this.assert(this.request.query.category_id, 'Category id required');
-
 		const
 			objRole = new getRole(),
 			privilegeUsers = await this.mysql.query(`
@@ -60,7 +58,7 @@ exports.user_search = class extends API {
 			roleUsers = await objRole.get(this.account.account_id, 'user', 'role'),
 			hash = `User Access Account#account_id: ${this.account.account_id}`;
 
-		this.searchWith = this.request.query.search_with;
+		this.searchWith = this.request.query.search_by;
 
 		this.userAccess = {
 			privilege: {},

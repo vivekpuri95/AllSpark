@@ -43,19 +43,10 @@ main table .search-bar th {
 	}
 main .user-search {
 	margin-bottom: calc(var(--gap) * 2);
-	padding: var(--gap) 0;
+	grid-template-columns: repeat(7, 200px);
+	grid-gap: calc(var(--gap) * 2);
 }
-	main .user-search > div {
-		padding: 5px 10px;
+	main .user-search button {
+		cursor: pointer;
+		margin-top: auto;
 	}
-		main .user-search > div > select {
-			margin-left: var(--gap);
-		}
-	main .user-search .params {
-		grid-template-columns: 200px 200px 200px;
-		/* align-items: end; */
-	}
-		main .user-search .params button {
-			cursor: pointer;
-			margin-top: auto;
-		}
