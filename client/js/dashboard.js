@@ -1270,9 +1270,9 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 		this.globalFilterContainer.classList.add(this.page.account.settings.get('global_filters_position') || 'right');
 
-		this.page.container.removeEventListener('scroll', DashboardGlobalFilters.scrollListener);
-		this.page.container.addEventListener('scroll', DashboardGlobalFilters.scrollListener = e => {
-			this.globalFilterContainer.classList.toggle('scrolled', this.page.container.scrollTop > 45);
+		document.removeEventListener('scroll', DashboardGlobalFilters.scrollListener);
+		document.addEventListener('scroll', DashboardGlobalFilters.scrollListener = e => {
+			this.globalFilterContainer.classList.toggle('scrolled', this.globalFilterContainer.getBoundingClientRect().top == 50);
 		}, {passive: true});
 	}
 

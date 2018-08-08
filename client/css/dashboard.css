@@ -13,40 +13,35 @@ header > .nav-toggle {
 	justify-content: center;
 	white-space: nowrap;
 }
-
 header > .nav-toggle:hover {
 	text-decoration: none;
 	background: rgba(255, 255, 255, 0.3);
 	cursor: pointer;
 	transition: box-shadow var(--transition-duration);
 }
-
 header > .nav-toggle:active {
 	background: rgba(255, 255, 255, 0.3);
 	box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 }
-
 main > nav {
 	display: flex;
 	flex-direction: column;
 	position: sticky;
 	top: 50px;
 	overflow-y: auto;
-	z-index: 7;
 	height: calc(100vh - 50px);
 	border-right: 1px solid #ccc
 }
-
 main > nav.show {
 	transform: translateX(0px) !important;
 	opacity: 1 !important;
+	z-index: 6;
 }
 main > nav .dashboard-search {
 	box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
 	position: sticky;
 	top: 0;
 	background: #fff;
-
 }
 main > nav .dashboard-search input[type=search] {
 	background: transparent;
@@ -250,7 +245,7 @@ main .mailto-content {
 }
 main #reports > .global-filters {
 	display: flex;
-	z-index: 7;
+	z-index: 6;
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }
@@ -265,7 +260,7 @@ main #reports > .global-filters.right {
 	bottom: 0;
 	background: #fff;
 	padding: 0 calc(var(--gap) * 2);
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
 	transform: translateX(260px);
 }
 main #reports > .global-filters.right.show {
@@ -278,9 +273,9 @@ main #reports > .global-filters.top {
 	align-items: flex-end;
 	margin: 0 calc(var(--gap) * -3);
 	position: sticky;
-	top: 0;
+	top: 50px;
 	background: #eee;
-	z-index: 5;
+	z-index: 4;
 }
 main #reports > .global-filters.top.scrolled {
 	padding: calc(var(--gap) * 2);
@@ -398,7 +393,7 @@ main #reports > .list {
 	grid-gap: calc(var(--gap) * 4);
 	padding: calc(var(--gap) * 2) 0;
 	align-items: start;
-	z-index: 4;
+	z-index: 3;
 	width: 100%;
 }
 	main #reports > .list .NA.no-reports {
@@ -565,7 +560,7 @@ body.floating header > .nav-toggle  {
 body.floating main  {
 	grid-template-columns: 1fr;
 }
-	body.floating main  nav {
+	body.floating main nav {
 		position: fixed;
 		width: 220px;
 		transform: translateX(-220px);
@@ -574,27 +569,27 @@ body.floating main  {
 		opacity: 0;
 		background: #fff;
 		border: 0;
-		box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
 		transition: transform var(--transition-duration),
 		opacity var(--transition-duration);
 	}
 
 main .nav-blanket {
-	background: rgba(0, 0, 0, 0.25);
 	position: fixed;
+	background: rgba(0, 0, 0, 0.5);
 	bottom: 0;
 	right: 0;
 	top: 0;
 	left: 0;
-	z-index: 6;
+	z-index: 5;
 }
 
 main #reports > .NA {
 	text-align: center;
 }
 main #reports #blanket {
-	background: rgba(0, 0, 0, 0.25);
 	position: fixed;
+	background: rgba(0, 0, 0, 0.5);
 	bottom: 0;
 	right: 0;
 	top: 0;
