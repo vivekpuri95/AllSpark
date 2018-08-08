@@ -1021,7 +1021,7 @@ class API extends AJAX {
 
 		if(refresh_token) {
 			if(typeof parameters == 'string')
-				parameters += '&refresh_token='+refresh_token;
+				parameters += '&refresh_token='+refresh_token.body;
 			else
 				parameters.refresh_token = refresh_token;
 		}

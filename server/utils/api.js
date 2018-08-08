@@ -12,7 +12,6 @@ const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
 const msssql = require("./mssql").MsSql;
 const child_process = require('child_process');
-let sessionLogs = require("./sessions").sessions;
 const atob = require('atob');
 
 const env = {
