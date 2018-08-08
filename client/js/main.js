@@ -1041,6 +1041,9 @@ class API extends AJAX {
 		}
 	}
 
+	/**
+	 * Makes sure the short term token we have is valid and up to date.
+	 */
 	static async refreshToken() {
 
 		let
