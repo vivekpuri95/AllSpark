@@ -1046,84 +1046,88 @@ main .data-source.flush {
 	height: 100%;
 	font-size: calc(18px + 5vw);
 }
-.visualization.livenumber .container {
-	display: flex;
-	flex-wrap: wrap;
+main .data-source .visualization.livenumber {
+	overflow: hidden;
 }
-	.visualization.livenumber .container h5 {
-		font-size: calc(35px + 1vw);
-		flex: 1 1 100%;
-		margin: 0;
-		height: 55%;
+	.visualization.livenumber .container {
 		display: flex;
-		justify-content: center;
-		align-items: center;
-		font-weight: normal;
-		z-index: 1;
+		flex-wrap: wrap;
+		overflow: hidden;
 	}
-	.visualization.livenumber .container .left {
-		border-right: 1px solid #999;
-	}
-	.visualization.livenumber .container .left,
-	.visualization.livenumber .container .right {
-		flex: 1 0 50%;
-		height: 45%;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		border-top: 1px solid #999;
-		padding: calc(var(--gap) * 2);
-		position: relative;
-	}
-		.visualization.livenumber .container .red {
-			color: #db4437;
-		}
-		.visualization.livenumber .container .green {
-			color: #2c9d58;
-		}
-		.visualization.livenumber .container h6 {
-			font-size: calc(18px + .2vw);
-			margin: 0 0 var(--gap) 0;
-			font-weight: normal;
-			transition: filter var(--transition-duration);
-		}
-		.visualization.livenumber .container .left .value,
-		.visualization.livenumber .container .right .value {
-			text-align: center;
-		}
-		.visualization.livenumber .container .left .value-left,
-		.visualization.livenumber .container .right .value-right {
-			transition: filter var(--transition-duration);
-		}
-		.visualization.livenumber .container .left:hover h6,
-		.visualization.livenumber .container .right:hover h6,
-		.visualization.livenumber .container .left:hover .value-left,
-		.visualization.livenumber .container .right:hover .value-right {
-			opacity: 0.6;
-			filter: blur(1.5px);
-		}
-		.visualization.livenumber .container .left .value small,
-		.visualization.livenumber .container .right .value small {
-			margin-top: 1px;
-			opacity: 0;
+		.visualization.livenumber .container h5 {
+			font-size: calc(35px + 1vw);
+			flex: 1 1 100%;
+			margin: 0;
+			height: 55%;
 			display: flex;
-			position: absolute;
-			top: 0;
-			bottom: 0;
-			right: 0;
-			left: 0;
-			align-items: center;
 			justify-content: center;
-			font-size: 125%;
-			font-weight: bold;
-			color: #333;
-			transition: opacity var(--transition-duration);
+			align-items: center;
+			font-weight: normal;
+			z-index: 1;
 		}
-		.visualization.livenumber .container .left:hover .value small,
-		.visualization.livenumber .container .right:hover .value small {
-			opacity: 1;
+		.visualization.livenumber .container .left {
+			border-right: 1px solid #999;
 		}
+		.visualization.livenumber .container .left,
+		.visualization.livenumber .container .right {
+			flex: 1 0 50%;
+			height: 45%;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			border-top: 1px solid #999;
+			padding: calc(var(--gap) * 2);
+			position: relative;
+		}
+			.visualization.livenumber .container .red {
+				color: #db4437;
+			}
+			.visualization.livenumber .container .green {
+				color: #2c9d58;
+			}
+			.visualization.livenumber .container h6 {
+				font-size: calc(18px + .2vw);
+				margin: 0 0 var(--gap) 0;
+				font-weight: normal;
+				transition: filter var(--transition-duration);
+			}
+			.visualization.livenumber .container .left .value,
+			.visualization.livenumber .container .right .value {
+				text-align: center;
+			}
+			.visualization.livenumber .container .left .value-left,
+			.visualization.livenumber .container .right .value-right {
+				transition: filter var(--transition-duration);
+			}
+			.visualization.livenumber .container .left:hover h6,
+			.visualization.livenumber .container .right:hover h6,
+			.visualization.livenumber .container .left:hover .value-left,
+			.visualization.livenumber .container .right:hover .value-right {
+				opacity: 0.6;
+				filter: blur(1.5px);
+			}
+			.visualization.livenumber .container .left .value small,
+			.visualization.livenumber .container .right .value small {
+				margin-top: 1px;
+				opacity: 0;
+				display: flex;
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				right: 0;
+				left: 0;
+				align-items: center;
+				justify-content: center;
+				font-size: 125%;
+				font-weight: bold;
+				color: #333;
+				transition: opacity var(--transition-duration);
+			}
+			.visualization.livenumber .container .left:hover .value small,
+			.visualization.livenumber .container .right:hover .value small {
+				opacity: 1;
+			}
 	.visualization.livenumber .graph {
 		position: absolute;
 		top: 0;
@@ -1131,6 +1135,10 @@ main .data-source.flush {
 		bottom: 0;
 		left: 0;
 		filter: blur(3px);
+		transition: transform var(--transition-duration);
+	}
+	.visualization.livenumber:hover .graph {
+		transition: none;
 	}
 		.visualization.livenumber .graph svg .line {
 			fill: none;

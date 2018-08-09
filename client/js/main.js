@@ -3,20 +3,23 @@
 if(typeof window != 'undefined') {
 	window.addEventListener('DOMContentLoaded', async () => {
 
-		console.log(`%c
-					           _ _  _____                  _
-					     /\\   | | |/ ____|                | |
-					    /  \\  | | | (___  _ __   __ _ _ __| | __
-					   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
-					  / ____ \\| | |____) | |_) | (_| | |  |   <
-					 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
-					                     | |
-					                     |_|
-					   %cWelcome to the source, enjoy your stay.
-			Find the entire code at https://github.com/Jungle-Works/AllSpark
-		`, 'color: #f33; font-weight: bold;', 'color: #777');
-
 		await Page.setup();
+
+		if(!user || !user.privileges.has('superadmin')) {
+
+			console.log(`%c
+						           _ _  _____                  _
+						     /\\   | | |/ ____|                | |
+						    /  \\  | | | (___  _ __   __ _ _ __| | __
+						   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
+						  / ____ \\| | |____) | |_) | (_| | |  |   <
+						 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
+						                     | |
+						                     |_|
+						   %cWelcome to the source, enjoy your stay.
+				Find the entire code at https://github.com/Jungle-Works/AllSpark
+			`, 'color: #f33; font-weight: bold;', 'color: #777');
+		}
 
 		if(!Page.class)
 			return;
