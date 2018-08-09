@@ -146,25 +146,16 @@ class Users extends Page {
 		for(const element of Users.userSearch.querySelectorAll('input, select'))
 			parameters.set(element.name, element.value);
 
-		if(!Users.category.value.length)
-			parameters.set('category_id' , 0);
-
 		for(const value of Users.category.value)
 			parameters.append('category_id', value);
 
 		if(parameters.get('search_by') == 'privilege') {
-
-			if(!Users.privilege.value.length)
-				parameters.set('privilege_id', 0);
 
 			for(const value of Users.privilege.value)
 				parameters.append('privilege_id', value);
 		}
 
 		if(parameters.get('search_by') == 'role') {
-
-			if(!Users.role.value.length)
-				parameters.set('role_id' , 0);
 
 			for(const value of Users.role.value)
 				parameters.append('role_id', value);
