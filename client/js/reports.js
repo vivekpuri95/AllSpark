@@ -2676,7 +2676,7 @@ class DataSourceTransformation {
 
 	run(response = []) {
 
-		if(!response || !response.length || !this.rows || this.rows.length != 1)
+		if(!response || !response.length)
 			return response;
 
 		const
