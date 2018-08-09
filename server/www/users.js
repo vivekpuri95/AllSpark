@@ -69,7 +69,7 @@ exports.list = class extends API {
 	async list() {
 
 		if (!this.request.body.user_id) {
-console.log(((this.user.privilege.has('user', this.user.privileges[0].category_id)) || (this.user.privilege.has('report', this.user.privileges[0].category_id))), '@@@@');
+
 			this.assert(
 				((this.user.privilege.has('user', this.user.privileges[0].category_id)) || (this.user.privilege.has('report', this.user.privileges[0].category_id))),
 				"User does not have privilege to view user list."
