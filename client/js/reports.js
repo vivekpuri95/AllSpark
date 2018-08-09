@@ -2749,10 +2749,10 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 					if(!(value.column in responseRow))
 						continue;
 
-					if(!row.has(value.column))
-						row.set(value.column, []);
+					if(!row.has(value.name || value.column))
+						row.set(value.name || value.column, []);
 
-					row.get(value.column).push(responseRow[value.column])
+					row.get(value.name || value.column).push(responseRow[value.column])
 				}
 			}
 		}
@@ -2780,7 +2780,7 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 				else {
 
 					for(const value of this.values) {
-						if(value.column == groupColumnValue)
+						if((value.name || value.column) == groupColumnValue)
 							function_ = value.function;
 					}
 				}
