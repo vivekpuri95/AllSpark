@@ -54,6 +54,18 @@ class HTMLAPI extends API {
 		}
 
 		return `<!DOCTYPE html>
+			<!--
+				           _ _  _____                  _
+				     /\\   | | |/ ____|                | |
+				    /  \\  | | | (___  _ __   __ _ _ __| | __
+				   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
+				  / ____ \\| | |____) | |_) | (_| | |  |   <
+				 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
+				                     | |
+				                     |_|
+				   Welcome to the source, enjoy your stay.
+		Find the entire code at https://github.com/Jungle-Works/AllSpark
+			-->
 			<html lang="en">
 				<head>
 					<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -61,8 +73,8 @@ class HTMLAPI extends API {
 					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
 
-					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + this.checksum + '">').join('')}
-					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>').join('')}
+					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + this.checksum + '">\n\t\t\t\t\t').join('')}
+					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>\n\t\t\t\t\t').join('')}
 
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
