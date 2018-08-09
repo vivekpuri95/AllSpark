@@ -294,30 +294,28 @@ exports.login = class extends API {
 
 		this.assert(this.userDetails && this.userDetails.user_id, "user not found while loading user's details");
 
-		const userAgent = this.request.get('user-agent');
-
-		const user_agent = new commonFun.UserAgent(userAgent);
+		const user_agent = new commonFun.UserAgent(this.request.get('user-agent'));
 
 		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 7) * 86400);
 
-		sessionLogs.request = {};
-
-		Object.assign(sessionLogs.request, this.request);
-
-		sessionLogs.request.body = {
-			user_id: this.userDetails.user_id,
-			type: 'login',
-			expire_time: expiryTime,
-			description: 'Login',
-			user_agent: userAgent,
-			os: user_agent.os,
-			browser: user_agent.browser,
-			ip: this.request.connection.remoteAddress,
-		}
-
-		let sessionId = [];
+		let sessionId = {};
 
 		try{
+			sessionLogs.request = {};
+
+			Object.assign(sessionLogs.request, this.request);
+
+			sessionLogs.request.body = {
+				user_id: this.userDetails.user_id,
+				type: 'login',
+				expire_time: expiryTime,
+				description: 'Login',
+				user_agent: this.request.get('user-agent'),
+				os: user_agent.os,
+				browser: user_agent.browser,
+				ip: this.request.connection.remoteAddress,
+			}
+
 			sessionId = await sessionLogs.insert();
 		}
 		catch(e){}

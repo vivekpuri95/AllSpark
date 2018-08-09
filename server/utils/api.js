@@ -209,17 +209,11 @@ class API {
 
 			let
 				status,
-				details = {},
-				refresh_token
+				details = {};
 
 			try {
 
-				if(obj.request.method == 'POST')
-					refresh_token = obj.request.body.refresh_token
-				else if(obj.request.method == 'GET')
-					refresh_token = obj.request.query.refresh_token;
-
-				details = await commonFun.getUserDetailsJWT(refresh_token);
+				details = await commonFun.getUserDetailsJWT(obj.request.body.refresh_token || obj.request.query.refresh_token);
 			}
 			catch(e){}
 

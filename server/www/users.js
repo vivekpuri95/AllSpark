@@ -26,14 +26,6 @@ exports.insert = class extends API {
 
 };
 
-exports.foo = class extends API {
-
-	async foo() {
-
-		throw new API.Exception(401, 'asd');
-	}
-}
-
 exports.delete = class extends API {
 
 	async delete() {

@@ -72,11 +72,13 @@ async function getUserDetailsJWT(token) {
 
 	const details = await verifyJWT(token);
 
-	if(!details.error)
+	if(!details.error) {
 		return details;
+	}
 
-	if(details.error && details.message != 'jwt expired')
+	if(details.error && details.message != 'jwt expired') {
 		return details;
+	}
 
 	let token_details = [];
 
