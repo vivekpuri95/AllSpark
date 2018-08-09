@@ -26,7 +26,7 @@ Page.class = class Dashboards extends Page {
 			this.nav.classList.toggle('show');
 			navBlanket.classList.toggle('hidden');
 			navToggle.classList.toggle('selected');
-			this.sync();
+			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
 		navBlanket.on('click', () => {
@@ -34,14 +34,14 @@ Page.class = class Dashboards extends Page {
 			this.nav.classList.remove('show');
 			navBlanket.classList.add('hidden');
 			navToggle.classList.remove('selected');
-			this.sync();
+			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
 		this.nav.querySelector('.collapse-panel').on('click', () => {
 
 			document.querySelector('body').classList.toggle('floating');
 			this.nav.classList.remove('show');
-			this.sync();
+			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
 		if (this.account.settings.get('disable_powered_by'))
@@ -154,25 +154,6 @@ Page.class = class Dashboards extends Page {
 				label && label.classList.add('selected');
 				submenu && label.parentElement.classList.add('list-open');
 			}
-		}
-	}
-
-	sync() {
-
-		this.collapsePanel = this.collapsePanel || this.nav.querySelector('.collapse-panel');
-		this.navToggle = this.navToggle || document.querySelector('header > .nav-toggle');
-		const blanket = this.container.querySelector('.nav-blanket');
-
-		const showing = this.nav.classList.contains('show');
-
-		if (showing) {
-
-			blanket.classList.remove('hidden');
-		}
-
-		else if (!showing) {
-
-			blanket.classList.add('hidden');
 		}
 	}
 
