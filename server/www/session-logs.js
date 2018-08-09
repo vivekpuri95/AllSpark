@@ -27,7 +27,7 @@ class SessionLogs extends API {
 			os: user_agent.os,
 			browser: user_agent.browser,
 			refresh_token: this.request.body.refresh_token,
-			ip: this.request.connection.remoteAddress,
+			ip: this.request.headers['x-real-ip'],
 		};
 		if(params.type == 'login' && this.response) {
 			return;
