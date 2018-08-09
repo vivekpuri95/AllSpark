@@ -118,6 +118,14 @@ class Authenticate {
 			}
 		}
 
+		if(reportObject.added_by === userJWTObject.user_id) {
+
+			return {
+				error: false,
+				message: "Report created by the current user.",
+			};
+		}
+
 		const userPrivileges = [];
 
 		userJWTObject.roles && userJWTObject.roles.map(x => {
