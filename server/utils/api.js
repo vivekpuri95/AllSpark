@@ -209,10 +209,17 @@ class API {
 
 			let
 				status,
-				details;
+				details = {},
+				refresh_token
 
 			try {
-				details = JSON.parse(atob(obj.request.body.refresh_token.split('.')[1]));
+
+				if(obj.request.method == 'POST')
+					refresh_token = obj.request.body.refresh_token
+				else if(obj.request.method == 'GET')
+					refresh_token = obj.request.query.refresh_token;
+
+				details = await commonFun.getUserDetailsJWT(refresh_token);
 			}
 			catch(e){}
 
@@ -222,8 +229,8 @@ class API {
 			catch(e){}
 
 			const error = {
-				account_id: details.account_id,
-				user_id: details.user_id,
+				account_id: obj.account.account_id,
+				user_id: obj.user.user_id,
 				message: e.message || e.sqlMessage,
 				url: obj.request.url,
 				description: JSON.stringify(e),

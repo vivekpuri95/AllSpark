@@ -389,7 +389,7 @@ class report extends API {
 
 				await engine.log(this.reportObj.query_id, this.reportObj.query, result.query,
 					Date.now() - this.reportObjStartTime, this.reportObj.type,
-					this.user.user_id, 1, JSON.stringify({filters: this.filters}), JSON.stringify(this.request.body)
+					this.user.user_id, 1, JSON.stringify({filters: this.filters}), this.user.sessionId
 				);
 
 				result.cached = {
@@ -416,7 +416,7 @@ class report extends API {
 		}
 
 		await engine.log(this.reportObj.query_id, this.reportObj.query, result.query, result.runtime,
-			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters}), JSON.stringify(this.request.body)
+			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters}), this.user.sessionId
 		);
 
 		const EOD = new Date();
@@ -895,9 +895,7 @@ class ReportEngine extends API {
 		};
 	}
 
-	async log(query_id, query = "", result_query, executionTime, type, userId, is_redis, rows, request) {
-
-		console.log(request)
+	async log(query_id, query = "", result_query, executionTime, type, userId, is_redis, rows, session_id) {
 
 		try {
 
@@ -907,8 +905,6 @@ class ReportEngine extends API {
 				result_query = JSON.stringify(result_query);
 			}
 
-			const session_id = JSON.parse(atob(JSON.parse(request).refresh_token.split('.')[1])).sessionId;
-
 			const db = dbConfig.write.database.concat('_logs');
 
 			await this.mysql.query(`
@@ -916,23 +912,22 @@ class ReportEngine extends API {
 					${db}.tb_report_logs (
 						query_id,
 						query,
-						session_id,
 						result_query,
 						response_time,
 						type,
 						user_id,
+						session_id,
 						cache,
 						\`rows\`
 					)
 				VALUES
-					(?,?,?,?,?,?,?,?)`,
-				[query_id, typeof query == 'object' ? JSON.stringify(query) : query, session_id, result_query, executionTime, type, userId, is_redis, rows],
+					(?,?,?,?,?,?,?,?,?)`,
+				[query_id, typeof query == 'object' ? JSON.stringify(query) : query, result_query, executionTime, type, userId, session_id, is_redis, rows],
 				"write"
 			);
 		}
 
 		catch (e) {
-
 			console.log(e);
 		}
 	}

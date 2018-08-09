@@ -1,7 +1,6 @@
 const API = require('../utils/api');
 const commonFun = require('../utils/commonFunctions');
 const dbConfig = require('config').get("sql_db");
-const atob = require('atob');
 
 class SessionLogs extends API {
 
@@ -16,27 +15,30 @@ class SessionLogs extends API {
 
 		const db = dbConfig.write.database.concat('_logs');
 
-		const user_agent = new commonFun.UserAgent(this.request.get('user-agent'));
+		const userAgent = this.request.body.user_agent || this.request.get('user-agent');
+
+		const user_agent = new commonFun.UserAgent(userAgent);
 
 		let params = {
 			user_id: this.request.body.user_id,
 			type: this.request.body.type,
-			user_agent: this.request.get('user-agent'),
+			user_agent: userAgent,
 			expire_time: this.request.body.expire_time,
 			os: user_agent.os,
 			browser: user_agent.browser,
 			refresh_token: this.request.body.refresh_token,
 			ip: this.request.connection.remoteAddress,
 		};
+		if(params.type == 'login' && this.response) {
+			return;
+		}
 
-		if(params.type != 'login' && params.refresh_token) {
+		if(params.type == 'logout' && params.refresh_token) {
 
-			const check_token = await commonFun.verifyJWT(params.refresh_token);
+			const token_details = await commonFun.getUserDetailsJWT(params.refresh_token);
 
-			if(check_token.error && check_token.message != 'jwt expired')
-				return check_token.message;
-
-			const token_details = JSON.parse(atob(params.refresh_token.split('.')[1]));
+			if(token_details.error)
+				return;
 
 			params.user_id = token_details.user_id;
 			params.session_id = token_details.sessionId;

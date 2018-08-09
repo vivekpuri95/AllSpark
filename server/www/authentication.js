@@ -294,18 +294,22 @@ exports.login = class extends API {
 
 		this.assert(this.userDetails && this.userDetails.user_id, "user not found while loading user's details");
 
-		const user_agent = new commonFun.UserAgent(this.request.get('user-agent'));
+		const userAgent = this.request.get('user-agent');
+
+		const user_agent = new commonFun.UserAgent(userAgent);
 
 		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 7) * 86400);
 
-		Object.assign(sessionLogs, this);
+		sessionLogs.request = {};
+
+		Object.assign(sessionLogs.request, this.request);
 
 		sessionLogs.request.body = {
 			user_id: this.userDetails.user_id,
 			type: 'login',
 			expire_time: expiryTime,
 			description: 'Login',
-			user_agent: this.request.get('user-agent'),
+			user_agent: userAgent,
 			os: user_agent.os,
 			browser: user_agent.browser,
 			ip: this.request.connection.remoteAddress,
@@ -340,6 +344,8 @@ exports.refresh = class extends API {
 	async refresh() {
 
 		let userDetail = await commonFun.verifyJWT(this.request.body.refresh_token);
+
+		const sessionId = userDetail.sessionId;
 
 		this.assert(!userDetail.error, "Token not correct", 401);
 
@@ -441,6 +447,7 @@ exports.refresh = class extends API {
 			name: [user.first_name, user.middle_name, user.last_name].filter(x => x).join(' '),
 			roles,
 			privileges,
+			sessionId: sessionId,
 		};
 
 		if (config.has("superAdmin_users") && config.get("superAdmin_users").includes(user.email)) {

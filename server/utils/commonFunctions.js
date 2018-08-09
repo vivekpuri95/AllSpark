@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const promisify = require('util').promisify;
 const jwtVerifyAsync = promisify(jwt.verify, jwt);
+const atob = require('atob');
 
 
 function promiseParallelLimit(limit, funcs) {
@@ -67,6 +68,26 @@ async function verifyJWT(token) {
 	}
 }
 
+async function getUserDetailsJWT(token) {
+
+	const details = await verifyJWT(token);
+
+	if(!details.error)
+		return details;
+
+	if(details.error && details.message != 'jwt expired')
+		return details;
+
+	let token_details = [];
+
+	try {
+		token_details = JSON.parse(atob(token.split('.')[1]))
+	}
+	catch(e) {
+	}
+
+	return token_details;
+}
 
 function clearDirectory(directory) {
 
@@ -293,6 +314,7 @@ exports.makeBcryptHash = makeBcryptHash;
 exports.verifyBcryptHash = verifyBcryptHash;
 exports.makeJWT = makeJWT;
 exports.verifyJWT = verifyJWT;
+exports.getUserDetailsJWT = getUserDetailsJWT;
 exports.clearDirectory = clearDirectory;
 exports.listOfArrayToMatrix = listOfArrayToMatrix;
 exports.authenticatePrivileges = authenticatePrivileges;
