@@ -387,7 +387,7 @@ class report extends API {
 
 				// await this.storeQueryResult(result);
 
-				await engine.log(this.reportObj.query_id, this.reportObj.query, result.query,
+				await engine.log(this.reportObj.query_id, result.query,
 					Date.now() - this.reportObjStartTime, this.reportObj.type,
 					this.user.user_id, 1, JSON.stringify({filters: this.filters}), this.user.sessionId
 				);
@@ -415,7 +415,7 @@ class report extends API {
 			throw new API.Exception(400, e.message);
 		}
 
-		await engine.log(this.reportObj.query_id, this.reportObj.query, result.query, result.runtime,
+		await engine.log(this.reportObj.query_id, result.query, result.runtime,
 			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters}), this.user.sessionId
 		);
 
@@ -895,7 +895,7 @@ class ReportEngine extends API {
 		};
 	}
 
-	async log(query_id, query = "", result_query, executionTime, type, userId, is_redis, rows, session_id) {
+	async log(query_id, result_query, executionTime, type, userId, is_redis, rows, session_id) {
 
 		try {
 
@@ -911,7 +911,6 @@ class ReportEngine extends API {
 				INSERT INTO
 					${db}.tb_report_logs (
 						query_id,
-						query,
 						result_query,
 						response_time,
 						type,
@@ -921,8 +920,8 @@ class ReportEngine extends API {
 						\`rows\`
 					)
 				VALUES
-					(?,?,?,?,?,?,?,?,?)`,
-				[query_id, typeof query == 'object' ? JSON.stringify(query) : query, result_query, executionTime, type, userId, session_id, is_redis, rows],
+					(?,?,?,?,?,?,?,?)`,
+				[query_id, result_query, executionTime, type, userId, session_id, is_redis, rows],
 				"write"
 			);
 		}
