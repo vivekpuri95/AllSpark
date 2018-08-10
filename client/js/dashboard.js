@@ -737,38 +737,24 @@ class Dashboard {
 			});
 
 			report.container.insertAdjacentHTML('beforeend', `
-				<div class="resize right" draggable="true" title="Resize Graph"></div>
-				<div class="resize bottom" draggable="true" title="Resize Graph"></div>
+				<div class="resize-dimentions hidden"></div>
+				<div class="resize" draggable="true" title="Resize Graph"></div>
 			`);
 
-			const
-				right = report.container.querySelector('.resize.right'),
-				bottom = report.container.querySelector('.resize.bottom');
+			const resize = report.container.querySelector('.resize');
 
-			right.on('dragstart', e => {
+			resize.on('dragstart', e => {
 				e.stopPropagation();
-				report.draggingEdge = right;
 				this.page.loadedVisualizations.beingResized = report
 			});
 
-			right.on('dragend', e => {
-				e.stopPropagation();
-				this.page.loadedVisualizations.beingResized = null;
-			});
-
-			bottom.on('dragstart', e => {
-				e.stopPropagation();
-				report.draggingEdge = bottom;
-				this.page.loadedVisualizations.beingResized = report
-			});
-
-			bottom.on('dragend', e => {
+			resize.on('dragend', e => {
 				e.stopPropagation();
 				this.page.loadedVisualizations.beingResized = null;
 			});
 		}
 
-		Dashboard.container.on('dragover', e => {
+		Dashboard.container.parentElement.on('dragover', e => {
 
 			e.preventDefault();
 			e.stopPropagation();
@@ -783,36 +769,28 @@ class Dashboard {
 			if (!format.format)
 				format.format = {};
 
-			const visualizationFormat = format.format;
+			const
+				visualizationFormat = format.format,
+				columnStart = getColumn(report.container.offsetLeft),
+				newColumn = getColumn(e.clientX) + 1,
+				rowStart = getRow(report.container.offsetTop),
+				newRow = getRow(e.pageY) + 1;
 
-			if (report.draggingEdge.classList.contains('right')) {
+			if (newRow > rowStart)
+				visualizationFormat.height = newRow - rowStart;
 
-				const
-					columnStart = getColumn(report.container.offsetLeft),
-					column = getColumn(e.clientX) + 1;
-
-				if (column <= columnStart)
-					return;
-
-				visualizationFormat.width = column - columnStart;
-			}
-
-			if (report.draggingEdge.classList.contains('bottom')) {
-
-				const
-					rowStart = getRow(report.container.offsetTop),
-					row = rowStart + getRow(e.clientY);
-
-				if (row <= rowStart)
-					return;
-
-				visualizationFormat.height = row - rowStart - 1;
-			}
+			if (newColumn > columnStart && newColumn <= Dashboard.grid.columns)
+				visualizationFormat.width = newColumn - columnStart;
 
 			if (
 				visualizationFormat.width != report.container.style.gridColumnEnd.split(' ')[1] ||
 				visualizationFormat.height != report.container.style.gridRowEnd.split(' ')[1]
 			) {
+
+				const dimentions = report.container.querySelector('.resize-dimentions');
+
+				dimentions.classList.remove('hidden');
+				dimentions.textContent = `${visualizationFormat.width} x ${visualizationFormat.height}`;
 
 				report.container.setAttribute('style', `
 					order: ${report.selectedVisualization.format.position || 0};
@@ -823,7 +801,7 @@ class Dashboard {
 				if (this.dragTimeout)
 					clearTimeout(this.dragTimeout);
 
-				this.dragTimeout = setTimeout(() => report.visualizations.selected.render(true), 400);
+				this.dragTimeout = setTimeout(() => report.visualizations.selected.render({resize: true}), 100);
 
 				if (this.saveTimeout)
 					clearTimeout(this.saveTimeout);
@@ -831,7 +809,6 @@ class Dashboard {
 				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, report.selectedVisualization.id), 1000);
 			}
 		});
-
 
 		function getColumn(position) {
 			return Math.floor(

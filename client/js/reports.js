@@ -2680,7 +2680,7 @@ class DataSourceTransformation {
 			return response;
 
 		const
-			[{column: groupColumn}] = this.columns.length ? this.columns : [{}],
+			[{column: groupColumn}] = this.columns && this.columns.length ? this.columns : [{}],
 			columns = new Set,
 			rows = new Map;
 
@@ -2696,7 +2696,7 @@ class DataSourceTransformation {
 
 			let key = {};
 
-			for(const row of this.rows)
+			for(const row of this.rows || [])
 				key[row.column] = responseRow[row.column];
 
 			key = JSON.stringify(key);
@@ -3448,6 +3448,7 @@ class LinearVisualization extends Visualization {
 
 			const
 				mouse = d3.mouse(this),
+				width = Math.abs(that.zoomRectangle.origin[0] - mouse[0]),
 				filteredRows = that.rows.filter(row => {
 
 					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
@@ -3460,7 +3461,8 @@ class LinearVisualization extends Visualization {
 
 			that.zoomRectangle = null;
 
-			if(filteredRows.length < 2)
+			// Width check to make sure the zoom rectangle has substantial width
+			if(filteredRows.length < 2 || width <= 10)
 				return;
 
 			that.rows = filteredRows;
@@ -6751,7 +6753,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 	plotGraph(options) {
 
-		const margin = {top: 30, right: 20, bottom: 30, left: 20};
+		const margin = {top: 30, right: 30, bottom: 30, left: 30};
 
 		const container = d3.selectAll(`#visualization-${this.id} .graph`);
 
@@ -6762,7 +6764,13 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
 		}
 
-		const data = [];
+		const
+			data = [],
+			x = d3.scale.ordinal().rangePoints([0, this.width], 0.1, 0),
+			y = d3.scale.linear().range([this.height, 0]),
+			valueline = d3.svg.line()
+				.x(d => x(d.date))
+				.y(d => y(d.value));
 
 		for(const row of this.dates.values()) {
 			data.push({
@@ -6771,15 +6779,8 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			});
 		}
 
-		const x = d3.scale.ordinal().rangePoints([0, this.width], 0.1, 0);
-		const y = d3.scale.linear().range([this.height, 0]);
-
 		x.domain(data.map(d => d.date));
 		y.domain([d3.min(data, d => d.value), d3.max(data, d => d.value)]);
-
-		const valueline = d3.svg.line()
-			.x(d => x(d.date))
-			.y(d => y(d.value));
 
 		const svg = container
 			.append('svg')
@@ -6821,6 +6822,26 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				this.plotGraph({resize: true});
 			}
 		});
+
+		if(!this.options.graphParallax)
+			return;
+
+		const graph = this.container.querySelector('.graph');
+
+		this.container.on('mousemove', e => {
+
+			const
+				rect = this.container.getBoundingClientRect(),
+				x = e.clientX - rect.left,
+				y = e.clientY - rect.top,
+				parallax = 30,
+				valueX = ((x / this.container.clientWidth * parallax) - (parallax / 2)) * -1,
+				valueY = ((y / this.container.clientHeight * parallax) - (parallax / 3)) * -1;
+
+			graph.style.transform = `translate(${valueX}px, ${valueY}px)`;
+		});
+
+		this.container.on('mouseout', () => graph.removeAttribute('style'));
 	}
 
 	getColor(percentage) {
