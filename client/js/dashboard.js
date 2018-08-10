@@ -66,7 +66,7 @@ Page.class = class Dashboards extends Page {
 			this.load(e.state)
 		});
 
-		this.navbar = new Navbar([], this);
+		this.navbar = new Navbar(new Map, this);
 
 		(async () => {
 

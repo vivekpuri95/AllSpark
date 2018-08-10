@@ -179,19 +179,19 @@ class API {
 					});
 				}
 
-				if (!(e instanceof Error)) {
-
-					e = new Error(e);
-					e.status = 400;
-				}
-
 				if (e instanceof assert.AssertionError) {
 
 					if (commonFun.isJson(e.message)) {
-						e.message = JSON.parse(e.message);
+						e.message = JSON.parse(e.message).message;
 					}
 					e.status = e.message.status || 400;
 					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "Something went wrong! :(");
+				}
+
+				if (!(e instanceof Error)) {
+
+					e = new Error(e);
+					e.status = 401;
 				}
 
 				else {
