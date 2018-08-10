@@ -66,8 +66,9 @@ exports.list = class extends API {
 
 		const reportRoles = await role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],);
 
-		const reportRoleMapping = {};
+		const userSharedQueries = new Set((await role.get(this.account.account_id, "query", "user", results[0].length ? results[0].map(x => x.query_id) : [-1], this.user.user_id)).map(x => x.owner_id));
 
+		const reportRoleMapping = {};
 
 		for (const row of reportRoles) {
 
@@ -104,6 +105,8 @@ exports.list = class extends API {
 
 			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
 			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
+
+			row.flag = userSharedQueries.has(row.query_id);
 
 			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
 				continue;
