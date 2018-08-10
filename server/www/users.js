@@ -1,10 +1,13 @@
 const API = require("../utils/api");
 const commonFun = require("../utils/commonFunctions");
 const constants = require('../utils/constants');
+const getRole = (require('./object_roles')).get
 
 exports.insert = class extends API {
 
 	async insert() {
+
+		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
 		var result = {};
 
@@ -21,7 +24,6 @@ exports.insert = class extends API {
 		result.account_id = this.account.account_id;
 
 		return await this.mysql.query(`INSERT INTO tb_users SET ?`, result, 'write');
-
 	}
 
 };
@@ -38,6 +40,13 @@ exports.delete = class extends API {
 exports.update = class extends API {
 
 	async update() {
+		const objRole = new getRole();
+
+		const requiredCategories = (await objRole.get(this.account.account_id, 'user', 'role', this.request.body.user_id)).map(x => x.category_id);
+
+		this.assert(requiredCategories.some(x => this.user.privilege.has('user', x)), 'User does not have enough privileges');
+
+		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
 		var keys = Object.keys(this.request.body);
 
@@ -70,8 +79,11 @@ exports.list = class extends API {
 		if (!this.request.body.user_id) {
 
 			this.assert(
-				((this.user.privilege.has('user', this.user.privileges[0].category_id)) || (this.user.privilege.has('report', this.user.privileges[0].category_id))),
-				"User does not have privilege to view user list."
+				((this.user.privilege.has('user', this.user.privileges[0] && this.user.privileges[0].category_id)) || (this.user.privilege.has('report', this.user.privileges[0] && this.user.privileges[0].category_id))),
+				{
+					message: "User does not have privilege to view user list.",
+					status: 401,
+				}
 			);
 		}
 
