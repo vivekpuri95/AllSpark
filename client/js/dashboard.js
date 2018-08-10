@@ -826,7 +826,7 @@ class Dashboard {
 
 		if (this.format && this.format.category_id) {
 
-			this.page.listContainer.form.category.value = this.format.category_id;
+			this.page.listContainer.form.subtitle.value = this.format.category_id;
 
 			this.page.renderList();
 
