@@ -777,7 +777,6 @@ class User {
 				parameters = {
 					user_id: user.user_id,
 					type: 'logout',
-					description: 'Logout from UI.',
 				},
 				options = {
 					method: 'POST',
