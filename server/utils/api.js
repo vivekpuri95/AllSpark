@@ -12,6 +12,7 @@ const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
 const msssql = require("./mssql").MsSql;
 const child_process = require('child_process');
+const atob = require('atob');
 
 const env = {
 	name: process.env.NODE_ENV,
@@ -101,6 +102,7 @@ class API {
 					obj.user = new User(userDetails);
 				}
 
+
 				let host = request.headers.host.split(':')[0];
 
 				for(const account of global.accounts) {
@@ -139,6 +141,7 @@ class API {
 				}
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
+
 					throw new API.Exception(401, 'User Not Authenticated! :(');
 				}
 
@@ -203,6 +206,22 @@ class API {
 	static async errorMessage(e, obj) {
 
 		try {
+
+			let
+				status,
+				details = {};
+
+			try {
+
+				details = await commonFun.getUserDetailsJWT(obj.request.body.refresh_token || obj.request.query.refresh_token);
+			}
+			catch(e){}
+
+			try {
+				status = JSON.parse(e.message).status;
+			}
+			catch(e){}
+
 			const error = {
 				account_id: obj.account.account_id,
 				user_id: obj.user.user_id,
@@ -211,6 +230,8 @@ class API {
 				description: JSON.stringify(e),
 				type: "server",
 				user_agent: obj.request.get('user-agent'),
+				status: status || e.status,
+				session_id: details.session_id,
 			};
 
 			await errorLogs.insert(error);

@@ -142,6 +142,7 @@ class Page {
 
 		userPopup.on('click', e => e.stopPropagation());
 		navContainer.on('click', e => e.stopPropagation());
+
 		header.querySelector('.logout').on('click', () => User.logout());
 
 		menuToggle.on('click', e => {
@@ -770,23 +771,41 @@ class User {
 
 	static async logout({next, callback, redirect = true} = {}) {
 
-		const parameters = new URLSearchParams();
+		try {
 
-		await Storage.clear();
+			const
+				parameters = {
+					user_id: user.user_id,
+					type: 'logout',
+				},
+				options = {
+					method: 'POST',
+				};
 
-		if(next)
-			parameters.set('continue', window.location.pathname + window.location.search);
-
-		if(callback)
-			await callback();
-
-		if(navigator.serviceWorker) {
-			for(const registration of await navigator.serviceWorker.getRegistrations())
-				registration.unregister();
+			API.call('session-logs/insert', parameters, options);
 		}
+		catch(e) {}
 
-		if(redirect)
-			window.location = '/login?'+parameters.toString();
+		setTimeout(async() => {
+
+			const parameters = new URLSearchParams();
+
+			await Storage.clear();
+
+			if(next)
+				parameters.set('continue', window.location.pathname + window.location.search);
+
+			if(callback)
+				await callback();
+
+			if(navigator.serviceWorker) {
+				for(const registration of await navigator.serviceWorker.getRegistrations())
+					registration.unregister();
+			}
+
+			if(redirect)
+				window.location = '/login?'+parameters.toString();
+		}, 100)
 	}
 
 	constructor(user) {
@@ -998,6 +1017,15 @@ class API extends AJAX {
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
+		const refresh_token = await Storage.get('refresh_token');
+
+		if(refresh_token) {
+			if(typeof parameters == 'string')
+				parameters += '&refresh_token='+refresh_token;
+			else
+				parameters.refresh_token = refresh_token;
+		}
+
 		const token = await Storage.get('token');
 
 		if(token && token.body) {
@@ -1007,6 +1035,7 @@ class API extends AJAX {
 
 			else
 				parameters.token = token.body;
+
 		}
 
 		// If a form id was supplied, then also load the data from that form
