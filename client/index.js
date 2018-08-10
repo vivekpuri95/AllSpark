@@ -1118,11 +1118,11 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 					<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
 				</header>
                 
-                <div class="user-search block form">
+                <form class="user-search block form">
                 	
 					<label>
 						<span>Id</span>
-						<input type="number" name="id">
+						<input type="number" name="user_id">
 					</label>
 					
 					<label>
@@ -1148,16 +1148,19 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 						<span>Category</span>
 					</label>
 					
-					<label class="hidden privilege">
-						<span>Privilege</span>
-					</label>
-					
 					<label class="hidden role">
 						<span>Role</span>
 					</label>
 					
-					<button name="apply">Apply</button>
-                </div>
+					<label class="hidden privilege">
+						<span>Privilege</span>
+					</label>
+					
+					<label>
+						<span></span>
+						<button type="submit" name="apply">Apply</button>
+					</label>
+                </form>
 
 				<table class="block">
 					<thead>
@@ -1166,7 +1169,7 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 							<th data-key="id" class="thin">ID</th>
 							<th data-key="name">Name</th>
 							<th data-key="email">Email</th>
-							<th data-key="lastLogin">Last Login</th>
+							<!--<th data-key="lastLogin">Last Login</th>-->
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>

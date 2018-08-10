@@ -634,7 +634,8 @@ class GlobalSearch {
 		this.searchList.innerHTML = `<li><span class="loading"><i class="fa fa-spinner fa-spin"></i></span></li>`;
 
 		const params = {
-			text: this.searchInput.value
+			text: this.searchInput.value,
+			search: "global",
 		};
 
 		const data = await API.call('search/query', params);

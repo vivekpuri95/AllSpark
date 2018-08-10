@@ -103,7 +103,7 @@ exports.list = class extends API {
 				`,
 			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`;
 
-		if (this.request.body.user_id) {
+		if (this.request.body.user_id && !this.request.body.search) {
 
 			user_query = user_query.concat(` AND user_id = ${this.request.body.user_id}`);
 			role_query = role_query.concat(` AND owner_id = ${this.request.body.user_id}`);
@@ -114,27 +114,76 @@ exports.list = class extends API {
 
 			if (this.request.body.search) {
 
-				user_query = user_query.concat(`
-					AND  (
-						user_id LIKE ?
-						OR phone LIKE ?
-						OR email LIKE ?
-						OR first_name LIKE ?
-						OR middle_name LIKE ?
-						OR last_name LIKE ?
-					)
-					LIMIT 10
-				`);
+				if(this.request.body.user_id) {
+
+					user_query = user_query.concat(`AND user_id LIKE '%${this.request.body.user_id}%'`);
+				}
+
+				if(this.request.body.email) {
+
+					user_query = user_query.concat(`AND email LIKE '%${this.request.body.email}%'`);
+				}
+
+				if(this.request.body.name) {
+
+					user_query = user_query.concat(`AND CONCAT(first_name, ' ', IFNULL(middle_name, ' '),' ', IFNULL(last_name, ' ')) LIKE '%${this.request.body.name}%'`);
+				}
+
+
+				if(this.request.query.text) {
+
+					user_query = user_query.concat(`
+						AND  (
+							user_id LIKE '%${this.request.body.text}%'
+							OR phone LIKE '%${this.request.body.text}%'
+							OR email LIKE '%${this.request.body.text}%'
+							OR first_name LIKE '%${this.request.body.text}%'
+							OR middle_name LIKE '%${this.request.body.text}%'
+							OR last_name LIKE '%${this.request.body.text}%'
+						)
+						LIMIT 10
+					`);
+				}
+
 			}
+
+			results = await Promise.all([
+				this.mysql.query(user_query),
+				this.mysql.query(role_query),
+				this.mysql.query(prv_query)
+			]);
 		}
 
-		results = await Promise.all([
-			this.mysql.query(user_query, [this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search]),
-			this.mysql.query(role_query, [this.account.account_id]),
-			this.mysql.query(prv_query)
-		]);
+		let userList = [];
 
 		for (const role of results[1]) {
+
+			if(this.request.body.category_id || this.request.body.role_id) {
+
+				this.request.body.category_id = typeof this.request.body.category_id == 'string' ? [this.request.body.category_id] : this.request.body.category_id;
+				this.request.body.role_id = typeof this.request.body.role_id == 'string' ? [this.request.body.role_id] : this.request.body.role_id;
+
+				if(this.request.body.category_id) {
+
+					const categoryCheck = this.request.body.category_id.includes(role.category_id.toString());
+
+					if(!categoryCheck) {
+
+						continue;
+					}
+
+					if(categoryCheck && this.request.body.search_by == 'privilege') {
+
+						continue;
+					}
+
+				}
+
+				if(this.request.body.role_id && !this.request.body.role_id.includes(role.role_id.toString())) {
+
+					continue;
+				}
+			}
 
 			if (!roles[role.user_id]) {
 
@@ -145,6 +194,33 @@ exports.list = class extends API {
 		}
 
 		for (const privilege of results[2]) {
+
+			if(this.request.body.category_id || this.request.body.privilege_id) {
+
+				this.request.body.category_id = typeof this.request.body.category_id == 'string' ? [this.request.body.category_id] : this.request.body.category_id;
+				this.request.body.privilege_id = typeof this.request.body.privilege_id == 'string' ? [this.request.body.privilege_id] : this.request.body.privilege_id;
+
+				if(this.request.body.category_id) {
+
+					const categoryCheck = this.request.body.category_id.includes(privilege.category_id.toString());
+
+					if(!categoryCheck) {
+
+						continue;
+					}
+
+					if(categoryCheck && this.request.body.search_by == 'role') {
+
+						continue;
+					}
+
+				}
+
+				if(this.request.body.privilege_id && !this.request.body.privilege_id.includes(privilege.privilege_id.toString())) {
+
+					continue;
+				}
+			}
 
 			if (!privileges[privilege.user_id]) {
 
@@ -161,16 +237,34 @@ exports.list = class extends API {
 			row.href = `/user/profile/${row.user_id}`;
 			row.superset = 'Users';
 			row.name = [row.first_name, row.middle_name, row.last_name].filter(u => u).join(' ');
+
+			if(this.request.query.search) {
+
+				if (this.request.body.role_id && !roles[row.user_id]) {
+
+					continue;
+				}
+				else if(this.request.body.privilege_id && !privileges[row.user_id]) {
+
+					continue;
+				}
+				else if(this.request.body.category_id && !(roles[row.user_id] || privileges[row.user_id])) {
+
+					continue;
+				}
+			}
+
+			userList.push(row);
 		}
 
 		const userCategories = this.user.roles.map(x => parseInt(x.category_id));
 
 		if(!constants.adminCategory.some(x => userCategories.includes(x))) {
 
-			results[0] = results[0].filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))));
+			userList = userList.filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))));
 		}
 
-		return results[0];
+		return userList;
 	}
 
 };

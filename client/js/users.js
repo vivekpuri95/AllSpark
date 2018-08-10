@@ -23,20 +23,53 @@ class Users extends Page {
 	static async setup(page) {
 
 		Users.contaier = page.container.querySelector('section#list table tbody');
-		Users.thead = page.container.querySelector('section#list table thead');
+		Users.userSearchForm = page.container.querySelector('section#list .user-search');
 
-		Users.userSearch = page.container.querySelector('section#list .user-search');
+		Users.userSearchForm.search_by.on('change', () => {
 
-		Users.userSearch.querySelector('select[name=search_by]').on('change', () => {
-
-			const paramValue = Users.userSearch.querySelector('select[name=search_by]').value;
-
-			Users.userSearch.querySelector('.role').classList.toggle('hidden', paramValue == 'privilege' || paramValue == 'category');
-			Users.userSearch.querySelector('.privilege').classList.toggle('hidden', paramValue == 'role' || paramValue == 'category');
+			Users.userSearchForm.querySelector('.role').classList.toggle('hidden', ['privilege', 'category'].includes(Users.userSearchForm.search_by.value));
+			Users.userSearchForm.querySelector('.privilege').classList.toggle('hidden', ['role', 'category'].includes(Users.userSearchForm.search_by.value));
 
 		});
 
-		Users.loadSearchParams();
+		const
+			categoryDatalist =  [],
+			privilegeDatalist = [],
+			roleDatalist = [];
+
+		for(const category of MetaData.categories.values()) {
+			categoryDatalist.push({
+				name: category.name,
+				value:category.category_id,
+				subtitle: category.is_admin ? 'Admin' : ' ',
+			});
+		}
+
+		for(const privilege of MetaData.privileges.values()) {
+			privilegeDatalist.push({
+				name: privilege.name,
+				value: privilege.privilege_id,
+				subtitle: privilege.is_admin ? 'Admin' : ' ',
+			})
+		}
+
+		for(const role of MetaData.roles.values()) {
+			roleDatalist.push({
+				name: role.name,
+				value: role.role_id,
+				subtitle: role.is_admin ? 'Admin' : ' ',
+			})
+		}
+
+		Users.category = new MultiSelect({datalist: categoryDatalist});
+		Users.privilege = new MultiSelect({datalist: privilegeDatalist});
+		Users.role = new MultiSelect({datalist: roleDatalist});
+
+		Users.userSearchForm.querySelector('.category').appendChild(Users.category.container);
+		Users.userSearchForm.querySelector('.privilege').appendChild(Users.privilege.container);
+		Users.userSearchForm.querySelector('.role').appendChild(Users.role.container);
+
+		Users.userSearchForm.on('submit', e => Users.search(e));
 	}
 
 	static async load() {
@@ -48,35 +81,9 @@ class Users extends Page {
 		Users.render(Users.list);
 	}
 
-	static search() {
-
-		const searchQuery = Users.thead.querySelectorAll('.search-bar input');
-
-		const list = Users.list.filter(user => {
-
-			for(const input of searchQuery) {
-
-				const query = input.value.toLowerCase();
-
-				if(!query)
-					continue;
-
-				const value = user[input.dataset.key].toString().toLowerCase();
-
-				if(!value.includes(query))
-					return false;
-			}
-			return true;
-		});
-
-		Users.render(list);
-	}
-
 	static render(list) {
 
 		Users.contaier.textContent = null;
-
-		const searchQueries = Users.thead.querySelectorAll('.search-bar th');
 
 		for(const user of list)
 			Users.contaier.appendChild(user.row);
@@ -100,50 +107,15 @@ class Users extends Page {
 		Sections.show('list');
 	}
 
-	static loadSearchParams() {
+	static async search(e) {
 
-		const
-			categoryDatalist =  [],
-			privilegeDatalist = [],
-			roleDatalist = [];
-
-		for(const category of MetaData.categories.values()) {
-			categoryDatalist.push({
-				name: category.name,
-				value:category.category_id
-			});
-		}
-
-		for(const privilege of MetaData.privileges.values()) {
-			privilegeDatalist.push({
-				name: privilege.name,
-				value: privilege.privilege_id
-			})
-		}
-
-		for(const role of MetaData.roles.values()) {
-			roleDatalist.push({
-				name: role.name,
-				value: role.role_id
-			})
-		}
-
-		Users.category = new MultiSelect({datalist: categoryDatalist});
-		Users.privilege = new MultiSelect({datalist: privilegeDatalist});
-		Users.role = new MultiSelect({datalist: roleDatalist});
-
-		Users.userSearch.querySelector('.category').appendChild(Users.category.container);
-		Users.userSearch.querySelector('.privilege').appendChild(Users.privilege.container);
-		Users.userSearch.querySelector('.role').appendChild(Users.role.container);
-
-		Users.userSearch.querySelector('button[name=apply]').on('click', () => Users.globalSearch());
-	}
-
-	static async globalSearch() {
+		e.preventDefault();
 
 		const parameters = new URLSearchParams();
 
-		for(const element of Users.userSearch.querySelectorAll('input, select'))
+		parameters.set('search', "users");
+
+		for(const element of Users.userSearchForm.querySelectorAll('input, select'))
 			parameters.set(element.name, element.value);
 
 		for(const value of Users.category.value)
@@ -162,8 +134,8 @@ class Users extends Page {
 		}
 
 		const
-			data = await API.call('search/user_search', parameters.toString()),
-			filteredUsers = Users.list.filter(x => data.some( y => y == x.user_id));
+			data = await API.call('search/query', parameters.toString()),
+			filteredUsers = Users.list.filter(x => data.some( y => y.user_id == x.user_id));
 
 		Users.render(filteredUsers);
 	}
@@ -353,7 +325,7 @@ class UserManage {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.email}</td>
-			<td>2018-01-01</td>
+			<!--<td>2018-01-01</td>-->
 			<td class="action green" title="Edit">Edit</i></td>
 			<td class="action red" title="Delete">Delete</td>
 		`;
