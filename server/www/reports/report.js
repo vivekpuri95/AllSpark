@@ -164,7 +164,6 @@ exports.update = class extends API {
 				'is_redis',
 				'load_saved',
 				'refresh_rate',
-				'roles',
 				'format',
 				'connection_name',
 			];
@@ -219,7 +218,6 @@ exports.insert = class extends API {
 				'is_redis',
 				'load_saved',
 				'refresh_rate',
-				'roles',
 				'format',
 				'connection_name',
 			];
