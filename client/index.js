@@ -556,8 +556,8 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 				<form class="form toolbar">
 
 					<label class="right">
-						<select name="category">
-							<option value="">All Categories</option>
+						<select name="subtitle">
+							<option value="">Everything</option>
 						</select>
 					</label>
 
@@ -845,7 +845,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 							<label>
 								<span>Category</span>
-								<select name="category_id"></select>
+								<select name="subtitle"></select>
 							</label>
 						</div>
 
