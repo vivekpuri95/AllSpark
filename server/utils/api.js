@@ -231,7 +231,7 @@ class API {
 				type: "server",
 				user_agent: obj.request.get('user-agent'),
 				status: status || e.status,
-				session_id: details.sessionId,
+				session_id: details.session_id,
 			};
 
 			await errorLogs.insert(error);

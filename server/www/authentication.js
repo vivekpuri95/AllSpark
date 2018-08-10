@@ -298,7 +298,7 @@ exports.login = class extends API {
 
 		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 7) * 86400);
 
-		let sessionId = {};
+		let session = {};
 
 		try{
 			sessionLogs.request = {};
@@ -316,7 +316,7 @@ exports.login = class extends API {
 				ip: this.request.connection.remoteAddress,
 			}
 
-			sessionId = await sessionLogs.insert();
+			session = await sessionLogs.insert();
 		}
 		catch(e){}
 
@@ -324,7 +324,7 @@ exports.login = class extends API {
 			user_id: this.userDetails.user_id,
 			email: this.userDetails.email,
 			account_id: this.userDetails.account_id,
-			sessionId: sessionId.insertId,
+			session_id: session.insertId,
 		};
 
 		const finalObj = {
@@ -343,7 +343,7 @@ exports.refresh = class extends API {
 
 		let userDetail = await commonFun.verifyJWT(this.request.body.refresh_token);
 
-		const sessionId = userDetail.sessionId;
+		const sessionId = userDetail.session_id;
 
 		this.assert(!userDetail.error, "Token not correct", 401);
 
@@ -445,7 +445,7 @@ exports.refresh = class extends API {
 			name: [user.first_name, user.middle_name, user.last_name].filter(x => x).join(' '),
 			roles,
 			privileges,
-			sessionId: sessionId,
+			session_id: sessionId,
 		};
 
 		if (config.has("superAdmin_users") && config.get("superAdmin_users").includes(user.email)) {

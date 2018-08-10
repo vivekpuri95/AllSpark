@@ -389,7 +389,7 @@ class report extends API {
 
 				await engine.log(this.reportObj.query_id, result.query,
 					Date.now() - this.reportObjStartTime, this.reportObj.type,
-					this.user.user_id, 1, JSON.stringify({filters: this.filters}), this.user.sessionId
+					this.user.user_id, 1, JSON.stringify({filters: this.filters}), this.user.session_id
 				);
 
 				result.cached = {
@@ -416,7 +416,7 @@ class report extends API {
 		}
 
 		await engine.log(this.reportObj.query_id, result.query, result.runtime,
-			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters}), this.user.sessionId
+			this.reportObj.type, this.user.user_id, 0, JSON.stringify({filters: this.filters}), this.user.session_id
 		);
 
 		const EOD = new Date();
