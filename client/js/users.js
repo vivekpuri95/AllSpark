@@ -317,7 +317,7 @@ class UserManage {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.email}</td>
-			<td>${this.last_login}</td>
+			<td>${Format.date(this.last_login)}</td>
 			<td class="action green" title="Edit">Edit</i></td>
 			<td class="action red" title="Delete">Delete</td>
 		`;
