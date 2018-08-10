@@ -56,10 +56,10 @@ Page.class = class Dashboards extends Page {
 
 		for (const category of MetaData.categories.values()) {
 
-			this.listContainer.form.category.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
+			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
 		}
 
-		this.listContainer.form.category.on('change', () => this.renderList());
+		this.listContainer.form.subtitle.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
 
 		window.on('popstate', e => {
@@ -192,7 +192,7 @@ Page.class = class Dashboards extends Page {
 				continue;
 			}
 
-			if (this.listContainer.form.category.value && report.category_id != this.listContainer.form.category.value) {
+			if (this.listContainer.form.subtitle.value && report.subtitle != this.listContainer.form.subtitle.value) {
 
 				continue;
 			}
@@ -249,7 +249,7 @@ Page.class = class Dashboards extends Page {
 				<td><a href="/report/${report.query_id}" target="_blank" class="link">${report.name}</a></td>
 				<td>${description.join(' ') || ''}</td>
 				<td class="tags"></td>
-				<td>${MetaData.categories.has(report.category_id) && MetaData.categories.get(report.category_id).name || ''}</td>
+				<td>${MetaData.categories.has(report.subtitle) && MetaData.categories.get(report.subtitle).name || ''}</td>
 				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
 			`;
 

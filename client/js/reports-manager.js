@@ -650,7 +650,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		for(const category of MetaData.categories.values()) {
 
-			this.form.category_id.insertAdjacentHTML('beforeend', `
+			this.form.subtitle.insertAdjacentHTML('beforeend', `
 				<option value="${category.category_id}">${category.name}</option>
 			`);
 		}
