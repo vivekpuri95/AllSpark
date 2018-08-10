@@ -31,14 +31,13 @@ class SessionLogs extends API {
 			return;
 		}
 
-		if(params.type == 'logout' && params.refresh_token) {
+		if(params.type == 'logout' && refresh_token) {
 
-			const token_details = await commonFun.getUserDetailsJWT(params.refresh_token);
+			const token_details = await commonFun.getUserDetailsJWT(refresh_token);
 
 			if(token_details.error) {
 				return;
 			}
-
 			params.user_id = token_details.user_id;
 			params.session_id = token_details.session_id;
 		}
