@@ -146,13 +146,13 @@ exports.list = class extends API {
 				}
 
 			}
-
-			results = await Promise.all([
-				this.mysql.query(user_query),
-				this.mysql.query(role_query),
-				this.mysql.query(prv_query)
-			]);
 		}
+
+		results = await Promise.all([
+			this.mysql.query(user_query),
+			this.mysql.query(role_query),
+			this.mysql.query(prv_query),
+		]);
 
 		let userList = [];
 
