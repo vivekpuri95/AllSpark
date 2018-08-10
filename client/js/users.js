@@ -13,7 +13,6 @@ class Users extends Page {
 			Roles.setup();
 
 			await Users.load();
-
 			Users.loadState();
 		})();
 
@@ -69,14 +68,40 @@ class Users extends Page {
 		Users.userSearchForm.querySelector('.privilege').appendChild(Users.privilege.container);
 		Users.userSearchForm.querySelector('.role').appendChild(Users.role.container);
 
-		Users.userSearchForm.on('submit', e => Users.search(e));
+		Users.userSearchForm.on('submit', e => Users.load(e));
 	}
 
-	static async load() {
+	static async load(e) {
 
-		const users = await API.call('users/list');
+		if(e)
+			e.preventDefault();
 
-		Users.list = users.map(user => new UserManage(user));
+		const parameters = new URLSearchParams();
+
+		parameters.set('search', "users");
+
+		for(const element of Users.userSearchForm.querySelectorAll('input, select'))
+			parameters.set(element.name, element.value);
+
+		for(const value of Users.category.value)
+			parameters.append('category_id', value);
+
+		if(parameters.get('search_by') == 'privilege') {
+
+			for(const value of Users.privilege.value)
+				parameters.append('privilege_id', value);
+		}
+
+		if(parameters.get('search_by') == 'role') {
+
+			for(const value of Users.role.value)
+				parameters.append('role_id', value);
+		}
+
+		const
+			data = await API.call('search/query', parameters.toString());
+
+		Users.list = data.map(user => new UserManage(user));
 
 		Users.render(Users.list);
 	}
@@ -105,39 +130,6 @@ class Users extends Page {
 			return user[0].edit();
 
 		Sections.show('list');
-	}
-
-	static async search(e) {
-
-		e.preventDefault();
-
-		const parameters = new URLSearchParams();
-
-		parameters.set('search', "users");
-
-		for(const element of Users.userSearchForm.querySelectorAll('input, select'))
-			parameters.set(element.name, element.value);
-
-		for(const value of Users.category.value)
-			parameters.append('category_id', value);
-
-		if(parameters.get('search_by') == 'privilege') {
-
-			for(const value of Users.privilege.value)
-				parameters.append('privilege_id', value);
-		}
-
-		if(parameters.get('search_by') == 'role') {
-
-			for(const value of Users.role.value)
-				parameters.append('role_id', value);
-		}
-
-		const
-			data = await API.call('search/query', parameters.toString()),
-			filteredUsers = Users.list.filter(x => data.some( y => y.user_id == x.user_id));
-
-		Users.render(filteredUsers);
 	}
 }
 
@@ -325,7 +317,7 @@ class UserManage {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.email}</td>
-			<!--<td>2018-01-01</td>-->
+			<td>${this.last_login}</td>
 			<td class="action green" title="Edit">Edit</i></td>
 			<td class="action red" title="Delete">Delete</td>
 		`;

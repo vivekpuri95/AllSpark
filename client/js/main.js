@@ -635,7 +635,7 @@ class GlobalSearch {
 
 		const params = {
 			text: this.searchInput.value,
-			search: "global",
+			search: 'global',
 		};
 
 		const data = await API.call('search/query', params);

@@ -10,14 +10,14 @@ class Dashboard extends API {
 		if(this.request.body.search) {
 			query = query.concat(`
 				AND (
-					id LIKE '%${this.request.body.text}%'
-					OR name LIKE '%${this.request.body.text}%'
+					id LIKE ?
+					OR name LIKE ?
 				)
 				LIMIT 10
 			`);
 		}
 
-		let dashboards = this.mysql.query(query);
+		let dashboards = this.mysql.query(query, [`%${this.request.body.text}%`, `%${this.request.body.text}%`]);
 
 		let visualizationDashboards = this.mysql.query(
 			"select vd.*, query_id from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id join tb_query q  using(query_id) where d.status = 1 and d.account_id = ? and q.is_enabled = 1 and q.is_deleted = 0",
