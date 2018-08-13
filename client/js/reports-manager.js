@@ -4419,22 +4419,34 @@ class ReportVisualizationFilters extends Map {
 		this.visualization = stage.visualization;
 		this.container = stage.container.querySelector('.configuration-section #filters');
 		this.stage = stage;
-
-		if (this.stage.visualization.options && this.stage.visualization.options.filters) {
-
-			for(const filter of this.stage.visualization.options.filters) {
-
-				const [filterObj] = this.stage.report.filters.filter(x => x.filter_id == filter.filter_id);
-
-				if(!filterObj)
-					continue;
-
-				this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, stage));
-			}
-		}
 	}
 
 	load() {
+
+		this.process();
+
+		this.render();
+	}
+
+	process() {
+
+		this.clear();
+
+		if(!this.visualization.options)
+			return;
+
+		for(const filter of this.stage.visualization.options.filters || []) {
+
+			const [filterObj] = this.stage.report.filters.filter(x => x.filter_id == filter.filter_id);
+
+			if(!filterObj)
+				continue;
+
+			this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, this.stage));
+		}
+	}
+
+	render() {
 
 		this.container.textContent = null;
 
@@ -4499,8 +4511,9 @@ class ReportVisualizationFilters extends Map {
 				this.stage,
 			));
 
-			this.load();
+			this.render();
 		});
+
 	}
 
 	get json() {
@@ -4561,7 +4574,7 @@ class ReportVisualizationFilter {
 			this.container.parentElement.removeChild(container);
 			this.stage.reportVisualizationFilters.delete(this.filter_id);
 
-			this.stage.reportVisualizationFilters.load();
+			this.stage.reportVisualizationFilters.render();
 		});
 
 		return container;
