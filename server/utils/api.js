@@ -12,7 +12,6 @@ const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
 const msssql = require("./mssql").MsSql;
 const child_process = require('child_process');
-const atob = require('atob');
 
 const env = {
 	name: process.env.NODE_ENV,
@@ -182,7 +181,7 @@ class API {
 				if (e instanceof assert.AssertionError) {
 
 					if (commonFun.isJson(e.message)) {
-						e.message = JSON.parse(e.message).message;
+						e.message = JSON.parse(e.message);
 					}
 					e.status = e.message.status || 400;
 					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "Something went wrong! :(");

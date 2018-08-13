@@ -7,6 +7,7 @@ const {Client} = require('pg');
 const Sequelize = require('sequelize');
 const {MongoClient} = require('mongodb');
 const auth = require('../utils/auth');
+const commonFun = require('../utils/commonFunctions');
 
 
 exports.insert = class extends API {
@@ -56,15 +57,15 @@ exports.list = class extends API {
 	async list() {
 
 		const
-			response =[],
-			connections =  await this.mysql.query(
+			response = [],
+			connections = await this.mysql.query(
 				'SELECT * FROM tb_credentials WHERE account_id = ? AND status = 1',
 				[this.account.account_id]
 			);
 
-		for(const row of connections) {
+		for (const row of connections) {
 
-			if(!(await auth.connection(row, this.user)).error)
+			if (!(await auth.connection(row, this.user)).error)
 				response.push(row);
 		}
 
@@ -276,7 +277,7 @@ testClasses.set("mssql",
 				});
 			}
 
-			catch(e) {
+			catch (e) {
 
 				console.log(e);
 				result = [{status: 0}];
@@ -295,7 +296,7 @@ testClasses.set("mongo",
 
 		async checkPulse() {
 
-			const connectionString = `mongodb://${this.credential.user ? this.credential.user + ':' + this.credential.password + '@': ''}${this.credential.host}:${this.credential.port || 27017}/${this.credential.db}`;
+			const connectionString = `mongodb://${this.credential.user ? this.credential.user + ':' + this.credential.password + '@' : ''}${this.credential.host}:${this.credential.port || 27017}/${this.credential.db}`;
 
 			try {
 				let db = (await MongoClient.connect(connectionString, {useNewUrlParser: true})).db(this.credential.db);
@@ -319,14 +320,12 @@ exports.schema = class extends API {
 
 		const databases = [];
 
-		let [typeOfConnection] = await this.mysql.query("select type from tb_credentials where id = ?", [this.request.query.id]);
+		let [connection] = await this.mysql.query("select * from tb_credentials where id = ?", [this.request.query.id]);
 
-		if (!typeOfConnection) {
+		if (!connection) {
 
 			return "not found"
 		}
-
-		typeOfConnection = typeOfConnection.type;
 
 		let columns;
 
@@ -339,7 +338,7 @@ exports.schema = class extends API {
 			FROM
 				information_schema.columns `;
 
-		switch (typeOfConnection) {
+		switch (connection.type) {
 
 			case "mysql":
 
@@ -354,6 +353,11 @@ exports.schema = class extends API {
 			case "mssql":
 				columns = await this.mssql.query(selectQuery.replace(/table_schema/, "table_catalog").replace(/column_type/, "data_type"), [], this.request.query.id);
 				break;
+
+
+			case "mongo":
+				const mongoSchema = new MongoScehma(connection);
+				return await mongoSchema.mongoSchema();
 
 			default:
 				return [];
@@ -436,5 +440,65 @@ exports.schema = class extends API {
 		}
 
 		return databases;
+	}
+};
+
+class MongoScehma {
+
+	constructor(credential) {
+
+		this.credential = credential;
+	}
+
+	async mongoSchema() {
+
+		const connectionString = `mongodb://${this.credential.user ? this.credential.user + ':' + this.credential.password + '@' : ''}${this.credential.host}:${this.credential.port || 27017}/${this.credential.db}`;
+		const connection = (await MongoClient.connect(connectionString ,{useNewUrlParser: true})).db(this.credential.db);
+		const collections = await connection.listCollections().toArray();
+
+		const schemaPromiseList = [];
+
+		for(const collection of collections) {
+
+			schemaPromiseList.push(connection.collection(collection.name).findOne({}));
+		}
+
+		const schema = await commonFun.promiseParallelLimit(7, schemaPromiseList);
+
+		const result = [{
+			name: this.credential.db,
+		}];
+
+		const tables = [];
+
+		for(const [index, collection] of collections.entries()) {
+
+
+			let columns;
+
+			try {
+
+				columns = Object.keys(schema[index]).map(x => {
+
+					return {
+						name: x
+					}
+				});
+			}
+
+			catch(e) {
+
+				columns = [];
+			}
+
+			tables.push({
+				name: collection.name,
+				columns,
+			})
+		}
+
+		result[0].tables = tables;
+
+		return result;
 	}
 }
