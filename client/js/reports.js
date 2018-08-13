@@ -4009,12 +4009,12 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 
 		this.plot(options);
 	}
@@ -4279,12 +4279,12 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 
 		this.plot(options);
 	}
@@ -4454,12 +4454,12 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 
 		this.plot(options);
 	}
@@ -4634,12 +4634,12 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		await this.source.response();
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 		this.plot(options);
 	}
 
@@ -4855,7 +4855,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
 	constructor(visualization, source) {
@@ -4984,7 +4984,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 		await this.plot(options);
 	}
 
@@ -5433,12 +5433,12 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 		this.plot(options);
 	}
 
@@ -5648,12 +5648,12 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 		this.plot(options);
 	}
 
