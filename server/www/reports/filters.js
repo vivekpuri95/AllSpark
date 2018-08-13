@@ -43,15 +43,15 @@ exports.update = class extends API {
 
             if(filter_cols.includes(key)) {
 
-				values[key] = this.request.body[key] || null;
-				compareJson[key] = filterQuery[key] ? typeof filterQuery[key] == "object" ? filterQuery[key] : filterQuery[key].toString(): '';
+				values[key] = this.request.body[key] || '';
+				compareJson[key] = filterQuery[key] == null ? '' : typeof filterQuery[key] == "object" ? filterQuery[key] : filterQuery[key].toString();
 			}
         }
 
-        values.default_value = values.default_value || '';
-
 		if(JSON.stringify(compareJson) == JSON.stringify(values))
 			return;
+
+        values.default_value = values.default_value || '';
 
         const
             updateResponse = await this.mysql.query('UPDATE tb_query_filters SET ? WHERE filter_id = ?', [values, this.request.body.filter_id], 'write'),

@@ -33,7 +33,7 @@ exports.update = class extends API {
             if(visual_cols.includes(key)) {
 
                 values[key] = this.request.body[key] || null;
-				compareJson[key] = updatedRow[key] ? typeof updatedRow[key] == "object" ? updatedRow[key] : updatedRow[key].toString() : '';
+				compareJson[key] = updatedRow[key] ? typeof updatedRow[key] == "object" ? updatedRow[key] : updatedRow[key].toString() : null;
 			}
         }
 
