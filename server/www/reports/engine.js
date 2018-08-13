@@ -17,7 +17,7 @@ const fs = require("fs");
 const mongoConnecter = require("../../utils/mongo").Mongo.query;
 const userQueryLogs = require("../accounts").userQueryLogs;
 const getRole = require("../object_roles").get;
-const atob = require('atob');
+const ObjectId = require('mongodb').ObjectID;
 
 // prepare the raw data
 class report extends API {
@@ -350,7 +350,7 @@ class report extends API {
 				preparedRequest = new Bigquery(this.reportObj, this.filters, this.request.body.token);
 				break;
 			case "mongo":
-				preparedRequest = new Mongo(this.reportObj);
+				preparedRequest = new Mongo(this.reportObj, this.filters);
 				break;
 			case "file":
 				this.assert(false, 'No data found in the file. Please upload some data first.');
@@ -787,15 +787,19 @@ class Bigquery {
 
 class Mongo {
 
-	constructor(reportObj) {
+	constructor(reportObj, filters) {
 
 		this.reportObj = reportObj;
+		this.filters = filters;
 
 		reportObj.definition = JSON.parse(reportObj.definition);
+
+		this.sandbox = { x: 1, ObjectId};
 	}
 
 	get finalQuery() {
 
+		this.applyFilters();
 		this.prepareQuery;
 
 		return {
@@ -804,24 +808,47 @@ class Mongo {
 		}
 	}
 
+	applyFilters() {
+
+		for(const filter of this.filters) {
+
+			const regex = new RegExp(`{{${filter.placeholder}}}`, 'g');
+
+			if(filter.multiple && !Array.isArray(filter.value)) {
+
+				filter.value = [filter.value];
+			}
+
+			this.reportObj.query = this.reportObj.query.replace(regex, typeof filter.value == 'object' ? filter.placeholder : `'${filter.value}'`);
+			this.sandbox[filter.placeholder] = filter.value;
+		}
+	}
+
 	get prepareQuery() {
 
-		const sandbox = { x: 1 };
-
-		vm.createContext(sandbox);
+		vm.createContext(this.sandbox);
 
 		const code = `x = ${this.reportObj.query}`;
 
-		vm.runInContext(code, sandbox);
+		try {
+			vm.runInContext(code, this.sandbox);
+		}
 
-		this.reportObj.query = sandbox.x;
+		catch(e) {
+
+			throw new API.Exception(400, {
+				message: e.message,
+				query: JSON.stringify(this.reportObj.query, 0, 1),
+			})
+		}
+
+		this.reportObj.query = this.sandbox.x;
 
 		if(!(this.reportObj.definition.collection_name && this.reportObj.query)) {
 
 			throw("something missing in collection and aggregate query");
 		}
 	}
-
 }
 
 
@@ -885,7 +912,7 @@ class ReportEngine extends API {
 
 		else if (this.parameters.type === "mongo") {
 
-			query = this.parameters.request[0];
+			query = JSON.stringify(this.parameters.request[0], 0, 1);
 		}
 
 		return {
