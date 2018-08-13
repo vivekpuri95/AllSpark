@@ -1711,6 +1711,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.form.reset();
 		this.dashboards.clear();
 		this.transformations.clear();
+		this.reportVisualizationFilters.clear();
 
 		this.form.name.value = this.visualization.name;
 		this.form.type.value = this.visualization.type;
@@ -4150,6 +4151,31 @@ class ReportVisualizationFilters extends Map {
 
 	load() {
 
+		this.process();
+
+		this.render();
+	}
+
+	process() {
+
+		this.clear();
+
+		if(!this.visualization.options)
+			return;
+
+		for(const filter of this.stage.visualization.options.filters || []) {
+
+			const [filterObj] = this.stage.report.filters.filter(x => x.filter_id == filter.filter_id);
+
+			if(!filterObj)
+				continue;
+
+			this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, this.stage));
+		}
+	}
+
+	render() {
+
 		this.container.textContent = null;
 
 		if(!this.stage.report.filters.length)
@@ -4213,8 +4239,9 @@ class ReportVisualizationFilters extends Map {
 				this.stage,
 			));
 
-			this.load();
+			this.render();
 		});
+
 	}
 
 	get json() {
@@ -4275,7 +4302,7 @@ class ReportVisualizationFilter {
 			this.container.parentElement.removeChild(container);
 			this.stage.reportVisualizationFilters.delete(this.filter_id);
 
-			this.stage.reportVisualizationFilters.load();
+			this.stage.reportVisualizationFilters.render();
 		});
 
 		return container;
