@@ -57,3 +57,18 @@ main .profile-details {
 			font-weight: bold;
 			color: #666;
 		}
+
+main .switch {
+	background: #fff;
+	margin: calc(var(--gap) * 2) 0;
+}
+main .switch section {
+	padding: calc(var(--gap) * 2);
+}
+	main .switch .heading-bar {
+		display: grid;
+		grid-template-columns: 40px 40px;
+	}
+		.heading-bar h3 {
+			margin: 0;
+		}

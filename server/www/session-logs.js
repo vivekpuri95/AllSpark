@@ -6,9 +6,12 @@ class SessionLogs extends API {
 
 	async list() {
 
-		this.user.privilege.needs('user');
+		const db = dbConfig.write.database.concat('_logs');
 
-		return await this.mysql.query(`SELECT * FROM tb_sessions WHERE account_id = ?`, [this.user.user_id]);
+		if(this.request.query.inactive)
+			return await this.mysql.query(`SELECT * FROM ??.tb_sessions WHERE date(created_at) between ? and ?`, [db,this.request.query.sdate,this.request.query.edate]);
+
+		return await this.mysql.query(`select a.* from ??.tb_sessions a where a.id not in (select session_id from ??.tb_sessions where session_id is not NULL) and a.type = 'login' and a.expire_time >  unix_timestamp(now()) and a.user_id = ?`,[db, db, this.request.query.user_id])
 	};
 
 	async insert() {
@@ -52,5 +55,6 @@ class SessionLogs extends API {
 	}
 }
 
+exports.list = SessionLogs;
 exports.insert = SessionLogs;
 exports.sessions = (() => new SessionLogs)();

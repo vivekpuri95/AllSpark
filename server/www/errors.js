@@ -1,7 +1,14 @@
 const API = require('../utils/api');
 const errorLogs = require('../utils/errorLogs');
+const dbConfig = require('config').get("sql_db");
 
-exports.log = class extends API {
+class Error extends API {
+
+	async list() {
+		const db = dbConfig.write.database.concat('_logs');
+
+		return await this.mysql.query(`SELECT * FROM ${db}.tb_errors WHERE user_id = ? and session_id = ?`, [this.request.query.user_id, this.request.query.session_id]);
+	}
 
 	async log() {
 
@@ -19,3 +26,6 @@ exports.log = class extends API {
 	}
 
 };
+
+exports.list = Error;
+exports.log = Error;
