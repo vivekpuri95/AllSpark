@@ -1,7 +1,8 @@
 const API = require("../utils/api");
 const commonFun = require("../utils/commonFunctions");
 const constants = require('../utils/constants');
-const getRole = (require('./object_roles')).get
+const getRole = (require('./object_roles')).get;
+const dbConfig = require('config').get("sql_db");
 
 exports.insert = class extends API {
 
@@ -90,11 +91,18 @@ exports.list = class extends API {
 			roles = {},
 			privileges = {},
 			last_login = {},
+			db = dbConfig.write.database.concat('_logs'),
 			user_query = `
 				SELECT
-					*
+					u.*, 
+					max(s.created_at + INTERVAL 330 MINUTE) AS last_login
 				FROM
-					tb_users
+					tb_users u
+				LEFT JOIN
+					${db}.tb_sessions s
+				ON
+					u.user_id = s.user_id
+					AND s.type = 'login'
 				WHERE
 					account_id = ?
 					AND status = 1
@@ -112,30 +120,19 @@ exports.list = class extends API {
 					and target = "role"
 					and account_id = ?
 				`,
-			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`,
-			last_login_query = `
-				SELECT 
-					user_id, 
-					max(created_at + INTERVAL 330 MINUTE) AS last_login 
-				FROM 
-					allspark_logs.tb_sessions 
-				WHERE 
-					type = 'login'
-			`
+			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`
 		;
 
 		if (this.request.body.user_id && !this.request.body.search) {
 
-			user_query = user_query.concat(` AND user_id = ?`);
+			user_query = user_query.concat(` AND u.user_id = ?`);
 			role_query = role_query.concat(` AND owner_id = ?`);
 			prv_query = prv_query.concat(` WHERE user_id = ?`);
-			last_login_query = last_login_query.concat(` AND user_id = ?`);
 
 			results = await Promise.all([
 				this.mysql.query(user_query, [this.account.account_id, this.request.body.user_id]),
 				this.mysql.query(role_query, [this.account.account_id, this.request.body.user_id]),
 				this.mysql.query(prv_query, [this.request.body.user_id]),
-				this.mysql.query(last_login_query, [this.request.body.user_id]),
 			]);
 		}
 
@@ -147,19 +144,19 @@ exports.list = class extends API {
 
 				if(this.request.body.user_id) {
 
-					user_query = user_query.concat(` AND user_id LIKE ?`);
+					user_query = user_query.concat(` AND u.user_id LIKE ?`);
 					queryParams.push(`%${this.request.body.user_id}%`);
 				}
 
 				if(this.request.body.email) {
 
-					user_query = user_query.concat(` AND email LIKE ?`);
+					user_query = user_query.concat(` AND u.email LIKE ?`);
 					queryParams.push(`%${this.request.body.email}%`);
 				}
 
 				if(this.request.body.name) {
 
-					user_query = user_query.concat(` AND CONCAT(first_name, ' ', IFNULL(middle_name, ' '),' ', IFNULL(last_name, ' ')) LIKE ?`);
+					user_query = user_query.concat(` AND CONCAT(u.first_name, ' ', IFNULL(u.middle_name, ' '),' ', IFNULL(u.last_name, ' ')) LIKE ?`);
 					queryParams.push(`%${this.request.body.name}%`);
 				}
 
@@ -168,12 +165,12 @@ exports.list = class extends API {
 
 					user_query = user_query.concat(`
 						AND  (
-							user_id LIKE ?
-							OR phone LIKE ?
-							OR email LIKE ?
-							OR first_name LIKE ?
-							OR middle_name LIKE ?
-							OR last_name LIKE ?
+							u.user_id LIKE ?
+							OR u.phone LIKE ?
+							OR u.email LIKE ?
+							OR u.first_name LIKE ?
+							OR u.middle_name LIKE ?
+							OR u.last_name LIKE ?
 						)
 						LIMIT 10
 					`);
@@ -185,13 +182,12 @@ exports.list = class extends API {
 
 			}
 
-			last_login_query = last_login_query.concat(' GROUP BY user_id');
+			user_query = user_query.concat(' GROUP BY u.user_id');
 
 			results = await Promise.all([
 				this.mysql.query(user_query, [this.account.account_id, ...queryParams]),
 				this.mysql.query(role_query, [this.account.account_id]),
 				this.mysql.query(prv_query),
-				this.mysql.query(last_login_query),
 			]);
 		}
 
@@ -271,11 +267,6 @@ exports.list = class extends API {
 			privileges[privilege.user_id].push(privilege);
 		}
 
-		for(const user of results[3]) {
-
-			last_login[user.user_id] = user.last_login;
-		}
-
 		for (const row of results[0]) {
 
 			row.roles = roles[row.user_id] ? roles[row.user_id] : [];
@@ -283,7 +274,7 @@ exports.list = class extends API {
 			row.href = `/user/profile/${row.user_id}`;
 			row.superset = 'Users';
 			row.name = [row.first_name, row.middle_name, row.last_name].filter(u => u).join(' ');
-			row.last_login = last_login[row.user_id] ? last_login[row.user_id] : '';
+			row.last_login = row.last_login
 
 			if(this.request.query.search) {
 
