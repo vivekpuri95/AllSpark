@@ -1161,6 +1161,11 @@ class Nav {
 			submenu.appendChild(this.page.navbar.list.get(child.id).menuItem);
 		}
 
+		if(this.format && this.format.hidden) {
+
+			container.classList.add('hidden');
+		}
+
 		container.querySelector('.label').on('click', () => {
 
 			this.page.render({
