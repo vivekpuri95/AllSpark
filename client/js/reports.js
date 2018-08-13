@@ -1774,7 +1774,7 @@ class DataSourceColumn {
 
 		new SnackBar({
 			message: `Changes to <em>${this.name}</em> applied`,
-			subtitle: 'Changes are not saved yet, they will be reset when the page is reloaded.',
+			subtitle: 'Changes are not saved yet and will be reset when the page reloads.',
 		});
 	}
 
@@ -1845,7 +1845,7 @@ class DataSourceColumn {
 
 			new SnackBar({
 				message: `Changes to <em>${this.name}</em> saved`,
-				subtitle: 'These changes will persist even when reloads.',
+				subtitle: 'These changes will persist across page reloads.',
 			});
 
 		} catch(e) {
