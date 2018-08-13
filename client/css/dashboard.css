@@ -391,7 +391,7 @@ main #reports > .list {
 	grid-template-columns: repeat(32, 1.25fr);
 	grid-auto-rows: calc(50px - (var(--gap) * 4));
 	grid-gap: calc(var(--gap) * 4);
-	padding: calc(var(--gap) * 2) 0;
+	padding-top: calc(var(--gap) * 2);
 	align-items: start;
 	z-index: 3;
 	width: 100%;
@@ -405,11 +405,6 @@ main #reports > .list {
 		transition: box-shadow var(--transition-duration),
 					opacity var(--transition-duration),
 					border var(--transition-duration);
-	}
-	main #reports .list .data-source header .edit {
-		display: grid;
-		grid-auto-flow: column;
-		grid-gap: calc(var(--gap) * 2);
 	}
 	main #reports .list .data-source.being-dragged {
 		opacity: 0.5;
@@ -530,9 +525,7 @@ main #reports > .list {
 			transition: transform var(--transition-duration),
 						opacity var(--transition-duration);
 		}
-
 		main > nav .collapse-panel {
-
 			display: none;
 		}
 		main #reports {

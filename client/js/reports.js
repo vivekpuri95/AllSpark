@@ -134,7 +134,6 @@ class DataSource {
 			catch(e) {
 
 				this.error('Click here to retry', {retry: true});
-
 				throw e;
 			}
 		}
@@ -193,7 +192,7 @@ class DataSource {
 				<h2><span class="title">${this.name}</span></h2>
 				<div class="actions right">
 					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
-					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
+					<a class="menu-toggle" title="Menu"><i class="fa fa-angle-down"></i></a>
 				</div>
 			</header>
 

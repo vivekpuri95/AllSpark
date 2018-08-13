@@ -614,7 +614,7 @@ class Dashboard {
 			report.format.format = selectedVisualizationProperties.format;
 
 			const
-				header = report.container.querySelector('header'),
+				header = report.container.querySelector('header .actions'),
 				format = report.selectedVisualization.format;
 
 			if (!format.width)
@@ -624,11 +624,9 @@ class Dashboard {
 				format.height = Dashboard.grid.rows;
 
 			header.insertAdjacentHTML('beforeend', `
-				<div class="edit">
-					<span class="remove" title="Remove Graph"><i class="fa fa-times"></i></span>
-					<span class="move-up" title="Move visualization up"><i class="fas fa-angle-up"></i></span>
-					<span class="move-down" title="Move visualization down"><i class="fas fa-angle-down"></i></span>
-				</div>
+				<a class="show move-up" title="Move visualization up"><i class="fas fa-angle-double-up"></i></a>
+				<a class="show move-down" title="Move visualization down"><i class="fas fa-angle-double-down"></i></a>
+				<a class="show remove" title="Remove Graph"><i class="fa fa-times"></i></a>
 			`);
 
 			header.querySelector('.move-up').on('click', () => {

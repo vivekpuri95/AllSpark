@@ -2265,6 +2265,7 @@ class SnackBar {
 		this.page = window.page;
 
 		this.message = message;
+		this.subtitle = subtitle;
 		this.type = type;
 		this.timeout = parseInt(timeout);
 		this.position = position;
@@ -2298,28 +2299,39 @@ class SnackBar {
 			icon = '<i class="fas fa-exclamation-triangle"></i>';
 
 		this.container.innerHTML = `
-			${icon}
+			<div class="icon">${icon}</div>
 			<div class="title">${this.message}</div>
+			<div class="subtitle">${this.subtitle || ''}</div>
+			<div class="close">&times;</div>
 		`;
-
-		if(this.subtitle)
-			this.container.insertAdjacentHTML('beforeend', `<div class="subtitle">${this.subtitle}</div>`);
 
 		this.container.classList.add('snack-bar', this.type);
 
 		this.container.on('click', () => this.hide());
 
 		setTimeout(() => this.container.classList.add('show'));
-		setTimeout(() => this.hide, this.timeout * 60 * 1000);
+		setTimeout(() => this.hide(), this.timeout * 1000);
 
+		SnackBar.container[this.position].classList.remove('hidden');
 		SnackBar.container[this.position].appendChild(this.container);
+		SnackBar.container[this.position].scrollTop = SnackBar.container[this.position].scrollHeight
 	}
 
+	/**
+	 * Hide the snack bar and also hide the container if no other snackbar is in the container.
+	 */
 	hide() {
 
 		this.container.classList.remove('show');
 
-		setTimeout(() => this.container.remove(), Page.animationDuration);
+		setTimeout(() => {
+
+			this.container.remove();
+
+			if(!SnackBar.container[this.position].children.length)
+				SnackBar.container[this.position].classList.add('hidden');
+
+		}, Page.transitionDuration);
 	}
 }
 
@@ -2342,6 +2354,7 @@ Date.prototype.getTimeUTC = function() {
 
 MetaData.timeout = 5 * 60 * 1000;
 Page.animationDuration = 750;
+Page.transitionDuration = 300;
 
 if(typeof window != 'undefined')
 	window.onerror = ErrorLogs.send;
