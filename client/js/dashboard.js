@@ -1161,7 +1161,7 @@ class Nav {
 			submenu.appendChild(this.page.navbar.list.get(child.id).menuItem);
 		}
 
-		if(this.format && this.format.hidden) {
+		if(this.dashboard.format && this.dashboard.format.hidden) {
 
 			container.classList.add('hidden');
 		}
