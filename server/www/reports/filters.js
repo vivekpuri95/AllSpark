@@ -30,9 +30,9 @@ exports.update = class extends API {
 
         let
             values = {},
-            filter_cols = ['name', 'placeholder', 'description', 'order', 'default_value', 'is_multiple', 'offset', 'type', 'dataset', 'multiple'],
-            [filterQuery] = await this.mysql.query('SELECT * FROM tb_query_filters WHERE filter_id = ?', [this.request.body.filter_id]);
-
+            filter_cols = ['name', 'placeholder', 'description', 'order', 'default_value', 'offset', 'type', 'dataset', 'multiple'],
+            [filterQuery] = await this.mysql.query('SELECT * FROM tb_query_filters WHERE filter_id = ?', [this.request.body.filter_id]),
+            compareJson = {};
 
         this.assert(filterQuery, 'Invalid filter id');
 
@@ -40,11 +40,18 @@ exports.update = class extends API {
 			throw new API.Exception(404, 'User not authenticated for this report');
 
         for(const key in this.request.body) {
-            if(filter_cols.includes(key))
-                values[key] = this.request.body[key] || null;
+
+            if(filter_cols.includes(key)) {
+
+				values[key] = this.request.body[key] || null;
+				compareJson[key] = filterQuery[key] ? typeof filterQuery[key] == "object" ? filterQuery[key] : filterQuery[key].toString(): '';
+			}
         }
 
         values.default_value = values.default_value || '';
+
+		if(JSON.stringify(compareJson) == JSON.stringify(values))
+			return;
 
         const
             updateResponse = await this.mysql.query('UPDATE tb_query_filters SET ? WHERE filter_id = ?', [values, this.request.body.filter_id], 'write'),
