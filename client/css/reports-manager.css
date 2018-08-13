@@ -285,6 +285,8 @@ main.preview-left #stages {
 			order: 2;
 			flex: 1 60%;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+			height: 100%;
+			grid-template-rows: max-content 1fr;
 		}
 		#stage-define-report #define-report-form.form {
 			height: max-content;
@@ -294,6 +296,7 @@ main.preview-left #stages {
 			}
 			#stage-define-report #define-report-form.form .mongo-query {
 				max-width: 100%;
+			    grid-template-rows: max-content 1fr;
 			}
 				#stage-define-report #define-report-form.form .mongo-query .ace_editor {
 					height: 50vh;
