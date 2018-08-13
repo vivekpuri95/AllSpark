@@ -288,9 +288,6 @@ main.preview-left #stages {
 			height: 100%;
 			grid-template-rows: max-content 1fr;
 		}
-		#stage-define-report #define-report-form.form {
-			height: max-content;
-		}
 			#stage-define-report #define-report-form .ace_editor {
 				height: 100%;
 			}
