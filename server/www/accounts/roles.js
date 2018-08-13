@@ -32,9 +32,7 @@ exports.insert = class extends API {
             ]
 		);
 
-		if(!check.length) {
-			throw 'Unauthorised user';
-		}
+		this.assert(check.length, "Invalid request");
 
         const params = {
 			owner_id: this.request.body.user_id,
@@ -91,9 +89,7 @@ exports.update = class extends API {
 			[this.request.body.category_id, this.request.body.role_id, this.account.account_id, this.account.account_id]
         );
 
-		if(!update_check.length || !existing_check.length) {
-			throw 'Unauthorised user';
-		}
+		this.assert(update_check.length && existing_check.length, "Invalid request");
 
         const params = {
             category_id: this.request.body.category_id,
@@ -132,9 +128,7 @@ exports.delete = class extends API {
             [this.request.body.id, this.account.account_id, this.account.account_id]
         );
 
-        if(!delete_check.length) {
-			throw "Unauthorized User";
-		}
+		this.assert(delete_check.length, "Invalid request");
 
         return await this.mysql.query(
             'DELETE FROM tb_object_roles WHERE id = ?',
