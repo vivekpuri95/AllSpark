@@ -298,9 +298,6 @@ main.preview-left #stages {
 				max-width: 100%;
 			    grid-template-rows: max-content 1fr;
 			}
-				#stage-define-report #define-report-form.form .mongo-query .ace_editor {
-					height: 50vh;
-				}
 		#stage-define-report .upload-file {
 			order: 2;
 			background: #fff;
