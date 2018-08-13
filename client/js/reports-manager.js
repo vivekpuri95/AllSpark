@@ -1711,7 +1711,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.form.reset();
 		this.dashboards.clear();
 		this.transformations.clear();
-		this.reportVisualizationFilters.clear();
 
 		this.form.name.value = this.visualization.name;
 		this.form.type.value = this.visualization.type;
