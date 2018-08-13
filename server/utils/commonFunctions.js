@@ -239,10 +239,10 @@ function flattenObject(init, lkey = '') {
 
 		if (Array.isArray(val)) {
 
-			ret[lkey + rkey] = val.join();
+			ret[lkey + rkey] = (val.map(x => JSON.stringify(x))).join();
 		}
 
-		else if (val.__proto__.constructor.name === 'Object') {
+		else if (val && val.__proto__.constructor.name === 'Object') {
 
 			Object.assign(ret, flattenObject(val, lkey + rkey + '_'));
 		}

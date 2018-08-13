@@ -80,10 +80,8 @@ exports.list = class extends API {
 
 			this.assert(
 				((this.user.privilege.has('user', this.user.privileges[0] && this.user.privileges[0].category_id)) || (this.user.privilege.has('report', this.user.privileges[0] && this.user.privileges[0].category_id))),
-				{
-					message: "User does not have privilege to view user list.",
-					status: 401,
-				}
+				"User does not have privilege to view user list.",
+				401
 			);
 		}
 

@@ -1100,7 +1100,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 							<span class="name">
 								<strong>C</strong>
 								<span title="${name}">${name}</span>
-								<small>${column.type}</small>
+								<small>${column.type || ''}</small>
 							</span>
 						`;
 
