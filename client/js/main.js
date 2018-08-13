@@ -63,6 +63,8 @@ class Page {
 		}
 
 		await API.refreshToken();
+
+		SnackBar.setup();
 	}
 
 	constructor() {
@@ -194,8 +196,12 @@ class Page {
 Page.exception = class PageException extends Error {
 
 	constructor(message) {
+
 		super(message);
+
 		this.message = message;
+
+		ErrorLogs.send(this.message, null, null, null, this);
 	}
 }
 
@@ -2228,6 +2234,95 @@ class ObjectRoles {
 	}
 }
 
+/**
+ * Show a snackbar type notification somewhere on screen.
+ */
+class SnackBar {
+
+	static setup() {
+
+		SnackBar.container = {
+			'bottom-left': document.createElement('div'),
+		};
+
+		SnackBar.container['bottom-left'].classList.add('snack-bar-container', 'bottom-left');
+
+		document.body.appendChild(SnackBar.container['bottom-left']);
+	}
+
+	/**
+	 * Create a new Snackbar notification instance. This will show the notfication instantly.
+	 *
+	 * @param String	options.message		The message body.
+	 * @param String	options.subtitle	The messgae subtitle.
+	 * @param String	options.type		success (green), warning (yellow), error (red).
+	 * @param Number	options.timeout		(Seconds) How long the notification will be visible.
+	 * @param String	options.position	bottom-left (for now).
+	 */
+	constructor({message = null, subtitle = null, type = 'success', timeout = 5, position = 'bottom-left'} = {}) {
+
+		this.container = document.createElement('div');
+		this.page = window.page;
+
+		this.message = message;
+		this.type = type;
+		this.timeout = parseInt(timeout);
+		this.position = position;
+
+		if(!this.message)
+			throw new Page.exception('SnackBar Message is required.');
+
+		if(!parseInt(this.timeout))
+			throw new Page.exception(`Invalid SnackBar timeout: ${this.timeout}.`);
+
+		if(!['success', 'warning', 'error'].includes(this.type))
+			throw new Page.exception(`Invalid SnackBar type: ${this.type}.`);
+
+		if(!['bottom-left'].includes(this.position))
+			throw new Page.exception(`Invalid SnackBar position: ${this.position}.`);
+
+		this.show();
+	}
+
+	show() {
+
+		let icon = null;
+
+		if(this.type == 'success')
+			icon = '<i class="fas fa-check"></i>';
+
+		else if(this.type == 'warning')
+			icon = '<i class="fas fa-exclamation-triangle"></i>';
+
+		else if(this.type == 'error')
+			icon = '<i class="fas fa-exclamation-triangle"></i>';
+
+		this.container.innerHTML = `
+			${icon}
+			<div class="title">${this.message}</div>
+		`;
+
+		if(this.subtitle)
+			this.container.insertAdjacentHTML('beforeend', `<div class="subtitle">${this.subtitle}</div>`);
+
+		this.container.classList.add('snack-bar', this.type);
+
+		this.container.on('click', () => this.hide());
+
+		setTimeout(() => this.container.classList.add('show'));
+		setTimeout(() => this.hide, this.timeout * 60 * 1000);
+
+		SnackBar.container[this.position].appendChild(this.container);
+	}
+
+	hide() {
+
+		this.container.classList.remove('show');
+
+		setTimeout(() => this.container.remove(), Page.animationDuration);
+	}
+}
+
 if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {
 		this.addEventListener(name, fn);
@@ -2246,6 +2341,7 @@ Date.prototype.getTimeUTC = function() {
 }
 
 MetaData.timeout = 5 * 60 * 1000;
+Page.animationDuration = 750;
 
 if(typeof window != 'undefined')
 	window.onerror = ErrorLogs.send;

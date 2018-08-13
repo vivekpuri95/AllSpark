@@ -4172,7 +4172,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				path.style.strokeDashoffset = length;
 				path.getBoundingClientRect();
 
-				path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+				path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-in-out`;
 				path.style.strokeDashoffset = '0';
 			});
 		}
@@ -4199,7 +4199,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 					d3.select(this)
 						.attr('r', 6)
 						.transition()
-						.duration(Visualization.animationDuration)
+						.duration(Page.animationDuration)
 						.attr('r', 12);
 
 					d3.select(this).classed('hover', 1);
@@ -4211,7 +4211,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 					d3.select(this)
 						.transition()
-						.duration(Visualization.animationDuration)
+						.duration(Page.animationDuration)
 						.attr('r', 6);
 
 					d3.select(this).classed('hover', 0);
@@ -4415,7 +4415,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				dots = dots
 					.attr('r', d => 0)
 					.transition()
-					.duration(Visualization.animationDuration)
+					.duration(Page.animationDuration)
 					.ease('elastic');
 			}
 
@@ -4799,7 +4799,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.attr('y', cell => this.y(0))
 				.attr('height', () => 0)
 				.transition()
-				.duration(Visualization.animationDuration)
+				.duration(Page.animationDuration)
 				.ease('quad-in');
 
 			if(values) {
@@ -4808,7 +4808,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 					.attr('y', cell => this.y(0))
 					.attr('height', () => 0)
 					.transition()
-					.duration(Visualization.animationDuration)
+					.duration(Page.animationDuration)
 					.ease('quad-in');
 			}
 		}
@@ -5205,7 +5205,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				.attr('height', () => 0)
 				.attr('y', () => this.height)
 				.transition()
-				.duration(Visualization.animationDuration)
+				.duration(Page.animationDuration)
 				.ease('quad-in');
 		}
 
@@ -5243,7 +5243,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				path.style.strokeDashoffset = length;
 				path.getBoundingClientRect();
 
-				path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+				path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-in-out`;
 				path.style.strokeDashoffset = '0';
 			});
 		}
@@ -5592,7 +5592,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				.attr('height', d => 0)
 				.attr('y', d => this.height)
 				.transition()
-				.duration(Visualization.animationDuration)
+				.duration(Page.animationDuration)
 				.ease('quad-in');
 
 			if(values) {
@@ -5601,7 +5601,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 					.attr('y', cell => this.y(0))
 					.attr('height', () => 0)
 					.transition()
-					.duration(Visualization.animationDuration)
+					.duration(Page.animationDuration)
 					.ease('quad-in');
 			}
 		}
@@ -5813,7 +5813,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			areas = areas
 				.style('opacity', 0)
 				.transition()
-				.duration(Visualization.animationDuration)
+				.duration(Page.animationDuration)
 				.ease("quad-in");
 		}
 
@@ -5842,7 +5842,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 					d3.select(this)
 						.attr('r', 6)
 						.transition()
-						.duration(Visualization.animationDuration)
+						.duration(Page.animationDuration)
 						.attr('r', 12);
 
 					d3.select(this).classed('hover', 1);
@@ -5854,7 +5854,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 					d3.select(this)
 						.transition()
-						.duration(Visualization.animationDuration)
+						.duration(Page.animationDuration)
 						.attr('r', 6);
 
 					d3.select(this).classed('hover', 0);
@@ -6051,7 +6051,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 					.attr("height", d => 0)
 					.attr("y", d => 30)
 					.transition()
-					.duration(Visualization.animationDuration);
+					.duration(Page.animationDuration);
 			}
 
 			rectangles
@@ -6380,7 +6380,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				d3
 					.select(this)
 					.transition()
-					.duration(Visualization.animationDuration / 3)
+					.duration(Page.animationDuration / 3)
 					.attr('d', row => arcHover(row));
 			})
 
@@ -6389,7 +6389,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				d3
 					.select(this)
 					.transition()
-					.duration(Visualization.animationDuration / 3)
+					.duration(Page.animationDuration / 3)
 					.attr('d', row => arc(row));
 
 				Tooltip.hide(that.container);
@@ -6400,8 +6400,8 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		if(!options.resize) {
 			slice
 				.transition()
-				.duration(Visualization.animationDuration / data.length * 2)
-				.delay((_, i) => i * Visualization.animationDuration / data.length)
+				.duration(Page.animationDuration / data.length * 2)
+				.delay((_, i) => i * Page.animationDuration / data.length)
 				.attrTween('d', function(d) {
 
 					const i = d3.interpolate(d.endAngle, d.startAngle);
@@ -6915,7 +6915,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	animate(options) {
 
 		const
-			duration = Visualization.animationDuration * 2 / 1000,
+			duration = Page.animationDuration * 2 / 1000,
 			jumpsPerSecond = 20,
 			jumps = Math.floor(duration * jumpsPerSecond),
 			values = {
@@ -6999,7 +6999,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			path.style.strokeDashoffset = length;
 			path.getBoundingClientRect();
 
-			path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+			path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-in-out`;
 			path.style.strokeDashoffset = '0';
 		}
 
@@ -7662,8 +7662,6 @@ class Tooltip {
 		container.classList.add('hidden');
 	}
 }
-
-Visualization.animationDuration = 750;
 
 DataSourceFilter.setup();
 DataSourceColumnFilter.setup();
