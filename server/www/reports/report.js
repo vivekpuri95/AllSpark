@@ -58,7 +58,7 @@ exports.list = class extends API {
 		}
 
 		const results = await Promise.all([
-			this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]),
+			this.mysql.query(query, [`%${this.request.body.text}%`, `%${this.request.body.text}%`, `%${this.request.body.text}%`]),
 			this.mysql.query('SELECT * FROM tb_query_filters'),
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 			this.mysql.query(dashboardRoleQuery),

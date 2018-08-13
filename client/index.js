@@ -1117,6 +1117,50 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 				<header class="toolbar">
 					<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
 				</header>
+                
+                <form class="user-search block form">
+                    
+                    <label>
+                        <span>Id</span>
+                        <input type="number" name="user_id" step="1" min="0">
+                    </label>
+                    
+                    <label>
+                        <span>Name</span>
+                        <input type="text" name="name">
+                    </label>
+                    
+                    <label>
+                        <span>Email</span>
+                        <input type="text" name="email">
+                    </label>
+                    
+                    <label>
+                        <span>Search by</span>
+                        <select name="search_by" value="category">
+                            <option value="category">Category</option>
+                            <option value="role">Role</option>
+                            <option value="privilege">Privilege</option>
+                        </select>
+                    </label>
+                    
+                    <label class="category">
+                        <span>Category</span>
+                    </label>
+                    
+                    <label class="hidden role">
+                        <span>Role</span>
+                    </label>
+                    
+                    <label class="hidden privilege">
+                        <span>Privilege</span>
+                    </label>
+                    
+                    <label>
+                        <span></span>
+                        <button type="submit">Apply</button>
+                    </label>
+                </form>
 
 				<table class="block">
 					<thead>
@@ -1125,6 +1169,7 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 							<th data-key="id" class="thin">ID</th>
 							<th data-key="name">Name</th>
 							<th data-key="email">Email</th>
+							<th data-key="lastLogin">Last Login</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>

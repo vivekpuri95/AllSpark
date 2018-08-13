@@ -17,7 +17,7 @@ class Dashboard extends API {
 			`);
 		}
 
-		let dashboards = this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]);
+		let dashboards = this.mysql.query(query, [`%${this.request.body.text}%`, `%${this.request.body.text}%`]);
 
 		let visualizationDashboards = this.mysql.query(
 			"select vd.*, query_id from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id join tb_query q  using(query_id) where d.status = 1 and d.account_id = ? and q.is_enabled = 1 and q.is_deleted = 0",

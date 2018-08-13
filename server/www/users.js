@@ -91,13 +91,14 @@ exports.list = class extends API {
 			results,
 			roles = {},
 			privileges = {},
+			last_login = {},
 			user_query = `
 				SELECT
 					*
 				FROM
 					tb_users
 				WHERE
-					account_id = ${this.account.account_id}
+					account_id = ?
 					AND status = 1
 			`,
 			role_query = `
@@ -111,42 +112,121 @@ exports.list = class extends API {
 				WHERE
 					owner = "user"
 					and target = "role"
-					and account_id = ${this.account.account_id}
+					and account_id = ?
 				`,
-			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`;
+			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`,
+			last_login_query = `
+				SELECT 
+					user_id, 
+					max(created_at + INTERVAL 330 MINUTE) AS last_login 
+				FROM 
+					allspark_logs.tb_sessions 
+				WHERE 
+					type = 'login'
+			`
+		;
 
-		if (this.request.body.user_id) {
+		if (this.request.body.user_id && !this.request.body.search) {
 
-			user_query = user_query.concat(` AND user_id = ${this.request.body.user_id}`);
-			role_query = role_query.concat(` AND owner_id = ${this.request.body.user_id}`);
-			prv_query = prv_query.concat(` WHERE user_id = ${this.request.body.user_id}`);
+			user_query = user_query.concat(` AND user_id = ?`);
+			role_query = role_query.concat(` AND owner_id = ?`);
+			prv_query = prv_query.concat(` WHERE user_id = ?`);
+			last_login_query = last_login_query.concat(` AND user_id = ?`);
+
+			results = await Promise.all([
+				this.mysql.query(user_query, [this.account.account_id, this.request.body.user_id]),
+				this.mysql.query(role_query, [this.account.account_id, this.request.body.user_id]),
+				this.mysql.query(prv_query, [this.request.body.user_id]),
+				this.mysql.query(last_login_query, [this.request.body.user_id]),
+			]);
 		}
 
 		else {
 
+			let queryParams = [];
+
 			if (this.request.body.search) {
 
-				user_query = user_query.concat(`
-					AND  (
-						user_id LIKE ?
-						OR phone LIKE ?
-						OR email LIKE ?
-						OR first_name LIKE ?
-						OR middle_name LIKE ?
-						OR last_name LIKE ?
-					)
-					LIMIT 10
-				`);
+				if(this.request.body.user_id) {
+
+					user_query = user_query.concat(` AND user_id LIKE ?`);
+					queryParams.push(`%${this.request.body.user_id}%`);
+				}
+
+				if(this.request.body.email) {
+
+					user_query = user_query.concat(` AND email LIKE ?`);
+					queryParams.push(`%${this.request.body.email}%`);
+				}
+
+				if(this.request.body.name) {
+
+					user_query = user_query.concat(` AND CONCAT(first_name, ' ', IFNULL(middle_name, ' '),' ', IFNULL(last_name, ' ')) LIKE ?`);
+					queryParams.push(`%${this.request.body.name}%`);
+				}
+
+
+				if(this.request.query.text) {
+
+					user_query = user_query.concat(`
+						AND  (
+							user_id LIKE ?
+							OR phone LIKE ?
+							OR email LIKE ?
+							OR first_name LIKE ?
+							OR middle_name LIKE ?
+							OR last_name LIKE ?
+						)
+						LIMIT 10
+					`);
+
+					for(let i = 1; i <= 6; i++) {
+						queryParams.push(`%${this.request.body.text}%`);
+					}
+				}
+
 			}
+
+			last_login_query = last_login_query.concat(' GROUP BY user_id');
+
+			results = await Promise.all([
+				this.mysql.query(user_query, [this.account.account_id, ...queryParams]),
+				this.mysql.query(role_query, [this.account.account_id]),
+				this.mysql.query(prv_query),
+				this.mysql.query(last_login_query),
+			]);
 		}
 
-		results = await Promise.all([
-			this.mysql.query(user_query, [this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search]),
-			this.mysql.query(role_query, [this.account.account_id]),
-			this.mysql.query(prv_query)
-		]);
+		let userList = [];
 
 		for (const role of results[1]) {
+
+			if(this.request.body.category_id || this.request.body.role_id) {
+
+				this.request.body.category_id = typeof this.request.body.category_id == 'string' ? [this.request.body.category_id] : this.request.body.category_id;
+				this.request.body.role_id = typeof this.request.body.role_id == 'string' ? [this.request.body.role_id] : this.request.body.role_id;
+
+				if(this.request.body.category_id) {
+
+					const categoryCheck = this.request.body.category_id.includes(role.category_id.toString());
+
+					if(!categoryCheck) {
+
+						continue;
+					}
+
+					if(categoryCheck && this.request.body.search_by == 'privilege') {
+
+						continue;
+					}
+
+				}
+
+				if(this.request.body.role_id && !this.request.body.role_id.includes(role.role_id.toString())) {
+
+					continue;
+				}
+			}
 
 			if (!roles[role.user_id]) {
 
@@ -158,12 +238,44 @@ exports.list = class extends API {
 
 		for (const privilege of results[2]) {
 
+			if(this.request.body.category_id || this.request.body.privilege_id) {
+
+				this.request.body.category_id = typeof this.request.body.category_id == 'string' ? [this.request.body.category_id] : this.request.body.category_id;
+				this.request.body.privilege_id = typeof this.request.body.privilege_id == 'string' ? [this.request.body.privilege_id] : this.request.body.privilege_id;
+
+				if(this.request.body.category_id) {
+
+					const categoryCheck = this.request.body.category_id.includes(privilege.category_id.toString());
+
+					if(!categoryCheck) {
+
+						continue;
+					}
+
+					if(categoryCheck && this.request.body.search_by == 'role') {
+
+						continue;
+					}
+
+				}
+
+				if(this.request.body.privilege_id && !this.request.body.privilege_id.includes(privilege.privilege_id.toString())) {
+
+					continue;
+				}
+			}
+
 			if (!privileges[privilege.user_id]) {
 
 				privileges[privilege.user_id] = [];
 			}
 
 			privileges[privilege.user_id].push(privilege);
+		}
+
+		for(const user of results[3]) {
+
+			last_login[user.user_id] = user.last_login;
 		}
 
 		for (const row of results[0]) {
@@ -173,16 +285,35 @@ exports.list = class extends API {
 			row.href = `/user/profile/${row.user_id}`;
 			row.superset = 'Users';
 			row.name = [row.first_name, row.middle_name, row.last_name].filter(u => u).join(' ');
+			row.last_login = last_login[row.user_id] ? last_login[row.user_id] : '';
+
+			if(this.request.query.search) {
+
+				if (this.request.body.role_id && !roles[row.user_id]) {
+
+					continue;
+				}
+				else if(this.request.body.privilege_id && !privileges[row.user_id]) {
+
+					continue;
+				}
+				else if(this.request.body.category_id && !(roles[row.user_id] || privileges[row.user_id])) {
+
+					continue;
+				}
+			}
+
+			userList.push(row);
 		}
 
 		const userCategories = this.user.roles.map(x => parseInt(x.category_id));
 
 		if(!constants.adminCategory.some(x => userCategories.includes(x))) {
 
-			results[0] = results[0].filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))));
+			userList = userList.filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))));
 		}
 
-		return results[0];
+		return userList;
 	}
 
 };
