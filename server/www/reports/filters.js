@@ -1,5 +1,6 @@
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
+const reportHistory = require('../../utils/reportLogs');
 
 exports.insert = class extends API {
 
@@ -30,7 +31,7 @@ exports.update = class extends API {
         let
             values = {},
             filter_cols = ['name', 'placeholder', 'description', 'order', 'default_value', 'is_multiple', 'offset', 'type', 'dataset', 'multiple'],
-            [filterQuery] = await this.mysql.query('SELECT query_id FROM tb_query_filters WHERE filter_id = ?', [this.request.body.filter_id]);
+            [filterQuery] = await this.mysql.query('SELECT * FROM tb_query_filters WHERE filter_id = ?', [this.request.body.filter_id]);
 
 
         this.assert(filterQuery, 'Invalid filter id');
@@ -45,7 +46,18 @@ exports.update = class extends API {
 
         values.default_value = values.default_value || '';
 
-        return await this.mysql.query('UPDATE tb_query_filters SET ? WHERE filter_id = ?', [values, this.request.body.filter_id], 'write');
+        const
+            updateResponse = await this.mysql.query('UPDATE tb_query_filters SET ? WHERE filter_id = ?', [values, this.request.body.filter_id], 'write'),
+            logs = {
+                owner: 'filter',
+                owner_id: this.request.body.filter_id,
+                value: JSON.stringify(filterQuery),
+                operation:'update',
+            };
+
+		reportHistory.insert(this, logs);
+
+        return updateResponse;
     }
 };
 
@@ -53,14 +65,24 @@ exports.delete = class extends API {
 
     async delete() {
 
-        const [filterQuery] = await this.mysql.query('SELECT query_id FROM tb_query_filters WHERE filter_id = ?', [this.request.body.filter_id]);
+        const [filterQuery] = await this.mysql.query('SELECT * FROM tb_query_filters WHERE filter_id = ?', [this.request.body.filter_id]);
 
         this.assert(filterQuery, 'Invalid filter id');
 
         if((await auth.report(filterQuery.query_id, this.user)).error)
 			throw new API.Exception(404, 'User not authenticated for this report');
 
+        const
+            deleteResponse = await this.mysql.query('DELETE FROM tb_query_filters WHERE filter_id = ?', [this.request.body.filter_id], 'write'),
+            logs = {
+                owner: 'filter',
+                owner_id: this.request.body.filter_id,
+                value: JSON.stringify(filterQuery),
+                operation:'delete',
+            };
 
-        return await this.mysql.query('DELETE FROM tb_query_filters WHERE filter_id = ?', [this.request.body.filter_id], 'write');
+		reportHistory.insert(this, logs);
+
+		return deleteResponse;
     }
 };

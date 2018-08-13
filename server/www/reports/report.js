@@ -3,6 +3,7 @@
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
 const role = new (require("../object_roles")).get();
+const reportHistory = require('../../utils/reportLogs');
 
 exports.list = class extends API {
 
@@ -194,7 +195,19 @@ exports.update = class extends API {
 
 		}
 
-		return await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write');
+		const
+			updateResponse =  await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write'),
+			[updatedRow] = await this.mysql.query(`SELECT * FROM tb_query WHERE query_id = ?`, [this.request.body.query_id]),
+			logs = {
+				owner: 'query',
+				owner_id: this.request.body.query_id,
+				value: JSON.stringify(updatedRow),
+				operation:'update',
+			};
+
+		reportHistory.insert(this, logs);
+
+		return updateResponse;
 
 	}
 };
