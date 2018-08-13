@@ -100,8 +100,20 @@ class DataConnection {
 		});
 
 		for(const [type, _] of DataConnection.types) {
+
+			let feature;
+
+			for(const _feature of MetaData.features.values()) {
+
+				if(_feature.slug == type && _feature.type == 'source')
+					feature = _feature;
+			}
+
+			if(!feature)
+				continue;
+
 			DataConnection.form.type.insertAdjacentHTML('beforeend', `
-				<option value="${type}">${type}</option>
+				<option value="${feature.slug}">${feature.name}</option>
 			`);
 		}
 	}
@@ -150,6 +162,12 @@ class DataConnection {
 			this[key] = item[key];
 
 		this.page = page;
+
+		for(const feature of MetaData.features.values()) {
+
+			if(feature.slug == this.type && feature.type == 'source')
+				this.feature = feature;
+		}
 	}
 
 	async edit() {
@@ -276,7 +294,7 @@ class DataConnection {
 		container.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.connection_name}</td>
-			<td>${this.type}</td>
+			<td>${this.feature.name}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -438,6 +456,17 @@ DataConnection.types.set('pgsql', class {
 });
 
 DataConnection.types.set('api', class {
+
+	static render(connections = {}) {
+		DataConnection.form.querySelector('#details').innerHTML = null;
+	}
+
+	static get details() {
+		return JSON.stringify({});
+	}
+});
+
+DataConnection.types.set('bigquery', class {
 
 	static render(connections = {}) {
 		DataConnection.form.querySelector('#details').innerHTML = null;

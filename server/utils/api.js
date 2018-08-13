@@ -101,6 +101,7 @@ class API {
 					obj.user = new User(userDetails);
 				}
 
+
 				let host = request.headers.host.split(':')[0];
 
 				for(const account of global.accounts) {
@@ -139,6 +140,7 @@ class API {
 				}
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
+
 					throw new API.Exception(401, 'User Not Authenticated! :(');
 				}
 
@@ -176,12 +178,6 @@ class API {
 					});
 				}
 
-				if (!(e instanceof Error)) {
-
-					e = new Error(e);
-					e.status = 400;
-				}
-
 				if (e instanceof assert.AssertionError) {
 
 					if (commonFun.isJson(e.message)) {
@@ -189,6 +185,12 @@ class API {
 					}
 					e.status = e.message.status || 400;
 					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "Something went wrong! :(");
+				}
+
+				if (!(e instanceof Error)) {
+
+					e = new Error(e);
+					e.status = 401;
 				}
 
 				else {
@@ -203,6 +205,22 @@ class API {
 	static async errorMessage(e, obj) {
 
 		try {
+
+			let
+				status,
+				details = {};
+
+			try {
+
+				details = await commonFun.getUserDetailsJWT(obj.request.body.refresh_token || obj.request.query.refresh_token);
+			}
+			catch(e){}
+
+			try {
+				status = JSON.parse(e.message).status;
+			}
+			catch(e){}
+
 			const error = {
 				account_id: obj.account.account_id,
 				user_id: obj.user.user_id,
@@ -211,6 +229,8 @@ class API {
 				description: JSON.stringify(e),
 				type: "server",
 				user_agent: obj.request.get('user-agent'),
+				status: status || e.status,
+				session_id: details.session_id,
 			};
 
 			await errorLogs.insert(error);

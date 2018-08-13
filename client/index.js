@@ -54,34 +54,54 @@ class HTMLAPI extends API {
 		}
 
 		return `<!DOCTYPE html>
+			<!--
+				           _ _  _____                  _
+				     /\\   | | |/ ____|                | |
+				    /  \\  | | | (___  _ __   __ _ _ __| | __
+				   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
+				  / ____ \\| | |____) | |_) | (_| | |  |   <
+				 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
+				                     | |
+				                     |_|
+				   Welcome to the source, enjoy your stay.
+		Find the entire code at https://github.com/Jungle-Works/AllSpark
+			-->
 			<html lang="en">
 				<head>
 					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<meta name="theme-color" content="#fff">
+					<meta name="theme-color" content="#3e7adc">
 					<title></title>
 					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
 
-					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + this.checksum + '">').join('')}
-					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>').join('')}
+					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + this.checksum + '">\n\t\t\t\t\t').join('')}
+					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>\n\t\t\t\t\t').join('')}
 
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
 				</head>
 				<body>
+
 					<div id="ajax-working"></div>
+
 					<header>
-						<div class="logo-container">
+						<a class="logo" href="/dashboard/first"><img></a>
 
-							<div class="left-menu-toggle hidden">
-								<i class="fas fa-bars"></i>
+						<div class="nav-container">
+
+							<nav></nav>
+
+							<span class="user-toggle"></span>
+
+							<div class="user-popup hidden">
+								<span class="name"></span>
+								<span class="email"></span>
+								<a href="#" class="logout">Logout</a>
 							</div>
-
-							<a class="logo" href="/dashboard/first"><img></a>
 						</div>
 
-						<nav class="hidden"></nav>
+						<div class="menu-toggle"><i class="fas fa-chevron-down"></i></div>
 					</header>
-					<div class="nav-blanket"></div>
+
 					<main>
 						${await this.main() || ''}
 					</main>
@@ -316,7 +336,7 @@ router.get('/login/forgot', API.serve(class extends HTMLAPI {
 				<img src="" />
 			</div>
 
-			<form class="form">
+			<form class="form forgot">
 
 				<label>
 					<span>Email</span>
@@ -353,7 +373,7 @@ router.get('/login/reset', API.serve(class extends HTMLAPI {
 				<img src="" />
 			</div>
 
-			<form class="form">
+			<form class="form reset">
 
 				<label>
 					<span>New Password</span>
@@ -361,7 +381,6 @@ router.get('/login/reset', API.serve(class extends HTMLAPI {
 				</label>
 
 				<div>
-					<a href='/login'><i class="fa fa-arrow-left"></i> &nbsp;Login</a>
 					<button class="submit">
 						<i class="fa fa-paper-plane"></i>
 						Change Password
@@ -501,8 +520,8 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 			'/js/reports.js',
 			'/js/dashboard.js',
 
-			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
 			'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU&libraries=visualization" defer f="',
 
 			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 		]);
@@ -512,17 +531,33 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 
 		return `
 			<nav>
-				<div class="NA"><i class="fa fa-spinner fa-spin"></i></div>
-			</nav>
+				<label class="dashboard-search">
+					<input type="search" name="search" placeholder="Search..." >
+				</label>
 
+				<div class="dashboard-hierarchy"></div>
+
+				<footer>
+
+					<div class="collapse-panel">
+						<span class="left"><i class="fa fa-angle-double-left"></i></span>
+					</div>
+
+					<span class="powered-by ${this.account.settings.get('disable_powered_by') ? 'hidden' : ''}">
+						Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
+						<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
+					</span>
+				</footer>
+			</nav>
+			<div class="nav-blanket hidden"></div>
 			<section class="section" id="list">
 				<h2>${this.request.params.type}</h2>
 
 				<form class="form toolbar">
 
 					<label class="right">
-						<select name="category">
-							<option value="">All Categories</option>
+						<select name="subtitle">
+							<option value="">Everything</option>
 						</select>
 					</label>
 
@@ -541,7 +576,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 
 				<h1 class="dashboard-name"></h1>
 
-				<div class="toolbar form">
+				<div class="toolbar form hidden">
 
 					<button id="back">
 						<i class="fa fa-arrow-left"></i>
@@ -591,21 +626,6 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 					<i class="fas fa-filter"></i>
 				</button>
 			</section>
-
-			<footer class="site-footer">
-				<span class="${this.account.settings.get('disable_powered_by') ? 'hidden' : ''}">
-					Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
-					<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
-				</span><span>&nbsp;</span>
-				<div class="env">
-					<span class="text">
-						Env: <span class="strong">${this.env.name}</span>
-						Branch: <span class="strong">${this.env.branch}</span>
-						Last deployed: <span title="${this.env.deployed_on}" class="strong deploy-time">${this.env.deployed_on}</span>
-					</span>
-					<i class="fas fa-exclamation-circle"></i>
-				</div>
-			</footer>
 		`;
 	}
 }));
@@ -652,7 +672,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 							<th>Name</th>
 							<th>Parent</th>
 							<th>Icon</th>
-							<th>Visibility</th>
+							<th>Order</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>
@@ -686,6 +706,11 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 						<input type="text" name="icon">
 					</label>
 
+					<label>
+						<span>Order</span>
+						<input type="number" min="0" step="1" name="order">
+					</label>
+
 					<label id="format">
 						<span>Format</span>
 					</label>
@@ -715,8 +740,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ext-language_tools.js',
 
-			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU" defer f="',
 			'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU&libraries=visualization" defer f="',
 
 			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 		]);
@@ -816,6 +841,11 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							<label>
 								<span>Tags (Comma Separated)</span>
 								<input type="text" name="tags">
+							</label>
+
+							<label>
+								<span>Category</span>
+								<select name="subtitle"></select>
 							</label>
 						</div>
 
@@ -989,7 +1019,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 						<div class="toolbar">
 							<button id="visualization-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
-							<button type="submit" form="add-visualization-form"><i class="fas fa-save"></i> Save</button>
 						</div>
 
 						<form id="add-visualization-form"></form>
@@ -1088,6 +1117,50 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 				<header class="toolbar">
 					<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
 				</header>
+                
+                <form class="user-search block form">
+                    
+                    <label>
+                        <span>Id</span>
+                        <input type="number" name="user_id" step="1" min="0">
+                    </label>
+                    
+                    <label>
+                        <span>Name</span>
+                        <input type="text" name="name">
+                    </label>
+                    
+                    <label>
+                        <span>Email</span>
+                        <input type="text" name="email">
+                    </label>
+                    
+                    <label>
+                        <span>Search by</span>
+                        <select name="search_by" value="category">
+                            <option value="category">Category</option>
+                            <option value="role">Role</option>
+                            <option value="privilege">Privilege</option>
+                        </select>
+                    </label>
+                    
+                    <label class="category">
+                        <span>Category</span>
+                    </label>
+                    
+                    <label class="hidden role">
+                        <span>Role</span>
+                    </label>
+                    
+                    <label class="hidden privilege">
+                        <span>Privilege</span>
+                    </label>
+                    
+                    <label>
+                        <span></span>
+                        <button type="submit">Apply</button>
+                    </label>
+                </form>
 
 				<table class="block">
 					<thead>
@@ -1096,6 +1169,7 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 							<th data-key="id" class="thin">ID</th>
 							<th data-key="name">Name</th>
 							<th data-key="email">Email</th>
+							<th data-key="lastLogin">Last Login</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>
@@ -1309,6 +1383,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		super();
 
 		this.stylesheets.push('/css/settings.css');
+		this.scripts.push('/js/reports.js');
 		this.scripts.push('/js/settings.js');
 		this.scripts.push('/js/settings-manager.js');
 	}
@@ -1317,13 +1392,13 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		return `
 			<nav></nav>
 
-			<div class="setting-page datasets-page hidden">
-				<section class="section" id="datasets-list">
+			<div class="setting-page global-filters-page hidden">
+				<section class="section" id="global-filters-list">
 
-					<h1>Manage Datasets</h1>
+					<h1>Manage Global Filters</h1>
 
 					<header class="toolbar">
-						<button id="add-datset"><i class="fa fa-plus"></i> Add New Dataset</button>
+						<button id="add-global-filter"><i class="fa fa-plus"></i> Add New Global Filter</button>
 					</header>
 
 					<table class="block">
@@ -1331,9 +1406,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 							<tr>
 								<th>ID</th>
 								<th>Name</th>
-								<th>Category</th>
-								<th>Query id</th>
-								<th>Order</th>
+								<th>Placeholder</th>
+								<th>Default Value</th>
+								<th>Type</th>
+								<th>Multiple</th>
+								<th>Offset</th>
+								<th>Dataset</th>
 								<th class="action">Edit</th>
 								<th class="action">Delete</th>
 							</tr>
@@ -1342,7 +1420,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					</table>
 				</section>
 
-				<section class="section" id="datasets-form">
+				<section class="section" id="global-filters-form">
 
 					<h1></h1>
 
@@ -1359,18 +1437,35 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label>
-							<span>Category</span>
-							<select name="category_id"></select>
+							<span>Placeholder</span>
+							<input type="text" name="placeholder" required>
 						</label>
 
 						<label>
-							<span>Query Id</span>
-							<input type="number" name="query_id">
+							<span>Default Value</span>
+							<input type="text" name="default_value">
 						</label>
 
 						<label>
-							<span>Order</span>
-							<input type="number" name="order">
+							<span>Type</span>
+							<select name="type"></select>
+						</label>
+
+						<label>
+							<span>Multiple</span>
+							<select name="multiple">
+								<option value="0">No</option>
+								<option value="1">Yes</option>
+							</select>
+						</label>
+
+						<label>
+							<span>Offset</span>
+							<input type="number" name="offset" placeholder="Offset">
+						</label>
+
+						<label class="datasets">
+							<span>Dataset</span>
 						</label>
 					</form>
 				</section>

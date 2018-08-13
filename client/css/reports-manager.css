@@ -1,9 +1,13 @@
+html, body {
+	height: 100%;
+}
 main {
 	display: grid;
 	grid-template-rows: max-content 1fr;
 	grid-template-columns: 1fr 1fr 1fr;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2);
+	height: 100%;
 }
 main.preview-bottom {
 	grid-template-rows: max-content calc(60vh - 155px) 40vh;
@@ -104,7 +108,7 @@ main.preview-bottom {
 
 main .form {
 	background: #fff;
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
 #stages {
@@ -153,7 +157,7 @@ main.preview-left #stages {
 
 #stage-pick-report table {
 	background: #fff;
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 	#stage-pick-report table thead tr th {
 		position: sticky;
@@ -202,7 +206,7 @@ main.preview-left #stages {
 		height: 100%;
 	}
 		#stage-define-report #schema {
-			overflow: hidden;
+			overflow: auto;
 			font-weight: normal;
 			height: 100%;
 			position: relative;
@@ -223,13 +227,15 @@ main.preview-left #stages {
 				width: 100%;
 				border: 0;
 				border-bottom: 1px solid #ccc;
-				background: #fff;
+				position: sticky;
+				top: 0;
+				z-index: 1;
 			}
 			#stage-define-report #schema ul {
 				padding: 0;
 				list-style: none;
 				margin: 0;
-				overflow: auto;
+				/* overflow: auto; */
 			}
 			#stage-define-report #schema ul ul {
 				border-left: 1px dashed #999;
@@ -279,19 +285,16 @@ main.preview-left #stages {
 			order: 2;
 			flex: 1 60%;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
-		}
-		#stage-define-report #define-report-form.form {
-			height: max-content;
+			height: 100%;
+			grid-template-rows: max-content 1fr;
 		}
 			#stage-define-report #define-report-form .ace_editor {
 				height: 100%;
 			}
 			#stage-define-report #define-report-form.form .mongo-query {
 				max-width: 100%;
+			    grid-template-rows: max-content 1fr;
 			}
-				#stage-define-report #define-report-form.form .mongo-query .ace_editor {
-					height: 50vh;
-				}
 		#stage-define-report .upload-file {
 			order: 2;
 			background: #fff;
@@ -305,10 +308,6 @@ main.preview-left #stages {
 			transition: background var(--transition-duration),
 						box-shadow var(--transition-duration),
 						color var(--transition-duration);
-		}
-		#stage-define-report .upload-file:hover {
-			background: #ccc;
-			color: #666;
 		}
 		#stage-define-report .upload-file:active {
 			box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.15);
@@ -414,6 +413,7 @@ main.preview-left #stages {
 		position: sticky;
 		top: 0;
 		z-index: 2;
+		background: #eee;
 	}
 	#stage-configure-visualization .toolbar .right {
 		margin-left: auto;
@@ -431,7 +431,7 @@ main.preview-left #stages {
 		font-size: 100%;
 		font-weight: normal;
 		z-index: 1;
-		background: #fff;
+		background: #eee;
 		transition: color var(--transition-duration);
 	}
 	#stage-configure-visualization h3:hover {
@@ -449,11 +449,12 @@ main.preview-left #stages {
 		margin: 0 0 calc(var(--gap) * 2)
 	}
 	#stage-configure-visualization fieldset {
-		border: 1px solid #ccc;
-		background: #eef;
+		background: #fff;
 		padding: calc(var(--gap) * 2);
 		margin: 0;
 		border-radius: 3px;
+		border: 0;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
 		#stage-configure-visualization fieldset legend {
 			font-size: 90%;
@@ -465,23 +466,30 @@ main.preview-left #stages {
 			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 		}
 	#stage-configure-visualization .subform {
-		border-bottom: 1px solid #ccc;
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
 		padding: calc(var(--gap) * 2);
-		border: 1px solid #ccc;
-		background: #eef;
-		box-shadow: none;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		border-radius: 3px;
 	}
 
-	#stage-configure-visualization .axes {
+	#stage-configure-visualization .axes,
+	#stage-configure-visualization .layers {
 	}
-		#stage-configure-visualization .axes .form {
+		#stage-configure-visualization .axes .form,
+		#stage-configure-visualization .layers .form {
 			background: transparent;
 			padding: 0;
 		}
-		#stage-configure-visualization .axes .add-axis .form {
+			#stage-configure-visualization .layers .form .opacity > span {
+				justify-content: space-between;
+			}
+			#stage-configure-visualization .layers .form .opacity > span .value {
+				font-weight: normal;
+				color: #999;
+			}
+		#stage-configure-visualization .axes .add-axis .form,
+		#stage-configure-visualization .layers .add-layer .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;
 			grid-gap: calc(var(--gap) * 2);
 		}
@@ -523,26 +531,30 @@ main.preview-left #stages {
 					padding-bottom: var(--gap);
 					font-size: 90%;
 				}
+
+			#stage-configure-visualization #transformations .transformation .form-row {
+				display: grid;
+				grid-auto-flow: column;
+				grid-gap: calc(var(--gap) * 2);
+			}
+			#stage-configure-visualization #transformations .transformation .form-row button svg {
+				margin: 0;
+			}
+				#stage-configure-visualization #transformations .transformation input[type=text] {
+					width: 100px;
+				}
+			#stage-configure-visualization #transformations .transformation button {
+				white-space: nowrap;
+			}
+			#stage-configure-visualization #transformations .transformation.stream .joins,
+			#stage-configure-visualization #transformations .transformation.stream .columns {
+				grid-row: 2;
+			}
 		#stage-configure-visualization #transformations .add-transformation .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;
 			background: transparent;
 			padding: 0;
 			grid-gap: calc(var(--gap) * 2);
-		}
-		#stage-configure-visualization #transformations .transformation .row,
-		#stage-configure-visualization #transformations .transformation .column,
-		#stage-configure-visualization #transformations .transformation .value {
-			display: grid;
-			grid-auto-flow: column;
-			grid-gap: calc(var(--gap) * 2);
-		}
-		#stage-configure-visualization #transformations .transformation button {
-			white-space: nowrap;
-		}
-		#stage-configure-visualization #transformations .transformation .row button svg,
-		#stage-configure-visualization #transformations .transformation .column button svg,
-		#stage-configure-visualization #transformations .transformation .value button svg {
-			margin: 0;
 		}
 	#stage-configure-visualization #dashboards {
 	}
@@ -593,7 +605,7 @@ main.preview-left #stages {
 	#stage-configure-visualization .configuration-section > h3 .count.transformation {
 		margin-left: 3px;
 	}
-	#stage-configure-visualization .configuration-section .form {
+	#stage-configure-visualization .configuration-section fieldset .form {
 		box-shadow: none;
 	}
 		#stage-configure-visualization .configuration-section .form label span {
@@ -604,12 +616,70 @@ main.preview-left #stages {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 			padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
+			background: #eee;
 		}
 			#stage-configure-visualization .configuration-section .body > .NA {
-				background: #efefef;
-				border: 1px solid #ccc;
+				background: #fff;
 				padding: calc(var(--gap) * 2);
+				box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+				border-radius: 3px;
 			}
+	#stage-configure-visualization .configuration-section .theme-list {
+		padding: 10px;
+		list-style-type: none;
+		font-size: 90%;
+		font-weight: bold;
+		color: #444;
+		margin: 0;
+		display: grid;
+		grid-template-columns: max-content max-content max-content;
+		grid-gap: calc(var(--gap) * 4);
+		position: relative;
+		justify-content: space-around;
+	}
+		#stage-configure-visualization .configuration-section .theme-list .theme {
+			display: flex;
+			justify-content: center;
+			cursor: pointer;
+			height: 140px;
+			width: 160px;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+		}
+		#stage-configure-visualization .configuration-section .theme-list .theme:hover {
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+			transform: perspective(500px) translatez(30px)
+		}
+		#stage-configure-visualization .configuration-section .theme-list .theme.selected {
+			border: 1px solid #80b7fa;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		}
+			#stage-configure-visualization .configuration-section .theme-list .theme .name {
+				position: absolute;
+				font-size: 120%;
+				letter-spacing: 0.5px;
+				font-weight: normal;
+				margin-top: 115px;
+				color: #7d7d7d;
+			}
+			#stage-configure-visualization .configuration-section .theme-list .theme-image {
+				overflow: hidden;
+			}
+				#stage-configure-visualization .configuration-section .theme-list .theme-image .road {
+					height: 10px;
+					transform: rotate(27deg);
+					width: 153px;
+					margin: 18px;
+				}
+				#stage-configure-visualization .configuration-section .theme-list .theme-image .water {
+					height: 16px;
+					margin-top: 20px;
+				}
+				#stage-configure-visualization .configuration-section .theme-list .theme-image .park {
+					height: 20px;
+					transform: rotate(28deg);
+					width: 250px;
+					margin-left: -65px;
+				}
 
 #add-visualization-picker {
 	grid-column: 1 / 3;
@@ -626,32 +696,55 @@ main.preview-left #stages {
 		justify-content: center;
 		cursor: pointer;
 		width: 350px;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		transform: perspective(500px) translatez(0);
 		transition: box-shadow var(--transition-duration),
 					transform var(--transition-duration);
 	}
 
 	#add-visualization-form figure:hover {
-		box-shadow: 0 0 50px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
 		transform: perspective(500px) translatez(30px);
 	}
-		#add-visualization-form img {
+		#add-visualization-form img,
+		#add-visualization-form .NA,
+		#add-visualization-form .loader {
 			height: auto;
 			width: 100%;
-			margin-bottom: var(--gap);
-			background: #fff;
+			height: 233.33px;
+		}
+		#add-visualization-form img {
+			opacity: 0;
+			transition: opacity var(--transition-duration);
+		}
+		#add-visualization-form img.show {
+			opacity: 1;
+		}
+		#add-visualization-form .loader {
+			font-size: 200%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: #8d6e63;
+			position: absolute;
+			top: 0;
+		}
+		#add-visualization-form .NA {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: #8d6e63;
+			font-size: 110%;
+			position: absolute;
+			top: 0;
 		}
 		#add-visualization-form figcaption {
-			background: #ddf;
+			background: #D7CCC8;
 			width: 100%;
-			padding: 5px;
+			padding: calc(var(--gap) * 2);
 			text-align: center;
 			transition: background var(--transition-duration);
-		}
-		#add-visualization-form figure.selected figcaption {
-			background: var(--color-selected);
-			color: var(--color-selected-text);
+			font-size: 125%;
 		}
 
 main.preview-top #preview {

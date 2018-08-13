@@ -1,11 +1,14 @@
 const API = require("../utils/api");
 const commonFun = require("../utils/commonFunctions");
 const constants = require('../utils/constants');
-const config = require('config');
+const getRole = (require('./object_roles')).get;
+const dbConfig = require('config').get("sql_db");
 
 exports.insert = class extends API {
 
 	async insert() {
+
+		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
 		var result = {};
 
@@ -22,7 +25,6 @@ exports.insert = class extends API {
 		result.account_id = this.account.account_id;
 
 		return await this.mysql.query(`INSERT INTO tb_users SET ?`, result, 'write');
-
 	}
 
 };
@@ -39,6 +41,13 @@ exports.delete = class extends API {
 exports.update = class extends API {
 
 	async update() {
+		const objRole = new getRole();
+
+		const requiredCategories = (await objRole.get(this.account.account_id, 'user', 'role', this.request.body.user_id)).map(x => x.category_id);
+
+		this.assert(requiredCategories.some(x => this.user.privilege.has('user', x)), 'User does not have enough privileges');
+
+		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
 		var keys = Object.keys(this.request.body);
 
@@ -69,20 +78,33 @@ exports.list = class extends API {
 	async list() {
 
 		if (!this.request.body.user_id) {
-			this.user.privilege.needs('user');
+
+			this.assert(
+				((this.user.privilege.has('user', this.user.privileges[0] && this.user.privileges[0].category_id)) || (this.user.privilege.has('report', this.user.privileges[0] && this.user.privileges[0].category_id))),
+				"User does not have privilege to view user list.",
+				401
+			);
 		}
 
 		let
 			results,
 			roles = {},
 			privileges = {},
+			last_login = {},
+			db = dbConfig.write.database.concat('_logs'),
 			user_query = `
 				SELECT
-					*
+					u.*, 
+					max(s.created_at + INTERVAL 330 MINUTE) AS last_login
 				FROM
-					tb_users
+					tb_users u
+				LEFT JOIN
+					${db}.tb_sessions s
+				ON
+					u.user_id = s.user_id
+					AND s.type = 'login'
 				WHERE
-					account_id = ${this.account.account_id}
+					account_id = ?
 					AND status = 1
 			`,
 			role_query = `
@@ -96,68 +118,191 @@ exports.list = class extends API {
 				WHERE
 					owner = "user"
 					and target = "role"
-					and account_id = ${this.account.account_id}
+					and account_id = ?
 				`,
-			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`;
-		if (this.request.body.user_id) {
+			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`
+		;
 
-			user_query = user_query.concat(` AND user_id = ${this.request.body.user_id}`);
-			role_query = role_query.concat(` AND owner_id = ${this.request.body.user_id}`);
-			prv_query = prv_query.concat(` WHERE user_id = ${this.request.body.user_id}`);
+		if (this.request.body.user_id && !this.request.body.search) {
+
+			user_query = user_query.concat(` AND u.user_id = ?`);
+			role_query = role_query.concat(` AND owner_id = ?`);
+			prv_query = prv_query.concat(` WHERE user_id = ?`);
 
 			results = await Promise.all([
-				this.mysql.query(user_query),
-				this.mysql.query(role_query, [this.account.account_id]),
-				this.mysql.query(prv_query)
+				this.mysql.query(user_query, [this.account.account_id, this.request.body.user_id]),
+				this.mysql.query(role_query, [this.account.account_id, this.request.body.user_id]),
+				this.mysql.query(prv_query, [this.request.body.user_id]),
 			]);
-
 		}
+
 		else {
 
+			let queryParams = [];
+
 			if (this.request.body.search) {
-				user_query = user_query.concat(`
-					AND  (
-						user_id LIKE ?
-						OR phone LIKE ?
-						OR email LIKE ?
-						OR first_name LIKE ?
-						OR middle_name LIKE ?
-						OR last_name LIKE ?
-					)
-					LIMIT 10
-				`);
+
+				if(this.request.body.user_id) {
+
+					user_query = user_query.concat(` AND u.user_id LIKE ?`);
+					queryParams.push(`%${this.request.body.user_id}%`);
+				}
+
+				if(this.request.body.email) {
+
+					user_query = user_query.concat(` AND u.email LIKE ?`);
+					queryParams.push(`%${this.request.body.email}%`);
+				}
+
+				if(this.request.body.name) {
+
+					user_query = user_query.concat(` AND CONCAT(u.first_name, ' ', IFNULL(u.middle_name, ' '),' ', IFNULL(u.last_name, ' ')) LIKE ?`);
+					queryParams.push(`%${this.request.body.name}%`);
+				}
+
+
+				if(this.request.query.text) {
+
+					user_query = user_query.concat(`
+						AND  (
+							u.user_id LIKE ?
+							OR u.phone LIKE ?
+							OR u.email LIKE ?
+							OR u.first_name LIKE ?
+							OR u.middle_name LIKE ?
+							OR u.last_name LIKE ?
+						)
+						LIMIT 10
+					`);
+
+					for(let i = 1; i <= 6; i++) {
+						queryParams.push(`%${this.request.body.text}%`);
+					}
+				}
+
 			}
 
+			user_query = user_query.concat(' GROUP BY u.user_id');
+
 			results = await Promise.all([
-				this.mysql.query(user_query, [this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search, this.request.body.search]),
-				this.mysql.query(role_query),
-				this.mysql.query(prv_query)
+				this.mysql.query(user_query, [this.account.account_id, ...queryParams]),
+				this.mysql.query(role_query, [this.account.account_id]),
+				this.mysql.query(prv_query),
 			]);
 		}
 
+		let userList = [];
+
 		for (const role of results[1]) {
+
+			if(this.request.body.category_id || this.request.body.role_id) {
+
+				this.request.body.category_id = typeof this.request.body.category_id == 'string' ? [this.request.body.category_id] : this.request.body.category_id;
+				this.request.body.role_id = typeof this.request.body.role_id == 'string' ? [this.request.body.role_id] : this.request.body.role_id;
+
+				if(this.request.body.category_id) {
+
+					const categoryCheck = this.request.body.category_id.includes(role.category_id.toString());
+
+					if(!categoryCheck) {
+
+						continue;
+					}
+
+					if(categoryCheck && this.request.body.search_by == 'privilege') {
+
+						continue;
+					}
+
+				}
+
+				if(this.request.body.role_id && !this.request.body.role_id.includes(role.role_id.toString())) {
+
+					continue;
+				}
+			}
+
 			if (!roles[role.user_id]) {
+
 				roles[role.user_id] = [];
 			}
+
 			roles[role.user_id].push(role);
 		}
 
 		for (const privilege of results[2]) {
+
+			if(this.request.body.category_id || this.request.body.privilege_id) {
+
+				this.request.body.category_id = typeof this.request.body.category_id == 'string' ? [this.request.body.category_id] : this.request.body.category_id;
+				this.request.body.privilege_id = typeof this.request.body.privilege_id == 'string' ? [this.request.body.privilege_id] : this.request.body.privilege_id;
+
+				if(this.request.body.category_id) {
+
+					const categoryCheck = this.request.body.category_id.includes(privilege.category_id.toString());
+
+					if(!categoryCheck) {
+
+						continue;
+					}
+
+					if(categoryCheck && this.request.body.search_by == 'role') {
+
+						continue;
+					}
+
+				}
+
+				if(this.request.body.privilege_id && !this.request.body.privilege_id.includes(privilege.privilege_id.toString())) {
+
+					continue;
+				}
+			}
+
 			if (!privileges[privilege.user_id]) {
+
 				privileges[privilege.user_id] = [];
 			}
+
 			privileges[privilege.user_id].push(privilege);
 		}
 
 		for (const row of results[0]) {
+
 			row.roles = roles[row.user_id] ? roles[row.user_id] : [];
 			row.privileges = privileges[row.user_id] ? privileges[row.user_id] : [];
 			row.href = `/user/profile/${row.user_id}`;
-			row.superset = 'Users'
+			row.superset = 'Users';
 			row.name = [row.first_name, row.middle_name, row.last_name].filter(u => u).join(' ');
+			row.last_login = row.last_login
+
+			if(this.request.query.search) {
+
+				if (this.request.body.role_id && !roles[row.user_id]) {
+
+					continue;
+				}
+				else if(this.request.body.privilege_id && !privileges[row.user_id]) {
+
+					continue;
+				}
+				else if(this.request.body.category_id && !(roles[row.user_id] || privileges[row.user_id])) {
+
+					continue;
+				}
+			}
+
+			userList.push(row);
 		}
 
-		return results[0];
+		const userCategories = this.user.roles.map(x => parseInt(x.category_id));
+
+		if(!constants.adminCategory.some(x => userCategories.includes(x))) {
+
+			userList = userList.filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))));
+		}
+
+		return userList;
 	}
 
 };
@@ -262,10 +407,14 @@ exports.metadata = class extends API {
 			[this.account.account_id]
 		);
 
-		metadata.datasets = await this.mysql.query(
-			'SELECT * FROM tb_datasets WHERE account_id = ?',
+		metadata.globalFilters = await this.mysql.query(
+			'SELECT * FROM tb_global_filters WHERE account_id = ? AND is_enabled = 1',
 			[this.account.account_id]
 		);
+
+		for (const data of metadata.globalFilters) {
+			data.placeholder = data.placeholder.split(',');
+		}
 
 		metadata.filterTypes = constants.filterTypes;
 
@@ -286,6 +435,8 @@ exports.metadata = class extends API {
 		);
 
 		metadata.features = await this.mysql.query('SELECT * from tb_features');
+
+		metadata.spatialMapThemes = await this.mysql.query('select * from tb_spatial_map_themes');
 
 		return metadata;
 	}

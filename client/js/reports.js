@@ -50,8 +50,8 @@ class DataSource {
 
 		parameters.set('query_id', this.query_id);
 
-		if(this.queryOverride)
-			parameters.set('query', this.query);
+		if(this.definitionOverride)
+			parameters.set('query', this.definition.query);
 
 		for(const filter of this.filters.values()) {
 
@@ -104,18 +104,39 @@ class DataSource {
 
 		this.resetError();
 
+		if(this.refresh_rate) {
+
+			clearTimeout(this.refreshRateTimeout);
+
+			this.refreshRateTimeout = setTimeout(() => {
+				if(this.containerElement && document.body.contains(this.container))
+					this.visualizations.selected.load();
+			}, this.refresh_rate * 1000);
+		}
+
 		try {
 			response = await API.call('reports/engine/report', parameters.toString(), options);
 		}
 
 		catch(e) {
 
+			response = {};
+
 			let message = e.message;
 
-			message = message.replace('You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use', '');
+			try {
 
-			this.error(JSON.stringify(message, 0, 4));
-			throw e;
+				message = message.replace('You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use', '');
+				this.error(JSON.stringify(message, 0, 4));
+
+				throw e;
+			}
+			catch(e) {
+
+				this.error('Click here to retry', {retry: true});
+
+				throw e;
+			}
 		}
 
 		if(parameters.get('download'))
@@ -152,18 +173,7 @@ class DataSource {
 
 		this.columns.update();
 		this.postProcessors.update();
-
 		this.render();
-
-		if(this.refresh_rate) {
-
-			clearTimeout(this.refreshRateTimeout);
-
-			this.refreshRateTimeout = setTimeout(() => {
-				if(this.containerElement && document.body.contains(this.container))
-					this.visualizations.selected.load();
-			}, this.refresh_rate * 1000);
-		}
 	}
 
 	get container() {
@@ -308,7 +318,7 @@ class DataSource {
 		});
 
 		container.querySelector('header .reload').on('click', () => {
-			this.visualizations.selected.load(true);
+			this.visualizations.selected.load();
 		});
 
 		container.querySelector('.menu .filters-toggle').on('click', () => {
@@ -505,7 +515,7 @@ class DataSource {
 		this.visibleTo =  await API.call('reports/report/userPrvList', {report_id : this.query_id});
 	}
 
-	get response() {
+	async response() {
 
 		this.resetError();
 
@@ -519,7 +529,7 @@ class DataSource {
 		if(!Array.isArray(this.originalResponse.data))
 			return [];
 
-		const data = this.transformations.run(this.originalResponse.data);
+		const data = await this.transformations.run(this.originalResponse.data);
 
 		if(!this.columns.list.size)
 			return this.error();
@@ -590,7 +600,7 @@ class DataSource {
 
 			const response = [];
 
-			for(const row of this.response) {
+			for(const row of await this.response()) {
 
 				const temp = {};
 				const arr = [...row];
@@ -606,7 +616,7 @@ class DataSource {
 				visualization: this.visualizations.selected.type,
 				sheet_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
 				file_name :this.name.replace(/[^a-zA-Z0-9]/g,'_'),
-				token :await Storage.get('token'),
+				token : (await Storage.get('token')).body,
 				show_legends: !this.visualizations.selected.options.hideLegend || 0,
 				show_values: this.visualizations.selected.options.showValues || 0,
 				classic_pie: this.visualizations.selected.options.classicPie
@@ -622,7 +632,9 @@ class DataSource {
 
 		else if(what.mode == 'filtered-csv') {
 
-			for(const row of this.response) {
+			const response = await this.response();
+
+			for(const row of response) {
 
 				const line = [];
 
@@ -632,7 +644,7 @@ class DataSource {
 				str.push(line.join());
 			}
 
-			str = Array.from(this.response[0].keys()).join() + '\r\n' + str.join('\r\n');
+			str = Array.from(response[0].keys()).join() + '\r\n' + str.join('\r\n');
 
 			what.mode = 'csv';
 		}
@@ -715,7 +727,7 @@ class DataSource {
 		this.visualizations.selected.container.classList.remove('hidden');
 	}
 
-	error(message = '') {
+	error(message = '', {retry = false} = {}) {
 
 		if(this.container.querySelector('pre.warning'))
 			return;
@@ -728,6 +740,14 @@ class DataSource {
 				<span>${message}</span>
 			</pre>
 		`);
+
+		if(retry) {
+
+			const pre = this.container.querySelector('.warning');
+			pre.classList.add('retry');
+
+			pre.on('click', () => this.visualizations.selected.load());
+		};
 
 		this.visualizations.selected.container.classList.add('hidden');
 	}
@@ -823,6 +843,7 @@ class DataSourceFilters extends Map {
 					filter_id: Math.random(),
 					name: filter.name.replace(/(start|end|date)/ig, '') + ' Date Range',
 					placeholder: name + '_date_range',
+					placeholders: [],
 					type: 'daterange',
 					companions: [],
 				}]);
@@ -1067,8 +1088,10 @@ class DataSourceFilter {
 
 		if(!isNaN(parseFloat(this.offset))) {
 
-			if(this.type.includes('date'))
-				value = new Date(Date.now() + this.offset * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			if(this.type.includes('date')) {
+				const today = new Date();
+				value = new Date(Date.nowUTC() + (this.offset * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10);
+			}
 
 			if(this.type == 'month') {
 				const date = new Date();
@@ -1234,7 +1257,17 @@ class DataSourceRow extends Map {
 					if(!row[key])
 						this.skip = true;
 
-					if(!DataSourceColumnFilter.searchTypes[parseInt(search.name) || 0].apply(search.value, row[key] === null ? '' : row[key]))
+					if(!search.slug)
+						continue;
+
+					// Look for a filter with the selected filter's slug
+					const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == search.slug);
+
+					if(!filter)
+						continue;
+
+					// Apply the filter. It checks if a row passes a filter or not.
+					if(!filter.apply(search.value, row[key] === null ? '' : row[key]))
 						this.skip = true;
 				}
 			}
@@ -1262,10 +1295,11 @@ class DataSourceRow extends Map {
 	 * - Apply prefix/postfix.
 	 * - Apply date/number type formating.
 	 *
-	 * @param  string	key	The key whose value is needed.
-	 * @return string		The value of the column with it's type information applied to it.
+	 * @param  string	key		The key whose value is needed.
+	 * @param  string	value	An optional value, can be used to format this value with given key's settings.
+	 * @return string			The value of the column with it's type information applied to it.
 	 */
-	getTypedValue(key) {
+	getTypedValue(key, value = null) {
 
 		if(!this.has(key))
 			return undefined;
@@ -1275,13 +1309,23 @@ class DataSourceRow extends Map {
 
 		const column = this.source.columns.get(key);
 
-		let value = this.get(key);
+		if(!value)
+			value = this.get(key);
 
 		if(column.type == 'date')
 			value = Format.date(value);
 
-		if(column.type == 'datetime')
+		if(column.type == 'month')
+			value = Format.month(value);
+
+		if(column.type == 'year')
+			value = Format.year(value);
+
+		if(column.type == 'time')
 			value = Format.time(value);
+
+		if(column.type == 'datetime')
+			value = Format.dateTime(value);
 
 		else if(column.type == 'number')
 			value = Format.number(value);
@@ -1363,7 +1407,7 @@ class DataSourceColumn {
 	constructor(column, source) {
 
 		DataSourceColumn.colors = [
-			'#8595e1',
+			'#3e7adc',
 			'#ef6692',
 			'#d6bcc0',
 			'#ffca05',
@@ -1554,6 +1598,9 @@ class DataSourceColumn {
 					<option value="string">String</option>
 					<option value="number">Number</option>
 					<option value="date">Date</option>
+					<option value="month">Month</option>
+					<option value="year">Year</option>
+					<option value="time">Time</option>
 					<option value="datetime">Date Time</option>
 					<option value="html">HTML</option>
 				</select>
@@ -2231,49 +2278,60 @@ class DataSourceColumnFilter {
 
 	static setup() {
 
-		DataSourceColumnFilter.searchTypes = [
+		DataSourceColumnFilter.types = [
 			{
+				slug: 'contains',
 				name: 'Contains',
 				apply: (q, v) => v.toString().toLowerCase().includes(q.toString().toLowerCase()),
 			},
 			{
+				slug: 'notcontains',
 				name: 'Not Contains',
 				apply: (q, v) => !v.toString().toLowerCase().includes(q.toString().toLowerCase()),
 			},
 			{
+				slug: 'startswith',
 				name: 'Starts With',
 				apply: (q, v) => v.toString().toLowerCase().startsWith(q.toString().toLowerCase()),
 			},
 			{
+				slug: 'endswith',
 				name: 'Ends With',
 				apply: (q, v) => v.toString().toLowerCase().endsWith(q.toString().toLowerCase()),
 			},
 			{
-				name: 'Equal To',
+				slug: 'equalto',
+				name: '=',
 				apply: (q, v) => v.toString().toLowerCase() == q.toString().toLowerCase(),
 			},
 			{
-				name: 'Not Equal To',
+				slug: 'notequalto',
+				name: '!=',
 				apply: (q, v) => v.toString().toLowerCase() != q.toString().toLowerCase(),
 			},
 			{
-				name: 'Greater Than',
+				slug: 'greaterthan',
+				name: '>',
 				apply: (q, v) => v > q,
 			},
 			{
-				name: 'Less Than',
+				slug: 'lessthan',
+				name: '<',
 				apply: (q, v) => v < q,
 			},
 			{
-				name: 'Greater Than or Equal To',
+				slug: 'greaterthanequalsto',
+				name: '>=',
 				apply: (q, v) => v >= q,
 			},
 			{
-				name: 'Less Than or Equal To',
+				slug: 'lessthanequalto',
+				name: '<=',
 				apply: (q, v) => v <= q,
 			},
 			{
-				name: 'Regular Expression',
+				slug: 'regularexpression',
+				name: 'RegExp',
 				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
 			},
 		];
@@ -2303,15 +2361,17 @@ class DataSourceColumnFilter {
 			</div>
 		`;
 
-		for(const [i, type] of DataSourceColumnFilter.searchTypes.entries()) {
+		for(const filter of DataSourceColumnFilter.types) {
 			container.querySelector('select.searchType').insertAdjacentHTML('beforeend', `
-				<option value="${i}">
-					${type.name}
+				<option value="${filter.slug}">
+					${filter.name}
 				</option>
 			`);
 		}
 
-		container.querySelector('select').value = this.name;
+		if(this.slug)
+			container.querySelector('select').value = this.slug;
+
 		container.querySelector('input').value = this.value;
 
 		container.querySelector('.delete').on('click', () => {
@@ -2325,7 +2385,10 @@ class DataSourceColumnFilter {
 
 	get json() {
 
-		return {name: this.container.querySelector('select').value, value: this.container.querySelector('input').value};
+		return {
+			slug: this.container.querySelector('select').value,
+			value: this.container.querySelector('input').value,
+		};
 	}
 }
 
@@ -2391,27 +2454,33 @@ class DataSourceColumnAccumulation {
 
 		DataSourceColumnAccumulation.accumulationTypes = [
 			{
+				slug: 'sum',
 				name: 'Sum',
 				apply: (rows, column) => Format.number(rows.reduce((c, r) => c + (parseFloat(r.get(column)) || 0), 0)),
 			},
 			{
+				slug: 'average',
 				name: 'Average',
 				apply: (rows, column) => Format.number(rows.reduce((c, r) => c + (parseFloat(r.get(column)) || 0), 0) / rows.length),
 			},
 			{
+				slug: 'max',
 				name: 'Max',
 				apply: (rows, column) => Format.number(Math.max(...rows.map(r => parseFloat(r.get(column)) || 0))),
 			},
 			{
+				slug: 'min',
 				name: 'Min',
 				apply: (rows, column) => Format.number(Math.min(...rows.map(r => parseFloat(r.get(column)) || 0))),
 			},
 			{
+				slug: 'distinctcount',
 				name: 'Distinct Count',
 				apply: (rows, column) => Format.number(new Set(rows.map(r => r.get(column))).size),
 				string: true,
 			},
 			{
+				slug: 'distinctvalues',
 				name: 'Distinct Values',
 				apply: (rows, column) => Array.from(new Set(rows.map(r => r.get(column)))).join(', '),
 				string: true,
@@ -2443,29 +2512,12 @@ class DataSourceColumnAccumulation {
 			</div>
 		`;
 
-		// To check the type of the column
-		let string = false;
-
-		for(const [index, report] of this.accumulations.column.source.response.entries()) {
-
-			if(index > 10)
-				break;
-
-			if(isNaN(report.get(this.accumulations.column.key))) {
-				string = true;
-				break;
-			}
-		}
-
 		const select = container.querySelector('.accumulation-content');
 
 		select.insertAdjacentHTML('beforeend', `<option value="-1">Select</option>`);
 
-		for(const [i, type] of DataSourceColumnAccumulation.accumulationTypes.entries()) {
-
-			if(!string || type.string)
-				select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
-		}
+		for(const [i, type] of DataSourceColumnAccumulation.accumulationTypes.entries())
+			select.insertAdjacentHTML('beforeend', `<option value="${i}">${type.name}</option>`);
 
 		select.querySelector('option').selected = true;
 
@@ -2483,14 +2535,14 @@ class DataSourceColumnAccumulation {
 		return container
 	}
 
-	run() {
+	async run() {
 
 		const select = this.container.querySelector('select');
 
 		const accumulation = DataSourceColumnAccumulation.accumulationTypes[select.value];
 
 		if(accumulation)
-			this.container.querySelector('input').value = accumulation.apply(this.accumulations.column.source.response, this.accumulations.column.key);
+			this.container.querySelector('input').value = accumulation.apply(await this.accumulations.column.source.response(), this.accumulations.column.key);
 
 		else this.container.querySelector('input').value = '';
 	}
@@ -2602,7 +2654,7 @@ class DataSourceTransformations extends Set {
 		this.source = source;
 	}
 
-	run(response) {
+	async run(response) {
 
 		this.clear();
 
@@ -2610,13 +2662,16 @@ class DataSourceTransformations extends Set {
 			visualization = this.source.visualizations.selected,
 			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
 
-		for(const transformation of transformations)
-			this.add(new DataSourceTransformation(transformation, this.source));
+		for(const transformation of transformations) {
+
+			if(DataSourceTransformation.types.has(transformation.type))
+				this.add(new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source));
+		}
 
 		response = JSON.parse(JSON.stringify(response));
 
 		for(const transformation of this)
-			response = transformation.run(response);
+			response = await transformation.run(response);
 
 		if(this.size) {
 			this.source.columns.update(response);
@@ -2633,17 +2688,21 @@ class DataSourceTransformation {
 
 		this.source = source;
 
-		for(const key in transformation)
-			this[key] = transformation[key];
+		Object.assign(this, transformation);
 	}
+}
 
-	run(response = []) {
+DataSourceTransformation.types = new Map;
 
-		if(!response || !response.length || !this.rows || this.rows.length != 1)
+DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot extends DataSourceTransformation {
+
+	async run(response = []) {
+
+		if(!response || !response.length)
 			return response;
 
 		const
-			[{column: groupColumn}] = this.columns.length ? this.columns : [{}],
+			[{column: groupColumn}] = this.columns && this.columns.length ? this.columns : [{}],
 			columns = new Set,
 			rows = new Map;
 
@@ -2659,7 +2718,7 @@ class DataSourceTransformation {
 
 			let key = {};
 
-			for(const row of this.rows)
+			for(const row of this.rows || [])
 				key[row.column] = responseRow[row.column];
 
 			key = JSON.stringify(key);
@@ -2688,10 +2747,10 @@ class DataSourceTransformation {
 					if(!(value.column in responseRow))
 						continue;
 
-					if(!row.has(value.column))
-						row.set(value.column, []);
+					if(!row.has(value.name || value.column))
+						row.set(value.name || value.column, []);
 
-					row.get(value.column).push(responseRow[value.column])
+					row.get(value.name || value.column).push(responseRow[value.column])
 				}
 			}
 		}
@@ -2719,7 +2778,7 @@ class DataSourceTransformation {
 				else {
 
 					for(const value of this.values) {
-						if(value.column == groupColumnValue)
+						if((value.name || value.column) == groupColumnValue)
 							function_ = value.function;
 					}
 				}
@@ -2770,7 +2829,177 @@ class DataSourceTransformation {
 
 		return newResponse;
 	}
-}
+});
+
+DataSourceTransformation.types.set('filters', class DataSourceTransformationPivot extends DataSourceTransformation {
+
+	async run(response = []) {
+
+		if(!response || !response.length || !this.filters || !this.filters.length)
+			return response;
+
+		const newResponse = [];
+
+		for(const row of response) {
+
+			let status = true;
+
+			for(const _filter of this.filters) {
+
+				const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == _filter.function);
+
+				if(!filter)
+					continue;
+
+				if((!_filter.column in row))
+					continue;
+
+				if(!filter.apply(_filter.value, row[_filter.column]))
+					status = false;
+			}
+
+			if(status)
+				newResponse.push(row);
+		}
+
+		return newResponse;
+	}
+});
+
+DataSourceTransformation.types.set('stream', class DataSourceTransformationPivot extends DataSourceTransformation {
+
+	async run(response = []) {
+
+		if(!response || !response.length)
+			return response;
+
+		if(!this.visualization_id)
+			return this.source.error('Stream visualization not selected!');
+
+		let report = null;
+
+		for(const _report of DataSource.list.values()) {
+
+			const [visualization] = _report.visualizations.filter(v => v.visualization_id == this.visualization_id);
+
+			if(!visualization)
+				continue;
+
+			report = new DataSource(_report);
+			break;
+		}
+
+		if(!report)
+			return this.source.error('Stream visualization not found!');
+
+		[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == this.visualization_id)
+
+		await report.fetch();
+
+		const streamResponse = await report.response();
+
+		const
+			newResponse = [],
+			newColumns = Array.from(streamResponse[0].keys()),
+			filters = {};
+
+		for(const filter of DataSourceColumnFilter.types)
+			filters[filter.slug] = filter;
+
+		for(const row of response) {
+
+			for(const newColumn of newColumns) {
+
+				// If the stream's column doesn't exists in base report then add it
+				if(!(newColumn in row))
+					row[newColumn] = [];
+			}
+
+			for(const streamRow of streamResponse) {
+
+				let matched = true;
+
+				for(const join of this.joins) {
+
+					if(!filters[join.function].apply(row[join.sourceColumn], streamRow.get(join.streamColumn))) {
+						matched = false;
+						break
+					}
+				}
+
+				if(!matched)
+					continue;
+
+				for(const [key, value] of streamRow) {
+
+					const array = row[key];
+
+					if(Array.isArray(array))
+						array.push(value);
+				}
+			}
+
+			for(const key in row) {
+
+				const [column] = this.columns.filter(c => c.column == key);
+
+				if(!column) {
+					delete row[key];
+					continue;
+				}
+
+				const values = row[key];
+
+				if(!Array.isArray(values))
+					continue;
+
+				let value = null;
+
+				switch(column.function) {
+
+					case 'sum':
+						value = values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
+						break;
+
+					case 'count':
+						value = values.length;
+						break;
+
+					case 'distinctcount':
+						value = new Set(values).size;
+						break;
+
+					case 'max':
+						value = Math.max(...values);
+						break;
+
+					case 'min':
+						value = Math.min(...values);
+						break;
+
+					case 'average':
+						value = Math.floor(values.reduce((sum, value) => sum + (parseFloat(value) || 0), 0) / values.length * 100) / 100;
+						break;
+
+					case 'values':
+						value = values.join(', ');
+						break;
+
+					case 'distinctvalues':
+						value = Array.from(new Set(values)).join(', ');
+						break;
+
+					default:
+						value = values.length;
+				}
+
+				row[key] = value;
+			}
+		}
+
+		return response;
+	}
+});
 
 DataSourcePostProcessors.processors = new Map;
 
@@ -3069,9 +3298,9 @@ class LinearVisualization extends Visualization {
 		}
 	}
 
-	draw() {
+	async draw() {
 
-		const rows = this.source.response;
+		const rows = await this.source.response();
 
 		if(!rows || !rows.length)
 			return this.source.error();
@@ -3169,6 +3398,7 @@ class LinearVisualization extends Visualization {
 		}
 
 		this.rows = rows;
+		this.originalLength = rows.length;
 
 		window.addEventListener('resize', () => {
 
@@ -3239,7 +3469,7 @@ class LinearVisualization extends Visualization {
 		if(!this.rows.length)
 			return this.source.error();
 
-		if(this.rows.length != this.source.response.length) {
+		if(this.rows.length != this.originalLength) {
 
 			// Reset Zoom Button
 			const resetZoom = this.svg.append('g')
@@ -3261,9 +3491,9 @@ class LinearVisualization extends Visualization {
 				.text('Reset Zoom');
 
 			// Click on reset zoom function
-			resetZoom.on('click', () => {
+			resetZoom.on('click', async () => {
 
-				const rows = this.source.response;
+				const rows = await this.source.response();
 
 				for(const row of rows) {
 					for(const [key, column] of row)
@@ -3411,6 +3641,7 @@ class LinearVisualization extends Visualization {
 
 			const
 				mouse = d3.mouse(this),
+				width = Math.abs(that.zoomRectangle.origin[0] - mouse[0]),
 				filteredRows = that.rows.filter(row => {
 
 					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
@@ -3423,7 +3654,8 @@ class LinearVisualization extends Visualization {
 
 			that.zoomRectangle = null;
 
-			if(filteredRows.length < 2)
+			// Width check to make sure the zoom rectangle has substantial width
+			if(filteredRows.length < 2 || width <= 10)
 				return;
 
 			that.rows = filteredRows;
@@ -3456,7 +3688,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
 	get container() {
@@ -3477,11 +3709,11 @@ Visualization.list.set('table', class Table extends Visualization {
 		return container;
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
 		const
 			container = this.container.querySelector('.container'),
-			rows = this.source.response;
+			rows = await this.source.response();
 
 		container.textContent = null;
 
@@ -3587,10 +3819,61 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				const td = document.createElement('td');
 
-				if(column.type == 'html')
+				let rowJson = row.get(key);
+
+				if(column.type == 'html') {
+
 					td.innerHTML = row.getTypedValue(key);
-				else
+				}
+				else if(rowJson && typeof rowJson == 'object') {
+
+					td.innerHTML = `
+						<span class="value">${Array.isArray(rowJson) ? '[ Array: ' + rowJson.length + ' ]' : '{ Object: ' + Object.keys(rowJson).length + ' }'}</span>
+					`;
+
+					td.classList.add('json');
+
+					const tdValue = td.querySelector('.value');
+
+					td.on('click', () => {
+
+						tdValue.classList.add('hidden');
+
+						if(td.editorContainer) {
+
+							td.appendChild(td.editorContainer);
+							return;
+						}
+
+						td.editorContainer = document.createElement('div');
+
+						td.editorContainer.innerHTML = `
+							<span class="close" title="Close"><i class="fa fa-times"></i></span>
+						`;
+
+						const editor = new CodeEditor({mode: 'json'});
+
+						editor.editor.setTheme('ace/theme/clouds');
+						td.editorContainer.appendChild(editor.container);
+
+						editor.value = JSON.stringify(rowJson, 0 , 4);
+
+						td.editorContainer.on('click', e => e.stopPropagation());
+
+						td.editorContainer.querySelector('.close').on('click', e => {
+
+							e.stopPropagation();
+							td.editorContainer.remove();
+							tdValue.classList.remove('hidden');
+						});
+
+						td.appendChild(td.editorContainer);
+					});
+				}
+				else {
+
 					td.textContent = row.getTypedValue(key);
+				}
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
 
@@ -3611,8 +3894,14 @@ Visualization.list.set('table', class Table extends Visualization {
 				else this.selectedRows.add(row);
 
 				tr.classList.toggle('selected');
+
 				this.renderRowSummary();
 			});
+
+			if(!options.resize) {
+				tr.classList.add('initial');
+				setTimeout(() => window.requestAnimationFrame(() => tr.classList.remove('initial')), position * 50);
+			}
 
 			tbody.appendChild(tr);
 		}
@@ -3633,7 +3922,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 			tr.on('click', () => {
 				this.rowLimit = Math.ceil(this.rowLimit * this.rowLimitMultiplier);
-				this.source.visualizations.selected.render();
+				this.source.visualizations.selected.render({resize: true});
 			});
 
 			tbody.appendChild(tr);
@@ -3681,6 +3970,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	renderRowSummary() {
 
+		if(this.hideRowSummary)
+			return;
+
 		const container = this.container.querySelector('.row-summary .selected-rows');
 
 		container.classList.toggle('hidden', !this.selectedRows.size);
@@ -3715,12 +4007,12 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 
 		this.plot(options);
 	}
@@ -3985,12 +4277,12 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 
 		this.plot(options);
 	}
@@ -4160,12 +4452,12 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 
 		this.plot(options);
 	}
@@ -4338,14 +4630,14 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.source.response;
+		await this.source.response();
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 		this.plot(options);
 	}
 
@@ -4561,7 +4853,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
 	constructor(visualization, source) {
@@ -4574,9 +4866,9 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		}
 	}
 
-	draw() {
+	async draw() {
 
-		const rows = this.source.response;
+		const rows = await this.source.response();
 
 		if(!rows || !rows.length)
 			return this.source.error();
@@ -4688,13 +4980,13 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		});
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
-		this.plot(options);
+		await this.draw();
+		await this.plot(options);
 	}
 
-	plot(options = {})  {
+	async plot(options = {})  {
 
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
@@ -4755,7 +5047,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		if(!this.rows.length)
 			return this.source.error();
 
-		if(this.rows.length != this.source.response.length) {
+		if(this.rows.length != (await this.source.response()).length) {
 
 			// Reset Zoom Button
 			const resetZoom = this.svg.append('g')
@@ -4777,8 +5069,8 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				.text('Reset Zoom');
 
 			// Click on reset zoom function
-			resetZoom.on('click', () => {
-				this.rows = this.source.response;
+			resetZoom.on('click', async () => {
+				this.rows = await this.source.response();
 				this.plot();
 			});
 		}
@@ -5139,12 +5431,12 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 		this.plot(options);
 	}
 
@@ -5354,12 +5646,12 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.draw();
+		await this.draw();
 		this.plot(options);
 	}
 
@@ -5619,14 +5911,14 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
 		const
 			series = [],
-			rows = this.source.response;
+			rows = await this.source.response();
 
 		if(rows.length > 1) {
 
@@ -5786,7 +6078,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.data([poly2, poly1])
 				.enter().append("polygon")
 				.attr('points', d =>  d.map(d => [d.x, d.y].join()).join(' '))
-				.attr('fill', '#f1f1f1');
+				.attr('fill', '#fff');
 
 			//selecting all the paths
 			var path = svg.selectAll('rect'),
@@ -5961,7 +6253,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		this.process();
 
-		this.render(options);
+		await this.render(options);
 	}
 
 	process() {
@@ -5995,9 +6287,9 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			visualizationToggle.value = this.source.visualizations.indexOf(this);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		this.rows = this.source.response;
+		this.rows = await this.source.response();
 
 		this.height = this.container.clientHeight - 20;
 		this.width = this.container.clientWidth - 20;
@@ -6152,14 +6444,25 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		if(!this.options) {
+
+			this.options = {layers: []};
+		}
+
+		this.layers = new SpatialMapLayers(this.options.layers || [], this);
+		this.themes = new SpatialMapThemes(this);
+	}
+
 	get container() {
 
 		if(this.containerElement)
 			return this.containerElement;
 
-		this.containerElement = document.createElement('section');
-
-		const container = this.containerElement;
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'spatial-map');
 
@@ -6169,79 +6472,47 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 			</div>
 		`;
 
+		container.appendChild(this.layers.container);
+
 		return container;
 	}
 
 	async load(options = {}) {
 
-		super.render();
+		super.render(options);
 
 		await this.source.fetch(options);
 
-		this.render(options);
+		await this.render();
 	}
 
-	render() {
-
-		const
-			markers = [],
-			response = this.source.response;
+	async render() {
 
 		if(!this.options)
-			return this.source.error('Options not defined.');
+			return this.source.error('Map layers not defined');
 
-		if(!this.options.latitude)
-			return this.source.error('Latitude Column not defined.');
+		if(!this.options.layers || !this.options.layers.length)
+			return this.source.error('Map layers not defined.');
 
-		if(!this.source.columns.has(this.options.latitude))
-			return this.source.error(`Latitude Column '${this.options.latitude}' not found.`);
+		const zoom = this.options.zoom || 12;
 
-		if(!this.options.longitude)
-			return this.source.error('Longitude Column not defined.');
+		this.rows = await this.source.response();
 
-		if(!this.source.columns.has(this.options.longitude))
-			return this.source.error(`Longitude Column '${this.options.longitude}' not found.`);
-
-		const zoom = parseInt(this.options.initialZoom) || 12;
-
-		// If the maps object wasn't already initialized
 		if(!this.map)
-			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {zoom});
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {
+				zoom,
+				center: {
+					lat: this.options.centerLatitude || parseFloat(this.rows[0].get(this.options.layers[0].latitudeColumn)),
+					lng: this.options.centerLongitude || parseFloat(this.rows[0].get(this.options.layers[0].longitudeColumn))
+				}
+			});
 
-		// If the clustered object wasn't already initialized
-		if(!this.clusterer)
-			this.clusterer = new MarkerClusterer(this.map, null, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+		this.map.set('styles', this.themes.get(this.options.theme).config || []);
 
-		// Add the marker to the markers array
-		for(const row of response) {
-			markers.push(
-				new google.maps.Marker({
-					position: {
-						lat: parseFloat(row.get(this.options.latitude)),
-						lng: parseFloat(row.get(this.options.longitude)),
-					},
-				})
-			);
-		}
+		this.layers.render();
 
-		if(!this.markers || this.markers.length != markers.length) {
-
-			// Empty the map
-			this.clusterer.clearMarkers();
-
-			// Load the markers
-			this.clusterer.addMarkers(markers);
-
-			this.markers = markers;
-		}
-
-		// Point the map to location's center
-		this.map.panTo({
-			lat: parseFloat(this.options.initialLatitude || response[0].get(this.options.latitude)),
-			lng: parseFloat(this.options.initialLongitude || response[0].get(this.options.longitude)),
-		});
 	}
-});
+})
 
 Visualization.list.set('cohort', class Cohort extends Visualization {
 
@@ -6273,31 +6544,33 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 
 		await this.source.fetch(options);
 
-		this.process();
-		this.render(options);
+		await this.process();
+		await this.render(options);
 	}
 
-	process() {
+	async process() {
 
 		this.max = 0;
 
-		this.source.response.pop();
+		const response = await this.source.response();
 
-		for(const row of this.source.response) {
+		response.pop();
+
+		for(const row of response) {
 
 			for(const column of row.get('data') || [])
 				this.max = Math.max(this.max, column.count);
 		}
 	}
 
-	render() {
+	async render() {
 
 		const
 			container = this.container.querySelector('.container'),
 			table = document.createElement('table'),
 			tbody = document.createElement('tbody'),
 			type = this.source.filters.get('type').label.querySelector('input').value,
-			response = this.source.response;
+			response = await this.source.response();
 
 		container.textContent = null;
 
@@ -6390,14 +6663,14 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		await this.source.fetch(options);
 
-		this.process();
+		await this.process();
 
-		this.render(options);
+		await this.render(options);
 	}
 
-	process() {
+	async process() {
 
-		const [response] = this.source.response;
+		const [response] = await this.source.response();
 
 		if(!this.options.column)
 			return this.source.error('Value column not selected.');
@@ -6409,9 +6682,9 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 			return this.source.error(`<em>${this.options.column}</em> column not found.`);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
-		const [response] = this.source.response;
+		const [response] = await this.source.response();
 
 		let value = response.getTypedValue(this.options.column);
 
@@ -6429,8 +6702,10 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		const container = this.containerElement = document.createElement('section');
 
 		container.classList.add('visualization', 'livenumber');
+		container.id = `visualization-${this.id}`;
 
 		container.innerHTML = `
+			<div class="graph"></div>
 			<div class="container"></div>
 		`;
 
@@ -6441,11 +6716,14 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		super.render(options);
 
+		this.source.columns.render();
+
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
+		this.container.querySelector('.graph').textContent = null;
 
 		if(this.subReports && this.subReports.length) {
 
@@ -6453,17 +6731,28 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			const actions = this.source.container.querySelector('header .actions');
 
-			actions.insertAdjacentHTML('beforeend', `
-				<span class="card-info" title="${this.subReports.length + (this.subReports.length > 1 ? ' sub-cards' : ' sub-card')}">
-					<i class="fas fa-ellipsis-h"></i>
-				</span>
-			`);
+			const card_info = this.source.container.querySelector('header .actions .card-info');
+
+			if(!card_info) {
+
+				actions.insertAdjacentHTML('beforeend', `
+					<span class="card-info" title="${this.subReports.length + (this.subReports.length > 1 ? ' sub-cards' : ' sub-card')}">
+						<i class="fas fa-ellipsis-h"></i>
+					</span>
+				`);
+			}
 		}
 
 		this.container.on('click', async () => {
 
 			if(!this.subReports || !this.subReports.length)
 				return;
+
+			if(this.subReportsLoaded) {
+
+				this.subReportDialogBox.show();
+				return;
+			}
 
 			this.subReportDialogBox.body.textContent = null;
 			this.subReportDialogBox.show();
@@ -6475,7 +6764,6 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				const selectedVisualizations = report.visualizations.filter(x => this.subReports.includes(x.visualization_id.toString()));
 
 				visualizations = visualizations.concat(selectedVisualizations);
-
 			}
 
 			for(const visualization of visualizations) {
@@ -6491,16 +6779,17 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 				this.subReportDialogBox.body.appendChild(report.container);
 			}
 
+			this.subReportsLoaded = true;
 		});
 
 		await this.source.fetch(options);
 
-		this.process();
+		await this.process();
 
 		this.render(options);
 	}
 
-	process() {
+	async process() {
 
 		if(!this.options)
 			return this.source.error('Visualization configuration not set.');
@@ -6511,9 +6800,9 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 		if(!this.options.valueColumn)
 			return this.source.error('Value column not selected.');
 
-		const dates = new Map;
+		this.dates = new Map;
 
-		for(const row of this.source.response) {
+		for(const row of await this.source.response()) {
 
 			if(!row.has(this.options.timingColumn))
 				return this.source.error(`Timing column '${this.options.timingColumn}' not found.`);
@@ -6524,7 +6813,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			if(!Date.parse(row.get(this.options.timingColumn)))
 				return this.source.error(`Timing column value '${row.get(this.options.timingColumn)}' is not a valid date.`);
 
-			dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
+			this.dates.set(Date.parse(new Date(row.get(this.options.timingColumn)).toISOString().substring(0, 10)), row);
 		}
 
 		let today = new Date();
@@ -6536,37 +6825,39 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			date: Date.parse(new Date(new Date(today - ((this.options.centerOffset || 0) * 24 * 60 * 60 * 1000))).toISOString().substring(0, 10)),
 		};
 
-		this.right = {
-			value: 0,
-			date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-		};
+		if(this.dates.has(this.center.date))
+			this.center.value = this.dates.get(this.center.date).get(this.options.valueColumn);
 
-		this.left = {
-			value: 0,
-			date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
-		};
+		if(this.options.rightOffset != '') {
 
-		let centerValue;
+			this.right = {
+				value: 0,
+				date: Date.parse(new Date(this.center.date - ((this.options.rightOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			};
 
-		if(dates.has(this.center.date)) {
-			centerValue = dates.get(this.center.date).get(this.options.valueColumn);
-			this.center.value = dates.get(this.center.date).getTypedValue(this.options.valueColumn);
+			if(this.dates.has(this.right.date)) {
+
+				const value = this.dates.get(this.right.date).get(this.options.valueColumn);
+
+				this.right.percentage = ((value - this.center.value) / value) * 100 * -1;
+				this.right.value = value;
+			}
 		}
 
-		if(dates.has(this.left.date)) {
+		if(this.options.leftOffset != '') {
 
-			const value = dates.get(this.left.date).get(this.options.valueColumn);
+			this.left = {
+				value: 0,
+				date: Date.parse(new Date(this.center.date - ((this.options.leftOffset || 0) * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10)),
+			};
 
-			this.left.percentage = ((value - centerValue) / value) * 100 * -1;
-			this.left.value = dates.get(this.left.date).getTypedValue(this.options.valueColumn);
-		}
+			if(this.dates.has(this.left.date)) {
 
-		if(dates.has(this.right.date)) {
+				const value = this.dates.get(this.left.date).get(this.options.valueColumn);
 
-			const value = dates.get(this.right.date).get(this.options.valueColumn);
-
-			this.right.percentage = ((value - centerValue) / value) * 100 * -1;
-			this.right.value = dates.get(this.right.date).getTypedValue(this.options.valueColumn);
+				this.left.percentage = ((value - this.center.value) / value) * 100 * -1;
+				this.left.value = value;
+			}
 		}
 	}
 
@@ -6577,25 +6868,175 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 		const container = this.container.querySelector('.container');
 
-		container.innerHTML = `
-			<h5>${this.center.value}</h5>
+		container.innerHTML = `<h5>${this.dates.get(this.center.date) ? this.dates.get(this.center.date).getTypedValue(this.options.valueColumn) : ''}</h5>`;
+		this.center.container = this.container.querySelector('h5');
 
-			<div class="left">
-				<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
-				<span class="value">
-					${this.left.value}<br>
-					<small title="${Format.date(this.left.date)}">${Format.number(this.options.leftOffset)} days ago</small>
-				</span>
-			</div>
+		if(this.left) {
 
-			<div class="right">
-				<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
-				<span class="value">
-					${this.right.value}<br>
-					<small title="${Format.date(this.right.date)}">${Format.number(this.options.rightOffset)} days ago</small>
-				</span>
-			</div>
-		`;
+			container.insertAdjacentHTML('beforeend', `
+				<div class="left">
+					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
+					<span class="value">
+						<span class="value-left">${this.dates.get(this.left.date) ? this.dates.get(this.left.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
+						<small title="${Format.date(this.left.date)}">
+							${Format.number(this.options.leftOffset)} ${this.options.leftOffset == '1'? 'day' : 'days'} ago
+						</small>
+					</span>
+				</div>
+			`);
+
+			this.left.container = this.container.querySelector('.value-left');
+		}
+
+		if(this.right) {
+
+			container.insertAdjacentHTML('beforeend', `
+				<div class="right">
+					<h6 class="percentage ${this.getColor(this.right.percentage)}">${this.right.percentage ? Format.number(this.right.percentage) + '%' : '-'}</h6>
+					<span class="value">
+						<span class="value-right">${this.dates.get(this.right.date) ? this.dates.get(this.right.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
+						<small title="${Format.date(this.right.date)}">
+							${Format.number(this.options.rightOffset)} day${this.options.rightOffset == '1'? '' : 's'} ago
+						</small>
+					</span>
+				</div>
+			`);
+
+			this.right.container = this.container.querySelector('.value-right');
+		}
+
+		if(!options.resize)
+			this.animate(options);
+
+		if(this.options.showGraph)
+			this.plotGraph(options);
+	}
+
+	animate(options) {
+
+		const
+			duration = Visualization.animationDuration * 2 / 1000,
+			jumpsPerSecond = 20,
+			jumps = Math.floor(duration * jumpsPerSecond),
+			values = {
+				center: 0,
+				left: 0,
+				right: 0,
+			};
+
+		const count = jump => {
+
+			if(jump < jumps)
+				setTimeout(() => window.requestAnimationFrame(() => count(jump + 1)), duration / jumps);
+
+			for(const position of ['center', 'left', 'right']) {
+
+				if(!this[position] || !this.dates.has(this[position].date))
+					continue;
+
+				values[position] = (this[position].value / jumps) * jump;
+
+				if(this[position].value % 1 == 0)
+					values[position] = Math.floor(values[position]);
+
+				this[position].container.textContent = this.dates.get(this[position].date).getTypedValue(this.options.valueColumn, values[position]);
+			}
+		};
+
+		count(1);
+	}
+
+	plotGraph(options) {
+
+		const margin = {top: 30, right: 30, bottom: 30, left: 30};
+
+		const container = d3.selectAll(`#visualization-${this.id} .graph`);
+
+		container.selectAll('*').remove();
+
+		if(!this.width) {
+			this.width = this.container.clientWidth - margin.left - margin.right;
+			this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
+		}
+
+		const
+			data = [],
+			x = d3.scale.ordinal().rangePoints([0, this.width], 0.1, 0),
+			y = d3.scale.linear().range([this.height, 0]),
+			valueline = d3.svg.line()
+				.x(d => x(d.date))
+				.y(d => y(d.value));
+
+		for(const row of this.dates.values()) {
+			data.push({
+				date: Format.date(row.get(this.options.timingColumn)),
+				value: row.get(this.options.valueColumn),
+			});
+		}
+
+		x.domain(data.map(d => d.date));
+		y.domain([d3.min(data, d => d.value), d3.max(data, d => d.value)]);
+
+		const svg = container
+			.append('svg')
+				.attr('width', this.width + margin.left + margin.right)
+				.attr('height', this.height + margin.top + margin.bottom)
+			.append('g')
+				.attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+		svg.append('path')
+			.attr('class', 'line')
+			.attr('d', valueline(data))
+			.attr('stroke', this.source.columns.get(this.options.valueColumn).color);
+
+		if(!options.resize) {
+
+			const
+				path = svg.selectAll('path')[0][0],
+				length = path.getTotalLength();
+
+			path.style.strokeDasharray = length + ' ' + length;
+			path.style.strokeDashoffset = length;
+			path.getBoundingClientRect();
+
+			path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+			path.style.strokeDashoffset = '0';
+		}
+
+		window.addEventListener('resize', () => {
+
+			const
+				width = this.container.clientWidth - margin.left - margin.right,
+				height = this.container.clientHeight - margin.top - margin.bottom - 10;
+
+			if(this.width != width || this.height != height) {
+
+				this.width = width;
+				this.height = height;
+
+				this.plotGraph({resize: true});
+			}
+		});
+
+		if(!this.options.graphParallax)
+			return;
+
+		const graph = this.container.querySelector('.graph');
+
+		this.container.on('mousemove', e => {
+
+			const
+				rect = this.container.getBoundingClientRect(),
+				x = e.clientX - rect.left,
+				y = e.clientY - rect.top,
+				parallax = 30,
+				valueX = ((x / this.container.clientWidth * parallax) - (parallax / 2)) * -1,
+				valueY = ((y / this.container.clientHeight * parallax) - (parallax / 3)) * -1;
+
+			graph.style.transform = `translate(${valueX}px, ${valueY}px)`;
+		});
+
+		this.container.on('mouseout', () => graph.removeAttribute('style'));
 	}
 
 	getColor(percentage) {
@@ -6658,6 +7099,8 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 		this.editor = new CodeEditor({mode: 'json'});
 
+		this.editor.editor.setTheme('ace/theme/clouds');
+
 		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
 		this.editor.editor.setReadOnly(true);
 
@@ -6678,10 +7121,10 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		container.classList.add('visualization', 'html');
 		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
 
-		if(this.options.hideHeader)
+		if(this.options && this.options.hideHeader)
 			this.source.container.querySelector('header').classList.add('hidden');
 
-		if(this.options.hideLegend)
+		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
 		this.source.container.classList.add('flush');
@@ -6697,10 +7140,489 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 	render(options = {}) {
 
-		if(this.options.hideLegend)
+		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
+
+		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
 	}
 });
+
+class SpatialMapLayers extends Set {
+
+	constructor(layers, visualization) {
+
+		super();
+
+		this.visualization = visualization;
+		this.visible =  new Set();
+
+		for(const layer of layers) {
+
+			this.add(new (SpatialMapLayer.types.get(layer.type))(layer, this));
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('columns-toggle');
+
+		container.innerHTML = `
+			<div class="columns hidden"></div>
+			<span class="arrow up" title="Plotted Layers"><i class="fas fa-angle-up"></i></span>
+			<span class="arrow down hidden" title="Collapse"><i class="fas fa-angle-down"></i></span>
+		`;
+
+		container.on('click', () => {
+
+			container.querySelector('.arrow.up').classList.toggle('hidden');
+			container.querySelector('.arrow.down').classList.toggle('hidden');
+			container.querySelector('.columns').classList.toggle('hidden');
+		});
+
+		for(const layer of this.values()) {
+
+			this.visible.add(layer);
+			container.querySelector('.columns').appendChild(layer.container);
+		}
+
+		return container;
+	}
+
+	render() {
+
+		for(const layer of this.values()) {
+
+			if(!layer.latitudeColumn)
+				return this.visualization.source.error('Latitude Column not defined.');
+
+			if(!this.visualization.source.columns.has(layer.latitudeColumn))
+				return this.visualization.source.error(`Latitude Column '${layer.latitudeColumn}' not found.`);
+
+			if(!layer.longitudeColumn)
+				return this.visualization.source.error('Longitude Column not defined.');
+
+			if(!this.visualization.source.columns.has(layer.longitudeColumn))
+				return this.visualization.source.error(`Longitude Column '${layer.longitudeColumn}' not found.`);
+
+			this.visible.has(layer) ? layer.plot() : layer.clear();
+		}
+	}
+}
+
+class SpatialMapLayer {
+
+	constructor(layer, layers) {
+
+		Object.assign(this, layer);
+
+		this.layers = layers;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('label');
+
+		container.classList.add('column');
+
+		container.innerHTML = `
+				<span class="name">${this.layer_name} <span class="type">${this.type}</span></span>
+				<input type="checkbox" name="visible_layers" checked>
+			`;
+
+		container.on('click', e => e.stopPropagation());
+
+		const visibleCheck = container.querySelector('input[name=visible_layers]');
+
+		visibleCheck.on('change', e => {
+
+			container.classList.toggle('disabled');
+
+			if(visibleCheck.checked)
+				this.layers.visible.add(this);
+			else
+				this.layers.visible.delete(this);
+
+			this.layers.render();
+		});
+
+		return container;
+
+	}
+}
+
+SpatialMapLayer.types = new Map();
+
+SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
+
+	constructor(layer, layers) {
+
+		super(layer, layers);
+
+		this.heatmap = new google.maps.visualization.HeatmapLayer({
+			radius: this.radius || 15,
+			opacity: this.opacity || 0.6
+		});
+	}
+
+	plot() {
+
+		if(this.heatmap.getMap())
+			return;
+
+		this.heatmap.setData(this.markers);
+		this.heatmap.setMap(this.layers.visualization.map);
+	}
+
+	clear() {
+
+		this.heatmap.setMap(null);
+	}
+
+	get markers() {
+
+		const markers = [];
+
+		for(const row of this.layers.visualization.rows) {
+
+			if(this.weightColumn) {
+
+				markers.push({
+					location: new google.maps.LatLng(parseFloat(row.get(this.latitudeColumn)), parseFloat(row.get(this.longitudeColumn))),
+					weight: parseFloat(row.get(this.weightColumn))
+				});
+
+				continue;
+			}
+
+			markers.push(
+				new google.maps.LatLng(parseFloat(row.get(this.latitudeColumn)), parseFloat(row.get(this.longitudeColumn)))
+			);
+		}
+
+		return markers
+	}
+});
+
+SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer {
+
+	plot() {
+
+		if(this.clusterer)
+			return;
+
+		this.clusterer = new MarkerClusterer(this.layers.visualization.map, this.markers, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
+	}
+
+	clear() {
+
+		if(this.clusterer) {
+
+			this.clusterer.clearMarkers();
+			this.clusterer = null;
+		}
+	}
+
+	get markers() {
+
+		const markers = [];
+
+		for(const row of this.layers.visualization.rows) {
+			markers.push(
+				new google.maps.Marker({
+					position: {
+						lat: parseFloat(row.get(this.latitudeColumn)),
+						lng: parseFloat(row.get(this.longitudeColumn)),
+					},
+				})
+			);
+		}
+
+		return markers;
+	}
+});
+
+SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer {
+
+	plot() {
+
+		const map = this.markers[0].getMap();
+
+		for(const marker of this.markers) {
+
+			if(!map)
+				marker.setMap(this.layers.visualization.map);
+		}
+	}
+
+	clear() {
+
+		for(const marker of this.markers) {
+
+			marker.setMap(null);
+		}
+	}
+
+	get markers() {
+
+		if(this.existingMarkers)
+			return this.existingMarkers;
+
+		const markers = this.existingMarkers = [];
+
+		const
+			markerColor = ['red', 'blue', 'green', 'orange', 'pink', 'yellow', 'purple'],
+			urlPrefix = 'http://maps.google.com/mapfiles/ms/icons/';
+
+		let uniqueFields = [];
+
+		if(this.colorColumn) {
+
+			uniqueFields = this.layers.visualization.rows.map(x => x.get(this.colorColumn));
+			uniqueFields = Array.from(new Set(uniqueFields));
+		}
+
+		for(const row of this.layers.visualization.rows) {
+
+			const infoContent = `
+				<div>
+					<table style="border: none;">
+						<tr>
+							<td>${this.colorColumn.slice(0, 1).toUpperCase() + this.colorColumn.slice(1)}</td>
+							<td>${row.get(this.colorColumn) || ''}</td>
+						</tr>
+					</table>
+					<hr>
+					<span style="color: #888">Latitude: ${row.get(this.latitudeColumn)}, Longitude: ${row.get(this.longitudeColumn)}</span>
+				</div>
+			`;
+
+			let infoPopUp;
+
+			const markerObj = new google.maps.Marker({
+				position: {
+					lat: parseFloat(row.get(this.latitudeColumn)),
+					lng: parseFloat(row.get(this.longitudeColumn)),
+				},
+				icon: urlPrefix + (markerColor[uniqueFields.indexOf(row.get(this.colorColumn)) % markerColor.length] || 'red') + '-dot.png',
+			});
+
+			markerObj.addListener('mouseover', () => {
+
+				infoPopUp = new google.maps.InfoWindow({
+					content: infoContent
+				});
+
+				infoPopUp.open(this.layers.visualization.map, markerObj);
+			});
+
+			markerObj.addListener('mouseout', () => {
+
+				infoPopUp.close();
+			});
+
+			markers.push(markerObj);
+		}
+
+		return markers;
+	}
+});
+
+SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
+
+	plot() {
+
+		const map = this.markers[0].getMap();
+
+		for(const marker of this.markers) {
+
+			if(!map)
+				marker.setMap(this.layers.visualization.map);
+		}
+	}
+
+	clear() {
+
+		for(const marker of this.markers) {
+
+			marker.setMap(null);
+		}
+	}
+
+	get markers() {
+
+		if(this.existingMarkers)
+			return this.existingMarkers;
+
+		const
+			markers = this.existingMarkers = [],
+			possibleRadiusValues = this.layers.visualization.rows.map(x => parseFloat(x.get(this.radiusColumn))),
+			range = {
+				source: {
+					min: Math.min(...possibleRadiusValues),
+					max: Math.max(...possibleRadiusValues),
+				},
+				target: {
+					min: 100,
+					max: 2000000,
+				},
+			};
+
+		let uniqueFields = [];
+
+		if(this.colorColumn) {
+
+			uniqueFields = this.layers.visualization.rows.map(x => x.get(this.colorColumn));
+			uniqueFields = Array.from(new Set(uniqueFields));
+		}
+
+		for(const row of this.layers.visualization.rows) {
+
+			const markerRadius = parseFloat(row.get(this.radiusColumn));
+
+			if(!markerRadius && markerRadius != 0)
+				return this.layers.visualization.source.error('Radius column must contain numerical values');
+
+			const color = DataSourceColumn.colors[uniqueFields.indexOf(row.get(this.colorColumn)) % DataSourceColumn.colors.length] || DataSourceColumn.colors[0];
+
+			markers.push(new google.maps.Circle({
+				radius: (((markerRadius - range.source.min) / range.source.max) * (range.target.max - range.target.min)) + range.target.min,
+				center: {
+					lat: parseFloat(row.get(this.latitudeColumn)),
+					lng: parseFloat(row.get(this.longitudeColumn)),
+				},
+				strokeColor: color,
+				strokeOpacity: 0.8,
+				strokeWeight: 2,
+				fillColor: color,
+				fillOpacity: 0.35,
+			}));
+		}
+
+		return markers;
+	}
+});
+
+class SpatialMapThemes extends Map {
+
+	constructor(visualization) {
+
+		super();
+
+		this.visualization = visualization;
+
+		for(const theme of MetaData.spatialMapThemes.keys()) {
+
+			this.set(theme, new SpatialMapTheme({name: theme, config: MetaData.spatialMapThemes.get(theme)}, this))
+		}
+
+		this.selected = this.visualization && this.visualization.options && this.visualization.options.theme ? this.visualization.options.theme : 'Standard';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('theme-list');
+
+		for(const theme of this.values()) {
+
+			container.appendChild(theme.container);
+		}
+
+		return container;
+
+	}
+}
+
+class SpatialMapTheme {
+
+	constructor(theme, themes) {
+
+		Object.assign(this, theme);
+
+		this.themes = themes;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.conatinerElement;
+
+		const container = this.containerElement = document.createElement('span');
+
+		container.classList.add('theme');
+
+		container.innerHTML = `
+			<div class="name">${this.name}</div>
+		`;
+
+		if(this.themes.selected == this.name)
+			container.classList.add('selected');
+
+		container.insertBefore(this.image, container.querySelector('.name'));
+
+		container.on('click', () => {
+
+			for(const element of container.parentNode.querySelectorAll('.theme')) {
+
+				element.classList.remove('selected');
+			}
+
+			this.themes.selected = container.querySelector('.name').textContent;
+			container.classList.add('selected');
+		});
+
+		return container;
+	}
+
+	get image() {
+
+		const
+			image = document.createElement('div');
+
+		image.classList.add('theme-image', 'image-container');
+
+		image.innerHTML = `
+			<div class="road"></div>
+			<div class="water"></div>
+			<div class="park"></div>
+		`;
+
+		if(!this.config.length) {
+
+			image.style.background = '#fff';
+			image.querySelector('.road').style.background = '#ededed';
+			image.querySelector('.water').style.background = '#aadaff';
+			image.querySelector('.park').style.background = '#c0ecae';
+		}
+		else {
+
+			image.style.background = this.config[0].stylers[0].color;
+
+			const
+				[roadColor] = this.config.filter(x => x.featureType == 'road'),
+				[waterColor] = this.config.filter(x => x.featureType == 'water'),
+				[parkColor] = this.config.filter(x => x.featureType == 'poi.park');
+
+			image.querySelector('.road').style.background = roadColor.stylers[0].color;
+			image.querySelector('.water').style.background = waterColor.stylers[0].color;
+			image.querySelector('.park').style.background = parkColor.stylers[0].color;
+		}
+
+		return image;
+	}
+}
 
 class Tooltip {
 
@@ -6740,7 +7662,6 @@ class Tooltip {
 		container.classList.add('hidden');
 	}
 }
-
 
 Visualization.animationDuration = 750;
 

@@ -58,7 +58,7 @@ exports.list = class extends API {
 		}
 
 		const results = await Promise.all([
-			this.mysql.query(query, [this.request.body.search, this.request.body.search, this.request.body.search]),
+			this.mysql.query(query, [`%${this.request.body.text}%`, `%${this.request.body.text}%`, `%${this.request.body.text}%`]),
 			this.mysql.query('SELECT * FROM tb_query_filters'),
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 			this.mysql.query(dashboardRoleQuery),
@@ -66,8 +66,9 @@ exports.list = class extends API {
 
 		const reportRoles = await role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],);
 
-		const reportRoleMapping = {};
+		const userSharedQueries = new Set((await role.get(this.account.account_id, "query", "user", results[0].length ? results[0].map(x => x.query_id) : [-1], this.user.user_id)).map(x => x.owner_id));
 
+		const reportRoleMapping = {};
 
 		for (const row of reportRoles) {
 
@@ -105,6 +106,8 @@ exports.list = class extends API {
 			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
 			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
 
+			row.flag = userSharedQueries.has(row.query_id);
+
 			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
 				continue;
 			}
@@ -141,7 +144,12 @@ exports.update = class extends API {
 
 	async update() {
 
-		this.user.privilege.needs('report');
+		const categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
+
+		for(const category of categories || [0]) {
+
+			this.user.privilege.needs('report', category);
+		}
 
 		let
 			values = {},
@@ -150,9 +158,7 @@ exports.update = class extends API {
 				'source',
 				'query',
 				'definition',
-				'url',
-				'url_options',
-				'category_id',
+				'subtitle',
 				'description',
 				'added_by',
 				'tags',
@@ -161,7 +167,6 @@ exports.update = class extends API {
 				'is_redis',
 				'load_saved',
 				'refresh_rate',
-				'roles',
 				'format',
 				'connection_name',
 			];
@@ -172,7 +177,6 @@ exports.update = class extends API {
 
 				values[key] = this.request.body[key];
 			}
-
 		}
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;
@@ -199,7 +203,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('report');
+		this.user.privilege.needs('report', this.user.roles[0].category_id);
 
 		let
 			values = {}, query_cols = [
@@ -208,9 +212,7 @@ exports.insert = class extends API {
 				'source',
 				'query',
 				'definition',
-				'url',
-				'url_options',
-				'category_id',
+				'subtitle',
 				'description',
 				'added_by',
 				'tags',
@@ -219,7 +221,6 @@ exports.insert = class extends API {
 				'is_redis',
 				'load_saved',
 				'refresh_rate',
-				'roles',
 				'format',
 				'connection_name',
 			];

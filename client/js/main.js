@@ -5,6 +5,22 @@ if(typeof window != 'undefined') {
 
 		await Page.setup();
 
+		if(!user || !user.privileges.has('superadmin')) {
+
+			console.log(`%c
+						           _ _  _____                  _
+						     /\\   | | |/ ____|                | |
+						    /  \\  | | | (___  _ __   __ _ _ __| | __
+						   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
+						  / ____ \\| | |____) | |_) | (_| | |  |   <
+						 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
+						                     | |
+						                     |_|
+						   %cWelcome to the source, enjoy your stay.
+				Find the entire code at https://github.com/Jungle-Works/AllSpark
+			`, 'color: #f33; font-weight: bold;', 'color: #777');
+		}
+
 		if(!Page.class)
 			return;
 
@@ -19,10 +35,6 @@ class Page {
 		AJAXLoader.setup();
 
 		await Page.load();
-
-		Page.render();
-
-		Page.setupShortcuts();
 	}
 
 	static async load() {
@@ -53,9 +65,41 @@ class Page {
 		await API.refreshToken();
 	}
 
-	static render() {
+	constructor() {
 
-		const header = document.querySelector('body > header');
+		this.container = document.querySelector('main');
+
+		this.account = window.account;
+		this.user = window.user;
+		this.metadata = window.MetaData;
+		this.indexedDb = IndexedDb.instance;
+		this.cookies = Cookies;
+
+		this.serviceWorker = new Page.serviceWorker(this);
+		this.webWorker = new Page.webWorker(this);
+
+		this.renderPage();
+		this.shortcuts();
+	}
+
+	renderPage() {
+
+		const
+			navList = [
+				{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+				{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
+				{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
+				{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
+				{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
+				{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+			],
+			header = document.querySelector('body > header'),
+			navContainer = header.querySelector('.nav-container'),
+			nav = header.querySelector('nav'),
+			userPopup = header.querySelector('.user-popup'),
+			userToggle = header.querySelector('.user-toggle'),
+			menuToggle = header.querySelector('.menu-toggle'),
+			profileLink = document.createElement('a');
 
 		if(window.account) {
 
@@ -73,64 +117,49 @@ class Page {
 			document.title = account.name;
 		}
 
-		Page.navList = [
-			{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
-			{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
-			{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
-			{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
-			{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
-			{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
-		];
+		userToggle.innerHTML = '<i class="fa fa-user"></i>&nbsp; '+ this.user.name;
 
-		const nav_container = header.querySelector('nav');
+		profileLink.textContent = 'Profile';
+		profileLink.href = `/user/profile/${this.user.user_id}`;
+		profileLink.classList.add('profile-link');
 
-		if(window.account && account.settings.get('top_nav_position') == 'left') {
+		header.querySelector('.name').innerHTML = this.user.name;
+		header.querySelector('.email').innerHTML = this.user.email;
+		header.querySelector('.user-popup').insertBefore(profileLink, header.querySelector('.logout'));
 
-			document.querySelector('.logo-container .left-menu-toggle').classList.remove('hidden');
-
-			nav_container.classList.add('left');
-		};
-
-		header.querySelector('.left-menu-toggle').on('click', () => {
-
-			header.querySelector('.left-menu-toggle').classList.toggle('selected');
-			nav_container.classList.toggle('show');
-			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		userToggle.on('click', e => {
+			e.stopPropagation();
+			userPopup.classList.toggle('hidden');
+			userToggle.classList.toggle('selected');
 		});
 
-		document.querySelector('.nav-blanket').on('click', () => {
-			header.querySelector('.left-menu-toggle').classList.toggle('selected');
-			nav_container.classList.toggle('show');
-			document.querySelector('.nav-blanket').classList.toggle('menu-cover');
+		document.body.on('click', () => {
+			userPopup.classList.add('hidden');
+			userToggle.classList.remove('selected');
+			navContainer.classList.remove('show');
+			menuToggle.classList.remove('selected');
 		});
 
-		nav_container.classList.remove('hidden');
+		userPopup.on('click', e => e.stopPropagation());
+		navContainer.on('click', e => e.stopPropagation());
 
-		header.insertAdjacentHTML('beforeend', `
-			<span class="user-name"></span>
-			<span class="logout">
-				<i class="fa fa-power-off"></i>&nbsp;
-				Logout
-			</span>
-		`);
-
-		const user_name = header.querySelector('.user-name');
-
-		if(user.id) {
-
-			user_name.innerHTML = `<a href="/user/profile/${user.user_id}"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;&nbsp;${user.name}</a>`;
-			const search = new GlobalSearch().container;
-			search.classList.add('search-header');
-			header.insertBefore(search, user_name);
-		}
 		header.querySelector('.logout').on('click', () => User.logout());
 
-		for(const item of Page.navList) {
+		menuToggle.on('click', e => {
+			e.stopPropagation();
+			navContainer.classList.toggle('show');
+			menuToggle.classList.toggle('selected');
+		});
+
+		if(user.id)
+			navContainer.insertBefore(new GlobalSearch().container, header.querySelector('.user-toggle'));
+
+		for(const item of navList) {
 
 			if(!window.user || !user.privileges.has(item.privilege))
 				continue;
 
-			nav_container.insertAdjacentHTML('beforeend',`
+			nav.insertAdjacentHTML('beforeend',`
 				<a href='${item.url}'>
 					<i class="${item.icon}"></i>&nbsp;
 					${item.name}
@@ -138,20 +167,13 @@ class Page {
 			`);
 		}
 
-		for(const item of nav_container.querySelectorAll('a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname)) {
-				user_name.classList.remove('selected');
+		for(const item of nav.querySelectorAll('a')) {
+			if(window.location.pathname.startsWith(new URL(item.href).pathname))
 				item.classList.add('selected');
-			}
-		}
-
-		if(window.location.pathname.includes('/user/profile')) {
-			Array.from(nav_container.querySelectorAll('a')).map(items => items.classList.remove('selected'));
-			user_name.querySelector('a').classList.add('selected');
 		}
 	}
 
-	static setupShortcuts() {
+	shortcuts() {
 
 		document.on('keyup', e => {
 
@@ -166,20 +188,6 @@ class Page {
 			if(e.keyCode == 76)
 				User.logout();
 		});
-	}
-
-	constructor() {
-
-		this.container = document.querySelector('main');
-
-		this.account = window.account;
-		this.user = window.user;
-		this.metadata = window.MetaData;
-		this.indexedDb = IndexedDb.instance;
-		this.cookies = Cookies;
-
-		this.serviceWorker = new Page.serviceWorker(this);
-		this.webWorker = new Page.webWorker(this);
 	}
 }
 
@@ -626,7 +634,8 @@ class GlobalSearch {
 		this.searchList.innerHTML = `<li><span class="loading"><i class="fa fa-spinner fa-spin"></i></span></li>`;
 
 		const params = {
-			text: this.searchInput.value
+			text: this.searchInput.value,
+			search: 'global',
 		};
 
 		const data = await API.call('search/query', params);
@@ -755,7 +764,7 @@ class User {
 		const token = await Storage.get('token');
 
 		try {
-			user = JSON.parse(atob(token.split('.')[1]));
+			user = JSON.parse(atob(token.body.split('.')[1]));
 		} catch(e) {}
 
 		return window.user = new User(user);
@@ -763,23 +772,41 @@ class User {
 
 	static async logout({next, callback, redirect = true} = {}) {
 
-		const parameters = new URLSearchParams();
+		try {
 
-		await Storage.clear();
+			const
+				parameters = {
+					user_id: user.user_id,
+					type: 'logout',
+				},
+				options = {
+					method: 'POST',
+				};
 
-		if(next)
-			parameters.set('continue', window.location.pathname + window.location.search);
-
-		if(callback)
-			await callback();
-
-		if(navigator.serviceWorker) {
-			for(const registration of await navigator.serviceWorker.getRegistrations())
-				registration.unregister();
+			API.call('session-logs/insert', parameters, options);
 		}
+		catch(e) {}
 
-		if(redirect)
-			window.location = '/login?'+parameters.toString();
+		setTimeout(async() => {
+
+			const parameters = new URLSearchParams();
+
+			await Storage.clear();
+
+			if(next)
+				parameters.set('continue', window.location.pathname + window.location.search);
+
+			if(callback)
+				await callback();
+
+			if(navigator.serviceWorker) {
+				for(const registration of await navigator.serviceWorker.getRegistrations())
+					registration.unregister();
+			}
+
+			if(redirect)
+				window.location = '/login?'+parameters.toString();
+		}, 100)
 	}
 
 	constructor(user) {
@@ -830,10 +857,11 @@ class MetaData {
 		MetaData.categories = new Map;
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
-		MetaData.datasets = new Map;
 		MetaData.visualizations = new Map;
 		MetaData.filterTypes = new Map;
 		MetaData.features = new Set;
+		MetaData.spatialMapThemes = new Map;
+		MetaData.globalFilters = new Set;
 
 		if(!user.id)
 			return;
@@ -891,10 +919,11 @@ class MetaData {
 			MetaData.categories.set(category.category_id, category);
 		}
 
+		MetaData.spatialMapThemes =  new Map(metadata.spatialMapThemes.map(x => [x.name, JSON.parse(x.theme)]));
 		MetaData.filterTypes = new Map(metadata.filterTypes.map(x => [x.name.toLowerCase(), x]));
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
-		MetaData.datasets = new Map(metadata.datasets.map(d => [d.id, d]));
 		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
+		MetaData.globalFilters = new Map(metadata.globalFilters.map(d => [d.id, d]));
 	}
 }
 
@@ -970,7 +999,7 @@ class AJAX {
 		if(response.status == 401)
 			return User.logout({redirect: options.redirectOnLogout});
 
-		return await response.json();
+		return response.headers.get('content-type').includes('json') ? await response.json() : await response.text();
 	}
 }
 
@@ -989,15 +1018,25 @@ class API extends AJAX {
 		if(!endpoint.startsWith('authentication'))
 			await API.refreshToken();
 
+		const refresh_token = await Storage.get('refresh_token');
+
+		if(refresh_token) {
+			if(typeof parameters == 'string')
+				parameters += '&refresh_token='+refresh_token;
+			else
+				parameters.refresh_token = refresh_token;
+		}
+
 		const token = await Storage.get('token');
 
-		if(token) {
+		if(token && token.body) {
 
 			if(typeof parameters == 'string')
-				parameters += '&token='+token;
+				parameters += '&token='+token.body;
 
 			else
-				parameters.token = token;
+				parameters.token = token.body;
+
 		}
 
 		// If a form id was supplied, then also load the data from that form
@@ -1048,7 +1087,11 @@ class API extends AJAX {
 		}
 	}
 
+	/**
+	 * Makes sure the short term token we have is valid and up to date.
+	 */
 	static async refreshToken() {
+
 		let
 			getToken = true,
 			token = await Storage.get('token'),
@@ -1066,22 +1109,23 @@ class API extends AJAX {
 			Cookies.set('refresh_token', '');
 		}
 
-		if(token) {
+		if(token && token.body) {
 
 			try {
 
-				const user = JSON.parse(atob(token.split('.')[1]));
+				const user = JSON.parse(atob(token.body.split('.')[1]));
 
-				if(user.exp && user.exp * 1000 > Date.now())
+				// If the token is about to expire in next few seconds then let it refresh.
+				// We're using the difference of expiry and creation here to support casses
+				// where users manually change system time and local UTC time gets out of sync with remote UTC time.
+				if(Date.now() - token.timestamp + 10000 < (user.exp - user.iat) * 1000)
 					getToken = false;
 
 			} catch(e) {}
 		}
 
-		if(!(await Storage.has('refresh_token')) || !getToken || API.refreshToken.lastCheck > Date.now() - 2 * 1000)
+		if(!(await Storage.has('refresh_token')) || !getToken)
 			return;
-
-		API.refreshToken.lastCheck = Date.now();
 
 		const
 			parameters = {
@@ -1107,8 +1151,15 @@ class API extends AJAX {
 
 		const response = await API.call('authentication/refresh', parameters, options);
 
-		await Storage.set('token', response);
-		Cookies.set('token', response);
+		token = {
+
+			// Save the time we got the token, we can use this later to check if it's about to expire
+			timestamp: Date.now(),
+			body: response
+		};
+
+		await Storage.set('token', token);
+		Cookies.set('token', token);
 
 		Page.load();
 	}
@@ -1117,8 +1168,9 @@ class API extends AJAX {
 API.Exception = class {
 
 	constructor(response = {}) {
-		this.status = response.status;
-		this.message = response.message;
+
+		this.status = response.status || '';
+		this.message = response.message || response;
 	}
 }
 
@@ -1153,8 +1205,8 @@ class AJAXLoader {
 		container.classList.add('show');
 		container.classList.remove('hidden');
 
-		if(AJAXLoader.timeout)
-			clearTimeout(AJAXLoader.timeout);
+		clearTimeout(AJAXLoader.timeout);
+		clearTimeout(AJAXLoader.timeoutHidden);
 	}
 
 	/**
@@ -1173,9 +1225,12 @@ class AJAXLoader {
 		if(!container || AJAXLoader.count)
 			return;
 
-		container.classList.remove('show');
+		AJAXLoader.timeout = setTimeout(() => {
 
-		AJAXLoader.timeout = setTimeout(() => container.classList.add('hidden'), 300);
+			container.classList.remove('show');
+
+			AJAXLoader.timeoutHidden = setTimeout(() => container.classList.add('hidden'), 300);
+		}, 100);
 	}
 
 	static animateEllipses() {
@@ -1200,10 +1255,11 @@ class Format {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric',
+			timeZone: 'UTC',
 		};
 
 		if(!Format.date.formatter)
-			Format.date.formatter = new Intl.DateTimeFormat('en-IN', options);
+			Format.date.formatter = new Intl.DateTimeFormat(undefined, options);
 
 		if(typeof date == 'string')
 			date = Date.parse(date);
@@ -1217,18 +1273,60 @@ class Format {
 		return Format.date.formatter.format(date);
 	}
 
-	static time(time) {
+	static month(month) {
 
 		const options = {
 			year: 'numeric',
 			month: 'short',
-			day: 'numeric',
+			timeZone: 'UTC',
+		};
+
+		if(!Format.month.formatter)
+			Format.month.formatter = new Intl.DateTimeFormat(undefined, options);
+
+		if(typeof month == 'string')
+			month = Date.parse(month);
+
+		if(typeof month == 'object' && month)
+			month = month.getTime();
+
+		if(!month)
+			return '';
+
+		return Format.month.formatter.format(month);
+	}
+
+	static year(year) {
+
+		const options = {
+			year: 'numeric',
+			timeZone: 'UTC',
+		};
+
+		if(!Format.year.formatter)
+			Format.year.formatter = new Intl.DateTimeFormat(undefined, options);
+
+		if(typeof year == 'string')
+			year = Date.parse(year);
+
+		if(typeof year == 'object' && year)
+			year = year.getTime();
+
+		if(!year)
+			return '';
+
+		return Format.year.formatter.format(year);
+	}
+
+	static time(time) {
+
+		const options = {
 			hour: 'numeric',
 			minute: 'numeric'
 		};
 
 		if(!Format.time.formatter)
-			Format.time.formatter = new Intl.DateTimeFormat('en-IN', options);
+			Format.time.formatter = new Intl.DateTimeFormat(undefined, options);
 
 		if(typeof time == 'string')
 			time = Date.parse(time);
@@ -1242,10 +1340,35 @@ class Format {
 		return Format.time.formatter.format(time);
 	}
 
+	static dateTime(dateTime) {
+
+		const options = {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: 'numeric'
+		};
+
+		if(!Format.dateTime.formatter)
+			Format.dateTime.formatter = new Intl.DateTimeFormat(undefined, options);
+
+		if(typeof dateTime == 'string')
+			dateTime = Date.parse(dateTime);
+
+		if(typeof dateTime == 'object' && dateTime)
+			dateTime = dateTime.getTime();
+
+		if(!dateTime)
+			return '';
+
+		return Format.dateTime.formatter.format(dateTime);
+	}
+
 	static number(number) {
 
 		if(!Format.number.formatter)
-			Format.number.formatter = new Intl.NumberFormat('en-IN', {maximumFractionDigits: 2});
+			Format.number.formatter = new Intl.NumberFormat(undefined, {maximumFractionDigits: 2});
 
 		return Format.number.formatter.format(number);
 	}
@@ -1276,7 +1399,11 @@ class CodeEditor {
 	}
 
 	get container() {
-		return this.editor.container;
+
+		const container = this.editor.container;
+		container.classList.add('code-editor');
+
+		return container;
 	}
 
 	get editor() {
@@ -1315,7 +1442,6 @@ class CodeEditor {
 
 		this.editor.setOptions({
 			enableBasicAutocompletion: true,
-			enableLiveAutocompletion: true,
 		});
 	}
 }
@@ -1617,7 +1743,7 @@ class MultiSelect {
 			}
 
 			input.name = this.inputName;
-			input.value = row.value;
+			input.value = row.value == null ? '' : row.value;
 			input.type = this.multiple ? 'checkbox' : 'radio';
 
 			label.appendChild(input);
@@ -1736,7 +1862,7 @@ class MultiSelect {
 		if(!this.multiple || this.disabled || !this.datalist)
 			return;
 
-		this.datalist.map(obj => this.selectedValues.add(obj.value.toString()));
+		this.datalist.map(obj => this.selectedValues.add(obj.value ? obj.value.toString() : ''));
 
 		if(this.changeCallback)
 			this.changeCallback();
@@ -2106,6 +2232,17 @@ if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {
 		this.addEventListener(name, fn);
 	}
+}
+
+Date.nowUTC = function() {
+
+	const today = new Date();
+
+	return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes(), today.getSeconds())).getTime();
+}
+
+Date.prototype.getTimeUTC = function() {
+	return new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate(), this.getHours(), this.getMinutes(), this.getSeconds())).getTime();
 }
 
 MetaData.timeout = 5 * 60 * 1000;

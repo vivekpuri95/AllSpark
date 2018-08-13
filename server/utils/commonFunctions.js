@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const promisify = require('util').promisify;
 const jwtVerifyAsync = promisify(jwt.verify, jwt);
+const atob = require('atob');
 
 
 function promiseParallelLimit(limit, funcs) {
@@ -37,11 +38,11 @@ async function verifyBcryptHash(pass, hash) {
 	return await bcrypt.compare(pass, hash)
 }
 
-function makeJWT(obj, expiresAfterSeconds = 86400 * 7) {
+function makeJWT(obj, expiresIn = Math.floor(Date.now() / 1000) + (86400 * 7)) {
 
-	return jwt.sign(obj, config.get('secret_key'), {
-		expiresIn: expiresAfterSeconds
-	});
+	obj.exp = expiresIn;
+
+	return jwt.sign(obj, config.get('secret_key'));
 
 }
 
@@ -67,6 +68,28 @@ async function verifyJWT(token) {
 	}
 }
 
+async function getUserDetailsJWT(token) {
+
+	const details = await verifyJWT(token);
+
+	if(!details.error) {
+		return details;
+	}
+
+	if(details.error && details.message != 'jwt expired') {
+		return details;
+	}
+
+	let token_details = [];
+
+	try {
+		token_details = JSON.parse(atob(token.split('.')[1]))
+	}
+	catch(e) {
+	}
+
+	return token_details;
+}
 
 function clearDirectory(directory) {
 
@@ -216,10 +239,10 @@ function flattenObject(init, lkey = '') {
 
 		if (Array.isArray(val)) {
 
-			ret[lkey + rkey] = val.join();
+			ret[lkey + rkey] = (val.map(x => JSON.stringify(x))).join();
 		}
 
-		else if (val.__proto__.constructor.name === 'Object') {
+		else if (val && val.__proto__.constructor.name === 'Object') {
 
 			Object.assign(ret, flattenObject(val, lkey + rkey + '_'));
 		}
@@ -233,11 +256,67 @@ function flattenObject(init, lkey = '') {
 	return ret;
 }
 
+class UserAgent {
+
+	constructor(userAgent) {
+
+		this.userAgent = userAgent.toLowerCase();
+	}
+
+	get os() {
+
+		if(this.userAgent.includes('linux')) {
+
+			return 'linux';
+		}
+
+		else if(this.userAgent.includes('macintosh')) {
+
+			return 'macintosh';
+		}
+
+		else if(this.userAgent.includes('windows')) {
+
+			return 'windows';
+		}
+
+		else {
+
+			return 'others';
+		}
+	}
+
+	get browser() {
+
+		if(this.userAgent.includes('chrome')) {
+
+			return 'chrome';
+		}
+
+		else if (this.userAgent.includes('firefox')) {
+
+			return 'firefox';
+		}
+
+		else if(this.userAgent.includes('safari') && !this.userAgent.includes('chrome')) {
+
+			return 'safari';
+		}
+
+		else {
+
+			return 'others';
+		}
+	}
+}
+
+exports.UserAgent = UserAgent;
 exports.isJson = isJson;
 exports.makeBcryptHash = makeBcryptHash;
 exports.verifyBcryptHash = verifyBcryptHash;
 exports.makeJWT = makeJWT;
 exports.verifyJWT = verifyJWT;
+exports.getUserDetailsJWT = getUserDetailsJWT;
 exports.clearDirectory = clearDirectory;
 exports.listOfArrayToMatrix = listOfArrayToMatrix;
 exports.authenticatePrivileges = authenticatePrivileges;

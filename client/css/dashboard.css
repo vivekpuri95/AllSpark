@@ -3,74 +3,74 @@ main {
 	grid-template-rows: 1fr max-content;
 	grid-template-columns: 220px calc(100% - 220px);
 }
-main.collapsed-grid {
-	grid-template-columns: 60px calc(100% - 60px) !important;
+
+header > .nav-toggle {
+	display: none;
+	padding: 15px 20px;
+	color: var(--color-primary-text);
+	transition: background var(--transition-duration);
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
 }
-main label {
-	font-weight: normal;
+header > .nav-toggle:hover {
+	text-decoration: none;
+	background: rgba(255, 255, 255, 0.3);
+	cursor: pointer;
+	transition: box-shadow var(--transition-duration);
+}
+header > .nav-toggle:active {
+	background: rgba(255, 255, 255, 0.3);
+	box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 }
 main > nav {
 	display: flex;
 	flex-direction: column;
 	position: sticky;
-	top: 0;
+	top: 50px;
 	overflow-y: auto;
-	z-index: 6;
 	height: calc(100vh - 50px);
-	background: var(--color-primary);
-	color: var(--color-primary-text);
+	border-right: 1px solid #ccc
 }
-	main > nav .dashboard-search input {
-		background: rgba(255, 255, 255, 0.1) !important;
-		border: 0 !important;
-		width: 100%;
-		height: 35px !important;
-		color: #fff;
-		outline: none;
-	}
-	main > nav .collapse {
-		margin-top: auto;
-	}
-		main > nav .collapse .name {
-			color: #ccc;
-			margin: 0 auto;
-		}
-	nav.collapsed {
-		overflow: unset;
-	}
-main > nav.collapsed .dashboard-search {
+main > nav.show {
+	transform: translateX(0px) !important;
+	opacity: 1 !important;
+	z-index: 6;
+}
+main > nav .dashboard-search {
+	box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
+	position: sticky;
+	top: 0;
+	background: #fff;
+}
+main > nav .dashboard-search input[type=search] {
+	background: transparent;
+	border: 0 !important;
+	width: 100%;
+	height: 35px !important;
+	outline: none;
+}
+main > nav .collapse {
+	margin-top: auto;
+}
+main > nav .collapse .name {
+	color: #ccc;
+	margin: 0 auto;
+}
+nav > .item .left span {
+	padding: 0 5px;
+}
+nav > .item.list-open {
+	box-shadow: inset 10px 0px 0 var(--color-accent);
+}
+
+main > nav::-webkit-scrollbar {
+	background: #fff;
+	width: 8px;
 	display: none;
 }
-main > nav.collapsed .selected {
-	box-shadow: none !important;
-	background: var(--color-accent) !important;
-}
-	nav.collapsed > .item {
-		position: relative;
-	}
-	nav.collapsed > .item > .submenu {
-		position: absolute;
-		left: 100%;
-		width: 220px;
-		top: 0;
-		background: var(--color-primary);
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
-	}
-		nav > .item > .collapsed-submenu-bar .label {
-			padding-left: 10px;
-		}
-		nav > .item > .collapsed-submenu-bar .submenu .label {
-			padding-left: 40px;
-		}
-		nav > .item .left span {
-			padding: 0 5px;
-		}
-		nav > .item.list-open {
-			box-shadow: inset 10px 0px 0 var(--color-accent);
-		}
-main > nav::-webkit-scrollbar {
-	background: var(--color-secondary);
-	width: 8px;
+main > nav:hover::-webkit-scrollbar {
+	display: block;
 }
 main > nav::-webkit-scrollbar-thumb {
 	background: var(--color-accent);
@@ -85,6 +85,12 @@ main > nav::-webkit-scrollbar-track {
 		main > nav .NA svg {
 			font-size: 175%;
 		}
+	main > nav .dashboard-hierarchy {
+		display: flex;
+		flex-direction: column;
+		min-height: max-content;
+		margin-bottom: 10px;
+	}
 	main > nav .label {
 		display: flex;
 		padding: 12px;
@@ -92,65 +98,134 @@ main > nav::-webkit-scrollbar-track {
 		border-radius: 0;
 		font: inherit;
 		vertical-align: inherit;
-		color: var(--color-primary-text);
 		transition: background var(--transition-duration),
 					box-shadow var(--transition-duration);
 	}
 	main > nav .label:hover {
 		text-decoration: none;
-		background: rgba(0, 0, 0, 0.3);
+		background: rgba(0, 0, 0, 0.2);
 	}
 	main > nav .label:active {
 		box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
 	}
 	main > nav .label.selected {
-		background: rgba(0, 0, 0, 0.3);
-		box-shadow: inset 5px 0px 0 var(--color-accent);
+		background: rgba(0, 0, 0, 0.15);
+		box-shadow: inset 6px 0px 0 var(--color-accent);
 	}
-		main > nav .submenu .label {
-			padding-left: 40px;
+		main > nav .submenu {
+			display: flex;
+			flex-direction: column;
 		}
-		main > nav .submenu .submenu .label {
-			padding-left: 60px;
-		}
-		main > nav .submenu .submenu .submenu .label {
-			padding-left: 90px;
-		}
-			main > nav .item .label .name {
-				margin-left: 8px;
+			main > nav .submenu .label {
+				padding-left: 40px;
 			}
-			main > nav .item .label .angle {
-				transition: transform var(--transition-duration);
-				margin-left: auto;
+			main > nav .submenu .submenu .label {
+				padding-left: 60px;
 			}
-			main > nav .item .label .angle.down {
-				transform: rotate(90deg);
+			main > nav .submenu .submenu .submenu .label {
+				padding-left: 90px;
 			}
+				main > nav .item .label .name {
+					margin-left: 8px;
+				}
+				main > nav .item .label .angle {
+					margin-left: auto;
+					opacity: 0;
+					transition: transform var(--transition-duration),
+								opacity var(--transition-duration);
+				}
+				main > nav .item .label:hover .angle {
+					opacity: 1;
+				}
+				main > nav .item .label .angle.down {
+					transform: rotate(90deg);
+				}
 	main > nav footer {
 		margin-top: auto;
+		color: #666;
+		display: flex;
+		align-items: center;
+		min-height: max-content;
 	}
-		.collapsed-grid .collapse-panel {
-			display: flex;
-			padding: 12px 0;
-			justify-content: center;
-			width: 100%;
-			color: #fff;
-		}
-	 	main > nav footer .collapse-panel {
-			padding: calc(var(--gap) * 2);
-			color: #ccc;
+		main > nav footer .collapse-panel {
+			padding: 10px;
 		}
 		main > nav footer .collapse-panel:hover {
 			cursor: pointer;
 			background: rgba(0, 0, 0, 0.15);
 		}
+		main > nav footer .powered-by {
+			padding: 10px 5px;
+			font-size: 80%;
+			text-align: center;
+			flex: 1;
+		}
+			main > nav footer .powered-by a {
+				color: #333;
+			}
 
-main .section h1.dashboard-name {
+main #reports.show {
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+	padding: calc(var(--gap) * 2) calc(var(--gap) * 3);
+	grid-template-rows: max-content max-content max-content;
+}
+
+main #reports > h1.dashboard-name {
 	border: 0;
 	font-size: 150%;
 	border-bottom:  1px dashed #ccc;
 	font-weight: normal;
+	display: flex;
+	justify-content: space-between;
+	max-width: 100%;
+    overflow: auto;
 }
+main #reports > h1.dashboard-name::-webkit-scrollbar {
+	display: none;
+}
+	main #reports > h1.dashboard-name > span {
+		display: grid;
+		grid-auto-flow: column;
+		grid-gap: calc(var(--gap) * 2);
+		white-space: nowrap;
+	}
+	main #reports > h1.dashboard-name > div {
+			display: flex;
+			opacity: 0;
+			transition: opacity var(--transition-duration);
+		}
+		main #reports > h1.dashboard-name:hover > div {
+			opacity: 1;
+		}
+			main #reports > h1.dashboard-name > div span {
+				font-size: 70%;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				width: 25px;
+				transition: background var(--transition-duration),
+							color var(--transition-duration);
+			}
+			main #reports > h1.dashboard-name > div span:hover {
+				background: var(--color-accent);
+				color: var(--color-accent-text);
+				cursor: pointer;
+			}
+
+main #reports > .toolbar {
+	align-items: flex-end;
+	background: transparent;
+	padding: 0;
+}
+	main #reports > .toolbar input[name=date-range] {
+		width: 250px;
+		text-align: center;
+		letter-spacing: 0.5px;
+	}
+	main #reports > .toolbar label select {
+		max-width: 200px;
+	}
 
 main #mailto.selected {
 	background: var(--color-accent);
@@ -170,7 +245,7 @@ main .mailto-content {
 }
 main #reports > .global-filters {
 	display: flex;
-	z-index: 7;
+	z-index: 6;
 	transition: transform var(--transition-duration),
 				opacity var(--transition-duration);
 }
@@ -185,7 +260,7 @@ main #reports > .global-filters.right {
 	bottom: 0;
 	background: #fff;
 	padding: 0 calc(var(--gap) * 2);
-	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
 	transform: translateX(260px);
 }
 main #reports > .global-filters.right.show {
@@ -194,13 +269,17 @@ main #reports > .global-filters.right.show {
 }
 main #reports > .global-filters.top {
 	flex-wrap: wrap;
-	padding: 0 0 var(--gap) 0;
-	align-items:  flex-end;
-	margin: 0 calc(var(--gap) * -1) calc(var(--gap) * 2);
+	padding: 0 calc(var(--gap) * 2);
+	align-items: flex-end;
+	margin: 0 calc(var(--gap) * -3);
 	position: sticky;
-	top: 0;
-	z-index: 5;
-	background: #fff;
+	top: 50px;
+	background: #eee;
+	z-index: 4;
+}
+main #reports > .global-filters.top.scrolled {
+	padding: calc(var(--gap) * 2);
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 	main #reports > .global-filters.top .head {
 		display: none;
@@ -300,7 +379,7 @@ main #reports > .global-filters.top {
 		}
 	main #reports > .global-filters.top .filters {
 		margin: 0;
-		padding: var(--gap) 0;
+		padding: 0;
 	}
 		main #reports > .global-filters.top .filters > label {
 			max-width: initial;
@@ -311,25 +390,15 @@ main #reports > .list {
 	display: grid;
 	grid-template-columns: repeat(32, 1.25fr);
 	grid-auto-rows: calc(50px - (var(--gap) * 4));
-	grid-gap: calc(var(--gap) * 5);
+	grid-gap: calc(var(--gap) * 4);
+	padding: calc(var(--gap) * 2) 0;
 	align-items: start;
-	z-index: 20;
+	z-index: 3;
+	width: 100%;
 }
 	main #reports > .list .NA.no-reports {
 		grid-column: 1 / span all;
 	}
-	main #reports > .toolbar {
-		align-items: flex-end;
-		background: transparent;
-	}
-		main #reports > .toolbar input[name=date-range] {
-			width: 250px;
-			text-align: center;
-			letter-spacing: 0.5px;
-		}
-		main #reports > .toolbar label select {
-			max-width: 200px;
-		}
 	main #reports .list .data-source {
 		grid-column: auto / span 16;
 		grid-row: auto / span 2;
@@ -350,7 +419,7 @@ main #reports > .list {
 	}
 
 	main #reports .side {
-		position: absolute;
+		position: fixed;
 		bottom: 18px;
 		right: 18px;
 		width: 40px;
@@ -381,26 +450,26 @@ main #reports > .list {
 		main #reports .side > svg {
 			margin-right: 0px;
 		}
-
-	main #reports .list .data-source .resize.right {
+	main #reports .list .data-source .resize-dimentions {
 		position: absolute;
-		cursor: col-resize;
-		width: 5px;
-		height: 40px;
-		right: 0;
-		top: calc(50% - 20px);
-		z-index: 10;
-		border-right: 3px double #aaa;
+		bottom: 10px;
+		right: 10px;
+		z-index: 5;
+		color: #999;
+		background: rgba(0, 0, 0, 0.05);
+		padding: calc(var(--gap) * 2);
+		font-size: 125%;
 	}
-	main #reports .list .data-source .resize.bottom {
+	main #reports .list .data-source .resize {
 		position: absolute;
-		cursor: row-resize;
-		width: 40px;
-		height: 5px;
+		cursor: nwse-resize;
+		width: 12px;
+		height: 12px;
 		bottom: 0;
-		left: calc(50% - 20px);
-		z-index: 10;
-		border-bottom: 3px double #aaa;
+		right: 0;
+		z-index: 5;
+		border: double #aaa;
+		border-width: 0 3px 3px 0;
 	}
 	main .data-source.add-new {
 		cursor: pointer;
@@ -422,36 +491,110 @@ main #reports > .list {
 	}
 		main #reports .list.singleton {
 			display: initial;
+			grid-row: 1 / 4;
+			padding: calc(var(--gap)) 0;
+			height: calc(100vh - 70px);
 		}
-		main .singleton .data-source .visualization {
-			max-height: 500px;
-		}
-			main .singleton .data-source .visualization.spatial-map {
-				max-height: calc(100vh - 190px);
+			main #reports .list.singleton .list {
+				padding: var(--gap) 0;
 			}
-			main .singleton .data-source .visualization.table {
-				max-height: calc(100vh - 200px);
-			}
+				main .singleton .data-source .visualization {
+					max-height: 400px;
+				}
+				main .singleton .data-source .visualization.spatial-map {
+					max-height: calc(100vh - 190px);
+				}
+				main .singleton .data-source .visualization.table {
+					max-height: calc(100vh - 200px);
+				}
 
 @media (max-width: 750px) {
 
-	main #reports > .list {
+	header .nav-toggle {
 		display: flex;
-		flex-direction: column;
 	}
-		main #reports > .list .data-source {
-			width: 100%;
-			margin: calc(var(--gap) * 2) 0;
-			height: 450px;
+
+	main {
+		grid-template-columns: 1fr;
+	}
+		main > nav {
+			position: fixed;
+			width: 220px;
+			transform: translateX(-220px);
+			top: 50px;
+			left: 0;
+			opacity: 0;
+			background: #fff;
+			border: 0;
+			box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
+			transition: transform var(--transition-duration),
+						opacity var(--transition-duration);
 		}
+
+		main > nav .collapse-panel {
+
+			display: none;
+		}
+		main #reports {
+			grid-column: 1 / 3;
+			grid-row: 1;
+		}
+			main #reports > .list {
+				display: flex;
+				flex-direction: column;
+				padding: 0;
+			}
+				main #reports > .list .data-source {
+					margin: calc(var(--gap) * 2) 0;
+					width: calc(100vw - calc(var(--gap) * 6));
+				}
+					main #reports > .list .visualization {
+						height: 275px;
+					}
+					main #reports > .list .visualization.livenumber {
+						height: 200px;
+					}
+					main #reports > .list .visualization.html {
+						height: auto;
+					}
+}
+
+body.floating header > .nav-toggle  {
+	display: flex;
+}
+body.floating main  {
+	grid-template-columns: 1fr;
+}
+	body.floating main nav {
+		position: fixed;
+		width: 220px;
+		transform: translateX(-220px);
+		top: 50px;
+		left: 0;
+		opacity: 0;
+		background: #fff;
+		border: 0;
+		box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
+		transition: transform var(--transition-duration),
+		opacity var(--transition-duration);
+	}
+
+main .nav-blanket {
+	position: fixed;
+	background: rgba(0, 0, 0, 0.5);
+	bottom: 0;
+	right: 0;
+	top: 0;
+	left: 0;
+	z-index: 5;
 }
 
 main #reports > .NA {
 	text-align: center;
 }
 main #reports #blanket {
-	background: rgba(0, 0, 0, 0.25);
-	position: absolute;
+	position: fixed;
+	background: rgba(0, 0, 0, 0.5);
 	bottom: 0;
 	right: 0;
 	top: 0;
@@ -470,36 +613,3 @@ main table tbody tr .tag {
 	border-radius: 2px;
 	font-size: 80%;
 }
-main > footer {
-	grid-column: 2 / -1;
-	z-index: 5;
-	background: var(--color-primary);
-	display: flex;
-	color: #ccc;
-	padding: calc(var(--gap) );
-	justify-content: center;
-	font-size: 80%;
-	margin-top: auto;
-	position: relative;
-}
-	main footer.site-footer .strong {
-		color: var(--color-primary-text);
-		letter-spacing: 0.5px;
-	}
-	main footer > .env {
-		position: absolute;
-		right: 5px;
-		white-space: nowrap;
-		overflow: hidden;
-	}
-	main footer > .env:hover {
-		width: initial;
-	}
-		main footer > .env .text {
-			font-size: 90%;
-			margin-right: 5px;
-			display: none;
-		}
-		main footer > .env:hover .text {
-			display: initial;
-		}

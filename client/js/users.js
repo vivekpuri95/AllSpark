@@ -13,7 +13,6 @@ class Users extends Page {
 			Roles.setup();
 
 			await Users.load();
-
 			Users.loadState();
 		})();
 
@@ -23,64 +22,93 @@ class Users extends Page {
 	static async setup(page) {
 
 		Users.contaier = page.container.querySelector('section#list table tbody');
-		Users.thead = page.container.querySelector('section#list table thead');
+		Users.userSearchForm = page.container.querySelector('section#list .user-search');
 
-		for(const thead of Users.thead.querySelectorAll('.thead-bar th')) {
+		Users.userSearchForm.search_by.on('change', () => {
 
-			if(thead.classList.contains('action'))
-				continue;
+			Users.userSearchForm.querySelector('.role').classList.toggle('hidden', ['privilege', 'category'].includes(Users.userSearchForm.search_by.value));
+			Users.userSearchForm.querySelector('.privilege').classList.toggle('hidden', ['role', 'category'].includes(Users.userSearchForm.search_by.value));
 
-			const th = document.createElement('th');
-			th.classList.add('search');
-
-			th.innerHTML = `
-				<input type="text" placeholder="Search ${thead.textContent}" data-key="${thead.dataset.key}">
-			`;
-
-			th.on('keyup', () => Users.search());
-
-			Users.thead.querySelector('.search-bar').appendChild(th);
-		}
-	}
-
-	static async load() {
-
-		const users = await API.call('users/list');
-
-		Users.list = users.map(user => new UserManage(user));
-
-		Users.render(Users.list);
-	}
-
-	static search() {
-
-		const searchQuery = Users.thead.querySelectorAll('.search-bar input');
-
-		const list = Users.list.filter(user => {
-
-			for(const input of searchQuery) {
-
-				const query = input.value.toLowerCase();
-
-				if(!query)
-					continue;
-
-				const value = user[input.dataset.key].toString().toLowerCase();
-
-				if(!value.includes(query))
-					return false;
-			}
-			return true;
 		});
 
-		Users.render(list);
+		const
+			categoryDatalist =  [],
+			privilegeDatalist = [],
+			roleDatalist = [];
+
+		for(const category of MetaData.categories.values()) {
+			categoryDatalist.push({
+				name: category.name,
+				value:category.category_id,
+				subtitle: category.is_admin ? 'Admin' : ' ',
+			});
+		}
+
+		for(const privilege of MetaData.privileges.values()) {
+			privilegeDatalist.push({
+				name: privilege.name,
+				value: privilege.privilege_id,
+				subtitle: privilege.is_admin ? 'Admin' : ' ',
+			})
+		}
+
+		for(const role of MetaData.roles.values()) {
+			roleDatalist.push({
+				name: role.name,
+				value: role.role_id,
+				subtitle: role.is_admin ? 'Admin' : ' ',
+			})
+		}
+
+		Users.category = new MultiSelect({datalist: categoryDatalist});
+		Users.privilege = new MultiSelect({datalist: privilegeDatalist});
+		Users.role = new MultiSelect({datalist: roleDatalist});
+
+		Users.userSearchForm.querySelector('.category').appendChild(Users.category.container);
+		Users.userSearchForm.querySelector('.privilege').appendChild(Users.privilege.container);
+		Users.userSearchForm.querySelector('.role').appendChild(Users.role.container);
+
+		Users.userSearchForm.on('submit', e => Users.load(e));
+	}
+
+	static async load(e) {
+
+		if(e)
+			e.preventDefault();
+
+		const parameters = new URLSearchParams();
+
+		parameters.set('search', "users");
+
+		for(const element of Users.userSearchForm.querySelectorAll('input, select'))
+			parameters.set(element.name, element.value);
+
+		for(const value of Users.category.value)
+			parameters.append('category_id', value);
+
+		if(parameters.get('search_by') == 'privilege') {
+
+			for(const value of Users.privilege.value)
+				parameters.append('privilege_id', value);
+		}
+
+		if(parameters.get('search_by') == 'role') {
+
+			for(const value of Users.role.value)
+				parameters.append('role_id', value);
+		}
+
+		const
+			data = await API.call('search/query', parameters.toString());
+
+		Users.list = data.map(user => new UserManage(user));
+
+		Users.render(Users.list);
 	}
 
 	static render(list) {
 
 		Users.contaier.textContent = null;
-
-		const searchQueries = Users.thead.querySelectorAll('.search-bar th');
 
 		for(const user of list)
 			Users.contaier.appendChild(user.row);
@@ -289,6 +317,7 @@ class UserManage {
 			<td>${this.id}</td>
 			<td>${this.name}</td>
 			<td>${this.email}</td>
+			<td>${Format.dateTime(this.last_login)}</td>
 			<td class="action green" title="Edit">Edit</i></td>
 			<td class="action red" title="Delete">Delete</td>
 		`;

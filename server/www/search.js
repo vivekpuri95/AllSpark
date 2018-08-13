@@ -1,21 +1,26 @@
 const API = require('../utils/api');
 const users = require('./users').list;
 const dashboards = require('./dashboards').list;
-const datasets = require('./datasets').list;
 const reports = require('./reports/report').list;
 
 exports.query = class extends API {
 
 	async query() {
 
-		this.request.body = {
-			search: `%${this.request.query.text}%`
-		};
+		Object.assign(this.request.body, this.request.query);
 
-		const search_set = [users, dashboards, datasets, reports];
-		let response = [];
+		let
+			search_map = new Map(),
+			search_items = [],
+			response = [];
 
-		for(const item of search_set) {
+		search_map.set("users", users);
+		search_map.set("dashboards", dashboards);
+		search_map.set("reports", reports);
+
+		search_items = this.request.query.search != 'global' ? [search_map.get(this.request.query.search)] : search_map.values();
+
+		for(const item of search_items) {
 
 			const obj = Object.assign(new item(), this);
 			let list;

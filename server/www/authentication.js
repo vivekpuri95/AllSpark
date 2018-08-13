@@ -11,6 +11,7 @@ const account = require('../onServerStart');
 const fetch = require('node-fetch');
 const URLSearchParams = require('url').URLSearchParams;
 const redis = require("../utils/redis").Redis;
+const sessionLogs = require("./session-logs").sessions;
 
 const EXPIRE_AFTER = 1; //HOURS
 
@@ -43,6 +44,8 @@ exports.resetlink = class extends API {
 		const query = `INSERT INTO tb_password_reset(user_id, reset_token, status) values ?`;
 		await this.mysql.query(query, [[[user_id, token, 1]]], 'write');
 
+		let emailUrl = this.account.url.includes(this.request.headers.host) ? this.request.headers.host : this.account.url[0];
+
 		let mailer = new Mailer();
 		mailer.from_email = 'no-reply@' + config.get("mailer").get("domain");
 		mailer.from_name = this.account.name;
@@ -60,8 +63,8 @@ exports.resetlink = class extends API {
 						Hi ${full_name}, <br/><br/>
 						<span style="color: #666;"> Please click on the link below to reset your password.</span>
 					</div>
-					<a href="https://${this.account.url}/login/reset?reset_token=${token}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">
-						https://${this.account.url}/login/reset?reset_token=${token}
+					<a href="https://${emailUrl}/login/reset?reset_token=${token}" style="font-size: 16px; text-decoration: none; padding: 20px;display:block;background: #eee;border: 1px solid #ccc;margin: 20px 0;text-align: center; " target="_blank">
+						https://${emailUrl}/login/reset?reset_token=${token}
 					</a>
 
 					<div style="font-size:14px;color:#666">Thank You.</div>
@@ -291,14 +294,41 @@ exports.login = class extends API {
 
 		this.assert(this.userDetails && this.userDetails.user_id, "user not found while loading user's details");
 
+		const user_agent = new commonFun.UserAgent(this.request.get('user-agent'));
+
+		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 7) * 86400);
+
+		let session = {};
+
+		try{
+			sessionLogs.request = {};
+
+			Object.assign(sessionLogs.request, this.request);
+
+			sessionLogs.request.body = {
+				user_id: this.userDetails.user_id,
+				type: 'login',
+				expire_time: expiryTime,
+				description: 'Login',
+				user_agent: this.request.get('user-agent'),
+				os: user_agent.os,
+				browser: user_agent.browser,
+				ip: this.request.connection.remoteAddress,
+			}
+
+			session = await sessionLogs.insert();
+		}
+		catch(e){}
+
 		const obj = {
 			user_id: this.userDetails.user_id,
 			email: this.userDetails.email,
 			account_id: this.userDetails.account_id,
+			session_id: session.insertId,
 		};
 
 		const finalObj = {
-			jwt: commonFun.makeJWT(obj, parseInt(this.userDetails.ttl || 7) * 86400),
+			jwt: commonFun.makeJWT(obj, expiryTime),
 		};
 
 		Object.assign(finalObj, this.authResponseObj);
@@ -312,6 +342,8 @@ exports.refresh = class extends API {
 	async refresh() {
 
 		let userDetail = await commonFun.verifyJWT(this.request.body.refresh_token);
+
+		const sessionId = userDetail.session_id;
 
 		this.assert(!userDetail.error, "Token not correct", 401);
 
@@ -413,6 +445,7 @@ exports.refresh = class extends API {
 			name: [user.first_name, user.middle_name, user.last_name].filter(x => x).join(' '),
 			roles,
 			privileges,
+			session_id: sessionId,
 		};
 
 		if (config.has("superAdmin_users") && config.get("superAdmin_users").includes(user.email)) {
@@ -423,6 +456,6 @@ exports.refresh = class extends API {
 				category_id: constants.adminCategory[0],
 			})
 		}
-		return commonFun.makeJWT(obj, 5 * 60);
+		return commonFun.makeJWT(obj, Math.floor(Date.now() / 1000) + (5 * 60));
 	}
 }
