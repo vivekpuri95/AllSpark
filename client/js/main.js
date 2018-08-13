@@ -2282,6 +2282,9 @@ class SnackBar {
 		if(!['bottom-left'].includes(this.position))
 			throw new Page.exception(`Invalid SnackBar position: ${this.position}.`);
 
+		if(this.subtitle && this.subtitle.length > 250)
+			this.subtitle = this.subtitle.substring(0, 250) + '&hellip;';
+
 		this.show();
 	}
 

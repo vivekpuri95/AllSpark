@@ -770,6 +770,8 @@ body {
 	position: fixed;
 	overflow: auto;
 	max-height: 100vh;
+	min-width: 300px;
+	max-width: 400px;
 	z-index: 5;
 }
 .snack-bar-container::-webkit-scrollbar {
@@ -804,14 +806,15 @@ body {
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 		border-radius: 4px;
 		padding: 15px 20px;
-		min-width: 200px;
 		color: #fff;
 		letter-spacing: 1px;
 		opacity: 0;
 		display: grid;
 		align-items: center;
-		grid-template-columns: max-content max-content max-content;
+		width: 100%;
+		grid-template-columns: max-content 1fr max-content;
 		grid-column-gap: calc(var(--gap) * 3);
+		grid-row-gap: var(--gap);
 		margin-bottom: -50px;
 		cursor: pointer;
 		transition: opacity var(--transition-duration),
@@ -847,6 +850,9 @@ body {
 			color: #eee;
 			grid-column: 2 / 3;
 		}
+			.snack-bar .subtitle .NA {
+				color: #eee;
+			}
 		.snack-bar .close {
 			font-size: 125%;
 			grid-row: 1 / 3;
@@ -859,10 +865,8 @@ body {
 		}
 
 @media (max-width: 750px) {
+
 	.snack-bar-container {
-		width: 100%;
-	}
-	.snack-bar {
-		min-width: 100%;
+		max-width: 100%;
 	}
 }

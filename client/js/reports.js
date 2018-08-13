@@ -1769,7 +1769,13 @@ class DataSourceColumn {
 			this.source.columns.sortBy = this;
 
 		await this.source.visualizations.selected.render();
+
 		this.dialogueBox.hide();
+
+		new SnackBar({
+			message: `Changes to <em>${this.name}</em> applied`,
+			subtitle: 'Changes are not saved yet, they will be reset when the page is reloaded.',
+		});
 	}
 
 	async save() {
@@ -1829,10 +1835,27 @@ class DataSourceColumn {
 				method: 'POST',
 			};
 
-		await API.call('reports/report/update', parameters, options);
-		await this.source.visualizations.selected.load();
+		try {
 
-		this.dialogueBox.hide();
+			await API.call('reports/report/update', parameters, options);
+
+			await this.source.visualizations.selected.load();
+
+			this.dialogueBox.hide();
+
+			new SnackBar({
+				message: `Changes to <em>${this.name}</em> saved`,
+				subtitle: 'These changes will persist even when reloads.',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+		}
 	}
 
 	async update() {
