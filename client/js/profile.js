@@ -60,17 +60,27 @@ Page.class = class x extends Page {
 			</label>
 		`;
 
-		this.container.querySelector('.heading-bar .info').on('click',() => {
-			this.profileInfo.render();
+		this.profileInfo.render();
+
+		const info = this.container.querySelector('.heading-bar .info');
+		const activity = this.container.querySelector('.heading-bar .activity');
+
+		info.on('click',() => {
+
+			info.classList.add('selected');
+			activity.classList.remove('selected');
+
 			Sections.show('profile-info');
 		});
 
-		this.container.querySelector('.heading-bar .activity').on('click', () => {
+		activity.on('click', () => {
+
+			info.classList.remove('selected');
+			activity.classList.add('selected');
+
 			this.sessions.render();
 			Sections.show('activity-info');
 		});
-
-		this.container.querySelector('.heading-bar .activity').click();
 	}
 }
 
@@ -115,7 +125,7 @@ class Sessions {
 		const container = this.container;
 
 		for(const session of this.sessionsList.values())
-			container.appendChild(session.container);
+			container.querySelector('.list').appendChild(session.container);
 	}
 
 	get container() {
@@ -124,12 +134,15 @@ class Sessions {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
+		container.classList.add('session-activity');
 
 		container.innerHTML = `
 
-			<div class="toolbar">
+			<div class="sessions-toolbar">
 				<h3>Show session details</h3>
 			</div>
+
+			<div class="list"></list>
 		`;
 
 		return container;
@@ -196,29 +209,47 @@ class Session {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
+		container.classList.add('session-container');
 
 		container.innerHTML = `
 			<div class="sessions">
-				<div><i class="far fa-clock"></i></div>
+				<div class="list-icon"><i class="far fa-clock"></i></div>
 				<div class="details">
-					<div class="time"><strong>${Format.dateTime(this.created_at)} Session Id: ${this.id}</div>
+					<div class="time">
+						<div class="hash">#${this.id}</div>
+						<strong>
+							${Format.dateTime(this.created_at)}
+						</strong>
+						<div class="down">
+							<i class="fas fa-angle-right"></i>
+						</div>
+					</div>
 					<div class="device-info">
 						<label>
-							<span>Browser: ${this.browser}</span>
+							<span>${this.browser}</span>
 						</label>
+						&middot;&nbsp;
 						<label>
-							<span>Os: ${this.OS}</span>
+							<span>${this.OS}</span>
 						</label>
+						&middot;&nbsp;
 						<label>
-							<span>IP: ${this.ip}</span>
+							<span>${this.ip}</span>
 						</label>
 					</div>
 				</div>
-			<div>
+			</div>
+
+			<div class="logs hidden"></div>
 		`;
 
+		container.querySelector('.details').on('click', () => {
+			container.querySelector('.logs').classList.toggle('hidden');
+			container.querySelector('.down').classList.toggle('angle-rotate');
+		});
+
 		for(const elemnt of this.sortedActivity)
-			container.appendChild(elemnt.container);
+			container.querySelector('.logs').appendChild(elemnt.container);
 
 		return container;
 	}
@@ -239,13 +270,18 @@ class ReportContainer {
 		container.classList.add('report-log');
 
 		container.innerHTML = `
-			<div><i class="fas fa-file-alt"></i></div>
+			<div class="list-icon"><i class="far fa-file"></i></div>
 			<div class="details">
-
-				<strong>${DataSource.list.get(this.query_id).name}#${this.id}</strong>
-				<div class="time-info">
-					<div>Execution time: ${this.response_time}</div>
-					<div>${Format.dateTime(this.created_at)}</div>
+				<div class="report-name">
+					<strong>${DataSource.list.get(this.query_id).name}</strong><div class="hash"> #${this.id}</div>
+				</div>
+				<div class="extra-info">
+					<label>
+						<span>Execution time: ${this.response_time}</span>
+					</label>
+					<label>
+						<span>Time: ${Format.dateTime(this.created_at)}</span>
+					</label>
 				</div>
 			</div>
 		`;
@@ -266,16 +302,25 @@ class ErrorContainer {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
+		container.classList.add('error-log');
 
 		container.innerHTML = `
-			<div><i class="fas fa-exclamation-triangle"></i></div>
+			<div class="list-icon"><i class="fas fa-exclamation"></i></div>
 
 			<div class="details">
-				<strong>Error</strong>
-				<div class="time-info">
-					<div>${this.type}</div>
-					<div>${this.message}</div>
-					<div>${Format.dateTime(this.created_at)}</div>
+				<div class="error-info">
+					<strong>Error</strong>
+				</div>
+				<div class="extra-info">
+					<label>
+						<span>Type: ${this.type}</span>
+					</label>
+					<label>
+						<span>Message: ${this.message}</span>
+					</label>
+					<label>
+						<span>Time: ${Format.dateTime(this.created_at)}</span>
+					</label>
 				</div>
 			</div>
 		`;

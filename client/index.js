@@ -459,7 +459,7 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 
 			<div class="switch">
 				<div class="heading-bar">
-					<label class='info'>
+					<label class='info selected'>
 						<h3>Info</h3>
 					</label>
 					<label class='activity'>
@@ -467,7 +467,7 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 					</label>
 				</div>
 
-				<section class="section" id="profile-info">
+				<section class="section show" id="profile-info">
 					<h2>Privileges</h2>
 					<p>
 						Privileges define what <strong>actions</strong> the user can perform.<br>

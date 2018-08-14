@@ -22,11 +22,10 @@ main {
 			display: flex;
 			justify-content: space-between;
 		}
-	main h2 {
+	main #profile-info h2 {
 		border-bottom: 1px dashed black;
 		margin: calc(var(--gap) * 2) 0;
 		font-size: 110%;
-		padding: var(--gap) 0;
 	}
 	main p {
 		line-height: 20px;
@@ -59,16 +58,149 @@ main .profile-details {
 		}
 
 main .switch {
-	background: #fff;
 	margin: calc(var(--gap) * 2) 0;
 }
+.angle-rotate {
+	transform: rotate(90deg);
+}
 main .switch section {
-	padding: calc(var(--gap) * 2);
+	padding: 0 !important;
 }
 	main .switch .heading-bar {
 		display: grid;
-		grid-template-columns: 40px 40px;
+		grid-template-columns: 60px 60px;
+		border-bottom: 1px solid #999;
 	}
-		.heading-bar h3 {
+		main .switch .hash {
+			color: #ccc;
+			margin-right: var(--gap);
+		}
+		main .heading-bar h3 {
+			margin: 0;
+			border: 0;
+		}
+		main .switch .heading-bar label {
+			display: flex;
+			justify-content: center;
+			padding: var(--gap);
+			transition: box-shadow var(--transition-duration),
+						background var(--transition-duration);
+		}
+		main .switch .heading-bar label.selected {
+			box-shadow: inset 0px -4px 0px var(--color-accent);
+			/* color: #fff; */
+		}
+		main .switch .heading-bar label:hover {
+			cursor: pointer;
+		}
+
+
+main .session-activity .list{
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+}
+	main .session-activity .sessions-toolbar {
+		background: #fff;
+		padding: calc(var(--gap) * 2);
+		margin: calc(var(--gap) * 2) 0;
+	}
+		main .session-activity .sessions-toolbar h3 {
 			margin: 0;
 		}
+	main .session-container {
+		background: #fff;
+	}
+	main .session-container .sessions {
+		display: grid;
+		grid-template-columns: 50px 1fr;
+		padding: calc(var(--gap) * 2);
+		transition: box-shadow var(--transition-duration);
+	}
+	main .session-container .sessions:hover {
+		cursor: pointer;
+		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+	}
+		main .sessions .list-icon,
+		main .logs .list-icon {
+			color: #666;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		main .sessions .list-icon {
+			font-size: 225%;
+		}
+		main .sessions .details,
+		main .logs .details {
+			display: grid;
+			grid-gap: var(--gap);
+		}
+			main .sessions .details .time,
+			main .logs .details .report-name,
+			main .logs .details .error-info {
+				display: flex;
+				align-items: center;
+				padding: 0 calc(var(--gap) * 2);
+				font-size: 125%;
+				color: #333;
+			}
+				main .logs .details .report-name strong,
+				main .logs .details .error-info strong,
+				main .sessions .details .time strong {
+					margin-right: var(--gap);
+					font-weight: normal;
+				}
+				main .sessions .details .time .down {
+					margin-left: auto;
+					transition: transform var(--transition-duration);
+				}
+			main .logs .details .extra-info,
+			main .logs .details .extra-info,
+			main .sessions .details .device-info {
+				display: flex;
+				align-items: center;
+				padding: 0 calc(var(--gap) * 2);
+				color: #999;
+				font-size: 90%;
+			}
+				main .logs .details .extra-info label,
+				main .logs .details .extra-info label,
+				main .sessions .details .device-info label {
+					margin-right: var(--gap);
+				}
+	main .session-container .logs {
+		display: grid;
+		grid-gap: calc(var(--gap)*2);
+		max-height: 300px;
+		overflow: auto;
+		background-color: aliceblue;
+		padding: calc(var(--gap) * 2) 0;
+	}
+
+.logs {}
+		main .logs .report-log,
+		main .logs .error-log {
+			display: grid;
+			grid-template-columns: 50px 1fr;
+			padding: var(--gap);
+			transition: box-shadow var(--transition-duration),
+						background var(--transition-duration);
+			padding-left: calc(var(--gap) * 8);
+		}
+		main .logs .report-log:hover,
+		main .logs .error-log:hover {
+			cursor: pointer;
+			background: #ddf;
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		}
+			main .logs .list-icon {
+				font-size: 125%;
+			}
+			main .logs .details {
+				display: grid;
+				grid-gap: var(--gap);
+			}
+			main .logs .details .report-name,
+			main .logs .details .error-info {
+				font-size: 110%;
+			}
