@@ -186,6 +186,9 @@ class Session {
 		const reports = await API.call('reports/logs/log', parameters, options);
 		const errors = await API.call('errors/list', parameters, options);
 
+		this.reportsCount = reports.length;
+		this.errorsCount = errors.length;
+
 		this.sortedActivity = this.process(reports, errors);
 	}
 
@@ -234,7 +237,7 @@ class Session {
 							<i class="fas fa-angle-right"></i>
 						</div>
 					</div>
-					<div class="device-info">
+					<div class="device-info NA">
 						<label>
 							<span>${this.browser}</span>
 						</label>
@@ -246,6 +249,7 @@ class Session {
 						<label>
 							<span>${this.ip}</span>
 						</label>
+						<span class="activity-details NA">Reports: ${this.reportsCount} &middot; Errors: ${this.errorsCount}</span>
 					</div>
 				</div>
 			</header>
@@ -283,7 +287,7 @@ class ReportContainer {
 			<div class="icon"><i class="far fa-file"></i></div>
 			<div class="details">
 				<div class="title">
-					${DataSource.list.get(this.query_id).name}<div class="NA"> #${this.id}</div>
+					<span class="report-name">${DataSource.list.get(this.query_id).name}</span><div class="NA"> #${this.id}</div>
 				</div>
 				<div class="extra-info">
 					<span>Execution time: ${this.response_time}</span>

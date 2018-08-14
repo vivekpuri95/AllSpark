@@ -73,7 +73,6 @@ main .switch section {
 		main .switch .NA {
 			color: #999;
 			margin-right: var(--gap);
-			font-size: 80%;
 		}
 		main .heading-bar h3 {
 			margin: 0;
@@ -84,13 +83,14 @@ main .switch section {
 			flex: 1;
 			display: flex;
 			justify-content: center;
-			padding: var(--gap);
+			padding: calc(var(--gap) * 2);
 			transition: box-shadow var(--transition-duration),
 						background var(--transition-duration);
 		}
 		main .switch .heading-bar label.selected {
-			box-shadow: inset 0px -5px 0px var(--color-accent);
+			box-shadow: inset 0px -6px 0px var(--color-accent);
 			margin-bottom: -1px;
+			border-bottom: 1;
 		}
 		main .switch .heading-bar label:hover {
 			cursor: pointer;
@@ -115,7 +115,7 @@ main .sessions-list .list {
 		flex-direction:  column;
 	}
 	main article.active {
-		box-shadow: inset -10px 0 0px #02d40e;
+		box-shadow: inset -6px 0 0px #02d40e;
 	}
 	main article header {
 		display: grid;
@@ -133,6 +133,9 @@ main .sessions-list .list {
 		}
 		main header .icon {
 			font-size: 225%;
+		}
+		main header .activity-details {
+			margin-left: auto;
 		}
 		main header .details,
 		main .activities .details {
@@ -185,6 +188,9 @@ main .sessions-list .list {
 		}
 			main .activities .icon {
 				font-size: 125%;
+			}
+			main .activities .report-name {
+				margin-right: calc(var(--gap) * 2);
 			}
 			main .activities .details {
 				display: grid;
