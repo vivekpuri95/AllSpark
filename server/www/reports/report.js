@@ -3,6 +3,7 @@
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
 const role = new (require("../object_roles")).get();
+const reportHistory = require('../../utils/reportLogs');
 
 exports.list = class extends API {
 
@@ -144,15 +145,20 @@ exports.update = class extends API {
 
 	async update() {
 
-		const categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
+		const
+			categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id),
+			[updatedRow] = await this.mysql.query(`SELECT * FROM tb_query WHERE query_id = ?`, [this.request.body.query_id]);
 
 		for(const category of categories || [0]) {
 
 			this.user.privilege.needs('report', category);
 		}
 
+		this.assert(updatedRow, 'Invalid query id');
+
 		let
 			values = {},
+			compareJson = {},
 			query_cols = [
 				'name',
 				'source',
@@ -176,8 +182,12 @@ exports.update = class extends API {
 			if (query_cols.includes(key)) {
 
 				values[key] = this.request.body[key];
+				compareJson[key] = updatedRow[key] ? typeof updatedRow[key] == "object" ? updatedRow[key] : updatedRow[key].toString() : '';
 			}
 		}
+
+		if(JSON.stringify(compareJson) == JSON.stringify(values))
+			return;
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;
 
@@ -194,7 +204,18 @@ exports.update = class extends API {
 
 		}
 
-		return await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write');
+		const
+			updateResponse =  await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write'),
+			logs = {
+				owner: 'query',
+				owner_id: this.request.body.query_id,
+				value: JSON.stringify(updatedRow),
+				operation:'update',
+			};
+
+		reportHistory.insert(this, logs);
+
+		return updateResponse;
 
 	}
 };
