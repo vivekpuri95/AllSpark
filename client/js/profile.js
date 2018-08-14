@@ -221,6 +221,7 @@ class Session {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('article');
+		container.classList.add('active');
 
 		container.innerHTML = `
 			<header>

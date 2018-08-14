@@ -114,6 +114,9 @@ main .sessions-list .list {
 		display: flex;
 		flex-direction:  column;
 	}
+	main article.active {
+		box-shadow: inset -10px 0 0px #02d40e;
+	}
 	main article header {
 		display: grid;
 		grid-template-columns: 50px 1fr;
