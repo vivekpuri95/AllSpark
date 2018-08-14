@@ -633,6 +633,7 @@ body {
 .multi-select {
 	width: 100%;
 	position: relative;
+	z-index: 5;
 }
 	.multi-select > input {
 		width: 100%;
