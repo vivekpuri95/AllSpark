@@ -670,7 +670,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 						<tr>
 							<th class="thin">ID</th>
 							<th>Name</th>
-							<th>Parent</th>
+							<th>Parents</th>
 							<th>Icon</th>
 							<th>Order</th>
 							<th class="action">Edit</th>
@@ -1098,14 +1098,14 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/users/:id?', API.serve(class extends HTMLAPI {
+router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
 		super();
 
-		this.stylesheets.push('/css/users.css');
-		this.scripts.push('/js/users.js');
+		this.stylesheets.push('/css/users-manager.css');
+		this.scripts.push('/js/users-manager.js');
 	}
 
 	async main() {

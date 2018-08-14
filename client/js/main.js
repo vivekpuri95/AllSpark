@@ -88,7 +88,7 @@ class Page {
 
 		const
 			navList = [
-				{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+				{url: '/users-manager', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
 				{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
 				{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
 				{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
