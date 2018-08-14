@@ -170,7 +170,7 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.form.reset();
 
-		DashboardsDashboard.container.querySelector('#share-dashboards').innerHTML = `<div class="NA">You can share dashboards after adding one<div>`;
+		DashboardsDashboard.container.querySelector('#share-dashboards').innerHTML = `<div class="NA">You can share the dashboard once you create one.<div>`;
 
 		if(DashboardsDashboard.form_listener)
 			DashboardsDashboard.form.removeEventListener('submit', DashboardsDashboard.form_listener);

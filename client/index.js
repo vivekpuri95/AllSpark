@@ -150,8 +150,8 @@ router.get('/account-signup', API.serve(class extends HTMLAPI {
 
 		super();
 
-		this.stylesheets.push('/css/accountSignup.css');
-		this.scripts.push('/js/accountSignup.js');
+		this.stylesheets.push('/css/account-signup.css');
+		this.scripts.push('/js/account-signup.js');
 	}
 
 	async main() {
@@ -1275,14 +1275,14 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/connections/:id?', API.serve(class extends HTMLAPI {
+router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
 		super();
 
-		this.stylesheets.push('/css/connections.css');
-		this.scripts.push('/js/connections.js');
+		this.stylesheets.push('/css/connections-manager.css');
+		this.scripts.push('/js/connections-manager.js');
 	}
 
 	async main() {
@@ -1370,7 +1370,7 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 				</form>
 
 				<h2 class="share-heading">Share connections</h2>
-				<div id="share-connections" class="NA">You can share connections after adding one.</div>
+				<div id="share-connections"></div>
 			</section>
 		`;
 	}

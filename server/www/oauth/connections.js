@@ -188,7 +188,7 @@ class GoogleAPIs extends OAuthConnection {
 		parameters.set('code', this.endpoint.request.body.code);
 		parameters.set('client_id', this.provider.client_id);
 		parameters.set('client_secret', this.provider.client_secret);
-		parameters.set('redirect_uri', `https://${this.endpoint.account.url}/connections`);
+		parameters.set('redirect_uri', `https://${this.endpoint.account.url}/connections-manager`);
 		parameters.set('grant_type', 'authorization_code');
 
 		let response = await fetch('https://www.googleapis.com/oauth2/v4/token', options);
@@ -254,7 +254,7 @@ class FacebookMarketing extends OAuthConnection {
 			};
 
 		parameters.set('client_id', this.provider.client_id);
-		parameters.set('redirect_uri', `https://${this.endpoint.account.url}/connections`);
+		parameters.set('redirect_uri', `https://${this.endpoint.account.url}/connections-manager`);
 		parameters.set('client_secret', this.provider.client_secret);
 		parameters.set('code', this.endpoint.request.body.code);
 

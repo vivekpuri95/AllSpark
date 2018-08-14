@@ -91,7 +91,7 @@ class Page {
 				{url: '/users-manager', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
 				{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
 				{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
-				{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
+				{url: '/connections-manager', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
 				{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
 				{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
 			],

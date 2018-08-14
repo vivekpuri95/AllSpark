@@ -28,7 +28,6 @@ class Users extends Page {
 
 			Users.userSearchForm.querySelector('.role').classList.toggle('hidden', ['privilege', 'category'].includes(Users.userSearchForm.search_by.value));
 			Users.userSearchForm.querySelector('.privilege').classList.toggle('hidden', ['role', 'category'].includes(Users.userSearchForm.search_by.value));
-
 		});
 
 		const
