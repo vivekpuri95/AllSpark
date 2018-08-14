@@ -96,81 +96,79 @@ main .switch section {
 			cursor: pointer;
 		}
 
-main .session-activity .list {
+main .sessions-list .list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 }
-	main .session-activity .sessions-toolbar {
+	main .sessions-list .sessions-toolbar {
 		background: #fff;
 		padding: calc(var(--gap) * 2);
 		margin: calc(var(--gap) * 2) 0;
 	}
-		main .session-activity .sessions-toolbar h3 {
+		main .sessions-list .sessions-toolbar h3 {
 			margin: 0;
 		}
-	main .session-container {
+	main article {
 		background: #fff;
 		overflow: hidden;
 		display: flex;
 		flex-direction:  column;
 	}
-	main .session-container .sessions {
+	main article header {
 		display: grid;
 		grid-template-columns: 50px 1fr;
 		padding: calc(var(--gap) * 2);
 		box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 		z-index: 1;
 	}
-		main .sessions .list-icon,
-		main .logs .list-icon {
+		main header .icon,
+		main .activities .icon {
 			color: #999;
 			display: flex;
 			justify-content: center;
 			align-items: center;
 		}
-		main .sessions .list-icon {
+		main header .icon {
 			font-size: 225%;
 		}
-		main .sessions .details,
-		main .logs .details {
+		main header .details,
+		main .activities .details {
 			display: grid;
 			grid-gap: var(--gap);
 		}
-			main .sessions .details .time,
-			main .logs .details .report-name,
-			main .logs .details .error-info {
+			main header .details .title,
+			main .activities .details .title {
 				display: flex;
 				align-items: center;
 				padding: 0 calc(var(--gap) * 2);
 				font-size: 125%;
 				color: #333;
 			}
-				main .sessions .details .time .down {
+				main header .details .title .down {
 					margin-left: auto;
 					transition: transform var(--transition-duration);
 				}
-			main .logs .details .extra-info,
-			main .logs .details .extra-info,
-			main .sessions .details .device-info {
+			main .activities .details .extra-info,
+			main .activities .details .extra-info,
+			main header .details .device-info {
 				display: flex;
 				align-items: center;
 				padding: 0 calc(var(--gap) * 2);
 				color: #999;
 				font-size: 90%;
 			}
-				main .logs .details .extra-info span,
-				main .logs .details .extra-info span,
-				main .sessions .details .device-info label {
+				main .activities .details .extra-info span,
+				main .activities .details .extra-info span,
+				main header .details .device-info label {
 					margin-right: var(--gap);
 				}
-	main .session-container .logs {
+	main article .activities {
 		display: grid;
 		max-height: 300px;
 		overflow: auto;
 		background-color: #fff;
 	}
-		main .logs .report-log,
-		main .logs .error-log {
+		main .activities .activity {
 			display: grid;
 			grid-template-columns: 50px 1fr;
 			padding: calc(var(--gap) * 2);
@@ -178,23 +176,21 @@ main .session-activity .list {
 						background var(--transition-duration);
 			border-bottom: 1px solid #eee;
 		}
-		main .logs .report-log:hover,
-		main .logs .error-log:hover {
+		main .activities .activity:hover {
 			cursor: pointer;
 			background: #ddf;
 		}
-			main .logs .list-icon {
+			main .activities .icon {
 				font-size: 125%;
 			}
-			main .logs .details {
+			main .activities .details {
 				display: grid;
 				grid-gap: var(--gap);
 			}
-			main .logs .details .report-name,
-			main .logs .details .error-info {
+			main .activities .details .title {
 				font-size: 110%;
 			}
-			main .logs .details .extra-info span:last-child,
-			main .logs .details .extra-info span:last-child {
+			main .activities .details .extra-info span:last-child,
+			main .activities .details .extra-info span:last-child {
 				margin-left: auto;
 			}

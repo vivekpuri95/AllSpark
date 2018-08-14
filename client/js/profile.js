@@ -146,7 +146,7 @@ class Sessions {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('session-activity');
+		container.classList.add('sessions-list');
 
 		container.innerHTML = `
 
@@ -220,14 +220,13 @@ class Session {
 		if(this.containerElement)
 			return this.containerElement;
 
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('session-container');
+		const container = this.containerElement = document.createElement('article');
 
 		container.innerHTML = `
-			<div class="session">
-				<div class="list-icon"><i class="far fa-clock"></i></div>
+			<header>
+				<div class="icon"><i class="far fa-clock"></i></div>
 				<div class="details">
-					<div class="time">
+					<div class="title">
 						<div class="NA">#${this.id}</div>
 							${Format.dateTime(this.created_at)}
 						<div class="down">
@@ -248,18 +247,18 @@ class Session {
 						</label>
 					</div>
 				</div>
-			</div>
+			</header>
 
-			<div class="logs hidden"></div>
+			<div class="activities hidden"></div>
 		`;
 
 		container.querySelector('.details').on('click', () => {
-			container.querySelector('.logs').classList.toggle('hidden');
+			container.querySelector('.activities').classList.toggle('hidden');
 			container.querySelector('.down').classList.toggle('angle-rotate');
 		});
 
-		for(const elemnt of this.sortedActivity)
-			container.querySelector('.logs').appendChild(elemnt.container);
+		for(const element of this.sortedActivity)
+			container.querySelector('.activities').appendChild(element.container);
 
 		return container;
 	}
@@ -277,12 +276,12 @@ class ReportContainer {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('report-log');
+		container.classList.add('activity', 'report');
 
 		container.innerHTML = `
-			<div class="list-icon"><i class="far fa-file"></i></div>
+			<div class="icon"><i class="far fa-file"></i></div>
 			<div class="details">
-				<div class="report-name">
+				<div class="title">
 					${DataSource.list.get(this.query_id).name}<div class="NA"> #${this.id}</div>
 				</div>
 				<div class="extra-info">
@@ -308,13 +307,13 @@ class ErrorContainer {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('error-log');
+		container.classList.add('activity', 'error');
 
 		container.innerHTML = `
-			<div class="list-icon"><i class="fas fa-exclamation"></i></div>
+			<div class="icon"><i class="fas fa-exclamation"></i></div>
 
 			<div class="details">
-				<div class="error-info">
+				<div class="title">
 					Error
 				</div>
 				<div class="extra-info">
