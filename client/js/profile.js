@@ -62,20 +62,32 @@ Page.class = class Profile extends Page {
 
 		this.profileInfo.render();
 
-		const info = this.container.querySelector('.heading-bar .info');
-		const activity = this.container.querySelector('.heading-bar .activity');
+		const
+			info = this.container.querySelector('.heading-bar .info'),
+			activity = this.container.querySelector('.heading-bar .activity'),
+			access = this.container.querySelector('.heading-bar .access');
+
 
 		info.on('click',() => {
 
+			this.container.querySelector('.heading-bar .selected').classList.remove('selected');
 			info.classList.add('selected');
-			activity.classList.remove('selected');
 
 			Sections.show('profile-info');
 		});
 
+		access.on('click',() => {
+
+			this.container.querySelector('.heading-bar .selected').classList.remove('selected');
+			access.classList.add('selected');
+
+			Sections.show('access');
+		});
+
 		activity.on('click', () => {
 
-			info.classList.remove('selected');
+			this.container.querySelector('.heading-bar .selected').classList.remove('selected');
+
 			activity.classList.add('selected');
 
 			this.sessions.render();
@@ -138,7 +150,7 @@ class Sessions {
 
 		container.innerHTML = `
 
-			<div class="sessions-toolbar">
+			<div class="sessions-toolbar hidden">
 				<h3>Show session details</h3>
 			</div>
 
@@ -212,14 +224,12 @@ class Session {
 		container.classList.add('session-container');
 
 		container.innerHTML = `
-			<div class="sessions">
+			<div class="session">
 				<div class="list-icon"><i class="far fa-clock"></i></div>
 				<div class="details">
 					<div class="time">
-						<div class="hash">#${this.id}</div>
-						<strong>
+						<div class="NA">#${this.id}</div>
 							${Format.dateTime(this.created_at)}
-						</strong>
 						<div class="down">
 							<i class="fas fa-angle-right"></i>
 						</div>
@@ -273,15 +283,11 @@ class ReportContainer {
 			<div class="list-icon"><i class="far fa-file"></i></div>
 			<div class="details">
 				<div class="report-name">
-					<strong>${DataSource.list.get(this.query_id).name}</strong><div class="hash"> #${this.id}</div>
+					${DataSource.list.get(this.query_id).name}<div class="NA"> #${this.id}</div>
 				</div>
 				<div class="extra-info">
-					<label>
-						<span>Execution time: ${this.response_time}</span>
-					</label>
-					<label>
-						<span>Time: ${Format.dateTime(this.created_at)}</span>
-					</label>
+					<span>Execution time: ${this.response_time}</span>
+					<span>${Format.dateTime(this.created_at)}</span>
 				</div>
 			</div>
 		`;
@@ -309,18 +315,12 @@ class ErrorContainer {
 
 			<div class="details">
 				<div class="error-info">
-					<strong>Error</strong>
+					Error
 				</div>
 				<div class="extra-info">
-					<label>
-						<span>Type: ${this.type}</span>
-					</label>
-					<label>
-						<span>Message: ${this.message}</span>
-					</label>
-					<label>
-						<span>Time: ${Format.dateTime(this.created_at)}</span>
-					</label>
+					<span>Type: ${this.type}</span>
+					<span>Message: ${this.message}</span>
+					<span>${Format.dateTime(this.created_at)}</span>
 				</div>
 			</div>
 		`;

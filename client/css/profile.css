@@ -38,7 +38,6 @@ main .profile-details,
 main .privileges,
 main .roles {
 	background: #fff;
-	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	table-layout: fixed;
 	overflow: hidden;
 }
@@ -65,21 +64,24 @@ main .switch {
 }
 main .switch section {
 	padding: 0 !important;
+	margin-top: calc(var(--gap) * 2);
 }
 	main .switch .heading-bar {
-		display: grid;
-		grid-template-columns: 60px 60px;
-		border-bottom: 1px solid #999;
+		display: flex;
+		border-bottom: 1px solid #ccc;
 	}
-		main .switch .hash {
-			color: #ccc;
+		main .switch .NA {
+			color: #999;
 			margin-right: var(--gap);
+			font-size: 80%;
 		}
 		main .heading-bar h3 {
 			margin: 0;
 			border: 0;
+			font-size: 100%;
 		}
 		main .switch .heading-bar label {
+			flex: 1;
 			display: flex;
 			justify-content: center;
 			padding: var(--gap);
@@ -87,13 +89,14 @@ main .switch section {
 						background var(--transition-duration);
 		}
 		main .switch .heading-bar label.selected {
-			box-shadow: inset 0px -4px 0px var(--color-accent);
+			box-shadow: inset 0px -5px 0px var(--color-accent);
+			margin-bottom: -1px;
 		}
 		main .switch .heading-bar label:hover {
 			cursor: pointer;
 		}
 
-main .session-activity .list{
+main .session-activity .list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 }
@@ -107,20 +110,20 @@ main .session-activity .list{
 		}
 	main .session-container {
 		background: #fff;
+		overflow: hidden;
+		display: flex;
+		flex-direction:  column;
 	}
 	main .session-container .sessions {
 		display: grid;
 		grid-template-columns: 50px 1fr;
 		padding: calc(var(--gap) * 2);
-		transition: box-shadow var(--transition-duration);
-	}
-	main .session-container .sessions:hover {
-		cursor: pointer;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+		box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
+		z-index: 1;
 	}
 		main .sessions .list-icon,
 		main .logs .list-icon {
-			color: #666;
+			color: #999;
 			display: flex;
 			justify-content: center;
 			align-items: center;
@@ -142,12 +145,6 @@ main .session-activity .list{
 				font-size: 125%;
 				color: #333;
 			}
-				main .logs .details .report-name strong,
-				main .logs .details .error-info strong,
-				main .sessions .details .time strong {
-					margin-right: var(--gap);
-					font-weight: normal;
-				}
 				main .sessions .details .time .down {
 					margin-left: auto;
 					transition: transform var(--transition-duration);
@@ -161,33 +158,30 @@ main .session-activity .list{
 				color: #999;
 				font-size: 90%;
 			}
-				main .logs .details .extra-info label,
-				main .logs .details .extra-info label,
+				main .logs .details .extra-info span,
+				main .logs .details .extra-info span,
 				main .sessions .details .device-info label {
 					margin-right: var(--gap);
 				}
 	main .session-container .logs {
 		display: grid;
-		grid-gap: calc(var(--gap)*2);
 		max-height: 300px;
 		overflow: auto;
-		background-color: aliceblue;
-		padding: calc(var(--gap) * 2) 0;
+		background-color: #fff;
 	}
 		main .logs .report-log,
 		main .logs .error-log {
 			display: grid;
 			grid-template-columns: 50px 1fr;
-			padding: var(--gap);
+			padding: calc(var(--gap) * 2);
 			transition: box-shadow var(--transition-duration),
 						background var(--transition-duration);
-			padding-left: calc(var(--gap) * 8);
+			border-bottom: 1px solid #eee;
 		}
 		main .logs .report-log:hover,
 		main .logs .error-log:hover {
 			cursor: pointer;
 			background: #ddf;
-			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		}
 			main .logs .list-icon {
 				font-size: 125%;
@@ -199,4 +193,8 @@ main .session-activity .list{
 			main .logs .details .report-name,
 			main .logs .details .error-info {
 				font-size: 110%;
+			}
+			main .logs .details .extra-info span:last-child,
+			main .logs .details .extra-info span:last-child {
+				margin-left: auto;
 			}
