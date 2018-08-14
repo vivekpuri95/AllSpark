@@ -10,21 +10,28 @@ exports.insert = class extends API {
 
 		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
-		var result = {};
+		let password;
 
-		for (var key in this.request.body) {
-			result[key] = this.request.body[key]
+		if (this.request.body.password) {
+			password = await commonFun.makeBcryptHash(this.request.body.password);
 		}
 
-		if (result.password) {
-			result.password = await commonFun.makeBcryptHash(result.password);
-		}
-
-		delete result.token;
-
-		result.account_id = this.account.account_id;
-
-		return await this.mysql.query(`INSERT INTO tb_users SET ?`, result, 'write');
+		return await this.mysql.query(
+			`INSERT INTO 
+				tb_users (account_id, email, first_name, last_name, middle_name, password)
+			VALUES
+				(?, ?, ?, ?, ?, ?)
+			`,
+			[
+				this.account.account_id,
+				this.request.body.email,
+				this.request.body.first_name,
+				this.request.body.last_name,
+				this.request.body.middle_name,
+				password
+			],
+			'write'
+		);
 	}
 
 };
@@ -32,6 +39,8 @@ exports.insert = class extends API {
 exports.delete = class extends API {
 
 	async delete() {
+
+		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
 		return await this.mysql.query(`UPDATE tb_users SET status = 0 WHERE user_id = ?`, [this.request.body.user_id], 'write');
 
@@ -49,18 +58,16 @@ exports.update = class extends API {
 
 		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
-		var keys = Object.keys(this.request.body);
+		var keys = ['first_name', 'last_name', 'middle_name', 'phone', 'password', 'email', 'status'];
 
-		const params = this.request.body,
-			user_id = params.user_id,
+		const
+			user_id = this.request.body.user_id,
 			setParams = {};
 
-		for (const key in params) {
-			if (keys.includes(key) && key != 'user_id')
-				setParams[key] = params[key] || null;
+		for (const key in this.request.body) {
+			if (keys.includes(key))
+				setParams[key] = this.request.body[key] || null;
 		}
-
-		delete setParams['token'];
 
 		if (setParams.password)
 			setParams.password = await commonFun.makeBcryptHash(setParams.password);
