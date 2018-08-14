@@ -88,12 +88,10 @@ main .switch section {
 		}
 		main .switch .heading-bar label.selected {
 			box-shadow: inset 0px -4px 0px var(--color-accent);
-			/* color: #fff; */
 		}
 		main .switch .heading-bar label:hover {
 			cursor: pointer;
 		}
-
 
 main .session-activity .list{
 	display: grid;
@@ -176,8 +174,6 @@ main .session-activity .list{
 		background-color: aliceblue;
 		padding: calc(var(--gap) * 2) 0;
 	}
-
-.logs {}
 		main .logs .report-log,
 		main .logs .error-log {
 			display: grid;

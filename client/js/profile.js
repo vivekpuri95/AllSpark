@@ -1,4 +1,4 @@
-Page.class = class x extends Page {
+Page.class = class Profile extends Page {
 
 	constructor() {
 
@@ -142,7 +142,7 @@ class Sessions {
 				<h3>Show session details</h3>
 			</div>
 
-			<div class="list"></list>
+			<div class="list"></div>
 		`;
 
 		return container;
