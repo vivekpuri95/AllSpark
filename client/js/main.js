@@ -2166,7 +2166,12 @@ class ObjectRoles {
 				&& x.category_id == (parseInt(this.categorySelect.value) || 0)
 			).length) {
 
-			window.alert('Already exists');
+			new SnackBar({
+				message: 'Alread Exists',
+				subtitle: 'The association you\'re trying to create already exists.',
+				type: 'warning',
+			});
+
 			return;
 		}
 
@@ -2245,7 +2250,7 @@ class SnackBar {
 			'bottom-left': document.createElement('div'),
 		};
 
-		SnackBar.container['bottom-left'].classList.add('snack-bar-container', 'bottom-left');
+		SnackBar.container['bottom-left'].classList.add('snack-bar-container', 'bottom-left', 'hidden');
 
 		document.body.appendChild(SnackBar.container['bottom-left']);
 	}
@@ -2312,7 +2317,10 @@ class SnackBar {
 
 		this.container.on('click', () => this.hide());
 
+		// Add the show class out of the current event loop so that CSS transitions have time to initiate.
 		setTimeout(() => this.container.classList.add('show'));
+
+		// Hide the snackbar after the timeout.
 		setTimeout(() => this.hide(), this.timeout * 1000);
 
 		SnackBar.container[this.position].classList.remove('hidden');

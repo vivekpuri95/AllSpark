@@ -805,7 +805,7 @@ body {
 		background: #eee;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 		border-radius: 4px;
-		padding: 15px 20px;
+		padding: 10px 20px;
 		color: #fff;
 		letter-spacing: 1px;
 		opacity: 0;
@@ -813,7 +813,7 @@ body {
 		align-items: center;
 		width: 100%;
 		grid-template-columns: max-content 1fr max-content;
-		grid-column-gap: calc(var(--gap) * 3);
+		grid-column-gap: calc(var(--gap) * 4);
 		grid-row-gap: var(--gap);
 		margin-bottom: -50px;
 		cursor: pointer;
@@ -832,7 +832,7 @@ body {
 		background: #5b5;
 	}
 	.snack-bar.warning {
-		background: #e77;
+		background: #ffa000;
 	}
 	.snack-bar.error {
 		background: #e77;

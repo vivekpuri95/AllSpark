@@ -333,8 +333,9 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 	prepareSearch() {
 
-		const search = this.container.querySelector('table thead tr.search');
-		const columns = this.container.querySelectorAll('table thead th');
+		const
+			search = this.container.querySelector('table thead tr.search'),
+			columns = this.container.querySelectorAll('table thead th');
 
 		for(const column of columns) {
 
@@ -711,6 +712,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 
@@ -785,6 +788,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 });
@@ -964,6 +969,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 
@@ -1380,6 +1387,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 
@@ -1452,6 +1461,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 
@@ -1488,6 +1499,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 });
@@ -1594,6 +1607,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			window.history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
 
 			this.page.load();
+			this.page.stages.get('configure-visualization').disabled = false;
 			this.container.querySelector('#add-visualization-picker').classList.add('hidden');
 			this.container.querySelector('#visualization-list').classList.remove('hidden');
 
@@ -1609,6 +1623,8 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 
@@ -1647,6 +1663,8 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 
@@ -1920,6 +1938,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 
@@ -4385,9 +4405,9 @@ class ReportVisualizationDashboards extends Set {
 				<fieldset>
 					<legend>Add Dashboard</legend>
 					<div class="form">
-						<label>
+
+						<label class="dashboard_id">
 							<span>Dashboard</span>
-							<select name="dashboard_id"></select>
 						</label>
 
 						<label>
@@ -4406,14 +4426,42 @@ class ReportVisualizationDashboards extends Set {
 
 		const form = this.container.querySelector('.add-dashboard');
 
-		for(const dashboard of this.response.values()) {
+		const datalist = [];
 
-			form.dashboard_id.insertAdjacentHTML('beforeend',`
-				<option value=${dashboard.id}>
-					${dashboard.name} ${this.response.has(dashboard.parent) ? `(parent: ${this.response.get(dashboard.parent).name})` : ''}
-				</option>
-			`);
+		if(this.response) {
+
+			for(const dashboard of this.response.values()) {
+
+				const
+					parents = [],
+					seen = [];
+
+				let parent = dashboard.parent;
+
+				while(parent) {
+
+					if(!this.response.has(parent) || seen.includes(parent))
+						break;
+
+					const parentDashboard = this.response.get(parent);
+
+					parents.push(`${parentDashboard.name} #${parentDashboard.id}`);
+					seen.push(parentDashboard.id);
+
+					parent = parentDashboard.parent;
+				}
+
+				datalist.push({
+					value: dashboard.id,
+					name: dashboard.name,
+					subtitle: parents.reverse().join(' &rsaquo; '),
+				});
+			}
 		}
+
+		this.dashboardMultiSelect = new MultiSelect({datalist, multiple: false, dropDownPosition: 'top'});
+
+		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
 
 		form.on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
 	}
@@ -4428,13 +4476,15 @@ class ReportVisualizationDashboards extends Set {
 
 		e.preventDefault();
 
-		const form = stage.dashboards.container.querySelector('.add-dashboard');
+		const
+			form = stage.dashboards.container.querySelector('.add-dashboard'),
+			dashboard_id = parseInt(stage.dashboards.dashboardMultiSelect.value[0]);
 
-		if(Array.from(stage.dashboards).some(d => d.id == form.dashboard_id.value)) {
+		if(Array.from(stage.dashboards).some(d => d.id == dashboard_id)) {
 
 			new SnackBar({
 				message: 'Visualization already added',
-				subtitle: `${stage.dashboards.response.get(parseInt(form.dashboard_id.value)).name} <span class="NA">#${form.dashboard_id.value}</span>`,
+				subtitle: `${stage.dashboards.response.get(dashboard_id).name} <span class="NA">#${dashboard_id}</span>`,
 				type: 'error',
 			});
 
@@ -4446,7 +4496,7 @@ class ReportVisualizationDashboards extends Set {
 				method: 'POST',
 			},
 			parameters = {
-				dashboard_id: form.dashboard_id.value,
+				dashboard_id,
 				visualization_id: stage.visualization.visualization_id,
 				format: JSON.stringify({position: parseInt(form.position.value)})
 			};
@@ -4458,8 +4508,8 @@ class ReportVisualizationDashboards extends Set {
 			await stage.dashboards.load({force: true});
 
 			new SnackBar({
-				message: 'Visualization Added to Dashboard',
-				subtitle: `${stage.dashboards.response.get(parseInt(form.dashboard_id.value)).name} <span class="NA">#${form.dashboard_id.value}</span>`,
+				message: 'Dashboard Added',
+				subtitle: `${stage.dashboards.response.get(dashboard_id).name} <span class="NA">#${dashboard_id}</span>`,
 			});
 
 		} catch(e) {
@@ -4469,6 +4519,8 @@ class ReportVisualizationDashboards extends Set {
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 }
@@ -4495,9 +4547,8 @@ class ReportVisualizationDashboard {
 		form.classList.add('subform', 'form');
 
 		form.innerHTML = `
-			<label>
+			<label class="dashboard_id">
 				<span>Dashboard</span>
-				<select name="dashboard_id"></select>
 			</label>
 
 			<label>
@@ -4521,21 +4572,46 @@ class ReportVisualizationDashboard {
 			</label>
 		`;
 
+		const datalist = [];
+
 		if(this.stage.dashboards.response) {
 
 			for(const dashboard of this.stage.dashboards.response.values()) {
 
-				form.dashboard_id.insertAdjacentHTML('beforeend',`
-					<option value=${dashboard.id}>
-						${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
-					</option>
-				`);
+				const
+					parents = [],
+					seen = [];
+
+				let parent = dashboard.parent;
+
+				while(parent) {
+
+					if(!this.stage.dashboards.response.has(parent) || seen.includes(parent))
+						break;
+
+					const parentDashboard = this.stage.dashboards.response.get(parent);
+
+					parents.push(`${parentDashboard.name} #${parentDashboard.id}`);
+					seen.push(parentDashboard.id);
+
+					parent = parentDashboard.parent;
+				}
+
+				datalist.push({
+					value: dashboard.id,
+					name: dashboard.name,
+					subtitle: parents.reverse().join(' &rsaquo; '),
+				});
 			}
 		}
 
-		form.dashboard_id.value = this.visualization.dashboard_id;
-		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + (form.dashboard_id.value)));
+		this.dashboardMultiSelect = new MultiSelect({datalist, multiple: false, dropDownPosition: 'top'});
 
+		this.dashboardMultiSelect.value = this.visualization.dashboard_id;
+
+		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
+
+		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + (form.dashboard_id.value)));
 		form.querySelector('.delete').on('click', () => this.delete());
 
 		form.on('submit', async e => this.update(e))
@@ -4564,7 +4640,7 @@ class ReportVisualizationDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Deleted',
-				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} <span class="NA">#${this.form.dashboard_id.value}</span>`,
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} <span class="NA">#${this.visualization.dashboard_id}</span>`,
 			});
 
 		} catch(e) {
@@ -4574,6 +4650,8 @@ class ReportVisualizationDashboard {
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 
@@ -4589,7 +4667,7 @@ class ReportVisualizationDashboard {
 			},
 			parameters = {
 				id: this.visualization.id,
-				dashboard_id: this.form.dashboard_id.value,
+				dashboard_id: this.dashboardMultiSelect.value[0],
 				visualization_id: this.visualization.visualization_id,
 				format: JSON.stringify(this.visualization.format)
 			};
@@ -4602,7 +4680,7 @@ class ReportVisualizationDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Saved',
-				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} <span class="NA">#${this.form.dashboard_id.value}</span>`,
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} <span class="NA">#${this.visualization.dashboard_id}</span>`,
 			});
 
 		} catch(e) {
@@ -4612,6 +4690,8 @@ class ReportVisualizationDashboard {
 				subtitle: e.message,
 				type: 'error',
 			});
+
+			throw e;
 		}
 	}
 }

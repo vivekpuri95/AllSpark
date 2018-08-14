@@ -115,6 +115,7 @@ main .form {
 	display: flex;
 	grid-column: 1 / 4;
 	grid-row: 2;
+	overflow-y: auto;
 }
 main.preview-top #stages {
 	grid-row: 3;
@@ -143,14 +144,11 @@ main.preview-left #stages {
 		align-self: center;
 	}
 #stage-configure-report #configure-report-form {
-	display: flex;
+	display: grid;
 	flex-wrap: wrap;
-	margin: -5px;
+	grid-gap: calc(var(--gap) * 2);
+	grid-template-columns: 1fr 1fr;
 }
-	#stage-configure-report #configure-report-form > .form {
-		margin: 5px;
-		flex: 1;
-	}
 #stage-configure-report > h2 {
 	margin: calc(var(--gap) * 2) 0;
 }
@@ -567,17 +565,17 @@ main.preview-left #stages {
 			background: transparent;
 			padding: 0;
 		}
-		#stage-configure-visualization #dashboards .delete:hover {
-			background: #c33;
-			border-color: transparent;
-		}
-			#stage-configure-visualization #dashboards .delete > svg,
-			#stage-configure-visualization #dashboards .view-dashboard > svg {
-				margin: 0;
+			#stage-configure-visualization #dashboards .delete:hover {
+				background: #c33;
+				border-color: transparent;
 			}
-		#stage-configure-visualization #dashboards select {
-			width: 100%;
-		}
+				#stage-configure-visualization #dashboards .delete > svg,
+				#stage-configure-visualization #dashboards .view-dashboard > svg {
+					margin: 0;
+				}
+			#stage-configure-visualization #dashboards .dashboard_id {
+				width: 200px;
+			}
 
 	#stage-configure-visualization #filters {
 	}
