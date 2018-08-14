@@ -4,6 +4,7 @@ const API = require('../../utils/api');
 const auth = require('../../utils/auth');
 const role = new (require("../object_roles")).get();
 const reportHistory = require('../../utils/reportLogs');
+const constants = require("../../utils/constants");
 
 exports.list = class extends API {
 
@@ -58,6 +59,16 @@ exports.list = class extends API {
 			`);
 		}
 
+		let userCategories = new Set(this.user.privileges.filter(x => x.privilege_name === constants.privilege.administrator || x.privilege_name === constants.privilege.report).map(x => x.category_id));
+		let isAdmin = false;
+
+		if(constants.adminPrivilege.some(x => userCategories.has(x))) {
+
+			userCategories = new Set([0]);
+			isAdmin = true;
+		}
+
+
 		const results = await Promise.all([
 			this.mysql.query(query, [`%${this.request.body.text}%`, `%${this.request.body.text}%`, `%${this.request.body.text}%`]),
 			this.mysql.query('SELECT * FROM tb_query_filters'),
@@ -104,13 +115,25 @@ exports.list = class extends API {
 
 		for (const row of results[0]) {
 
-			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
-			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
+			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [];
+			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [];
 
 			row.flag = userSharedQueries.has(row.query_id);
 
+
+
 			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
 				continue;
+			}
+
+			if(isAdmin || row.category_id.every(x => userCategories.has(x))) {
+
+				row.editable = true;
+			}
+
+			else {
+
+				delete row.query;
 			}
 
 			row.filters = results[1].filter(filter => filter.query_id === row.query_id);

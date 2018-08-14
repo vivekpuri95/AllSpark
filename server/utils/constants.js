@@ -6,6 +6,8 @@ exports.adminCategory = [0];
 
 exports.adminRole = [0];
 
+exports.adminPrivilege = [0];
+
 exports.privilege = {
 	administrator: "admin",
 	user: "user",
