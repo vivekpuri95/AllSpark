@@ -899,6 +899,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
 						<button id="edit-data-toggle"><i class="fas fa-edit"></i> Edit Data</button>
 						<button id="run"><i class="fas fa-sync"></i> Run</button>
+						<button id="history-toggle"><i class="fa fa-history"></i> Query History</button>
 					</header>
 
 					<div id="define-report-parts">

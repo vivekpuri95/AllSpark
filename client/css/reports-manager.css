@@ -136,7 +136,11 @@ main.preview-left #stages {
 		padding: 0;
 		width: 100%;
 	}
-
+	#stages .toolbar #history-toggle {
+		position: absolute;
+		right: calc(var(--gap) * 2);
+		font-size: 90%;
+	}
 #stage-configure-report .toolbar {
 	justify-content: space-between;
 }
@@ -362,6 +366,35 @@ main.preview-left #stages {
 				background: #fff;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			}
+		#stage-define-report .report-history {
+			order: 3;
+			flex: 1 40%;
+			margin-left: calc(var(--gap) * 2);
+			overflow: auto;
+		}
+			#stage-define-report .report-history ul {
+				margin: 0;
+				list-style-type: none;
+				padding: 10px 0;
+			}
+				#stage-define-report .report-history ul li {
+					display: flex;
+					flex-direction: column;
+					padding: 5px 20px;
+					cursor:  pointer;
+				}
+				#stage-define-report .report-history ul li:hover {background: #eee;box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);}
+					#stage-define-report .report-history ul li span {
+						padding: 5px 0;
+					}
+					#stage-define-report .report-history ul li .timing {
+						font-weight: bold;
+						font-size: 100%;
+					}
+					#stage-define-report .report-history ul li .footer {
+						color: #999;
+						font-size: 90%;
+					}
 		#stage-define-report .edit-report-data {
 			overflow: auto;
 			width: 100%;

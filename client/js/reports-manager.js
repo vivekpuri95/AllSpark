@@ -874,6 +874,25 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				this.report.connection.editor.editor.resize();
 		});
 
+		const historyToggle = this.container.querySelector('#history-toggle');
+
+		historyToggle.on('click', async () => {
+
+			historyToggle.classList.toggle('selected');
+
+			if(this.reportLogs) {
+
+				this.reportLogs.toggleHide();
+				return;
+			}
+
+			this.reportLogs = new ReportLogs(this.report, this);
+
+			this.container.querySelector('#define-report-parts').appendChild(this.reportLogs.container);
+			await this.reportLogs.load();
+
+		});
+
 		this.editReportData = new EditReportData();
 
 		this.editReportData.container.classList.add('hidden');
@@ -1985,6 +2004,166 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		});
 	}
 });
+
+class ReportLogs extends Set{
+
+	constructor(report, page) {
+
+		super();
+
+		this.report = report;
+		this.page = page;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('report-history');
+
+		container.innerHTML = `
+			<div class="list"></div>
+			<div class="info hidden">
+				<div class="title">
+					<h3>Report History</h3>
+					<i class="fa fa-angle-double-right"></i>
+					<span class="log-title"></span>
+				</div>
+				<div class="toolbar">
+					<button type="button"> Back</button>
+				</div>
+				<div>
+					<table>
+						<!--<thead>-->
+							<!--<tr>-->
+								<!--<th>Key</th>-->
+								<!--<th>Value</th>-->
+								<!--<th>Restore</th>-->
+							<!--</tr>-->
+						<!--</thead>-->
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load() {
+
+		const
+			parameters = {
+				query_id: this.report.query_id,
+				owner: 'query'
+			},
+			options = {
+				method: 'POST'
+			},
+			logs =  await API.call('reports/report/logs', parameters, options);
+
+		for(const log of logs) {
+
+			this.add(new ReportLog(log, this));
+		}
+
+		this.render();
+	}
+
+	render() {
+
+		const listDiv = this.container.querySelector('.list');
+
+		listDiv.textContent = null;
+
+		listDiv.innerHTML = '<h3>Report History</h3>';
+
+		if(!this.size) {
+
+			listDiv.insertAdjacentHTML('beforeend', '<div class="NA">No report logs</div>');
+			return;
+		}
+
+		const logList = document.createElement('ul');
+		logList.classList.add("block");
+
+		for(const log of this.values()) {
+
+			logList.appendChild(log.container);
+		}
+
+		listDiv.appendChild(logList);
+
+	}
+
+	toggleHide() {
+
+		this.container.classList.toggle('hidden');
+	}
+}
+
+class ReportLog {
+
+	constructor(log, logs) {
+
+		Object.assign(this, log);
+
+		this.logs = logs;
+
+		try {
+			this.value = JSON.parse(this.value);
+		}
+		catch(e) {}
+
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('li');
+
+		container.innerHTML = `
+			<span class="timing">${Format.dateTime(this.created_at)}</span>
+			<span class="footer">${this.user_name}</span>
+		`;
+
+		container.on('click', () => this.load());
+
+		return container;
+	}
+
+	load() {
+
+		const logInfoDiv = this.logs.container.querySelector('.info');
+
+		logInfoDiv.classList.remove('hidden');
+		this.logs.container.querySelector('.list').classList.add('hidden');
+
+		logInfoDiv.querySelector('.title span').textContent =  Format.dateTime(this.created_at);
+
+		const logtable = logInfoDiv.querySelector('table tbody');
+
+		for(const key in this.value) {
+
+			logtable.insertAdjacentHTML('beforeend', `
+				<tr>
+					<td>${key}</td>
+					<td>${this.value[key]}\
+					
+					
+					
+					</td>
+				</tr>
+			`);
+		}
+	}
+}
 
 class ReportConnection {
 

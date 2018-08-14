@@ -447,7 +447,7 @@ body {
 			transition: var(--transition-duration);
 		}
 		main table tbody tr:nth-child(2n) {
-			background: #efefef;
+			/* background: #efefef; */
 		}
 		main table tbody tr:hover,
 		main table tbody tr.selected {
@@ -764,6 +764,30 @@ body {
 		z-index: 2;
 	}
 
+.report-history {
+
+}
+	.report-history h3 {
+		margin: 0;
+		padding: calc(var(--gap) * 2);
+	}
+	.report-history .list h3 {
+		background: var(--color-primary);
+		color: var(--color-primary-text);
+		font-weight: normal;
+		letter-spacing: 0.5px;
+	}
+	.report-history .info .title {
+		display: flex;
+		align-items: center;
+	}
+		.report-history .info .title span {
+			padding: calc(var(--gap) * 2);
+			color: #999;
+		}
+	.report-history .info h3 {
+
+	}
 .snack-bar-container {
 	display: grid;
 	grid-gap: 15px;
