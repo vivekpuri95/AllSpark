@@ -300,7 +300,7 @@ class UserManage {
 				method: 'POST',
 			};
 
-		await API.call('users/update', parameters, options);
+		await API.call('users/delete', parameters, options);
 
 		await Users.load();
 		await Sections.show('list');
