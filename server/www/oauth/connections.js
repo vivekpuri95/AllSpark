@@ -29,7 +29,7 @@ exports.insert = class extends API {
 
 		const providers = await (new Providers.list(this)).list();
 
-		this.assert(providers.some(p => p.provider_id == this.request.body.provider_id), 'Invalid provier id! :(');
+		this.assert(providers.some(p => p.provider_id == this.request.body.provider_id), 'Invalid provier id!');
 
 		return await this.mysql.query(
 			`INSERT INTO tb_oauth_connections SET user_id = ?, provider_id = ?`,
@@ -49,11 +49,11 @@ exports.delete = class extends API {
 			[this.request.body.id, this.user.user_id]
 		);
 
-		this.assert(connection, 'Invalid connection ID! :(');
+		this.assert(connection, 'Invalid connection ID!');
 
 		const providers = await (new Providers.list(this)).list();
 
-		this.assert(providers.some(p => p.provider_id == connection.provider_id), 'Invalid provier id! :(');
+		this.assert(providers.some(p => p.provider_id == connection.provider_id), 'Invalid provier id!');
 
 		return await this.mysql.query(
 			`UPDATE tb_oauth_connections SET status = 0 WHERE id = ? AND user_id = ?`,
@@ -83,11 +83,11 @@ exports.redirect_uri = class extends API {
 			[this.request.body.state, this.user.user_id]
 		);
 
-		this.assert(provider, 'Invalid connection ID! :(');
+		this.assert(provider, 'Invalid connection ID!');
 
 		const providers = await (new Providers.list(this)).list();
 
-		this.assert(providers.some(p => p.provider_id == provider.provider_id), 'Invalid provier id! :(');
+		this.assert(providers.some(p => p.provider_id == provider.provider_id), 'Invalid provier id!');
 
 		let connection;
 
@@ -97,7 +97,7 @@ exports.redirect_uri = class extends API {
 		else if(provider.type == 'Facebook')
 			connection = new FacebookMarketing(this, provider);
 
-		this.assert(connection, 'Invalid provider type! :(');
+		this.assert(connection, 'Invalid provider type!');
 
 		await connection.validate();
 
@@ -127,11 +127,11 @@ exports.test = class extends API {
 			[this.request.query.id, this.user.user_id]
 		);
 
-		this.assert(provider, 'Invalid connection ID! :(');
+		this.assert(provider, 'Invalid connection ID!');
 
 		const providers = await (new Providers.list(this)).list();
 
-		this.assert(providers.some(p => p.provider_id == provider.provider_id), 'Invalid provier id! :(');
+		this.assert(providers.some(p => p.provider_id == provider.provider_id), 'Invalid provier id!');
 
 		let connection;
 
@@ -141,7 +141,7 @@ exports.test = class extends API {
 		else if(provider.type == 'Facebook')
 			connection = new FacebookMarketing(this, provider);
 
-		this.assert(connection, 'Invalid provider type! :(');
+		this.assert(connection, 'Invalid provider type!');
 
 		return await connection.test();
 	}
@@ -154,9 +154,9 @@ class OAuthConnection {
 		this.endpoint = endpoint;
 		this.provider = provider;
 
-		this.endpoint.assert(this.provider.connection_id, 'Connection ID not found! :(');
-		this.endpoint.assert(this.provider.client_id, 'Client ID not found! :(');
-		this.endpoint.assert(this.provider.client_secret, 'Client secret not found! :(');
+		this.endpoint.assert(this.provider.connection_id, 'Connection ID not found!');
+		this.endpoint.assert(this.provider.client_id, 'Client ID not found!');
+		this.endpoint.assert(this.provider.client_secret, 'Client secret not found!');
 	}
 
 	async validate() {
@@ -195,7 +195,7 @@ class GoogleAPIs extends OAuthConnection {
 
 		response = await response.json();
 
-		this.endpoint.assert(response.refresh_token, `Refresh token not recieved from google, ${JSON.stringify(response)}! :(`);
+		this.endpoint.assert(response.refresh_token, `Refresh token not recieved from google, ${JSON.stringify(response)}!`);
 
 		connection.refresh_token = response.refresh_token;
 	}
@@ -219,7 +219,7 @@ class GoogleAPIs extends OAuthConnection {
 
 		response = await response.json();
 
-		this.endpoint.assert(response.access_token, 'Access Token not recieved form Google! :(');
+		this.endpoint.assert(response.access_token, 'Access Token not recieved form Google!');
 
 		connection.access_token = response.access_token;
 		connection.expires_at = new Date(Date.now() + (response.expires_in * 1000)).toISOString().replace('T', ' ').replace('Z', '');
@@ -227,8 +227,8 @@ class GoogleAPIs extends OAuthConnection {
 
 	async test() {
 
-		this.endpoint.assert(this.provider.access_token, 'Access Token not found! :(');
-		this.endpoint.assert(this.provider.refresh_token, 'Refresh Token not found! :(');
+		this.endpoint.assert(this.provider.access_token, 'Access Token not found!');
+		this.endpoint.assert(this.provider.refresh_token, 'Refresh Token not found!');
 
 		await this.accessToken(this.provider);
 
@@ -262,7 +262,7 @@ class FacebookMarketing extends OAuthConnection {
 
 		response = await response.json();
 
-		this.endpoint.assert(response.access_token, `Access Token not recieved form Facebook, ${JSON.stringify(response)}! :(`);
+		this.endpoint.assert(response.access_token, `Access Token not recieved form Facebook, ${JSON.stringify(response)}!`);
 
 		connection.access_token = response.access_token;
 		connection.expires_at = new Date(Date.now() + (response.expires_in * 1000)).toISOString();
@@ -270,7 +270,7 @@ class FacebookMarketing extends OAuthConnection {
 
 	async test() {
 
-		this.endpoint.assert(this.provider.access_token, 'Access Token not found! :(');
+		this.endpoint.assert(this.provider.access_token, 'Access Token not found!');
 
 		let  appAccessToken;
 
@@ -291,7 +291,7 @@ class FacebookMarketing extends OAuthConnection {
 
 			response = await response.json();
 
-			this.endpoint.assert(response.access_token, 'App Access Token not recieved form Facebook! :(');
+			this.endpoint.assert(response.access_token, 'App Access Token not recieved form Facebook!');
 
 			appAccessToken = response.access_token;
 		}
@@ -311,7 +311,7 @@ class FacebookMarketing extends OAuthConnection {
 
 			response = await response.json();
 
-			this.endpoint.assert(response.data && response.data.is_valid, 'Access token in not valid! :(');
+			this.endpoint.assert(response.data && response.data.is_valid, 'Access token in not valid!');
 		}
 
 		return this.provider.access_token;

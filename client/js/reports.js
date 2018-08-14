@@ -2279,7 +2279,7 @@ class DataSourceColumnFilters extends Set {
 			div.appendChild(filter.container);
 
 		if(!this.size) {
-			div.innerHTML = '<div class="NA">No Filters Added :(</div>'
+			div.innerHTML = '<div class="NA">No Filters Added</div>'
 		}
 	}
 
@@ -2465,7 +2465,7 @@ class DataSourceColumnAccumulations extends Set {
 			div.appendChild(accumulation.container);
 
 		if(!this.size) {
-			div.innerHTML = '<div class="NA">No Accumulation Added :(</div>'
+			div.innerHTML = '<div class="NA">No Accumulation Added</div>'
 		}
 	}
 }
@@ -3952,7 +3952,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		if(!rows.length) {
 			table.insertAdjacentHTML('beforeend', `
-				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found! :('}</td></tr>
+				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found!'}</td></tr>
 			`);
 		}
 
@@ -6641,7 +6641,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 		}
 
 		if(!response.length)
-			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No data found! :('}</caption>`;
+			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No data found!'}</caption>`;
 
 		table.appendChild(tbody);
 		container.appendChild(table);

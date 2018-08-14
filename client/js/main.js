@@ -687,7 +687,7 @@ class GlobalSearch {
 		}
 
 		if(!data.length) {
-			this.searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
+			this.searchList.innerHTML = `<li><a href="#">No results found</a></li>`;
 		}
 	}
 
@@ -1080,7 +1080,7 @@ class API extends AJAX {
 	static loadFormData(parameters, formData) {
 
 		if(!(formData instanceof FormData))
-			throw new Page.exception('The form object is not an instance of FormDat class! :(');
+			throw new Page.exception('The form object is not an instance of FormDat class!');
 
 		for(const key of formData.keys()) {
 
@@ -1399,7 +1399,7 @@ class CodeEditor {
 	constructor({mode = null}) {
 
 		if(!window.ace)
-			throw Page.exception('Ace editor not available! :(');
+			throw Page.exception('Ace editor not available!');
 
 		this.mode = mode;
 	}
@@ -1599,7 +1599,7 @@ class MultiSelect {
 					<a class="clear">Clear</a>
 				</header>
 				<div class="list"></div>
-				<div class="no-matches NA hidden">No matches found! :(</div>
+				<div class="no-matches NA hidden">No matches found!</div>
 				<footer class="hidden"></footer>
 			</div>
 		`;
@@ -1722,7 +1722,7 @@ class MultiSelect {
 		optionList.textContent = null;
 
 		if(!this.datalist || !this.datalist.length) {
-			optionList.innerHTML = '<div class="NA">No data found... :(</div>';
+			optionList.innerHTML = '<div class="NA">No data found...</div>';
 			return;
 		}
 
@@ -2146,7 +2146,7 @@ class ObjectRoles {
 		}
 
 		if(!this.alreadyVisible.length)
-			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet! :(</td></tr>'
+			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet!</td></tr>'
 
 		return table;
 	}

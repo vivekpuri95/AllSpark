@@ -113,7 +113,7 @@ class Users extends Page {
 			Users.contaier.appendChild(user.row);
 
 		if(!list.length)
-			Users.contaier.innerHTML = '<td colspan="5" class="NA">No rows found :(</td>'
+			Users.contaier.innerHTML = '<td colspan="5" class="NA">No rows found</td>'
 	}
 
 	static loadState(state) {
@@ -167,8 +167,8 @@ class UserManage {
 		UserManage.heading.textContent = 'Add User';
 		UserManage.form.on('submit', UserManage.submitListener = e => UserManage.insert(e));
 
-		Privileges.privileges_container.innerHTML = `<div class="NA">You can add privileges to this user once you add the user :(</div>`;
-		Roles.roles_container.innerHTML = `<div class="NA">You can add roles to this user once you add the user :(</div>`;
+		Privileges.privileges_container.innerHTML = `<div class="NA">You can add privileges to this user once you add the user</div>`;
+		Roles.roles_container.innerHTML = `<div class="NA">You can add roles to this user once you add the user</div>`;
 
 		Privileges.add_filter.classList.add('hidden');
 		Roles.add_roles.classList.add('hidden');
@@ -442,7 +442,7 @@ class Privileges {
 		container.textContent = null;
 
 		if(!this.list.length)
-			Privileges.privileges_container.innerHTML = `<div class="NA">No privilege assigned :(</div>`;
+			Privileges.privileges_container.innerHTML = `<div class="NA">No privilege assigned</div>`;
 
 		for(const privilege of this.list) {
 			container.appendChild(privilege.row);
@@ -669,7 +669,7 @@ class Roles {
 		container.textContent = null;
 
 		if(!this.list.length)
-			Roles.roles_container.innerHTML = `<div class="NA">No roles assigned :(</div>`;
+			Roles.roles_container.innerHTML = `<div class="NA">No roles assigned</div>`;
 
 		for(const privilege of this.list) {
 			container.appendChild(privilege.row);

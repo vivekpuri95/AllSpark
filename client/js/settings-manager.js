@@ -46,7 +46,7 @@ class SettingsManager {
 			tbody.appendChild(data.row);
 
 		if(!this.profiles.size)
-			tbody.innerHTML = `<tr><td colspan="2" class="NA">No profile found :(</td></tr>`;
+			tbody.innerHTML = `<tr><td colspan="2" class="NA">No profile found</td></tr>`;
 
 		tbody.querySelector('tr').click();
 	}

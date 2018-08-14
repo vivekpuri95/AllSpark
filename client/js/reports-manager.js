@@ -281,10 +281,10 @@ class ReportsMangerStage {
 			const connection = this.page.connections.get(parseInt(report.connection_name));
 
 			if(!connection)
-				throw new Page.exception('Report connection not found! :(');
+				throw new Page.exception('Report connection not found!');
 
 			if(!ReportConnection.types.has(connection.type))
-				throw new Page.exception('Invalid report connection type! :(');
+				throw new Page.exception('Invalid report connection type!');
 
 			report.connection = new (ReportConnection.types.get(connection.type))(report, this);
 		}
@@ -467,7 +467,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		}
 
 		if(!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA"><td colspan="11">No Reports Found! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA"><td colspan="11">No Reports Found!</td></tr>`;
 
 		this.switcher.querySelector('small').textContent = 'Pick a report';
 	}
@@ -1092,7 +1092,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			const div = document.createElement('div');
 
 			div.classList.add('NA');
-			div.innerHTML = 'Failed to load Schema! :(';
+			div.innerHTML = 'Failed to load Schema!';
 
 			container.appendChild(div);
 
@@ -1251,7 +1251,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			}
 
 			if(!databases.children.length)
-				databases.innerHTML = `<div class="NA">No matches found! :(</div>`;
+				databases.innerHTML = `<div class="NA">No matches found!</div>`;
 		}
 
 		renderList();
@@ -1315,7 +1315,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		}
 
 		if(!this.report.filters.length)
-			tbody.innerHTML = `<tr class="NA"><td colspan="6">No filters added yet! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA"><td colspan="6">No filters added yet!</td></tr>`;
 
 		this.filterForm.datasetMultiSelect.datalist = Array.from(DataSource.list.values()).filter(r => r.query_id != this.report.query_id).map(r => {return {name: r.name, value: r.query_id}});
 		this.filterForm.datasetMultiSelect.render();
@@ -1543,7 +1543,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				<figure>
 					<img alt="${visualization.name}">
 					<span class="loader"><i class="fa fa-spinner fa-spin"></i></span>
-					<span class="NA hidden">Preview not available! :(</span>
+					<span class="NA hidden">Preview not available!</span>
 					<figcaption>${visualization.name}</figcaption>
 				</figure>
 			`;
@@ -1579,7 +1579,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		}
 
 		if(!MetaData.visualizations.size)
-			this.form.innerHTML = `<div class="NA">No visualizations found :(</div>`;
+			this.form.innerHTML = `<div class="NA">No visualizations found</div>`;
 	}
 
 	get url() {
@@ -1731,7 +1731,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		}
 
 		if(!this.report.visualizations.length)
-			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found! :(</td></tr>';
+			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found!</td></tr>';
 
 		this.page.preview.position = 'right';
 	}
@@ -2342,7 +2342,7 @@ ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConne
 		if(event == 'upload')
 			this.onUpload = callback;
 
-		else throw new Page.exception(`Invalid event File Upload event type ${event}! :(`);
+		else throw new Page.exception(`Invalid event File Upload event type ${event}!`);
 	}
 
 	/**
@@ -2353,7 +2353,7 @@ ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConne
 	upload(file) {
 
 		if(!this.stage.report.load_saved)
-			return this.message('This report doesn\'t have \'Store Result\' property enabled! :(', 'warning');
+			return this.message('This report doesn\'t have \'Store Result\' property enabled!', 'warning');
 
 		this.message(`Uploading ${file.name}`, 'notice');
 
@@ -2593,7 +2593,7 @@ class Axes extends Set {
 			this.container.appendChild(axis.container);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No axes added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No axes added yet!</div>';
 
 		this.container.insertAdjacentHTML('beforeend', `
 
@@ -2939,7 +2939,7 @@ class SpatialMapOptionsLayers extends Set {
 		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' map layer' + ( this.size == 1 ? ' added' :'s added') : ''}`;
 
 		if (!this.size)
-			this.container.innerHTML = '<div class="NA">No layers added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No layers added yet!</div>';
 
 		for(const layer of this) {
 
@@ -3735,7 +3735,7 @@ class ReportTransformations extends Set {
 			this.container.appendChild(transformation.container);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No transformation added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No transformation added yet!</div>';
 
 		this.container.insertAdjacentHTML('beforeend', `
 
@@ -3841,7 +3841,7 @@ class ReportTransformation {
 		Object.assign(this, transformation);
 
 		if(!ReportTransformation.types.has(this.type))
-			throw new Page.exception(`Invalid transformation type ${this.type}! :(`);
+			throw new Page.exception(`Invalid transformation type ${this.type}!`);
 	}
 }
 
@@ -4395,7 +4395,7 @@ class ReportVisualizationDashboards extends Set {
 			this.container.appendChild(dashboard.form);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No dashboard added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No dashboard added yet!</div>';
 
 		this.container.parentElement.querySelector('h3 .count').innerHTML = `${this.size ? 'Added to ' + this.size + ' dashboard' + (this.size == 1 ? '' : 's') : ''}` ;
 
@@ -4743,7 +4743,7 @@ class ReportVisualizationFilters extends Map {
 			this.container.appendChild(filter.container);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No filters added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No filters added yet!</div>';
 
 		this.container.insertAdjacentHTML('beforeend', `
 
@@ -5041,7 +5041,7 @@ class EditReportData {
 		table.textContent = null;
 
 		if(!this.data || !this.data.length)
-			return table.innerHTML = '<tr class="NA"><td>No data found :(</td></tr>';
+			return table.innerHTML = '<tr class="NA"><td>No data found</td></tr>';
 
 		tbody.setAttribute('contenteditable', '');
 

@@ -67,7 +67,7 @@ Page.class = class Connections extends Page {
 			dataConnectionsContainer.appendChild(item.row);
 
 		if(!dataConnectionsContainer.textContent)
-			dataConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No data connections found! :(</td></tr>';
+			dataConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No data connections found!</td></tr>';
 
 		oAuthConnectionsContainer.textContent = null;
 
@@ -75,7 +75,7 @@ Page.class = class Connections extends Page {
 			oAuthConnectionsContainer.appendChild(item.row);
 
 		if(!oAuthConnectionsContainer.textContent)
-			oAuthConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No OAuth connections found! :(</td></tr>';
+			oAuthConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No OAuth connections found!</td></tr>';
 
 		const providerList = this.listContainer.querySelector('#add-oauth-connection').provider;
 

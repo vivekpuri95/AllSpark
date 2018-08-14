@@ -132,7 +132,7 @@ class Dashboard extends API {
 			JSON.parse(values.format);
 		}
 		catch(e) {
-			this.assert(false, 'Invalid format! :(');
+			this.assert(false, 'Invalid format!');
 		}
 
 		return await this.mysql.query(

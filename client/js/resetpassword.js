@@ -10,7 +10,7 @@ Page.class = class ResetPassword extends Page {
 		this.form.on('submit', e => this.submit(e));
 
 		if(!account) {
-			this.message.textContent = 'Account not found! :(';
+			this.message.textContent = 'Account not found!';
 			this.message.classList.remove('hidden');
 			this.message.classList.add('warning');
 			return;
@@ -49,7 +49,7 @@ Page.class = class ResetPassword extends Page {
 		catch(error) {
 
 			this.message.classList.add('warning');
-			this.message.textContent = error.message || error || 'Something went wrong! :(';
+			this.message.textContent = error.message || error || 'Something went wrong!';
 		}
 	}
 }

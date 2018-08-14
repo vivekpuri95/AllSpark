@@ -120,7 +120,7 @@ Page.class = class DashboardManager extends Page {
 			container.appendChild(dashboard.row);
 
 		if(!this.list.size)
-			container.innerHTML = `<tr class="NA"><td colspan="2">No dashboards found! :(</td></tr>`;
+			container.innerHTML = `<tr class="NA"><td colspan="2">No dashboards found!</td></tr>`;
 
 		const datalist = [];
 

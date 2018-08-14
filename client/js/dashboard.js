@@ -267,7 +267,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		if (!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found!</td></tr>`;
 	}
 
 	async load(state) {
@@ -931,7 +931,7 @@ class Dashboard {
 
 		if (!this.page.loadedVisualizations.size) {
 
-			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
+			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found!</div>';
 		}
 
 		if (this.page.user.privileges.has('report')) {
@@ -1303,7 +1303,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				<label><input type="checkbox" checked> Select All</label>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
 			</div>
-			<div class="NA no-results hidden">No filters found! :(</div>
+			<div class="NA no-results hidden">No filters found!</div>
 		`;
 
 		container.appendChild(this.container);

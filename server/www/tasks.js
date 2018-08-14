@@ -37,14 +37,14 @@ class Tasks extends API {
 
 		this.validateRequest();
 
-		this.assert(this.request.body.id, 'Task id is required! :(');
+		this.assert(this.request.body.id, 'Task id is required!');
 
 		const [task] = await this.mysql.query(
 			'SELECT id FROM tb_tasks WHERE account_id = ? AND id = ? AND status = 1',
 			[this.account.account_id, this.request.body.id]
 		);
 
-		this.assert(task, 'Invalid task ID! :(')
+		this.assert(task, 'Invalid task ID!')
 
 		return await this.mysql.query(
 			'UPDATE tb_tasks SET name = ?, type = ?, details = ? WHERE id = ?',
@@ -63,7 +63,7 @@ class Tasks extends API {
 			[this.account.account_id, this.request.body.id]
 		);
 
-		this.assert(task, 'Invalid task ID! :(');
+		this.assert(task, 'Invalid task ID!');
 
 		return await this.mysql.query(
 			'UPDATE tb_tasks SET status = 0 WHERE id = ?',
@@ -75,14 +75,14 @@ class Tasks extends API {
 
 		this.user.privilege.needs('tasks');
 
-		this.assert(this.request.body.name, 'Task name is required! :(');
-		this.assert(this.request.body.type, 'Task type is required! :(');
+		this.assert(this.request.body.name, 'Task name is required!');
+		this.assert(this.request.body.type, 'Task type is required!');
 
 		if(this.request.body.details) {
 			try {
 				JSON.parse(this.request.body.details);
 			} catch(e) {
-				this.assert(false, 'Task details is not a valid JSON! :(');
+				this.assert(false, 'Task details is not a valid JSON!');
 			}
 		}
 	}

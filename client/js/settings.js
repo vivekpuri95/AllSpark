@@ -134,7 +134,7 @@ Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
 		container.textContent = null;
 
 		if (!this.list.size)
-			container.innerHTML = '<tr class="NA"><td colspan="5">No rows found :(</td></tr>'
+			container.innerHTML = '<tr class="NA"><td colspan="5">No rows found</td></tr>'
 
 		for (const globalFilter of this.list.values()) {
 			container.appendChild(globalFilter.row);
@@ -180,7 +180,7 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 		container.textContent = null;
 
 		if (!this.list.size)
-			container.innerHTML = '<div class="NA">No rows found :(</div>'
+			container.innerHTML = '<div class="NA">No rows found</div>'
 
 		for (const dataset of this.list.values()) {
 			container.appendChild(dataset.row);
@@ -224,7 +224,7 @@ Settings.list.set('roles', class Roles extends SettingPage {
 		container.textContent = null;
 
 		if(!this.list.size)
-			container.innerHTML = '<div class="NA">No rows found :(</div>'
+			container.innerHTML = '<div class="NA">No rows found</div>'
 
 		for(const role of this.list.values())
 			container.appendChild(role.row);
@@ -269,7 +269,7 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 		container.textContent = null;
 
 		if(!this.list.size)
-			container.innerHTML = '<div class="NA">No Account found :(</div>';
+			container.innerHTML = '<div class="NA">No Account found</div>';
 
 		for(const account of this.list.values())
 			container.appendChild(account.row);
@@ -312,7 +312,7 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		container.textContent = null;
 
 		if(!this.list.size)
-			container.innerHTML = '<div class="NA">No rows found :(</div>';
+			container.innerHTML = '<div class="NA">No rows found</div>';
 
 		for(const category of this.list.values())
 			container.appendChild(category.row);
@@ -866,7 +866,7 @@ class AccountsFeatures {
 			}
 
 			if(!tbody.childElementCount)
-				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found</td></tr>`;
 		});
 
 		container.querySelector('.feature-type').on('change', (e) => {
@@ -876,7 +876,7 @@ class AccountsFeatures {
 			tbody.textContent = null;
 
 			if(!selected.length) {
-				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found</td></tr>`;
 				return;
 			};
 
@@ -887,7 +887,7 @@ class AccountsFeatures {
 			};
 
 			if(!tbody.childElementCount)
-				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found</td></tr>`;
 		});
 
 		return container;
