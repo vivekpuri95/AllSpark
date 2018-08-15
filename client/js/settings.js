@@ -1,3 +1,20 @@
+function findBrackets(q) {
+
+	let matches = [];
+
+	for(const match of q.match(/\((.*)\)/g)) {
+
+		const subMatches = findBrackets(match.slice());
+
+		if(subMatches)
+			matches = matches.concat(subMatches);
+
+		else matches.push(match);
+	}
+
+	return matches;
+}
+
 class Settings extends Page {
 
 	constructor() {

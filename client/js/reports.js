@@ -143,7 +143,7 @@ class DataSource {
 
 		this.originalResponse = response;
 
-		this.container.querySelector('.query').innerHTML = response.query;
+		this.container.querySelector('.query').innerHTML = new FormatSQL(response.query).query;
 
 		let age = response.cached ? Math.floor(response.cached.age * 100) / 100 : 0;
 
