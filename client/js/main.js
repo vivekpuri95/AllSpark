@@ -2378,7 +2378,6 @@ class FormatSQL {
 			'ORDER BY',
 			'GROUP BY',
 			'LIMIT',
-			'IN',
 			'ON',
 			'AND',
 			'OR',
