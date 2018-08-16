@@ -183,7 +183,7 @@ class report extends API {
 
 			if (filter.type == 'datetime') {
 
-				filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0,19);
+				filter.default_value = new Date(Date.now() + filter.offset * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
 				if (filter.value >= new Date().toISOString().slice(0, 10)) {
@@ -403,10 +403,28 @@ class report extends API {
 			}
 		}
 
+		if (global.executingReports.has(engine.hash)) {
+
+			return await global.executingReports.get(engine.hash).get("execute");
+		}
+
+		const engineExecution = engine.execute();
+
+		const queryDetails = new Map;
+
+		queryDetails.set("query_id", this.reportObj.query_id);
+		queryDetails.set("account_id", this.account.account_id);
+		queryDetails.set("user_id", this.user.user_id);
+		queryDetails.set("params", engine.parameters);
+		queryDetails.set("execute", engineExecution);
+
+		global.executingReports.set(engine.hash, queryDetails);
+
 		try {
 
-			result = await engine.execute();
+			result = await engineExecution;
 			await this.storeQueryResult(result);
+			global.executingReports.delete(engine.hash);
 
 		}
 		catch (e) {
@@ -794,7 +812,7 @@ class Mongo {
 
 		reportObj.definition = JSON.parse(reportObj.definition);
 
-		this.sandbox = { x: 1, ObjectId};
+		this.sandbox = {x: 1, ObjectId};
 	}
 
 	get finalQuery() {
@@ -810,11 +828,11 @@ class Mongo {
 
 	applyFilters() {
 
-		for(const filter of this.filters) {
+		for (const filter of this.filters) {
 
 			const regex = new RegExp(`{{${filter.placeholder}}}`, 'g');
 
-			if(filter.multiple && !Array.isArray(filter.value)) {
+			if (filter.multiple && !Array.isArray(filter.value)) {
 
 				filter.value = [filter.value];
 			}
@@ -834,7 +852,7 @@ class Mongo {
 			vm.runInContext(code, this.sandbox);
 		}
 
-		catch(e) {
+		catch (e) {
 
 			throw new API.Exception(400, {
 				message: e.message,
@@ -844,7 +862,7 @@ class Mongo {
 
 		this.reportObj.query = this.sandbox.x;
 
-		if(!(this.reportObj.definition.collection_name && this.reportObj.query)) {
+		if (!(this.reportObj.definition.collection_name && this.reportObj.query)) {
 
 			throw("something missing in collection and aggregate query");
 		}
@@ -879,9 +897,11 @@ class ReportEngine extends API {
 		return crypto.createHash('md5').update(JSON.stringify(this.parameters) || "").digest('hex');
 	}
 
-	async execute() {
+	async execute(startTime) {
 
-		this.executionTimeStart = Date.now();
+		await new Promise((resolve) => setTimeout(() => resolve(1), 500));
+
+		this.executionTimeStart = startTime || Date.now();
 
 		if (!Object.keys(this.parameters).length) {
 
@@ -1051,6 +1071,45 @@ class download extends API {
 
 	}
 }
+
+class executingReports extends API {
+
+	async executingReports() {
+
+		const result = [];
+		const superadmin = this.user.privilege.has("superadmin");
+		const admin = this.user.privilege.has("admin");
+
+		for(const [_, value] of global.executingReports.entries()) {
+
+			let obj = {};
+
+			if(!(superadmin || admin) && value.get("user_id") !== this.user.user_id) {
+
+				continue;
+			}
+
+			if(!superadmin && admin && value.get("account_id") !== this.account.account_id) {
+
+				continue;
+			}
+
+			for (const [k, v] of value.entries()) {
+
+				if (k === "execute") {
+
+					continue;
+				}
+
+				obj[k] = v;
+				result.push(obj)
+			}
+		}
+
+		return result;
+	}
+}
+
 
 exports.query = query;
 exports.report = report;
