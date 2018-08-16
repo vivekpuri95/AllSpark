@@ -2487,7 +2487,7 @@ class FormatSQL {
 		];
 
 		for(const keyword of keywords)
-			this.query = this.query.replace(new RegExp(`\\n\\s*${keyword}\s`, 'g'), ' ' + keyword);
+			this.query = this.query.replace(new RegExp(`\\n\\s*${keyword}`, 'g'), ' ' + keyword);
 
 		/**
 		 * FROM
@@ -2498,6 +2498,38 @@ class FormatSQL {
 		 * FROM (
 		 */
 		this.query = this.query.replace(/\n(\s*)FROM\n\s*\(\n/gi, (a, b) => `\n${b}FROM (\n`);
+
+		/**
+		 * foo, bar, baz(a, b)
+		 *
+		 * turns to
+		 *
+		 * foo,
+		 * bar,
+		 * baz(a, b)
+		 */
+		{
+			const result = [];
+			let select = false;
+
+			for(let line of this.query.split('\n')) {
+
+				const depth = Math.max(line.match(/\s*/)[0].split('\t').length - 1, 0);
+
+				if(select) {
+					line = line.replace(/,\s/ig, ',');
+					line = line.replace(/,(?![^()]*\))/ig, ',\n' + '\t'.repeat(depth));
+					select = false;
+				}
+
+				if(line.trim().toLowerCase() == 'select')
+					select = true;
+
+				result.push(line);
+			}
+
+			this.query = result.join('\n');
+		}
 	}
 }
 
