@@ -886,6 +886,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				return;
 			}
 
+			this.class = QueryLogs;
+
 			this.reportLogs = new ReportLogs(this.report, this);
 
 			this.container.querySelector('#define-report-parts').appendChild(this.reportLogs.container);
@@ -2022,34 +2024,25 @@ class ReportLogs extends Set{
 
 		const container = this.containerElement = document.createElement('div');
 
-		container.classList.add('report-history');
+		container.classList.add('query-history');
 
 		container.innerHTML = `
 			<div class="list"></div>
 			<div class="info hidden">
-				<div class="title">
-					<h3>Report History</h3>
-					<i class="fa fa-angle-double-right"></i>
+				<div class="toolbar">
+					<button type="button"><i class="fa fa-arrow-left"></i> Back</button>
 					<span class="log-title"></span>
 				</div>
-				<div class="toolbar">
-					<button type="button"> Back</button>
-				</div>
-				<div>
-					<table>
-						<!--<thead>-->
-							<!--<tr>-->
-								<!--<th>Key</th>-->
-								<!--<th>Value</th>-->
-								<!--<th>Restore</th>-->
-							<!--</tr>-->
-						<!--</thead>-->
-						<tbody>
-						</tbody>
-					</table>
-				</div>
+				<div class="block"></div>
 			</div>
 		`;
+
+		container.querySelector('.toolbar button').on('click', () => {
+
+			container.querySelector('.list').classList.remove('hidden');
+			container.querySelector('.info').classList.add('hidden');
+		});
+
 
 		return container;
 	}
@@ -2068,7 +2061,7 @@ class ReportLogs extends Set{
 
 		for(const log of logs) {
 
-			this.add(new ReportLog(log, this));
+			this.add(new (this.page.class)(log, this));
 		}
 
 		this.render();
@@ -2080,11 +2073,11 @@ class ReportLogs extends Set{
 
 		listDiv.textContent = null;
 
-		listDiv.innerHTML = '<h3>Report History</h3>';
+		listDiv.innerHTML = '<h3>Query History</h3>';
 
 		if(!this.size) {
 
-			listDiv.insertAdjacentHTML('beforeend', '<div class="NA">No report logs</div>');
+			listDiv.insertAdjacentHTML('beforeend', '<div class="NA">No logs</div>');
 			return;
 		}
 
@@ -2123,17 +2116,12 @@ class ReportLog {
 
 	get container() {
 
-		if(this.containerElement)
-			return this.containerElement;
-
 		const container = this.containerElement = document.createElement('li');
 
 		container.innerHTML = `
 			<span class="timing">${Format.dateTime(this.created_at)}</span>
 			<span class="footer">${this.user_name}</span>
 		`;
-
-		container.on('click', () => this.load());
 
 		return container;
 	}
@@ -2145,22 +2133,45 @@ class ReportLog {
 		logInfoDiv.classList.remove('hidden');
 		this.logs.container.querySelector('.list').classList.add('hidden');
 
-		logInfoDiv.querySelector('.title span').textContent =  Format.dateTime(this.created_at);
+		logInfoDiv.querySelector('.toolbar span').textContent =  Format.dateTime(this.created_at);
+	}
+}
 
-		const logtable = logInfoDiv.querySelector('table tbody');
+class QueryLogs extends ReportLog {
 
-		for(const key in this.value) {
+	get container() {
 
-			logtable.insertAdjacentHTML('beforeend', `
-				<tr>
-					<td>${key}</td>
-					<td>${this.value[key]}\
-					
-					
-					
-					</td>
-				</tr>
-			`);
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = super.container;
+
+		container.on('click', () => this.load());
+
+		return container;
+	}
+
+	load() {
+
+		super.load();
+
+		const queryDiv = this.logs.container.querySelector('.info div.block');
+
+		queryDiv.textContent = null;
+		queryDiv.classList.add('query');
+
+		try{
+			this.value.definition = JSON.parse(this.value.definition);
+		}
+		catch(e) {}
+
+		if(!this.value.definition.query && !this.value.query) {
+
+			queryDiv.innerHTML = '<div class="NA">Query does not exist</div>';
+		}
+		else {
+
+			queryDiv.textContent = this.value.definition.query || this.value.query;
 		}
 	}
 }
