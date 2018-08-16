@@ -373,8 +373,7 @@ main.preview-left #stages {
 			overflow: auto;
 		}
 			#stage-define-report .query-history .info .query {
-				padding: calc(var(--gap) * 2);
-				user-select: text;
+				height: 100%;
 			}
 		#stage-define-report .edit-report-data {
 			overflow: auto;

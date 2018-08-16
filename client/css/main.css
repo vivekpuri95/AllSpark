@@ -788,7 +788,8 @@ body {
 			cursor:  pointer;
 		}
 		.query-history ul li:hover {
-			background: #eee;box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+			background: #eee;
+			box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 		}
 			.query-history ul li span {
 				padding: 5px 0;
@@ -801,16 +802,24 @@ body {
 				color: #999;
 				font-size: 90%;
 			}
-	.query-history .info .toolbar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
+	.query-history .info {
+		height: 100%;
 	}
-		.query-history .info .toolbar span {
-			padding-right: calc(var(--gap) * 2);
-			color: #999;
+		.query-history .info .toolbar {
+			display: flex;
+			align-items: center;
 		}
-	.report-history .info h3 {
+			.query-history .info .toolbar button {
+				margin-right: calc(var(--gap) * 2);
+			}
+			.query-history .info .toolbar span {
+				padding-right: calc(var(--gap) * 2);
+				color: #999;
+				margin-left: auto;
+			}
+		.query-history .info .code-editor {
+			height: 100%;
+		}	.report-history .info h3 {
 
 	}
 .snack-bar-container {

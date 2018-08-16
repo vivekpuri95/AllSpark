@@ -2007,136 +2007,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 	}
 });
 
-class ReportLogs extends Set{
-
-	constructor(report, page) {
-
-		super();
-
-		this.report = report;
-		this.page = page;
-	}
-
-	get container() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		const container = this.containerElement = document.createElement('div');
-
-		container.classList.add('query-history');
-
-		container.innerHTML = `
-			<div class="list"></div>
-			<div class="info hidden">
-				<div class="toolbar">
-					<button type="button"><i class="fa fa-arrow-left"></i> Back</button>
-					<span class="log-title"></span>
-				</div>
-				<div class="block"></div>
-			</div>
-		`;
-
-		container.querySelector('.toolbar button').on('click', () => {
-
-			container.querySelector('.list').classList.remove('hidden');
-			container.querySelector('.info').classList.add('hidden');
-		});
-
-
-		return container;
-	}
-
-	async load() {
-
-		const
-			parameters = {
-				query_id: this.report.query_id,
-				owner: 'query'
-			},
-			options = {
-				method: 'POST'
-			},
-			logs =  await API.call('reports/report/logs', parameters, options);
-
-		for(const log of logs) {
-
-			this.add(new (this.page.class)(log, this));
-		}
-
-		this.render();
-	}
-
-	render() {
-
-		const listDiv = this.container.querySelector('.list');
-
-		listDiv.textContent = null;
-
-		listDiv.innerHTML = '<h3>Query History</h3>';
-
-		if(!this.size) {
-
-			listDiv.insertAdjacentHTML('beforeend', '<div class="NA">No logs</div>');
-			return;
-		}
-
-		const logList = document.createElement('ul');
-		logList.classList.add("block");
-
-		for(const log of this.values()) {
-
-			logList.appendChild(log.container);
-		}
-
-		listDiv.appendChild(logList);
-
-	}
-
-	toggleHide() {
-
-		this.container.classList.toggle('hidden');
-	}
-}
-
-class ReportLog {
-
-	constructor(log, logs) {
-
-		Object.assign(this, log);
-
-		this.logs = logs;
-
-		try {
-			this.value = JSON.parse(this.value);
-		}
-		catch(e) {}
-
-	}
-
-	get container() {
-
-		const container = this.containerElement = document.createElement('li');
-
-		container.innerHTML = `
-			<span class="timing">${Format.dateTime(this.created_at)}</span>
-			<span class="footer">${this.user_name}</span>
-		`;
-
-		return container;
-	}
-
-	load() {
-
-		const logInfoDiv = this.logs.container.querySelector('.info');
-
-		logInfoDiv.classList.remove('hidden');
-		this.logs.container.querySelector('.list').classList.add('hidden');
-
-		logInfoDiv.querySelector('.toolbar span').textContent =  Format.dateTime(this.created_at);
-	}
-}
-
 class QueryLogs extends ReportLog {
 
 	get container() {
@@ -2165,14 +2035,19 @@ class QueryLogs extends ReportLog {
 		}
 		catch(e) {}
 
-		if(!this.value.definition.query && !this.value.query) {
+		if(!this.editor)
+			this.editor = new CodeEditor({mode: 'sql'});
 
-			queryDiv.innerHTML = '<div class="NA">Query does not exist</div>';
-		}
-		else {
+		queryDiv.appendChild(this.editor.container);
 
-			queryDiv.textContent = this.value.definition.query || this.value.query;
-		}
+		this.editor.editor.setReadOnly(true);
+		this.editor.editor.setTheme('ace/theme/clouds');
+		this.editor.value = this.value.definition.query || this.query;
+
+		this.logs.container.querySelector('.info .restore').on('click', () => {
+
+			this.logs.report.connection.editor.value = this.editor.value;
+		});
 	}
 }
 
