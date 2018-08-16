@@ -897,11 +897,9 @@ class ReportEngine extends API {
 		return crypto.createHash('md5').update(JSON.stringify(this.parameters) || "").digest('hex');
 	}
 
-	async execute(startTime) {
+	async execute() {
 
-		await new Promise((resolve) => setTimeout(() => resolve(1), 500));
-
-		this.executionTimeStart = startTime || Date.now();
+		this.executionTimeStart = Date.now();
 
 		if (!Object.keys(this.parameters).length) {
 
