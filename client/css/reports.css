@@ -952,6 +952,10 @@ main .data-source.flush {
 	fill: none;
 	stroke: #ddd;
 }
+.visualization.dualaxisbar .container > svg .axis path,
+.visualization.dualaxisbar .container > svg .axis line {
+	display: none;
+}
 
 .visualization .container > svg .y path {
 	display: none;
