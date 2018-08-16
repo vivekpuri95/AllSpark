@@ -1117,3 +1117,4 @@ exports.ReportEngine = ReportEngine;
 exports.Postgres = Postgres;
 exports.APIRequest = APIRequest;
 exports.download = download;
+exports.executingReports = executingReports;
