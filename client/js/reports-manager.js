@@ -2020,7 +2020,7 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
 			this.editor.editor.commands.addCommand({
-				name: 'execute',
+				name: 'format',
 				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
 				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
 			});
@@ -2083,7 +2083,7 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 
 			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
 			this.editor.editor.commands.addCommand({
-				name: 'execute',
+				name: 'format',
 				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
 				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
 			});
@@ -2146,7 +2146,7 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 
 			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
 			this.editor.editor.commands.addCommand({
-				name: 'execute',
+				name: 'format',
 				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
 				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
 			});
@@ -2209,7 +2209,7 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 
 			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
 			this.editor.editor.commands.addCommand({
-				name: 'execute',
+				name: 'format',
 				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
 				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
 			});
