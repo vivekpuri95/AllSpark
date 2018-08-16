@@ -7693,20 +7693,10 @@ class ReportLogs extends Set{
 				<span class="more">Load more...</span>
 			</div>
 			<div class="info hidden">
-				<div class="toolbar">
-					<button type="button"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="button" class="restore"><i class="fa fa-window-restore"></i> Restore</button>
-					<span class="log-title"></span>
-				</div>
+				<div class="toolbar"></div>
 				<div class="block"></div>
 			</div>
 		`;
-
-		container.querySelector('.toolbar button').on('click', () => {
-
-			container.querySelector('.list').classList.remove('hidden');
-			container.querySelector('.info').classList.add('hidden');
-		});
 
 		container.querySelector('.list .more').on('click', async () => {
 
@@ -7809,11 +7799,20 @@ class ReportLog {
 		logInfoDiv.classList.remove('hidden');
 		this.logs.container.querySelector('.list').classList.add('hidden');
 
-		logInfoDiv.querySelector('.toolbar span').innerHTML =  `
-			<span>
+		logInfoDiv.querySelector('.toolbar').innerHTML =  `
+			<button class="back"><i class="fa fa-arrow-left"></i> Back</button>
+			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
+			<button class="run"><i class="fas fa-sync"></i> Run</button>
+			<span class="log-title">
 				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
 			</span>
 		`;
+
+		logInfoDiv.querySelector('.toolbar button.back').on('click', () => {
+
+			this.logs.container.querySelector('.list').classList.remove('hidden');
+			logInfoDiv.classList.add('hidden');
+		});
 	}
 }
 

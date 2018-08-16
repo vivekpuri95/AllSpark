@@ -926,9 +926,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		return `${this.key}/${this.report.query_id}`;
 	}
 
-	async preview() {
+	async preview(logQuery) {
 
-		const definition = this.report.connection.json;
+		const definition = logQuery || this.report.connection.json;
 
 		if(this.report.connection.editor && this.report.connection.editor.editor.getSelectedText())
 			definition.query = this.report.connection.editor.editor.getSelectedText();
@@ -2035,8 +2035,7 @@ class QueryLogs extends ReportLog {
 		}
 		catch(e) {}
 
-		if(!this.editor)
-			this.editor = new CodeEditor({mode: 'sql'});
+		this.editor = new CodeEditor({mode: 'sql'});
 
 		queryDiv.appendChild(this.editor.container);
 
@@ -2047,6 +2046,13 @@ class QueryLogs extends ReportLog {
 		this.logs.container.querySelector('.info .restore').on('click', () => {
 
 			this.logs.report.connection.editor.value = this.editor.value;
+		});
+
+		this.logs.container.querySelector('.info .run').on('click', () => {
+
+			this.logs.page.preview({
+				query: this.editor.value
+			});
 		});
 	}
 }
