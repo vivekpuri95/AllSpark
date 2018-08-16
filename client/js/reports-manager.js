@@ -595,11 +595,30 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				method: 'POST',
 			};
 
-		await API.call('reports/report/update', parameters, options);
+		try {
 
-		await DataSource.load(true);
+			await API.call('reports/report/update', parameters, options);
 
-		this.load();
+			await DataSource.load(true);
+
+			this.load();
+
+			new SnackBar({
+				message: 'Report Deleted',
+				subtitle: `${report.name} #${report.query_id}`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 });
 
@@ -676,6 +695,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.is_redis.classList.remove('hidden');
 
 		else this.form.is_redis.classList.add('hidden');
+
+		this.form.name.focus();
 	}
 
 	async insert(e) {
@@ -702,7 +723,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 			new SnackBar({
 				message: 'New Report Added',
-				subtitle: `${this.form.name.value} <span class="NA">#${response.insertId}</span>`,
+				subtitle: `${this.form.name.value} #${response.insertId}`,
+				icon: 'fas fa-plus',
 			});
 
 		} catch(e) {
@@ -778,7 +800,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 			new SnackBar({
 				message: 'Report Saved',
-				subtitle: `${this.report.name} <span class="NA">#${this.report.query_id}</span>`,
+				subtitle: `${this.report.name} #${this.report.query_id}`,
+				icon: 'far fa-save',
 			});
 
 		} catch(e) {
@@ -957,9 +980,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			await DataSource.load(true);
 
 			this.load();
+
 			new SnackBar({
 				message: 'Report Saved',
-				subtitle: `${this.report.name} <span class="NA">#${this.report.query_id}</span>`,
+				subtitle: `${this.report.name} #${this.report.query_id}`,
 			});
 
 		} catch(e) {
@@ -1376,8 +1400,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.load();
 
 			new SnackBar({
-				message: 'New Filter Added',
-				subtitle: `${this.filterForm.name.value} <span class="NA">(${this.filterForm.placeholder.value})</span>`,
+				message: `${this.filterForm.name.value} Filter Added`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.filterForm.type.value).name}</strong> Placeholer: <strong>${this.filterForm.placeholder.value}</strong></span>`,
+				icon: 'fa fa-plus',
 			});
 
 		} catch(e) {
@@ -1450,8 +1475,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.load();
 
 			new SnackBar({
-				message: 'Filter Saved',
-				subtitle: `${this.filterForm.name.value} <span class="NA">(${this.filterForm.placeholder.value})</span>`,
+				message: `${this.filterForm.name.value} Filter Saved`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.filterForm.type.value).name}</strong> Placeholer: <strong>${this.filterForm.placeholder.value}</strong>`,
+				icon: 'far fa-save',
 			});
 
 		} catch(e) {
@@ -1488,8 +1514,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.load();
 
 			new SnackBar({
-				message: 'Filter Deleted',
-				subtitle: `${filter.name} <span class="NA">(${filter.placeholder})</span>`,
+				message: `${filter.name} Filter Deleted`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(filter.type).name}</strong> Placeholer: <strong>${filter.placeholder}</strong>`,
+				icon: 'far fa-trash-alt',
 			});
 
 		} catch(e) {
@@ -1612,8 +1639,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			this.container.querySelector('#visualization-list').classList.remove('hidden');
 
 			new SnackBar({
-				message: 'New Visualization Added',
-				subtitle: `${this.report.name} <span class="NA">#${response.insertId} (${visualization.name})</span>`,
+				message: `${visualization.name} Visualization Added`,
+				subtitle: `${this.report.name} #${response.insertId}`,
+				icon: 'fas fa-plus',
 			});
 
 		} catch(e) {
@@ -1652,8 +1680,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			const type = MetaData.visualizations.get(visualization.type);
 
 			new SnackBar({
-				message: 'Visualization Deleted',
-				subtitle: `${visualization.name} <span class="NA">#${visualization.visualization_id} (${type ? type.name : ''})</span>`,
+				message: `${type ? type.name : ''} Visualization Deleted`,
+				subtitle: `${visualization.name} #${visualization.visualization_id}`,
+				icon: 'far fa-trash-alt',
 			});
 
 		} catch(e) {
@@ -1927,8 +1956,9 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			const type = MetaData.visualizations.get(this.visualization.type);
 
 			new SnackBar({
-				message: 'Visualization Saved',
-				subtitle: `${this.visualization.name} <span class="NA">#${this.visualization.visualization_id} (${type ? type.name : ''})</span>`,
+				message: `${type ? type.name : ''} Visualization Saved`,
+				subtitle: `${this.visualization.name} #${this.visualization.visualization_id}`,
+				icon: 'far fa-save',
 			});
 
 		} catch(e) {
@@ -4511,9 +4541,9 @@ class ReportVisualizationDashboards extends Set {
 		if(Array.from(stage.dashboards).some(d => d.id == dashboard_id)) {
 
 			new SnackBar({
-				message: 'Visualization already added',
-				subtitle: `${stage.dashboards.response.get(dashboard_id).name} <span class="NA">#${dashboard_id}</span>`,
-				type: 'error',
+				message: 'Visualization Already Added',
+				subtitle: `${stage.dashboards.response.get(dashboard_id).name} #${dashboard_id}`,
+				type: 'warning',
 			});
 
 			return;
@@ -4536,8 +4566,9 @@ class ReportVisualizationDashboards extends Set {
 			await stage.dashboards.load({force: true});
 
 			new SnackBar({
-				message: 'Dashboard Added',
-				subtitle: `${stage.dashboards.response.get(dashboard_id).name} <span class="NA">#${dashboard_id}</span>`,
+				message: 'Visualization Added to Dahsboard',
+				subtitle: `${stage.dashboards.response.get(dashboard_id).name} #${dashboard_id}`,
+				icon: 'fas fa-plus',
 			});
 
 		} catch(e) {
@@ -4586,7 +4617,7 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>&nbsp;</span>
-				<button type="submit"><i class="fa fa-save"></i> Save</button>
+				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</label>
 
 			<label>
@@ -4668,7 +4699,8 @@ class ReportVisualizationDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Deleted',
-				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} <span class="NA">#${this.visualization.dashboard_id}</span>`,
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} #${this.visualization.dashboard_id}`,
+				icon: 'far fa-trash-alt',
 			});
 
 		} catch(e) {
@@ -4708,7 +4740,8 @@ class ReportVisualizationDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Saved',
-				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} <span class="NA">#${this.visualization.dashboard_id}</span>`,
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} #${this.visualization.dashboard_id}`,
+				icon: 'far fa-save',
 			});
 
 		} catch(e) {

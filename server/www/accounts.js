@@ -169,6 +169,7 @@ exports.update = class extends API {
 
 		delete setParams.account_id;
 		delete setParams.token;
+		delete setParams.refresh_token;
 
 		const values = [setParams, this.request.body.account_id];
 

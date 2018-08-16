@@ -205,7 +205,8 @@ class UserManage {
 
 			new SnackBar({
 				message: 'New User Added',
-				subtitle: `${user.name} <span class="NA">#${user.user_id}</span>`,
+				subtitle: `${user.name} #${user.user_id}`,
+				icon: 'fas fa-user-plus',
 			});
 
 		} catch(e) {
@@ -303,7 +304,8 @@ class UserManage {
 
 			new SnackBar({
 				message: 'User Profile Saved',
-				subtitle: `${this.name} <span class="NA">#${this.user_id}</span>`,
+				subtitle: `${this.name} #${this.user_id}`,
+				icon: 'far fa-save',
 			});
 
 		} catch(e) {
@@ -332,10 +334,29 @@ class UserManage {
 				method: 'POST',
 			};
 
-		await API.call('users/delete', parameters, options);
+		try {
 
-		await Users.load();
-		await Sections.show('list');
+			await API.call('users/delete', parameters, options);
+
+			await Users.load();
+			await Sections.show('list');
+
+			new SnackBar({
+				message: 'User Deleted',
+				subtitle: `${this.name} #${this.user_id}`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	get row() {
@@ -416,11 +437,12 @@ class Privileges {
 			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 
 			new SnackBar({
-				message: `New privilege assigned to ${this.user.name}`,
+				message: `Privilege Assigned to ${this.user.name}`,
 				subtitle: `
 					Category: <strong>${MetaData.categories.get(parseInt(Privileges.add_filter.category_id.value)).name}</strong>;
 					Privilege: <strong>${MetaData.privileges.get(parseInt(Privileges.add_filter.privilege_id.value)).name}</strong>
 				`,
+				icon: 'fas fa-plus',
 			});
 
 		} catch(e) {
@@ -478,11 +500,11 @@ class Privilege {
 			</label>
 
 			<label class="edit">
-				<button title="Edit"><i class="fa fa-save"></i></button>
+				<button title="Edit"><i class="far fa-save"></i></button>
 			</label>
 
 			<label class="delete">
-				<button title="Delete"><i class="fa fa-trash-alt" aria-hidden="true"></i></button>
+				<button title="Delete"><i class="far fa-trash-alt" aria-hidden="true"></i></button>
 			</label>
 		`;
 
@@ -529,11 +551,12 @@ class Privilege {
 			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 
 			new SnackBar({
-				message: `${this.user.name}'s privilge saved`,
+				message: `${this.user.name}'s Privilge Saved`,
 				subtitle: `
 					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
 					Privilege: <strong>${MetaData.privileges.get(parseInt(this.container.privilege_id.value)).name}</strong>
 				`,
+				icon: 'far fa-save',
 			});
 
 		} catch(e) {
@@ -572,11 +595,12 @@ class Privilege {
 			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 
 			new SnackBar({
-				message: `${this.user.name}'s privilge removed`,
+				message: `${this.user.name}'s Privilge Deleted`,
 				subtitle: `
 					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
 					Privilege: <strong>${MetaData.privileges.get(parseInt(this.container.privilege_id.value)).name}</strong>
 				`,
+				icon: 'far fa-trash-alt',
 			});
 
 		} catch(e) {
@@ -643,11 +667,12 @@ class Roles {
 			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 
 			new SnackBar({
-				message: `New role assigned to ${this.user.name}`,
+				message: `Role Assigned to ${this.user.name}`,
 				subtitle: `
 					Category: <strong>${MetaData.categories.get(parseInt(Roles.add_roles.category_id.value)).name}</strong>;
 					Role: <strong>${MetaData.privileges.get(parseInt(Roles.add_roles.role_id.value)).name}</strong>
 				`,
+				icon: 'fas fa-plus',
 			});
 
 		} catch(e) {
@@ -705,11 +730,11 @@ class Role {
 			</label>
 
 			<label class="edit">
-				<button title="Edit"><i class="fa fa-save"></i></button>
+				<button title="Edit"><i class="far fa-save"></i></button>
 			</label>
 
 			<label class="delete">
-				<button title="Delete"><i class="fa fa-trash-alt" aria-hidden="true"></i></button>
+				<button title="Delete"><i class="far fa-trash-alt" aria-hidden="true"></i></button>
 			</label>
 		`;
 
@@ -754,11 +779,12 @@ class Role {
 			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 
 			new SnackBar({
-				message: `${this.user.name}'s role saved`,
+				message: `${this.user.name}'s Role Saved`,
 				subtitle: `
 					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
 					Role: <strong>${MetaData.privileges.get(parseInt(this.container.role_id.value)).name}</strong>
 				`,
+				icon: 'far fa-save',
 			});
 
 		} catch(e) {
@@ -797,11 +823,12 @@ class Role {
 			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 
 			new SnackBar({
-				message: `${this.user.name}'s role removed`,
+				message: `${this.user.name}'s Role Deleted`,
 				subtitle: `
 					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
 					Role: <strong>${MetaData.privileges.get(parseInt(this.container.role_id.value)).name}</strong>
 				`,
+				icon: 'far fa-trash-alt',
 			});
 
 		} catch(e) {

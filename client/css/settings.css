@@ -15,14 +15,12 @@ main {
 						box-shadow var(--transition-duration);
 		}
 		main > nav a:hover {
-			background: var(--color-secondary);
-			color: var(--color-secondary-text);
+			background: #ddd;
 			text-decoration: none;
 		}
 		main > nav a.selected {
-			background: var(--color-secondary);
-			color: var(--color-secondary-text);
 			box-shadow: inset 10px 0px 0 var(--color-accent);
+			font-weight: bold;
 		}
 	main #account-form label img {
 		border: 1px solid #ccc;

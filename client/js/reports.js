@@ -1660,7 +1660,7 @@ class DataSourceColumn {
 				</button>
 
 				<button type="button" class="save">
-					<i class="fa fa-save"></i> Save
+					<i class="far fa-save"></i> Save
 				</button>
 			</footer>
 		`;
@@ -1773,7 +1773,7 @@ class DataSourceColumn {
 		this.dialogueBox.hide();
 
 		new SnackBar({
-			message: `Changes to <em>${this.name}</em> applied`,
+			message: `Changes to <em>${this.name}</em> Applied`,
 			subtitle: 'Changes are not saved yet and will be reset when the page reloads.',
 		});
 	}
@@ -1844,7 +1844,7 @@ class DataSourceColumn {
 			this.dialogueBox.hide();
 
 			new SnackBar({
-				message: `Changes to <em>${this.name}</em> saved`,
+				message: `Changes to <em>${this.name}</em> Saved`,
 				subtitle: 'These changes will persist across page reloads.',
 			});
 

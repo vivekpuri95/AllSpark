@@ -676,9 +676,9 @@ body {
 			color: #999;
 			z-index: auto;
 		}
-		.multi-select .options .NA {
+		.multi-select .options > .NA,
+		.multi-select .options .list > .NA {
 			padding: calc(var(--gap) * 2);
-			color: #999;
 			text-align: center;
 		}
 		.multi-select .options .list {

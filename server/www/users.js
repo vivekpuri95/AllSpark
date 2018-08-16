@@ -10,6 +10,14 @@ exports.insert = class extends API {
 
 		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
+		const alreadyExists = await this.mysql.query(
+			'SELECT * FROM tb_users WHERE account_id = ? AND email = ?',
+			[this.account.account_id, this.request.body.email]
+		);
+
+		if(alreadyExists.length)
+			throw new API.Exception(400, 'User already exists');
+
 		let password;
 
 		if (this.request.body.password) {

@@ -96,21 +96,40 @@ class SettingsManager {
 		e.preventDefault();
 
 		const
-			options = {
-				method: 'POST',
-			},
 			parameter = {
 				account_id: this.owner_id,
 				profile: this.form.querySelector('form').name.value,
 				owner: this.owner,
 				value: JSON.stringify([]),
+			},
+			options = {
+				method: 'POST',
 			};
 
-		const response = await API.call('settings/insert', parameter, options);
+		try {
 
-		await this.load();
+			const response = await API.call('settings/insert', parameter, options);
 
-		this.profiles.get(response.insertId).edit();
+			await this.load();
+
+			this.profiles.get(response.insertId).edit();
+
+			new SnackBar({
+				message: this.owner + ' Settings Profile Added',
+				subtitle: `${this.form.querySelector('form').name.value}`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 }
 
@@ -222,18 +241,39 @@ class SettingsManagerProfile {
 		}));
 
 		const
-			options = {
-				method: "POST"
-			},
 			parameters = {
 				profile: this.section.querySelector('form').name.value,
 				id: this.id,
 				value: JSON.stringify(value),
+			},
+			options = {
+				method: 'POST',
 			};
 
-		await API.call('settings/update', parameters, options);
-		await this.parent.load();
-		this.parent.profiles.get(this.id).edit();
+		try {
+
+			await API.call('settings/update', parameters, options);
+
+			await this.parent.load();
+
+			this.parent.profiles.get(this.id).edit();
+
+			new SnackBar({
+				message: this.owner + ' Settings Profile Saved',
+				subtitle: this.profile,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete(e) {
@@ -251,8 +291,28 @@ class SettingsManagerProfile {
 				id: this.id,
 			};
 
-		await API.call('settings/delete', parameters, options);
-		await this.parent.load();
+		try {
+
+			await API.call('settings/delete', parameters, options);
+
+			await this.parent.load();
+
+			new SnackBar({
+				message: this.owner + ' Settings Profile Deleted',
+				subtitle: this.profile,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	search() {

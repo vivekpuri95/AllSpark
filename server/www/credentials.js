@@ -117,6 +117,7 @@ exports.update = class extends API {
 
 		delete this.request.body.id;
 		delete this.request.body.token;
+		delete this.request.body.refresh_token;
 
 		this.request.body.port = this.request.body.port || null;
 
