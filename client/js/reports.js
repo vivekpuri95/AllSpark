@@ -7141,7 +7141,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'html');
-		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
+		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
 
 		if(this.options && this.options.hideHeader)
 			this.source.container.querySelector('header').classList.add('hidden');
@@ -7165,7 +7165,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
-		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
+		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
 	}
 });
 
