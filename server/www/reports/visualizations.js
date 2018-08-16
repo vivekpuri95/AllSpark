@@ -33,16 +33,19 @@ exports.update = class extends API {
             if(visual_cols.includes(key)) {
 
                 values[key] = this.request.body[key] || null;
-				compareJson[key] = updatedRow[key] ? typeof updatedRow[key] == "object" ? updatedRow[key] : updatedRow[key].toString() : null;
+				compareJson[key] = updatedRow[key] == null || updatedRow[key] === '' ? null : updatedRow[key].toString();
 			}
         }
 
-        if(JSON.stringify(compareJson) == JSON.stringify(values))
-            return;
+        if(JSON.stringify(compareJson) == JSON.stringify(values)) {
+
+        	return "0 rows affected";
+		}
 
         const
             updateResponse = await this.mysql.query('UPDATE tb_query_visualizations SET ? WHERE visualization_id = ?', [values, this.request.body.visualization_id], 'write'),
             logs = {
+				query_id: updatedRow.query_id,
                 owner: 'visualization',
                 owner_id: this.request.body.visualization_id,
                 value: JSON.stringify(updatedRow),
@@ -63,6 +66,7 @@ exports.delete = class extends API {
 			[updatedRow] =  await this.mysql.query('SELECT * FROM tb_query_visualizations WHERE visualization_id = ?', [this.request.body.visualization_id]),
             deleteResponse = await this.mysql.query('DELETE FROM tb_query_visualizations WHERE visualization_id = ?', [this.request.body.visualization_id], 'write'),
             logs = {
+				query_id: updatedRow.query_id,
                 owner: 'visualization',
                 owner_id: this.request.body.visualization_id,
                 value: JSON.stringify(updatedRow),
