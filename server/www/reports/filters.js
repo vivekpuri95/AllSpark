@@ -43,8 +43,8 @@ exports.update = class extends API {
 
             if(filter_cols.includes(key)) {
 
-				values[key] = this.request.body[key] || '';
-				compareJson[key] = filterQuery[key] == null ? '' : typeof filterQuery[key] == "object" ? filterQuery[key] : filterQuery[key].toString();
+				values[key] = this.request.body[key] || null;
+				compareJson[key] = filterQuery[key] == null || filterQuery[key] === '' ? null : filterQuery[key].toString();
 			}
         }
 
