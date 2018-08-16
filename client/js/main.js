@@ -63,6 +63,8 @@ class Page {
 		}
 
 		await API.refreshToken();
+
+		SnackBar.setup();
 	}
 
 	constructor() {
@@ -86,10 +88,10 @@ class Page {
 
 		const
 			navList = [
-				{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
+				{url: '/users-manager', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
 				{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
 				{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
-				{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
+				{url: '/connections-manager', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
 				{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
 				{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
 			],
@@ -194,8 +196,12 @@ class Page {
 Page.exception = class PageException extends Error {
 
 	constructor(message) {
+
 		super(message);
+
 		this.message = message;
+
+		ErrorLogs.send(this.message, null, null, null, this);
 	}
 }
 
@@ -681,7 +687,7 @@ class GlobalSearch {
 		}
 
 		if(!data.length) {
-			this.searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
+			this.searchList.innerHTML = `<li><a href="#">No results found</a></li>`;
 		}
 	}
 
@@ -1074,7 +1080,7 @@ class API extends AJAX {
 	static loadFormData(parameters, formData) {
 
 		if(!(formData instanceof FormData))
-			throw new Page.exception('The form object is not an instance of FormDat class! :(');
+			throw new Page.exception('The form object is not an instance of FormDat class!');
 
 		for(const key of formData.keys()) {
 
@@ -1393,7 +1399,7 @@ class CodeEditor {
 	constructor({mode = null}) {
 
 		if(!window.ace)
-			throw Page.exception('Ace editor not available! :(');
+			throw Page.exception('Ace editor not available!');
 
 		this.mode = mode;
 	}
@@ -1593,7 +1599,7 @@ class MultiSelect {
 					<a class="clear">Clear</a>
 				</header>
 				<div class="list"></div>
-				<div class="no-matches NA hidden">No matches found! :(</div>
+				<div class="no-matches NA hidden">No matches found!</div>
 				<footer class="hidden"></footer>
 			</div>
 		`;
@@ -1716,7 +1722,7 @@ class MultiSelect {
 		optionList.textContent = null;
 
 		if(!this.datalist || !this.datalist.length) {
-			optionList.innerHTML = '<div class="NA">No data found... :(</div>';
+			optionList.innerHTML = '<div class="NA">No data found...</div>';
 			return;
 		}
 
@@ -2140,7 +2146,7 @@ class ObjectRoles {
 		}
 
 		if(!this.alreadyVisible.length)
-			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet! :(</td></tr>'
+			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet!</td></tr>'
 
 		return table;
 	}
@@ -2160,7 +2166,12 @@ class ObjectRoles {
 				&& x.category_id == (parseInt(this.categorySelect.value) || 0)
 			).length) {
 
-			window.alert('Already exists');
+			new SnackBar({
+				message: 'Alread Exists',
+				subtitle: 'The association you\'re trying to create already exists.',
+				type: 'warning',
+			});
+
 			return;
 		}
 
@@ -2228,6 +2239,113 @@ class ObjectRoles {
 	}
 }
 
+/**
+ * Show a snackbar type notification somewhere on screen.
+ */
+class SnackBar {
+
+	static setup() {
+
+		SnackBar.container = {
+			'bottom-left': document.createElement('div'),
+		};
+
+		SnackBar.container['bottom-left'].classList.add('snack-bar-container', 'bottom-left', 'hidden');
+
+		document.body.appendChild(SnackBar.container['bottom-left']);
+	}
+
+	/**
+	 * Create a new Snackbar notification instance. This will show the notfication instantly.
+	 *
+	 * @param String	options.message		The message body.
+	 * @param String	options.subtitle	The messgae subtitle.
+	 * @param String	options.type		success (green), warning (yellow), error (red).
+	 * @param Number	options.timeout		(Seconds) How long the notification will be visible.
+	 * @param String	options.position	bottom-left (for now).
+	 */
+	constructor({message = null, subtitle = null, type = 'success', timeout = 5, position = 'bottom-left'} = {}) {
+
+		this.container = document.createElement('div');
+		this.page = window.page;
+
+		this.message = message;
+		this.subtitle = subtitle;
+		this.type = type;
+		this.timeout = parseInt(timeout);
+		this.position = position;
+
+		if(!this.message)
+			throw new Page.exception('SnackBar Message is required.');
+
+		if(!parseInt(this.timeout))
+			throw new Page.exception(`Invalid SnackBar timeout: ${this.timeout}.`);
+
+		if(!['success', 'warning', 'error'].includes(this.type))
+			throw new Page.exception(`Invalid SnackBar type: ${this.type}.`);
+
+		if(!['bottom-left'].includes(this.position))
+			throw new Page.exception(`Invalid SnackBar position: ${this.position}.`);
+
+		if(this.subtitle && this.subtitle.length > 250)
+			this.subtitle = this.subtitle.substring(0, 250) + '&hellip;';
+
+		this.show();
+	}
+
+	show() {
+
+		let icon = null;
+
+		if(this.type == 'success')
+			icon = '<i class="fas fa-check"></i>';
+
+		else if(this.type == 'warning')
+			icon = '<i class="fas fa-exclamation-triangle"></i>';
+
+		else if(this.type == 'error')
+			icon = '<i class="fas fa-exclamation-triangle"></i>';
+
+		this.container.innerHTML = `
+			<div class="icon">${icon}</div>
+			<div class="title">${this.message}</div>
+			<div class="subtitle">${this.subtitle || ''}</div>
+			<div class="close">&times;</div>
+		`;
+
+		this.container.classList.add('snack-bar', this.type);
+
+		this.container.on('click', () => this.hide());
+
+		// Add the show class out of the current event loop so that CSS transitions have time to initiate.
+		setTimeout(() => this.container.classList.add('show'));
+
+		// Hide the snackbar after the timeout.
+		setTimeout(() => this.hide(), this.timeout * 1000);
+
+		SnackBar.container[this.position].classList.remove('hidden');
+		SnackBar.container[this.position].appendChild(this.container);
+		SnackBar.container[this.position].scrollTop = SnackBar.container[this.position].scrollHeight
+	}
+
+	/**
+	 * Hide the snack bar and also hide the container if no other snackbar is in the container.
+	 */
+	hide() {
+
+		this.container.classList.remove('show');
+
+		setTimeout(() => {
+
+			this.container.remove();
+
+			if(!SnackBar.container[this.position].children.length)
+				SnackBar.container[this.position].classList.add('hidden');
+
+		}, Page.transitionDuration);
+	}
+}
+
 if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {
 		this.addEventListener(name, fn);
@@ -2246,6 +2364,8 @@ Date.prototype.getTimeUTC = function() {
 }
 
 MetaData.timeout = 5 * 60 * 1000;
+Page.animationDuration = 750;
+Page.transitionDuration = 300;
 
 if(typeof window != 'undefined')
 	window.onerror = ErrorLogs.send;

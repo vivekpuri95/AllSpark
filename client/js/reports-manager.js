@@ -281,10 +281,10 @@ class ReportsMangerStage {
 			const connection = this.page.connections.get(parseInt(report.connection_name));
 
 			if(!connection)
-				throw new Page.exception('Report connection not found! :(');
+				throw new Page.exception('Report connection not found!');
 
 			if(!ReportConnection.types.has(connection.type))
-				throw new Page.exception('Invalid report connection type! :(');
+				throw new Page.exception('Invalid report connection type!');
 
 			report.connection = new (ReportConnection.types.get(connection.type))(report, this);
 		}
@@ -333,8 +333,9 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 	prepareSearch() {
 
-		const search = this.container.querySelector('table thead tr.search');
-		const columns = this.container.querySelectorAll('table thead th');
+		const
+			search = this.container.querySelector('table thead tr.search'),
+			columns = this.container.querySelectorAll('table thead th');
 
 		for(const column of columns) {
 
@@ -466,7 +467,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		}
 
 		if(!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA"><td colspan="11">No Reports Found! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA"><td colspan="11">No Reports Found!</td></tr>`;
 
 		this.switcher.querySelector('small').textContent = 'Pick a report';
 	}
@@ -686,16 +687,34 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			form: new FormData(this.form),
 		};
 
-		const response = await API.call('reports/report/insert', {}, options);
+		try {
 
-		await DataSource.load(true);
+			const response = await API.call('reports/report/insert', {}, options);
 
-		window.history.replaceState({}, '', `/reports/define-report/${response.insertId}`);
+			await DataSource.load(true);
 
-		this.page.load();
-		this.page.stages.get('configure-report').disabled = false;
-		this.page.stages.get('define-report').disabled = false;
-		this.page.stages.get('pick-visualization').disabled = false;
+			window.history.replaceState({}, '', `/reports/define-report/${response.insertId}`);
+
+			this.page.load();
+			this.page.stages.get('configure-report').disabled = false;
+			this.page.stages.get('define-report').disabled = false;
+			this.page.stages.get('pick-visualization').disabled = false;
+
+			new SnackBar({
+				message: 'New Report Added',
+				subtitle: `${this.form.name.value} <span class="NA">#${response.insertId}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async edit() {
@@ -749,11 +768,29 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				form: new FormData(this.form),
 			};
 
-		await API.call('reports/report/update', parameters, options);
+		try {
 
-		await DataSource.load(true);
+			await API.call('reports/report/update', parameters, options);
 
-		this.load();
+			await DataSource.load(true);
+
+			this.load();
+
+			new SnackBar({
+				message: 'Report Saved',
+				subtitle: `${this.report.name} <span class="NA">#${this.report.query_id}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 });
 
@@ -913,11 +950,28 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				method: 'POST',
 			};
 
-		await API.call('reports/report/update', parameters, options);
+		try {
 
-		await DataSource.load(true);
+			await API.call('reports/report/update', parameters, options);
 
-		this.load();
+			await DataSource.load(true);
+
+			this.load();
+			new SnackBar({
+				message: 'Report Saved',
+				subtitle: `${this.report.name} <span class="NA">#${this.report.query_id}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	filterSuggestions() {
@@ -1038,7 +1092,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			const div = document.createElement('div');
 
 			div.classList.add('NA');
-			div.innerHTML = 'Failed to load Schema! :(';
+			div.innerHTML = 'Failed to load Schema!';
 
 			container.appendChild(div);
 
@@ -1197,7 +1251,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			}
 
 			if(!databases.children.length)
-				databases.innerHTML = `<div class="NA">No matches found! :(</div>`;
+				databases.innerHTML = `<div class="NA">No matches found!</div>`;
 		}
 
 		renderList();
@@ -1261,7 +1315,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		}
 
 		if(!this.report.filters.length)
-			tbody.innerHTML = `<tr class="NA"><td>No filters added yet! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA"><td colspan="6">No filters added yet!</td></tr>`;
 
 		this.filterForm.datasetMultiSelect.datalist = Array.from(DataSource.list.values()).filter(r => r.query_id != this.report.query_id).map(r => {return {name: r.name, value: r.query_id}});
 		this.filterForm.datasetMultiSelect.render();
@@ -1313,11 +1367,29 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				form: new FormData(this.filterForm),
 			};
 
-		await API.call('reports/filters/insert', parameters, options);
+		try {
 
-		await DataSource.load(true);
+			await API.call('reports/filters/insert', parameters, options);
 
-		this.load();
+			await DataSource.load(true);
+
+			this.load();
+
+			new SnackBar({
+				message: 'New Filter Added',
+				subtitle: `${this.filterForm.name.value} <span class="NA">(${this.filterForm.placeholder.value})</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	editFilter(filter) {
@@ -1369,11 +1441,29 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				form: new FormData(this.filterForm),
 			};
 
-		await API.call('reports/filters/update', parameters, options);
+		try {
 
-		await DataSource.load(true);
+			await API.call('reports/filters/update', parameters, options);
 
-		this.load();
+			await DataSource.load(true);
+
+			this.load();
+
+			new SnackBar({
+				message: 'Filter Saved',
+				subtitle: `${this.filterForm.name.value} <span class="NA">(${this.filterForm.placeholder.value})</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async deleteFilter(filter) {
@@ -1389,11 +1479,29 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				method: 'POST',
 			};
 
-		await API.call('reports/filters/delete', parameters, options);
+		try {
 
-		await DataSource.load(true);
+			await API.call('reports/filters/delete', parameters, options);
 
-		this.load();
+			await DataSource.load(true);
+
+			this.load();
+
+			new SnackBar({
+				message: 'Filter Deleted',
+				subtitle: `${filter.name} <span class="NA">(${filter.placeholder})</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 });
 
@@ -1435,7 +1543,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				<figure>
 					<img alt="${visualization.name}">
 					<span class="loader"><i class="fa fa-spinner fa-spin"></i></span>
-					<span class="NA hidden">Preview not available! :(</span>
+					<span class="NA hidden">Preview not available!</span>
 					<figcaption>${visualization.name}</figcaption>
 				</figure>
 			`;
@@ -1471,7 +1579,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		}
 
 		if(!MetaData.visualizations.size)
-			this.form.innerHTML = `<div class="NA">No visualizations found :(</div>`;
+			this.form.innerHTML = `<div class="NA">No visualizations found</div>`;
 	}
 
 	get url() {
@@ -1490,15 +1598,34 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				method: 'POST',
 			};
 
-		const response = await API.call('reports/visualizations/insert', parameters, options);
+		try {
 
-		await DataSource.load(true);
+			const response = await API.call('reports/visualizations/insert', parameters, options);
 
-		window.history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
+			await DataSource.load(true);
 
-		this.page.load();
-		this.container.querySelector('#add-visualization-picker').classList.add('hidden');
-		this.container.querySelector('#visualization-list').classList.remove('hidden');
+			window.history.pushState({}, '', `/reports/configure-visualization/${response.insertId}`);
+
+			this.page.load();
+			this.page.stages.get('configure-visualization').disabled = false;
+			this.container.querySelector('#add-visualization-picker').classList.add('hidden');
+			this.container.querySelector('#visualization-list').classList.remove('hidden');
+
+			new SnackBar({
+				message: 'New Visualization Added',
+				subtitle: `${this.report.name} <span class="NA">#${response.insertId} (${visualization.name})</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete(visualization) {
@@ -1514,11 +1641,31 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				method: 'POST',
 			};
 
-		const response = await API.call('reports/visualizations/delete', parameters, options);
+		try {
 
-		await DataSource.load(true);
+			const response = await API.call('reports/visualizations/delete', parameters, options);
 
-		this.select();
+			await DataSource.load(true);
+
+			this.select();
+
+			const type = MetaData.visualizations.get(visualization.type);
+
+			new SnackBar({
+				message: 'Visualization Deleted',
+				subtitle: `${visualization.name} <span class="NA">#${visualization.visualization_id} (${type ? type.name : ''})</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async load() {
@@ -1584,7 +1731,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		}
 
 		if(!this.report.visualizations.length)
-			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found! :(</td></tr>';
+			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found!</td></tr>';
 
 		this.page.preview.position = 'right';
 	}
@@ -1767,13 +1914,33 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		options.form.set('options', JSON.stringify(this.visualization.options));
 
-		await API.call('reports/visualizations/update', parameters, options);
+		try {
 
-		await DataSource.load(true);
+			await API.call('reports/visualizations/update', parameters, options);
 
-		this.load();
+			await DataSource.load(true);
 
-		this.page.stages.get('pick-visualization').switcher.querySelector('small').textContent = this.form.name.value;
+			this.load();
+
+			this.page.stages.get('pick-visualization').switcher.querySelector('small').textContent = this.form.name.value;
+
+			const type = MetaData.visualizations.get(this.visualization.type);
+
+			new SnackBar({
+				message: 'Visualization Saved',
+				subtitle: `${this.visualization.name} <span class="NA">#${this.visualization.visualization_id} (${type ? type.name : ''})</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async preview() {
@@ -2175,7 +2342,7 @@ ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConne
 		if(event == 'upload')
 			this.onUpload = callback;
 
-		else throw new Page.exception(`Invalid event File Upload event type ${event}! :(`);
+		else throw new Page.exception(`Invalid event File Upload event type ${event}!`);
 	}
 
 	/**
@@ -2186,7 +2353,7 @@ ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConne
 	upload(file) {
 
 		if(!this.stage.report.load_saved)
-			return this.message('This report doesn\'t have \'Store Result\' property enabled! :(', 'warning');
+			return this.message('This report doesn\'t have \'Store Result\' property enabled!', 'warning');
 
 		this.message(`Uploading ${file.name}`, 'notice');
 
@@ -2426,7 +2593,7 @@ class Axes extends Set {
 			this.container.appendChild(axis.container);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No axes added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No axes added yet!</div>';
 
 		this.container.insertAdjacentHTML('beforeend', `
 
@@ -2772,7 +2939,7 @@ class SpatialMapOptionsLayers extends Set {
 		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' map layer' + ( this.size == 1 ? ' added' :'s added') : ''}`;
 
 		if (!this.size)
-			this.container.innerHTML = '<div class="NA">No layers added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No layers added yet!</div>';
 
 		for(const layer of this) {
 
@@ -2826,7 +2993,6 @@ class SpatialMapOptionsLayers extends Set {
 		return response;
 
 	}
-
 }
 
 class SpatialMapOptionsLayer {
@@ -3569,7 +3735,7 @@ class ReportTransformations extends Set {
 			this.container.appendChild(transformation.container);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No transformation added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No transformation added yet!</div>';
 
 		this.container.insertAdjacentHTML('beforeend', `
 
@@ -3675,7 +3841,7 @@ class ReportTransformation {
 		Object.assign(this, transformation);
 
 		if(!ReportTransformation.types.has(this.type))
-			throw new Page.exception(`Invalid transformation type ${this.type}! :(`);
+			throw new Page.exception(`Invalid transformation type ${this.type}!`);
 	}
 }
 
@@ -4229,7 +4395,7 @@ class ReportVisualizationDashboards extends Set {
 			this.container.appendChild(dashboard.form);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No dashboard added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No dashboard added yet!</div>';
 
 		this.container.parentElement.querySelector('h3 .count').innerHTML = `${this.size ? 'Added to ' + this.size + ' dashboard' + (this.size == 1 ? '' : 's') : ''}` ;
 
@@ -4239,9 +4405,9 @@ class ReportVisualizationDashboards extends Set {
 				<fieldset>
 					<legend>Add Dashboard</legend>
 					<div class="form">
-						<label>
+
+						<label class="dashboard_id">
 							<span>Dashboard</span>
-							<select name="dashboard_id"></select>
 						</label>
 
 						<label>
@@ -4260,14 +4426,42 @@ class ReportVisualizationDashboards extends Set {
 
 		const form = this.container.querySelector('.add-dashboard');
 
-		for(const dashboard of this.response.values()) {
+		const datalist = [];
 
-			form.dashboard_id.insertAdjacentHTML('beforeend',`
-				<option value=${dashboard.id}>
-					${dashboard.name} ${this.response.has(dashboard.parent) ? `(parent: ${this.response.get(dashboard.parent).name})` : ''}
-				</option>
-			`);
+		if(this.response) {
+
+			for(const dashboard of this.response.values()) {
+
+				const
+					parents = [],
+					seen = [];
+
+				let parent = dashboard.parent;
+
+				while(parent) {
+
+					if(!this.response.has(parent) || seen.includes(parent))
+						break;
+
+					const parentDashboard = this.response.get(parent);
+
+					parents.push(`${parentDashboard.name} #${parentDashboard.id}`);
+					seen.push(parentDashboard.id);
+
+					parent = parentDashboard.parent;
+				}
+
+				datalist.push({
+					value: dashboard.id,
+					name: dashboard.name,
+					subtitle: parents.reverse().join(' &rsaquo; '),
+				});
+			}
 		}
+
+		this.dashboardMultiSelect = new MultiSelect({datalist, multiple: false, dropDownPosition: 'top'});
+
+		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
 
 		form.on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
 	}
@@ -4282,23 +4476,52 @@ class ReportVisualizationDashboards extends Set {
 
 		e.preventDefault();
 
-		const form = stage.dashboards.container.querySelector('.add-dashboard');
+		const
+			form = stage.dashboards.container.querySelector('.add-dashboard'),
+			dashboard_id = parseInt(stage.dashboards.dashboardMultiSelect.value[0]);
 
-		if(Array.from(stage.dashboards).some(d => d.id == form.dashboard_id.value))
-			return alert('Cannot add a visualization to a dashboard more than once!');
+		if(Array.from(stage.dashboards).some(d => d.id == dashboard_id)) {
+
+			new SnackBar({
+				message: 'Visualization already added',
+				subtitle: `${stage.dashboards.response.get(dashboard_id).name} <span class="NA">#${dashboard_id}</span>`,
+				type: 'error',
+			});
+
+			return;
+		}
 
 		const
 			option = {
 				method: 'POST',
 			},
 			parameters = {
-				dashboard_id: form.dashboard_id.value,
+				dashboard_id,
 				visualization_id: stage.visualization.visualization_id,
 				format: JSON.stringify({position: parseInt(form.position.value)})
 			};
 
-		await API.call('reports/dashboard/insert', parameters, option);
-		await stage.dashboards.load({force: true});
+		try {
+
+			await API.call('reports/dashboard/insert', parameters, option);
+
+			await stage.dashboards.load({force: true});
+
+			new SnackBar({
+				message: 'Dashboard Added',
+				subtitle: `${stage.dashboards.response.get(dashboard_id).name} <span class="NA">#${dashboard_id}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 }
 
@@ -4324,9 +4547,8 @@ class ReportVisualizationDashboard {
 		form.classList.add('subform', 'form');
 
 		form.innerHTML = `
-			<label>
+			<label class="dashboard_id">
 				<span>Dashboard</span>
-				<select name="dashboard_id"></select>
 			</label>
 
 			<label>
@@ -4350,20 +4572,46 @@ class ReportVisualizationDashboard {
 			</label>
 		`;
 
+		const datalist = [];
+
 		if(this.stage.dashboards.response) {
+
 			for(const dashboard of this.stage.dashboards.response.values()) {
 
-				form.dashboard_id.insertAdjacentHTML('beforeend',`
-					<option value=${dashboard.id}>
-						${dashboard.name} ${this.stage.dashboards.response.has(dashboard.parent) ? `(parent: ${this.stage.dashboards.response.get(dashboard.parent).name})` : ''}
-					</option>
-				`);
+				const
+					parents = [],
+					seen = [];
+
+				let parent = dashboard.parent;
+
+				while(parent) {
+
+					if(!this.stage.dashboards.response.has(parent) || seen.includes(parent))
+						break;
+
+					const parentDashboard = this.stage.dashboards.response.get(parent);
+
+					parents.push(`${parentDashboard.name} #${parentDashboard.id}`);
+					seen.push(parentDashboard.id);
+
+					parent = parentDashboard.parent;
+				}
+
+				datalist.push({
+					value: dashboard.id,
+					name: dashboard.name,
+					subtitle: parents.reverse().join(' &rsaquo; '),
+				});
 			}
 		}
 
-		form.dashboard_id.value = this.visualization.dashboard_id;
-		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + (form.dashboard_id.value)));
+		this.dashboardMultiSelect = new MultiSelect({datalist, multiple: false, dropDownPosition: 'top'});
 
+		this.dashboardMultiSelect.value = this.visualization.dashboard_id;
+
+		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
+
+		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + (form.dashboard_id.value)));
 		form.querySelector('.delete').on('click', () => this.delete());
 
 		form.on('submit', async e => this.update(e))
@@ -4384,8 +4632,27 @@ class ReportVisualizationDashboard {
 				id: this.visualization.id,
 			};
 
-		await API.call('reports/dashboard/delete', parameters, option);
-		await this.stage.dashboards.load({force: true});
+		try {
+
+			await API.call('reports/dashboard/delete', parameters, option);
+
+			await this.stage.dashboards.load({force: true});
+
+			new SnackBar({
+				message: 'Dashboard Deleted',
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} <span class="NA">#${this.visualization.dashboard_id}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async update(e) {
@@ -4400,13 +4667,32 @@ class ReportVisualizationDashboard {
 			},
 			parameters = {
 				id: this.visualization.id,
-				dashboard_id: this.form.dashboard_id.value,
+				dashboard_id: this.dashboardMultiSelect.value[0],
 				visualization_id: this.visualization.visualization_id,
 				format: JSON.stringify(this.visualization.format)
 			};
 
-		await API.call('reports/dashboard/update', parameters, option);
-		await this.stage.dashboards.load({force: true});
+		try {
+
+			await API.call('reports/dashboard/update', parameters, option);
+
+			await this.stage.dashboards.load({force: true});
+
+			new SnackBar({
+				message: 'Dashboard Saved',
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} <span class="NA">#${this.visualization.dashboard_id}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 }
 
@@ -4457,7 +4743,7 @@ class ReportVisualizationFilters extends Map {
 			this.container.appendChild(filter.container);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No filters added yet! :(</div>';
+			this.container.innerHTML = '<div class="NA">No filters added yet!</div>';
 
 		this.container.insertAdjacentHTML('beforeend', `
 
@@ -4755,7 +5041,7 @@ class EditReportData {
 		table.textContent = null;
 
 		if(!this.data || !this.data.length)
-			return table.innerHTML = '<tr class="NA"><td>No data found :(</td></tr>';
+			return table.innerHTML = '<tr class="NA"><td>No data found</td></tr>';
 
 		tbody.setAttribute('contenteditable', '');
 

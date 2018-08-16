@@ -134,7 +134,6 @@ class DataSource {
 			catch(e) {
 
 				this.error('Click here to retry', {retry: true});
-
 				throw e;
 			}
 		}
@@ -193,7 +192,7 @@ class DataSource {
 				<h2><span class="title">${this.name}</span></h2>
 				<div class="actions right">
 					<a class="reload" title="Reload Report"><i class="fas fa-sync"></i></a>
-					<a class="menu-toggle" title="Menu"><i class="fas fa-ellipsis-v"></i></a>
+					<a class="menu-toggle" title="Menu"><i class="fa fa-angle-down"></i></a>
 				</div>
 			</header>
 
@@ -1770,7 +1769,13 @@ class DataSourceColumn {
 			this.source.columns.sortBy = this;
 
 		await this.source.visualizations.selected.render();
+
 		this.dialogueBox.hide();
+
+		new SnackBar({
+			message: `Changes to <em>${this.name}</em> applied`,
+			subtitle: 'Changes are not saved yet and will be reset when the page reloads.',
+		});
 	}
 
 	async save() {
@@ -1830,10 +1835,27 @@ class DataSourceColumn {
 				method: 'POST',
 			};
 
-		await API.call('reports/report/update', parameters, options);
-		await this.source.visualizations.selected.load();
+		try {
 
-		this.dialogueBox.hide();
+			await API.call('reports/report/update', parameters, options);
+
+			await this.source.visualizations.selected.load();
+
+			this.dialogueBox.hide();
+
+			new SnackBar({
+				message: `Changes to <em>${this.name}</em> saved`,
+				subtitle: 'These changes will persist across page reloads.',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+		}
 	}
 
 	async update() {
@@ -2257,7 +2279,7 @@ class DataSourceColumnFilters extends Set {
 			div.appendChild(filter.container);
 
 		if(!this.size) {
-			div.innerHTML = '<div class="NA">No Filters Added :(</div>'
+			div.innerHTML = '<div class="NA">No Filters Added</div>'
 		}
 	}
 
@@ -2443,7 +2465,7 @@ class DataSourceColumnAccumulations extends Set {
 			div.appendChild(accumulation.container);
 
 		if(!this.size) {
-			div.innerHTML = '<div class="NA">No Accumulation Added :(</div>'
+			div.innerHTML = '<div class="NA">No Accumulation Added</div>'
 		}
 	}
 }
@@ -3930,7 +3952,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		if(!rows.length) {
 			table.insertAdjacentHTML('beforeend', `
-				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found! :('}</td></tr>
+				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found!'}</td></tr>
 			`);
 		}
 
@@ -4172,7 +4194,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				path.style.strokeDashoffset = length;
 				path.getBoundingClientRect();
 
-				path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+				path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-in-out`;
 				path.style.strokeDashoffset = '0';
 			});
 		}
@@ -4199,7 +4221,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 					d3.select(this)
 						.attr('r', 6)
 						.transition()
-						.duration(Visualization.animationDuration)
+						.duration(Page.animationDuration)
 						.attr('r', 12);
 
 					d3.select(this).classed('hover', 1);
@@ -4211,7 +4233,7 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 					d3.select(this)
 						.transition()
-						.duration(Visualization.animationDuration)
+						.duration(Page.animationDuration)
 						.attr('r', 6);
 
 					d3.select(this).classed('hover', 0);
@@ -4415,7 +4437,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				dots = dots
 					.attr('r', d => 0)
 					.transition()
-					.duration(Visualization.animationDuration)
+					.duration(Page.animationDuration)
 					.ease('elastic');
 			}
 
@@ -4799,7 +4821,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.attr('y', cell => this.y(0))
 				.attr('height', () => 0)
 				.transition()
-				.duration(Visualization.animationDuration)
+				.duration(Page.animationDuration)
 				.ease('quad-in');
 
 			if(values) {
@@ -4808,7 +4830,7 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 					.attr('y', cell => this.y(0))
 					.attr('height', () => 0)
 					.transition()
-					.duration(Visualization.animationDuration)
+					.duration(Page.animationDuration)
 					.ease('quad-in');
 			}
 		}
@@ -5205,7 +5227,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				.attr('height', () => 0)
 				.attr('y', () => this.height)
 				.transition()
-				.duration(Visualization.animationDuration)
+				.duration(Page.animationDuration)
 				.ease('quad-in');
 		}
 
@@ -5243,7 +5265,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				path.style.strokeDashoffset = length;
 				path.getBoundingClientRect();
 
-				path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+				path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-in-out`;
 				path.style.strokeDashoffset = '0';
 			});
 		}
@@ -5592,7 +5614,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				.attr('height', d => 0)
 				.attr('y', d => this.height)
 				.transition()
-				.duration(Visualization.animationDuration)
+				.duration(Page.animationDuration)
 				.ease('quad-in');
 
 			if(values) {
@@ -5601,7 +5623,7 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 					.attr('y', cell => this.y(0))
 					.attr('height', () => 0)
 					.transition()
-					.duration(Visualization.animationDuration)
+					.duration(Page.animationDuration)
 					.ease('quad-in');
 			}
 		}
@@ -5813,7 +5835,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 			areas = areas
 				.style('opacity', 0)
 				.transition()
-				.duration(Visualization.animationDuration)
+				.duration(Page.animationDuration)
 				.ease("quad-in");
 		}
 
@@ -5842,7 +5864,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 					d3.select(this)
 						.attr('r', 6)
 						.transition()
-						.duration(Visualization.animationDuration)
+						.duration(Page.animationDuration)
 						.attr('r', 12);
 
 					d3.select(this).classed('hover', 1);
@@ -5854,7 +5876,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 					d3.select(this)
 						.transition()
-						.duration(Visualization.animationDuration)
+						.duration(Page.animationDuration)
 						.attr('r', 6);
 
 					d3.select(this).classed('hover', 0);
@@ -6051,7 +6073,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 					.attr("height", d => 0)
 					.attr("y", d => 30)
 					.transition()
-					.duration(Visualization.animationDuration);
+					.duration(Page.animationDuration);
 			}
 
 			rectangles
@@ -6380,7 +6402,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				d3
 					.select(this)
 					.transition()
-					.duration(Visualization.animationDuration / 3)
+					.duration(Page.animationDuration / 3)
 					.attr('d', row => arcHover(row));
 			})
 
@@ -6389,7 +6411,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				d3
 					.select(this)
 					.transition()
-					.duration(Visualization.animationDuration / 3)
+					.duration(Page.animationDuration / 3)
 					.attr('d', row => arc(row));
 
 				Tooltip.hide(that.container);
@@ -6400,8 +6422,8 @@ Visualization.list.set('pie', class Pie extends Visualization {
 		if(!options.resize) {
 			slice
 				.transition()
-				.duration(Visualization.animationDuration / data.length * 2)
-				.delay((_, i) => i * Visualization.animationDuration / data.length)
+				.duration(Page.animationDuration / data.length * 2)
+				.delay((_, i) => i * Page.animationDuration / data.length)
 				.attrTween('d', function(d) {
 
 					const i = d3.interpolate(d.endAngle, d.startAngle);
@@ -6619,7 +6641,7 @@ Visualization.list.set('cohort', class Cohort extends Visualization {
 		}
 
 		if(!response.length)
-			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No data found! :('}</caption>`;
+			table.innerHTML = `<caption class="NA">${this.source.originalResponse.message || 'No data found!'}</caption>`;
 
 		table.appendChild(tbody);
 		container.appendChild(table);
@@ -6915,7 +6937,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 	animate(options) {
 
 		const
-			duration = Visualization.animationDuration * 2 / 1000,
+			duration = Page.animationDuration * 2 / 1000,
 			jumpsPerSecond = 20,
 			jumps = Math.floor(duration * jumpsPerSecond),
 			values = {
@@ -6999,7 +7021,7 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 			path.style.strokeDashoffset = length;
 			path.getBoundingClientRect();
 
-			path.style.transition  = `stroke-dashoffset ${Visualization.animationDuration}ms ease-in-out`;
+			path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-in-out`;
 			path.style.strokeDashoffset = '0';
 		}
 
@@ -7119,7 +7141,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'html');
-		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
+		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
 
 		if(this.options && this.options.hideHeader)
 			this.source.container.querySelector('header').classList.add('hidden');
@@ -7143,7 +7165,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
-		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.query}</div>`;
+		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
 	}
 });
 
@@ -7662,8 +7684,6 @@ class Tooltip {
 		container.classList.add('hidden');
 	}
 }
-
-Visualization.animationDuration = 750;
 
 DataSourceFilter.setup();
 DataSourceColumnFilter.setup();

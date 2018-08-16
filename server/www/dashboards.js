@@ -5,7 +5,7 @@ class Dashboard extends API {
 
 	async list() {
 
-		let query = `select * from tb_dashboards where status = 1 and account_id = ${this.account.account_id}`;
+		let query = `SELECT * FROM tb_dashboards WHERE status = 1 AND account_id = ${this.account.account_id}`;
 
 		if(this.request.body.search) {
 			query = query.concat(`
@@ -19,8 +19,24 @@ class Dashboard extends API {
 
 		let dashboards = this.mysql.query(query, [`%${this.request.body.text}%`, `%${this.request.body.text}%`]);
 
-		let visualizationDashboards = this.mysql.query(
-			"select vd.*, query_id from tb_visualization_dashboard vd join tb_query_visualizations qv using(visualization_id) join tb_dashboards d on d.id = vd.dashboard_id join tb_query q  using(query_id) where d.status = 1 and d.account_id = ? and q.is_enabled = 1 and q.is_deleted = 0",
+		let visualizationDashboards = this.mysql.query(`
+			SELECT
+				vd.*,
+				query_id
+			FROM
+				tb_visualization_dashboard vd
+			JOIN
+				tb_query_visualizations qv USING(visualization_id)
+			JOIN
+				tb_dashboards d ON d.id = vd.dashboard_id
+			JOIN
+				tb_query q USING(query_id)
+			WHERE
+				d.status = 1 AND
+				d.account_id = ? AND
+				q.is_enabled = 1 AND
+				q.is_deleted = 0
+			`,
 			[this.account.account_id]
 		);
 
@@ -68,7 +84,7 @@ class Dashboard extends API {
 			dashboardObject[d].superset = 'Dashboards';
 		}
 
-		return Object.values(dashboardObject).sort((x, y) => x.order - y.order);
+		return Object.values(dashboardObject).sort((x, y) => x.parent - y.parent || x.order - y.order);
 	}
 
 	async insert() {
@@ -116,7 +132,7 @@ class Dashboard extends API {
 			JSON.parse(values.format);
 		}
 		catch(e) {
-			this.assert(false, 'Invalid format! :(');
+			this.assert(false, 'Invalid format!');
 		}
 
 		return await this.mysql.query(

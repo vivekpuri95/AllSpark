@@ -31,7 +31,7 @@ Page.class = class extends Page {
 	render() {
 
 		if(!this.data)
-			return this.container.innerHTML = '<div class="NA">No User found :(</div>';
+			return this.container.innerHTML = '<div class="NA">No User found</div>';
 
 		this.container.querySelector('.edit').classList.toggle('hidden', user.id != this.id);
 
@@ -64,7 +64,7 @@ Page.class = class extends Page {
 		}
 
 		if(!this.data.privileges || !this.data.privileges.length)
-			privileges.innerHTML = `<tr class="NA"><td colspan="2">No Privileges assigned! :(</td></tr>`;
+			privileges.innerHTML = `<tr class="NA"><td colspan="2">No Privileges assigned!</td></tr>`;
 
 		const roles = this.container.querySelector('.roles tbody');
 
@@ -78,6 +78,6 @@ Page.class = class extends Page {
 		}
 
 		if(!this.data.roles || !this.data.roles.length)
-			roles.innerHTML = `<tr class="NA"><td colspan="2">No Roles assigned! :(</td></tr>`;
+			roles.innerHTML = `<tr class="NA"><td colspan="2">No Roles assigned!</td></tr>`;
 	}
 }

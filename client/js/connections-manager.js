@@ -67,7 +67,7 @@ Page.class = class Connections extends Page {
 			dataConnectionsContainer.appendChild(item.row);
 
 		if(!dataConnectionsContainer.textContent)
-			dataConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No data connections found! :(</td></tr>';
+			dataConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No data connections found!</td></tr>';
 
 		oAuthConnectionsContainer.textContent = null;
 
@@ -75,7 +75,7 @@ Page.class = class Connections extends Page {
 			oAuthConnectionsContainer.appendChild(item.row);
 
 		if(!oAuthConnectionsContainer.textContent)
-			oAuthConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No OAuth connections found! :(</td></tr>';
+			oAuthConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No OAuth connections found!</td></tr>';
 
 		const providerList = this.listContainer.querySelector('#add-oauth-connection').provider;
 
@@ -123,6 +123,8 @@ class DataConnection {
 		DataConnection.form.removeEventListener('submit', DataConnection.submitListener);
 		DataConnection.form.reset();
 
+		this.page.container.querySelector('#share-connections').innerHTML = `<div class="NA">You can share the connection once you create one.</div>`;
+
 		DataConnection.container.querySelector('.toolbar #test-connection').classList.add('hidden');
 		DataConnection.container.querySelector('.test-result').classList.add('hidden');
 		DataConnection.container.querySelector('h1').textContent = 'Add New Connection';
@@ -149,11 +151,30 @@ class DataConnection {
 				form: new FormData(DataConnection.form),
 			};
 
-		const response = await API.call('credentials/insert', parameters, options);
+		try {
+			const response = await API.call('credentials/insert', parameters, options);
 
-		await DataConnection.page.load();
+			await DataConnection.page.load();
 
-		page.dataConnections.get(response.insertId).edit();
+			const connection = page.dataConnections.get(response.insertId);
+
+			connection.edit();
+
+			new SnackBar({
+				message: 'New Connection Added',
+				subtitle: `${connection.connection_name} <span class="NA">#${connection.id}</span> (${connection.feature.name})`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	constructor(item, page) {
@@ -176,9 +197,14 @@ class DataConnection {
 		DataConnection.form.reset();
 
 		DataConnection.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
-		DataConnection.form.on('submit', DataConnection.submitListener = e => this.update(e));
+
+		DataConnection.form.on('submit', DataConnection.submitListener = e => {
+			e.preventDefault();
+			this.update();
+		});
 
 		this.objectRoles = new ObjectRoles('connection', this.id, ['user', 'role']);
+
 		await this.objectRoles.load();
 
 		this.page.container.querySelector('#share-connections').innerHTML = null;
@@ -225,31 +251,32 @@ class DataConnection {
 			response = await API.call('credentials/testConnections', parameter, options);
 		}
 		catch (e) {
-			container.classList.remove('hidden');
-			container.classList.add('warning');
-			container.classList.remove('notice');
-			container.textContent = e;
-			return;
-		}
 
-		container.classList.remove('hidden');
+			new SnackBar({
+				message: 'Connection Failed',
+				subtitle: e.message || JSON.stringify(e),
+				type: 'error',
+			});
+
+			throw e;
+		}
 
 		if(response.status) {
-			container.classList.add('notice');
-			container.classList.remove('warning');
-			container.textContent = 'Connection Successful';
+
+			new SnackBar({
+				message: 'Connection Successful',
+			});
 		}
 		else {
-			container.classList.add('warning');
-			container.classList.remove('notice');
-			container.textContent = 'Connection Failed';
+			new SnackBar({
+				message: 'Connection Failed',
+				subtitle: JSON.stringify(response.message || response),
+				type: 'error',
+			});
 		}
 	}
 
-	async update(e) {
-
-		if(e && e.preventDefault)
-			e.preventDefault();
+	async update() {
 
 		const
 			parameters = {
@@ -260,10 +287,28 @@ class DataConnection {
 				form: new FormData(DataConnection.form),
 			};
 
-		await API.call('credentials/update', parameters, options);
+		try {
 
-		await this.page.load();
-		await Sections.show('list');
+			await API.call('credentials/update', parameters, options);
+
+			await this.page.load();
+			await Sections.show('list');
+
+			new SnackBar({
+				message: 'Connection Saved',
+				subtitle: `${this.name} <span class="NA">#${this.id}</span> (${this.feature.name})`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete() {
@@ -279,9 +324,27 @@ class DataConnection {
 				method: 'POST',
 			};
 
-		await API.call('credentials/delete', parameters, options);
+		try {
 
-		await this.page.load();
+			await API.call('credentials/delete', parameters, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: 'Connection removed',
+				subtitle: `${this.name} <span class="NA">#${this.id}</span> (${this.feature.name})`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	get row() {
@@ -565,7 +628,7 @@ class OAuthConnection {
 			return;
 		}
 
-		window.location = '/connections';
+		window.location = '/connections-manager';
 	}
 
 	static async insert(e) {
@@ -664,7 +727,7 @@ class OAuthConnection {
 			const parameters = new URLSearchParams();
 
 			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections`);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/analytics.readonly');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
@@ -679,7 +742,7 @@ class OAuthConnection {
 			const parameters = new URLSearchParams();
 
 			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections`);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/adwords');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
@@ -694,7 +757,7 @@ class OAuthConnection {
 			const parameters = new URLSearchParams();
 
 			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections`);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/bigquery');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
@@ -709,7 +772,7 @@ class OAuthConnection {
 			const parameters = new URLSearchParams();
 
 			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections`);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'ads_read');
 			parameters.set('response_type', 'code');
 			parameters.set('state', this.id);

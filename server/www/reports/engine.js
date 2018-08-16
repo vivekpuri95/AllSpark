@@ -399,7 +399,7 @@ class report extends API {
 				return result;
 			}
 			catch (e) {
-				throw new API.Exception(500, "Invalid Redis Data! :(");
+				throw new API.Exception(500, "Invalid Redis Data!");
 			}
 		}
 

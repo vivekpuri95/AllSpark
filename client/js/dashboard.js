@@ -267,7 +267,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		if (!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found!</td></tr>`;
 	}
 
 	async load(state) {
@@ -614,7 +614,7 @@ class Dashboard {
 			report.format.format = selectedVisualizationProperties.format;
 
 			const
-				header = report.container.querySelector('header'),
+				header = report.container.querySelector('header .actions'),
 				format = report.selectedVisualization.format;
 
 			if (!format.width)
@@ -624,11 +624,9 @@ class Dashboard {
 				format.height = Dashboard.grid.rows;
 
 			header.insertAdjacentHTML('beforeend', `
-				<div class="edit">
-					<span class="remove" title="Remove Graph"><i class="fa fa-times"></i></span>
-					<span class="move-up" title="Move visualization up"><i class="fas fa-angle-up"></i></span>
-					<span class="move-down" title="Move visualization down"><i class="fas fa-angle-down"></i></span>
-				</div>
+				<a class="show move-up" title="Move visualization up"><i class="fas fa-angle-double-up"></i></a>
+				<a class="show move-down" title="Move visualization down"><i class="fas fa-angle-double-down"></i></a>
+				<a class="show remove" title="Remove Graph"><i class="fa fa-times"></i></a>
 			`);
 
 			header.querySelector('.move-up').on('click', () => {
@@ -933,7 +931,7 @@ class Dashboard {
 
 		if (!this.page.loadedVisualizations.size) {
 
-			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
+			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found!</div>';
 		}
 
 		if (this.page.user.privileges.has('report')) {
@@ -1305,7 +1303,7 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				<label><input type="checkbox" checked> Select All</label>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
 			</div>
-			<div class="NA no-results hidden">No filters found! :(</div>
+			<div class="NA no-results hidden">No filters found!</div>
 		`;
 
 		container.appendChild(this.container);

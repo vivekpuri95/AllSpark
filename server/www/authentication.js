@@ -214,7 +214,7 @@ exports.login = class extends API {
 
 		if(redisResult) {
 
-			throw("Failure, please try again :(");
+			throw("Failure, please try again");
 		}
 
 		await redis.set(redisHash, 1);
@@ -225,7 +225,7 @@ exports.login = class extends API {
 
 		if (!this.email) {
 
-			this.assert(this.possibleAccounts.length, "No account found :(");
+			this.assert(this.possibleAccounts.length, "No account found");
 
 
 			if (!this.possibleAccounts[0].auth_api) {
@@ -270,7 +270,7 @@ exports.login = class extends API {
 			else {
 
 				this.userDetails = userDetails[0];
-				this.assert(this.userDetails && this.userDetails.user_id, "Email not found :(");
+				this.assert(this.userDetails && this.userDetails.user_id, "Email not found");
 
 				this.possibleAccounts = global.accounts.filter(x => x.account_id === this.userDetails.account_id);
 
@@ -287,7 +287,7 @@ exports.login = class extends API {
 				if (!this.request.body.external_parameters && this.request.body.password) {
 
 					const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, this.userDetails.password);
-					this.assert(checkPassword, "Invalid Password! :(");
+					this.assert(checkPassword, "Invalid Password!");
 				}
 			}
 		}
@@ -362,11 +362,11 @@ exports.refresh = class extends API {
 			userDetail = loginObj.userDetails;
 		}
 
-		this.assert(userDetail, "User not found! :(", 401);
+		this.assert(userDetail, "User not found!", 401);
 
 		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ? and status = 1", userDetail.user_id);
 
-		this.assert(user, "User not found! :(", 401);
+		this.assert(user, "User not found!", 401);
 
 		const userPrivilegesRoles = await this.mysql.query(`
 				SELECT

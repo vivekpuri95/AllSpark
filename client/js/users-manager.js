@@ -28,7 +28,6 @@ class Users extends Page {
 
 			Users.userSearchForm.querySelector('.role').classList.toggle('hidden', ['privilege', 'category'].includes(Users.userSearchForm.search_by.value));
 			Users.userSearchForm.querySelector('.privilege').classList.toggle('hidden', ['role', 'category'].includes(Users.userSearchForm.search_by.value));
-
 		});
 
 		const
@@ -114,7 +113,7 @@ class Users extends Page {
 			Users.contaier.appendChild(user.row);
 
 		if(!list.length)
-			Users.contaier.innerHTML = '<td colspan="5" class="NA">No rows found :(</td>'
+			Users.contaier.innerHTML = '<td colspan="5" class="NA">No rows found</td>'
 	}
 
 	static loadState(state) {
@@ -145,7 +144,7 @@ class UserManage {
 
 		document.querySelector('section#list #add-user').on('click', () => {
 			UserManage.add();
-			history.pushState({what: 'add'}, '', `/users/add`);
+			history.pushState({what: 'add'}, '', `/users-manager/add`);
 		});
 
 		UserManage.contaier.querySelector('#cancel-form').on('click', UserManage.back);
@@ -157,7 +156,7 @@ class UserManage {
 			return history.back();
 
 		Sections.show('list');
-		history.pushState(null, '', `/users`);
+		history.pushState(null, '', `/users-manager`);
 	}
 
 	static async add() {
@@ -168,8 +167,8 @@ class UserManage {
 		UserManage.heading.textContent = 'Add User';
 		UserManage.form.on('submit', UserManage.submitListener = e => UserManage.insert(e));
 
-		Privileges.privileges_container.innerHTML = `<div class="NA">You can add privileges to this user once you add the user :(</div>`;
-		Roles.roles_container.innerHTML = `<div class="NA">You can add roles to this user once you add the user :(</div>`;
+		Privileges.privileges_container.innerHTML = `<div class="NA">You can add privileges to this user once you add the user</div>`;
+		Roles.roles_container.innerHTML = `<div class="NA">You can add roles to this user once you add the user</div>`;
 
 		Privileges.add_filter.classList.add('hidden');
 		Roles.add_roles.classList.add('hidden');
@@ -195,15 +194,30 @@ class UserManage {
 		}
 
 		try {
-			await API.call('users/insert', parameters, options);
-		}
 
-		catch(e) {
-			return alert(e.response);
-		}
+			const response = await API.call('users/insert', parameters, options);
 
-		await Users.load();
-		UserManage.back();
+			await Users.load();
+
+			const [user] = Users.list.filter(user => user.user_id == response.insertId);
+
+			user.edit();
+
+			new SnackBar({
+				message: 'New User Added',
+				subtitle: `${user.name} <span class="NA">#${user.user_id}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	constructor(user) {
@@ -242,7 +256,7 @@ class UserManage {
 
 		Privileges.add_filter.on('submit', Privileges.submitListener = async (e) => {
 			e.preventDefault();
-			await this.privileges.add();
+			await this.privileges.insert();
 		});
 
 		if(Roles.submitListener)
@@ -250,7 +264,7 @@ class UserManage {
 
 		Roles.add_roles.on('submit', Roles.submitListener = async (e) => {
 			e.preventDefault();
-			await this.roles.add();
+			await this.roles.insert();
 		});
 
 		this.privileges.render();
@@ -281,9 +295,27 @@ class UserManage {
 		if(!UserManage.form.password.value)
 			delete parameters.password;
 
-		await API.call('users/update', parameters, options);
+		try {
 
-		await Users.load();
+			await API.call('users/update', parameters, options);
+
+			await Users.load();
+
+			new SnackBar({
+				message: 'User Profile Saved',
+				subtitle: `${this.name} <span class="NA">#${this.user_id}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete() {
@@ -315,7 +347,7 @@ class UserManage {
 
 		this.container.innerHTML = `
 			<td>${this.id}</td>
-			<td>${this.name}</td>
+			<td><a href="/user/profile/${this.id}" target="_blank">${this.name}</a></td>
 			<td>${this.email}</td>
 			<td>${Format.dateTime(this.last_login)}</td>
 			<td class="action green" title="Edit">Edit</i></td>
@@ -324,7 +356,7 @@ class UserManage {
 
 		this.container.querySelector('.green').on('click', () => {
 			this.edit();
-			history.pushState({what: this.id}, '', `/users/${this.id}`);
+			history.pushState({what: this.id}, '', `/users-manager/${this.id}`);
 		});
 
 		this.container.querySelector('.red').on('click', () => this.delete());
@@ -366,20 +398,41 @@ class Privileges {
 		this.user = user;
 	}
 
-	async add(e) {
+	async insert(e) {
 
 		const options= {
 			method: 'POST',
 			form: new FormData(Privileges.add_filter)
 		}
 
-		await API.call('user/privileges/insert', {user_id: this.user.user_id}, options);
+		try {
 
-		this.render();
+			await API.call('user/privileges/insert', {user_id: this.user.user_id}, options);
 
-		await Users.load();
+			this.render();
 
-		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+			await Users.load();
+
+			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+
+			new SnackBar({
+				message: `New privilege assigned to ${this.user.name}`,
+				subtitle: `
+					Category: <strong>${MetaData.categories.get(parseInt(Privileges.add_filter.category_id.value)).name}</strong>;
+					Privilege: <strong>${MetaData.privileges.get(parseInt(Privileges.add_filter.privilege_id.value)).name}</strong>
+				`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	render() {
@@ -389,7 +442,7 @@ class Privileges {
 		container.textContent = null;
 
 		if(!this.list.length)
-			Privileges.privileges_container.innerHTML = `<div class="NA">No privilege assigned :(</div>`;
+			Privileges.privileges_container.innerHTML = `<div class="NA">No privilege assigned</div>`;
 
 		for(const privilege of this.list) {
 			container.appendChild(privilege.row);
@@ -413,7 +466,6 @@ class Privilege {
 		this.container = document.createElement('form');
 
 		this.container.classList.add('filter');
-		this.container.id = 'filters-form-'+this.id;
 
 		this.container.innerHTML = `
 
@@ -442,7 +494,7 @@ class Privilege {
 
 		this.container.on('submit', async (e) => {
 			e.preventDefault();
-			this.edit(this.id);
+			this.update(this.id);
 
 		});
 		this.container.querySelector('.delete').on('click', async (e) => {
@@ -454,25 +506,46 @@ class Privilege {
 		return this.container;
 	}
 
-	async edit(id) {
+	async update(id) {
 
-		const options = {
-			method: 'POST',
-			form: new FormData(this.container),
+		const
+			parameters = {
+				user_id: this.user.user_id,
+				id: id,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.container),
+			};
+
+		try {
+
+			await API.call('user/privileges/update', parameters, options);
+
+			await Users.load();
+
+			this.parent.render();
+
+			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+
+			new SnackBar({
+				message: `${this.user.name}'s privilge saved`,
+				subtitle: `
+					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
+					Privilege: <strong>${MetaData.privileges.get(parseInt(this.container.privilege_id.value)).name}</strong>
+				`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
 		}
-
-		const parameters = {
-			user_id: this.user.user_id,
-			id: id,
-		}
-
-		await API.call('user/privileges/update', parameters, options);
-
-		await Users.load();
-
-		this.parent.render();
-
-		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 	}
 
 	async delete(id) {
@@ -480,21 +553,42 @@ class Privilege {
 		if(!window.confirm('Are you sure?!'))
 			return;
 
-		const options = {
-			method: 'POST',
-		};
+		const
+			parameters = {
+				id,
+			},
+			options = {
+				method: 'POST',
+			};
 
-		const parameters = {
-			id: id
-		};
+		try {
 
-		await API.call('user/privileges/delete', parameters, options);
+			await API.call('user/privileges/delete', parameters, options);
 
-		await Users.load();
+			await Users.load();
 
-		this.parent.render();
+			this.parent.render();
 
-		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+
+			new SnackBar({
+				message: `${this.user.name}'s privilge removed`,
+				subtitle: `
+					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
+					Privilege: <strong>${MetaData.privileges.get(parseInt(this.container.privilege_id.value)).name}</strong>
+				`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 }
 
@@ -531,20 +625,41 @@ class Roles {
 		this.user = user;
 	}
 
-	async add() {
+	async insert() {
 
-		const options= {
+		const options = {
 			method: 'POST',
 			form: new FormData(Roles.add_roles)
+		};
+
+		try {
+
+			await API.call('accounts/roles/insert', {user_id: this.user.user_id}, options);
+
+			this.render();
+
+			await Users.load();
+
+			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+
+			new SnackBar({
+				message: `New role assigned to ${this.user.name}`,
+				subtitle: `
+					Category: <strong>${MetaData.categories.get(parseInt(Roles.add_roles.category_id.value)).name}</strong>;
+					Role: <strong>${MetaData.privileges.get(parseInt(Roles.add_roles.role_id.value)).name}</strong>
+				`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
 		}
-
-		await API.call('accounts/roles/insert', {user_id: this.user.user_id}, options);
-
-		this.render();
-
-		await Users.load();
-
-		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
 	}
 
 	render() {
@@ -554,7 +669,7 @@ class Roles {
 		container.textContent = null;
 
 		if(!this.list.length)
-			Roles.roles_container.innerHTML = `<div class="NA">No roles assigned :(</div>`;
+			Roles.roles_container.innerHTML = `<div class="NA">No roles assigned</div>`;
 
 		for(const privilege of this.list) {
 			container.appendChild(privilege.row);
@@ -578,7 +693,6 @@ class Role {
 		this.container = document.createElement('form');
 
 		this.container.classList.add('filter');
-		this.container.id = 'filters-form-'+this.id;
 
 		this.container.innerHTML = `
 
@@ -607,7 +721,7 @@ class Role {
 
 		this.container.querySelector('.edit').on('click', async (e) => {
 			e.preventDefault();
-			this.edit(this.id);
+			this.update(this.id);
 		});
 
 		this.container.querySelector('.delete').on('click', async (e) => {
@@ -618,25 +732,45 @@ class Role {
 		return this.container;
 	}
 
-	async edit(id) {
+	async update(id) {
 
-		const options = {
-			method: 'POST',
-			form: new FormData(this.container),
+		const
+			parameters = {
+				id,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.container),
+			};
+
+		try {
+
+			await API.call('accounts/roles/update', parameters, options);
+
+			await Users.load();
+
+			this.parent.render();
+
+			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+
+			new SnackBar({
+				message: `${this.user.name}'s role saved`,
+				subtitle: `
+					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
+					Role: <strong>${MetaData.privileges.get(parseInt(this.container.role_id.value)).name}</strong>
+				`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
 		}
-
-		const parameters = {
-			id: id,
-		}
-
-		await API.call('accounts/roles/update', parameters, options);
-
-		await Users.load();
-
-		this.parent.render();
-
-		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
-
 	}
 
 	async delete(id) {
@@ -644,20 +778,41 @@ class Role {
 		if(!window.confirm('Are you sure?!'))
 			return;
 
-		const options = {
-			method: 'POST',
-		};
+		const
+			parameters = {
+				id,
+			},
+			options = {
+				method: 'POST',
+			};
 
-		const parameters = {
-			id: id
-		};
+		try {
 
-		await API.call('accounts/roles/delete', parameters, options);
+			await API.call('accounts/roles/delete', parameters, options);
 
-		await Users.load();
+			await Users.load();
 
-		this.parent.render();
+			this.parent.render();
 
-		Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+			Users.list.filter(u => u.user_id == this.user.user_id)[0].edit();
+
+			new SnackBar({
+				message: `${this.user.name}'s role removed`,
+				subtitle: `
+					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
+					Role: <strong>${MetaData.privileges.get(parseInt(this.container.role_id.value)).name}</strong>
+				`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 }

@@ -32,6 +32,10 @@ Page.class = class DashboardManager extends Page {
 
 		DashboardsDashboard.setup(this);
 
+		this.parentDashboardMultiselect = new MultiSelect({multiple: false});
+
+		DashboardsDashboard.container.querySelector('.parent-dashboard').appendChild(this.parentDashboardMultiselect.container);
+
 		(async () => {
 
 			await this.load();
@@ -74,6 +78,7 @@ Page.class = class DashboardManager extends Page {
 		if(this.list.has(parseInt(what)))
 			return this.list.get(parseInt(what)).edit();
 
+
 		await Sections.show('list');
 	}
 
@@ -84,7 +89,7 @@ Page.class = class DashboardManager extends Page {
 
 		await Sections.show('list');
 
-		history.pushState(null, '', `/dashboards`);
+		history.pushState(null, '', `/dashboards-manager/`);
 	}
 
 	async load() {
@@ -115,7 +120,21 @@ Page.class = class DashboardManager extends Page {
 			container.appendChild(dashboard.row);
 
 		if(!this.list.size)
-			container.innerHTML = `<tr class="NA"><td colspan="2">No dashboards found! :(</td></tr>`;
+			container.innerHTML = `<tr class="NA"><td colspan="2">No dashboards found!</td></tr>`;
+
+		const datalist = [];
+
+		for(const dashboard of this.list.values()) {
+
+			datalist.push({
+				value: dashboard.id,
+				name: dashboard.name,
+				subtitle: dashboard.parents.reverse().map(d => `${d.name} #${d.id}`).join(' &rsaquo; '),
+			});
+		}
+
+		this.parentDashboardMultiselect.datalist = datalist;
+		this.parentDashboardMultiselect.render();
 	}
 }
 
@@ -151,6 +170,8 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.form.reset();
 
+		DashboardsDashboard.container.querySelector('#share-dashboards').innerHTML = `<div class="NA">You can share the dashboard once you create one.<div>`;
+
 		if(DashboardsDashboard.form_listener)
 			DashboardsDashboard.form.removeEventListener('submit', DashboardsDashboard.form_listener);
 
@@ -179,11 +200,29 @@ class DashboardsDashboard {
 
 		const response = await API.call('dashboards/insert', parameters, options);
 
-		await DashboardsDashboard.page.load();
+		try {
 
-		DashboardsDashboard.page.list.get(response.insertId).edit();
+			await DashboardsDashboard.page.load();
 
-		history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
+			DashboardsDashboard.page.list.get(response.insertId).edit();
+
+			history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
+
+			new SnackBar({
+				message: 'New Dashboard Added',
+				subtitle: `${DashboardsDashboard.form.name.value} <span class="NA">#${response.insertId}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	constructor(data, page) {
@@ -202,25 +241,18 @@ class DashboardsDashboard {
 
 		await this.objectRoles.load();
 
-		this.page.container.querySelector('#share-dashboards').innerHTML = null;
+		DashboardsDashboard.container.querySelector('#share-dashboards').innerHTML = null;
+		DashboardsDashboard.container.querySelector('#share-dashboards').appendChild(this.objectRoles.container);
 
-		this.page.container.querySelector('#share-dashboards').appendChild(this.objectRoles.container);
+		DashboardsDashboard.form.reset();
 
 		for(const element of DashboardsDashboard.form.elements) {
 			if(this[element.name])
 				element.value = this[element.name];
 		}
 
-		const datalist = this.page.response.map(a => {return {name: a.name, value: a.id}});
-
-		this.multiselect = new MultiSelect({datalist, multiple: false});
-
-		this.multiselect.value = this.parent ? [this.parent.toString()] : [];
-
-		if(DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select'))
-			DashboardsDashboard.container.querySelector('.parent-dashboard .multi-select').remove();
-
-		DashboardsDashboard.container.querySelector('.parent-dashboard').appendChild(this.multiselect.container);
+		this.page.parentDashboardMultiselect.clear();
+		this.page.parentDashboardMultiselect.value = this.parent;
 
 		DashboardsDashboard.editor.value = JSON.stringify(this.format || {}, 0, 4) || '';
 
@@ -248,7 +280,7 @@ class DashboardsDashboard {
 		const parameters = {
 			id: this.id,
 			format: DashboardsDashboard.editor.value,
-			parent: this.multiselect.value[0] || '',
+			parent: this.page.parentDashboardMultiselect.value[0] || '',
 		};
 
 		const options = {
@@ -256,11 +288,29 @@ class DashboardsDashboard {
 			form: new FormData(DashboardsDashboard.form),
 		};
 
-		await API.call('dashboards/update', parameters, options);
+		try {
 
-		await this.page.load();
+			await API.call('dashboards/update', parameters, options);
 
-		this.page.list.get(this.id).edit();
+			await this.page.load();
+
+			this.page.list.get(this.id).edit();
+
+			new SnackBar({
+				message: 'Dashboard Saved',
+				subtitle: `${this.name} <span class="NA">#${this.id}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete() {
@@ -276,9 +326,27 @@ class DashboardsDashboard {
 				method: 'POST',
 			};
 
-		await API.call('dashboards/delete', parameters, options);
+		try {
 
-		await this.page.load();
+			await API.call('dashboards/delete', parameters, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: 'Dashboard Deleted',
+				subtitle: `${this.name} <span class="NA">#${this.id}</span>`,
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	get row() {
@@ -291,11 +359,16 @@ class DashboardsDashboard {
 		this.container.innerHTML = `
 			<td>${this.id}</td>
 			<td><a href="/dashboard/${this.id}">${this.name}</a></td>
-			<td>${this.parent || ''}</td>
+			<td>
+				${this.parents.length ? this.parents.reverse().map(d => `
+					<a href="/dashboard/${d.id}" target="_blank">${d.name}</a>
+					<span class="NA">#${d.id}</span>
+				`).join(' &rsaquo; ') : ''}
+			</td>
 			<td>${this.icon || ''}</td>
 			<td>${this.order || ''}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			<td class="action green">Edit</td>
+			<td class="action red">Delete</td>
 		`;
 
 		this.container.querySelector('.green').on('click', () => {
@@ -306,5 +379,32 @@ class DashboardsDashboard {
 		this.container.querySelector('.red').on('click', async() => this.delete());
 
 		return this.container;
+	}
+
+	get parents() {
+
+		if(this.parentsList)
+			return this.parentsList;
+
+		this.parentsList = [];
+
+		const seen = [];
+
+		let parent = this.parent;
+
+		while(parent) {
+
+			if(!this.page.list.has(parent) || seen.includes(parent))
+				break;
+
+			const parentDashboard = this.page.list.get(parent);
+
+			this.parentsList.push(parentDashboard);
+			seen.push(parentDashboard.id);
+
+			parent = parentDashboard.parent;
+		}
+
+		return this.parentsList;
 	}
 }

@@ -141,7 +141,7 @@ class API {
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
 
-					throw new API.Exception(401, 'User Not Authenticated! :(');
+					throw new API.Exception(401, 'User Not Authenticated!');
 				}
 
 				const result = await obj[path.split(pathSeparator).pop()]();
@@ -184,7 +184,7 @@ class API {
 						e.message = JSON.parse(e.message);
 					}
 					e.status = e.message.status || 400;
-					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "Something went wrong! :(");
+					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "Something went wrong!");
 				}
 
 				if (!(e instanceof Error)) {

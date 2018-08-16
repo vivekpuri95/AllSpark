@@ -164,7 +164,7 @@ main .data-source.flush {
 				padding: 4px 0;
 				width: 12px;
 			}
-			main .data-source > header .actions a {
+			main .data-source > header .actions a:not(.show) {
 				opacity: 0;
 				transition: opacity var(--transition-duration);
 			}
@@ -951,6 +951,10 @@ main .data-source.flush {
 .visualization .container > svg .axis line {
 	fill: none;
 	stroke: #ddd;
+}
+.visualization.dualaxisbar .container > svg .axis path,
+.visualization.dualaxisbar .container > svg .axis line {
+	display: none;
 }
 
 .visualization .container > svg .y path {

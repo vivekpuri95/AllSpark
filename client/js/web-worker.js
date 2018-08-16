@@ -12,7 +12,7 @@ self.onmessage = async function(e) {
 		message.response = await dataStreamWorker.load(e.data.request);
 
 	else
-		throw 'Invalid Web Worker action! :(';
+		throw 'Invalid Web Worker action!';
 
 	self.postMessage(message);
 }

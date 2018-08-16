@@ -23,7 +23,7 @@ main #form .report {
 			max-width: inherit;
 		}
 			main #form #format .ace_editor {
-				height: 500px;
+				height: 250px;
 				margin: 0;
 			}
 

@@ -17,7 +17,7 @@ exports.insert = class extends API {
 		}
 
 		return await this.mysql.query(
-			`INSERT INTO 
+			`INSERT INTO
 				tb_users (account_id, email, first_name, last_name, middle_name, password)
 			VALUES
 				(?, ?, ?, ?, ?, ?)
@@ -101,7 +101,7 @@ exports.list = class extends API {
 			db = dbConfig.write.database.concat('_logs'),
 			user_query = `
 				SELECT
-					u.*, 
+					u.*,
 					max(s.created_at + INTERVAL 330 MINUTE) AS last_login
 				FROM
 					tb_users u
@@ -337,7 +337,7 @@ exports.changePassword = class extends API {
 
 		}
 
-		throw new API.Exception(400, 'Old Password does not match! :(');
+		throw new API.Exception(400, 'Old Password does not match!');
 	}
 }
 

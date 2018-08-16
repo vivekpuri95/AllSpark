@@ -150,8 +150,8 @@ router.get('/account-signup', API.serve(class extends HTMLAPI {
 
 		super();
 
-		this.stylesheets.push('/css/accountSignup.css');
-		this.scripts.push('/js/accountSignup.js');
+		this.stylesheets.push('/css/account-signup.css');
+		this.scripts.push('/js/account-signup.js');
 	}
 
 	async main() {
@@ -649,7 +649,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 
 	async main() {
 		return `
-			<section class="section show" id="list">
+			<section class="section" id="list">
 
 				<h1>Dashboard Manager</h1>
 
@@ -670,7 +670,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 						<tr>
 							<th class="thin">ID</th>
 							<th>Name</th>
-							<th>Parent</th>
+							<th>Parents</th>
 							<th>Icon</th>
 							<th>Order</th>
 							<th class="action">Edit</th>
@@ -717,7 +717,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 				</form>
 
 				<h2 class="share-heading">Share dashboards</h2>
-				<div id="share-dashboards" class="NA">You can share dashboards after adding one.</div>
+				<div id="share-dashboards"></div>
 			</section>
 		`;
 	}
@@ -1098,14 +1098,14 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/users/:id?', API.serve(class extends HTMLAPI {
+router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
 		super();
 
-		this.stylesheets.push('/css/users.css');
-		this.scripts.push('/js/users.js');
+		this.stylesheets.push('/css/users-manager.css');
+		this.scripts.push('/js/users-manager.js');
 	}
 
 	async main() {
@@ -1117,24 +1117,24 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 				<header class="toolbar">
 					<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
 				</header>
-                
+
                 <form class="user-search block form">
-                    
+
                     <label>
                         <span>Id</span>
                         <input type="number" name="user_id" step="1" min="0">
                     </label>
-                    
+
                     <label>
                         <span>Name</span>
                         <input type="text" name="name">
                     </label>
-                    
+
                     <label>
                         <span>Email</span>
                         <input type="text" name="email">
                     </label>
-                    
+
                     <label>
                         <span>Search by</span>
                         <select name="search_by" value="category">
@@ -1143,19 +1143,19 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
                             <option value="privilege">Privilege</option>
                         </select>
                     </label>
-                    
+
                     <label class="category">
                         <span>Category</span>
                     </label>
-                    
+
                     <label class="hidden role">
                         <span>Role</span>
                     </label>
-                    
+
                     <label class="hidden privilege">
                         <span>Privilege</span>
                     </label>
-                    
+
                     <label>
                         <span></span>
                         <button type="submit">Apply</button>
@@ -1275,14 +1275,14 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/connections/:id?', API.serve(class extends HTMLAPI {
+router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
 		super();
 
-		this.stylesheets.push('/css/connections.css');
-		this.scripts.push('/js/connections.js');
+		this.stylesheets.push('/css/connections-manager.css');
+		this.scripts.push('/js/connections-manager.js');
 	}
 
 	async main() {
@@ -1370,7 +1370,7 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 				</form>
 
 				<h2 class="share-heading">Share connections</h2>
-				<div id="share-connections" class="NA">You can share connections after adding one.</div>
+				<div id="share-connections"></div>
 			</section>
 		`;
 	}

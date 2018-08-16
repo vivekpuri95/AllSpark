@@ -110,6 +110,7 @@ exports.update = class extends API {
 	async update() {
 
 		const authResponse = await auth.connection(this.request.body.id, this.user);
+
 		this.assert(!authResponse.error, authResponse.message);
 
 		let id = this.request.body['id'];
