@@ -251,7 +251,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('report', this.user.roles[0].category_id);
+		this.user.privilege.needs('report', this.request.body.subtitle);
 
 		let
 			values = {}, query_cols = [
