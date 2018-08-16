@@ -2487,7 +2487,7 @@ class FormatSQL {
 		];
 
 		for(const keyword of keywords)
-			this.query = this.query.replace(new RegExp(`\\n\\s*${keyword}\\s`, 'g'), ' ' + keyword);
+			this.query = this.query.replace(new RegExp(`\\n\\s*${keyword}`, 'g'), ' ' + keyword);
 
 		/**
 		 * FROM
