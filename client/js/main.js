@@ -2514,12 +2514,15 @@ class FormatSQL {
 
 			for(let line of this.query.split('\n')) {
 
+				const depth = Math.max(line.match(/\s*/)[0].split('\t').length - 1, 0);
+
 				if(select) {
-					line = line.replace(/,(?![^()]*\))/ig, ',\n');
-					start = false;
+					line = line.replace(/,\s/ig, ',');
+					line = line.replace(/,(?![^()]*\))/ig, ',\n' + '\t'.repeat(depth));
+					select = false;
 				}
 
-				if(line.trim().toLowerCase() == 'start')
+				if(line.trim().toLowerCase() == 'select')
 					select = true;
 
 				result.push(line);
