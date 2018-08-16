@@ -2017,6 +2017,13 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
 				exec: () => this.stage.preview(),
 			});
+
+			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
+				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
+			});
 		});
 	}
 
@@ -2072,6 +2079,13 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 				name: 'execute',
 				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
 				exec: () => this.stage.preview(),
+			});
+
+			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
+				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
 			});
 		});
 	}
@@ -2129,6 +2143,13 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
 				exec: () => this.stage.preview(),
 			});
+
+			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
+				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
+			});
 		});
 	}
 
@@ -2184,6 +2205,13 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 				name: 'execute',
 				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
 				exec: () => this.stage.preview(),
+			});
+
+			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
+				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
 			});
 		});
 	}

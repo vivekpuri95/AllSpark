@@ -304,6 +304,7 @@ main .data-source.flush {
 		padding: 10px;
 		user-select: text;
 		font-family: monospace;
+		white-space: pre;
 		max-height: 100%;
 		overflow: auto;
 		border-top: 1px solid #ccc;

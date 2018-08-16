@@ -1053,7 +1053,7 @@ class API extends AJAX {
 
 		const response = await AJAX.call(endpoint, parameters, options);
 
-		if(response.status)
+		if(response && response.status)
 			return response.data;
 
 		else
@@ -2343,6 +2343,161 @@ class SnackBar {
 				SnackBar.container[this.position].classList.add('hidden');
 
 		}, Page.transitionDuration);
+	}
+}
+
+class FormatSQL {
+
+	constructor(query) {
+
+		this.query = ' ' + query;
+
+		this.deflate();
+		this.newLines();
+		this.indentBrackets();
+		this.indentSections();
+		this.rollUp();
+	}
+
+	deflate() {
+
+		this.query = this.query.replace(/\s+/g, ' ');
+	}
+
+	newLines() {
+
+		const keywords = [
+			'\\)',
+			'SELECT',
+			'FROM',
+			'WHERE',
+			'LEFT JOIN',
+			'RIGHT JOIN',
+			'INNER JOIN',
+			'JOIN',
+			'GROUP BY',
+			'ORDER BY',
+			'LIMIT',
+			'ON',
+			'AND',
+			'OR',
+		];
+
+		this.query = this.query.replace(/\s\(\s/g, ' (\n');
+		this.query = this.query.replace(/\n\(\s/g, '\n(\n');
+
+		for(const keyword of keywords) {
+
+			if(keyword == 'JOIN')
+				this.query = this.query.replace(/(LEFT JOIN|RIGHT JOIN|INNER JOIN)/ig, (a, b) => b.replace(' ', '-'));
+
+			this.query = this.query.replace(new RegExp(`\\s${keyword}\\s`, 'ig'), `\n${keyword.replace('\\', '')}\n`);
+
+			if(keyword == 'JOIN')
+				this.query = this.query.replace(/(LEFT-JOIN|RIGHT-JOIN|INNER-JOIN)/ig, (a, b) => b.replace('-', ' '));
+		}
+	}
+
+	indentBrackets() {
+
+		const result = [];
+
+		let indent = 0;
+
+		for(let line of this.query.split('\n')) {
+
+			line = line.trim();
+
+			if(!line)
+				continue;
+
+			if(line == ')')
+				indent = Math.max(0, indent - 1);
+
+			line = '\t'.repeat(indent) + line;
+
+			if(line.endsWith('('))
+				indent++;
+
+			result.push(line);
+		}
+
+		this.query = result.join('\n');
+	}
+
+	indentSections() {
+
+		const
+			result = [],
+			keywords = [
+				'SELECT',
+				'FROM',
+				'WHERE',
+				'LEFT JOIN',
+				'RIGHT JOIN',
+				'INNER JOIN',
+				'JOIN',
+				'ORDER BY',
+				'GROUP BY',
+				'LIMIT',
+			];
+
+		let
+			indent = false,
+			depth = 0;
+
+		for(let line of this.query.split('\n')) {
+
+			if(line.trim() == ')')
+				depth = Math.max(0, depth - 1);
+
+			line = '\t'.repeat(depth)  + line;
+
+			if(line.endsWith('(') && indent) {
+				depth++;
+			}
+
+			if(keywords.includes(line.trim()))
+				indent = true;
+
+			else if(indent)
+				line = '\t' + line
+
+			result.push(line);
+		}
+
+		this.query = result.join('\n');
+	}
+
+	rollUp() {
+
+		/**
+		 * foo = bar
+		 * AND
+		 * foo = bar
+		 *
+		 * truns into:
+		 *
+		 * foo = bar AND
+		 * foo = bar
+		 */
+		const keywords = [
+			'AND',
+			'OR',
+		];
+
+		for(const keyword of keywords)
+			this.query = this.query.replace(new RegExp(`\\n\\s*${keyword}\s`, 'g'), ' ' + keyword);
+
+		/**
+		 * FROM
+		 * 	(
+		 *
+		 * turns into
+		 *
+		 * FROM (
+		 */
+		this.query = this.query.replace(/\n(\s*)FROM\n\s*\(\n/gi, (a, b) => `\n${b}FROM (\n`);
 	}
 }
 
