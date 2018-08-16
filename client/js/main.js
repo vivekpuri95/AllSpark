@@ -2498,6 +2498,35 @@ class FormatSQL {
 		 * FROM (
 		 */
 		this.query = this.query.replace(/\n(\s*)FROM\n\s*\(\n/gi, (a, b) => `\n${b}FROM (\n`);
+
+		/**
+		 * foo, bar, baz(a, b)
+		 *
+		 * turns to
+		 *
+		 * foo,
+		 * bar,
+		 * baz(a, b)
+		 */
+		{
+			const result = [];
+			let select = false;
+
+			for(let line of this.query.split('\n')) {
+
+				if(select) {
+					line = line.replace(/,(?![^()]*\))/ig, ',\n');
+					start = false;
+				}
+
+				if(line.trim().toLowerCase() == 'start')
+					select = true;
+
+				result.push(line);
+			}
+
+			this.query = result.join('\n');
+		}
 	}
 }
 
