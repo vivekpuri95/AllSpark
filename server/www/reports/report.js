@@ -5,6 +5,7 @@ const auth = require('../../utils/auth');
 const role = new (require("../object_roles")).get();
 const reportHistory = require('../../utils/reportLogs');
 const constants = require("../../utils/constants");
+const dbConfig = require('config').get("sql_db");
 
 exports.list = class extends API {
 
@@ -204,13 +205,15 @@ exports.update = class extends API {
 
 			if (query_cols.includes(key)) {
 
-				values[key] = this.request.body[key];
-				compareJson[key] = updatedRow[key] ? typeof updatedRow[key] == "object" ? updatedRow[key] : updatedRow[key].toString() : '';
+				values[key] = this.request.body[key] || null;
+				compareJson[key] = updatedRow[key] == null || updatedRow[key] === '' ? null : updatedRow[key].toString();
 			}
 		}
 
-		if(JSON.stringify(compareJson) == JSON.stringify(values))
-			return;
+		if(JSON.stringify(compareJson) == JSON.stringify(values)) {
+
+			return "0 rows affected";
+		}
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;
 
@@ -230,6 +233,7 @@ exports.update = class extends API {
 		const
 			updateResponse =  await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write'),
 			logs = {
+				query_id: updatedRow.query_id,
 				owner: 'query',
 				owner_id: this.request.body.query_id,
 				value: JSON.stringify(updatedRow),
@@ -287,6 +291,31 @@ exports.insert = class extends API {
 		return await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'write');
 	}
 };
+
+exports.logs = class extends API {
+
+	async logs() {
+
+		const db = dbConfig.write.database.concat('_logs');
+
+		return await this.mysql.query(`
+			SELECT 
+				h.*,
+				CONCAT_WS(' ', first_name, middle_name, last_name) AS user_name
+			FROM 
+				${db}.tb_report_history h
+			LEFT JOIN
+				tb_users u
+			ON 
+				h.updated_by = u.user_id
+			WHERE 
+				owner = ? 
+				AND h.account_id = ? 
+				AND owner_id = ?`,
+			[this.request.body.owner, this.account.account_id, this.request.body.query_id]
+		);
+	}
+}
 
 exports.userPrvList = class extends API {
 

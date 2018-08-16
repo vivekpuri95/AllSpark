@@ -48,14 +48,17 @@ exports.update = class extends API {
 			}
         }
 
-		if(JSON.stringify(compareJson) == JSON.stringify(values))
-			return;
+		if(JSON.stringify(compareJson) == JSON.stringify(values)) {
+
+        	return "0 rows affected";
+		}
 
         values.default_value = values.default_value || '';
 
         const
             updateResponse = await this.mysql.query('UPDATE tb_query_filters SET ? WHERE filter_id = ?', [values, this.request.body.filter_id], 'write'),
             logs = {
+				query_id: filterQuery.query_id,
                 owner: 'filter',
                 owner_id: this.request.body.filter_id,
                 value: JSON.stringify(filterQuery),
@@ -82,6 +85,7 @@ exports.delete = class extends API {
         const
             deleteResponse = await this.mysql.query('DELETE FROM tb_query_filters WHERE filter_id = ?', [this.request.body.filter_id], 'write'),
             logs = {
+				query_id: filterQuery.query_id,
                 owner: 'filter',
                 owner_id: this.request.body.filter_id,
                 value: JSON.stringify(filterQuery),

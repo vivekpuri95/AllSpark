@@ -97,7 +97,6 @@ exports.list = class extends API {
 			results,
 			roles = {},
 			privileges = {},
-			last_login = {},
 			db = dbConfig.write.database.concat('_logs'),
 			user_query = `
 				SELECT
