@@ -194,16 +194,10 @@ class Session {
 
 	process(reports, errors) {
 
-		const
-			logs = reports.concat(errors),
-			list = new Set;
+		let logs = reports.concat(errors);
+		const list = new Set;
 
-		logs.sort((a,b) => {
-
-			const
-				first = a.created_at,
-				second = b.created_at;
-		});
+		logs = logs.sort((a, b) => a.created_at - b.created_at);
 
 		for(const data of logs) {
 
@@ -287,7 +281,8 @@ class ReportContainer {
 			<div class="icon"><i class="far fa-file"></i></div>
 			<div class="details">
 				<div class="title">
-					<span class="report-name">${DataSource.list.get(this.query_id).name}</span><div class="NA"> #${this.id}</div>
+					<span cla
+						ss="report-name">${DataSource.list.get(this.query_id).name}</span><div class="NA"> #${this.id}</div>
 				</div>
 				<div class="extra-info">
 					<span>Execution time: ${this.response_time}</span>
