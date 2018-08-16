@@ -447,7 +447,7 @@ body {
 			transition: var(--transition-duration);
 		}
 		main table tbody tr:nth-child(2n) {
-			/* background: #efefef; */
+			 background: #efefef;
 		}
 		main table tbody tr:hover,
 		main table tbody tr.selected {
@@ -819,9 +819,8 @@ body {
 			}
 		.query-history .info .code-editor {
 			height: 100%;
-		}	.report-history .info h3 {
+		}
 
-	}
 .snack-bar-container {
 	display: grid;
 	grid-gap: 15px;
