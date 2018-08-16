@@ -7674,6 +7674,8 @@ class ReportLogs extends Set{
 
 		this.report = report;
 		this.page = page;
+		this.offset = 0;
+		this.previousSize = 0;
 	}
 
 	get container() {
@@ -7686,7 +7688,10 @@ class ReportLogs extends Set{
 		container.classList.add('query-history');
 
 		container.innerHTML = `
-			<div class="list"></div>
+			<div class="list">
+				<ul></ul>
+				<span class="more">Load more...</span>
+			</div>
 			<div class="info hidden">
 				<div class="toolbar">
 					<button type="button"><i class="fa fa-arrow-left"></i> Back</button>
@@ -7703,16 +7708,23 @@ class ReportLogs extends Set{
 			container.querySelector('.info').classList.add('hidden');
 		});
 
+		container.querySelector('.list .more').on('click', async () => {
+
+			await this.load();
+		});
 
 		return container;
 	}
 
 	async load() {
 
+		this.offset = this.size;
+
 		const
 			parameters = {
 				query_id: this.report.query_id,
-				owner: 'query'
+				owner: 'query',
+				offset: this.offset,
 			},
 			options = {
 				method: 'POST'
@@ -7729,28 +7741,30 @@ class ReportLogs extends Set{
 
 	render() {
 
-		const listDiv = this.container.querySelector('.list');
+		if(this.previousSize == this.size) {
 
-		listDiv.textContent = null;
-
-		listDiv.innerHTML = '<h3>Query History</h3>';
-
-		if(!this.size) {
-
-			listDiv.insertAdjacentHTML('beforeend', '<div class="NA">No logs</div>');
+			this.container.querySelector('.list .more').classList.add('hidden');
 			return;
 		}
 
-		const logList = document.createElement('ul');
-		logList.classList.add("block");
+		const logList = this.container.querySelector('.list ul');
+
+		logList.textContent = null;
+
+		if(!this.size) {
+
+			logList.insertAdjacentHTML('beforeend', '<div class="NA">No logs</div>');
+			this.container.querySelector('.list .more').classList.add('hidden');
+			return;
+		}
+
+		this.container.querySelector('.list .more').classList.remove('hidden');
+		this.previousSize = this.size;
 
 		for(const log of this.values()) {
 
 			logList.appendChild(log.container);
 		}
-
-		listDiv.appendChild(logList);
-
 	}
 
 	toggleHide() {
@@ -7778,9 +7792,11 @@ class ReportLog {
 
 		const container = this.containerElement = document.createElement('li');
 
+		container.classList.add('block');
+
 		container.innerHTML = `
 			<span class="timing">${Format.dateTime(this.created_at)}</span>
-			<span class="footer">${this.user_name}</span>
+			<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a>
 		`;
 
 		return container;
@@ -7793,7 +7809,11 @@ class ReportLog {
 		logInfoDiv.classList.remove('hidden');
 		this.logs.container.querySelector('.list').classList.add('hidden');
 
-		logInfoDiv.querySelector('.toolbar span').textContent =  Format.dateTime(this.created_at);
+		logInfoDiv.querySelector('.toolbar span').innerHTML =  `
+			<span>
+				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
+			</span>
+		`;
 	}
 }
 

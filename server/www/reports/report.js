@@ -311,8 +311,9 @@ exports.logs = class extends API {
 			WHERE 
 				owner = ? 
 				AND h.account_id = ? 
-				AND owner_id = ?`,
-			[this.request.body.owner, this.account.account_id, this.request.body.query_id]
+				AND owner_id = ?
+			LIMIT 10 OFFSET ?`,
+			[this.request.body.owner, this.account.account_id, this.request.body.query_id, parseInt(this.request.body.offset)]
 		);
 	}
 }
