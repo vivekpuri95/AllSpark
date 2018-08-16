@@ -12,6 +12,7 @@ const mongo = require("../utils/mongo");
 
 	await account.loadAccounts();
 	await account.loadBigquery();
+	account.executingQueriesMap();
 	await api.setup();
 	await mysql.crateExternalPool();
 	await mssql.crateExternalPool();
