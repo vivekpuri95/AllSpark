@@ -9,7 +9,7 @@ exports.adminRole = [0];
 exports.adminPrivilege = [0];
 
 exports.privilege = {
-	administrator: "admin",
+	administrator: "Everything",
 	user: "user",
 	connection: "connection",
 	dashboard: "dashboard",
