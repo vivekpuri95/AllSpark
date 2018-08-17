@@ -5,12 +5,25 @@ exports.toggle = class extends API {
 
 		this.user.privilege.needs('administrator');
 
+		const [account] = await this.mysql.query(
+			'SELECT account_id FROM tb_accounts WHERE account_id = ? AND status = 1',
+			[this.request.body.account_id]
+		);
+
+		if(!account)
+			throw new API.Exception(400, 'Invalid account ID');
+
+		const [feature] = await this.mysql.query(
+			'SELECT feature_id FROM tb_features WHERE feature_id = ?',
+			[this.request.body.feature_id]
+		);
+
+		if(!feature)
+			throw new API.Exception(400, 'Invalid feature ID');
+
 		return await this.mysql.query(`
-			INSERT INTO tb_account_features(account_id, feature_id)
-			SELECT ?,? FROM dual WHERE ? IN (SELECT account_id FROM tb_accounts) AND ? IN (SELECT feature_id FROM tb_features)
-			ON DUPLICATE KEY UPDATE status = ?;
-			`,
-			[this.request.body.account_id, this.request.body.feature_id, this.request.body.account_id, this.request.body.feature_id, this.request.body.status],
+			INSERT INTO tb_account_features(account_id, feature_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE status = ?`,
+			[this.request.body.account_id, this.request.body.feature_id, this.request.body.status],
 			'write'
 		);
 	}
