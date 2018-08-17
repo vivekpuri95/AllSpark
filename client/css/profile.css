@@ -117,12 +117,17 @@ main .sessions-list .list {
 	main article.active {
 		box-shadow: inset -6px 0 0px #02d40e;
 	}
+	main article > header {
+		box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
+		z-index: 1;
+	}
 	main article header {
 		display: grid;
 		grid-template-columns: 50px 1fr;
 		padding: calc(var(--gap) * 2);
-		box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
-		z-index: 1;
+		position: sticky;
+		top: 0;
+		background: #fff;
 	}
 		main header .icon,
 		main .activities .icon {
@@ -142,6 +147,9 @@ main .sessions-list .list {
 			display: grid;
 			grid-gap: var(--gap);
 		}
+		main header .details:hover {
+			cursor: pointer;
+		}
 			main header .details .title,
 			main .activities .details .title {
 				display: flex;
@@ -150,10 +158,18 @@ main .sessions-list .list {
 				font-size: 125%;
 				color: #333;
 			}
+				main header .details .title span,
+				main .activities .details .title span {
+					margin-right: var(--gap);
+				}
 				main header .details .title .down {
 					margin-left: auto;
 					transition: transform var(--transition-duration);
 				}
+			main .activity-list {
+				border-top: 1px solid #ddd;
+				border-bottom: 1px solid #ddd;
+			}
 			main .activities .details .extra-info,
 			main .activities .details .extra-info,
 			main header .details .device-info {
@@ -170,8 +186,8 @@ main .sessions-list .list {
 				}
 	main article .activities {
 		display: grid;
-		max-height: 300px;
-		overflow: auto;
+		 max-height: 300px;
+		 overflow: auto;
 		background-color: #fff;
 	}
 		main .activities .activity {
@@ -181,6 +197,7 @@ main .sessions-list .list {
 			transition: box-shadow var(--transition-duration),
 						background var(--transition-duration);
 			border-bottom: 1px solid #eee;
+			font-size: 90%;
 		}
 		main .activities .activity:hover {
 			cursor: pointer;
@@ -190,7 +207,9 @@ main .sessions-list .list {
 				font-size: 125%;
 			}
 			main .activities .report-name {
-				margin-right: calc(var(--gap) * 2);
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				grid-gap: calc(var(--gap) * 2);
 			}
 			main .activities .details {
 				display: grid;
@@ -198,8 +217,33 @@ main .sessions-list .list {
 			}
 			main .activities .details .title {
 				font-size: 110%;
+				text-transform: capitalize;
 			}
 			main .activities .details .extra-info span:last-child,
 			main .activities .details .extra-info span:last-child {
 				margin-left: auto;
 			}
+
+main .activity-popup {
+	padding: calc(var(--gap) * 2);
+	display: grid;
+	grid-template-columns: max-content 1fr;
+}
+	main .activity-popup .key {
+		color: #999;
+		text-transform: capitalize;
+	}
+	main .activity-popup .value {
+		color: #666;
+	}
+	main .activity-popup .key,
+	main .activity-popup .value {
+		margin: var(--gap);
+	}
+ 	main .activity-popup .json {
+ 		max-height: 150px;
+ 		overflow: auto;
+		margin: 0;
+		background: #eee;
+ 		padding: 10px;
+ 	}

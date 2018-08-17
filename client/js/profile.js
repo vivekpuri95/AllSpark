@@ -186,30 +186,54 @@ class Session {
 		const reports = await API.call('reports/logs/log', parameters, options);
 		const errors = await API.call('errors/list', parameters, options);
 
-		this.reportsCount = reports.length;
-		this.errorsCount = errors.length;
-
-		this.sortedActivity = this.process(reports, errors);
+		this.process(reports, errors);
 	}
 
 	process(reports, errors) {
 
-		let logs = reports.concat(errors);
-		const list = new Set;
+		for(const report of reports)
+			report.type = 'report';
 
-		logs = logs.sort((a, b) => a.created_at - b.created_at);
+		for(const error of errors)
+			error.type = 'error';
 
-		for(const data of logs) {
+		this.reportsCount = reports.length;
+		this.errorsCount = errors.length;
 
-			if(data.result_query) {
-				list.add(new ReportContainer(data));
+		const groupedActivity = this.groupedActivity(reports, errors);
+
+		this.activityGroups = new ActivityGroups(groupedActivity);
+	}
+
+	groupedActivity(reports, errors) {
+
+		let activity = reports.concat(errors);
+
+		activity = activity.sort((a, b) => a.created_at - b.created_at);
+
+		const groupedList = [];
+
+		for(const i in activity) {
+			const value = [];
+
+			value.push(activity[i]);
+
+			for(const j in activity) {
+				if(parseInt(j) <= parseInt(i))
+					continue;
+
+				if(activity[j].type == activity[i].type) {
+					value.push(activity[j])
+				}
+				else
+					break;
 			}
-			else {
-				list.add(new ErrorContainer(data));
-			}
+
+			if((groupedList.length && value[0].type != groupedList[groupedList.length -1][0].type) || !parseInt(i))
+				groupedList.push(value);
 		}
 
-		return list;
+		return groupedList;
 	}
 
 	get container() {
@@ -254,19 +278,123 @@ class Session {
 		container.querySelector('.details').on('click', () => {
 			container.querySelector('.activities').classList.toggle('hidden');
 			container.querySelector('.down').classList.toggle('angle-rotate');
-		});
 
-		for(const element of this.sortedActivity)
-			container.querySelector('.activities').appendChild(element.container);
+			container.querySelector('.activities').appendChild(this.activityGroups.container);
+		});
 
 		return container;
 	}
 }
 
-class ReportContainer {
+class ActivityGroups extends Set {
 
-	constructor(report) {
-		Object.assign(this, report)
+	constructor(activityGroups) {
+
+		super();
+
+		for(const activityGroup of activityGroups) {
+			this.add(new ActivityGroup(activityGroup))
+		}
+	}
+
+	render() {
+
+		const container = this.container;
+
+		for(const activityGroup of this)
+			container.appendChild(activityGroup.container);
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('activityGroups');
+
+		this.render();
+
+		return container;
+	}
+}
+
+class ActivityGroup extends Set {
+
+	constructor(activityGroup) {
+
+		super();
+
+		for(const activity of activityGroup) {
+			this.add(new Activity(activity));
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('activity-group');
+
+		const icon = Array.from(this)[0].type == 'report' ? 'far fa-file' : 'fas fa-exclamation';
+		container.innerHTML = `
+			<header>
+				<div class="icon"><i class="${icon}"></i></div>
+				<div class="details">
+					<div class="title">
+						<span>${this.size}</span><span>${Array.from(this)[0].type}</span>
+
+						<div class="down">
+							<i class="fas fa-angle-right"></i>
+						</div>
+					</div>
+
+					<div class="extra-info">
+						${Format.dateTime(Array.from(this)[0].created_at)} - ${Format.dateTime(Array.from(this)[this.size - 1].created_at)}
+					</div>
+				</div>
+			</header>
+
+			<div class="activity-list hidden"></div>
+		`;
+
+
+		container.querySelector('.details').on('click', () => {
+
+			container.querySelector('.activity-list').classList.toggle('hidden');
+
+			container.querySelector('.down').classList.toggle('angle-rotate');
+
+			for(const activity of this)
+				container.querySelector('.activity-list').appendChild(activity.container);
+		});
+
+		return container;
+	}
+}
+
+class Activity {
+
+	constructor(data) {
+
+		Object.assign(this, data);
+
+		if(data.result_query) {
+			this.activityType = new ActivityReport(data);
+		}
+		else {
+			this.activityType = new ActivityError(data);
+		}
+	}
+
+	render() {
+
+		const container = this.container;
+
+			container.querySelector('.title').appendChild(this.activityType.name);
+			container.querySelector('.extra-info').innerHTML = this.activityType.extraInfo;
 	}
 
 	get container() {
@@ -278,50 +406,155 @@ class ReportContainer {
 		container.classList.add('activity', 'report');
 
 		container.innerHTML = `
-			<div class="icon"><i class="far fa-file"></i></div>
+			<div class=""></div>
 			<div class="details">
-				<div class="title">
-					<span cla
-						ss="report-name">${DataSource.list.get(this.query_id).name}</span><div class="NA"> #${this.id}</div>
-				</div>
-				<div class="extra-info">
-					<span>Execution time: ${this.response_time}</span>
-					<span>${Format.dateTime(this.created_at)}</span>
-				</div>
+				<div class="title"></div>
+
+				<div class="extra-info"></div>
 			</div>
+		`;
+
+		const dialogueBox = new DialogBox();
+
+		dialogueBox.heading = this.type;
+		dialogueBox.body.classList.add('activity-popup');
+
+		for(const key of this.activityType.keys) {
+
+			const span = document.createElement('span');
+			span.classList.add('key');
+			span.textContent = `${key}:`;
+
+			dialogueBox.body.appendChild(span);
+
+			try {
+				const value = JSON.parse(this[key]);
+
+				if(typeof value == 'object') {
+
+					const pre = document.createElement('pre');
+					pre.classList.add('value', 'json');
+					pre.textContent = JSON.stringify(value, 0, 4);
+
+					dialogueBox.body.appendChild(pre);
+				}
+				else {
+
+					const span = document.createElement('span');
+					span.classList.add('value');
+					span.textContent = this[key];
+
+					dialogueBox.body.appendChild(span);
+				}
+			}
+			catch(e) {
+
+				const span = document.createElement('span');
+					span.classList.add('value');
+					span.textContent = this[key];
+
+					dialogueBox.body.appendChild(span);
+			}
+		}
+
+		container.querySelector('.details').on('click', () => {
+
+			dialogueBox.show();
+		});
+
+		this.render();
+
+		return container;
+	}
+}
+
+class ActivityReport {
+
+	constructor(report) {
+		Object.assign(this, report)
+	}
+
+	get icon() {
+
+		if(this.iconElement)
+			return this.iconElement;
+
+		const i = this.iconElement = document.createElement('i');
+		i.classList.add('far', 'fa-file');
+
+		return i;
+	}
+
+	get name() {
+
+		if(this.nameElement)
+			return this.nameElement;
+
+		const span = this.nameElement = document.createElement('span');
+		span.classList.add('report-name');
+		span.innerHTML = `
+
+			${DataSource.list.get(this.query_id).name}<div class="NA"> #${this.id}</div>
+		`;
+
+		return span;
+	}
+
+	get keys() {
+
+		return ['user_id','session_id', 'query_id', 'response_time', 'rows', 'result_query'];
+	}
+
+	get extraInfo() {
+
+		const container =  `
+			<span>Execution time: ${this.response_time}</span>
+			<span>${Format.dateTime(this.created_at)}</span>
 		`;
 
 		return container;
 	}
 }
 
-class ErrorContainer {
+class ActivityError {
 
 	constructor(error) {
 		Object.assign(this, error)
 	}
 
-	get container() {
+	get keys() {
 
-		if(this.containerElement)
-			return this.containerElement;
+		return ['user_id', 'session_id', 'status', 'message', 'description'];
+	}
 
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('activity', 'error');
+	get icon() {
 
-		container.innerHTML = `
-			<div class="icon"><i class="fas fa-exclamation"></i></div>
+		if(this.iconElement)
+			return this.iconElement;
 
-			<div class="details">
-				<div class="title">
-					Error
-				</div>
-				<div class="extra-info">
-					<span>Type: ${this.type}</span>
-					<span>Message: ${this.message}</span>
-					<span>${Format.dateTime(this.created_at)}</span>
-				</div>
-			</div>
+		const i = this.iconElement = document.createElement('i');
+		i.classList.add('fas', 'fa-exclamation');
+
+		return i;
+	}
+
+	get name() {
+
+		if(this.nameElement)
+			return this.nameElement;
+
+		const span = this.nameElement = document.createDocumentFragment();
+		span.textContent = 'Error';
+
+		return span;
+	}
+
+	get extraInfo() {
+
+		const container = `
+			<span>Type: ${this.type}</span>
+			<span>Message: ${this.message}</span>
+			<span>${Format.dateTime(this.created_at)}</span>
 		`;
 
 		return container;
