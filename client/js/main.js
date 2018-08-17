@@ -2183,15 +2183,33 @@ class ObjectRoles {
 				target_id: [...this.multiSelect.selectedValues][0],
 				category_id: this.categorySelect.value || null,
 			},
-
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('object_roles/insert', parameters, options);
-		await this.load();
+		try {
 
-		this.render();
+			await API.call('object_roles/insert', parameters, options);
+
+			await this.load();
+
+			this.render();
+
+			new SnackBar({
+				message: `${this.owner} shared with ${this.selectedType.value}`,
+				icon: 'fas fa-share-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete(id) {
@@ -2204,14 +2222,33 @@ class ObjectRoles {
 			parameters = {
 				id: id,
 			},
-
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('object_roles/delete', parameters, options);
-		await this.load();
-		this.render();
+		try {
+
+			await API.call('object_roles/delete', parameters, options);
+
+			await this.load();
+
+			this.render();
+
+			new SnackBar({
+				message: 'Share Revoked',
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	combine() {
@@ -2261,10 +2298,11 @@ class SnackBar {
 	 * @param String	options.message		The message body.
 	 * @param String	options.subtitle	The messgae subtitle.
 	 * @param String	options.type		success (green), warning (yellow), error (red).
+	 * @param String	options.icon		A font awesome name for the snackbar icon.
 	 * @param Number	options.timeout		(Seconds) How long the notification will be visible.
 	 * @param String	options.position	bottom-left (for now).
 	 */
-	constructor({message = null, subtitle = null, type = 'success', timeout = 5, position = 'bottom-left'} = {}) {
+	constructor({message = null, subtitle = null, type = 'success', icon = null, timeout = 5, position = 'bottom-left'} = {}) {
 
 		this.container = document.createElement('div');
 		this.page = window.page;
@@ -2272,6 +2310,7 @@ class SnackBar {
 		this.message = message;
 		this.subtitle = subtitle;
 		this.type = type;
+		this.icon = icon;
 		this.timeout = parseInt(timeout);
 		this.position = position;
 
@@ -2297,17 +2336,20 @@ class SnackBar {
 
 		let icon = null;
 
-		if(this.type == 'success')
-			icon = '<i class="fas fa-check"></i>';
+		if(this.icon)
+			icon = this.icon;
+
+		else if(this.type == 'success')
+			icon = 'fas fa-check';
 
 		else if(this.type == 'warning')
-			icon = '<i class="fas fa-exclamation-triangle"></i>';
+			icon = 'fas fa-exclamation-triangle';
 
 		else if(this.type == 'error')
-			icon = '<i class="fas fa-exclamation-triangle"></i>';
+			icon = 'fas fa-exclamation-triangle';
 
 		this.container.innerHTML = `
-			<div class="icon">${icon}</div>
+			<div class="icon"><i class="${icon}"></i></div>
 			<div class="title">${this.message}</div>
 			<div class="subtitle">${this.subtitle || ''}</div>
 			<div class="close">&times;</div>

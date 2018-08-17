@@ -161,8 +161,9 @@ class DataConnection {
 			connection.edit();
 
 			new SnackBar({
-				message: 'New Connection Added',
-				subtitle: `${connection.connection_name} <span class="NA">#${connection.id}</span> (${connection.feature.name})`,
+				message: `${connection.feature.name} Connection Added`,
+				subtitle: `${connection.connection_name} #${connection.id}`,
+				icon: 'fas fa-plus',
 			});
 
 		} catch(e) {
@@ -295,8 +296,9 @@ class DataConnection {
 			await Sections.show('list');
 
 			new SnackBar({
-				message: 'Connection Saved',
-				subtitle: `${this.name} <span class="NA">#${this.id}</span> (${this.feature.name})`,
+				message: `${this.feature.name} Connection Saved`,
+				subtitle: `${this.name} #${this.id} (${this.feature.name})`,
+				icon: 'far fa-save',
 			});
 
 		} catch(e) {
@@ -331,8 +333,9 @@ class DataConnection {
 			await this.page.load();
 
 			new SnackBar({
-				message: 'Connection removed',
-				subtitle: `${this.name} <span class="NA">#${this.id}</span> (${this.feature.name})`,
+				message: `${this.feature.name} Connection Removed`,
+				subtitle: `${this.name} #${this.id}`,
+				icon: 'far fa-trash-alt',
 			});
 
 		} catch(e) {

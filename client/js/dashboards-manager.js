@@ -209,8 +209,9 @@ class DashboardsDashboard {
 			history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
 
 			new SnackBar({
-				message: 'New Dashboard Added',
-				subtitle: `${DashboardsDashboard.form.name.value} <span class="NA">#${response.insertId}</span>`,
+				message: 'Dashboard Added',
+				subtitle: `${DashboardsDashboard.form.name.value} #${response.insertId}`,
+				icon: 'fas fa-plus',
 			});
 
 		} catch(e) {
@@ -298,7 +299,8 @@ class DashboardsDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Saved',
-				subtitle: `${this.name} <span class="NA">#${this.id}</span>`,
+				subtitle: `${this.name} #${this.id}`,
+				icon: 'far fa-save',
 			});
 
 		} catch(e) {
@@ -334,7 +336,8 @@ class DashboardsDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Deleted',
-				subtitle: `${this.name} <span class="NA">#${this.id}</span>`,
+				subtitle: `${this.name} #${this.id}`,
+				icon: 'far fa-trash-alt',
 			});
 
 		} catch(e) {
