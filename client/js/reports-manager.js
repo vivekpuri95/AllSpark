@@ -1317,7 +1317,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(!this.report.filters.length)
 			tbody.innerHTML = `<tr class="NA"><td colspan="6">No filters added yet!</td></tr>`;
 
-		this.filterForm.datasetMultiSelect.datalist = Array.from(DataSource.list.values()).filter(r => r.query_id != this.report.query_id).map(r => {return {name: r.name, value: r.query_id}});
+		this.filterForm.datasetMultiSelect.datalist = Array.from(DataSource.list.values()).filter(r => r.query_id != this.report.query_id).map(r => {return {name: r.name, value: r.query_id, subtitle: r.subtitle}});
 		this.filterForm.datasetMultiSelect.render();
 	}
 
