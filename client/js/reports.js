@@ -7674,7 +7674,6 @@ class ReportLogs extends Set{
 
 		this.report = report;
 		this.page = page;
-		this.offset = 0;
 		this.previousSize = 0;
 	}
 
@@ -7690,7 +7689,11 @@ class ReportLogs extends Set{
 		container.innerHTML = `
 			<div class="list">
 				<ul></ul>
-				<span class="more">Load more...</span>
+				<span class="more">
+					<i class="fa fa-angle-down"></i>
+					<span>Show more logs</span>
+					<i class="fa fa-angle-down"></i>
+				</span>
 			</div>
 			<div class="info hidden">
 				<div class="toolbar"></div>
@@ -7708,13 +7711,11 @@ class ReportLogs extends Set{
 
 	async load() {
 
-		this.offset = this.size;
-
 		const
 			parameters = {
 				query_id: this.report.query_id,
 				owner: 'query',
-				offset: this.offset,
+				offset: this.size,
 			},
 			options = {
 				method: 'POST'

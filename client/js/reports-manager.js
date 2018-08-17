@@ -886,7 +886,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				return;
 			}
 
-			this.class = QueryLogs;
+			this.class = QueryLog;
 
 			this.reportLogs = new ReportLogs(this.report, this);
 
@@ -969,6 +969,16 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.loadSchema();
 		this.filters();
+
+		if(this.reportLogs) {
+
+			this.reportLogs.report = this.report;
+			this.reportLogs.page = this;
+			this.reportLogs.clear();
+			this.reportLogs.previousSize = 0;
+
+			this.reportLogs.load();
+		}
 
 		this.page.preview.position = 'bottom';
 		this.container.querySelector('#preview-toggle').classList.toggle('selected', !this.page.preview.hidden);
@@ -2007,7 +2017,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 	}
 });
 
-class QueryLogs extends ReportLog {
+class QueryLog extends ReportLog {
 
 	get container() {
 
@@ -2025,7 +2035,9 @@ class QueryLogs extends ReportLog {
 
 		super.load();
 
-		const queryDiv = this.logs.container.querySelector('.info div.block');
+		const
+			queryDiv = this.logs.container.querySelector('.info div.block'),
+			connection = this.logs.page.page.connections.get(parseInt(this.logs.report.connection_name));
 
 		queryDiv.textContent = null;
 		queryDiv.classList.add('query');
@@ -2035,23 +2047,34 @@ class QueryLogs extends ReportLog {
 		}
 		catch(e) {}
 
-		this.editor = new CodeEditor({mode: 'sql'});
+		if(['file', 'mongo'].includes(connection.type)) {
 
-		queryDiv.appendChild(this.editor.container);
+			queryDiv.innerHTML = '<div class="NA">No information found.</div>';
+			return;
+		}
 
-		this.editor.editor.setReadOnly(true);
-		this.editor.editor.setTheme('ace/theme/clouds');
-		this.editor.value = this.value.definition.query || this.query;
+		if(!this.connection) {
+			
+			this.connection = new (ReportConnection.types.get(connection.type))(this.value, this.logs.page);
+		}
+
+		if(this.connection.editor) {
+
+			this.connection.editor.editor.setReadOnly(true);
+			this.connection.editor.editor.setTheme('ace/theme/clouds');
+		}
+
+		queryDiv.appendChild(this.connection.form);
 
 		this.logs.container.querySelector('.info .restore').on('click', () => {
 
-			this.logs.report.connection.editor.value = this.editor.value;
+			this.logs.report.connection.editor.value = this.connection.editor.value;
 		});
 
 		this.logs.container.querySelector('.info .run').on('click', () => {
 
 			this.logs.page.preview({
-				query: this.editor.value
+				query: this.connection.editor.value
 			});
 		});
 	}

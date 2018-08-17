@@ -790,7 +790,7 @@ body {
 				cursor:  pointer;
 			}
 			.query-history ul li:hover {
-				background: #eee;
+				background: #ddd;
 				box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 			}
 				.query-history ul li span {
@@ -802,11 +802,22 @@ body {
 				}
 		.query-history .list .more {
 			display: flex;
-			justify-content: flex-end;
-			padding: calc(var(--gap) * 2);
+			justify-content: center;
+			padding: calc(var(--gap) * 1);
 			color: #999;
 			cursor: pointer;
+			font-size: 90%;
+			background: white;
 		}
+		.query-history .list .more:hover {
+			background: #ddd;
+		}
+		.query-history .list .more:active {
+
+		}
+			.query-history .list .more span {
+				margin: 0 15px;
+			}
 		.query-history .list .more:active {
 			color: #888;
 		}
