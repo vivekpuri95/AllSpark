@@ -4821,17 +4821,20 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.attr('y', cell => this.y(0))
 				.attr('height', () => 0)
 				.transition()
+				.delay((_, i) => (Page.animationDuration / this.x.domain().length) * i)
 				.duration(Page.animationDuration)
-				.ease('quad-in');
+				.ease('exp-out');
 
 			if(values) {
 
 				values = values
 					.attr('y', cell => this.y(0))
-					.attr('height', () => 0)
+					.attr('height', 0)
+					.attr('opacity', 0)
 					.transition()
+					.delay((_, i) => (Page.animationDuration / this.x.domain().length) * i)
 					.duration(Page.animationDuration)
-					.ease('quad-in');
+					.ease('exp-out');
 			}
 		}
 
@@ -4843,7 +4846,8 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 			values
 				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 3)
-				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)))
+				.attr('opacity', 1);
 		}
 	}
 });
@@ -5227,14 +5231,14 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 				.attr('height', () => 0)
 				.attr('y', () => this.height)
 				.transition()
+				.delay((_, i) => (Page.animationDuration / this.bottom.domain().length) * i)
 				.duration(Page.animationDuration)
-				.ease('quad-in');
+				.ease('exp-out');
 		}
 
 		bars
 			.attr('height', cell => this.height - this.left(cell.y))
 			.attr('y', cell => this.left(cell.y));
-
 
 		//graph type line and
 		const
@@ -5258,14 +5262,16 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		const path = this.svg.selectAll('path');
 
 		if(!options.resize) {
+
 			path[0].forEach(path => {
+
 				var length = path.getTotalLength();
 
 				path.style.strokeDasharray = length + ' ' + length;
 				path.style.strokeDashoffset = length;
 				path.getBoundingClientRect();
 
-				path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-in-out`;
+				path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-out`;
 				path.style.strokeDashoffset = '0';
 			});
 		}
@@ -5273,16 +5279,26 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 		// For each line appending the circle at each point
 		for(const column of this.columns.right) {
 
-			this.svg.selectAll('dot')
+			let dots = this.svg.selectAll('dot')
 				.data(column)
 				.enter()
 				.append('circle')
 				.attr('class', 'clips')
-				.attr('id', (_, i) => i)
-				.attr('r', 5)
 				.style('fill', column.color)
 				.attr('cx', d => this.bottom(d.x) + this.axes.left.width + (this.bottom.rangeBand() / 2))
-				.attr('cy', d => this.right(d.y))
+				.attr('cy', d => this.right(d.y));
+
+			if(!options.resize) {
+
+				dots = dots
+					.attr('r', 0)
+					.transition()
+					.delay((_, i) => (Page.animationDuration / this.bottom.domain().length) * i)
+					.duration(0)
+					.ease('exp-out');
+			}
+
+			dots.attr('r', 5);
 		}
 
 		this.zoomRectangle = null;
@@ -5614,17 +5630,20 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 				.attr('height', d => 0)
 				.attr('y', d => this.height)
 				.transition()
+				.delay((_, i) => (Page.animationDuration / this.x.domain().length) * i)
 				.duration(Page.animationDuration)
-				.ease('quad-in');
+				.ease('exp-out');
 
 			if(values) {
 
 				values = values
 					.attr('y', cell => this.y(0))
-					.attr('height', () => 0)
+					.attr('height', 0)
+					.attr('opacity', 0)
 					.transition()
+					.delay((_, i) => (Page.animationDuration / this.x.domain().length) * i)
 					.duration(Page.animationDuration)
-					.ease('quad-in');
+					.ease('exp-out');
 			}
 		}
 
@@ -5636,7 +5655,8 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 			values
 				.attr('y', cell => this.y(cell.y > 0 ? cell.y + cell.y0 : 0) - 3)
-				.attr('height', cell => {return Math.abs(this.y(cell.y + cell.y0) - this.y(0))});
+				.attr('height', cell => {return Math.abs(this.y(cell.y + cell.y0) - this.y(0))})
+				.attr('opacity', 1);
 		}
 	}
 });
@@ -5827,19 +5847,19 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 					else
 						return Format.number(cell.y)
 				})
-				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5)
-				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)));
+				.attr('y', cell => this.y(cell.y > 0 ? cell.y : 0) - 5);
 		}
 
 		if(!options.resize) {
+
 			areas = areas
-				.style('opacity', 0)
+				.attr('opacity', 0)
 				.transition()
 				.duration(Page.animationDuration)
-				.ease("quad-in");
+				.ease("exp-out");
 		}
 
-		areas.style('opacity', 0.8);
+		areas.attr('opacity', 0.8);
 
 		// For each line appending the circle at each point
 		for(const column of this.columns) {
