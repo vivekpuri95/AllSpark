@@ -597,24 +597,12 @@ class SettingsAccount {
 
 		const tr = document.createElement('tr');
 
-		const whiteListElements = ['account_id', 'name', 'icon', 'url', 'logo', 'auth_api'];
-
-		for (const element in this) {
-
-			if (!whiteListElements.includes(element))
-				continue;
-
-			const td = document.createElement('td');
-
-			td.innerHTML = this[element];
-			tr.appendChild(td);
-
-			if (['icon', 'logo'].includes(element)) {
-				td.innerHTML = `<img src=${this[element]} height="30">`
-			}
-		}
-
-		tr.innerHTML += `
+		tr.innerHTML = `
+			<td>${this.account_id}</td>
+			<td>${this.name}</td>
+			<td><a href="http://${this.url}" target="_blank">${this.url}</td>
+			<td><img src="${this.icon}" height="30"></td>
+			<td><img src="${this.logo}" height="30"></td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -645,6 +633,7 @@ class AccountsFeatures {
 		const container = document.createElement('div');
 
 		container.classList.add('feature-form');
+
 		container.innerHTML = `
 
 			<h3>Features</h3>
@@ -660,17 +649,21 @@ class AccountsFeatures {
 					<input id="feature-search" type="text" placeholder="Search..">
 				</label>
 			</div>
-			<table>
-				<thead>
-					<tr>
-						<th class="action">ID</th>
-						<th>Types</th>
-						<th>Name</th>
-						<th>Status</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
+
+			<div class="table-container">
+				<table>
+					<thead>
+						<tr>
+							<th class="action">ID</th>
+							<th>Types</th>
+							<th>Name</th>
+							<th>Slug</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
 		`;
 
 		let list = new Set;
@@ -752,18 +745,22 @@ class AccountsFeature {
 			<td>${this.feature_id}</td>
 			<td>${this.type}</td>
 			<td>${this.name}</td>
-			<td>
-				<select id="status">
-					<option value="1">ON</option>
-					<option value="0">OFF</option>
-				</select>
+			<td>${this.slug}</td>
+			<td class="feature-toggle">
+				<div>
+					<label><input type="radio" name="status-${this.feature_id}" value="1"> Enabled</label>
+					<label><input type="radio" name="status-${this.feature_id}" value="0"> Disabled</label>
+				<div>
 			</td>
 		`;
 
-		const status = tr.querySelector('select#status');
-		status.value =  this.status ? 1 : 0;
+		for(const input of tr.querySelectorAll('input')) {
 
-		status.on('change', async (e) => this.update(e, status.value));
+			if(parseInt(input.value) == this.status)
+				input.checked = true;
+
+			input.on('change', e => this.update(e, parseInt(input.value)));
+		}
 
 		return tr;
 	}
@@ -779,21 +776,17 @@ class AccountsFeature {
 			parameter = {
 				account_id: this.account.account_id,
 				feature_id: this.feature_id,
-				status: status,
+				status,
 			};
 
 		try {
 
 			await API.call('accounts/features/toggle', parameter, options);
 
-			await this.account.page.load();
-
-			await Sections.show('accounts-form');
-
 			new SnackBar({
 				message: `${this.name} Feature ${status ? 'Enabled' : 'Disabled'}`,
 				subtitle: this.type,
-				icon: status ? 'fas fa-check' : 'fas fa-times',
+				icon: status ? 'fas fa-check' : 'fas fa-ban',
 			});
 
 		} catch(e) {

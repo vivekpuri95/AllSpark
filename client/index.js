@@ -1404,12 +1404,11 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 					<table class="block">
 						<thead>
-							<th>Account Id</th>
+							<th>Id</th>
 							<th>Name</th>
 							<th>URL</th>
 							<th>Icon</th>
 							<th>Logo</th>
-							<th>Authentication API</th>
 							<th>Edit</th>
 							<th>Delete</th>
 						</thead>
