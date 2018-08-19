@@ -869,7 +869,7 @@ class AccountsFeatures {
 					<thead>
 						<tr>
 							<th class="action">ID</th>
-							<th>Types</th>
+							<th>Type</th>
 							<th>Name</th>
 							<th>Slug</th>
 							<th>Status</th>

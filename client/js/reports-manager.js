@@ -2151,6 +2151,12 @@ class VisualizationManager {
 				name: this.json.name
 			}
 		});
+
+		new SnackBar({
+			message: 'Preview Loaded',
+			subtitle: 'Your changes are not saved yet, and will be lost if page is reloaded',
+			icon: 'fas fa-eye',
+		});
 	}
 
 	setupConfigurationSetions(container) {
@@ -3167,6 +3173,7 @@ class Axis {
 			return this.axisContainer;
 
 		const container = this.axisContainer = document.createElement('div');
+
 		let datalist = [];
 
 		container.classList.add('axis');
@@ -3203,6 +3210,27 @@ class Axis {
 				<div class="form">
 
 					<label>
+						<span>Type</span>
+						<select name="axis-type">
+							<option value=""></option>
+							<option value="line">Line</option>
+							<option value="bar">Bar</option>
+							<option value="stacked">Stacked</option>
+							<option value="area">Area</option>
+						</select>
+					</label>
+
+					<label>
+						<span>Position</span>
+						<select name="position">
+							<option value="bottom">Bottom</option>
+							<option value="left">Left</option>
+							<option value="top">Top</option>
+							<option value="right">Right</option>
+						</select>
+					</label>
+
+					<label>
 						<span>Label</span>
 						<input type="text" name="label" value="${this.label || ''}">
 					</label>
@@ -3219,6 +3247,41 @@ class Axis {
 							<option value="">None</option>
 							<option value="s">SI</option>
 						</select>
+					</label>
+
+					<label>
+						<span>Z Axis (Depth)</span>
+						<input type="number" step="1" name="axisDepth" value="${this.depth || ''}">
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="axisShowValues"> Show Values
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="axisShowPoints"> Show Points
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="axisHideScale"> Hide Scale
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="axisHideScaleLines"> Hide Scale Lines
+						</span>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="axisDontAnimate"> Don't Animate
+						</span>
 					</label>
 
 					<label>
@@ -3293,7 +3356,15 @@ class Axis {
 
 		container.querySelector('.axis-column').appendChild(axisColumn);
 
+		container.querySelector('select[name=axis-type]').value = this.type;
+		container.querySelector('select[name=position]').value = this.position;
 		container.querySelector('select[name=format]').value = this.format || '';
+		container.querySelector('input[name=axisDepth]').value = this.depth;
+		container.querySelector('input[name=axisShowValues]').checked = this.showValues;
+		container.querySelector('input[name=axisShowPoints]').checked = this.showPoints;
+		container.querySelector('input[name=axisHideScale]').checked = this.hideScale;
+		container.querySelector('input[name=axisHideScaleLines]').checked = this.hideScaleLines;
+		container.querySelector('input[name=axisDontAnimate]').checked = this.dontAnimate;
 
 		container.querySelector('.delete').on('click', () => {
 			this.axes.delete(this);
@@ -3306,11 +3377,18 @@ class Axis {
 	get json() {
 
 		return {
-			position: this.position,
+			position: this.container.querySelector('select[name=position]').value,
+			type: this.container.querySelector('select[name=axis-type]').value,
 			label: this.container.querySelector('input[name=label]').value,
 			columns: this.container.multiSelectColumns.value.map(c => {return {key: c}}),
 			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
 			format: this.container.querySelector('select[name=format]').value,
+			depth: this.container.querySelector('input[name=axisDepth]').value,
+			showValues: this.container.querySelector('input[name=axisShowValues]').checked,
+			showPoints: this.container.querySelector('input[name=axisShowPoints]').checked,
+			hideScale: this.container.querySelector('input[name=axisHideScale]').checked,
+			hideScaleLines: this.container.querySelector('input[name=axisHideScaleLines]').checked,
+			dontAnimate: this.container.querySelector('input[name=axisDontAnimate]').checked,
 		};
 	}
 }
@@ -3359,14 +3437,46 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+
 						<label>
 							<span>
-								<input type="checkbox" name="hideLegend">Hide Legend
+								<input type="checkbox" name="hideHeader"> Hide Header
 							</span>
 						</label>
+
 						<label>
 							<span>
-								<input type="checkbox" name="showValues">Show Values
+								<input type="checkbox" name="hideLegend"> Hide Legend
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showValues"> Show Values
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showPoints"> Show Points
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideScales"> Hide Scales
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideScaleLines"> Hide Scale Lines
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="dontAnimate"> Don't Animate
 							</span>
 						</label>
 					</div>
@@ -3385,8 +3495,23 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
 
+		if(this.visualization.options && this.visualization.options.hideHeader)
+			container.querySelector('input[name=hideHeader]').checked = this.visualization.options.hideHeader;
+
 		if(this.visualization.options && this.visualization.options.showValues)
 			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
+
+		if(this.visualization.options && this.visualization.options.showPoints)
+			container.querySelector('input[name=showPoints]').checked = this.visualization.options.showPoints;
+
+		if(this.visualization.options && this.visualization.options.hideScales)
+			container.querySelector('input[name=hideScales]').checked = this.visualization.options.hideScales;
+
+		if(this.visualization.options && this.visualization.options.hideScaleLines)
+			container.querySelector('input[name=hideScaleLines]').checked = this.visualization.options.hideScaleLines;
+
+		if(this.visualization.options && this.visualization.options.dontAnimate)
+			container.querySelector('input[name=dontAnimate]').checked = this.visualization.options.dontAnimate;
 
 		return container;
 	}
@@ -3395,8 +3520,13 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		const response = {
 			axes: this.axes.json,
+			hideHeader: this.formContainer.querySelector('input[name=hideHeader]').checked,
 			hideLegend: this.formContainer.querySelector('input[name=hideLegend]').checked,
 			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
+			showPoints: this.formContainer.querySelector('input[name=showPoints]').checked,
+			hideScales: this.formContainer.querySelector('input[name=hideScales]').checked,
+			hideScaleLines: this.formContainer.querySelector('input[name=hideScaleLines]').checked,
+			dontAnimate: this.formContainer.querySelector('input[name=dontAnimate]').checked,
 		};
 
 		return response;
@@ -3427,7 +3557,6 @@ class SpatialMapOptionsLayers extends Set {
 		this.render();
 
 		return container;
-
 	}
 
 	render() {
@@ -3477,7 +3606,6 @@ class SpatialMapOptionsLayers extends Set {
 			this.add(new (SpatialMapOptionsLayer.types.get(type))({type}, this));
 			this.render();
 		});
-
 	}
 
 	get json() {
@@ -3489,7 +3617,6 @@ class SpatialMapOptionsLayers extends Set {
 		}
 
 		return response;
-
 	}
 }
 
@@ -3812,6 +3939,9 @@ ConfigureVisualization.types.set('bar', class BarOptions extends ReportVisualiza
 });
 
 ConfigureVisualization.types.set('dualaxisbar', class DualAxisBarOptions extends ReportVisualizationLinearOptions {
+});
+
+ConfigureVisualization.types.set('linear', class LinearOptions extends ReportVisualizationLinearOptions {
 });
 
 ConfigureVisualization.types.set('stacked', class StackedOptions extends ReportVisualizationLinearOptions {

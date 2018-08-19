@@ -1016,13 +1016,17 @@ main .dataset {
 	display: flex;
 	padding: calc(var(--gap) * 2);
 }
-.visualization .container > svg .axis path,
-.visualization .container > svg .axis line {
+.visualization .container > svg .scale path,
+.visualization .container > svg .scale line {
 	fill: none;
 	stroke: #ddd;
 }
-.visualization.dualaxisbar .container > svg .axis path,
-.visualization.dualaxisbar .container > svg .axis line {
+.visualization.dualaxisbar .container > svg .scale path,
+.visualization.dualaxisbar .container > svg .scale line {
+	display: none;
+}
+.visualization.linear .container > svg .scale.hide-scale-lines path,
+.visualization.linear .container > svg .scale.hide-scale-lines line {
 	display: none;
 }
 
