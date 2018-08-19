@@ -3255,6 +3255,11 @@ class Axis {
 					</label>
 
 					<label>
+						<span>Line Thickness (Line Type Only)</span>
+						<input type="number" step="0.1" name="axisLineThickness" value="${this.lineThickness || ''}">
+					</label>
+
+					<label>
 						<span>
 							<input type="checkbox" name="axisShowValues"> Show Values
 						</span>
@@ -3334,7 +3339,6 @@ class Axis {
 				axis.container.multiSelectColumns.datalist = newDataList;
 				axis.container.multiSelectColumns.render();
 			}
-
 		});
 
 		const restColumns = container.querySelector('.restcolumns');
@@ -3360,6 +3364,7 @@ class Axis {
 		container.querySelector('select[name=position]').value = this.position;
 		container.querySelector('select[name=format]').value = this.format || '';
 		container.querySelector('input[name=axisDepth]').value = this.depth;
+		container.querySelector('input[name=axisLineThickness]').value = this.lineThickness;
 		container.querySelector('input[name=axisShowValues]').checked = this.showValues;
 		container.querySelector('input[name=axisShowPoints]').checked = this.showPoints;
 		container.querySelector('input[name=axisHideScale]').checked = this.hideScale;
@@ -3384,6 +3389,7 @@ class Axis {
 			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
 			format: this.container.querySelector('select[name=format]').value,
 			depth: this.container.querySelector('input[name=axisDepth]').value,
+			lineThickness: this.container.querySelector('input[name=axisLineThickness]').value,
 			showValues: this.container.querySelector('input[name=axisShowValues]').checked,
 			showPoints: this.container.querySelector('input[name=axisShowPoints]').checked,
 			hideScale: this.container.querySelector('input[name=axisHideScale]').checked,

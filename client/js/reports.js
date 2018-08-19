@@ -4346,13 +4346,13 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -4619,13 +4619,13 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -4789,13 +4789,13 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -4969,13 +4969,13 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -5128,15 +5128,27 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		super(visualization, source);
 
-		this.axes = this.axes.sort((a, b) => b.depth - a.depth);
+		if(!this.axes)
+			this.axes = [];
+
+		this.axes = this.axes.sort((a, b) => a.depth - b.depth);
 		this.axes = this.axes.sort((a, b) => ['top', 'bottom'].includes(a.position) ? -1 : 1);
 
-		this.axes.top = {};
-		this.axes.right = {};
-		this.axes.bottom = {};
-		this.axes.left = {};
+		this.axes.top = {
+			size: 0,
+		};
+		this.axes.right = {
+			size: 0,
+		};
+		this.axes.bottom = {
+			size: 0,
+		};
+		this.axes.left = {
+			size: 0,
+		};
 
 		for(const axis of this.axes || []) {
+			axis.size = 0;
 			this.axes[axis.position] = axis;
 			axis.column = axis.columns.length ? axis.columns[0].key : '';
 		}
@@ -5157,27 +5169,27 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		this.rows = rows;
 
-		this.axes.bottom.height = 25;
-		this.axes.left.width = 40;
-		this.axes.right.width = 25;
+		for(const axis of this.axes) {
 
-		if(this.axes.bottom.label)
-			this.axes.bottom.height += 20;
+			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
 
-		if(this.axes.left.label)
-			this.axes.left.width += 20;
+			if(!columns.length)
+				continue;
 
-		if(this.axes.right.label)
-			this.axes.right.width += 10;
+			this.axes[axis.position].size += axis.position == 'left' ? 50 : 30;
 
-		this.height = this.container.clientHeight - this.axes.bottom.height - 20;
-		this.width = this.container.clientWidth - this.axes.left.width - this.axes.right.width - 40;
+			if(axis.label)
+				this.axes[axis.position].size += 15;
+		}
+
+		this.height = this.container.clientHeight - this.axes.top.size - this.axes.bottom.size - 20;
+		this.width = this.container.clientWidth - this.axes.left.size - this.axes.right.size - 40;
 
 		window.addEventListener('resize', () => {
 
 			const
-				height = this.container.clientHeight - this.axes.bottom.height - 20,
-				width = this.container.clientWidth - this.axes.left.width - this.axes.right.width - 40;
+				height = this.container.clientHeight - this.axes.top.size - this.axes.bottom.size - 20,
+				width = this.container.clientWidth - this.axes.left.size - this.axes.right.size - 40;
 
 			if(this.width != width || this.height != height) {
 
@@ -5205,6 +5217,11 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		for(const [axisIndex, axis] of this.axes.entries()) {
 
+			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
+
+			if(!columns.length)
+				continue;
+
 			axis.animate = !options.resize && !axis.dontAnimate && !this.options.dontAnimate;
 
 			if(['top', 'bottom'].includes(axis.position)) {
@@ -5218,7 +5235,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				for(const row of this.rows) {
 
-					const value = row.get(axis.columns[0].key);
+					const value = row.get(columns[0].key);
 
 					column.push(value);
 
@@ -5254,58 +5271,49 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.call(d3Axis);
 
 					if(axis.position == 'bottom')
-						g.attr('transform', `translate(${this.axes.left.width}, ${this.height})`);
+						g.attr('transform', `translate(${this.axes.left.size}, ${this.height})`);
 					else
-						g.attr('transform', `translate(${this.axes.left.width}, 0)`);
+						g.attr('transform', `translate(${this.axes.left.size}, ${axis.label ? 20 : 0})`);
 				}
 
 				if(axis.label) {
 
-					this.svg
+					const text = this.svg
 						.append('text')
-						.attr('transform', `translate(${(this.width / 2)}, ${this.height + 40})`)
 						.attr('class', 'axis-label')
 						.style('text-anchor', 'middle')
 						.text(axis.label);
+
+					if(axis.position == 'bottom')
+						text.attr('transform', `translate(${(this.width / 2)}, ${this.height + 35})`)
+					else
+						text.attr('transform', `translate(${(this.width / 2)}, 10)`)
 				}
 
 				this.x = scale;
-				this.x.column = axis.columns[0].key;
+				this.x.column = columns[0].key;
 				continue;
 			}
 
-			let
-				max = 0,
-				min = 0;
-
-			for(const row of this.rows) {
-
-				for(const column of axis.columns) {
-
-					max = Math.max(max, Math.ceil(row.get(column.key)) || 0);
-					min = Math.min(min, Math.floor(row.get(column.key)) || 0);
-				}
-			}
+			if(!this.x)
+				continue;
 
 			const scale = d3.scale.linear().range([this.height, 20]);
 
-			scale.domain([min, max]).nice();
-
 			// Needed to show multiple columns
-			axis.columns.scale = d3.scale.ordinal();
-			axis.columns.scale.domain(axis.columns.map(column => column.key));
-			axis.columns.scale.rangeBands([0, this.x.rangeBand()]);
+			columns.scale = d3.scale.ordinal();
+			columns.scale.domain(columns.map(column => column.key));
+			columns.scale.rangeBands([0, this.x.rangeBand()]);
 
 			if(axis.type == 'line') {
-				
-				// Because line's min/max isn't playing nice
+
 				let
-					max = this.rows[0].get(axis.columns[0].key),
-					min = this.rows[0].get(axis.columns[0].key);
+					max = this.rows[0].get(columns[0].key),
+					min = this.rows[0].get(columns[0].key);
 
 				for(const row of this.rows) {
 
-					for(const column of axis.columns) {
+					for(const column of columns) {
 
 						max = Math.max(max, Math.ceil(row.get(column.key)) || 0);
 						min = Math.min(min, Math.floor(row.get(column.key)) || 0);
@@ -5314,21 +5322,22 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				scale.domain([min, max]).nice();
 
-				const 
+				const
 					line = d3.svg.line()
-						.x(([row, column]) => this.x(row.get(this.x.column)) + this.axes.left.width + (this.x.rangeBand() / 2))
+						.x(([row, column]) => this.x(row.get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
 						.y(([row, column]) => scale(row.get(column.key)));
 
 				// Appending line in chart
 				this.svg.selectAll('.line-' + axisIndex)
-					.data(axis.columns)
+					.data(columns)
 					.enter()
 					.append('g')
 					.attr('class', `${axis.type} ${axis.position} line-${axisIndex}`)
 					.append('path')
 					.attr('class', 'line')
 					.attr('d', column => line(this.rows.map(row => [row, column])))
-					.style('stroke', column => this.source.columns.get(column.key).color);
+					.style('stroke', column => this.source.columns.get(column.key).color)
+					.style('stroke-width', axis.lineThickness || 2);
 
 				if(axis.animate) {
 
@@ -5348,22 +5357,37 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			else if(axis.type == 'bar') {
 
+				let
+					max = 0,
+					min = 0;
+
+				for(const row of this.rows) {
+
+					for(const column of columns) {
+
+						max = Math.max(max, Math.ceil(row.get(column.key)) || 0);
+						min = Math.min(min, Math.floor(row.get(column.key)) || 0);
+					}
+				}
+
+				scale.domain([min, max]).nice();
+
 				let bars = this.svg
 					.append('g')
 					.attr('class', `${axis.type} ${axis.position}`)
 					.selectAll('g')
-					.data(axis.columns)
+					.data(columns)
 					.enter()
 					.append('g')
 					.style('fill', column => this.source.columns.get(column.key).color)
-					.attr('transform', column => `translate(${axis.columns.scale(column.key)}, 0)`)
+					.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
 					.selectAll('rect')
 					.data(column => this.rows.map(row => [row, column]))
 					.enter()
 					.append('rect')
 					.classed('bar', true)
-					.attr('width', axis.columns.scale.rangeBand())
-					.attr('x', ([row, column]) => this.x(row.get(this.x.column)) + this.axes.left.width)
+					.attr('width', columns.scale.rangeBand())
+					.attr('x', ([row, column]) => this.x(row.get(this.x.column)) + this.axes.left.size)
 					.on('click', function(_, __, [row, column]) {
 						that.source.columns.get(column.key).initiateDrilldown(row);
 						d3.select(this).classed('hover', false);
@@ -5383,7 +5407,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.attr('y', _ => scale(0))
 						.attr('height', 0)
 						.transition()
-						.delay((_, i) => (Page.animationDuration / this.x.domain().length) * i)
+						.delay((_, i) => (Page.animationDuration / this.rows.length) * i)
 						.duration(Page.animationDuration)
 						.ease('exp-out');
 				}
@@ -5393,18 +5417,136 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.attr('height', ([row, column]) => Math.abs(scale(row.get(column.key)) - scale(0)));
 			}
 
-			else if(axis.type == 'area') {
+			else if(axis.type == 'stacked') {
 
-				const area = d3.svg.area()
-						.x(([row, column]) => this.x(row.get(this.x.column)) + this.axes.left.width + (this.x.rangeBand() / 2))
-						.y(([row, column]) => scale(row.get(column.key)));
-					.x(d => this.x(d.x))
-					.y0(d => this.y(d.y0))
-					.y1(d => this.y(d.y0 + d.y))
+				let
+					max = 0,
+					min = 0;
+
+				for(const row of this.rows) {
+
+					let total = 0;
+
+					for(const column of columns) {
+
+						total += parseFloat(row.get(column.key)) || 0;
+						min = Math.min(min, Math.floor(row.get(column.key)) || 0);
+					}
+
+					max = Math.max(max, Math.ceil(total) || 0);
+				}
+
+				scale.domain([min, max]).nice();
+
+				const
+					stack = d3.layout.stack(),
+
+					layer = this.svg
+						.selectAll(`.${axis.type}`)
+						.data(stack(columns.map(column => this.rows.map((row, i) => {return {x: i, y: row.get(column.key)}}))))
+						.enter()
+						.append('g')
+						.attr('class', `${axis.type} ${axis.position}`)
+						.attr('transform', `translate(0, ${this.axes.top.size})`)
+						.style('fill', (column, i) => this.source.columns.get(columns[i].key).color);
+
+				let bars = layer
+					.selectAll('rect')
+					.data(column => column)
+					.enter()
+					.append('rect')
+					.classed('bar', true)
+					.on('click', function(_, row, column) {
+						that.source.columns.get(columns[column].key).initiateDrilldown(that.rows[row]);
+						d3.select(this).classed('hover', false);
+					})
+					.on('mouseover', function(_, __, column) {
+						that.hoverColumn = columns[column];
+						d3.select(this).classed('hover', true);
+					})
+					.on('mouseout', function() {
+						that.hoverColumn = null;
+						d3.select(this).classed('hover', false);
+					})
+					.attr('width', this.x.rangeBand())
+					.attr('x', (cell, i) => this.x(this.rows[i].get(this.x.column)) + this.axes.left.size);
+
+				if(axis.animate) {
+
+					bars = bars
+						.attr('y', this.height)
+						.attr('height', 0)
+						.transition()
+						.delay((_, i) => (Page.animationDuration / this.rows.length) * i)
+						.duration(Page.animationDuration)
+						.ease('exp-out');
+				}
+
+				bars
+					.attr('y', d => scale(d.y + d.y0))
+					.attr('height', d => this.height - scale(d.y));
 			}
 
-			if(!scale)
-				return this.source.error('Scale not defined');
+			else if(axis.type == 'area') {
+
+				let
+					max = 0,
+					min = 0;
+
+				for(const row of this.rows) {
+
+					let total = 0;
+
+					for(const column of columns) {
+
+						total += parseFloat(row.get(column.key)) || 0;
+						min = Math.min(min, Math.floor(row.get(column.key)) || 0);
+					}
+
+					max = Math.max(max, Math.ceil(total) || 0);
+				}
+
+				scale.domain([min, max]).nice();
+
+				const
+					area = d3.svg.area()
+						.x((data, i) => this.x(this.rows[i].get(this.x.column)))
+						.y0(d =>scale(d.y0))
+						.y1(d =>scale(d.y0 + d.y)),
+
+					stack = d3.layout.stack();
+
+				let areas = this.svg
+					.selectAll('.path')
+					.data(stack(columns.map(column => this.rows.map((row, i) => {return {x: i, y: row.get(column.key)}}))))
+					.enter()
+					.append('g')
+					.attr('transform', `translate(${this.axes.left.size}, 0)`)
+					.attr('class', 'path')
+					.append('path')
+					.classed('bar', true)
+					.on('mouseover', function(column) {
+						that.hoverColumn = column;
+						d3.select(this).classed('hover', true);
+					})
+					.on('mouseout', function() {
+						that.hoverColumn = null;
+						d3.select(this).classed('hover', false);
+					})
+					.attr('d', column => area(column))
+					.style('fill', (column, i) => this.source.columns.get(columns[i].key).color);
+
+				if(!options.resize) {
+
+					areas = areas
+						.attr('opacity', 0)
+						.transition()
+						.duration(Page.animationDuration)
+						.ease('exp-out');
+				}
+
+				areas.attr('opacity', 0.8);
+			}
 
 			// Append the axis scale
 			if(!this.options.hideScales && !axis.hideScale) {
@@ -5422,13 +5564,27 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.attr('class', 'scale ' + axis.position)
 					.classed('hide-scale-lines', this.options.hideScaleLines || axis.hideScaleLines)
 					.call(d3Axis)
-					.attr('transform', `translate(${this.axes.left.width}, 0)`);
+					.attr('transform', `translate(${this.axes.left.size}, ${this.axes.top.size})`);
+			}
+
+			if(axis.label) {
+
+				const text = this.svg
+					.append('text')
+					.attr('class', 'axis-label')
+					.style('text-anchor', 'middle')
+					.text(axis.label);
+
+				if(axis.position == 'right')
+					text.attr('transform', `rotate(90) translate(${(this.height / 2)}, ${(this.axes.left.size + this.width + 50) * -1})`);
+				else
+					text.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`);
 			}
 
 			// For each line appending the circle at each point
 			if(this.options.showPoints || axis.showPoints) {
 
-				for(const column of axis.columns) {
+				for(const column of columns) {
 
 					let dots = this.svg.selectAll('dot')
 						.data(this.rows)
@@ -5436,8 +5592,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.append('circle')
 						.attr('class', 'clips')
 						.style('fill', this.source.columns.get(column.key).color)
-						.attr('transform', column => `translate(${axis.columns.scale(column.key)}, 0)`)
-						.attr('cx', row => this.x(row.get(this.x.column)) + this.axes.left.width + (this.x.rangeBand() / 2))
+						.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
+						.attr('cx', row => this.x(row.get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
 						.attr('cy', row => scale(row.get(column.key)))
 						.on('mouseover', function(_, __, column) {
 							that.hoverColumn = column[1];
@@ -5468,15 +5624,15 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				let points = this.svg
 					.append('g')
 					.selectAll('g')
-					.data(axis.columns)
+					.data(columns)
 					.enter()
 					.append('g')
-					.attr('transform', column => `translate(${axis.columns.scale(column.key)}, 0)`)
+					.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
 					.selectAll('text')
 					.data(column => this.rows.map(row => [row, column]))
 					.enter()
 					.append('text')
-					.attr('width', axis.columns.scale.rangeBand())
+					.attr('width', columns.scale.rangeBand())
 					.attr('fill', '#666')
 					.text(([row, column]) => {
 
@@ -5493,7 +5649,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						if(['s'].includes(axis.format))
 							value = d3.format('.4s')(row.get(column.key));
 
-						return this.x(row.get(this.x.column)) + this.axes.left.width + (axis.columns.scale.rangeBand() / 2) - (value.toString().length * 4)
+						return this.x(row.get(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
 					})
 					.attr('y', ([row, column]) => scale(row.get(column.key) > 0 ? row.get(column.key) : 0) - 5)
 					.attr('height', ([row, column]) => Math.abs(scale(row.get(column.key)) - scale(0)));
@@ -5510,30 +5666,62 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				points.attr('opacity', 1);
 			}
-
-			if(axis.label) {
-
-				let y = null;
-
-				if(axis.position == 'right')
-					y = `rotate(90) translate(${(this.height / 2)}, ${(this.axes.left.width + this.width + 40) * -1})`
-				else
-					y = `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`;
-
-				this.svg
-					.append('text')
-					.attr('transform', y)
-					.attr('class', 'axis-label')
-					.style('text-anchor', 'middle')
-					.text(axis.label);
-			}
 		}
 
-		for(const g of this.svg.selectAll('svg > g')[0])  {
+		for(const g of this.svg.selectAll('svg > g')[0] || [])  {
 
 			if(g.classList.contains('scale'))
 				g.parentElement.insertBefore(g, g.parentElement.firstChild);
 		}
+
+		container
+
+		.on('mousemove', function() {
+
+			const mouse = d3.mouse(this);
+
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
+
+ 			if(!row)
+				return;
+
+			const tooltip = [];
+
+			for(const [key, _] of row) {
+
+				if(key == that.x.column)
+					continue;
+
+				const column = row.source.columns.get(key);
+
+				if(column.disabled)
+					continue;
+
+				tooltip.push(`
+					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
+						<span class="circle" style="background:${column.color}"></span>
+						<span>
+							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
+							${column.name}
+						</span>
+						<span class="value">${Format.number(row.get(key))}</span>
+					</li>
+				`);
+			}
+
+			const content = `
+				<header>${row.get(that.x.column)}</header>
+				<ul class="body">
+					${tooltip.reverse().join('')}
+				</ul>
+			`;
+
+			Tooltip.show(that.container, mouse, content, row);
+		})
+
+		.on('mouseleave', function() {
+			Tooltip.hide(that.container);
+		});
 	}
 });
 
@@ -5845,19 +6033,19 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(bottomAxis);
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(leftAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(rightAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
@@ -6222,13 +6410,13 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -6456,13 +6644,13 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -6497,7 +6685,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
 			})
-			.attr('d', d => area(d))
+			.attr('d', d => {debugger;area(d)})
 			.style('fill', d => d.color);
 
 		if(this.options.showValues) {
