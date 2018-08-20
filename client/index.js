@@ -21,11 +21,11 @@ class HTMLAPI extends API {
 
 		this.stylesheets = [
 			'/css/main.css',
+			'https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous" f="'
 		];
 
 		this.scripts = [
 			'/js/main.js',
-			'https://use.fontawesome.com/releases/v5.0.8/js/all.js" async defer f="',
 			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
 		];
 	}
