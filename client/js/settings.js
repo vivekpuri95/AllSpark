@@ -30,7 +30,9 @@ class Settings extends Page {
 						a.classList.add('hidden');
 
 					a.classList.add('selected');
-					setting.setup();
+
+					await setting.setup();
+
 					setting.load();
 					setting.container.classList.remove('hidden');
 				});
@@ -65,7 +67,9 @@ class Settings extends Page {
 			const setting = new settings(this.container);
 
 			if (byDefault.textContent == setting.name) {
+
 				await setting.setup();
+
 				setting.load();
 				setting.container.classList.remove('hidden');
 			}
