@@ -1049,6 +1049,11 @@ class Navbar {
 			}
 		}
 
+		if(dashboardHirachy.querySelectorAll('.item:not(.hidden)').length <= 40) {
+
+			search.classList.add('hidden');
+		}
+
 		search.removeEventListener('keyup', this.navSearch);
 
 		search.on('keyup', this.navSearch = () => {
