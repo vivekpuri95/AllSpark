@@ -3653,9 +3653,9 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 				if(visualisation.type == 'livenumber' && visualisation.visualization_id != this.visualization.visualization_id) {
 
 					datalist.push({
-						'name': visualisation.name,
+						'name': `${visualisation.name} #${visualisation.visualization_id}`,
 						'value': visualisation.visualization_id,
-						'subtitle': `${report.name} #${report.query_id}`,
+						'subtitle': `${report.subtitle && MetaData.categories.has(report.subtitle) ? MetaData.categories.get(report.subtitle).name + ' &rsaquo; ' : ''}${report.name} #${report.query_id}`,
 					});
 				}
 			}

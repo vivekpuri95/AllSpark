@@ -22,8 +22,8 @@ class GlobalFilters extends API {
 			default_value: this.request.body.default_value,
 			multiple: this.request.body.multiple,
 			type: this.request.body.type,
-			offset: this.request.body.offset || null,
-			dataset: this.request.body.dataset,
+			offset: isNaN(parseInt(this.request.body.offset)) ? null : parseInt(this.request.body.offset),
+			dataset: parseInt(this.request.body.dataset) || null,
 		};
 
 		return await this.mysql.query(
@@ -42,8 +42,8 @@ class GlobalFilters extends API {
 			default_value: this.request.body.default_value,
 			multiple: this.request.body.multiple,
 			type: this.request.body.type,
-			offset: this.request.body.offset || null,
-			dataset: this.request.body.dataset,
+			offset: isNaN(parseInt(this.request.body.offset)) ? null : parseInt(this.request.body.offset),
+			dataset: parseInt(this.request.body.dataset) || null,
 		};
 
 		return await this.mysql.query(
