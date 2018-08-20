@@ -435,12 +435,12 @@ main.preview-left #stages {
 	#stage-configure-visualization h3:hover {
 		color: inherit;
 	}
-		#stage-configure-visualization h3 > svg {
+		#stage-configure-visualization h3 > i {
 			margin-right: var(--gap);
 			width: 10px;
 			transition: margin-right var(--transition-duration);
 		}
-		#stage-configure-visualization h3:hover > svg {
+		#stage-configure-visualization h3:hover > i {
 			margin-right: calc(var(--gap) * 2);
 		}
 	#stage-configure-visualization h4 {
@@ -569,8 +569,8 @@ main.preview-left #stages {
 				background: #c33;
 				border-color: transparent;
 			}
-				#stage-configure-visualization #dashboards .delete > svg,
-				#stage-configure-visualization #dashboards .view-dashboard > svg {
+				#stage-configure-visualization #dashboards .delete > i,
+				#stage-configure-visualization #dashboards .view-dashboard > i {
 					margin: 0;
 				}
 			#stage-configure-visualization #dashboards .dashboard_id {
@@ -589,7 +589,7 @@ main.preview-left #stages {
 			border-color: transparent;
 			background: #c33;
 		}
-			#stage-configure-visualization #filters .delete > svg {
+			#stage-configure-visualization #filters .delete > i {
 				margin: 0;
 			}
 
