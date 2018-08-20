@@ -1821,7 +1821,9 @@ class MultiSelect {
 
 			let hide = false;
 
-			if(search.value && !row.name.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+			const rowValue = row.name.concat(' ', row.value, ' ', row.subtitle || '');
+
+			if(search.value && !rowValue.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
 				hide = true;
 
 			row.input.parentElement.classList.toggle('hidden', hide);
