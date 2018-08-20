@@ -531,7 +531,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 
 		return `
 			<nav>
-				<label class="dashboard-search">
+				<label class="dashboard-search hidden">
 					<input type="search" name="search" placeholder="Search..." >
 				</label>
 
