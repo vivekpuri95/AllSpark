@@ -113,26 +113,32 @@ exports.update = class extends API {
 
 		this.assert(!authResponse.error, authResponse.message);
 
-		let id = this.request.body['id'];
+		const [credential] = await this.mysql.query(
+			'SELECT id, type FROM tb_credentials WHERE id = ? AND status = 1',
+			[this.request.body.id]
+		);
+
+		this.assert(credential, 'Invalid connection ID', 400);
 
 		delete this.request.body.id;
 		delete this.request.body.token;
 		delete this.request.body.refresh_token;
+		delete this.request.body.type;
 
 		this.request.body.port = this.request.body.port || null;
 
 		const response = await this.mysql.query(
 			'UPDATE tb_credentials SET ? WHERE id = ?',
-			[this.request.body, id],
+			[this.request.body, credential.id],
 			'write'
 		);
 
-		if (this.request.body.type.toLowerCase() === "mysql") {
+		if (credential.type.toLowerCase() == "mysql") {
 
 			await mysql.crateExternalPool(this.request.body.id);
 		}
 
-		else if (this.request.body.type.toLowerCase() === "mssql") {
+		else if (credential.type.toLowerCase() == "mssql") {
 
 			await mssql.crateExternalPool(this.request.body.id);
 		}
