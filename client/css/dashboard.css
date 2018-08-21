@@ -82,9 +82,6 @@ main > nav::-webkit-scrollbar-track {
 		text-align: center;
 		padding: 20px;
 	}
-		main > nav .NA svg {
-			font-size: 175%;
-		}
 	main > nav .dashboard-hierarchy {
 		display: flex;
 		flex-direction: column;
@@ -314,7 +311,7 @@ main #reports > .global-filters.top.scrolled {
 				width: 100%;
 				outline: 0;
 			}
-			main #reports > .global-filters > .head.heading svg {
+			main #reports > .global-filters > .head.heading i {
 				color: #999;
 			}
 			main #reports > .global-filters > .head .reload {
@@ -327,7 +324,7 @@ main #reports > .global-filters.top.scrolled {
 				color: var(--color-accent);
 				border: 3px solid blue;
 			}
-			main #reports > .global-filters > .head .reload svg {
+			main #reports > .global-filters > .head .reload i {
 				margin: 0;
 			}
 	main #reports > .global-filters .dataset-container {
@@ -442,7 +439,7 @@ main #reports > .list {
 	main #reports .side.selected {
 		right: 275px;
 	}
-		main #reports .side > svg {
+		main #reports .side > i {
 			margin-right: 0px;
 		}
 	main #reports .list .data-source .resize-dimentions {
