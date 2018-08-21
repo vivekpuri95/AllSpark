@@ -441,47 +441,74 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 		super();
 
 		this.stylesheets.push('/css/profile.css');
+		this.scripts.push('/js/reports.js');
 		this.scripts.push('/js/profile.js');
 	}
 
 	async main() {
 		return `
-			<h1>
-				<span></span>
-				<a href="/user/profile/edit" class="edit"><i class="fa fa-edit"></i> Edit</a>
-			</h1>
 
-			<div class="profile-details"></div>
+			<div class="details">
 
-			<h2>Privileges</h2>
-			<p>
-				Privileges define what <strong>actions</strong> the user can perform.<br>
-				<span class="NA">For Example: Manage Reports, Users, Connections, Dashboards, etc</span>
-			</p>
-			<table class="privileges">
-				<thead>
-					<tr>
-						<th>Category</th>
-						<th>Privilege</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
+				<h1>
+					<span></span>
+					<a href="/user/profile/edit" class="edit"><i class="fa fa-edit"></i> Edit</a>
+				</h1>
+			</div>
 
-			<h2>Roles</h2>
-			<p>
-				Roles define what <strong>data</strong> the user can view.<br>
-				<span class="NA">For Example: <em>Merchant Dashboard</em>, <em>Production MySQL</em> (Connection), <em>Delivery Analysys Report</em> etc</span>
-			</p>
-			<table class="roles">
-				<thead>
-					<tr>
-						<th>Category</th>
-						<th>Role</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
+			<div class="switch">
+				<div class="heading-bar">
+					<label class="info selected">
+						<h3>Info</h3>
+					</label>
+					<label class='access'>
+						<h3>Access</h3>
+					</label>
+					<label class='activity'>
+						<h3>Activity</h3>
+					</label>
+				</div>
+
+				<section class="section show" id="profile-info">
+					<i class="fa fa-spinner fa-spin"></i>
+				</section>
+
+				<section class="section" id="access">
+					<h2>Privileges</h2>
+					<p>
+						Privileges define what <strong>actions</strong> the user can perform.<br>
+						<span class="NA">For Example: Manage Reports, Users, Connections, Dashboards, etc</span>
+					</p>
+					<table class="privileges">
+						<thead>
+							<tr>
+								<th>Category</th>
+								<th>Privilege</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+
+					<h2>Roles</h2>
+					<p>
+						Roles define what <strong>data</strong> the user can view.<br>
+						<span class="NA">For Example: <em>Merchant Dashboard</em>, <em>Production MySQL</em> (Connection), <em>Delivery Analysys Report</em> etc</span>
+					</p>
+					<table class="roles">
+						<thead>
+							<tr>
+								<th>Category</th>
+								<th>Role</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</section>
+
+				<section class="section" id="activity-info"></section>
+
+			</div>
+
 		`;
 	}
 }));

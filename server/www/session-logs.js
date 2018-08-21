@@ -8,7 +8,38 @@ class SessionLogs extends API {
 
 		this.user.privilege.needs('user');
 
-		return await this.mysql.query(`SELECT * FROM tb_sessions WHERE account_id = ?`, [this.user.user_id]);
+		const db = dbConfig.write.database.concat('_logs');
+
+		if(this.request.query.inactive) {
+			return await this.mysql.query(`
+				SELECT
+					*
+				FROM
+					??.tb_sessions
+				WHERE
+					date(created_at) between ? and ?
+				`,
+				[db,this.request.query.sdate,this.request.query.edate]
+			);
+		}
+
+		return await this.mysql.query(`
+			SELECT
+				s1.*
+			FROM
+				??.tb_sessions s1
+			LEFT JOIN
+				??.tb_sessions s2
+			ON
+				s1.id = s2.session_id
+			WHERE
+				s1.type = 'login'
+				AND s2.id is  null
+				AND s1.expire_time >  unix_timestamp(now())
+				AND s1.user_id = ?
+			`,
+			[db, db, this.request.query.user_id]
+		)
 	};
 
 	async insert() {
@@ -52,5 +83,6 @@ class SessionLogs extends API {
 	}
 }
 
+exports.list = SessionLogs;
 exports.insert = SessionLogs;
 exports.sessions = (() => new SessionLogs)();
