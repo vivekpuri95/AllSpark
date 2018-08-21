@@ -312,8 +312,10 @@ exports.logs = class extends API {
 				owner = ? 
 				AND h.account_id = ? 
 				AND owner_id = ?
+			ORDER BY
+				h.id DESC
 			LIMIT 10 OFFSET ?`,
-			[this.request.body.owner, this.account.account_id, this.request.body.query_id, parseInt(this.request.body.offset)]
+			[this.request.query.owner, this.account.account_id, this.request.query.query_id, parseInt(this.request.query.offset)]
 		);
 	}
 }

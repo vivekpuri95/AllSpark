@@ -137,9 +137,9 @@ main.preview-left #stages {
 		width: 100%;
 	}
 	#stages .toolbar #history-toggle {
-		position: absolute;
+		margin-left: auto;
 		right: calc(var(--gap) * 2);
-		font-size: 90%;
+		position: absolute;
 	}
 #stage-configure-report .toolbar {
 	justify-content: space-between;
@@ -371,9 +371,10 @@ main.preview-left #stages {
 			flex: 1 50%;
 			margin-left: calc(var(--gap) * 2);
 			overflow: auto;
+			min-width: 50%;
 		}
 			#stage-define-report .query-history .info .query {
-				height: 100%;
+				height: calc(100% - 38px);
 			}
 		#stage-define-report .edit-report-data {
 			overflow: auto;

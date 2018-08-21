@@ -7666,15 +7666,15 @@ class SpatialMapTheme {
 	}
 }
 
-class ReportLogs extends Set{
+class ReportLogs extends Set {
 
-	constructor(report, page) {
+	constructor(report, page, logtype) {
 
 		super();
 
 		this.report = report;
 		this.page = page;
-		this.previousSize = 0;
+		this.logClass = logtype;
 	}
 
 	get container() {
@@ -7689,11 +7689,14 @@ class ReportLogs extends Set{
 		container.innerHTML = `
 			<div class="list">
 				<ul></ul>
-				<span class="more">
-					<i class="fa fa-angle-down"></i>
-					<span>Show more logs</span>
-					<i class="fa fa-angle-down"></i>
-				</span>
+				<div class="footer hidden">
+					<span class="more">
+						<i class="fa fa-angle-down"></i>
+						<span>Show more logs</span>
+						<i class="fa fa-angle-down"></i>
+					</span>
+					<span class="showing"></span>
+				</div>
 			</div>
 			<div class="info hidden">
 				<div class="toolbar"></div>
@@ -7716,15 +7719,13 @@ class ReportLogs extends Set{
 				query_id: this.report.query_id,
 				owner: 'query',
 				offset: this.size,
-			},
-			options = {
-				method: 'POST'
-			},
-			logs =  await API.call('reports/report/logs', parameters, options);
+			};
 
-		for(const log of logs) {
+		this.currentResponse =  await API.call('reports/report/logs', parameters);
 
-			this.add(new (this.page.class)(log, this));
+		for(const log of this.currentResponse) {
+
+			this.add(new (this.logClass)(log, this));
 		}
 
 		this.render();
@@ -7732,30 +7733,34 @@ class ReportLogs extends Set{
 
 	render() {
 
-		if(this.previousSize == this.size) {
-
-			this.container.querySelector('.list .more').classList.add('hidden');
-			return;
-		}
-
 		const logList = this.container.querySelector('.list ul');
-
-		logList.textContent = null;
 
 		if(!this.size) {
 
-			logList.insertAdjacentHTML('beforeend', '<div class="NA">No logs</div>');
-			this.container.querySelector('.list .more').classList.add('hidden');
+			logList.innerHTML = '<li class="NA block">No logs</li>';
 			return;
 		}
 
-		this.container.querySelector('.list .more').classList.remove('hidden');
-		this.previousSize = this.size;
+		this.container.querySelector('.list .footer').classList.remove('hidden');
+
+		if(!this.currentResponse.length) {
+
+			this.container.querySelector('.list .footer .more').classList.add('hidden');
+			return;
+		}
+
+		logList.textContent = null;
+
+		this.container.querySelector('.list .footer .more').classList.remove('hidden');
+		this.container.querySelector('.info').classList.add('hidden');
+		this.container.querySelector('.list').classList.remove('hidden');
 
 		for(const log of this.values()) {
 
 			logList.appendChild(log.container);
 		}
+
+		this.container.querySelector('.list .showing').textContent = `Showing: ${this.size}`;
 	}
 
 	toggleHide() {
@@ -7781,26 +7786,36 @@ class ReportLog {
 
 	get container() {
 
+		if(this.containerElement) {
+
+			return this.containerElement;
+		}
+
 		const container = this.containerElement = document.createElement('li');
 
 		container.classList.add('block');
 
 		container.innerHTML = `
-			<span class="timing">${Format.dateTime(this.created_at)}</span>
-			<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a>
+			<span class="clock"><i class="fa fa-history"></i></span>
+			<div>
+				<span class="timing">${Format.dateTime(this.created_at)}</span>
+				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a>
+			</div>
 		`;
+
+		container.on('click', () => this.load());
 
 		return container;
 	}
 
 	load() {
 
-		const logInfoDiv = this.logs.container.querySelector('.info');
+		const logInfo = this.logs.container.querySelector('.info');
 
-		logInfoDiv.classList.remove('hidden');
+		logInfo.classList.remove('hidden');
 		this.logs.container.querySelector('.list').classList.add('hidden');
 
-		logInfoDiv.querySelector('.toolbar').innerHTML =  `
+		logInfo.querySelector('.toolbar').innerHTML =  `
 			<button class="back"><i class="fa fa-arrow-left"></i> Back</button>
 			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
 			<button class="run"><i class="fas fa-sync"></i> Run</button>
@@ -7809,10 +7824,21 @@ class ReportLog {
 			</span>
 		`;
 
-		logInfoDiv.querySelector('.toolbar button.back').on('click', () => {
+		logInfo.querySelector('.toolbar button.back').on('click', () => {
 
 			this.logs.container.querySelector('.list').classList.remove('hidden');
-			logInfoDiv.classList.add('hidden');
+			logInfo.classList.add('hidden');
+		});
+
+		logInfo.querySelector('.toolbar .restore').on('click', () => {
+
+			this.logs.report.connection.formJson = this.connection.json;
+		});
+
+		logInfo.querySelector('.toolbar .run').on('click', () => {
+
+			this.logs.page.preview(this.connection.json);
+
 		});
 	}
 }
