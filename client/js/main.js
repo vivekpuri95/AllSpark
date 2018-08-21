@@ -1488,15 +1488,6 @@ class DialogBox {
 
 		container.on('click', () => this.hide());
 
-		document.body.on('keyup', this.keyUpListener = e => {
-
-			if(e.keyCode == 27) {
-
-				this.hide();
-				document.body.removeEventListener('keyup', this.keyUpListener);
-			}
-		});
-
 		this.hide();
 
 		document.querySelector('main').appendChild(container);
@@ -1549,6 +1540,16 @@ class DialogBox {
 	 * Displays the dialog box container
 	 */
 	show() {
+
+		document.body.removeEventListener('keyup', this.keyUpListener);
+
+		document.body.on('keyup', this.keyUpListener = e => {
+
+			if(e.keyCode == 27) {
+
+				this.hide();
+			}
+		});
 
 		this.container.classList.remove('hidden');
 	}
