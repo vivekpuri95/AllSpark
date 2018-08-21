@@ -1541,6 +1541,16 @@ class DialogBox {
 	 */
 	show() {
 
+		document.body.removeEventListener('keyup', this.keyUpListener);
+
+		document.body.on('keyup', this.keyUpListener = e => {
+
+			if(e.keyCode == 27) {
+
+				this.hide();
+			}
+		});
+
 		this.container.classList.remove('hidden');
 	}
 }
@@ -1812,7 +1822,9 @@ class MultiSelect {
 
 			let hide = false;
 
-			if(search.value && !row.name.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+			const rowValue = row.name.concat(' ', row.value, ' ', row.subtitle || '');
+
+			if(search.value && !rowValue.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
 				hide = true;
 
 			row.input.parentElement.classList.toggle('hidden', hide);
@@ -1827,8 +1839,10 @@ class MultiSelect {
 
 		search.placeholder = 'Search...';
 
-		if(firstSelected && options.classList.contains('hidden'))
+		if(firstSelected) {
+
 			search.placeholder = selected > 1 ? `${firstSelected.textContent} and ${selected - 1} more` : firstSelected.textContent;
+		}
 
 		const footer = options.querySelector('footer');
 
