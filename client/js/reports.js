@@ -7704,10 +7704,7 @@ class ReportLogs extends Set {
 			</div>
 		`;
 
-		container.querySelector('.list .more').on('click', async () => {
-
-			await this.load();
-		});
+		container.querySelector('.list .more').on('click', () => this.load());
 
 		return container;
 	}

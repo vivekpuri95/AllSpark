@@ -2727,7 +2727,7 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 
 		super.form.querySelector('label.mongo-query').appendChild(this.editor.container);
 
-		// Set the vlues from report definition
+		// Set the values from report definition
 		this.formJson = this.report.definition || {};
 
 		return super.form;

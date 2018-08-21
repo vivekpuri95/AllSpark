@@ -298,6 +298,8 @@ exports.logs = class extends API {
 
 		const db = dbConfig.write.database.concat('_logs');
 
+		this.request.query.offset = this.request.query.offset ? parseInt(this.request.query.offset) : 0;
+
 		return await this.mysql.query(`
 			SELECT 
 				h.*,
@@ -315,7 +317,7 @@ exports.logs = class extends API {
 			ORDER BY
 				h.id DESC
 			LIMIT 10 OFFSET ?`,
-			[this.request.query.owner, this.account.account_id, this.request.query.query_id, parseInt(this.request.query.offset)]
+			[this.request.query.owner, this.account.account_id, this.request.query.query_id, this.request.query.offset]
 		);
 	}
 }
