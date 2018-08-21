@@ -470,7 +470,7 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 				</div>
 
 				<section class="section show" id="profile-info">
-					<div class="profile-details"></div>
+					<i class="fa fa-spinner fa-spin"></i>
 				</section>
 
 				<section class="section" id="access">

@@ -37,27 +37,28 @@ Page.class = class Profile extends Page {
 
 	render() {
 
-		if(!this.data)
-
+		if(!this.data.user_id)
 			return this.container.innerHTML = '<div class="NA">No User found</div>';
 
 		this.container.querySelector('.edit').classList.toggle('hidden', user.id != this.id);
 
 		this.container.querySelector('h1 span').textContent = [this.data.first_name, this.data.middle_name, this.data.last_name].filter(a => a).join(' ');
 
-		this.container.querySelector('.profile-details').innerHTML = `
-			<label>
-				<span>User ID</span>
-				<div>${this.data.user_id}</div>
-			</label>
-			<label>
-				<span>Email</span>
-				<div>${this.data.email}</div>
-			</label>
-			<label>
-				<span>Phone</span>
-				<div>${this.data.phone || ''}</div>
-			</label>
+		this.container.querySelector('#profile-info').innerHTML = `
+			<div class="profile-details">
+				<label>
+					<span>User ID</span>
+					<div>${this.data.user_id}</div>
+				</label>
+				<label>
+					<span>Email</span>
+					<div>${this.data.email}</div>
+				</label>
+				<label>
+					<span>Phone</span>
+					<div>${this.data.phone || ''}</div>
+				</label>
+			</div>
 		`;
 
 		this.profileInfo.render();
@@ -84,13 +85,16 @@ Page.class = class Profile extends Page {
 			Sections.show('access');
 		});
 
-		activity.on('click', () => {
+		activity.on('click', async() => {
 
 			this.container.querySelector('.heading-bar .selected').classList.remove('selected');
 
 			activity.classList.add('selected');
 
+			await this.sessions.load();
+
 			this.sessions.render();
+
 			Sections.show('activity-info');
 		});
 	}
@@ -103,10 +107,6 @@ class Sessions {
 		Object.assign(this, user.data);
 
 		this.sessionsList = new Map;
-
-		(async() => {
-			await this.load();
-		})();
 	}
 
 	async load() {
@@ -121,23 +121,26 @@ class Sessions {
 
 		const sessions = await API.call('session-logs/list', parameters, options);
 
-		this.process(sessions);
+		await this.process(sessions);
 	}
 
-	process(sessions) {
+	async process(sessions) {
 
 		this.sessionsList.clear();
 
-		for(const session of sessions)
-			this.sessionsList.set(session.id, new Session(session))
+		for(const session of sessions) {
+			this.sessionsList.set(session.id, new Session(session));
+		}
 	}
 
 	render() {
 
 		const container = this.container;
+		const list = container.querySelector('.list');
+		list.textContent = null;
 
 		for(const session of this.sessionsList.values())
-			container.querySelector('.list').appendChild(session.container);
+			list.appendChild(session.container);
 	}
 
 	get container() {
@@ -146,11 +149,11 @@ class Sessions {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('sessions-list');
+		container.classList.add('sessions');
 
 		container.innerHTML = `
 
-			<div class="sessions-toolbar hidden">
+			<div class="toolbar hidden">
 				<h3>Show session details</h3>
 			</div>
 
@@ -166,13 +169,12 @@ class Session {
 	constructor(session) {
 
 		Object.assign(this, session);
-
-		(async() => {
-			await this.load();
-		})();
 	}
 
 	async load() {
+
+		if(this.reports && this.errors)
+			return;
 
 		const
 			parameters = {
@@ -183,10 +185,10 @@ class Session {
 				method: 'Get',
 			};
 
-		const reports = await API.call('reports/logs/log', parameters, options);
-		const errors = await API.call('errors/list', parameters, options);
+		this.reports = await API.call('reports/logs/log', parameters, options);
+		this.errors = await API.call('errors/list', parameters, options);
 
-		this.process(reports, errors);
+		this.process(this.reports, this.errors);
 	}
 
 	process(reports, errors) {
@@ -213,24 +215,26 @@ class Session {
 
 		const groupedList = [];
 
-		for(const i in activity) {
-			const value = [];
+		let tempList = [];
 
-			value.push(activity[i]);
+		for(const index in activity) {
 
-			for(const j in activity) {
-				if(parseInt(j) <= parseInt(i))
-					continue;
-
-				if(activity[j].type == activity[i].type) {
-					value.push(activity[j])
-				}
-				else
-					break;
+			if(!parseInt(index)) {
+				tempList.push(activity[index]);
 			}
 
-			if((groupedList.length && value[0].type != groupedList[groupedList.length -1][0].type) || !parseInt(i))
-				groupedList.push(value);
+			if(tempList[tempList.length - 1].type == activity[parseInt(index)].type) {
+				tempList.push(activity[index]);
+			}
+			else {
+				groupedList.push(tempList);
+				tempList = [];
+				tempList.push(activity[index]);
+			}
+
+			if(index == activity.length - 1){
+				groupedList.push(tempList);
+			}
 		}
 
 		return groupedList;
@@ -244,6 +248,7 @@ class Session {
 		const container = this.containerElement = document.createElement('article');
 		container.classList.add('active');
 
+		const detailString = `${this.browser || ''} ${this.OS ? '&middot;&nbsp;'+this.OS : ''} ${this.ip ? '&middot;&nbsp;'+this.ip : ''}`
 		container.innerHTML = `
 			<header>
 				<div class="icon"><i class="far fa-clock"></i></div>
@@ -256,18 +261,8 @@ class Session {
 						</div>
 					</div>
 					<div class="device-info NA">
-						<label>
-							<span>${this.browser}</span>
-						</label>
-						&middot;&nbsp;
-						<label>
-							<span>${this.OS}</span>
-						</label>
-						&middot;&nbsp;
-						<label>
-							<span>${this.ip}</span>
-						</label>
-						<span class="activity-details NA">Reports: ${this.reportsCount} &middot; Errors: ${this.errorsCount}</span>
+						${detailString}
+						<span class="activity-details NA"></span>
 					</div>
 				</div>
 			</header>
@@ -275,7 +270,12 @@ class Session {
 			<div class="activities hidden"></div>
 		`;
 
-		container.querySelector('.details').on('click', () => {
+		container.querySelector('header').on('click', async() => {
+
+			await this.load();
+
+			container.querySelector('.activity-details').innerHTML = `Reports: ${this.reportsCount} &middot; Errors: ${this.errorsCount}`;
+
 			container.querySelector('.activities').classList.toggle('hidden');
 			container.querySelector('.down').classList.toggle('angle-rotate');
 
@@ -333,18 +333,23 @@ class ActivityGroup extends Set {
 	get container() {
 
 		if(this.containerElement)
-			return this.containerElement;
+			return this.containerElement
+
+		;
 
 		const container = this.containerElement = document.createElement('div');
+
+
 		container.classList.add('activity-group');
 
 		const icon = Array.from(this)[0].type == 'report' ? 'far fa-file' : 'fas fa-exclamation';
+
 		container.innerHTML = `
 			<header>
 				<div class="icon"><i class="${icon}"></i></div>
 				<div class="details">
 					<div class="title">
-						<span>${this.size}</span><span>${Array.from(this)[0].type}</span>
+						<span>${this.size}</span><span>${Array.from(this)[0].type}${this.size == 1 ? '' : 's'}</span>
 
 						<div class="down">
 							<i class="fas fa-angle-right"></i>
@@ -360,15 +365,20 @@ class ActivityGroup extends Set {
 			<div class="activity-list hidden"></div>
 		`;
 
+		const activityList = container.querySelector('.activity-list');
 
-		container.querySelector('.details').on('click', () => {
+		container.querySelector('header').on('click', () => {
 
-			container.querySelector('.activity-list').classList.toggle('hidden');
+			activityList.classList.toggle('hidden');
 
 			container.querySelector('.down').classList.toggle('angle-rotate');
 
+			const tempContainer = document.createDocumentFragment();
+
 			for(const activity of this)
-				container.querySelector('.activity-list').appendChild(activity.container);
+				tempContainer.appendChild(activity.container);
+
+			activityList.appendChild(tempContainer);
 		});
 
 		return container;
@@ -389,80 +399,74 @@ class Activity {
 		}
 	}
 
-	render() {
-
-		const container = this.container;
-
-			container.querySelector('.title').appendChild(this.activityType.name);
-			container.querySelector('.extra-info').innerHTML = this.activityType.extraInfo;
-	}
-
 	get container() {
 
 		if(this.containerElement)
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
+
 		container.classList.add('activity', 'report');
+		const
+			div = document.createElement('div'),
+			details = document.createElement('div');
 
-		container.innerHTML = `
-			<div class=""></div>
-			<div class="details">
-				<div class="title"></div>
+		details.classList.add('details');
 
-				<div class="extra-info"></div>
-			</div>
-		`;
+		container.on('click', () => {
 
-		const dialogueBox = new DialogBox();
+			const dialogueBox = new DialogBox();
 
-		dialogueBox.heading = this.type;
-		dialogueBox.body.classList.add('activity-popup');
+			dialogueBox.heading = this.type;
+			dialogueBox.body.classList.add('activity-popup');
 
-		for(const key of this.activityType.keys) {
-
-			const span = document.createElement('span');
-			span.classList.add('key');
-			span.textContent = `${key}:`;
-
-			dialogueBox.body.appendChild(span);
-
-			try {
-				const value = JSON.parse(this[key]);
-
-				if(typeof value == 'object') {
-
-					const pre = document.createElement('pre');
-					pre.classList.add('value', 'json');
-					pre.textContent = JSON.stringify(value, 0, 4);
-
-					dialogueBox.body.appendChild(pre);
-				}
-				else {
-
-					const span = document.createElement('span');
-					span.classList.add('value');
-					span.textContent = this[key];
-
-					dialogueBox.body.appendChild(span);
-				}
-			}
-			catch(e) {
+			for(const key of this.activityType.keys) {
 
 				const span = document.createElement('span');
-					span.classList.add('value');
-					span.textContent = this[key];
+				span.classList.add('key');
+				span.textContent = `${key}:`;
 
-					dialogueBox.body.appendChild(span);
+				dialogueBox.body.appendChild(span);
+
+				try {
+					const value = JSON.parse(this[key]);
+
+					if(typeof value == 'object') {
+
+						const pre = document.createElement('pre');
+						pre.classList.add('value', 'json');
+						pre.textContent = JSON.stringify(value, 0, 4);
+
+						dialogueBox.body.appendChild(pre);
+					}
+					else {
+
+						const span = document.createElement('span');
+						span.classList.add('value');
+						span.textContent = this[key];
+
+						dialogueBox.body.appendChild(span);
+					}
+				}
+				catch(e) {
+
+					const pre = document.createElement('pre');
+						pre.classList.add('value', 'sql');
+
+						pre.textContent = new FormatSQL(this[key]).query;
+
+						dialogueBox.body.appendChild(pre);
+				}
 			}
-		}
-
-		container.querySelector('.details').on('click', () => {
 
 			dialogueBox.show();
 		});
 
-		this.render();
+		details.appendChild(this.activityType.name);
+		details.appendChild(this.activityType.extraInfo);
+
+		container.appendChild(div);
+		container.appendChild(details);
 
 		return container;
 	}
@@ -474,30 +478,23 @@ class ActivityReport {
 		Object.assign(this, report)
 	}
 
-	get icon() {
-
-		if(this.iconElement)
-			return this.iconElement;
-
-		const i = this.iconElement = document.createElement('i');
-		i.classList.add('far', 'fa-file');
-
-		return i;
-	}
-
 	get name() {
 
 		if(this.nameElement)
 			return this.nameElement;
 
-		const span = this.nameElement = document.createElement('span');
-		span.classList.add('report-name');
-		span.innerHTML = `
+		const title = this.nameElement = document.createElement('div');
+		title.classList.add('title');
 
-			${DataSource.list.get(this.query_id).name}<div class="NA"> #${this.id}</div>
-		`;
+		title.textContent = DataSource.list.get(this.query_id).name;
 
-		return span;
+		const span = document.createElement('span');
+		span.classList.add('NA');
+		span.textContent = '#' + this.id;
+
+		title.appendChild(span);
+
+		return title;
 	}
 
 	get keys() {
@@ -507,12 +504,22 @@ class ActivityReport {
 
 	get extraInfo() {
 
-		const container =  `
-			<span>Execution time: ${this.response_time}</span>
-			<span>${Format.dateTime(this.created_at)}</span>
-		`;
+		if(this.extraInfoElement)
+			return this.extraInfoElement;
 
-		return container;
+		const extraInfo = this.extraInfoElement = document.createElement('div');
+		extraInfo.classList.add('extra-info');
+
+		const executionTime = document.createElement('span');
+		executionTime.textContent = `Execution time: ${this.response_time}`;
+
+		const date = document.createElement('span');
+		date.textContent = Format.dateTime(this.created_at);
+
+		extraInfo.appendChild(executionTime);
+		extraInfo.appendChild(date);
+
+		return extraInfo;
 	}
 }
 
@@ -527,37 +534,37 @@ class ActivityError {
 		return ['user_id', 'session_id', 'status', 'message', 'description'];
 	}
 
-	get icon() {
-
-		if(this.iconElement)
-			return this.iconElement;
-
-		const i = this.iconElement = document.createElement('i');
-		i.classList.add('fas', 'fa-exclamation');
-
-		return i;
-	}
-
 	get name() {
 
-		if(this.nameElement)
-			return this.nameElement;
+		if(this.titleElement)
+			return this.titleElement;
 
-		const span = this.nameElement = document.createDocumentFragment();
-		span.textContent = 'Error';
+		const title = this.containerElement = document.createElement('div');
+		title.classList.add('title');
 
-		return span;
+		title.textContent = 'Error';
+
+		return title;
 	}
 
 	get extraInfo() {
 
-		const container = `
-			<span>Type: ${this.type}</span>
-			<span>Message: ${this.message}</span>
-			<span>${Format.dateTime(this.created_at)}</span>
-		`;
+		if(this.extraInfoElement)
+			return this.extraInfoElement;
 
-		return container;
+		const extraInfo = this.containerElement = document.createElement('div');
+		extraInfo.classList.add('extra-info');
+
+		const type = document.createElement('span');
+		type.textContent = 'Type:' + this.type;
+
+		const date = document.createElement('span');
+		date.textContent = Format.dateTime(this.created_at);
+
+		extraInfo.appendChild(type);
+		extraInfo.appendChild(date);
+
+		return extraInfo;
 	}
 }
 

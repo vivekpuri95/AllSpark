@@ -5,6 +5,9 @@ main {
 	width: 100%;
 	max-width: 600px;
 }
+.angle-rotate {
+	transform: rotate(90deg);
+}
 	main h1 {
 		border-bottom: 1px dashed black;
 		margin: 0 0 calc(var(--gap) * 2);
@@ -22,6 +25,12 @@ main {
 			display: flex;
 			justify-content: space-between;
 		}
+
+	main #profile-info > svg {
+		font-size: 150%;
+		display: flex;
+		margin: 50px auto;
+	}
 	main #profile-info h2 {
 		border-bottom: 1px dashed black;
 		margin: calc(var(--gap) * 2) 0;
@@ -44,6 +53,7 @@ main .roles {
 main .profile-details {
 	padding: var(--gap);
 	user-select: text;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 	.profile-details label {
 		display: grid;
@@ -59,9 +69,6 @@ main .profile-details {
 main .switch {
 	margin: calc(var(--gap) * 2) 0;
 }
-.angle-rotate {
-	transform: rotate(90deg);
-}
 main .switch section {
 	padding: 0 !important;
 	margin-top: calc(var(--gap) * 2);
@@ -70,7 +77,7 @@ main .switch section {
 		display: flex;
 		border-bottom: 1px solid #ccc;
 	}
-		main .switch .NA {
+		main .switch #activity-info .NA {
 			color: #999;
 			margin-right: var(--gap);
 		}
@@ -88,24 +95,25 @@ main .switch section {
 						background var(--transition-duration);
 		}
 		main .switch .heading-bar label.selected {
-			box-shadow: inset 0px -6px 0px var(--color-accent);
+			box-shadow: inset 0px -6px 0px var(--color-accent) !important;
 			margin-bottom: -1px;
-			border-bottom: 1;
 		}
 		main .switch .heading-bar label:hover {
 			cursor: pointer;
+			box-shadow: inset 0px -6px 0px #999;
+			margin-bottom: -1px;
 		}
 
-main .sessions-list .list {
+main .sessions .list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 }
-	main .sessions-list .sessions-toolbar {
+	main .sessions .toolbar {
 		background: #fff;
 		padding: calc(var(--gap) * 2);
 		margin: calc(var(--gap) * 2) 0;
 	}
-		main .sessions-list .sessions-toolbar h3 {
+		main .sessions .toolbar h3 {
 			margin: 0;
 		}
 	main article {
@@ -113,9 +121,15 @@ main .sessions-list .list {
 		overflow: hidden;
 		display: flex;
 		flex-direction:  column;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
-	main article.active {
-		box-shadow: inset -6px 0 0px #02d40e;
+	main article.active > header::after {
+		content: "";
+		background: #9dec42;
+		width: 6px;
+		position: absolute;
+		right: 0;
+		height: 100%;
 	}
 	main article > header {
 		box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
@@ -147,14 +161,13 @@ main .sessions-list .list {
 			display: grid;
 			grid-gap: var(--gap);
 		}
-		main header .details:hover {
+		main header:hover {
 			cursor: pointer;
 		}
 			main header .details .title,
 			main .activities .details .title {
 				display: flex;
 				align-items: center;
-				padding: 0 calc(var(--gap) * 2);
 				font-size: 125%;
 				color: #333;
 			}
@@ -167,49 +180,40 @@ main .sessions-list .list {
 					transition: transform var(--transition-duration);
 				}
 			main .activity-list {
-				border-top: 1px solid #ddd;
-				border-bottom: 1px solid #ddd;
+				background: #efefef;
 			}
 			main .activities .details .extra-info,
 			main .activities .details .extra-info,
 			main header .details .device-info {
 				display: flex;
 				align-items: center;
-				padding: 0 calc(var(--gap) * 2);
 				color: #999;
 				font-size: 90%;
 			}
 				main .activities .details .extra-info span,
-				main .activities .details .extra-info span,
-				main header .details .device-info label {
+				main .activities .details .extra-info span {
 					margin-right: var(--gap);
 				}
 	main article .activities {
 		display: grid;
-		 max-height: 300px;
-		 overflow: auto;
+		max-height: 300px;
+		overflow: auto;
 		background-color: #fff;
 	}
 		main .activities .activity {
 			display: grid;
 			grid-template-columns: 50px 1fr;
 			padding: calc(var(--gap) * 2);
-			transition: box-shadow var(--transition-duration),
-						background var(--transition-duration);
 			border-bottom: 1px solid #eee;
 			font-size: 90%;
+			transition: box-shadow var(--transition-duration),
+						background var(--transition-duration);
 		}
 		main .activities .activity:hover {
 			cursor: pointer;
-			background: #ddf;
 		}
 			main .activities .icon {
 				font-size: 125%;
-			}
-			main .activities .report-name {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				grid-gap: calc(var(--gap) * 2);
 			}
 			main .activities .details {
 				display: grid;
@@ -223,6 +227,9 @@ main .sessions-list .list {
 			main .activities .details .extra-info span:last-child {
 				margin-left: auto;
 			}
+		main .activity .NA {
+			margin-left: var(--gap);
+		}
 
 main .activity-popup {
 	padding: calc(var(--gap) * 2);
@@ -240,10 +247,10 @@ main .activity-popup {
 	main .activity-popup .value {
 		margin: var(--gap);
 	}
+ 	main .activity-popup .sql,
  	main .activity-popup .json {
  		max-height: 150px;
  		overflow: auto;
-		margin: 0;
-		background: #eee;
+ 		background: #eee;
  		padding: 10px;
  	}
