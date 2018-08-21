@@ -7666,6 +7666,180 @@ class SpatialMapTheme {
 	}
 }
 
+class ReportLogs extends Set {
+
+	constructor(report, page, logtype) {
+
+		super();
+
+		this.report = report;
+		this.page = page;
+		this.logClass = logtype;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('query-history');
+
+		container.innerHTML = `
+			<div class="list">
+				<ul></ul>
+				<div class="footer hidden">
+					<span class="more">
+						<i class="fa fa-angle-down"></i>
+						<span>Show more logs</span>
+						<i class="fa fa-angle-down"></i>
+					</span>
+					<span class="showing"></span>
+				</div>
+			</div>
+			<div class="info hidden">
+				<div class="toolbar"></div>
+				<div class="block"></div>
+			</div>
+		`;
+
+		container.querySelector('.list .more').on('click', () => this.load());
+
+		return container;
+	}
+
+	async load() {
+
+		const
+			parameters = {
+				query_id: this.report.query_id,
+				owner: 'query',
+				offset: this.size,
+			};
+
+		this.currentResponse =  await API.call('reports/report/logs', parameters);
+
+		for(const log of this.currentResponse) {
+
+			this.add(new (this.logClass)(log, this));
+		}
+
+		this.render();
+	}
+
+	render() {
+
+		const logList = this.container.querySelector('.list ul');
+
+		if(!this.size) {
+
+			logList.innerHTML = '<li class="NA block">No logs</li>';
+			return;
+		}
+
+		this.container.querySelector('.list .footer').classList.remove('hidden');
+
+		if(!this.currentResponse.length) {
+
+			this.container.querySelector('.list .footer .more').classList.add('hidden');
+			return;
+		}
+
+		logList.textContent = null;
+
+		this.container.querySelector('.list .footer .more').classList.remove('hidden');
+		this.container.querySelector('.info').classList.add('hidden');
+		this.container.querySelector('.list').classList.remove('hidden');
+
+		for(const log of this.values()) {
+
+			logList.appendChild(log.container);
+		}
+
+		this.container.querySelector('.list .showing').textContent = `Showing: ${this.size}`;
+	}
+
+	toggleHide() {
+
+		this.container.classList.toggle('hidden');
+	}
+}
+
+class ReportLog {
+
+	constructor(log, logs) {
+
+		Object.assign(this, log);
+
+		this.logs = logs;
+
+		try {
+			this.value = JSON.parse(this.value);
+		}
+		catch(e) {}
+
+	}
+
+	get container() {
+
+		if(this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		const container = this.containerElement = document.createElement('li');
+
+		container.classList.add('block');
+
+		container.innerHTML = `
+			<span class="clock"><i class="fa fa-history"></i></span>
+			<div>
+				<span class="timing">${Format.dateTime(this.created_at)}</span>
+				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a>
+			</div>
+		`;
+
+		container.on('click', () => this.load());
+
+		return container;
+	}
+
+	load() {
+
+		const logInfo = this.logs.container.querySelector('.info');
+
+		logInfo.classList.remove('hidden');
+		this.logs.container.querySelector('.list').classList.add('hidden');
+
+		logInfo.querySelector('.toolbar').innerHTML =  `
+			<button class="back"><i class="fa fa-arrow-left"></i> Back</button>
+			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
+			<button class="run"><i class="fas fa-sync"></i> Run</button>
+			<span class="log-title">
+				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
+			</span>
+		`;
+
+		logInfo.querySelector('.toolbar button.back').on('click', () => {
+
+			this.logs.container.querySelector('.list').classList.remove('hidden');
+			logInfo.classList.add('hidden');
+		});
+
+		logInfo.querySelector('.toolbar .restore').on('click', () => {
+
+			this.logs.report.connection.formJson = this.connection.json;
+		});
+
+		logInfo.querySelector('.toolbar .run').on('click', () => {
+
+			this.logs.page.preview(this.connection.json);
+
+		});
+	}
+}
+
 class Tooltip {
 
 	static show(div, position, content) {

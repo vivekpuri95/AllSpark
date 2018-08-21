@@ -874,6 +874,29 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				this.report.connection.editor.editor.resize();
 		});
 
+		const historyToggle = this.container.querySelector('#history-toggle');
+
+		historyToggle.on('click', async () => {
+
+			historyToggle.classList.toggle('selected');
+
+			if(this.reportLogs) {
+
+				this.reportLogs.toggleHide();
+
+				if(this.reportLogs.container.classList.contains('hidden') || this.reportLogs.size)
+					return;
+
+			}
+			else {
+
+				this.reportLogs = new ReportLogs(this.report, this, QueryLog);
+				this.container.querySelector('#define-report-parts').appendChild(this.reportLogs.container);
+			}
+
+			await this.reportLogs.load();
+		});
+
 		this.editReportData = new EditReportData();
 
 		this.editReportData.container.classList.add('hidden');
@@ -905,9 +928,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		return `${this.key}/${this.report.query_id}`;
 	}
 
-	async preview() {
+	async preview(logQuery) {
 
-		const definition = this.report.connection.json;
+		const definition = logQuery || this.report.connection.json;
 
 		if(this.report.connection.editor && this.report.connection.editor.editor.getSelectedText())
 			definition.query = this.report.connection.editor.editor.getSelectedText();
@@ -936,8 +959,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
 
-		if(this.container.querySelector('#define-report-form'))
-			this.container.querySelector('#define-report-form').remove();
+		if(this.container.querySelector('#define-report-parts > form#define-report-form'))
+			this.container.querySelector('#define-report-parts > form#define-report-form').remove();
 
 		this.container.querySelector('#define-report-parts').appendChild(this.report.connection.form);
 
@@ -948,6 +971,15 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.loadSchema();
 		this.filters();
+
+		if(this.reportLogs && !this.reportLogs.container.classList.contains('hidden')) {
+
+			this.reportLogs.report = this.report;
+			this.reportLogs.page = this;
+			this.reportLogs.clear();
+
+			await this.reportLogs.load();
+		}
 
 		this.page.preview.position = 'bottom';
 		this.container.querySelector('#preview-toggle').classList.toggle('selected', !this.page.preview.hidden);
@@ -979,6 +1011,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			await DataSource.load(true);
 
+			this.reportLogs.clear();
 			this.load();
 
 			new SnackBar({
@@ -1986,12 +2019,58 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 	}
 });
 
+class QueryLog extends ReportLog {
+
+	load() {
+
+		super.load();
+
+		const
+			queryInfo = this.logs.container.querySelector('.info div.block'),
+			connection = this.logs.page.page.connections.get(parseInt(this.logs.report.connection_name));
+
+		queryInfo.textContent = null;
+		queryInfo.classList.add('query');
+
+		try {
+
+			this.value.definition = JSON.parse(this.value.definition);
+		}
+		catch(e) {}
+
+		if(['file'].includes(connection.type)) {
+
+			queryInfo.innerHTML = '<div class="NA">No Report History Available</div>';
+			return;
+		}
+
+		this.connection = new (ReportConnection.types.get(connection.type))(this.value, this.logs.page, true);
+
+		queryInfo.appendChild(this.connection.form);
+
+		this.logs.report.connection.editor.editor.session.on('changeScrollTop', this.editorScrollListener = () => {
+
+			clearTimeout(QueryLog.scrollTimeout);
+			
+			QueryLog.scrollTimeout = setTimeout(() => {
+
+				this.connection.editor.editor.resize(true);
+				this.connection.editor.editor.scrollToLine(this.logs.report.connection.editor.editor.getFirstVisibleRow());
+
+				this.connection.editor.editor.gotoLine(this.logs.report.connection.editor.editor.getLastVisibleRow());
+			}, 100);
+
+		});
+	}
+}
+
 class ReportConnection {
 
-	constructor(report, stage) {
+	constructor(report, stage, readOnly = false) {
 
 		this.report = report;
 		this.stage = stage;
+		this.readOnly = readOnly;
 	}
 
 	get form() {
@@ -2008,6 +2087,37 @@ class ReportConnection {
 		return form;
 	}
 
+	set formJson(json = {}) {
+
+		for(const key in json) {
+
+			if(!(key in this.form.elements)) {
+
+				continue;
+			}
+
+			this.form.elements[key].value = json[key];
+
+			if(this.readOnly) {
+
+				if(this.form.elements[key].tagName == 'SELECT') {
+
+					this.form.elements[key].disabled = true;
+				}
+				else {
+
+					this.form.elements[key].readOnly = true;
+				}
+			}
+		}
+
+		if(this.editor) {
+
+			this.editor.value = json.query;
+		}
+
+	}
+
 	get json() {
 		return {};
 	}
@@ -2017,11 +2127,17 @@ ReportConnection.types = new Map();
 
 ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage) {
+	constructor(report, stage, readOnly) {
 
-		super(report, stage);
+		super(report, stage, readOnly);
 
 		this.editor = new CodeEditor({mode: 'sql'});
+
+		if(this.readOnly) {
+
+			this.editor.editor.setReadOnly(true);
+			this.editor.editor.setTheme('ace/theme/clouds');
+		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
@@ -2064,8 +2180,7 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 		super.form.appendChild(this.editor.container);
 
-		if(this.report.definition)
-			this.editor.value = this.report.definition.query;
+		this.formJson = this.report.definition || {};
 
 		return super.form;
 	}
@@ -2080,11 +2195,17 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage) {
+	constructor(report, stage, readOnly) {
 
-		super(report, stage);
+		super(report, stage, readOnly);
 
 		this.editor = new CodeEditor({mode: 'sql'});
+
+		if(this.readOnly) {
+
+			this.editor.editor.setReadOnly(true);
+			this.editor.editor.setTheme('ace/theme/clouds');
+		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
@@ -2127,8 +2248,7 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 
 		super.form.appendChild(this.editor.container);
 
-		if(this.report.definition)
-			this.editor.value = this.report.definition.query;
+		this.formJson = this.report.definition || {};
 
 		return super.form;
 	}
@@ -2143,11 +2263,17 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage) {
+	constructor(report, stage, readOnly) {
 
-		super(report, stage);
+		super(report, stage, readOnly);
 
 		this.editor = new CodeEditor({mode: 'sql'});
+
+		if(this.readOnly) {
+
+			this.editor.editor.setReadOnly(true);
+			this.editor.editor.setTheme('ace/theme/clouds');
+		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
@@ -2190,8 +2316,7 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 
 		super.form.appendChild(this.editor.container);
 
-		if(this.report.definition)
-			this.editor.value = this.report.definition.query;
+		this.formJson = this.report.definition || {};
 
 		return super.form;
 	}
@@ -2206,11 +2331,17 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('bigquery', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage) {
+	constructor(report, stage, readOnly) {
 
-		super(report, stage);
+		super(report, stage, readOnly);
 
 		this.editor = new CodeEditor({mode: 'sql'});
+
+		if(this.readOnly) {
+
+			this.editor.editor.setReadOnly(true);
+			this.editor.editor.setTheme('ace/theme/clouds');
+		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
@@ -2253,8 +2384,7 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 
 		super.form.appendChild(this.editor.container);
 
-		if(this.report.definition)
-			this.editor.value = this.report.definition.query;
+		this.formJson = this.report.definition || {};
 
 		return super.form;
 	}
@@ -2293,10 +2423,7 @@ ReportConnection.types.set('api', class ReportConnectionAPI extends ReportConnec
 		`;
 
 		// Set the vlues from report definition
-		for(const key in this.report.definition || {}) {
-			if(key in super.form.elements)
-				super.form.elements[key].value = this.report.definition[key];
-		}
+		this.formJson = this.report.definition || {};
 
 		return super.form;
 	}
@@ -2539,11 +2666,17 @@ ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConne
 
 ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage) {
+	constructor(report, stage, readOnly) {
 
-		super(report, stage);
+		super(report, stage, readOnly);
 
 		this.editor = new CodeEditor({mode: 'javascript'});
+
+		if(this.readOnly) {
+
+			this.editor.editor.setReadOnly(true);
+			this.editor.editor.setTheme('ace/theme/clouds');
+		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
@@ -2591,16 +2724,10 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 			</label>
 		`;
 
-		// Set the vlues from report definition
-		for(const key in this.report.definition || {}) {
-			if(key in super.form.elements)
-				super.form.elements[key].value = this.report.definition[key];
-		}
+		super.form.querySelector('label.mongo-query').appendChild(this.editor.container);
 
-		super.form.querySelector('label.mongo-query').appendChild(this.editor.container)
-
-		if(this.report.definition)
-			this.editor.value = this.report.definition.query;
+		// Set the values from report definition
+		this.formJson = this.report.definition || {};
 
 		return super.form;
 	}
@@ -2816,9 +2943,9 @@ class Axis {
 				var newDataList = [];
 
 				for(const data of axis.container.multiSelectColumns.datalist) {
-				    if(!usedColumns.includes(data.value) || selected.includes(data.value)) {
-				        newDataList.push(data);
-				    }
+					if(!usedColumns.includes(data.value) || selected.includes(data.value)) {
+						newDataList.push(data);
+					}
 				}
 
 				for(const value of freeColumns) {

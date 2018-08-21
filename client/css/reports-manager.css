@@ -136,7 +136,11 @@ main.preview-left #stages {
 		padding: 0;
 		width: 100%;
 	}
-
+	#stages .toolbar #history-toggle {
+		margin-left: auto;
+		right: calc(var(--gap) * 2);
+		position: absolute;
+	}
 #stage-configure-report .toolbar {
 	justify-content: space-between;
 }
@@ -361,6 +365,16 @@ main.preview-left #stages {
 			#stage-define-report #filters .form {
 				background: #fff;
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+			}
+		#stage-define-report .query-history {
+			order: 3;
+			flex: 1 50%;
+			margin-left: calc(var(--gap) * 2);
+			overflow: auto;
+			min-width: 50%;
+		}
+			#stage-define-report .query-history .info .query {
+				height: calc(100% - 38px);
 			}
 		#stage-define-report .edit-report-data {
 			overflow: auto;

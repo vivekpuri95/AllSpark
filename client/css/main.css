@@ -447,7 +447,7 @@ body {
 			transition: var(--transition-duration);
 		}
 		main table tbody tr:nth-child(2n) {
-			background: #efefef;
+			 background: #efefef;
 		}
 		main table tbody tr:hover,
 		main table tbody tr.selected {
@@ -763,6 +763,106 @@ body {
 		padding: calc(var(--gap) * 2);
 		z-index: 2;
 	}
+
+.query-history {
+
+}
+	.query-history a {
+		color: #888;
+		width: max-content;
+	}
+	.query-history .info,
+	.query-history .list {
+		height: 100%;
+	}
+		.query-history .list .NA {
+			padding: calc(var(--gap) * 2);
+		}
+		.query-history ul {
+			margin: 0;
+			list-style-type: none;
+			padding: 0;
+			grid-gap: calc(var(--gap) * 2);
+			display: grid;
+		}
+			.query-history ul li {
+				display: grid;
+				grid-template-columns: max-content 1fr;
+				grid-gap: calc(var(--gap) * 2);
+				padding: calc(var(--gap) * 2);
+				cursor:  pointer;
+				transition: background var(--transition-duration),
+							box-shadow var(--transition-duration);
+			}
+			.query-history ul li:hover {
+				background: #eee;
+				box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+			}
+			.query-history ul li:active {
+				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
+			}
+				.query-history ul li .clock {
+					font-size: 30px;
+					padding: 0;
+					color: #aaa;
+					align-items: center;
+					display: flex;
+				}
+				.query-history ul li > div {
+					display: grid;
+					grid-gap: calc(var(--gap) * 2);
+				}
+					.query-history ul li .timing {
+						font-weight: bold;
+					}
+		.query-history .list .footer {
+			display: flex;
+			padding: calc(var(--gap) * 1);
+			color: #888;
+			font-size: 90%;
+			margin-top: calc(var(--gap) * 2);
+			background: #fff;
+			box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+			cursor: pointer;
+			transition: background var(--transition-duration),
+						box-shadow var(--transition-duration);
+		}
+		.query-history .list .footer:hover {
+			background: #eee;
+		}
+		.query-history .list .footer:active {
+			box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
+		}
+			.query-history .list .footer .more {
+				margin-left: 45%;
+			}
+			.query-history .list .footer .more span {
+				margin: 0 15px;
+			}
+		.query-history .list .footer .showing {
+			margin-left: auto;
+			position: sticky;
+			bottom: 0;
+		}
+		.query-history .info .toolbar {
+			display: flex;
+			align-items: center;
+		}
+			.query-history .info .toolbar button {
+				margin-right: calc(var(--gap) * 2);
+			}
+			.query-history .info .toolbar span {
+				padding-right: calc(var(--gap) * 2);
+				color: #888;
+				margin-left: auto;
+			}
+		.query-history .info .query input:disabled,
+		.query-history .info .query select:disabled {
+			color: #333;
+		}
+		.query-history .info .code-editor {
+			height: 100%;
+		}
 
 .snack-bar-container {
 	display: grid;
