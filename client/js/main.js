@@ -1839,8 +1839,10 @@ class MultiSelect {
 
 		search.placeholder = 'Search...';
 
-		if(firstSelected && options.classList.contains('hidden'))
+		if(firstSelected) {
+
 			search.placeholder = selected > 1 ? `${firstSelected.textContent} and ${selected - 1} more` : firstSelected.textContent;
+		}
 
 		const footer = options.querySelector('footer');
 
