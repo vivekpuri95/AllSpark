@@ -787,10 +787,6 @@ main .data-source.flush {
 			transition: transform var(--transition-duration),
 						opacity var(--transition-duration);
 		}
-		.visualization.table table tr.selected {
-			background: #ddf;
-			color: var(--theme-light-text);
-		}
 		.visualization.table table tr.NA {
 			text-align: center;
 		}

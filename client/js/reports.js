@@ -7771,7 +7771,7 @@ class ReportLogs extends Set {
 
 		if(!this.size) {
 
-			logList.innerHTML = '<li class="NA block">No logs</li>';
+			logList.innerHTML = '<li class="NA block">No Report History Available</li>';
 			return;
 		}
 
@@ -7797,9 +7797,8 @@ class ReportLogs extends Set {
 		this.container.querySelector('.list .showing').textContent = `Showing: ${this.size}`;
 	}
 
-	toggleHide() {
-
-		this.container.classList.toggle('hidden');
+	toggle(condition) {
+		this.container.classList.toggle('hidden', !condition);
 	}
 }
 
@@ -7838,6 +7837,7 @@ class ReportLog {
 		`;
 
 		container.on('click', () => this.load());
+		container.querySelector('a').on('click', e => e.stopPropagation());
 
 		return container;
 	}
@@ -7872,7 +7872,6 @@ class ReportLog {
 		logInfo.querySelector('.toolbar .run').on('click', () => {
 
 			this.logs.page.preview(this.connection.json);
-
 		});
 	}
 }

@@ -1340,11 +1340,11 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 	async apply(options = {}) {
 
-		for (const report of this.dashboard.visibleVisuliaztions) {
+		for(const report of this.dashboard.visibleVisuliaztions) {
 
 			let found = false;
 
-			for (const filter of report.filters.values()) {
+			for(const filter of report.filters.values()) {
 
 				let [matchingFilter] = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))
 
@@ -1356,7 +1356,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				found = true;
 			}
 
-			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report) && !options.dontLoad)
+			if(options.dontLoad)
+				return;
+
+			if(found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
 				report.visualizations.selected.load(options);
 
 			report.container.style.opacity = found ? 1 : 0.4;
