@@ -183,8 +183,10 @@ class Session {
 				method: 'GET',
 			};
 
-		this.reports = await API.call('reports/logs/log', parameters, options);
-		this.errors = await API.call('errors/list', parameters, options);
+		[this.reports, this.errors] = await Promise.all([
+			API.call('reports/logs/log', parameters, options),
+			API.call('errors/list', parameters, options),
+		]);
 
 		this.process(this.reports, this.errors);
 	}

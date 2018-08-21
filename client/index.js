@@ -458,7 +458,7 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 
 			<div class="switch">
 				<div class="heading-bar">
-					<label class='info selected'>
+					<label class="info selected">
 						<h3>Info</h3>
 					</label>
 					<label class='access'>
@@ -505,8 +505,7 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 					</table>
 				</section>
 
-				<section class="section" id="activity-info">
-				</section>
+				<section class="section" id="activity-info"></section>
 
 			</div>
 

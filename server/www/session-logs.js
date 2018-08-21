@@ -6,12 +6,40 @@ class SessionLogs extends API {
 
 	async list() {
 
+		this.user.privilege.needs('user');
+
 		const db = dbConfig.write.database.concat('_logs');
 
-		if(this.request.query.inactive)
-			return await this.mysql.query(`SELECT * FROM ??.tb_sessions WHERE date(created_at) between ? and ?`, [db,this.request.query.sdate,this.request.query.edate]);
+		if(this.request.query.inactive) {
+			return await this.mysql.query(`
+				SELECT
+					*
+				FROM
+					??.tb_sessions
+				WHERE
+					date(created_at) between ? and ?
+				`,
+				[db,this.request.query.sdate,this.request.query.edate]
+			);
+		}
 
-		return await this.mysql.query(`select a.* from ??.tb_sessions a where a.id not in (select session_id from ??.tb_sessions where session_id is not NULL) and a.type = 'login' and a.expire_time >  unix_timestamp(now()) and a.user_id = ?`,[db, db, this.request.query.user_id])
+		return await this.mysql.query(`
+			SELECT
+				s1.*
+			FROM
+				??.tb_sessions s1
+			LEFT JOIN
+				??.tb_sessions s2
+			ON
+				s1.id = s2.session_id
+			WHERE
+				s1.type = 'login'
+				AND s2.id is  null
+				AND s1.expire_time >  unix_timestamp(now())
+				AND s1.user_id = ?
+			`,
+			[db, db, this.request.query.user_id]
+		)
 	};
 
 	async insert() {
