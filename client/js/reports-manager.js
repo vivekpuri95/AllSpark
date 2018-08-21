@@ -2034,7 +2034,8 @@ class QueryLog extends ReportLog {
 		queryInfo.textContent = null;
 		queryInfo.classList.add('query');
 
-		try{
+		try {
+
 			this.value.definition = JSON.parse(this.value.definition);
 		}
 		catch(e) {}
