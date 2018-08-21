@@ -2029,8 +2029,6 @@ class QueryLog extends ReportLog {
 			queryInfo = this.logs.container.querySelector('.info div.block'),
 			connection = this.logs.page.page.connections.get(parseInt(this.logs.report.connection_name));
 
-		this.logs.report.connection.editor.editor.session.removeEventListener('changeScrollTop', this.editorScrollListener);
-
 		queryInfo.textContent = null;
 		queryInfo.classList.add('query');
 
@@ -2042,7 +2040,7 @@ class QueryLog extends ReportLog {
 
 		if(['file'].includes(connection.type)) {
 
-			queryInfo.innerHTML = '<div class="NA">No information found.</div>';
+			queryInfo.innerHTML = '<div class="NA">No Report History Available</div>';
 			return;
 		}
 
