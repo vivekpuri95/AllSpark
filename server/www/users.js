@@ -109,17 +109,22 @@ exports.list = class extends API {
 			user_query = `
 				SELECT
 					u.*,
+					concat_ws(' ', addedByUser.first_name, addedByUser.middle_name, addedByUser.last_name) as added_by_user,
 					max(s.created_at + INTERVAL 330 MINUTE) AS last_login
 				FROM
 					tb_users u
+				LEFT JOIN
+					tb_users addedByUser
+				ON
+					u.added_by = addedByUser.user_id
 				LEFT JOIN
 					${db}.tb_sessions s
 				ON
 					u.user_id = s.user_id
 					AND s.type = 'login'
 				WHERE
-					account_id = ?
-					AND status = 1
+					u.account_id = ?
+					AND u.status = 1
 			`,
 			role_query = `
 				SELECT
@@ -139,9 +144,9 @@ exports.list = class extends API {
 
 		if (this.request.body.user_id && !this.request.body.search) {
 
-			user_query = user_query.concat(` AND u.user_id = ?`);
-			role_query = role_query.concat(` AND owner_id = ?`);
-			prv_query = prv_query.concat(` WHERE user_id = ?`);
+			user_query = user_query.concat(' AND u.user_id = ?');
+			role_query = role_query.concat(' AND owner_id = ?');
+			prv_query = prv_query.concat(' WHERE user_id = ?');
 
 			results = await Promise.all([
 				this.mysql.query(user_query, [this.account.account_id, this.request.body.user_id]),
@@ -158,7 +163,7 @@ exports.list = class extends API {
 
 				if(this.request.body.user_id) {
 
-					user_query = user_query.concat(` AND u.user_id LIKE ?`);
+					user_query = user_query.concat(' AND u.user_id LIKE ?');
 					queryParams.push(`%${this.request.body.user_id}%`);
 				}
 

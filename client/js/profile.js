@@ -46,18 +46,16 @@ Page.class = class Profile extends Page {
 
 		this.container.querySelector('#profile-info').innerHTML = `
 			<div class="profile-details">
-				<label>
-					<span>User ID</span>
-					<div>${this.data.user_id}</div>
-				</label>
-				<label>
-					<span>Email</span>
-					<div>${this.data.email}</div>
-				</label>
-				<label>
-					<span>Phone</span>
-					<div>${this.data.phone || ''}</div>
-				</label>
+				<span>User ID</span>
+				<div>${this.data.user_id}</div>
+				<span>Email</span>
+				<div>${this.data.email}</div>
+				<span>Phone</span>
+				<div>${this.data.phone || '<span class="NA">-</span>'}</div>
+				<span>Sign-up Date</span>
+				<div>${Format.dateTime(this.data.created_at) || '<span class="NA">-</span>'}</div>
+				<span>Added By</span>
+				<div>${this.data.added_by_user || '<span class="NA">-</span>'}</div>
 			</div>
 		`;
 
@@ -182,7 +180,7 @@ class Session {
 				session_id: this.id,
 			},
 			options = {
-				method: 'Get',
+				method: 'GET',
 			};
 
 		this.reports = await API.call('reports/logs/log', parameters, options);
@@ -217,22 +215,22 @@ class Session {
 
 		let tempList = [];
 
-		for(const index in activity) {
+		for(const data of activity) {
 
-			if(!parseInt(index)) {
-				tempList.push(activity[index]);
+			if(!activity.indexOf(data)) {
+				tempList.push(data);
 			}
 
-			if(tempList[tempList.length - 1].type == activity[parseInt(index)].type) {
-				tempList.push(activity[index]);
+			if(tempList[tempList.length - 1].type == activity[activity.indexOf(data)].type) {
+				tempList.push(data);
 			}
 			else {
 				groupedList.push(tempList);
 				tempList = [];
-				tempList.push(activity[index]);
+				tempList.push(data);
 			}
 
-			if(index == activity.length - 1){
+			if(activity.indexOf(data) == activity.length - 1){
 				groupedList.push(tempList);
 			}
 		}
@@ -248,7 +246,10 @@ class Session {
 		const container = this.containerElement = document.createElement('article');
 		container.classList.add('active');
 
-		const detailString = `${this.browser || ''} ${this.OS ? '&middot;&nbsp;'+this.OS : ''} ${this.ip ? '&middot;&nbsp;'+this.ip : ''}`
+		let detailString = [this.browser, this.OS, this.ip].filter(d => d);
+
+		detailString = detailString.join('&middot;&nbsp;');
+
 		container.innerHTML = `
 			<header>
 				<div class="icon"><i class="far fa-clock"></i></div>
@@ -260,14 +261,12 @@ class Session {
 							<i class="fas fa-angle-right"></i>
 						</div>
 					</div>
-					<div class="device-info NA">
+					<div class="extra-info NA">
 						${detailString}
 						<span class="activity-details NA"></span>
 					</div>
 				</div>
 			</header>
-
-			<div class="activities hidden"></div>
 		`;
 
 		container.querySelector('header').on('click', async() => {
@@ -276,10 +275,11 @@ class Session {
 
 			container.querySelector('.activity-details').innerHTML = `Reports: ${this.reportsCount} &middot; Errors: ${this.errorsCount}`;
 
-			container.querySelector('.activities').classList.toggle('hidden');
 			container.querySelector('.down').classList.toggle('angle-rotate');
 
-			container.querySelector('.activities').appendChild(this.activityGroups.container);
+			container.appendChild(this.activityGroups.container);
+
+			container.querySelector('.activity-groups').classList.toggle('hidden');
 		});
 
 		return container;
@@ -297,23 +297,16 @@ class ActivityGroups extends Set {
 		}
 	}
 
-	render() {
-
-		const container = this.container;
-
-		for(const activityGroup of this)
-			container.appendChild(activityGroup.container);
-	}
-
 	get container() {
 
 		if(this.containerElement)
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('activityGroups');
+		container.classList.add('activity-groups', 'hidden');
 
-		this.render();
+		for(const activityGroup of this)
+			container.appendChild(activityGroup.container);
 
 		return container;
 	}
@@ -325,31 +318,37 @@ class ActivityGroup extends Set {
 
 		super();
 
+		this.type = activityGroup[0].type;
+
 		for(const activity of activityGroup) {
-			this.add(new Activity(activity));
+
+			if(activity.result_query) {
+				this.add(new ActivityReport(activity));
+			}
+			else {
+				this.add(new ActivityError(activity));
+			}
 		}
 	}
 
 	get container() {
 
 		if(this.containerElement)
-			return this.containerElement
-
-		;
+			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
 
 
 		container.classList.add('activity-group');
 
-		const icon = Array.from(this)[0].type == 'report' ? 'far fa-file' : 'fas fa-exclamation';
+		const icon = this.type == 'report' ? 'far fa-file' : 'fas fa-exclamation';
 
 		container.innerHTML = `
 			<header>
 				<div class="icon"><i class="${icon}"></i></div>
 				<div class="details">
 					<div class="title">
-						<span>${this.size}</span><span>${Array.from(this)[0].type}${this.size == 1 ? '' : 's'}</span>
+						<span>${this.size}</span><span>${this.type}${this.size == 1 ? '' : 's'}</span>
 
 						<div class="down">
 							<i class="fas fa-angle-right"></i>
@@ -371,6 +370,7 @@ class ActivityGroup extends Set {
 
 			activityList.classList.toggle('hidden');
 
+			container.querySelector('header').classList.toggle('selected');
 			container.querySelector('.down').classList.toggle('angle-rotate');
 
 			const tempContainer = document.createDocumentFragment();
@@ -390,21 +390,14 @@ class Activity {
 	constructor(data) {
 
 		Object.assign(this, data);
-
-		if(data.result_query) {
-			this.activityType = new ActivityReport(data);
-		}
-		else {
-			this.activityType = new ActivityError(data);
-		}
 	}
 
 	get container() {
 
-		if(this.containerElement)
-			return this.containerElement;
+		if(this.activityContainerElement)
+			return this.activityContainerElement;
 
-		const container = this.containerElement = document.createElement('div');
+		const container = this.activityContainerElement = document.createElement('div');
 
 		container.classList.add('activity', 'report');
 		const
@@ -420,11 +413,11 @@ class Activity {
 			dialogueBox.heading = this.type;
 			dialogueBox.body.classList.add('activity-popup');
 
-			for(const key of this.activityType.keys) {
+			for(const key of this.keys) {
 
 				const span = document.createElement('span');
 				span.classList.add('key');
-				span.textContent = `${key}:`;
+				span.textContent = key + ':';
 
 				dialogueBox.body.appendChild(span);
 
@@ -462,8 +455,8 @@ class Activity {
 			dialogueBox.show();
 		});
 
-		details.appendChild(this.activityType.name);
-		details.appendChild(this.activityType.extraInfo);
+		details.appendChild(this.name);
+		details.appendChild(this.extraInfo);
 
 		container.appendChild(div);
 		container.appendChild(details);
@@ -472,9 +465,12 @@ class Activity {
 	}
 }
 
-class ActivityReport {
+class ActivityReport extends Activity {
 
 	constructor(report) {
+
+		super(report);
+
 		Object.assign(this, report)
 	}
 
@@ -523,9 +519,12 @@ class ActivityReport {
 	}
 }
 
-class ActivityError {
+class ActivityError extends Activity {
 
 	constructor(error) {
+
+		super(error);
+
 		Object.assign(this, error)
 	}
 

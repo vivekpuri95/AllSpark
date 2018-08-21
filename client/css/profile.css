@@ -51,20 +51,17 @@ main .roles {
 	overflow: hidden;
 }
 main .profile-details {
-	padding: var(--gap);
+	display: grid;
+	padding: calc(var(--gap) * 2);
 	user-select: text;
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+	grid-template-columns: max-content 1fr;
+	grid-gap: calc(var(--gap) * 2);
 }
-	.profile-details label {
-		display: grid;
-		padding: var(--gap);
-		font-size: 14px;
-		grid-template-columns: 100px 600px;
+	.profile-details span {
+		font-weight: bold;
+		color: #666;
 	}
-		.profile-details label span {
-			font-weight: bold;
-			color: #666;
-		}
 
 main .switch {
 	margin: calc(var(--gap) * 2) 0;
@@ -77,7 +74,7 @@ main .switch section {
 		display: flex;
 		border-bottom: 1px solid #ccc;
 	}
-		main .switch #activity-info .NA {
+		main .switch #activity-info .extra-info.NA {
 			color: #999;
 			margin-right: var(--gap);
 		}
@@ -116,14 +113,14 @@ main .sessions .list {
 		main .sessions .toolbar h3 {
 			margin: 0;
 		}
-	main article {
+	main #activity-info article {
 		background: #fff;
 		overflow: hidden;
 		display: flex;
 		flex-direction:  column;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
-	main article.active > header::after {
+	main #activity-info article.active > header::after {
 		content: "";
 		background: #9dec42;
 		width: 6px;
@@ -131,48 +128,46 @@ main .sessions .list {
 		right: 0;
 		height: 100%;
 	}
-	main article > header {
+	main #activity-info article > header {
 		box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 		z-index: 1;
 	}
-	main article header {
+	main #activity-info article header {
 		display: grid;
 		grid-template-columns: 50px 1fr;
 		padding: calc(var(--gap) * 2);
 		position: sticky;
 		top: 0;
 		background: #fff;
+		transition: background var(--transition-duration);
 	}
-		main header .icon,
-		main .activities .icon {
+	main #activity-info article header:hover {
+		cursor: pointer;
+	}
+		main #activity-info .icon {
 			color: #999;
 			display: flex;
 			justify-content: center;
 			align-items: center;
 		}
-		main header .icon {
+		main article header .icon {
 			font-size: 225%;
 		}
-		main header .activity-details {
+		main #activity-info article header .activity-details {
 			margin-left: auto;
 		}
-		main header .details,
-		main .activities .details {
+		main #activity-info article header .details,
+		main .activity-groups .details {
 			display: grid;
 			grid-gap: var(--gap);
 		}
-		main header:hover {
-			cursor: pointer;
-		}
-			main header .details .title,
-			main .activities .details .title {
+			main .details .title {
 				display: flex;
 				align-items: center;
 				font-size: 125%;
 				color: #333;
 			}
-				main header .details .title span,
-				main .activities .details .title span {
+				main .details .title span {
 					margin-right: var(--gap);
 				}
 				main header .details .title .down {
@@ -182,25 +177,17 @@ main .sessions .list {
 			main .activity-list {
 				background: #efefef;
 			}
-			main .activities .details .extra-info,
-			main .activities .details .extra-info,
-			main header .details .device-info {
-				display: flex;
-				align-items: center;
-				color: #999;
-				font-size: 90%;
-			}
-				main .activities .details .extra-info span,
-				main .activities .details .extra-info span {
-					margin-right: var(--gap);
-				}
-	main article .activities {
+	main .activity-groups header.selected,
+	main .activity-groups header:hover {
+		background: #ddf !important;
+	}
+	main #activity-info article .activity-groups {
 		display: grid;
 		max-height: 300px;
 		overflow: auto;
 		background-color: #fff;
 	}
-		main .activities .activity {
+		main .activity-groups .activity {
 			display: grid;
 			grid-template-columns: 50px 1fr;
 			padding: calc(var(--gap) * 2);
@@ -209,25 +196,33 @@ main .sessions .list {
 			transition: box-shadow var(--transition-duration),
 						background var(--transition-duration);
 		}
-		main .activities .activity:hover {
+		main .activity-groups .activity:hover {
 			cursor: pointer;
 		}
-			main .activities .icon {
+			main .activity-groups header .icon {
 				font-size: 125%;
 			}
-			main .activities .details {
+			main .activity-groups .details {
 				display: grid;
 				grid-gap: var(--gap);
 			}
-			main .activities .details .title {
+				main .details .extra-info {
+					display: flex;
+					align-items: center;
+					color: #999;
+					font-size: 90%;
+				}
+				main .activity-groups .details .extra-info span:last-child {
+					margin-left: auto;
+				}
+					main .activity-groups .details .extra-info span {
+						margin-right: var(--gap);
+					}
+			main .activity-groups .details .title {
 				font-size: 110%;
 				text-transform: capitalize;
 			}
-			main .activities .details .extra-info span:last-child,
-			main .activities .details .extra-info span:last-child {
-				margin-left: auto;
-			}
-		main .activity .NA {
+		main .activity .details .NA {
 			margin-left: var(--gap);
 		}
 
@@ -235,6 +230,7 @@ main .activity-popup {
 	padding: calc(var(--gap) * 2);
 	display: grid;
 	grid-template-columns: max-content 1fr;
+	user-select: text;
 }
 	main .activity-popup .key {
 		color: #999;
