@@ -807,14 +807,18 @@ body {
 					color: #aaa;
 					align-items: center;
 					display: flex;
+					grid-row: 1 / 3;
 				}
-				.query-history ul li > div {
-					display: grid;
-					grid-gap: calc(var(--gap) * 2);
+				.query-history ul li .timing {
+					font-weight: bold;
 				}
-					.query-history ul li .timing {
-						font-weight: bold;
-					}
+			.query-history ul li.loading {
+				display: flex;
+				justify-content: center;
+			}
+				.query-history ul li.loading > span {
+					font-size: large;
+				}
 		.query-history .list .footer {
 			display: flex;
 			padding: calc(var(--gap) * 1);

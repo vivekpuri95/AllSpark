@@ -7704,12 +7704,23 @@ class ReportLogs extends Set {
 			</div>
 		`;
 
-		container.querySelector('.list .more').on('click', () => this.load());
+		container.querySelector('.list .footer').on('click', () => {
+
+			if(container.querySelector('.list .footer .more').classList.contains('hidden')) {
+
+				return;
+			}
+
+			this.load()
+		});
 
 		return container;
 	}
 
 	async load() {
+
+		this.container.querySelector('.list ul').innerHTML = '<li class="loading"><span><i class="fa fa-spinner fa-spin"></i></span></li>';
+		this.container.querySelector('.list .footer').classList.add('hidden');
 
 		const
 			parameters = {
@@ -7743,7 +7754,6 @@ class ReportLogs extends Set {
 		if(!this.currentResponse.length) {
 
 			this.container.querySelector('.list .footer .more').classList.add('hidden');
-			return;
 		}
 
 		logList.textContent = null;
@@ -7794,10 +7804,8 @@ class ReportLog {
 
 		container.innerHTML = `
 			<span class="clock"><i class="fa fa-history"></i></span>
-			<div>
-				<span class="timing">${Format.dateTime(this.created_at)}</span>
-				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a>
-			</div>
+			<span class="timing">${Format.dateTime(this.created_at)}</span>
+			<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a>
 		`;
 
 		container.on('click', () => this.load());
@@ -7830,6 +7838,12 @@ class ReportLog {
 		logInfo.querySelector('.toolbar .restore').on('click', () => {
 
 			this.logs.report.connection.formJson = this.connection.json;
+
+			new SnackBar({
+				message: this.query_id + ' Query Restored',
+				subtitle: 'The  restored query is not saved yet and will be lost on page reload.',
+				icon: 'fa fa-plus',
+			});
 		});
 
 		logInfo.querySelector('.toolbar .run').on('click', () => {
