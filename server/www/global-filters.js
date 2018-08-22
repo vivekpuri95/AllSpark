@@ -36,7 +36,7 @@ class GlobalFilters extends API {
 		);
 	}
 
-	async update({id,name, placeholder, default_value, multiple, type, offset, dataset} = {}) {
+	async update({id, name, placeholder, default_value, multiple, type, offset, dataset} = {}) {
 
 		this.user.privilege.needs('administrator');
 
