@@ -461,16 +461,18 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 					<label class="info selected">
 						<h3>Info</h3>
 					</label>
-					<label class='access'>
+					<label class="access">
 						<h3>Access</h3>
 					</label>
-					<label class='activity'>
+					<label class="activity">
 						<h3>Activity</h3>
 					</label>
 				</div>
 
 				<section class="section show" id="profile-info">
-					<i class="fa fa-spinner fa-spin"></i>
+					<div class="spinner">
+						<i class="fa fa-spinner fa-spin"></i>
+					</div>
 				</section>
 
 				<section class="section" id="access">
@@ -505,10 +507,8 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 					</table>
 				</section>
 
-				<section class="section" id="activity-info"></section>
-
+				<section class="section activity-info" id="activity"></section>
 			</div>
-
 		`;
 	}
 }));
