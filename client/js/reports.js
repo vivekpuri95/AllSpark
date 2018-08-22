@@ -209,7 +209,7 @@ class DataSource {
 						<button type="button" class="filtered-csv-download"><i class="far fa-file-excel"></i> Filtered CSV</button>
 						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i> XLSX</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
-						<button type="button" class="export-toggle"><i class="fa fa-download"></i> Export</button>
+						<!--<button type="button" class="export-toggle"><i class="fa fa-download"></i> Export</button>-->
 					</div>
 				</div>
 				<select class="change-visualization hidden"></select>
@@ -248,10 +248,6 @@ class DataSource {
 					</span>
 				</div>
 			</div>
-
-			<div class="export-json hidden">
-				${JSON.stringify(DataSource.list.get(this.query_id))}
-			</div>
 		`;
 
 		if(user.privileges.has('report'))
@@ -262,12 +258,13 @@ class DataSource {
 			this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
 		})
 
-		container.querySelector('.menu .export-toggle').on('click', () => {
-			container.querySelector('.export-json').classList.toggle('hidden');
-			container.querySelector('.export-toggle').classList.toggle('selected');
+		// container.querySelector('.menu .export-toggle').on('click', () => {
+		// 	container.querySelector('.export-json').classList.toggle('hidden');
+		// 	container.querySelector('.export-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render({resize: true});
-		});
+		// 	this.visualizations.selected.render({resize: true});
+		// });
+
 		container.querySelector('header .menu-toggle').on('click', () => {
 
 			container.querySelector('.menu').classList.toggle('hidden');
@@ -1103,10 +1100,10 @@ class DataSourceFilter {
 					if(!date)
 						break;
 
-					if(companion.name.toLowerCase().includes('start') && date != today + ((range.start + 1) * 24 * 60 * 60 * 1000))
+					if(companion.name.toLowerCase().includes('start') && date != today + ((range.start) * 24 * 60 * 60 * 1000))
 						match = false;
 
-					else if(companion.name.toLowerCase().includes('end') && date != today + ((range.end + 1) * 24 * 60 * 60 * 1000))
+					else if(companion.name.toLowerCase().includes('end') && date != today + ((range.end) * 24 * 60 * 60 * 1000))
 						match = false;
 				}
 
