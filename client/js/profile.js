@@ -216,19 +216,10 @@ class Session {
 		let activity = reports.concat(errors);
 
 		activity = activity.sort((a, b) => {
-
-			const created_atA = a.created_at.toLowerCase();
-			const created_atB = b.created_at.toLowerCase();
-
-			if (created_atA < created_atB) {
+			if(a.created_at < b.created_at)
 				return -1;
-			}
-
-			if (created_atA > created_atB) {
+			else
 				return 1;
-			}
-
-			return 0;
 		});
 
 		const groupedList = [];
