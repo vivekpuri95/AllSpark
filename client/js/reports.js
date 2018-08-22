@@ -7751,11 +7751,6 @@ class ReportLogs extends Set {
 
 		this.container.querySelector('.list .footer').classList.remove('hidden');
 
-		if(!this.currentResponse.length) {
-
-			this.container.querySelector('.list .footer .more').classList.add('hidden');
-		}
-
 		logList.textContent = null;
 
 		this.container.querySelector('.list .footer .more').classList.remove('hidden');
@@ -7765,6 +7760,11 @@ class ReportLogs extends Set {
 		for(const log of this.values()) {
 
 			logList.appendChild(log.container);
+		}
+
+		if(this.currentResponse.length < 10) {
+
+			this.container.querySelector('.list .footer .more').classList.add('hidden');
 		}
 
 		this.container.querySelector('.list .showing').textContent = `Showing: ${this.size}`;
