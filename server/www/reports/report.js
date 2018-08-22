@@ -317,7 +317,7 @@ exports.logs = class extends API {
 			ORDER BY
 				h.id DESC
 			LIMIT 10 OFFSET ?`,
-			[this.request.query.owner, this.account.account_id, this.request.query.query_id, this.request.query.offset]
+			[this.request.query.owner, this.account.account_id, this.request.query.owner_id, this.request.query.offset]
 		);
 	}
 }

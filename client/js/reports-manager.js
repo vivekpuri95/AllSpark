@@ -885,10 +885,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		historyToggle.on('click', async () => {
 
 			historyToggle.classList.toggle('selected');
-			this.reportLogs.toggle(historyToggle.classList.contains('selected'));
+			this.queryLogs.toggle(historyToggle.classList.contains('selected'));
 
-			if(historyToggle.classList.contains('selected') && !this.reportLogs.size)
-				await this.reportLogs.load();
+			if(historyToggle.classList.contains('selected') && !this.queryLogs.size)
+				await this.queryLogs.load();
 		});
 
 		this.editReportData = new EditReportData();
@@ -966,19 +966,19 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.loadSchema();
 		this.filters();
 
-		this.reportLogs = new ReportLogs(this.report, this, QueryLog);
+		this.queryLogs = new ReportLogs(this.report, this, {class: QueryLog, name: 'query'});
 
 		const historyToggleSelected = this.container.querySelector('#history-toggle').classList.contains('selected')
 
-		this.reportLogs.toggle(historyToggleSelected);
+		this.queryLogs.toggle(historyToggleSelected);
 
 		if(historyToggleSelected)
-			this.reportLogs.load();
+			this.queryLogs.load();
 
 		if(this.container.querySelector('#define-report-parts .query-history'))
 			this.container.querySelector('#define-report-parts .query-history').remove();
 
-		this.container.querySelector('#define-report-parts').appendChild(this.reportLogs.container);
+		this.container.querySelector('#define-report-parts').appendChild(this.queryLogs.container);
 
 		this.page.preview.position = 'bottom';
 		this.container.querySelector('#preview-toggle').classList.toggle('selected', !this.page.preview.hidden);
@@ -1010,7 +1010,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			await DataSource.load(true);
 
-			this.reportLogs.clear();
+			this.queryLogs.clear();
 			this.load();
 
 			new SnackBar({
@@ -1833,6 +1833,19 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.form.on('submit', e => this.update(e));
 		this.container.querySelector('#preview-configure-visualization').on('click', e => this.preview(e));
 
+		const historyToggle = this.container.querySelector('#history-configure-visualization');
+
+		historyToggle.on('click',async () =>{
+
+			historyToggle.classList.toggle('selected');
+			this.visualizationLogs.toggle(historyToggle.classList.contains('selected'));
+
+			this.page.container.classList.toggle('compact', historyToggle.classList.contains('selected'));
+
+			if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
+				await this.visualizationLogs.load();
+		});
+
 		this.setupConfigurationSetions();
 	}
 
@@ -1902,6 +1915,20 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 				this.visualization.options = JSON.parse(this.visualization.options) || {};
 			} catch(e) {}
 		}
+
+		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
+
+		const visualizationLogsSelected = this.container.querySelector('#history-configure-visualization').classList.contains('selected')
+
+		this.visualizationLogs.toggle(visualizationLogsSelected);
+
+		if(visualizationLogsSelected)
+			this.visualizationLogs.load();
+
+		if(this.page.container.querySelector('.query-history'))
+			this.page.container.querySelector('.query-history').remove();
+
+		this.page.container.appendChild(this.visualizationLogs.container);
 
 		if(!this.visualization.options)
 			this.visualization.options = {};
@@ -1981,6 +2008,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 			await DataSource.load(true);
 
+			this.visualizationLogs.clear();
+
 			this.load();
 
 			this.page.stages.get('pick-visualization').switcher.querySelector('small').textContent = this.form.name.value;
@@ -2026,7 +2055,7 @@ class QueryLog extends ReportLog {
 
 		const
 			queryInfo = this.logs.container.querySelector('.info div.block'),
-			connection = this.logs.page.page.connections.get(parseInt(this.logs.report.connection_name));
+			connection = this.logs.page.page.connections.get(parseInt(this.logs.owner.connection_name));
 
 		queryInfo.textContent = null;
 		queryInfo.classList.add('query');
@@ -2047,19 +2076,61 @@ class QueryLog extends ReportLog {
 
 		queryInfo.appendChild(this.connection.form);
 
-		this.logs.report.connection.editor.editor.session.on('changeScrollTop', this.editorScrollListener = () => {
+		this.logs.owner.connection.editor.editor.session.on('changeScrollTop', this.editorScrollListener = () => {
 
 			clearTimeout(QueryLog.scrollTimeout);
 
 			QueryLog.scrollTimeout = setTimeout(() => {
 
 				this.connection.editor.editor.resize(true);
-				this.connection.editor.editor.scrollToLine(this.logs.report.connection.editor.editor.getFirstVisibleRow());
+				this.connection.editor.editor.scrollToLine(this.logs.owner.connection.editor.editor.getFirstVisibleRow());
 
-				this.connection.editor.editor.gotoLine(this.logs.report.connection.editor.editor.getLastVisibleRow());
+				this.connection.editor.editor.gotoLine(this.logs.owner.connection.editor.editor.getLastVisibleRow());
 			}, 100);
 
 		});
+	}
+}
+
+class VisualizationLog extends ReportLog {
+
+	load() {
+
+		super.load();
+
+		const
+			queryInfo = this.logs.container.querySelector('.info div.block'),
+			optionsForm = new (ConfigureVisualization.types.get(this.logs.owner.type))(this.logs.owner, this.logs.page.page, this.logs.page);
+
+		queryInfo.classList.remove('block');
+
+		queryInfo.innerHTML = `
+			<div class="logs-configuration-section">
+			
+				<h3><i class="fas fa-angle-right"></i> General</h3>
+
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Name</span>
+							<input type="text" name="name" required>
+						</label>
+
+						<label>
+							<span>Visualization Type</span>
+							<select name="type" required></select>
+						</label>
+
+						<label>
+							<span>Description</span>
+							<textarea  name="description" rows="4" cols="50"></textarea>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+		
+		queryInfo.appendChild(optionsForm.form);
 	}
 }
 

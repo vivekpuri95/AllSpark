@@ -7843,13 +7843,14 @@ class SpatialMapTheme {
 
 class ReportLogs extends Set {
 
-	constructor(report, page, logtype) {
+	constructor(owner, page, logtype) {
 
 		super();
 
-		this.report = report;
+		this.owner = owner;
 		this.page = page;
-		this.logClass = logtype;
+		this.logClass = logtype.class;
+		this.ownerName = logtype.name;
 	}
 
 	get container() {
@@ -7899,8 +7900,8 @@ class ReportLogs extends Set {
 
 		const
 			parameters = {
-				query_id: this.report.query_id,
-				owner: 'query',
+				owner_id: this.owner[this.ownerName + '_id'],
+				owner: this.ownerName,
 				offset: this.size,
 			};
 
@@ -8012,7 +8013,7 @@ class ReportLog {
 
 		logInfo.querySelector('.toolbar .restore').on('click', () => {
 
-			this.logs.report.connection.formJson = this.connection.json;
+			this.logs.owner.connection.formJson = this.connection.json;
 
 			new SnackBar({
 				message: this.query_id + ' Query Restored',

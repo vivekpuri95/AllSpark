@@ -773,6 +773,7 @@ main.preview-right #preview {
 	grid-row: 2;
 	height: calc(100vh - 135px);
 }
+	main.preview-right.compact #preview {grid-column: 3 / 4;}
 main.preview-left #preview {
 	grid-column: 1 / 3;
 	grid-row: 2;
