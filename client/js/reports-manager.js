@@ -879,22 +879,10 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		historyToggle.on('click', async () => {
 
 			historyToggle.classList.toggle('selected');
+			this.reportLogs.toggle(historyToggle.classList.contains('selected'));
 
-			if(this.reportLogs) {
-
-				this.reportLogs.toggleHide();
-
-				if(this.reportLogs.container.classList.contains('hidden') || this.reportLogs.size)
-					return;
-
-			}
-			else {
-
-				this.reportLogs = new ReportLogs(this.report, this, QueryLog);
-				this.container.querySelector('#define-report-parts').appendChild(this.reportLogs.container);
-			}
-
-			await this.reportLogs.load();
+			if(historyToggle.classList.contains('selected') && !this.reportLogs.size)
+				await this.reportLogs.load();
 		});
 
 		this.editReportData = new EditReportData();
@@ -972,14 +960,19 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.loadSchema();
 		this.filters();
 
-		if(this.reportLogs && !this.reportLogs.container.classList.contains('hidden')) {
+		this.reportLogs = new ReportLogs(this.report, this, QueryLog);
 
-			this.reportLogs.report = this.report;
-			this.reportLogs.page = this;
-			this.reportLogs.clear();
+		const historyToggleSelected = this.container.querySelector('#history-toggle').classList.contains('selected')
 
-			await this.reportLogs.load();
-		}
+		this.reportLogs.toggle(historyToggleSelected);
+
+		if(historyToggleSelected)
+			this.reportLogs.load();
+
+		if(this.container.querySelector('#define-report-parts .query-history'))
+			this.container.querySelector('#define-report-parts .query-history').remove();
+
+		this.container.querySelector('#define-report-parts').appendChild(this.reportLogs.container);
 
 		this.page.preview.position = 'bottom';
 		this.container.querySelector('#preview-toggle').classList.toggle('selected', !this.page.preview.hidden);
@@ -2051,7 +2044,7 @@ class QueryLog extends ReportLog {
 		this.logs.report.connection.editor.editor.session.on('changeScrollTop', this.editorScrollListener = () => {
 
 			clearTimeout(QueryLog.scrollTimeout);
-			
+
 			QueryLog.scrollTimeout = setTimeout(() => {
 
 				this.connection.editor.editor.resize(true);

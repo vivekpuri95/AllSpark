@@ -2434,6 +2434,7 @@ class FormatSQL {
 			'GROUP BY',
 			'ORDER BY',
 			'LIMIT',
+			'HAVING',
 			'ON',
 			'AND',
 			'OR',
@@ -2493,8 +2494,9 @@ class FormatSQL {
 				'RIGHT JOIN',
 				'INNER JOIN',
 				'JOIN',
-				'ORDER BY',
 				'GROUP BY',
+				'ORDER BY',
+				'HAVING',
 				'LIMIT',
 			];
 

@@ -5,7 +5,7 @@
 	--color-secondary-text: #333;
 	--color-accent:  #1abb9c;
 	--color-accent-text: #fff;
-	--color-row-hover: #ddf;
+	--color-hover: #ddf;
 	--transition-duration: 300ms;
 	--gap: 5px;
 }

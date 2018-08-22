@@ -907,6 +907,7 @@ class Dashboard {
 
 		await API.refreshToken();
 
+		this.globalFilters.apply({dontLoad: true});
 		this.lazyLoad(this.maxScrollHeightAchieved, resize);
 
 		document.addEventListener('scroll',
@@ -1339,21 +1340,26 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 	async apply(options = {}) {
 
-		for (const report of this.dashboard.visibleVisuliaztions) {
+		for(const report of this.dashboard.visibleVisuliaztions) {
 
 			let found = false;
 
-			for (const filter of report.filters.values()) {
+			for(const filter of report.filters.values()) {
 
-				if (!Array.from(this.values()).some(gfl => gfl.placeholders.includes(filter.placeholder)))
+				let [matchingFilter] = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))
+
+				if(!matchingFilter)
 					continue;
 
-				filter.value = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))[0].value;
+				filter.value = matchingFilter.value;
 
 				found = true;
 			}
 
-			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
+			if(options.dontLoad)
+				return;
+
+			if(found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
 				report.visualizations.selected.load(options);
 
 			report.container.style.opacity = found ? 1 : 0.4;

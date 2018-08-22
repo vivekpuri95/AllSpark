@@ -209,7 +209,7 @@ class DataSource {
 						<button type="button" class="filtered-csv-download"><i class="far fa-file-excel"></i> Filtered CSV</button>
 						<button type="button" class="xlsx-download"><i class="fas fa-file-excel"></i> XLSX</button>
 						<button type="button" class="json-download"><i class="fas fa-code"></i> JSON</button>
-						<button type="button" class="export-toggle"><i class="fa fa-download"></i> Export</button>
+						<!--<button type="button" class="export-toggle"><i class="fa fa-download"></i> Export</button>-->
 					</div>
 				</div>
 				<select class="change-visualization hidden"></select>
@@ -248,10 +248,6 @@ class DataSource {
 					</span>
 				</div>
 			</div>
-
-			<div class="export-json hidden">
-				${JSON.stringify(DataSource.list.get(this.query_id))}
-			</div>
 		`;
 
 		if(user.privileges.has('report'))
@@ -262,12 +258,13 @@ class DataSource {
 			this.containerElement.querySelector('.menu .download-btn .download').classList.remove('selected');
 		})
 
-		container.querySelector('.menu .export-toggle').on('click', () => {
-			container.querySelector('.export-json').classList.toggle('hidden');
-			container.querySelector('.export-toggle').classList.toggle('selected');
+		// container.querySelector('.menu .export-toggle').on('click', () => {
+		// 	container.querySelector('.export-json').classList.toggle('hidden');
+		// 	container.querySelector('.export-toggle').classList.toggle('selected');
 
-			this.visualizations.selected.render({resize: true});
-		});
+		// 	this.visualizations.selected.render({resize: true});
+		// });
+
 		container.querySelector('header .menu-toggle').on('click', () => {
 
 			container.querySelector('.menu').classList.toggle('hidden');
@@ -1011,8 +1008,6 @@ class DataSourceFilter {
 			this.dateRanges = account.settings.has('global_filters_date_ranges');
 
 		this.dateRanges.push({name: 'Custom'});
-
-		this.value = 0;
 	}
 
 	get label() {
@@ -1042,7 +1037,7 @@ class DataSourceFilter {
 			for(const [index, range] of this.dateRanges.entries())
 				input.insertAdjacentHTML('beforeend', `<option value="${index}">${range.name}</option>`);
 
-			input.value = 'valueCache' in this ? this.valueCache : this.value;
+			input.value = this.value;
 
 			input.on('change', () => this.dateRangeUpdate());
 		}
@@ -1054,7 +1049,7 @@ class DataSourceFilter {
 			input.type = MetaData.filterTypes.get(this.type).input_type;
 			input.name = this.placeholder;
 
-			input.value = 'valueCache' in this ? this.valueCache : this.value;
+			input.value = this.value;
 		}
 
 		container.innerHTML = `<span>${this.name}<span>`;
@@ -1082,6 +1077,45 @@ class DataSourceFilter {
 		// If a value was recieved before the container could be created
 		if('valueCache' in this)
 			return this.valueCache;
+
+		// If the filter's type is a date range then it's default value depends on it's companion filters' values
+		if(this.type == 'daterange') {
+
+			// The default date range value is the custom value in case no other filter preset matches
+			let value = this.dateRanges.length - 1;
+
+			// Find the date range that matches the selected date range values for the current filter's companions
+			for(const [index, range] of this.dateRanges.entries()) {
+
+				let match = true;
+
+				for(let companion of this.companions || []) {
+
+					companion = this.filters.get(companion.placeholder);
+
+					const
+						date = Date.parse(companion.value),
+						today = new Date(new Date().toISOString().substring(0, 10)).getTime();
+
+					if(!date)
+						break;
+
+					if(companion.name.toLowerCase().includes('start') && date != today + ((range.start) * 24 * 60 * 60 * 1000))
+						match = false;
+
+					else if(companion.name.toLowerCase().includes('end') && date != today + ((range.end) * 24 * 60 * 60 * 1000))
+						match = false;
+				}
+
+				if(!match)
+					continue;
+
+				value = index;
+				break
+			}
+
+			return value;
+		}
 
 		let value = this.default_value;
 
@@ -4084,8 +4118,8 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				if(min == null)
 					min = Math.floor(row.y);
 
-				max = Math.max(max, Math.floor(row.y) || 0);
-				min = Math.min(min, Math.ceil(row.y) || 0);
+				max = Math.max(max, Math.ceil(row.y) || 0);
+				min = Math.min(min, Math.floor(row.y) || 0);
 			}
 		}
 
@@ -7734,7 +7768,7 @@ class ReportLogs extends Set {
 
 		if(!this.size) {
 
-			logList.innerHTML = '<li class="NA block">No logs</li>';
+			logList.innerHTML = '<li class="NA block">No Report History Available</li>';
 			return;
 		}
 
@@ -7760,9 +7794,8 @@ class ReportLogs extends Set {
 		this.container.querySelector('.list .showing').textContent = `Showing: ${this.size}`;
 	}
 
-	toggleHide() {
-
-		this.container.classList.toggle('hidden');
+	toggle(condition) {
+		this.container.classList.toggle('hidden', !condition);
 	}
 }
 
@@ -7801,6 +7834,7 @@ class ReportLog {
 		`;
 
 		container.on('click', () => this.load());
+		container.querySelector('a').on('click', e => e.stopPropagation());
 
 		return container;
 	}
@@ -7835,7 +7869,6 @@ class ReportLog {
 		logInfo.querySelector('.toolbar .run').on('click', () => {
 
 			this.logs.page.preview(this.connection.json);
-
 		});
 	}
 }
