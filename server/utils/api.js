@@ -144,9 +144,7 @@ class API {
 					throw new API.Exception(401, 'User Not Authenticated!');
 				}
 
-				let params = request.query;
-
-				Object.assign(params, request.body);
+				const params = {...request.query, ...request.body};
 
 				const result = await obj[path.split(pathSeparator).pop()](params);
 

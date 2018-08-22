@@ -1,6 +1,6 @@
 const API = require('../utils/api');
 
-exports.list = class extends API {
+class Category extends API {
 
 	async list() {
 
@@ -17,11 +17,9 @@ exports.list = class extends API {
 				tb_categories
 			WHERE
 				account_id = ?`,
-			[this.account.account_id]);
+			[this.account.account_id]
+		);
 	}
-}
-
-exports.insert = class extends API {
 
 	async insert({name, slug, parent, is_admin} = {}) {
 
@@ -32,13 +30,10 @@ exports.insert = class extends API {
 				tb_categories (account_id, name, slug, parent, is_admin)
 			VALUES
 				(?, ?, ?, ?, ?)`,
-			[this.account.account_id, name, slug, parseInt(parent) || null, is_admin],
+			[this.account.account_id, name, slug, parent || null, is_admin],
 			'write'
 		);
 	}
-};
-
-exports.update = class extends API {
 
 	async update({name, slug, parent, is_admin, category_id} = {}) {
 
@@ -55,13 +50,10 @@ exports.update = class extends API {
 			 WHERE 
 			 	category_id = ? 
 			 	AND account_id = ?`,
-			[name, slug, parseInt(parent) || null, is_admin, category_id, this.account.account_id],
+			[name, slug, parent || null, is_admin, category_id, this.account.account_id],
 			'write'
 		);
 	}
-};
-
-exports.delete = class extends API {
 
 	async delete({category_id} = {}) {
 
@@ -73,4 +65,9 @@ exports.delete = class extends API {
 			'write'
 		);
 	}
-};
+}
+
+exports.list = Category;
+exports.insert = Category;
+exports.update = Category;
+exports.delete = Category;
