@@ -183,9 +183,6 @@ main .switch {
 				font-size: 125%;
 				color: #333;
 			}
-			main .activity-info article .info-grid .activity-details {
-				margin-left: auto;
-			}
 			main .activity-info article .activity-groups {
 				display: grid;
 				max-height: 300px;
