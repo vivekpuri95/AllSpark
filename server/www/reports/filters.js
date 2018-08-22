@@ -4,10 +4,10 @@ const reportHistory = require('../../utils/reportLogs');
 
 class Filters extends API {
 
-	async insert({name, query_id, placeholder, description = null, order, default_value = '', offset, type, dataset, multiple = 0} = {}) {
+	async insert({name, query_id, placeholder, description = null, order, default_value = '', offset, type = null, dataset, multiple = null} = {}) {
 
 		this.assert(query_id, 'Query id is required');
-		this.assert(name && placeholder, 'Name or placeholder is required');
+		this.assert(name && placeholder, 'Name or placeholder is missing');
 
 		let values = {
 			name, query_id, placeholder, type, multiple, default_value, description,
@@ -22,10 +22,10 @@ class Filters extends API {
 		return await this.mysql.query('INSERT INTO tb_query_filters SET  ?', [values], 'write');
 	}
 
-	async update({filter_id, name, placeholder, description = null, order, default_value = '', offset, type, dataset, multiple = 0} = {}) {
+	async update({filter_id, name, placeholder, description = null, order, default_value = '', offset, type = null, dataset, multiple = null} = {}) {
 
 		this.assert(filter_id, 'Filter id is required');
-		this.assert(name && placeholder, 'Name or placeholder is required');
+		this.assert(name && placeholder, 'Name or placeholder is missing');
 
 		let
 			values = {
@@ -52,8 +52,6 @@ class Filters extends API {
 			return "0 rows affected";
 		}
 
-		values.default_value = values.default_value || '';
-
 		const
 			updateResponse = await this.mysql.query('UPDATE tb_query_filters SET ? WHERE filter_id = ?', [values, filter_id], 'write'),
 			logs = {
@@ -77,8 +75,10 @@ class Filters extends API {
 
 		this.assert(filterQuery, 'Invalid filter id');
 
-		if((await auth.report(filterQuery.query_id, this.user)).error)
+		if((await auth.report(filterQuery.query_id, this.user)).error) {
+
 			throw new API.Exception(404, 'User not authenticated for this report');
+		}
 
 		const
 			deleteResponse = await this.mysql.query('DELETE FROM tb_query_filters WHERE filter_id = ?', [filter_id], 'write'),

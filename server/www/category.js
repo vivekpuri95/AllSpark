@@ -21,23 +21,28 @@ class Category extends API {
 		);
 	}
 
-	async insert({name, slug, parent, is_admin} = {}) {
+	async insert({name, slug = null, parent = null, is_admin = null} = {}) {
 
 		this.user.privilege.needs("administrator");
+
+		this.assert(name, "Category name is required");
 
 		return await this.mysql.query(
 			`INSERT INTO 
 				tb_categories (account_id, name, slug, parent, is_admin)
 			VALUES
 				(?, ?, ?, ?, ?)`,
-			[this.account.account_id, name, slug, parent || null, is_admin],
+			[this.account.account_id, name, slug, parent, is_admin],
 			'write'
 		);
 	}
 
-	async update({name, slug, parent, is_admin, category_id} = {}) {
+	async update({category_id, name, slug = null, parent = null, is_admin = null} = {}) {
 
 		this.user.privilege.needs("administrator");
+
+        this.assert(category_id, "Category Id is required");
+		this.assert(name, "Name cannot be null or empty");
 
 		return await this.mysql.query(
 			`UPDATE 
@@ -50,7 +55,7 @@ class Category extends API {
 			 WHERE 
 			 	category_id = ? 
 			 	AND account_id = ?`,
-			[name, slug, parent || null, is_admin, category_id, this.account.account_id],
+			[name, slug, parent, is_admin, category_id, this.account.account_id],
 			'write'
 		);
 	}
@@ -58,6 +63,8 @@ class Category extends API {
 	async delete({category_id} = {}) {
 
 		this.user.privilege.needs("administrator");
+
+		this.assert(category_id, "Category Id is required");
 
 		return await this.mysql.query(
 			'DELETE FROM tb_categories WHERE category_id = ? AND account_id = ?',
