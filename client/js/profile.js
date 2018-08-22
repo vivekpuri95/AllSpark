@@ -17,8 +17,6 @@ Page.class = class Profile extends Page {
 			this.sessions = new Sessions(this);
 
 			this.render();
-
-			this.container.querySelector('.activity-info').appendChild(this.sessions.container);
 		})();
 	}
 
@@ -89,10 +87,12 @@ Page.class = class Profile extends Page {
 
 			activity.classList.add('selected');
 
-			const response = await this.sessions.load();
-			await this.sessions.process(response);
+			if(!this.container.querySelector('.activity-info .sessions')) {
+				const response = await this.sessions.load();
+				await this.sessions.process(response);
+			}
 
-			this.sessions.render();
+			this.container.querySelector('.activity-info').appendChild(this.sessions.container);
 
 			Sections.show('activity');
 		});
@@ -135,16 +135,6 @@ class Sessions {
 		}
 	}
 
-	render() {
-
-		const container = this.container;
-		const list = container.querySelector('.list');
-		list.textContent = null;
-
-		for(const session of this.sessionsList.values())
-			list.appendChild(session.container);
-	}
-
 	get container() {
 
 		if(this.containerElement)
@@ -162,6 +152,12 @@ class Sessions {
 			<div class="list"></div>
 		`;
 
+		const list = container.querySelector('.list');
+		list.textContent = null;
+
+		for(const session of this.sessionsList.values())
+			list.appendChild(session.container);
+
 		return container;
 	}
 }
@@ -171,12 +167,11 @@ class Session {
 	constructor(session) {
 
 		Object.assign(this, session);
+
+		this.activityGroups = new ActivityGroups([]);
 	}
 
 	async load() {
-
-		if(this.reports && this.errors)
-			return;
 
 		const
 			parameters = {
@@ -187,12 +182,12 @@ class Session {
 				method: 'GET',
 			};
 
-		[this.reports, this.errors] = await Promise.all([
+		const [reports, errors] = await Promise.all([
 			API.call('reports/logs/log', parameters, options),
 			API.call('errors/list', parameters, options),
 		]);
 
-		this.process(this.reports, this.errors);
+		this.process(reports, errors);
 	}
 
 	process(reports, errors) {
@@ -261,42 +256,42 @@ class Session {
 		detailString = detailString.join('&middot;&nbsp;');
 
 		container.innerHTML = `
-			<header>
+			<div class="info-grid">
 				<div class="icon"><i class="far fa-clock"></i></div>
-				<div class="details">
-					<div class="title">
-						<div class="NA">#${this.id}</div>
-							${Format.dateTime(this.created_at)}
-						<div class="down">
-							<i class="fas fa-angle-right"></i>
-						</div>
-					</div>
-					<div class="extra-info NA">
-						${detailString}
-						<span class="activity-details NA"></span>
-					</div>
+
+				<div class="title">
+					<span class="NA">#${this.id}</span>
+					${Format.dateTime(this.created_at)}
 				</div>
-			</header>
+				<span class="down"><i class="fas fa-angle-right"></i></span>
+
+				<div class="extra-info NA">${detailString}</div>
+
+				<span class="activity-details NA"></span>
+			</div>
+
 			<div class="loading-activity-groups hidden">
 				<i class="fa fa-spinner fa-spin"></i>
 			</div>
 		`;
 
-		container.querySelector('header').on('click', async() => {
+		container.querySelector('.info-grid').on('click', async() => {
+
+			container.querySelector('.down i').classList.toggle('angle-rotate');
+
+			if(this.activityGroups.size)
+				return container.querySelector('.activity-groups').classList.toggle('hidden');
 
 			container.querySelector('.loading-activity-groups').classList.remove('hidden');
 
 			await this.load();
 
-			container.querySelector('.activity-details').innerHTML = `Reports: ${this.reportsCount} &middot; Errors: ${this.errorsCount}`;
-
-			container.querySelector('.down').classList.toggle('angle-rotate');
+			container.querySelector('.activity-details').innerHTML = `Reports: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)}`;
 
 			container.appendChild(this.activityGroups.container);
 
-			container.querySelector('.loading-activity-groups').classList.add('hidden');
+			container.querySelector('.loading-activity-groups').remove();
 
-			container.querySelector('.activity-groups').classList.toggle('hidden');
 		});
 
 		return container;
@@ -320,7 +315,7 @@ class ActivityGroups extends Set {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('activity-groups', 'hidden');
+		container.classList.add('activity-groups');
 
 		for(const activityGroup of this)
 			container.appendChild(activityGroup.container);
@@ -361,32 +356,31 @@ class ActivityGroup extends Set {
 		const icon = this.type == 'report' ? 'far fa-file' : 'fas fa-exclamation';
 
 		container.innerHTML = `
-			<header>
+			<div class="info-grid">
 				<div class="icon"><i class="${icon}"></i></div>
-				<div class="details">
-					<div class="title">
-						<span>${this.size}</span><span>${this.type}${this.size == 1 ? '' : 's'}</span>
+				<div class="title">
+					<span class="NA">${Format.number(this.size)}</span>
+					<span class="type">${this.type}${this.size == 1 ? '' : 's'}</span>
+				</div>
+				<div class="down">
+					<i class="fas fa-angle-right"></i>
+				</div>
 
-						<div class="down">
-							<i class="fas fa-angle-right"></i>
-						</div>
-					</div>
-
-					<div class="extra-info">
-						${Format.dateTime(Array.from(this)[0].created_at)} - ${Format.dateTime(Array.from(this)[this.size - 1].created_at)}
-					</div>
-			</header>
+				<div class="extra-info">
+					${Format.dateTime(Array.from(this)[0].created_at)} - ${Format.dateTime(Array.from(this)[this.size - 1].created_at)}
+				</div>
+			</div>
 
 			<div class="activity-list hidden"></div>
 		`;
 
 		const activityList = container.querySelector('.activity-list');
 
-		container.querySelector('header').on('click', () => {
+		container.querySelector('.info-grid').on('click', () => {
 
 			activityList.classList.toggle('hidden');
 
-			container.querySelector('header').classList.toggle('selected');
+			container.querySelector('.info-grid').classList.toggle('selected');
 			container.querySelector('.down').classList.toggle('angle-rotate');
 
 			if(activityList.childElementCount)
@@ -411,6 +405,19 @@ class Activity {
 		Object.assign(this, data);
 	}
 
+	get createdAt() {
+
+		if(this.createdAtElement)
+			return this.createdAtElement;
+
+		const container = this.createdAtElement = document.createElement('span');
+		container.classList.add('NA');
+
+		container.textContent = Format.dateTime(this.created_at);
+
+		return container;
+	}
+
 	get container() {
 
 		if(this.activityContainerElement)
@@ -418,18 +425,13 @@ class Activity {
 
 		const container = this.activityContainerElement = document.createElement('div');
 
-		container.classList.add('activity', 'report');
-		const
-			div = document.createElement('div'),
-			details = document.createElement('div');
-
-		details.classList.add('details');
+		container.classList.add('info-grid');
 
 		container.on('click', () => {
 
 			const dialogueBox = new DialogBox();
 
-			dialogueBox.heading = this.type;
+			dialogueBox.heading = this.heading;
 			dialogueBox.body.classList.add('activity-popup');
 
 			for(const key of this.keys) {
@@ -474,11 +476,9 @@ class Activity {
 			dialogueBox.show();
 		});
 
-		details.appendChild(this.name);
-		details.appendChild(this.extraInfo);
-
-		container.appendChild(div);
-		container.appendChild(details);
+		container.appendChild(this.name);
+		container.appendChild(this.extraInfo);
+		container.appendChild(this.createdAt);
 
 		return container;
 	}
@@ -512,6 +512,18 @@ class ActivityReport extends Activity {
 		return title;
 	}
 
+	get heading() {
+
+		if(this.headingElement)
+			return this.headingElement;
+
+		const span = this.headingElement = document.createElement('span');
+
+		span.textContent =  DataSource.list.get(this.query_id).name;
+
+		return span;
+	}
+
 	get keys() {
 
 		return ['user_id','session_id', 'query_id', 'response_time', 'rows', 'result_query'];
@@ -525,14 +537,7 @@ class ActivityReport extends Activity {
 		const extraInfo = this.extraInfoElement = document.createElement('div');
 		extraInfo.classList.add('extra-info');
 
-		const executionTime = document.createElement('span');
-		executionTime.textContent = `Execution Time: ${this.response_time}`;
-
-		const date = document.createElement('span');
-		date.textContent = Format.dateTime(this.created_at);
-
-		extraInfo.appendChild(executionTime);
-		extraInfo.appendChild(date);
+		extraInfo.textContent = `Execution Time: ${this.response_time}`;
 
 		return extraInfo;
 	}
@@ -565,6 +570,18 @@ class ActivityError extends Activity {
 		return title;
 	}
 
+	get heading() {
+
+		if(this.headingElement)
+			return this.headingElement;
+
+		const span = this.headingElement = document.createElement('span');
+
+		span.textContent = 'Error';
+
+		return span;
+	}
+
 	get extraInfo() {
 
 		if(this.extraInfoElement)
@@ -573,14 +590,7 @@ class ActivityError extends Activity {
 		const extraInfo = this.containerElement = document.createElement('div');
 		extraInfo.classList.add('extra-info');
 
-		const type = document.createElement('span');
-		type.textContent = 'Type:' + this.type;
-
-		const date = document.createElement('span');
-		date.textContent = Format.dateTime(this.created_at);
-
-		extraInfo.appendChild(type);
-		extraInfo.appendChild(date);
+		extraInfo.textContent = 'Type:' + this.type;
 
 		return extraInfo;
 	}

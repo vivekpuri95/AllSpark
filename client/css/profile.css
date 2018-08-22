@@ -81,10 +81,6 @@ main .switch {
 			display: flex;
 			border-bottom: 1px solid #ccc;
 		}
-			main .switch .activity-info .details .NA {
-				color: #999;
-				margin-right: var(--gap);
-			}
 			main .heading-bar h3 {
 				margin: 0;
 				border: 0;
@@ -127,7 +123,7 @@ main .switch {
 			flex-direction:  column;
 			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		}
-		main .activity-info article.active > header::after {
+		main .activity-info article.active > .info-grid::after {
 			content: "";
 			background: #9dec42;
 			width: 6px;
@@ -135,22 +131,25 @@ main .switch {
 			right: 0;
 			height: 100%;
 		}
-		main .activity-info article > header {
+		main .activity-info article > .info-grid {
 			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 			z-index: 1;
 		}
-		main .activity-info article header {
+		main .activity-info article .info-grid {
 			display: grid;
-			grid-template-columns: 50px 1fr;
+			grid-template-columns: 50px 1fr max-content;
 			padding: calc(var(--gap) * 2);
 			position: sticky;
+			grid-gap: calc(var(--gap) * 2);
 			top: 0;
-			background: #fff;
 			transition: background var(--transition-duration);
 		}
-		main .activity-info article header:hover {
+		main .activity-info article .info-grid:hover {
 			cursor: pointer;
 		}
+			main .activity-info article .info-grid .down {
+				text-align: right;
+			}
 			main .activity-info .loading-activity-groups {
 				display: flex;
 				align-items: center;
@@ -159,90 +158,57 @@ main .switch {
 				font-size: 150%;
 				color: #999;
 			}
-			main .activity-info .icon {
+			main .activity-info article .info-grid .icon {
 				color: #999;
+				grid-row: 1 / 3;
 				display: flex;
 				justify-content: center;
 				align-items: center;
-			}
-			main article header .icon {
 				font-size: 225%;
 			}
-			main .activity-info article header .activity-details {
+			main .activity-info article .info-grid .extra-info {
+				grid-column: 2;
+				font-size: 90%;
+				color: #999;
+			}
+			main .activity-info article .info-grid .title {
+				grid-column: 2;
+				font-size: 125%;
+				color: #333;
+			}
+			main .activity-info article .info-grid .activity-details {
 				margin-left: auto;
 			}
-			main .activity-info article header .details,
-			main .activity-groups .details {
+			main .activity-info article .activity-groups {
 				display: grid;
-				grid-gap: var(--gap);
+				max-height: 300px;
+				overflow: auto;
+				background-color: #fff;
 			}
-				main .details .title {
-					display: flex;
-					align-items: center;
-					font-size: 125%;
-					color: #333;
-				}
-					main .details .title span {
-						margin-right: var(--gap);
-					}
-					main header .details .title .down {
-						margin-left: auto;
-						transition: transform var(--transition-duration);
-					}
-				main .activity-list {
-					background: #efefef;
-				}
-		main .activity-groups header.selected {
+
+		main .activity-groups .info-grid.selected {
 			background: var(--color-selected) !important;
+			z-index: 1;
 		}
-		main .activity-groups header:hover {
-			background: #ddf;
+		main .activity-groups .info-grid:active {
+			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 		}
-		main .activity-info article .activity-groups {
-			display: grid;
-			max-height: 300px;
-			overflow: auto;
-			background-color: #fff;
+		main .activity-groups .info-grid:hover {
+			background: var(--color-hover);
 		}
-			main .activity-groups .activity {
-				display: grid;
-				grid-template-columns: 50px 1fr;
-				padding: calc(var(--gap) * 2);
-				border-bottom: 1px solid #eee;
-				font-size: 90%;
-				transition: box-shadow var(--transition-duration),
-							background var(--transition-duration);
+		main .activity-groups .activity-group .info-grid .title {
+			font-size: 110%;
+			color: #333;
+		}
+			main .activity-groups .activity-group .info-grid .type {
+				text-transform: capitalize;
 			}
-			main .activity-groups .activity:hover {
-				cursor: pointer;
-				background: #ddf;
-			}
-				main .activity-groups header .icon {
-					font-size: 125%;
-				}
-				main .activity-groups .details {
-					display: grid;
-					grid-gap: var(--gap);
-				}
-					main .details .extra-info {
-						display: flex;
-						align-items: center;
-						color: #666;
-						font-size: 90%;
-					}
-					main .activity-groups .details .extra-info span:last-child {
-						margin-left: auto;
-					}
-						main .activity-groups .details .extra-info span {
-							margin-right: var(--gap);
-						}
-				main .activity-groups .details .title {
-					font-size: 110%;
-					text-transform: capitalize;
-				}
-			main .activity .details .NA {
-				margin-left: var(--gap);
-			}
+		main .activity-groups .activity-group .info-grid .icon {
+			font-size: 125%;
+		}
+		main .activity-groups .activity-group .activity-list {
+			background: #eee;
+		}
 
 	main .activity-popup {
 		padding: calc(var(--gap) * 2);

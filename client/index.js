@@ -451,7 +451,7 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 			<div class="details">
 
 				<h1>
-					<span></span>
+					<span>&nbsp;</span>
 					<a href="/user/profile/edit" class="edit"><i class="fa fa-edit"></i> Edit</a>
 				</h1>
 			</div>
