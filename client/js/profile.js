@@ -18,7 +18,7 @@ Page.class = class Profile extends Page {
 
 			this.render();
 
-			this.container.querySelector('#activity-info').appendChild(this.sessions.container);
+			this.container.querySelector('.activity-info').appendChild(this.sessions.container);
 		})();
 	}
 
@@ -83,17 +83,18 @@ Page.class = class Profile extends Page {
 			Sections.show('access');
 		});
 
-		activity.on('click', async() => {
+		activity.on('click', async () => {
 
 			this.container.querySelector('.heading-bar .selected').classList.remove('selected');
 
 			activity.classList.add('selected');
 
-			await this.sessions.load();
+			const response = await this.sessions.load();
+			await this.sessions.process(response);
 
 			this.sessions.render();
 
-			Sections.show('activity-info');
+			Sections.show('activity');
 		});
 	}
 }
@@ -109,6 +110,9 @@ class Sessions {
 
 	async load() {
 
+		if(this.response)
+			return this.response;
+
 		const
 			parameters = {
 				user_id: this.user_id,
@@ -117,9 +121,9 @@ class Sessions {
 				method: 'GET',
 			};
 
-		const sessions = await API.call('session-logs/list', parameters, options);
+		this.response = await API.call('session-logs/list', parameters, options);
 
-		await this.process(sessions);
+		return this.response;
 	}
 
 	async process(sessions) {
@@ -211,7 +215,12 @@ class Session {
 
 		let activity = reports.concat(errors);
 
-		activity = activity.sort((a, b) => a.created_at - b.created_at);
+		activity = activity.sort((a, b) => {
+			if(a.created_at < b.created_at)
+				return -1;
+			else
+				return 1;
+		});
 
 		const groupedList = [];
 
@@ -222,8 +231,7 @@ class Session {
 			if(!activity.indexOf(data)) {
 				tempList.push(data);
 			}
-
-			if(tempList[tempList.length - 1].type == activity[activity.indexOf(data)].type) {
+			else if(tempList[tempList.length - 1].type == activity[activity.indexOf(data)].type) {
 				tempList.push(data);
 			}
 			else {
@@ -269,9 +277,14 @@ class Session {
 					</div>
 				</div>
 			</header>
+			<div class="loading-activity-groups hidden">
+				<i class="fa fa-spinner fa-spin"></i>
+			</div>
 		`;
 
 		container.querySelector('header').on('click', async() => {
+
+			container.querySelector('.loading-activity-groups').classList.remove('hidden');
 
 			await this.load();
 
@@ -280,6 +293,8 @@ class Session {
 			container.querySelector('.down').classList.toggle('angle-rotate');
 
 			container.appendChild(this.activityGroups.container);
+
+			container.querySelector('.loading-activity-groups').classList.add('hidden');
 
 			container.querySelector('.activity-groups').classList.toggle('hidden');
 		});
@@ -360,7 +375,6 @@ class ActivityGroup extends Set {
 					<div class="extra-info">
 						${Format.dateTime(Array.from(this)[0].created_at)} - ${Format.dateTime(Array.from(this)[this.size - 1].created_at)}
 					</div>
-				</div>
 			</header>
 
 			<div class="activity-list hidden"></div>
@@ -374,6 +388,9 @@ class ActivityGroup extends Set {
 
 			container.querySelector('header').classList.toggle('selected');
 			container.querySelector('.down').classList.toggle('angle-rotate');
+
+			if(activityList.childElementCount)
+				return;
 
 			const tempContainer = document.createDocumentFragment();
 
@@ -509,7 +526,7 @@ class ActivityReport extends Activity {
 		extraInfo.classList.add('extra-info');
 
 		const executionTime = document.createElement('span');
-		executionTime.textContent = `Execution time: ${this.response_time}`;
+		executionTime.textContent = `Execution Time: ${this.response_time}`;
 
 		const date = document.createElement('span');
 		date.textContent = Format.dateTime(this.created_at);
