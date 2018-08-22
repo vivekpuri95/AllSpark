@@ -123,6 +123,9 @@ main .switch {
 			flex-direction:  column;
 			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		}
+		main .activity-info article.active > .info-grid {
+			padding-right: calc((var(--gap) * 2) + 6px);
+		}
 		main .activity-info article.active > .info-grid::after {
 			content: "";
 			background: #9dec42;
@@ -146,10 +149,14 @@ main .switch {
 		}
 		main .activity-info article .info-grid:hover {
 			cursor: pointer;
+			background: var(--color-hover);
 		}
 			main .activity-info article .info-grid .down {
 				text-align: right;
 			}
+				main .activity-info article .info-grid .down i {
+					transition: transform var(--transition-duration);
+				}
 			main .activity-info .loading-activity-groups {
 				display: flex;
 				align-items: center;
