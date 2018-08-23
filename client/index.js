@@ -1243,8 +1243,8 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 					</label>
 				</form>
 
-				<h3>Privileges</h3>
 				<div class="privileges form-container">
+					<h3>Privileges</h3>
 					<form class="filter">
 						<label><span>Category</span></label>
 						<label><span>Privileges</span></label>
@@ -1270,8 +1270,8 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 					</form>
 				</div>
 
-				<h3>Roles</h3>
 				<div class="roles form-container">
+					<h3>Roles</h3>
 					<form class="filter">
 						<label><span>Category</span></label>
 						<label><span>Roles</span></label>
