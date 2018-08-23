@@ -782,7 +782,7 @@ class Role {
 				message: `${this.user.name}'s Role Saved`,
 				subtitle: `
 					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
-					Role: <strong>${MetaData.privileges.get(parseInt(this.container.role_id.value)).name}</strong>
+					Role: <strong>${MetaData.roles.get(parseInt(this.container.role_id.value)).name}</strong>
 				`,
 				icon: 'far fa-save',
 			});
@@ -826,7 +826,7 @@ class Role {
 				message: `${this.user.name}'s Role Deleted`,
 				subtitle: `
 					Category: <strong>${MetaData.categories.get(parseInt(this.container.category_id.value)).name}</strong>;
-					Role: <strong>${MetaData.privileges.get(parseInt(this.container.role_id.value)).name}</strong>
+					Role: <strong>${MetaData.roles.get(parseInt(this.container.role_id.value)).name}</strong>
 				`,
 				icon: 'far fa-trash-alt',
 			});
