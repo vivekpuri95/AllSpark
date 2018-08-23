@@ -2734,6 +2734,74 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 	}
 });
 
+ReportConnection.types.set('oracle', class ReportConnectionMysql extends ReportConnection {
+
+	constructor(report, stage, readOnly) {
+
+		super(report, stage, readOnly);
+
+		this.editor = new CodeEditor({mode: 'sql'});
+
+		if(this.readOnly) {
+
+			this.editor.editor.setReadOnly(true);
+			this.editor.editor.setTheme('ace/theme/clouds');
+		}
+
+		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
+
+		setTimeout(() => {
+
+			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'save',
+				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+				exec: async () => {
+
+					const cursor = this.editor.editor.getCursorPosition();
+
+					await this.stage.update();
+
+					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+				},
+			});
+
+			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'execute',
+				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+				exec: () => this.stage.preview(),
+			});
+
+			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'format',
+				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
+				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
+			});
+		});
+	}
+
+	get form() {
+
+		if(this.formElement)
+			return this.formElement;
+
+		super.form.appendChild(this.editor.container);
+
+		this.formJson = this.report.definition || {};
+
+		return super.form;
+	}
+
+	get json() {
+
+		return {
+			query: this.editor.value,
+		};
+	}
+});
+
 class Axes extends Set {
 
 	constructor(axes, stage) {

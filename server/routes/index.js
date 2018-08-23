@@ -7,6 +7,7 @@ const mysql = require("../utils/mysql");
 const mssql = require("../utils/mssql");
 const postgres = require("../utils/pgsql");
 const mongo = require("../utils/mongo");
+const oracle = require("../utils/oracle");
 
 (async () => {
 
@@ -18,7 +19,7 @@ const mongo = require("../utils/mongo");
 	await mssql.crateExternalPool();
 	await postgres.crateExternalPool();
 	await mongo.crateExternalPool();
-
+	await oracle.crateExternalPool();
 })();
 
 

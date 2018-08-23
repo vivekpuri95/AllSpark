@@ -8,6 +8,7 @@ const Sequelize = require('sequelize');
 const {MongoClient} = require('mongodb');
 const auth = require('../utils/auth');
 const commonFun = require('../utils/commonFunctions');
+const oracle = require('../utils/oracle').Oracle;
 
 
 exports.insert = class extends API {
@@ -366,6 +367,9 @@ exports.schema = class extends API {
 			case "mongo":
 				const mongoSchema = new MongoScehma(connection);
 				return await mongoSchema.mongoSchema();
+
+			case "oracle":
+				return await oracle.schema(this.request.query.id);
 
 			default:
 				return [];
