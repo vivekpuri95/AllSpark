@@ -670,7 +670,7 @@ class Roles {
 				message: `Role Assigned to ${this.user.name}`,
 				subtitle: `
 					Category: <strong>${MetaData.categories.get(parseInt(Roles.add_roles.category_id.value)).name}</strong>;
-					Role: <strong>${MetaData.privileges.get(parseInt(Roles.add_roles.role_id.value)).name}</strong>
+					Role: <strong>${MetaData.roles.get(parseInt(Roles.add_roles.role_id.value)).name}</strong>
 				`,
 				icon: 'fas fa-plus',
 			});
