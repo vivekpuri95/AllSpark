@@ -200,7 +200,7 @@ class DataSource {
 					<span class="label reload"><i class="fas fa-sync"></i> Reload</span>
 				</div>
 
-				<div class="item">
+				<div class="item hidden">
 					<span class="label filters-toggle"><i class="fa fa-filter"></i> Filters</span>
 				</div>
 
@@ -248,13 +248,27 @@ class DataSource {
 						</div>>-->
 					</div>
 				</div>
+
+				<div class="item hidden">
+					<a class="label configure-visualization">
+						<i class="fas fa-cog"></i>
+						<span>Configure</span>
+					</a>
+				</div>
+
+				<div class="item hidden">
+					<a class="label define-visualization" href="/reports/define-report/${this.query_id}">
+						<i class="fas fa-pencil-alt"></i>
+						<span>Define</span>
+					</a>
+				</div>
 			</div>
 
 			<div class="columns"></div>
-			<div class="query hidden"></div>
+			<div class="query overlay hidden"></div>
 			<div class="drilldown hidden"></div>
 
-			<div class="description hidden">
+			<div class="description overlay hidden">
 				<div class="body"></div>
 				<div class="footer hidden">
 					<span>
@@ -282,18 +296,9 @@ class DataSource {
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
 				</div>
+				<div class="close">&times;</div>
 			</div>
 		`;
-
-		if(user.privileges.has('report'))
-			container.querySelector('header h2').insertAdjacentHTML('beforeend', ` <span class="id">#${this.query_id}</span>`);
-
-		// container.querySelector('.menu .export-toggle').on('click', () => {
-		// 	container.querySelector('.export-json').classList.toggle('hidden');
-		// 	container.querySelector('.export-toggle').parentElement.classList.toggle('selected');
-
-		// 	this.visualizations.selected.render({resize: true});
-		// });
 
 		container.querySelector('header .menu-toggle').on('click', e => {
 
@@ -313,39 +318,46 @@ class DataSource {
 			}
 		});
 
-		container.querySelector('.menu').on('click', e => e.stopPropagation());
+		// container.querySelector('.menu').on('click', e => e.stopPropagation());
 
-		if(user.privileges.has('report')) {
-			container.querySelector('.menu .expand-toggle').parentElement.classList.remove('hidden');
-			container.querySelector('.menu .query-toggle').parentElement.classList.remove('hidden');
-			container.querySelector('.description .footer').classList.remove('hidden');
+		if(this.editable) {
+
+			const elementsToShow = [
+				'.menu .expand-toggle',
+				'.menu .query-toggle',
+				'.menu .configure-visualization',
+				'.menu .define-visualization',
+			];
+
+			for(const element of elementsToShow)
+				container.querySelector(elementsToShow).parentElement.classList.remove('hidden');
+
+			container.querySelector('.description .footer').parentElement.classList.remove('hidden');
+
+			container.querySelector('.description .visible-to .count').on('click', () => {
+
+				if(!this.dialogue)
+					this.dialogue = new DialogBox();
+
+				this.dialogue.heading = 'Users';
+
+				const user_element = [];
+
+				for(const user of this.visibleTo) {
+					user_element.push(`
+						<li>
+							<a href="/user/profile/${user.user_id}">${user.name}</a>
+							<span>${user.reason}</span>
+						</li>
+					`);
+				}
+
+				this.dialogue.body.insertAdjacentHTML('beforeend', `<ul class="user-list">${user_element.join('')}</ul>`);
+				this.dialogue.show();
+			});
 		}
 
-		container.querySelector('.description .visible-to .count').on('click', () => {
-
-			if(!this.dialogue)
-				this.dialogue = new DialogBox();
-
-			this.dialogue.heading = 'Users';
-
-			const user_element = [];
-
-			for(const user of this.visibleTo) {
-				user_element.push(`
-					<li>
-						<a href="/user/profile/${user.user_id}">${user.name}</a>
-						<span>${user.reason}</span>
-					</li>
-				`);
-			}
-
-			this.dialogue.body.insertAdjacentHTML('beforeend', `<ul class="user-list">${user_element.join('')}</ul>`);
-			this.dialogue.show();
-		});
-
-		container.querySelector('.menu .reload').on('click', () => {
-			this.visualizations.selected.load();
-		});
+		container.querySelector('.menu .reload').on('click', () => this.visualizations.selected.load());
 
 		container.querySelector('.menu .filters-toggle').on('click', () => {
 
@@ -362,7 +374,7 @@ class DataSource {
 		});
 
 		// If every filter is of hidden type then don't show the filters toggle
-		if(Array.from(this.filters.values()).every(f => f.type == 'hidden'))
+		if(!this.filters.size || Array.from(this.filters.values()).every(f => f.type == 'hidden'))
 			container.querySelector('.menu .filters-toggle').classList.add('hidden');
 
 		container.querySelector('.menu .description-toggle').on('click', async () => {
@@ -394,33 +406,13 @@ class DataSource {
 			this.visualizations.selected.render({resize: true});
 		});
 
+		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.change-visualization').parentElement);
+
 		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
 		container.querySelector('.menu .filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
 		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
 		container.querySelector('.menu .xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
-
-		if(user.privileges.has('report')) {
-
-			container.querySelector('.menu').insertAdjacentHTML('beforeend', `
-				<div class="item">
-					<a class="label configure-visualization-link">
-						<i class="fas fa-cog"></i>
-						<span>Configure</span>
-					</a>
-				</div>
-
-				<div class="item">
-					<a class="label" href="/reports/define-report/${this.query_id}">
-						<i class="fas fa-pencil-alt"></i>
-						<span>Define</span>
-					</a>
-				</div>
-			`);
-		}
-
-		else container.querySelector('.menu .query-toggle').classList.add('hidden');
-
-		container.querySelector('.menu .view').on('click', () => window.location = `/report/${this.query_id}`);
+		container.querySelector('.menu .expand-toggle').on('click', () => window.location = `/report/${this.query_id}`);
 
 		if(this.visualizations.length) {
 
@@ -467,10 +459,6 @@ class DataSource {
 
 		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
 
-		if(!this.filters.size)
-			container.querySelector('.filters-toggle').classList.add('hidden');
-
-		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.description-toggle').parentElement);
 
 		if(this.drilldown) {
 
@@ -915,7 +903,7 @@ class DataSourceFilters extends Map {
 
 		const container = this.containerElement = document.createElement('form');
 
-		container.classList.add('toolbar', 'form', 'filters');
+		container.classList.add('toolbar', 'form', 'filters', 'overlay');
 
 		for(const filter of this.values()) {
 
@@ -930,17 +918,18 @@ class DataSourceFilters extends Map {
 		});
 
 		container.insertAdjacentHTML('beforeend', `
+
 			<label>
 				<span>&nbsp;</span>
 				<button type="submit" class="apply">
 					<i class="fas fa-paper-plane"></i> Apply
 				</button>
 			</label>
+
+			<div class="close">&times;</div>
 		`);
 
-		if(this.source)
-			container.on('click', () => this.source.container.querySelector('.filters-toggle').click());
-
+		container.querySelector('.close').on('click', () => this.source.container.querySelector('.filters-toggle').click());
 		container.querySelector('.apply').on('click', e => e.stopPropagation());
 
 		return container;
@@ -2657,7 +2646,7 @@ class DataSourcePostProcessors {
 			container = this.containerElement = document.createDocumentFragment(),
 			processors = document.createElement('div');
 
-		processors.classList.add('item');
+		processors.classList.add('item', 'hidden');
 
 		processors.innerHTML =`
 			<div class="label postprocessors">
@@ -3406,7 +3395,7 @@ class Visualization {
 		this.source.container.appendChild(this.container);
 		this.source.container.querySelector('.columns').classList.remove('hidden');
 
-		const configure = this.source.container.querySelector('.menu .configure-visualization-link');
+		const configure = this.source.container.querySelector('.menu .configure-visualization');
 
 		if(configure) {
 

@@ -191,25 +191,13 @@ main .data-source {
 			main .data-source .toolbar .right {
 				order: 2000;
 			}
-	main .data-source .toolbar.filters {
-		grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
-		background: rgba(255, 255, 255, 0.5);
-		position: absolute;
-		bottom: 0;
-		top: 22px;
-		z-index: 1;
-		left: 0;
-		right: 0;
-		overflow: auto;
-		max-height:  100%;
-		margin: 0;
-		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
-		align-items: flex-start;
-	}
 		main .data-source .menu-toggle.selected {
 			background: var(--color-accent);
 			color: var(--color-accent-text);
 			border-color: var(--color-accent);
+		}
+		main .singleton .data-source .menu-toggle {
+			visibility: hidden;
 		}
 
 	main .data-source > .menu {
@@ -217,18 +205,31 @@ main .data-source {
 		right: 0;
 		top: 22px;
 		background: #fff;
-		z-index: 3;
+		z-index: 6;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 		display: flex;
 		flex-direction: column;
 		width: 150px;
 		border-top-right-radius: 6px;
+		font-size: 90%;
+	}
+	main .singleton .data-source > .menu {
+		position: static;
+		flex-direction: row;
+		width: 100%;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+		border-radius: 0;
+		border-top: 20px solid #fff;
+		border-bottom: 1px solid #ccc;
 	}
 		main .data-source > .menu .item {
 			position: relative;
 		}
 		main .data-source > .menu > .item:first-child .label {
 			border-top-right-radius: 6px;
+		}
+		main .singleton .data-source > .menu > .item:first-child .label {
+			border-radius: 0;
 		}
 			main .data-source > .menu .item .submenu {
 				display: none;
@@ -243,6 +244,10 @@ main .data-source {
 			main .data-source > .menu .item:hover > .submenu {
 				display: flex;
 			}
+			main .singleton .data-source > .menu > .item > .submenu {
+				top: 100%;
+				right: 0;
+			}
 			main .data-source > .menu .label {
 				display: grid;
 				padding: calc(var(--gap) * 2);
@@ -255,6 +260,9 @@ main .data-source {
 				transition: background var(--transition-duration),
 							box-shadow var(--transition-duration),
 							color var(--transition-duration);
+			}
+			main .singleton .data-source > .menu .label {
+				padding: 8px calc(var(--gap) * 2);
 			}
 			main .data-source > .menu a.label {
 				color: inherit;
@@ -291,15 +299,44 @@ main .data-source {
 					color: #666;
 				}
 
-	main .data-source > .description {
+	main .data-source > .overlay {
 		background: rgba(255, 255, 255, 0.5);
 		position: absolute;
 		padding-top: 15px;
 		bottom: 0;
 		top: 22px;
-		z-index: 1;
+		z-index: 2;
 		left: 0;
 		right: 0;
+		max-height: 100%;
+		overflow: auto;
+	}
+	main .singleton .data-source > .overlay {
+		top: 74px;
+	}
+		main .data-source > .overlay > .close {
+			cursor: pointer;
+			font-size: 175%;
+			color: #999;
+			position: absolute;
+			top: 10px;
+			right: 15px;
+			transition: color var(--transition-duration);
+		}
+		main .data-source > .overlay > .close:hover {
+			color: #333;
+		}
+
+	main .data-source .toolbar.filters {
+		grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
+		background: rgba(255, 255, 255, 0.5);
+		margin: 0;
+		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
+		align-items: flex-start;
+		flex-wrap: wrap;
+	}
+
+	main .data-source > .description {
 		display: flex;
 		flex-direction: column;
 	}
@@ -349,19 +386,10 @@ main .data-source {
 		user-select: text;
 		font-family: monospace;
 		white-space: pre;
-		max-height: 100%;
-		overflow: auto;
-		background: rgba(255, 255, 255, 0.5);
-		position: absolute;
-		bottom: 0;
-		top: 0;
-		z-index: 1;
-		left: 0;
-		right: 0;
 		display: flex;
 		flex-direction: column;
-		top: 22px;
 	}
+
     main .data-source > .export-json {
           background: #fff;
           box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
@@ -413,6 +441,7 @@ main .data-source {
 		transition: filter var(--transition-duration);
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		background: #fff;
+		z-index: 1;
 	}
 	main .data-source > .columns.blur {
 		filter: blur(2px);
@@ -576,6 +605,10 @@ main .data-source {
 		background: #fff;
 		border-radius: 6px 6px 0 0;
 		border-top: 10px #fff solid;
+	}
+	main .singleton .data-source > .visualization {
+		border-radius: 0;
+		border-top: 0;
 	}
 
 	main .data-source:not(.flush) .visualization:hover {
@@ -1124,7 +1157,7 @@ main .data-source .visualization.livenumber {
 			z-index: 1;
 		}
 		.visualization.livenumber .container .left {
-			border-right: 1px solid #999;
+			border-right: 1px solid #bbb;
 		}
 		.visualization.livenumber .container .left,
 		.visualization.livenumber .container .right {
@@ -1134,7 +1167,7 @@ main .data-source .visualization.livenumber {
 			flex-direction: column;
 			justify-content: center;
 			align-items: center;
-			border-top: 1px solid #999;
+			border-top: 1px solid #bbb;
 			padding: calc(var(--gap) * 2);
 			position: relative;
 		}
