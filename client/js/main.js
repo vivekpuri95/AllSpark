@@ -997,7 +997,7 @@ class AJAX {
 		}
 		catch(e) {
 			AJAXLoader.hide();
-			throw new API.Exception(e.status || e.message || e, 'API Execution Failed');
+			throw new API.Exception(es, 'API Execution Failed');
 		}
 
 		AJAXLoader.hide();
@@ -1176,7 +1176,8 @@ API.Exception = class {
 	constructor(response = {}) {
 
 		this.status = response.status || '';
-		this.message = response.message || response;
+		this.message = response.message || '';
+		this.body = response;
 	}
 }
 
