@@ -43,7 +43,7 @@ exports.update = class extends API {
 
 		return await this.mysql.query(
 			"UPDATE tb_settings SET profile = ?, value = ? WHERE id = ?",
-			[profile, value, id],
+			[profile || null, value, id],
 			"write"
 		);
 	}
@@ -69,6 +69,8 @@ exports.list = class extends API {
 	async list({account_id} = {}) {
 
 		this.user.privilege.needs("administrator");
+
+		this.assert(account_id, 'No account id found');
 
 		const settingsList = await this.mysql.query("select * from tb_settings where account_id = ?", [account_id]);
 

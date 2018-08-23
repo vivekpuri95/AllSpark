@@ -21,11 +21,14 @@ class Category extends API {
 		);
 	}
 
-	async insert({name, slug = null, parent = null, is_admin = null} = {}) {
+	async insert({name, slug, parent = null, is_admin = 0} = {}) {
 
 		this.user.privilege.needs("administrator");
 
-		this.assert(name, "Category name is required");
+		this.assert(name && slug, "Category name or slug is missing");
+
+		parent = isNaN(parseInt(parent)) ? null : parseInt(parent);
+		is_admin = isNaN(parseInt(is_admin)) ? 0 : parseInt(is_admin);
 
 		return await this.mysql.query(
 			`INSERT INTO 
@@ -37,12 +40,15 @@ class Category extends API {
 		);
 	}
 
-	async update({category_id, name, slug = null, parent = null, is_admin = null} = {}) {
+	async update({category_id, name, slug, parent = null, is_admin = 0} = {}) {
 
 		this.user.privilege.needs("administrator");
 
         this.assert(category_id, "Category Id is required");
-		this.assert(name, "Name cannot be null or empty");
+		this.assert(name && slug, "Name or Slug cannot be null or empty");
+
+		parent = isNaN(parseInt(parent)) ? null : parseInt(parent);
+		is_admin = isNaN(parseInt(is_admin)) ? 0 : parseInt(is_admin);
 
 		return await this.mysql.query(
 			`UPDATE 
