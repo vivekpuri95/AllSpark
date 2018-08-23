@@ -1066,62 +1066,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<button type="button" id="history-configure-visualization"><i class="fa fa-history"></i> History</button>
 					</div>
 
-					<form id="configure-visualization-form">
-
-						<div class="configuration-section">
-							<h3><i class="fas fa-angle-right"></i> General</h3>
-
-							<div class="body">
-								<div class="form subform">
-									<label>
-										<span>Name</span>
-										<input type="text" name="name" required>
-									</label>
-
-									<label>
-										<span>Visualization Type</span>
-										<select name="type" required></select>
-									</label>
-
-									<label>
-										<span>Description</span>
-										<textarea  name="description" rows="4" cols="50"></textarea>
-									</label>
-								</div>
-							</div>
-						</div>
-
-						<div class="options"></div>
-
-					</form>
-
-					<div class="configuration-section">
-
-						<h3>
-							<i class="fas fa-angle-right"></i>
-							Transformations
-							<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
-							<span class="count transformation"></span>
-						</h3>
-
-						<div class="body" id="transformations"></div>
-					</div>
-
-					<div class="configuration-section">
-
-						<h3><i class="fas fa-angle-right"></i> Dashboards <span class="count"></span></h3>
-
-						<div class="body" id="dashboards"></div>
-					</div>
-
-					<div class="configuration-section">
-
-						<h3><i class="fas fa-angle-right"></i> Filters <span class="count"></span></h3>
-
-						<div class="body" id="filters"></div>
-
-					</div>
-
 				</section>
 			</div>
 

@@ -1808,8 +1808,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.title = 'Configure Visualization';
 		this.description = 'Define how the report is visualized';
 
-		this.form = this.container.querySelector('#configure-visualization-form');
-
 		this.container.querySelector('#configure-visualization-back').on('click', () => {
 
 			if(window.history.state) {
@@ -1824,13 +1822,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.page.load();
 		});
 
-		for(const visualization of MetaData.visualizations.values()) {
-			this.form.type.insertAdjacentHTML('beforeend', `
-				<option value="${visualization.slug}">${visualization.name}</option>
-			`);
-		}
-
-		this.form.on('submit', e => this.update(e));
 		this.container.querySelector('#preview-configure-visualization').on('click', e => this.preview(e));
 
 		const historyToggle = this.container.querySelector('#history-configure-visualization');
@@ -1845,8 +1836,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
 				await this.visualizationLogs.load();
 		});
-
-		this.setupConfigurationSetions();
 	}
 
 	setupConfigurationSetions(container) {
@@ -1887,6 +1876,9 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		let visualization_id = window.location.pathname.split('/').pop();
 
+		if(this.container.querySelector('.visualization-form'))
+			this.container.querySelector('.visualization-form').remove();
+
 		if(!window.location.pathname.includes('configure-visualization')) {
 
 			if(!this.lastSelectedVisualizationId)
@@ -1904,17 +1896,16 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization)
 			return;
 
-		if(ConfigureVisualization.types.has(this.visualization.type))
-			this.optionsForm = new (ConfigureVisualization.types.get(this.visualization.type))(this.visualization, this.page, this);
+		if(ConfigureVisualization.types.has(this.visualization.type)) {
 
-		else throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
-
-		if(typeof this.visualization.options == 'string') {
-
-			try {
-				this.visualization.options = JSON.parse(this.visualization.options) || {};
-			} catch(e) {}
+			this.visualizationForm = new VisualizationManager(this.visualization, this);
 		}
+		else {
+
+			throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
+		}
+
+		this.container.appendChild(this.visualizationForm.container);
 
 		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
 
@@ -1922,57 +1913,36 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.visualizationLogs.toggle(visualizationLogsSelected);
 
-		if(visualizationLogsSelected)
-			this.visualizationLogs.load();
+		if(visualizationLogsSelected) {
 
-		if(this.page.container.querySelector('.query-history'))
+			this.visualizationLogs.load();
+		}
+
+		if(this.page.container.querySelector('.query-history')) {
+
 			this.page.container.querySelector('.query-history').remove();
+		}
 
 		this.page.container.appendChild(this.visualizationLogs.container);
 
-		if(!this.visualization.options)
-			this.visualization.options = {};
-
-		if(!this.visualization.options.transformations)
-			this.visualization.options.transformations = [];
-
-		if(!this.visualization.options.axes)
-			this.visualization.options.axes = [];
-
 		this.dashboards = new ReportVisualizationDashboards(this);
-		this.transformations = new ReportTransformations(this.visualization, this);
-		this.reportVisualizationFilters =  new ReportVisualizationFilters(this);
 
-		this.form.reset();
+		if(this.container.querySelector('.configuration-section.dashboards')) {
+
+			this.container.querySelector('.configuration-section.dashboards').remove();
+		}
+
+		this.container.appendChild(this.dashboards.container);
+
 		this.dashboards.clear();
-		this.transformations.clear();
-		this.reportVisualizationFilters.clear();
-
-		this.form.name.value = this.visualization.name;
-		this.form.type.value = this.visualization.type;
-		this.form.description.value = this.visualization.description;
-
-		const options = this.container.querySelector('.options');
-
-		options.textContent = null;
-
 		this.page.preview.position = 'right';
 
 		this.dashboards.load();
-		this.reportVisualizationFilters.load();
-
-		await this.page.preview.load({
-			query_id: this.report.query_id,
-			visualization: {
-				id: this.visualization.visualization_id
-			},
-		});
-
-		this.transformations.load();
-
-		options.appendChild(this.optionsForm.form);
+		this.visualizationForm.load();
 
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
+
+		this.setupConfigurationSetions();
 
 		const first = this.container.querySelector('.configuration-section');
 
@@ -1980,27 +1950,162 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			first.querySelector('h3').click();
 	}
 
+	async preview() {
+
+		const json = this.visualizationForm.json;
+
+		this.page.preview.load({
+			query_id: json.query_id,
+			visualizationOptions: json.options,
+			visualization: {
+				id: json.visualization_id,
+				type: json.type,
+				name: json.name
+			}
+		});
+	}
+});
+
+class VisualizationManager {
+
+	constructor(visualization, stage) {
+
+		Object.assign(this, visualization);
+		this.stage = stage;
+
+		if(!this.options) {
+
+			this.options = {};
+		}
+
+		if(typeof this.options == 'string') {
+
+			try {
+
+				this.options = JSON.parse(this.options) || {};
+			}
+			catch(e) {}
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('visualization-form');
+
+		container.innerHTML = `
+			<form id="configure-visualization-form">			
+				<div class="configuration-section">				
+					<h3><i class="fas fa-angle-right"></i> General</h3>
+					<div class="body">
+						<div class="form subform">
+							<label>
+								<span>Name</span>
+								<input type="text" name="name" required>
+							</label>
+
+							<label>
+								<span>Visualization Type</span>
+								<select name="type" required></select>
+							</label>
+
+							<label>
+								<span>Description</span>
+								<textarea  name="description" rows="4" cols="50"></textarea>
+							</label>
+						</div>
+					</div>
+				</div>
+
+				<div class="options"></div>
+
+			</form>
+		`;
+
+		this.form = this.container.querySelector('#configure-visualization-form');
+		this.optionsForm = new (ConfigureVisualization.types.get(this.type))(this, this.stage.page, this.stage);
+
+		this.transformations = new ReportTransformations(this, this.stage);
+		this.reportVisualizationFilters =  new ReportVisualizationFilters(this, this.stage);
+
+		container.appendChild(this.transformations.container);
+		container.appendChild(this.reportVisualizationFilters.container);
+
+		for(const visualization of MetaData.visualizations.values()) {
+
+			this.form.type.insertAdjacentHTML('beforeend', `
+				<option value="${visualization.slug}">${visualization.name}</option>
+			`);
+		}
+
+		this.form.on('submit', e => this.update(e));
+
+		return container;
+	}
+
+	async load() {
+
+		this.form.name.value = this.name;
+		this.form.type.value = this.type;
+		this.form.description.value = this.description;
+
+		this.reportVisualizationFilters.load();
+
+		await this.stage.page.preview.load({
+			query_id: this.stage.report.query_id,
+			visualization: {
+				id: this.visualization_id
+			},
+		});
+
+		this.transformations.load();
+		this.container.querySelector('.options').appendChild(this.optionsForm.form);
+
+	}
+
+	get json() {
+
+		return {
+			visualization_id: this.visualization_id,
+			query_id: this.query_id,
+			name: this.form.name.value,
+			type:this.form.type.value,
+			description: this.form.description.value,
+			options:{...this.optionsForm.json, transformations: this.transformations.json, filters: this.reportVisualizationFilters.json}
+		};
+
+	}
+
 	async update(e) {
 
-		if(e)
+		if(e) {
+
 			e.preventDefault();
+		}
 
 		const
 			parameters = {
-				visualization_id: this.visualization.visualization_id,
+				visualization_id: this.visualization_id
 			},
 			options = {
 				method: 'POST',
 				form: new FormData(this.form),
 			};
 
-		if(this.optionsForm)
-			this.visualization.options = this.optionsForm.json;
+		if(this.optionsForm) {
 
-		this.visualization.options.transformations = this.transformations.json;
-		this.visualization.options.filters = this.reportVisualizationFilters.json;
+			this.options = this.optionsForm.json;
+		}
 
-		options.form.set('options', JSON.stringify(this.visualization.options));
+		this.options.transformations = this.transformations.json;
+		this.options.filters = this.reportVisualizationFilters.json;
+
+		options.form.set('options', JSON.stringify(this.options));
 
 		try {
 
@@ -2008,17 +2113,17 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 			await DataSource.load(true);
 
-			this.visualizationLogs.clear();
+			this.stage.visualizationLogs.clear();
 
-			this.load();
+			this.stage.load();
 
-			this.page.stages.get('pick-visualization').switcher.querySelector('small').textContent = this.form.name.value;
+			this.stage.page.stages.get('pick-visualization').switcher.querySelector('small').textContent = this.form.name.value;
 
-			const type = MetaData.visualizations.get(this.visualization.type);
+			const type = MetaData.visualizations.get(this.type);
 
 			new SnackBar({
 				message: `${type ? type.name : ''} Visualization Saved`,
-				subtitle: `${this.visualization.name} #${this.visualization.visualization_id}`,
+				subtitle: `${this.name} #${this.visualization_id}`,
 				icon: 'far fa-save',
 			});
 
@@ -2032,26 +2137,49 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 			throw e;
 		}
-	}
 
-	async preview() {
-		this.page.preview.load({
-			query_id: this.report.query_id,
-			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json},
-			visualization: {
-				id: this.visualization.visualization_id,
-				type: this.form.type.value,
-				name: this.form.name.value
-			}
-		});
 	}
-});
+}
 
 class QueryLog extends ReportLog {
 
 	load() {
 
-		super.load();
+		const logInfo = this.logs.container.querySelector('.info');
+
+		logInfo.classList.remove('hidden');
+		this.logs.container.querySelector('.list').classList.add('hidden');
+
+		logInfo.querySelector('.toolbar').innerHTML =  `
+			<button class="back"><i class="fa fa-arrow-left"></i> Back</button>
+			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
+			<button class="run"><i class="fas fa-sync"></i> Run</button>
+			<span class="log-title">
+				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
+			</span>
+		`;
+
+		logInfo.querySelector('.toolbar button.back').on('click', () => {
+
+			this.logs.container.querySelector('.list').classList.remove('hidden');
+			logInfo.classList.add('hidden');
+		});
+
+		logInfo.querySelector('.toolbar .restore').on('click', () => {
+
+			this.logs.owner.connection.formJson = this.connection.json;
+
+			new SnackBar({
+				message: this.query_id + ' Query Restored',
+				subtitle: 'The restored query is not saved yet and will be lost on page reload.',
+				icon: 'fa fa-plus',
+			});
+		});
+
+		logInfo.querySelector('.toolbar .run').on('click', () => {
+
+			this.logs.page.preview(this.connection.json);
+		});
 
 		const
 			queryInfo = this.logs.container.querySelector('.info div.block'),
@@ -2096,13 +2224,41 @@ class VisualizationLog extends ReportLog {
 
 	load() {
 
-		super.load();
+		const logInfo = this.logs.container.querySelector('.info');
+
+		logInfo.classList.remove('hidden');
+		this.logs.container.querySelector('.list').classList.add('hidden');
+
+		logInfo.querySelector('.toolbar').innerHTML =  `
+			<button class="back"><i class="fa fa-arrow-left"></i> Back to history</button>
+			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
+			<button class="preview"><i class="fas fa-eye"></i> Preview</button>
+			<span class="log-title">
+				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
+			</span>
+		`;
+
+		logInfo.querySelector('.toolbar button.back').on('click', () => {
+
+			this.logs.container.querySelector('.list').classList.remove('hidden');
+			logInfo.classList.add('hidden');
+		});
+
+		logInfo.querySelector('.toolbar .restore').on('click', () => {
+
+		});
+
+		logInfo.querySelector('.toolbar .preview').on('click', () => {
+
+
+		});
 
 		const
-			queryInfo = this.logs.container.querySelector('.info div.block'),
-			optionsForm = new (ConfigureVisualization.types.get(this.logs.owner.type))(this.logs.owner, this.logs.page.page, this.logs.page);
+			queryInfo = this.logs.container.querySelector('.info div.log-form'),
+			optionsForm = new (ConfigureVisualization.types.get(this.logs.owner.type))(this.logs.owner, this.logs.page.page, this.logs.page, true);
 
 		queryInfo.classList.remove('block');
+		queryInfo.classList.add('logs-configure-visualization');
 
 		queryInfo.innerHTML = `
 			<div class="logs-configuration-section">
@@ -2113,22 +2269,26 @@ class VisualizationLog extends ReportLog {
 					<div class="form subform">
 						<label>
 							<span>Name</span>
-							<input type="text" name="name" required>
+							<input type="text" name="name" value="${this.value.name}" readonly>
 						</label>
 
 						<label>
 							<span>Visualization Type</span>
-							<select name="type" required></select>
+							<select name="type"></select>
 						</label>
 
 						<label>
 							<span>Description</span>
-							<textarea  name="description" rows="4" cols="50"></textarea>
+							<textarea  name="description" rows="4" cols="50" readonly></textarea>
 						</label>
 					</div>
 				</div>
 			</div>
 		`;
+
+		queryInfo.querySelector('textarea[name=description]').value = this.value.description;
+		queryInfo.querySelector('select[name=type]').innerHTML = `<option value="${this.value.type}">${MetaData.visualizations.get(this.value.type).name}</option>`;
+		queryInfo.querySelector('select[name=type]').value = this.value.type;
 		
 		queryInfo.appendChild(optionsForm.form);
 	}
@@ -3143,10 +3303,11 @@ class Axis {
 
 class ReportVisualizationOptions {
 
-	constructor(visualization, page, stage) {
+	constructor(visualization, page, stage, readOnly = false) {
 		this.visualization = visualization;
 		this.page = page;
 		this.stage = stage;
+		this.readOnly = readOnly;
 	}
 
 	get form() {
@@ -3603,12 +3764,24 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 			</div>
 		`;
 
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
+		this.form = this.visualization.options;
 
 		this.stage.setupConfigurationSetions(container);
 
 		return container;
+	}
+
+	set form(json) {
+
+		for(const element of this.form.querySelectorAll('select, input')) {
+
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = json && json[element.name];
+
+			if(this.readOnly) {
+
+				element.disabled = true;
+			}
+		}
 	}
 });
 
@@ -4017,9 +4190,45 @@ class ReportTransformations extends Set {
 		this.visualization = visualization;
 		this.stage = stage;
 		this.page = this.stage.page;
-		this.container = this.stage.container.querySelector('#transformations');
+	}
 
-		const preview = this.container.parentElement.querySelector('h3 #transformations-preview');
+	get container () {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('configuration-section', 'transformations');
+
+		container.innerHTML = `
+			<h3>
+				<i class="fas fa-angle-right"></i> Transformations
+				<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
+				<span class="count transformation"></span>
+			</h3>
+			<div class="body">
+				<div class="list"></div>
+				<form class="add-transformation">
+					<fieldset>
+						<legend>Add Transformation</legend>
+						<div class="form">
+	
+							<label>
+								<span>Type</span>
+								<select name="type"></select>
+							</label>
+	
+							<label>
+								<span>&nbsp;</span>
+								<button type="submit"><i class="fa fa-plus"></i> Add</button>
+							</label>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+		`;
+
+		const preview = container.querySelector('h3 #transformations-preview');
 
 		preview.removeEventListener('click', ReportTransformations.previewListener);
 
@@ -4027,6 +4236,10 @@ class ReportTransformations extends Set {
 			e.stopPropagation();
 			this.preview();
 		});
+
+		this.container.querySelector('.add-transformation').on('submit', e => this.insert(e));
+
+		return container;
 	}
 
 	load() {
@@ -4052,43 +4265,22 @@ class ReportTransformations extends Set {
 
 	render() {
 
-		this.container.textContent = null;
+		const transformationsList = this.container.querySelector('.list');
+
+		transformationsList.textContent = null;
 
 		for(const transformation of this)
-			this.container.appendChild(transformation.container);
+			transformationsList.appendChild(transformation.container);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No transformation added yet!</div>';
-
-		this.container.insertAdjacentHTML('beforeend', `
-
-			<form class="add-transformation">
-				<fieldset>
-					<legend>Add Transformation</legend>
-					<div class="form">
-
-						<label>
-							<span>Type</span>
-							<select name="type"></select>
-						</label>
-
-						<label>
-							<span>&nbsp;</span>
-							<button type="submit"><i class="fa fa-plus"></i> Add</button>
-						</label>
-					</div>
-				</fieldset>
-			</form>
-		`);
+			transformationsList.innerHTML = '<div class="NA">No transformation added yet!</div>';
 
 		const select = this.container.querySelector('.add-transformation select');
 
 		for(const [key, type] of ReportTransformation.types)
 			select.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
 
-		this.container.querySelector('.add-transformation').on('submit', e => this.insert(e));
-
-		this.container.parentElement.querySelector('h3 .count').innerHTML = `
+		this.container.querySelector('h3 .count').innerHTML = `
 			${this.size ? this.size + ' transformation' + (this.size == 1 ? ' applied' : 's applied') : ''}
 		`;
 	}
@@ -4138,7 +4330,7 @@ class ReportTransformations extends Set {
 	clear() {
 
 		super.clear();
-		this.container.innerHTML = '<div class="NA">Loading&hellip;</div>';
+		this.container.querySelector('.list').innerHTML = '<div class="NA">Loading&hellip;</div>';
 	}
 
 	insert(e) {
@@ -4669,9 +4861,47 @@ class ReportVisualizationDashboards extends Set {
 		super();
 
 		this.stage = stage;
+	}
 
-		this.container = this.stage.container.querySelector('#dashboards');
-		this.addForm = this.container.querySelector('.add-dashboard');
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('configuration-section', 'dashboards');
+
+		container.innerHTML = `
+			<h3><i class="fas fa-angle-right"></i> Dashboards <span class="count"></span></h3>
+			<div class="body">
+				<div class="list"></div>
+				<form class="add-dashboard">
+					<fieldset>
+						<legend>Add Dashboard</legend>
+						<div class="form">
+	
+							<label class="dashboard_id">
+								<span>Dashboard</span>
+							</label>
+	
+							<label>
+								<span>Position</span>
+								<input name="position" type="number">
+							</label>
+	
+							<label>
+								<span>&nbsp;</span>
+								<button type="submit"><i class="fa fa-plus"></i> Add</button>
+							</label>
+						</div>
+					</fieldset>
+				</form>
+			</div>			
+		`;
+
+		this.container.querySelector('form').on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
+
+		return container;
 	}
 
 	async load(options) {
@@ -4712,40 +4942,17 @@ class ReportVisualizationDashboards extends Set {
 
 	render() {
 
-		this.container.textContent = null;
+		const dashboardsList = this.container.querySelector('.list');
+
+		dashboardsList.textContent = null;
 
 		for(const dashboard of this)
-			this.container.appendChild(dashboard.form);
+			dashboardsList.appendChild(dashboard.form);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No dashboard added yet!</div>';
+			dashboardsList.innerHTML = '<div class="NA">No dashboard added yet!</div>';
 
-		this.container.parentElement.querySelector('h3 .count').innerHTML = `${this.size ? 'Added to ' + this.size + ' dashboard' + (this.size == 1 ? '' : 's') : ''}` ;
-
-		this.container.insertAdjacentHTML('beforeend', `
-
-			<form class="add-dashboard">
-				<fieldset>
-					<legend>Add Dashboard</legend>
-					<div class="form">
-
-						<label class="dashboard_id">
-							<span>Dashboard</span>
-						</label>
-
-						<label>
-							<span>Position</span>
-							<input name="position" type="number">
-						</label>
-
-						<label>
-							<span>&nbsp;</span>
-							<button type="submit"><i class="fa fa-plus"></i> Add</button>
-						</label>
-					</div>
-				</fieldset>
-			</form>
-		`);
+		this.container.querySelector('h3 .count').innerHTML = `${this.size ? 'Added to ' + this.size + ' dashboard' + (this.size == 1 ? '' : 's') : ''}` ;
 
 		const form = this.container.querySelector('.add-dashboard');
 
@@ -4785,14 +4992,12 @@ class ReportVisualizationDashboards extends Set {
 		this.dashboardMultiSelect = new MultiSelect({datalist, multiple: false, dropDownPosition: 'top'});
 
 		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
-
-		form.on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
 	}
 
 	clear() {
 
 		super.clear();
-		this.container.innerHTML = '<div class="NA">Loading&hellip;</div>';
+		this.container.querySelector('.list').innerHTML = '<div class="NA">Loading&hellip;</div>';
 	}
 
 	static async insert(e, stage) {
@@ -5024,13 +5229,65 @@ class ReportVisualizationDashboard {
 
 class ReportVisualizationFilters extends Map {
 
-	constructor(stage) {
+	constructor(visualization, stage) {
 
 		super();
 
-		this.visualization = stage.visualization;
-		this.container = stage.container.querySelector('.configuration-section #filters');
+		this.visualization = visualization;
 		this.stage = stage;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('configuration-section', 'filters');
+
+		container.innerHTML = `
+			<h3><i class="fas fa-angle-right"></i> Filters <span class="count"></span></h3>
+			<div class="body">
+				<div class="list" class="list"></div>
+				<form class="add-filter">
+					<fieldset>
+						<legend>Add Filter</legend>
+	
+						<div class="form">
+	
+							<label>
+								<span>Name</span>
+								<select></select>
+							</label>
+	
+							<label>
+								<span>&nbsp;</span>
+								<button type="submit"><i class="fa fa-plus"></i> Add</button>
+							</label>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+		`;
+
+		this.container.querySelector('.add-filter').on('submit', (e) => {
+
+			e.preventDefault();
+
+			const
+				filterOptions = this.container.querySelector('.add-filter select'),
+				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
+
+			this.set(filter.filter_id, new ReportVisualizationFilter(
+				{filter_id: filter.filter_id, default_value: ''},
+				filter,
+				this,
+			));
+
+			this.render();
+		});
+
+		return container;
 	}
 
 	load() {
@@ -5047,51 +5304,38 @@ class ReportVisualizationFilters extends Map {
 		if(!this.visualization.options)
 			return;
 
-		for(const filter of this.stage.visualization.options.filters || []) {
+		for(const filter of this.visualization.options.filters || []) {
 
 			const [filterObj] = this.stage.report.filters.filter(x => x.filter_id == filter.filter_id);
 
 			if(!filterObj)
 				continue;
 
-			this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, this.stage));
+			this.set(filter.filter_id, new ReportVisualizationFilter(filter, filterObj, this));
 		}
 	}
 
 	render() {
 
-		this.container.textContent = null;
+		const filterList = this.container.querySelector('.list');
 
-		if(!this.stage.report.filters.length)
-			return this.container.innerHTML = '<div class="NA">No filters found!</div>';
+		filterList.textContent = null;
+
+		if(!this.stage.report.filters.length) {
+
+			filterList.innerHTML = '<div class="NA">No filters found!</div>';
+			this.container.querySelector('.add-filter').classList.add('hidden');
+
+			return;
+		}
+
+		this.container.querySelector('.add-filter').classList.remove('hidden');
 
 		for(const filter of this.values())
-			this.container.appendChild(filter.container);
+			filterList.appendChild(filter.container);
 
 		if(!this.size)
-			this.container.innerHTML = '<div class="NA">No filters added yet!</div>';
-
-		this.container.insertAdjacentHTML('beforeend', `
-
-			<form class="add-filter">
-				<fieldset>
-					<legend>Add Filter</legend>
-
-					<div class="form">
-
-						<label>
-							<span>Name</span>
-							<select></select>
-						</label>
-
-						<label>
-							<span>&nbsp;</span>
-							<button type="submit"><i class="fa fa-plus"></i> Add</button>
-						</label>
-					</div>
-				</fieldset>
-			</form>
-		`);
+			filterList.innerHTML = '<div class="NA">No filters added yet!</div>';
 
 		const optionsList = this.container.querySelector('.add-filter select');
 
@@ -5105,27 +5349,9 @@ class ReportVisualizationFilters extends Map {
 
 		this.container.querySelector('.add-filter').classList.toggle('hidden', this.size == this.stage.report.filters.length);
 
-		this.container.parentElement.querySelector('h3 .count').innerHTML = `
+		this.container.querySelector('h3 .count').innerHTML = `
 			${this.size ? this.size + ' filter' + (this.size == 1 ? ' added' : 's added') : ''}
 		`;
-
-		this.container.querySelector('.add-filter').on('submit', (e) => {
-
-			e.preventDefault();
-
-			const
-				filterOptions = this.container.querySelector('.add-filter select'),
-				[filter] = this.stage.report.filters.filter(x => x.filter_id == parseInt(filterOptions.value));
-
-			this.set(filter.filter_id, new ReportVisualizationFilter(
-				{filter_id: filter.filter_id, default_value: ''},
-				filter,
-				this.stage,
-			));
-
-			this.render();
-		});
-
 	}
 
 	get json() {
@@ -5143,18 +5369,18 @@ class ReportVisualizationFilters extends Map {
 	clear() {
 
 		super.clear();
-		this.container.innerHTML = `<div class="NA">Loading&hellip;</div>`;
+		this.container.querySelector('.list').innerHTML = `<div class="NA">Loading&hellip;</div>`;
 	}
 }
 
 class ReportVisualizationFilter {
 
-	constructor(reportVisualizationFilter, reportFilter, stage) {
+	constructor(filter, reportFilter, filters) {
 
-		this.stage = stage;
+		this.reportVisualizationFilters = filters;
 		this.reportFilter = reportFilter;
 
-		Object.assign(this, reportVisualizationFilter);
+		Object.assign(this, filter);
 	}
 
 	get container() {
@@ -5184,9 +5410,9 @@ class ReportVisualizationFilter {
 		container.querySelector('.delete').on('click', () => {
 
 			this.container.parentElement.removeChild(container);
-			this.stage.reportVisualizationFilters.delete(this.filter_id);
 
-			this.stage.reportVisualizationFilters.render();
+			this.reportVisualizationFilters.delete(this.filter_id);
+			this.reportVisualizationFilters.render();
 		});
 
 		return container;
