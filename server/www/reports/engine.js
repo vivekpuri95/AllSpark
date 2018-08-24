@@ -18,6 +18,7 @@ const mongoConnecter = require("../../utils/mongo").Mongo.query;
 const userQueryLogs = require("../accounts").userQueryLogs;
 const getRole = require("../object_roles").get;
 const ObjectId = require('mongodb').ObjectID;
+const oracle = require('../../utils/oracle').Oracle;
 
 // prepare the raw data
 class report extends API {
@@ -351,6 +352,9 @@ class report extends API {
 				break;
 			case "mongo":
 				preparedRequest = new Mongo(this.reportObj, this.filters);
+				break;
+			case "oracle":
+				preparedRequest = new Oracle(this.reportObj, this.filters);
 				break;
 			case "file":
 				this.assert(false, 'No data found in the file. Please upload some data first.');
@@ -870,6 +874,75 @@ class Mongo {
 }
 
 
+class Oracle {
+
+	constructor(reportObj, filters = []) {
+
+		this.reportObj = reportObj;
+		this.filters = filters;
+	}
+
+	prepareQuery() {
+
+		let queryParameters = {};
+
+		for (const filter of this.filters) {
+
+			if (!Array.isArray(filter.value)) {
+
+				filter.value = [filter.value];
+			}
+
+			queryParameters = {...queryParameters, ...this.prepareParameters(filter)};
+		}
+
+		this.queryParameters = queryParameters;
+	}
+
+
+	prepareParameters(filter) {
+
+		const filterObj = {}, containerArray = [];
+
+		const regex = new RegExp(`{{${filter.placeholder}}}`, 'g');
+
+		for (let position = 0; position < (this.reportObj.query.match(regex) || []).length; position++) {
+
+			let tempArray = [];
+
+			for (const [index, value] of filter.value.entries()) {
+
+				const key = `${filter.placeholder}_${position}_${index}`;
+
+				filterObj[key] = value;
+				tempArray.push(":" + key);
+			}
+
+			containerArray.push(tempArray);
+		}
+
+		this.reportObj.query = this.reportObj.query.replace(regex, (() => {
+
+			let number = 0;
+
+			return () => (containerArray[number++] || []).join(", ");
+		})());
+
+		return filterObj;
+	}
+
+	get finalQuery() {
+
+		this.prepareQuery();
+
+		return {
+			type: "oracle",
+			request: [this.reportObj.query, this.queryParameters, this.reportObj.connection_name],
+		}
+	}
+}
+
+
 class ReportEngine extends API {
 
 	constructor(parameters) {
@@ -883,6 +956,7 @@ class ReportEngine extends API {
 			bigquery: bigQuery.call,
 			mssql: this.mssql.query,
 			mongo: mongoConnecter,
+			oracle: oracle.query,
 		};
 
 		this.parameters = parameters || {};
@@ -913,7 +987,7 @@ class ReportEngine extends API {
 
 		let query;
 
-		if (["mysql", "pgsql", "mssql"].includes(this.parameters.type)) {
+		if (["mysql", "pgsql", "mssql", "oracle"].includes(this.parameters.type)) {
 
 			query = data.instance ? data.instance.sql : data;
 		}
@@ -924,8 +998,10 @@ class ReportEngine extends API {
 
 			data = await data.json();
 
-			if (data && Array.isArray(data.data))
+			if (data && Array.isArray(data.data)) {
+
 				data = data.data;
+			}
 		}
 
 		else if (this.parameters.type === "mongo") {
@@ -1078,16 +1154,16 @@ class executingReports extends API {
 		const superadmin = this.user.privilege.has("superadmin");
 		const admin = this.user.privilege.has("admin");
 
-		for(const [_, value] of global.executingReports.entries()) {
+		for (const [_, value] of global.executingReports.entries()) {
 
 			let obj = {};
 
-			if(!(superadmin || admin) && value.get("user_id") !== this.user.user_id) {
+			if (!(superadmin || admin) && value.get("user_id") !== this.user.user_id) {
 
 				continue;
 			}
 
-			if(!superadmin && admin && value.get("account_id") !== this.account.account_id) {
+			if (!superadmin && admin && value.get("account_id") !== this.account.account_id) {
 
 				continue;
 			}
