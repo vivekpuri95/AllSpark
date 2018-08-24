@@ -1071,11 +1071,6 @@ class SettingsPrivilege {
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		if(!user.privileges.has('admin') || (!this.account_id && !user.privileges.has('superadmin'))) {
-			row.querySelector('.green').classList.add('NA');
-			row.querySelector('.red').classList.add('NA');
-		}
-
 		if(!row.querySelector('.green.NA'))
 			row.querySelector('.green').on('click', () => this.edit());
 
