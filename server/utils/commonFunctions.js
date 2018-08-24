@@ -28,10 +28,12 @@ function isJson(str) {
 	return true;
 }
 
+
 async function makeBcryptHash(pass) {
 
 	return await bcrypt.hash(pass, constants.saltrounds);
 }
+
 
 async function verifyBcryptHash(pass, hash) {
 
@@ -45,6 +47,7 @@ function makeJWT(obj, expiresIn = Math.floor(Date.now() / 1000) + (86400 * 7)) {
 	return jwt.sign(obj, config.get('secret_key'));
 
 }
+
 
 async function verifyJWT(token) {
 
