@@ -51,7 +51,7 @@ exports.insert = class extends cycleDetection {
 	async fetch() {
 
 		this.accountPrivileges = await this.mysql.query(
-			"select pt.* from tb_privileges p join tb_privileges_tree pt where (account_id = ? or account_id = 0) and p.status = 1",
+			"select pt.*, p.account_id as prv_account from tb_privileges p join tb_privileges_tree pt where (account_id = ? or account_id = 0) and p.status = 1",
 			[this.account.account_id],
 		);
 
@@ -71,6 +71,10 @@ exports.insert = class extends cycleDetection {
 
 			parents = [parents]
 		}
+
+		let requestPrivilege = this.accountPrivileges.filter(x => x.privilege_id = parseInt(this.request.body.privilege_id));
+
+		this.assert(requestPrivilege.prv_account, "Can't modify root privileges");
 
 		for (const parent of parents) {
 
