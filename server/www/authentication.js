@@ -419,7 +419,7 @@ exports.refresh = class extends cycleDetection {
 					AND u.user_id = ?
 					AND u.account_id = ?
                `,
-			[user.user_id, this.account.account_id, user.user_id, this.account.account_id]
+			[user.user_id, user.account_id, user.user_id, user.account_id]
 		),
 			this.mysql.query(
 				"select pt.*, p.name from tb_privileges p join tb_privileges_tree pt using(privilege_id) where (account_id = ? or account_id = 0) and p.status = 1",
