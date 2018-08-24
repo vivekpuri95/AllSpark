@@ -4,7 +4,6 @@ const crypto = require('crypto');
 const request = require('request');
 const promisify = require('util').promisify;
 const Mailer = require('../utils/mailer');
-const requestPromise = promisify(request);
 const cycleDetection = require("./privileges_manager").cycleDetection;
 const config = require("config");
 const constants = require("../utils/constants");
@@ -17,6 +16,7 @@ const sessionLogs = require("./session-logs").sessions;
 const EXPIRE_AFTER = 1; //HOURS
 
 exports.resetlink = class extends API {
+
 	async resetlink() {
 
 		let user = await this.mysql.query(
@@ -188,7 +188,7 @@ exports.login = class extends API {
 
 			authAPIResponse = await authAPIResponse.json();
 
-			if(!(authAPIResponse.data && authAPIResponse.data.userDetails)) {
+			if (!(authAPIResponse.data && authAPIResponse.data.userDetails)) {
 
 				throw({message: authAPIResponse.message, status: status});
 			}
@@ -213,7 +213,7 @@ exports.login = class extends API {
 		const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
 		const redisResult = await redis.get(redisHash);
 
-		if(redisResult) {
+		if (redisResult) {
 
 			throw("Failure, please try again");
 		}
@@ -301,7 +301,7 @@ exports.login = class extends API {
 
 		let session = {};
 
-		try{
+		try {
 			sessionLogs.request = {};
 
 			Object.assign(sessionLogs.request, this.request);
@@ -319,7 +319,8 @@ exports.login = class extends API {
 
 			session = await sessionLogs.insert();
 		}
-		catch(e){}
+		catch (e) {
+		}
 
 		const obj = {
 			user_id: this.userDetails.user_id,
@@ -393,26 +394,30 @@ exports.refresh = class extends cycleDetection {
 				UNION ALL
 
                 SELECT
-                    'roles' AS 'owner',
-                    u.user_id,
-                    IF(r.is_admin = 1, 0, ur.role_id) AS owner_id,
-                    r.name AS role_name,
-                    IF(c.is_admin = 1, 0, ur.category_id) AS category_id,
-                    c.name AS category_name
-                FROM
-                    tb_user_roles ur
-                JOIN
-                    tb_users u
-                    USING(user_id)
-                JOIN
-                    tb_categories c
-                    USING(category_id)
-                JOIN
-                    tb_roles r
-                    USING(role_id)
-                WHERE
-                    user_id = ?
-                    AND u.account_id = ?
+					'roles' AS 'owner',
+					user_id,
+					IF(r.is_admin = 1, 0, role_id) AS owner_id,
+					r.name AS role_name,
+					IF(c.is_admin = 1, 0, category_id) AS category_id,
+					c.name AS category_name
+				FROM
+					tb_object_roles obr
+				JOIN
+					tb_roles r
+					ON r.role_id = obr.target_id
+				JOIN
+					tb_categories c
+					USING(category_id)
+				JOIN
+					tb_users u
+					ON u.user_id = obr.owner_id
+					AND u.account_id = obr.account_id
+				WHERE
+					OWNER = "user"
+					AND target = "role"
+					AND u.status = 1
+					AND u.user_id = ?
+					AND u.account_id = ?
                `,
 			[user.user_id, this.account.account_id, user.user_id, this.account.account_id]
 		),
@@ -447,7 +452,8 @@ exports.refresh = class extends cycleDetection {
 					category_id: privilege.category_id,
 				});
 			}
-		};
+		}
+		;
 
 		let privilegeObj = {};
 
