@@ -1272,8 +1272,8 @@ class PrivilegeComponents {
 				method: "POST",
 			},
 			parameters = {
-				parent: this.privilege.privilege_id,
-				privilege_id: this.multiSelect.value[0],
+				parent: this.multiSelect.value[0],
+				privilege_id: this.privilege.privilege_id,
 			};
 
 		const result = await API.call('privileges_manager/insert', parameters, options);
