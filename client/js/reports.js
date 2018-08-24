@@ -544,6 +544,9 @@ class DataSource {
 		const xlsxDownloadDropdown = menu.querySelector('.xlsx-download');
 
 		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
+
+		if(this.visualizations.selected.visualization_id)
+			menu.querySelector('.configure-visualization').href = `/reports/configure-visualization/${this.visualizations.selected.visualization_id}`;
 	}
 
 	async userList() {

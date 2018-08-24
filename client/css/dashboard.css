@@ -538,6 +538,9 @@ main #reports > .list {
 					margin: calc(var(--gap) * 2) 0;
 					width: calc(100vw - calc(var(--gap) * 6));
 				}
+				main #reports > .list.singleton .data-source {
+					margin: 0;
+				}
 					main #reports > .list .visualization {
 						height: 275px;
 					}

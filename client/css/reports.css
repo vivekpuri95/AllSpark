@@ -215,6 +215,7 @@ main .data-source {
 		width: 150px;
 		border-top-right-radius: 6px;
 		font-size: 90%;
+		flex-wrap: wrap;
 	}
 	main .singleton .data-source > .menu {
 		position: static;
@@ -241,6 +242,7 @@ main .data-source {
 				position: absolute;
 				right: 100%;
 				top: 0;
+				z-index: 7;
 				background: #fff;
 				box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 			}
@@ -332,7 +334,6 @@ main .data-source {
 
 	main .data-source .toolbar.filters {
 		grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
-		background: rgba(255, 255, 255, 0.5);
 		margin: 0;
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		align-items: flex-start;
@@ -619,6 +620,8 @@ main .data-source {
 	main .data-source.flush .visualization {
 		box-shadow: none;
 		background: #eee;
+		border-radius: 0;
+		border: 0;
 	}
 
 	main .data-source .visualization.blur {

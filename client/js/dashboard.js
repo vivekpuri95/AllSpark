@@ -380,10 +380,13 @@ Page.class = class Dashboards extends Page {
 		report.container.removeAttribute('style');
 		container.classList.add('singleton');
 		Dashboard.toolbar.classList.add('hidden');
+
 		this.container.querySelector('#reports .global-filters').classList.add('hidden');
 
-		report.container.querySelector('.menu').classList.remove('hidden');
-		report.container.querySelector('.menu-toggle').classList.add('selected');
+		if(!report.container.contains(report.menu))
+			report.container.appendChild(report.menu);
+
+		report.menu.classList.remove('hidden')
 
 		container.appendChild(report.container);
 
