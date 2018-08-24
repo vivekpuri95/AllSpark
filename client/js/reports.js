@@ -124,14 +124,13 @@ class DataSource {
 
 			let message = e.message;
 
-			try {
-
+			if(typeof e.body == 'object') {
 				message = message.replace('You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use', '');
 				this.error(JSON.stringify(message, 0, 4));
 
 				throw e;
 			}
-			catch(e) {
+			else {
 
 				this.error('Click here to retry', {retry: true});
 				throw e;
