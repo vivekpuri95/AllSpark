@@ -72,7 +72,7 @@ exports.insert = class extends cycleDetection {
 			parents = [parents]
 		}
 
-		let [requestPrivilege] = this.mysql.query(
+		let [requestPrivilege] = await this.mysql.query(
 			"select * from tb_privileges where privilege_id = ? and status = 1",
 			[this.request.body.privilege_id]
 		);
