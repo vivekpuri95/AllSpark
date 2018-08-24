@@ -45,7 +45,7 @@ exports.update = class extends API {
 
 		this.assert(this.request.body.privilege_id, 'Privilege Id not found');
 
-		const account_id = await this.mysql.query(`SELECT account_id FROM tb_privileges WHERE privilege_id = ?
+		const [account_id] = await this.mysql.query(`SELECT account_id FROM tb_privileges WHERE privilege_id = ?
 				AND status = 1
 			`, [this.request.body.privilege_id]
 		);
@@ -54,7 +54,7 @@ exports.update = class extends API {
 			this.user.privilege.needs('superadmin');
 		}
 
-		const result = await this.mysql.query(`
+		return await this.mysql.query(`
 			UPDATE
 				tb_privileges
 			SET
@@ -65,8 +65,6 @@ exports.update = class extends API {
 			`, [this.request.body.name, this.request.body.is_admin, this.request.body.privilege_id, this.account.account_id],
 			'write'
 		);
-
-		return result;
 	}
 }
 
