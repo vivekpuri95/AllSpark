@@ -1258,7 +1258,7 @@ class PrivilegeComponents {
 
  		container.querySelector('label.add-new').appendChild(this.multiSelect.container);
 
- 		container.querySelector('form').on('submit', (e) => this.add(e));
+ 		container.querySelector('form.add-new-container').on('submit', (e) => this.add(e));
 
  		return container;
 	}
