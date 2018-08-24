@@ -129,6 +129,9 @@ main .data-source {
 			margin: 0 0 -25px 15px;
 			z-index: 5;
 		}
+		main .singleton .data-source > header h2 {
+			z-index: 7;
+		}
 			main .data-source > header h2 .title {
 				padding: 6px 15px;
 				background: var(--color-accent);
@@ -384,7 +387,6 @@ main .data-source {
 	main .data-source > .query {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		user-select: text;
-		font-family: monospace;
 		white-space: pre;
 		display: flex;
 		flex-direction: column;

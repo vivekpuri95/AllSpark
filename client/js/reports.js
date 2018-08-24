@@ -142,33 +142,6 @@ class DataSource {
 
 		this.originalResponse = response;
 
-		this.container.querySelector('.query').innerHTML = new FormatSQL(response.query).query;
-
-		let age = response.cached ? Math.floor(response.cached.age * 100) / 100 : 0;
-
-		if(age < 1000)
-			age += 'ms';
-
-		else if(age < 1000 * 60)
-			age = Format.number((age / 1000)) + 's';
-
-		else if(age < 1000 * 60 * 60)
-			age = Format.number((age / (1000 * 60))) + 'h';
-
-		let runtime = Math.floor(response.runtime * 100) / 100;
-
-		if(runtime < 1000)
-			runtime += 'ms';
-
-		else if(runtime < 1000 * 60)
-			runtime = (runtime / 1000) + 's';
-
-		else if(runtime < 1000 * 60 * 60)
-			runtime = (runtime / (1000 * 60)) + 'h';
-
-		this.container.querySelector('.description .cached').textContent = response.cached && response.cached.status ? age : 'No';
-		this.container.querySelector('.description .runtime').textContent = runtime;
-
 		this.columns.update();
 		this.postProcessors.update();
 		this.render();
@@ -194,103 +167,43 @@ class DataSource {
 				</div>
 			</header>
 
-			<div class="menu hidden">
-
-				<div class="item">
-					<span class="label reload"><i class="fas fa-sync"></i> Reload</span>
-				</div>
-
-				<div class="item hidden">
-					<span class="label filters-toggle"><i class="fa fa-filter"></i> Filters</span>
-				</div>
-
-				<div class="item">
-					<span class="label description-toggle"><i class="fa fa-info"></i> Info</span>
-				</div>
-
-				<div class="item view hidden">
-					<span class="label expand-toggle"><i class="fas fa-expand-arrows-alt"></i> Expand</span>
-				</div>
-
-				<div class="item hidden">
-					<span class="label query-toggle"><i class="fas fa-file-alt"></i> Query</span>
-				</div>
-
-				<div class="item">
-					<span class="label change-visualization"><i class="fas fa-chart-line"></i> Visualizations</span>
-					<div class="submenu"></div>
-				</div>
-
-				<div class="item" title="Download CSV">
-
-					<span class="label download" title="Download Report"><i class="fa fa-download"></i> Download</span>
-
-					<div class="submenu">
-
-						<div class="item">
-							<span class="label csv-download"><i class="far fa-file-excel"></i> CSV</label>
-						</div>
-
-						<div class="item">
-							<span class="label filtered-csv-download"><i class="far fa-file-excel"></i> Filtered CSV</label>
-						</div>
-
-						<div class="item">
-							<span class="label xlsx-download"><i class="fas fa-file-excel"></i> XLSX</label>
-						</div>
-
-						<div class="item">
-							<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
-						</div>
-
-						<!--<div class="item">
-							<span class="label export-toggle"><i class="fa fa-download"></i> Export</label>
-						</div>>-->
-					</div>
-				</div>
-
-				<div class="item hidden">
-					<a class="label configure-visualization">
-						<i class="fas fa-cog"></i>
-						<span>Configure</span>
-					</a>
-				</div>
-
-				<div class="item hidden">
-					<a class="label define-visualization" href="/reports/define-report/${this.query_id}">
-						<i class="fas fa-pencil-alt"></i>
-						<span>Define</span>
-					</a>
-				</div>
-			</div>
-
 			<div class="columns"></div>
-			<div class="query overlay hidden"></div>
 			<div class="drilldown hidden"></div>
+
+			<div class="query overlay hidden">
+				<code></code>
+				<div class="close">&times;</div>
+			</div>
 
 			<div class="description overlay hidden">
 				<div class="body"></div>
 				<div class="footer hidden">
+
 					<span>
 						<span class="label">Role:</span>
 						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : '<span class="NA">NA</span>'}</span>
 					</span>
+
 					<span>
 						<span class="label">Added On:</span>
 						<span>${Format.date(this.created_at)}</span>
 					</span>
+
 					<span>
 						<span class="label">Cached:</span>
 						<span class="cached"></span>
 					</span>
+
 					<span>
 						<span class="label">Runtime:</span>
 						<span class="runtime"></span>
 					</span>
+
 					<span class="right visible-to">
 						<span class="label">Visible To</span>
 						<span class="count"></span>
 					</span>
+
 					<span>
 						<span class="label">Added By:</span>
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
@@ -304,35 +217,24 @@ class DataSource {
 
 			e.stopPropagation();
 
-			const menu = container.querySelector('.menu');
+			if(!container.contains(this.menu))
+				container.appendChild(this.menu);
 
-			menu.classList.toggle('hidden');
+			this.menu.classList.toggle('hidden');
 			container.querySelector('header .menu-toggle').classList.toggle('selected');
 
 			document.body.removeEventListener('click', this.menuToggleListener);
 
-			if(!menu.classList.contains('hidden')) {
+			if(!this.menu.classList.contains('hidden')) {
 				document.body.on('click', this.menuToggleListener = e => {
 					container.querySelector('header .menu-toggle').click();
 				});
 			}
 		});
 
-		// container.querySelector('.menu').on('click', e => e.stopPropagation());
-
 		if(this.editable) {
 
-			const elementsToShow = [
-				'.menu .expand-toggle',
-				'.menu .query-toggle',
-				'.menu .configure-visualization',
-				'.menu .define-visualization',
-			];
-
-			for(const element of elementsToShow)
-				container.querySelector(elementsToShow).parentElement.classList.remove('hidden');
-
-			container.querySelector('.description .footer').parentElement.classList.remove('hidden');
+			container.querySelector('.description .footer').classList.remove('hidden');
 
 			container.querySelector('.description .visible-to .count').on('click', () => {
 
@@ -357,108 +259,23 @@ class DataSource {
 			});
 		}
 
-		container.querySelector('.menu .reload').on('click', () => this.visualizations.selected.load());
-
-		container.querySelector('.menu .filters-toggle').on('click', () => {
-
-			container.querySelector('.filters-toggle').parentElement.classList.toggle('selected');
-			this.visualizations.selected.container.classList.toggle('blur');
-			container.querySelector('.columns').classList.toggle('blur');
-
-			if(container.contains(this.filters.container))
-				container.removeChild(this.filters.container);
-
-			else container.insertBefore(this.filters.container, container.querySelector('.columns'));
-
-			this.visualizations.selected.render({resize: true});
-		});
-
-		// If every filter is of hidden type then don't show the filters toggle
-		if(!this.filters.size || Array.from(this.filters.values()).every(f => f.type == 'hidden'))
-			container.querySelector('.menu .filters-toggle').classList.add('hidden');
-
-		container.querySelector('.menu .description-toggle').on('click', async () => {
-
-			container.querySelector('.description').classList.toggle('hidden');
-			container.querySelector('.description-toggle').parentElement.classList.toggle('selected');
-			this.visualizations.selected.container.classList.toggle('blur');
-			container.querySelector('.columns').classList.toggle('blur');
-
-			this.visualizations.selected.render({resize: true});
-
-			if(user.privileges.has('report')) {
-
-				await this.userList();
-				container.querySelector('.description .count').textContent = `${this.visibleTo.length} people`;
-			}
-			else {
-				container.querySelector('.description .visible-to').classList.add('hidden');
-			}
-		});
-
-		container.querySelector('.menu .query-toggle').on('click', () => {
-
-			container.querySelector('.query').classList.toggle('hidden');
-			container.querySelector('.query-toggle').parentElement.classList.toggle('selected');
-			this.visualizations.selected.container.classList.toggle('blur');
-			container.querySelector('.columns').classList.toggle('blur');
-
-			this.visualizations.selected.render({resize: true});
-		});
-
-		container.querySelector('.menu').insertBefore(this.postProcessors.container, container.querySelector('.change-visualization').parentElement);
-
-		container.querySelector('.menu .csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
-		container.querySelector('.menu .filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
-		container.querySelector('.menu .json-download').on('click', (e) => this.download(e, {mode: 'json'}));
-		container.querySelector('.menu .xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
-		container.querySelector('.menu .expand-toggle').on('click', () => window.location = `/report/${this.query_id}`);
+		container.querySelector('.description .close').on('click', () => container.querySelector('.menu .description-toggle').click());
+		container.querySelector('.query .close').on('click', () => container.querySelector('.menu .query-toggle').click());
 
 		if(this.visualizations.length) {
-
-			const changeVisualization = container.querySelector('.change-visualization');
 
 			for(const visualization of this.visualizations) {
 
 				if(visualization.default)
 					this.visualizations.selected = visualization;
-
-				const item = document.createElement('div');
-
-				item.classList.add('item');
-
-				item.on('click', () => visualization.load());
-
-				item.dataset.id =  visualization.visualization_id;
-
-				item.innerHTML = `
-					<div class="label">
-						<span class="no-icon">
-							${visualization.name}<br>
-							<span class="NA">${visualization.type}</span>
-						</span>
-					</div>
-				`;
-
-				changeVisualization.parentElement.querySelector('.submenu').appendChild(item);
 			}
 
 			if(!this.visualizations.selected)
 				this.visualizations.selected = Array.from(this.visualizations)[0];
 
-			if(this.visualizations.length > 1)
-				changeVisualization.classList.remove('hidden');
-
 			if(this.visualizations.selected)
 				container.appendChild(this.visualizations.selected.container);
 		}
-
-		this.xlsxDownloadable = [...MetaData.visualizations.values()].filter(x => x.excel_format).map(x => x.slug).includes(this.visualizations.selected.type);
-
-		const xlsxDownloadDropdown = this.container.querySelector(".xlsx-download");
-
-		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
-
 
 		if(this.drilldown) {
 
@@ -515,6 +332,218 @@ class DataSource {
 		this.columns.render();
 
 		return container;
+	}
+
+	get menu() {
+
+		if(this.menuElement)
+			return this.menuElement;
+
+		const menu = this.menuElement = document.createElement('div');
+
+		menu.classList.add('menu', 'hidden');
+
+		menu.innerHTML = `
+
+			<div class="item">
+				<span class="label reload"><i class="fas fa-sync"></i> Reload</span>
+			</div>
+
+			<div class="item hidden">
+				<span class="label filters-toggle"><i class="fa fa-filter"></i> Filters</span>
+			</div>
+
+			<div class="item">
+				<span class="label description-toggle"><i class="fa fa-info"></i> Info</span>
+			</div>
+
+			<div class="item view hidden">
+				<span class="label expand-toggle"><i class="fas fa-expand-arrows-alt"></i> Expand</span>
+			</div>
+
+			<div class="item hidden">
+				<span class="label query-toggle"><i class="fas fa-file-alt"></i> Query</span>
+			</div>
+
+			<div class="item">
+				<span class="label change-visualization"><i class="fas fa-chart-line"></i> Visualizations</span>
+				<div class="submenu"></div>
+			</div>
+
+			<div class="item" title="Download CSV">
+
+				<span class="label download" title="Download Report"><i class="fa fa-download"></i> Download</span>
+
+				<div class="submenu">
+
+					<div class="item">
+						<span class="label csv-download"><i class="far fa-file-excel"></i> CSV</label>
+					</div>
+
+					<div class="item">
+						<span class="label filtered-csv-download"><i class="far fa-file-excel"></i> Filtered CSV</label>
+					</div>
+
+					<div class="item">
+						<span class="label xlsx-download"><i class="fas fa-file-excel"></i> XLSX</label>
+					</div>
+
+					<div class="item">
+						<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
+					</div>
+
+					<!--<div class="item">
+						<span class="label export-toggle"><i class="fa fa-download"></i> Export</label>
+					</div>>-->
+				</div>
+			</div>
+
+			<div class="item hidden">
+				<a class="label configure-visualization">
+					<i class="fas fa-cog"></i>
+					<span>Configure</span>
+				</a>
+			</div>
+
+			<div class="item hidden">
+				<a class="label define-visualization" href="/reports/define-report/${this.query_id}">
+					<i class="fas fa-pencil-alt"></i>
+					<span>Define</span>
+				</a>
+			</div>
+		`;
+
+		menu.on('click', e => e.stopPropagation());
+
+		const
+			filtersToggle = menu.querySelector('.filters-toggle'),
+			descriptionToggle = menu.querySelector('.description-toggle'),
+			queryToggle = menu.querySelector('.query-toggle');
+
+		if(this.editable) {
+
+			const elementsToShow = [
+				'.menu .expand-toggle',
+				'.menu .query-toggle',
+				'.menu .configure-visualization',
+				'.menu .define-visualization',
+			];
+
+			for(const element of elementsToShow)
+				menu.querySelector(element).parentElement.classList.remove('hidden');
+		}
+
+		menu.querySelector('.reload').on('click', () => this.visualizations.selected.load());
+
+		filtersToggle.on('click', () => {
+
+			filtersToggle.parentElement.classList.toggle('selected');
+
+			if(queryToggle.parentElement.classList.contains('selected'))
+				queryToggle.click();
+
+			if(descriptionToggle.parentElement.classList.contains('selected'))
+				descriptionToggle.click();
+
+			this.visualizations.selected.container.classList.toggle('blur');
+			this.container.querySelector('.columns').classList.toggle('blur');
+
+			if(this.container.contains(this.filters.container))
+				this.container.removeChild(this.filters.container);
+
+			else this.container.insertBefore(this.filters.container, this.container.querySelector('.columns'));
+
+			this.visualizations.selected.render({resize: true});
+		});
+
+		// If there are filters and every filter is not of hidden type then show the filters toggle
+		if(this.filters.size && !Array.from(this.filters.values()).every(f => f.type == 'hidden'))
+			filtersToggle.parentElement.classList.remove('hidden');
+
+		descriptionToggle.on('click', async () => {
+
+			if(queryToggle.parentElement.classList.contains('selected'))
+				queryToggle.click();
+
+			if(filtersToggle.parentElement.classList.contains('selected'))
+				filtersToggle.click();
+
+			this.container.querySelector('.description').classList.toggle('hidden');
+			descriptionToggle.parentElement.classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			this.container.querySelector('.columns').classList.toggle('blur');
+
+			this.visualizations.selected.render({resize: true});
+
+			if(user.privileges.has('report')) {
+
+				await this.userList();
+				this.container.querySelector('.description .count').textContent = `${this.visibleTo.length} people`;
+			}
+			else {
+				this.container.querySelector('.description .visible-to').classList.add('hidden');
+			}
+		});
+
+		queryToggle.on('click', () => {
+
+			if(filtersToggle.parentElement.classList.contains('selected'))
+				filtersToggle.click();
+
+			if(descriptionToggle.parentElement.classList.contains('selected'))
+				descriptionToggle.click();
+
+			this.container.querySelector('.query').classList.toggle('hidden');
+			queryToggle.parentElement.classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			this.container.querySelector('.columns').classList.toggle('blur');
+
+			this.visualizations.selected.render({resize: true});
+		});
+
+		menu.insertBefore(this.postProcessors.container, menu.querySelector('.change-visualization').parentElement);
+
+		menu.querySelector('.csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
+		menu.querySelector('.filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
+		menu.querySelector('.json-download').on('click', (e) => this.download(e, {mode: 'json'}));
+		menu.querySelector('.xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
+		menu.querySelector('.expand-toggle').on('click', () => window.location = `/report/${this.query_id}`);
+
+		if(this.visualizations.length) {
+
+			const changeVisualization = menu.querySelector('.change-visualization');
+
+			for(const visualization of this.visualizations) {
+
+				const item = document.createElement('div');
+
+				item.classList.add('item');
+
+				item.on('click', () => visualization.load());
+
+				item.dataset.id =  visualization.visualization_id;
+
+				item.innerHTML = `
+					<div class="label">
+						<span class="no-icon">
+							${visualization.name}<br>
+							<span class="NA">${visualization.type}</span>
+						</span>
+					</div>
+				`;
+
+				changeVisualization.parentElement.querySelector('.submenu').appendChild(item);
+			}
+
+			if(this.visualizations.length > 1)
+				changeVisualization.classList.remove('hidden');
+		}
+
+		this.xlsxDownloadable = [...MetaData.visualizations.values()].filter(x => x.excel_format).map(x => x.slug).includes(this.visualizations.selected.type);
+
+		const xlsxDownloadDropdown = menu.querySelector('.xlsx-download');
+
+		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
 	}
 
 	async userList() {
@@ -806,6 +835,33 @@ class DataSource {
 
 		for(const item of this.container.querySelectorAll('.change-visualization + .submenu .item'))
 			item.classList.toggle('selected', item.dataset.id == this.visualizations.selected.visualization_id);
+
+		this.container.querySelector('.query code').innerHTML = new FormatSQL(this.originalResponse.query).query;
+
+		let age = this.originalResponse.cached ? Math.floor(this.originalResponse.cached.age * 100) / 100 : 0;
+
+		if(age < 1000)
+			age += 'ms';
+
+		else if(age < 1000 * 60)
+			age = Format.number((age / 1000)) + 's';
+
+		else if(age < 1000 * 60 * 60)
+			age = Format.number((age / (1000 * 60))) + 'h';
+
+		let runtime = Math.floor(this.originalResponse.runtime * 100) / 100;
+
+		if(runtime < 1000)
+			runtime += 'ms';
+
+		else if(runtime < 1000 * 60)
+			runtime = (runtime / 1000) + 's';
+
+		else if(runtime < 1000 * 60 * 60)
+			runtime = (runtime / (1000 * 60)) + 'h';
+
+		this.container.querySelector('.description .cached').textContent = this.originalResponse.cached && this.originalResponse.cached.status ? age : 'No';
+		this.container.querySelector('.description .runtime').textContent = runtime;
 
 		this.columns.render();
 	}

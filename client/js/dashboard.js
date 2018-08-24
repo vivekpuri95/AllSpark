@@ -1312,6 +1312,8 @@ class DashboardGlobalFilters extends DataSourceFilters {
 			<div class="NA no-results hidden">No filters found!</div>
 		`;
 
+		this.container.querySelector('.close').remove();
+
 		container.appendChild(this.container);
 
 		const searchInput = container.querySelector('.global-filter-search');
