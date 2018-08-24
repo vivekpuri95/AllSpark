@@ -5324,6 +5324,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				const
 					line = d3.svg.line()
+						.interpolate(this.settings.curve || 'linear')
 						.x(([row, column]) => this.x(row.get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
 						.y(([row, column]) => scale(row.get(column.key)));
 
@@ -6685,7 +6686,7 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				that.hoverColumn = null;
 				d3.select(this).classed('hover', false);
 			})
-			.attr('d', d => {debugger;area(d)})
+			.attr('d', d => area(d))
 			.style('fill', d => d.color);
 
 		if(this.options.showValues) {
@@ -7790,7 +7791,11 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			container.insertAdjacentHTML('beforeend', `
 				<div class="left">
-					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
+					<h6 class="percentage ${this.getColor(this.left.percentage)}">
+						${this.options.changePrefix || ''}
+						${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}
+						${this.options.changePostfix || ''}
+					</h6>
 					<span class="value">
 						<span class="value-left">${this.dates.get(this.left.date) ? this.dates.get(this.left.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
 						<small title="${Format.date(this.left.date)}">

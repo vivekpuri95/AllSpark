@@ -3255,7 +3255,24 @@ class Axis {
 					</label>
 
 					<label>
-						<span>Line Thickness (Line Type Only)</span>
+						<span>Line Style (Line Only)</span>
+						<select name="curve">
+							<option value="linear">Linear</option>
+							<option value="step-before">Step Before</option>
+							<option value="step-after">Step After</option>
+							<option value="basis">Basis</option>
+							<option value="basis-open">Basis Open</option>
+							<option value="basis-closed">Basis Closed</option>
+							<option value="bundle">Bundle</option>
+							<option value="cardinal">Cardinal</option>
+							<option value="cardinal-open">Cardinal Open</option>
+							<option value="cardinal-closed">Cardinal Closed</option>
+							<option value="monotone">Monotone</option>
+						</select>
+					</label>
+
+					<label>
+						<span>Line Thickness (Line Only)</span>
 						<input type="number" step="0.1" name="axisLineThickness" value="${this.lineThickness || ''}">
 					</label>
 
@@ -4194,31 +4211,41 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 							<input type="number" name="rightOffset">
 						</label>
 
+						<label>
+							<span>Change Prefix</span>
+							<input type="text" name="changePrefix">
+						</label>
+
+						<label>
+							<span>Change Postfix</span>
+							<input type="text" name="changePostfix">
+						</label>
+
 						<label class="sub-reports">
 							<span>Sub-reports</span>
 						</label>
 
 						<label>
 							<span>
-								<input type="checkbox" name="invertValues">Invert Values
+								<input type="checkbox" name="invertValues"> Invert Values
 							</span>
 						</label>
 
 						<label>
 							<span>
-								<input type="checkbox" name="showGraph">Show Graph
+								<input type="checkbox" name="showGraph"> Show Graph
 							</span>
 						</label>
 
 						<label>
 							<span>
-								<input type="checkbox" name="graphParallax">Graph Parallax
+								<input type="checkbox" name="graphParallax"> Graph Parallax
 							</span>
 						</label>
 
 						<label>
 							<span>
-								<input type="checkbox" name="hideLegend">Hide Legend
+								<input type="checkbox" name="hideLegend"> Hide Legend
 							</span>
 						</label>
 					</div>
