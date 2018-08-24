@@ -392,6 +392,9 @@ class Privileges {
 
 		Privileges.container = document.querySelector('.privileges.form-container');
 
+		if(!user.privileges.has('admin') && !user.privileges.has('superadmin'))
+			Privileges.container.classList.add('hidden');
+
 		Privileges.privileges_container = Privileges.container.querySelector('#filters-list');
 
 		Privileges.add_filter = Privileges.container.querySelector('#add-filter');
