@@ -91,6 +91,8 @@ exports.insert = class extends cycleDetection {
 
 	async insert() {
 
+		this.user.privilege.needs('administrator');
+
 		await this.fetch();
 		this.cycleDetection();
 
@@ -125,6 +127,8 @@ exports.insert = class extends cycleDetection {
 exports.sever = class extends API {
 
 	async sever() {
+
+		this.user.privilege.needs('administrator');
 
 		const id = this.request.body.id;
 
@@ -165,6 +169,8 @@ exports.sever = class extends API {
 exports.add_parent = class extends cycleDetection {
 
 	async add_parent() {
+
+		this.user.privilege.needs('administrator');
 
 		const privilegeId = parseInt(this.request.body.privilege_id);
 		const parentId = parseInt(this.request.body.parent_id);
@@ -214,17 +220,32 @@ exports.list = class extends API {
 
 	async list() {
 
-		const privilegesList = await this.mysql.query(
-			`SELECT * from tb_privileges_tree join tb_privileges using(privilege_id) where parent = ? and status = 1 and account_id in (0, ?)`,[this.request.body.id, this.account.account_id]
-			);
+		this.user.privilege.needs('administrator');
 
-		return privilegesList;
+		return await this.mysql.query(`
+			SELECT
+				*
+			FROM
+				tb_privileges_tree pt
+			JOIN
+				tb_privileges p
+			ON
+				pt.parent = p.privilege_id
+			WHERE
+				pt.privilege_id = ?
+				AND status = 1
+				AND account_id in (0, ?)
+			`,
+			[this.request.body.id, this.account.account_id]
+		);
 	}
 }
 
 exports.delete = class extends API {
 
 	async delete() {
+
+		this.user.privilege.needs('administrator');
 
 		this.accountPrivileges = await this.mysql.query(
 			"select pt.* from tb_privileges p join tb_privileges_tree pt where (account_id = ? or account_id = 0) and p.status = 1",

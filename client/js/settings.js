@@ -1013,6 +1013,9 @@ class SettingsPrivilege {
 		privileges.container.querySelector('#privileges-form h1').textContent = 'Add new Privileges';
 		privileges.form.reset();
 
+		if(privileges.form.parentElement.querySelector('.privilege-component'))
+			privileges.form.parentElement.querySelector('.privilege-component').remove();
+
 		privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
 		privileges.form.on('submit', SettingsPrivilege.submitListener = e => SettingsPrivilege.insert(e, privileges));
 
@@ -1055,24 +1058,31 @@ class SettingsPrivilege {
 
 	get row() {
 
-		if (this.container)
-			return this.container;
+		if (this.rowElement)
+			return this.rowElement;
 
-		this.container = document.createElement('tr');
+		const row = this.rowElement = document.createElement('tr');
 
-		this.container.innerHTML = `
+		row.innerHTML = `
 			<td>${this.privilege_id}</td>
 			<td>${this.name}</td>
 			<td>${this.is_admin ? 'Yes' : 'No'}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action green" title="Edit" disabled><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		this.container.querySelector('.green').on('click', () => this.edit());
+		if(!user.privileges.has('admin') || (!this.account_id && !user.privileges.has('superadmin'))) {
+			row.querySelector('.green').classList.add('NA');
+			row.querySelector('.red').classList.add('NA');
+		}
 
-		this.container.querySelector('.red').on('click', () => this.delete());
+		if(!row.querySelector('.green.NA'))
+			row.querySelector('.green').on('click', () => this.edit());
 
-		return this.container;
+		if(!row.querySelector('.red.NA'))
+			row.querySelector('.red').on('click', () => this.delete());
+
+		return row;
 	}
 
 	async edit() {
@@ -1086,10 +1096,10 @@ class SettingsPrivilege {
 		this.privilegeComponent = new PrivilegeComponents(this);
 		await this.privilegeComponent.load();
 
- 		if(this.privileges.form.parentElement.querySelector('.privilege-component'))
+		if(this.privileges.form.parentElement.querySelector('.privilege-component'))
 			this.privileges.form.parentElement.querySelector('.privilege-component').remove();
 
- 		this.privileges.form.parentElement.appendChild(this.privilegeComponent.container);
+		this.privileges.form.parentElement.appendChild(this.privilegeComponent.container);
 
 		this.privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
 		this.privileges.form.on('submit', SettingsPrivilege.submitListener = e => this.update(e));
@@ -1173,165 +1183,213 @@ class SettingsPrivilege {
 	}
 }
 
-class PrivilegeComponents {
+class PrivilegeComponents extends Set {
 
- 	constructor(privilege) {
+	constructor(privilege) {
 
- 		this.privilege = privilege;
-		this.list = this.privilege.privileges.list;
+		super();
+
+		Object.assign(this, privilege);
+
+		this.list = this.privileges.list;
 	}
 
- 	async load() {
+	async load() {
 
- 		await this.fetch();
+		await this.fetch();
 
 		await this.process();
+
 		this.render();
 	}
 
- 	async fetch() {
+	async fetch() {
 
- 		const
+		const
 			 options = {
-			 	"method": "POST",
+				"method": "POST",
 			},
 			parameter = {
-				id: this.privilege.privilege_id,
+				id: this.privilege_id,
 			}
 
- 		this.response = await API.call('privileges_manager/list', parameter, options);
+		this.response = await API.call('privileges_manager/list', parameter, options);
 	}
 
- 	process() {
+	process() {
 
- 		this.list = new Map;
+		this.list = new Map;
 
- 		for(const data of this.response || [])
+		for(const data of this.response || [])
 			this.list.set(data.id, new PrivilegeComponent(data, this));
 	}
 
- 	render() {
+	render() {
 
- 		const formContainer = this.container;
+		const formContainer = this.container;
 
- 		formContainer.querySelector('.component-list').textContent = null;
+		formContainer.querySelector('.component-list').textContent = null;
 
- 		for(const component of this.list.values()) {
+		for(const component of this.list.values()) {
 			formContainer.querySelector('.component-list').appendChild(component.row);
 		}
 
- 		if(!this.list.size)
-			formContainer.querySelector('.component-list').innerHTML = `<div class='NA'>No Components found :(</div>`;
+		if(!this.list.size)
+			formContainer.querySelector('.component-list').innerHTML = `<div class='NA'>No Components found.</div>`;
 	}
 
- 	get container() {
+	get container() {
 
- 		if(this.containerElement)
+		if(this.containerElement)
 			return this.containerElement;
 
- 		const container = this.containerElement = document.createElement('div');
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('privilege-component');
- 		container.innerHTML = `
-			<h3>Privileges Component</h3>
- 			<form class="headings">
-				<label><span>Privilege Id</span></label>
+		container.innerHTML = `
+			<div class="title">Privileges Component</div>
+
+			<form class="headings">
+
+				<label><span>Id</span></label>
 				<label><span>Privilege Name</span></label>
 				<label><span></span></label>
 			</form>
- 			<div class="component-list"></div>
- 			<form class="add-new-container">
+
+			<div class="component-list"></div>
+
+			<form class="add-new-container">
+
 				<label class="add-new"></label>
- 				<label>
+				<label>
 					<button type="submit"><i class="fa fa-plus"></i>Add</button>
 				</label>
 			</form>
 		`;
 
- 		const list = [];
+		const list = [];
 
- 		for(const privilege of this.privilege.privileges.list.values()) {
-			list.push({name: privilege.name, value: privilege.privilege_id});
+		for(const privilege of this.privileges.list.values()) {
+
+			if(privilege.privilege_id != this.privilege_id)
+				list.push({name: privilege.name, value: privilege.privilege_id});
 		}
 
- 		this.multiSelect = new MultiSelect({datalist: list, multiple: false, expand: false});
+		this.multiSelect = new MultiSelect({datalist: list, multiple: false, expand: false});
 
- 		container.querySelector('label.add-new').appendChild(this.multiSelect.container);
+		container.querySelector('label.add-new').appendChild(this.multiSelect.container);
 
- 		container.querySelector('form.add-new-container').on('submit', (e) => this.add(e));
+		container.querySelector('form.add-new-container').on('submit', (e) => this.add(e));
 
- 		return container;
+		return container;
 	}
 
- 	async add(e) {
+	async add(e) {
 
- 		e.preventDefault();
+		e.preventDefault();
 
- 		const
-			options = {
-				method: "POST",
-			},
-			parameters = {
-				parent: this.privilege.privilege_id,
-				privilege_id: this.multiSelect.value[0],
-			};
+		try {
+			const
+				options = {
+					method: "POST",
+				},
+				parameters = {
+					parent: this.multiSelect.value[0],
+					privilege_id: this.privilege_id,
+				};
 
-		const result = await API.call('privileges_manager/insert', parameters, options);
+			const result = await API.call('privileges_manager/insert', parameters, options);
 
-		await this.load();
+			new SnackBar({
+				message: 'Added successfully',
+				subtitle: '',
+				icon: 'far fa-save',
+			});
+
+			await this.load();
+		}
+		catch(e) {
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 }
 
  class PrivilegeComponent {
 
- 	constructor(component, privilegeComponents) {
+	constructor(component, privilegeComponents) {
 
- 		for(const key in component)
+		for(const key in component)
 			this[key] = component[key];
 
- 		this.privilegeComponents = privilegeComponents;
+		this.privilegeComponents = privilegeComponents;
 	}
 
- 	get row() {
+	get row() {
 
- 		if(this.containerElement)
+		if(this.containerElement)
 			return this.containerElement;
 
- 		const container = this.containerElement = document.createElement('div');
+		const container = this.containerElement = document.createDocumentFragment();
 
- 		container.innerHTML = `
-			<label>
-				<input type="number" value=${this.privilege_id} readonly>
-			</label>
-			<label>
-				<input type="text" value=${this.privilegeComponents.privilege.privileges.list.get(parseInt(this.privilege_id)).name} readonly>
-			</label>
-			<label>
-				<button class="action delete"><i class="far fa-trash-alt"></i></button>
-			</label>
-		`;
+		const id = document.createElement('label');
+		id.innerHTML = `<input class="thin" type="number" value=${this.privilege_id} readonly>`;
 
- 		container.querySelector('.delete').on('click', () => this.delete());
+		const list = document.createElement('label');
+		list.innerHTML = `<input type="text" value=${this.privilegeComponents.privileges.list.get(parseInt(this.privilege_id)).name} readonly>`;
 
- 		return container;
+		const del = document.createElement('label');
+		del.innerHTML = `<button class="action delete"><i class="far fa-trash-alt"></i></button>`;
+
+		del.querySelector('.delete').on('click', () => this.delete());
+
+		container.appendChild(id);
+		container.appendChild(list);
+		container.appendChild(del);
+
+		return container;
 	}
 
- 	async delete() {
+	async delete() {
 
- 		if(!confirm('Are you sure?'))
+		if(!confirm('Are you sure?'))
 			return;
 
- 		const
-			options = {
-				method: "POST",
-			},
-			parameter = {
-				privilege_id: this.privilege_id,
-			};
+		try {
 
- 		const response = await API.call('privileges_manager/delete', parameter, options);
+			const
+				options = {
+					method: "POST",
+				},
+				parameter = {
+					privilege_id: this.privilege_id,
+				};
 
- 		await this.privilegeComponents.load();
+			const response = await API.call('privileges_manager/delete', parameter, options);
+
+			await this.privilegeComponents.load();
+
+			new SnackBar({
+				message: 'Deleted successfully',
+				subtitle: '',
+				icon: 'far fa-trash-alt',
+			});
+		}
+		catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 }
 

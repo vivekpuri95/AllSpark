@@ -473,16 +473,16 @@ body {
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
-				main table td.action.green:hover {
+				main table td.action.green:not(.NA):hover {
 					background: #5b5;
 				}
-				main table td.action.red:hover {
+				main table td.action.red:not(.NA):hover {
 					background: #e77;
 				}
 				main table td.action:active {
 					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
 				}
-				main table td.action:hover {
+				main table td.action:not(.NA):hover {
 					background: var(--color-accent);
 					color: var(--color-accent-text);
 					cursor: pointer;
