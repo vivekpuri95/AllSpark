@@ -1803,4 +1803,32 @@ router.get('/tasks/:id?/:define?', API.serve(class extends HTMLAPI {
 	}
 }));
 
+router.get('/tests', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/tests.css');
+		this.scripts.push('/js/tests.js');
+	}
+
+	main() {
+
+		return `
+
+			<section class="section" id="list">
+
+				<h1>Tests</h1>
+
+				<header class="toolbar">
+					<button id="run"><i class="fas fa-check"></i> Run</button>
+				</header>
+
+				<div id="tests"></div>
+			</section>
+		`;
+	}
+}));
+
 module.exports = router;

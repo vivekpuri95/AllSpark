@@ -1,5 +1,11 @@
 const mysql = require('./mysql').MySQL;
-const oracledb = require('oracledb');
+let oracledb = null;
+
+try {
+	oracledb = require('oracledb');
+} catch(e) {
+	oracledb = 1;
+}
 
 oracledb.poolTimeout = 0;
 oracledb.Promise = Promise;

@@ -1,0 +1,55 @@
+#tests {
+	display: flex;
+	flex-wrap: wrap;
+}
+	#tests section {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	#tests section section {
+		margin: var(--gap)  calc(var(--gap) * 8);
+	}
+		#tests section h2 {
+			flex: 1 0 100%;
+			margin: calc(var(--gap) * 2) 0;
+			font-size: 125%;
+		}
+		#tests section .test {
+			margin: calc(var(--gap) * 2);
+			padding: var(--gap) calc(var(--gap) * 2);
+			border: 1px solid #999;
+			transition: background var(--transition-duration),
+						color var(--transition-duration);
+		}
+		#tests section .test.passed {
+			background: #2c9d58;
+			color: #fff;
+		}
+		#tests section .test.failed {
+			background: #db4437;
+			color: #fff;
+		}
+		#tests section .test.executing {
+			animation-duration: 1000ms;
+			animation-name: executing;
+			animation-iteration-count: infinite;
+		}
+
+		@keyframes executing {
+
+			0% {
+				background: #fff;
+				background: #eda;
+			}
+
+			33% {
+				background: #eda;
+			}
+		}
+
+.dialog-box .body.test-description {
+	padding: calc(var(--gap) * 2);
+}
+	.dialog-box .body.test-description code {
+		white-space: pre-wrap;
+	}
