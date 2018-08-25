@@ -521,6 +521,49 @@ DataConnection.types.set('pgsql', class {
 	}
 });
 
+DataConnection.types.set('oracle', class {
+
+	static render(connections = {}) {
+
+		DataConnection.form.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span class="password">Password <a class="show-password">Show</a></span>
+				<input type="password" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+		`;
+
+		DataConnection.form.password.on('click', () => {
+			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password': 'text';
+		});
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: DataConnection.form.user.value,
+			password: DataConnection.form.password.value,
+			host: DataConnection.form.host.value,
+			port: DataConnection.form.port.value,
+		});
+	}
+});
+
 DataConnection.types.set('api', class {
 
 	static render(connections = {}) {

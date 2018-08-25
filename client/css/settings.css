@@ -19,7 +19,7 @@ main {
 			text-decoration: none;
 		}
 		main > nav a.selected {
-			box-shadow: inset 10px 0px 0 var(--color-accent);
+			box-shadow: inset 6px 0px 0 var(--color-accent);
 			font-weight: bold;
 		}
 	main #account-form label img {
