@@ -6541,7 +6541,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 			arcs = container
 				.append('svg')
-				.data([data])
+				.data([data.sort((a, b) => a.percentage - b.percentage)])
 				.append('g')
 				.attr('transform', 'translate(' + (this.width / 2) + ',' + (this.height / 2) + ')')
 				.selectAll('g')

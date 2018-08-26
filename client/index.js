@@ -1810,7 +1810,18 @@ router.get('/tests', API.serve(class extends HTMLAPI {
 		super();
 
 		this.stylesheets.push('/css/tests.css');
-		this.scripts.push('/js/tests.js');
+
+		this.scripts = this.scripts.concat([
+
+			'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU&libraries=visualization" defer f="',
+
+			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+
+			'/js/reports.js',
+			'/js/profile.js',
+			'/js/tests.js',
+		]);
 	}
 
 	main() {
@@ -1823,6 +1834,11 @@ router.get('/tests', API.serve(class extends HTMLAPI {
 
 				<header class="toolbar">
 					<button id="run"><i class="fas fa-check"></i> Run</button>
+
+					<div id="progress">
+						<meter min="0"></meter>
+						<span class="NA"></span>
+					</div>
 				</header>
 
 				<div id="tests"></div>

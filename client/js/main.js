@@ -68,9 +68,9 @@ class Page {
 		SnackBar.setup();
 	}
 
-	constructor() {
+	constructor({container = null} = {}) {
 
-		this.container = document.querySelector('main');
+		this.container = container || document.querySelector('main');
 
 		this.account = window.account;
 		this.user = window.user;
@@ -80,6 +80,9 @@ class Page {
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
+
+		if(container)
+			return;
 
 		this.renderPage();
 		this.shortcuts();
@@ -2232,10 +2235,6 @@ class ObjectRoles {
 	}
 
 	async delete(id) {
-
-		if (!confirm('Are you sure?')) {
-			return;
-		}
 
 		const
 			parameters = {
