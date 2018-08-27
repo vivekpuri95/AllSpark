@@ -165,7 +165,11 @@ main .feature-form .table-container {
 					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
 				}
 
-main .privilege-component {display: grid;grid-gap: calc(var(--gap) * 2);margin: calc(var(--gap) * 2) 0;}
+main .privilege-component {
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+	margin: calc(var(--gap) * 2) 0;
+}
 	main .privilege-component h3 {
 		border-bottom: 1px dashed #999;
 		margin: 0;
@@ -183,8 +187,6 @@ main .privilege-component {display: grid;grid-gap: calc(var(--gap) * 2);margin: 
 	}
 		main .privilege-component .component-list .thin{
 			max-width: 50px;
-		}
-		main .privilege-component .component-list .NA {
 		}
 	main .privilege-component .add-new-container {
 		display: grid;
