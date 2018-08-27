@@ -350,6 +350,16 @@ Page.class = class Dashboards extends Page {
 
 			return this.render({dashboardId: currentId, renderNav: true, updateNav: false});
 		}
+
+		const
+			adminRoles = Array.from(MetaData.roles).filter(x => x.is_admin == 1).map(x => x.role_id),
+			userRoles = Array.from(this.user.roles).filter(x => x.is_admin == 1).map(x => x.role_id);
+
+		if(adminRoles.some(x => userRoles.includes(x))) {
+
+			(new Setup()).load();
+		}
+
 	}
 
 	async report(id) {
