@@ -83,7 +83,7 @@ exports.insert = class extends cycleDetection {
 		for (const parent of parents) {
 
 			this.accountPrivileges.push({
-				privilege_id: this.request.body.privilege_id,
+				privilege_id: parseInt(this.request.body.privilege_id),
 				parent: parseInt(parent),
 			});
 		}
