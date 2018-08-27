@@ -1822,20 +1822,25 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.page.load();
 		});
 
+		this.container.querySelector('.toolbar button[type=submit]').insertAdjacentHTML(
+			'afterend',
+			'<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>'
+		);
+
 		this.container.querySelector('#preview-configure-visualization').on('click', e => this.preview(e));
 
-		const historyToggle = this.container.querySelector('#history-configure-visualization');
+		// const historyToggle = this.container.querySelector('#history-configure-visualization');
 
-		historyToggle.on('click',async () =>{
-
-			historyToggle.classList.toggle('selected');
-			this.visualizationLogs.toggle(historyToggle.classList.contains('selected'));
-
-			this.page.container.classList.toggle('compact', historyToggle.classList.contains('selected'));
-
-			if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
-				await this.visualizationLogs.load();
-		});
+		// historyToggle.on('click',async () =>{
+		//
+		// 	historyToggle.classList.toggle('selected');
+		// 	this.visualizationLogs.toggle(historyToggle.classList.contains('selected'));
+		//
+		// 	this.page.container.classList.toggle('compact', historyToggle.classList.contains('selected'));
+		//
+		// 	if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
+		// 		await this.visualizationLogs.load();
+		// });
 	}
 
 	setupConfigurationSetions(container) {
@@ -1907,23 +1912,23 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.container.appendChild(this.visualizationForm.container);
 
-		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
+		// this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
 
-		const visualizationLogsSelected = this.container.querySelector('#history-configure-visualization').classList.contains('selected')
+		// const visualizationLogsSelected = this.container.querySelector('#history-configure-visualization').classList.contains('selected')
 
-		this.visualizationLogs.toggle(visualizationLogsSelected);
+		// this.visualizationLogs.toggle(visualizationLogsSelected);
 
-		if(visualizationLogsSelected) {
+		// if(visualizationLogsSelected) {
+		//
+		// 	this.visualizationLogs.load();
+		// }
 
-			this.visualizationLogs.load();
-		}
+		// if(this.page.container.querySelector('.query-history')) {
+		//
+		// 	this.page.container.querySelector('.query-history').remove();
+		// }
 
-		if(this.page.container.querySelector('.query-history')) {
-
-			this.page.container.querySelector('.query-history').remove();
-		}
-
-		this.page.container.appendChild(this.visualizationLogs.container);
+		// this.page.container.appendChild(this.visualizationLogs.container);
 
 		this.dashboards = new ReportVisualizationDashboards(this);
 
@@ -1932,7 +1937,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.container.querySelector('.configuration-section.dashboards').remove();
 		}
 
-		this.container.appendChild(this.dashboards.container);
+		this.container.querySelector('.visualization-form').insertBefore(this.dashboards.container, this.container.querySelector('.filters'));
 
 		this.dashboards.clear();
 		this.page.preview.position = 'right';
@@ -4901,6 +4906,9 @@ class ReportVisualizationDashboards extends Set {
 
 		this.container.querySelector('form').on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
 
+		this.dashboardMultiSelect = new MultiSelect({multiple: false, dropDownPosition: 'top'});
+		this.container.querySelector('.add-dashboard .dashboard_id').appendChild(this.dashboardMultiSelect.container);
+
 		return container;
 	}
 
@@ -4954,8 +4962,6 @@ class ReportVisualizationDashboards extends Set {
 
 		this.container.querySelector('h3 .count').innerHTML = `${this.size ? 'Added to ' + this.size + ' dashboard' + (this.size == 1 ? '' : 's') : ''}` ;
 
-		const form = this.container.querySelector('.add-dashboard');
-
 		const datalist = [];
 
 		if(this.response) {
@@ -4989,9 +4995,8 @@ class ReportVisualizationDashboards extends Set {
 			}
 		}
 
-		this.dashboardMultiSelect = new MultiSelect({datalist, multiple: false, dropDownPosition: 'top'});
-
-		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
+		this.dashboardMultiSelect.datalist = datalist;
+		this.dashboardMultiSelect.render();
 	}
 
 	clear() {
@@ -5140,7 +5145,7 @@ class ReportVisualizationDashboard {
 
 		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
 
-		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + (form.dashboard_id.value)));
+		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + this.dashboardMultiSelect.value[0]));
 		form.querySelector('.delete').on('click', () => this.delete());
 
 		form.on('submit', async e => this.update(e))
@@ -5188,6 +5193,11 @@ class ReportVisualizationDashboard {
 	async update(e) {
 
 		e.preventDefault();
+
+		if(!this.dashboardMultiSelect.value[0]) {
+
+			throw new Page.exception('Dashboard cannot be null');
+		}
 
 		this.visualization.format.position = parseInt(this.form.position.value);
 
