@@ -1242,7 +1242,7 @@ class PrivilegeComponents extends Set {
 
 		container.classList.add('privilege-component');
 		container.innerHTML = `
-			<div class="title">Privileges Component</div>
+			<h3>Privileges Component</h3>
 
 			<form class="headings">
 
