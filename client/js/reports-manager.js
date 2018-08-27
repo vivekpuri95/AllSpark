@@ -3215,7 +3215,6 @@ class Axis {
 							<option value=""></option>
 							<option value="line">Line</option>
 							<option value="bar">Bar</option>
-							<option value="stacked">Stacked</option>
 							<option value="area">Area</option>
 						</select>
 					</label>
@@ -3274,6 +3273,12 @@ class Axis {
 					<label>
 						<span>Line Thickness (Line Only)</span>
 						<input type="number" step="0.1" name="axisLineThickness" value="${this.lineThickness || ''}">
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="axisStacked"> Stacked
+						</span>
 					</label>
 
 					<label>
@@ -3380,8 +3385,10 @@ class Axis {
 		container.querySelector('select[name=axis-type]').value = this.type;
 		container.querySelector('select[name=position]').value = this.position;
 		container.querySelector('select[name=format]').value = this.format || '';
+		container.querySelector('select[name=curve]').value = this.curve || '';
 		container.querySelector('input[name=axisDepth]').value = this.depth;
 		container.querySelector('input[name=axisLineThickness]').value = this.lineThickness;
+		container.querySelector('input[name=axisStacked]').checked = this.stacked;
 		container.querySelector('input[name=axisShowValues]').checked = this.showValues;
 		container.querySelector('input[name=axisShowPoints]').checked = this.showPoints;
 		container.querySelector('input[name=axisHideScale]').checked = this.hideScale;
@@ -3405,8 +3412,10 @@ class Axis {
 			columns: this.container.multiSelectColumns.value.map(c => {return {key: c}}),
 			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
 			format: this.container.querySelector('select[name=format]').value,
+			curve: this.container.querySelector('select[name=curve]').value,
 			depth: this.container.querySelector('input[name=axisDepth]').value,
 			lineThickness: this.container.querySelector('input[name=axisLineThickness]').value,
+			stacked: this.container.querySelector('input[name=axisStacked]').checked,
 			showValues: this.container.querySelector('input[name=axisShowValues]').checked,
 			showPoints: this.container.querySelector('input[name=axisShowPoints]').checked,
 			hideScale: this.container.querySelector('input[name=axisHideScale]').checked,

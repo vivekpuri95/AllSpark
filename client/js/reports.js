@@ -5169,6 +5169,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		this.rows = rows;
 
+		for(const axis of this.axes)
+			this.axes[axis.position].size = 0;
+
 		for(const axis of this.axes) {
 
 			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
@@ -5235,7 +5238,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				for(const row of this.rows) {
 
-					const value = row.get(columns[0].key);
+					const value = row.getTypedValue(columns[0].key);
 
 					column.push(value);
 
@@ -5300,43 +5303,71 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			const scale = d3.scale.linear().range([this.height, 20]);
 
+			let columnsData = [];
+
+			for(const _column of columns) {
+
+				const column = [];
+
+				Object.assign(column, _column);
+
+				for(const [index, row] of this.rows.entries()) {
+
+					column.push({
+						x: index,
+						y: row.get(column.key),
+					});
+				}
+
+				columnsData.push(column);
+			}
+
+			if(axis.stacked)
+				columnsData = d3.layout.stack()(columnsData);
+
 			// Needed to show multiple columns
 			columns.scale = d3.scale.ordinal();
 			columns.scale.domain(columns.map(column => column.key));
 			columns.scale.rangeBands([0, this.x.rangeBand()]);
 
-			if(axis.type == 'line') {
+			let
+				max = 0,
+				min = 0;
 
-				let
-					max = this.rows[0].get(columns[0].key),
-					min = this.rows[0].get(columns[0].key);
+			for(const row of this.rows) {
 
-				for(const row of this.rows) {
+				let total = 0;
 
-					for(const column of columns) {
+				for(const column of columns) {
 
-						max = Math.max(max, Math.ceil(row.get(column.key)) || 0);
-						min = Math.min(min, Math.floor(row.get(column.key)) || 0);
-					}
+					total += parseFloat(row.get(column.key)) || 0;
+					max = Math.max(max, Math.ceil(row.get(column.key)) || 0);
+					min = Math.min(min, Math.floor(row.get(column.key)) || 0);
 				}
 
-				scale.domain([min, max]).nice();
+				if(axis.stacked)
+					max = Math.max(max, Math.ceil(total) || 0);
+			}
+
+			scale.domain([min, max]).nice();
+
+			if(axis.type == 'line') {
 
 				const
 					line = d3.svg.line()
-						.interpolate(this.settings.curve || 'linear')
-						.x(([row, column]) => this.x(row.get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
-						.y(([row, column]) => scale(row.get(column.key)));
+						.interpolate(axis.curve || 'linear')
+						.x((_, i) => this.x(this.rows[i].getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.y(d => scale(d.y + (d.y0 || 0)));
 
 				// Appending line in chart
 				this.svg.selectAll('.line-' + axisIndex)
-					.data(columns)
+					.data(columnsData)
 					.enter()
 					.append('g')
 					.attr('class', `${axis.type} ${axis.position} line-${axisIndex}`)
 					.append('path')
 					.attr('class', 'line')
-					.attr('d', column => line(this.rows.map(row => [row, column])))
+					.attr('d', column => line(column))
 					.style('stroke', column => this.source.columns.get(column.key).color)
 					.style('stroke-width', axis.lineThickness || 2);
 
@@ -5358,49 +5389,33 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			else if(axis.type == 'bar') {
 
-				let
-					max = 0,
-					min = 0;
-
-				for(const row of this.rows) {
-
-					for(const column of columns) {
-
-						max = Math.max(max, Math.ceil(row.get(column.key)) || 0);
-						min = Math.min(min, Math.floor(row.get(column.key)) || 0);
-					}
-				}
-
-				scale.domain([min, max]).nice();
-
 				let bars = this.svg
 					.append('g')
 					.attr('class', `${axis.type} ${axis.position}`)
 					.selectAll('g')
-					.data(columns)
+					.data(columnsData)
 					.enter()
 					.append('g')
-					.style('fill', column => this.source.columns.get(column.key).color)
-					.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
+					.style('fill', (column, i) => this.source.columns.get(columns[i].key).color)
+					.attr('transform', column => axis.stacked ? `translate(0, ${this.axes.top.size})` : `translate(${columns.scale(column.key)}, 0)`)
 					.selectAll('rect')
-					.data(column => this.rows.map(row => [row, column]))
+					.data(column => column)
 					.enter()
 					.append('rect')
-					.classed('bar', true)
-					.attr('width', columns.scale.rangeBand())
-					.attr('x', ([row, column]) => this.x(row.get(this.x.column)) + this.axes.left.size)
-					.on('click', function(_, __, [row, column]) {
-						that.source.columns.get(column.key).initiateDrilldown(row);
+					.on('click', function(_, row, column) {
+						that.source.columns.get(columns[column].key).initiateDrilldown(that.rows[row]);
 						d3.select(this).classed('hover', false);
 					})
 					.on('mouseover', function(_, __, column) {
-						that.hoverColumn = column[1];
+						that.hoverColumn = columns[column];
 						d3.select(this).classed('hover', true);
 					})
 					.on('mouseout', function() {
 						that.hoverColumn = null;
 						d3.select(this).classed('hover', false);
-					});
+					})
+					.attr('width', axis.stacked ? this.x.rangeBand() : columns.scale.rangeBand())
+					.attr('x', (cell, i) => this.x(this.rows[i].getTypedValue(this.x.column)) + this.axes.left.size);
 
 				if(axis.animate) {
 
@@ -5414,118 +5429,30 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				}
 
 				bars
-					.attr('y', ([row, column]) => scale(row.get(column.key) > 0 ? row.get(column.key) : 0))
-					.attr('height', ([row, column]) => Math.abs(scale(row.get(column.key)) - scale(0)));
-			}
-
-			else if(axis.type == 'stacked') {
-
-				let
-					max = 0,
-					min = 0;
-
-				for(const row of this.rows) {
-
-					let total = 0;
-
-					for(const column of columns) {
-
-						total += parseFloat(row.get(column.key)) || 0;
-						min = Math.min(min, Math.floor(row.get(column.key)) || 0);
-					}
-
-					max = Math.max(max, Math.ceil(total) || 0);
-				}
-
-				scale.domain([min, max]).nice();
-
-				const
-					stack = d3.layout.stack(),
-
-					layer = this.svg
-						.selectAll(`.${axis.type}`)
-						.data(stack(columns.map(column => this.rows.map((row, i) => {return {x: i, y: row.get(column.key)}}))))
-						.enter()
-						.append('g')
-						.attr('class', `${axis.type} ${axis.position}`)
-						.attr('transform', `translate(0, ${this.axes.top.size})`)
-						.style('fill', (column, i) => this.source.columns.get(columns[i].key).color);
-
-				let bars = layer
-					.selectAll('rect')
-					.data(column => column)
-					.enter()
-					.append('rect')
-					.classed('bar', true)
-					.on('click', function(_, row, column) {
-						that.source.columns.get(columns[column].key).initiateDrilldown(that.rows[row]);
-						d3.select(this).classed('hover', false);
-					})
-					.on('mouseover', function(_, __, column) {
-						that.hoverColumn = columns[column];
-						d3.select(this).classed('hover', true);
-					})
-					.on('mouseout', function() {
-						that.hoverColumn = null;
-						d3.select(this).classed('hover', false);
-					})
-					.attr('width', this.x.rangeBand())
-					.attr('x', (cell, i) => this.x(this.rows[i].get(this.x.column)) + this.axes.left.size);
-
-				if(axis.animate) {
-
-					bars = bars
-						.attr('y', this.height)
-						.attr('height', 0)
-						.transition()
-						.delay((_, i) => (Page.animationDuration / this.rows.length) * i)
-						.duration(Page.animationDuration)
-						.ease('exp-out');
-				}
-
-				bars
-					.attr('y', d => scale(d.y + d.y0))
-					.attr('height', d => this.height - scale(d.y));
+					.attr('y', d => scale((d.y + (d.y0 || 0)) > 0 ? d.y + (d.y0 || 0) : 0))
+					.attr('height', d => Math.abs(scale(d.y) - scale(d.y0 || 0)));
 			}
 
 			else if(axis.type == 'area') {
 
-				let
-					max = 0,
-					min = 0;
-
-				for(const row of this.rows) {
-
-					let total = 0;
-
-					for(const column of columns) {
-
-						total += parseFloat(row.get(column.key)) || 0;
-						min = Math.min(min, Math.floor(row.get(column.key)) || 0);
-					}
-
-					max = Math.max(max, Math.ceil(total) || 0);
-				}
-
-				scale.domain([min, max]).nice();
-
 				const
 					area = d3.svg.area()
-						.x((data, i) => this.x(this.rows[i].get(this.x.column)))
-						.y0(d =>scale(d.y0))
-						.y1(d =>scale(d.y0 + d.y)),
+						.interpolate(axis.curve)
+						.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
+						.y0(d => scale(0))
+						.y1(d => scale(d.y)),
 
 					stack = d3.layout.stack();
 
 				let areas = this.svg
-					.selectAll('.path')
-					.data(stack(columns.map(column => this.rows.map((row, i) => {return {x: i, y: row.get(column.key)}}))))
+					.append('g')
+					.attr('class', `${axis.type} ${axis.position}`)
+					.selectAll('g')
+					.data(columnsData)
 					.enter()
 					.append('g')
 					.attr('transform', `translate(${this.axes.left.size}, 0)`)
-					.attr('class', 'path')
 					.append('path')
-					.classed('bar', true)
 					.on('mouseover', function(column) {
 						that.hoverColumn = column;
 						d3.select(this).classed('hover', true);
@@ -5705,13 +5632,13 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
 							${column.name}
 						</span>
-						<span class="value">${Format.number(row.get(key))}</span>
+						<span class="value">${row.getTypedValue(key)}</span>
 					</li>
 				`);
 			}
 
 			const content = `
-				<header>${row.get(that.x.column)}</header>
+				<header>${row.getTypedValue(that.x.column)}</header>
 				<ul class="body">
 					${tooltip.reverse().join('')}
 				</ul>
