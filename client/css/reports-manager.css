@@ -485,7 +485,8 @@ main.preview-left #stages {
 		border-radius: 3px;
 	}
 
-	#stage-configure-visualization .axes {
+	#stage-configure-visualization .axes,
+	#stage-configure-visualization .layers {
 	}
 		#stage-configure-visualization .axes .form,
 		#stage-configure-visualization .layers .form {
@@ -507,7 +508,6 @@ main.preview-left #stages {
 	#stage-configure-visualization #configure-visualization-form {
 		display: flex;
 		flex-direction: column;
-		/* width: 89%; */
 	}
 	#stage-configure-visualization .liner-visualization-options {
 		display: flex;

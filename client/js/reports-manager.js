@@ -1822,13 +1822,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.page.load();
 		});
 
-		this.container.querySelector('.toolbar button[type=submit]').insertAdjacentHTML(
-			'afterend',
-			'<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>'
-		);
-
-		this.container.querySelector('#preview-configure-visualization').on('click', e => this.preview(e));
-
 		// const historyToggle = this.container.querySelector('#history-configure-visualization');
 
 		// historyToggle.on('click',async () =>{
@@ -1910,6 +1903,11 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
 		}
 
+		if(this.container.querySelector('#preview-configure-visualization')) {
+
+			this.container.querySelector('#preview-configure-visualization').remove();
+		}
+
 		this.container.appendChild(this.visualizationForm.container);
 
 		// this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
@@ -1953,21 +1951,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		if(first && first.querySelector('.body.hidden'))
 			first.querySelector('h3').click();
-	}
-
-	async preview() {
-
-		const json = this.visualizationForm.json;
-
-		this.page.preview.load({
-			query_id: json.query_id,
-			visualizationOptions: json.options,
-			visualization: {
-				id: json.visualization_id,
-				type: json.type,
-				name: json.name
-			}
-		});
 	}
 });
 
@@ -2050,6 +2033,13 @@ class VisualizationManager {
 
 		this.form.on('submit', e => this.update(e));
 
+		this.stage.container.querySelector('.toolbar button[type=submit]').insertAdjacentHTML(
+			'afterend',
+			'<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>'
+		);
+
+		this.stage.container.querySelector('#preview-configure-visualization').on('click', () => this.preview());
+
 		return container;
 	}
 
@@ -2070,19 +2060,6 @@ class VisualizationManager {
 
 		this.transformations.load();
 		this.container.querySelector('.options').appendChild(this.optionsForm.form);
-
-	}
-
-	get json() {
-
-		return {
-			visualization_id: this.visualization_id,
-			query_id: this.query_id,
-			name: this.form.name.value,
-			type:this.form.type.value,
-			description: this.form.description.value,
-			options:{...this.optionsForm.json, transformations: this.transformations.json, filters: this.reportVisualizationFilters.json}
-		};
 
 	}
 
@@ -2118,7 +2095,7 @@ class VisualizationManager {
 
 			await DataSource.load(true);
 
-			this.stage.visualizationLogs.clear();
+// 			this.stage.visualizationLogs.clear();
 
 			this.stage.load();
 
@@ -2143,6 +2120,19 @@ class VisualizationManager {
 			throw e;
 		}
 
+	}
+
+	async preview() {
+
+		this.stage.page.preview.load({
+			query_id: this.query_id,
+			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json, filters: this.reportVisualizationFilters.json},
+			visualization: {
+				id: this.visualization_id,
+				type: this.form.type.value,
+				name: this.form.name.value
+			}
+		});
 	}
 }
 
