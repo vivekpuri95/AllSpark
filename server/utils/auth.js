@@ -77,6 +77,14 @@ class Authenticate {
 			reportObject.roles = roles;
 		}
 
+		if(!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
+
+			return {
+				error: true,
+				message: "Report not shared with anyone and user did not create this report."
+			}
+		}
+
 		if((await Authenticate.connection(reportObject.connection_name, userJWTObject)).error) {
 
 			return {
