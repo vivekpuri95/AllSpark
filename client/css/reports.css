@@ -126,14 +126,14 @@ main .data-source {
 			white-space: nowrap;
 			line-height: inherit;
 			user-select: text;
-			margin: 0 0 -25px 15px;
+			margin: 0 0 -22px 15px;
 			z-index: 5;
 		}
 		main .singleton .data-source > header h2 {
 			z-index: 7;
 		}
-			main .data-source > header h2 .title {
-				padding: 6px 15px;
+			main .data-source > header h2 {
+				padding: 6px 10px 6px 15px;
 				background: var(--color-accent);
 				color: var(--color-accent-text);
 				border-radius: 4px;
@@ -142,15 +142,11 @@ main .data-source {
 				cursor: default;
 				box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 			}
-			main .data-source > header h2 .id {
-				color: #aaa;
-				opacity: 0;
-				transition: opacity var(--transition-duration);
-			}
-			main .data-source > header h2:hover .id {
-				opacity: 1;
-			}
+				main .data-source > header i {
+					margin-left: 5px;
+				}
 		main .data-source > header .actions {
+			height: 22px;
 		}
 			main .data-source > header .actions > * {
 				font-size: 85%;
@@ -160,20 +156,10 @@ main .data-source {
 				text-align: center;
 				color: #999;
 			}
-			main .data-source > header .actions a {
-				transition: var(--transition-duration);
-				opacity: 0;
-			}
-			main .data-source:hover > header .actions a {
-				opacity: 1;
-			}
 			main .data-source > header .actions .card-info {
 				cursor: pointer;
 				padding: 4px 0;
 				width: 12px;
-			}
-			main .data-source > header a:hover {
-				color: var(--color-accent);
 			}
 			main .data-source > header .grey {
 				color: #999;
@@ -205,15 +191,13 @@ main .data-source {
 
 	main .data-source > .menu {
 		position: absolute;
-		right: 0;
-		top: 22px;
+		top: 25px;
 		background: #fff;
 		z-index: 6;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 		display: flex;
 		flex-direction: column;
 		width: 150px;
-		border-top-right-radius: 6px;
 		font-size: 90%;
 		flex-wrap: wrap;
 	}
@@ -228,12 +212,6 @@ main .data-source {
 	}
 		main .data-source > .menu .item {
 			position: relative;
-		}
-		main .data-source > .menu > .item:first-child .label {
-			border-top-right-radius: 6px;
-		}
-		main .singleton .data-source > .menu > .item:first-child .label {
-			border-radius: 0;
 		}
 			main .data-source > .menu .item .submenu {
 				display: none;

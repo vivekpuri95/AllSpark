@@ -161,10 +161,11 @@ class DataSource {
 		container.innerHTML = `
 
 			<header>
-				<h2><span class="title">${this.name}</span></h2>
-				<div class="actions right">
+				<h2>
+					<span class="title">${this.name}</span>
 					<a class="menu-toggle" title="Menu"><i class="fa fa-angle-down"></i></a>
-				</div>
+				</h2>
+				<div class="actions right"></div>
 			</header>
 
 			<div class="columns"></div>
@@ -213,7 +214,9 @@ class DataSource {
 			</div>
 		`;
 
-		container.querySelector('header .menu-toggle').on('click', e => {
+		const menuToggle = container.querySelector('header .menu-toggle');
+
+		menuToggle.on('click', e => {
 
 			e.stopPropagation();
 
@@ -221,13 +224,14 @@ class DataSource {
 				container.appendChild(this.menu);
 
 			this.menu.classList.toggle('hidden');
-			container.querySelector('header .menu-toggle').classList.toggle('selected');
+			this.menu.style.left = menuToggle.offsetLeft + 'px';
+			menuToggle.classList.toggle('selected');
 
 			document.body.removeEventListener('click', this.menuToggleListener);
 
 			if(!this.menu.classList.contains('hidden')) {
 				document.body.on('click', this.menuToggleListener = e => {
-					container.querySelector('header .menu-toggle').click();
+					menuToggle.click();
 				});
 			}
 		});
@@ -345,24 +349,12 @@ class DataSource {
 
 		menu.innerHTML = `
 
-			<div class="item">
-				<span class="label reload"><i class="fas fa-sync"></i> Reload</span>
-			</div>
-
 			<div class="item hidden">
 				<span class="label filters-toggle"><i class="fa fa-filter"></i> Filters</span>
 			</div>
 
 			<div class="item">
 				<span class="label description-toggle"><i class="fa fa-info"></i> Info</span>
-			</div>
-
-			<div class="item view hidden">
-				<span class="label expand-toggle"><i class="fas fa-expand-arrows-alt"></i> Expand</span>
-			</div>
-
-			<div class="item hidden">
-				<span class="label query-toggle"><i class="fas fa-file-alt"></i> Query</span>
 			</div>
 
 			<div class="item">
@@ -398,6 +390,10 @@ class DataSource {
 				</div>
 			</div>
 
+			<div class="item view hidden">
+				<span class="label expand-toggle"><i class="fas fa-expand-arrows-alt"></i> Expand</span>
+			</div>
+
 			<div class="item hidden">
 				<a class="label configure-visualization">
 					<i class="fas fa-cog"></i>
@@ -411,9 +407,17 @@ class DataSource {
 					<span>Define</span>
 				</a>
 			</div>
+
+			<div class="item hidden">
+				<span class="label query-toggle"><i class="fas fa-file-alt"></i> Query</span>
+			</div>
+
+			<div class="item">
+				<span class="label reload"><i class="fas fa-sync"></i> Reload</span>
+			</div>
 		`;
 
-		menu.on('click', e => e.stopPropagation());
+		// menu.on('click', e => e.stopPropagation());
 
 		const
 			filtersToggle = menu.querySelector('.filters-toggle'),
@@ -972,8 +976,12 @@ class DataSourceFilters extends Map {
 		}
 
 		container.on('submit', e => {
+
 			e.preventDefault();
+
 			this.apply();
+
+			this.source.container.querySelector('.filters-toggle').click()
 		});
 
 		container.insertAdjacentHTML('beforeend', `
@@ -989,7 +997,6 @@ class DataSourceFilters extends Map {
 		`);
 
 		container.querySelector('.close').on('click', () => this.source.container.querySelector('.filters-toggle').click());
-		container.querySelector('.apply').on('click', e => e.stopPropagation());
 
 		return container;
 	}
@@ -2705,7 +2712,9 @@ class DataSourcePostProcessors {
 			container = this.containerElement = document.createDocumentFragment(),
 			processors = document.createElement('div');
 
-		processors.classList.add('item', 'hidden');
+		processors.classList.add('item');
+
+		processors.classList.toggle('hidden', this.timingColumn ? false : true);
 
 		processors.innerHTML =`
 			<div class="label postprocessors">
