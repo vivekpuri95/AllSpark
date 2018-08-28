@@ -1896,7 +1896,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		if(ConfigureVisualization.types.has(this.visualization.type)) {
 
-			this.visualizationForm = new VisualizationManager(this.visualization, this);
+			this.visualizationManager = new VisualizationManager(this.visualization, this);
 		}
 		else {
 
@@ -1908,25 +1908,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.container.querySelector('#preview-configure-visualization').remove();
 		}
 
-		this.container.appendChild(this.visualizationForm.container);
-
-		// this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
-
-		// const visualizationLogsSelected = this.container.querySelector('#history-configure-visualization').classList.contains('selected')
-
-		// this.visualizationLogs.toggle(visualizationLogsSelected);
-
-		// if(visualizationLogsSelected) {
-		//
-		// 	this.visualizationLogs.load();
-		// }
-
-		// if(this.page.container.querySelector('.query-history')) {
-		//
-		// 	this.page.container.querySelector('.query-history').remove();
-		// }
-
-		// this.page.container.appendChild(this.visualizationLogs.container);
+		this.container.appendChild(this.visualizationManager.container);
 
 		this.dashboards = new ReportVisualizationDashboards(this);
 
@@ -1941,7 +1923,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.page.preview.position = 'right';
 
 		this.dashboards.load();
-		this.visualizationForm.load();
+		this.visualizationManager.load();
 
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 
@@ -1972,7 +1954,10 @@ class VisualizationManager {
 
 				this.options = JSON.parse(this.options) || {};
 			}
-			catch(e) {}
+			catch(e) {
+
+				this.options = {};
+			}
 		}
 	}
 
@@ -2079,15 +2064,7 @@ class VisualizationManager {
 				form: new FormData(this.form),
 			};
 
-		if(this.optionsForm) {
-
-			this.options = this.optionsForm.json;
-		}
-
-		this.options.transformations = this.transformations.json;
-		this.options.filters = this.reportVisualizationFilters.json;
-
-		options.form.set('options', JSON.stringify(this.options));
+		options.form.set('options', JSON.stringify(this.json.options));
 
 		try {
 
@@ -2119,18 +2096,33 @@ class VisualizationManager {
 
 			throw e;
 		}
+	}
 
+	get json() {
+
+		return {
+			id: this.visualization_id,
+			query_id: this.query_id,
+			type: this.form.type.value,
+			name: this.form.name.value,
+			description: this.form.description.value,
+			options: {
+				...this.optionsForm.json,
+				transformations: this.transformations.json,
+				filters: this.reportVisualizationFilters.json
+			}
+		};
 	}
 
 	async preview() {
 
 		this.stage.page.preview.load({
 			query_id: this.query_id,
-			visualizationOptions: {...this.optionsForm.json, transformations: this.transformations.json, filters: this.reportVisualizationFilters.json},
+			visualizationOptions: this.json.options,
 			visualization: {
 				id: this.visualization_id,
-				type: this.form.type.value,
-				name: this.form.name.value
+				type: this.json.type,
+				name: this.json.name
 			}
 		});
 	}
@@ -2185,7 +2177,7 @@ class QueryLog extends ReportLog {
 
 		try {
 
-			this.value.definition = JSON.parse(this.value.definition);
+			this.state.definition = JSON.parse(this.state.definition);
 		}
 		catch(e) {}
 
@@ -2195,7 +2187,7 @@ class QueryLog extends ReportLog {
 			return;
 		}
 
-		this.connection = new (ReportConnection.types.get(connection.type))(this.value, this.logs.page, true);
+		this.connection = new (ReportConnection.types.get(connection.type))(this.state, this.logs.page, true);
 
 		queryInfo.appendChild(this.connection.form);
 
@@ -2212,80 +2204,6 @@ class QueryLog extends ReportLog {
 			}, 100);
 
 		});
-	}
-}
-
-class VisualizationLog extends ReportLog {
-
-	load() {
-
-		const logInfo = this.logs.container.querySelector('.info');
-
-		logInfo.classList.remove('hidden');
-		this.logs.container.querySelector('.list').classList.add('hidden');
-
-		logInfo.querySelector('.toolbar').innerHTML =  `
-			<button class="back"><i class="fa fa-arrow-left"></i> Back to history</button>
-			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
-			<button class="preview"><i class="fas fa-eye"></i> Preview</button>
-			<span class="log-title">
-				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
-			</span>
-		`;
-
-		logInfo.querySelector('.toolbar button.back').on('click', () => {
-
-			this.logs.container.querySelector('.list').classList.remove('hidden');
-			logInfo.classList.add('hidden');
-		});
-
-		logInfo.querySelector('.toolbar .restore').on('click', () => {
-
-		});
-
-		logInfo.querySelector('.toolbar .preview').on('click', () => {
-
-
-		});
-
-		const
-			queryInfo = this.logs.container.querySelector('.info div.log-form'),
-			optionsForm = new (ConfigureVisualization.types.get(this.logs.owner.type))(this.logs.owner, this.logs.page.page, this.logs.page, true);
-
-		queryInfo.classList.remove('block');
-		queryInfo.classList.add('logs-configure-visualization');
-
-		queryInfo.innerHTML = `
-			<div class="logs-configuration-section">
-			
-				<h3><i class="fas fa-angle-right"></i> General</h3>
-
-				<div class="body">
-					<div class="form subform">
-						<label>
-							<span>Name</span>
-							<input type="text" name="name" value="${this.value.name}" readonly>
-						</label>
-
-						<label>
-							<span>Visualization Type</span>
-							<select name="type"></select>
-						</label>
-
-						<label>
-							<span>Description</span>
-							<textarea  name="description" rows="4" cols="50" readonly></textarea>
-						</label>
-					</div>
-				</div>
-			</div>
-		`;
-
-		queryInfo.querySelector('textarea[name=description]').value = this.value.description;
-		queryInfo.querySelector('select[name=type]').innerHTML = `<option value="${this.value.type}">${MetaData.visualizations.get(this.value.type).name}</option>`;
-		queryInfo.querySelector('select[name=type]').value = this.value.type;
-		
-		queryInfo.appendChild(optionsForm.form);
 	}
 }
 
@@ -4220,8 +4138,7 @@ class ReportTransformations extends Set {
 						</div>
 					</fieldset>
 				</form>
-			</div>
-		`;
+			</div>`;
 
 		const preview = container.querySelector('h3 #transformations-preview');
 

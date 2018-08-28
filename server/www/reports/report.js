@@ -207,6 +207,7 @@ exports.update = class extends API {
 
 				values[key] = this.request.body[key] || null;
 				compareJson[key] = updatedRow[key] == null || updatedRow[key] === '' ? null : updatedRow[key].toString();
+				updatedRow[key] = this.request.body[key];
 			}
 		}
 
@@ -233,10 +234,9 @@ exports.update = class extends API {
 		const
 			updateResponse =  await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write'),
 			logs = {
-				query_id: updatedRow.query_id,
 				owner: 'query',
 				owner_id: this.request.body.query_id,
-				value: JSON.stringify(updatedRow),
+				state: JSON.stringify(updatedRow),
 				operation:'update',
 			};
 
@@ -288,7 +288,22 @@ exports.insert = class extends API {
 			values.format = JSON.stringify({});
 		}
 
-		return await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'write');
+		const
+			insertResponse = await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'write'),
+			[loggedRow] = await this.mysql.query(
+				'SELECT * FROM tb_query WHERE query_id = ?',
+				[insertResponse.insertId]
+			),
+			logs = {
+				owner: 'query',
+				owner_id: insertResponse.insertId,
+				state: JSON.stringify(loggedRow),
+				operation:'insert',
+			};
+
+		reportHistory.insert(this, logs);
+
+		return insertResponse;
 	}
 };
 
@@ -304,8 +319,8 @@ exports.logs = class extends API {
 			SELECT
 				h.*,
 				CONCAT_WS(' ', first_name, middle_name, last_name) AS user_name
-			FROM
-				${db}.tb_report_history h
+			FROM 
+				${db}.tb_history h
 			LEFT JOIN
 				tb_users u
 			ON

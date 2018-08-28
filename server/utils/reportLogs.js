@@ -18,7 +18,7 @@ class ReportHistory {
 		logs.updated_by = obj.user.user_id;
 
 		await mysql.query(
-			`INSERT INTO ${db}.tb_report_history SET ? `,
+			`INSERT INTO ${db}.tb_history SET ? `,
 			[logs],
 			'write'
 		);

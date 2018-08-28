@@ -7843,14 +7843,14 @@ class SpatialMapTheme {
 
 class ReportLogs extends Set {
 
-	constructor(owner, page, logtype) {
+	constructor(owner, page, logType) {
 
 		super();
 
 		this.owner = owner;
 		this.page = page;
-		this.logClass = logtype.class;
-		this.ownerName = logtype.name;
+		this.logClass = logType.class;
+		this.ownerName = logType.name;
 	}
 
 	get container() {
@@ -7960,7 +7960,7 @@ class ReportLog {
 		this.logs = logs;
 
 		try {
-			this.value = JSON.parse(this.value);
+			this.state = JSON.parse(this.state);
 		}
 		catch(e) {}
 
