@@ -15,6 +15,14 @@ Page.class = class Connections extends Page {
 
 		(async () => {
 
+			if((await Storage.get('newUser')) && !(await Storage.get('forceClosed'))) {
+
+				const onboardScript = document.createElement("script");
+				onboardScript.src = '/js/user-onboard.js';
+
+				document.head.appendChild(onboardScript);
+			}
+
 			await this.load();
 
 			await Sections.show('list');

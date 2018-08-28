@@ -312,6 +312,15 @@ Page.class = class Dashboards extends Page {
 
 		this.navbar.render();
 
+		if(this.user.privileges.has('admin') && !DataSource.list.size && !(await Storage.get('forceClosed'))) {
+
+			const onboardScript = document.createElement("script");
+			onboardScript.src = '/js/user-onboard.js';
+
+			document.head.appendChild(onboardScript);
+			await Storage.set('newUser', true);
+		}
+
 		if (window.location.pathname.split('/').pop() === 'first') {
 
 			this.navbar.render();
@@ -349,15 +358,6 @@ Page.class = class Dashboards extends Page {
 		else {
 
 			return this.render({dashboardId: currentId, renderNav: true, updateNav: false});
-		}
-
-		const
-			adminRoles = Array.from(MetaData.roles).filter(x => x.is_admin == 1).map(x => x.role_id),
-			userRoles = Array.from(this.user.roles).filter(x => x.is_admin == 1).map(x => x.role_id);
-
-		if(adminRoles.some(x => userRoles.includes(x))) {
-
-			(new Setup()).load();
 		}
 
 	}
