@@ -378,6 +378,12 @@ exports.metadata = class extends API {
                     ifnull(is_admin, 0) AS is_admin
                 FROM
                     tb_privileges
+                JOIN
+                	tb_privileges_tree
+                	USING(privilege_id)
+                WHERE
+                	parent = 0
+                	AND (account_id = ? OR account_id = 0)
 
                 UNION ALL
 
@@ -391,7 +397,7 @@ exports.metadata = class extends API {
                 WHERE
                     account_id = ?
             `,
-			[this.account.account_id, this.account.account_id]
+			[this.account.account_id, this.account.account_id, this.account.account_id]
 		);
 
 		const metadata = {};
