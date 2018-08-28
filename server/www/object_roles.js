@@ -4,7 +4,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs("administrator");
+		//this.user.privilege.needs("administrator");
 
 		const expectedFields = ["owner", "owner_id", "target", "target_id", "category_id"];
 
@@ -23,7 +23,7 @@ exports.update = class extends API {
 
 	async update() {
 
-		this.user.privilege.needs("administrator");
+		//this.user.privilege.needs("administrator");
 
 		const expectedFields = ["owner", "owner_id", "target", "target_id"];
 
@@ -47,7 +47,7 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		this.user.privilege.needs("administrator");
+		//this.user.privilege.needs("administrator");
 
 		return await this.mysql.query(
 			"delete from tb_object_roles where id = ? and account_id = ?",
