@@ -1260,6 +1260,143 @@ class AJAXLoader {
 
 class Format {
 
+	static ago(timestamp) {
+
+		if(!timestamp)
+			return '';
+
+		const
+			date = new Date(timestamp),
+			currentSeconds = date.getTime(),
+			type = [{name: 'second'}, {name: 'minute'}, {name: 'hour',prefix: 'An'}, {name: 'day'}, {name: 'week'}, {name: 'month'}, {name:'year'}],
+			agoFormat = [
+				{
+					unit: 60,
+					minimum: 5,
+					type: 0,
+				},
+				{
+					unit: 60,
+					minimum: 1,
+					type: 1,
+				},
+				{
+					unit: 24,
+					minimum: 1,
+					type: 2,
+				},
+				{
+					unit: 7,
+					minimum: 1,
+					type: 3,
+				},
+				{
+					unit: 7,
+					minimum: 1,
+					type: 4,
+				},
+				{
+					unit: 12,
+					minimum: 1,
+					type: 5,
+				},
+			];
+
+		let
+			time = Math.floor((Date.now() - currentSeconds) / 1000),
+			finalString = '',
+			format = agoFormat[0];
+
+		format.time = time;
+
+		finalString = calcAgo(format);
+
+		time = Math.floor(time / 60);
+
+		if(time) {
+			format = agoFormat[1];
+			format.time = time;
+		}
+
+		time = Math.floor(time / 60);
+
+		if(time) {
+			format = agoFormat[2];
+			format.time = time;
+		}
+
+		time = Math.floor(time / 24);
+
+		if(time) {
+			format = agoFormat[3];
+			format.time = time;
+		}
+
+		if(time < 30) {
+
+			const weeks = Math.floor(time / 7);
+
+			if(weeks) {
+
+				format = agoFormat[4];
+				format.time = weeks;
+			}
+		}
+		else if(time >= 30) {
+
+			const months = Math.floor(time / 30);
+
+			if(months) {
+
+				format = agoFormat[5];
+				format.time = months;
+			}
+		}
+
+		if(time >= 365) {
+
+			const years = Math.floor(time / 365);
+
+			if(years) {
+
+				finalString = years + ' years ago';
+
+				if(years <= 1) {
+					finalString = 'A year ago';
+				}
+				else {
+					finalString = '';
+				}
+			}
+		}
+		else {
+			finalString = calcAgo(format);
+		}
+
+		function calcAgo(format) {
+
+			const
+				range = format.unit - (0.15 * format.unit),
+				time = format.time % format.unit;
+
+			let string = `${time} ${type[format.type].name}s ago`;
+
+			if(time <= format.minimum) {
+
+				if(type[format.type].name.includes('second'))
+					string = 'Just Now';
+				else
+					string = `${type[format.type].prefix ? type[format.type].prefix : 'A'}  ${type[format.type].name} ago`;
+			}
+			else if(time >= range)
+				string = `About ${type[format.type + 1].prefix ? type[format.type + 1].prefix.toLowerCase() : 'a'} ${type[format.type + 1].name} ago`;
+
+			return string;
+		}
+
+		return finalString;
+	}
+
 	static date(date) {
 
 		const options = {

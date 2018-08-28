@@ -46,6 +46,9 @@ main .user-search {
 	display: flex;
 	flex-wrap: wrap;
 	padding: var(--gap);
+	position: sticky;
+	top: 50px;
+	z-index: 1;
 }
 	main .user-search label {
 		padding: var(--gap);

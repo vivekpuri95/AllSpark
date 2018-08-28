@@ -361,7 +361,7 @@ class UserManage {
 			<td>${this.id}</td>
 			<td><a href="/user/profile/${this.id}" target="_blank">${this.name}</a></td>
 			<td>${this.email}</td>
-			<td>${Format.dateTime(this.last_login)}</td>
+			<td title="${Format.dateTime(this.last_login)}">${Format.ago(this.last_login)}</td>
 			<td class="action green" title="Edit">Edit</i></td>
 			<td class="action red" title="Delete">Delete</td>
 		`;

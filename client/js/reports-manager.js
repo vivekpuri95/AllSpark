@@ -758,8 +758,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		this.container.querySelector('#added-by').innerHTML = `
 			Added by
 			<strong><a href="/user/profile/${this.report.added_by}" target="_blank">${this.report.added_by_name || 'Unknown User'}</a></strong>
-			on
-			<strong>${Format.dateTime(this.report.created_at)}</strong>
+
+			<strong title="${Format.dateTime(this.report.created_at)}">${Format.ago(this.report.created_at)}</strong>
 		`;
 
 		if(this.report.is_redis > 0) {
