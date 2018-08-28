@@ -1266,39 +1266,41 @@ class Format {
 			return '';
 
 		const
-			date = new Date(timestamp),
-			currentSeconds = date.getTime(),
-			type = [{name: 'second'}, {name: 'minute'}, {name: 'hour',prefix: 'An'}, {name: 'day'}, {name: 'week'}, {name: 'month'}, {name:'year'}],
+			currentSeconds = Date.parse(timestamp) + (new Date()).getTimezoneOffset() * 60000,
 			agoFormat = [
 				{
 					unit: 60,
 					minimum: 5,
-					type: 0,
+					name: 'second',
 				},
 				{
 					unit: 60,
 					minimum: 1,
-					type: 1,
+					name: 'minute',
 				},
 				{
 					unit: 24,
 					minimum: 1,
-					type: 2,
+					name: 'hour',
+					prefix: 'An',
 				},
 				{
 					unit: 7,
 					minimum: 1,
-					type: 3,
+					name: 'day',
 				},
 				{
-					unit: 7,
+					unit: 4.3,
 					minimum: 1,
-					type: 4,
+					name: 'week',
 				},
 				{
 					unit: 12,
 					minimum: 1,
-					type: 5,
+					name: 'month',
+				},
+				{
+					name: 'year',
 				},
 			];
 
@@ -1307,89 +1309,56 @@ class Format {
 			finalString = '',
 			format = agoFormat[0];
 
-		format.time = time;
+		for(const data of agoFormat) {
 
-		finalString = calcAgo(format);
+			if(agoFormat.indexOf(data) >= agoFormat.length - 1)
+				break;
 
-		time = Math.floor(time / 60);
+			format = data;
 
-		if(time) {
-			format = agoFormat[1];
 			format.time = time;
+
+			time = Math.floor(time / format.unit);
+
+			if(!time)
+				break;
 		}
 
-		time = Math.floor(time / 60);
+		const years = time % 12;
 
-		if(time) {
-			format = agoFormat[2];
-			format.time = time;
-		}
+		if(years) {
 
-		time = Math.floor(time / 24);
+			finalString = years + ' years ago';
 
-		if(time) {
-			format = agoFormat[3];
-			format.time = time;
-		}
-
-		if(time < 30) {
-
-			const weeks = Math.floor(time / 7);
-
-			if(weeks) {
-
-				format = agoFormat[4];
-				format.time = weeks;
+			if(years <= 1) {
+				finalString = 'A year ago';
+			}
+			else {
+				finalString = Format.dateTime(timestamp);
 			}
 		}
-		else if(time >= 30) {
-
-			const months = Math.floor(time / 30);
-
-			if(months) {
-
-				format = agoFormat[5];
-				format.time = months;
-			}
-		}
-
-		if(time >= 365) {
-
-			const years = Math.floor(time / 365);
-
-			if(years) {
-
-				finalString = years + ' years ago';
-
-				if(years <= 1) {
-					finalString = 'A year ago';
-				}
-				else {
-					finalString = '';
-				}
-			}
-		}
-		else {
+		else
 			finalString = calcAgo(format);
-		}
+
 
 		function calcAgo(format) {
 
 			const
 				range = format.unit - (0.15 * format.unit),
-				time = format.time % format.unit;
+				time = format.time % format.unit,
+				index = agoFormat.indexOf(format);
 
-			let string = `${time} ${type[format.type].name}s ago`;
+			let string = `${time} ${format.name}s ago`;
 
 			if(time <= format.minimum) {
 
-				if(type[format.type].name.includes('second'))
+				if(format.name.includes('second'))
 					string = 'Just Now';
 				else
-					string = `${type[format.type].prefix ? type[format.type].prefix : 'A'}  ${type[format.type].name} ago`;
+					string = `${format.prefix ? format.prefix : 'A'}  ${format.name} ago`;
 			}
 			else if(time >= range)
-				string = `About ${type[format.type + 1].prefix ? type[format.type + 1].prefix.toLowerCase() : 'a'} ${type[format.type + 1].name} ago`;
+				string = `About ${agoFormat[index + 1].prefix ? agoFormat[index + 1].prefix.toLowerCase() : 'a'} ${agoFormat[index + 1].name} ago`;
 
 			return string;
 		}
