@@ -1266,7 +1266,7 @@ class Format {
 			return '';
 
 		const
-			currentSeconds = Date.parse(timestamp) + (new Date()).getTimezoneOffset() * 60000,
+			currentSeconds = Date.parse(timestamp),
 			agoFormat = [
 				{
 					unit: 60,
