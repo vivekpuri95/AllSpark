@@ -182,7 +182,7 @@ main .privilege-component {
 	}
 	main .privilege-component .component-list {
 		display: grid;
-		grid-template-columns: max-content 150px 50px;
+		grid-template-columns: max-content max-content 50px;
 		grid-gap: calc(var(--gap) * 2);
 	}
 		main .privilege-component .component-list .thin{
