@@ -111,6 +111,7 @@ main .data-source {
 		display: flex;
 		align-items: center;
 		white-space: nowrap;
+		z-index: 1;
 	}
 	main .data-source > header::-webkit-scrollbar {
 		display: none;
