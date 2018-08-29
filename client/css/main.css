@@ -1012,6 +1012,7 @@ main .setup-stages {
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		border-right: 1px solid #ccc;
 	}
 	main .setup-stages a {
 		text-decoration: none;
@@ -1035,6 +1036,7 @@ main .setup-stages {
 		padding: 12px;
 		transition: box-shadow var(--transition-duration),
 					background var(--transition-duration);
+		border-right: 1px solid #ccc;
 	}
 	main .setup-stages .close {
 		cursor: pointer;

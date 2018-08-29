@@ -78,6 +78,9 @@ class HTMLAPI extends API {
 
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
+					<script>
+						const demo_url = "${config.get('demo_url') || ''}";
+					</script>
 				</head>
 				<body>
 

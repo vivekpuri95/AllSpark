@@ -17,7 +17,7 @@ class UserOnboard {
 		const container = document.createElement('div');
 		container.classList.add('setup-stages');
 
-		container.innerHTML = '<a href="https://demo.katoai.co/login?email=demo@katoai.co&password=katoai" target="_blank">View Demo</a>';
+		container.innerHTML = `<a href="${demo_url}" target="_blank">View Demo</a>`;
 
 		for(const stage of UserOnboard.stages.values()) {
 
