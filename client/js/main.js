@@ -1308,6 +1308,10 @@ class Format {
 		if(currentSeconds > Date.now())
 			return '';
 
+		//If the date is invalid;
+		if(!currentSeconds)
+			return 'Invalid Date';
+
 		let
 			time = Math.floor((Date.now() - currentSeconds) / 1000),
 			finalString = '',
@@ -1350,7 +1354,7 @@ class Format {
 			let string = `${time} ${format.name}s ago`;
 
 			if(time <= format.minimum)
-				string = format.name.includes('second') ? 'Just Now' : `${format.prefix ? format.prefix : 'A'}  ${format.name} ago`;
+				string = format.name.includes('second') ? 'Just Now' : `${format.prefix || 'A'} ${format.name} ago`;
 			else if(time >= range) {
 
 				let

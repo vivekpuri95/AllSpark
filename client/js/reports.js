@@ -1438,7 +1438,7 @@ class DataSourceRow extends Map {
 		if(column.type == 'year')
 			value = Format.year(value);
 
-		if(column.type == 'timeElapsed')
+		if(column.type == 'timeelapsed')
 			value = Format.ago(value);
 
 		if(column.type == 'time')
@@ -1722,7 +1722,7 @@ class DataSourceColumn {
 					<option value="year">Year</option>
 					<option value="time">Time</option>
 					<option value="datetime">Date Time</option>
-					<option value="timeElapsed">Time Elapsed</option>
+					<option value="timeelapsed">Time Elapsed</option>
 					<option value="html">HTML</option>
 				</select>
 			</label>
