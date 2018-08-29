@@ -1304,6 +1304,10 @@ class Format {
 				},
 			];
 
+		//If the time is future.
+		if(currentSeconds > Date.now())
+			return '';
+
 		let
 			time = Math.floor((Date.now() - currentSeconds) / 1000),
 			finalString = '',
@@ -1311,6 +1315,7 @@ class Format {
 
 		for(const data of agoFormat) {
 
+			//If the time format is year then break.
 			if(agoFormat.indexOf(data) >= agoFormat.length - 1)
 				break;
 
@@ -1324,24 +1329,18 @@ class Format {
 				break;
 		}
 
+		//Special case for year.
 		const years = time % 12;
 
 		if(years) {
 
-			finalString = years + ' years ago';
-
-			if(years <= 1) {
-				finalString = 'A year ago';
-			}
-			else {
-				finalString = Format.dateTime(timestamp);
-			}
+			finalString = years == 1 ? 'A year ago' : Format.dateTime(timestamp);
 		}
 		else
-			finalString = calcAgo(format);
+			finalString = calculateAgo(format);
 
 
-		function calcAgo(format) {
+		function calculateAgo(format) {
 
 			const
 				range = format.unit - (0.15 * format.unit),
@@ -1350,15 +1349,16 @@ class Format {
 
 			let string = `${time} ${format.name}s ago`;
 
-			if(time <= format.minimum) {
+			if(time <= format.minimum)
+				string = format.name.includes('second') ? 'Just Now' : `${format.prefix ? format.prefix : 'A'}  ${format.name} ago`;
+			else if(time >= range) {
 
-				if(format.name.includes('second'))
-					string = 'Just Now';
-				else
-					string = `${format.prefix ? format.prefix : 'A'}  ${format.name} ago`;
+				let
+					nextFormat = agoFormat[index + 1],
+					prefix = nextFormat.prefix || 'a';
+
+				string = `About ${prefix.toLowerCase()} ${nextFormat.name} ago`;
 			}
-			else if(time >= range)
-				string = `About ${agoFormat[index + 1].prefix ? agoFormat[index + 1].prefix.toLowerCase() : 'a'} ${agoFormat[index + 1].name} ago`;
 
 			return string;
 		}

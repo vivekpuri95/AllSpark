@@ -187,7 +187,7 @@ class DataSource {
 
 					<span>
 						<span class="label">Added On:</span>
-						<span>${Format.date(this.created_at)}</span>
+						<span title="${Format.date(this.created_at)}">${Format.ago(this.created_at)}</span>
 					</span>
 
 					<span>
@@ -200,7 +200,7 @@ class DataSource {
 						<span class="runtime"></span>
 					</span>
 
-					<span class="right visible-to">
+					<span class="right visible-to hidden">
 						<span class="label">Visible To</span>
 						<span class="count"></span>
 					</span>
@@ -242,8 +242,10 @@ class DataSource {
 
 			container.querySelector('.description .visible-to .count').on('click', () => {
 
-				if(!this.dialogue)
-					this.dialogue = new DialogBox();
+				if(this.dialogue)
+					return this.dialogue.show();
+
+				this.dialogue = new DialogBox();
 
 				this.dialogue.heading = 'Users';
 
@@ -479,13 +481,11 @@ class DataSource {
 
 			this.visualizations.selected.render({resize: true});
 
-			if(user.privileges.has('report')) {
+			if(user.privileges.has('report') && user.privileges.has('user')) {
 
 				await this.userList();
+				this.container.querySelector('.visible-to').classList.remove('hidden');
 				this.container.querySelector('.description .count').textContent = `${this.visibleTo.length} people`;
-			}
-			else {
-				this.container.querySelector('.description .visible-to').classList.add('hidden');
 			}
 		});
 
