@@ -1,23 +1,13 @@
-Page.class = class Profile extends Page {
+class UserProfile extends Page {
 
-	constructor() {
+	constructor(options) {
 
-		super();
+		super(options);
 
 		const container = this.container;
 		this.id = parseInt(location.pathname.split('/').pop());
 
-		(async() => {
-
-			await DataSource.load();
-			await this.load();
-
-			this.profileInfo = new ProfileInfo(this);
-
-			this.sessions = new Sessions(this);
-
-			this.render();
-		})();
+		this.load();
 	}
 
 	async load() {
@@ -30,7 +20,15 @@ Page.class = class Profile extends Page {
 				method: 'POST',
 			};
 
+		await DataSource.load();
+
 		[this.data] = await API.call('users/list', parameters, options);
+
+		this.profileInfo = new ProfileInfo(this);
+
+		this.sessions = new Sessions(this);
+
+		this.render();
 	}
 
 	render() {
@@ -98,6 +96,8 @@ Page.class = class Profile extends Page {
 		});
 	}
 }
+
+Page.class = UserProfile;
 
 class Sessions {
 
@@ -349,7 +349,6 @@ class ActivityGroup extends Set {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-
 
 		container.classList.add('activity-group');
 

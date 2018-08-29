@@ -1803,4 +1803,48 @@ router.get('/tasks/:id?/:define?', API.serve(class extends HTMLAPI {
 	}
 }));
 
+router.get('/tests', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/tests.css');
+
+		this.scripts = this.scripts.concat([
+
+			'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU&libraries=visualization" defer f="',
+
+			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+
+			'/js/reports.js',
+			'/js/profile.js',
+			'/js/tests.js',
+		]);
+	}
+
+	main() {
+
+		return `
+
+			<section class="section" id="list">
+
+				<h1>Tests</h1>
+
+				<header class="toolbar">
+					<button id="run"><i class="fas fa-check"></i> Run</button>
+
+					<div id="progress">
+						<meter min="0"></meter>
+						<span class="NA"></span>
+					</div>
+				</header>
+
+				<div id="tests"></div>
+			</section>
+		`;
+	}
+}));
+
 module.exports = router;

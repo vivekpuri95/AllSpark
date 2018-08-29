@@ -64,12 +64,13 @@ class Page {
 
 		await API.refreshToken();
 
+		DialogBox.container = document.querySelector('main');
 		SnackBar.setup();
 	}
 
-	constructor() {
+	constructor({container = null} = {}) {
 
-		this.container = document.querySelector('main');
+		this.container = container || document.querySelector('main');
 
 		this.account = window.account;
 		this.user = window.user;
@@ -79,6 +80,9 @@ class Page {
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
+
+		if(container)
+			return;
 
 		this.renderPage();
 		this.shortcuts();
@@ -987,7 +991,7 @@ class AJAX {
 			};
 		}
 
-		else
+		else if(_parameters)
 			url += '?' + parameters.toString();
 
 		let response = null;
@@ -1397,7 +1401,7 @@ class Sections {
 
 class CodeEditor {
 
-	constructor({mode = null}) {
+	constructor({mode = null} = {}) {
 
 		if(!window.ace)
 			throw Page.exception('Ace editor not available!');
@@ -1408,6 +1412,7 @@ class CodeEditor {
 	get container() {
 
 		const container = this.editor.container;
+
 		container.classList.add('code-editor');
 
 		return container;
@@ -1470,6 +1475,10 @@ class DialogBox {
 	 */
 	get container() {
 
+		// Make sure we have a container to append the dialog box in
+		if(!DialogBox.container)
+			throw new Page.exception('Dialog Box container not defined before use!');
+
 		if(this.containerElement)
 			return this.containerElement;
 
@@ -1491,7 +1500,7 @@ class DialogBox {
 
 		this.hide();
 
-		document.querySelector('main').appendChild(container);
+		DialogBox.container.appendChild(container);
 
 		return container;
 	}
@@ -1510,14 +1519,12 @@ class DialogBox {
 			heading.textContent = null;
 			heading.appendChild(dialogHeading);
 		}
-		else if(typeof dialogHeading == 'string') {
 
+		else if(typeof dialogHeading == 'string')
 			heading.innerHTML = dialogHeading;
-		}
-		else {
 
+		else
 			throw Page.exception('Invalid heading format');
-		}
 	}
 
 	/**
@@ -2228,10 +2235,6 @@ class ObjectRoles {
 	}
 
 	async delete(id) {
-
-		if (!confirm('Are you sure?')) {
-			return;
-		}
 
 		const
 			parameters = {
