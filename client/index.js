@@ -1270,33 +1270,10 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 					</form>
 				</div>
 
+				<h3>Roles</h3>
+
 				<div class="roles form-container">
-					<h3>Roles</h3>
-					<form class="filter">
-						<label><span>Category</span></label>
-						<label><span>Roles</span></label>
-						<label class="edit"><span></span></label>
-						<label class="save"><span></span></label>
-					</form>
-
-					<div id="roles-list"></div>
-
-					<form id="add-roles" class="filter">
-
-						<label>
-							<select name="category_id" required></select>
-						</label>
-
-						<label>
-							<select name="role_id" required></select>
-						</label>
-
-						<label class="save">
-							<button type="submit" title="Add"><i class="fa fa-paper-plane"></i></button>
-						</label>
-					</form>
 				</div>
-
 
 			</section>
 		`;
