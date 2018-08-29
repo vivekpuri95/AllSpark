@@ -35,7 +35,9 @@ Page.class = class Connections extends Page {
 
 		const responses = await this.fetch();
 
-		if(UserOnboard && document.querySelector('.setup-stages')) {
+		const newUserCheck = (await Storage.get('newUser'));
+
+		if(newUserCheck.setup && !newUserCheck.forceClosed) {
 
 			document.querySelector('.setup-stages').remove();
 			UserOnboard.setup();

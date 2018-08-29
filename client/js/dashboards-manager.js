@@ -108,7 +108,9 @@ Page.class = class DashboardManager extends Page {
 
 		await DataSource.load();
 
-		if(UserOnboard && document.querySelector('.setup-stages')) {
+		const newUserCheck = (await Storage.get('newUser'));
+
+		if(newUserCheck.setup && !newUserCheck.forceClosed) {
 
 			document.querySelector('.setup-stages').remove();
 			UserOnboard.setup();

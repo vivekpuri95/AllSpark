@@ -78,9 +78,11 @@ class ReportsManger extends Page {
 		this.connections = new Map(this.connections.map(c => [c.id, c]));
 	}
 
-	load() {
+	async load() {
 
-		if(UserOnboard && document.querySelector('.setup-stages')) {
+		const newUserCheck = (await Storage.get('newUser'));
+
+		if(newUserCheck.setup && !newUserCheck.forceClosed) {
 
 			document.querySelector('.setup-stages').remove();
 			UserOnboard.setup();
