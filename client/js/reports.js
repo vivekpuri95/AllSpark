@@ -5179,7 +5179,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			if(!columns.length)
 				continue;
 
-			this.axes[axis.position].size += axis.position == 'left' ? 50 : 30;
+			this.axes[axis.position].size += axis.position == 'left' ? 50 : axis.top == 'top' ? 20 : 30;
 
 			if(axis.label)
 				this.axes[axis.position].size += 15;
@@ -5264,7 +5264,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 					const d3Axis = d3.svg.axis()
 						.scale(scale)
-						.orient('bottom');
+						.orient(axis.position);
 
 					d3Axis.tickValues(ticks);
 
@@ -5276,7 +5276,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					if(axis.position == 'bottom')
 						g.attr('transform', `translate(${this.axes.left.size}, ${this.height})`);
 					else
-						g.attr('transform', `translate(${this.axes.left.size}, ${axis.label ? 20 : 0})`);
+						g.attr('transform', `translate(${this.axes.left.size}, ${axis.label ? 45 : 20})`);
 				}
 
 				if(axis.label) {
@@ -5294,6 +5294,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				}
 
 				this.x = scale;
+
+				Object.assign(this.x, axis);
+
 				this.x.column = columns[0].key;
 				continue;
 			}
@@ -5349,7 +5352,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					max = Math.max(max, Math.ceil(total) || 0);
 			}
 
-			scale.domain([min, max]).nice();
+			scale.domain(this.x.position == 'bottom' ? [min, max] : [max, min]).nice();
 
 			if(axis.type == 'line') {
 
@@ -5429,20 +5432,17 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				}
 
 				bars
-					.attr('y', d => scale((d.y + (d.y0 || 0)) > 0 ? d.y + (d.y0 || 0) : 0))
-					.attr('height', d => Math.abs(scale(d.y) - scale(d.y0 || 0)));
+					.attr('y', d => this.x.position == 'top' ? this.axes.top.size : scale((d.y + (d.y0 || 0)) > 0 ? d.y + (d.y0 || 0) : 0))
+					.attr('height', d => Math.abs(axis.stacked ? this.height - scale(d.y) : scale(d.y) - scale(d.y0 || 0)));
 			}
 
 			else if(axis.type == 'area') {
 
-				const
-					area = d3.svg.area()
-						.interpolate(axis.curve)
-						.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
-						.y0(d => scale(0))
-						.y1(d => scale(d.y)),
-
-					stack = d3.layout.stack();
+				const area = d3.svg.area()
+					.interpolate(axis.curve)
+					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
+					.y0(d => scale(0))
+					.y1(d => scale(d.y + (d.y0 || 0)));
 
 				let areas = this.svg
 					.append('g')
@@ -5492,7 +5492,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.attr('class', 'scale ' + axis.position)
 					.classed('hide-scale-lines', this.options.hideScaleLines || axis.hideScaleLines)
 					.call(d3Axis)
-					.attr('transform', `translate(${this.axes.left.size}, ${this.axes.top.size})`);
+					.attr('transform', `translate(${this.axes.left.size}, 0)`);
 			}
 
 			if(axis.label) {
@@ -5579,7 +5579,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 						return this.x(row.get(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
 					})
-					.attr('y', ([row, column]) => scale(row.get(column.key) > 0 ? row.get(column.key) : 0) - 5)
+					.attr('y', ([row, column]) => scale(row.get(column.key) > 0 ? row.get(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
 					.attr('height', ([row, column]) => Math.abs(scale(row.get(column.key)) - scale(0)));
 
 				if(axis.animate) {

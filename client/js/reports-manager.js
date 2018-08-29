@@ -3110,7 +3110,6 @@ class Axes extends Set {
 							<select name="position" value="${this.position}" required>
 								<option value="bottom">Bottom</option>
 								<option value="left">Left</option>
-								<option value="top">Top</option>
 								<option value="right">Right</option>
 							</select>
 						</label>
@@ -3210,6 +3209,284 @@ class Axis {
 				<div class="form">
 
 					<label>
+						<span>Label</span>
+						<input type="text" name="label" value="${this.label || ''}">
+					</label>
+
+					<label class="axis-column">
+						<span>Columns</span>
+					</label>
+
+					<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${this.restcolumns ? 'checked' : ''}> Rest</span></label>
+
+					<label>
+						<span>Format</span>
+						<select name="format">
+							<option value="">None</option>
+							<option value="s">SI</option>
+						</select>
+					</label>
+
+					<label>
+						<span>
+							<input type="checkbox" name="axisShowValues"> Show Values
+						</span>
+					</label>
+
+					<label>
+						<button class="delete" type="button">
+							<i class="far fa-trash-alt"></i> Delete
+						</button>
+					</label>
+				</div>
+			</fieldset>
+		`;
+
+		container.multiSelectColumns.on('change', () => {
+
+			let usedColumns = [];
+			const freeColumns = [];
+
+			for(const axis of this.axes)
+				usedColumns = usedColumns.concat(axis.container.multiSelectColumns.value);
+
+			for(const axis of this.axes) {
+				for(const item of axis.container.multiSelectColumns.datalist) {
+					if(!freeColumns.some(c => c.value.includes(item.value)) && !usedColumns.includes(item.value))
+						freeColumns.push(item);
+				}
+			}
+
+			for(const axis of this.axes) {
+
+				if(axis == this)
+					continue;
+
+				const selected = axis.container.multiSelectColumns.value;
+
+				var newDataList = [];
+
+				for(const data of axis.container.multiSelectColumns.datalist) {
+					if(!usedColumns.includes(data.value) || selected.includes(data.value)) {
+						newDataList.push(data);
+					}
+				}
+
+				for(const value of freeColumns) {
+					if(!newDataList.some(k => k.value.includes(value.value)))
+						newDataList.push(value);
+				}
+
+				if(axis.container.multiSelectColumns.datalist.map(x => x.value).sort().join() == newDataList.map(x => x.value).sort().join())
+					continue;
+
+				axis.container.multiSelectColumns.datalist = newDataList;
+				axis.container.multiSelectColumns.render();
+			}
+		});
+
+		const restColumns = container.querySelector('.restcolumns');
+
+		restColumns.on('change', () => {
+
+			this.axes.restCheck(restColumns.checked);
+			axisColumn.classList.toggle('hidden');
+
+			if(restColumns.checked)
+				container.querySelector('.restCheck').classList.remove('hidden');
+		});
+
+		if(this.restcolumns) {
+
+			this.axes.restCheck(true);
+			axisColumn.classList.add('hidden');
+		}
+
+		container.querySelector('.axis-column').appendChild(axisColumn);
+
+		container.querySelector('select[name=format]').value = this.format || '';
+		container.querySelector('input[name=axisShowValues]').checked = this.showValues;
+
+		container.querySelector('.delete').on('click', () => {
+			this.axes.delete(this);
+			this.axes.render();
+		});
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			label: this.container.querySelector('input[name=label]').value,
+			columns: this.container.multiSelectColumns.value.map(c => {return {key: c}}),
+			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
+			format: this.container.querySelector('select[name=format]').value,
+			showValues: this.container.querySelector('input[name=axisShowValues]').checked,
+		};
+	}
+}
+
+class LinearAxes extends Set {
+
+	constructor(axes, stage) {
+		super();
+
+		this.stage = stage;
+		this.list = axes;
+		this.clear();
+
+		for(const axis of this.list)
+			this.add(new LinearAxis(axis, this));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('options', 'form', 'body', 'axes');
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		this.container.textContent = null;
+
+		this.stage.formContainer.querySelector('.configuration-section .count').innerHTML = `${this.size ? this.size + ' axes added' : ''}`;
+
+		for(const axis of this)
+			this.container.appendChild(axis.container);
+
+		if(!this.size)
+			this.container.innerHTML = '<div class="NA">No axes added yet!</div>';
+
+		this.container.insertAdjacentHTML('beforeend', `
+
+			<div class="add-axis">
+				<fieldset>
+					<legend>Add Axis</legend>
+					<div class="form">
+
+						<label>
+							<span>Position</span>
+							<select name="position" value="${this.position}" required>
+								<option value="bottom">Bottom</option>
+								<option value="left">Left</option>
+								<option value="top">Top</option>
+								<option value="right">Right</option>
+							</select>
+						</label>
+
+						<label>
+							<span>&nbsp;</span>
+							<button type="button"><i class="fa fa-plus"></i> Add</button>
+						</label>
+					</div>
+				</fieldset>
+			</div>
+		`);
+
+		this.container.querySelector('.add-axis button[type=button]').on('click', e => this.insert(e));
+	}
+
+	get json() {
+
+		const response = [];
+
+		for(const axis of this.values())
+			response.push(axis.json);
+
+		return response;
+	}
+
+	restCheck(action) {
+
+		for(const rest of this.container.querySelectorAll('.restCheck'))
+			rest.classList.toggle('hidden', action);
+	}
+
+	insert(e) {
+
+		e.preventDefault();
+
+		const
+			position = this.container.querySelector('.add-axis select').value,
+			axis = new LinearAxis({position}, this);
+
+		// Open the newly added axis
+		axis.container.querySelector('legend').click();
+
+		this.add(axis);
+		this.render();
+	}
+}
+
+class LinearAxis {
+
+	constructor(axis, axes) {
+
+		for(const key in axis)
+			this[key] = axis[key]
+
+		this.axes = axes;
+
+		if(!this.columns)
+			this.columns = [];
+	}
+
+	get container() {
+
+		if(this.axisContainer)
+			return this.axisContainer;
+
+		const container = this.axisContainer = document.createElement('div');
+
+		let datalist = [];
+
+		container.classList.add('axis');
+
+		for(const [key, column] of this.axes.stage.page.preview.report.columns)
+			datalist.push({name: column.name, value: key});
+
+		let usedColumns = [];
+
+		for(const axis of this.axes) {
+
+			if(axis.position == this.position)
+				continue;
+
+			usedColumns = usedColumns.concat(axis.columns.map(x => x.key));
+		}
+
+		for(const column of usedColumns)
+			datalist = datalist.filter(x => !column.includes(x.value));
+
+		this.position = this.position || 'top';
+
+		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true});
+
+		const axisColumn = container.multiSelectColumns.container;
+
+		container.multiSelectColumns.value = this.columns ? this.columns.map(x => x.key) : [];
+
+		container.innerHTML = `
+
+			<fieldset>
+				<legend class="interactive">
+					${this.position[0].toUpperCase() + this.position.slice(1)} Axis
+				</legend>
+
+				<div class="ellipsis"><i class="fas fa-ellipsis-h"></i></div>
+
+				<div class="form hidden">
+
+					<label>
 						<span>Type</span>
 						<select name="axis-type">
 							<option value=""></option>
@@ -3241,6 +3518,14 @@ class Axis {
 					<label class="restCheck"><span><input type="checkbox" name="restcolumns" class="restcolumns" ${this.restcolumns ? 'checked' : ''}> Rest</span></label>
 
 					<label>
+						<span>
+							<input type="checkbox" name="axisStacked"> Stacked
+						</span>
+					</label>
+
+					<div class="advanced-toggle"><i class="fa fa-angle-down"></i> &nbsp; Advanced &nbsp; <i class="fa fa-angle-down"></i></div>
+
+					<label class="advanced hidden">
 						<span>Format</span>
 						<select name="format">
 							<option value="">None</option>
@@ -3248,13 +3533,13 @@ class Axis {
 						</select>
 					</label>
 
-					<label>
+					<label class="advanced hidden">
 						<span>Z Axis (Depth)</span>
 						<input type="number" step="1" name="axisDepth" value="${this.depth || ''}">
 					</label>
 
-					<label>
-						<span>Line Style (Line Only)</span>
+					<label class="advanced hidden">
+						<span>Line Curve</span>
 						<select name="curve">
 							<option value="linear">Linear</option>
 							<option value="step-before">Step Before</option>
@@ -3270,42 +3555,36 @@ class Axis {
 						</select>
 					</label>
 
-					<label>
+					<label class="advanced hidden">
 						<span>Line Thickness (Line Only)</span>
 						<input type="number" step="0.1" name="axisLineThickness" value="${this.lineThickness || ''}">
 					</label>
 
-					<label>
-						<span>
-							<input type="checkbox" name="axisStacked"> Stacked
-						</span>
-					</label>
-
-					<label>
+					<label class="advanced hidden">
 						<span>
 							<input type="checkbox" name="axisShowValues"> Show Values
 						</span>
 					</label>
 
-					<label>
+					<label class="advanced hidden">
 						<span>
 							<input type="checkbox" name="axisShowPoints"> Show Points
 						</span>
 					</label>
 
-					<label>
+					<label class="advanced hidden">
 						<span>
 							<input type="checkbox" name="axisHideScale"> Hide Scale
 						</span>
 					</label>
 
-					<label>
+					<label class="advanced hidden">
 						<span>
 							<input type="checkbox" name="axisHideScaleLines"> Hide Scale Lines
 						</span>
 					</label>
 
-					<label>
+					<label class="advanced hidden">
 						<span>
 							<input type="checkbox" name="axisDontAnimate"> Don't Animate
 						</span>
@@ -3319,6 +3598,22 @@ class Axis {
 				</div>
 			</fieldset>
 		`;
+
+		container.querySelector('legend').on('click', () => {
+			container.querySelector('.form').classList.toggle('hidden');
+			container.querySelector('.ellipsis').classList.toggle('hidden');
+		});
+
+		container.querySelector('.ellipsis').on('click', () => {
+			container.querySelector('.form').classList.toggle('hidden');
+			container.querySelector('.ellipsis').classList.toggle('hidden');
+		});
+
+		container.querySelector('.advanced-toggle').on('click', () => {
+
+			for(const elemen of container.querySelectorAll('.advanced'))
+				elemen.classList.toggle('hidden');
+		});
 
 		container.multiSelectColumns.on('change', () => {
 
@@ -3487,30 +3782,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 								<input type="checkbox" name="showValues"> Show Values
 							</span>
 						</label>
-
-						<label>
-							<span>
-								<input type="checkbox" name="showPoints"> Show Points
-							</span>
-						</label>
-
-						<label>
-							<span>
-								<input type="checkbox" name="hideScales"> Hide Scales
-							</span>
-						</label>
-
-						<label>
-							<span>
-								<input type="checkbox" name="hideScaleLines"> Hide Scale Lines
-							</span>
-						</label>
-
-						<label>
-							<span>
-								<input type="checkbox" name="dontAnimate"> Don't Animate
-							</span>
-						</label>
 					</div>
 				</div>
 			</div>
@@ -3533,18 +3804,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		if(this.visualization.options && this.visualization.options.showValues)
 			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
 
-		if(this.visualization.options && this.visualization.options.showPoints)
-			container.querySelector('input[name=showPoints]').checked = this.visualization.options.showPoints;
-
-		if(this.visualization.options && this.visualization.options.hideScales)
-			container.querySelector('input[name=hideScales]').checked = this.visualization.options.hideScales;
-
-		if(this.visualization.options && this.visualization.options.hideScaleLines)
-			container.querySelector('input[name=hideScaleLines]').checked = this.visualization.options.hideScaleLines;
-
-		if(this.visualization.options && this.visualization.options.dontAnimate)
-			container.querySelector('input[name=dontAnimate]').checked = this.visualization.options.dontAnimate;
-
 		return container;
 	}
 
@@ -3555,10 +3814,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			hideHeader: this.formContainer.querySelector('input[name=hideHeader]').checked,
 			hideLegend: this.formContainer.querySelector('input[name=hideLegend]').checked,
 			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
-			showPoints: this.formContainer.querySelector('input[name=showPoints]').checked,
-			hideScales: this.formContainer.querySelector('input[name=hideScales]').checked,
-			hideScaleLines: this.formContainer.querySelector('input[name=hideScaleLines]').checked,
-			dontAnimate: this.formContainer.querySelector('input[name=dontAnimate]').checked,
 		};
 
 		return response;
@@ -3974,6 +4229,119 @@ ConfigureVisualization.types.set('dualaxisbar', class DualAxisBarOptions extends
 });
 
 ConfigureVisualization.types.set('linear', class LinearOptions extends ReportVisualizationLinearOptions {
+
+	get form() {
+
+		if(this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.classList.add('liner-visualization-options');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Axes <span class="count"></span></h3>
+			</div>
+
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideHeader"> Hide Header
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend"> Hide Legend
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showValues"> Show Values
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showPoints"> Show Points
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideScales"> Hide Scales
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideScaleLines"> Hide Scale Lines
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="dontAnimate"> Don't Animate
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		this.formContainer.axes = new Set();
+
+		this.axes = new LinearAxes(this.visualization.options.axes, this);
+
+		container.querySelector('.configuration-section').appendChild(this.axes.container);
+
+		this.stage.setupConfigurationSetions(container);
+
+		if(this.visualization.options && this.visualization.options.hideLegend)
+			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
+
+		if(this.visualization.options && this.visualization.options.hideHeader)
+			container.querySelector('input[name=hideHeader]').checked = this.visualization.options.hideHeader;
+
+		if(this.visualization.options && this.visualization.options.showValues)
+			container.querySelector('input[name=showValues]').checked = this.visualization.options.showValues;
+
+		if(this.visualization.options && this.visualization.options.showPoints)
+			container.querySelector('input[name=showPoints]').checked = this.visualization.options.showPoints;
+
+		if(this.visualization.options && this.visualization.options.hideScales)
+			container.querySelector('input[name=hideScales]').checked = this.visualization.options.hideScales;
+
+		if(this.visualization.options && this.visualization.options.hideScaleLines)
+			container.querySelector('input[name=hideScaleLines]').checked = this.visualization.options.hideScaleLines;
+
+		if(this.visualization.options && this.visualization.options.dontAnimate)
+			container.querySelector('input[name=dontAnimate]').checked = this.visualization.options.dontAnimate;
+
+		return container;
+	}
+
+	get json() {
+
+		const response = {
+			axes: this.axes.json,
+			hideHeader: this.formContainer.querySelector('input[name=hideHeader]').checked,
+			hideLegend: this.formContainer.querySelector('input[name=hideLegend]').checked,
+			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
+			showPoints: this.formContainer.querySelector('input[name=showPoints]').checked,
+			hideScales: this.formContainer.querySelector('input[name=hideScales]').checked,
+			hideScaleLines: this.formContainer.querySelector('input[name=hideScaleLines]').checked,
+			dontAnimate: this.formContainer.querySelector('input[name=dontAnimate]').checked,
+		};
+
+		return response;
+	}
 });
 
 ConfigureVisualization.types.set('stacked', class StackedOptions extends ReportVisualizationLinearOptions {
