@@ -5,77 +5,43 @@ class UserOnboard {
 		this.page = window.page;
 	}
 
-	static setup() {
+	static async setup() {
 
 		const onboard = new UserOnboard();
-		onboard.load();
+		await onboard.load();
 
 	}
 
-	load() {
+	async load() {
 
 		const container = document.createElement('div');
 		container.classList.add('setup-stages');
 
-		container.innerHTML = '<span class="heading">Setup Progress</span>'
+		container.innerHTML = '<a href="https://demo.katoai.co/login?email=demo@katoai.co&password=katoai" target="_blank">View Demo</a>';
 
 		for(const stage of UserOnboard.stages.values()) {
 
 			const stageObj = new stage();
 
 			container.appendChild(stageObj.container);
+			await stageObj.load();
 		}
 
-		container.insertAdjacentHTML('beforeend', '<span class="close"><i class="fa fa-times"></i></span>');
+		container.insertAdjacentHTML('beforeend', '<span class="close">Skip</span>');
 
 		container.querySelector('.close').on('click', async () => {
 
 			container.remove();
-			await Storage.set('forceClosed', true);
+			await Storage.set('newUser', {setup: true, forceClosed: true});
 		});
 
 		document.querySelector('main').appendChild(container);
 	}
-
-	// get container() {
-	//
-	// 	if(this.containerElement) {
-	//
-	// 		return this.containerElement;
-	// 	}
-	//
-	// 	const container = this.containerElement = document.createElement('div');
-	// 	container.classList.add('setup-stages');
-	//
-	// 	container.innerHTML = '<span class="heading">Setup Progress</span>'
-	//
-	// 	for(const stage of UserOnboard.stages.values()) {
-	//
-	// 		const stageObj = new stage();
-	//
-	// 		container.appendChild(stageObj.container);
-	// 	}
-	//
-	// 	container.insertAdjacentHTML('beforeend', '<span class="close"><i class="fa fa-times"></i></span>');
-	//
-	// 	container.querySelector('.close').on('click', async () => {
-	//
-	// 		container.remove();
-	// 		await Storage.set('forceClosed', true);
-	// 	});
-	//
-	// 	return container;
-	// }
-
-	set selected(value) {
-
-		this.container.classList.add('selected');
-	}
 }
 
-UserOnboard.stages = new Map();
+UserOnboard.stages = new Set();
 
-UserOnboard.stages.set('addConnection', class AddConnection extends UserOnboard {
+UserOnboard.stages.add(class AddConnection {
 
 	get container() {
 
@@ -88,26 +54,39 @@ UserOnboard.stages.set('addConnection', class AddConnection extends UserOnboard 
 		container.classList.add('stage');
 
 		container.innerHTML = `
-			<span><i class="fa fa-server"></i></span>
+			<span class="order">1</span>
 			<span>Add Connection</span>
 		`;
 
 		container.on('click', () => {
 
 			window.location = '/connections-manager';
-			this.selected = true;
 		});
+
+		if(window.location.pathname.split('/').pop() == 'connections-manager') {
+
+			container.classList.add('active');
+		}
 
 		return container;
 	}
 
-	get url() {
+	async load() {
 
-		return '/connections-manager';
+		const response = await API.call('credentials/list');
+
+		if(response.length) {
+
+			this.connection = response[0];
+
+			this.isCompleted = true;
+			this.container.classList.add('completed');
+			this.container.querySelector('span.order').innerHTML = '<i class="fa fa-check"></i>';
+		}
 	}
 });
 
-UserOnboard.stages.set('addReport', class AddReport extends UserOnboard {
+UserOnboard.stages.add(class AddReport {
 
 	get container() {
 
@@ -120,25 +99,39 @@ UserOnboard.stages.set('addReport', class AddReport extends UserOnboard {
 		container.classList.add('stage');
 
 		container.innerHTML = `
-			<span><i class="fa fa-database"></i></span>
+			<span class="order">2</span>
 			<span>Add Report</span>
 		`;
 
-		container.on('click', () => window.location = '/reports');
+		container.on('click', () => {
+
+			window.location = this.report ? `/reports/define-report/${this.report.query_id}` : '/reports';
+		});
+
+		if(['reports', 'pick-report'].includes(window.location.pathname.split('/').pop())) {
+
+			container.classList.add('active');
+		}
 
 		return container;
 	}
 
-	get url() {
+	async load() {
 
-		return '/reports-manager';
+		await DataSource.load(true);
+
+		if(DataSource.list.size) {
+
+			this.report = DataSource.list.values().next().value;
+
+			this.isCompleted = true;
+			this.container.classList.add('completed');
+			this.container.querySelector('span.order').innerHTML = '<i class="fa fa-check"></i>';
+		}
 	}
-
-
-
 });
 
-UserOnboard.stages.set('addDashboard', class AddDashboard extends UserOnboard {
+UserOnboard.stages.add(class AddDashboard {
 
 	get container() {
 
@@ -151,23 +144,39 @@ UserOnboard.stages.set('addDashboard', class AddDashboard extends UserOnboard {
 		container.classList.add('stage');
 
 		container.innerHTML = `
-			<span><i class="fa fa-newspaper"></i></span>
+			<span class="order">3</span>
 			<span> Add Dashboard</span>
 		`;
 
-		container.on('click', () => window.location = '/dashboards-manager');
+		container.on('click', () => {
+
+			window.location = this.dashboard ? `/dashboards-manager/${this.dashboard.id}` : '/dashboards-manager/add';
+		});
+
+		if(window.location.pathname.split('/').pop() == 'dashboards-manager') {
+
+			container.classList.add('active');
+		}
 
 		return container;
 	}
 
-	get url() {
+	async load() {
 
-		return '/dashboards-manager';
+		const response = await API.call('dashboards/list');
+
+		if(response.length) {
+
+			this.dashboard =  response[0];
+
+			this.isCompleted = true;
+			this.container.classList.add('completed');
+			this.container.querySelector('span.order').innerHTML = '<i class="fa fa-check"></i>';
+		}
 	}
-
 });
 
-UserOnboard.stages.set('addVisualization', class AddVisualization extends UserOnboard {
+UserOnboard.stages.add(class AddVisualization {
 
 	get container() {
 
@@ -180,18 +189,38 @@ UserOnboard.stages.set('addVisualization', class AddVisualization extends UserOn
 		container.classList.add('stage');
 
 		container.innerHTML = `
-			<span><i class="fas fa-chart-bar"></i></span>
+			<span class="order">4</span>
 			<span>Add and configure visualization</span>
 		`;
 
-		container.on('click', () => window.location = '/reports');
+		container.on('click', () => {
+
+			window.location = this.report ? `/reports/pick-visualization/${this.report.query_id}` : '/reports'
+		});
+
+		if(window.location.pathname.split('/').pop() == 'pick-visualization') {
+
+			container.classList.add('active');
+		}
 
 		return container;
 	}
 
-	get url() {
+	async load() {
 
-		return '/reports-manager'
+		await DataSource.load();
+
+		if(DataSource.list.size) {
+
+			this.report = DataSource.list.values().next().value;
+
+			if(this.report.visualizations.length) {
+
+				this.isCompleted = true;
+				this.container.classList.add('completed');
+				this.container.querySelector('span.order').innerHTML = '<i class="fa fa-check"></i>';
+			}
+		}
 	}
 
 });

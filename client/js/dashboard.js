@@ -312,13 +312,15 @@ Page.class = class Dashboards extends Page {
 
 		this.navbar.render();
 
-		if(this.user.privileges.has('admin') && !DataSource.list.size && !(await Storage.get('forceClosed'))) {
+		const newUserCheck = (await Storage.get('newUser')) || {};
 
-			const onboardScript = document.createElement("script");
+		if((newUserCheck.setup && !newUserCheck.forceClosed) || (this.user.privileges.has('admin') && !DataSource.list.size && !newUserCheck.forceClosed)) {
+
+			const onboardScript = document.createElement('script');
 			onboardScript.src = '/js/user-onboard.js';
 
 			document.head.appendChild(onboardScript);
-			await Storage.set('newUser', true);
+			await Storage.set('newUser', {setup: true});
 		}
 
 		if (window.location.pathname.split('/').pop() === 'first') {

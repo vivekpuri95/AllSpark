@@ -1287,7 +1287,7 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 		super();
 
 		this.stylesheets.push('/css/connections-manager.css');
-		this.scripts.push('/js/connections-manager.js');
+		this.scripts.push('/js/connections-manager.js', 'js/reports.js');
 	}
 
 	async main() {

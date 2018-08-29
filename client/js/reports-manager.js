@@ -11,9 +11,11 @@ class ReportsManger extends Page {
 
 		(async () => {
 
-			if ((await Storage.get('newUser')) && !(await Storage.get('forceClosed'))) {
+			const newUserCheck = (await Storage.get('newUser'));
 
-				const onboardScript = document.createElement("script");
+   			if(newUserCheck.setup && !newUserCheck.forceClosed) {
+
+				const onboardScript = document.createElement('script');
 				onboardScript.src = '/js/user-onboard.js';
 
 				document.head.appendChild(onboardScript);
@@ -77,6 +79,12 @@ class ReportsManger extends Page {
 	}
 
 	load() {
+
+		if(UserOnboard && document.querySelector('.setup-stages')) {
+
+			document.querySelector('.setup-stages').remove();
+			UserOnboard.setup();
+		}
 
 		let stage = null;
 

@@ -15,7 +15,9 @@ Page.class = class Connections extends Page {
 
 		(async () => {
 
-			if((await Storage.get('newUser')) && !(await Storage.get('forceClosed'))) {
+			const newUserCheck = await Storage.get('newUser');
+
+			if(newUserCheck.setup && !newUserCheck.forceClosed) {
 
 				const onboardScript = document.createElement("script");
 				onboardScript.src = '/js/user-onboard.js';
@@ -32,6 +34,12 @@ Page.class = class Connections extends Page {
 	async load() {
 
 		const responses = await this.fetch();
+
+		if(UserOnboard && document.querySelector('.setup-stages')) {
+
+			document.querySelector('.setup-stages').remove();
+			UserOnboard.setup();
+		}
 
 		this.process(responses);
 
@@ -329,6 +337,7 @@ class DataConnection {
 		const
 			parameters = {
 				id: this.id,
+				type: this.type,
 			},
 			options = {
 				method: 'POST',

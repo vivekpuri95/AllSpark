@@ -327,14 +327,6 @@ class Authenticate {
 
 	static async connection(connectionObj, user) {
 
-		if (!(user.roles && user.roles.length)) {
-
-			return {
-				error: true,
-				message: "User does not have any role.",
-			}
-		}
-
 		const objRole = new getRole();
 
 		let userPrivileges = [], connectionRoles, userConnections;

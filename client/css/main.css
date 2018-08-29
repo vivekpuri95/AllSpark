@@ -989,41 +989,71 @@ body {
 main .setup-stages {
 	position: absolute;
 	display: grid;
-	grid-template-columns: max-content repeat(4, 23%) 20px;
-	/* grid-gap: 10px; */
+	grid-template-columns: 180px repeat(4, 22%) 40px;
 	width: 100%;
 	background: #fff;
 	grid-column: 1 / 3;
 	bottom: 0;
 	justify-content: center;
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+	z-index: 4;
 }
 	main .setup-stages span {
 		justify-content: center;
 		display: flex;
-		padding: 10px 5px;
+		align-items: center;
 	}
-	main .setup-stages span.heading {
-		background: #ddd;
+	main .setup-stages a {
 		font-weight: bold;
 		letter-spacing: 0.5px;
+		font-size: 110%;
+		color: #333;
+		text-align: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	main .setup-stages a {
+		text-decoration: none;
+	}
+	main .setup-stages span.order {
+		border: 1px solid #777;
+		border-radius: 15px;
+		width: 25px;
+		padding: 0px;
+		height: 25px;
+		align-items: center;
+		align-self: center;
+		margin-right: calc(var(--gap) * 2);
+		color: #777;
+		font-size: 95%;
 	}
 	main .setup-stages .stage {
 		cursor: pointer;
-		/* display: grid; */
-		/* grid-template-columns: max-content max-content; */
 		justify-content: center;
 		display: flex;
+		padding: 12px;
+		transition: box-shadow var(--transition-duration),
+					background var(--transition-duration);
 	}
 	main .setup-stages .close {
 		cursor: pointer;
+		font-size: 90%;
+		color: #777;
 	}
-
-	main .setup-stages .stage.completed,
-	main .setup-stages .stage.selected {
-		background: #ddd;
+	main .setup-stages .stage:active,
+	main .setup-stages span.close:active,
+	main .setup-stages a:active {
+		 box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.2);
 	}
-	main .setup-stages .stage:hover,
-	main .setup-stages .close:hover {
+	main .setup-stages .stage:hover, main .setup-stages .close:hover, main .setup-stages a:hover {
 		background: #eee;
+	}
+	main .setup-stages .stage.completed,
+	main .setup-stages .stage.completed:hover {
+	background: #b0eab0;
+	}
+	main .setup-stages .stage.active,
+	main .setup-stages .stage.active:hover {
+		box-shadow: inset 0 3px var(--color-accent);
 	}
