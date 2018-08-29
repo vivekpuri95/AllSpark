@@ -58,7 +58,7 @@ class API {
 				for (const key in module) {
 
 					// Make sure the endpoint extends API class
-					if (module.hasOwnProperty(key) && module[key] && module[key].prototype && module[key].prototype.__proto__.constructor == API)
+					if (module.hasOwnProperty(key) && module[key] && module[key].prototype && module[key].prototype instanceof API)
 						API.endpoints.set([path.slice(0, -3), key].join(pathSeparator), module[key]);
 				}
 			}
@@ -144,7 +144,9 @@ class API {
 					throw new API.Exception(401, 'User Not Authenticated!');
 				}
 
-				const result = await obj[path.split(pathSeparator).pop()]();
+				const params = {...request.query, ...request.body};
+
+				const result = await obj[path.split(pathSeparator).pop()](params);
 
 				obj.result = {
 					status: result ? true : false,

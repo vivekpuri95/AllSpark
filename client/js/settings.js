@@ -215,11 +215,11 @@ Settings.list.set('privileges', class Privileges extends SettingPage {
 
 	async load() {
 
-		const response = await API.call('privileges/list');
+		Privileges.response = await API.call('privileges/list');
 
 		this.list = new Map;
 
-		for(const data of response)
+		for(const data of Privileges.response)
 			this.list.set(data.privilege_id, new SettingsPrivilege(data, this));
 
 		await this.render();
@@ -1013,6 +1013,9 @@ class SettingsPrivilege {
 		privileges.container.querySelector('#privileges-form h1').textContent = 'Add new Privileges';
 		privileges.form.reset();
 
+		if(privileges.form.parentElement.querySelector('.privilege-component'))
+			privileges.form.parentElement.querySelector('.privilege-component').remove();
+
 		privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
 		privileges.form.on('submit', SettingsPrivilege.submitListener = e => SettingsPrivilege.insert(e, privileges));
 
@@ -1055,24 +1058,26 @@ class SettingsPrivilege {
 
 	get row() {
 
-		if (this.container)
-			return this.container;
+		if (this.rowElement)
+			return this.rowElement;
 
-		this.container = document.createElement('tr');
+		const row = this.rowElement = document.createElement('tr');
 
-		this.container.innerHTML = `
+		row.innerHTML = `
 			<td>${this.privilege_id}</td>
 			<td>${this.name}</td>
 			<td>${this.is_admin ? 'Yes' : 'No'}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action green" title="Edit" disabled><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		this.container.querySelector('.green').on('click', () => this.edit());
+		if(!row.querySelector('.green.NA'))
+			row.querySelector('.green').on('click', () => this.edit());
 
-		this.container.querySelector('.red').on('click', () => this.delete());
+		if(!row.querySelector('.red.NA'))
+			row.querySelector('.red').on('click', () => this.delete());
 
-		return this.container;
+		return row;
 	}
 
 	async edit() {
@@ -1082,6 +1087,14 @@ class SettingsPrivilege {
 
 		this.privileges.form.name.value = this.name;
 		this.privileges.form.is_admin.value = this.is_admin;
+
+		this.privilegeComponent = new PrivilegeComponents(this);
+		await this.privilegeComponent.load();
+
+		if(this.privileges.form.parentElement.querySelector('.privilege-component'))
+			this.privileges.form.parentElement.querySelector('.privilege-component').remove();
+
+		this.privileges.form.parentElement.appendChild(this.privilegeComponent.container);
 
 		this.privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
 		this.privileges.form.on('submit', SettingsPrivilege.submitListener = e => this.update(e));
@@ -1153,6 +1166,216 @@ class SettingsPrivilege {
 			});
 
 		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+class PrivilegeComponents extends Set {
+
+	constructor(privilege) {
+
+		super();
+
+		Object.assign(this, privilege);
+
+		this.list = this.privileges.list;
+	}
+
+	async load() {
+
+		await this.fetch();
+
+		await this.process();
+
+		this.render();
+	}
+
+	async fetch() {
+
+		const
+			 options = {
+				"method": "POST",
+			},
+			parameter = {
+				id: this.privilege_id,
+			}
+
+		this.response = await API.call('privileges_manager/list', parameter, options);
+	}
+
+	process() {
+
+		this.list = new Map;
+
+		for(const data of this.response || [])
+			this.list.set(data.id, new PrivilegeComponent(data, this));
+	}
+
+	render() {
+
+		const formContainer = this.container;
+
+		formContainer.querySelector('.component-list').textContent = null;
+
+		for(const component of this.list.values()) {
+			formContainer.querySelector('.component-list').appendChild(component.row);
+		}
+
+		if(!this.list.size)
+			formContainer.querySelector('.component-list').innerHTML = `<div class='NA'>No Components found.</div>`;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('privilege-component');
+		container.innerHTML = `
+			<h3>Privileges Component</h3>
+
+			<form class="headings">
+
+				<label><span>Id</span></label>
+				<label><span>Privilege Name</span></label>
+				<label><span></span></label>
+			</form>
+
+			<div class="component-list"></div>
+
+			<form class="add-new-container">
+
+				<label class="add-new"></label>
+				<label>
+					<button type="submit"><i class="fa fa-plus"></i>Add</button>
+				</label>
+			</form>
+		`;
+
+		const list = [];
+
+		for(const privilege of this.privileges.list.values()) {
+
+			if(privilege.privilege_id != this.privilege_id)
+				list.push({name: privilege.name, value: privilege.privilege_id});
+		}
+
+		this.multiSelect = new MultiSelect({datalist: list, multiple: false, expand: false});
+
+		container.querySelector('label.add-new').appendChild(this.multiSelect.container);
+
+		container.querySelector('form.add-new-container').on('submit', (e) => this.add(e));
+
+		return container;
+	}
+
+	async add(e) {
+
+		e.preventDefault();
+
+		try {
+			const
+				options = {
+					method: "POST",
+				},
+				parameters = {
+					parent: this.multiSelect.value[0],
+					privilege_id: this.privilege_id,
+				};
+
+			const result = await API.call('privileges_manager/insert', parameters, options);
+
+			new SnackBar({
+				message: 'Added successfully',
+				subtitle: '',
+				icon: 'far fa-save',
+			});
+
+			await this.load();
+		}
+		catch(e) {
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+ class PrivilegeComponent {
+
+	constructor(component, privilegeComponents) {
+
+		for(const key in component)
+			this[key] = component[key];
+
+		this.privilegeComponents = privilegeComponents;
+	}
+
+	get row() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createDocumentFragment();
+
+		const id = document.createElement('label');
+		id.innerHTML = `<input class="thin" type="number" value=${this.privilege_id} readonly>`;
+
+		const list = document.createElement('label');
+		list.innerHTML = `<input type="text" value=${this.privilegeComponents.privileges.list.get(parseInt(this.privilege_id)).name} readonly>`;
+
+		const del = document.createElement('label');
+		del.innerHTML = `<button class="action delete"><i class="far fa-trash-alt"></i></button>`;
+
+		del.querySelector('.delete').on('click', () => this.delete());
+
+		container.appendChild(id);
+		container.appendChild(list);
+		container.appendChild(del);
+
+		return container;
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		try {
+
+			const
+				options = {
+					method: "POST",
+				},
+				parameter = {
+					privilege_id: this.privilege_id,
+				};
+
+			const response = await API.call('privileges_manager/delete', parameter, options);
+
+			await this.privilegeComponents.load();
+
+			new SnackBar({
+				message: 'Deleted successfully',
+				subtitle: '',
+				icon: 'far fa-trash-alt',
+			});
+		}
+		catch(e) {
 
 			new SnackBar({
 				message: 'Request Failed',
