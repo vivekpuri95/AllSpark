@@ -336,8 +336,10 @@ Settings.list.set('about', class About extends SettingPage {
 	setup() {
 
 		this.container = this.page.querySelector('.about-page');
-		this.container.innerHTML = `
-			<h2>About</h2>
+		this.section = this.container.querySelector('#about');
+
+		this.section.innerHTML = `
+			<h1>About</h1>
 		`;
 	}
 
@@ -350,9 +352,27 @@ Settings.list.set('about', class About extends SettingPage {
 
 	render() {
 
-		const container = this.infoContainer;
+		const infoContainer = this.infoContainer;
+		const clearCacheContainer = this.clearCacheContainer;
 
-		this.container.appendChild(container);
+		this.section.appendChild(infoContainer);
+		this.section.appendChild(clearCacheContainer);
+
+		Sections.show('about')
+	}
+
+	get clearCacheContainer() {
+
+		if(this.cacheContainerElement)
+			return this.cacheContainerElement;
+
+		const button = this.cacheContainerElement = document.createElement('button');
+		button.classList.add('clear-cache');
+		button.textContent = 'Clear Cache';
+
+		button.on('click', async (e) => await User.clearCache());
+
+		return button;
 	}
 
 	get infoContainer() {
@@ -366,16 +386,24 @@ Settings.list.set('about', class About extends SettingPage {
 		container.innerHTML = `
 			<span class="key">Account Id</span>
 			<span class="value">${account.account_id}</span>
+			<span class="key">Connectivity </span>
+			<span class="value">${navigator.onLine ? 'online' : 'offline'}</span>
 		`;
 
 		for(const data in this.response) {
 
 			const key = document.createElement('span');
 			key.classList.add('key');
+
+
 			key.textContent = data;
+
 
 			const value = document.createElement('span');
 			value.classList.add('value');
+
+			if(data.includes('deployed_on'))
+
 			value.textContent = this.response[data];
 
 			container.appendChild(key);

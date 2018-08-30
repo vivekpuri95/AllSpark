@@ -196,25 +196,23 @@ main .privilege-component {
 		grid-gap: calc(var(--gap) * 2);
 	}
 
-main .about-page {
-	display: flex;
-	margin: 0 auto;
-	flex-direction: column;
-	width: 40%;
+main .about-list {
+	display: grid !important;
+	grid-template-rows: max-content max-content;
+	grid-gap: calc(var(--gap) * 3);
 }
-	main .about-page h2 {
-		margin: calc(var(--gap) * 2) 0;
-		border-bottom: 1px dashed #999;
-
-	}
-	main .about-page .info {
+	main .about-list .info {
 		display: grid;
 		grid-template-columns: max-content max-content;
-		grid-gap: calc(var(--gap) * 2);
+		grid-gap: calc(var(--gap) * 3);
 		background: #fff;
 		padding: calc(var(--gap) * 2);
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
-		main .about-page .info .key {
+		main .about-list .info .key {
 			text-transform: capitalize;
 			color: #999;
 		}
+	main .about-list button.clear-cache {
+		width: 10%;
+	}
