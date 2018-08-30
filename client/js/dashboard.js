@@ -314,7 +314,7 @@ Page.class = class Dashboards extends Page {
 
 		if(await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
 
-			Page.loadScripts();
+			Page.loadOnboardScripts();
 		}
 
 		if (window.location.pathname.split('/').pop() === 'first') {

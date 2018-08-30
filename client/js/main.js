@@ -66,7 +66,7 @@ class Page {
 
 		if(await Storage.get('newUser')) {
 
-			Page.loadScripts();
+			Page.loadOnboardScripts();
 		}
 
 		DialogBox.container = document.querySelector('main');
@@ -201,7 +201,7 @@ class Page {
 		});
 	}
 
-	static async loadScripts() {
+	static async loadOnboardScripts() {
 
 		try {
 
@@ -224,7 +224,6 @@ class Page {
 			const onboardScript = document.createElement('script');
 			onboardScript.src = '/js/user-onboard.js';
 			document.head.appendChild(onboardScript);
-			await Storage.set('newUser', {});
 		}
 	}
 }

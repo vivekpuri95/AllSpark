@@ -13,6 +13,7 @@ class UserOnboard {
 		const onboard = new UserOnboard();
 
 		await onboard.load();
+		await Storage.set('newUser', {});
 	}
 
 	async load() {
