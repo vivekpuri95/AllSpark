@@ -989,7 +989,7 @@ body {
 main .setup-stages {
 	position: absolute;
 	display: grid;
-	grid-template-columns: 180px repeat(4, 22%) 40px;
+	grid-template-columns: 180px repeat(4, 1fr) 60px;
 	width: 100%;
 	background: #fff;
 	grid-column: 1 / 3;
@@ -1003,20 +1003,6 @@ main .setup-stages {
 		display: flex;
 		align-items: center;
 	}
-	main .setup-stages a {
-		font-weight: bold;
-		letter-spacing: 0.5px;
-		font-size: 110%;
-		color: #333;
-		text-align: center;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-right: 1px solid #ccc;
-	}
-	main .setup-stages a {
-		text-decoration: none;
-	}
 	main .setup-stages span.order {
 		border: 1px solid #777;
 		border-radius: 15px;
@@ -1029,19 +1015,31 @@ main .setup-stages {
 		color: #777;
 		font-size: 95%;
 	}
+	main .setup-stages a {
+		font-weight: bold;
+		letter-spacing: 0.5px;
+		font-size: 110%;
+		color: #333;
+		text-align: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-right: 1px solid #999;
+		text-decoration: none;
+	}
 	main .setup-stages .stage {
 		cursor: pointer;
 		justify-content: center;
 		display: flex;
+		border-right: 1px solid #999;
 		padding: 12px;
 		transition: box-shadow var(--transition-duration),
 					background var(--transition-duration);
-		border-right: 1px solid #ccc;
 	}
 	main .setup-stages .close {
 		cursor: pointer;
 		font-size: 90%;
-		color: #777;
+		color: #444;
 	}
 	main .setup-stages .stage:active,
 	main .setup-stages span.close:active,

@@ -15,9 +15,7 @@ Page.class = class Connections extends Page {
 
 		(async () => {
 
-			const newUserCheck = await Storage.get('newUser');
-
-			if(newUserCheck.setup && !newUserCheck.forceClosed) {
+			if(await Storage.get('newUser')) {
 
 				for(const file of ['reports.js', 'user-onboard.js']) {
 
@@ -38,15 +36,8 @@ Page.class = class Connections extends Page {
 
 		const responses = await this.fetch();
 
-		const newUserCheck = (await Storage.get('newUser'));
-
-		if(newUserCheck.setup && !newUserCheck.forceClosed) {
-
-			if(document.querySelector('.setup-stages'))
-				document.querySelector('.setup-stages').remove();
-
+		if(await Storage.get('newUser'))
 			UserOnboard.setup();
-		}
 
 		this.process(responses);
 

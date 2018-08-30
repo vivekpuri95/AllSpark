@@ -38,9 +38,7 @@ Page.class = class DashboardManager extends Page {
 
 		(async () => {
 
-			const newUserCheck = (await Storage.get('newUser'));
-
-			if(newUserCheck.setup && !newUserCheck.forceClosed) {
+			if(await Storage.get('newUser')) {
 
 				const onboardScript = document.createElement('script');
 				onboardScript.src = '/js/user-onboard.js';
@@ -108,15 +106,8 @@ Page.class = class DashboardManager extends Page {
 
 		await DataSource.load();
 
-		const newUserCheck = (await Storage.get('newUser'));
-
-		if(newUserCheck.setup && !newUserCheck.forceClosed) {
-
-			if(document.querySelector('.setup-stages'))
-				document.querySelector('.setup-stages').remove();
-
+		if(await Storage.get('newUser'))
 			UserOnboard.setup();
-		}
 
 		this.process();
 		this.render();

@@ -7,14 +7,18 @@ class UserOnboard {
 
 	static async setup() {
 
-		const onboard = new UserOnboard();
-		await onboard.load();
+		if(document.querySelector('.setup-stages'))
+			document.querySelector('.setup-stages').remove();
 
+		const onboard = new UserOnboard();
+
+		await onboard.load();
 	}
 
 	async load() {
 
 		const container = document.createElement('div');
+
 		container.classList.add('setup-stages');
 
 		container.innerHTML = `<a href="${demo_url}" target="_blank">View Demo</a>`;
@@ -32,7 +36,7 @@ class UserOnboard {
 		container.querySelector('.close').on('click', async () => {
 
 			container.remove();
-			await Storage.set('newUser', {setup: true, forceClosed: true});
+			await Storage.delete('newUser');
 		});
 
 		document.querySelector('main').appendChild(container);
@@ -190,7 +194,7 @@ UserOnboard.stages.add(class AddVisualization {
 
 		container.innerHTML = `
 			<span class="order">4</span>
-			<span>Add and configure visualization</span>
+			<span>Add Visualization</span>
 		`;
 
 		container.on('click', () => {
