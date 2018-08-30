@@ -15,14 +15,6 @@ Page.class = class Connections extends Page {
 
 		(async () => {
 
-			if(await Storage.get('newUser')) {
-
-				const script = document.createElement("script");
-				script.src = '/js/reports.js';
-
-				document.head.appendChild(script);
-			}
-
 			await this.load();
 
 			await Sections.show('list');

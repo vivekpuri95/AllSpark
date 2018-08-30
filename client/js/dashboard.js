@@ -314,11 +314,7 @@ Page.class = class Dashboards extends Page {
 
 		if(await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
 
-			const onboardScript = document.createElement('script');
-			onboardScript.src = '/js/user-onboard.js';
-
-			document.head.appendChild(onboardScript);
-			await Storage.set('newUser', {});
+			Page.loadScripts();
 		}
 
 		if (window.location.pathname.split('/').pop() === 'first') {

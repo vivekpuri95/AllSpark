@@ -16,11 +16,6 @@ Page.class = class Tasks extends Page {
 
 		(async () => {
 
-			const script = document.createElement("script");
-			script.src = '/js/reports.js';
-
-			document.head.appendChild(script);
-
 			await this.load();
 
 			this.loadState();

@@ -64,13 +64,9 @@ class Page {
 
 		await API.refreshToken();
 
-		if(await Storage.get('newUser') && !window.location.href.split('/').includes('dashboard')) {
+		if(await Storage.get('newUser')) {
 
-			const onboardScript = document.createElement('script');
-			onboardScript.src = '/js/user-onboard.js';
-
-			document.head.appendChild(onboardScript);
-			await Storage.set('newUser', {});
+			Page.loadScripts();
 		}
 
 		DialogBox.container = document.querySelector('main');
@@ -203,6 +199,33 @@ class Page {
 			if(e.keyCode == 76)
 				User.logout();
 		});
+	}
+
+	static async loadScripts() {
+
+		try {
+
+			DataSource;
+		}
+		catch(e) {
+
+			const script = document.createElement("script");
+			script.src = '/js/reports.js';
+
+			document.head.appendChild(script);
+		}
+
+		try {
+
+			UserOnboard;
+		}
+		catch(e) {
+
+			const onboardScript = document.createElement('script');
+			onboardScript.src = '/js/user-onboard.js';
+			document.head.appendChild(onboardScript);
+			await Storage.set('newUser', {});
+		}
 	}
 }
 
