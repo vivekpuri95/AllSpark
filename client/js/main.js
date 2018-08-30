@@ -68,6 +68,24 @@ class Page {
 		SnackBar.setup();
 	}
 
+	static async clearCache() {
+
+		const refresh_token = await Storage.get('refresh_token');
+
+		await Storage.clear();
+
+		Storage.set('refresh_token', refresh_token);
+
+		await API.refreshToken();
+		await MetaData.load();
+
+		new SnackBar({
+			message: 'Cache Cleared',
+			subtitle: '',
+			icon: 'fas fa-check',
+		});
+	}
+
 	constructor({container = null} = {}) {
 
 		this.container = container || document.querySelector('main');
@@ -196,7 +214,7 @@ class Page {
 
 			// Alt + O
 			if(e.keyCode == 79)
-				await User.clearCache();
+				await Page.clearCache();
 		});
 	}
 }
@@ -821,36 +839,6 @@ class User {
 			if(redirect)
 				window.location = '/login?'+parameters.toString();
 		}, 100)
-	}
-
-	static async clearCache() {
-
-
-		try {
-
-			const refresh_token = await Storage.get('refresh_token');
-
-			await Storage.clear();
-
-			Storage.set('refresh_token', refresh_token);
-
-			await API.refreshToken();
-			await MetaData.load();
-
-			new SnackBar({
-				message: 'Cache Cleared',
-				subtitle: '',
-				icon: 'fas fa-check',
-			});
-		}
-		catch(e) {
-
-			new SnackBar({
-				message: 'Request Failed',
-				subtitle: e.message,
-				type: 'error',
-			});
-		}
 	}
 
 	constructor(user) {

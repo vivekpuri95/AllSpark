@@ -210,7 +210,6 @@ main .about-list {
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
 		main .about-list .info .key {
-			text-transform: capitalize;
 			color: #999;
 		}
 	main .about-list button.clear-cache {

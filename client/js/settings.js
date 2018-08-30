@@ -370,7 +370,7 @@ Settings.list.set('about', class About extends SettingPage {
 		button.classList.add('clear-cache');
 		button.textContent = 'Clear Cache';
 
-		button.on('click', async (e) => await User.clearCache());
+		button.on('click', async (e) => await Page.clearCache());
 
 		return button;
 	}
@@ -388,23 +388,15 @@ Settings.list.set('about', class About extends SettingPage {
 			<span class="value">${account.account_id}</span>
 			<span class="key">Connectivity </span>
 			<span class="value">${navigator.onLine ? 'online' : 'offline'}</span>
+			<span class="key">Environment</span>
+			<span class="value">${this.response.name}</span>
+			<span class="key">Deployed On</span>
+			<span class="value">${this.response.deployed_on} - (<span class="NA">${Format.ago(this.response.deployed_on)}</span>)</span>
+			<span class="key">Git Checksum</span>
+			<span class="value">${this.response.gitChecksum}</span>
+			<span class="key">Branch</span>
+			<span class="value">${this.response.branch}</span>
 		`;
-
-		for(const data in this.response) {
-
-			const key = document.createElement('span');
-			key.classList.add('key');
-
-			key.textContent = data;
-
-			const value = document.createElement('span');
-			value.classList.add('value');
-
-			value.textContent = data.includes('deployed_on') ? Format.ago(this.response[data]) : this.response[data];
-
-			container.appendChild(key);
-			container.appendChild(value);
-		}
 
 		return container;
 	}
