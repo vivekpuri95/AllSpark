@@ -327,6 +327,65 @@ Settings.list.set('categories', class Categories extends SettingPage {
 	}
 });
 
+Settings.list.set('about', class About extends SettingPage {
+
+	get name() {
+		return 'About';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.about-page');
+		this.container.innerHTML = `
+			<h2>About</h2>
+		`;
+	}
+
+	async load() {
+
+		this.response = await API.call('env-info/envInfo');
+
+		this.render();
+	}
+
+	render() {
+
+		const container = this.infoContainer;
+
+		this.container.appendChild(container);
+	}
+
+	get infoContainer() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('info');
+
+		container.innerHTML = `
+			<span class="key">Account Id</span>
+			<span class="value">${account.account_id}</span>
+		`;
+
+		for(const data in this.response) {
+
+			const key = document.createElement('span');
+			key.classList.add('key');
+			key.textContent = data;
+
+			const value = document.createElement('span');
+			value.classList.add('value');
+			value.textContent = this.response[data];
+
+			container.appendChild(key);
+			container.appendChild(value);
+		}
+
+		return container;
+	}
+});
+
 class SettingsAccount {
 
 	constructor(account, page) {
@@ -1315,7 +1374,7 @@ class PrivilegeComponents extends Set {
 	}
 }
 
- class PrivilegeComponent {
+class PrivilegeComponent {
 
 	constructor(component, privilegeComponents) {
 

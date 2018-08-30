@@ -28,6 +28,7 @@ class API {
 		this.pgsql = pgsql;
 		this.mssql = msssql;
 		this.env = env.name;
+		this.abc = env;
 
 		if(context) {
 			this.user = context.user;
@@ -281,4 +282,5 @@ API.Exception = class {
 }
 
 module.exports = API;
+
 API.setup();

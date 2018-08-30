@@ -6,6 +6,8 @@ main {
 		display: flex;
 		flex-direction: column;
 		color: var(--color-primary-text);
+		height: calc(100vh - 50px);
+		border-right: 1px solid #ccc;
 	}
 		main > nav a {
 			padding: 12px 16px;
@@ -193,3 +195,26 @@ main .privilege-component {
 		grid-template-columns: 200px max-content;
 		grid-gap: calc(var(--gap) * 2);
 	}
+
+main .about-page {
+	display: flex;
+	margin: 0 auto;
+	flex-direction: column;
+	width: 40%;
+}
+	main .about-page h2 {
+		margin: calc(var(--gap) * 2) 0;
+		border-bottom: 1px dashed #999;
+
+	}
+	main .about-page .info {
+		display: grid;
+		grid-template-columns: max-content max-content;
+		grid-gap: calc(var(--gap) * 2);
+		background: #fff;
+		padding: calc(var(--gap) * 2);
+	}
+		main .about-page .info .key {
+			text-transform: capitalize;
+			color: #999;
+		}
