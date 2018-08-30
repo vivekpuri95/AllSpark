@@ -19,10 +19,13 @@ Page.class = class Connections extends Page {
 
 			if(newUserCheck.setup && !newUserCheck.forceClosed) {
 
-				const onboardScript = document.createElement("script");
-				onboardScript.src = '/js/user-onboard.js';
+				for(const file of ['reports.js', 'user-onboard.js']) {
 
-				document.head.appendChild(onboardScript);
+					const script = document.createElement("script");
+					script.src = `/js/${file}`;
+
+					document.head.appendChild(script);
+				}
 			}
 
 			await this.load();
@@ -39,7 +42,9 @@ Page.class = class Connections extends Page {
 
 		if(newUserCheck.setup && !newUserCheck.forceClosed) {
 
-			document.querySelector('.setup-stages').remove();
+			if(document.querySelector('.setup-stages'))
+				document.querySelector('.setup-stages').remove();
+
 			UserOnboard.setup();
 		}
 

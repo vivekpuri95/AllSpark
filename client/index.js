@@ -79,7 +79,7 @@ class HTMLAPI extends API {
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
 					<script>
-						const demo_url = "${config.get('demo_url') || ''}";
+						const demo_url = "${config.has('demo_url') ? config.get('demo_url') : ''}";
 					</script>
 				</head>
 				<body>
@@ -1290,7 +1290,7 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 		super();
 
 		this.stylesheets.push('/css/connections-manager.css');
-		this.scripts.push('/js/connections-manager.js', 'js/reports.js');
+		this.scripts.push('/js/connections-manager.js');
 	}
 
 	async main() {

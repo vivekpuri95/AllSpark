@@ -112,7 +112,9 @@ Page.class = class DashboardManager extends Page {
 
 		if(newUserCheck.setup && !newUserCheck.forceClosed) {
 
-			document.querySelector('.setup-stages').remove();
+			if(document.querySelector('.setup-stages'))
+				document.querySelector('.setup-stages').remove();
+
 			UserOnboard.setup();
 		}
 
