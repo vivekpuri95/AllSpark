@@ -64,6 +64,15 @@ class Page {
 
 		await API.refreshToken();
 
+		if(await Storage.get('newUser') && !window.location.href.split('/').includes('dashboard')) {
+
+			const onboardScript = document.createElement('script');
+			onboardScript.src = '/js/user-onboard.js';
+
+			document.head.appendChild(onboardScript);
+			await Storage.set('newUser', {});
+		}
+
 		DialogBox.container = document.querySelector('main');
 		SnackBar.setup();
 	}
@@ -1468,7 +1477,7 @@ class CodeEditor {
  */
 class DialogBox {
 
-	constructor({closable= true} = {}) {
+	constructor({closable = true} = {}) {
 
 		this.closable = closable;
 	}

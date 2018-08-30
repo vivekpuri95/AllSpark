@@ -9,17 +9,6 @@ class ReportsManger extends Page {
 
 		this.setup();
 
-		(async () => {
-
-   			if(await Storage.get('newUser')) {
-
-				const onboardScript = document.createElement('script');
-				onboardScript.src = '/js/user-onboard.js';
-
-				document.head.appendChild(onboardScript);
-			}
-		})();
-
 		window.onbeforeunload = () => this.container.querySelector('.unsaved');
 	}
 

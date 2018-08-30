@@ -6,21 +6,15 @@ class Users extends Page {
 
 		(async () => {
 
+			const script = document.createElement("script");
+			script.src = '/js/reports.js';
+
+			document.head.appendChild(script);
+
 			await Users.setup(this);
 			await UserManage.setup();
 
 			Privileges.setup();
-
-			if(await Storage.get('newUser')) {
-
-				for(const file of ['reports.js', 'user-onboard.js']) {
-
-					const script = document.createElement("script");
-					script.src = `/js/${file}`;
-
-					document.head.appendChild(script);
-				}
-			}
 
 			await Users.load();
 			Users.loadState();
