@@ -3,7 +3,7 @@ const API = require('../utils/api');
 class Info extends API {
 
 	envInfo() {
-		return this.abc;
+		return this.env;
 	}
 }
 

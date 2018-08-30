@@ -395,16 +395,12 @@ Settings.list.set('about', class About extends SettingPage {
 			const key = document.createElement('span');
 			key.classList.add('key');
 
-
 			key.textContent = data;
-
 
 			const value = document.createElement('span');
 			value.classList.add('value');
 
-			if(data.includes('deployed_on'))
-
-			value.textContent = this.response[data];
+			value.textContent = data.includes('deployed_on') ? Format.ago(this.response[data]) : this.response[data];
 
 			container.appendChild(key);
 			container.appendChild(value);

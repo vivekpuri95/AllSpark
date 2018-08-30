@@ -27,8 +27,7 @@ class API {
 		this.mysql = mysql;
 		this.pgsql = pgsql;
 		this.mssql = msssql;
-		this.env = env.name;
-		this.abc = env;
+		this.env = env;
 
 		if(context) {
 			this.user = context.user;
