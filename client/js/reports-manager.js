@@ -9,17 +9,6 @@ class ReportsManger extends Page {
 
 		this.setup();
 
-		(async () => {
-
-   			if(await Storage.get('newUser')) {
-
-				const onboardScript = document.createElement('script');
-				onboardScript.src = '/js/user-onboard.js';
-
-				document.head.appendChild(onboardScript);
-			}
-		})();
-
 		window.onbeforeunload = () => this.container.querySelector('.unsaved');
 	}
 
@@ -389,6 +378,9 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 	async load() {
 
 		this.page.stages.get('configure-visualization').lastSelectedVisualizationId = null;
+
+		if(await Storage.get('newUser'))
+			UserOnboard.setup();
 
 		const
 			theadSearch = document.querySelectorAll('.column-search'),

@@ -13,6 +13,7 @@ class UserOnboard {
 		const onboard = new UserOnboard();
 
 		await onboard.load();
+		await Storage.set('newUser', {});
 	}
 
 	async load() {
@@ -38,6 +39,11 @@ class UserOnboard {
 			container.remove();
 			await Storage.delete('newUser');
 		});
+
+		if(container.querySelectorAll('.completed').length == 4) {
+
+			await Storage.delete('newUser');
+		}
 
 		document.querySelector('main').appendChild(container);
 	}

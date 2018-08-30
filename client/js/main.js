@@ -64,6 +64,11 @@ class Page {
 
 		await API.refreshToken();
 
+		if(await Storage.get('newUser')) {
+
+			Page.loadOnboardScripts();
+		}
+
 		DialogBox.container = document.querySelector('main');
 		SnackBar.setup();
 	}
@@ -194,6 +199,32 @@ class Page {
 			if(e.keyCode == 76)
 				User.logout();
 		});
+	}
+
+	static async loadOnboardScripts() {
+
+		try {
+
+			DataSource;
+		}
+		catch(e) {
+
+			const script = document.createElement("script");
+			script.src = '/js/reports.js';
+
+			document.head.appendChild(script);
+		}
+
+		try {
+
+			UserOnboard;
+		}
+		catch(e) {
+
+			const onboardScript = document.createElement('script');
+			onboardScript.src = '/js/user-onboard.js';
+			document.head.appendChild(onboardScript);
+		}
 	}
 }
 
@@ -1578,6 +1609,11 @@ class CodeEditor {
  */
 class DialogBox {
 
+	constructor({closable = true} = {}) {
+
+		this.closable = closable;
+	}
+
 	/**
 	 * The main container of the Dialog Box.
 	 *
@@ -1597,16 +1633,24 @@ class DialogBox {
 
 		container.innerHTML = `
 			<section class="dialog-box">
-				<header><h3></h3><span class="close"><i class="fa fa-times"></i></span></header>
+				<header><h3></h3></header>
 				<div class="body"></div>
 			</section>
 		`;
 
-		container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
+		if(this.closable) {
+
+			container.querySelector('header').insertAdjacentHTML(
+				'beforeend',
+				'<span class="close"><i class="fa fa-times"></i></span>'
+			);
+
+			container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
+
+			container.on('click', () => this.hide());
+		}
 
 		container.querySelector('.dialog-box').on('click', e => e.stopPropagation());
-
-		container.on('click', () => this.hide());
 
 		this.hide();
 
@@ -1659,15 +1703,18 @@ class DialogBox {
 	 */
 	show() {
 
-		document.body.removeEventListener('keyup', this.keyUpListener);
+		if(this.closable) {
 
-		document.body.on('keyup', this.keyUpListener = e => {
+			document.body.removeEventListener('keyup', this.keyUpListener);
 
-			if(e.keyCode == 27) {
+			document.body.on('keyup', this.keyUpListener = e => {
 
-				this.hide();
-			}
-		});
+				if(e.keyCode == 27) {
+
+					this.hide();
+				}
+			});
+		}
 
 		this.container.classList.remove('hidden');
 	}

@@ -11,19 +11,6 @@ class Users extends Page {
 
 			Privileges.setup();
 
-			const newUserCheck = await Storage.get('newUser');
-
-			if(newUserCheck.setup && !newUserCheck.forceClosed) {
-
-				for(const file of ['reports.js', 'user-onboard.js']) {
-
-					const script = document.createElement("script");
-					script.src = `/js/${file}`;
-
-					document.head.appendChild(script);
-				}
-			}
-
 			await Users.load();
 			Users.loadState();
 		})();

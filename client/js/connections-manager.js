@@ -15,17 +15,6 @@ Page.class = class Connections extends Page {
 
 		(async () => {
 
-			if(await Storage.get('newUser')) {
-
-				for(const file of ['reports.js', 'user-onboard.js']) {
-
-					const script = document.createElement("script");
-					script.src = `/js/${file}`;
-
-					document.head.appendChild(script);
-				}
-			}
-
 			await this.load();
 
 			await Sections.show('list');
