@@ -39,6 +39,11 @@ class UserOnboard {
 			await Storage.delete('newUser');
 		});
 
+		if(container.querySelectorAll('.completed').length == 4) {
+
+			await Storage.delete('newUser');
+		}
+
 		document.querySelector('main').appendChild(container);
 	}
 }
