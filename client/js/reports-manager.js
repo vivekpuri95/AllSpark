@@ -67,9 +67,6 @@ class ReportsManger extends Page {
 
 	async load() {
 
-		if(await Storage.get('newUser'))
-			UserOnboard.setup();
-
 		let stage = null;
 
 		for(const [key, _stage] of this.stages) {
@@ -215,7 +212,7 @@ class ReportsMangerStage {
 		return container;
 	}
 
-	select() {
+	async select() {
 
 		if(this.page.stages.selected)
 			this.page.stages.selected.switcher.classList.remove('selected');
@@ -248,6 +245,9 @@ class ReportsMangerStage {
 		}
 
 		this.load();
+
+		if(await Storage.get('newUser'))
+			UserOnboard.setup();
 	}
 
 	set disabled(disabled) {
@@ -378,9 +378,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 	async load() {
 
 		this.page.stages.get('configure-visualization').lastSelectedVisualizationId = null;
-
-		if(await Storage.get('newUser'))
-			UserOnboard.setup();
 
 		const
 			theadSearch = document.querySelectorAll('.column-search'),

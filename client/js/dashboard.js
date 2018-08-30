@@ -314,6 +314,8 @@ Page.class = class Dashboards extends Page {
 
 		if(await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
 
+			await Storage.set('newUser', (await Storage.get('newUser')) || {});
+
 			Page.loadOnboardScripts();
 		}
 

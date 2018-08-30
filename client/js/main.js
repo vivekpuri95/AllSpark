@@ -210,8 +210,8 @@ class Page {
 		catch(e) {
 
 			const script = document.createElement("script");
-			script.src = '/js/reports.js';
 
+			script.src = '/js/reports.js';
 			document.head.appendChild(script);
 		}
 
@@ -222,6 +222,7 @@ class Page {
 		catch(e) {
 
 			const onboardScript = document.createElement('script');
+
 			onboardScript.src = '/js/user-onboard.js';
 			document.head.appendChild(onboardScript);
 		}
