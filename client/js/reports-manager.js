@@ -9,6 +9,17 @@ class ReportsManger extends Page {
 
 		this.setup();
 
+		(async () => {
+
+   			if(await Storage.get('newUser')) {
+
+				const onboardScript = document.createElement('script');
+				onboardScript.src = '/js/user-onboard.js';
+
+				document.head.appendChild(onboardScript);
+			}
+		})();
+
 		window.onbeforeunload = () => this.container.querySelector('.unsaved');
 	}
 
@@ -65,7 +76,10 @@ class ReportsManger extends Page {
 		this.connections = new Map(this.connections.map(c => [c.id, c]));
 	}
 
-	load() {
+	async load() {
+
+		if(await Storage.get('newUser'))
+			UserOnboard.setup();
 
 		let stage = null;
 

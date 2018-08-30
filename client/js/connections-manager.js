@@ -15,6 +15,17 @@ Page.class = class Connections extends Page {
 
 		(async () => {
 
+			if(await Storage.get('newUser')) {
+
+				for(const file of ['reports.js', 'user-onboard.js']) {
+
+					const script = document.createElement("script");
+					script.src = `/js/${file}`;
+
+					document.head.appendChild(script);
+				}
+			}
+
 			await this.load();
 
 			await Sections.show('list');
@@ -24,6 +35,9 @@ Page.class = class Connections extends Page {
 	async load() {
 
 		const responses = await this.fetch();
+
+		if(await Storage.get('newUser'))
+			UserOnboard.setup();
 
 		this.process(responses);
 
@@ -321,6 +335,7 @@ class DataConnection {
 		const
 			parameters = {
 				id: this.id,
+				type: this.type,
 			},
 			options = {
 				method: 'POST',

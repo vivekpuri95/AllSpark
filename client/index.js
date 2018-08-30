@@ -58,7 +58,7 @@ class HTMLAPI extends API {
 				           _ _  _____                  _
 				     /\\   | | |/ ____|                | |
 				    /  \\  | | | (___  _ __   __ _ _ __| | __
-				   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
+				   / /\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
 				  / ____ \\| | |____) | |_) | (_| | |  |   <
 				 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
 				                     | |
@@ -78,6 +78,9 @@ class HTMLAPI extends API {
 
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
+					<script>
+						const demo_url = "${config.has('demo_url') ? config.get('demo_url') : ''}";
+					</script>
 				</head>
 				<body>
 
