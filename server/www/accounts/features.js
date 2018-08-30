@@ -1,4 +1,5 @@
 const API = require('../../utils/api.js');
+const onServerStart = require('../../onServerStart');
 
 exports.toggle = class extends API {
 	async toggle() {
@@ -21,10 +22,14 @@ exports.toggle = class extends API {
 		if(!feature)
 			throw new API.Exception(400, 'Invalid feature ID');
 
-		return await this.mysql.query(`
+		const insertResponse = await this.mysql.query(`
 			INSERT INTO tb_account_features(account_id, feature_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE status = ?`,
 			[this.request.body.account_id, this.request.body.feature_id, this.request.body.status],
 			'write'
 		);
+
+		await onServerStart.loadAccounts();
+
+		return insertResponse;
 	}
 }
