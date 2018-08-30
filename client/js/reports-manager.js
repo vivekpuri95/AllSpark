@@ -390,6 +390,9 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		this.page.stages.get('configure-visualization').lastSelectedVisualizationId = null;
 
+		if(await Storage.get('newUser'))
+			UserOnboard.setup();
+
 		const
 			theadSearch = document.querySelectorAll('.column-search'),
 			tbody = this.container.querySelector('tbody');

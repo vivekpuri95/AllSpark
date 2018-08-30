@@ -11,9 +11,7 @@ class Users extends Page {
 
 			Privileges.setup();
 
-			const newUserCheck = await Storage.get('newUser');
-
-			if(newUserCheck.setup && !newUserCheck.forceClosed) {
+			if(await Storage.get('newUser')) {
 
 				for(const file of ['reports.js', 'user-onboard.js']) {
 
