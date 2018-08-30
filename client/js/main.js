@@ -1260,6 +1260,116 @@ class AJAXLoader {
 
 class Format {
 
+	static ago(timestamp) {
+
+		if(!timestamp)
+			return '';
+
+		const
+			currentSeconds = Date.parse(timestamp),
+			agoFormat = [
+				{
+					unit: 60,
+					minimum: 5,
+					name: 'second',
+				},
+				{
+					unit: 60,
+					minimum: 1,
+					name: 'minute',
+				},
+				{
+					unit: 24,
+					minimum: 1,
+					name: 'hour',
+					prefix: 'An',
+				},
+				{
+					unit: 7,
+					minimum: 1,
+					name: 'day',
+				},
+				{
+					unit: 4.3,
+					minimum: 1,
+					name: 'week',
+				},
+				{
+					unit: 12,
+					minimum: 1,
+					name: 'month',
+				},
+				{
+					name: 'year',
+				},
+			];
+
+		//If the time is future.
+		if(currentSeconds > Date.now())
+			return '';
+
+		//If the date is invalid;
+		if(!currentSeconds)
+			return 'Invalid Date';
+
+		let
+			time = Math.floor((Date.now() - currentSeconds) / 1000),
+			finalString = '',
+			format = agoFormat[0];
+
+		for(const data of agoFormat) {
+
+			//If the time format is year then break.
+			if(agoFormat.indexOf(data) >= agoFormat.length - 1)
+				break;
+
+			format = data;
+
+			format.time = time;
+
+			time = Math.floor(time / format.unit);
+
+			if(!time)
+				break;
+		}
+
+		//Special case for year.
+		const years = time % 12;
+
+		if(years) {
+
+			finalString = years == 1 ? 'A year ago' : Format.dateTime(timestamp);
+		}
+		else
+			finalString = calculateAgo(format);
+
+
+		function calculateAgo(format) {
+
+			const
+				range = format.unit - (0.15 * format.unit),
+				time = format.time % format.unit,
+				index = agoFormat.indexOf(format);
+
+			let string = `${time} ${format.name}s ago`;
+
+			if(time <= format.minimum)
+				string = format.name.includes('second') ? 'Just Now' : `${format.prefix || 'A'} ${format.name} ago`;
+			else if(time >= range) {
+
+				let
+					nextFormat = agoFormat[index + 1],
+					prefix = nextFormat.prefix || 'a';
+
+				string = `About ${prefix.toLowerCase()} ${nextFormat.name} ago`;
+			}
+
+			return string;
+		}
+
+		return finalString;
+	}
+
 	static date(date) {
 
 		const options = {

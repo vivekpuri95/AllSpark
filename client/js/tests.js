@@ -13,7 +13,6 @@ Page.class = class Tests extends Page {
 		Sections.show('list');
 	}
 
-
 	async load() {
 
 		await this.process();
@@ -548,6 +547,129 @@ const tests = {
 
 				snackbar.show();
 				snackbar.hide();
+			}
+		},
+	},
+
+	'Format.Ago': {
+
+		InvalidDate: class InvalidDate extends Test {
+
+			async execute() {
+
+				const string = Format.ago('2018-08-29 29:36:08');
+
+				this.assert(string == 'Invalid Date');
+			}
+		},
+
+		FutureDate: class FutureDate extends Test {
+
+			async execute() {
+
+				//added 1 day to today to check future case.
+
+				const date = new Date(Date.now() + (60 * 60 * 1000 * 24));
+
+				const string = Format.ago(date);
+
+				this.assert(string == '');
+			}
+		},
+
+		Justnow: class Justnow extends Test {
+
+			async execute() {
+
+				const date = new Date(Date.now() - 4000);
+
+				const string = Format.ago(date);
+
+				this.assert(string == 'Just Now');
+			}
+		},
+
+		SecondsAgo: class SecondsAgo extends Test {
+
+			async execute() {
+
+				const date = new Date(Date.now() - 10000);
+
+				const string = Format.ago(date);
+
+				this.assert(string == '10 seconds ago');
+			}
+		},
+
+		minutesAgo: class minutesAgo extends Test {
+
+			async execute() {
+
+				const date = new Date(Date.now() - (60000 * 5));
+
+				const string = Format.ago(date);
+
+				this.assert(string == '5 minutes ago');
+			}
+		},
+
+		hoursAgo: class hoursAgo extends Test {
+
+			async execute() {
+
+				const date = new Date(Date.now() - (3600000 * 5));
+
+				const string = Format.ago(date);
+
+				this.assert(string == '5 hours ago');
+			}
+		},
+
+		daysAgo: class daysAgo extends Test {
+
+			async execute() {
+
+				const date = new Date(Date.now() - (86400000 * 5));
+
+				const string = Format.ago(date);
+
+				this.assert(string == '5 days ago');
+			}
+		},
+
+		weeksAgo: class weeksAgo extends Test {
+
+			async execute() {
+
+				const date = new Date(Date.now() - (86400000 * 15));
+
+				const string = Format.ago(date);
+
+				this.assert(string == '2 weeks ago');
+			}
+		},
+
+		yearAgo: class yearAgo extends Test {
+
+			async execute() {
+
+				const date = new Date(Date.now() - (86400000 * 365));
+
+				const string = Format.ago(date);
+
+				this.assert(string == 'A year ago');
+			}
+		},
+
+		monthsAgo: class monthsAgo extends Test {
+
+			async execute() {
+
+				const date = new Date(Date.now() - (86400000 * 40));
+
+				const string = Format.ago(date);
+
+				this.assert(string == 'A month ago');
 			}
 		},
 	},
