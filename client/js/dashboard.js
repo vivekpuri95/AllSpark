@@ -64,7 +64,7 @@ Page.class = class Dashboards extends Page {
 		menuBar.appendChild(this.menuBarToggle);
 
 		document.querySelector('body').on('click', () => {
-			this.menuBarToggle.classList.remove('selected');
+			menuBar.querySelector('.menu-header-toggle').classList.remove('selected');
 			document.querySelector('.nav-container nav').classList.add('hidden');
 		})
 
