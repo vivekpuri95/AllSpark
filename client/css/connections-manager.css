@@ -41,7 +41,7 @@ main h2.share-heading {
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		width: 350px;
+		width: 200px;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		transform: perspective(500px) translatez(0);
 		transition: box-shadow var(--transition-duration),
