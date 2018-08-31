@@ -868,8 +868,11 @@ class User {
 					registration.unregister();
 			}
 
-			if(redirect)
+			if(account.settings.has("logout_redirect_url") && account.settings.get("logout_redirect_url"))
+				window.open(account.settings.get("logout_redirect_url"), "_self");
+			else if(redirect)
 				window.location = '/login?'+parameters.toString();
+
 		}, 100)
 	}
 
@@ -1063,7 +1066,7 @@ class AJAX {
 		AJAXLoader.hide();
 
 		if(response.status == 401)
-			return User.logout({redirect: options.redirectOnLogout});
+			return User.logout({next: true, redirect: options.redirectOnLogout});
 
 		return response.headers.get('content-type').includes('json') ? await response.json() : await response.text();
 	}

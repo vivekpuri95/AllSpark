@@ -100,6 +100,7 @@ Page.class = class Login extends Page {
 			options = {
 				method: 'POST',
 				form: new FormData(this.container.querySelector('#accept-email form')),
+				redirectOnLogout: false,
 			};
 
 		let accounts;
@@ -267,7 +268,9 @@ Page.class = class Login extends Page {
 
 			this.message('Login Successful! Redirecting&hellip;', 'notice');
 
-			window.location = '../';
+			const param = new URLSearchParams(window.location.search);
+
+			window.location = param.get('continue') || '../';
 
 		} catch(error) {
 			this.message(error.message || error, 'warning');

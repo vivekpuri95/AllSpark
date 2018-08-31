@@ -509,6 +509,12 @@ class SettingsAccount {
 				multiple: false,
 			},
 			{
+				key: 'logout_redirect_url',
+				type: 'url',
+				name: 'Logout Url',
+				description: 'Redirect user to specified url',
+			},
+			{
 				key: 'global_filters_position',
 				type: 'multiselect',
 				name: 'Global Filters Position',
