@@ -101,6 +101,8 @@ class UserOnboard {
 				<span class="figure"><i class="fas fa-cogs"></i></span>
 				<span>Configure Manually</span>
 			</a>
+
+			<a class="skip">Skip &nbsp;<i class="fas fa-arrow-right"></i></a>
 		`;
 
 		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => this.dialogBox.hide);
