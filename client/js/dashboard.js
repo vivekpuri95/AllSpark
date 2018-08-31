@@ -59,6 +59,10 @@ Page.class = class Dashboards extends Page {
 			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
 		}
 
+		const menuBar = document.querySelector('header');
+		menuBar.querySelector('.nav-container nav').classList.add('toggle-right', 'hidden');
+		menuBar.appendChild(this.menuBarToggle);
+
 		this.listContainer.form.subtitle.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
 
@@ -72,6 +76,27 @@ Page.class = class Dashboards extends Page {
 
 			await this.load();
 		})();
+	}
+
+	get menuBarToggle() {
+
+		if(this.element)
+			return this.element;
+
+		const div = this.element = document.createElement('div');
+		div.classList.add('menu-header-toggle');
+
+		const i = document.createElement('i');
+		i.classList.add('fas', 'fa-chevron-down');
+
+		div.appendChild(i);
+
+		div.on('click', () => {
+			div.classList.toggle('selected');
+			document.querySelector('.nav-container nav').classList.toggle('hidden');
+		})
+
+		return div;
 	}
 
 	get currentDashboard() {
@@ -357,7 +382,6 @@ Page.class = class Dashboards extends Page {
 
 			return this.render({dashboardId: currentId, renderNav: true, updateNav: false});
 		}
-
 	}
 
 	async report(id) {
