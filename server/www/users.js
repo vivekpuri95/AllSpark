@@ -318,7 +318,7 @@ exports.list = class extends API {
 
 		if(!constants.adminCategory.some(x => userCategories.includes(x))) {
 
-			userList = userList.filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))));
+			userList = userList.filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))) || x.user_id === this.user.user_id);
 		}
 
 		return userList;
