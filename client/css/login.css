@@ -1,10 +1,11 @@
 main {
 	margin: 0 auto;
-	width: 300px;
+	width: 350px;
 	display: flex;
 	flex-direction: column;
 	overflow: visible;
 	justify-content: center;
+	height: 100vh;
 }
 main > * {
 	margin: var(--gap) 0;
@@ -14,16 +15,22 @@ main > * {
 		background: var(--color-secondary);
 		padding: 20px 50px;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+		border-radius: 2px;
 	}
 		main .logo img {
 			width: 100%;
 		}
 	main > section {
 		background: #fff;
-		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+		box-shadow: 1px 1px 15px rgba(0, 0, 0, 0.1);
+		border-radius: 2px;
+	}
+	main section:not(#message) {
+		padding: 30px 20px;
 	}
 		main .form {
 			padding: 0;
+			grid-gap: calc(var(--gap) * 5);
 		}
 			main .form.reset,
 			main .form.forgot {
@@ -34,6 +41,13 @@ main > * {
 		main .form label {
 			max-width: initial;
 		}
+			main .form input {
+				font-size: 110% !important;
+			}
+			main .form input,
+			main .form button {
+				height: 40px !important;
+			}
 		main form div {
 			display: flex;
 			align-items: center;
