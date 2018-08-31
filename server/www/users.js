@@ -357,7 +357,6 @@ exports.metadata = class extends API {
 
 	async metadata() {
 
-
 		const [
 			categoriesPrivilegesRoles,
 			visualizations,
@@ -470,13 +469,12 @@ exports.metadata = class extends API {
 		}
 
 		metadata.globalFilters = globalFilters;
-		metadata.filterTypes = filterTypes;
+		metadata.filterTypes = constants.filterTypes;
 		metadata.sourceTypes = sourceTypes;
 		metadata.features = features;
 		metadata.spatialMapThemes = spatialMapThemes;
 		metadata.visualizations = visualizations;
 		metadata.datasources = datasources;
-
 
 		for (const data of metadata.globalFilters) {
 
