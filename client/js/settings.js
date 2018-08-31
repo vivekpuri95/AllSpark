@@ -327,6 +327,81 @@ Settings.list.set('categories', class Categories extends SettingPage {
 	}
 });
 
+Settings.list.set('about', class About extends SettingPage {
+
+	get name() {
+		return 'About';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.about-page');
+		this.section = this.container.querySelector('#about');
+
+		this.section.innerHTML = `
+			<h1>About</h1>
+		`;
+	}
+
+	async load() {
+
+		this.response = await API.call('env-info/envInfo');
+
+		this.render();
+	}
+
+	render() {
+
+		const infoContainer = this.infoContainer;
+		const clearCacheContainer = this.clearCacheContainer;
+
+		this.section.appendChild(infoContainer);
+		this.section.appendChild(clearCacheContainer);
+
+		Sections.show('about')
+	}
+
+	get clearCacheContainer() {
+
+		if(this.cacheContainerElement)
+			return this.cacheContainerElement;
+
+		const button = this.cacheContainerElement = document.createElement('button');
+		button.classList.add('clear-cache');
+		button.textContent = 'Clear Cache';
+
+		button.on('click', async (e) => await Page.clearCache());
+
+		return button;
+	}
+
+	get infoContainer() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('info');
+
+		container.innerHTML = `
+			<span class="key">Account Id</span>
+			<span class="value">${account.account_id}</span>
+			<span class="key">Connectivity </span>
+			<span class="value">${navigator.onLine ? 'online' : 'offline'}</span>
+			<span class="key">Environment</span>
+			<span class="value">${this.response.name}</span>
+			<span class="key">Deployed On</span>
+			<span class="value">${this.response.deployed_on} - (<span class="NA">${Format.ago(this.response.deployed_on)}</span>)</span>
+			<span class="key">Git Checksum</span>
+			<span class="value">${this.response.gitChecksum}</span>
+			<span class="key">Branch</span>
+			<span class="value">${this.response.branch}</span>
+		`;
+
+		return container;
+	}
+});
+
 class SettingsAccount {
 
 	constructor(account, page) {
@@ -1315,7 +1390,7 @@ class PrivilegeComponents extends Set {
 	}
 }
 
- class PrivilegeComponent {
+class PrivilegeComponent {
 
 	constructor(component, privilegeComponents) {
 

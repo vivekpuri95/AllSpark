@@ -6,6 +6,8 @@ main {
 		display: flex;
 		flex-direction: column;
 		color: var(--color-primary-text);
+		height: calc(100vh - 50px);
+		border-right: 1px solid #ccc;
 	}
 		main > nav a {
 			padding: 12px 16px;
@@ -192,4 +194,24 @@ main .privilege-component {
 		display: grid;
 		grid-template-columns: 200px max-content;
 		grid-gap: calc(var(--gap) * 2);
+	}
+
+main .about-list {
+	display: grid !important;
+	grid-template-rows: max-content max-content;
+	grid-gap: calc(var(--gap) * 3);
+}
+	main .about-list .info {
+		display: grid;
+		grid-template-columns: max-content max-content;
+		grid-gap: calc(var(--gap) * 3);
+		background: #fff;
+		padding: calc(var(--gap) * 2);
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+	}
+		main .about-list .info .key {
+			color: #999;
+		}
+	main .about-list button.clear-cache {
+		width: 10%;
 	}

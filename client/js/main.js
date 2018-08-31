@@ -73,6 +73,24 @@ class Page {
 		SnackBar.setup();
 	}
 
+	static async clearCache() {
+
+		const refresh_token = await Storage.get('refresh_token');
+
+		await Storage.clear();
+
+		Storage.set('refresh_token', refresh_token);
+
+		await API.refreshToken();
+		await MetaData.load();
+
+		new SnackBar({
+			message: 'Cache Cleared',
+			subtitle: '',
+			icon: 'fas fa-check',
+		});
+	}
+
 	constructor({container = null} = {}) {
 
 		this.container = container || document.querySelector('main');
@@ -186,7 +204,7 @@ class Page {
 
 	shortcuts() {
 
-		document.on('keyup', e => {
+		document.on('keyup', async (e) => {
 
 			if(!e.altKey)
 				return;
@@ -198,6 +216,10 @@ class Page {
 			// Alt + L
 			if(e.keyCode == 76)
 				User.logout();
+
+			// Alt + O
+			if(e.keyCode == 79)
+				await Page.clearCache();
 		});
 	}
 

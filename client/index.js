@@ -1708,6 +1708,10 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					</form>
 				</section>
 			</div>
+
+			<div class="setting-page about-page hidden">
+				<section class="section about-list" id="about"></section>
+			</div>
 		`;
 	}
 }));
