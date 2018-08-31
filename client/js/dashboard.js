@@ -63,6 +63,11 @@ Page.class = class Dashboards extends Page {
 		menuBar.querySelector('.nav-container nav').classList.add('toggle-right', 'hidden');
 		menuBar.appendChild(this.menuBarToggle);
 
+		document.querySelector('body').on('click', () => {
+			this.menuBarToggle.classList.remove('selected');
+			document.querySelector('.nav-container nav').classList.add('hidden');
+		})
+
 		this.listContainer.form.subtitle.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
 
@@ -80,18 +85,20 @@ Page.class = class Dashboards extends Page {
 
 	get menuBarToggle() {
 
-		if(this.element)
-			return this.element;
+		if(this.menuBarToggleElement)
+			return this.menuBarToggleElement;
 
 		const div = this.element = document.createElement('div');
 		div.classList.add('menu-header-toggle');
 
-		const i = document.createElement('i');
-		i.classList.add('fas', 'fa-chevron-down');
+		div.innerHTML = `
+			<i class="fas fa-chevron-down"></i>
+		`;
 
-		div.appendChild(i);
+		div.on('click', (e) => {
 
-		div.on('click', () => {
+			e.stopPropagation();
+
 			div.classList.toggle('selected');
 			document.querySelector('.nav-container nav').classList.toggle('hidden');
 		})
