@@ -1350,6 +1350,20 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 
 			</section>
 
+			<section class="section" id="add-connection">
+
+				<h1>Add New Connection</h1>
+
+				<div id="add-connection-picker">
+
+					<div class="toolbar">
+						<button id="connection-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
+					</div>
+
+					<form id="add-connection-form"></form>
+				</div>
+			</section>
+
 			<section class="section" id="form">
 
 				<h1></h1>
@@ -1367,11 +1381,6 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 					<label>
 						<span>Name</span>
 						<input type="text" name="connection_name" required>
-					</label>
-
-					<label id="connections">
-						<span>Type</span>
-						<select name="type"></select>
 					</label>
 
 					<div id="details"></div>

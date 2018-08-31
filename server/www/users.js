@@ -354,11 +354,20 @@ exports.changePassword = class extends API {
 }
 
 exports.metadata = class extends API {
+
 	async metadata() {
 
-		const user_id = this.user.user_id;
+		const [
+			categoriesPrivilegesRoles,
+			visualizations,
+			globalFilters,
+			sourceTypes,
+			features,
+			spatialMapThemes,
+			datasources
+		] = await Promise.all([
 
-		const categoriesPrivilegesRoles = await this.mysql.query(`
+			this.mysql.query(`
                 SELECT
                     'categories' AS 'type',
                     category_id as owner_id,
@@ -397,22 +406,10 @@ exports.metadata = class extends API {
                 WHERE
                     account_id = ?
             `,
-			[this.account.account_id, this.account.account_id, this.account.account_id]
-		);
+				[this.account.account_id, this.account.account_id, this.account.account_id]
+			),
 
-		const metadata = {};
-
-		for (const row of categoriesPrivilegesRoles) {
-
-			if (!metadata[row.type]) {
-
-				metadata[row.type] = [];
-			}
-
-			metadata[row.type].push(row);
-		}
-
-		metadata.visualizations = await this.mysql.query(`
+			this.mysql.query(`
 			SELECT
 				v.*
 			FROM
@@ -429,21 +426,15 @@ exports.metadata = class extends API {
 			ON
 				f.slug = v.slug
 			`,
-			[this.account.account_id]
-		);
+				[this.account.account_id]
+			),
 
-		metadata.globalFilters = await this.mysql.query(
-			'SELECT * FROM tb_global_filters WHERE account_id = ? AND is_enabled = 1',
-			[this.account.account_id]
-		);
+			this.mysql.query(
+				'SELECT * FROM tb_global_filters WHERE account_id = ? AND is_enabled = 1',
+				[this.account.account_id]
+			),
 
-		for (const data of metadata.globalFilters) {
-			data.placeholder = data.placeholder.split(',');
-		}
-
-		metadata.filterTypes = constants.filterTypes;
-
-		metadata.sourceTypes = await this.mysql.query(`
+			this.mysql.query(`
 			SELECT
 				f.slug
 			FROM
@@ -456,12 +447,39 @@ exports.metadata = class extends API {
 				AND f.type = 'source'
 				AND af.account_id = ?
 			`,
-			[this.account.account_id]
-		);
+				[this.account.account_id]
+			),
+			this.mysql.query('SELECT * from tb_features'),
 
-		metadata.features = await this.mysql.query('SELECT * from tb_features');
+			this.mysql.query('select * from tb_spatial_map_themes'),
 
-		metadata.spatialMapThemes = await this.mysql.query('select * from tb_spatial_map_themes');
+			this.mysql.query('select * from tb_datasources'),
+		]);
+
+		const metadata = {};
+
+		for (const row of categoriesPrivilegesRoles) {
+
+			if (!metadata[row.type]) {
+
+				metadata[row.type] = [];
+			}
+
+			metadata[row.type].push(row);
+		}
+
+		metadata.globalFilters = globalFilters;
+		metadata.filterTypes = constants.filterTypes;
+		metadata.sourceTypes = sourceTypes;
+		metadata.features = features;
+		metadata.spatialMapThemes = spatialMapThemes;
+		metadata.visualizations = visualizations;
+		metadata.datasources = datasources;
+
+		for (const data of metadata.globalFilters) {
+
+			data.placeholder = data.placeholder.split(',');
+		}
 
 		return metadata;
 	}
