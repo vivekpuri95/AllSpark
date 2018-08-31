@@ -921,6 +921,7 @@ class MetaData {
 		MetaData.categories = new Map;
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
+		MetaData.datasources = new Map;
 		MetaData.visualizations = new Map;
 		MetaData.filterTypes = new Map;
 		MetaData.features = new Set;
@@ -985,6 +986,7 @@ class MetaData {
 
 		MetaData.spatialMapThemes =  new Map(metadata.spatialMapThemes.map(x => [x.name, JSON.parse(x.theme)]));
 		MetaData.filterTypes = new Map(metadata.filterTypes.map(x => [x.name.toLowerCase(), x]));
+		MetaData.datasources = new Map(metadata.datasources.map(v => [v.slug, v]));
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
 		MetaData.globalFilters = new Map(metadata.globalFilters.map(d => [d.id, d]));

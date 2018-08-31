@@ -97,28 +97,7 @@ class DataConnection {
 		DataConnection.form = DataConnection.container.querySelector('form');
 
 		DataConnection.container.querySelector('.toolbar #back').on('click', () => Sections.show('list'));
-
-		DataConnection.form.type.on('change', function() {
-			DataConnection.types.get(this.value).render();
-		});
-
-		for(const [type, _] of DataConnection.types) {
-
-			let feature;
-
-			for(const _feature of MetaData.features.values()) {
-
-				if(_feature.slug == type && _feature.type == 'source')
-					feature = _feature;
-			}
-
-			if(!feature)
-				continue;
-
-			DataConnection.form.type.insertAdjacentHTML('beforeend', `
-				<option value="${feature.slug}">${feature.name}</option>
-			`);
-		}
+		page.container.querySelector('#connection-picker-back').on('click', () => Sections.show('list'));
 	}
 
 	static async add(page) {
@@ -133,12 +112,74 @@ class DataConnection {
 		DataConnection.container.querySelector('h1').textContent = 'Add New Connection';
 		DataConnection.form.on('submit', DataConnection.submitListener = e => DataConnection.insert(e, page));
 
-		DataConnection.form.type.disabled = false;
-		DataConnection.types.get(DataConnection.form.type.value).render();
-
-		await Sections.show('form');
-
 		DataConnection.form.connection_name.focus();
+
+		const addConnectionForm = page.container.querySelector('#add-connection-form');
+
+		addConnectionForm.textContent = null;
+
+		for(const connection of MetaData.datasources.values()) {
+
+			let feature;
+
+			for(const _feature of MetaData.features.values()) {
+
+				if(_feature.slug == connection.slug && _feature.type == 'source')
+					feature = _feature;
+			}
+
+			// if(!feature)
+			// 	continue;
+
+			const label = document.createElement('label');
+
+			label.dataset.slug = connection.slug;
+
+			label.innerHTML = `
+				<figure>
+					<img alt="${connection.name}">
+					<span class="loader"><i class="fa fa-spinner fa-spin"></i></span>
+					<span class="NA hidden">Preview not available!</span>
+					<figcaption>${connection.name}</figcaption>
+				</figure>
+			`;
+
+			const
+				img = label.querySelector('img'),
+				loader = label.querySelector('.loader'),
+				NA = label.querySelector('.NA');
+
+			img.on('load', () => {
+				img.classList.add('show');
+				loader.classList.add('hidden');
+			});
+
+			img.on('error', () => {
+				NA.classList.remove('hidden');
+				loader.classList.add('hidden');
+			});
+
+			img.src = connection.image;
+
+			label.on('click', async () => {
+
+				if(addConnectionForm.querySelector('figure.selected'))
+					addConnectionForm.querySelector('figure.selected').classList.remove('selected');
+
+				label.querySelector('figure').classList.add('selected');
+
+				DataConnection.types.get(connection.slug).render();
+
+				await Sections.show('form');
+			});
+
+			addConnectionForm.appendChild(label);
+		}
+
+		if(!MetaData.datasources.size)
+			addConnectionForm.innerHTML = `<div class="NA">No connections found</div>`;
+
+		await Sections.show('add-connection');
 	}
 
 	static async insert(e, page) {
@@ -147,7 +188,7 @@ class DataConnection {
 
 		const
 			parameters = {
-				type: DataConnection.form.type.value,
+				type: page.container.querySelector('#add-connection-form .selected').dataset.value,
 			},
 			options = {
 				method: 'POST',
@@ -155,6 +196,7 @@ class DataConnection {
 			};
 
 		try {
+
 			const response = await API.call('credentials/insert', parameters, options);
 
 			await DataConnection.page.load();
@@ -364,7 +406,7 @@ class DataConnection {
 		container.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.connection_name}</td>
-			<td>${this.feature.name}</td>
+			<td>${this.feature ? this.feature.name : ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
