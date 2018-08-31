@@ -98,9 +98,6 @@ Page.class = class DashboardManager extends Page {
 
 		await DataSource.load();
 
-		if(await Storage.get('newUser'))
-			UserOnboard.setup();
-
 		this.process();
 		this.render();
 	}
@@ -210,6 +207,9 @@ class DashboardsDashboard {
 			DashboardsDashboard.page.list.get(response.insertId).edit();
 
 			history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
+
+			if(await Storage.get('newUser'))
+				UserOnboard.setup();
 
 			new SnackBar({
 				message: 'Dashboard Added',

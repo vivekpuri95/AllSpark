@@ -15,58 +15,102 @@ class UserOnboard {
 
 		this.page = window.page;
 		this.stages = [];
+		this.progress = 0;
 	}
 
 	async load() {
 
 		this.stages = [];
 
-		const stageLoads = [];
-
 		for(const stage of UserOnboard.stages.values()) {
 
 			const stageObj = new stage();
+			await stageObj.load();
 
-			this.stages.push(stageObj);
+			this.progress = this.progress + (stageObj.progress || 0);
 
-			stageLoads.push(stageObj.load());
+			if(!stageObj.isCompleted) {
+				this.stages.push(stageObj);
+				break;
+			}
 		}
-
-		await Promise.all(stageLoads);
 
 		if(this.stages.every(stage => stage.isCompleted))
 			return await Storage.delete('newUser');
 
-		if(document.querySelector('main .setup-stages'))
-			document.querySelector('main .setup-stages').remove();
+		if(document.querySelector('.setup-stages'))
+			document.querySelector('.setup-stages').remove();
 
-		document.querySelector('main').appendChild(this.container);
+		document.body.appendChild(this.container);
 
-		this.loadWelcomeDialogBox();
+// 		this.loadWelcomeDialogBox();
 	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
+
+			for(const stage of this.stages) {
+
+				stage.container.style.background = `linear-gradient(to right,  #b3f0b3 0%,#b3f0b3 ${this.progress}%, #d9e3f7 ${this.progress}%, #d9e3f7 100%)`;
+			}
+
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('setup-stages');
 
-		container.innerHTML = `<a href="${demo_url}" target="_blank">View Demo</a>`;
+		container.innerHTML = `
+			<a href="${demo_url}" target="_blank">View Demo</a>
+		`;
 
-		for(const stage of this.stages)
+		let next;
+
+		for(const stage of this.stages) {
+
 			container.appendChild(stage.container);
+			stage.container.style.background = `linear-gradient(to right,  #b3f0b3 0%,#b3f0b3 ${this.progress}%, #d9e3f7 ${this.progress}%, #d9e3f7 100%)`;
+			next = stage.next;
+		}
 
-		container.insertAdjacentHTML('beforeend', '<span class="close">Skip</span>');
+		container.insertAdjacentHTML('beforeend', `
+			<div class="next stage">Next:</div>
+			<div class="skip">Skip</div>
+		`);
 
-		container.querySelector('.close').on('click', async () => {
+		const nextStep = container.querySelector('.next');
+
+		if(next) {
+
+			nextStep.insertAdjacentHTML('beforeend', `<span>${next.title}</span>`);
+
+			nextStep.on('click', () => {
+
+				window.location = next.url;
+			});
+
+			container.querySelector('.skip').on('click', async () => {
 
 			container.remove();
 
 			await Storage.delete('newUser');
 		});
+		}
+		else {
+
+			nextStep.textContent = 'Dismiss';
+
+			nextStep.on('click', async () => {
+
+				container.remove();
+
+				await Storage.delete('newUser');
+			});
+			container.querySelector('.skip').remove();
+			container.style['grid-template-columns'] = '180px 1fr 150px';
+		}
 
 		return container;
 	}
@@ -125,9 +169,9 @@ class UserOnboard {
 	}
 }
 
-UserOnboard.stages = new Set();
+UserOnboard.stages = new Map();
 
-UserOnboard.stages.add(class AddConnection {
+UserOnboard.stages.set('add-connection', class AddConnection {
 
 	get container() {
 
@@ -137,14 +181,11 @@ UserOnboard.stages.add(class AddConnection {
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('stage');
 
-		container.innerHTML = `
-			<span class="order">1</span>
-			<span>Add Connection</span>
-		`;
+		container.innerHTML = `<span>Add Connection</span>`;
 
 		container.on('click', () => {
 
-			window.location = '/connections-manager';
+			window.location = this.url;
 		});
 
 		if(window.location.pathname.split('/').pop() == 'connections-manager') {
@@ -153,6 +194,11 @@ UserOnboard.stages.add(class AddConnection {
 		}
 
 		return container;
+	}
+
+	get url() {
+
+		return '/connections-manager';
 	}
 
 	async load() {
@@ -165,12 +211,18 @@ UserOnboard.stages.add(class AddConnection {
 
 			this.isCompleted = true;
 			this.container.classList.add('completed');
-			this.container.querySelector('span.order').innerHTML = '<i class="fa fa-check"></i>';
+
+			this.progress = 10;
 		}
+		
+		this.next = {
+			title: 'Add Report',
+			url: '/reports'
+		};
 	}
 });
 
-UserOnboard.stages.add(class AddReport {
+UserOnboard.stages.set('add-report', class AddReport {
 
 	get container() {
 
@@ -180,10 +232,7 @@ UserOnboard.stages.add(class AddReport {
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('stage');
 
-		container.innerHTML = `
-			<span class="order">2</span>
-			<span>Create Report</span>
-		`;
+		container.innerHTML = `<span>Create Report</span>`;
 
 		container.on('click', () => {
 
@@ -208,12 +257,18 @@ UserOnboard.stages.add(class AddReport {
 
 			this.isCompleted = true;
 			this.container.classList.add('completed');
-			this.container.querySelector('span.order').innerHTML = '<i class="fa fa-check"></i>';
+
+			this.progress = 50;
 		}
+
+		this.next = {
+			title: 'Add Dashboard',
+			url: '/dashboards-manager/add'
+		};
 	}
 });
 
-UserOnboard.stages.add(class AddDashboard {
+UserOnboard.stages.set('add-dashboard', class AddDashboard {
 
 	get container() {
 
@@ -223,10 +278,7 @@ UserOnboard.stages.add(class AddDashboard {
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('stage');
 
-		container.innerHTML = `
-			<span class="order">3</span>
-			<span>Create Dashboard</span>
-		`;
+		container.innerHTML = `<span>Create Dashboard</span>`;
 
 		container.on('click', () => {
 
@@ -251,12 +303,18 @@ UserOnboard.stages.add(class AddDashboard {
 
 			this.isCompleted = true;
 			this.container.classList.add('completed');
-			this.container.querySelector('span.order').innerHTML = '<i class="fa fa-check"></i>';
+
+			this.progress = 25;
 		}
+
+		this.next = {
+			title: 'Add Visualization',
+			url: '/reports'
+		};
 	}
 });
 
-UserOnboard.stages.add(class AddVisualization {
+UserOnboard.stages.set('add-visualization', class AddVisualization {
 
 	get container() {
 
@@ -266,10 +324,7 @@ UserOnboard.stages.add(class AddVisualization {
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('stage');
 
-		container.innerHTML = `
-			<span class="order">4</span>
-			<span>Create Visualization</span>
-		`;
+		container.innerHTML = `<span>Create Visualization</span>`;
 
 		container.on('click', () => {
 
@@ -295,8 +350,8 @@ UserOnboard.stages.add(class AddVisualization {
 			if(this.report.visualizations.length) {
 
 				this.isCompleted = true;
+				this.progress = 25;
 				this.container.classList.add('completed');
-				this.container.querySelector('span.order').innerHTML = '<i class="fa fa-check"></i>';
 			}
 		}
 	}

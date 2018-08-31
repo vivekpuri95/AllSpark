@@ -25,9 +25,6 @@ Page.class = class Connections extends Page {
 
 		const responses = await this.fetch();
 
-		if(await Storage.get('newUser'))
-			UserOnboard.setup();
-
 		this.process(responses);
 
 		this.render();
@@ -204,6 +201,9 @@ class DataConnection {
 			const connection = page.dataConnections.get(response.insertId);
 
 			connection.edit();
+
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup();
 
 			new SnackBar({
 				message: `${connection.feature.name} Connection Added`,
