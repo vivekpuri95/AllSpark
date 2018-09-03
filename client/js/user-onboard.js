@@ -43,7 +43,7 @@ class UserOnboard {
 
 		document.body.appendChild(this.container);
 
-// 		this.loadWelcomeDialogBox();
+		this.loadWelcomeDialogBox();
 	}
 
 	get container() {
