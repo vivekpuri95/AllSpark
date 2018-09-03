@@ -14,7 +14,7 @@ exports.list = class extends API {
 		let query = `
 			SELECT
 				q.*,
-				CONCAT(u.first_name, ' ', u.last_name) AS added_by_name
+				CONCAT_WS(' ', u.first_name, u.last_name) AS added_by_name
 			FROM
 				tb_query q
 			LEFT JOIN
@@ -301,18 +301,18 @@ exports.logs = class extends API {
 		this.request.query.offset = this.request.query.offset ? parseInt(this.request.query.offset) : 0;
 
 		return await this.mysql.query(`
-			SELECT 
+			SELECT
 				h.*,
 				CONCAT_WS(' ', first_name, middle_name, last_name) AS user_name
-			FROM 
+			FROM
 				${db}.tb_report_history h
 			LEFT JOIN
 				tb_users u
-			ON 
+			ON
 				h.updated_by = u.user_id
-			WHERE 
-				owner = ? 
-				AND h.account_id = ? 
+			WHERE
+				owner = ?
+				AND h.account_id = ?
 				AND owner_id = ?
 			ORDER BY
 				h.id DESC
