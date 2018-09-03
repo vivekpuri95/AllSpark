@@ -15,12 +15,12 @@ class UserOnboard {
 
 		this.page = window.page;
 		this.stages = [];
-		this.progress = 0;
 	}
 
 	async load() {
 
 		this.stages = [];
+		this.progress = 0;
 
 		for(const stage of UserOnboard.stages.values()) {
 
@@ -47,16 +47,6 @@ class UserOnboard {
 	}
 
 	get container() {
-
-		if(this.containerElement) {
-
-			for(const stage of this.stages) {
-
-				stage.container.style.background = `linear-gradient(to right,  #b3f0b3 0%,#b3f0b3 ${this.progress}%, #d9e3f7 ${this.progress}%, #d9e3f7 100%)`;
-			}
-
-			return this.containerElement;
-		}
 
 		const container = this.containerElement = document.createElement('div');
 
@@ -193,6 +183,10 @@ UserOnboard.stages.set('add-connection', class AddConnection {
 			container.classList.add('active');
 		}
 
+		if(this.isCompleted) {
+			container.classList.add('completed');
+		}
+
 		return container;
 	}
 
@@ -210,11 +204,9 @@ UserOnboard.stages.set('add-connection', class AddConnection {
 			this.connection = response[0];
 
 			this.isCompleted = true;
-			this.container.classList.add('completed');
-
 			this.progress = 10;
 		}
-		
+
 		this.next = {
 			title: 'Add Report',
 			url: '/reports'
@@ -244,6 +236,10 @@ UserOnboard.stages.set('add-report', class AddReport {
 			container.classList.add('active');
 		}
 
+		if(this.isCompleted) {
+			container.classList.add('completed');
+		}
+
 		return container;
 	}
 
@@ -256,9 +252,7 @@ UserOnboard.stages.set('add-report', class AddReport {
 			this.report = DataSource.list.values().next().value;
 
 			this.isCompleted = true;
-			this.container.classList.add('completed');
-
-			this.progress = 50;
+			this.progress = 40;
 		}
 
 		this.next = {
@@ -288,6 +282,10 @@ UserOnboard.stages.set('add-dashboard', class AddDashboard {
 		if(window.location.pathname.split('/').pop() == 'dashboards-manager') {
 
 			container.classList.add('active');
+		}
+
+		if(this.isCompleted) {
+			container.classList.add('completed');
 		}
 
 		return container;
@@ -334,6 +332,10 @@ UserOnboard.stages.set('add-visualization', class AddVisualization {
 		if(window.location.pathname.split('/').pop() == 'pick-visualization') {
 
 			container.classList.add('active');
+		}
+
+		if(this.isCompleted) {
+			container.classList.add('completed');
 		}
 
 		return container;

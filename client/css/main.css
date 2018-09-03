@@ -1066,10 +1066,10 @@ body {
 	.setup-stages .stage:hover,
 	.setup-stages .skip:hover,
 	.setup-stages a:hover {
-		background: var(--color-hover);
+		background: var(--color-hover) !important;
 	}
 	.setup-stages .stage:hover:after {
-		/*border-left-color: var(--color-hover);*/
+		border-left-color: var(--color-hover);
 	}
 	.setup-stages .stage:active,
 	.setup-stages .skip:active,

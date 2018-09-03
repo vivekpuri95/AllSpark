@@ -1670,6 +1670,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			this.container.querySelector('#add-visualization-picker').classList.add('hidden');
 			this.container.querySelector('#visualization-list').classList.remove('hidden');
 
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup();
+
 			new SnackBar({
 				message: `${visualization.name} Visualization Added`,
 				subtitle: `${this.report.name} #${response.insertId}`,
