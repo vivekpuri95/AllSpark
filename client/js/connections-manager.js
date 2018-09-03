@@ -188,7 +188,7 @@ class DataConnection {
 
 		const
 			parameters = {
-				type: page.container.querySelector('#add-connection-form .selected').dataset.value,
+				type: page.container.querySelector('#add-connection-form .selected').parentElement.dataset.slug,
 			},
 			options = {
 				method: 'POST',
@@ -267,14 +267,12 @@ class DataConnection {
 
 		test.on('click', DataConnection.test_listener = async () => this.test());
 
-		DataConnection.form.type.disabled = true;
-
 		for(const key in this) {
 			if(DataConnection.form.elements[key])
 				DataConnection.form.elements[key].value = this[key];
 		}
 
-		DataConnection.types.get(DataConnection.form.type.value).render(this);
+		DataConnection.types.get(this.type).render(this);
 
 		await Sections.show('form');
 
@@ -380,7 +378,7 @@ class DataConnection {
 
 			new SnackBar({
 				message: `${this.feature.name} Connection Removed`,
-				subtitle: `${this.name} #${this.id}`,
+				subtitle: `${this.connection_name} #${this.id}`,
 				icon: 'far fa-trash-alt',
 			});
 
