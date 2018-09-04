@@ -434,6 +434,10 @@ class report extends API {
 		catch (e) {
 
 			console.error(e.stack);
+			if(e.message.includes("<!DOCTYPE")) {
+
+				e.message = e.message.slice(0, e.message.indexOf("<!DOCTYPE")).trim();
+			}
 			throw new API.Exception(400, e.message);
 		}
 
