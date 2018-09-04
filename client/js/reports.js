@@ -3348,6 +3348,8 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 	get domain() {
 
 		return new Map([
+			['hour', 'Hour'],
+			['day', 'Day'],
 			['week', 'Week'],
 			['month', 'Month'],
 		]);
@@ -3364,18 +3366,33 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 		for(const row of response) {
 
-			let period;
+			let
+				period,
+				timing;
 
 			const periodDate = new Date(row.get(timingColumn.key));
 
 			// Week starts from monday, not sunday
-			if(this.value == 'week')
-				period = periodDate.getDay() ? periodDate.getDay() - 1 : 6;
+			if(this.value == 'week') {
+				period = (periodDate.getDay() ? periodDate.getDay() - 1 : 6) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
 
-			else if(this.value == 'month')
-				period = periodDate.getDate() - 1;
+			else if(this.value == 'month') {
+				period = (periodDate.getDate() - 1) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
 
-			const timing = new Date(Date.parse(row.get(timingColumn.key)) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			else if(this.value == 'day') {
+				period = periodDate.getHours() * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
+
+			else if(this.value == 'hour') {
+				period = periodDate.getMinutes() * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13);
+			}
+
 
 			if(!result.has(timing)) {
 
