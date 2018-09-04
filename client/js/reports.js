@@ -3348,6 +3348,8 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 	get domain() {
 
 		return new Map([
+			['second', 'Second'],
+			['minute', 'Minute'],
 			['hour', 'Hour'],
 			['day', 'Day'],
 			['week', 'Week'],
@@ -3391,6 +3393,16 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 			else if(this.value == 'hour') {
 				period = periodDate.getMinutes() * 60 * 1000;
 				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13);
+			}
+
+			else if(this.value == 'minute') {
+				period = periodDate.getSeconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16);
+			}
+
+			else if(this.value == 'second') {
+				period = periodDate.getMilliseconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 19);
 			}
 
 
