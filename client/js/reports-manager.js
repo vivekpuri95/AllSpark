@@ -1828,43 +1828,18 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.page.load();
 		});
 
-		// const historyToggle = this.container.querySelector('#history-configure-visualization');
+		const historyToggle = this.container.querySelector('#history-configure-visualization');
 
-		// historyToggle.on('click',async () =>{
-		//
-		// 	historyToggle.classList.toggle('selected');
-		// 	this.visualizationLogs.toggle(historyToggle.classList.contains('selected'));
-		//
-		// 	this.page.container.classList.toggle('compact', historyToggle.classList.contains('selected'));
-		//
-		// 	if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
-		// 		await this.visualizationLogs.load();
-		// });
-	}
+		historyToggle.on('click',async () =>{
 
-	setupConfigurationSetions(container) {
+			historyToggle.classList.toggle('selected');
+			this.visualizationLogs.toggle(historyToggle.classList.contains('selected'));
 
-		if(!container)
-			container = this.container;
+			this.page.container.classList.toggle('compact', historyToggle.classList.contains('selected'));
 
-		for(const section of container.querySelectorAll('.configuration-section')) {
-
-			const
-				body = section.querySelector('.body'),
-				h3 = section.querySelector('h3');
-
-			body.classList.add('hidden');
-
-			h3.on('click', () => {
-
-				body.classList.toggle('hidden');
-
-				for(const svg of h3.querySelectorAll('.fa-angle-right, .fa-angle-down'))
-					svg.remove();
-
-				h3.insertAdjacentHTML('afterbegin', body.classList.contains('hidden') ? '<i class="fas fa-angle-right"></i>' : '<i class="fas fa-angle-down"></i>');
-			});
-		}
+			if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
+				await this.visualizationLogs.load();
+		});
 	}
 
 	get url() {
@@ -1916,6 +1891,24 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.container.appendChild(this.visualizationManager.container);
 
+		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
+
+		const visualizationLogsSelected = this.container.querySelector('#history-configure-visualization').classList.contains('selected')
+
+		this.visualizationLogs.toggle(visualizationLogsSelected);
+
+		if(visualizationLogsSelected) {
+
+			this.visualizationLogs.load();
+0		}
+
+		if(this.page.container.querySelector('.query-history')) {
+
+			this.page.container.querySelector('.query-history').remove();
+		}
+
+		this.page.container.appendChild(this.visualizationLogs.container);
+
 		this.dashboards = new ReportVisualizationDashboards(this);
 
 		if(this.container.querySelector('.configuration-section.dashboards')) {
@@ -1932,13 +1925,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.visualizationManager.load();
 
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
-
-		this.setupConfigurationSetions();
-
-		const first = this.container.querySelector('.configuration-section');
-
-		if(first && first.querySelector('.body.hidden'))
-			first.querySelector('h3').click();
 	}
 });
 
@@ -2052,6 +2038,13 @@ class VisualizationManager {
 		this.transformations.load();
 		this.container.querySelector('.options').appendChild(this.optionsForm.form);
 
+		this.setupConfigurationSetions();
+
+		const first = this.container.querySelector('.configuration-section');
+
+		if(first && first.querySelector('.body.hidden'))
+			first.querySelector('h3').click();
+
 	}
 
 	async update(e) {
@@ -2131,6 +2124,31 @@ class VisualizationManager {
 				name: this.json.name
 			}
 		});
+	}
+
+	setupConfigurationSetions(container) {
+
+		if(!container)
+			container = this.container;
+
+		for(const section of container.querySelectorAll('.configuration-section')) {
+
+			const
+				body = section.querySelector('.body'),
+				h3 = section.querySelector('h3');
+
+			body.classList.add('hidden');
+
+			h3.on('click', () => {
+
+				body.classList.toggle('hidden');
+
+				for(const svg of h3.querySelectorAll('.fa-angle-right, .fa-angle-down'))
+					svg.remove();
+
+				h3.insertAdjacentHTML('afterbegin', body.classList.contains('hidden') ? '<i class="fas fa-angle-right"></i>' : '<i class="fas fa-angle-down"></i>');
+			});
+		}
 	}
 }
 
@@ -2213,13 +2231,59 @@ class QueryLog extends ReportLog {
 	}
 }
 
+class VisualizationLog extends ReportLog {
+
+	load() {
+
+		const logInfo = this.logs.container.querySelector('.info');
+
+		logInfo.classList.remove('hidden');
+		this.logs.container.querySelector('.list').classList.add('hidden');
+
+		logInfo.querySelector('.toolbar').innerHTML =  `
+			<button class="back"><i class="fa fa-arrow-left"></i> Back to history</button>
+			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
+			<button class="preview"><i class="fas fa-eye"></i> Preview</button>
+			<span class="log-title">
+				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
+			</span>
+		`;
+
+		logInfo.querySelector('.toolbar button.back').on('click', () => {
+
+			this.logs.container.querySelector('.list').classList.remove('hidden');
+			logInfo.classList.add('hidden');
+		});
+
+		logInfo.querySelector('.toolbar .restore').on('click', () => {
+
+		});
+
+		logInfo.querySelector('.toolbar .preview').on('click', () => {
+
+
+		});
+
+		const queryInfo = this.logs.container.querySelector('.info div.log-form');
+
+		queryInfo.classList.remove('block');
+		queryInfo.classList.add('logs-configure-visualization');
+
+		this.logsVisualizationManager = new VisualizationManager(this.logs.owner, this.logs.page);
+		queryInfo.appendChild(this.logsVisualizationManager.container);
+
+		this.logsVisualizationManager.load();
+
+	}
+}
+
 class ReportConnection {
 
-	constructor(report, stage, readOnly = false) {
+	constructor(report, stage, logsEditor = false) {
 
 		this.report = report;
 		this.stage = stage;
-		this.readOnly = readOnly;
+		this.logsEditor = logsEditor;
 	}
 
 	get form() {
@@ -2246,18 +2310,6 @@ class ReportConnection {
 			}
 
 			this.form.elements[key].value = json[key];
-
-			if(this.readOnly) {
-
-				if(this.form.elements[key].tagName == 'SELECT') {
-
-					this.form.elements[key].disabled = true;
-				}
-				else {
-
-					this.form.elements[key].readOnly = true;
-				}
-			}
 		}
 
 		if(this.editor) {
@@ -2276,15 +2328,14 @@ ReportConnection.types = new Map();
 
 ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2344,15 +2395,14 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2412,15 +2462,14 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2480,15 +2529,14 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('bigquery', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2815,15 +2863,14 @@ ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConne
 
 ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'javascript'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2892,15 +2939,14 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('oracle', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -3285,7 +3331,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		container.querySelector('.configuration-section').appendChild(this.axes.container);
 
-		this.stage.setupConfigurationSetions(container);
+
 
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
@@ -3685,7 +3731,7 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 		this.form = this.visualization.options;
 
-		this.stage.setupConfigurationSetions(container);
+
 
 		return container;
 	}
@@ -3766,8 +3812,6 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 		for(const element of this.formContainer.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
 
-		this.stage.setupConfigurationSetions(container);
-
 		return container;
 	}
 });
@@ -3828,8 +3872,6 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 		this.layers = new SpatialMapOptionsLayers(this.visualization.options.layers || [], this);
 
 		container.querySelector('.configuration-section').appendChild(this.layers.container);
-
-		this.stage.setupConfigurationSetions(container);
 
 		const mapOptions = container.querySelector('.map-options');
 
@@ -3923,8 +3965,6 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 		for(const element of this.formContainer.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
-
-		this.stage.setupConfigurationSetions(container);
 
 		return container;
 	}
@@ -4044,8 +4084,6 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		this.subReports.value = (this.visualization.options && this.visualization.options.subReports) || [];
 
-		this.stage.setupConfigurationSetions(container);
-
 		return container;
 	}
 
@@ -4093,8 +4131,6 @@ ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisuali
 
 		for(const element of this.formContainer.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
-
-		this.stage.setupConfigurationSetions(container);
 
 		return container;
 	}

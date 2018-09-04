@@ -430,7 +430,7 @@ main.preview-left #stages {
 	#stage-configure-visualization .toolbar .right {
 		margin-left: auto;
 	}
-	#stage-configure-visualization h3 {
+	.visualization-form h3 {
 		color: #444;
 		border-bottom: 1px dashed #999;
 		cursor: pointer;
@@ -449,7 +449,7 @@ main.preview-left #stages {
 	#stage-configure-visualization h3:hover {
 		color: inherit;
 	}
-		#stage-configure-visualization h3 > i {
+		.visualization-form h3 > i {
 			margin-right: var(--gap);
 			width: 10px;
 			transition: margin-right var(--transition-duration);
@@ -460,7 +460,7 @@ main.preview-left #stages {
 	#stage-configure-visualization h4 {
 		margin: 0 0 calc(var(--gap) * 2)
 	}
-	#stage-configure-visualization fieldset {
+	.visualization-form fieldset {
 		background: #fff;
 		padding: calc(var(--gap) * 2);
 		margin: 0;
@@ -468,7 +468,7 @@ main.preview-left #stages {
 		border: 0;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
-		#stage-configure-visualization fieldset legend {
+		.visualization-form fieldset legend {
 			font-size: 90%;
 			border: 1px solid #ccc;
 			padding: 2px 8px;
@@ -477,7 +477,7 @@ main.preview-left #stages {
 			background: #fff;
 			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 		}
-	#stage-configure-visualization .subform {
+	.visualization-form .subform {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
 		padding: calc(var(--gap) * 2);
@@ -505,7 +505,7 @@ main.preview-left #stages {
 			grid-template-columns: minmax(max-content, 200px) max-content;
 			grid-gap: calc(var(--gap) * 2);
 		}
-	#stage-configure-visualization #configure-visualization-form {
+	.visualization-form #configure-visualization-form {
 		display: flex;
 		flex-direction: column;
 	}
@@ -513,7 +513,7 @@ main.preview-left #stages {
 		display: flex;
 		flex-direction: column;
 	}
-	#stage-configure-visualization #transformations-preview {
+	.visualization-form #transformations-preview {
 		height: 15px;
 		margin-left: auto;
 		display: flex;
@@ -562,12 +562,6 @@ main.preview-left #stages {
 			#stage-configure-visualization .transformations .transformation.stream .columns {
 				grid-row: 2;
 			}
-		#stage-configure-visualization .transformations .add-transformation .form {
-			grid-template-columns: minmax(max-content, 200px) max-content;
-			background: transparent;
-			padding: 0;
-			grid-gap: calc(var(--gap) * 2);
-		}
 	#stage-configure-visualization .dashboards {
 	}
 		#stage-configure-visualization .dashboards .form {
@@ -593,7 +587,8 @@ main.preview-left #stages {
 
 	#stage-configure-visualization .filters {
 	}
-		#stage-configure-visualization .filters .form {
+		.visualization-form .transformations .add-transformation .form,
+		.visualization-form .filters .add-filter .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;
 			background: transparent;
 			grid-gap: calc(var(--gap) * 2);
@@ -625,13 +620,13 @@ main.preview-left #stages {
 			display: flex;
 			align-items: center;
 		}
-		#stage-configure-visualization .configuration-section .body {
+		.visualization-form .configuration-section .body {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 			padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
 			background: #eee;
 		}
-			#stage-configure-visualization .configuration-section .body .list .NA {
+			.visualization-form .configuration-section .body .list .NA {
 				background: #fff;
 				padding: calc(var(--gap) * 2);
 				box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);

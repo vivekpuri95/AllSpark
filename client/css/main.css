@@ -782,8 +782,7 @@ body {
 		z-index: 2;
 	}
 
-.query-history {
-}
+.query-history {overflow: auto;}
 	.query-history a {
 		color: #888;
 		width: max-content;
