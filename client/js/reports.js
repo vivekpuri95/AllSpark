@@ -7843,13 +7843,14 @@ class SpatialMapTheme {
 
 class ReportLogs extends Set {
 
-	constructor(report, page, logtype) {
+	constructor(owner, page, logType) {
 
 		super();
 
-		this.report = report;
+		this.owner = owner;
 		this.page = page;
-		this.logClass = logtype;
+		this.logClass = logType.class;
+		this.ownerName = logType.name;
 	}
 
 	get container() {
@@ -7875,7 +7876,7 @@ class ReportLogs extends Set {
 			</div>
 			<div class="info hidden">
 				<div class="toolbar"></div>
-				<div class="block"></div>
+				<div class="log-form block"></div>
 			</div>
 		`;
 
@@ -7899,8 +7900,8 @@ class ReportLogs extends Set {
 
 		const
 			parameters = {
-				query_id: this.report.query_id,
-				owner: 'query',
+				owner_id: this.owner[this.ownerName + '_id'],
+				owner: this.ownerName,
 				offset: this.size,
 			};
 
@@ -7959,7 +7960,7 @@ class ReportLog {
 		this.logs = logs;
 
 		try {
-			this.value = JSON.parse(this.value);
+			this.state = JSON.parse(this.state);
 		}
 		catch(e) {}
 
@@ -7986,45 +7987,6 @@ class ReportLog {
 		container.querySelector('a').on('click', e => e.stopPropagation());
 
 		return container;
-	}
-
-	load() {
-
-		const logInfo = this.logs.container.querySelector('.info');
-
-		logInfo.classList.remove('hidden');
-		this.logs.container.querySelector('.list').classList.add('hidden');
-
-		logInfo.querySelector('.toolbar').innerHTML =  `
-			<button class="back"><i class="fa fa-arrow-left"></i> Back</button>
-			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
-			<button class="run"><i class="fas fa-sync"></i> Run</button>
-			<span class="log-title">
-				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
-			</span>
-		`;
-
-		logInfo.querySelector('.toolbar button.back').on('click', () => {
-
-			this.logs.container.querySelector('.list').classList.remove('hidden');
-			logInfo.classList.add('hidden');
-		});
-
-		logInfo.querySelector('.toolbar .restore').on('click', () => {
-
-			this.logs.report.connection.formJson = this.connection.json;
-
-			new SnackBar({
-				message: this.query_id + ' Query Restored',
-				subtitle: 'The  restored query is not saved yet and will be lost on page reload.',
-				icon: 'fa fa-plus',
-			});
-		});
-
-		logInfo.querySelector('.toolbar .run').on('click', () => {
-
-			this.logs.page.preview(this.connection.json);
-		});
 	}
 }
 

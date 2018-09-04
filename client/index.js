@@ -929,7 +929,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
 						<button id="edit-data-toggle"><i class="fas fa-edit"></i> Edit Data</button>
 						<button id="run"><i class="fas fa-sync"></i> Run</button>
-						<button id="history-toggle"><i class="fa fa-history"></i> Query History</button>
+						<button id="history-toggle"><i class="fa fa-history"></i> History</button>
 					</header>
 
 					<div id="define-report-parts">
@@ -1062,63 +1062,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div class="toolbar">
 						<button type="button" id="configure-visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
 						<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
-						<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>
-					</div>
-
-					<form id="configure-visualization-form">
-
-						<div class="configuration-section">
-							<h3><i class="fas fa-angle-right"></i> General</h3>
-
-							<div class="body">
-								<div class="form subform">
-									<label>
-										<span>Name</span>
-										<input type="text" name="name" required>
-									</label>
-
-									<label>
-										<span>Visualization Type</span>
-										<select name="type" required></select>
-									</label>
-
-									<label>
-										<span>Description</span>
-										<textarea  name="description" rows="4" cols="50"></textarea>
-									</label>
-								</div>
-							</div>
-						</div>
-
-						<div class="options"></div>
-
-					</form>
-
-					<div class="configuration-section">
-
-						<h3>
-							<i class="fas fa-angle-right"></i>
-							Transformations
-							<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
-							<span class="count transformation"></span>
-						</h3>
-
-						<div class="body" id="transformations"></div>
-					</div>
-
-					<div class="configuration-section">
-
-						<h3><i class="fas fa-angle-right"></i> Dashboards <span class="count"></span></h3>
-
-						<div class="body" id="dashboards"></div>
-					</div>
-
-					<div class="configuration-section">
-
-						<h3><i class="fas fa-angle-right"></i> Filters <span class="count"></span></h3>
-
-						<div class="body" id="filters"></div>
-
+						<!--<button type="button" id="history-configure-visualization"><i class="fa fa-history"></i> History</button>-->
 					</div>
 
 				</section>

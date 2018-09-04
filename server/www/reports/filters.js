@@ -19,7 +19,22 @@ class Filters extends API {
 		if((await auth.report(query_id, this.user)).error)
 			throw new API.Exception(404, 'User not authenticated for this report');
 
-		return await this.mysql.query('INSERT INTO tb_query_filters SET  ?', [values], 'write');
+		const
+			insertResponse = await this.mysql.query('INSERT INTO tb_query_filters SET  ?', [values], 'write'),
+			[loggedRow] = await this.mysql.query(
+				'SELECT * FROM tb_query_filters WHERE filter_id = ?',
+				[insertResponse.insertId]
+			),
+			logs = {
+				owner: 'filter',
+				owner_id: insertResponse.insertId,
+				state: JSON.stringify(loggedRow),
+				operation:'insert',
+			};
+
+		reportHistory.insert(this, logs);
+
+		return insertResponse;
 	}
 
 	async update({filter_id, name, placeholder, description = null, order, default_value = '', offset, type = null, dataset, multiple = null} = {}) {
@@ -45,6 +60,7 @@ class Filters extends API {
 		for(const key in values) {
 
 			compareJson[key] = filterQuery[key] == null ? null : filterQuery[key].toString();
+			filterQuery[key] = values[key];
 		}
 
 		if(JSON.stringify(compareJson) == JSON.stringify(values)) {
@@ -55,10 +71,9 @@ class Filters extends API {
 		const
 			updateResponse = await this.mysql.query('UPDATE tb_query_filters SET ? WHERE filter_id = ?', [values, filter_id], 'write'),
 			logs = {
-				query_id: filterQuery.query_id,
 				owner: 'filter',
 				owner_id: filter_id,
-				value: JSON.stringify(filterQuery),
+				state: JSON.stringify(filterQuery),
 				operation:'update',
 			};
 
@@ -83,10 +98,9 @@ class Filters extends API {
 		const
 			deleteResponse = await this.mysql.query('DELETE FROM tb_query_filters WHERE filter_id = ?', [filter_id], 'write'),
 			logs = {
-				query_id: filterQuery.query_id,
 				owner: 'filter',
 				owner_id: filter_id,
-				value: JSON.stringify(filterQuery),
+				state: JSON.stringify(filterQuery),
 				operation:'delete',
 			};
 
