@@ -1802,11 +1802,16 @@ class DataSourceColumn {
 				<select name="type">
 					<option value="string">String</option>
 					<option value="number">Number</option>
-					<option value="date">Date</option>
-					<option value="month">Month</option>
-					<option value="year">Year</option>
-					<option value="time">Time</option>
-					<option value="datetime">Date Time</option>
+					<optgroup label="Timing">
+						<option value="date">Date</option>
+						<option value="month">Month</option>
+						<option value="year">Year</option>
+						<option value="time">Time</option>
+						<option value="hour">Hour</option>
+						<option value="minute">Minute</option>
+						<option value="second">Second</option>
+						<option value="datetime">Date Time</option>
+					</optgroup>
 					<option value="timeelapsed">Time Elapsed</option>
 					<option value="html">HTML</option>
 				</select>

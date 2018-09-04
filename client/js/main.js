@@ -1643,6 +1643,72 @@ class Format {
 		return Format.time.formatter.format(time);
 	}
 
+	static hour(hour) {
+
+		const options = {
+			hour: 'numeric',
+			minute: 'numeric',
+			second: 'numeric',
+		};
+
+		if(!Format.hour.formatter)
+			Format.hour.formatter = new Intl.DateTimeFormat(undefined, options);
+
+		if(typeof hour == 'string')
+			hour = Date.parse(hour);
+
+		if(typeof hour == 'object' && hour)
+			hour = hour.getTime();
+
+		if(!hour)
+			return '';
+
+		return Format.hour.formatter.format(hour);
+	}
+
+	static minute(minute) {
+
+		const options = {
+			minute: 'numeric',
+			second: 'numeric',
+		};
+
+		if(!Format.minute.formatter)
+			Format.minute.formatter = new Intl.DateTimeFormat(undefined, options);
+
+		if(typeof minute == 'string')
+			minute = Date.parse(minute);
+
+		if(typeof minute == 'object' && minute)
+			minute = minute.getTime();
+
+		if(!minute)
+			return '';
+
+		return Format.minute.formatter.format(minute);
+	}
+
+	static second(second) {
+
+		const options = {
+			second: 'numeric',
+		};
+
+		if(!Format.second.formatter)
+			Format.second.formatter = new Intl.DateTimeFormat(undefined, options);
+
+		if(typeof second == 'string')
+			second = Date.parse(second);
+
+		if(typeof second == 'object' && second)
+			second = second.getTime();
+
+		if(!second)
+			return '';
+
+		return Format.second.formatter.format(second);
+	}
+
 	static dateTime(dateTime) {
 
 		const options = {
