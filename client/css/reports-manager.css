@@ -602,14 +602,14 @@ main.preview-left #stages {
 				margin: 0;
 			}
 
-	#stage-configure-visualization .configuration-section  h3 .count {
+	.visualization-form .configuration-section h3 .count {
 		color: #bbb;
 		font-size: 90%;
 		margin-left: auto;
 		font-weight: normal;
 		letter-spacing: 0.25px;
 	}
-	#stage-configure-visualization .configuration-section h3 .count.transformation {
+	.visualization-form .configuration-section h3 .count.transformation {
 		margin-left: 3px;
 		display: flex;
 	}

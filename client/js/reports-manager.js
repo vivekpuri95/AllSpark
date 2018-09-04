@@ -2010,12 +2010,15 @@ class VisualizationManager {
 
 		this.form.on('submit', e => this.update(e));
 
-		this.stage.container.querySelector('.toolbar button[type=submit]').insertAdjacentHTML(
-			'afterend',
-			'<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>'
-		);
+		if(!this.stage.container.querySelector('#preview-configure-visualization')) {
 
-		this.stage.container.querySelector('#preview-configure-visualization').on('click', () => this.preview());
+			this.stage.container.querySelector('.toolbar button[type=submit]').insertAdjacentHTML(
+				'afterend',
+				'<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>'
+			);
+
+			this.stage.container.querySelector('#preview-configure-visualization').on('click', () => this.preview());
+		}
 
 		return container;
 	}
@@ -2071,7 +2074,7 @@ class VisualizationManager {
 
 			await DataSource.load(true);
 
-// 			this.stage.visualizationLogs.clear();
+			this.stage.visualizationLogs.clear();
 
 			this.stage.load();
 
