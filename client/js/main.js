@@ -868,8 +868,9 @@ class User {
 					registration.unregister();
 			}
 
-			if(account.settings.has("logout_redirect_url") && account.settings.get("logout_redirect_url"))
-				window.open(account.settings.get("logout_redirect_url"), "_self");
+			if(account.settings.get('logout_redirect_url'))
+				window.open(account.settings.get('logout_redirect_url')+parameters.toString(), '_self');
+
 			else if(redirect)
 				window.location = '/login?'+parameters.toString();
 

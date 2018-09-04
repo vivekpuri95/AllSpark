@@ -527,7 +527,7 @@ class SettingsAccount {
 			},
 			{
 				key: 'pre_report_api',
-				type: 'string',
+				type: 'url',
 				name: 'Pre Report API',
 				description: 'An API that is hit before any report is executed',
 			},
