@@ -624,11 +624,12 @@ class DataSource {
 	async download(e, what) {
 
 		this.containerElement.querySelector('.menu .download').classList.remove('selected');
-		e.currentTarget.parentElement.classList.add('hidden');
 
-		const response = await this.fetch({download: 1});
+		let str = [],
+			response;
 
-		let str = [];
+		if(what.mode != 'filtered-csv')
+			response = await this.fetch({download: 1});
 
 		if(what.mode == 'json') {
 
