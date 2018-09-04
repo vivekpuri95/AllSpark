@@ -49,6 +49,28 @@ exports.list = class extends API {
 				AND q.is_deleted = 0
 		`;
 
+		const dashboardToReportAccessQuery = `
+			SELECT
+                query_id
+            FROM
+                tb_query q
+            JOIN
+                tb_query_visualizations qv
+                USING(query_id)
+            JOIN
+                tb_visualization_dashboard vd
+                USING(visualization_id)
+            JOIN
+                tb_object_roles o
+            ON
+                o.owner_id = vd.dashboard_id
+            WHERE
+                 OWNER = "dashboard"
+                 AND target = "user"
+                 AND target_id = ?
+            GROUP BY query_id
+        `;
+
 		if (this.request.body.search) {
 			query = query.concat(`
 				AND (
@@ -75,11 +97,13 @@ exports.list = class extends API {
 			this.mysql.query('SELECT * FROM tb_query_filters'),
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 			this.mysql.query(dashboardRoleQuery),
+			this.mysql.query(dashboardToReportAccessQuery, [this.user.user_id])
 		]);
 
 		const reportRoles = await role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],);
 
 		const userSharedQueries = new Set((await role.get(this.account.account_id, "query", "user", results[0].length ? results[0].map(x => x.query_id) : [-1], this.user.user_id)).map(x => x.owner_id));
+		const dashboardSharedQueries = new Set(results[4].map(x => parseInt(x.query_id)));
 
 		const reportRoleMapping = {};
 
@@ -119,9 +143,7 @@ exports.list = class extends API {
 			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [];
 			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [];
 
-			row.flag = userSharedQueries.has(row.query_id);
-
-
+			row.flag = userSharedQueries.has(row.query_id) || dashboardSharedQueries.has(row.query_id);
 
 			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
 				continue;
