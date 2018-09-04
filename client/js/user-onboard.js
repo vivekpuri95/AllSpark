@@ -35,13 +35,18 @@ class UserOnboard {
 			}
 		}
 
-		if(this.stages.every(stage => stage.isCompleted))
-			return await Storage.delete('newUser');
+		if(document.querySelector('.setup-stages')) {
 
-		if(document.querySelector('.setup-stages'))
 			document.querySelector('.setup-stages').remove();
+		}
+
 
 		document.body.appendChild(this.container);
+
+		if(this.stages.every(stage => stage.isCompleted)) {
+			
+			return await Storage.delete('newUser');
+		}
 
 		this.loadWelcomeDialogBox();
 	}
@@ -99,7 +104,14 @@ class UserOnboard {
 				await Storage.delete('newUser');
 			});
 			container.querySelector('.skip').remove();
-			container.style['grid-template-columns'] = '180px 1fr 150px';
+
+			if(!this.stages.length) {
+
+				container.classList.add('last');
+			}
+			else {
+				container.style['grid-template-columns'] = '180px 1fr 150px';
+			}
 		}
 
 		return container;

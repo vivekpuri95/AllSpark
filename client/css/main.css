@@ -999,6 +999,10 @@ body {
 	z-index: 4;
 	background: #fff;
 }
+.setup-stages.last {
+	grid-template-columns: 180px 1fr;
+	height: 38px;
+}
 	.setup-stages span,
 	.setup-stages .next,
 	.setup-stages .skip {
