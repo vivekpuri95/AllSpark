@@ -2961,7 +2961,7 @@ class Axes extends Set {
 		this.list = axes;
 		this.clear();
 
-		for(const axis of this.list)
+		for(const axis of this.list || [])
 			this.add(new Axis(axis, this));
 	}
 
