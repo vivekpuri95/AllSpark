@@ -618,15 +618,11 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 						Edit
 					</button>
 
-					<button id="export-dashboard" class="hidden">
-						<i class="fa fa-download"></i>
-						Export
-					</button>
-
 					<button id="mailto" class="hidden">
 						<i class="fas fa-envelope"></i>
 						Email
 					</button>
+
 					<button id="configure" class="hidden">
 						<i class="fas fa-cog"></i>
 						Configure

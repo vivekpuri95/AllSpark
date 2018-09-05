@@ -503,27 +503,6 @@ class Dashboard {
 		}
 	}
 
-	get export() {
-		const data = {
-			dashboard: {
-				name: this.name,
-				parent: this.parent,
-				type: this.type,
-				icon: this.icon,
-				status: this.status,
-				roles: this.roles,
-				format: this.format
-			},
-			query: []
-		};
-
-		for (const report of this.format.reports) {
-			data.query.push(DataSource.list.get(report.query_id));
-		}
-
-		return data;
-	}
-
 	static setup(page) {
 
 		Dashboard.grid = {
@@ -996,20 +975,6 @@ class Dashboard {
 
 				edit.click();
 			}
-
-			const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
-			exportButton.classList.remove('hidden');
-
-			exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
-
-			exportButton.on('click', Dashboard.toolbar.exportListener = () => {
-				const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.export));
-
-				const downloadAnchor = document.createElement('a');
-				downloadAnchor.setAttribute('href', jsonFile);
-				downloadAnchor.setAttribute('download', 'dashboard.json');
-				downloadAnchor.click();
-			});
 
 			const configure = Dashboard.toolbar.querySelector('#configure');
 			configure.on('click', () => location.href = `/dashboards-manager/${this.id}`);
