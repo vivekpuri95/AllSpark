@@ -245,9 +245,6 @@ class ReportsMangerStage {
 		}
 
 		this.load();
-
-		if(await Storage.get('newUser'))
-			UserOnboard.setup();
 	}
 
 	set disabled(disabled) {
@@ -726,6 +723,9 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.page.stages.get('configure-report').disabled = false;
 			this.page.stages.get('define-report').disabled = false;
 			this.page.stages.get('pick-visualization').disabled = false;
+
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup();
 
 			new SnackBar({
 				message: 'New Report Added',
@@ -1671,6 +1671,9 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			this.page.stages.get('configure-visualization').disabled = false;
 			this.container.querySelector('#add-visualization-picker').classList.add('hidden');
 			this.container.querySelector('#visualization-list').classList.remove('hidden');
+
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup();
 
 			new SnackBar({
 				message: `${visualization.name} Visualization Added`,
