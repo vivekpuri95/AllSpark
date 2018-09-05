@@ -1845,7 +1845,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		const historyToggle = this.container.querySelector('#history-configure-visualization');
 
-		historyToggle.on('click',async () =>{
+		historyToggle.on('click',async () => {
 
 			historyToggle.classList.toggle('selected');
 			this.visualizationLogs.toggle(historyToggle.classList.contains('selected'));
