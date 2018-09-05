@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const request = require('request');
 const promisify = require('util').promisify;
 const Mailer = require('../utils/mailer');
-const requestPromise = promisify(request);
+const cycleDetection = require("./privileges_manager").cycleDetection;
 const config = require("config");
 const constants = require("../utils/constants");
 const account = require('../onServerStart');
@@ -16,6 +16,7 @@ const sessionLogs = require("./session-logs").sessions;
 const EXPIRE_AFTER = 1; //HOURS
 
 exports.resetlink = class extends API {
+
 	async resetlink() {
 
 		let user = await this.mysql.query(
@@ -187,7 +188,7 @@ exports.login = class extends API {
 
 			authAPIResponse = await authAPIResponse.json();
 
-			if(!(authAPIResponse.data && authAPIResponse.data.userDetails)) {
+			if (!(authAPIResponse.data && authAPIResponse.data.userDetails)) {
 
 				throw({message: authAPIResponse.message, status: status});
 			}
@@ -212,9 +213,9 @@ exports.login = class extends API {
 		const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
 		const redisResult = await redis.get(redisHash);
 
-		if(redisResult) {
+		if (redisResult) {
 
-			throw("Failure, please try again :(");
+			throw("Failure, please try again");
 		}
 
 		await redis.set(redisHash, 1);
@@ -225,7 +226,7 @@ exports.login = class extends API {
 
 		if (!this.email) {
 
-			this.assert(this.possibleAccounts.length, "No account found :(");
+			this.assert(this.possibleAccounts.length, "No account found");
 
 
 			if (!this.possibleAccounts[0].auth_api) {
@@ -270,7 +271,7 @@ exports.login = class extends API {
 			else {
 
 				this.userDetails = userDetails[0];
-				this.assert(this.userDetails && this.userDetails.user_id, "Email not found :(");
+				this.assert(this.userDetails && this.userDetails.user_id, "Email not found");
 
 				this.possibleAccounts = global.accounts.filter(x => x.account_id === this.userDetails.account_id);
 
@@ -287,7 +288,7 @@ exports.login = class extends API {
 				if (!this.request.body.external_parameters && this.request.body.password) {
 
 					const checkPassword = await commonFun.verifyBcryptHash(this.request.body.password, this.userDetails.password);
-					this.assert(checkPassword, "Invalid Password! :(");
+					this.assert(checkPassword, "Invalid Password!");
 				}
 			}
 		}
@@ -300,7 +301,7 @@ exports.login = class extends API {
 
 		let session = {};
 
-		try{
+		try {
 			sessionLogs.request = {};
 
 			Object.assign(sessionLogs.request, this.request);
@@ -318,7 +319,8 @@ exports.login = class extends API {
 
 			session = await sessionLogs.insert();
 		}
-		catch(e){}
+		catch (e) {
+		}
 
 		const obj = {
 			user_id: this.userDetails.user_id,
@@ -337,7 +339,7 @@ exports.login = class extends API {
 	}
 };
 
-exports.refresh = class extends API {
+exports.refresh = class extends cycleDetection {
 
 	async refresh() {
 
@@ -362,13 +364,13 @@ exports.refresh = class extends API {
 			userDetail = loginObj.userDetails;
 		}
 
-		this.assert(userDetail, "User not found! :(", 401);
+		this.assert(userDetail, "User not found!", 401);
 
 		const [user] = await this.mysql.query("SELECT * FROM tb_users WHERE user_id = ? and status = 1", userDetail.user_id);
 
-		this.assert(user, "User not found! :(", 401);
+		this.assert(user, "User not found!", 401);
 
-		const userPrivilegesRoles = await this.mysql.query(`
+		const [userPrivilegesRoles, accountPrivileges] = await Promise.all([this.mysql.query(`
 				SELECT
 					'privileges' AS 'owner',
 					user_id,
@@ -391,44 +393,91 @@ exports.refresh = class extends API {
 
 				UNION ALL
 
-				SELECT
-						'roles' AS 'owner',
-						user_id,
-						IF(r.is_admin = 1, 0, role_id) AS owner_id,
-						r.name AS role_name,
-						IF(c.is_admin = 1, 0, category_id) AS category_id,
-						c.name AS category_name
-					FROM
-						tb_object_roles obr
-					JOIN
-						tb_roles r
-						ON r.role_id = obr.target_id
-					JOIN
-						tb_categories c
-						USING(category_id)
-					JOIN
-						tb_users u
-						ON u.user_id = obr.owner_id
-						AND u.account_id = obr.account_id
-					WHERE
-						OWNER = "user"
-						AND target = "role"
-						AND u.status = 1
-						AND u.user_id = ?
-						AND u.account_id = ?
+                SELECT
+					'roles' AS 'owner',
+					user_id,
+					IF(r.is_admin = 1, 0, role_id) AS owner_id,
+					r.name AS role_name,
+					IF(c.is_admin = 1, 0, category_id) AS category_id,
+					c.name AS category_name
+				FROM
+					tb_object_roles obr
+				JOIN
+					tb_roles r
+					ON r.role_id = obr.target_id
+				JOIN
+					tb_categories c
+					USING(category_id)
+				JOIN
+					tb_users u
+					ON u.user_id = obr.owner_id
+					AND u.account_id = obr.account_id
+				WHERE
+					OWNER = "user"
+					AND target = "role"
+					AND u.status = 1
+					AND u.user_id = ?
+					AND u.account_id = ?
+               `,
+			[user.user_id, user.account_id, user.user_id, user.account_id]
+		),
+			this.mysql.query(
+				"select pt.*, p.name from tb_privileges p join tb_privileges_tree pt using(privilege_id) where (account_id = ? or account_id = 0) and p.status = 1",
+				[this.account.account_id]
+			),
+		]);
 
-			   `,
-			[user.user_id, user.account_id, user.user_id, user.account_id,]
-		);
+		this.accountPrivileges = accountPrivileges;
 
-		const privileges = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges").map(x => {
+		this.cycleDetection();
 
-			return {
-				privilege_id: x.owner_id,
-				privilege_name: x.owner_name,
-				category_id: x.category_id,
+		let privileges = [];
+
+		for (let privilege of userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "privileges")) {
+
+			if (privilege.owner_id == 0 || JSON.stringify([...this.simplifiedTreeMapping.get(privilege.owner_id)]) == JSON.stringify([0])) {
+
+				privilege.owner_id = [privilege.owner_id];
 			}
-		});
+
+			else {
+
+				privilege.owner_id = [...this.simplifiedTreeMapping.get(privilege.owner_id)];
+			}
+			for (const privilegeId of privilege.owner_id) {
+
+				privileges.push({
+					privilege_id: privilegeId,
+					privilege_name: privilege.owner_name,
+					category_id: privilege.category_id,
+				});
+			}
+		}
+		;
+
+		let privilegeObj = {};
+
+		this.accountPrivileges.map(x => privilegeObj[x.privilege_id] = x);
+
+		for (const privilege of privileges) {
+
+			if (!privilegeObj[privilege.privilege_id] || privilegeObj[privilege.privilege_id].is_admin) {
+
+				privilege.privilege_id = 0;
+				privilege.privilege_name = constants.privilege.administrator;
+				continue;
+			}
+
+			privilege.privilege_name = privilegeObj[privilege.privilege_id].name;
+
+		}
+
+		privilegeObj = {};
+
+		privileges.map(x => privilegeObj[x.privilege_id] = x);
+
+		privileges = Object.values(privilegeObj)
+
 
 		const roles = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "roles").map(x => {
 

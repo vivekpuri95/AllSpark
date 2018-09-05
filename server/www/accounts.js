@@ -91,7 +91,7 @@ exports.get = class extends API {
 			`,
 			[this.account.account_id]);
 
-		this.assert(accountList.length, "Account not found! :(");
+		this.assert(accountList.length, "Account not found!");
 
 		const account = {
 			settings: [],
@@ -169,6 +169,7 @@ exports.update = class extends API {
 
 		delete setParams.account_id;
 		delete setParams.token;
+		delete setParams.refresh_token;
 
 		const values = [setParams, this.request.body.account_id];
 
@@ -308,9 +309,9 @@ exports.signup = class extends API {
 
 		await Promise.all([
 			this.mysql.query(
-				`INSERT INTO 
-					tb_object_roles 
-					(account_id, owner, owner_id, target, target_id, category_id) 
+				`INSERT INTO
+					tb_object_roles
+					(account_id, owner, owner_id, target, target_id, category_id)
 					VALUES (?, ?, ?)
 				`,
 				[account_res.account_id, "user", user.insertId, "role", account_res.role_id, account_res.category_id]

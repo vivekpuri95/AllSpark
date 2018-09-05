@@ -150,6 +150,13 @@ class Authenticate {
 			}
 		}
 
+		if(!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
+
+			return {
+				error: true,
+				message: "Report not shared with anyone and user did not create this report."
+			}
+		}
 
 		let objectPrivileges = [[reportObject.account_id], Array.isArray(reportObject.category_id) ? reportObject.category_id : [reportObject.category_id]];
 
@@ -318,14 +325,6 @@ class Authenticate {
 	}
 
 	static async connection(connectionObj, user) {
-
-		if (!(user.roles && user.roles.length)) {
-
-			return {
-				error: true,
-				message: "User does not have any role.",
-			}
-		}
 
 		const objRole = new getRole();
 

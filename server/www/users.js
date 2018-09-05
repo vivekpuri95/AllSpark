@@ -10,21 +10,36 @@ exports.insert = class extends API {
 
 		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
-		var result = {};
+		const alreadyExists = await this.mysql.query(
+			'SELECT * FROM tb_users WHERE account_id = ? AND email = ?',
+			[this.account.account_id, this.request.body.email]
+		);
 
-		for (var key in this.request.body) {
-			result[key] = this.request.body[key]
+		if(alreadyExists.length)
+			throw new API.Exception(400, 'User already exists');
+
+		let password;
+
+		if (this.request.body.password) {
+			password = await commonFun.makeBcryptHash(this.request.body.password);
 		}
 
-		if (result.password) {
-			result.password = await commonFun.makeBcryptHash(result.password);
-		}
-
-		delete result.token;
-
-		result.account_id = this.account.account_id;
-
-		return await this.mysql.query(`INSERT INTO tb_users SET ?`, result, 'write');
+		return await this.mysql.query(
+			`INSERT INTO
+				tb_users (account_id, email, first_name, last_name, middle_name, password)
+			VALUES
+				(?, ?, ?, ?, ?, ?)
+			`,
+			[
+				this.account.account_id,
+				this.request.body.email,
+				this.request.body.first_name,
+				this.request.body.last_name,
+				this.request.body.middle_name,
+				password
+			],
+			'write'
+		);
 	}
 
 };
@@ -32,6 +47,8 @@ exports.insert = class extends API {
 exports.delete = class extends API {
 
 	async delete() {
+
+		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
 		return await this.mysql.query(`UPDATE tb_users SET status = 0 WHERE user_id = ?`, [this.request.body.user_id], 'write');
 
@@ -49,18 +66,16 @@ exports.update = class extends API {
 
 		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
 
-		var keys = Object.keys(this.request.body);
+		var keys = ['first_name', 'last_name', 'middle_name', 'phone', 'password', 'email', 'status'];
 
-		const params = this.request.body,
-			user_id = params.user_id,
+		const
+			user_id = this.request.body.user_id,
 			setParams = {};
 
-		for (const key in params) {
-			if (keys.includes(key) && key != 'user_id')
-				setParams[key] = params[key] || null;
+		for (const key in this.request.body) {
+			if (keys.includes(key))
+				setParams[key] = this.request.body[key] || null;
 		}
-
-		delete setParams['token'];
 
 		if (setParams.password)
 			setParams.password = await commonFun.makeBcryptHash(setParams.password);
@@ -90,22 +105,26 @@ exports.list = class extends API {
 			results,
 			roles = {},
 			privileges = {},
-			last_login = {},
 			db = dbConfig.write.database.concat('_logs'),
 			user_query = `
 				SELECT
-					u.*, 
+					u.*,
+					concat_ws(' ', addedByUser.first_name, addedByUser.middle_name, addedByUser.last_name) as added_by_user,
 					max(s.created_at + INTERVAL 330 MINUTE) AS last_login
 				FROM
 					tb_users u
+				LEFT JOIN
+					tb_users addedByUser
+				ON
+					u.added_by = addedByUser.user_id
 				LEFT JOIN
 					${db}.tb_sessions s
 				ON
 					u.user_id = s.user_id
 					AND s.type = 'login'
 				WHERE
-					account_id = ?
-					AND status = 1
+					u.account_id = ?
+					AND u.status = 1
 			`,
 			role_query = `
 				SELECT
@@ -125,9 +144,9 @@ exports.list = class extends API {
 
 		if (this.request.body.user_id && !this.request.body.search) {
 
-			user_query = user_query.concat(` AND u.user_id = ?`);
-			role_query = role_query.concat(` AND owner_id = ?`);
-			prv_query = prv_query.concat(` WHERE user_id = ?`);
+			user_query = user_query.concat(' AND u.user_id = ?');
+			role_query = role_query.concat(' AND owner_id = ?');
+			prv_query = prv_query.concat(' WHERE user_id = ?');
 
 			results = await Promise.all([
 				this.mysql.query(user_query, [this.account.account_id, this.request.body.user_id]),
@@ -144,7 +163,7 @@ exports.list = class extends API {
 
 				if(this.request.body.user_id) {
 
-					user_query = user_query.concat(` AND u.user_id LIKE ?`);
+					user_query = user_query.concat(' AND u.user_id LIKE ?');
 					queryParams.push(`%${this.request.body.user_id}%`);
 				}
 
@@ -299,7 +318,7 @@ exports.list = class extends API {
 
 		if(!constants.adminCategory.some(x => userCategories.includes(x))) {
 
-			userList = userList.filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))));
+			userList = userList.filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))) || x.user_id === this.user.user_id);
 		}
 
 		return userList;
@@ -330,16 +349,25 @@ exports.changePassword = class extends API {
 
 		}
 
-		throw new API.Exception(400, 'Old Password does not match! :(');
+		throw new API.Exception(400, 'Old Password does not match!');
 	}
 }
 
 exports.metadata = class extends API {
+
 	async metadata() {
 
-		const user_id = this.user.user_id;
+		const [
+			categoriesPrivilegesRoles,
+			visualizations,
+			globalFilters,
+			sourceTypes,
+			features,
+			spatialMapThemes,
+			datasources
+		] = await Promise.all([
 
-		const categoriesPrivilegesRoles = await this.mysql.query(`
+			this.mysql.query(`
                 SELECT
                     'categories' AS 'type',
                     category_id as owner_id,
@@ -359,6 +387,12 @@ exports.metadata = class extends API {
                     ifnull(is_admin, 0) AS is_admin
                 FROM
                     tb_privileges
+                JOIN
+                	tb_privileges_tree
+                	USING(privilege_id)
+                WHERE
+                	parent = 0
+                	AND (account_id = ? OR account_id = 0)
 
                 UNION ALL
 
@@ -372,22 +406,10 @@ exports.metadata = class extends API {
                 WHERE
                     account_id = ?
             `,
-			[this.account.account_id, this.account.account_id]
-		);
+				[this.account.account_id, this.account.account_id, this.account.account_id]
+			),
 
-		const metadata = {};
-
-		for (const row of categoriesPrivilegesRoles) {
-
-			if (!metadata[row.type]) {
-
-				metadata[row.type] = [];
-			}
-
-			metadata[row.type].push(row);
-		}
-
-		metadata.visualizations = await this.mysql.query(`
+			this.mysql.query(`
 			SELECT
 				v.*
 			FROM
@@ -404,21 +426,15 @@ exports.metadata = class extends API {
 			ON
 				f.slug = v.slug
 			`,
-			[this.account.account_id]
-		);
+				[this.account.account_id]
+			),
 
-		metadata.globalFilters = await this.mysql.query(
-			'SELECT * FROM tb_global_filters WHERE account_id = ? AND is_enabled = 1',
-			[this.account.account_id]
-		);
+			this.mysql.query(
+				'SELECT * FROM tb_global_filters WHERE account_id = ? AND is_enabled = 1',
+				[this.account.account_id]
+			),
 
-		for (const data of metadata.globalFilters) {
-			data.placeholder = data.placeholder.split(',');
-		}
-
-		metadata.filterTypes = constants.filterTypes;
-
-		metadata.sourceTypes = await this.mysql.query(`
+			this.mysql.query(`
 			SELECT
 				f.slug
 			FROM
@@ -431,12 +447,39 @@ exports.metadata = class extends API {
 				AND f.type = 'source'
 				AND af.account_id = ?
 			`,
-			[this.account.account_id]
-		);
+				[this.account.account_id]
+			),
+			this.mysql.query('SELECT * from tb_features'),
 
-		metadata.features = await this.mysql.query('SELECT * from tb_features');
+			this.mysql.query('select * from tb_spatial_map_themes'),
 
-		metadata.spatialMapThemes = await this.mysql.query('select * from tb_spatial_map_themes');
+			this.mysql.query('select * from tb_datasources'),
+		]);
+
+		const metadata = {};
+
+		for (const row of categoriesPrivilegesRoles) {
+
+			if (!metadata[row.type]) {
+
+				metadata[row.type] = [];
+			}
+
+			metadata[row.type].push(row);
+		}
+
+		metadata.globalFilters = globalFilters;
+		metadata.filterTypes = constants.filterTypes;
+		metadata.sourceTypes = sourceTypes;
+		metadata.features = features;
+		metadata.spatialMapThemes = spatialMapThemes;
+		metadata.visualizations = visualizations;
+		metadata.datasources = datasources;
+
+		for (const data of metadata.globalFilters) {
+
+			data.placeholder = data.placeholder.split(',');
+		}
 
 		return metadata;
 	}

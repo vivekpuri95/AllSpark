@@ -63,11 +63,37 @@ class Page {
 		}
 
 		await API.refreshToken();
+
+		if(await Storage.get('newUser')) {
+
+			Page.loadOnboardScripts();
+		}
+
+		DialogBox.container = document.querySelector('main');
+		SnackBar.setup();
 	}
 
-	constructor() {
+	static async clearCache() {
 
-		this.container = document.querySelector('main');
+		const refresh_token = await Storage.get('refresh_token');
+
+		await Storage.clear();
+
+		Storage.set('refresh_token', refresh_token);
+
+		await API.refreshToken();
+		await MetaData.load();
+
+		new SnackBar({
+			message: 'Cache Cleared',
+			subtitle: '',
+			icon: 'fas fa-check',
+		});
+	}
+
+	constructor({container = null} = {}) {
+
+		this.container = container || document.querySelector('main');
 
 		this.account = window.account;
 		this.user = window.user;
@@ -78,6 +104,9 @@ class Page {
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
 
+		if(container)
+			return;
+
 		this.renderPage();
 		this.shortcuts();
 	}
@@ -86,11 +115,11 @@ class Page {
 
 		const
 			navList = [
-				{url: '/users', name: 'Users', privilege: 'users', icon: 'fas fa-users'},
-				{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboards', icon: 'fa fa-newspaper'},
+				{url: '/users-manager', name: 'Users', privilege: 'user', icon: 'fas fa-users'},
+				{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboard', icon: 'fa fa-newspaper'},
 				{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
-				{url: '/connections', name: 'Connections', privilege: 'connections', icon: 'fa fa-server'},
-				{url: '/tasks', name: 'Tasks', privilege: 'tasks', icon: 'fas fa-tasks'},
+				{url: '/connections-manager', name: 'Connections', privilege: 'connection', icon: 'fa fa-server'},
+				{url: '/tasks', name: 'Tasks', privilege: 'task', icon: 'fas fa-tasks'},
 				{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
 			],
 			header = document.querySelector('body > header'),
@@ -175,7 +204,7 @@ class Page {
 
 	shortcuts() {
 
-		document.on('keyup', e => {
+		document.on('keyup', async (e) => {
 
 			if(!e.altKey)
 				return;
@@ -187,15 +216,50 @@ class Page {
 			// Alt + L
 			if(e.keyCode == 76)
 				User.logout();
+
+			// Alt + O
+			if(e.keyCode == 79)
+				await Page.clearCache();
 		});
+	}
+
+	static async loadOnboardScripts() {
+
+		try {
+
+			DataSource;
+		}
+		catch(e) {
+
+			const script = document.createElement("script");
+
+			script.src = '/js/reports.js';
+			document.head.appendChild(script);
+		}
+
+		try {
+
+			UserOnboard;
+		}
+		catch(e) {
+
+			const onboardScript = document.createElement('script');
+
+			onboardScript.src = '/js/user-onboard.js';
+			document.head.appendChild(onboardScript);
+		}
 	}
 }
 
 Page.exception = class PageException extends Error {
 
 	constructor(message) {
+
 		super(message);
+
 		this.message = message;
+
+		ErrorLogs.send(this.message, null, null, null, this);
 	}
 }
 
@@ -681,7 +745,7 @@ class GlobalSearch {
 		}
 
 		if(!data.length) {
-			this.searchList.innerHTML = `<li><a href="#">No results found... :(</a></li>`;
+			this.searchList.innerHTML = `<li><a href="#">No results found</a></li>`;
 		}
 	}
 
@@ -804,8 +868,12 @@ class User {
 					registration.unregister();
 			}
 
-			if(redirect)
+			if(account.settings.get('logout_redirect_url'))
+				window.open(account.settings.get('logout_redirect_url')+'?'+parameters.toString(), '_self');
+
+			else if(redirect)
 				window.location = '/login?'+parameters.toString();
+
 		}, 100)
 	}
 
@@ -857,6 +925,7 @@ class MetaData {
 		MetaData.categories = new Map;
 		MetaData.privileges = new Map;
 		MetaData.roles = new Map;
+		MetaData.datasources = new Map;
 		MetaData.visualizations = new Map;
 		MetaData.filterTypes = new Map;
 		MetaData.features = new Set;
@@ -921,6 +990,7 @@ class MetaData {
 
 		MetaData.spatialMapThemes =  new Map(metadata.spatialMapThemes.map(x => [x.name, JSON.parse(x.theme)]));
 		MetaData.filterTypes = new Map(metadata.filterTypes.map(x => [x.name.toLowerCase(), x]));
+		MetaData.datasources = new Map(metadata.datasources.map(v => [v.slug, v]));
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
 		MetaData.globalFilters = new Map(metadata.globalFilters.map(d => [d.id, d]));
@@ -981,7 +1051,7 @@ class AJAX {
 			};
 		}
 
-		else
+		else if(_parameters)
 			url += '?' + parameters.toString();
 
 		let response = null;
@@ -991,13 +1061,13 @@ class AJAX {
 		}
 		catch(e) {
 			AJAXLoader.hide();
-			throw new API.Exception(e.status || e.message || e, 'API Execution Failed');
+			throw new API.Exception(e, 'API Execution Failed');
 		}
 
 		AJAXLoader.hide();
 
 		if(response.status == 401)
-			return User.logout({redirect: options.redirectOnLogout});
+			return User.logout({next: true, redirect: options.redirectOnLogout});
 
 		return response.headers.get('content-type').includes('json') ? await response.json() : await response.text();
 	}
@@ -1047,7 +1117,7 @@ class API extends AJAX {
 
 		const response = await AJAX.call(endpoint, parameters, options);
 
-		if(response.status)
+		if(response && response.status)
 			return response.data;
 
 		else
@@ -1074,7 +1144,7 @@ class API extends AJAX {
 	static loadFormData(parameters, formData) {
 
 		if(!(formData instanceof FormData))
-			throw new Page.exception('The form object is not an instance of FormDat class! :(');
+			throw new Page.exception('The form object is not an instance of FormDat class!');
 
 		for(const key of formData.keys()) {
 
@@ -1170,7 +1240,8 @@ API.Exception = class {
 	constructor(response = {}) {
 
 		this.status = response.status || '';
-		this.message = response.message || response;
+		this.message = response.message || '';
+		this.body = response;
 	}
 }
 
@@ -1248,6 +1319,116 @@ class AJAXLoader {
 }
 
 class Format {
+
+	static ago(timestamp) {
+
+		if(!timestamp)
+			return '';
+
+		const
+			currentSeconds = Date.parse(timestamp),
+			agoFormat = [
+				{
+					unit: 60,
+					minimum: 5,
+					name: 'second',
+				},
+				{
+					unit: 60,
+					minimum: 1,
+					name: 'minute',
+				},
+				{
+					unit: 24,
+					minimum: 1,
+					name: 'hour',
+					prefix: 'An',
+				},
+				{
+					unit: 7,
+					minimum: 1,
+					name: 'day',
+				},
+				{
+					unit: 4.3,
+					minimum: 1,
+					name: 'week',
+				},
+				{
+					unit: 12,
+					minimum: 1,
+					name: 'month',
+				},
+				{
+					name: 'year',
+				},
+			];
+
+		//If the time is future.
+		if(currentSeconds > Date.now())
+			return '';
+
+		//If the date is invalid;
+		if(!currentSeconds)
+			return 'Invalid Date';
+
+		let
+			time = Math.floor((Date.now() - currentSeconds) / 1000),
+			finalString = '',
+			format = agoFormat[0];
+
+		for(const data of agoFormat) {
+
+			//If the time format is year then break.
+			if(agoFormat.indexOf(data) >= agoFormat.length - 1)
+				break;
+
+			format = data;
+
+			format.time = time;
+
+			time = Math.floor(time / format.unit);
+
+			if(!time)
+				break;
+		}
+
+		//Special case for year.
+		const years = time % 12;
+
+		if(years) {
+
+			finalString = years == 1 ? 'A year ago' : Format.dateTime(timestamp);
+		}
+		else
+			finalString = calculateAgo(format);
+
+
+		function calculateAgo(format) {
+
+			const
+				range = format.unit - (0.15 * format.unit),
+				time = format.time % format.unit,
+				index = agoFormat.indexOf(format);
+
+			let string = `${time} ${format.name}s ago`;
+
+			if(time <= format.minimum)
+				string = format.name.includes('second') ? 'Just Now' : `${format.prefix || 'A'} ${format.name} ago`;
+			else if(time >= range) {
+
+				let
+					nextFormat = agoFormat[index + 1],
+					prefix = nextFormat.prefix || 'a';
+
+				string = `About ${prefix.toLowerCase()} ${nextFormat.name} ago`;
+			}
+
+			return string;
+		}
+
+		return finalString;
+	}
 
 	static date(date) {
 
@@ -1390,10 +1571,10 @@ class Sections {
 
 class CodeEditor {
 
-	constructor({mode = null}) {
+	constructor({mode = null} = {}) {
 
 		if(!window.ace)
-			throw Page.exception('Ace editor not available! :(');
+			throw Page.exception('Ace editor not available!');
 
 		this.mode = mode;
 	}
@@ -1401,6 +1582,7 @@ class CodeEditor {
 	get container() {
 
 		const container = this.editor.container;
+
 		container.classList.add('code-editor');
 
 		return container;
@@ -1456,12 +1638,21 @@ class CodeEditor {
  */
 class DialogBox {
 
+	constructor({closable = true} = {}) {
+
+		this.closable = closable;
+	}
+
 	/**
 	 * The main container of the Dialog Box.
 	 *
 	 * @return	HTMLElement	A div that has the entire content.
 	 */
 	get container() {
+
+		// Make sure we have a container to append the dialog box in
+		if(!DialogBox.container)
+			throw new Page.exception('Dialog Box container not defined before use!');
 
 		if(this.containerElement)
 			return this.containerElement;
@@ -1471,20 +1662,28 @@ class DialogBox {
 
 		container.innerHTML = `
 			<section class="dialog-box">
-				<header><h3></h3><span class="close"><i class="fa fa-times"></i></span></header>
+				<header><h3></h3></header>
 				<div class="body"></div>
 			</section>
 		`;
 
-		container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
+		if(this.closable) {
+
+			container.querySelector('header').insertAdjacentHTML(
+				'beforeend',
+				'<span class="close"><i class="fa fa-times"></i></span>'
+			);
+
+			container.querySelector('.dialog-box header span.close').on('click', () => this.hide());
+
+			container.on('click', () => this.hide());
+		}
 
 		container.querySelector('.dialog-box').on('click', e => e.stopPropagation());
 
-		container.on('click', () => this.hide());
-
 		this.hide();
 
-		document.querySelector('main').appendChild(container);
+		DialogBox.container.appendChild(container);
 
 		return container;
 	}
@@ -1503,14 +1702,12 @@ class DialogBox {
 			heading.textContent = null;
 			heading.appendChild(dialogHeading);
 		}
-		else if(typeof dialogHeading == 'string') {
 
+		else if(typeof dialogHeading == 'string')
 			heading.innerHTML = dialogHeading;
-		}
-		else {
 
+		else
 			throw Page.exception('Invalid heading format');
-		}
 	}
 
 	/**
@@ -1534,6 +1731,19 @@ class DialogBox {
 	 * Displays the dialog box container
 	 */
 	show() {
+
+		if(this.closable) {
+
+			document.body.removeEventListener('keyup', this.keyUpListener);
+
+			document.body.on('keyup', this.keyUpListener = e => {
+
+				if(e.keyCode == 27) {
+
+					this.hide();
+				}
+			});
+		}
 
 		this.container.classList.remove('hidden');
 	}
@@ -1593,7 +1803,7 @@ class MultiSelect {
 					<a class="clear">Clear</a>
 				</header>
 				<div class="list"></div>
-				<div class="no-matches NA hidden">No matches found! :(</div>
+				<div class="no-matches NA hidden">No matches found!</div>
 				<footer class="hidden"></footer>
 			</div>
 		`;
@@ -1716,7 +1926,7 @@ class MultiSelect {
 		optionList.textContent = null;
 
 		if(!this.datalist || !this.datalist.length) {
-			optionList.innerHTML = '<div class="NA">No data found... :(</div>';
+			optionList.innerHTML = '<div class="NA">No data found...</div>';
 			return;
 		}
 
@@ -1806,7 +2016,9 @@ class MultiSelect {
 
 			let hide = false;
 
-			if(search.value && !row.name.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
+			const rowValue = row.name.concat(' ', row.value, ' ', row.subtitle || '');
+
+			if(search.value && !rowValue.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
 				hide = true;
 
 			row.input.parentElement.classList.toggle('hidden', hide);
@@ -1821,8 +2033,10 @@ class MultiSelect {
 
 		search.placeholder = 'Search...';
 
-		if(firstSelected && options.classList.contains('hidden'))
+		if(firstSelected) {
+
 			search.placeholder = selected > 1 ? `${firstSelected.textContent} and ${selected - 1} more` : firstSelected.textContent;
+		}
 
 		const footer = options.querySelector('footer');
 
@@ -2140,7 +2354,7 @@ class ObjectRoles {
 		}
 
 		if(!this.alreadyVisible.length)
-			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet! :(</td></tr>'
+			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet!</td></tr>'
 
 		return table;
 	}
@@ -2160,7 +2374,12 @@ class ObjectRoles {
 				&& x.category_id == (parseInt(this.categorySelect.value) || 0)
 			).length) {
 
-			window.alert('Already exists');
+			new SnackBar({
+				message: 'Alread Exists',
+				subtitle: 'The association you\'re trying to create already exists.',
+				type: 'warning',
+			});
+
 			return;
 		}
 
@@ -2172,35 +2391,68 @@ class ObjectRoles {
 				target_id: [...this.multiSelect.selectedValues][0],
 				category_id: this.categorySelect.value || null,
 			},
-
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('object_roles/insert', parameters, options);
-		await this.load();
+		try {
 
-		this.render();
+			await API.call('object_roles/insert', parameters, options);
+
+			await this.load();
+
+			this.render();
+
+			new SnackBar({
+				message: `${this.owner} shared with ${this.selectedType.value}`,
+				icon: 'fas fa-share-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete(id) {
-
-		if (!confirm('Are you sure?')) {
-			return;
-		}
 
 		const
 			parameters = {
 				id: id,
 			},
-
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('object_roles/delete', parameters, options);
-		await this.load();
-		this.render();
+		try {
+
+			await API.call('object_roles/delete', parameters, options);
+
+			await this.load();
+
+			this.render();
+
+			new SnackBar({
+				message: 'Share Revoked',
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	combine() {
@@ -2228,6 +2480,307 @@ class ObjectRoles {
 	}
 }
 
+/**
+ * Show a snackbar type notification somewhere on screen.
+ */
+class SnackBar {
+
+	static setup() {
+
+		SnackBar.container = {
+			'bottom-left': document.createElement('div'),
+		};
+
+		SnackBar.container['bottom-left'].classList.add('snack-bar-container', 'bottom-left', 'hidden');
+
+		document.body.appendChild(SnackBar.container['bottom-left']);
+	}
+
+	/**
+	 * Create a new Snackbar notification instance. This will show the notfication instantly.
+	 *
+	 * @param String	options.message		The message body.
+	 * @param String	options.subtitle	The messgae subtitle.
+	 * @param String	options.type		success (green), warning (yellow), error (red).
+	 * @param String	options.icon		A font awesome name for the snackbar icon.
+	 * @param Number	options.timeout		(Seconds) How long the notification will be visible.
+	 * @param String	options.position	bottom-left (for now).
+	 */
+	constructor({message = null, subtitle = null, type = 'success', icon = null, timeout = 5, position = 'bottom-left'} = {}) {
+
+		this.container = document.createElement('div');
+		this.page = window.page;
+
+		this.message = message;
+		this.subtitle = subtitle;
+		this.type = type;
+		this.icon = icon;
+		this.timeout = parseInt(timeout);
+		this.position = position;
+
+		if(!this.message)
+			throw new Page.exception('SnackBar Message is required.');
+
+		if(!parseInt(this.timeout))
+			throw new Page.exception(`Invalid SnackBar timeout: ${this.timeout}.`);
+
+		if(!['success', 'warning', 'error'].includes(this.type))
+			throw new Page.exception(`Invalid SnackBar type: ${this.type}.`);
+
+		if(!['bottom-left'].includes(this.position))
+			throw new Page.exception(`Invalid SnackBar position: ${this.position}.`);
+
+		if(this.subtitle && this.subtitle.length > 250)
+			this.subtitle = this.subtitle.substring(0, 250) + '&hellip;';
+
+		this.show();
+	}
+
+	show() {
+
+		let icon = null;
+
+		if(this.icon)
+			icon = this.icon;
+
+		else if(this.type == 'success')
+			icon = 'fas fa-check';
+
+		else if(this.type == 'warning')
+			icon = 'fas fa-exclamation-triangle';
+
+		else if(this.type == 'error')
+			icon = 'fas fa-exclamation-triangle';
+
+		this.container.innerHTML = `
+			<div class="icon"><i class="${icon}"></i></div>
+			<div class="title">${this.message}</div>
+			<div class="subtitle">${this.subtitle || ''}</div>
+			<div class="close">&times;</div>
+		`;
+
+		this.container.classList.add('snack-bar', this.type);
+
+		this.container.on('click', () => this.hide());
+
+		// Add the show class out of the current event loop so that CSS transitions have time to initiate.
+		setTimeout(() => this.container.classList.add('show'));
+
+		// Hide the snackbar after the timeout.
+		setTimeout(() => this.hide(), this.timeout * 1000);
+
+		SnackBar.container[this.position].classList.remove('hidden');
+		SnackBar.container[this.position].appendChild(this.container);
+		SnackBar.container[this.position].scrollTop = SnackBar.container[this.position].scrollHeight
+	}
+
+	/**
+	 * Hide the snack bar and also hide the container if no other snackbar is in the container.
+	 */
+	hide() {
+
+		this.container.classList.remove('show');
+
+		setTimeout(() => {
+
+			this.container.remove();
+
+			if(!SnackBar.container[this.position].children.length)
+				SnackBar.container[this.position].classList.add('hidden');
+
+		}, Page.transitionDuration);
+	}
+}
+
+class FormatSQL {
+
+	constructor(query) {
+
+		this.query = ' ' + query;
+
+		this.deflate();
+		this.newLines();
+		this.indentBrackets();
+		this.indentSections();
+		this.rollUp();
+	}
+
+	deflate() {
+
+		this.query = this.query.replace(/\s+/g, ' ');
+	}
+
+	newLines() {
+
+		const keywords = [
+			'\\)',
+			'SELECT',
+			'FROM',
+			'WHERE',
+			'LEFT JOIN',
+			'RIGHT JOIN',
+			'INNER JOIN',
+			'JOIN',
+			'GROUP BY',
+			'ORDER BY',
+			'LIMIT',
+			'HAVING',
+			'ON',
+			'AND',
+			'OR',
+		];
+
+		this.query = this.query.replace(/\s\(\s/g, ' (\n');
+		this.query = this.query.replace(/\n\(\s/g, '\n(\n');
+
+		for(const keyword of keywords) {
+
+			if(keyword == 'JOIN')
+				this.query = this.query.replace(/(LEFT JOIN|RIGHT JOIN|INNER JOIN)/ig, (a, b) => b.replace(' ', '-'));
+
+			this.query = this.query.replace(new RegExp(`\\s${keyword}\\s`, 'ig'), `\n${keyword.replace('\\', '')}\n`);
+
+			if(keyword == 'JOIN')
+				this.query = this.query.replace(/(LEFT-JOIN|RIGHT-JOIN|INNER-JOIN)/ig, (a, b) => b.replace('-', ' '));
+		}
+	}
+
+	indentBrackets() {
+
+		const result = [];
+
+		let indent = 0;
+
+		for(let line of this.query.split('\n')) {
+
+			line = line.trim();
+
+			if(!line)
+				continue;
+
+			if(line == ')')
+				indent = Math.max(0, indent - 1);
+
+			line = '\t'.repeat(indent) + line;
+
+			if(line.endsWith('('))
+				indent++;
+
+			result.push(line);
+		}
+
+		this.query = result.join('\n');
+	}
+
+	indentSections() {
+
+		const
+			result = [],
+			keywords = [
+				'SELECT',
+				'FROM',
+				'WHERE',
+				'LEFT JOIN',
+				'RIGHT JOIN',
+				'INNER JOIN',
+				'JOIN',
+				'GROUP BY',
+				'ORDER BY',
+				'HAVING',
+				'LIMIT',
+			];
+
+		let
+			indent = false,
+			depth = 0;
+
+		for(let line of this.query.split('\n')) {
+
+			if(line.trim() == ')')
+				depth = Math.max(0, depth - 1);
+
+			line = '\t'.repeat(depth)  + line;
+
+			if(line.endsWith('(') && indent) {
+				depth++;
+			}
+
+			if(keywords.includes(line.trim()))
+				indent = true;
+
+			else if(indent)
+				line = '\t' + line
+
+			result.push(line);
+		}
+
+		this.query = result.join('\n');
+	}
+
+	rollUp() {
+
+		/**
+		 * foo = bar
+		 * AND
+		 * foo = bar
+		 *
+		 * truns into:
+		 *
+		 * foo = bar AND
+		 * foo = bar
+		 */
+		const keywords = [
+			'AND',
+			'OR',
+		];
+
+		for(const keyword of keywords)
+			this.query = this.query.replace(new RegExp(`\\n\\s*${keyword}`, 'g'), ' ' + keyword);
+
+		/**
+		 * FROM
+		 * 	(
+		 *
+		 * turns into
+		 *
+		 * FROM (
+		 */
+		this.query = this.query.replace(/\n(\s*)FROM\n\s*\(\n/gi, (a, b) => `\n${b}FROM (\n`);
+
+		/**
+		 * foo, bar, baz(a, b)
+		 *
+		 * turns to
+		 *
+		 * foo,
+		 * bar,
+		 * baz(a, b)
+		 */
+		{
+			const result = [];
+			let select = false;
+
+			for(let line of this.query.split('\n')) {
+
+				const depth = Math.max(line.match(/\s*/)[0].split('\t').length - 1, 0);
+
+				if(select) {
+					line = line.replace(/,\s/ig, ',');
+					line = line.replace(/,(?![^()]*\))/ig, ',\n' + '\t'.repeat(depth));
+					select = false;
+				}
+
+				if(line.trim().toLowerCase() == 'select')
+					select = true;
+
+				result.push(line);
+			}
+
+			this.query = result.join('\n');
+		}
+	}
+}
+
 if(typeof Node != 'undefined') {
 	Node.prototype.on = window.on = function(name, fn) {
 		this.addEventListener(name, fn);
@@ -2246,6 +2799,8 @@ Date.prototype.getTimeUTC = function() {
 }
 
 MetaData.timeout = 5 * 60 * 1000;
+Page.animationDuration = 750;
+Page.transitionDuration = 300;
 
 if(typeof window != 'undefined')
 	window.onerror = ErrorLogs.send;

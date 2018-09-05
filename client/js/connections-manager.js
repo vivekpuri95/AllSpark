@@ -67,7 +67,7 @@ Page.class = class Connections extends Page {
 			dataConnectionsContainer.appendChild(item.row);
 
 		if(!dataConnectionsContainer.textContent)
-			dataConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No data connections found! :(</td></tr>';
+			dataConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No data connections found!</td></tr>';
 
 		oAuthConnectionsContainer.textContent = null;
 
@@ -75,7 +75,7 @@ Page.class = class Connections extends Page {
 			oAuthConnectionsContainer.appendChild(item.row);
 
 		if(!oAuthConnectionsContainer.textContent)
-			oAuthConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No OAuth connections found! :(</td></tr>';
+			oAuthConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No OAuth connections found!</td></tr>';
 
 		const providerList = this.listContainer.querySelector('#add-oauth-connection').provider;
 
@@ -94,28 +94,7 @@ class DataConnection {
 		DataConnection.form = DataConnection.container.querySelector('form');
 
 		DataConnection.container.querySelector('.toolbar #back').on('click', () => Sections.show('list'));
-
-		DataConnection.form.type.on('change', function() {
-			DataConnection.types.get(this.value).render();
-		});
-
-		for(const [type, _] of DataConnection.types) {
-
-			let feature;
-
-			for(const _feature of MetaData.features.values()) {
-
-				if(_feature.slug == type && _feature.type == 'source')
-					feature = _feature;
-			}
-
-			if(!feature)
-				continue;
-
-			DataConnection.form.type.insertAdjacentHTML('beforeend', `
-				<option value="${feature.slug}">${feature.name}</option>
-			`);
-		}
+		page.container.querySelector('#connection-picker-back').on('click', () => Sections.show('list'));
 	}
 
 	static async add(page) {
@@ -123,17 +102,81 @@ class DataConnection {
 		DataConnection.form.removeEventListener('submit', DataConnection.submitListener);
 		DataConnection.form.reset();
 
+		this.page.container.querySelector('#share-connections').innerHTML = `<div class="NA">You can share the connection once you create one.</div>`;
+
 		DataConnection.container.querySelector('.toolbar #test-connection').classList.add('hidden');
 		DataConnection.container.querySelector('.test-result').classList.add('hidden');
 		DataConnection.container.querySelector('h1').textContent = 'Add New Connection';
 		DataConnection.form.on('submit', DataConnection.submitListener = e => DataConnection.insert(e, page));
 
-		DataConnection.form.type.disabled = false;
-		DataConnection.types.get(DataConnection.form.type.value).render();
-
-		await Sections.show('form');
-
 		DataConnection.form.connection_name.focus();
+
+		const addConnectionForm = page.container.querySelector('#add-connection-form');
+
+		addConnectionForm.textContent = null;
+
+		for(const connection of MetaData.datasources.values()) {
+
+			let feature;
+
+			for(const _feature of MetaData.features.values()) {
+
+				if(_feature.slug == connection.slug && _feature.type == 'source')
+					feature = _feature;
+			}
+
+			// if(!feature)
+			// 	continue;
+
+			const label = document.createElement('label');
+
+			label.dataset.slug = connection.slug;
+
+			label.innerHTML = `
+				<figure>
+					<img alt="${connection.name}">
+					<span class="loader"><i class="fa fa-spinner fa-spin"></i></span>
+					<span class="NA hidden">Preview not available!</span>
+					<figcaption>${connection.name}</figcaption>
+				</figure>
+			`;
+
+			const
+				img = label.querySelector('img'),
+				loader = label.querySelector('.loader'),
+				NA = label.querySelector('.NA');
+
+			img.on('load', () => {
+				img.classList.add('show');
+				loader.classList.add('hidden');
+			});
+
+			img.on('error', () => {
+				NA.classList.remove('hidden');
+				loader.classList.add('hidden');
+			});
+
+			img.src = connection.image;
+
+			label.on('click', async () => {
+
+				if(addConnectionForm.querySelector('figure.selected'))
+					addConnectionForm.querySelector('figure.selected').classList.remove('selected');
+
+				label.querySelector('figure').classList.add('selected');
+
+				DataConnection.types.get(connection.slug).render();
+
+				await Sections.show('form');
+			});
+
+			addConnectionForm.appendChild(label);
+		}
+
+		if(!MetaData.datasources.size)
+			addConnectionForm.innerHTML = `<div class="NA">No connections found</div>`;
+
+		await Sections.show('add-connection');
 	}
 
 	static async insert(e, page) {
@@ -142,18 +185,42 @@ class DataConnection {
 
 		const
 			parameters = {
-				type: DataConnection.form.type.value,
+				type: page.container.querySelector('#add-connection-form .selected').parentElement.dataset.slug,
 			},
 			options = {
 				method: 'POST',
 				form: new FormData(DataConnection.form),
 			};
 
-		const response = await API.call('credentials/insert', parameters, options);
+		try {
 
-		await DataConnection.page.load();
+			const response = await API.call('credentials/insert', parameters, options);
 
-		page.dataConnections.get(response.insertId).edit();
+			await DataConnection.page.load();
+
+			const connection = page.dataConnections.get(response.insertId);
+
+			connection.edit();
+
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup();
+
+			new SnackBar({
+				message: `${connection.feature.name} Connection Added`,
+				subtitle: `${connection.connection_name} #${connection.id}`,
+				icon: 'fas fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	constructor(item, page) {
@@ -176,9 +243,14 @@ class DataConnection {
 		DataConnection.form.reset();
 
 		DataConnection.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
-		DataConnection.form.on('submit', DataConnection.submitListener = e => this.update(e));
+
+		DataConnection.form.on('submit', DataConnection.submitListener = e => {
+			e.preventDefault();
+			this.update();
+		});
 
 		this.objectRoles = new ObjectRoles('connection', this.id, ['user', 'role']);
+
 		await this.objectRoles.load();
 
 		this.page.container.querySelector('#share-connections').innerHTML = null;
@@ -195,14 +267,12 @@ class DataConnection {
 
 		test.on('click', DataConnection.test_listener = async () => this.test());
 
-		DataConnection.form.type.disabled = true;
-
 		for(const key in this) {
 			if(DataConnection.form.elements[key])
 				DataConnection.form.elements[key].value = this[key];
 		}
 
-		DataConnection.types.get(DataConnection.form.type.value).render(this);
+		DataConnection.types.get(this.type).render(this);
 
 		await Sections.show('form');
 
@@ -225,31 +295,32 @@ class DataConnection {
 			response = await API.call('credentials/testConnections', parameter, options);
 		}
 		catch (e) {
-			container.classList.remove('hidden');
-			container.classList.add('warning');
-			container.classList.remove('notice');
-			container.textContent = e;
-			return;
-		}
 
-		container.classList.remove('hidden');
+			new SnackBar({
+				message: 'Connection Failed',
+				subtitle: e.message || JSON.stringify(e),
+				type: 'error',
+			});
+
+			throw e;
+		}
 
 		if(response.status) {
-			container.classList.add('notice');
-			container.classList.remove('warning');
-			container.textContent = 'Connection Successful';
+
+			new SnackBar({
+				message: 'Connection Successful',
+			});
 		}
 		else {
-			container.classList.add('warning');
-			container.classList.remove('notice');
-			container.textContent = 'Connection Failed';
+			new SnackBar({
+				message: 'Connection Failed',
+				subtitle: JSON.stringify(response.message || response),
+				type: 'error',
+			});
 		}
 	}
 
-	async update(e) {
-
-		if(e && e.preventDefault)
-			e.preventDefault();
+	async update() {
 
 		const
 			parameters = {
@@ -260,10 +331,29 @@ class DataConnection {
 				form: new FormData(DataConnection.form),
 			};
 
-		await API.call('credentials/update', parameters, options);
+		try {
 
-		await this.page.load();
-		await Sections.show('list');
+			await API.call('credentials/update', parameters, options);
+
+			await this.page.load();
+			await Sections.show('list');
+
+			new SnackBar({
+				message: `${this.feature.name} Connection Saved`,
+				subtitle: `${this.name} #${this.id} (${this.feature.name})`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete() {
@@ -274,14 +364,34 @@ class DataConnection {
 		const
 			parameters = {
 				id: this.id,
+				type: this.type,
 			},
 			options = {
 				method: 'POST',
 			};
 
-		await API.call('credentials/delete', parameters, options);
+		try {
 
-		await this.page.load();
+			await API.call('credentials/delete', parameters, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: `${this.feature.name} Connection Removed`,
+				subtitle: `${this.connection_name} #${this.id}`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	get row() {
@@ -294,7 +404,7 @@ class DataConnection {
 		container.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.connection_name}</td>
-			<td>${this.feature.name}</td>
+			<td>${this.feature ? this.feature.name : ''}</td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -455,6 +565,49 @@ DataConnection.types.set('pgsql', class {
 	}
 });
 
+DataConnection.types.set('oracle', class {
+
+	static render(connections = {}) {
+
+		DataConnection.form.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span class="password">Password <a class="show-password">Show</a></span>
+				<input type="password" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+		`;
+
+		DataConnection.form.password.on('click', () => {
+			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password': 'text';
+		});
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: DataConnection.form.user.value,
+			password: DataConnection.form.password.value,
+			host: DataConnection.form.host.value,
+			port: DataConnection.form.port.value,
+		});
+	}
+});
+
 DataConnection.types.set('api', class {
 
 	static render(connections = {}) {
@@ -565,7 +718,7 @@ class OAuthConnection {
 			return;
 		}
 
-		window.location = '/connections';
+		window.location = '/connections-manager';
 	}
 
 	static async insert(e) {
@@ -664,7 +817,7 @@ class OAuthConnection {
 			const parameters = new URLSearchParams();
 
 			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections`);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/analytics.readonly');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
@@ -679,7 +832,7 @@ class OAuthConnection {
 			const parameters = new URLSearchParams();
 
 			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections`);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/adwords');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
@@ -694,7 +847,7 @@ class OAuthConnection {
 			const parameters = new URLSearchParams();
 
 			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections`);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/bigquery');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
@@ -709,7 +862,7 @@ class OAuthConnection {
 			const parameters = new URLSearchParams();
 
 			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections`);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'ads_read');
 			parameters.set('response_type', 'code');
 			parameters.set('state', this.id);

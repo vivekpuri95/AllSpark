@@ -107,7 +107,7 @@ Page.class = class Tasks extends Page {
 			tbody.appendChild(task.row);
 
 		if(!tbody.children.length)
-			tbody.innerHTML = '<tr><td class="NA" colspan="6">No Tasks found! :(</td></tr>';
+			tbody.innerHTML = '<tr><td class="NA" colspan="6">No Tasks found!</td></tr>';
 	}
 }
 
@@ -153,7 +153,7 @@ class Task {
 		await tasks.load();
 
 		if(!tasks.list.has(response.insertId))
-			throw new Page.exception('New task\'s id not found in task list! :(');
+			throw new Page.exception('New task\'s id not found in task list!');
 
 		tasks.back();
 	}

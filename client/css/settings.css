@@ -6,6 +6,8 @@ main {
 		display: flex;
 		flex-direction: column;
 		color: var(--color-primary-text);
+		height: calc(100vh - 50px);
+		border-right: 1px solid #ccc;
 	}
 		main > nav a {
 			padding: 12px 16px;
@@ -15,26 +17,18 @@ main {
 						box-shadow var(--transition-duration);
 		}
 		main > nav a:hover {
-			background: var(--color-secondary);
-			color: var(--color-secondary-text);
+			background: #ddd;
 			text-decoration: none;
 		}
 		main > nav a.selected {
-			background: var(--color-secondary);
-			color: var(--color-secondary-text);
-			box-shadow: inset 10px 0px 0 var(--color-accent);
+			box-shadow: inset 6px 0px 0 var(--color-accent);
+			font-weight: bold;
 		}
 	main #account-form label img {
 		border: 1px solid #ccc;
 		padding: var(--gap);
 	}
-main .feature-form h3 {
-	border-bottom: 1px dashed #999;
-	margin-bottom: 0;
-}
-main .feature-form table {
-	background: #fff;
-}
+
 main .settings-manager {
 	display: grid;
 	grid-template-columns: 300px auto;
@@ -82,7 +76,7 @@ main .settings-manager {
 			position: sticky;
 			top: 0;
 			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-			z-index: 5;
+			z-index: 6;
 		}
 			main .settings-manager .profile > header h3 {
 				margin: 0;
@@ -136,3 +130,88 @@ main .settings-manager {
 				align-items: center;
 				padding: calc(var(--gap) * 2);
 			}
+
+main .feature-form h3 {
+	border-bottom: 1px dashed #999;
+	margin-bottom: 0;
+}
+main .feature-form .table-container {
+	max-height: 600px;
+	overflow: auto;
+}
+	main .feature-form table {
+		background: #fff;
+	}
+		main .feature-form table thead th {
+			position: sticky;
+		}
+		main .feature-form table .feature-toggle {
+			padding: 0;
+			width: 250px;
+		}
+			main .feature-form table .feature-toggle div {
+				display: flex;
+			}
+				main .feature-form table .feature-toggle label {
+					flex: 1;
+					text-align: center;
+					padding: 8px;
+					transition: background var(--transition-duration),
+								box-shadow var(--transition-duration);
+				}
+				main .feature-form table .feature-toggle label:hover {
+					cursor: pointer;
+					background: #ccc;
+				}
+				main .feature-form table .feature-toggle label:active {
+					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+				}
+
+main .privilege-component {
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+	margin: calc(var(--gap) * 2) 0;
+}
+	main .privilege-component h3 {
+		border-bottom: 1px dashed #999;
+		margin: 0;
+	}
+	main .privilege-component .headings {
+		display: grid;
+		grid-template-columns: 50px 150px 150px;
+		grid-gap: calc(var(--gap) * 2);
+		color: #333;
+	}
+	main .privilege-component .component-list {
+		display: grid;
+		grid-template-columns: max-content max-content 50px;
+		grid-gap: calc(var(--gap) * 2);
+	}
+		main .privilege-component .component-list .thin{
+			max-width: 50px;
+		}
+	main .privilege-component .add-new-container {
+		display: grid;
+		grid-template-columns: 200px max-content;
+		grid-gap: calc(var(--gap) * 2);
+	}
+
+main .about-list {
+	display: grid !important;
+	grid-template-rows: max-content max-content;
+	grid-gap: calc(var(--gap) * 3);
+}
+	main .about-list .info {
+		display: grid;
+		grid-template-columns: max-content max-content;
+		grid-gap: calc(var(--gap) * 3);
+		background: #fff;
+		padding: calc(var(--gap) * 2);
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+	}
+		main .about-list .info .key {
+			color: #999;
+		}
+	main .about-list button.clear-cache {
+		width: 10%;
+	}

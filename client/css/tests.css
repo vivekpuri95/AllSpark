@@ -1,0 +1,106 @@
+#list .toolbar {
+	position: sticky;
+	top: 50px;
+	background: #eee;
+	z-index: 1;
+	justify-content: space-between;
+}
+	#list .toolbar #progress {
+		display: grid;
+		grid-gap: var(--gap);
+		width: 250px;
+	}
+		#list .toolbar #progress meter {
+			width: 100%;
+		}
+		#list .toolbar #progress .NA {
+			display: flex;
+			justify-content: space-between;
+		}
+#tests {
+	display: flex;
+	flex-wrap: wrap;
+	margin: -10px;
+}
+	#tests section {
+		flex: 1 0 500px;
+		margin: 10px;
+	}
+		#tests section h2 {
+			flex: 1 0 100%;
+			margin: calc(var(--gap) * 2) 0;
+			font-size: 125%;
+			border-bottom: 1px dashed #ccc;
+		}
+		#tests section > table {
+			background: #fff;
+			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+		}
+		#tests section > table {
+			table-layout: fixed;
+		}
+			#tests section > table th,
+			#tests section > table td {
+				padding: calc(var(--gap) * 2);
+			}
+			#tests section > table th.name {
+				width: 250px;
+			}
+			#tests section > table tbody th.name {
+				text-align: left;
+			}
+			#tests section > table tbody td.test {
+				cursor: pointer;
+				transition: background var(--transition-duration),
+							color var(--transition-duration),
+							box-shadow var(--transition-duration);
+			}
+			#tests section > table tbody td.test:hover {
+				background: #ddd;
+			}
+			#tests section > table tbody td.test:active {
+				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
+			}
+			#tests section > table tbody td.test.passed {
+				background: #2c9d58;
+				color: #fff;
+				border: 1px solid #fff;
+			}
+			#tests section > table tbody td.test.failed {
+				background: #db4437;
+				color: #fff;
+				border: 1px solid #fff;
+			}
+			#tests section > table tbody td.test.running {
+				border: 1px solid transparent;
+				animation-duration: 1000ms;
+				animation-name: running;
+				animation-iteration-count: infinite;
+			}
+
+			@keyframes running {
+
+				0% {
+					background: #fff;
+					background: #eda;
+				}
+
+				33% {
+					background: #eda;
+				}
+			}
+
+.dialog-box .body.test-info,
+.dialog-box .body.test-description {
+	user-select: text;
+}
+	.dialog-box .body.test-info .code-editor,
+	.dialog-box .body.test-description .code-editor {
+		height: 300px;
+	}
+	.dialog-box .body.test-info th,
+	.dialog-box .body.test-description th {
+		width: 150px;
+		text-align: left;
+		padding: 8px;
+	}

@@ -3,27 +3,37 @@ const API = require('../utils/api');
 class GlobalFilters extends API {
 
 	async list() {
-		const result = await this.mysql.query(`SELECT * FROM tb_global_filters WHERE account_id = ?`, [this.account.account_id]);
+
+        this.user.privilege.needs("administrator");
+
+		const result = await this.mysql.query(
+			`SELECT * FROM tb_global_filters WHERE account_id = ?`,
+			[this.account.account_id]
+		);
 
 		for(const data of result) {
+
 			data.placeholder = data.placeholder.split(',');
 		}
 
 		return result;
 	};
 
-	async insert() {
+	async insert({name, placeholder, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
+
 		this.user.privilege.needs('administrator');
+
+        this.assert(name && placeholder, 'Name or Placeholder is missing');
 
 		const params = {
 			account_id: this.account.account_id,
-			name: this.request.body.name,
-			placeholder: this.request.body.placeholder,
-			default_value: this.request.body.default_value,
-			multiple: this.request.body.multiple,
-			type: this.request.body.type,
-			offset: this.request.body.offset || null,
-			dataset: this.request.body.dataset,
+			name,
+			placeholder,
+			default_value,
+			multiple,
+			type,
+			offset: isNaN(parseInt(offset)) ? null : parseInt(offset),
+			dataset: parseInt(dataset) || null,
 		};
 
 		return await this.mysql.query(
@@ -33,32 +43,35 @@ class GlobalFilters extends API {
 		);
 	}
 
-	async update() {
+	async update({id, name, placeholder, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
+
 		this.user.privilege.needs('administrator');
 
+		this.assert(id, 'Global filter id is required');
+		this.assert(name && placeholder, 'Name or Placeholder cannot be null or empty');
+
 		const params = {
-			name: this.request.body.name,
-			placeholder: this.request.body.placeholder,
-			default_value: this.request.body.default_value,
-			multiple: this.request.body.multiple,
-			type: this.request.body.type,
-			offset: this.request.body.offset || null,
-			dataset: this.request.body.dataset,
+			name, placeholder, default_value, multiple, type,
+			offset: isNaN(parseInt(offset)) ? null : parseInt(offset),
+			dataset: parseInt(dataset) || null,
 		};
 
 		return await this.mysql.query(
 			`UPDATE tb_global_filters SET ? WHERE id = ? and account_id = ?`,
-			[params, this.request.body.id, this.account.account_id],
+			[params, id, this.account.account_id],
 			'write'
 		);
 	}
 
-	async delete() {
+	async delete({id} = {}) {
+
 		this.user.privilege.needs('administrator');
+
+		this.assert(id, 'Global filter id is required');
 
 		return await this.mysql.query(
 			`DELETE FROM tb_global_filters WHERE id = ? and account_id = ?`,
-			[this.request.body.id, this.account.account_id],
+			[id, this.account.account_id],
 			'write'
 		);
 	}

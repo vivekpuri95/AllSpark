@@ -3,6 +3,9 @@
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
 const role = new (require("../object_roles")).get();
+const reportHistory = require('../../utils/reportLogs');
+const constants = require("../../utils/constants");
+const dbConfig = require('config').get("sql_db");
 
 exports.list = class extends API {
 
@@ -11,7 +14,7 @@ exports.list = class extends API {
 		let query = `
 			SELECT
 				q.*,
-				CONCAT(u.first_name, ' ', u.last_name) AS added_by_name
+				CONCAT_WS(' ', u.first_name, u.last_name) AS added_by_name
 			FROM
 				tb_query q
 			LEFT JOIN
@@ -46,6 +49,28 @@ exports.list = class extends API {
 				AND q.is_deleted = 0
 		`;
 
+		const dashboardToReportAccessQuery = `
+			SELECT
+                query_id
+            FROM
+                tb_query q
+            JOIN
+                tb_query_visualizations qv
+                USING(query_id)
+            JOIN
+                tb_visualization_dashboard vd
+                USING(visualization_id)
+            JOIN
+                tb_object_roles o
+            ON
+                o.owner_id = vd.dashboard_id
+            WHERE
+                 OWNER = "dashboard"
+                 AND target = "user"
+                 AND target_id = ?
+            GROUP BY query_id
+        `;
+
 		if (this.request.body.search) {
 			query = query.concat(`
 				AND (
@@ -57,16 +82,28 @@ exports.list = class extends API {
 			`);
 		}
 
+		let userCategories = new Set(this.user.privileges.filter(x => x.privilege_name === constants.privilege.administrator || x.privilege_name === constants.privilege.report).map(x => x.category_id));
+		let isAdmin = false;
+
+		if(constants.adminPrivilege.some(x => userCategories.has(x))) {
+
+			userCategories = new Set([0]);
+			isAdmin = true;
+		}
+
+
 		const results = await Promise.all([
 			this.mysql.query(query, [`%${this.request.body.text}%`, `%${this.request.body.text}%`, `%${this.request.body.text}%`]),
 			this.mysql.query('SELECT * FROM tb_query_filters'),
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 			this.mysql.query(dashboardRoleQuery),
+			this.mysql.query(dashboardToReportAccessQuery, [this.user.user_id])
 		]);
 
 		const reportRoles = await role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],);
 
 		const userSharedQueries = new Set((await role.get(this.account.account_id, "query", "user", results[0].length ? results[0].map(x => x.query_id) : [-1], this.user.user_id)).map(x => x.owner_id));
+		const dashboardSharedQueries = new Set(results[4].map(x => parseInt(x.query_id)));
 
 		const reportRoleMapping = {};
 
@@ -103,13 +140,23 @@ exports.list = class extends API {
 
 		for (const row of results[0]) {
 
-			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [null];
-			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [null];
+			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [];
+			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [];
 
-			row.flag = userSharedQueries.has(row.query_id);
+			row.flag = userSharedQueries.has(row.query_id) || dashboardSharedQueries.has(row.query_id);
 
 			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
 				continue;
+			}
+
+			if(isAdmin || row.category_id.every(x => userCategories.has(x))) {
+
+				row.editable = true;
+			}
+
+			else {
+
+				delete row.query;
 			}
 
 			row.filters = results[1].filter(filter => filter.query_id === row.query_id);
@@ -144,15 +191,20 @@ exports.update = class extends API {
 
 	async update() {
 
-		const categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
+		const
+			categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id),
+			[updatedRow] = await this.mysql.query(`SELECT * FROM tb_query WHERE query_id = ?`, [this.request.body.query_id]);
 
 		for(const category of categories || [0]) {
 
 			this.user.privilege.needs('report', category);
 		}
 
+		this.assert(updatedRow, 'Invalid query id');
+
 		let
 			values = {},
+			compareJson = {},
 			query_cols = [
 				'name',
 				'source',
@@ -175,8 +227,15 @@ exports.update = class extends API {
 
 			if (query_cols.includes(key)) {
 
-				values[key] = this.request.body[key];
+				values[key] = this.request.body[key] || null;
+				compareJson[key] = updatedRow[key] == null || updatedRow[key] === '' ? null : updatedRow[key].toString();
+				updatedRow[key] = this.request.body[key];
 			}
+		}
+
+		if(JSON.stringify(compareJson) == JSON.stringify(values)) {
+
+			return "0 rows affected";
 		}
 
 		values.refresh_rate = parseInt(values.refresh_rate) || null;
@@ -194,7 +253,18 @@ exports.update = class extends API {
 
 		}
 
-		return await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write');
+		const
+			updateResponse =  await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write'),
+			logs = {
+				owner: 'query',
+				owner_id: this.request.body.query_id,
+				state: JSON.stringify(updatedRow),
+				operation:'update',
+			};
+
+		reportHistory.insert(this, logs);
+
+		return updateResponse;
 
 	}
 };
@@ -203,7 +273,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('report', this.user.roles[0].category_id);
+		this.user.privilege.needs('report', parseInt(this.request.body.subtitle));
 
 		let
 			values = {}, query_cols = [
@@ -240,9 +310,54 @@ exports.insert = class extends API {
 			values.format = JSON.stringify({});
 		}
 
-		return await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'write');
+		const
+			insertResponse = await this.mysql.query('INSERT INTO tb_query SET  ?', [values], 'write'),
+			[loggedRow] = await this.mysql.query(
+				'SELECT * FROM tb_query WHERE query_id = ?',
+				[insertResponse.insertId]
+			),
+			logs = {
+				owner: 'query',
+				owner_id: insertResponse.insertId,
+				state: JSON.stringify(loggedRow),
+				operation:'insert',
+			};
+
+		reportHistory.insert(this, logs);
+
+		return insertResponse;
 	}
 };
+
+exports.logs = class extends API {
+
+	async logs() {
+
+		const db = dbConfig.write.database.concat('_logs');
+
+		this.request.query.offset = this.request.query.offset ? parseInt(this.request.query.offset) : 0;
+
+		return await this.mysql.query(`
+			SELECT
+				h.*,
+				CONCAT_WS(' ', first_name, middle_name, last_name) AS user_name
+			FROM 
+				${db}.tb_history h
+			LEFT JOIN
+				tb_users u
+			ON
+				h.updated_by = u.user_id
+			WHERE
+				owner = ?
+				AND h.account_id = ?
+				AND owner_id = ?
+			ORDER BY
+				h.id DESC
+			LIMIT 10 OFFSET ?`,
+			[this.request.query.owner, this.account.account_id, this.request.query.owner_id, this.request.query.offset]
+		);
+	}
+}
 
 exports.userPrvList = class extends API {
 

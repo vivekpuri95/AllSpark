@@ -7,17 +7,19 @@ const mysql = require("../utils/mysql");
 const mssql = require("../utils/mssql");
 const postgres = require("../utils/pgsql");
 const mongo = require("../utils/mongo");
+const oracle = require("../utils/oracle");
 
 (async () => {
 
 	await account.loadAccounts();
 	await account.loadBigquery();
+	account.executingQueriesMap();
 	await api.setup();
 	await mysql.crateExternalPool();
 	await mssql.crateExternalPool();
 	await postgres.crateExternalPool();
 	await mongo.crateExternalPool();
-
+	await oracle.crateExternalPool();
 })();
 
 

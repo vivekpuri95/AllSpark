@@ -101,5 +101,11 @@ async function loadBigquery() {
 	await bigquery();
 }
 
+function executingQueriesMap() {
+
+	global.executingReports = new Map;
+}
+
 exports.loadAccounts = loadAccounts;
 exports.loadBigquery = loadBigquery;
+exports.executingQueriesMap = executingQueriesMap;

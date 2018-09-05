@@ -1,3 +1,50 @@
+/*Css for nav bar at left only on dashboard page*/
+@media (min-width: 750px) {
+
+	body > header .menu-header-toggle {
+		display: flex;
+		padding: 15px 20px;
+		justify-content: center;
+		align-items: center;
+		transition: background var(--transition-duration);
+	}
+	body > header .menu-header-toggle.selcted {
+		background: #fff;
+		color: #333;
+	}
+	body > header .menu-header-toggle:hover {
+		background: rgba(0, 0, 0, 0.25);
+		cursor: pointer;
+	}
+	body > header .nav-container .global-search {
+		margin-left: auto;
+	}
+	body > header .nav-container nav.toggle-right {
+		position: absolute;
+		display: grid;
+		right: 0;
+		top: 50px;
+		background: #fff;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+	}
+		body > header .nav-container nav.toggle-right a {
+			color: #333;
+		}
+		body > header .nav-container nav.toggle-right a:hover {
+			background: rgba(0, 0, 0, 0.15);
+		}
+}
+@media (max-width: 750px) {
+
+	body > header .menu-header-toggle {
+		display: none !important;
+	}
+		body > header .nav-container nav {
+			display: block !important;
+		}
+}
+/*end*/
+
 main {
 	display: grid !important;
 	grid-template-rows: 1fr max-content;
@@ -82,9 +129,6 @@ main > nav::-webkit-scrollbar-track {
 		text-align: center;
 		padding: 20px;
 	}
-		main > nav .NA svg {
-			font-size: 175%;
-		}
 	main > nav .dashboard-hierarchy {
 		display: flex;
 		flex-direction: column;
@@ -163,7 +207,6 @@ main > nav::-webkit-scrollbar-track {
 			main > nav footer .powered-by a {
 				color: #333;
 			}
-
 main #reports.show {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
@@ -314,7 +357,7 @@ main #reports > .global-filters.top.scrolled {
 				width: 100%;
 				outline: 0;
 			}
-			main #reports > .global-filters > .head.heading svg {
+			main #reports > .global-filters > .head.heading i {
 				color: #999;
 			}
 			main #reports > .global-filters > .head .reload {
@@ -327,7 +370,7 @@ main #reports > .global-filters.top.scrolled {
 				color: var(--color-accent);
 				border: 3px solid blue;
 			}
-			main #reports > .global-filters > .head .reload svg {
+			main #reports > .global-filters > .head .reload i {
 				margin: 0;
 			}
 	main #reports > .global-filters .dataset-container {
@@ -391,7 +434,7 @@ main #reports > .list {
 	grid-template-columns: repeat(32, 1.25fr);
 	grid-auto-rows: calc(50px - (var(--gap) * 4));
 	grid-gap: calc(var(--gap) * 4);
-	padding: calc(var(--gap) * 2) 0;
+	padding-top: calc(var(--gap) * 2);
 	align-items: start;
 	z-index: 3;
 	width: 100%;
@@ -405,11 +448,6 @@ main #reports > .list {
 		transition: box-shadow var(--transition-duration),
 					opacity var(--transition-duration),
 					border var(--transition-duration);
-	}
-	main #reports .list .data-source header .edit {
-		display: grid;
-		grid-auto-flow: column;
-		grid-gap: calc(var(--gap) * 2);
 	}
 	main #reports .list .data-source.being-dragged {
 		opacity: 0.5;
@@ -447,7 +485,7 @@ main #reports > .list {
 	main #reports .side.selected {
 		right: 275px;
 	}
-		main #reports .side > svg {
+		main #reports .side > i {
 			margin-right: 0px;
 		}
 	main #reports .list .data-source .resize-dimentions {
@@ -530,9 +568,7 @@ main #reports > .list {
 			transition: transform var(--transition-duration),
 						opacity var(--transition-duration);
 		}
-
 		main > nav .collapse-panel {
-
 			display: none;
 		}
 		main #reports {
@@ -547,6 +583,9 @@ main #reports > .list {
 				main #reports > .list .data-source {
 					margin: calc(var(--gap) * 2) 0;
 					width: calc(100vw - calc(var(--gap) * 6));
+				}
+				main #reports > .list.singleton .data-source {
+					margin: 0;
 				}
 					main #reports > .list .visualization {
 						height: 275px;

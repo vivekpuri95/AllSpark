@@ -1,0 +1,94 @@
+section#list h1:last-of-type {
+	margin: calc(var(--gap) * 2) 0;
+}
+#add-oauth-connection {
+	grid-auto-flow: column;
+	grid-template-columns: max-content max-content max-content;
+	grid-gap: calc(var(--gap) * 2);
+}
+#details {
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+}
+.test-result {
+	margin-bottom: calc(var(--gap) * 2);
+}
+#form .password {
+	display: flex;
+}
+	#form .password .show-password {
+		margin-left: auto;
+		font-size: 90%;
+		color: #666;
+		font-weight: normal;
+	}
+main h2.share-heading {
+	padding-top: 15px;
+	margin-bottom: calc(var(--gap) * 2);
+}
+
+#add-connection-picker {
+	grid-column: 1 / 3;
+}
+#add-connection-form {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+}
+	#add-connection-form figure {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		width: 200px;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+		transform: perspective(500px) translatez(0);
+		transition: box-shadow var(--transition-duration),
+					transform var(--transition-duration);
+	}
+
+	#add-connection-form figure:hover {
+		box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+		transform: perspective(500px) translatez(30px);
+	}
+		#add-connection-form img,
+		#add-connection-form .NA,
+		#add-connection-form .loader {
+			height: auto;
+			width: 100%;
+			height: 175px;
+		}
+		#add-connection-form img {
+			opacity: 0;
+			transition: opacity var(--transition-duration);
+		}
+		#add-connection-form img.show {
+			opacity: 1;
+		}
+		#add-connection-form .loader {
+			font-size: 200%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: #8d6e63;
+			position: absolute;
+			top: 0;
+		}
+		#add-connection-form .NA {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: #8d6e63;
+			font-size: 110%;
+			position: absolute;
+			top: 0;
+		}
+		#add-connection-form figcaption {
+			background: #D7CCC8;
+			width: 100%;
+			padding: calc(var(--gap) * 2);
+			text-align: center;
+			transition: background var(--transition-duration);
+			font-size: 125%;
+		}

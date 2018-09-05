@@ -59,6 +59,15 @@ Page.class = class Dashboards extends Page {
 			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
 		}
 
+		const menuBar = document.querySelector('header');
+		menuBar.querySelector('.nav-container nav').classList.add('toggle-right', 'hidden');
+		menuBar.appendChild(this.menuBarToggle);
+
+		document.querySelector('body').on('click', () => {
+			menuBar.querySelector('.menu-header-toggle').classList.remove('selected');
+			document.querySelector('.nav-container nav').classList.add('hidden');
+		})
+
 		this.listContainer.form.subtitle.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
 
@@ -72,6 +81,29 @@ Page.class = class Dashboards extends Page {
 
 			await this.load();
 		})();
+	}
+
+	get menuBarToggle() {
+
+		if(this.menuBarToggleElement)
+			return this.menuBarToggleElement;
+
+		const div = this.element = document.createElement('div');
+		div.classList.add('menu-header-toggle');
+
+		div.innerHTML = `
+			<i class="fas fa-chevron-down"></i>
+		`;
+
+		div.on('click', (e) => {
+
+			e.stopPropagation();
+
+			div.classList.toggle('selected');
+			document.querySelector('.nav-container nav').classList.toggle('hidden');
+		})
+
+		return div;
 	}
 
 	get currentDashboard() {
@@ -267,7 +299,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		if (!tbody.children.length)
-			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found! :(</td></tr>`;
+			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found!</td></tr>`;
 	}
 
 	async load(state) {
@@ -311,6 +343,13 @@ Page.class = class Dashboards extends Page {
 		this.navbar = new Navbar(this.list, this);
 
 		this.navbar.render();
+
+		if(await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
+
+			await Storage.set('newUser', (await Storage.get('newUser')) || {});
+
+			Page.loadOnboardScripts();
+		}
 
 		if (window.location.pathname.split('/').pop() === 'first') {
 
@@ -380,10 +419,13 @@ Page.class = class Dashboards extends Page {
 		report.container.removeAttribute('style');
 		container.classList.add('singleton');
 		Dashboard.toolbar.classList.add('hidden');
+
 		this.container.querySelector('#reports .global-filters').classList.add('hidden');
 
-		report.container.querySelector('.menu').classList.remove('hidden');
-		report.container.querySelector('.menu-toggle').classList.add('selected');
+		if(!report.container.contains(report.menu))
+			report.container.appendChild(report.menu);
+
+		report.menu.classList.remove('hidden')
 
 		container.appendChild(report.container);
 
@@ -614,7 +656,7 @@ class Dashboard {
 			report.format.format = selectedVisualizationProperties.format;
 
 			const
-				header = report.container.querySelector('header'),
+				header = report.container.querySelector('header .actions'),
 				format = report.selectedVisualization.format;
 
 			if (!format.width)
@@ -624,11 +666,9 @@ class Dashboard {
 				format.height = Dashboard.grid.rows;
 
 			header.insertAdjacentHTML('beforeend', `
-				<div class="edit">
-					<span class="remove" title="Remove Graph"><i class="fa fa-times"></i></span>
-					<span class="move-up" title="Move visualization up"><i class="fas fa-angle-up"></i></span>
-					<span class="move-down" title="Move visualization down"><i class="fas fa-angle-down"></i></span>
-				</div>
+				<a class="show move-up" title="Move visualization up"><i class="fas fa-angle-double-up"></i></a>
+				<a class="show move-down" title="Move visualization down"><i class="fas fa-angle-double-down"></i></a>
+				<a class="show remove" title="Remove Graph"><i class="fa fa-times"></i></a>
 			`);
 
 			header.querySelector('.move-up').on('click', () => {
@@ -909,6 +949,7 @@ class Dashboard {
 
 		await API.refreshToken();
 
+		this.globalFilters.apply({dontLoad: true});
 		this.lazyLoad(this.maxScrollHeightAchieved, resize);
 
 		document.addEventListener('scroll',
@@ -933,7 +974,7 @@ class Dashboard {
 
 		if (!this.page.loadedVisualizations.size) {
 
-			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found! :(</div>';
+			Dashboard.container.innerHTML = '<div class="NA no-reports">No reports found!</div>';
 		}
 
 		if (this.page.user.privileges.has('report')) {
@@ -1049,6 +1090,11 @@ class Navbar {
 
 				dashboardHirachy.append(dashboardItem.menuItem);
 			}
+		}
+
+		if(dashboardHirachy.querySelectorAll('.item:not(.hidden)').length > 40) {
+
+			search.classList.remove('hidden');
 		}
 
 		search.removeEventListener('keyup', this.navSearch);
@@ -1305,8 +1351,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				<label><input type="checkbox" checked> Select All</label>
 				<button class="reload icon" title="Fore Refresh"><i class="fas fa-sync"></i></button>
 			</div>
-			<div class="NA no-results hidden">No filters found! :(</div>
+			<div class="NA no-results hidden">No filters found!</div>
 		`;
+
+		this.container.querySelector('.close').remove();
 
 		container.appendChild(this.container);
 
@@ -1336,21 +1384,26 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 	async apply(options = {}) {
 
-		for (const report of this.dashboard.visibleVisuliaztions) {
+		for(const report of this.dashboard.visibleVisuliaztions) {
 
 			let found = false;
 
-			for (const filter of report.filters.values()) {
+			for(const filter of report.filters.values()) {
 
-				if (!Array.from(this.values()).some(gfl => gfl.placeholders.includes(filter.placeholder)))
+				let [matchingFilter] = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))
+
+				if(!matchingFilter)
 					continue;
 
-				filter.value = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))[0].value;
+				filter.value = matchingFilter.value;
 
 				found = true;
 			}
 
-			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
+			if(options.dontLoad)
+				return;
+
+			if(found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
 				report.visualizations.selected.load(options);
 
 			report.container.style.opacity = found ? 1 : 0.4;

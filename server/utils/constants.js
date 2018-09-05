@@ -6,8 +6,10 @@ exports.adminCategory = [0];
 
 exports.adminRole = [0];
 
+exports.adminPrivilege = [0];
+
 exports.privilege = {
-	administrator: "admin",
+	administrator: "Everything",
 	user: "user",
 	connection: "connection",
 	dashboard: "dashboard",
@@ -26,6 +28,7 @@ exports.publicEndpoints = [
 	'/v2/accounts/signup',
 	'/v2/oauth/connections/redirect_uri',
 	'/v2/session-logs/insert',
+	'/v2/tests/test',
 ];
 
 exports.filterPrefix = "param_";

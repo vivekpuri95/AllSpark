@@ -21,11 +21,11 @@ class HTMLAPI extends API {
 
 		this.stylesheets = [
 			'/css/main.css',
+			'https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous" f="'
 		];
 
 		this.scripts = [
 			'/js/main.js',
-			'https://use.fontawesome.com/releases/v5.0.8/js/all.js" async defer f="',
 			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
 		];
 	}
@@ -58,7 +58,7 @@ class HTMLAPI extends API {
 				           _ _  _____                  _
 				     /\\   | | |/ ____|                | |
 				    /  \\  | | | (___  _ __   __ _ _ __| | __
-				   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
+				   / /\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
 				  / ____ \\| | |____) | |_) | (_| | |  |   <
 				 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
 				                     | |
@@ -78,6 +78,9 @@ class HTMLAPI extends API {
 
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
+					<script>
+						const demo_url = "${config.has('demo_url') ? config.get('demo_url') : ''}";
+					</script>
 				</head>
 				<body>
 
@@ -150,8 +153,8 @@ router.get('/account-signup', API.serve(class extends HTMLAPI {
 
 		super();
 
-		this.stylesheets.push('/css/accountSignup.css');
-		this.scripts.push('/js/accountSignup.js');
+		this.stylesheets.push('/css/account-signup.css');
+		this.scripts.push('/js/account-signup.js');
 	}
 
 	async main() {
@@ -162,7 +165,7 @@ router.get('/account-signup', API.serve(class extends HTMLAPI {
 
 				<div class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="submit" form="signup-form"><i class="fa fa-save"></i> Sign up</button>
+					<button type="submit" form="signup-form"><i class="far fa-save"></i> Sign up</button>
 					<span class="notice hidden"></span>
 				</div>
 
@@ -277,6 +280,7 @@ router.get('/login', API.serve(class extends HTMLAPI {
 					</label>
 
 					<div>
+						<a href="/login/forgot">Forgot Password?</a>
 						<button class="submit">
 							<i class="fas fa-arrow-right"></i>
 							Next
@@ -313,7 +317,6 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			<section id="message"></section>
 
 			<div id="signup" class="hidden">
-				<a href="/login/forgot">Forgot Password?</a>
 				${this.account.settings.get('enable_account_signup') ? 'Or Create a <a href="/account-signup">new account</a>' : ''}
 			</div>
 		`;
@@ -420,7 +423,7 @@ router.get('/user/profile/edit', API.serve(class extends HTMLAPI {
 					<label>
 						<span></span>
 						<button class="submit">
-							<i class="fa fa-save"></i>
+							<i class="far fa-save"></i>
 							Change
 						</button>
 					</label>
@@ -441,47 +444,74 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 		super();
 
 		this.stylesheets.push('/css/profile.css');
+		this.scripts.push('/js/reports.js');
 		this.scripts.push('/js/profile.js');
 	}
 
 	async main() {
 		return `
-			<h1>
-				<span></span>
-				<a href="/user/profile/edit" class="edit"><i class="fa fa-edit"></i> Edit</a>
-			</h1>
 
-			<div class="profile-details"></div>
+			<div class="details">
 
-			<h2>Privileges</h2>
-			<p>
-				Privileges define what <strong>actions</strong> the user can perform.<br>
-				<span class="NA">For Example: Manage Reports, Users, Connections, Dashboards, etc</span>
-			</p>
-			<table class="privileges">
-				<thead>
-					<tr>
-						<th>Category</th>
-						<th>Privilege</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
+				<h1>
+					<span>&nbsp;</span>
+					<a href="/user/profile/edit" class="edit"><i class="fa fa-edit"></i> Edit</a>
+				</h1>
+			</div>
 
-			<h2>Roles</h2>
-			<p>
-				Roles define what <strong>data</strong> the user can view.<br>
-				<span class="NA">For Example: <em>Merchant Dashboard</em>, <em>Production MySQL</em> (Connection), <em>Delivery Analysys Report</em> etc</span>
-			</p>
-			<table class="roles">
-				<thead>
-					<tr>
-						<th>Category</th>
-						<th>Role</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
+			<div class="switch">
+				<div class="heading-bar">
+					<label class="info selected">
+						<h3>Info</h3>
+					</label>
+					<label class="access">
+						<h3>Access</h3>
+					</label>
+					<label class="activity">
+						<h3>Activity</h3>
+					</label>
+				</div>
+
+				<section class="section show" id="profile-info">
+					<div class="spinner">
+						<i class="fa fa-spinner fa-spin"></i>
+					</div>
+				</section>
+
+				<section class="section" id="access">
+					<h2>Privileges</h2>
+					<p>
+						Privileges define what <strong>actions</strong> the user can perform.<br>
+						<span class="NA">For Example: Manage Reports, Users, Connections, Dashboards, etc</span>
+					</p>
+					<table class="privileges">
+						<thead>
+							<tr>
+								<th>Category</th>
+								<th>Privilege</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+
+					<h2>Roles</h2>
+					<p>
+						Roles define what <strong>data</strong> the user can view.<br>
+						<span class="NA">For Example: <em>Merchant Dashboard</em>, <em>Production MySQL</em> (Connection), <em>Delivery Analysys Report</em> etc</span>
+					</p>
+					<table class="roles">
+						<thead>
+							<tr>
+								<th>Category</th>
+								<th>Role</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</section>
+
+				<section class="section activity-info" id="activity"></section>
+			</div>
 		`;
 	}
 }));
@@ -531,7 +561,7 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 
 		return `
 			<nav>
-				<label class="dashboard-search">
+				<label class="dashboard-search hidden">
 					<input type="search" name="search" placeholder="Search..." >
 				</label>
 
@@ -649,7 +679,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 
 	async main() {
 		return `
-			<section class="section show" id="list">
+			<section class="section" id="list">
 
 				<h1>Dashboard Manager</h1>
 
@@ -670,7 +700,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 						<tr>
 							<th class="thin">ID</th>
 							<th>Name</th>
-							<th>Parent</th>
+							<th>Parents</th>
 							<th>Icon</th>
 							<th>Order</th>
 							<th class="action">Edit</th>
@@ -687,7 +717,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 
 				<div class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="submit" form="dashboard-form"><i class="fa fa-save"></i> Save</button>
+					<button type="submit" form="dashboard-form"><i class="far fa-save"></i> Save</button>
 				</div>
 
 				<form class="block form" id="dashboard-form">
@@ -717,7 +747,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 				</form>
 
 				<h2 class="share-heading">Share dashboards</h2>
-				<div id="share-dashboards" class="NA">You can share dashboards after adding one.</div>
+				<div id="share-dashboards"></div>
 			</section>
 		`;
 	}
@@ -788,7 +818,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-configure-report">
 
 					<header class="toolbar">
-						<button type="submit" form="configure-report-form"><i class="fa fa-save"></i> Save</button>
+						<button type="submit" form="configure-report-form"><i class="far fa-save"></i> Save</button>
 						<small id="added-by"></small>
 					</header>
 
@@ -893,12 +923,13 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-define-report">
 
 					<header class="toolbar">
-						<button type="submit" form="define-report-form"><i class="fa fa-save"></i> Save</button>
+						<button type="submit" form="define-report-form"><i class="far fa-save"></i> Save</button>
 						<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
 						<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
 						<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
 						<button id="edit-data-toggle"><i class="fas fa-edit"></i> Edit Data</button>
 						<button id="run"><i class="fas fa-sync"></i> Run</button>
+						<button id="history-toggle"><i class="fa fa-history"></i> History</button>
 					</header>
 
 					<div id="define-report-parts">
@@ -935,7 +966,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 								<div class="toolbar">
 									<button id="filter-back"><i class="fa fa-arrow-left"></i> Back</button>
-									<button type="submit" form="filter-form-f"><i class="fa fa-save"></i> Save</button>
+									<button type="submit" form="filter-form-f"><i class="far fa-save"></i> Save</button>
 								</div>
 
 								<form id="filter-form-f" class="form">
@@ -1031,63 +1062,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div class="toolbar">
 						<button type="button" id="configure-visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
 						<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
-						<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>
-					</div>
-
-					<form id="configure-visualization-form">
-
-						<div class="configuration-section">
-							<h3><i class="fas fa-angle-right"></i> General</h3>
-
-							<div class="body">
-								<div class="form subform">
-									<label>
-										<span>Name</span>
-										<input type="text" name="name" required>
-									</label>
-
-									<label>
-										<span>Visualization Type</span>
-										<select name="type" required></select>
-									</label>
-
-									<label>
-										<span>Description</span>
-										<textarea  name="description" rows="4" cols="50"></textarea>
-									</label>
-								</div>
-							</div>
-						</div>
-
-						<div class="options"></div>
-
-					</form>
-
-					<div class="configuration-section">
-
-						<h3>
-							<i class="fas fa-angle-right"></i>
-							Transformations
-							<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
-							<span class="count transformation"></span>
-						</h3>
-
-						<div class="body" id="transformations"></div>
-					</div>
-
-					<div class="configuration-section">
-
-						<h3><i class="fas fa-angle-right"></i> Dashboards <span class="count"></span></h3>
-
-						<div class="body" id="dashboards"></div>
-					</div>
-
-					<div class="configuration-section">
-
-						<h3><i class="fas fa-angle-right"></i> Filters <span class="count"></span></h3>
-
-						<div class="body" id="filters"></div>
-
+						<!--<button type="button" id="history-configure-visualization"><i class="fa fa-history"></i> History</button>-->
 					</div>
 
 				</section>
@@ -1098,14 +1073,14 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/users/:id?', API.serve(class extends HTMLAPI {
+router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
 		super();
 
-		this.stylesheets.push('/css/users.css');
-		this.scripts.push('/js/users.js');
+		this.stylesheets.push('/css/users-manager.css');
+		this.scripts.push('/js/users-manager.js');
 	}
 
 	async main() {
@@ -1117,24 +1092,24 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 				<header class="toolbar">
 					<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
 				</header>
-                
+
                 <form class="user-search block form">
-                    
+
                     <label>
                         <span>Id</span>
                         <input type="number" name="user_id" step="1" min="0">
                     </label>
-                    
+
                     <label>
                         <span>Name</span>
                         <input type="text" name="name">
                     </label>
-                    
+
                     <label>
                         <span>Email</span>
                         <input type="text" name="email">
                     </label>
-                    
+
                     <label>
                         <span>Search by</span>
                         <select name="search_by" value="category">
@@ -1143,19 +1118,19 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
                             <option value="privilege">Privilege</option>
                         </select>
                     </label>
-                    
+
                     <label class="category">
                         <span>Category</span>
                     </label>
-                    
+
                     <label class="hidden role">
                         <span>Role</span>
                     </label>
-                    
+
                     <label class="hidden privilege">
                         <span>Privilege</span>
                     </label>
-                    
+
                     <label>
                         <span></span>
                         <button type="submit">Apply</button>
@@ -1184,7 +1159,7 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 
 				<header class="toolbar">
 					<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
+					<button type="submit" form="user-form"><i class="far fa-save"></i> Save</button>
 				</header>
 
 				<form class="block form" id="user-form">
@@ -1215,8 +1190,8 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 					</label>
 				</form>
 
-				<h3>Privileges</h3>
 				<div class="privileges form-container">
+					<h3>Privileges</h3>
 					<form class="filter">
 						<label><span>Category</span></label>
 						<label><span>Privileges</span></label>
@@ -1243,46 +1218,23 @@ router.get('/users/:id?', API.serve(class extends HTMLAPI {
 				</div>
 
 				<h3>Roles</h3>
+
 				<div class="roles form-container">
-					<form class="filter">
-						<label><span>Category</span></label>
-						<label><span>Roles</span></label>
-						<label class="edit"><span></span></label>
-						<label class="save"><span></span></label>
-					</form>
-
-					<div id="roles-list"></div>
-
-					<form id="add-roles" class="filter">
-
-						<label>
-							<select name="category_id" required></select>
-						</label>
-
-						<label>
-							<select name="role_id" required></select>
-						</label>
-
-						<label class="save">
-							<button type="submit" title="Add"><i class="fa fa-paper-plane"></i></button>
-						</label>
-					</form>
 				</div>
-
 
 			</section>
 		`;
 	}
 }));
 
-router.get('/connections/:id?', API.serve(class extends HTMLAPI {
+router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
 		super();
 
-		this.stylesheets.push('/css/connections.css');
-		this.scripts.push('/js/connections.js');
+		this.stylesheets.push('/css/connections-manager.css');
+		this.scripts.push('/js/connections-manager.js');
 	}
 
 	async main() {
@@ -1342,13 +1294,27 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 
 			</section>
 
+			<section class="section" id="add-connection">
+
+				<h1>Add New Connection</h1>
+
+				<div id="add-connection-picker">
+
+					<div class="toolbar">
+						<button id="connection-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
+					</div>
+
+					<form id="add-connection-form"></form>
+				</div>
+			</section>
+
 			<section class="section" id="form">
 
 				<h1></h1>
 
 				<header class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="submit" form="connections-form"><i class="fa fa-save"></i> Save</button>
+					<button type="submit" form="connections-form"><i class="far fa-save"></i> Save</button>
 					<button type="button" id="test-connection"><i class="fas fa-flask"></i>Test</button>
 				</header>
 
@@ -1361,16 +1327,11 @@ router.get('/connections/:id?', API.serve(class extends HTMLAPI {
 						<input type="text" name="connection_name" required>
 					</label>
 
-					<label id="connections">
-						<span>Type</span>
-						<select name="type"></select>
-					</label>
-
 					<div id="details"></div>
 				</form>
 
 				<h2 class="share-heading">Share connections</h2>
-				<div id="share-connections" class="NA">You can share connections after adding one.</div>
+				<div id="share-connections"></div>
 			</section>
 		`;
 	}
@@ -1391,6 +1352,71 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 	async main() {
 		return `
 			<nav></nav>
+
+			<div class="setting-page accounts-page hidden">
+
+				<section class="section" id="accounts-list">
+
+					<h1>Manage Accounts</h1>
+
+					<header class="toolbar">
+						<button id="add-account"><i class="fa fa-plus"></i> Add New Account</button>
+					</header>
+
+					<table class="block">
+						<thead>
+							<th>Id</th>
+							<th>Name</th>
+							<th>URL</th>
+							<th>Icon</th>
+							<th>Logo</th>
+							<th>Edit</th>
+							<th>Delete</th>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</section>
+
+				<section class="section" id="accounts-form">
+
+					<h1></h1>
+
+					<header class="toolbar">
+						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
+						<button type="submit" form="account-form"><i class="far fa-save"></i> Save</button>
+					</header>
+
+					<form class="block form" id="account-form">
+
+						<label>
+							<span>Name</span>
+							<input type="text" name="name" required>
+						</label>
+
+						<label>
+							<span>URL</span>
+							<input type="text" name="url" required>
+						</label>
+
+						<label>
+							<span>Icon</span>
+							<input type="url" name="icon">
+							<img src="" alt="icon" id="icon" height="30">
+						</label>
+
+						<label>
+							<span>Logo</span>
+							<input type="url" name="logo">
+							<img src="" alt="logo" id="logo" height="30">
+						</label>
+
+						<label>
+							<span>Authentication API</span>
+							<input type="url" name="auth_api">
+						</label>
+					</form>
+				</section>
+			</div>
 
 			<div class="setting-page global-filters-page hidden">
 				<section class="section" id="global-filters-list">
@@ -1426,7 +1452,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 					<header class="toolbar">
 						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
-						<button type="submit" form="user-form"><i class="fa fa-save"></i> Save</button>
+						<button type="submit" form="user-form"><i class="far fa-save"></i> Save</button>
 					</header>
 
 					<form class="block form" id="user-form">
@@ -1472,11 +1498,15 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 			</div>
 
 			<div class="setting-page privilege-page hidden">
+
 				<section class="section" id="privileges-list">
+
 					<h1>Manage Privileges</h1>
+
 					<header class="toolbar">
 						<button id="add-privilege"><i class="fa fa-plus"></i> Add New Privilege</button>
 					</header>
+
 					<table class="block">
 						<thead>
 							<tr>
@@ -1497,8 +1527,9 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 					<header class="toolbar">
 						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
-						<button type="submit" form="user-form2"><i class="fa fa-save"></i> Save</button>
+						<button type="submit" form="user-form2"><i class="far fa-save"></i> Save</button>
 					</header>
+
 					<form class="block form" id="user-form2">
 
 						<label>
@@ -1547,10 +1578,11 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 					<header class="toolbar">
 						<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-						<button type="submit" form="role-form"><i class="fa fa-save"></i> Save</button>
+						<button type="submit" form="role-form"><i class="far fa-save"></i> Save</button>
 					</header>
 
 					<form class="block form" id="role-form">
+
 						<label>
 							<span>Name</span>
 							<input type="text" name="name">
@@ -1567,68 +1599,10 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 				</section>
 			</div>
 
-			<div class="setting-page accounts-page hidden">
-				<section class="section" id="accounts-list">
-					<h1>Manage Accounts</h1>
-					<header class="toolbar">
-						<button id="add-account"><i class="fa fa-plus"></i> Add New Account</button>
-					</header>
-
-					<table class="block">
-						<thead>
-							<th>Account Id</th>
-							<th>Name</th>
-							<th>URL</th>
-							<th>Icon</th>
-							<th>Logo</th>
-							<th>Authentication API</th>
-							<th>Edit</th>
-							<th>Delete</th>
-						</thead>
-						<tbody></tbody>
-					</table>
-				</section>
-
-				<section class="section" id="accounts-form">
-					<h1></h1>
-					<header class="toolbar">
-						<button id="cancel-form"><i class="fa fa-arrow-left"></i> Back</button>
-						<button type="submit" form="account-form"><i class="fa fa-save"></i> Save</button>
-					</header>
-					<form class="block form" id="account-form">
-
-						<label>
-							<span>Name</span>
-							<input type="text" name="name">
-						</label>
-
-						<label>
-							<span>URL</span>
-							<input type="text" name="url">
-						</label>
-
-						<label>
-							<span>Icon</span>
-							<input type="text" name="icon">
-							<img src="" alt="icon" id="icon" height="30">
-						</label>
-
-						<label>
-							<span>Logo</span>
-							<input type="text" name="logo">
-							<img src="" alt="logo" id="logo" height="30">
-						</label>
-
-						<label>
-							<span>Authentication API</span>
-							<input type="text" name="auth_api">
-						</label>
-					</form>
-				</section>
-			</div>
-
 			<div class="setting-page category-page hidden">
+
 				<section class="section" id="category-list">
+
 					<h1>Manage Categories</h1>
 
 					<header class="toolbar">
@@ -1650,27 +1624,33 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						<tbody></tbody>
 					</table>
 				</section>
+
 				<section class="section" id="category-edit">
+
 					<h1></h1>
 
 					<header class="toolbar">
 						<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-						<button type="submit" form="category-form"><i class="fa fa-save"></i> Save</button>
+						<button type="submit" form="category-form"><i class="far fa-save"></i> Save</button>
 					</header>
 
 					<form class="block form" id="category-form">
+
 						<label>
 							<span>Name</span>
-							<input type="text" name="name">
+							<input type="text" name="name" required>
 						</label>
+
 						<label>
 							<span>Slug</span>
-							<input type="text" name="slug">
+							<input type="text" name="slug" required>
 						</label>
+
 						<label>
 							<span>Parent</span>
-							<input type="text" name="parent">
+							<input type="number" name="parent">
 						</label>
+
 						<label>
 							<span>Admin</span>
 							<select name="is_admin">
@@ -1680,6 +1660,10 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 					</form>
 				</section>
+			</div>
+
+			<div class="setting-page about-page hidden">
+				<section class="section about-list" id="about"></section>
 			</div>
 		`;
 	}
@@ -1751,6 +1735,50 @@ router.get('/tasks/:id?/:define?', API.serve(class extends HTMLAPI {
 					<button id="define-back"><i class="fas fa-arrow-left"></i> Back</button>
 					<button type="submit" form="task-define"><i class="far fa-save"></i> Save</button>
 				</header>
+			</section>
+		`;
+	}
+}));
+
+router.get('/tests', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/tests.css');
+
+		this.scripts = this.scripts.concat([
+
+			'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js" defer f="',
+			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU&libraries=visualization" defer f="',
+
+			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+
+			'/js/reports.js',
+			'/js/profile.js',
+			'/js/tests.js',
+		]);
+	}
+
+	main() {
+
+		return `
+
+			<section class="section" id="list">
+
+				<h1>Tests</h1>
+
+				<header class="toolbar">
+					<button id="run"><i class="fas fa-check"></i> Run</button>
+
+					<div id="progress">
+						<meter min="0"></meter>
+						<span class="NA"></span>
+					</div>
+				</header>
+
+				<div id="tests"></div>
 			</section>
 		`;
 	}

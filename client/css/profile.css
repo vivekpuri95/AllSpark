@@ -5,6 +5,9 @@ main {
 	width: 100%;
 	max-width: 600px;
 }
+.angle-rotate {
+	transform: rotate(90deg);
+}
 	main h1 {
 		border-bottom: 1px dashed black;
 		margin: 0 0 calc(var(--gap) * 2);
@@ -22,11 +25,16 @@ main {
 			display: flex;
 			justify-content: space-between;
 		}
-	main h2 {
+
+	main #profile-info > i {
+		font-size: 150%;
+		display: flex;
+		margin: 50px auto;
+	}
+	main #profile-info h2 {
 		border-bottom: 1px dashed black;
 		margin: calc(var(--gap) * 2) 0;
 		font-size: 110%;
-		padding: var(--gap) 0;
 	}
 	main p {
 		line-height: 20px;
@@ -39,21 +47,194 @@ main .profile-details,
 main .privileges,
 main .roles {
 	background: #fff;
-	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	table-layout: fixed;
 	overflow: hidden;
 }
 main .profile-details {
-	padding: var(--gap);
+	display: grid;
+	padding: calc(var(--gap) * 2);
 	user-select: text;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+	grid-template-columns: max-content 1fr;
+	grid-gap: calc(var(--gap) * 2);
 }
-	.profile-details label {
-		display: grid;
-		padding: var(--gap);
-		font-size: 14px;
-		grid-template-columns: 100px 600px;
+	.profile-details span {
+		font-weight: bold;
+		color: #999;
 	}
-		.profile-details label span {
-			font-weight: bold;
+
+main .switch {
+	margin: calc(var(--gap) * 2) 0;
+}
+	main .switch .spinner {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 150%;
+		margin-top: 50px;
+	}
+	main .switch section {
+		padding: 0 !important;
+		margin-top: calc(var(--gap) * 2);
+	}
+		main .switch .heading-bar {
+			display: flex;
+			border-bottom: 1px solid #ccc;
+		}
+			main .heading-bar h3 {
+				margin: 0;
+				border: 0;
+				font-size: 100%;
+			}
+			main .switch .heading-bar label {
+				flex: 1;
+				display: flex;
+				justify-content: center;
+				padding: calc(var(--gap) * 2);
+				transition: box-shadow var(--transition-duration),
+							background var(--transition-duration);
+			}
+			main .switch .heading-bar label.selected {
+				box-shadow: inset 0px -6px 0px var(--color-accent) !important;
+				margin-bottom: -1px;
+			}
+			main .switch .heading-bar label:hover {
+				cursor: pointer;
+				box-shadow: inset 0px -6px 0px #999;
+				margin-bottom: -1px;
+			}
+
+	main .sessions .list {
+		display: grid;
+		grid-gap: calc(var(--gap) * 2);
+	}
+		main .sessions .toolbar {
+			background: #fff;
+			padding: calc(var(--gap) * 2);
+			margin: calc(var(--gap) * 2) 0;
+		}
+			main .sessions .toolbar h3 {
+				margin: 0;
+			}
+		main .activity-info article {
+			background: #fff;
+			overflow: hidden;
+			display: flex;
+			flex-direction:  column;
+			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+		}
+		main .activity-info article.active > .info-grid {
+			padding-right: calc((var(--gap) * 2) + 6px);
+		}
+		main .activity-info article.active > .info-grid::after {
+			content: "";
+			background: #9dec42;
+			width: 6px;
+			position: absolute;
+			right: 0;
+			height: 100%;
+		}
+		main .activity-info article > .info-grid {
+			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
+			z-index: 1;
+		}
+		main .activity-info article .info-grid {
+			display: grid;
+			grid-template-columns: 50px 1fr max-content;
+			padding: calc(var(--gap) * 2);
+			position: sticky;
+			grid-gap: calc(var(--gap) * 2);
+			top: 0;
+			transition: background var(--transition-duration);
+		}
+		main .activity-info article .info-grid:hover {
+			cursor: pointer;
+			background: var(--color-hover);
+		}
+			main .activity-info article .info-grid .down {
+				text-align: right;
+			}
+				main .activity-info article .info-grid .down i {
+					transition: transform var(--transition-duration);
+				}
+			main .activity-info .loading-activity-groups {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin: 30px 0;
+				font-size: 150%;
+				color: #999;
+			}
+			main .activity-info article .info-grid .icon {
+				color: #999;
+				grid-row: 1 / 3;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				font-size: 225%;
+			}
+			main .activity-info article .info-grid .extra-info {
+				grid-column: 2;
+				font-size: 90%;
+				color: #999;
+			}
+			main .activity-info article .info-grid .title {
+				grid-column: 2;
+				font-size: 125%;
+				color: #333;
+			}
+			main .activity-info article .activity-groups {
+				display: grid;
+				max-height: 300px;
+				overflow: auto;
+				background-color: #fff;
+			}
+
+		main .activity-groups .info-grid.selected {
+			background: var(--color-selected) !important;
+			z-index: 1;
+		}
+		main .activity-groups .info-grid:active {
+			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+		}
+		main .activity-groups .info-grid:hover {
+			background: var(--color-hover);
+		}
+		main .activity-groups .activity-group .info-grid .title {
+			font-size: 110%;
+			color: #333;
+		}
+			main .activity-groups .activity-group .info-grid .type {
+				text-transform: capitalize;
+			}
+		main .activity-groups .activity-group .info-grid .icon {
+			font-size: 125%;
+		}
+		main .activity-groups .activity-group .activity-list {
+			background: #eee;
+		}
+
+	main .activity-popup {
+		padding: calc(var(--gap) * 2);
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		user-select: text;
+	}
+		main .activity-popup .key {
+			color: #999;
+			text-transform: capitalize;
+		}
+		main .activity-popup .value {
 			color: #666;
 		}
+		main .activity-popup .key,
+		main .activity-popup .value {
+			margin: var(--gap);
+		}
+	 	main .activity-popup .sql,
+	 	main .activity-popup .json {
+	 		max-height: 150px;
+	 		overflow: auto;
+	 		background: #eee;
+	 		padding: 10px;
+	 	}

@@ -19,7 +19,7 @@ Page.class = class Login extends Page {
 		super();
 
 		if(!this.account)
-			return this.message('Account not found! :(', 'warning');
+			return this.message('Account not found!', 'warning');
 
 		const urlSearchParam = new URLSearchParams(window.location.search);
 
@@ -100,6 +100,7 @@ Page.class = class Login extends Page {
 			options = {
 				method: 'POST',
 				form: new FormData(this.container.querySelector('#accept-email form')),
+				redirectOnLogout: false,
 			};
 
 		let accounts;
@@ -117,7 +118,7 @@ Page.class = class Login extends Page {
 		}
 
 		if(!Array.isArray(accounts))
-			throw new Page.exception('Invalid account list! :(');
+			throw new Page.exception('Invalid account list!');
 
 		const container = this.container.querySelector('#accept-account');
 
@@ -136,7 +137,7 @@ Page.class = class Login extends Page {
 		}
 
 		if(!accounts.length)
-			container.innerHTML = `<div class="NA">Email not associated with any account! :(</div>`;
+			container.innerHTML = `<div class="NA">Email not associated with any account!</div>`;
 
 		if(accounts.length == 1)
 			container.querySelector('.account').click();
@@ -236,7 +237,7 @@ Page.class = class Login extends Page {
 			const response = await API.call('authentication/login', parameters, options);
 
 			if(!response.jwt && response.length)
-				return this.message('Ambigious email! :(', 'warning');
+				return this.message('Ambigious email!', 'warning');
 
 			await Storage.set('refresh_token', response.jwt);
 			this.cookies.set('refresh_token', response.jwt);
@@ -267,7 +268,9 @@ Page.class = class Login extends Page {
 
 			this.message('Login Successful! Redirecting&hellip;', 'notice');
 
-			window.location = '../';
+			const param = new URLSearchParams(window.location.search);
+
+			window.location = param.get('continue') || '../';
 
 		} catch(error) {
 			this.message(error.message || error, 'warning');

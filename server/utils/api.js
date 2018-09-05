@@ -27,7 +27,7 @@ class API {
 		this.mysql = mysql;
 		this.pgsql = pgsql;
 		this.mssql = msssql;
-		this.env = env.name;
+		this.env = env;
 
 		if(context) {
 			this.user = context.user;
@@ -58,7 +58,7 @@ class API {
 				for (const key in module) {
 
 					// Make sure the endpoint extends API class
-					if (module.hasOwnProperty(key) && module[key] && module[key].prototype && module[key].prototype.__proto__.constructor == API)
+					if (module.hasOwnProperty(key) && module[key] && module[key].prototype && module[key].prototype instanceof API)
 						API.endpoints.set([path.slice(0, -3), key].join(pathSeparator), module[key]);
 				}
 			}
@@ -141,10 +141,12 @@ class API {
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
 
-					throw new API.Exception(401, 'User Not Authenticated! :(');
+					throw new API.Exception(401, 'User Not Authenticated!');
 				}
 
-				const result = await obj[path.split(pathSeparator).pop()]();
+				const params = {...request.query, ...request.body};
+
+				const result = await obj[path.split(pathSeparator).pop()](params);
 
 				obj.result = {
 					status: result ? true : false,
@@ -184,7 +186,7 @@ class API {
 						e.message = JSON.parse(e.message);
 					}
 					e.status = e.message.status || 400;
-					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "Something went wrong! :(");
+					e.message = e.message.message || (typeof e.message === typeof "string" ? e.message : "Something went wrong!");
 				}
 
 				if (!(e instanceof Error)) {
@@ -279,4 +281,5 @@ API.Exception = class {
 }
 
 module.exports = API;
+
 API.setup();

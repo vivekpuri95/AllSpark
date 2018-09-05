@@ -30,7 +30,9 @@ class Settings extends Page {
 						a.classList.add('hidden');
 
 					a.classList.add('selected');
-					setting.setup();
+
+					await setting.setup();
+
 					setting.load();
 					setting.container.classList.remove('hidden');
 				});
@@ -65,7 +67,9 @@ class Settings extends Page {
 			const setting = new settings(this.container);
 
 			if (byDefault.textContent == setting.name) {
+
 				await setting.setup();
+
 				setting.load();
 				setting.container.classList.remove('hidden');
 			}
@@ -84,159 +88,9 @@ class SettingPage {
 
 Settings.list = new Map;
 
-Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
-
-	get name() {
-		return 'Global Filters';
-	}
-
-	async setup() {
-
-		this.container = this.page.querySelector('.global-filters-page');
-		this.form = this.container.querySelector('section#global-filters-form form');
-
-		await DataSource.load();
-
-		const datalist = Array.from(DataSource.list.values()).map(r => {return {name: r.name, value: r.query_id}});
-
-		this.datasetsMultiselect =  new MultiSelect({datalist, dropDownPosition: 'top', multiple: false});
-
-		this.form.querySelector('.datasets').appendChild(this.datasetsMultiselect.container);
-
-		this.container.querySelector('section#global-filters-list #add-global-filter').on('click', () => GlobalFilter.add(this));
-
-		const select = this.form.querySelector('select[name="type"]');
-
-		for(const type of MetaData.filterTypes.values()) {
-			select.insertAdjacentHTML('beforeend', `<option value="${type.name.toLowerCase()}">${type.name}</option>`);
-		};
-
-		this.container.querySelector('#global-filters-form #cancel-form').on('click', () => {
-			Sections.show('global-filters-list');
-		});
-	}
-
-	async load() {
-
-		const response = await API.call('global-filters/list');
-
-		this.list = new Map;
-
-		for (const data of response)
-			this.list.set(data.id, new GlobalFilter(data, this));
-
-		await this.render();
-	}
-
-	async render() {
-
-		const container = this.container.querySelector('#global-filters-list table tbody')
-		container.textContent = null;
-
-		if (!this.list.size)
-			container.innerHTML = '<tr class="NA"><td colspan="5">No rows found :(</td></tr>'
-
-		for (const globalFilter of this.list.values()) {
-			container.appendChild(globalFilter.row);
-		}
-
-		await Sections.show('global-filters-list');
-	}
-});
-
-Settings.list.set('privileges', class Privileges extends SettingPage {
-
-	get name() {
-		return 'Privileges';
-	}
-
-	setup() {
-
-		this.container = this.page.querySelector('.privilege-page');
-		this.form = this.container.querySelector('section#privileges-form form');
-
-		this.container.querySelector('section#privileges-list #add-privilege').on('click', () => SettingsPrivilege.add(this));
-
-		this.container.querySelector('#privileges-form #cancel-form').on('click', () => {
-			Sections.show('privileges-list');
-		});
-	}
-
-	async load() {
-
-		const response = await API.call('privileges/list');
-
-		this.list = new Map;
-
-		for (const data of response)
-			this.list.set(data.privilege_id, new SettingsPrivilege(data, this));
-
-		await this.render();
-	}
-
-	async render() {
-
-		const container = this.container.querySelector('#privileges-list table tbody')
-		container.textContent = null;
-
-		if (!this.list.size)
-			container.innerHTML = '<div class="NA">No rows found :(</div>'
-
-		for (const dataset of this.list.values()) {
-			container.appendChild(dataset.row);
-		}
-
-		await Sections.show('privileges-list');
-	}
-});
-
-Settings.list.set('roles', class Roles extends SettingPage {
-
-	get name() {
-
-		return 'Roles';
-	}
-
-	setup() {
-
-		this.container = this.page.querySelector('.roles-page');
-		this.form = this.page.querySelector('#role-form');
-
-		this.container.querySelector('#add-role').on('click', () => SettingsRole.add(this));
-		this.container.querySelector('#roles-form #back').on('click', () => Sections.show('roles-list'));
-	}
-
-	async load() {
-
-		const roles_list = await API.call('roles/list');
-
-		this.list = new Map();
-
-		for(const role of roles_list)
-			this.list.set(role.role_id, new SettingsRole(role, this));
-
-		await this.render();
-	}
-
-	async render() {
-
-		const container = this.container.querySelector('#roles-list table tbody');
-		container.textContent = null;
-
-		if(!this.list.size)
-			container.innerHTML = '<div class="NA">No rows found :(</div>'
-
-		for(const role of this.list.values())
-			container.appendChild(role.row);
-
-		await Sections.show('roles-list');
-	}
-});
-
 Settings.list.set('accounts', class Accounts extends SettingPage {
 
 	get name() {
-
 		return 'Accounts';
 	}
 
@@ -245,8 +99,7 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 		this.container = this.page.querySelector('.accounts-page');
 		this.form = this.container.querySelector('#accounts-form');
 
-		this.container.querySelector('section#accounts-list #add-account').on('click', () => SettingsAccount.add(this));
-
+		this.container.querySelector('#accounts-list #add-account').on('click', () => SettingsAccount.add(this));
 		this.container.querySelector('#accounts-form #cancel-form').on('click', () => Sections.show('accounts-list'));
 	}
 
@@ -269,12 +122,165 @@ Settings.list.set('accounts', class Accounts extends SettingPage {
 		container.textContent = null;
 
 		if(!this.list.size)
-			container.innerHTML = '<div class="NA">No Account found :(</div>';
+			container.innerHTML = '<tr><td class="NA" colspan="5">No Accounts Found</td></tr>';
 
 		for(const account of this.list.values())
 			container.appendChild(account.row);
 
 		await Sections.show('accounts-list');
+	}
+});
+
+Settings.list.set('globalFilters', class GlobalFilters extends SettingPage {
+
+	get name() {
+		return 'Global Filters';
+	}
+
+	async setup() {
+
+		this.container = this.page.querySelector('.global-filters-page');
+		this.form = this.container.querySelector('section#global-filters-form form');
+
+		this.container.querySelector('#global-filters-list #add-global-filter').on('click', () => GlobalFilter.add(this));
+		this.container.querySelector('#global-filters-form #cancel-form').on('click', () => Sections.show('global-filters-list'));
+
+		await DataSource.load();
+
+		const datalist = [];
+
+		for(const report of DataSource.list.values()) {
+
+			datalist.push({
+				name: `${report.name} <span class="NA">#${report.query_id}</span>`,
+				value: report.query_id,
+			});
+		}
+
+		this.datasetsMultiselect =  new MultiSelect({datalist, dropDownPosition: 'top', multiple: false});
+
+		if(this.form.querySelector('.datasets .multi-select'))
+			this.form.querySelector('.datasets .multi-select').remove();
+
+		this.form.querySelector('.datasets').appendChild(this.datasetsMultiselect.container);
+
+		const select = this.form.querySelector('select[name="type"]');
+
+		for(const type of MetaData.filterTypes.values())
+			select.insertAdjacentHTML('beforeend', `<option value="${type.name.toLowerCase()}">${type.name}</option>`);
+	}
+
+	async load() {
+
+		const response = await API.call('global-filters/list');
+
+		this.list = new Map;
+
+		for (const data of response)
+			this.list.set(data.id, new GlobalFilter(data, this));
+
+		await this.render();
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#global-filters-list table tbody');
+
+		container.textContent = null;
+
+		if(!this.list.size)
+			container.innerHTML = '<tr><td colspan="5" class="NA">No Global Filters Found</td></tr>'
+
+		for(const globalFilter of this.list.values())
+			container.appendChild(globalFilter.row);
+
+		await Sections.show('global-filters-list');
+	}
+});
+
+Settings.list.set('privileges', class Privileges extends SettingPage {
+
+	get name() {
+		return 'Privileges';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.privilege-page');
+		this.form = this.container.querySelector('section#privileges-form form');
+
+		this.container.querySelector('#privileges-list #add-privilege').on('click', () => SettingsPrivilege.add(this));
+		this.container.querySelector('#privileges-form #cancel-form').on('click', () => Sections.show('privileges-list'));
+	}
+
+	async load() {
+
+		Privileges.response = await API.call('privileges/list');
+
+		this.list = new Map;
+
+		for(const data of Privileges.response)
+			this.list.set(data.privilege_id, new SettingsPrivilege(data, this));
+
+		await this.render();
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#privileges-list table tbody');
+
+		container.textContent = null;
+
+		if(!this.list.size)
+			container.innerHTML = '<tr><td class="NA" colspan="5">No Privileges Found</td></tr>';
+
+		for(const dataset of this.list.values())
+			container.appendChild(dataset.row);
+
+		await Sections.show('privileges-list');
+	}
+});
+
+Settings.list.set('roles', class Roles extends SettingPage {
+
+	get name() {
+		return 'Roles';
+	}
+
+	setup() {
+
+		this.container = this.page.querySelector('.roles-page');
+		this.form = this.page.querySelector('#role-form');
+
+		this.container.querySelector('#roles-list #add-role').on('click', () => SettingsRole.add(this));
+		this.container.querySelector('#roles-form #back').on('click', () => Sections.show('roles-list'));
+	}
+
+	async load() {
+
+		const roles_list = await API.call('roles/list');
+
+		this.list = new Map();
+
+		for(const role of roles_list)
+			this.list.set(role.role_id, new SettingsRole(role, this));
+
+		await this.render();
+	}
+
+	async render() {
+
+		const container = this.container.querySelector('#roles-list table tbody');
+
+		container.textContent = null;
+
+		if(!this.list.size)
+			container.innerHTML = '<tr><td class="NA" colspan="5">No Roles Found</td></tr>';
+
+		for(const role of this.list.values())
+			container.appendChild(role.row);
+
+		await Sections.show('roles-list');
 	}
 });
 
@@ -289,19 +295,18 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		this.container = this.page.querySelector('.category-page');
 		this.form = this.page.querySelector('#category-edit');
 
-		this.container.querySelector('#add-category').on('click', () => SettingsCategory.add(this));
-		this.form.querySelector('#back').on('click', () => Sections.show('category-list'));
+		this.container.querySelector('#category-list #add-category').on('click', () => SettingsCategory.add(this));
+		this.container.querySelector('#category-edit #back').on('click', () => Sections.show('category-list'));
 	}
 
 	async load() {
 
 		const categoryList = await API.call('category/list');
+
 		this.list = new Map();
 
-		for(const category of categoryList) {
-
+		for(const category of categoryList)
 			this.list.set(category.category_id, new SettingsCategory(category, this));
-		}
 
 		await this.render();
 	}
@@ -309,10 +314,11 @@ Settings.list.set('categories', class Categories extends SettingPage {
 	async render() {
 
 		const container = this.container.querySelector('#category-list table tbody');
+
 		container.textContent = null;
 
 		if(!this.list.size)
-			container.innerHTML = '<div class="NA">No rows found :(</div>';
+			container.innerHTML = '<tr><td class="NA" colspan="5">No Categories Found</td></tr>';
 
 		for(const category of this.list.values())
 			container.appendChild(category.row);
@@ -321,240 +327,95 @@ Settings.list.set('categories', class Categories extends SettingPage {
 	}
 });
 
-class SettingsPrivilege {
+Settings.list.set('about', class About extends SettingPage {
 
-	constructor(privilege, privileges) {
-
-		for (const key in privilege)
-			this[key] = privilege[key];
-
-		this.privileges = privileges;
+	get name() {
+		return 'About';
 	}
 
-	static async add(privileges) {
+	setup() {
 
-		privileges.container.querySelector('#privileges-form h1').textContent = 'Add new Privileges';
-		privileges.form.reset();
+		this.container = this.page.querySelector('.about-page');
+		this.section = this.container.querySelector('#about');
 
-		if (SettingsPrivilege.submitListener)
-			privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
-
-		privileges.form.on('submit', SettingsPrivilege.submitListener = e => SettingsPrivilege.insert(e, privileges));
-
-		await Sections.show('privileges-form');
+		this.section.innerHTML = `
+			<h1>About</h1>
+		`;
 	}
 
-	static async insert(e, privileges) {
+	async load() {
 
-		e.preventDefault();
+		this.response = await API.call('env-info/envInfo');
 
-		const options = {
-			method: 'POST',
-			form: new FormData(privileges.form),
-		}
-
-		const response = await API.call('privileges/insert', {}, options);
-
-		await privileges.load();
-
-		await privileges.list.get(response.insertId).edit();
+		this.render();
 	}
 
-	get row() {
+	render() {
 
-		if (this.container)
-			return this.container;
+		const infoContainer = this.infoContainer;
+		const clearCacheContainer = this.clearCacheContainer;
 
-		this.container = document.createElement('tr');
+		this.section.appendChild(infoContainer);
+		this.section.appendChild(clearCacheContainer);
 
-		this.container.innerHTML = `
-			<td>${this.privilege_id}</td>
-			<td>${this.name}</td>
-			<td>${this.is_admin ? 'Yes' : 'No'}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		Sections.show('about')
+	}
+
+	get clearCacheContainer() {
+
+		if(this.cacheContainerElement)
+			return this.cacheContainerElement;
+
+		const button = this.cacheContainerElement = document.createElement('button');
+		button.classList.add('clear-cache');
+		button.textContent = 'Clear Cache';
+
+		button.on('click', async (e) => await Page.clearCache());
+
+		return button;
+	}
+
+	get infoContainer() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('info');
+
+		container.innerHTML = `
+			<span class="key">Account Id</span>
+			<span class="value">${account.account_id}</span>
+			<span class="key">Connectivity </span>
+			<span class="value">${navigator.onLine ? 'online' : 'offline'}</span>
+			<span class="key">Environment</span>
+			<span class="value">${this.response.name}</span>
+			<span class="key">Deployed On</span>
+			<span class="value">${this.response.deployed_on} - (<span class="NA">${Format.ago(this.response.deployed_on)}</span>)</span>
+			<span class="key">Git Checksum</span>
+			<span class="value">${this.response.gitChecksum}</span>
+			<span class="key">Branch</span>
+			<span class="value">${this.response.branch}</span>
 		`;
 
-		this.container.querySelector('.green').on('click', () => this.edit());
-
-		this.container.querySelector('.red').on('click', () => this.delete());
-
-		return this.container;
+		return container;
 	}
-
-	async edit() {
-
-		this.privileges.container.querySelector('#privileges-form h1').textContent = 'Edit ' + this.name;
-		this.privileges.form.reset();
-
-		this.privileges.form.name.value = this.name;
-		this.privileges.form.is_admin.value = this.is_admin;
-
-		this.privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
-		this.privileges.form.on('submit', SettingsPrivilege.submitListener = e => this.update(e));
-
-		await Sections.show('privileges-form');
-	}
-
-	async update(e) {
-
-		e.preventDefault();
-
-		const parameter = {
-			privilege_id: this.privilege_id,
-		}
-
-		const options = {
-			method: 'POST',
-			form: new FormData(this.privileges.form),
-		}
-
-		await API.call('privileges/update', parameter, options);
-
-		await this.privileges.load();
-
-		this.privileges.list.get(this.privilege_id).edit();
-
-		await Sections.show('privileges-form');
-	}
-
-	async delete() {
-
-		if (!confirm('Are you sure?'))
-			return;
-
-		const options = {
-			method: 'POST',
-		}
-		const parameter = {
-			privilege_id: this.privilege_id,
-		}
-
-		await API.call('privileges/delete', parameter, options);
-		await this.privileges.load();
-	}
-}
-
-class SettingsRole {
-
-	constructor(role, roles) {
-
-		for(const key in role)
-			this[key] = role[key];
-
-		this.roles = roles;
-	}
-
-	static add(roles) {
-
-		roles.container.querySelector('#roles-form h1').textContent = 'Add new Role';
-		roles.form.reset();
-
-		roles.form.removeEventListener('submit', SettingsRole.submitListener);
-		roles.form.on('submit', SettingsRole.submitListener = e => SettingsRole.insert(e, roles));
-		Sections.show('roles-form');
-		roles.form.name.focus();
-	}
-
-	static async insert(e, roles) {
-
-		e.preventDefault();
-
-		const options = {
-			method: 'POST',
-			form: new FormData(roles.form),
-		}
-
-		await API.call('roles/insert', {}, options);
-		await roles.load();
-	}
-
-	async edit() {
-
-		this.roles.form.removeEventListener('submit', SettingsRole.submitListener);
-		this.roles.form.reset();
-
-		this.roles.form.on('submit', SettingsRole.submitListener = e => this.update(e));
-		this.roles.container.querySelector('#roles-form h1').textContent = `Editing ${this.name}`;
-		this.roles.form.name.value = this.name;
-		this.roles.form.is_admin.value = this.is_admin;
-
-		await Sections.show('roles-form');
-		this.roles.form.name.focus();
-	}
-
-	async update(e){
-
-		e.preventDefault();
-
-		const
-			parameter = {
-				role_id: this.role_id,
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.roles.form),
-			};
-
-		await API.call('roles/update', parameter, options);
-
-		await this.roles.load();
-		this.roles.list.get(this.role_id).edit();
-
-		await Sections.show('roles-form');
-	}
-
-	async delete() {
-
-		if(!confirm('Are you sure?'))
-			return;
-
-		const
-			options = {
-				method: 'POST',
-			},
-			parameter = {
-				role_id: this.role_id
-			}
-
-		await API.call('roles/delete', parameter, options);
-		await this.roles.load();
-	}
-
-	get row() {
-
-		if(this.container)
-			return this.container;
-
-		this.container = document.createElement('tr');
-
-		this.container.innerHTML = `
-			<td>${this.role_id}</td>
-			<td>${this.name}</td>
-			<td>${this.is_admin ? 'Yes' : 'No'}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
-		`;
-
-		this.container.querySelector('.green').on('click', () => this.edit());
-		this.container.querySelector('.red').on('click', () => this.delete());
-
-		return this.container;
-	}
-}
+});
 
 class SettingsAccount {
 
 	constructor(account, page) {
 
 		Object.assign(this, account);
+
 		this.page = page;
+
 		this.form = this.page.form.querySelector('#account-form');
+
+		page.container.querySelector('#cancel-form').on('click', () => Sections.show('accounts-list'));
 	}
 
 	static async add(page) {
-
-		SettingsAccount.page = page;
 
 		SettingsAccount.form = page.form.querySelector('#account-form');
 
@@ -566,35 +427,56 @@ class SettingsAccount {
 		SettingsAccount.form.icon.src = '';
 		SettingsAccount.form.querySelector('#icon').classList.add('hidden');
 
-		page.form.querySelector('#cancel-form').on('click', () => {
-			SettingsAccount.form.removeEventListener('submit', SettingsAccount.submitEventListener);
-			Sections.show('accounts-list');
-		});
+		if(SettingsAccount.form.parentElement.querySelector('.feature-form'))
+			SettingsAccount.form.parentElement.querySelector('.feature-form').remove();
+
+		if(SettingsAccount.form.parentElement.querySelector('.settings-manager'))
+			SettingsAccount.form.parentElement.querySelector('.settings-manager').remove();
 
 		await Sections.show('accounts-form');
 
-		page.form.querySelector('h1').textContent = 'Adding new Account';
-		page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+		page.form.querySelector('h1').textContent = 'Add New Account';
 
-		page.form.on('submit', SettingsAccount.submitEventListener =  async e => {
-			await SettingsAccount.insert(e);
-			await page.load();
-			await Sections.show('accounts-form');
-		});
+		page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+		page.form.on('submit', SettingsAccount.submitEventListener = e => SettingsAccount.insert(e, page));
+
+		SettingsAccount.form.name.focus();
 	}
 
-	static async insert(e) {
+	static async insert(e, page) {
 
 		if(e && e.preventDefault)
 			e.preventDefault();
 
-		const
-			options = {
-				method: 'POST',
-				form: new FormData(SettingsAccount.form),
-			};
+		const options = {
+			method: 'POST',
+			form: new FormData(SettingsAccount.form),
+		};
 
-		return await API.call('accounts/insert', {}, options);
+		try {
+
+			const response = await API.call('accounts/insert', {}, options);
+
+			await page.load();
+
+			page.list.get(response.account_id).edit();
+
+			new SnackBar({
+				message: 'Account Added',
+				subtitle: `${SettingsAccount.form.name.value} #${response.account_id}`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async edit() {
@@ -627,6 +509,12 @@ class SettingsAccount {
 				multiple: false,
 			},
 			{
+				key: 'logout_redirect_url',
+				type: 'url',
+				name: 'Logout Url',
+				description: 'Redirect user to specified url',
+			},
+			{
 				key: 'global_filters_position',
 				type: 'multiselect',
 				name: 'Global Filters Position',
@@ -639,7 +527,7 @@ class SettingsAccount {
 			},
 			{
 				key: 'pre_report_api',
-				type: 'string',
+				type: 'url',
 				name: 'Pre Report API',
 				description: 'An API that is hit before any report is executed',
 			},
@@ -708,15 +596,11 @@ class SettingsAccount {
 
 		this.form.parentElement.appendChild(features.container);
 
-		await Sections.show('accounts-form');
-
 		this.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+		this.form.on('submit', SettingsAccount.submitEventListener = e => this.update(e));
 
-		this.form.on('submit', SettingsAccount.submitEventListener = async e => {
-			await this.update(e);
-			await this.page.load();
-			await Sections.show('accounts-form');
-		});
+		await Sections.show('accounts-form');
+		this.form.name.focus();
 	}
 
 	async update(e) {
@@ -725,7 +609,7 @@ class SettingsAccount {
 			e.preventDefault();
 
 		const
-			parameter = {
+			parameters = {
 				account_id: this.account_id,
 			},
 			options = {
@@ -733,7 +617,28 @@ class SettingsAccount {
 				form: new FormData(this.form),
 			};
 
-		return await API.call('accounts/update', parameter, options);
+		try {
+
+			await API.call('accounts/update', parameters, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: 'Account Saved',
+				subtitle: `${this.form.name.value} #${this.account_id}`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete() {
@@ -749,32 +654,40 @@ class SettingsAccount {
 				account_id: this.account_id
 			};
 
-		await API.call('accounts/delete', parameter, options);
-		await this.page.load();
+		try {
+
+			await API.call('accounts/delete', parameter, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: 'Account Deleted',
+				subtitle: `${this.name} #${this.account_id}`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	get row() {
 
 		const tr = document.createElement('tr');
 
-		const whiteListElements = ['account_id', 'name', 'icon', 'url', 'logo', 'auth_api'];
-
-		for (const element in this) {
-
-			if (!whiteListElements.includes(element))
-				continue;
-
-			const td = document.createElement('td');
-
-			td.innerHTML = this[element];
-			tr.appendChild(td);
-
-			if (['icon', 'logo'].includes(element)) {
-				td.innerHTML = `<img src=${this[element]} height="30">`
-			}
-		}
-
-		tr.innerHTML += `
+		tr.innerHTML = `
+			<td>${this.account_id}</td>
+			<td>${this.name}</td>
+			<td><a href="http://${this.url}" target="_blank">${this.url}</td>
+			<td><img src="${this.icon}" height="30"></td>
+			<td><img src="${this.logo}" height="30"></td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
@@ -805,6 +718,7 @@ class AccountsFeatures {
 		const container = document.createElement('div');
 
 		container.classList.add('feature-form');
+
 		container.innerHTML = `
 
 			<h3>Features</h3>
@@ -820,17 +734,21 @@ class AccountsFeatures {
 					<input id="feature-search" type="text" placeholder="Search..">
 				</label>
 			</div>
-			<table>
-				<thead>
-					<tr>
-						<th class="action">ID</th>
-						<th>Types</th>
-						<th>Name</th>
-						<th>Status</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
+
+			<div class="table-container">
+				<table>
+					<thead>
+						<tr>
+							<th class="action">ID</th>
+							<th>Types</th>
+							<th>Name</th>
+							<th>Slug</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
 		`;
 
 		let list = new Set;
@@ -866,7 +784,7 @@ class AccountsFeatures {
 			}
 
 			if(!tbody.childElementCount)
-				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found</td></tr>`;
 		});
 
 		container.querySelector('.feature-type').on('change', (e) => {
@@ -876,7 +794,7 @@ class AccountsFeatures {
 			tbody.textContent = null;
 
 			if(!selected.length) {
-				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found</td></tr>`;
 				return;
 			};
 
@@ -887,7 +805,7 @@ class AccountsFeatures {
 			};
 
 			if(!tbody.childElementCount)
-				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found :(</td></tr>`;
+				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found</td></tr>`;
 		});
 
 		return container;
@@ -912,18 +830,22 @@ class AccountsFeature {
 			<td>${this.feature_id}</td>
 			<td>${this.type}</td>
 			<td>${this.name}</td>
-			<td>
-				<select id="status">
-					<option value="1">ON</option>
-					<option value="0">OFF</option>
-				</select>
+			<td>${this.slug}</td>
+			<td class="feature-toggle">
+				<div>
+					<label><input type="radio" name="status-${this.feature_id}" value="1"> Enabled</label>
+					<label><input type="radio" name="status-${this.feature_id}" value="0"> Disabled</label>
+				<div>
 			</td>
 		`;
 
-		const status = tr.querySelector('select#status');
-		status.value =  this.status ? 1 : 0;
+		for(const input of tr.querySelectorAll('input')) {
 
-		status.on('change', async (e) => this.update(e, status.value));
+			if(parseInt(input.value) == this.status)
+				input.checked = true;
+
+			input.on('change', e => this.update(e, parseInt(input.value)));
+		}
 
 		return tr;
 	}
@@ -939,126 +861,29 @@ class AccountsFeature {
 			parameter = {
 				account_id: this.account.account_id,
 				feature_id: this.feature_id,
-				status: status,
+				status,
 			};
 
-		await API.call('accounts/features/toggle', parameter, options);
-		await this.account.page.load();
-		await Sections.show('accounts-form');
-	}
-}
+		try {
 
-class SettingsCategory {
+			await API.call('accounts/features/toggle', parameter, options);
 
-	constructor(category, page) {
+			new SnackBar({
+				message: `${this.name} Feature ${status ? 'Enabled' : 'Disabled'}`,
+				subtitle: this.type,
+				icon: status ? 'fas fa-check' : 'fas fa-ban',
+			});
 
-		Object.assign(this, category);
+		} catch(e) {
 
-		this.page = page;
-		this.form = this.page.form.querySelector('#category-form');
-	}
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
 
-	static add(page) {
-
-		page.form.querySelector('h1').textContent = 'Add new Category';
-
-		const categoryForm = page.form.querySelector('#category-form');
-
-		SettingsCategory.form = categoryForm;
-		categoryForm.reset();
-
-		categoryForm.removeEventListener('submit', SettingsCategory.submitListener);
-		categoryForm.on('submit', SettingsCategory.submitListener = e => SettingsCategory.insert(e, page));
-		Sections.show('category-edit');
-		categoryForm.name.focus();
-	}
-
-	static async insert(e, page) {
-
-		e.preventDefault();
-
-		const options = {
-			method: 'POST',
-			form: new FormData(SettingsCategory.form),
+			throw e;
 		}
-
-		await API.call('category/insert', {}, options);
-		await page.load();
-	}
-
-	async edit() {
-
-		this.form.removeEventListener('submit', SettingsCategory.submitListener);
-
-		this.form.on('submit', SettingsCategory.submitListener = e => this.update(e));
-		this.page.form.querySelector('h1').textContent = `Editing ${this.name}`;
-
-		const formElements = ["name", "slug", "parent", "is_admin"];
-
-		for(const element of formElements) {
-			this.form[element].value = this[element];
-		}
-
-		await Sections.show('category-edit');
-		this.form.name.focus();
-	}
-
-	async update(e) {
-
-		if (e.preventDefault)
-			e.preventDefault();
-
-		const
-			parameters = {
-				category_id: this.category_id
-			},
-			options = {
-				method: 'POST',
-				form: new FormData(this.form),
-			};
-
-		await API.call('category/update', parameters, options);
-		await this.page.load();
-	}
-
-	async delete() {
-
-		if(!confirm('Are you sure?'))
-			return;
-
-		const
-			options = {
-				method: 'POST',
-			},
-			parameter = {
-				category_id: this.category_id
-			}
-
-		await API.call('category/delete', parameter, options);
-		await this.page.load();
-	}
-
-	get row() {
-
-		if(this.container)
-			return this.container;
-
-		this.container = document.createElement('tr');
-
-		this.container.innerHTML = `
-			<td>${this.category_id}</td>
-			<td>${this.name}</td>
-			<td>${this.slug}</td>
-			<td>${this.parent}</td>
-			<td>${this.is_admin ? 'Yes' : 'No'}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
-		`;
-
-		this.container.querySelector('.green').on('click', () => this.edit());
-		this.container.querySelector('.red').on('click', () => this.delete());
-
-		return this.container;
 	}
 }
 
@@ -1087,7 +912,7 @@ class GlobalFilter {
 
 		Sections.show('global-filters-form');
 
-		globalFilters.form.focus();
+		globalFilters.form.name.focus();
 	}
 
 	static async insert(e, globalFilters) {
@@ -1097,13 +922,30 @@ class GlobalFilter {
 		const options = {
 			method: 'POST',
 			form: new FormData(globalFilters.form),
+		};
+
+		try {
+
+			const response = await API.call('global-filters/insert', {dataset: globalFilters.datasetsMultiselect.value}, options);
+
+			await globalFilters.load();
+
+			new SnackBar({
+				message: `${globalFilters.form.name.value} Global Filter Added`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(globalFilters.form.type.value).name}</strong> Placeholer: <strong>${globalFilters.form.placeholder.value}</strong></span>`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
 		}
-
-		const response = await API.call('global-filters/insert', {dataset: globalFilters.datasetsMultiselect.value}, options);
-
-		await globalFilters.load();
-
-		await globalFilters.list.get(response.insertId).edit();
 	}
 
 	get row() {
@@ -1111,7 +953,11 @@ class GlobalFilter {
 		if (this.container)
 			return this.container;
 
-		const dataset = Array.from(DataSource.list.values()).filter(r => r.query_id == this.dataset)[0];
+		let dataset = '';
+
+		if(DataSource.list.has(this.dataset))
+			dataset = DataSource.list.get(this.dataset).name;
+
 		this.container = document.createElement('tr');
 
 		this.container.innerHTML = `
@@ -1121,14 +967,13 @@ class GlobalFilter {
 			<td>${this.default_value}</td>
 			<td>${this.type}</td>
 			<td>${this.multiple ? 'Yes' : 'No'}</td>
-			<td>${this.offset || ''}</td>
-			<td><a target="_blank" href="/report/${this.dataset}">${dataset ? dataset.name : ''}</a></td>
+			<td>${isNaN(parseInt(this.offset)) ? '' : this.offset}</td>
+			<td><a target="_blank" href="/report/${this.dataset}">${dataset}</a></td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
 		this.container.querySelector('.green').on('click', () => this.edit());
-
 		this.container.querySelector('.red').on('click', () => this.delete());
 
 		return this.container;
@@ -1145,6 +990,7 @@ class GlobalFilter {
 				element.value = this[element.name];
 		}
 
+		this.globalFilters.form.offset.value = isNaN(parseInt(this.offset)) ? '' : this.offset;
 		this.globalFilters.datasetsMultiselect.value = this.dataset;
 
 		this.globalFilters.container.querySelector('#global-filters-form h1').textContent = 'Edit ' + this.name;
@@ -1153,6 +999,8 @@ class GlobalFilter {
 		this.globalFilters.form.on('submit', GlobalFilter.submitListener = e => this.update(e));
 
 		await Sections.show('global-filters-form');
+
+		this.globalFilters.form.name.focus();
 	}
 
 	async update(e) {
@@ -1169,11 +1017,28 @@ class GlobalFilter {
 				form: new FormData(this.globalFilters.form),
 			};
 
-		await API.call('global-filters/update', parameter, options);
+		try {
 
-		await this.globalFilters.load();
+			await API.call('global-filters/update', parameter, options);
 
-		this.globalFilters.list.get(this.id).edit();
+			await this.globalFilters.load();
+
+			new SnackBar({
+				message: `${this.globalFilters.form.name.value} Global Filter Saved`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.globalFilters.form.type.value).name}</strong> Placeholer: <strong>${this.globalFilters.form.placeholder.value}</strong></span>`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 
 	async delete() {
@@ -1189,7 +1054,756 @@ class GlobalFilter {
 				id: this.id,
 			};
 
-		await API.call('global-filters/delete', parameter, options);
-		await this.globalFilters.load();
+		try {
+
+			await API.call('global-filters/delete', parameter, options);
+
+			await this.globalFilters.load();
+
+			new SnackBar({
+				message: `${this.name} Global Filter Deleted`,
+				subtitle: `Type: <strong>${MetaData.filterTypes.get(this.type).name}</strong> Placeholer: <strong>${this.placeholder}</strong>`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+class SettingsPrivilege {
+
+	constructor(privilege, privileges) {
+
+		for (const key in privilege)
+			this[key] = privilege[key];
+
+		this.privileges = privileges;
+	}
+
+	static async add(privileges) {
+
+		privileges.container.querySelector('#privileges-form h1').textContent = 'Add new Privileges';
+		privileges.form.reset();
+
+		if(privileges.form.parentElement.querySelector('.privilege-component'))
+			privileges.form.parentElement.querySelector('.privilege-component').remove();
+
+		privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
+		privileges.form.on('submit', SettingsPrivilege.submitListener = e => SettingsPrivilege.insert(e, privileges));
+
+		await Sections.show('privileges-form');
+		privileges.form.name.focus();
+	}
+
+	static async insert(e, privileges) {
+
+		e.preventDefault();
+
+		const options = {
+			method: 'POST',
+			form: new FormData(privileges.form),
+		};
+
+		try {
+
+			const response = await API.call('privileges/insert', {}, options);
+
+			await privileges.load();
+
+			new SnackBar({
+				message: 'Privilege Added',
+				subtitle: `${privileges.form.name.value} #${response.insertId}`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	get row() {
+
+		if (this.rowElement)
+			return this.rowElement;
+
+		const row = this.rowElement = document.createElement('tr');
+
+		row.innerHTML = `
+			<td>${this.privilege_id}</td>
+			<td>${this.name}</td>
+			<td>${this.is_admin ? 'Yes' : 'No'}</td>
+			<td class="action green" title="Edit" disabled><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		if(!row.querySelector('.green.NA'))
+			row.querySelector('.green').on('click', () => this.edit());
+
+		if(!row.querySelector('.red.NA'))
+			row.querySelector('.red').on('click', () => this.delete());
+
+		return row;
+	}
+
+	async edit() {
+
+		this.privileges.container.querySelector('#privileges-form h1').textContent = 'Edit ' + this.name;
+		this.privileges.form.reset();
+
+		this.privileges.form.name.value = this.name;
+		this.privileges.form.is_admin.value = this.is_admin;
+
+		this.privilegeComponent = new PrivilegeComponents(this);
+		await this.privilegeComponent.load();
+
+		if(this.privileges.form.parentElement.querySelector('.privilege-component'))
+			this.privileges.form.parentElement.querySelector('.privilege-component').remove();
+
+		this.privileges.form.parentElement.appendChild(this.privilegeComponent.container);
+
+		this.privileges.form.removeEventListener('submit', SettingsPrivilege.submitListener);
+		this.privileges.form.on('submit', SettingsPrivilege.submitListener = e => this.update(e));
+
+		await Sections.show('privileges-form');
+		this.privileges.form.name.focus();
+	}
+
+	async update(e) {
+
+		e.preventDefault();
+
+		const
+			parameter = {
+				privilege_id: this.privilege_id,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.privileges.form),
+			};
+
+		try {
+
+			await API.call('privileges/update', parameter, options);
+
+			await this.privileges.load();
+
+			new SnackBar({
+				message: 'Privilege Saved',
+				subtitle: `${this.privileges.form.name.value} #${this.privilege_id}`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async delete() {
+
+		if (!confirm('Are you sure?'))
+			return;
+
+		const
+			parameter = {
+				privilege_id: this.privilege_id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		try {
+
+			await API.call('privileges/delete', parameter, options);
+
+			await this.privileges.load();
+
+			new SnackBar({
+				message: 'Privilege Deleted',
+				subtitle: `${this.name} #${this.privilege_id}`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+class PrivilegeComponents extends Set {
+
+	constructor(privilege) {
+
+		super();
+
+		Object.assign(this, privilege);
+
+		this.list = this.privileges.list;
+	}
+
+	async load() {
+
+		await this.fetch();
+
+		await this.process();
+
+		this.render();
+	}
+
+	async fetch() {
+
+		const
+			 options = {
+				"method": "POST",
+			},
+			parameter = {
+				id: this.privilege_id,
+			}
+
+		this.response = await API.call('privileges_manager/list', parameter, options);
+	}
+
+	process() {
+
+		this.list = new Map;
+
+		for(const data of this.response || [])
+			this.list.set(data.id, new PrivilegeComponent(data, this));
+	}
+
+	render() {
+
+		const formContainer = this.container;
+
+		formContainer.querySelector('.component-list').textContent = null;
+
+		for(const component of this.list.values()) {
+			formContainer.querySelector('.component-list').appendChild(component.row);
+		}
+
+		if(!this.list.size)
+			formContainer.querySelector('.component-list').innerHTML = `<div class='NA'>No Components found.</div>`;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('privilege-component');
+		container.innerHTML = `
+			<h3>Privileges Component</h3>
+
+			<form class="headings">
+
+				<label><span>Id</span></label>
+				<label><span>Privilege Name</span></label>
+				<label><span></span></label>
+			</form>
+
+			<div class="component-list"></div>
+
+			<form class="add-new-container">
+
+				<label class="add-new"></label>
+				<label>
+					<button type="submit"><i class="fa fa-plus"></i>Add</button>
+				</label>
+			</form>
+		`;
+
+		const list = [];
+
+		for(const privilege of this.privileges.list.values()) {
+
+			if(privilege.privilege_id != this.privilege_id)
+				list.push({name: privilege.name, value: privilege.privilege_id});
+		}
+
+		this.multiSelect = new MultiSelect({datalist: list, multiple: false, expand: false});
+
+		container.querySelector('label.add-new').appendChild(this.multiSelect.container);
+
+		container.querySelector('form.add-new-container').on('submit', (e) => this.add(e));
+
+		return container;
+	}
+
+	async add(e) {
+
+		e.preventDefault();
+
+		try {
+			const
+				options = {
+					method: "POST",
+				},
+				parameters = {
+					parent: this.multiSelect.value[0],
+					privilege_id: this.privilege_id,
+				};
+
+			const result = await API.call('privileges_manager/insert', parameters, options);
+
+			new SnackBar({
+				message: 'Added successfully',
+				subtitle: '',
+				icon: 'far fa-save',
+			});
+
+			await this.load();
+		}
+		catch(e) {
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+class PrivilegeComponent {
+
+	constructor(component, privilegeComponents) {
+
+		for(const key in component)
+			this[key] = component[key];
+
+		this.privilegeComponents = privilegeComponents;
+	}
+
+	get row() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createDocumentFragment();
+
+		const id = document.createElement('label');
+		id.innerHTML = `<input class="thin" type="number" value=${this.privilege_id} readonly>`;
+
+		const list = document.createElement('label');
+		list.innerHTML = `<input type="text" value=${this.privilegeComponents.privileges.list.get(parseInt(this.privilege_id)).name} readonly>`;
+
+		const del = document.createElement('label');
+		del.innerHTML = `<button class="action delete"><i class="far fa-trash-alt"></i></button>`;
+
+		del.querySelector('.delete').on('click', () => this.delete());
+
+		container.appendChild(id);
+		container.appendChild(list);
+		container.appendChild(del);
+
+		return container;
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		try {
+
+			const
+				options = {
+					method: "POST",
+				},
+				parameter = {
+					privilege_id: this.privilege_id,
+				};
+
+			const response = await API.call('privileges_manager/delete', parameter, options);
+
+			await this.privilegeComponents.load();
+
+			new SnackBar({
+				message: 'Deleted successfully',
+				subtitle: '',
+				icon: 'far fa-trash-alt',
+			});
+		}
+		catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+class SettingsRole {
+
+	constructor(role, roles) {
+
+		for(const key in role)
+			this[key] = role[key];
+
+		this.roles = roles;
+	}
+
+	static add(roles) {
+
+		roles.container.querySelector('#roles-form h1').textContent = 'Add New Role';
+		roles.form.reset();
+
+		roles.form.removeEventListener('submit', SettingsRole.submitListener);
+		roles.form.on('submit', SettingsRole.submitListener = e => SettingsRole.insert(e, roles));
+
+		Sections.show('roles-form');
+		roles.form.name.focus();
+	}
+
+	static async insert(e, roles) {
+
+		e.preventDefault();
+
+		const options = {
+			method: 'POST',
+			form: new FormData(roles.form),
+		};
+
+		try {
+
+			const response = await API.call('roles/insert', {}, options);
+
+			await roles.load();
+
+			new SnackBar({
+				message: 'Role Added',
+				subtitle: `${roles.form.name.value} #${response.insertId}`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async edit() {
+
+		this.roles.form.removeEventListener('submit', SettingsRole.submitListener);
+		this.roles.form.reset();
+
+		this.roles.form.on('submit', SettingsRole.submitListener = e => this.update(e));
+		this.roles.container.querySelector('#roles-form h1').textContent = `Editing ${this.name}`;
+		this.roles.form.name.value = this.name;
+		this.roles.form.is_admin.value = this.is_admin;
+
+		await Sections.show('roles-form');
+		this.roles.form.name.focus();
+	}
+
+	async update(e) {
+
+		e.preventDefault();
+
+		const
+			parameter = {
+				role_id: this.role_id,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.roles.form),
+			};
+
+		try {
+
+			await API.call('roles/update', parameter, options);
+
+			await this.roles.load();
+
+			new SnackBar({
+				message: 'Role Saved',
+				subtitle: `${this.roles.form.name.value} #${this.role_id}`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const
+			parameter = {
+				role_id: this.role_id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		try {
+
+			await API.call('roles/delete', parameter, options);
+
+			await this.roles.load();
+
+			new SnackBar({
+				message: 'Role Deleted',
+				subtitle: `${this.name} #${this.role_id}`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	get row() {
+
+		if(this.container)
+			return this.container;
+
+		this.container = document.createElement('tr');
+
+		this.container.innerHTML = `
+			<td>${this.role_id}</td>
+			<td>${this.name}</td>
+			<td>${this.is_admin ? 'Yes' : 'No'}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		this.container.querySelector('.green').on('click', () => this.edit());
+		this.container.querySelector('.red').on('click', () => this.delete());
+
+		return this.container;
+	}
+}
+
+class SettingsCategory {
+
+	constructor(category, page) {
+
+		Object.assign(this, category);
+
+		this.page = page;
+		this.form = this.page.form.querySelector('#category-form');
+	}
+
+	static add(page) {
+
+		page.form.querySelector('h1').textContent = 'Add new Category';
+
+		const categoryForm = page.form.querySelector('#category-form');
+
+		SettingsCategory.form = categoryForm;
+		categoryForm.reset();
+
+		categoryForm.removeEventListener('submit', SettingsCategory.submitListener);
+		categoryForm.on('submit', SettingsCategory.submitListener = e => SettingsCategory.insert(e, page));
+
+		Sections.show('category-edit');
+		categoryForm.name.focus();
+	}
+
+	static async insert(e, page) {
+
+		e.preventDefault();
+
+		const options = {
+			method: 'POST',
+			form: new FormData(SettingsCategory.form),
+		};
+
+		try {
+
+			const response = await API.call('category/insert', {}, options);
+
+			await page.load();
+
+			new SnackBar({
+				message: 'Category Added',
+				subtitle: `${SettingsCategory.form.name.value} #${response.insertId}`,
+				icon: 'fa fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async edit() {
+
+		this.form.removeEventListener('submit', SettingsCategory.submitListener);
+
+		this.form.on('submit', SettingsCategory.submitListener = e => this.update(e));
+		this.page.form.querySelector('h1').textContent = `Editing ${this.name}`;
+
+		const formElements = ['name', 'slug', 'parent', 'is_admin'];
+
+		for(const element of formElements)
+			this.form[element].value = this[element];
+
+		await Sections.show('category-edit');
+		this.form.name.focus();
+	}
+
+	async update(e) {
+
+		if (e.preventDefault)
+			e.preventDefault();
+
+		const
+			parameters = {
+				category_id: this.category_id,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		try {
+
+			await API.call('category/update', parameters, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: 'Category Saved',
+				subtitle: `${this.form.name.value} #${this.category_id}`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const
+			parameter = {
+				category_id: this.category_id,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		try {
+
+			await API.call('category/delete', parameter, options);
+
+			await this.page.load();
+
+			new SnackBar({
+				message: 'Category Deleted',
+				subtitle: `${this.name} #${this.category_id}`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	get row() {
+
+		if(this.container)
+			return this.container;
+
+		this.container = document.createElement('tr');
+
+		this.container.innerHTML = `
+			<td>${this.category_id}</td>
+			<td>${this.name}</td>
+			<td>${this.slug}</td>
+			<td>${parseInt(this.parent) || ''}</td>
+			<td>${this.is_admin ? 'Yes' : 'No'}</td>
+			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+		`;
+
+		this.container.querySelector('.green').on('click', () => this.edit());
+		this.container.querySelector('.red').on('click', () => this.delete());
+
+		return this.container;
 	}
 }

@@ -1,21 +1,16 @@
-Page.class = class extends Page {
+class UserProfile extends Page {
 
-	constructor() {
+	constructor(options) {
 
-		super();
+		super(options);
 
+		const container = this.container;
 		this.id = parseInt(location.pathname.split('/').pop());
+
 		this.load();
 	}
 
 	async load() {
-
-		await this.fetch();
-
-		this.render();
-	}
-
-	async fetch() {
 
 		const
 			parameters = {
@@ -25,34 +20,593 @@ Page.class = class extends Page {
 				method: 'POST',
 			};
 
+		await DataSource.load();
+
 		[this.data] = await API.call('users/list', parameters, options);
+
+		this.profileInfo = new ProfileInfo(this);
+
+		this.sessions = new Sessions(this);
+
+		this.render();
 	}
 
 	render() {
 
-		if(!this.data)
-			return this.container.innerHTML = '<div class="NA">No User found :(</div>';
+		if(!this.data.user_id)
+			return this.container.innerHTML = '<div class="NA">No User found</div>';
 
 		this.container.querySelector('.edit').classList.toggle('hidden', user.id != this.id);
 
 		this.container.querySelector('h1 span').textContent = [this.data.first_name, this.data.middle_name, this.data.last_name].filter(a => a).join(' ');
 
-		this.container.querySelector('.profile-details').innerHTML = `
-			<label>
+		this.container.querySelector('#profile-info').innerHTML = `
+			<div class="profile-details">
 				<span>User ID</span>
 				<div>${this.data.user_id}</div>
-			</label>
-			<label>
 				<span>Email</span>
 				<div>${this.data.email}</div>
-			</label>
-			<label>
 				<span>Phone</span>
-				<div>${this.data.phone || ''}</div>
-			</label>
+				<div>${this.data.phone || '<span class="NA">-</span>'}</div>
+				<span>Sign-up Date</span>
+				<div>${Format.dateTime(this.data.created_at) || '<span class="NA">-</span>'}</div>
+				<span>Added By</span>
+				<div>${this.data.added_by_user || '<span class="NA">-</span>'}</div>
+			</div>
 		`;
 
+		this.profileInfo.render();
+
+		const
+			info = this.container.querySelector('.heading-bar .info'),
+			activity = this.container.querySelector('.heading-bar .activity'),
+			access = this.container.querySelector('.heading-bar .access');
+
+
+		info.on('click',() => {
+
+			this.container.querySelector('.heading-bar .selected').classList.remove('selected');
+			info.classList.add('selected');
+
+			Sections.show('profile-info');
+		});
+
+		access.on('click',() => {
+
+			this.container.querySelector('.heading-bar .selected').classList.remove('selected');
+			access.classList.add('selected');
+
+			Sections.show('access');
+		});
+
+		activity.on('click', async () => {
+
+			this.container.querySelector('.heading-bar .selected').classList.remove('selected');
+
+			activity.classList.add('selected');
+
+			if(!this.container.querySelector('.activity-info .sessions')) {
+				const response = await this.sessions.load();
+				await this.sessions.process(response);
+			}
+
+			this.container.querySelector('.activity-info').appendChild(this.sessions.container);
+
+			Sections.show('activity');
+		});
+	}
+}
+
+Page.class = UserProfile;
+
+class Sessions {
+
+	constructor(user) {
+
+		Object.assign(this, user.data);
+
+		this.sessionsList = new Map;
+	}
+
+	async load() {
+
+		if(this.response)
+			return this.response;
+
+		const
+			parameters = {
+				user_id: this.user_id,
+			},
+			options = {
+				method: 'GET',
+			};
+
+		this.response = await API.call('session-logs/list', parameters, options);
+
+		return this.response;
+	}
+
+	async process(sessions) {
+
+		this.sessionsList.clear();
+
+		for(const session of sessions) {
+			this.sessionsList.set(session.id, new Session(session));
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('sessions');
+
+		container.innerHTML = `
+
+			<div class="toolbar hidden">
+				<h3>Show session details</h3>
+			</div>
+
+			<div class="list"></div>
+		`;
+
+		const list = container.querySelector('.list');
+		list.textContent = null;
+
+		for(const session of this.sessionsList.values())
+			list.appendChild(session.container);
+
+		return container;
+	}
+}
+
+class Session {
+
+	constructor(session) {
+
+		Object.assign(this, session);
+
+		this.activityGroups = new ActivityGroups([]);
+	}
+
+	async load() {
+
+		const
+			parameters = {
+				user_id: this.user_id,
+				session_id: this.id,
+			},
+			options = {
+				method: 'GET',
+			};
+
+		const [reports, errors] = await Promise.all([
+			API.call('reports/logs/log', parameters, options),
+			API.call('errors/list', parameters, options),
+		]);
+
+		this.process(reports, errors);
+	}
+
+	process(reports, errors) {
+
+		for(const report of reports)
+			report.type = 'report';
+
+		for(const error of errors)
+			error.type = 'error';
+
+		this.reportsCount = reports.length;
+		this.errorsCount = errors.length;
+
+		const groupedActivity = this.groupedActivity(reports, errors);
+
+		this.activityGroups = new ActivityGroups(groupedActivity);
+	}
+
+	groupedActivity(reports, errors) {
+
+		let activity = reports.concat(errors);
+
+		activity = activity.sort((a, b) => {
+			if(a.created_at < b.created_at)
+				return -1;
+			else
+				return 1;
+		});
+
+		const groupedList = [];
+
+		let tempList = [];
+
+		for(const data of activity) {
+
+			if(!activity.indexOf(data)) {
+				tempList.push(data);
+			}
+			else if(tempList[tempList.length - 1].type == activity[activity.indexOf(data)].type) {
+				tempList.push(data);
+			}
+			else {
+				groupedList.push(tempList);
+				tempList = [];
+				tempList.push(data);
+			}
+
+			if(activity.indexOf(data) == activity.length - 1){
+				groupedList.push(tempList);
+			}
+		}
+
+		return groupedList;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('article');
+		container.classList.add('active');
+
+		let detailString = [this.browser, this.OS, this.ip].filter(d => d);
+
+		detailString = detailString.join('&middot;&nbsp;');
+
+		container.innerHTML = `
+			<div class="info-grid">
+				<div class="icon"><i class="far fa-clock"></i></div>
+
+				<div class="title">
+					<span class="NA">#${this.id}</span>
+					${Format.dateTime(this.created_at)}
+				</div>
+				<span class="down"><i class="fas fa-angle-right"></i></span>
+
+				<div class="extra-info NA">${detailString}</div>
+
+				<span class="activity-details NA"></span>
+			</div>
+
+			<div class="loading-activity-groups hidden">
+				<i class="fa fa-spinner fa-spin"></i>
+			</div>
+		`;
+
+		container.querySelector('.info-grid').on('click', async() => {
+
+			container.querySelector('.down i').classList.toggle('angle-rotate');
+
+			if(this.activityGroups.size)
+				return container.querySelector('.activity-groups').classList.toggle('hidden');
+
+			container.querySelector('.loading-activity-groups').classList.remove('hidden');
+
+			await this.load();
+
+			container.querySelector('.activity-details').innerHTML = `Reports: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)}`;
+
+			container.appendChild(this.activityGroups.container);
+
+			container.querySelector('.loading-activity-groups').remove();
+
+		});
+
+		return container;
+	}
+}
+
+class ActivityGroups extends Set {
+
+	constructor(activityGroups) {
+
+		super();
+
+		for(const activityGroup of activityGroups) {
+			this.add(new ActivityGroup(activityGroup))
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('activity-groups');
+
+		for(const activityGroup of this)
+			container.appendChild(activityGroup.container);
+
+		return container;
+	}
+}
+
+class ActivityGroup extends Set {
+
+	constructor(activityGroup) {
+
+		super();
+
+		this.type = activityGroup[0].type;
+
+		for(const activity of activityGroup) {
+
+			if(activity.result_query) {
+				this.add(new ActivityReport(activity));
+			}
+			else {
+				this.add(new ActivityError(activity));
+			}
+		}
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('activity-group');
+
+		const icon = this.type == 'report' ? 'far fa-file' : 'fas fa-exclamation';
+
+		container.innerHTML = `
+			<div class="info-grid">
+				<div class="icon"><i class="${icon}"></i></div>
+				<div class="title">
+					<span class="NA">${Format.number(this.size)}</span>
+					<span class="type">${this.type}${this.size == 1 ? '' : 's'}</span>
+				</div>
+				<div class="down">
+					<i class="fas fa-angle-right"></i>
+				</div>
+
+				<div class="extra-info">
+					${Format.dateTime(Array.from(this)[0].created_at)} - ${Format.dateTime(Array.from(this)[this.size - 1].created_at)}
+				</div>
+			</div>
+
+			<div class="activity-list hidden"></div>
+		`;
+
+		const activityList = container.querySelector('.activity-list');
+
+		container.querySelector('.info-grid').on('click', () => {
+
+			activityList.classList.toggle('hidden');
+
+			container.querySelector('.info-grid').classList.toggle('selected');
+			container.querySelector('.down').classList.toggle('angle-rotate');
+
+			if(activityList.childElementCount)
+				return;
+
+			const tempContainer = document.createDocumentFragment();
+
+			for(const activity of this)
+				tempContainer.appendChild(activity.container);
+
+			activityList.appendChild(tempContainer);
+		});
+
+		return container;
+	}
+}
+
+class Activity {
+
+	constructor(data) {
+
+		Object.assign(this, data);
+	}
+
+	get createdAt() {
+
+		if(this.createdAtElement)
+			return this.createdAtElement;
+
+		const container = this.createdAtElement = document.createElement('span');
+		container.classList.add('NA');
+
+		container.textContent = Format.dateTime(this.created_at);
+
+		return container;
+	}
+
+	get container() {
+
+		if(this.activityContainerElement)
+			return this.activityContainerElement;
+
+		const container = this.activityContainerElement = document.createElement('div');
+
+		container.classList.add('info-grid');
+
+		container.on('click', () => {
+
+			const dialogueBox = new DialogBox();
+
+			dialogueBox.heading = this.heading;
+			dialogueBox.body.classList.add('activity-popup');
+
+			for(const key of this.keys) {
+
+				const span = document.createElement('span');
+				span.classList.add('key');
+				span.textContent = key + ':';
+
+				dialogueBox.body.appendChild(span);
+
+				try {
+					const value = JSON.parse(this[key]);
+
+					if(typeof value == 'object') {
+
+						const pre = document.createElement('pre');
+						pre.classList.add('value', 'json');
+						pre.textContent = JSON.stringify(value, 0, 4);
+
+						dialogueBox.body.appendChild(pre);
+					}
+					else {
+
+						const span = document.createElement('span');
+						span.classList.add('value');
+						span.textContent = this[key];
+
+						dialogueBox.body.appendChild(span);
+					}
+				}
+				catch(e) {
+
+					const pre = document.createElement('pre');
+						pre.classList.add('value', 'sql');
+
+						pre.textContent = new FormatSQL(this[key]).query;
+
+						dialogueBox.body.appendChild(pre);
+				}
+			}
+
+			dialogueBox.show();
+		});
+
+		container.appendChild(this.name);
+		container.appendChild(this.extraInfo);
+		container.appendChild(this.createdAt);
+
+		return container;
+	}
+}
+
+class ActivityReport extends Activity {
+
+	constructor(report) {
+
+		super(report);
+
+		Object.assign(this, report)
+	}
+
+	get name() {
+
+		if(this.nameElement)
+			return this.nameElement;
+
+		const title = this.nameElement = document.createElement('div');
+		title.classList.add('title');
+
+		title.textContent = DataSource.list.get(this.query_id).name;
+
+		const span = document.createElement('span');
+		span.classList.add('NA');
+		span.textContent = '#' + this.id;
+
+		title.appendChild(span);
+
+		return title;
+	}
+
+	get heading() {
+
+		if(this.headingElement)
+			return this.headingElement;
+
+		const span = this.headingElement = document.createElement('span');
+
+		span.textContent =  DataSource.list.get(this.query_id).name;
+
+		return span;
+	}
+
+	get keys() {
+
+		return ['user_id','session_id', 'query_id', 'response_time', 'rows', 'result_query'];
+	}
+
+	get extraInfo() {
+
+		if(this.extraInfoElement)
+			return this.extraInfoElement;
+
+		const extraInfo = this.extraInfoElement = document.createElement('div');
+		extraInfo.classList.add('extra-info');
+
+		extraInfo.textContent = `Execution Time: ${this.response_time}`;
+
+		return extraInfo;
+	}
+}
+
+class ActivityError extends Activity {
+
+	constructor(error) {
+
+		super(error);
+
+		Object.assign(this, error)
+	}
+
+	get keys() {
+
+		return ['user_id', 'session_id', 'status', 'message', 'description'];
+	}
+
+	get name() {
+
+		if(this.titleElement)
+			return this.titleElement;
+
+		const title = this.containerElement = document.createElement('div');
+		title.classList.add('title');
+
+		title.textContent = 'Error';
+
+		return title;
+	}
+
+	get heading() {
+
+		if(this.headingElement)
+			return this.headingElement;
+
+		const span = this.headingElement = document.createElement('span');
+
+		span.textContent = 'Error';
+
+		return span;
+	}
+
+	get extraInfo() {
+
+		if(this.extraInfoElement)
+			return this.extraInfoElement;
+
+		const extraInfo = this.containerElement = document.createElement('div');
+		extraInfo.classList.add('extra-info');
+
+		extraInfo.textContent = 'Type:' + this.type;
+
+		return extraInfo;
+	}
+}
+
+class ProfileInfo {
+
+	constructor(page) {
+
+		Object.assign(this, page);
+	}
+
+	render() {
+
 		const privileges = this.container.querySelector('.privileges tbody');
+
+		privileges.textContent = null;
 
 		for(const privilege of this.data.privileges || []) {
 			privileges.insertAdjacentHTML('beforeend', `
@@ -64,9 +618,11 @@ Page.class = class extends Page {
 		}
 
 		if(!this.data.privileges || !this.data.privileges.length)
-			privileges.innerHTML = `<tr class="NA"><td colspan="2">No Privileges assigned! :(</td></tr>`;
+			privileges.innerHTML = `<tr class="NA"><td colspan="2">No Privileges assigned!</td></tr>`;
 
 		const roles = this.container.querySelector('.roles tbody');
+
+		roles.textContent = null;
 
 		for(const role of this.data.roles || []) {
 			roles.insertAdjacentHTML('beforeend', `
@@ -78,6 +634,6 @@ Page.class = class extends Page {
 		}
 
 		if(!this.data.roles || !this.data.roles.length)
-			roles.innerHTML = `<tr class="NA"><td colspan="2">No Roles assigned! :(</td></tr>`;
+			roles.innerHTML = `<tr class="NA"><td colspan="2">No Roles assigned!</td></tr>`;
 	}
 }
