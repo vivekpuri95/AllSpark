@@ -644,6 +644,8 @@ class Dashboard {
 
 		edit.classList.add('hidden');
 
+		Dashboard.container.classList.add('editing');
+
 		for (let {query: report} of this.page.loadedVisualizations) {
 
 			const [selectedVisualizationProperties] = this.page.list.get(this.id).visualizations.filter(x => x.visualization_id === report.selectedVisualization.visualization_id);
