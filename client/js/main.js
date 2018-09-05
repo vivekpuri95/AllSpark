@@ -869,7 +869,7 @@ class User {
 			}
 
 			if(account.settings.get('logout_redirect_url'))
-				window.open(account.settings.get('logout_redirect_url')+parameters.toString(), '_self');
+				window.open(account.settings.get('logout_redirect_url')+'?'+parameters.toString(), '_self');
 
 			else if(redirect)
 				window.location = '/login?'+parameters.toString();
