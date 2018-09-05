@@ -79,6 +79,11 @@ class Page {
 
 		await Storage.clear();
 
+		if(navigator.serviceWorker) {
+			for(const registration of await navigator.serviceWorker.getRegistrations())
+				registration.unregister();
+		}
+
 		Storage.set('refresh_token', refresh_token);
 
 		await API.refreshToken();
@@ -86,7 +91,7 @@ class Page {
 
 		new SnackBar({
 			message: 'Cache Cleared',
-			subtitle: '',
+			subtitle: 'Reloaded website metadata, local cache and user access level information.',
 			icon: 'fas fa-check',
 		});
 	}
