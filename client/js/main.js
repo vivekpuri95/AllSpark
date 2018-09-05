@@ -1363,7 +1363,7 @@ class Format {
 			return '';
 
 		const
-			currentSeconds = Date.parse(timestamp),
+			currentSeconds = typeof timestamp == 'number' ? timestamp : Date.parse(timestamp),
 			agoFormat = [
 				{
 					unit: 60,

@@ -55,4 +55,7 @@ self.addEventListener('message', event => {
 
 	if(event.data.action == 'test')
 		event.ports[0].postMessage({action: event.data.action, response: 'test response'});
+
+	if(event.data.action == 'startTime')
+		event.ports[0].postMessage({action: event.data.action, response: now});
 });
