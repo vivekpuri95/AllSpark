@@ -865,8 +865,21 @@ body {
 			bottom: 0;
 		}
 		.query-history .info .toolbar {
+			position: sticky;
+			top: 0;
+			background: #eee;
+			z-index: 2;
 			display: flex;
 			align-items: center;
+		}
+		.query-history .info .toolbar.visualization {
+			display: grid;
+			grid-auto-columns: max-content;
+			grid-template-columns: repeat(auto-fit, minmax(75px, max-content));
+			grid-gap: calc(var(--gap) * 2);
+		}
+		.query-history .info .toolbar.visualization button {
+			margin: 0;
 		}
 			.query-history .info .toolbar button {
 				margin-right: calc(var(--gap) * 2);

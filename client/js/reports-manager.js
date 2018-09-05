@@ -663,6 +663,11 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 	load() {
 
+		if(this.page.container.querySelector('.query-history')) {
+
+			this.page.container.querySelector('.query-history').remove();
+		}
+
 		if(!this.form.connection_name.children.length) {
 
 			for(const connection of this.page.connections.values()) {
@@ -953,6 +958,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
+
+		if(this.page.container.querySelector('.query-history')) {
+
+			this.page.container.querySelector('.query-history').remove();
+		}
 
 		if(this.container.querySelector('#define-report-parts > form#define-report-form'))
 			this.container.querySelector('#define-report-parts > form#define-report-form').remove();
@@ -1741,6 +1751,11 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		this.page.preview.hidden = true;
 
+		if(this.page.container.querySelector('.query-history')) {
+
+			this.page.container.querySelector('.query-history').remove();
+		}
+
 		if(!this.page.stages.get('configure-visualization').lastSelectedVisualizationId)
 			this.page.stages.get('configure-visualization').disabled = true;
 
@@ -1839,6 +1854,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 			if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
 				await this.visualizationLogs.load();
+
+			this.load();
 		});
 	}
 
@@ -1854,9 +1871,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			throw new Page.exception('Invalid Report ID');
 
 		let visualization_id = window.location.pathname.split('/').pop();
-
-		if(this.container.querySelector('.visualization-form'))
-			this.container.querySelector('.visualization-form').remove();
 
 		if(!window.location.pathname.includes('configure-visualization')) {
 
@@ -1874,22 +1888,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		if(!this.visualization)
 			return;
-
-		if(ConfigureVisualization.types.has(this.visualization.type)) {
-
-			this.visualizationManager = new VisualizationManager(this.visualization, this);
-		}
-		else {
-
-			throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
-		}
-
-		if(this.container.querySelector('#preview-configure-visualization')) {
-
-			this.container.querySelector('#preview-configure-visualization').remove();
-		}
-
-		this.container.appendChild(this.visualizationManager.container);
 
 		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
 
@@ -1909,6 +1907,45 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.page.container.appendChild(this.visualizationLogs.container);
 
+		await this.page.preview.load({
+			query_id: this.report.query_id,
+			visualization: {
+				id: this.visualization.visualization_id
+			},
+		});
+
+		await this.loadVisualizationForm();
+
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
+	}
+
+
+	loadVisualizationForm(visualization) {
+
+		if(visualization) {
+
+			this.visualization = visualization;
+		}
+
+		if(this.container.querySelector('.visualization-form'))
+			this.container.querySelector('.visualization-form').remove();
+
+		if(ConfigureVisualization.types.has(this.visualization.type)) {
+
+			this.visualizationManager = new VisualizationManager(this.visualization, this);
+		}
+		else {
+
+			throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
+		}
+
+		if(this.container.querySelector('#preview-configure-visualization')) {
+
+			this.container.querySelector('#preview-configure-visualization').remove();
+		}
+
+		this.container.appendChild(this.visualizationManager.container);
+
 		this.dashboards = new ReportVisualizationDashboards(this);
 
 		if(this.container.querySelector('.configuration-section.dashboards')) {
@@ -1922,9 +1959,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.page.preview.position = 'right';
 
 		this.dashboards.load();
-		this.visualizationManager.load();
 
-		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
+		this.visualizationManager.load();
 	}
 });
 
@@ -1992,7 +2028,7 @@ class VisualizationManager {
 			</form>
 		`;
 
-		this.form = this.container.querySelector('#configure-visualization-form');
+		this.form = container.querySelector('#configure-visualization-form');
 		this.optionsForm = new (ConfigureVisualization.types.get(this.type))(this, this.stage.page, this.stage);
 
 		this.transformations = new ReportTransformations(this, this.stage);
@@ -2025,18 +2061,13 @@ class VisualizationManager {
 
 	async load() {
 
+		this.form.reset();
+
 		this.form.name.value = this.name;
 		this.form.type.value = this.type;
 		this.form.description.value = this.description;
 
 		this.reportVisualizationFilters.load();
-
-		await this.stage.page.preview.load({
-			query_id: this.stage.report.query_id,
-			visualization: {
-				id: this.visualization_id
-			},
-		});
 
 		this.transformations.load();
 		this.container.querySelector('.options').appendChild(this.optionsForm.form);
@@ -2103,7 +2134,7 @@ class VisualizationManager {
 	get json() {
 
 		return {
-			id: this.visualization_id,
+			visualization_id: this.visualization_id,
 			query_id: this.query_id,
 			type: this.form.type.value,
 			name: this.form.name.value,
@@ -2142,7 +2173,9 @@ class VisualizationManager {
 
 			body.classList.add('hidden');
 
-			h3.on('click', () => {
+			h3.removeEventListener('click', h3.clickListener);
+
+			h3.on('click', h3.clickListener = e => {
 
 				body.classList.toggle('hidden');
 
@@ -2184,7 +2217,7 @@ class QueryLog extends ReportLog {
 			this.logs.owner.connection.formJson = this.connection.json;
 
 			new SnackBar({
-				message: this.query_id + ' Query Restored',
+				message: this.owner_id + ' Query Restored',
 				subtitle: 'The restored query is not saved yet and will be lost on page reload.',
 				icon: 'fa fa-plus',
 			});
@@ -2252,6 +2285,8 @@ class VisualizationLog extends ReportLog {
 			</span>
 		`;
 
+		logInfo.querySelector('.toolbar').classList.add('visualization');
+
 		logInfo.querySelector('.toolbar button.back').on('click', () => {
 
 			this.logs.container.querySelector('.list').classList.remove('hidden');
@@ -2260,19 +2295,37 @@ class VisualizationLog extends ReportLog {
 
 		logInfo.querySelector('.toolbar .restore').on('click', () => {
 
+			if(this.logsVisualizationManager) {
+
+				this.logs.page.loadVisualizationForm(this.logsVisualizationManager.json);
+			}
+
+			new SnackBar({
+				message: this.owner_id + ' Visualization Restored',
+				subtitle: 'The restored visualization is not saved yet and will be lost on page reload.',
+				icon: 'fa fa-plus',
+			});
 		});
 
 		logInfo.querySelector('.toolbar .preview').on('click', () => {
 
+			if(this.logsVisualizationManager) {
+				
+				this.logsVisualizationManager.preview();
+			}
 
 		});
 
 		const queryInfo = this.logs.container.querySelector('.info div.log-form');
+		queryInfo.textContent =null;
 
 		queryInfo.classList.remove('block');
-		queryInfo.classList.add('logs-configure-visualization');
 
-		this.logsVisualizationManager = new VisualizationManager(this.logs.owner, this.logs.page);
+		if(!this.logsVisualizationManager) {
+
+			this.logsVisualizationManager = new VisualizationManager(this.state, this.logs.page);
+		}
+		
 		queryInfo.appendChild(this.logsVisualizationManager.container);
 
 		this.logsVisualizationManager.load();
