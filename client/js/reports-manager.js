@@ -416,52 +416,60 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
 				</td>
-				<td class="action green visualizations" title="${report.visualizations.map(f => f.name).join(', ')}" >
+				<td class="action visualizations ${!report.editable ? 'grey' : 'green'}" title="${report.visualizations.map(f => f.name).join(', ')}" >
 					${report.visualizations.length}
 				</td>
 				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
-				<td class="action green configure">Configure</td>
-				<td class="action green define">Define</td>
-				<td class="action red delete">Delete</td>
+				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action configure ${!report.editable ? 'grey' : 'green'}">Configure</td>
+				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action define ${!report.editable ? 'grey' : 'green'}">Define</td>
+				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action delete ${!report.editable ? 'grey' : 'red'}">Delete</td>
 			`;
 
 			for(const tag of tags)
 				row.querySelector('.tags').appendChild(tag);
 
-			row.querySelector('.configure').on('click', () => {
+			if(row.querySelector('.configure.green')) {
+				row.querySelector('.configure').on('click', () => {
 
-				window.history.pushState({}, '', `/reports/configure-report/${report.query_id}`);
+					window.history.pushState({}, '', `/reports/configure-report/${report.query_id}`);
 
-				this.page.stages.get('configure-report').disabled = false;
-				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('pick-visualization').disabled = false;
+					this.page.stages.get('configure-report').disabled = false;
+					this.page.stages.get('define-report').disabled = false;
+					this.page.stages.get('pick-visualization').disabled = false;
 
-				this.page.load();
-			});
+					this.page.load();
+				});
+			}
 
-			row.querySelector('.define').on('click', () => {
+			if(row.querySelector('.define.green')) {
+				row.querySelector('.define').on('click', () => {
 
-				window.history.pushState({}, '', `/reports/define-report/${report.query_id}`);
+					window.history.pushState({}, '', `/reports/define-report/${report.query_id}`);
 
-				this.page.stages.get('configure-report').disabled = false;
-				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('pick-visualization').disabled = false;
+					this.page.stages.get('configure-report').disabled = false;
+					this.page.stages.get('define-report').disabled = false;
+					this.page.stages.get('pick-visualization').disabled = false;
 
-				this.page.load();
-			});
+					this.page.load();
+				});
+			}
 
-			row.querySelector('.visualizations').on('click', () => {
+			if(row.querySelector('.visualizations.green')) {
+				row.querySelector('.visualizations').on('click', () => {
 
-				window.history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
+					window.history.pushState({}, '', `/reports/pick-visualization/${report.query_id}`);
 
-				this.page.stages.get('configure-report').disabled = false;
-				this.page.stages.get('define-report').disabled = false;
-				this.page.stages.get('pick-visualization').disabled = false;
+					this.page.stages.get('configure-report').disabled = false;
+					this.page.stages.get('define-report').disabled = false;
+					this.page.stages.get('pick-visualization').disabled = false;
 
-				this.page.load();
-			});
+					this.page.load();
+				});
+			}
 
-			row.querySelector('.delete').on('click', () => this.delete(report));
+			if(row.querySelector('.delete.red')) {
+				row.querySelector('.delete').on('click', () => this.delete(report));
+			}
 
 			tbody.appendChild(row);
 		}

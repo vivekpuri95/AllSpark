@@ -363,8 +363,8 @@ class UserManage {
 			<td><a href="/user/profile/${this.id}" target="_blank">${this.name}</a></td>
 			<td>${this.email}</td>
 			<td title="${Format.dateTime(this.last_login)}">${Format.ago(this.last_login)}</td>
-			<td  title="${!this.editable ? 'Not enough privileges' : ''}" class="action ${!this.editable ? 'grey' : 'green'}" title="Edit">Edit</i></td>
-			<td title="${!this.deletable ? 'Not enough privileges' : ''}" class="action ${!this.deletable ? 'grey' : 'red'}" title="Delete">Delete</td>
+			<td title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}">Edit</td>
+			<td title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}">Delete</td>
 		`;
 
 		if(this.container.querySelector('.green')) {

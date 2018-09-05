@@ -373,16 +373,20 @@ class DashboardsDashboard {
 			</td>
 			<td>${this.icon || ''}</td>
 			<td>${this.order || ''}</td>
-			<td class="action green">Edit</td>
-			<td class="action red">Delete</td>
+			<td title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}">Edit</td>
+			<td title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}">Delete</td>
 		`;
 
-		this.container.querySelector('.green').on('click', () => {
-			this.edit();
-			history.pushState({what: this.id}, '', `/dashboards-manager/${this.id}`);
-		});
+		if(this.container.querySelector('.green')) {
+			this.container.querySelector('.green').on('click', () => {
+				this.edit();
+				history.pushState({what: this.id}, '', `/dashboards-manager/${this.id}`);
+			});
+		}
 
-		this.container.querySelector('.red').on('click', async() => this.delete());
+		if(this.container.querySelector('.red')) {
+			this.container.querySelector('.red').on('click', async() => this.delete());
+		}
 
 		return this.container;
 	}
