@@ -76,7 +76,7 @@ main .settings-manager {
 			position: sticky;
 			top: 0;
 			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-			z-index: 5;
+			z-index: 6;
 		}
 			main .settings-manager .profile > header h3 {
 				margin: 0;

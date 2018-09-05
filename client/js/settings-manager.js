@@ -378,6 +378,35 @@ SettingsManager.types.set('string', class extends SettingsManagerType {
 	}
 });
 
+SettingsManager.types.set('url', class extends SettingsManagerType {
+
+	get container() {
+
+		if(this.div)
+			return this.div;
+
+		const container = this.div = document.createElement('label');
+
+		container.innerHTML = `
+			<span>${this.name}</span>
+			${this.description ? '<small class="NA">' + this.description + '</small>' : ''}
+			<input type="url" placeholder="Url">
+		`;
+
+		return container;
+	}
+
+	get value() {
+
+		return this.container.querySelector('input').value;
+	}
+
+	set value(param) {
+
+		this.container.querySelector('input').value = param;
+	}
+});
+
 SettingsManager.types.set('toggle', class extends SettingsManagerType {
 
 	get container() {

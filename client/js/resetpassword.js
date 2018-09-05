@@ -4,6 +4,8 @@ Page.class = class ResetPassword extends Page {
 
 		super();
 
+		document.querySelector('body > header').classList.add('hidden');
+
 		this.form = this.container.querySelector('form');
 		this.message = this.container.querySelector('#message');
 
