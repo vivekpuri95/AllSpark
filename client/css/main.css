@@ -534,8 +534,6 @@ body {
 	}
 		.dialog-box > header {
 			display: flex;
-			background: var(--color-secondary);
-			color: #fff;
 			position: sticky;
 			top: 0;
 			justify-content: space-between;
@@ -1108,8 +1106,10 @@ body {
 			margin: 0;
 			grid-column: 1 / 3;
 			padding-bottom: 5px;
-			font-size: 125%;
-			border-bottom: 1px dashed #999;
+			font-weight: normal;
+			text-align: center;
+			letter-spacing: 0.5px;
+			font-size: 175%;
 		}
 		main .dialog-box-blanket.user-onboarding-welcome .body a {
 			color: inherit;
@@ -1119,42 +1119,35 @@ body {
 		}
 		main .dialog-box-blanket.user-onboarding-welcome .body .view-demo,
 		main .dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough {
-			background: rgba(0, 0, 0, 0.1);
-			border-radius: 5px;
-			font-size: calc(110% + 0.25vw);
-			height: 150px;
+			font-size: calc(100% + 0.25vw);
+			height: 175px;
 			grid-row: 2;
 			display: flex;
 			flex-direction: column;
 			justify-content: center;
 			text-align: center;
-			border: 1px solid #ccc;
+			max-width: 200px;
+			margin: 25px auto;
 			transition: background var(--transition-duration),
 						box-shadow var(--transition-duration);
 		}
-		main .dialog-box-blanket.user-onboarding-welcome .body .view-demo:hover,
-		main .dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough:hover {
-			background: rgba(0, 0, 0, 0.25);
-			cursor: pointer;
-		}
-		main .dialog-box-blanket.user-onboarding-welcome .body .view-demo:active,
-		main .dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough:active,
-		main .dialog-box-blanket.user-onboarding-welcome .body .initiate-chat:active,
-		main .dialog-box-blanket.user-onboarding-welcome .body .skip:active  {
-			box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
-		}
 		main .dialog-box-blanket.user-onboarding-welcome .body .figure {
 			font-size: calc(25px + 1.8vw);
-			margin-bottom: 10px;
+			margin-bottom: 15px;
+			height: 110px;
+			align-items: flex-end;
+			display: flex;
+			justify-content: center;
 		}
-			main .dialog-box-blanket.user-onboarding-welcome .body .view-demo i {
-				margin-left: 18px;
+			main .dialog-box-blanket.user-onboarding-welcome .body .view-demo .NA,
+			main .dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough .NA {
+				font-size: 75%;
+				margin-top: 10px;
 			}
 		main .dialog-box-blanket.user-onboarding-welcome .body .or {
 			text-align: center;
-			color: #999;
+			color: #666;
 			grid-column: 1 / 3;
-			font-size: 90%;
 		}
 		main .dialog-box-blanket.user-onboarding-welcome .body .initiate-chat {
 			grid-column: 1 / 3;
@@ -1162,15 +1155,11 @@ body {
 			font-size: 115%;
 			margin: 0 auto;
 			padding: 8px 15px;
-			border: 1px solid #999;
-			transition: background var(--transition-duration),
-						box-shadow var(--transition-duration),
-						color var(--transition-duration);
+			border: 1px solid transparent;
+			transition: border var(--transition-duration);
 		}
 		main .dialog-box-blanket.user-onboarding-welcome .body .initiate-chat:hover {
-			background: var(--color-accent);
-			color: #fff;
-			border-color: transparent;
+			border-color: #999;
 		}
 		main .dialog-box-blanket.user-onboarding-welcome .body .skip {
 			grid-column: 2;
@@ -1183,6 +1172,4 @@ body {
 		}
 		main .dialog-box-blanket.user-onboarding-welcome .body .skip:hover {
 			border: 1px solid #999;
-		}
-		main .dialog-box-blanket.user-onboarding-welcome .body .skip:active {
 		}
