@@ -1263,7 +1263,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 							return;
 
 						this.page.preview.load({
-							query: `SELECT * FROM \`${database.name}\`.\`${table.name}\` LIMIT 100`,
+							definition: {
+								query: `SELECT * FROM \`${database.name}\`.\`${table.name}\` LIMIT 100`,
+							},
 							query_id: this.report.query_id,
 						});
 					});
@@ -1972,8 +1974,8 @@ class VisualizationManager {
 		container.classList.add('visualization-form');
 
 		container.innerHTML = `
-			<form id="configure-visualization-form">			
-				<div class="configuration-section">				
+			<form id="configure-visualization-form">
+				<div class="configuration-section">
 					<h3><i class="fas fa-angle-right"></i> General</h3>
 					<div class="body">
 						<div class="form subform">
@@ -4125,12 +4127,12 @@ class ReportTransformations extends Set {
 					<fieldset>
 						<legend>Add Transformation</legend>
 						<div class="form">
-	
+
 							<label>
 								<span>Type</span>
 								<select name="type"></select>
 							</label>
-	
+
 							<label>
 								<span>&nbsp;</span>
 								<button type="submit"><i class="fa fa-plus"></i> Add</button>
@@ -4791,16 +4793,16 @@ class ReportVisualizationDashboards extends Set {
 					<fieldset>
 						<legend>Add Dashboard</legend>
 						<div class="form">
-	
+
 							<label class="dashboard_id">
 								<span>Dashboard</span>
 							</label>
-	
+
 							<label>
 								<span>Position</span>
 								<input name="position" type="number">
 							</label>
-	
+
 							<label>
 								<span>&nbsp;</span>
 								<button type="submit"><i class="fa fa-plus"></i> Add</button>
@@ -4808,7 +4810,7 @@ class ReportVisualizationDashboards extends Set {
 						</div>
 					</fieldset>
 				</form>
-			</div>			
+			</div>
 		`;
 
 		this.container.querySelector('form').on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
@@ -5169,14 +5171,14 @@ class ReportVisualizationFilters extends Map {
 				<form class="add-filter">
 					<fieldset>
 						<legend>Add Filter</legend>
-	
+
 						<div class="form">
-	
+
 							<label>
 								<span>Name</span>
 								<select></select>
 							</label>
-	
+
 							<label>
 								<span>&nbsp;</span>
 								<button type="submit"><i class="fa fa-plus"></i> Add</button>
