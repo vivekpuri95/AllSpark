@@ -59,6 +59,7 @@ exports.delete = class extends API {
 exports.test = class extends API {
 
 	async test() {
-		return this.request.query || this.request.body;
+
+		return this.request.body || this.request.query;
 	}
 };

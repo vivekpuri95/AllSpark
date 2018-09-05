@@ -12,7 +12,7 @@ exports.insert = class extends API {
 
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 
-		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
+		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 
@@ -36,7 +36,7 @@ exports.delete = class extends API {
 		const mandatoryData = ["id"];
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 
-		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
+		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, user:this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 
@@ -55,7 +55,7 @@ exports.updateFormat = class extends API {
 
 		this.user.privilege.needs('dashboard');
 
-		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
+		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 
@@ -89,7 +89,7 @@ exports.update = class extends API {
 			}
 		}
 
-		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
+		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 

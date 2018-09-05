@@ -363,16 +363,20 @@ class UserManage {
 			<td><a href="/user/profile/${this.id}" target="_blank">${this.name}</a></td>
 			<td>${this.email}</td>
 			<td title="${Format.dateTime(this.last_login)}">${Format.ago(this.last_login)}</td>
-			<td class="action green" title="Edit">Edit</i></td>
-			<td class="action red" title="Delete">Delete</td>
+			<td  title="${!this.editable ? 'Not enough privileges' : ''}" class="action ${!this.editable ? 'grey' : 'green'}" title="Edit">Edit</i></td>
+			<td title="${!this.deletable ? 'Not enough privileges' : ''}" class="action ${!this.deletable ? 'grey' : 'red'}" title="Delete">Delete</td>
 		`;
 
-		this.container.querySelector('.green').on('click', () => {
-			this.edit();
-			history.pushState({what: this.id}, '', `/users-manager/${this.id}`);
-		});
+		if(this.container.querySelector('.green')) {
+			this.container.querySelector('.green').on('click', () => {
+				this.edit();
+				history.pushState({what: this.id}, '', `/users-manager/${this.id}`);
+			});
+		}
 
-		this.container.querySelector('.red').on('click', () => this.delete());
+		if(this.container.querySelector('.red')) {
+			this.container.querySelector('.red').on('click', () => this.delete());
+		}
 
 		return this.container;
 	}

@@ -4,7 +4,7 @@ exports.list = class extends API {
 
 	async list() {
 
-		this.user.privilege.needs('connection');
+		this.user.privilege.needs('connection.list');
 
 		return await this.mysql.query(`
 			SELECT

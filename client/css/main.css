@@ -94,6 +94,14 @@ a:active {
 	display: none !important;
 }
 
+.action.grey {
+	color: #999;
+}
+.action.grey:hover {
+	background: none !important;
+	color: #999 !important;
+}
+
 .notice, .warning {
 	padding: 16px;
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);

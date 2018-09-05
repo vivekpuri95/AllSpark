@@ -8,14 +8,14 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
+		this.user.privilege.needs('user.insert', "ignore");
 
 		const alreadyExists = await this.mysql.query(
 			'SELECT * FROM tb_users WHERE account_id = ? AND email = ?',
 			[this.account.account_id, this.request.body.email]
 		);
 
-		if(alreadyExists.length)
+		if (alreadyExists.length)
 			throw new API.Exception(400, 'User already exists');
 
 		let password;
@@ -48,7 +48,7 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
+		this.user.privilege.needs('user.delete', "ignore");
 
 		return await this.mysql.query(`UPDATE tb_users SET status = 0 WHERE user_id = ?`, [this.request.body.user_id], 'write');
 
@@ -64,7 +64,7 @@ exports.update = class extends API {
 
 		this.assert(requiredCategories.some(x => this.user.privilege.has('user', x)), 'User does not have enough privileges');
 
-		this.user.privilege.needs('user', this.user.privileges[0] && this.user.privileges[0].category_id);
+		this.user.privilege.needs('user.update', "ignore");
 
 		var keys = ['first_name', 'last_name', 'middle_name', 'phone', 'password', 'email', 'status'];
 
@@ -92,13 +92,18 @@ exports.list = class extends API {
 
 	async list() {
 
+		const possiblePrivileges = [constants.privilege["user.list"], constants.privilege["user"], constants.privilege["report"], constants.privilege["administrator"]];
+
 		if (!this.request.body.user_id) {
 
-			this.assert(
-				((this.user.privilege.has('user', this.user.privileges[0] && this.user.privileges[0].category_id)) || (this.user.privilege.has('report', this.user.privileges[0] && this.user.privileges[0].category_id))),
-				"User does not have privilege to view user list.",
-				401
-			);
+			let flag = false;
+
+			for (const p of possiblePrivileges) {
+
+				flag = flag || this.user.privilege.has(p, "ignore");
+			}
+
+			this.assert(flag, "User does not have enough privileges to view user list");
 		}
 
 		let
@@ -129,29 +134,36 @@ exports.list = class extends API {
 			role_query = `
 				SELECT
 					id,
-					owner_id as user_id,
+					owner_id AS user_id,
 					category_id,
-					target_id as role_id
+					target_id AS role_id
 				FROM
-					tb_object_roles
+					tb_object_roles o
+				JOIN
+					tb_categories c
+					USING(category_id)
+				JOIN
+					tb_roles r
+				ON
+					o.target_id = r.role_id
 				WHERE
-					owner = "user"
-					and target = "role"
-					and account_id = ?
+					OWNER = "user"
+					AND target = "role"
+					AND o.account_id = ?
 				`,
-			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege`
+			prv_query = `SELECT id, user_id, category_id, privilege_id FROM tb_user_privilege JOIN tb_privileges p USING(privilege_id) JOIN tb_categories USING(category_id) WHERE (p.account_id = ? OR p.account_id = 0 ) AND p.status = 1`
 		;
 
 		if (this.request.body.user_id && !this.request.body.search) {
 
 			user_query = user_query.concat(' AND u.user_id = ?');
 			role_query = role_query.concat(' AND owner_id = ?');
-			prv_query = prv_query.concat(' WHERE user_id = ?');
+			prv_query = prv_query.concat(' AND user_id = ?');
 
 			results = await Promise.all([
 				this.mysql.query(user_query, [this.account.account_id, this.request.body.user_id]),
 				this.mysql.query(role_query, [this.account.account_id, this.request.body.user_id]),
-				this.mysql.query(prv_query, [this.request.body.user_id]),
+				this.mysql.query(prv_query, [this.account.account_id, this.request.body.user_id]),
 			]);
 		}
 
@@ -161,26 +173,26 @@ exports.list = class extends API {
 
 			if (this.request.body.search) {
 
-				if(this.request.body.user_id) {
+				if (this.request.body.user_id) {
 
 					user_query = user_query.concat(' AND u.user_id LIKE ?');
 					queryParams.push(`%${this.request.body.user_id}%`);
 				}
 
-				if(this.request.body.email) {
+				if (this.request.body.email) {
 
 					user_query = user_query.concat(` AND u.email LIKE ?`);
 					queryParams.push(`%${this.request.body.email}%`);
 				}
 
-				if(this.request.body.name) {
+				if (this.request.body.name) {
 
 					user_query = user_query.concat(` AND CONCAT(u.first_name, ' ', IFNULL(u.middle_name, ' '),' ', IFNULL(u.last_name, ' ')) LIKE ?`);
 					queryParams.push(`%${this.request.body.name}%`);
 				}
 
 
-				if(this.request.query.text) {
+				if (this.request.query.text) {
 
 					user_query = user_query.concat(`
 						AND  (
@@ -194,11 +206,11 @@ exports.list = class extends API {
 						LIMIT 10
 					`);
 
-					for(let i = 1; i <= 6; i++) {
+					for (let i = 1; i <= 6; i++) {
+
 						queryParams.push(`%${this.request.body.text}%`);
 					}
 				}
-
 			}
 
 			user_query = user_query.concat(' GROUP BY u.user_id');
@@ -206,7 +218,7 @@ exports.list = class extends API {
 			results = await Promise.all([
 				this.mysql.query(user_query, [this.account.account_id, ...queryParams]),
 				this.mysql.query(role_query, [this.account.account_id]),
-				this.mysql.query(prv_query),
+				this.mysql.query(prv_query, [this.account.account_id]),
 			]);
 		}
 
@@ -214,28 +226,27 @@ exports.list = class extends API {
 
 		for (const role of results[1]) {
 
-			if(this.request.body.category_id || this.request.body.role_id) {
+			if (this.request.body.category_id || this.request.body.role_id) {
 
 				this.request.body.category_id = typeof this.request.body.category_id == 'string' ? [this.request.body.category_id] : this.request.body.category_id;
 				this.request.body.role_id = typeof this.request.body.role_id == 'string' ? [this.request.body.role_id] : this.request.body.role_id;
 
-				if(this.request.body.category_id) {
+				if (this.request.body.category_id) {
 
 					const categoryCheck = this.request.body.category_id.includes(role.category_id.toString());
 
-					if(!categoryCheck) {
+					if (!categoryCheck) {
 
 						continue;
 					}
 
-					if(categoryCheck && this.request.body.search_by == 'privilege') {
+					if (categoryCheck && this.request.body.search_by == 'privilege') {
 
 						continue;
 					}
-
 				}
 
-				if(this.request.body.role_id && !this.request.body.role_id.includes(role.role_id.toString())) {
+				if (this.request.body.role_id && !this.request.body.role_id.includes(role.role_id.toString())) {
 
 					continue;
 				}
@@ -251,28 +262,28 @@ exports.list = class extends API {
 
 		for (const privilege of results[2]) {
 
-			if(this.request.body.category_id || this.request.body.privilege_id) {
+			if (this.request.body.category_id || this.request.body.privilege_id) {
 
 				this.request.body.category_id = typeof this.request.body.category_id == 'string' ? [this.request.body.category_id] : this.request.body.category_id;
 				this.request.body.privilege_id = typeof this.request.body.privilege_id == 'string' ? [this.request.body.privilege_id] : this.request.body.privilege_id;
 
-				if(this.request.body.category_id) {
+				if (this.request.body.category_id) {
 
 					const categoryCheck = this.request.body.category_id.includes(privilege.category_id.toString());
 
-					if(!categoryCheck) {
+					if (!categoryCheck) {
 
 						continue;
 					}
 
-					if(categoryCheck && this.request.body.search_by == 'role') {
+					if (categoryCheck && this.request.body.search_by == 'role') {
 
 						continue;
 					}
 
 				}
 
-				if(this.request.body.privilege_id && !this.request.body.privilege_id.includes(privilege.privilege_id.toString())) {
+				if (this.request.body.privilege_id && !this.request.body.privilege_id.includes(privilege.privilege_id.toString())) {
 
 					continue;
 				}
@@ -293,19 +304,19 @@ exports.list = class extends API {
 			row.href = `/user/profile/${row.user_id}`;
 			row.superset = 'Users';
 			row.name = [row.first_name, row.middle_name, row.last_name].filter(u => u).join(' ');
-			row.last_login = row.last_login
+			row.last_login = row.last_login;
 
-			if(this.request.query.search) {
+			if (this.request.query.search) {
 
 				if (this.request.body.role_id && !roles[row.user_id]) {
 
 					continue;
 				}
-				else if(this.request.body.privilege_id && !privileges[row.user_id]) {
+				else if (this.request.body.privilege_id && !privileges[row.user_id]) {
 
 					continue;
 				}
-				else if(this.request.body.category_id && !(roles[row.user_id] || privileges[row.user_id])) {
+				else if (this.request.body.category_id && !(roles[row.user_id] || privileges[row.user_id])) {
 
 					continue;
 				}
@@ -314,11 +325,31 @@ exports.list = class extends API {
 			userList.push(row);
 		}
 
-		const userCategories = this.user.roles.map(x => parseInt(x.category_id));
+		const userCategories = this.user.privileges.filter(x => possiblePrivileges.includes(x.privilege_name)).map(x => x.category_id);
+		const userUpdateCategories = this.user.privileges.filter(x => [constants.privilege["user.update"], "user"].includes(x.privilege_name)).map(x => x.category_id);
+		const deleteUserCategories = this.user.privileges.filter(x => [constants.privilege["user.delete"], "user"].includes(x.privilege_name)).map(x => x.category_id);
 
-		if(!constants.adminCategory.some(x => userCategories.includes(x))) {
+		if (!constants.adminCategory.some(x => userCategories.includes(x))) {
 
-			userList = userList.filter(x => x.roles.some(x => userCategories.includes(parseInt(x.category_id))) || x.user_id === this.user.user_id);
+			userList = userList.filter(x => {
+
+				const categories = x.roles.map(c => parseInt(c.category_id));
+
+				return userCategories.every(cat => categories.includes(parseInt(cat)));
+			});
+		}
+
+		for(const user of userList) {
+
+			const categories = user.roles.map(u => parseInt(u.category_id));
+
+			const updateFlag = userUpdateCategories.some(cat => categories.includes(parseInt(cat)));
+
+			user.editable = constants.adminCategory.some(x => userCategories.includes(x)) || updateFlag;
+
+			const deleteFlag = deleteUserCategories.some(cat => categories.includes(parseInt(cat)));
+
+			user.deletable = constants.adminCategory.some(x => userCategories.includes(x)) || deleteFlag;
 		}
 
 		return userList;

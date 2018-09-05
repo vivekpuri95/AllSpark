@@ -197,7 +197,7 @@ exports.update = class extends API {
 
 		for(const category of categories || [0]) {
 
-			this.user.privilege.needs('report', category);
+			this.user.privilege.needs('report.update', category);
 		}
 
 		this.assert(updatedRow, 'Invalid query id');
@@ -273,7 +273,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('report', parseInt(this.request.body.subtitle));
+		this.user.privilege.needs('report.insert', parseInt(this.request.body.subtitle));
 
 		let
 			values = {}, query_cols = [

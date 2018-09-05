@@ -167,11 +167,20 @@ class Authenticate {
 		return commonFun.authenticatePrivileges(userPrivileges, objectPrivileges);
 	}
 
-	static async dashboard(dashboard_id, userObj) {
 
-		const objRole = new getRole();
+	static async dashboard({userObj, dashboard = null, dashboardRoles, dashboardUserPrivileges, dashboardQueryList , visibleQueryList} = {})  {
 
-		let dashboardUserPrivileges, dashboardRoles;
+		//dashboard = dashboard row.
+		//dashboardRoles = object role owner dashboard, target dashboard row
+		// query join query viz join dashboard viz
+		//visibleQueryList = report/list
+
+		//select * from tb_dashboards .
+		// objectRoles dashboard user .
+		//dashboard roles .
+		//dashboard visualizations(query visualizations) .
+
+
 
 		let userPrivileges = [];
 
@@ -188,7 +197,10 @@ class Authenticate {
 			userPrivileges.push([userObj.account_id, row.category_id, row.role])
 		}
 
-		const [dashboard] = await mysql.query(`SELECT * FROM tb_dashboards WHERE id = ? `, [dashboard_id]);
+		if (parseInt(dashboard) == dashboard) {
+
+			[dashboard] = await mysql.query(`SELECT * FROM tb_dashboards WHERE id = ? `, [dashboard]);
+		}
 
 		if (!dashboard) {
 
@@ -198,7 +210,9 @@ class Authenticate {
 			};
 		}
 
-		[dashboardUserPrivileges, dashboardRoles] = await Promise.all([mysql.query(`
+		if(!dashboardUserPrivileges) {
+
+			dashboardUserPrivileges = await mysql.query(`
 				SELECT
 					*
 				FROM
@@ -208,20 +222,26 @@ class Authenticate {
 					ON r.owner_id = d.id
 					AND OWNER = 'dashboard'
 					AND target = 'user'
-					AND owner_id = ?
+					AND target_id = ?
 					AND (category_id <= 0 OR category_id IS NULL)
 				WHERE 
 					d.id = ?
+					and owner_id = ?
 				`,
-			[userObj.user_id, dashboard.id,]
-		),
+				[userObj.user_id, dashboard.id, dashboard.id]
+			)
+		}
 
-			objRole.get(dashboard.account_id, "dashboard", "role", dashboard.id,),
-		]);
+		const objRole = new getRole();
+
+		if(!dashboardRoles) {
+
+			dashboardRoles = await objRole.get(dashboard.account_id, "dashboard", "role", dashboard.id,)
+		}
 
 		dashboardUserPrivileges = dashboardUserPrivileges[0];
 
-		if (dashboardUserPrivileges.added_by === userObj.user_id) {
+		if (dashboard.added_by === userObj.user_id) {
 
 			return {
 				error: false,
@@ -229,7 +249,7 @@ class Authenticate {
 			};
 		}
 
-		if (dashboardUserPrivileges.target_id) {
+		if (dashboardUserPrivileges && dashboardUserPrivileges.target_id) {
 
 			return {
 				error: false,
@@ -241,7 +261,7 @@ class Authenticate {
 
 		for (const row of dashboardRoles) {
 
-			let authResponse = await commonFun.authenticatePrivileges(userPrivileges, [row]);
+			let authResponse = commonFun.authenticatePrivileges(userPrivileges, [row]);
 
 			if (!authResponse.error) {
 
@@ -252,7 +272,9 @@ class Authenticate {
 			}
 		}
 
-		let dashboardQueryList = await mysql.query(`
+		if(!dashboardQueryList) {
+
+			dashboardQueryList = await mysql.query(`
 				SELECT
 					q.*
 				FROM
@@ -268,46 +290,57 @@ class Authenticate {
 					AND q.is_enabled = 1
 					AND q.is_deleted = 0
 				`,
-			[dashboard_id],);
-
-		if (!dashboardQueryList.length) {
-
-			return {
-				error: false,
-				message: "No reports in the dashboard found",
-			}
+				[dashboard.id],);
 		}
-
-		let reportRoles = await objRole.get(userObj.account_id, "query", "role", dashboardQueryList.map(x => x.query_id),);
 
 		const reportRoleMapping = {};
 
-		for (const row of reportRoles) {
+		if(!visibleQueryList) {
 
-			if (!reportRoleMapping[row.query_id]) {
+			let reportRoles = await objRole.get(userObj.account_id, "query", "role", dashboardQueryList.map(x => x.query_id),);
 
-				reportRoleMapping[row.query_id] = {
-					roles: [],
-					category_id: [],
-				};
+			for (const row of reportRoles) {
 
-				reportRoleMapping[row.query_id].roles.push(row.target_id);
-				reportRoleMapping[row.query_id].category_id.push(row.category_id);
+				if (!reportRoleMapping[row.query_id]) {
+
+					reportRoleMapping[row.query_id] = {
+						roles: [],
+						category_id: [],
+					};
+
+					reportRoleMapping[row.query_id].roles.push(row.target_id);
+					reportRoleMapping[row.query_id].category_id.push(row.category_id);
+				}
+			}
+
+			for (const query of dashboardQueryList) {
+
+				if (!reportRoleMapping[query.query_id]) {
+
+					query.roles = constants.adminRole;
+					query.category_id = constants.adminCategory;
+				}
+
+				query.roles = [...new Set((reportRoleMapping[query.query_id] || {}).roles || null)];
+				query.category_id = [...new Set((reportRoleMapping[query.query_id] || {}).category_id || null)];
 			}
 		}
 
 		for (const query of dashboardQueryList) {
 
-			if (!reportRoleMapping[query.query_id]) {
+			let authResponse;
 
-				query.roles = constants.adminRole;
-				query.category_id = constants.adminCategory;
+			if(visibleQueryList && visibleQueryList.has(query)) {
+
+				authResponse = {
+					error: false
+				}
 			}
 
-			query.roles = [...new Set((reportRoleMapping[query.query_id] || {}).roles || null)];
-			query.category_id = [...new Set((reportRoleMapping[query.query_id] || {}).category_id || null)];
+			else {
 
-			const authResponse = await Authenticate.report(query, userObj);
+				authResponse = await Authenticate.report(query, userObj);
+			}
 
 			if (authResponse.error) {
 
@@ -319,7 +352,7 @@ class Authenticate {
 		}
 
 		return {
-			error: false,
+			error: userObj.privilege.has("superadmin") || dashboard.added_by == dashboard.added_by,
 			message: "Privileged user.",
 		}
 	}
@@ -328,11 +361,19 @@ class Authenticate {
 
 		const objRole = new getRole();
 
-		let userPrivileges = [], connectionRoles, userConnections;
+		let userPrivileges = [], connectionRoles , userConnections;
 
 		if(parseInt(connectionObj)) {
 
-			connectionObj = await mysql.query(`SELECT * FROM tb_credentials WHERE id = ? AND status = 1`, [connectionObj]);
+			connectionObj = await mysql.query(`
+				SELECT 
+					* 
+				FROM 
+					tb_credentials c
+				WHERE 
+					c.id = ? 
+					AND status = 1
+				`, [connectionObj]);
 
 			connectionObj = connectionObj[0];
 
@@ -343,6 +384,12 @@ class Authenticate {
 					"message": 'Connection does not exist'
 				};
 			}
+
+			[connectionObj.user, connectionObj.role] = await Promise.all([
+				objRole.get(connectionObj.account_id, 'connection', 'user', connectionObj.id, user.user_id),
+				objRole.get(connectionObj.account_id, 'connection', 'role', connectionObj.id)
+			]);
+
 		}
 
 		user.roles && user.roles.map(x => {
@@ -357,10 +404,9 @@ class Authenticate {
 			};
 		}
 
-		[userConnections, connectionRoles] = await Promise.all([
-			objRole.get(connectionObj.account_id, 'connection', 'user', connectionObj.id, user.user_id),
-			objRole.get(connectionObj.account_id, 'connection', 'role', connectionObj.id,)
-		]);
+		userConnections = connectionObj.user;
+		connectionRoles = connectionObj.role;
+
 		connectionRoles = connectionRoles.map(x => [x.account_id, x.category_id, x.target_id]);
 
 		if(userConnections[0]) {

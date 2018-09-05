@@ -6,7 +6,7 @@ exports.list = class extends API {
 
 	async list() {
 
-		this.user.privilege.needs('connection');
+		this.user.privilege.needs('connection.list');
 
 		return await this.mysql.query(`
 			SELECT * FROM tb_oauth_connections WHERE status = 1 AND user_id = ? AND provider_id IN (
@@ -25,7 +25,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('connection');
+		this.user.privilege.needs('connection.insert');
 
 		const providers = await (new Providers.list(this)).list();
 
@@ -42,7 +42,7 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		this.user.privilege.needs('connection');
+		this.user.privilege.needs('connection.delete');
 
 		const [connection] = await this.mysql.query(
 			'SELECT provider_id FROM tb_oauth_connections WHERE id = ? AND user_id = ? AND status = 1',
@@ -66,7 +66,7 @@ exports.redirect_uri = class extends API {
 
 	async redirect_uri() {
 
-		this.user.privilege.needs('connection');
+		this.user.privilege.needs('connection.list');
 
 		const [provider] = await this.mysql.query(`
 			SELECT
@@ -109,7 +109,7 @@ exports.test = class extends API {
 
 	async test() {
 
-		this.user.privilege.needs('connection');
+		this.user.privilege.needs('connection.list');
 
 		const [provider] = await this.mysql.query(`
 			SELECT

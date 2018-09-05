@@ -1449,10 +1449,10 @@ class PrivilegeComponent {
 					method: "POST",
 				},
 				parameter = {
-					privilege_id: this.privilege_id,
+					id: this.id,
 				};
 
-			const response = await API.call('privileges_manager/delete', parameter, options);
+			const response = await API.call('privileges_manager/sever', parameter, options);
 
 			await this.privilegeComponents.load();
 

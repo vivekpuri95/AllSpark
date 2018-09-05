@@ -23,6 +23,7 @@ function privilege(userObj) {
 				return true;
 			}
 
+
 			if (privilegeName === "superadmin") {
 
 				return userObj.privileges.filter(x => x.privilege_name == privilegeName).length;
@@ -33,17 +34,18 @@ function privilege(userObj) {
 				throw(userObj.message);
 			}
 
-			const ignoreCategoryFlag = constants.privilege.ignore_category.includes(privilegeName);
+			const ignoreCategoryFlag = constants.privilege.ignore_category.includes(privilegeName) || categoryId == 'ignore';
+			const ignorePrivilegeFlag = constants.privilege.ignore_privilege.includes(privilegeName);
 
 			for (const userPrivilege of userObj.privileges) {
 
-				if ((userPrivilege.privilege_name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && (categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id) || ignoreCategoryFlag)) {
+				if ((ignorePrivilegeFlag || userPrivilege.privilege_name === constants.privilege[privilegeName] || constants.adminRole.includes(userPrivilege.privilege_id)) && (categoryId === userPrivilege.category_id || constants.adminCategory.includes(userPrivilege.category_id) || ignoreCategoryFlag)) {
 
 					return true;
 				}
 			}
 
-			return false;
+			return !userObj.privileges.length && ignorePrivilegeFlag && ignoreCategoryFlag;
 		},
 
 		needs: function (privilegeName, categoryId = 0) {

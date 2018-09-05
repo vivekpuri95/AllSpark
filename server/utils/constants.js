@@ -11,11 +11,23 @@ exports.adminPrivilege = [0];
 exports.privilege = {
 	administrator: "Everything",
 	user: "user",
+	"user.insert": "user",
+	"user.update": "user.update",
+	"user.delete": "user.delete",
+	"user.list": "user.list",
 	connection: "connection",
-	dashboard: "dashboard",
-	report: "report",
+	"connection.insert": "connection.insert",
+	"connection.update": "connection.update",
+	"connection.delete": "connection.delete",
+	"connection.list": "connection.list",
+	"dashboard.insert": "dashboard.insert",
+	"dashboard.update": "dashboard.update",
+	"dashboard.delete": "dashboard.delete",
+	"report.insert": "report.insert",
+	"report.update": "report.update",
 	superadmin: "superadmin",
-	ignore_category: ['connection', 'dashboard']
+	ignore_category: ["connection.list",],
+	ignore_privilege: []
 };
 
 exports.publicEndpoints = [

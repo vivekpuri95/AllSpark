@@ -472,13 +472,6 @@ exports.refresh = class extends cycleDetection {
 
 		}
 
-		privilegeObj = {};
-
-		privileges.map(x => privilegeObj[x.privilege_id] = x);
-
-		privileges = Object.values(privilegeObj)
-
-
 		const roles = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "roles").map(x => {
 
 			return {
