@@ -5216,6 +5216,35 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 		this.svg = container
 			.append('svg');
 
+		if(this.zoomedIn) {
+
+			// Reset Zoom Button
+			const resetZoom = this.svg.append('g')
+				.attr('class', 'reset-zoom')
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('rect')
+				.attr('width', 80)
+				.attr('height', 20)
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('text')
+				.attr('y', 15)
+				.attr('x', (this.width / 2) - 35 + 40)
+				.attr('text-anchor', 'middle')
+				.style('font-size', '12px')
+				.text('Reset Zoom');
+
+			// Click on reset zoom function
+			resetZoom.on('click', async () => {
+				this.rows = await this.source.response();
+				this.zoomedIn = false;
+				this.plot();
+			});
+		}
+
 		const that = this;
 
 		for(const [axisIndex, axis] of this.axes.entries()) {
@@ -5608,6 +5637,52 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			const mouse = d3.mouse(this);
 
+			if(that.zoomRectangle) {
+
+				const
+					filteredRows = that.rows.filter(row => {
+
+						const item = that.x(row.get(that.x.column)) + 100;
+
+						if(mouse[0] < that.zoomRectangle.origin[0])
+							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+						else
+							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+					}),
+					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+
+				// Assign width and height to the rectangle
+				that.zoomRectangle
+					.select('rect')
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]))
+					.attr('width', width)
+					.attr('height', that.height);
+
+				that.zoomRectangle
+					.select('g')
+					.selectAll('*')
+					.remove();
+
+				that.zoomRectangle
+					.select('g')
+					.append('text')
+					.text(`${Format.number(filteredRows.length)} Selected`)
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+					.attr('y', (that.height / 2) - 5);
+
+				if(filteredRows.length) {
+
+					that.zoomRectangle
+						.select('g')
+						.append('text')
+						.text(`${filteredRows[0].get(that.x.column)} - ${filteredRows[filteredRows.length - 1].get(that.x.column)}`)
+						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+						.attr('y', (that.height / 2) + 20);
+				}
+
+				return;
+			}
+
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
 
  			if(!row)
@@ -5649,7 +5724,58 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		.on('mouseleave', function() {
 			Tooltip.hide(that.container);
-		});
+		})
+
+		.on('mousedown', function() {
+
+			Tooltip.hide(that.container);
+
+			if(that.zoomRectangle)
+				return;
+
+			that.zoomRectangle = container.select('svg').append('g');
+
+			that.zoomRectangle
+				.attr('class', 'zoom')
+				.style('text-anchor', 'middle')
+				.append('rect')
+				.attr('class', 'zoom-rectangle');
+
+			that.zoomRectangle
+				.append('g');
+
+			that.zoomRectangle.origin = d3.mouse(this);
+		})
+
+		.on('mouseup', function() {
+
+			if(!that.zoomRectangle)
+				return;
+
+			that.zoomRectangle.remove();
+
+			const
+				mouse = d3.mouse(this),
+				filteredRows = that.rows.filter(row => {
+
+					const item = that.x(row.get(that.x.column)) + 100;
+
+					if(mouse[0] < that.zoomRectangle.origin[0])
+						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+					else
+						return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+				});
+
+			that.zoomRectangle = null;
+
+			if(!filteredRows.length)
+				return;
+
+			that.rows = filteredRows;
+			that.zoomedIn = true;
+
+			that.plot();
+		}, true);;
 	}
 });
 

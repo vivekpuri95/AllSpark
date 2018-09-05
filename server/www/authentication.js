@@ -210,17 +210,17 @@ exports.login = class extends API {
 	async login() {
 
 
-		const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
-		const redisResult = await redis.get(redisHash);
+		// const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
+		// const redisResult = await redis.get(redisHash);
 
-		if (redisResult) {
+		// if(redisResult) {
 
-			throw("Failure, please try again");
-		}
+		// 	throw("Failure, please try again");
+		// }
 
-		await redis.set(redisHash, 1);
+		// await redis.set(redisHash, 1);
 
-		await redis.expire(redisHash, 3);
+		// await redis.expire(redisHash, 3);
 
 		this.load();
 
