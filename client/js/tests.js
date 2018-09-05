@@ -551,6 +551,17 @@ const tests = {
 		},
 	},
 
+	ServiceWorker: {
+
+		message: class SnackBarShowHide extends Test {
+
+			async execute() {
+
+				this.assert(await page.serviceWorker.message('test') == 'test response');
+			}
+		},
+	},
+
 	'Format.Ago': {
 
 		InvalidDate: class InvalidDate extends Test {

@@ -8,14 +8,14 @@ if(typeof window != 'undefined') {
 		if(!user || !user.privileges.has('superadmin')) {
 
 			console.log(`%c
-						           _ _  _____                  _
-						     /\\   | | |/ ____|                | |
-						    /  \\  | | | (___  _ __   __ _ _ __| | __
+								   _ _  _____                  _
+							 /\\   | | |/ ____|                | |
+							/  \\  | | | (___  _ __   __ _ _ __| | __
 						   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
 						  / ____ \\| | |____) | |_) | (_| | |  |   <
 						 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
-						                     | |
-						                     |_|
+											 | |
+											 |_|
 						   %cWelcome to the source, enjoy your stay.
 				Find the entire code at https://github.com/Jungle-Works/AllSpark
 			`, 'color: #f33; font-weight: bold;', 'color: #777');
@@ -268,6 +268,9 @@ Page.exception = class PageException extends Error {
 	}
 }
 
+/**
+ * The main service worker for the website.
+ */
 Page.serviceWorker = class PageServiceWorker {
 
 	constructor(page) {
@@ -277,6 +280,9 @@ Page.serviceWorker = class PageServiceWorker {
 		this.setup();
 	}
 
+	/**
+	 * Register the service worker and save it's instance in the worker property.
+	 */
 	async setup() {
 
 		if(!('serviceWorker' in navigator)) {
@@ -290,6 +296,13 @@ Page.serviceWorker = class PageServiceWorker {
 			navigator.serviceWorker.controller.addEventListener('statechange', e => this.statechange(e));
 	}
 
+	/**
+	 * Signifies that the service worker's state has been changed.
+	 * This will show a banner on the site that lets the user know that the site has been updated
+	 * and they need to reload the page to see fresh code.
+	 *
+	 * @param Object	event	The service worker's state change event.
+	 */
 	statechange(event = {}) {
 
 		if(event.target && event.target.state != 'redundant')
@@ -311,6 +324,25 @@ Page.serviceWorker = class PageServiceWorker {
 			this.page.container.parentElement.insertBefore(message, this.page.container);
 
 		}, 1000);
+	}
+
+	/**
+	 * Send a message to the service worker with an action and a body and return it's response.
+	 *
+	 * @param  sring	action	The unique string to identify the action on service worker's end.
+	 * @param  any		body	The optional request body that the service worker will work on to prepare a response.
+	 * @return Promise			That resolves when the worker is done with the request and has sent a response.
+	 */
+	async message(action, body = null) {
+
+		return new Promise(resolve => {
+
+			const channel = new MessageChannel();
+
+			channel.port1.onmessage = event => resolve(event.data.response);
+
+			navigator.serviceWorker.controller.postMessage({action, body}, [channel.port2]);
+		});
 	}
 }
 
@@ -353,7 +385,7 @@ class IndexedDb {
 
 		return new Promise((resolve, reject) => {
 
- 			this.request = indexedDB.open('MainDb', 1);
+			this.request = indexedDB.open('MainDb', 1);
 
 			this.request.onupgradeneeded = e => this.setup(e.target.result);
 			this.request.onsuccess = e => {
