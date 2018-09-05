@@ -515,17 +515,6 @@ class SettingsAccount {
 
 		const settings_json = [
 			{
-				key: 'top_nav_position',
-				type: 'multiselect',
-				name: 'Top Navigation Bar Position',
-				description: 'The main navigation bar of the site',
-				datalist: [
-					{name: 'Top', value: 'top'},
-					{name: 'Left', value: 'left'},
-				],
-				multiple: false,
-			},
-			{
 				key: 'logout_redirect_url',
 				type: 'url',
 				name: 'Logout Url',
