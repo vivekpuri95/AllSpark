@@ -761,19 +761,19 @@ class Dashboard {
 				this.page.load();
 			});
 
-			header.querySelector('.remove').on('click', () => {
+			header.querySelector('.remove').on('click', async () => {
 
 				const
 					parameters = {
-						id: this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id)[0].id,
+						id: this.visualizations.filter(r => r.visualization_id == report.visualizations.selected.visualization_id)[0].id,
 					},
 					options = {
 						method: 'POST',
 					};
 
-				API.call('reports/dashboard/delete', parameters, options);
+				await API.call('reports/dashboard/delete', parameters, options);
 
-				this.page.load();
+				await this.page.load();
 			});
 
 			report.container.insertAdjacentHTML('beforeend', `
