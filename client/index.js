@@ -618,15 +618,11 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 						Edit
 					</button>
 
-					<button id="export-dashboard" class="hidden">
-						<i class="fa fa-download"></i>
-						Export
-					</button>
-
 					<button id="mailto" class="hidden">
 						<i class="fas fa-envelope"></i>
 						Email
 					</button>
+
 					<button id="configure" class="hidden">
 						<i class="fas fa-cog"></i>
 						Configure
@@ -1762,6 +1758,11 @@ router.get('/tests', API.serve(class extends HTMLAPI {
 	}
 
 	main() {
+
+		this.user.privileges.needs('superadmin');
+
+		if(['production', 'staging'].includes(this.env.name))
+			throw new API.exception('Tests cannot be run on production or staging.');
 
 		return `
 

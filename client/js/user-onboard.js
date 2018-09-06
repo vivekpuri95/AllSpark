@@ -44,7 +44,7 @@ class UserOnboard {
 		document.body.appendChild(this.container);
 
 		if(this.stages.every(stage => stage.isCompleted)) {
-			
+
 			return await Storage.delete('newUser');
 		}
 
@@ -136,22 +136,24 @@ class UserOnboard {
 
 		this.dialogBox.body.innerHTML = `
 
-			<h2>Lets Get You Started</h2>
+			<h2>Let's Get <strong>You Started!</strong></h2>
 
 			<a href="${demo_url}" target="_blank" class="view-demo">
-				<span class="figure"><i class="fas fa-external-link-alt"></i></span>
+				<span class="figure"><img src="/images/onboarding/demo.svg"></span>
 				<span>View Demo</span>
+				<span class="NA">Check out an established demo with various visualisations</span>
 			</a>
 
 			<a class="initiate-walkthrough">
-				<span class="figure"><i class="fas fa-cogs"></i></span>
+				<span class="figure"><img src="/images/onboarding/manual.svg"></span>
 				<span>Configure Manually</span>
+				<span class="NA">Connect to a data source and define the data query</span>
 			</a>
 
 			<a class="skip">Skip &nbsp;<i class="fas fa-arrow-right"></i></a>
 		`;
 
-		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => this.dialogBox.hide);
+		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => this.dialogBox.hide());
 
 		if(window.loadWelcomeDialogBoxListener)
 			window.loadWelcomeDialogBoxListener(this);

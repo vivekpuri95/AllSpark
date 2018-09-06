@@ -503,27 +503,6 @@ class Dashboard {
 		}
 	}
 
-	get export() {
-		const data = {
-			dashboard: {
-				name: this.name,
-				parent: this.parent,
-				type: this.type,
-				icon: this.icon,
-				status: this.status,
-				roles: this.roles,
-				format: this.format
-			},
-			query: []
-		};
-
-		for (const report of this.format.reports) {
-			data.query.push(DataSource.list.get(report.query_id));
-		}
-
-		return data;
-	}
-
 	static setup(page) {
 
 		Dashboard.grid = {
@@ -644,6 +623,8 @@ class Dashboard {
 
 		edit.classList.add('hidden');
 
+		Dashboard.container.classList.add('editing');
+
 		for (let {query: report} of this.page.loadedVisualizations) {
 
 			const [selectedVisualizationProperties] = this.page.list.get(this.id).visualizations.filter(x => x.visualization_id === report.selectedVisualization.visualization_id);
@@ -761,19 +742,19 @@ class Dashboard {
 				this.page.load();
 			});
 
-			header.querySelector('.remove').on('click', () => {
+			header.querySelector('.remove').on('click', async () => {
 
 				const
 					parameters = {
-						id: this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id)[0].id,
+						id: this.visualizations.filter(r => r.visualization_id == report.visualizations.selected.visualization_id)[0].id,
 					},
 					options = {
 						method: 'POST',
 					};
 
-				API.call('reports/dashboard/delete', parameters, options);
+				await API.call('reports/dashboard/delete', parameters, options);
 
-				this.page.load();
+				await this.page.load();
 			});
 
 			report.container.insertAdjacentHTML('beforeend', `
@@ -994,20 +975,6 @@ class Dashboard {
 
 				edit.click();
 			}
-
-			const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
-			exportButton.classList.remove('hidden');
-
-			exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
-
-			exportButton.on('click', Dashboard.toolbar.exportListener = () => {
-				const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.export));
-
-				const downloadAnchor = document.createElement('a');
-				downloadAnchor.setAttribute('href', jsonFile);
-				downloadAnchor.setAttribute('download', 'dashboard.json');
-				downloadAnchor.click();
-			});
 
 			const configure = Dashboard.toolbar.querySelector('#configure');
 			configure.on('click', () => location.href = `/dashboards-manager/${this.id}`);

@@ -387,23 +387,26 @@ main .data-source {
 			width: 100%;
 		}
 	main .data-source > .drilldown {
-		margin: calc(var(--gap) * 2);
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(0, auto));
 		justify-content: flex-start;
 		grid-gap: calc(var(--gap) * 2);
 		align-items: center;
+		padding: calc(var(--gap) * 2);
+		z-index: 1;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+		border-top: 15px solid #fff;
+		background: #fff;
 	}
 		main .data-source > .drilldown a {
 			padding: var(--gap) calc(var(--gap) * 2);
-			border: 1px solid #ccc;
-			background: #fff;
-			transition: background var(--transition-duration),
+			border: 1px solid transparent;
+			transition: border var(--transition-duration),
 						box-shadow var(--transition-duration);
 		}
 		main .data-source > .drilldown a:hover {
 			text-decoration: none;
-			background: #eff;
+			border-color: #ccc;
 		}
 		main .data-source > .drilldown a:active {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);

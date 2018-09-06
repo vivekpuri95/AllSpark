@@ -346,14 +346,16 @@ Settings.list.set('about', class About extends SettingPage {
 	async load() {
 
 		this.response = await API.call('env-info/envInfo');
+		this.serviceWorkerLoadTime = await page.serviceWorker.message('startTime');
 
 		this.render();
 	}
 
 	render() {
 
-		const infoContainer = this.infoContainer;
-		const clearCacheContainer = this.clearCacheContainer;
+		const
+			infoContainer = this.infoContainer,
+			clearCacheContainer = this.clearCacheContainer;
 
 		this.section.appendChild(infoContainer);
 		this.section.appendChild(clearCacheContainer);
@@ -381,19 +383,34 @@ Settings.list.set('about', class About extends SettingPage {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
+
 		container.classList.add('info');
 
 		container.innerHTML = `
 			<span class="key">Account Id</span>
 			<span class="value">${account.account_id}</span>
+
 			<span class="key">Connectivity </span>
 			<span class="value">${navigator.onLine ? 'online' : 'offline'}</span>
+
 			<span class="key">Environment</span>
 			<span class="value">${this.response.name}</span>
+
 			<span class="key">Deployed On</span>
-			<span class="value">${this.response.deployed_on} - (<span class="NA">${Format.ago(this.response.deployed_on)}</span>)</span>
+			<span class="value">
+				${Format.ago(this.response.deployed_on)}<br>
+				<span class="NA">${Format.dateTime(this.response.deployed_on)}</span>
+			</span>
+
+			<span class="key">Service Worker Deployed On</span>
+			<span class="value">
+				${Format.ago(this.serviceWorkerLoadTime)}<br>
+				<span class="NA">${Format.dateTime(this.serviceWorkerLoadTime)}</span>
+			</span>
+
 			<span class="key">Git Checksum</span>
 			<span class="value">${this.response.gitChecksum}</span>
+
 			<span class="key">Branch</span>
 			<span class="value">${this.response.branch}</span>
 		`;
@@ -497,17 +514,6 @@ class SettingsAccount {
 			this.form.parentElement.querySelector('.feature-form').remove();
 
 		const settings_json = [
-			{
-				key: 'top_nav_position',
-				type: 'multiselect',
-				name: 'Top Navigation Bar Position',
-				description: 'The main navigation bar of the site',
-				datalist: [
-					{name: 'Top', value: 'top'},
-					{name: 'Left', value: 'left'},
-				],
-				multiple: false,
-			},
 			{
 				key: 'logout_redirect_url',
 				type: 'url',

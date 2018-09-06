@@ -3560,7 +3560,6 @@ class LinearVisualization extends Visualization {
 				continue;
 
 			column.hidden = true;
-			column.disabled = true;
 			column.render();
 		}
 
@@ -3776,7 +3775,7 @@ class LinearVisualization extends Visualization {
 
 				const column = row.source.columns.get(key);
 
-				if(column.disabled)
+				if(column.hidden)
 					continue;
 
 				tooltip.push(`

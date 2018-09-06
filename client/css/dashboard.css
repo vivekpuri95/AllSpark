@@ -439,6 +439,9 @@ main #reports > .list {
 	z-index: 3;
 	width: 100%;
 }
+main #reports > .list.editing {
+	margin-bottom: 200px;
+}
 	main #reports > .list .NA.no-reports {
 		grid-column: 1 / span all;
 	}
