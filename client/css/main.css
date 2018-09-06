@@ -126,6 +126,9 @@ a:active {
 	color: #666;
 	font-size: 90%;
 }
+.blur {
+	filter: blur(4px);
+}
 
 html, body {
 	font-family: 'Roboto', sans-serif;
@@ -379,7 +382,7 @@ body {
 		background-size: contain;
 	}
 
-	main .dialog-box .body ul.user-list {
+	.dialog-box .body ul.user-list {
 		list-style-type: none;
 		padding: 0px;
 		display: grid;
@@ -388,17 +391,17 @@ body {
 		margin: calc(var(--gap) * 2);
 	}
 
-		main .dialog-box .body ul.user-list li {
+		.dialog-box .body ul.user-list li {
 			display: flex;
 			flex-direction: column;
 		}
 
-			main .dialog-box .body ul.user-list li a {
+			.dialog-box .body ul.user-list li a {
 				color: #333;
 				font-size: 110%;
 				width: fit-content;
 			}
-			main .dialog-box .body ul.user-list li span {
+			.dialog-box .body ul.user-list li span {
 				color: #999;
 				font-size: 90%;
 				margin-top: var(--gap);
@@ -493,18 +496,18 @@ body {
 					cursor: pointer;
 				}
 
-	main .form {
+	.form {
 		display: grid;
 		padding: calc(var(--gap) * 2);
 		grid-gap: calc(var(--gap) * 3);
 	}
-		main .form label {
+		.form label {
 			display: grid;
 			grid-gap: var(--gap);
 			max-width: 200px;
 			white-space: nowrap;
 		}
-			main .form label > span {
+			.form label > span {
 				font-size: 90%;
 				color: #444;
 				font-weight: bold;
