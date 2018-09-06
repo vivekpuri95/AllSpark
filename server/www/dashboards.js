@@ -50,10 +50,12 @@ class Dashboard extends API {
 				d.status = 1
 				and q.is_enabled = 1 
 				and q.is_deleted = 0
+				and q.account_id = ?
 			group by 
 				dashboard_id,
 				query_id
-		`);
+		`,
+			[this.account.account_id]);
 
 		let visualizationDashboards = this.mysql.query(`
 			SELECT

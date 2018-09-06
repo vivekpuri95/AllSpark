@@ -422,8 +422,7 @@ exports.metadata = class extends API {
                 	tb_privileges_tree
                 	USING(privilege_id)
                 WHERE
-                	parent = 0
-                	AND (account_id = ? OR account_id = 0)
+                	(account_id = ? OR account_id = 0)
 
                 UNION ALL
 

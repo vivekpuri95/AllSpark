@@ -77,12 +77,36 @@ class Authenticate {
 			reportObject.roles = roles;
 		}
 
+		if (reportObject.flag) {
+
+			return {
+				error: false,
+				message: "individual access",
+			}
+		}
+
+		if(reportObject.added_by === userJWTObject.user_id) {
+
+			return {
+				error: false,
+				message: "Report created by the current user.",
+			};
+		}
+
 		if((await Authenticate.connection(reportObject.connection_name, userJWTObject)).error) {
 
 			return {
 				error: true,
 				message: 'Connection error'
 			};
+		}
+
+		if(!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
+
+			return {
+				error: true,
+				message: "Report not shared with anyone and user did not create this report."
+			}
 		}
 
 		if (!reportDashboardRoles) {
@@ -110,22 +134,6 @@ class Authenticate {
 			);
 		}
 
-		if (reportObject.flag) {
-
-			return {
-				error: false,
-				message: "individual access",
-			}
-		}
-
-		if(reportObject.added_by === userJWTObject.user_id) {
-
-			return {
-				error: false,
-				message: "Report created by the current user.",
-			};
-		}
-
 		const userPrivileges = [];
 
 		userJWTObject.roles && userJWTObject.roles.map(x => {
@@ -150,13 +158,6 @@ class Authenticate {
 			}
 		}
 
-		if(!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
-
-			return {
-				error: true,
-				message: "Report not shared with anyone and user did not create this report."
-			}
-		}
 
 		let objectPrivileges = [[reportObject.account_id], Array.isArray(reportObject.category_id) ? reportObject.category_id : [reportObject.category_id]];
 
@@ -330,10 +331,10 @@ class Authenticate {
 
 			let authResponse;
 
-			if(visibleQueryList && visibleQueryList.has(query)) {
+			if(visibleQueryList) {
 
 				authResponse = {
-					error: false
+					error: !visibleQueryList.has(query.query_id)
 				}
 			}
 
@@ -342,18 +343,26 @@ class Authenticate {
 				authResponse = await Authenticate.report(query, userObj);
 			}
 
-			if (authResponse.error) {
+			if (!authResponse.error) {
 
 				return {
-					error: true,
-					message: "Not authenticated for Report id:" + query.query_id + ".",
+					error: false,
+					message: "authenticated for Report id:" + query.query_id + ".",
 				}
 			}
 		}
 
+		if(userObj.privilege.has("superadmin") || dashboard.added_by == userObj.user_id) {
+
+			return {
+				error: false,
+				message: "superadmin user or dashboard added by current user"
+			}
+		}
+
 		return {
-			error: userObj.privilege.has("superadmin") || dashboard.added_by == dashboard.added_by,
-			message: "Privileged user.",
+			error: true,
+			message: "not shared, superadmin or any added by current user",
 		}
 	}
 
