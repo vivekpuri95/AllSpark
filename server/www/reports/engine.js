@@ -455,7 +455,6 @@ class report extends API {
 
 			result = await engineExecution;
 			await this.storeQueryResult(result);
-			global.executingReports.delete(engine.hash);
 
 		}
 		catch (e) {
@@ -466,6 +465,11 @@ class report extends API {
 				e.message = e.message.slice(0, e.message.indexOf("<!DOCTYPE")).trim();
 			}
 			throw new API.Exception(400, e.message);
+		}
+
+		finally {
+
+			global.executingReports.delete(engine.hash);
 		}
 
 		await engine.log(this.reportObj.query_id, result.query, result.runtime,
