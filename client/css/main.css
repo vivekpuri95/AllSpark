@@ -998,7 +998,7 @@ body {
 	bottom: 0;
 	justify-content: center;
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-	z-index: 4;
+	z-index: 12;
 	background: #fff;
 }
 .setup-stages.last {
@@ -1099,14 +1099,14 @@ body {
 		padding: 0;
 	}
 
-	main .dialog-box-blanket.user-onboarding-welcome .body {
+	.dialog-box-blanket.user-onboarding-welcome .body {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		grid-template-rows: max-content 1fr max-content max-content max-content;
 		padding: 20px;
 		grid-gap: calc(var(--gap) * 4);
 	}
-		main .dialog-box-blanket.user-onboarding-welcome .body h2 {
+		.dialog-box-blanket.user-onboarding-welcome .body h2 {
 			margin: 0;
 			grid-column: 1 / 3;
 			padding-bottom: 5px;
@@ -1115,14 +1115,14 @@ body {
 			letter-spacing: 0.5px;
 			font-size: 175%;
 		}
-		main .dialog-box-blanket.user-onboarding-welcome .body a {
+		.dialog-box-blanket.user-onboarding-welcome .body a {
 			color: inherit;
 		}
-		main .dialog-box-blanket.user-onboarding-welcome .body a:hover {
+		.dialog-box-blanket.user-onboarding-welcome .body a:hover {
 			text-decoration: none;
 		}
-		main .dialog-box-blanket.user-onboarding-welcome .body .view-demo,
-		main .dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough {
+		.dialog-box-blanket.user-onboarding-welcome .body .view-demo,
+		.dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough {
 			font-size: calc(100% + 0.25vw);
 			height: 175px;
 			grid-row: 2;
@@ -1135,7 +1135,7 @@ body {
 			transition: background var(--transition-duration),
 						box-shadow var(--transition-duration);
 		}
-		main .dialog-box-blanket.user-onboarding-welcome .body .figure {
+		.dialog-box-blanket.user-onboarding-welcome .body .figure {
 			font-size: calc(25px + 1.8vw);
 			margin-bottom: 15px;
 			height: 110px;
@@ -1143,17 +1143,17 @@ body {
 			display: flex;
 			justify-content: center;
 		}
-			main .dialog-box-blanket.user-onboarding-welcome .body .view-demo .NA,
-			main .dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough .NA {
+			.dialog-box-blanket.user-onboarding-welcome .body .view-demo .NA,
+			.dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough .NA {
 				font-size: 75%;
 				margin-top: 10px;
 			}
-		main .dialog-box-blanket.user-onboarding-welcome .body .or {
+		.dialog-box-blanket.user-onboarding-welcome .body .or {
 			text-align: center;
 			color: #666;
 			grid-column: 1 / 3;
 		}
-		main .dialog-box-blanket.user-onboarding-welcome .body .initiate-chat {
+		.dialog-box-blanket.user-onboarding-welcome .body .initiate-chat {
 			grid-column: 1 / 3;
 			text-align: center;
 			font-size: 115%;
@@ -1162,10 +1162,10 @@ body {
 			border: 1px solid transparent;
 			transition: border var(--transition-duration);
 		}
-		main .dialog-box-blanket.user-onboarding-welcome .body .initiate-chat:hover {
+		.dialog-box-blanket.user-onboarding-welcome .body .initiate-chat:hover {
 			border-color: #999;
 		}
-		main .dialog-box-blanket.user-onboarding-welcome .body .skip {
+		.dialog-box-blanket.user-onboarding-welcome .body .skip {
 			grid-column: 2;
 			text-align: right;
 			margin-left: auto;
@@ -1174,6 +1174,6 @@ body {
 			transition: border var(--transition-duration),
 						box-shadow var(--transition-duration);
 		}
-		main .dialog-box-blanket.user-onboarding-welcome .body .skip:hover {
+		.dialog-box-blanket.user-onboarding-welcome .body .skip:hover {
 			border: 1px solid #999;
 		}
