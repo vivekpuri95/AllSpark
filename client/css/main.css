@@ -880,9 +880,9 @@ body {
 			grid-template-columns: repeat(auto-fit, minmax(75px, max-content));
 			grid-gap: calc(var(--gap) * 2);
 		}
-		.query-history .info .toolbar.visualization button {
-			margin: 0;
-		}
+			.query-history .info .toolbar.visualization button {
+				margin: 0;
+			}
 			.query-history .info .toolbar button {
 				margin-right: calc(var(--gap) * 2);
 			}

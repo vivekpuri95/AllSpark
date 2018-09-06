@@ -380,7 +380,6 @@ main.preview-left #stages {
 		#stage-define-report .query-history {
 			order: 3;
 			flex: 1 50%;
-			/* margin-left: calc(var(--gap) * 2); */
 			overflow: auto;
 			min-width: 50%;
 		}

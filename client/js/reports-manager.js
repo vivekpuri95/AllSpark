@@ -1848,7 +1848,12 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
 				await this.visualizationLogs.load();
 
-			this.load();
+			await this.page.preview.load({
+				query_id: this.report.query_id,
+				visualization: {
+					id: this.visualization.visualization_id
+				},
+			});
 		});
 	}
 
@@ -1932,6 +1937,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		}
 
 		this.container.appendChild(this.visualizationManager.container);
+		this.visualizationManager.container.classList.add('stage-form');
 
 		this.dashboards = new ReportVisualizationDashboards(this);
 
@@ -1940,7 +1946,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.container.querySelector('.configuration-section.dashboards').remove();
 		}
 
-		this.container.querySelector('.visualization-form').insertBefore(this.dashboards.container, this.container.querySelector('.filters'));
+		this.container.querySelector('.visualization-form.stage-form').insertBefore(this.dashboards.container, this.container.querySelector('.visualization-form.stage-form .filters'));
 
 		this.dashboards.clear();
 		this.page.preview.position = 'right';
