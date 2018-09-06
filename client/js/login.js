@@ -199,6 +199,7 @@ Page.class = class Login extends Page {
 			},
 			options = {
 				method: 'POST',
+				redirectOnLogout: false,
 			};
 
 		if(account.auth_api) {
