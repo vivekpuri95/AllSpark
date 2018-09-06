@@ -4794,7 +4794,7 @@ class ReportVisualizationDashboards extends Set {
 				<div class="list"></div>
 				<form class="add-dashboard">
 					<fieldset>
-						<legend>Add Dashboard</legend>
+						<legend>Add To Dashboard</legend>
 						<div class="form">
 
 							<label class="dashboard_id">
@@ -4810,12 +4810,20 @@ class ReportVisualizationDashboards extends Set {
 								<span>&nbsp;</span>
 								<button type="submit"><i class="fa fa-plus"></i> Add</button>
 							</label>
+
+							<label class="create-new">
+								<span>&nbsp;</span>
+								<button type="button"><i class="fa fa-plus"></i> Create New</button>
+							</label>
 						</div>
 					</fieldset>
 				</form>
 			</div>
 		`;
 
+		this.container.querySelector('.create-new').on('click', () => {
+			window.open('/dashboards-manager/add');
+		})
 		this.container.querySelector('form').on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
 
 		this.dashboardMultiSelect = new MultiSelect({multiple: false, dropDownPosition: 'top'});
