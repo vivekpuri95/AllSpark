@@ -128,6 +128,17 @@ main.preview-right #stages {
 	grid-column: 1;
 	height: calc(100vh - 135px);
 }
+main.preview-right.compact #stages {
+	grid-column: 1 / 3;
+}
+	main.preview-right.compact #stages #stage-configure-visualization {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: max-content;
+	}
+	main.preview-right.compact #stages #stage-configure-visualization .query-history {
+		grid-row: 1 / 3;
+		grid-column: 2;
+	}
 main.preview-left #stages {
 	grid-column: 3;
 	height: calc(100vh - 135px);
@@ -369,7 +380,7 @@ main.preview-left #stages {
 		#stage-define-report .query-history {
 			order: 3;
 			flex: 1 50%;
-			margin-left: calc(var(--gap) * 2);
+			/* margin-left: calc(var(--gap) * 2); */
 			overflow: auto;
 			min-width: 50%;
 		}

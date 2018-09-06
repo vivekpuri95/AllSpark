@@ -663,11 +663,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 	load() {
 
-		if(this.page.container.querySelector('.query-history')) {
-
-			this.page.container.querySelector('.query-history').remove();
-		}
-
 		if(!this.form.connection_name.children.length) {
 
 			for(const connection of this.page.connections.values()) {
@@ -958,11 +953,6 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		if(!this.report)
 			throw new Page.exception('Invalid Report ID');
-
-		if(this.page.container.querySelector('.query-history')) {
-
-			this.page.container.querySelector('.query-history').remove();
-		}
 
 		if(this.container.querySelector('#define-report-parts > form#define-report-form'))
 			this.container.querySelector('#define-report-parts > form#define-report-form').remove();
@@ -1751,11 +1741,6 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		this.page.preview.hidden = true;
 
-		if(this.page.container.querySelector('.query-history')) {
-
-			this.page.container.querySelector('.query-history').remove();
-		}
-
 		if(!this.page.stages.get('configure-visualization').lastSelectedVisualizationId)
 			this.page.stages.get('configure-visualization').disabled = true;
 
@@ -1843,6 +1828,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.page.load();
 		});
 
+		this.container.querySelector('#preview-configure-visualization').on('click', () => {
+
+			if(!this.visualizationManager)
+				return;
+
+			this.visualizationManager.preview();
+		});
+
 		const historyToggle = this.container.querySelector('#history-configure-visualization');
 
 		historyToggle.on('click',async () => {
@@ -1889,24 +1882,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization)
 			return;
 
-		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
-
-		const visualizationLogsSelected = this.container.querySelector('#history-configure-visualization').classList.contains('selected')
-
-		this.visualizationLogs.toggle(visualizationLogsSelected);
-
-		if(visualizationLogsSelected) {
-
-			this.visualizationLogs.load();
-0		}
-
-		if(this.page.container.querySelector('.query-history')) {
-
-			this.page.container.querySelector('.query-history').remove();
-		}
-
-		this.page.container.appendChild(this.visualizationLogs.container);
-
 		await this.page.preview.load({
 			query_id: this.report.query_id,
 			visualization: {
@@ -1916,9 +1891,26 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		await this.loadVisualizationForm();
 
+		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
+
+		const visualizationLogsSelected = this.container.querySelector('#history-configure-visualization').classList.contains('selected')
+
+		this.visualizationLogs.toggle(visualizationLogsSelected);
+
+		if(visualizationLogsSelected) {
+
+			this.visualizationLogs.load();
+		}
+
+		if(this.container.querySelector('.query-history')) {
+
+			this.container.querySelector('.query-history').remove();
+		}
+
+		this.container.appendChild(this.visualizationLogs.container);
+
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
-
 
 	loadVisualizationForm(visualization) {
 
@@ -1937,11 +1929,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		else {
 
 			throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
-		}
-
-		if(this.container.querySelector('#preview-configure-visualization')) {
-
-			this.container.querySelector('#preview-configure-visualization').remove();
 		}
 
 		this.container.appendChild(this.visualizationManager.container);
@@ -2045,16 +2032,6 @@ class VisualizationManager {
 		}
 
 		this.form.on('submit', e => this.update(e));
-
-		if(!this.stage.container.querySelector('#preview-configure-visualization')) {
-
-			this.stage.container.querySelector('.toolbar button[type=submit]').insertAdjacentHTML(
-				'afterend',
-				'<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>'
-			);
-
-			this.stage.container.querySelector('#preview-configure-visualization').on('click', () => this.preview());
-		}
 
 		return container;
 	}

@@ -783,7 +783,7 @@ body {
 	}
 
 .query-history {
-	overflow: auto;
+	margin-left: calc(var(--gap) * 2);
 }
 	.query-history a {
 		color: #888;
