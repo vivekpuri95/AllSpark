@@ -1924,8 +1924,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.visualization = visualization;
 		}
 
-		if(this.container.querySelector('.visualization-form'))
-			this.container.querySelector('.visualization-form').remove();
+		if(this.container.querySelector('.visualization-form.stage-form'))
+			this.container.querySelector('.visualization-form.stage-form').remove();
 
 		if(ConfigureVisualization.types.has(this.visualization.type)) {
 
