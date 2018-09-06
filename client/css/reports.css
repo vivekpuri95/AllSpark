@@ -526,7 +526,7 @@ main .data-source {
 				}
 
 						main .data-source .column form h3,
-						main .dialog-box form h3{
+						.dialog-box form h3{
 							margin: 0;
 							padding: var(--gap) 10px;
 							background: var(--color-secondary);
@@ -1219,27 +1219,27 @@ main .data-source .visualization.livenumber {
 			display: none;
 		}
 
-main .data-source-column form .parameter-list {
+.data-source-column form .parameter-list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2);
 	margin-top: 10px;
 }
-	main .data-source-column form .parameter {
+	.data-source-column form .parameter {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr max-content;
 	}
-		main .dialog-box form .parameter .delete:hover {
+		.dialog-box form .parameter .delete:hover {
 			background-color: #c11;
 			border-color: #c11;
 		}
-	main .data-source-column form .drilldown-parameters > label {
+	.data-source-column form .drilldown-parameters > label {
 		margin-left: calc(var(--gap) * 2);
 	}
-main .column-form {
+.column-form {
 	padding: calc(var(--gap) * 2) 0 0;
 }
-main .column-form.compact {
+.column-form.compact {
 	padding: 0;
 	grid-gap: calc(var(--gap) * 2);
 	box-shadow: none;
@@ -1247,19 +1247,19 @@ main .column-form.compact {
 	overflow: auto;
 	max-height: 200px;
 }
-	main .column-form .filters,
-	main .column-form .accumulations {
+	.column-form .filters,
+	.column-form .accumulations {
 		margin: 0 calc(var(--gap) * 2);
 		display: grid;
 		grid-gap: var(--gap);
 	}
-		main .column-form .filters .list,
-		main .column-form .accumulations .list {
+		.column-form .filters .list,
+		.column-form .accumulations .list {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 		}
-		main .column-form .filters span,
-		main .column-form .accumulations span {
+		.column-form .filters span,
+		.column-form .accumulations span {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
@@ -1267,61 +1267,61 @@ main .column-form.compact {
 			font-size: 90%;
 			color: #444;
 		}
-			main .column-form .filters .add-filter,
-			main .column-form .accumulations .add-accumulation {
+			.column-form .filters .add-filter,
+			.column-form .accumulations .add-accumulation {
 				border: 0;
 				height: auto;
 				width: 36px;
 			}
-				main .column-form .filters .add-filter svg,
-				main .column-form .accumulations .add-accumulation svg,
-				main .column-form .delete svg {
+				.column-form .filters .add-filter svg,
+				.column-form .accumulations .add-accumulation svg,
+				.column-form .delete svg {
 					margin: 0;
 				}
-		main .column-form.compact label {
+		.column-form.compact label {
 			max-width: none;
 			margin: 0;
 		}
-			main .column-form label .category-group {
+			.column-form label .category-group {
 				display: grid;
 				grid-template-columns: 1fr 1.5fr max-content;
 				grid-gap: calc(var(--gap) * 2);
 			}
-				main .column-form label .category-group button:hover {
+				.column-form label .category-group button:hover {
 					background: #c33;
 					border-color: transparent;
 				}
-					main .column-form label .category-group button svg {
+					.column-form label .category-group button svg {
 						margin: 0;
 					}
-				main .column-form:not(.compact) label .category-group select {
+				.column-form:not(.compact) label .category-group select {
 					width: 100px;
 				}
-				main .column-form label .category-group input,
-				main .column-form label .category-group select {
+				.column-form label .category-group input,
+				.column-form label .category-group select {
 					margin-bottom: 0;
 					text-align: initial !important;
 				}
-	main .column-form > label {
+	.column-form > label {
 		margin-left: calc(var(--gap) * 2);
 	}
-		main .column-form > label .color {
+		.column-form > label .color {
 			width: 100%;
 			padding: 0;
 		}
-	main .column-form .drilldown-dropdown {
+	.column-form .drilldown-dropdown {
 		max-width: initial;
 	}
-	main .column-form > footer {
+	.column-form > footer {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		position: sticky;
 		bottom: 0;
 		font-size: 110%;
-		z-index: 1;
+		z-index: 6;
 	}
-		main .column-form > footer button {
+		.column-form > footer button {
 			padding: calc(var(--gap) * 2);
 			height: auto;
 			border-right: 0;
@@ -1331,25 +1331,25 @@ main .column-form.compact {
 			align-items: center;
 			flex: 1;
 		}
-		main .column-form.compact > footer button {
+		.column-form.compact > footer button {
 			padding: calc(var(--gap));
 		}
-		main .column-form > footer button:first-child {
+		.column-form > footer button:first-child {
 			border-left: 0;
 		}
 
-main .sub-reports-dialog .dialog-box {
+.sub-reports-dialog .dialog-box {
 	width: 50%;
 	background: #eee;
 }
-	main .sub-reports-dialog .body {
+	.sub-reports-dialog .body {
 		padding: calc(var(--gap) * 2) 0;
 		margin: 0 calc(var(--gap) * 2);
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: space-around;
 	}
-		main .sub-reports-dialog .data-source {
+		.sub-reports-dialog .data-source {
 			min-width: 150px;
 			max-width: 350px;
 			width: 100%;
