@@ -382,7 +382,7 @@ body {
 		background-size: contain;
 	}
 
-	main .dialog-box .body ul.user-list {
+	.dialog-box .body ul.user-list {
 		list-style-type: none;
 		padding: 0px;
 		display: grid;
@@ -391,17 +391,17 @@ body {
 		margin: calc(var(--gap) * 2);
 	}
 
-		main .dialog-box .body ul.user-list li {
+		.dialog-box .body ul.user-list li {
 			display: flex;
 			flex-direction: column;
 		}
 
-			main .dialog-box .body ul.user-list li a {
+			.dialog-box .body ul.user-list li a {
 				color: #333;
 				font-size: 110%;
 				width: fit-content;
 			}
-			main .dialog-box .body ul.user-list li span {
+			.dialog-box .body ul.user-list li span {
 				color: #999;
 				font-size: 90%;
 				margin-top: var(--gap);
