@@ -32,7 +32,8 @@ self.addEventListener('fetch', async event => {
 
 		const match = await caches.match(event.request);
 
-		if(match && !event.request.url.includes('/v2/'))
+		// Return the cached response if we're offline or we're loading a non API resource
+		if(match && (!navigator.onLine || !event.request.url.includes('/v2/')))
 			return match;
 
 		const response = await fetch(event.request.clone());

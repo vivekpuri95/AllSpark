@@ -4,6 +4,11 @@ Page.class = class Tests extends Page {
 
 		super();
 
+		this.user.privileges.needs('superadmin');
+
+		if(['production', 'staging'].includes(this.env.name))
+			throw new API.exception('Tests cannot be run on production or staging.');
+
 		this.sections = new Map;
 
 		this.container.querySelector('#list .toolbar #run').on('click', () => this.run());

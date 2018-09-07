@@ -107,7 +107,7 @@ a:active {
 	background: #faa;
 	color: #fff;
 }
-.warning.site-outdated {
+.service-worker-message {
 	text-align: center;
 	color: #fff;
 	padding: var(--gap);
@@ -118,6 +118,7 @@ a:active {
 }
 .warning.site-outdated:hover {
 	background: #f77;
+	cursor: pointer;
 }
 .warning.site-outdated:active {
 	box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
