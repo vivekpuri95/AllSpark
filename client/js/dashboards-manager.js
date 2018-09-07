@@ -337,6 +337,9 @@ class DashboardsDashboard {
 
 			await this.page.load();
 
+			if(await Storage.get('newUser'))
+				UserOnboard.setup(true);
+
 			new SnackBar({
 				message: 'Dashboard Deleted',
 				subtitle: `${this.name} #${this.id}`,

@@ -604,6 +604,9 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			this.load();
 
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup();
+
 			new SnackBar({
 				message: 'Report Deleted',
 				subtitle: `${report.name} #${report.query_id}`,

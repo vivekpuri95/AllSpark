@@ -404,6 +404,9 @@ class DataConnection {
 
 			await this.page.load();
 
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup(true);
+
 			new SnackBar({
 				message: `${this.feature.name} Connection Removed`,
 				subtitle: `${this.connection_name} #${this.id}`,
