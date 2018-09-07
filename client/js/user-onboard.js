@@ -129,7 +129,7 @@ class UserOnboard {
 
 		if(!this.dialogBox) {
 
-			this.dialogBox = new DialogBox();
+			this.dialogBox = new DialogBox({closable: false});
 
 			this.dialogBox.container.classList.add('user-onboarding-welcome');
 		}
