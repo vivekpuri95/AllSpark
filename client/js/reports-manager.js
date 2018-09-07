@@ -8,8 +8,6 @@ class ReportsManger extends Page {
 		this.preview = new ReportsMangerPreview(this);
 
 		this.setup();
-
-		window.onbeforeunload = () => this.container.querySelector('.unsaved');
 	}
 
 	async setup() {
