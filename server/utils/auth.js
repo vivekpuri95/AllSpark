@@ -25,7 +25,7 @@ class Authenticate {
 			reportObject = await Promise.all([mysql.query(`
                 SELECT
                   q.*,
-                  IF(user_id IS NULL AND d.query_id IS NULL, 0, 1) AS flag,
+                  IF(user_id IS NULL AND userDashboard.query_id IS NULL, 0, 1) AS flag,
                   c.type,
 				  c.project_name
                 FROM
@@ -52,7 +52,7 @@ class Authenticate {
                 			NULL AS query_id
                 		LIMIT 1
                 	) userDashboard
-                LEFT JOIN
+                JOIN
 				(
 				    SELECT
 				        owner_id AS user_id
