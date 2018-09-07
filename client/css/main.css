@@ -1063,6 +1063,10 @@ body {
 		.setup-stages .stage-info div:hover {
 			border-color: #ccc;
 		}
+        .setup-stages .stage-info span i {
+            margin-right: 5px;
+            /* width: 5px; */
+        }
 	.setup-stages .progress-bar {
 		background: #ddd;
 		border-radius: 12px;

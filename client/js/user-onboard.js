@@ -183,15 +183,6 @@ class UserOnboardStage {
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('stage-info');
 
-		container.innerHTML = `
-			<div class="current"><span class="NA">${this.progress}%</span><span>${this.title}</span></div>
-		`;
-
-		container.querySelector('.current').on('click', () => {
-
-			window.location = this.url;
-		});
-
 		return container;
 	}
 }
@@ -214,21 +205,26 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 		const container = this.containerElement = super.container;
 
-		const nextStage = document.createElement('div');
-		nextStage.classList.add('next');
+		container.innerHTML = `
+			<div class="current"><span class="NA">${this.progress}%</span><span><i class="fa fa-server"></i> Add Connection</span></div>
+			<div class="next"><span class="NA">Next</span><span><i class="fa fa-database"></i> Add Report</span></div>
+		`;
 
-		nextStage.innerHTML = '<span class="NA">Next</span><span>Add Report</span>';
-		nextStage.on('click', () => {
+		container.querySelector('.current').on('click', () => {
+
+			window.location = this.url;
+		});
+
+		container.querySelector('.next').on('click', () => {
 
 			window.location = '/reports/configure-report/add';
 		});
 
 		if(!this.completed) {
 
-			nextStage.classList.add('disabled');
+			container.querySelector('.next').classList.add('disabled');
 		}
 
-		container.appendChild(nextStage);
 
 		return container;
 	}
@@ -273,22 +269,25 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 		const container = this.containerElement = super.container;
 
-		const nextStage = document.createElement('div');
-		nextStage.classList.add('next');
+		container.innerHTML = `
+			<div class="current"><span class="NA">${this.progress}%</span><span><i class="fa fa-database"></i> Add Report</div>
+			<div class="next"><span class="NA">Next</span><span><i class="fa fa-newspaper"></i>Add Dashboard</span></div>
+		`;
 
-		nextStage.innerHTML = '<span class="NA">Next</span><span>Add Dashboard</span>';
+		container.querySelector('.current').on('click', () => {
 
-		nextStage.on('click', () => {
+			window.location = this.url;
+		});
+
+		container.querySelector('.next').on('click', () => {
 
 			window.location = '/dashboards-manager/add';
 		});
 
 		if(!this.completed) {
 
-			nextStage.classList.add('disabled');
+			container.querySelector('.next').classList.add('disabled');
 		}
-
-		container.appendChild(nextStage);
 
 		return container;
 	}
@@ -333,22 +332,25 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
 		const container = this.containerElement = super.container;
 
-		const nextStage = document.createElement('div');
-		nextStage.classList.add('next');
+		container.innerHTML = `
+			<div class="current"><span class="NA">${this.progress}%</span><span><i class="fa fa-newspaper"></i> Add Dashboard</div>
+			<div class="next"><span class="NA">Next</span><span><i class="fa fa-line-chart"></i> Add Visualization</span></div>
+		`;
 
-		nextStage.innerHTML = '<span class="NA">Next</span><span>Add Visualization</span>';
+		container.querySelector('.current').on('click', () => {
 
-		nextStage.on('click', () => {
+			window.location = this.url;
+		});
+
+		container.querySelector('.next').on('click', () => {
 
 			window.location = this.stages[1].report ? `/reports/pick-visualization/${this.stages[1].report.query_id}` : '/reports';
 		});
 
 		if(!this.completed) {
 
-			nextStage.classList.add('disabled');
+			container.querySelector('.next').classList.add('disabled');
 		}
-
-		container.appendChild(nextStage);
 
 		return container;
 
@@ -388,8 +390,23 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 	get container() {
 
-		return super.container;
+		if(this.containerElement) {
 
+			return this.containerElement;
+		}
+
+		const container = this.containerElement = super.container;
+
+		container.innerHTML = `
+			<div class="current"><span class="NA">${this.progress}%</span><span><i class="fa fa-line-chart"></i> Add Visualization</span></div>
+		`;
+
+		container.querySelector('.current').on('click', () => {
+
+			window.location = this.url;
+		});
+
+		return container;
 	}
 
 	get url() {
