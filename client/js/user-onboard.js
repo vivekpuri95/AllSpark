@@ -80,6 +80,11 @@ class UserOnboard {
 			
 		`;
 
+		if(this.progress == 0) {
+
+			container.querySelector('.progress').classList.add('progress-zero');
+		}
+
 		if(this.stage) {
 
 			container.appendChild(this.stage.container);

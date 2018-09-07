@@ -1065,7 +1065,6 @@ body {
 		}
         .setup-stages .stage-info span i {
             margin-right: 5px;
-            /* width: 5px; */
         }
 	.setup-stages .progress-bar {
 		background: #ddd;
@@ -1088,6 +1087,9 @@ body {
             border-radius: 20px;
             position: absolute;
             right: 3px;
+        }
+        .setup-stages .progress-bar .progress.progress-zero::after {
+            display:none;
         }
 
 	.dialog-box-blanket.user-onboarding-welcome header {
