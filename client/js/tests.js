@@ -4,11 +4,6 @@ Page.class = class Tests extends Page {
 
 		super();
 
-		this.user.privileges.needs('superadmin');
-
-		if(['production', 'staging'].includes(this.env.name))
-			throw new API.exception('Tests cannot be run on production or staging.');
-
 		this.sections = new Map;
 
 		this.container.querySelector('#list .toolbar #run').on('click', () => this.run());
@@ -19,6 +14,14 @@ Page.class = class Tests extends Page {
 	}
 
 	async load() {
+
+		if(!this.user.privileges.has('superadmin'))
+			throw new Page.exception('Only superadmins can run tests.');
+
+		const environment = await API.call('environment/about');
+
+		if(['production', 'staging'].includes(environment.name))
+			throw new Page.exception('Tests cannot be run on production or staging.');
 
 		await this.process();
 
@@ -296,7 +299,7 @@ class TestUser {
 		this.test.section.tests.progress();
 
 		SnackBar.container['bottom-left'] = document.querySelector('.snack-bar-container.bottom-left');
-		DialogBox.container = document.querySelector('main');
+		DialogBox.container = document.body;
 	}
 
 	show() {
