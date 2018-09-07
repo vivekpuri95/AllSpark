@@ -351,7 +351,7 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 			</div>
 			<div class="next">
 				<span class="NA">Next</span>
-				<span><i class="fa fa-line-chart"></i> Add Visualization</span>
+				<span><i class="fa fa-chart-line"></i> Add Visualization</span>
 			</div>
 		`;
 
@@ -418,7 +418,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		container.innerHTML = `
 			<div class="current">
 				<span class="NA">${this.progress}%</span>
-				<span><i class="fa fa-line-chart"></i> Add Visualization</span>
+				<span><i class="fa fa-chart-line"></i> Add Visualization</span>
 			</div>
 		`;
 
