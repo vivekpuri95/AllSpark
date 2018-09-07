@@ -1,18 +1,20 @@
 class UserOnboard {
 
-	constructor() {
+	constructor(stateChanged) {
 
 		this.page = window.page;
+		this.stateChanged = stateChanged;
 	}
 
-	static async setup() {
+	static async setup(stateChanged) {
 
 		if(document.querySelector('.setup-stages'))
 			document.querySelector('.setup-stages').remove();
 
 		if(!UserOnboard.instance)
-			UserOnboard.instance = new UserOnboard();
+			UserOnboard.instance = new UserOnboard(stateChanged);
 
+		UserOnboard.instance.stateChanged = stateChanged;
 		await UserOnboard.instance.load();
 	}
 
@@ -61,21 +63,9 @@ class UserOnboard {
 
 	get container() {
 
-		if(this.containerElement){
+		if(this.stateChanged) {
 
-			if(this.progress == 100) {
-
-				this.containerElement.querySelector('.stage-info .current').innerHTML = `<span class="NA">${this.progress}%</span><span>Setup Complete</span>`
-			}
-			else {
-
-				this.containerElement.querySelector('.stage-info .current .NA').textContent = `${this.progress}%`;
-			}
-
-			this.containerElement.querySelector('.stage-info .next').classList.remove('disabled');
-			this.containerElement.querySelector('.progress').style.width = `${this.progress}%`;
-
-			return this.containerElement;
+			window.location = this.stage.url;
 		}
 
 		const container = this.containerElement = document.createElement('div');
@@ -93,6 +83,15 @@ class UserOnboard {
 		if(this.stage) {
 
 			container.appendChild(this.stage.container);
+		}
+		else {
+			container.insertAdjacentHTML('beforeend', `
+				<div class="stage-info">
+					<div class="current">
+						<span class="NA">${this.progress}%</span><span>Setup Complete</span>
+					</div>
+				</div>
+			`);
 		}
 
 		container.querySelector('.dismiss').on('click', async () => {
@@ -221,7 +220,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 		nextStage.innerHTML = '<span class="NA">Next</span><span>Add Report</span>';
 		nextStage.on('click', () => {
 
-			window.location = '/reports';
+			window.location = '/reports/configure-report/add';
 		});
 
 		if(!this.completed) {
@@ -296,7 +295,7 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 	get url() {
 
-		return this.report ? `/reports/define-report/${this.report.query_id}` : '/reports';
+		return this.report ? `/reports/define-report/${this.report.query_id}` : '/reports/configure-report/add';
 	}
 
 	async load() {

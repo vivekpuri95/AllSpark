@@ -231,7 +231,7 @@ class DataConnection {
 			connection.edit();
 
 			if(await Storage.get('newUser'))
-				await UserOnboard.setup();
+				await UserOnboard.setup(true);
 
 			new SnackBar({
 				message: `${connection.feature.name} Connection Added`,

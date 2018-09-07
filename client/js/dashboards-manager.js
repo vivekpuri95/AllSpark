@@ -209,7 +209,7 @@ class DashboardsDashboard {
 			history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
 
 			if(await Storage.get('newUser'))
-				UserOnboard.setup();
+				UserOnboard.setup(true);
 
 			new SnackBar({
 				message: 'Dashboard Added',
