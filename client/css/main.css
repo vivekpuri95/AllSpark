@@ -1104,6 +1104,14 @@ body {
 		padding: 0;
 	}
 
+	.dialog-box-blanket.user-onboarding-welcome header {
+		color: inherit;
+		background: #fff;
+		box-shadow: none;
+	}
+		.dialog-box-blanket.user-onboarding-welcome header .close {
+			padding: 10px;
+		}
 	.dialog-box-blanket.user-onboarding-welcome .body {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
