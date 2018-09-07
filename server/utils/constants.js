@@ -27,7 +27,7 @@ exports.privilege = {
 	"report.update": "report.update",
 	superadmin: "superadmin",
 	ignore_category: ["connection.list",],
-	ignore_privilege: []
+	ignore_privilege: ["dashboard.list"]
 };
 
 exports.publicEndpoints = [
