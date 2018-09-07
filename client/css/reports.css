@@ -107,11 +107,14 @@ main .dataset {
 		.data-source > .warning.retry:active {
 			box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.15);
 		}
+	.singleton .data-source > header {
+		z-index: 7;
+	}
 	.data-source > header {
 		display: flex;
 		align-items: center;
 		white-space: nowrap;
-		z-index: 7;
+		z-index: 1;
 	}
 	.data-source > header::-webkit-scrollbar {
 		display: none;
@@ -126,7 +129,6 @@ main .dataset {
 			line-height: inherit;
 			user-select: text;
 			margin: 0 0 -22px 15px;
-			z-index: 5;
 			padding: 6px 10px 6px 15px;
 			background: var(--color-accent);
 			color: var(--color-accent-text);
@@ -135,9 +137,6 @@ main .dataset {
 			overflow: auto;
 			cursor: default;
 			box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
-		}
-		.singleton .data-source > header h2 {
-			z-index: 7;
 		}
 			.data-source > header i {
 				margin-left: 5px;
