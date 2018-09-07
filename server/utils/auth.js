@@ -117,7 +117,7 @@ class Authenticate {
 			};
 		}
 
-		let connectionObj = report.connectionObj || reportObject.connection_name;
+		let connectionObj = reportObject.connectionObj || reportObject.connection_name;
 
 		if((await Authenticate.connection(reportObject.connection_name, userJWTObject)).error) {
 
