@@ -206,8 +206,14 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 		const container = this.containerElement = super.container;
 
 		container.innerHTML = `
-			<div class="current"><span class="NA">${this.progress}%</span><span><i class="fa fa-server"></i> Add Connection</span></div>
-			<div class="next"><span class="NA">Next</span><span><i class="fa fa-database"></i> Add Report</span></div>
+			<div class="current">
+				<span class="NA">${this.progress}%</span>
+				<span><i class="fa fa-server"></i> Add Connection</span>
+			</div>
+			<div class="next">
+				<span class="NA">Next</span>
+				<span><i class="fa fa-database"></i> Add Report</span>
+			</div>
 		`;
 
 		container.querySelector('.current').on('click', () => {
@@ -270,8 +276,14 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		const container = this.containerElement = super.container;
 
 		container.innerHTML = `
-			<div class="current"><span class="NA">${this.progress}%</span><span><i class="fa fa-database"></i> Add Report</div>
-			<div class="next"><span class="NA">Next</span><span><i class="fa fa-newspaper"></i>Add Dashboard</span></div>
+			<div class="current">
+				<span class="NA">${this.progress}%</span>
+				<span><i class="fa fa-database"></i> Add Report</span>
+			</div>
+			<div class="next">
+				<span class="NA">Next</span>
+				<span><i class="fa fa-newspaper"></i>Add Dashboard</span>
+			</div>
 		`;
 
 		container.querySelector('.current').on('click', () => {
@@ -333,8 +345,14 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 		const container = this.containerElement = super.container;
 
 		container.innerHTML = `
-			<div class="current"><span class="NA">${this.progress}%</span><span><i class="fa fa-newspaper"></i> Add Dashboard</div>
-			<div class="next"><span class="NA">Next</span><span><i class="fa fa-line-chart"></i> Add Visualization</span></div>
+			<div class="current">
+				<span class="NA">${this.progress}%</span>
+				<span><i class="fa fa-newspaper"></i> Add Dashboard</span>
+			</div>
+			<div class="next">
+				<span class="NA">Next</span>
+				<span><i class="fa fa-line-chart"></i> Add Visualization</span>
+			</div>
 		`;
 
 		container.querySelector('.current').on('click', () => {
@@ -398,7 +416,10 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		const container = this.containerElement = super.container;
 
 		container.innerHTML = `
-			<div class="current"><span class="NA">${this.progress}%</span><span><i class="fa fa-line-chart"></i> Add Visualization</span></div>
+			<div class="current">
+				<span class="NA">${this.progress}%</span>
+				<span><i class="fa fa-line-chart"></i> Add Visualization</span>
+			</div>
 		`;
 
 		container.querySelector('.current').on('click', () => {
