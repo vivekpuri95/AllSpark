@@ -235,7 +235,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 	get url() {
 
-		return '/connections-manager';
+		return '/connections-manager/add';
 	}
 
 	async load() {
