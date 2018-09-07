@@ -538,7 +538,6 @@ body {
 	}
 		.dialog-box .body {
 			overflow: auto;
-			height: 100%;
 		}
 		.dialog-box > header {
 			display: grid;
