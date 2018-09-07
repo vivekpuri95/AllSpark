@@ -43,10 +43,10 @@ class Authenticate {
                 			tb_query_visualizations qv
                 			USING(visualization_id)
                 		WHERE
-                			owner_id = ? -- user_id
+                			target_id = ? -- user_id
                 			AND query_id = ?
-                			AND OWNER = 'user'
-                			AND target = 'dashboard'
+                			AND OWNER = 'dashboard'
+                			AND target = 'user'
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id
