@@ -231,7 +231,7 @@ class DataConnection {
 			connection.edit();
 
 			if(await Storage.get('newUser'))
-				await UserOnboard.setup();
+				await UserOnboard.setup(true);
 
 			new SnackBar({
 				message: `${connection.feature.name} Connection Added`,
@@ -403,6 +403,9 @@ class DataConnection {
 			await API.call('credentials/delete', parameters, options);
 
 			await this.page.load();
+
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup(true);
 
 			new SnackBar({
 				message: `${this.feature.name} Connection Removed`,
