@@ -124,7 +124,7 @@ class UserOnboard {
 
 		const newUser = await Storage.get('newUser');
 
-		if(newUser.skipWelcomeDialogBox == true)
+		if(newUser.skipWelcomeDialogBox)
 			return;
 
 		if(!this.dialogBox) {
