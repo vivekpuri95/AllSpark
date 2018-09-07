@@ -62,7 +62,10 @@ exports.update = class extends API {
 
 		const requiredCategories = (await objRole.get(this.account.account_id, 'user', 'role', this.request.body.user_id)).map(x => x.category_id);
 
-		this.assert(requiredCategories.some(x => this.user.privilege.has('user', x)), 'User does not have enough privileges');
+		if(requiredCategories.length) {
+
+			this.assert(requiredCategories.some(x => this.user.privilege.has('user.update', x)), 'User does not have enough privileges');
+		}
 
 		this.user.privilege.needs('user.update', "ignore");
 
