@@ -5,6 +5,9 @@ main {
 	width: 100%;
 	max-width: 600px;
 }
+main .section > h2 {
+	margin: calc(var(--gap) * 2) 0;
+}
 .angle-rotate {
 	transform: rotate(90deg);
 }
