@@ -508,7 +508,7 @@ class SQL {
 
 	prepareQuery() {
 
-		this.reportObj.query = this.reportObj.query
+		this.reportObj.query = (this.reportObj.query || '')
 			.replace(/--.*(\n|$)/g, "")
 			.replace(/\s+/g, ' ');
 
