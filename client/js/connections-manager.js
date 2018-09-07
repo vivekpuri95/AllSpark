@@ -4,11 +4,16 @@ Page.class = class Connections extends Page {
 
 		super();
 
+		window.on('popstate', e => this.loadState(e.state));
+
 		DataConnection.setup(this);
 
 		this.listContainer = this.container.querySelector('section#list');
 
-		this.container.querySelector('#add-data-connection').on('click', () => DataConnection.add(this));
+		this.container.querySelector('#add-data-connection').on('click', () => {
+			history.pushState({what: 'add'}, '', '/connections-manager/add');
+			DataConnection.add(this);
+		});
 		this.container.querySelector('#add-oauth-connection').on('submit', e => OAuthConnection.insert(e));
 
 		OAuthConnection.validate();
@@ -17,8 +22,31 @@ Page.class = class Connections extends Page {
 
 			await this.load();
 
-			await Sections.show('list');
+			this.loadState();
 		})();
+	}
+
+	async loadState(state) {
+
+		const what = state ? state.what : location.pathname.split('/').pop();
+
+		if(what == 'add')
+			return DataConnection.add(this);
+
+		if(this.dataConnections.has(parseInt(what)))
+			return this.dataConnections.get(parseInt(what)).edit();
+
+		await Sections.show('list');
+	}
+
+	async back() {
+
+		if(history.state)
+			return history.back();
+
+		await Sections.show('list');
+
+		history.pushState(null, '', `/connections-manager`);
 	}
 
 	async load() {
@@ -93,8 +121,8 @@ class DataConnection {
 
 		DataConnection.form = DataConnection.container.querySelector('form');
 
-		DataConnection.container.querySelector('.toolbar #back').on('click', () => Sections.show('list'));
-		page.container.querySelector('#connection-picker-back').on('click', () => Sections.show('list'));
+		DataConnection.container.querySelector('.toolbar #back').on('click', () => page.back());
+		page.container.querySelector('#connection-picker-back').on('click', () => page.back());
 	}
 
 	static async add(page) {
@@ -409,7 +437,10 @@ class DataConnection {
 			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		container.querySelector('.green').on('click', () => this.edit());
+		container.querySelector('.green').on('click', () => {
+			history.pushState({what: this.id}, '', `/connections-manager/${this.id}`);
+			this.edit();
+		});
 		container.querySelector('.red').on('click', () => this.delete());
 
 		return container;
