@@ -1,5 +1,10 @@
 class UserOnboard {
 
+	constructor() {
+
+		this.page = window.page;
+	}
+
 	static async setup() {
 
 		if(document.querySelector('.setup-stages'))
@@ -11,28 +16,15 @@ class UserOnboard {
 		await UserOnboard.instance.load();
 	}
 
-	constructor() {
-
-		this.page = window.page;
-		this.stages = [];
-	}
-
 	async load() {
 
-		this.stages = [];
 		this.progress = 0;
 
-		for(const stage of UserOnboard.stages.values()) {
+		this.stage = (await this.getCurrentStage());
 
-			const stageObj = new stage();
-			await stageObj.load();
+		if(!this.stage) {
 
-			this.progress = this.progress + (stageObj.progress || 0);
-
-			if(!stageObj.isCompleted) {
-				this.stages.push(stageObj);
-				break;
-			}
+			await Storage.delete('newUser');
 		}
 
 		if(document.querySelector('.setup-stages')) {
@@ -40,86 +32,84 @@ class UserOnboard {
 			document.querySelector('.setup-stages').remove();
 		}
 
-
 		document.body.appendChild(this.container);
-
-		if(this.stages.every(stage => stage.isCompleted)) {
-
-			return await Storage.delete('newUser');
-		}
 
 		this.loadWelcomeDialogBox();
 	}
 
+	async getCurrentStage() {
+
+		this.stages = [];
+
+		for(const stage of UserOnboard.stages.values()) {
+
+			const stageObj = new stage(this);
+			await stageObj.load();
+
+			this.stages.push(stageObj);
+
+			if(!stageObj.completed) {
+
+				return stageObj;
+			}
+
+			this.progress = stageObj.progress;
+		}
+
+		return 0;
+	}
+
 	get container() {
 
-		const container = this.containerElement = document.createElement('div');
+		if(this.containerElement){
 
+			if(this.progress == 100) {
+
+				this.containerElement.querySelector('.stage-info .current').innerHTML = `<span class="NA">${this.progress}%</span><span>Setup Complete</span>`
+			}
+			else {
+
+				this.containerElement.querySelector('.stage-info .current .NA').textContent = `${this.progress}%`;
+			}
+
+			this.containerElement.querySelector('.stage-info .next').classList.remove('disabled');
+			this.containerElement.querySelector('.progress').style.width = `${this.progress}%`;
+
+			return this.containerElement;
+		}
+
+		const container = this.containerElement = document.createElement('div');
 		container.classList.add('setup-stages');
 
 		container.innerHTML = `
-			<a href="${demo_url}" target="_blank">View Demo</a>
+			<a href="${demo_url}" target="_blank" class=>View Demo</a>
+			<div class="progress-bar">
+				<div class="progress" style="width: ${this.progress}%"></div>
+			</div>		
+			<div class="dismiss">Dismiss</div>
+			
 		`;
 
-		let next;
+		if(this.stage) {
 
-		for(const stage of this.stages) {
-
-			container.appendChild(stage.container);
-			stage.container.style.background = `linear-gradient(to right,  #b3f0b3 0%,#b3f0b3 ${this.progress}%, #d9e3f7 ${this.progress}%, #d9e3f7 100%)`;
-			next = stage.next;
+			container.appendChild(this.stage.container);
 		}
 
-		container.insertAdjacentHTML('beforeend', `
-			<div class="next stage">Next:</div>
-			<div class="skip">Skip</div>
-		`);
-
-		const nextStep = container.querySelector('.next');
-
-		if(next) {
-
-			nextStep.insertAdjacentHTML('beforeend', `<span>${next.title}</span>`);
-
-			nextStep.on('click', () => {
-
-				window.location = next.url;
-			});
-
-			container.querySelector('.skip').on('click', async () => {
+		container.querySelector('.dismiss').on('click', async () => {
 
 			container.remove();
 
 			await Storage.delete('newUser');
+
+			console.log(await Storage.get('newUser'));
 		});
-		}
-		else {
-
-			nextStep.textContent = 'Dismiss';
-
-			nextStep.on('click', async () => {
-
-				container.remove();
-
-				await Storage.delete('newUser');
-			});
-			container.querySelector('.skip').remove();
-
-			if(!this.stages.length) {
-
-				container.classList.add('last');
-			}
-			else {
-				container.style['grid-template-columns'] = '180px 1fr 150px';
-			}
-		}
 
 		return container;
 	}
 
 	async loadWelcomeDialogBox() {
 
-		if(this.stages.some(stage => stage.isCompleted))
+		if(this.stages.some(stage => stage.completed))
 			return;
 
 		const newUser = await Storage.get('newUser');
@@ -171,35 +161,75 @@ class UserOnboard {
 
 		this.dialogBox.show();
 	}
+
 }
 
-UserOnboard.stages = new Map();
+UserOnboard.stages = new Set();
 
-UserOnboard.stages.set('add-connection', class AddConnection {
+class UserOnboardStage {
+
+	constructor(onboard) {
+
+		this.stages = onboard.stages;
+		this.progress = onboard.progress;
+	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
+
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('stage');
+		container.classList.add('stage-info');
 
-		container.innerHTML = `<span>Add Connection</span>`;
+		container.innerHTML = `
+			<div class="current"><span class="NA">${this.progress}%</span><span>${this.title}</span></div>
+		`;
 
-		container.on('click', () => {
+		container.querySelector('.current').on('click', () => {
 
 			window.location = this.url;
 		});
 
-		if(window.location.pathname.split('/').pop() == 'connections-manager') {
+		return container;
+	}
+}
 
-			container.classList.add('active');
+UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
+
+	constructor(onboard) {
+
+		super(onboard);
+
+		this.title = 'Add Connection';
+	}
+
+	get container() {
+
+		if(this.containerElement) {
+
+			return this.containerElement;
 		}
 
-		if(this.isCompleted) {
-			container.classList.add('completed');
+		const container = this.containerElement = super.container;
+
+		const nextStage = document.createElement('div');
+		nextStage.classList.add('next');
+
+		nextStage.innerHTML = '<span class="NA">Next</span><span>Add Report</span>';
+		nextStage.on('click', () => {
+
+			window.location = '/reports';
+		});
+
+		if(!this.completed) {
+
+			nextStage.classList.add('disabled');
 		}
+
+		container.appendChild(nextStage);
 
 		return container;
 	}
@@ -211,166 +241,184 @@ UserOnboard.stages.set('add-connection', class AddConnection {
 
 	async load() {
 
-		const response = await API.call('credentials/list');
+		const [response] = await API.call('credentials/list');
 
-		if(response.length) {
+		if(!response) {
 
-			this.connection = response[0];
-
-			this.isCompleted = true;
-			this.progress = 10;
+			return;
 		}
 
-		this.next = {
-			title: 'Add Report',
-			url: '/reports'
-		};
+		this.connection = response;
+
+		this.completed = true;
+		this.progress = this.progress + 10;
 	}
+
 });
 
-UserOnboard.stages.set('add-report', class AddReport {
+UserOnboard.stages.add(class AddReport extends UserOnboardStage {
+
+	constructor(onboard) {
+
+		super(onboard);
+
+		this.title = 'Add Report';
+	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
+
 			return this.containerElement;
+		}
 
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('stage');
+		const container = this.containerElement = super.container;
 
-		container.innerHTML = `<span>Create Report</span>`;
+		const nextStage = document.createElement('div');
+		nextStage.classList.add('next');
 
-		container.on('click', () => {
+		nextStage.innerHTML = '<span class="NA">Next</span><span>Add Dashboard</span>';
 
-			window.location = this.report ? `/reports/define-report/${this.report.query_id}` : '/reports';
+		nextStage.on('click', () => {
+
+			window.location = '/dashboards-manager/add';
 		});
 
-		if(['reports', 'pick-report'].includes(window.location.pathname.split('/').pop())) {
+		if(!this.completed) {
 
-			container.classList.add('active');
+			nextStage.classList.add('disabled');
 		}
 
-		if(this.isCompleted) {
-			container.classList.add('completed');
-		}
+		container.appendChild(nextStage);
 
 		return container;
+	}
+
+	get url() {
+
+		return this.report ? `/reports/define-report/${this.report.query_id}` : '/reports';
 	}
 
 	async load() {
 
 		await DataSource.load(true);
 
-		if(DataSource.list.size) {
+		if(!DataSource.list.size) {
 
-			this.report = DataSource.list.values().next().value;
-
-			this.isCompleted = true;
-			this.progress = 40;
+			return;
 		}
 
-		this.next = {
-			title: 'Add Dashboard',
-			url: '/dashboards-manager/add'
-		};
+		this.report = DataSource.list.values().next().value;
+
+		this.completed = true;
+		this.progress = this.progress + 40;
 	}
+
 });
 
-UserOnboard.stages.set('add-dashboard', class AddDashboard {
+UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
+
+	constructor(onboard) {
+
+		super(onboard);
+
+		this.title = 'Add Dashboard';
+	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
+
 			return this.containerElement;
+		}
 
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('stage');
+		const container = this.containerElement = super.container;
 
-		container.innerHTML = `<span>Create Dashboard</span>`;
+		const nextStage = document.createElement('div');
+		nextStage.classList.add('next');
 
-		container.on('click', () => {
+		nextStage.innerHTML = '<span class="NA">Next</span><span>Add Visualization</span>';
 
-			window.location = this.dashboard ? `/dashboards-manager/${this.dashboard.id}` : '/dashboards-manager/add';
+		nextStage.on('click', () => {
+
+			window.location = this.stages[1].report ? `/reports/pick-visualization/${this.stages[1].report.query_id}` : '/reports';
 		});
 
-		if(window.location.pathname.split('/').pop() == 'dashboards-manager') {
+		if(!this.completed) {
 
-			container.classList.add('active');
+			nextStage.classList.add('disabled');
 		}
 
-		if(this.isCompleted) {
-			container.classList.add('completed');
-		}
+		container.appendChild(nextStage);
 
 		return container;
+
+	}
+
+	get url() {
+
+		return '/dashboards-manager/add';
+
 	}
 
 	async load() {
 
-		const response = await API.call('dashboards/list');
+		const [response] = await API.call('dashboards/list');
 
-		if(response.length) {
+		if(!response) {
 
-			this.dashboard =  response[0];
-
-			this.isCompleted = true;
-			this.container.classList.add('completed');
-
-			this.progress = 25;
+			return;
 		}
 
-		this.next = {
-			title: 'Add Visualization',
-			url: '/reports'
-		};
+		this.dashboard =  response;
+
+		this.completed = true;
+		this.progress = this.progress + 25;
 	}
+
 });
 
-UserOnboard.stages.set('add-visualization', class AddVisualization {
+UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
+
+	constructor(onboard) {
+
+		super(onboard);
+
+		this.title = 'Add Visualization';
+	}
 
 	get container() {
 
-		if(this.containerElement)
-			return this.containerElement;
+		return super.container;
 
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('stage');
+	}
 
-		container.innerHTML = `<span>Create Visualization</span>`;
+	get url() {
 
-		container.on('click', () => {
+		return this.report ? `/reports/pick-visualization/${this.report.query_id}` : '/reports';
 
-			window.location = this.report ? `/reports/pick-visualization/${this.report.query_id}` : '/reports'
-		});
-
-		if(window.location.pathname.split('/').pop() == 'pick-visualization') {
-
-			container.classList.add('active');
-		}
-
-		if(this.isCompleted) {
-			container.classList.add('completed');
-		}
-
-		return container;
 	}
 
 	async load() {
 
 		await DataSource.load();
 
-		if(DataSource.list.size) {
+		if(!DataSource.list.size) {
 
-			this.report = DataSource.list.values().next().value;
-
-			if(this.report.visualizations.length) {
-
-				this.isCompleted = true;
-				this.progress = 25;
-				this.container.classList.add('completed');
-			}
+			return;
 		}
+
+		this.report = DataSource.list.values().next().value;
+
+		if(!this.report.visualizations.length) {
+
+			return;
+		}
+
+		this.completed = true;
+		this.progress = this.progress + 25;
 	}
+
 });
 
 UserOnboard.setup();
