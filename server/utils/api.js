@@ -146,13 +146,12 @@ class API {
 
 				const
 					params = {...request.query, ...request.body},
-					entryName = path.split(pathSeparator).pop(),
-					entry = obj[entryName];
+					entryName = path.split(pathSeparator).pop();
 
-				if(!entry || typeof entry != 'function')
+				if(!obj[entryName] || typeof obj[entryName] != 'function')
 					throw new API.Exception(400, `The API class has no function named "${entryName}"`);
 
-				const result = await obj[path.split(pathSeparator).pop()](params);
+				const result = await obj[entryName](params);
 
 				obj.result = {
 					status: result ? true : false,
