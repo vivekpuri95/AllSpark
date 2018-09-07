@@ -75,9 +75,9 @@ class UserOnboard {
 			<a href="${demo_url}" target="_blank">View Demo <i class="fas fa-external-link-alt"></i></a>
 			<div class="progress-bar">
 				<div class="progress" style="width: ${this.progress}%"></div>
-			</div>		
+			</div>
 			<button class="dismiss"><i class="fa fa-times"></i> Dismiss</button>
-			
+
 		`;
 
 		if(this.progress == 0) {
@@ -116,6 +116,9 @@ class UserOnboard {
 		if(this.stages.some(stage => stage.completed))
 			return;
 
+		if(window.location.pathname == '/connections-manager/add')
+			return;
+
 		const newUser = await Storage.get('newUser');
 
 		if(newUser.skipWelcomeDialogBox)
@@ -147,7 +150,9 @@ class UserOnboard {
 			<a class="skip">Skip &nbsp;<i class="fas fa-arrow-right"></i></a>
 		`;
 
-		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => this.dialogBox.hide());
+		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => {
+			window.location = '/connections-manager/add';
+		});
 
 		if(window.loadWelcomeDialogBoxListener)
 			window.loadWelcomeDialogBoxListener(this);
