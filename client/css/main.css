@@ -998,7 +998,7 @@ body {
 	display: grid;
 	width: 100%;
 	bottom: 0;
-	z-index: 12;
+	z-index: 4;
 	grid-column-gap: calc(var(--gap) * 2);
 	padding: 10px 15px;
 	grid-template-columns: 180px 1fr 150px;
@@ -1037,6 +1037,7 @@ body {
 		grid-row: 1;
 		display: flex;
 		justify-content: space-around;
+		text-shadow: 0.5px 0.5px #fff;
 	}
 		.setup-stages .stage-info div {
 			text-align: center;
