@@ -72,11 +72,11 @@ class UserOnboard {
 		container.classList.add('setup-stages');
 
 		container.innerHTML = `
-			<a href="${demo_url}" target="_blank" class=>View Demo</a>
+			<a href="${demo_url}" target="_blank">View Demo <i class="fas fa-external-link-alt"></i></a>
 			<div class="progress-bar">
 				<div class="progress" style="width: ${this.progress}%"></div>
 			</div>		
-			<div class="dismiss">Dismiss</div>
+			<button class="dismiss"><i class="fa fa-times"></i> Dismiss</button>
 			
 		`;
 
