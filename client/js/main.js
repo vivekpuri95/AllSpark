@@ -1060,7 +1060,7 @@ class MetaData {
 			} catch(e) {}
 		}
 
-		if(!timestamp || Date.now() - timestamp > MetaData.timeout) {
+		if(navigator.onLine && (!timestamp || Date.now() - timestamp > MetaData.timeout)) {
 
 			metadata = await API.call('users/metadata');
 
