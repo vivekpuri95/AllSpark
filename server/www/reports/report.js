@@ -159,12 +159,12 @@ exports.list = class extends API {
 
 			if (row.target == 'role') {
 
-				connectionMap[row.owner_id]["role"].push(row);
+				connectionMapping[row.owner_id]["role"].push(row);
 			}
 
 			if (row.target == 'user') {
 
-				connectionMap[row.owner_id]["user"].push(row);
+				connectionMapping[row.owner_id]["user"].push(row);
 			}
 		}
 
