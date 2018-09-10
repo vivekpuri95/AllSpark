@@ -128,7 +128,7 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		this.user.privilege.needs('connection.delete');
+		this.user.privilege.needs('connection.delete', 'ignore');
 
 		const authResponse = await auth.connection(this.request.body.id, this.user);
 		this.assert(!authResponse.error, authResponse.message);
@@ -160,7 +160,7 @@ exports.update = class extends API {
 
 	async update() {
 
-		this.user.privilege.needs('connection.update');
+		this.user.privilege.needs('connection.update', 'ignore');
 
 		const authResponse = await auth.connection(this.request.body.id, this.user);
 
@@ -208,7 +208,7 @@ exports.testConnections = class extends API {
 
 	async testConnections() {
 
-		this.user.privilege.needs('connection.list');
+		this.user.privilege.needs('connection.list', 'ignore');
 
 		const authResponse = await auth.connection(this.request.body.id, this.user);
 		this.assert(!authResponse.error, authResponse.message);
