@@ -360,7 +360,7 @@ class Authenticate {
 			if(visibleQueryList) {
 
 				authResponse = {
-					error: !visibleQueryList.has(query.query_id)
+					error: !visibleQueryList.has(query.query_id || query)
 				}
 			}
 
