@@ -4,14 +4,20 @@ Page.class = class Connections extends Page {
 
 		super();
 
+		window.on('popstate', e => this.loadState(e.state));
+
 		DataConnection.setup(this);
 
 		this.listContainer = this.container.querySelector('section#list');
 
+
 		if(user.privileges.has('connection.insert')) {
 
 			this.container.querySelector('#add-data-connection').classList.remove('grey');
-			this.container.querySelector('#add-data-connection').on('click', () => DataConnection.add(this));
+			this.container.querySelector('#add-data-connection').on('click', () => {
+        DataConnection.add(this));
+        history.pushState({what: 'add'}, '', '/connections-manager/add');
+      }
 		}
 		this.container.querySelector('#add-oauth-connection').on('submit', e => OAuthConnection.insert(e));
 
@@ -21,8 +27,31 @@ Page.class = class Connections extends Page {
 
 			await this.load();
 
-			await Sections.show('list');
+			this.loadState();
 		})();
+	}
+
+	async loadState(state) {
+
+		const what = state ? state.what : location.pathname.split('/').pop();
+
+		if(what == 'add')
+			return DataConnection.add(this);
+
+		if(this.dataConnections.has(parseInt(what)))
+			return this.dataConnections.get(parseInt(what)).edit();
+
+		await Sections.show('list');
+	}
+
+	async back() {
+
+		if(history.state)
+			return history.back();
+
+		await Sections.show('list');
+
+		history.pushState(null, '', `/connections-manager`);
 	}
 
 	async load() {
@@ -97,8 +126,8 @@ class DataConnection {
 
 		DataConnection.form = DataConnection.container.querySelector('form');
 
-		DataConnection.container.querySelector('.toolbar #back').on('click', () => Sections.show('list'));
-		page.container.querySelector('#connection-picker-back').on('click', () => Sections.show('list'));
+		DataConnection.container.querySelector('.toolbar #back').on('click', () => page.back());
+		page.container.querySelector('#connection-picker-back').on('click', () => page.back());
 	}
 
 	static async add(page) {
@@ -207,7 +236,7 @@ class DataConnection {
 			connection.edit();
 
 			if(await Storage.get('newUser'))
-				await UserOnboard.setup();
+				await UserOnboard.setup(true);
 
 			new SnackBar({
 				message: `${connection.feature.name} Connection Added`,
@@ -380,6 +409,9 @@ class DataConnection {
 
 			await this.page.load();
 
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup(true);
+
 			new SnackBar({
 				message: `${this.feature.name} Connection Removed`,
 				subtitle: `${this.connection_name} #${this.id}`,
@@ -414,11 +446,14 @@ class DataConnection {
 		`;
 
 		if(container.querySelector('.green'))
-			container.querySelector('.green').on('click', () => this.edit());
+			container.querySelector('.green').on('click', () => {
+        history.pushState({what: this.id}, '', `/connections-manager/${this.id}`);
+        this.edit();
+      });
 
 		if(container.querySelector('.red'))
 			container.querySelector('.red').on('click', () => this.delete());
-
+    
 		return container;
 	}
 }

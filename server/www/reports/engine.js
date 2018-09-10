@@ -468,13 +468,17 @@ class report extends API {
 
 			result = await engineExecution;
 			await this.storeQueryResult(result);
-			global.executingReports.delete(engine.hash);
 
 		}
 		catch (e) {
 
 			console.error(e.stack);
 			throw new API.Exception(400, e.message);
+		}
+
+		finally {
+
+			global.executingReports.delete(engine.hash);
 		}
 
 		await engine.log(this.reportObj.query_id, result.query, result.runtime,
@@ -513,7 +517,7 @@ class SQL {
 
 	prepareQuery() {
 
-		this.reportObj.query = this.reportObj.query
+		this.reportObj.query = (this.reportObj.query || '')
 			.replace(/--.*(\n|$)/g, "")
 			.replace(/\s+/g, ' ');
 

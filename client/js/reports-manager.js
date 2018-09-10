@@ -8,8 +8,6 @@ class ReportsManger extends Page {
 		this.preview = new ReportsMangerPreview(this);
 
 		this.setup();
-
-		window.onbeforeunload = () => this.container.querySelector('.unsaved');
 	}
 
 	async setup() {
@@ -615,6 +613,9 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 			await DataSource.load(true);
 
 			this.load();
+
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup();
 
 			new SnackBar({
 				message: 'Report Deleted',
@@ -1837,43 +1838,33 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.page.load();
 		});
 
-		// const historyToggle = this.container.querySelector('#history-configure-visualization');
+		this.container.querySelector('#preview-configure-visualization').on('click', () => {
 
-		// historyToggle.on('click',async () =>{
-		//
-		// 	historyToggle.classList.toggle('selected');
-		// 	this.visualizationLogs.toggle(historyToggle.classList.contains('selected'));
-		//
-		// 	this.page.container.classList.toggle('compact', historyToggle.classList.contains('selected'));
-		//
-		// 	if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
-		// 		await this.visualizationLogs.load();
-		// });
-	}
+			if(!this.visualizationManager)
+				return;
 
-	setupConfigurationSetions(container) {
+			this.visualizationManager.preview();
+		});
 
-		if(!container)
-			container = this.container;
+		const historyToggle = this.container.querySelector('#history-configure-visualization');
 
-		for(const section of container.querySelectorAll('.configuration-section')) {
+		historyToggle.on('click',async () => {
 
-			const
-				body = section.querySelector('.body'),
-				h3 = section.querySelector('h3');
+			historyToggle.classList.toggle('selected');
+			this.visualizationLogs.toggle(historyToggle.classList.contains('selected'));
 
-			body.classList.add('hidden');
+			this.page.container.classList.toggle('compact', historyToggle.classList.contains('selected'));
 
-			h3.on('click', () => {
+			if(historyToggle.classList.contains('selected') && !this.visualizationLogs.size)
+				await this.visualizationLogs.load();
 
-				body.classList.toggle('hidden');
-
-				for(const svg of h3.querySelectorAll('.fa-angle-right, .fa-angle-down'))
-					svg.remove();
-
-				h3.insertAdjacentHTML('afterbegin', body.classList.contains('hidden') ? '<i class="fas fa-angle-right"></i>' : '<i class="fas fa-angle-down"></i>');
+			await this.page.preview.load({
+				query_id: this.report.query_id,
+				visualization: {
+					id: this.visualization.visualization_id
+				},
 			});
-		}
+		});
 	}
 
 	get url() {
@@ -1888,9 +1879,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			throw new Page.exception('Invalid Report ID');
 
 		let visualization_id = window.location.pathname.split('/').pop();
-
-		if(this.container.querySelector('.visualization-form'))
-			this.container.querySelector('.visualization-form').remove();
 
 		if(!window.location.pathname.includes('configure-visualization')) {
 
@@ -1909,6 +1897,46 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization)
 			return;
 
+		await this.page.preview.load({
+			query_id: this.report.query_id,
+			visualization: {
+				id: this.visualization.visualization_id
+			},
+		});
+
+		await this.loadVisualizationForm();
+
+		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
+
+		const visualizationLogsSelected = this.container.querySelector('#history-configure-visualization').classList.contains('selected')
+
+		this.visualizationLogs.toggle(visualizationLogsSelected);
+
+		if(visualizationLogsSelected) {
+
+			this.visualizationLogs.load();
+		}
+
+		if(this.container.querySelector('.query-history')) {
+
+			this.container.querySelector('.query-history').remove();
+		}
+
+		this.container.appendChild(this.visualizationLogs.container);
+
+		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
+	}
+
+	loadVisualizationForm(visualization) {
+
+		if(visualization) {
+
+			this.visualization = visualization;
+		}
+
+		if(this.container.querySelector('.visualization-form.stage-form'))
+			this.container.querySelector('.visualization-form.stage-form').remove();
+
 		if(ConfigureVisualization.types.has(this.visualization.type)) {
 
 			this.visualizationManager = new VisualizationManager(this.visualization, this);
@@ -1918,12 +1946,8 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
 		}
 
-		if(this.container.querySelector('#preview-configure-visualization')) {
-
-			this.container.querySelector('#preview-configure-visualization').remove();
-		}
-
 		this.container.appendChild(this.visualizationManager.container);
+		this.visualizationManager.container.classList.add('stage-form');
 
 		this.dashboards = new ReportVisualizationDashboards(this);
 
@@ -1932,22 +1956,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.container.querySelector('.configuration-section.dashboards').remove();
 		}
 
-		this.container.querySelector('.visualization-form').insertBefore(this.dashboards.container, this.container.querySelector('.filters'));
+		this.container.querySelector('.visualization-form.stage-form').insertBefore(this.dashboards.container, this.container.querySelector('.visualization-form.stage-form .filters'));
 
 		this.dashboards.clear();
 		this.page.preview.position = 'right';
 
 		this.dashboards.load();
+
 		this.visualizationManager.load();
-
-		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
-
-		this.setupConfigurationSetions();
-
-		const first = this.container.querySelector('.configuration-section');
-
-		if(first && first.querySelector('.body.hidden'))
-			first.querySelector('h3').click();
 	}
 });
 
@@ -2015,7 +2031,7 @@ class VisualizationManager {
 			</form>
 		`;
 
-		this.form = this.container.querySelector('#configure-visualization-form');
+		this.form = container.querySelector('#configure-visualization-form');
 		this.optionsForm = new (ConfigureVisualization.types.get(this.type))(this, this.stage.page, this.stage);
 
 		this.transformations = new ReportTransformations(this, this.stage);
@@ -2033,17 +2049,12 @@ class VisualizationManager {
 
 		this.form.on('submit', e => this.update(e));
 
-		this.stage.container.querySelector('.toolbar button[type=submit]').insertAdjacentHTML(
-			'afterend',
-			'<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>'
-		);
-
-		this.stage.container.querySelector('#preview-configure-visualization').on('click', () => this.preview());
-
 		return container;
 	}
 
 	async load() {
+
+		this.form.reset();
 
 		this.form.name.value = this.name;
 		this.form.type.value = this.type;
@@ -2051,15 +2062,15 @@ class VisualizationManager {
 
 		this.reportVisualizationFilters.load();
 
-		await this.stage.page.preview.load({
-			query_id: this.stage.report.query_id,
-			visualization: {
-				id: this.visualization_id
-			},
-		});
-
 		this.transformations.load();
 		this.container.querySelector('.options').appendChild(this.optionsForm.form);
+
+		this.setupConfigurationSetions();
+
+		const first = this.container.querySelector('.configuration-section');
+
+		if(first && first.querySelector('.body.hidden'))
+			first.querySelector('h3').click();
 
 	}
 
@@ -2087,7 +2098,7 @@ class VisualizationManager {
 
 			await DataSource.load(true);
 
-// 			this.stage.visualizationLogs.clear();
+			this.stage.visualizationLogs.clear();
 
 			this.stage.load();
 
@@ -2116,7 +2127,7 @@ class VisualizationManager {
 	get json() {
 
 		return {
-			id: this.visualization_id,
+			visualization_id: this.visualization_id,
 			query_id: this.query_id,
 			type: this.form.type.value,
 			name: this.form.name.value,
@@ -2140,6 +2151,33 @@ class VisualizationManager {
 				name: this.json.name
 			}
 		});
+	}
+
+	setupConfigurationSetions(container) {
+
+		if(!container)
+			container = this.container;
+
+		for(const section of container.querySelectorAll('.configuration-section')) {
+
+			const
+				body = section.querySelector('.body'),
+				h3 = section.querySelector('h3');
+
+			body.classList.add('hidden');
+
+			h3.removeEventListener('click', h3.clickListener);
+
+			h3.on('click', h3.clickListener = e => {
+
+				body.classList.toggle('hidden');
+
+				for(const svg of h3.querySelectorAll('.fa-angle-right, .fa-angle-down'))
+					svg.remove();
+
+				h3.insertAdjacentHTML('afterbegin', body.classList.contains('hidden') ? '<i class="fas fa-angle-right"></i>' : '<i class="fas fa-angle-down"></i>');
+			});
+		}
 	}
 }
 
@@ -2172,7 +2210,7 @@ class QueryLog extends ReportLog {
 			this.logs.owner.connection.formJson = this.connection.json;
 
 			new SnackBar({
-				message: this.query_id + ' Query Restored',
+				message: this.owner_id + ' Query Restored',
 				subtitle: 'The restored query is not saved yet and will be lost on page reload.',
 				icon: 'fa fa-plus',
 			});
@@ -2222,13 +2260,79 @@ class QueryLog extends ReportLog {
 	}
 }
 
+class VisualizationLog extends ReportLog {
+
+	load() {
+
+		const logInfo = this.logs.container.querySelector('.info');
+
+		logInfo.classList.remove('hidden');
+		this.logs.container.querySelector('.list').classList.add('hidden');
+
+		logInfo.querySelector('.toolbar').innerHTML =  `
+			<button class="back"><i class="fa fa-arrow-left"></i> Back to history</button>
+			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
+			<button class="preview"><i class="fas fa-eye"></i> Preview</button>
+			<span class="log-title">
+				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
+			</span>
+		`;
+
+		logInfo.querySelector('.toolbar').classList.add('visualization');
+
+		logInfo.querySelector('.toolbar button.back').on('click', () => {
+
+			this.logs.container.querySelector('.list').classList.remove('hidden');
+			logInfo.classList.add('hidden');
+		});
+
+		logInfo.querySelector('.toolbar .restore').on('click', () => {
+
+			if(this.logsVisualizationManager) {
+
+				this.logs.page.loadVisualizationForm(this.logsVisualizationManager.json);
+			}
+
+			new SnackBar({
+				message: this.owner_id + ' Visualization Restored',
+				subtitle: 'The restored visualization is not saved yet and will be lost on page reload.',
+				icon: 'fa fa-plus',
+			});
+		});
+
+		logInfo.querySelector('.toolbar .preview').on('click', () => {
+
+			if(this.logsVisualizationManager) {
+				
+				this.logsVisualizationManager.preview();
+			}
+
+		});
+
+		const queryInfo = this.logs.container.querySelector('.info div.log-form');
+		queryInfo.textContent =null;
+
+		queryInfo.classList.remove('block');
+
+		if(!this.logsVisualizationManager) {
+
+			this.logsVisualizationManager = new VisualizationManager(this.state, this.logs.page);
+		}
+		
+		queryInfo.appendChild(this.logsVisualizationManager.container);
+
+		this.logsVisualizationManager.load();
+
+	}
+}
+
 class ReportConnection {
 
-	constructor(report, stage, readOnly = false) {
+	constructor(report, stage, logsEditor = false) {
 
 		this.report = report;
 		this.stage = stage;
-		this.readOnly = readOnly;
+		this.logsEditor = logsEditor;
 	}
 
 	get form() {
@@ -2255,18 +2359,6 @@ class ReportConnection {
 			}
 
 			this.form.elements[key].value = json[key];
-
-			if(this.readOnly) {
-
-				if(this.form.elements[key].tagName == 'SELECT') {
-
-					this.form.elements[key].disabled = true;
-				}
-				else {
-
-					this.form.elements[key].readOnly = true;
-				}
-			}
 		}
 
 		if(this.editor) {
@@ -2285,15 +2377,14 @@ ReportConnection.types = new Map();
 
 ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2353,15 +2444,14 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2421,15 +2511,14 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2489,15 +2578,14 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('bigquery', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2824,15 +2912,14 @@ ReportConnection.types.set('file', class ReportConnectionAPI extends ReportConne
 
 ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'javascript'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -2901,15 +2988,14 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 
 ReportConnection.types.set('oracle', class ReportConnectionMysql extends ReportConnection {
 
-	constructor(report, stage, readOnly) {
+	constructor(report, stage, logsEditor) {
 
-		super(report, stage, readOnly);
+		super(report, stage, logsEditor);
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.readOnly) {
+		if(this.logsEditor) {
 
-			this.editor.editor.setReadOnly(true);
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
@@ -3294,7 +3380,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		container.querySelector('.configuration-section').appendChild(this.axes.container);
 
-		this.stage.setupConfigurationSetions(container);
+
 
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
@@ -3694,7 +3780,7 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 		this.form = this.visualization.options;
 
-		this.stage.setupConfigurationSetions(container);
+
 
 		return container;
 	}
@@ -3775,8 +3861,6 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 		for(const element of this.formContainer.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = this.visualization.options && this.visualization.options[element.name];
 
-		this.stage.setupConfigurationSetions(container);
-
 		return container;
 	}
 });
@@ -3837,8 +3921,6 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 		this.layers = new SpatialMapOptionsLayers(this.visualization.options.layers || [], this);
 
 		container.querySelector('.configuration-section').appendChild(this.layers.container);
-
-		this.stage.setupConfigurationSetions(container);
 
 		const mapOptions = container.querySelector('.map-options');
 
@@ -3932,8 +4014,6 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 		for(const element of this.formContainer.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
-
-		this.stage.setupConfigurationSetions(container);
 
 		return container;
 	}
@@ -4053,8 +4133,6 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 
 		this.subReports.value = (this.visualization.options && this.visualization.options.subReports) || [];
 
-		this.stage.setupConfigurationSetions(container);
-
 		return container;
 	}
 
@@ -4102,8 +4180,6 @@ ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisuali
 
 		for(const element of this.formContainer.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
-
-		this.stage.setupConfigurationSetions(container);
 
 		return container;
 	}

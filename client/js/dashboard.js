@@ -349,6 +349,8 @@ Page.class = class Dashboards extends Page {
 
 		this.navbar.render();
 
+		console.log(await Storage.get('newUser'));
+
 		if(await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
 
 			await Storage.set('newUser', (await Storage.get('newUser')) || {});
@@ -894,6 +896,10 @@ class Dashboard {
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 		}
 
+		Sections.show('reports');
+
+		await API.refreshToken();
+
 		const dashboardName = this.page.container.querySelector('.dashboard-name');
 
 		dashboardName.innerHTML = `
@@ -905,8 +911,6 @@ class Dashboard {
 
 		dashboardName.classList.remove('hidden');
 		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
-
-		await Sections.show('reports');
 
 		this.page.render({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
 
@@ -932,8 +936,6 @@ class Dashboard {
 		}
 
 		this.maxScrollHeightAchieved = Math.max(Dashboard.screenHeightOffset, main.scrollTop);
-
-		await API.refreshToken();
 
 		this.globalFilters.apply({dontLoad: true});
 		this.lazyLoad(this.maxScrollHeightAchieved, resize);

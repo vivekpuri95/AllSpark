@@ -128,6 +128,17 @@ main.preview-right #stages {
 	grid-column: 1;
 	height: calc(100vh - 135px);
 }
+main.preview-right.compact #stages {
+	grid-column: 1 / 3;
+}
+	main.preview-right.compact #stages #stage-configure-visualization {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: max-content;
+	}
+		main.preview-right.compact #stages #stage-configure-visualization .query-history {
+			grid-row: 1 / 3;
+			grid-column: 2;
+		}
 main.preview-left #stages {
 	grid-column: 3;
 	height: calc(100vh - 135px);
@@ -369,7 +380,6 @@ main.preview-left #stages {
 		#stage-define-report .query-history {
 			order: 3;
 			flex: 1 50%;
-			margin-left: calc(var(--gap) * 2);
 			overflow: auto;
 			min-width: 50%;
 		}
@@ -430,7 +440,7 @@ main.preview-left #stages {
 	#stage-configure-visualization .toolbar .right {
 		margin-left: auto;
 	}
-	#stage-configure-visualization h3 {
+	.visualization-form h3 {
 		color: #444;
 		border-bottom: 1px dashed #999;
 		cursor: pointer;
@@ -446,21 +456,21 @@ main.preview-left #stages {
 		background: #eee;
 		transition: color var(--transition-duration);
 	}
-	#stage-configure-visualization h3:hover {
+	.visualization-form h3:hover {
 		color: inherit;
 	}
-		#stage-configure-visualization h3 > i {
+		.visualization-form h3 > i {
 			margin-right: var(--gap);
 			width: 10px;
 			transition: margin-right var(--transition-duration);
 		}
-		#stage-configure-visualization h3:hover > i {
+		.visualization-form h3:hover > i {
 			margin-right: calc(var(--gap) * 2);
 		}
-	#stage-configure-visualization h4 {
+	.visualization-form h4 {
 		margin: 0 0 calc(var(--gap) * 2)
 	}
-	#stage-configure-visualization fieldset {
+	.visualization-form fieldset {
 		background: #fff;
 		padding: calc(var(--gap) * 2);
 		margin: 0;
@@ -468,7 +478,7 @@ main.preview-left #stages {
 		border: 0;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
-		#stage-configure-visualization fieldset legend {
+		.visualization-form fieldset legend {
 			font-size: 90%;
 			border: 1px solid #ccc;
 			padding: 2px 8px;
@@ -477,7 +487,7 @@ main.preview-left #stages {
 			background: #fff;
 			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 		}
-	#stage-configure-visualization .subform {
+	.visualization-form .subform {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
 		padding: calc(var(--gap) * 2);
@@ -485,35 +495,35 @@ main.preview-left #stages {
 		border-radius: 3px;
 	}
 
-	#stage-configure-visualization .axes,
-	#stage-configure-visualization .layers {
+	.visualization-form .axes,
+	.visualization-form .layers {
 	}
-		#stage-configure-visualization .axes .form,
-		#stage-configure-visualization .layers .form {
+		.visualization-form .axes .form,
+		.visualization-form .layers .form {
 			background: transparent;
 			padding: 0;
 		}
-			#stage-configure-visualization .layers .form .opacity > span {
+			.visualization-form .layers .form .opacity > span {
 				justify-content: space-between;
 			}
-			#stage-configure-visualization .layers .form .opacity > span .value {
+			.visualization-form .layers .form .opacity > span .value {
 				font-weight: normal;
 				color: #999;
 			}
-		#stage-configure-visualization .axes .add-axis .form,
-		#stage-configure-visualization .layers .add-layer .form {
+		.visualization-form .axes .add-axis .form,
+		.visualization-form .layers .add-layer .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;
 			grid-gap: calc(var(--gap) * 2);
 		}
-	#stage-configure-visualization #configure-visualization-form {
+	.visualization-form #configure-visualization-form {
 		display: flex;
 		flex-direction: column;
 	}
-	#stage-configure-visualization .liner-visualization-options {
+	.visualization-form .liner-visualization-options {
 		display: flex;
 		flex-direction: column;
 	}
-	#stage-configure-visualization #transformations-preview {
+	.visualization-form #transformations-preview {
 		height: 15px;
 		margin-left: auto;
 		display: flex;
@@ -521,53 +531,47 @@ main.preview-left #stages {
 		padding: 0 10px;
 		font-size: 70%;
 	}
-		#stage-configure-visualization #transformations-preview svg {
+		.visualization-form #transformations-preview svg {
 			margin: 0;
 		}
-	#stage-configure-visualization .transformations {
+	.visualization-form .transformations {
 	}
-		#stage-configure-visualization .transformations .transformation {
+		.visualization-form .transformations .transformation {
 			display: grid;
 			grid-template-columns: 1fr 1fr 1fr;
 			grid-gap: calc(var(--gap) * 2);
 			align-items: flex-start;
 		}
-			#stage-configure-visualization .transformations .transformation > div {
+			.visualization-form .transformations .transformation > div {
 				display: grid;
 				grid-template-columns: 1fr;
 				grid-gap: calc(var(--gap) * 2);
 			}
-				#stage-configure-visualization .transformations .transformation h4 {
+				.visualization-form .transformations .transformation h4 {
 					margin: 0;
 					border-bottom: 1px dashed #ccc;
 					padding-bottom: var(--gap);
 					font-size: 90%;
 				}
 
-			#stage-configure-visualization .transformations .transformation .form-row {
+			.visualization-form .transformations .transformation .form-row {
 				display: grid;
 				grid-auto-flow: column;
 				grid-gap: calc(var(--gap) * 2);
 			}
-			#stage-configure-visualization .transformations .transformation .form-row button svg {
+			.visualization-form .transformations .transformation .form-row button svg {
 				margin: 0;
 			}
-				#stage-configure-visualization .transformations .transformation input[type=text] {
+				.visualization-form .transformations .transformation input[type=text] {
 					width: 100px;
 				}
-			#stage-configure-visualization .transformations .transformation button {
+			.visualization-form .transformations .transformation button {
 				white-space: nowrap;
 			}
-			#stage-configure-visualization .transformations .transformation.stream .joins,
-			#stage-configure-visualization .transformations .transformation.stream .columns {
+			.visualization-form .transformations .transformation.stream .joins,
+			.visualization-form .transformations .transformation.stream .columns {
 				grid-row: 2;
 			}
-		#stage-configure-visualization .transformations .add-transformation .form {
-			grid-template-columns: minmax(max-content, 200px) max-content;
-			background: transparent;
-			padding: 0;
-			grid-gap: calc(var(--gap) * 2);
-		}
 	#stage-configure-visualization .dashboards {
 	}
 		#stage-configure-visualization .dashboards .form {
@@ -591,53 +595,54 @@ main.preview-left #stages {
 				width: 200px;
 			}
 
-	#stage-configure-visualization .filters {
+	.visualization-form .filters {
 	}
-		#stage-configure-visualization .filters .form {
+		.visualization-form .transformations .add-transformation .form,
+		.visualization-form .filters .add-filter .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;
 			background: transparent;
 			grid-gap: calc(var(--gap) * 2);
 			padding: 0;
 		}
-		#stage-configure-visualization .filters .delete:hover {
+		.visualization-form .filters .delete:hover {
 			border-color: transparent;
 			background: #c33;
 		}
-			#stage-configure-visualization .filters .delete > i {
+			.visualization-form .filters .delete > i {
 				margin: 0;
 			}
 
-	#stage-configure-visualization .configuration-section  h3 .count {
+	.visualization-form .configuration-section h3 .count {
 		color: #bbb;
 		font-size: 90%;
 		margin-left: auto;
 		font-weight: normal;
 		letter-spacing: 0.25px;
 	}
-	#stage-configure-visualization .configuration-section h3 .count.transformation {
+	.visualization-form .configuration-section h3 .count.transformation {
 		margin-left: 3px;
 		display: flex;
 	}
-	#stage-configure-visualization .configuration-section fieldset .form {
+	.visualization-form .configuration-section fieldset .form {
 		box-shadow: none;
 	}
-		#stage-configure-visualization .configuration-section .form label span {
+		.visualization-form .configuration-section .form label span {
 			display: flex;
 			align-items: center;
 		}
-		#stage-configure-visualization .configuration-section .body {
+		.visualization-form .configuration-section .body {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 			padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
 			background: #eee;
 		}
-			#stage-configure-visualization .configuration-section .body .list .NA {
+			.visualization-form .configuration-section .body .list .NA {
 				background: #fff;
 				padding: calc(var(--gap) * 2);
 				box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 				border-radius: 3px;
 			}
-	#stage-configure-visualization .configuration-section .theme-list {
+	.visualization-form .configuration-section .theme-list {
 		padding: 10px;
 		list-style-type: none;
 		font-size: 90%;
@@ -650,7 +655,7 @@ main.preview-left #stages {
 		position: relative;
 		justify-content: space-around;
 	}
-		#stage-configure-visualization .configuration-section .theme-list .theme {
+		.visualization-form .configuration-section .theme-list .theme {
 			display: flex;
 			justify-content: center;
 			cursor: pointer;
@@ -658,15 +663,15 @@ main.preview-left #stages {
 			width: 160px;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 		}
-		#stage-configure-visualization .configuration-section .theme-list .theme:hover {
+		.visualization-form .configuration-section .theme-list .theme:hover {
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			transform: perspective(500px) translatez(30px)
 		}
-		#stage-configure-visualization .configuration-section .theme-list .theme.selected {
+		.visualization-form .configuration-section .theme-list .theme.selected {
 			border: 1px solid #80b7fa;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		}
-			#stage-configure-visualization .configuration-section .theme-list .theme .name {
+			.visualization-form .configuration-section .theme-list .theme .name {
 				position: absolute;
 				font-size: 120%;
 				letter-spacing: 0.5px;
@@ -674,20 +679,20 @@ main.preview-left #stages {
 				margin-top: 115px;
 				color: #7d7d7d;
 			}
-			#stage-configure-visualization .configuration-section .theme-list .theme-image {
+			.visualization-form .configuration-section .theme-list .theme-image {
 				overflow: hidden;
 			}
-				#stage-configure-visualization .configuration-section .theme-list .theme-image .road {
+				.visualization-form .configuration-section .theme-list .theme-image .road {
 					height: 10px;
 					transform: rotate(27deg);
 					width: 153px;
 					margin: 18px;
 				}
-				#stage-configure-visualization .configuration-section .theme-list .theme-image .water {
+				.visualization-form .configuration-section .theme-list .theme-image .water {
 					height: 16px;
 					margin-top: 20px;
 				}
-				#stage-configure-visualization .configuration-section .theme-list .theme-image .park {
+				.visualization-form .configuration-section .theme-list .theme-image .park {
 					height: 20px;
 					transform: rotate(28deg);
 					width: 250px;
