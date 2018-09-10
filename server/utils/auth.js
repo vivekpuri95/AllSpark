@@ -264,6 +264,7 @@ class Authenticate {
 		if(!dashboardRoles) {
 
 			dashboardRoles = await objRole.get(dashboard.account_id, "dashboard", "role", dashboard.id,)
+			dashboardRoles = dashboardRoles.map(x => [x.account_id, x.category_id, x.target_id]);
 		}
 
 		dashboardUserPrivileges = dashboardUserPrivileges[0];
@@ -283,8 +284,6 @@ class Authenticate {
 				message: "Shared Dashboard to the current user.",
 			};
 		}
-
-		dashboardRoles = dashboardRoles.map(x => [x.account_id, x.category_id, x.target_id]);
 
 		for (const row of dashboardRoles) {
 
