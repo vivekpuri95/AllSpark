@@ -1065,17 +1065,12 @@ body {
 			display: flex;
 			flex-direction: column;
 			cursor: pointer;
-			border: 1px dashed transparent;
+			background: rgba(0, 0, 0, 0.2);
 			padding: 5px 10px;
-			border-radius: 3px;
-            transition: border-color var(--transition-duration);
 		}
 		.setup-stages .stage-info div.next.disabled {
 			pointer-events: none;
 			color: #666;
-		}
-		.setup-stages .stage-info div:hover {
-			border-color: #ccc;
 		}
         .setup-stages .stage-info span i {
             margin-right: 5px;
