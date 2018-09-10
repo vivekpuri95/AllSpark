@@ -89,7 +89,7 @@ exports.list = class extends API {
 
 		let credentialObjectRoles = role.get(this.account.account_id, 'connection', ['user', 'role']);
 
-		let userCategories = new Set([constants.privilege.administrator, constants.privilege["report.update"]].map(x => x.category_id));
+		let userCategories = new Set(this.user.privileges.filter(x => [constants.privilege.administrator, constants.privilege["report.update"]].includes(x)).map(x => x.category_id));
 		let isAdmin = false;
 
 		if(constants.adminPrivilege.some(x => userCategories.has(x))) {
