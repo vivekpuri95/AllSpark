@@ -127,14 +127,6 @@ class Authenticate {
 			};
 		}
 
-		if(!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
-
-			return {
-				error: true,
-				message: "Report not shared with anyone and user did not create this report."
-			}
-		}
-
 		if (!reportDashboardRoles) {
 
 			reportDashboardRoles = await mysql.query(`
@@ -181,6 +173,14 @@ class Authenticate {
 			if (!authResponse.error) {
 
 				return authResponse
+			}
+		}
+
+		if(!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
+
+			return {
+				error: true,
+				message: "Report not shared with anyone and user did not create this report."
 			}
 		}
 
