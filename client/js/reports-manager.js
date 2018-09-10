@@ -501,9 +501,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		reports = reports.filter(report => {
 
-			if(!report.editable)
-				return false;
-
 			for(const input of inputs) {
 
 				const query = input.value.toLowerCase();
