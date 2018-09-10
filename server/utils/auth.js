@@ -127,14 +127,6 @@ class Authenticate {
 			};
 		}
 
-		if(!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
-
-			return {
-				error: true,
-				message: "Report not shared with anyone and user did not create this report."
-			}
-		}
-
 		if (!reportDashboardRoles) {
 
 			reportDashboardRoles = await mysql.query(`
@@ -181,6 +173,14 @@ class Authenticate {
 			if (!authResponse.error) {
 
 				return authResponse
+			}
+		}
+
+		if(!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
+
+			return {
+				error: true,
+				message: "Report not shared with anyone and user did not create this report."
 			}
 		}
 
@@ -264,6 +264,7 @@ class Authenticate {
 		if(!dashboardRoles) {
 
 			dashboardRoles = await objRole.get(dashboard.account_id, "dashboard", "role", dashboard.id,)
+			dashboardRoles = dashboardRoles.map(x => [x.account_id, x.category_id, x.target_id]);
 		}
 
 		dashboardUserPrivileges = dashboardUserPrivileges[0];
@@ -283,8 +284,6 @@ class Authenticate {
 				message: "Shared Dashboard to the current user.",
 			};
 		}
-
-		dashboardRoles = dashboardRoles.map(x => [x.account_id, x.category_id, x.target_id]);
 
 		for (const row of dashboardRoles) {
 
