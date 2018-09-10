@@ -113,8 +113,8 @@ exports.list = class extends API {
 
 			const categories = connection.role.map(u => parseInt(u.category_id));
 
-			const updateFlag = updateCategories.some(cat => categories.includes(parseInt(cat)));
-			const deleteFlag = deleteCategories.some(cat => categories.includes(parseInt(cat)));
+			const updateFlag = updateCategories.some(cat => categories.includes(parseInt(cat))) || (!categories.length && updateCategories.length);
+			const deleteFlag = deleteCategories.some(cat => categories.includes(parseInt(cat))) || (!categories.length && deleteCategories.length);
 
 			connection.editable = constants.adminCategory.some(x => updateCategories.includes(x)) || updateFlag;
 			connection.deletable = constants.adminCategory.some(x => deleteCategories.includes(x)) || deleteFlag;
