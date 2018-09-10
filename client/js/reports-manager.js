@@ -4301,8 +4301,6 @@ ConfigureVisualization.types.set('linear', class LinearOptions extends ReportVis
 
 		container.querySelector('.configuration-section').appendChild(this.axes.container);
 
-		this.stage.setupConfigurationSetions(container);
-
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
 
