@@ -8,10 +8,15 @@ Page.class = class DashboardManager extends Page {
 
 		this.listContainer = this.container.querySelector('section#list');
 
-		this.listContainer.querySelector('#add-dashboard').on('click', () => {
-			DashboardsDashboard.add(this);
-			history.pushState({id: 'add'}, '', `/dashboards-manager/add`);
-		});
+		if(user.privileges.has('dashboard.insert')) {
+			this.listContainer.querySelector('#add-dashboard').classList.remove('grey');
+
+			this.listContainer.querySelector('#add-dashboard').on('click', () => {
+				DashboardsDashboard.add(this);
+				history.pushState({id: 'add'}, '', `/dashboards-manager/add`);
+			});
+		}
+
 
 		this.listContainer.querySelector('#import-dashboard').on('click', () => {
 

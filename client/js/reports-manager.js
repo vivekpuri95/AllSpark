@@ -311,10 +311,15 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		this.prepareSearch();
 
-		this.container.querySelector('#add-report').on('click', () => {
-			this.add();
-			window.history.pushState({id: 'add'}, '', `/reports/configure-report/add`);
-		});
+		if(user.privileges.has('report.insert')) {
+
+			this.container.querySelector('#add-report').classList.remove('grey');
+
+			this.container.querySelector('#add-report').on('click', () => {
+				this.add();
+				window.history.pushState({id: 'add'}, '', `/reports/configure-report/add`);
+			});
+		}
 	}
 
 	get url() {

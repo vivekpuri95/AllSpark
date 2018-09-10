@@ -8,7 +8,11 @@ Page.class = class Connections extends Page {
 
 		this.listContainer = this.container.querySelector('section#list');
 
-		this.container.querySelector('#add-data-connection').on('click', () => DataConnection.add(this));
+		if(user.privileges.has('connection.insert')) {
+
+			this.container.querySelector('#add-data-connection').classList.remove('grey');
+			this.container.querySelector('#add-data-connection').on('click', () => DataConnection.add(this));
+		}
 		this.container.querySelector('#add-oauth-connection').on('submit', e => OAuthConnection.insert(e));
 
 		OAuthConnection.validate();
