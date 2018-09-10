@@ -58,7 +58,7 @@ class HTMLAPI extends API {
 				           _ _  _____                  _
 				     /\\   | | |/ ____|                | |
 				    /  \\  | | | (___  _ __   __ _ _ __| | __
-				   / /\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
+				   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
 				  / ____ \\| | |____) | |_) | (_| | |  |   <
 				 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
 				                     | |
@@ -1058,7 +1058,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div class="toolbar">
 						<button type="button" id="configure-visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
 						<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
-						<!--<button type="button" id="history-configure-visualization"><i class="fa fa-history"></i> History</button>-->
+						<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>
+						<button type="button" id="history-configure-visualization"><i class="fa fa-history"></i> History</button>
 					</div>
 
 				</section>
