@@ -1008,7 +1008,7 @@ body {
 }
 
 .setup-stages {
-	position: absolute;
+	position: fixed;
 	display: grid;
 	width: 100%;
 	bottom: 0;
