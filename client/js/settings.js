@@ -22,6 +22,7 @@ class Settings extends Page {
 				a.on('click', async () => {
 
 					await Storage.set('settingsCurrentTab', setting.name);
+					clearInterval(Settings.autoRefreshInterval);
 
 					for (const a of nav.querySelectorAll('a.selected'))
 						a.classList.remove('selected');
@@ -346,7 +347,17 @@ Settings.list.set('executingReports', class ExeReports extends SettingPage {
 
 	async load() {
 
-		const reports = await API.call('reports/engine/executingReports');
+		// const reports = await API.call('reports/engine/executingReports');
+
+		const reports = [ {
+			user_id: 787,
+			query_id: 581,
+			account_id: 1,
+			params: {
+				type: "mysql",
+				request: ["SELECT * FROM ( ( SELECT COUNT(*) AS signups FROM …ROUP BY u.user_id ) AS pa ) AS new_paying_users )", ["2018-08-01", "2018-08-31", "2018-08-01", "2018-08-31", "2018-08-31", "2018-08-01", "2018-08-01", "2018-08-01", "2018-08-31", "2018-08-01", "2018-08-01", "2018-08-01"], 12]
+			}
+		}];
 
 		this.executingReports = new Set();
 
@@ -369,23 +380,64 @@ Settings.list.set('executingReports', class ExeReports extends SettingPage {
 
 		container.innerHTML = `
 			<h1>Executing Reports</h1>
+						
+			<header class="toolbar block">
+				<input type="checkbox" name="auto-refresh"> Auto Refresh
+			</header>
+			
 			<table class="block">
 				<thead>
 					<tr>
 						<th>Account Id</th>
 						<th>Query Id</th>
 						<th>User Id</th>
-						<th>Params</th>
+						<th>Connection Type</th>
 					</tr>
 				</thead>
 				<tbody></tbody>
 			</table>
 		`;
 
+		const autoRefresh = container.querySelector('input[name=auto-refresh]');
+
+		autoRefresh.on('change', async () => {
+
+			if(autoRefresh.checked) {
+
+				await Storage.set('auto-refresh', true);
+				Settings.autoRefreshInterval =  setInterval(async () => {
+					await this.load();
+				}, 5000);
+			}
+			else {
+
+				await Storage.set('auto-refresh', false);
+				clearInterval(Settings.autoRefreshInterval);
+			}
+		});
+
 		return container;
 	}
 
 	async render() {
+
+		if(!(await Storage.has('auto-refresh'))) {
+
+			await Storage.set('auto-refresh', true);
+		};
+
+		const getAutoRefresh = await Storage.get('auto-refresh');
+
+		if(getAutoRefresh) {
+
+			clearInterval(Settings.autoRefreshInterval);
+
+			Settings.autoRefreshInterval =  setInterval(async () => {
+				await this.load();
+			}, 5000);
+		}
+
+		this.container.querySelector('input[name=auto-refresh]').checked = getAutoRefresh ? true : false;
 
 		const tbody = this.container.querySelector('table tbody');
 
@@ -1908,7 +1960,7 @@ class ExeReport {
 			<td>${this.account_id}</td>
 			<td>${this.query_id}</td>
 			<td>${this.user_id}</td>
-			<td>${this.this.params}</td>
+			<td>${this.params.type}</td>
 		`;
 
 		return tr;

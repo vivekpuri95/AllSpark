@@ -222,6 +222,7 @@ main .about-list {
 main .exe-reports {
 	padding: calc(var(--gap) * 2);
 }
-	main .exe-reports table {
-		margin-top: calc(var(--gap) * 2);
+	main .exe-reports .toolbar {
+		padding: calc(var(--gap) * 2);
+		margin: calc(var(--gap) * 2) 0;
 	}
