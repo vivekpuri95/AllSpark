@@ -327,6 +327,81 @@ Settings.list.set('categories', class Categories extends SettingPage {
 	}
 });
 
+Settings.list.set('executingReports', class ExeReports extends SettingPage {
+
+	get name() {
+
+		return 'Executing Reports';
+	}
+
+	setup() {
+
+		if(this.page.querySelector('.exe-reports')) {
+
+			this.page.querySelector('.exe-reports').remove();
+		}
+
+		this.page.appendChild(this.container);
+	}
+
+	async load() {
+
+		const reports = await API.call('reports/engine/executingReports');
+
+		this.executingReports = new Set();
+
+		for(const report of reports) {
+
+			this.executingReports.add(new ExeReport(report, this));
+		}
+
+		await this.render();
+
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('setting-page', 'exe-reports', 'hidden');
+
+		container.innerHTML = `
+			<h1>Executing Reports</h1>
+			<table class="block">
+				<thead>
+					<tr>
+						<th>Account Id</th>
+						<th>Query Id</th>
+						<th>User Id</th>
+						<th>Params</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		`;
+
+		return container;
+	}
+
+	async render() {
+
+		const tbody = this.container.querySelector('table tbody');
+
+		tbody.textContent = null;
+
+		if(!this.executingReports.size)
+			tbody.innerHTML = '<tr><td class="NA" colspan="4">No executing reports at this time.</td></tr>';
+
+		for(const report of this.executingReports.values())
+			tbody.appendChild(report.row);
+
+		this.container.classList.remove('hidden');
+	}
+
+});
+
 Settings.list.set('about', class About extends SettingPage {
 
 	get name() {
@@ -1813,5 +1888,29 @@ class SettingsCategory {
 		this.container.querySelector('.red').on('click', () => this.delete());
 
 		return this.container;
+	}
+}
+
+class ExeReport {
+
+	constructor(report, reports) {
+
+		Object.assign(this, report);
+
+		this.reports = reports;
+	}
+
+	get row() {
+
+		const tr = document.createElement('tr');
+
+		tr.innerHTML = `
+			<td>${this.account_id}</td>
+			<td>${this.query_id}</td>
+			<td>${this.user_id}</td>
+			<td>${this.this.params}</td>
+		`;
+
+		return tr;
 	}
 }

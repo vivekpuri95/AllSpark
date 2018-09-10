@@ -219,3 +219,9 @@ main .about-list {
 	main .about-list button.clear-cache {
 		width: 10%;
 	}
+main .exe-reports {
+	padding: calc(var(--gap) * 2);
+}
+	main .exe-reports table {
+		margin-top: calc(var(--gap) * 2);
+	}

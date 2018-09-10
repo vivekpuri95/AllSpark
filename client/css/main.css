@@ -417,7 +417,8 @@ body {
 			}
 
 	main .section > h1,
-	main .section > h2 {
+	main .section > h2,
+	main .exe-reports > h1 {
 		border-bottom: 1px dashed #999;
 		margin: 0;
 		font-size: 130%;
