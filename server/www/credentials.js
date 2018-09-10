@@ -85,10 +85,12 @@ exports.list = class extends API {
 				}
 			}
 			if (row.target == 'role') {
+
 				connectionMap[row.owner_id]["role"].push(row);
 			}
 
 			if (row.target == 'user' && row.target_id == this.user.user_id) {
+
 				connectionMap[row.owner_id]["user"].push(row);
 			}
 		}
@@ -96,7 +98,7 @@ exports.list = class extends API {
 		for (const row of connections) {
 
 			row.role = connectionMap[row.id] ? connectionMap[row.id].role : [];
-			row.user = connectionMap[row.id] ? connectionMap[row.id].user : [];
+			row.users = connectionMap[row.id] ? connectionMap[row.id].user : [];
 
 			if (!(await auth.connection(row, this.user)).error) {
 

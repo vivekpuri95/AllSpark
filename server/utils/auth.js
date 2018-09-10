@@ -420,7 +420,7 @@ class Authenticate {
 				};
 			}
 
-			[connectionObj.user, connectionObj.role] = await Promise.all([
+			[connectionObj.users, connectionObj.role] = await Promise.all([
 				objRole.get(connectionObj.account_id, 'connection', 'user', connectionObj.id, user.user_id),
 				objRole.get(connectionObj.account_id, 'connection', 'role', connectionObj.id)
 			]);
@@ -439,7 +439,7 @@ class Authenticate {
 			};
 		}
 
-		userConnections = connectionObj.user;
+		userConnections = connectionObj.users;
 		connectionRoles = connectionObj.role;
 
 		connectionRoles = connectionRoles.map(x => [x.account_id, x.category_id, x.target_id]);

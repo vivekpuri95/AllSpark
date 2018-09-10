@@ -153,7 +153,7 @@ exports.list = class extends API {
 
 				connectionMapping[row.owner_id] = {
 					role: [],
-					user: [],
+					users: [],
 					account_id: this.account.account_id,
 					id: row.owner_id
 				}
@@ -183,7 +183,7 @@ exports.list = class extends API {
 
 				row.connectionObj = {
 					role: [],
-					user: [],
+					users: [],
 					account_id: this.account.account_id,
 					id: row.connection_name
 				}
