@@ -15,9 +15,10 @@ Page.class = class Connections extends Page {
 
 			this.container.querySelector('#add-data-connection').classList.remove('grey');
 			this.container.querySelector('#add-data-connection').on('click', () => {
-        DataConnection.add(this);
-        history.pushState({what: 'add'}, '', '/connections-manager/add');
-      })
+				DataConnection.add(this);
+				history.pushState({what: 'add'}, '', '/connections-manager/add');
+			});
+		}
 
 		this.container.querySelector('#add-oauth-connection').on('submit', e => OAuthConnection.insert(e));
 
@@ -453,7 +454,7 @@ class DataConnection {
 
 		if(container.querySelector('.red'))
 			container.querySelector('.red').on('click', () => this.delete());
-    
+
 		return container;
 	}
 }
