@@ -121,7 +121,7 @@ class Page {
 		const
 			navList = [
 				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
-				{url: '/dashboards-manager', name: 'Dashboards', privileges: ['dashboard'], icon: 'fa fa-newspaper'},
+				{url: '/dashboards-manager', name: 'Dashboards', privileges: ['dashboard', 'dashboard.list', 'dashboard.insert', 'dashboard.delete'], icon: 'fa fa-newspaper'},
 				{url: '/reports', name: 'Reports', privileges: ['report', 'report.insert', 'report.update'], icon: 'fa fa-database'},
 				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
 				{url: '/tasks', name: 'Tasks', privileges: ['task'], icon: 'fas fa-tasks'},

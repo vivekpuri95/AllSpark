@@ -166,7 +166,7 @@ exports.list = class extends API {
 
 			if (row.target == 'user') {
 
-				connectionMapping[row.owner_id]["user"].push(row);
+				connectionMapping[row.owner_id]["users"].push(row);
 			}
 		}
 
