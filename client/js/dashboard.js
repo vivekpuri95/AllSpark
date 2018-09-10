@@ -304,11 +304,6 @@ Page.class = class Dashboards extends Page {
 
 	async load(state) {
 
-		if(!this.user.privileges.has('dashboard.list')) {
-
-			return [];
-		}
-
 		await DataSource.load();
 
 		const
@@ -348,8 +343,6 @@ Page.class = class Dashboards extends Page {
 		this.navbar = new Navbar(this.list, this);
 
 		this.navbar.render();
-
-		console.log(await Storage.get('newUser'));
 
 		if(await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
 
