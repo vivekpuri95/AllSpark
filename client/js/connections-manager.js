@@ -10,10 +10,15 @@ Page.class = class Connections extends Page {
 
 		this.listContainer = this.container.querySelector('section#list');
 
-		this.container.querySelector('#add-data-connection').on('click', () => {
-			history.pushState({what: 'add'}, '', '/connections-manager/add');
-			DataConnection.add(this);
-		});
+
+		if(user.privileges.has('connection.insert')) {
+
+			this.container.querySelector('#add-data-connection').classList.remove('grey');
+			this.container.querySelector('#add-data-connection').on('click', () => {
+        DataConnection.add(this));
+        history.pushState({what: 'add'}, '', '/connections-manager/add');
+      }
+		}
 		this.container.querySelector('#add-oauth-connection').on('submit', e => OAuthConnection.insert(e));
 
 		OAuthConnection.validate();
@@ -436,16 +441,19 @@ class DataConnection {
 			<td>${this.id}</td>
 			<td>${this.connection_name}</td>
 			<td>${this.feature ? this.feature.name : ''}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			<td title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></td>
+			<td title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		container.querySelector('.green').on('click', () => {
-			history.pushState({what: this.id}, '', `/connections-manager/${this.id}`);
-			this.edit();
-		});
-		container.querySelector('.red').on('click', () => this.delete());
+		if(container.querySelector('.green'))
+			container.querySelector('.green').on('click', () => {
+        history.pushState({what: this.id}, '', `/connections-manager/${this.id}`);
+        this.edit();
+      });
 
+		if(container.querySelector('.red'))
+			container.querySelector('.red').on('click', () => this.delete());
+    
 		return container;
 	}
 }

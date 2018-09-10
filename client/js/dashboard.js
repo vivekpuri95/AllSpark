@@ -304,6 +304,11 @@ Page.class = class Dashboards extends Page {
 
 	async load(state) {
 
+		if(!this.user.privileges.has('dashboard.list')) {
+
+			return [];
+		}
+
 		await DataSource.load();
 
 		const

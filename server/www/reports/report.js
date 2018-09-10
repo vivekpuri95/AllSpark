@@ -14,9 +14,14 @@ exports.list = class extends API {
 		let query = `
 			SELECT
 				q.*,
-				CONCAT_WS(' ', u.first_name, u.last_name) AS added_by_name
+				CONCAT_WS(' ', u.first_name, u.last_name) AS added_by_name,
+				c.added_by as connection_added_by
 			FROM
 				tb_query q
+			JOIN
+				tb_credentials c
+			ON
+			    q.connection_name = c.id
 			LEFT JOIN
 				tb_users u
 			ON
@@ -82,7 +87,9 @@ exports.list = class extends API {
 			`);
 		}
 
-		let userCategories = new Set(this.user.privileges.filter(x => x.privilege_name === constants.privilege.administrator || x.privilege_name === constants.privilege.report).map(x => x.category_id));
+		let credentialObjectRoles = role.get(this.account.account_id, 'connection', ['user', 'role']);
+
+		let userCategories = new Set(this.user.privileges.filter(x => [constants.privilege.administrator, constants.privilege["report.update"]].includes(x.privilege_name)).map(x => x.category_id));
 		let isAdmin = false;
 
 		if(constants.adminPrivilege.some(x => userCategories.has(x))) {
@@ -97,13 +104,15 @@ exports.list = class extends API {
 			this.mysql.query('SELECT * FROM tb_query_filters'),
 			this.mysql.query('SELECT * FROM tb_query_visualizations'),
 			this.mysql.query(dashboardRoleQuery),
-			this.mysql.query(dashboardToReportAccessQuery, [this.user.user_id])
+			this.mysql.query(dashboardToReportAccessQuery, [this.user.user_id]),
+			credentialObjectRoles
 		]);
 
 		const reportRoles = await role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],);
 
 		const userSharedQueries = new Set((await role.get(this.account.account_id, "query", "user", results[0].length ? results[0].map(x => x.query_id) : [-1], this.user.user_id)).map(x => x.owner_id));
 		const dashboardSharedQueries = new Set(results[4].map(x => parseInt(x.query_id)));
+		credentialObjectRoles = results[5];
 
 		const reportRoleMapping = {};
 
@@ -136,6 +145,31 @@ exports.list = class extends API {
 			reportRoleMapping[queryDashboardRole.query_id].dashboard_roles.push(queryDashboardRole);
 		}
 
+		const connectionMapping = {};
+
+		for(const row of credentialObjectRoles) {
+
+			if(!connectionMapping[row.owner_id]) {
+
+				connectionMapping[row.owner_id] = {
+					role: [],
+					users: [],
+					account_id: this.account.account_id,
+					id: row.owner_id
+				}
+			}
+
+			if (row.target == 'role') {
+
+				connectionMapping[row.owner_id]["role"].push(row);
+			}
+
+			if (row.target == 'user') {
+
+				connectionMapping[row.owner_id]["users"].push(row);
+			}
+		}
+
 		const response = [];
 
 		for (const row of results[0]) {
@@ -144,6 +178,23 @@ exports.list = class extends API {
 			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [];
 
 			row.flag = userSharedQueries.has(row.query_id) || dashboardSharedQueries.has(row.query_id);
+
+			if(!connectionMapping[row.connection_name]) {
+
+				row.connectionObj = {
+					role: [],
+					users: [],
+					account_id: this.account.account_id,
+					id: row.connection_name
+				}
+			}
+
+			else {
+
+				row.connectionObj = connectionMapping[row.connection_name];
+			}
+
+			row.connectionObj.added_by = row.connection_added_by;
 
 			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
 				continue;
@@ -197,7 +248,7 @@ exports.update = class extends API {
 
 		for(const category of categories || [0]) {
 
-			this.user.privilege.needs('report', category);
+			this.user.privilege.needs('report.update', category);
 		}
 
 		this.assert(updatedRow, 'Invalid query id');
@@ -273,7 +324,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('report', parseInt(this.request.body.subtitle));
+		this.user.privilege.needs('report.insert', parseInt(this.request.body.subtitle));
 
 		let
 			values = {}, query_cols = [

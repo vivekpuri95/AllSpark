@@ -120,12 +120,12 @@ class Page {
 
 		const
 			navList = [
-				{url: '/users-manager', name: 'Users', privilege: 'user', icon: 'fas fa-users'},
-				{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboard', icon: 'fa fa-newspaper'},
-				{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
-				{url: '/connections-manager', name: 'Connections', privilege: 'connection', icon: 'fa fa-server'},
-				{url: '/tasks', name: 'Tasks', privilege: 'task', icon: 'fas fa-tasks'},
-				{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
+				{url: '/dashboards-manager', name: 'Dashboards', privileges: ['dashboard', 'dashboard.list', 'dashboard.insert', 'dashboard.delete'], icon: 'fa fa-newspaper'},
+				{url: '/reports', name: 'Reports', privileges: ['report', 'report.insert', 'report.update'], icon: 'fa fa-database'},
+				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
+				{url: '/tasks', name: 'Tasks', privileges: ['task'], icon: 'fas fa-tasks'},
+				{url: '/settings', name: 'Settings', privileges: ['administrator'], icon: 'fas fa-cog'},
 			],
 			header = document.querySelector('body > header'),
 			navContainer = header.querySelector('.nav-container'),
@@ -190,7 +190,7 @@ class Page {
 
 		for(const item of navList) {
 
-			if(!window.user || !user.privileges.has(item.privilege))
+			if(!window.user || item.privileges.every(p => !user.privileges.has(p)))
 				continue;
 
 			nav.insertAdjacentHTML('beforeend',`

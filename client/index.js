@@ -680,7 +680,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 				<h1>Dashboard Manager</h1>
 
 				<form class="toolbar">
-					<button type="button" id="add-dashboard">
+					<button type="button" class="grey" id="add-dashboard">
 						<i class="fa fa-plus"></i>
 						Add New Dashboard
 					</button>
@@ -782,7 +782,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 					<form class="toolbar filters">
 
-						<button type="button" id="add-report">
+						<button type="button" class="grey" id="add-report">
 							<i class="fa fa-plus"></i>
 							Add New Report
 						</button>
@@ -1241,7 +1241,7 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 				<h1>Data Connections</h1>
 
 				<div class="toolbar filters">
-					<button type="button" id="add-data-connection">
+					<button type="button" id="add-data-connection" class="grey">
 						<i class="fa fa-plus"></i>
 						Add New Connection
 					</button>

@@ -39,17 +39,11 @@ class report extends API {
 			this.mysql.query(`
 				SELECT
                   q.*,
-                  IF(user_id IS NULL AND d.query_id is null, 0, 1) AS flag,
+                  IF(user_id IS NULL AND userDashboard.query_id IS NULL, 0, 1) AS flag,
                   c.type,
 				  c.project_name
                 FROM
 				tb_query q
-				
-				JOIN
-					tb_credentials c
-				ON 
-					q.connection_name = c.id
-					
                 JOIN
           			(
                 		SELECT
@@ -63,30 +57,49 @@ class report extends API {
                 			tb_query_visualizations qv
                 			USING(visualization_id)
                 		WHERE
-                			target_id = ?
+                			target_id = ? -- user_id
                 			AND query_id = ?
                 			AND OWNER = 'dashboard'
                 			AND target = 'user'
-                			and account_id = ?
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id
                 		LIMIT 1
-                	) d
-                LEFT JOIN
-				 tb_user_query uq ON
-				 uq.query_id = q.query_id
-				 AND user_id = ?
+                	) userDashboard
+                JOIN
+				(
+				    SELECT
+				        owner_id AS user_id
+				    FROM
+				        tb_object_roles o
+				    WHERE
+				        owner_id = ? -- query
+				        AND target_id = ? -- user
+				        AND OWNER = 'query'
+				        AND target = 'user'
+				        
+				    UNION ALL
+				    
+				    SELECT
+				        NULL AS user_id
+				        
+					LIMIT 1
+				) AS queryUser
+				
+				JOIN
+					tb_credentials c
+				ON
+					q.connection_name = c.id
+					
                 WHERE
-				q.query_id = ?
-				AND is_enabled = 1
-				AND is_deleted = 0
-				AND q.account_id = ?
-				AND c.account_id = ?
-				AND c.status = 1
-					`,
+					q.query_id = ?
+					AND is_enabled = 1
+					AND is_deleted = 0
+					AND q.account_id = ?
+					AND c.status = 1
+				`,
 
-				[this.user.user_id, this.reportId, this.account.account_id, this.user.user_id, this.reportId, this.account.account_id, this.account.account_id],
+				[this.user.user_id, this.reportId, this.reportId, this.user.user_id, this.reportId, this.account.account_id, this.account.account_id],
 			),
 
 			this.mysql.query(`select * from tb_query_filters where query_id = ?`, [this.reportId]),
@@ -460,10 +473,6 @@ class report extends API {
 		catch (e) {
 
 			console.error(e.stack);
-			if (e.message.includes("<!DOCTYPE")) {
-
-				e.message = e.message.slice(0, e.message.indexOf("<!DOCTYPE")).trim();
-			}
 			throw new API.Exception(400, e.message);
 		}
 
