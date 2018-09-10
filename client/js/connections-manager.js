@@ -15,10 +15,10 @@ Page.class = class Connections extends Page {
 
 			this.container.querySelector('#add-data-connection').classList.remove('grey');
 			this.container.querySelector('#add-data-connection').on('click', () => {
-        DataConnection.add(this));
+        DataConnection.add(this);
         history.pushState({what: 'add'}, '', '/connections-manager/add');
-      }
-		}
+      })
+
 		this.container.querySelector('#add-oauth-connection').on('submit', e => OAuthConnection.insert(e));
 
 		OAuthConnection.validate();
