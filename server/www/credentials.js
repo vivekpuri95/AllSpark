@@ -88,7 +88,7 @@ exports.list = class extends API {
 				connectionMap[row.owner_id]["role"].push(row);
 			}
 
-			if (row.target == 'user') {
+			if (row.target == 'user' && row.target_id == this.user.user_id) {
 				connectionMap[row.owner_id]["user"].push(row);
 			}
 		}
