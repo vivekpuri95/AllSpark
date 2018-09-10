@@ -7863,7 +7863,11 @@ class ReportLogs extends Set {
 
 		container.innerHTML = `
 			<div class="list">
+				<h3>${this.ownerName.slice(0,1).toUpperCase() + this.ownerName.slice(1)} History</h3>
 				<ul></ul>
+				<div class="loading">
+					<span><i class="fa fa-spinner fa-spin"></i></span>
+				</div>
 				<div class="footer hidden">
 					<span class="more">
 						<i class="fa fa-angle-down"></i>
@@ -7894,8 +7898,7 @@ class ReportLogs extends Set {
 
 	async load() {
 
-		this.container.querySelector('.list ul').innerHTML = '<li class="loading"><span><i class="fa fa-spinner fa-spin"></i></span></li>';
-		this.container.querySelector('.list .footer').classList.add('hidden');
+		this.container.querySelector('.list .loading').classList.remove('hidden');
 
 		const
 			parameters = {
@@ -7924,18 +7927,19 @@ class ReportLogs extends Set {
 			return;
 		}
 
-		this.container.querySelector('.list .footer').classList.remove('hidden');
-
-		logList.textContent = null;
-
 		this.container.querySelector('.list .footer .more').classList.remove('hidden');
 		this.container.querySelector('.info').classList.add('hidden');
 		this.container.querySelector('.list').classList.remove('hidden');
 
 		for(const log of this.values()) {
 
+			if(logList.contains(log.container))
+				continue;
+
 			logList.appendChild(log.container);
 		}
+
+		this.container.querySelector('.list .loading').classList.add('hidden');
 
 		if(this.currentResponse.length < 10) {
 
@@ -7943,6 +7947,7 @@ class ReportLogs extends Set {
 		}
 
 		this.container.querySelector('.list .showing').textContent = `Showing: ${this.size}`;
+		this.container.querySelector('.list .footer').classList.remove('hidden');
 	}
 
 	toggle(condition) {
