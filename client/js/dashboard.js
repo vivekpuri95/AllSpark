@@ -1059,7 +1059,7 @@ class Navbar {
 
 		for (const dashboardItem of this.list.values()) {
 
-			if (!dashboardItem.dashboard.parent) {
+			if (!dashboardItem.dashboard.parent || !this.list.has(dashboardItem.dashboard.parent)) {
 
 				dashboardHirachy.append(dashboardItem.menuItem);
 			}
