@@ -127,7 +127,7 @@ Page.class = class Dashboards extends Page {
 			return parents
 		}
 
-		while (dashboard && dashboard.parent && this.page.list.has(dashboard.parent)) {
+		while (dashboard && dashboard.parent && this.list.has(dashboard.parent)) {
 
 			parents.push(dashboard.parent);
 			dashboard = this.list.get(dashboard.parent);
