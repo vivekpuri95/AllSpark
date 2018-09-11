@@ -328,7 +328,7 @@ Settings.list.set('categories', class Categories extends SettingPage {
 	}
 });
 
-Settings.list.set('executingReports', class ExeReports extends SettingPage {
+Settings.list.set('executingReports', class ExecutingReports extends SettingPage {
 
 	get name() {
 
@@ -364,7 +364,7 @@ Settings.list.set('executingReports', class ExeReports extends SettingPage {
 
 			report.report_name = DataSource.list.get(report.query_id).name;
 			[report.user] = users.filter(x => report.user_id == x.user_id);
-			this.executingReports.add(new ExeReport(report, this));
+			this.executingReports.add(new ExecutingReport(report, this));
 		}
 
 		await this.render();
@@ -1946,7 +1946,7 @@ class SettingsCategory {
 	}
 }
 
-class ExeReport {
+class ExecutingReport {
 
 	constructor(report, reports) {
 
