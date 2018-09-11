@@ -338,7 +338,7 @@ exports.list = class extends API {
 
 				const categories = x.roles.map(c => parseInt(c.category_id));
 
-				return userCategories.every(cat => categories.includes(parseInt(cat)));
+				return userCategories.every(cat => categories.includes(parseInt(cat))) || x.added_by == this.user.user_id;
 			});
 		}
 
