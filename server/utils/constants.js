@@ -11,7 +11,7 @@ exports.adminPrivilege = [0];
 exports.privilege = {
 	administrator: "Everything",
 	user: "user",
-	"user.insert": "user",
+	"user.insert": "user.insert",
 	"user.update": "user.update",
 	"user.delete": "user.delete",
 	"user.list": "user.list",
