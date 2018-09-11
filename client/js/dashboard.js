@@ -180,6 +180,12 @@ Page.class = class Dashboards extends Page {
 			for (const element of parentDashboards) {
 
 				const label = this.nav.querySelector(`#${element}`);
+
+				if(!label) {
+
+					continue;
+				}
+
 				const submenu = label.parentElement.querySelector('.submenu');
 
 				submenu && submenu.classList.remove('hidden');
