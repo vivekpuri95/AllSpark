@@ -691,21 +691,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 					</button>
 				</form>
 
-				<table class="block">
-					<thead>
-						<tr>
-							<th class="thin">ID</th>
-							<th>Name</th>
-							<th>Parents</th>
-							<th>Icon</th>
-							<th>Order</th>
-							<th class="action">Edit</th>
-							<th class="action">Delete</th>
-						</tr>
-					</thead>
-
-					<tbody></tbody>
-				</table>
+				<div class="dashboards block"></div>
 			</section>
 
 			<section class="section" id="form">

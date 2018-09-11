@@ -30,3 +30,41 @@ main #form .report {
 main h2.share-heading {
 	margin: calc(var(--gap) * 2) 0;
 }
+main .dashboards {
+	display: flex;
+	flex-direction: column;
+	color: #aaa;
+}
+	main .dashboards .parent {
+		display: grid;
+		grid-gap: 10px;
+		padding: 10px;
+	}
+		main .dashboards .sub-dashboards .child {
+			padding: 0;
+		}
+			main .dashboards .sub-dashboards .first .name {
+				margin-left: 20px;
+			}
+		main .dashboards .parent .first {
+			grid-template-columns: 1fr 1fr repeat(2, 15px);
+			display: grid;
+			grid-gap: 10px;
+			cursor: pointer;
+		}
+		main .dashboards .parent .first:hover .action {
+			opacity: 1;
+			color: #777;
+		}
+			main .dashboards .parent .first .name {
+				letter-spacing: 0.5px;
+				font-weight: bold;
+				color: #777;
+			}
+				main .dashboards .parent .first .name a {
+					color: #777;
+				}
+			main .dashboards .parent .first .action {
+				opacity: 0;
+				transition: opacity var(--transition-duration);
+			}

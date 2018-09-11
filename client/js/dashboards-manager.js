@@ -111,21 +111,35 @@ Page.class = class DashboardManager extends Page {
 
 		this.list.clear();
 
-		for(const dashboard of this.response || [])
+		for(const dashboard of this.response || []) {
+
+			dashboard.children = new Map();
 			this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this));
+		}
+
+		for(const dashboard of this.list.values()) {
+
+			if(dashboard.parent && this.list.has(dashboard.parent)) {
+
+				(this.list.get(dashboard.parent)).children.set(dashboard.id, dashboard);
+				this.list.delete(dashboard.id);
+			}
+		}
 	}
 
 	render() {
 
-		const container = this.container.querySelector('table tbody');
+		const container = this.container.querySelector('.dashboards');
 
 		container.textContent = null;
 
+		// container.appendChild(this.appendRows(this.list.values()));
+
 		for(const dashboard of this.list.values())
-			container.appendChild(dashboard.row);
+			container.appendChild(dashboard.getDashboardContainer());
 
 		if(!this.list.size)
-			container.innerHTML = `<tr class="NA"><td colspan="2">No dashboards found!</td></tr>`;
+			container.innerHTML = `<div class="NA">No dashboards found!</div>`;
 
 		const datalist = [];
 
@@ -363,26 +377,21 @@ class DashboardsDashboard {
 		}
 	}
 
-	get row() {
+	getDashboardContainer() {
 
 		if(this.container)
 			return this.container;
 
-		this.container = document.createElement('tr');
+		this.container = document.createElement('div');
+		this.container.classList.add('parent');
 
 		this.container.innerHTML = `
-			<td>${this.id}</td>
-			<td><a href="/dashboard/${this.id}">${this.name}</a></td>
-			<td>
-				${this.parents.length ? this.parents.reverse().map(d => `
-					<a href="/dashboard/${d.id}" target="_blank">${d.name}</a>
-					<span class="NA">#${d.id}</span>
-				`).join(' &rsaquo; ') : ''}
-			</td>
-			<td>${this.icon || ''}</td>
-			<td>${this.order || ''}</td>
-			<td title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}">Edit</td>
-			<td title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}">Delete</td>
+			<div class="first">
+				<div class="name"><a href="/dashboard/${this.id}">${this.name}</a> <span>#${this.id}</span></div>
+				<div>Order: ${this.order || ''}</div>
+				<div title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></div>
+				<div title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></div>
+			</div>
 		`;
 
 		if(this.container.querySelector('.green')) {
@@ -394,6 +403,19 @@ class DashboardsDashboard {
 
 		if(this.container.querySelector('.red')) {
 			this.container.querySelector('.red').on('click', async() => this.delete());
+		}
+
+		if(this.children.size) {
+
+			this.container.insertAdjacentHTML('beforeend', `
+				<div class="sub-dashboards"></div>
+			`);
+
+			for(const child of this.children.values()) {
+
+				this.container.querySelector('div.sub-dashboards').appendChild(child.getDashboardContainer());
+				child.getDashboardContainer().classList.add('child')
+			}
 		}
 
 		return this.container;
