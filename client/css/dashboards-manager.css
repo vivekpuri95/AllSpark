@@ -38,7 +38,7 @@ main .dashboards {
 	main .dashboards .parent {
 		display: grid;
 		grid-gap: 5px;
-		margin-bottom: 10px;
+		padding: 10px;
 	}
 		main .dashboards .sub-dashboards {
 			display: grid;
@@ -49,17 +49,15 @@ main .dashboards {
 			margin: 0;
 			box-shadow: none;
 		}
-			main .dashboards .sub-dashboards .first {
-				margin-left: 20px;
-			}
+			main .dashboards .sub-dashboards .first {}
+				main .dashboards .sub-dashboards .first .name {
+					margin-left: 20px;
+				}
 		main .dashboards .parent .first {
 			grid-template-columns: 1fr 1fr repeat(2, 15px);
 			display: grid;
 			grid-gap: 10px;
 			cursor: pointer;
-			background: #fff;
-			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-			padding: 10px;
 		}
 		main .dashboards .parent .first:hover .action {
 			opacity: 1;
