@@ -38,26 +38,30 @@ main .dashboards {
 	main .dashboards .parent {
 		display: grid;
 		grid-gap: 5px;
-		padding: 10px;
+		margin-bottom: 10px;
 	}
 		main .dashboards .sub-dashboards {
 			display: grid;
 			grid-gap: 5px;
-			grid-column: 1 / 5;
 		}
 		main .dashboards .sub-dashboards .child {
 			padding: 0;
+			margin: 0;
+			box-shadow: none;
 		}
-			main .dashboards .sub-dashboards .name {
+			main .dashboards .sub-dashboards .first {
 				margin-left: 20px;
 			}
-		main .dashboards .parent {
+		main .dashboards .parent .first {
 			grid-template-columns: 1fr 1fr repeat(2, 15px);
 			display: grid;
-			grid-gap: 5px;
+			grid-gap: 10px;
 			cursor: pointer;
+			background: #fff;
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+			padding: 10px;
 		}
-		main .dashboards .parent:hover .action {
+		main .dashboards .parent .first:hover .action {
 			opacity: 1;
 			color: #777;
 		}

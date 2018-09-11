@@ -386,15 +386,17 @@ class DashboardsDashboard {
 		this.container.classList.add('parent');
 
 		this.container.innerHTML = `
-			<div class="name">
-				<span class="arrow">
-				</span>
-				<a href="/dashboard/${this.id}">${this.name}</a>
-				<span>#${this.id}</span>
-			</div>
-			<div>Order: ${this.order || ''}</div>
-			<div title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></div>
-			<div title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></div>
+			<div class="first">
+				<div class="name">
+					<span class="arrow">
+					</span>
+					<a href="/dashboard/${this.id}">${this.name}</a>
+					<span>#${this.id}</span>
+				</div>
+				<div>Order: ${this.order || ''}</div>
+				<div title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></div>
+				<div title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></div>
+			</div>			
 		`;
 
 		if(this.container.querySelector('.green')) {
@@ -420,7 +422,7 @@ class DashboardsDashboard {
 
 				arrow.removeEventListener('click', arrow.clickListener);
 
-				arrow.innerHTML = '<i class="fas fa-caret-right"></i>';
+				arrow.innerHTML = '<i class="fas fa-angle-right"></i>';
 
 				this.container.querySelector('div.sub-dashboards').appendChild(child.getDashboardContainer());
 				child.getDashboardContainer().classList.add('child');
@@ -431,11 +433,11 @@ class DashboardsDashboard {
 
 					if(this.container.querySelector('div.sub-dashboards').classList.contains('hidden')) {
 
-						arrow.innerHTML = '<i class="fas fa-caret-right"></i>';
+						arrow.innerHTML = '<i class="fas fa-angle-right"></i>';
 					}
 					else {
 
-						arrow.innerHTML = '<i class="fas fa-caret-down"></i>';
+						arrow.innerHTML = '<i class="fas fa-angle-down"></i>';
 					}
 
 				});

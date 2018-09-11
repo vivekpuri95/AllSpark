@@ -691,7 +691,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 					</button>
 				</form>
 
-				<div class="dashboards block"></div>
+				<div class="dashboards"></div>
 			</section>
 
 			<section class="section" id="form">
