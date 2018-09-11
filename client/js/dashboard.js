@@ -896,7 +896,7 @@ class Dashboard {
 		const dashboardName = this.page.container.querySelector('.dashboard-name');
 
 		dashboardName.innerHTML = `
-			<span>${this.page.parents(this.id).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
+			<span>${this.page.parents(this.id).filter(x => this.page.list.has(x)).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
 			<div>
 				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
 			</div>
