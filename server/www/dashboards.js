@@ -190,7 +190,7 @@ class Dashboard extends API {
 				continue;
 			}
 
-			const dashboardCategories = (dashboardRolesMapping[dashboard.id] || []).map(x => x.category_id);
+			const dashboardCategories = (dashboardRolesMapping[dashboard.id] || []).map(x => x[1]);
 
 			const updateFlag = dashboardUpdateCategories.some(cat => dashboardCategories.includes(parseInt(cat)));
 			const deleteFlag = dashboardDeleteCategories.some(cat => dashboardCategories.includes(parseInt(cat)));
