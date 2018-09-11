@@ -92,8 +92,8 @@ class Dashboard extends API {
 
 		const objRole = new getRole();
 
-		const dashboardsRolesList = await objRole.get(this.account.account_id, "dashboard", "role", dashboards.map(x => x.id));
-		const dashboardUserList = await objRole.get(this.account.account_id, "dashboard", "user", dashboards.map(x => x.id), this.user.user_id);
+		const dashboardsRolesList = await objRole.get(this.account.account_id, "dashboard", "role", dashboards.length ? dashboards.map(x => x.id) : 0);
+		const dashboardUserList = await objRole.get(this.account.account_id, "dashboard", "user", dashboards.length ? dashboards.map(x => x.id) : 0, this.user.user_id);
 
 		const dashboardRolesMapping = {}, dashboardUsersMapping = {};
 
