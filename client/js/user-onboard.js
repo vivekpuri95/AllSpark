@@ -125,6 +125,8 @@ class UserOnboard {
 			this.dialogBox.container.classList.add('user-onboarding-welcome');
 		}
 
+		document.body.querySelector('.setup-stages').classList.add('blur');
+
 		this.dialogBox.body.innerHTML = `
 
 			<h2>Let's Get <strong>You Started!</strong></h2>
