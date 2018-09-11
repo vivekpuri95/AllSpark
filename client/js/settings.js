@@ -347,22 +347,23 @@ Settings.list.set('executingReports', class ExeReports extends SettingPage {
 
 	async load() {
 
-		// const reports = await API.call('reports/engine/executingReports');
+		const options = {
+			method: 'POST',
+		};
 
-		const reports = [ {
-			user_id: 787,
-			query_id: 581,
-			account_id: 1,
-			params: {
-				type: "mysql",
-				request: ["SELECT * FROM ( ( SELECT COUNT(*) AS signups FROM …ROUP BY u.user_id ) AS pa ) AS new_paying_users )", ["2018-08-01", "2018-08-31", "2018-08-01", "2018-08-31", "2018-08-31", "2018-08-01", "2018-08-01", "2018-08-01", "2018-08-31", "2018-08-01", "2018-08-01", "2018-08-01"], 12]
-			}
-		}];
+		const [reports, users] = await Promise.all([
+			API.call('reports/engine/executingReports'),
+			API.call('users/list', {}, options)
+		]);
 
 		this.executingReports = new Set();
 
+		await DataSource.load();
+
 		for(const report of reports) {
 
+			report.report_name = DataSource.list.get(report.query_id).name;
+			[report.user] = users.filter(x => report.user_id == x.user_id);
 			this.executingReports.add(new ExeReport(report, this));
 		}
 
@@ -390,7 +391,9 @@ Settings.list.set('executingReports', class ExeReports extends SettingPage {
 					<tr>
 						<th>Account Id</th>
 						<th>Query Id</th>
+						<th>Report Name</th>
 						<th>User Id</th>
+						<th>User Name</th>
 						<th>Connection Type</th>
 					</tr>
 				</thead>
@@ -1959,9 +1962,35 @@ class ExeReport {
 		tr.innerHTML = `
 			<td>${this.account_id}</td>
 			<td>${this.query_id}</td>
+			<td>${this.report_name}</td>
 			<td>${this.user_id}</td>
+			<td>${[this.user.first_name, this.user.middle_name, this.user.last_name].filter(x => x).join(' ')}</td>
 			<td>${this.params.type}</td>
 		`;
+
+		tr.on('click', () => {
+
+			if(!this.queryDialog)
+				this.queryDialog = new DialogBox();
+
+			this.queryDialog.heading = this.report_name;
+
+			const
+				editor = new CodeEditor({mode: 'sql'});
+
+			editor.editor.setTheme('ace/theme/clouds');
+			editor.editor.setReadOnly(true);
+
+			editor.value = this.params.request[0];
+
+			this.queryDialog.body.classList.add('exe-query-info');
+
+			this.queryDialog.body.innerHTML = `<h3>Query:</h3>`;
+
+			this.queryDialog.body.appendChild(editor.container);
+
+			this.queryDialog.show();
+		});
 
 		return tr;
 	}

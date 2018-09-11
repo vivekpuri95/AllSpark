@@ -1834,6 +1834,7 @@ class DialogBox {
 
 		document.querySelector('main').classList.remove('blur');
 		document.querySelector('header').classList.remove('blur');
+
 		this.container.classList.add('hidden');
 	}
 
@@ -1857,6 +1858,7 @@ class DialogBox {
 
 		document.querySelector('main').classList.add('blur');
 		document.querySelector('header').classList.add('blur');
+
 		this.container.classList.remove('hidden');
 	}
 }
