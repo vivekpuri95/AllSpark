@@ -37,34 +37,46 @@ main .dashboards {
 }
 	main .dashboards .parent {
 		display: grid;
-		grid-gap: 10px;
+		grid-gap: 5px;
 		padding: 10px;
 	}
+		main .dashboards .sub-dashboards {
+			display: grid;
+			grid-gap: 5px;
+			grid-column: 1 / 5;
+		}
 		main .dashboards .sub-dashboards .child {
 			padding: 0;
 		}
-			main .dashboards .sub-dashboards .first .name {
+			main .dashboards .sub-dashboards .name {
 				margin-left: 20px;
 			}
-		main .dashboards .parent .first {
+		main .dashboards .parent {
 			grid-template-columns: 1fr 1fr repeat(2, 15px);
 			display: grid;
-			grid-gap: 10px;
+			grid-gap: 5px;
 			cursor: pointer;
 		}
-		main .dashboards .parent .first:hover .action {
+		main .dashboards .parent:hover .action {
 			opacity: 1;
 			color: #777;
 		}
-			main .dashboards .parent .first .name {
+			main .dashboards .parent .name {
 				letter-spacing: 0.5px;
 				font-weight: bold;
 				color: #777;
+				align-items: center;
+				display: flex;
 			}
-				main .dashboards .parent .first .name a {
+				main .dashboards .parent .name a {
 					color: #777;
+					margin: 0 5px;
 				}
-			main .dashboards .parent .first .action {
+				main .dashboards .name i {
+					color: var(--color-accent);
+					font-size: 20px;
+				}
+			main .dashboards .parent .action {
 				opacity: 0;
 				transition: opacity var(--transition-duration);
 			}
