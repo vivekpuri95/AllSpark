@@ -1087,7 +1087,7 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 				<h1>Manage Users</h1>
 
 				<header class="toolbar">
-					<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
+					<button id="add-user" class="grey"><i class="fa fa-plus"></i> Add New User</button>
 				</header>
 
                 <form class="user-search block form">

@@ -16,7 +16,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('connection.insert');
+		this.user.privilege.needs('connection.insert', 'ignore');
 
 		const response = await this.mysql.query(
 			'INSERT INTO tb_credentials(account_id, connection_name, host, port, user, password, db, `limit`, type, file, project_name, added_by) VALUES (?)',
@@ -58,7 +58,7 @@ exports.list = class extends API {
 
 	async list() {
 
-		this.user.privilege.needs('connection.list');
+		this.user.privilege.needs('connection.list', 'ignore');
 
 		const
 			response = [],
@@ -380,7 +380,7 @@ exports.schema = class extends API {
 
 	async schema() {
 
-		this.user.privilege.needs('connection.list');
+		this.user.privilege.needs('connection.list', 'ignore');
 
 		const authResponse = await auth.connection(this.request.query.id, this.user);
 		this.assert(!authResponse.error, authResponse.message);

@@ -26,9 +26,9 @@ exports.insert = class extends API {
 
 		return await this.mysql.query(
 			`INSERT INTO
-				tb_users (account_id, email, first_name, last_name, middle_name, password)
+				tb_users (account_id, email, first_name, last_name, middle_name, password, added_by)
 			VALUES
-				(?, ?, ?, ?, ?, ?)
+				(?, ?, ?, ?, ?, ?, ?)
 			`,
 			[
 				this.account.account_id,
@@ -36,7 +36,8 @@ exports.insert = class extends API {
 				this.request.body.first_name,
 				this.request.body.last_name,
 				this.request.body.middle_name,
-				password
+				password,
+				this.user.user_id,
 			],
 			'write'
 		);
@@ -338,7 +339,7 @@ exports.list = class extends API {
 
 				const categories = x.roles.map(c => parseInt(c.category_id));
 
-				return userCategories.every(cat => categories.includes(parseInt(cat)));
+				return userCategories.every(cat => categories.includes(parseInt(cat))) || x.added_by == this.user.user_id;
 			});
 		}
 
