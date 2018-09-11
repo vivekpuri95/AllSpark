@@ -141,10 +141,17 @@ class UserManage {
 		UserManage.form = UserManage.container.querySelector('form');
 		UserManage.heading = UserManage.container.querySelector('h1');
 
-		document.querySelector('section#list #add-user').on('click', () => {
-			UserManage.add();
-			history.pushState({what: 'add'}, '', `/users-manager/add`);
-		});
+		if(user.privileges.has('user.insert')) {
+
+			const addUser = document.querySelector('section#list #add-user');
+
+			addUser.classList.remove('grey');
+
+			addUser.on('click', () => {
+				UserManage.add();
+				history.pushState({what: 'add'}, '', `/users-manager/add`);
+			});
+		}
 
 		UserManage.container.querySelector('#cancel-form').on('click', UserManage.back);
 	}
