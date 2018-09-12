@@ -17,24 +17,6 @@ Page.class = class DashboardManager extends Page {
 			});
 		}
 
-
-		this.listContainer.querySelector('#import-dashboard').on('click', () => {
-
-			const importButton = document.createElement('input');
-			importButton.setAttribute('type', 'file');
-			importButton.click();
-
-			importButton.on('change', (selection) => {
-				if (!selection.target || !selection.target.files[0])
-					return;
-				const selectedFile = selection.target.files[0];
-
-				const reader = new FileReader();
-				reader.onload = this.sendImported;
-				reader.readAsText(selectedFile);
-			});
-		});
-
 		DashboardsDashboard.setup(this);
 
 		this.parentDashboardMultiselect = new MultiSelect({multiple: false});
@@ -49,28 +31,6 @@ Page.class = class DashboardManager extends Page {
 		})();
 
 		window.on('popstate', e => this.loadState(e.state));
-	}
-
-	async sendImported(loaded) {
-
-		try {
-			JSON.parse(loaded.target.result);
-		}
-		catch (e) {
-			alert('Invalid Json Format');
-			return;
-		}
-
-		const parameters = {
-			json: loaded.target.result
-		};
-		const options = {
-			method: 'POST'
-		};
-
-		await API.call('import/dashboard', parameters, options);
-
-		await DashboardsDashboard.page.load();
 	}
 
 	async loadState(state) {
@@ -113,17 +73,8 @@ Page.class = class DashboardManager extends Page {
 
 		for(const dashboard of this.response || []) {
 
-			dashboard.children = new Map();
-			this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this));
-		}
-
-		for(const dashboard of this.list.values()) {
-
-			if(dashboard.parent && this.list.has(dashboard.parent)) {
-
-				(this.list.get(dashboard.parent)).children.set(dashboard.id, dashboard);
-				this.list.delete(dashboard.id);
-			}
+			if(!dashboard.parent)
+				this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this.response, this));
 		}
 	}
 
@@ -132,8 +83,6 @@ Page.class = class DashboardManager extends Page {
 		const container = this.container.querySelector('.dashboards');
 
 		container.textContent = null;
-
-		// container.appendChild(this.appendRows(this.list.values()));
 
 		for(const dashboard of this.list.values())
 			container.appendChild(dashboard.getDashboardContainer());
@@ -248,12 +197,20 @@ class DashboardsDashboard {
 		}
 	}
 
-	constructor(data, page) {
+	constructor(data, dashboards, page) {
 
 		for(const key in data)
 			this[key] = data[key];
 
 		this.page = page;
+
+		this.children = new Map;
+
+		for(const dashboard of dashboards) {
+
+			if(dashboard.parent == this.id)
+				this.children.set(dashboard.id, new DashboardsDashboard(dashboard, dashboards, page))
+		}
 	}
 
 	async edit() {
@@ -396,7 +353,7 @@ class DashboardsDashboard {
 				<div>Order: ${this.order || ''}</div>
 				<div title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></div>
 				<div title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></div>
-			</div>			
+			</div>
 		`;
 
 		if(this.container.querySelector('.green')) {
@@ -413,34 +370,32 @@ class DashboardsDashboard {
 		if(this.children.size) {
 
 			this.container.insertAdjacentHTML('beforeend', `
-				<div class="sub-dashboards hidden"></div>
+				<div class="sub-dashboards"></div>
 			`);
+
+			const arrow = this.container.querySelector('.name .arrow');
+
+			arrow.removeEventListener('click', arrow.clickListener);
+			arrow.innerHTML = `
+				<i class="fas fa-angle-right right-arrow hidden"></i>
+				<i class="fas fa-angle-down down-arrow"></i>
+`			;
+
+			arrow.on('click', arrow.clickListener = e => {
+
+				this.container.querySelector('div.sub-dashboards').classList.toggle('hidden');
+
+				const subDashboardsHidden = this.container.querySelector('div.sub-dashboards').classList.contains('hidden');
+
+				arrow.querySelector('.right-arrow').classList.toggle('hidden', subDashboardsHidden);
+				arrow.querySelector('.down-arrow').classList.toggle('hidden', !subDashboardsHidden);
+
+			});
 
 			for(const child of this.children.values()) {
 
-				const arrow = this.container.querySelector('.name .arrow');
-
-				arrow.removeEventListener('click', arrow.clickListener);
-
-				arrow.innerHTML = '<i class="fas fa-angle-right"></i>';
-
 				this.container.querySelector('div.sub-dashboards').appendChild(child.getDashboardContainer());
 				child.getDashboardContainer().classList.add('child');
-
-				arrow.on('click', arrow.clickListener = e => {
-
-					this.container.querySelector('div.sub-dashboards').classList.toggle('hidden');
-
-					if(this.container.querySelector('div.sub-dashboards').classList.contains('hidden')) {
-
-						arrow.innerHTML = '<i class="fas fa-angle-right"></i>';
-					}
-					else {
-
-						arrow.innerHTML = '<i class="fas fa-angle-down"></i>';
-					}
-
-				});
 			}
 		}
 

@@ -1,84 +1,114 @@
-main #form .report {
-	display: flex;
-	transition: opacity var(--transition-duration);
+body {
+	height: 100vh;
+	background: #fff;
 }
-	main #form .report label {
-		margin: 5px;
-		min-width: 125px;
+main {
+	background: inherit;
+}
+	main #form .report {
+		display: flex;
+		transition: opacity var(--transition-duration);
 	}
-		main #form .report input {
-			margin: 0 !important;
+		main #form .report label {
+			margin: 5px;
+			min-width: 125px;
 		}
-
-		main #form .save,
-		main #form .delete {
-			min-width: 60px !important;
-			max-width: 60px;
-		}
-		main #dashboard-form .red {
-			box-shadow: inset -15px 0 #f66;
-		}
-
-		main #form #format {
-			max-width: inherit;
-		}
-			main #form #format .ace_editor {
-				height: 250px;
-				margin: 0;
+			main #form .report input {
+				margin: 0 !important;
 			}
-
-main h2.share-heading {
-	margin: calc(var(--gap) * 2) 0;
-}
-main .dashboards {
-	display: flex;
-	flex-direction: column;
-	color: #aaa;
-}
-	main .dashboards .parent {
-		display: grid;
-		grid-gap: 5px;
+			main #form .save,
+			main #form .delete {
+				min-width: 60px !important;
+				max-width: 60px;
+			}
+			main #dashboard-form .red {
+				box-shadow: inset -15px 0 #f66;
+			}
+			main #form #format {
+				max-width: inherit;
+			}
+				main #form #format .ace_editor {
+					height: 250px;
+					margin: 0;
+				}
+	main section .heading {
+		display: flex;
+		align-items: center;
+		margin-bottom: 10px;
+		border-bottom: 1px solid #ccc;
 		padding: 10px;
 	}
-		main .dashboards .sub-dashboards {
-			display: grid;
-			grid-gap: 5px;
-		}
-		main .dashboards .sub-dashboards .child {
-			padding: 0;
-			margin: 0;
-			box-shadow: none;
-		}
-			main .dashboards .sub-dashboards .first {}
-				main .dashboards .sub-dashboards .first .name {
-					margin-left: 20px;
-				}
-		main .dashboards .parent .first {
-			grid-template-columns: 1fr 1fr repeat(2, 15px);
-			display: grid;
-			grid-gap: 10px;
+		main section .heading button {
+			background: var(--color-accent);
+			color: #fff;
+			border-radius: 25px;
+			height: 40px;
+			margin-right: 20px;
 			cursor: pointer;
 		}
-		main .dashboards .parent .first:hover .action {
-			opacity: 1;
-			color: #777;
+			main section .heading button > i {
+				margin-right: 0;
+				font-size: 15px;
+			}
+		main section .heading h1 {
+			margin: 0;
+			color: #888;
 		}
-			main .dashboards .parent .name {
-				letter-spacing: 0.5px;
-				font-weight: bold;
-				color: #777;
+	main h2.share-heading {
+		margin: calc(var(--gap) * 2) 0;
+	}
+	main .dashboards {
+		display: flex;
+		flex-direction: column;
+	}
+		main .dashboards .parent {
+			display: grid;
+			grid-gap: calc(var(--gap) * 3);
+			padding: 20px 10px;
+			border-bottom: 1px solid #ddd;
+		}
+			main .dashboards .sub-dashboards {
+				display: grid;
+				grid-gap: calc(var(--gap) * 3);
+				margin-left: 20px;
+			}
+				main .dashboards .sub-dashboards .child {
+					padding: 0;
+					margin: 0;
+					box-shadow: none;
+					border: none;
+				}
+					main .dashboards .sub-dashboards .child .first {
+						font-size: 100%;
+					}
+			main .dashboards .parent .first {
+				grid-template-columns: 1fr 200px repeat(2, max-content);
+				display: grid;
+				grid-gap: calc(var(--gap) * 2);
+				cursor: pointer;
 				align-items: center;
-				display: flex;
+				font-size: 110%;
 			}
-				main .dashboards .parent .name a {
-					color: #777;
-					margin: 0 5px;
+				main .dashboards .parent .first .action {
+					color: #888;
 				}
-				main .dashboards .name i {
-					color: var(--color-accent);
-					font-size: 20px;
+				main .dashboards .parent .first .action:hover {
+					color: #333;
 				}
-			main .dashboards .parent .action {
-				opacity: 0;
-				transition: opacity var(--transition-duration);
-			}
+				main .dashboards .parent .name {
+					letter-spacing: 0.5px;
+					align-items: center;
+					display: flex;
+				}
+					main .dashboards .parent .name a {
+						margin: 0 5px;
+						font-weight: bold;
+						color: inherit;
+					}
+					main .dashboards .parent .name span {
+						color: #888;
+					}
+					main .dashboards .name i {
+						color: var(--color-accent);
+						font-size: 20px;
+					}

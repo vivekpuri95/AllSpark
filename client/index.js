@@ -677,21 +677,14 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 		return `
 			<section class="section" id="list">
 
-				<h1>Dashboard Manager</h1>
-
-				<form class="toolbar">
-					<button type="button" class="grey" id="add-dashboard">
+				<div class="heading">
+					<button id="add-dashboard" type="button" class="grey">
 						<i class="fa fa-plus"></i>
-						Add New Dashboard
 					</button>
-
-					<button type="button" id="import-dashboard">
-						<i class="fa fa-upload"></i>
-						Import
-					</button>
-				</form>
-
-				<div class="dashboards block"></div>
+					<h1>Manage Dashboards</h1>
+				</div>
+				
+				<div class="dashboards"></div>
 			</section>
 
 			<section class="section" id="form">
