@@ -4,6 +4,7 @@ body {
 }
 main section#list {
 	background: #fff;
+	padding: 5px calc(var(--gap) * 4);
 }
 main section .connections {
 	display: grid;
@@ -17,10 +18,9 @@ main section .connections {
 	}
 	main section .connections .heading-bar {
 		display: flex;
-		flex-direction: row;
 		justify-content: center;
 		background: #fff;
-		padding: calc(var(--gap) * 3);
+		padding: calc(var(--gap) * 3) 0;
 	}
 		main section .connections .heading-bar .data-connection {
 			background: var(--color-accent);
@@ -28,12 +28,18 @@ main section .connections {
 			padding: var(--gap) calc(var(--gap) * 2);
 			box-shadow: 0 0 20px rgba(0, 0, 0, 0.45);
 			border-radius: 4px;
+			letter-spacing: 0.5px;
 		}
 		main section .connections .heading-bar .search-connections {
 			margin-left: auto;
 			display: flex;
 			align-items: center;
-			width: 91%;
+			flex: 1;
+			margin-left: 20px;
+			background: #eee;
+			padding: 0 10px;
+			color: #999;
+			border-radius: 4px;
 		}
 			main section .connections .heading-bar .search-connections input {
 				background: #eee;
@@ -97,7 +103,7 @@ main section .connections {
 						}
 				main .connections #data-connections article .row {
 					display: grid;
-					grid-gap: var(--gap);
+					grid-gap: 10px;
 					max-height: 150px;
 					overflow: auto;
 					margin: calc(var(--gap) * 2);
@@ -105,10 +111,10 @@ main section .connections {
 					main .connections #data-connections article .row .connection {
 						border-bottom: 1px solid #ccc;
 						padding: var(--gap);
-						color: #999;
+						color: #666;
 						display: grid;
-						grid-template-columns: max-content max-content 1fr max-content;
-						grid-gap: var(--gap);
+						grid-template-columns: max-content 1fr max-content;
+						grid-gap: 10px;
 					}
 					main .connections #data-connections article .row .connection:last-child {
 						border: 0;
@@ -125,3 +131,6 @@ main section .connections {
 							cursor: pointer;
 							color: #e77;
 						}
+		main .hash-id {
+			color: #ccc;
+		}

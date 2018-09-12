@@ -131,6 +131,7 @@ Page.class = class Connections extends Page {
 				<span class="oAuth-connection hidden">OAuth Connection</span>
 
 				<div class="search-connections">
+					<i class="fa fa-search"></i>
 					<input type="search" placeholder="Search connections">
 				</div>
 			</div>
@@ -323,8 +324,7 @@ class DataConnection {
 		container.classList.add('connection');
 
 		container.innerHTML = `
-			<span>${this.id}</span>
-			<span>${this.connection_name}</span>
+			<span>${this.connection_name} <span class="hash-id">#${this.id}</span> </span>
 			<span title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></span>
 			<span title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></span>
 		`;
