@@ -1,32 +1,136 @@
-main #form .report {
-	display: flex;
-	transition: opacity var(--transition-duration);
+body {
+	height: 100vh;
+	background: #fff;
 }
-	main #form .report label {
-		margin: 5px;
-		min-width: 125px;
+main {
+	background: inherit;
+}
+	main #form .report {
+		display: flex;
+		transition: opacity var(--transition-duration);
 	}
-		main #form .report input {
-			margin: 0 !important;
+		main #form .report label {
+			margin: 5px;
+			min-width: 125px;
 		}
-
-		main #form .save,
-		main #form .delete {
-			min-width: 60px !important;
-			max-width: 60px;
-		}
-		main #dashboard-form .red {
-			box-shadow: inset -15px 0 #f66;
-		}
-
-		main #form #format {
-			max-width: inherit;
-		}
-			main #form #format .ace_editor {
-				height: 250px;
-				margin: 0;
+			main #form .report input {
+				margin: 0 !important;
 			}
-
-main h2.share-heading {
-	margin: calc(var(--gap) * 2) 0;
-}
+			main #form .save,
+			main #form .delete {
+				min-width: 60px !important;
+				max-width: 60px;
+			}
+			main #dashboard-form .red {
+				box-shadow: inset -15px 0 #f66;
+			}
+			main #form #format {
+				max-width: inherit;
+			}
+				main #form #format .ace_editor {
+					height: 250px;
+					margin: 0;
+				}
+	main section .heading {
+		display: flex;
+		align-items: center;
+		margin-bottom: 10px;
+		border-bottom: 1px solid #ccc;
+		padding: 10px;
+	}
+		main section .heading button {
+			background: var(--color-accent);
+			color: #fff;
+			border-radius: 25px;
+			height: 40px;
+			margin-right: 20px;
+			cursor: pointer;
+		}
+			main section .heading button > i {
+				margin-right: 0;
+				font-size: 15px;
+			}
+		main section .heading h1 {
+			margin: 0;
+			color: #888;
+		}
+	main h2.share-heading {
+		margin: calc(var(--gap) * 2) 0;
+	}
+	main .dashboards {
+		display: flex;
+		flex-direction: column;
+	}
+		main .dashboards .parent {
+			display: grid;
+			padding: 15px 10px;
+			border-bottom: 1px solid #ddd;
+			grid-gap: 5px;
+		}
+			main .dashboards .size {
+				padding: 5px 10px;
+				margin-left: 15px;
+				color: #888;
+			}
+			main .dashboards .sub-dashboards {
+				display: grid;
+				margin-left: 15px;
+				padding-left: 20px;
+				border-left: 1px dashed #ccc;
+				grid-gap: 5px;
+			}
+				main .dashboards .sub-dashboards .child {
+					padding: 0;
+					margin: 0;
+					box-shadow: none;
+					border: none;
+				}
+					main .dashboards .sub-dashboards .child .first .name {
+						font-size: 100%;
+					}
+			main .dashboards .parent .first {
+				grid-template-columns: 1fr 200px repeat(2, max-content);
+				display: grid;
+				grid-gap: calc(var(--gap) * 2);
+				cursor: pointer;
+				align-items: center;
+				transition: background var(--transition-duration);
+				padding: 0 5px;
+			}
+			main .dashboards .parent .first:hover {
+				background: #eee;
+			}
+				main .dashboards .parent .first .action {
+					color: #555;
+					padding: 10px;
+					transition: box-shadow var(--transition-duration),
+								background var(--transition-duration),
+								color var(--transition-duration);
+				}
+				main .dashboards .parent .first .action:active {
+					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
+				}
+				main .dashboards .parent .first .action:hover {
+					background: #ddd;
+					color: #333;
+				}
+				main .dashboards .parent .name {
+					letter-spacing: 0.5px;
+					align-items: center;
+					display: flex;
+					font-size: 110%;
+				}
+					main .dashboards .parent .name a {
+						margin: 0 5px;
+						font-weight: bold;
+						color: inherit;
+					}
+					main .dashboards .parent .name span {
+						color: #888;
+						font-size: 90%;
+					}
+					main .dashboards .name i {
+						color: var(--color-accent);
+						font-size: 20px;
+						padding: 0 5px;
+					}

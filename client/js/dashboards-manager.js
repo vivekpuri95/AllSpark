@@ -17,24 +17,6 @@ Page.class = class DashboardManager extends Page {
 			});
 		}
 
-
-		this.listContainer.querySelector('#import-dashboard').on('click', () => {
-
-			const importButton = document.createElement('input');
-			importButton.setAttribute('type', 'file');
-			importButton.click();
-
-			importButton.on('change', (selection) => {
-				if (!selection.target || !selection.target.files[0])
-					return;
-				const selectedFile = selection.target.files[0];
-
-				const reader = new FileReader();
-				reader.onload = this.sendImported;
-				reader.readAsText(selectedFile);
-			});
-		});
-
 		DashboardsDashboard.setup(this);
 
 		this.parentDashboardMultiselect = new MultiSelect({multiple: false});
@@ -49,28 +31,6 @@ Page.class = class DashboardManager extends Page {
 		})();
 
 		window.on('popstate', e => this.loadState(e.state));
-	}
-
-	async sendImported(loaded) {
-
-		try {
-			JSON.parse(loaded.target.result);
-		}
-		catch (e) {
-			alert('Invalid Json Format');
-			return;
-		}
-
-		const parameters = {
-			json: loaded.target.result
-		};
-		const options = {
-			method: 'POST'
-		};
-
-		await API.call('import/dashboard', parameters, options);
-
-		await DashboardsDashboard.page.load();
 	}
 
 	async loadState(state) {
@@ -111,21 +71,28 @@ Page.class = class DashboardManager extends Page {
 
 		this.list.clear();
 
-		for(const dashboard of this.response || [])
-			this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this));
+		for(const dashboard of this.response || []) {
+
+			this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this.response, this));
+		}
 	}
 
 	render() {
 
-		const container = this.container.querySelector('table tbody');
+		const container = this.container.querySelector('.dashboards');
 
 		container.textContent = null;
 
-		for(const dashboard of this.list.values())
-			container.appendChild(dashboard.row);
+		for(const dashboard of this.list.values()) {
+
+			if(!dashboard.parent || !this.list.has(dashboard.parent)) {
+
+				container.appendChild(dashboard.getDashboardContainer());
+			}
+		}
 
 		if(!this.list.size)
-			container.innerHTML = `<tr class="NA"><td colspan="2">No dashboards found!</td></tr>`;
+			container.innerHTML = `<div class="NA">No dashboards found!</div>`;
 
 		const datalist = [];
 
@@ -209,9 +176,7 @@ class DashboardsDashboard {
 
 			await DashboardsDashboard.page.load();
 
-			DashboardsDashboard.page.list.get(response.insertId).edit();
-
-			history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
+			history.pushState({id: 'add'}, '', '/dashboards-manager/add');
 
 			if(await Storage.get('newUser'))
 				UserOnboard.setup(true);
@@ -221,6 +186,8 @@ class DashboardsDashboard {
 				subtitle: `${DashboardsDashboard.form.name.value} #${response.insertId}`,
 				icon: 'fas fa-plus',
 			});
+
+			await Sections.show('list');
 
 		} catch(e) {
 
@@ -234,12 +201,22 @@ class DashboardsDashboard {
 		}
 	}
 
-	constructor(data, page) {
+	constructor(data, dashboards, page) {
 
 		for(const key in data)
 			this[key] = data[key];
 
 		this.page = page;
+
+		this.children = new Map;
+
+		for(const dashboard of dashboards) {
+
+			if(dashboard.parent == this.id) {
+
+				this.children.set(dashboard.id, new DashboardsDashboard(dashboard, dashboards, page))
+			}
+		}
 	}
 
 	async edit() {
@@ -363,37 +340,79 @@ class DashboardsDashboard {
 		}
 	}
 
-	get row() {
+	getDashboardContainer() {
 
 		if(this.container)
 			return this.container;
 
-		this.container = document.createElement('tr');
+		this.container = document.createElement('div');
+		this.container.classList.add('parent');
 
 		this.container.innerHTML = `
-			<td>${this.id}</td>
-			<td><a href="/dashboard/${this.id}">${this.name}</a></td>
-			<td>
-				${this.parents.length ? this.parents.reverse().map(d => `
-					<a href="/dashboard/${d.id}" target="_blank">${d.name}</a>
-					<span class="NA">#${d.id}</span>
-				`).join(' &rsaquo; ') : ''}
-			</td>
-			<td>${this.icon || ''}</td>
-			<td>${this.order || ''}</td>
-			<td title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}">Edit</td>
-			<td title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}">Delete</td>
+			<div class="first">
+				<div class="name">
+					<span class="arrow">
+					</span>
+					<a href="/dashboard/${this.id}">${this.name}</a>
+					<span>#${this.id}</span>
+				</div>
+				<div>${this.order ? ('Order: ' + this.order) : ''}</div>
+				<div title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></div>
+				<div title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></div>
+			</div>
 		`;
 
 		if(this.container.querySelector('.green')) {
-			this.container.querySelector('.green').on('click', () => {
+			this.container.querySelector('.green').on('click', e => {
+
+				e.stopPropagation();
+
 				this.edit();
 				history.pushState({what: this.id}, '', `/dashboards-manager/${this.id}`);
 			});
 		}
 
 		if(this.container.querySelector('.red')) {
-			this.container.querySelector('.red').on('click', async() => this.delete());
+			this.container.querySelector('.red').on('click', e => {
+
+				e.stopPropagation();
+
+				this.delete()
+			});
+		}
+
+		if(this.children.size) {
+
+			this.container.insertAdjacentHTML('beforeend', `
+				<div class="size hidden">${this.children.size} child dashboard${this.children.size > 1 ? 's': ''}</div>
+				<div class="sub-dashboards"></div>
+			`);
+
+			const arrow = this.container.querySelector('.name .arrow');
+
+			arrow.removeEventListener('click', arrow.clickListener);
+			arrow.innerHTML = `
+				<i class="fas fa-angle-right right-arrow hidden"></i>
+				<i class="fas fa-angle-down down-arrow"></i>
+`			;
+
+			this.container.querySelector('.first').on('click', arrow.clickListener = e => {
+
+				this.container.querySelector('div.sub-dashboards').classList.toggle('hidden');
+				this.container.querySelector('div.size').classList.toggle('hidden');
+
+				const subDashboardsHidden = this.container.querySelector('div.sub-dashboards').classList.contains('hidden');
+
+				arrow.querySelector('.right-arrow').classList.toggle('hidden', !subDashboardsHidden);
+				arrow.querySelector('.down-arrow').classList.toggle('hidden', subDashboardsHidden);
+
+			});
+
+			for(const child of this.children.values()) {
+
+				this.container.querySelector('div.sub-dashboards').appendChild(child.getDashboardContainer());
+				child.getDashboardContainer().classList.add('child');
+			}
 		}
 
 		return this.container;
