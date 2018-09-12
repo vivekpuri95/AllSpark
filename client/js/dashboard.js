@@ -833,7 +833,7 @@ class Dashboard {
 				if (this.saveTimeout)
 					clearTimeout(this.saveTimeout);
 
-				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, report.selectedVisualization), 1000);
+				this.saveTimeout = setTimeout(() => this.save(visualizationFormat, report.selectedVisualization.id), 1000);
 			}
 		});
 
@@ -1007,14 +1007,13 @@ class Dashboard {
 			this.globalFilters.apply();
 	}
 
-	async save(format, visualization) {
+	async save(format, id) {
 
 		Dashboard.editing = false;
 
 		const
 			parameters = {
-				id: visualization.id,
-				dashboard_id: visualization.dashboard_id,
+				id: id,
 				format: JSON.stringify(format || this.format),
 			},
 			options = {

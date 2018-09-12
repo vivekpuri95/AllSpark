@@ -73,8 +73,7 @@ Page.class = class DashboardManager extends Page {
 
 		for(const dashboard of this.response || []) {
 
-			if(!dashboard.parent)
-				this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this.response, this));
+			this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this.response, this));
 		}
 	}
 
@@ -84,8 +83,13 @@ Page.class = class DashboardManager extends Page {
 
 		container.textContent = null;
 
-		for(const dashboard of this.list.values())
-			container.appendChild(dashboard.getDashboardContainer());
+		for(const dashboard of this.list.values()) {
+
+			if(!dashboard.parent || !this.list.has(dashboard.parent)) {
+
+				container.appendChild(dashboard.getDashboardContainer());
+			}
+		}
 
 		if(!this.list.size)
 			container.innerHTML = `<div class="NA">No dashboards found!</div>`;
@@ -208,8 +212,10 @@ class DashboardsDashboard {
 
 		for(const dashboard of dashboards) {
 
-			if(dashboard.parent == this.id)
+			if(dashboard.parent == this.id) {
+
 				this.children.set(dashboard.id, new DashboardsDashboard(dashboard, dashboards, page))
+			}
 		}
 	}
 
