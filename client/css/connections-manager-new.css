@@ -45,14 +45,15 @@ main section .connections {
 			display: flex;
 			flex-wrap: wrap;
 			width: 100%;
-			padding: 0 calc(var(--gap) * 5);
+			/* padding: 0 calc(var(--gap) * 5); */
+			justify-content: space-between;
 		}
 			main .connections #data-connections article {
 				width: 350px;
 				min-height: 250px;
 				background: #fff;
 				box-shadow:  0 2px 4px 0 rgba(172, 172, 172, 0.5);
-				margin: calc(var(--gap) * 6 );
+				margin: calc(var(--gap) * 6 ) 0;
 				transition: box-shadow var(--transition-duration);
 			}
 			main .connections #data-connections article:hover {

@@ -1203,130 +1203,21 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/connections-manager-new/:id?', API.serve(class extends HTMLAPI {
-
-	constructor() {
-
-		super();
-
-		this.stylesheets.push('/css/connections-manager-new.css');
-		this.scripts.push('/js/connections-manager-new.js');
-	}
-
-	async main() {
-		return `
-
-			<section class="section" id="list">
-			</section>
-
-			<section class="section" id="form">
-
-				<h1></h1>
-
-				<header class="toolbar">
-					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="submit" form="connections-form"><i class="far fa-save"></i> Save</button>
-					<button type="button" id="test-connection"><i class="fas fa-flask"></i>Test</button>
-				</header>
-
-				<div class="test-result hidden"></div>
-
-				<form class="block form" id="connections-form">
-
-					<label>
-						<span>Name</span>
-						<input type="text" name="connection_name" required>
-					</label>
-
-					<div id="details"></div>
-				</form>
-
-				<h2 class="share-heading">Share connections</h2>
-				<div id="share-connections"></div>
-			</section>
-		`;
-	}
-
-}));
-
-router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
+router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
 		super();
 
 		this.stylesheets.push('/css/connections-manager.css');
+		this.stylesheets.push('/css/connections-manager-new.css');
 		this.scripts.push('/js/connections-manager.js');
 	}
 
 	async main() {
 		return `
+
 			<section class="section" id="list">
-
-				<h1>Data Connections</h1>
-
-				<div class="toolbar filters">
-					<button type="button" id="add-data-connection" class="grey">
-						<i class="fa fa-plus"></i>
-						Add New Connection
-					</button>
-				</div>
-
-				<div class="block data-connections">
-					<table>
-						<thead>
-							<tr>
-								<th class="thin">ID</th>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="action">Edit</th>
-								<th class="action">Delete</th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-				</div>
-
-				<h1>OAuth Connections</h1>
-
-				<div class="oauth-connections">
-
-					<div class="test-result hidden"></div>
-
-					<table class="block">
-						<thead>
-							<tr>
-								<th class="thin">ID</th>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="action">Authenticate</th>
-								<th class="action">Delete</th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-
-					<form id="add-oauth-connection" class="form">
-						<select name="provider"></select>
-						<button type="submit">
-							<i class="fas fa-plus"></i> Add New Connection
-						</button>
-					</form>
-				</div>
-			</section>
-
-			<section class="section" id="add-connection">
-
-				<h1>Add New Connection</h1>
-
-				<div id="add-connection-picker">
-
-					<div class="toolbar">
-						<button id="connection-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
-					</div>
-
-					<form id="add-connection-form"></form>
-				</div>
 			</section>
 
 			<section class="section" id="form">
@@ -1356,6 +1247,7 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 			</section>
 		`;
 	}
+
 }));
 
 router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
