@@ -6,6 +6,8 @@ Page.class = class Connections extends Page {
 
 		window.on('popstate', e => this.loadState(e.state));
 
+		this.container.querySelector('section#form .toolbar #back').on('click', () => this.back());
+
 		(async () => {
 
 			await this.load();
@@ -220,13 +222,14 @@ class DataConnections extends Set {
 
 		container.querySelector('#add-new').on('click', () => {
 
+			history.pushState({what: 'add'}, '', `/connections-manager/add/${connection.slug}`);
+
 			DataConnection.types.get(connection.slug).render(this.page);
 
 			this.addConnection();
 
 			Sections.show('form');
 
-			history.pushState({what: 'add'}, '', `/connections-manager/add/${connection.slug}`);
 		});
 
 		return container;
@@ -308,8 +311,6 @@ class DataConnection {
 
 		this.container = page.container.querySelector('section#form');
 
-		this.container.querySelector('.toolbar #back').on('click', () => this.page.back());
-
 		this.form = this.container.querySelector('form');
 	}
 
@@ -332,6 +333,7 @@ class DataConnection {
 			container.querySelector('.green').on('click', () => {
 
 				history.pushState({what: this.id}, '', `/connections-manager/${this.id}`);
+
 				this.edit();
 			});
 		}
