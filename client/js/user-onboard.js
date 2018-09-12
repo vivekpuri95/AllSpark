@@ -36,6 +36,11 @@ class UserOnboard {
 
 		document.body.appendChild(this.container);
 
+		if(this.progress == 100) {
+
+			await Storage.delete('newUser');
+		}
+
 		this.loadWelcomeDialogBox();
 	}
 
@@ -76,8 +81,6 @@ class UserOnboard {
 			<div class="progress-bar">
 				<div class="progress" style="width: ${this.progress}%"></div>
 			</div>
-			<button class="dismiss"><i class="fa fa-times"></i> Dismiss</button>
-
 		`;
 
 		if(this.progress == 0) {
@@ -98,15 +101,6 @@ class UserOnboard {
 				</div>
 			`);
 		}
-
-		container.querySelector('.dismiss').on('click', async () => {
-
-			container.remove();
-
-			await Storage.delete('newUser');
-
-			console.log(await Storage.get('newUser'));
-		});
 
 		return container;
 	}
@@ -131,6 +125,8 @@ class UserOnboard {
 			this.dialogBox.container.classList.add('user-onboarding-welcome');
 		}
 
+		document.body.querySelector('.setup-stages').classList.add('blur');
+
 		this.dialogBox.body.innerHTML = `
 
 			<h2>Let's Get <strong>You Started!</strong></h2>
@@ -146,8 +142,6 @@ class UserOnboard {
 				<span>Configure Manually</span>
 				<span class="NA">Connect to a data source and define the data query</span>
 			</a>
-
-			<a class="skip">Skip &nbsp;<i class="fas fa-arrow-right"></i></a>
 		`;
 
 		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => {
@@ -156,17 +150,6 @@ class UserOnboard {
 
 		if(window.loadWelcomeDialogBoxListener)
 			window.loadWelcomeDialogBoxListener(this);
-
-		this.dialogBox.body.querySelector('.skip').on('click', async () => {
-
-			this.dialogBox.hide();
-
-			const newUser = await Storage.get('newUser');
-
-			newUser.skipWelcomeDialogBox = true;
-
-			await Storage.set('newUser', newUser);
-		});
 
 		this.dialogBox.show();
 	}
