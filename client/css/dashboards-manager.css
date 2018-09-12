@@ -63,7 +63,7 @@ main {
 	}
 		main .dashboards .parent {
 			display: grid;
-			padding: 20px 10px;
+			padding: 15px 10px;
 			border-bottom: 1px solid #ddd;
 			grid-gap: 5px;
 		}
@@ -74,8 +74,8 @@ main {
 			}
 			main .dashboards .sub-dashboards {
 				display: grid;
-				margin-left: 10px;
-				padding-left: 30px;
+				margin-left: 15px;
+				padding-left: 20px;
 				border-left: 1px dashed #ccc;
 				grid-gap: 5px;
 			}
@@ -94,17 +94,18 @@ main {
 				grid-gap: calc(var(--gap) * 2);
 				cursor: pointer;
 				align-items: center;
-				padding: 0px;
 				transition: background var(--transition-duration);
+				padding: 0 5px;
 			}
 			main .dashboards .parent .first:hover {
 				background: #eee;
 			}
 				main .dashboards .parent .first .action {
-					color: #888;
+					color: #555;
 					padding: 10px;
 					transition: box-shadow var(--transition-duration),
-								background var(--transition-duration);
+								background var(--transition-duration),
+								color var(--transition-duration);
 				}
 				main .dashboards .parent .first .action:active {
 					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
@@ -126,6 +127,7 @@ main {
 					}
 					main .dashboards .parent .name span {
 						color: #888;
+						font-size: 90%;
 					}
 					main .dashboards .name i {
 						color: var(--color-accent);
