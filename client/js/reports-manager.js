@@ -1897,14 +1897,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization)
 			return;
 
+		await this.loadVisualizationForm();
+
 		await this.page.preview.load({
 			query_id: this.report.query_id,
 			visualization: {
 				id: this.visualization.visualization_id
 			},
 		});
-
-		await this.loadVisualizationForm();
 
 		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
 
