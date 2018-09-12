@@ -1760,11 +1760,6 @@ router.get('/tests', API.serve(class extends HTMLAPI {
 
 	main() {
 
-		this.user.privileges.needs('superadmin');
-
-		if(['production', 'staging'].includes(this.env.name))
-			throw new API.exception('Tests cannot be run on production or staging.');
-
 		return `
 
 			<section class="section" id="list">

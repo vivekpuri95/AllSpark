@@ -292,8 +292,16 @@ Page.serviceWorker = class PageServiceWorker {
 
 		this.worker = await navigator.serviceWorker.register('/service-worker.js');
 
-		if(navigator.serviceWorker.controller)
-			navigator.serviceWorker.controller.addEventListener('statechange', e => this.statechange(e));
+		if(!this.status)
+			return;
+
+		navigator.serviceWorker.controller.addEventListener('statechange', e => this.statechange(e));
+
+		window.on('online', () => this.online());
+		window.on('offline', () => this.offline());
+
+		// Update the offline status if needed but without the snackBar
+		this.offline({snackBar: false});
 	}
 
 	/**
@@ -312,7 +320,7 @@ Page.serviceWorker = class PageServiceWorker {
 
 			const message = document.createElement('div');
 
-			message.classList.add('warning', 'site-outdated');
+			message.classList.add('warning', 'service-worker-message', 'site-outdated');
 
 			message.innerHTML = `The site has been updated in the background. Click here to reload the page.`;
 
@@ -327,6 +335,56 @@ Page.serviceWorker = class PageServiceWorker {
 	}
 
 	/**
+	 * Removes the offline bar and shows an online notification.
+	 */
+	online() {
+
+		if(!navigator.onLine)
+			return;
+
+		if(this.page.container.parentElement.querySelector('.service-worker-message'))
+			this.page.container.parentElement.querySelector('.service-worker-message').remove();
+
+		new SnackBar({
+			message: 'You\'re online!',
+			subtitle: 'You can continue browsing freely.',
+			icon: 'fas fa-wifi',
+		});
+	}
+
+	/**
+	 * Shows the offline bar and snackbar if needed.
+	 *
+	 * @param boolean	snackBar	Wether the snackbar will be shown or not.
+	 */
+	offline({snackBar = true} = {}) {
+
+		if(navigator.onLine)
+			return;
+
+		if(this.page.container.parentElement.querySelector('.service-worker-message'))
+			this.page.container.parentElement.querySelector('.service-worker-message').remove();
+
+		const message = document.createElement('div');
+
+		message.classList.add('warning', 'service-worker-message');
+
+		message.innerHTML = 'You\'re offline!';
+
+		this.page.container.parentElement.insertBefore(message, this.page.container);
+
+		if(!snackBar)
+			return;
+
+		new SnackBar({
+			message: 'You\'re offline!',
+			subtitle: 'Now you can only see things that were loaded atleast once before.',
+			icon: 'fas fa-ban',
+			type: 'error',
+		});
+	}
+
+	/**
 	 * Send a message to the service worker with an action and a body and return it's response.
 	 *
 	 * @param  sring	action	The unique string to identify the action on service worker's end.
@@ -334,6 +392,9 @@ Page.serviceWorker = class PageServiceWorker {
 	 * @return Promise			That resolves when the worker is done with the request and has sent a response.
 	 */
 	async message(action, body = null) {
+
+		if(!this.status)
+			return false;
 
 		return new Promise(resolve => {
 
@@ -343,6 +404,16 @@ Page.serviceWorker = class PageServiceWorker {
 
 			navigator.serviceWorker.controller.postMessage({action, body}, [channel.port2]);
 		});
+	}
+
+
+	/**
+	 * Returns the status of the service worker in current environment.
+	 *
+	 * @return boolean
+	 */
+	get status() {
+		return navigator.serviceWorker.controller ? true : false;
 	}
 }
 
@@ -989,7 +1060,7 @@ class MetaData {
 			} catch(e) {}
 		}
 
-		if(!timestamp || Date.now() - timestamp > MetaData.timeout) {
+		if(navigator.onLine && (!timestamp || Date.now() - timestamp > MetaData.timeout)) {
 
 			metadata = await API.call('users/metadata');
 
@@ -1231,7 +1302,7 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!(await Storage.has('refresh_token')) || !getToken)
+		if(!(await Storage.has('refresh_token')) || !getToken || !navigator.onLine)
 			return;
 
 		const

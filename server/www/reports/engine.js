@@ -300,6 +300,8 @@ class report extends API {
 
 	async report(queryId, reportObj, filterList) {
 
+		this.request.body = {...this.request.body, ...this.request.query};
+
 		this.reportId = this.request.body.query_id || queryId;
 		this.reportObjStartTime = Date.now();
 		const forcedRun = parseInt(this.request.body.cached) === 0;

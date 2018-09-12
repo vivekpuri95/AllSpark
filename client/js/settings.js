@@ -345,7 +345,7 @@ Settings.list.set('about', class About extends SettingPage {
 
 	async load() {
 
-		this.response = await API.call('env-info/envInfo');
+		this.environment = await API.call('environment/about');
 		this.serviceWorkerLoadTime = await page.serviceWorker.message('startTime');
 
 		this.render();
@@ -386,33 +386,35 @@ Settings.list.set('about', class About extends SettingPage {
 
 		container.classList.add('info');
 
+		let serviceWorkerLoadTime = `
+			${Format.ago(this.serviceWorkerLoadTime)}<br>
+			<span class="NA">${Format.dateTime(this.serviceWorkerLoadTime)}</span>
+		`;
+
+		if(!page.serviceWorker.status)
+			serviceWorkerLoadTime = `<span>Service Worker Not Active</span>`;
+
 		container.innerHTML = `
 			<span class="key">Account Id</span>
 			<span class="value">${account.account_id}</span>
 
-			<span class="key">Connectivity </span>
-			<span class="value">${navigator.onLine ? 'online' : 'offline'}</span>
-
-			<span class="key">Environment</span>
-			<span class="value">${this.response.name}</span>
+			<span class="key">environment</span>
+			<span class="value">${this.environment.name}</span>
 
 			<span class="key">Deployed On</span>
 			<span class="value">
-				${Format.ago(this.response.deployed_on)}<br>
-				<span class="NA">${Format.dateTime(this.response.deployed_on)}</span>
+				${Format.ago(this.environment.deployed_on)}<br>
+				<span class="NA">${Format.dateTime(this.environment.deployed_on)}</span>
 			</span>
 
 			<span class="key">Service Worker Deployed On</span>
-			<span class="value">
-				${Format.ago(this.serviceWorkerLoadTime)}<br>
-				<span class="NA">${Format.dateTime(this.serviceWorkerLoadTime)}</span>
-			</span>
+			<span class="value">${serviceWorkerLoadTime}</span>
 
 			<span class="key">Git Checksum</span>
-			<span class="value">${this.response.gitChecksum}</span>
+			<span class="value">${this.environment.gitChecksum}</span>
 
 			<span class="key">Branch</span>
-			<span class="value">${this.response.branch}</span>
+			<span class="value">${this.environment.branch}</span>
 		`;
 
 		return container;
