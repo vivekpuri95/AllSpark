@@ -381,7 +381,6 @@ main.preview-left #stages {
 			order: 3;
 			flex: 1 50%;
 			overflow: auto;
-			min-width: 50%;
 		}
 			#stage-define-report .query-history .info .query {
 				height: calc(100% - 38px);
