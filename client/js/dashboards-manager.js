@@ -357,14 +357,22 @@ class DashboardsDashboard {
 		`;
 
 		if(this.container.querySelector('.green')) {
-			this.container.querySelector('.green').on('click', () => {
+			this.container.querySelector('.green').on('click', e => {
+
+				e.stopPropagation();
+
 				this.edit();
 				history.pushState({what: this.id}, '', `/dashboards-manager/${this.id}`);
 			});
 		}
 
 		if(this.container.querySelector('.red')) {
-			this.container.querySelector('.red').on('click', async() => this.delete());
+			this.container.querySelector('.red').on('click', e => {
+
+				e.stopPropagation();
+
+				this.delete()
+			});
 		}
 
 		if(this.children.size) {
@@ -381,7 +389,7 @@ class DashboardsDashboard {
 				<i class="fas fa-angle-down down-arrow"></i>
 `			;
 
-			arrow.on('click', arrow.clickListener = e => {
+			this.container.querySelector('.first').on('click', arrow.clickListener = e => {
 
 				this.container.querySelector('div.sub-dashboards').classList.toggle('hidden');
 
