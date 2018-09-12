@@ -323,7 +323,7 @@ class Authenticate {
 
 		if(!visibleQueryList) {
 
-			let reportRoles = await objRole.get(userObj.account_id, "query", "role", dashboardQueryList.map(x => x.query_id),);
+			let reportRoles = await objRole.get(userObj.account_id, "query", "role", dashboardQueryList.length ?  dashboardQueryList.map(x => x.query_id) : 0,);
 
 			for (const row of reportRoles) {
 
