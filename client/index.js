@@ -1203,6 +1203,52 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
+router.get('/connections-manager-new/:id?', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/connections-manager-new.css');
+		this.scripts.push('/js/connections-manager-new.js');
+	}
+
+	async main() {
+		return `
+
+			<section class="section" id="list">
+			</section>
+
+			<section class="section" id="form">
+
+				<h1></h1>
+
+				<header class="toolbar">
+					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
+					<button type="submit" form="connections-form"><i class="far fa-save"></i> Save</button>
+					<button type="button" id="test-connection"><i class="fas fa-flask"></i>Test</button>
+				</header>
+
+				<div class="test-result hidden"></div>
+
+				<form class="block form" id="connections-form">
+
+					<label>
+						<span>Name</span>
+						<input type="text" name="connection_name" required>
+					</label>
+
+					<div id="details"></div>
+				</form>
+
+				<h2 class="share-heading">Share connections</h2>
+				<div id="share-connections"></div>
+			</section>
+		`;
+	}
+
+}));
+
 router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
@@ -1267,7 +1313,6 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 						</button>
 					</form>
 				</div>
-
 			</section>
 
 			<section class="section" id="add-connection">

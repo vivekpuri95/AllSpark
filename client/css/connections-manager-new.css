@@ -1,0 +1,126 @@
+main,
+body {
+	background: #fff;
+}
+main section#list {
+	background: #fff;
+}
+main section .connections {
+	display: grid;
+	grid-template-rows: repeat(3, max-content);
+	grid-gap: calc(var(--gap) * 3);
+}
+	main section .connections .NA {
+		display: flex;
+		justify-content: center;
+		color: #999;
+	}
+	main section .connections .heading-bar {
+		display: flex;
+		flex-direction: row;
+		justify-content: center;
+		background: #fff;
+		padding: calc(var(--gap) * 3);
+	}
+		main section .connections .heading-bar .data-connection {
+			background: var(--color-accent);
+			color: #fff;
+			padding: var(--gap) calc(var(--gap) * 2);
+			box-shadow: 0 0 20px rgba(0, 0, 0, 0.45);
+			border-radius: 4px;
+		}
+		main section .connections .heading-bar .search-connections {
+			margin-left: auto;
+			display: flex;
+			align-items: center;
+			width: 91%;
+		}
+			main section .connections .heading-bar .search-connections input {
+				background: #eee;
+				width: 100%;
+				border: 0;
+				outline: 0;
+			}
+		main .connections #data-connections {
+			display: flex;
+			flex-wrap: wrap;
+			width: 100%;
+			padding: 0 calc(var(--gap) * 5);
+		}
+			main .connections #data-connections article {
+				width: 350px;
+				min-height: 250px;
+				background: #fff;
+				box-shadow:  0 2px 4px 0 rgba(172, 172, 172, 0.5);
+				margin: calc(var(--gap) * 6 );
+				transition: box-shadow var(--transition-duration);
+			}
+			main .connections #data-connections article:hover {
+				box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+				cursor: pointer;
+			}
+				main .connections #data-connections article .article-toolbar {
+					display: grid;
+					grid-template-columns: max-content max-content 1fr;
+					align-items: center;
+					grid-gap: var(--gap);
+					padding: 0 calc(var(--gap) * 2);
+					border-bottom: 1px solid #eee;
+				}
+					main .connections #data-connections article .article-toolbar button {
+						background: var(--color-accent);
+						color: var(--color-accent-text);
+						border-radius: 20px;
+						height: 40px;
+						width: 40px;
+						font-size: 70%;
+						padding: 0;
+						font-size: 130%;
+						box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
+					}
+						main .connections #data-connections article .article-toolbar button i {
+							margin: 0;
+						}
+					main .connections #data-connections article .article-toolbar span {
+						color:  #666;
+						font-size: 120%;
+					}
+					main .connections #data-connections article figure {
+						margin: 0;
+						margin-left: auto;
+						padding: var(--gap);
+					}
+						main .connections #data-connections article figure img {
+							height: 60px;
+							width: 60px;
+						}
+				main .connections #data-connections article .row {
+					display: grid;
+					grid-gap: var(--gap);
+					max-height: 150px;
+					overflow: auto;
+					margin: calc(var(--gap) * 2);
+				}
+					main .connections #data-connections article .row .connection {
+						border-bottom: 1px solid #ccc;
+						padding: var(--gap);
+						color: #999;
+						display: grid;
+						grid-template-columns: max-content max-content 1fr max-content;
+						grid-gap: var(--gap);
+					}
+					main .connections #data-connections article .row .connection:last-child {
+						border: 0;
+					}
+						main .connections #data-connections article .row .connection .action {
+							margin-left: auto;
+							transition: color var(--transition-duration);
+						}
+						main .connections #data-connections article .row .connection .green:hover {
+							cursor: pointer;
+							color: #5b5;
+						}
+						main .connections #data-connections article .row .connection .red:hover {
+							cursor: pointer;
+							color: #e77;
+						}

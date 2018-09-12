@@ -1,0 +1,757 @@
+Page.class = class Connections extends Page {
+
+	constructor() {
+
+		super();
+
+		window.on('popstate', e => this.loadState(e.state));
+
+		(async () => {
+
+			await this.load();
+
+			this.loadState();
+		})();
+	}
+
+	async loadState(state) {
+
+		const what = state ? state.what : location.pathname.split('/').pop();
+
+		if(what == 'add')
+			return DataConnection.add(this);
+
+		if(this.dataConnections.has(parseInt(what)))
+			return this.dataConnections.get(parseInt(what)).edit();
+
+		await Sections.show('list');
+	}
+
+	async back() {
+
+		if(history.state)
+			return history.back();
+
+		await Sections.show('list');
+
+		history.pushState(null, '', `/connections-manager-new`);
+	}
+
+	async load() {
+
+		const responses = await this.fetch();
+
+		this.process(responses);
+
+		this.render();
+	}
+
+	async fetch() {
+
+		return Promise.all([
+			API.call('credentials/list'),
+			API.call('oauth/providers/list'),
+			API.call('oauth/connections/list'),
+		]);
+	}
+
+	process(response) {
+
+		this.dataConnections = new Map;
+		this.oAuthProviders = new Map;
+		this.oAuthConnections = new Map;
+
+		const dataConnectionsList = {
+			mysql: [],
+			mssql: [],
+			pgsql: [],
+			oracle: [],
+			api: [],
+			bigquery: [],
+			file: [],
+			mongo: [],
+		};
+
+		for(const connection of response[0])
+			dataConnectionsList[connection.type].push(connection);
+
+		for(const connection in dataConnectionsList)
+			this.dataConnections.set(connection, new DataConnections(dataConnectionsList[connection], connection, this));
+
+		// for(const provider of response[1] || [])
+		// 	this.oAuthProviders.set(provider.provider_id, provider);
+
+		// for(const connection of response[2] || [])
+		// 	this.oAuthConnections.set(connection.id, new OAuthConnection(connection, this));
+	}
+
+	render(list) {
+
+		const container = this.connectionContainer;
+
+		const connContainer = container.querySelector('#data-connections');
+
+		connContainer.textContent = null;
+
+		const dataConnections = list || this.dataConnections;
+
+		for(const connection of dataConnections.values())
+			connContainer.appendChild(connection.container);
+
+		this.container.querySelector('section#list').appendChild(container);
+
+		Sections.show('list');
+	}
+
+	get connectionContainer() {
+
+		if(this.connectionContainerElement)
+			return this.connectionContainerElement;
+
+		const container = this.connectionContainerElement = document.createElement('div');
+		container.classList.add('connections');
+
+		container.innerHTML = `
+			<div class="heading-bar">
+				<span class="data-connection">Data Connections</span>
+				<span class="oAuth-connection hidden">OAuth Connection</span>
+
+				<div class="search-connections">
+					<input type="search" placeholder="Search connections">
+				</div>
+			</div>
+
+			<div id="data-connections"></div>
+
+			<div class="hidden" id="oAuth-connections"></div>
+		`;
+
+		container.querySelector('.heading-bar .data-connection').on('click', () => {
+
+		});
+
+		container.querySelector('.heading-bar .oAuth-connection').on('click', () => {
+
+		});
+
+		const input = container.querySelector('.search-connections input');
+
+		input.on('keyup', () => {
+			this.search(input.value);
+		});
+
+		return container;
+	}
+
+	search(searchString) {
+
+		const result = new Map;
+
+		for(const [key,value] of this.dataConnections) {
+
+			if(key.includes(searchString))
+				result.set(key, value)
+		}
+
+		this.render(result);
+
+		this.connectionContainer.querySelector('.search-connections input').focus();
+	}
+}
+
+class DataConnections extends Set {
+
+	constructor(connections, type, page) {
+
+		super();
+
+		this.type = type;
+
+		this.page = page;
+
+		this.connectionsContainer = this.page.container.querySelector('section#form');
+
+		this.form = this.connectionsContainer.querySelector('form');
+
+		for(const connection of connections)
+			this.add(new DataConnection(connection, page));
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const connection = MetaData.datasources.get(this.type);
+
+		const container = this.containerElement = document.createElement('article');
+
+		container.innerHTML = `
+			<div class="article-toolbar">
+				<button type="button" id="add-new"><i class="fa fa-plus"></i></button>
+				<span>&nbsp; ${connection.name}</span>
+				<figure>
+					<img alt="${connection.name}" src=${connection.image}>
+				</figure>
+			</div>
+			<div class="row">
+			</div>
+		`;
+
+		const row = container.querySelector('.row');
+
+		for(const connection of this)
+			row.appendChild(connection.row)
+
+		if(!row.childElementCount)
+			row.innerHTML = '<div class="NA">No connection added</div>'
+
+		container.querySelector('#add-new').on('click', () => {
+
+			DataConnection.types.get(connection.slug).render(this.page);
+
+			this.addConnection();
+
+			Sections.show('form');
+
+			history.pushState({what: 'add'}, '', `/connections-manager/add/${connection.slug}`);
+		});
+
+		return container;
+	}
+
+	async addConnection() {
+
+		this.page.container.querySelector('#share-connections').innerHTML = `<div class="NA">You can share the connection once you create one.</div>`;
+
+		this.connectionsContainer.querySelector('.toolbar #test-connection').classList.add('hidden');
+		this.connectionsContainer.querySelector('.test-result').classList.add('hidden');
+		this.connectionsContainer.querySelector('h1').textContent = `Add New ${this.type} Connection`;
+
+		this.form.on('submit', async (e) => {
+
+			e.preventDefault();
+			await this.insert();
+		});
+	}
+
+	async insert() {
+
+		const
+			parameters = {
+				type: this.type,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		try {
+
+			const response = await API.call('credentials/insert', parameters, options);
+
+			await this.page.load();
+
+			const connections = this.page.dataConnections.get(this.type);
+
+			let selectedConnection;
+
+			for(const connection of connections) {
+
+				if(connection.id == response.insertId) {
+					selectedConnection = connection;
+					selectedConnection.edit();
+				}
+			}
+
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup(true);
+
+			new SnackBar({
+				message: `${this.type} Connection Added`,
+				subtitle: `${selectedConnection.connection_name} #${selectedConnection.id}`,
+				icon: 'fas fa-plus',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+class DataConnection {
+
+	constructor(connection, page) {
+
+		Object.assign(this, connection);
+
+		this.page = page;
+
+		this.container = page.container.querySelector('section#form');
+
+		this.container.querySelector('.toolbar #back').on('click', () => this.page.back());
+
+		this.form = this.container.querySelector('form');
+	}
+
+	get row() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('connection');
+
+		container.innerHTML = `
+			<span>${this.id}</span>
+			<span>${this.connection_name}</span>
+			<span title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></span>
+			<span title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></span>
+		`;
+
+		if(container.querySelector('.green')) {
+			container.querySelector('.green').on('click', () => {
+
+				history.pushState({what: this.id}, '', `/connections-manager-new/${this.id}`);
+				this.edit();
+			});
+		}
+
+		if(container.querySelector('.red'))
+			container.querySelector('.red').on('click', () => this.delete());
+
+		return container;
+	}
+
+	async edit() {
+
+		this.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
+
+		this.form.on('submit', (e) => {
+			e.preventDefault();
+			this.update();
+		});
+
+		this.objectRoles = new ObjectRoles('connection', this.id, ['user', 'role']);
+
+		await this.objectRoles.load();
+
+		this.page.container.querySelector('#share-connections').innerHTML = null;
+
+		this.page.container.querySelector('#share-connections').appendChild(this.objectRoles.container);
+
+		this.container.querySelector('.test-result').classList.add('hidden');
+
+		const test = this.container.querySelector('.toolbar #test-connection');
+
+		test.classList.remove('hidden');
+
+		test.removeEventListener('click', DataConnection.test_listener);
+
+		test.on('click', DataConnection.test_listener = async () => this.test());
+
+		for(const key in this) {
+			if(this.form.elements[key])
+				this.form.elements[key].value = this[key];
+		}
+
+		DataConnection.types.get(this.type).render(this);
+
+		await Sections.show('form');
+	}
+
+	async update() {
+
+		const
+			parameters = {
+				id: this.id,
+			},
+			options = {
+				method: 'POST',
+				form: new FormData(this.form),
+			};
+
+		try {
+
+			await API.call('credentials/update', parameters, options);
+
+			await this.page.load();
+			await Sections.show('list');
+
+			new SnackBar({
+				message: `${this.type} Connection Saved`,
+				subtitle: `${this.name} #${this.id} (${this.type})`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?!'))
+			return;
+
+		const
+			parameters = {
+				id: this.id,
+				type: this.type,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		try {
+
+			await API.call('credentials/delete', parameters, options);
+
+			await this.page.load();
+
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup(true);
+
+			new SnackBar({
+				message: `${this.type} Connection Removed`,
+				subtitle: `${this.connection_name} #${this.id}`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+}
+
+DataConnection.types = new Map;
+
+DataConnection.types.set('mysql', class {
+
+	static render(connections = {}) {
+
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span class="password">Password <a class="show-password">Show</a></span>
+				<input type="password" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+
+			<label>
+				<span>Database</span>
+				<input type="text" name="db" value="${connections.db || ''}">
+			</label>
+		`;
+
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+		});
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
+			db: connections.form.db.value,
+		});
+	}
+});
+
+DataConnection.types.set('mssql', class {
+
+	static render(connections = {}) {
+
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span class="password">Password <a class="show-password">Show</a></span>
+				<input type="password" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+
+			<label>
+				<span>Database</span>
+				<input type="text" name="db" value="${connections.db || ''}">
+			</label>
+		`;
+
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password' : 'text';
+		});
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
+			db: connections.form.db.value,
+		});
+	}
+});
+
+DataConnection.types.set('pgsql', class {
+
+	static render(connections = {}) {
+
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span class="password">Password <a class="show-password">Show</a></span>
+				<input type="text" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+
+			<label>
+				<span>Database</span>
+				<input type="text" name="db" value="${connections.db || ''}">
+			</label>
+		`;
+
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+		});
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
+			db: connections.form.db.value,
+		});
+	}
+});
+
+DataConnection.types.set('oracle', class {
+
+	static render(connections = {}) {
+
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span class="password">Password <a class="show-password">Show</a></span>
+				<input type="password" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+		`;
+
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+		});
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
+		});
+	}
+});
+
+DataConnection.types.set('api', class {
+
+	static render(connections = {}) {
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = null;
+	}
+
+	static get details() {
+		return JSON.stringify({});
+	}
+});
+
+DataConnection.types.set('bigquery', class {
+
+	static render(connections = {}) {
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = null;
+	}
+
+	static get details() {
+		return JSON.stringify({});
+	}
+});
+
+DataConnection.types.set('file', class {
+
+	static render(connections = {}) {
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = null;
+	}
+
+	static get details() {
+		return JSON.stringify({});
+	}
+});
+
+DataConnection.types.set('mongo', class {
+
+	static render(connections = {}) {
+
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
+
+			<label>
+				<span>Username</span>
+				<input type="text" name="user" value="${connections.user || ''}">
+			</label>
+
+			<label>
+				<span class="password">Password <a class="show-password">Show</a></span>
+				<input type="password" name="password" value="${connections.password || ''}">
+			</label>
+
+			<label>
+				<span>Host</span>
+				<input type="text" name="host" value="${connections.host || ''}">
+			</label>
+
+			<label>
+				<span>Port</span>
+				<input type="text" name="port" value="${connections.port || ''}">
+			</label>
+
+			<label>
+				<span>Database</span>
+				<input type="text" name="db" value="${connections.db || ''}">
+			</label>
+		`;
+
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+		});
+	}
+
+	static get details() {
+
+		return JSON.stringify({
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
+			db: connections.form.db.value,
+		});
+	}
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
