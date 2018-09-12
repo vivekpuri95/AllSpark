@@ -378,6 +378,7 @@ class DashboardsDashboard {
 		if(this.children.size) {
 
 			this.container.insertAdjacentHTML('beforeend', `
+				<div class="size hidden">${this.children.size} child dashboard${this.children.size > 1 ? 's': ''}</div>
 				<div class="sub-dashboards"></div>
 			`);
 
@@ -392,6 +393,7 @@ class DashboardsDashboard {
 			this.container.querySelector('.first').on('click', arrow.clickListener = e => {
 
 				this.container.querySelector('div.sub-dashboards').classList.toggle('hidden');
+				this.container.querySelector('div.size').classList.toggle('hidden');
 
 				const subDashboardsHidden = this.container.querySelector('div.sub-dashboards').classList.contains('hidden');
 

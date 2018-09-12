@@ -67,6 +67,11 @@ main {
 			border-bottom: 1px solid #ddd;
 			grid-gap: 5px;
 		}
+			main .dashboards .size {
+				padding: 5px 10px;
+				margin-left: 15px;
+				color: #888;
+			}
 			main .dashboards .sub-dashboards {
 				display: grid;
 				margin-left: 10px;
