@@ -172,9 +172,7 @@ class DashboardsDashboard {
 
 			await DashboardsDashboard.page.load();
 
-			DashboardsDashboard.page.list.get(response.insertId).edit();
-
-			history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
+			history.pushState({id: 'add'}, '', '/dashboards-manager/add');
 
 			if(await Storage.get('newUser'))
 				UserOnboard.setup(true);
@@ -184,6 +182,8 @@ class DashboardsDashboard {
 				subtitle: `${DashboardsDashboard.form.name.value} #${response.insertId}`,
 				icon: 'fas fa-plus',
 			});
+
+			await Sections.show('list');
 
 		} catch(e) {
 
@@ -350,7 +350,7 @@ class DashboardsDashboard {
 					<a href="/dashboard/${this.id}">${this.name}</a>
 					<span>#${this.id}</span>
 				</div>
-				<div>Order: ${this.order || ''}</div>
+				<div>${this.order ? ('Order: ' + this.order) : ''}</div>
 				<div title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></div>
 				<div title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></div>
 			</div>
@@ -387,8 +387,8 @@ class DashboardsDashboard {
 
 				const subDashboardsHidden = this.container.querySelector('div.sub-dashboards').classList.contains('hidden');
 
-				arrow.querySelector('.right-arrow').classList.toggle('hidden', subDashboardsHidden);
-				arrow.querySelector('.down-arrow').classList.toggle('hidden', !subDashboardsHidden);
+				arrow.querySelector('.right-arrow').classList.toggle('hidden', !subDashboardsHidden);
+				arrow.querySelector('.down-arrow').classList.toggle('hidden', subDashboardsHidden);
 
 			});
 

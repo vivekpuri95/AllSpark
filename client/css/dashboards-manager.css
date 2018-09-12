@@ -70,7 +70,7 @@ main {
 			main .dashboards .sub-dashboards {
 				display: grid;
 				grid-gap: calc(var(--gap) * 3);
-				margin-left: 20px;
+				margin-left: 40px;
 			}
 				main .dashboards .sub-dashboards .child {
 					padding: 0;
@@ -78,7 +78,7 @@ main {
 					box-shadow: none;
 					border: none;
 				}
-					main .dashboards .sub-dashboards .child .first {
+					main .dashboards .sub-dashboards .child .first .name {
 						font-size: 100%;
 					}
 			main .dashboards .parent .first {
@@ -87,7 +87,6 @@ main {
 				grid-gap: calc(var(--gap) * 2);
 				cursor: pointer;
 				align-items: center;
-				font-size: 110%;
 			}
 				main .dashboards .parent .first .action {
 					color: #888;
@@ -99,6 +98,7 @@ main {
 					letter-spacing: 0.5px;
 					align-items: center;
 					display: flex;
+					font-size: 110%;
 				}
 					main .dashboards .parent .name a {
 						margin: 0 5px;
