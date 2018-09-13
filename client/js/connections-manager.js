@@ -805,23 +805,178 @@ DataConnection.types.set('mongo', class {
 	}
 });
 
+class OAuthConnection {
 
+ 	static async validate() {
 
+ 		const search = new URLSearchParams(window.location.search);
 
+ 		if(!search.has('state'))
+			return;
 
+ 		const
+			parameters = {
+				state: search.get('state'),
+				code: search.get('code'),
+			},
+			options = {method: 'POST'};
 
+ 		if(search.get('error') == 'access_denied')
+			return;
 
+ 		try {
+			await API.call('oauth/connections/redirect_uri', parameters, options);
+		}
+		catch(e) {
+ 			alert(e.message);
+			return;
+		}
 
+ 		window.location = '/connections-manager';
+	}
 
+ 	static async insert(e) {
 
+ 		e.preventDefault();
 
+ 		const
+			parameters = {
+				provider_id: DataConnection.page.container.querySelector('#add-oauth-connection').provider.value,
+			},
+			options = {
+				method: 'POST',
+			};
 
+ 		await API.call('oauth/connections/insert', parameters, options);
 
+ 		DataConnection.page.load();
+	}
 
+ 	constructor(connection, page) {
 
+ 		Object.assign(this, connection);
+		this.page = page;
+	}
 
+ 	get row() {
 
+ 		if(this.containerElement)
+			return this.containerElement;
 
+ 		const container = this.containerElement = document.createElement('tr');
 
+ 		container.innerHTML = `
+			<td>${this.id}</td>
+			<td>${this.page.oAuthProviders.get(this.provider_id).name}</td>
+			<td>${this.page.oAuthProviders.get(this.provider_id).type}</td>
+			<td class="action green authenticate">
+				${(this.access_token || this.refresh_token) ? '<i class="fas fa-flask"></i>' : '<i class="fas fa-link"></i>'}
+			</td>
+			<td class="action red delete"><i class="far fa-trash-alt"></i></td>
+		`;
 
+ 		container.querySelector('.authenticate').on('click', () => {
+
+ 			if(this.access_token || this.refresh_token)
+				this.test();
+ 			else this.authenticate();
+		});
+
+ 		container.querySelector('.delete').on('click', () => this.delete());
+
+ 		return container;
+	}
+
+ 	async test() {
+
+ 		const
+			parameters = { id: this.id },
+			container = this.page.listContainer.querySelector('.test-result');
+
+ 		let response;
+
+ 		try {
+			response = await API.call('oauth/connections/test', parameters);
+		}
+		catch (e) {
+ 			container.classList.remove('hidden');
+			container.classList.add('warning');
+			container.classList.remove('notice');
+			container.textContent = e.message || e;
+			return;
+		}
+
+ 		container.classList.remove('hidden');
+
+ 		if(response) {
+			container.classList.add('notice');
+			container.classList.remove('warning');
+			container.textContent = 'Connection Successful';
+		}
+		else {
+			container.classList.add('warning');
+			container.classList.remove('notice');
+			container.textContent = 'Connection Failed';
+		}
+	}
+
+ 	async authenticate() {
+
+ 		const provider = this.page.oAuthProviders.get(this.provider_id);
+
+ 		if(provider.name == 'Google Analytics') {
+ 			const parameters = new URLSearchParams();
+ 			parameters.set('client_id', provider.client_id);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
+			parameters.set('scope', 'https://www.googleapis.com/auth/analytics.readonly');
+			parameters.set('access_type', 'offline');
+			parameters.set('response_type', 'code');
+			parameters.set('state', this.id);
+			parameters.set('login_hint', user.email);
+ 			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
+		}
+ 		else if(provider.name == 'Google AdWords') {
+ 			const parameters = new URLSearchParams();
+ 			parameters.set('client_id', provider.client_id);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
+			parameters.set('scope', 'https://www.googleapis.com/auth/adwords');
+			parameters.set('access_type', 'offline');
+			parameters.set('response_type', 'code');
+			parameters.set('state', this.id);
+			parameters.set('login_hint', user.email);
+ 			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
+		}
+ 		else if(provider.name == 'Google BigQuery') {
+ 			const parameters = new URLSearchParams();
+ 			parameters.set('client_id', provider.client_id);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
+			parameters.set('scope', 'https://www.googleapis.com/auth/bigquery');
+			parameters.set('access_type', 'offline');
+			parameters.set('response_type', 'code');
+			parameters.set('state', this.id);
+			parameters.set('login_hint', user.email);
+ 			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
+		}
+ 		else if(provider.name == 'Facebook Marketing') {
+ 			const parameters = new URLSearchParams();
+ 			parameters.set('client_id', provider.client_id);
+			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
+			parameters.set('scope', 'ads_read');
+			parameters.set('response_type', 'code');
+			parameters.set('state', this.id);
+ 			window.open(`https://www.facebook.com/v3.0/dialog/oauth?` + parameters);
+		}
+	}
+
+ 	async delete() {
+
+ 		if(!confirm('Are you sure?! This will not delete the stored data.'))
+			return;
+ 		const
+			parameters = { id: this.id },
+			options = { method: 'POST' };
+ 		await API.call('oauth/connections/delete', parameters, options);
+ 		this.page.load();
+	}
+}
 
