@@ -219,3 +219,21 @@ main .about-list {
 	main .about-list button.clear-cache {
 		width: 10%;
 	}
+main .exe-reports {
+	padding: calc(var(--gap) * 2);
+}
+	main .exe-reports .toolbar {
+		padding: calc(var(--gap) * 2);
+		margin: calc(var(--gap) * 2) 0;
+	}
+.dialog-box-blanket .body.exe-query-info {
+	padding: 0 calc(var(--gap) * 2);
+}
+	.dialog-box-blanket .body.exe-query-info h3 {
+		margin: 0;
+		font-size: 100%;
+		padding: calc(var(--gap) * 2) 0;
+	}
+	.dialog-box-blanket .body.exe-query-info .code-editor {
+		height: 400px;
+	}

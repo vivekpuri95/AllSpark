@@ -22,6 +22,7 @@ class Settings extends Page {
 				a.on('click', async () => {
 
 					await Storage.set('settingsCurrentTab', setting.name);
+					clearInterval(Settings.autoRefreshInterval);
 
 					for (const a of nav.querySelectorAll('a.selected'))
 						a.classList.remove('selected');
@@ -325,6 +326,135 @@ Settings.list.set('categories', class Categories extends SettingPage {
 
 		await Sections.show('category-list');
 	}
+});
+
+Settings.list.set('executingReports', class ExecutingReports extends SettingPage {
+
+	get name() {
+
+		return 'Executing Reports';
+	}
+
+	setup() {
+
+		if(this.page.querySelector('.exe-reports')) {
+
+			this.page.querySelector('.exe-reports').remove();
+		}
+
+		this.page.appendChild(this.container);
+	}
+
+	async load() {
+
+		const options = {
+			method: 'POST',
+		};
+
+		const [reports, users] = await Promise.all([
+			API.call('reports/engine/executingReports'),
+			API.call('users/list', {}, options)
+		]);
+
+		this.executingReports = new Set();
+
+		await DataSource.load();
+
+		for(const report of reports) {
+
+			report.report_name = DataSource.list.get(report.query_id).name;
+			[report.user] = users.filter(x => report.user_id == x.user_id);
+			this.executingReports.add(new ExecutingReport(report, this));
+		}
+
+		await this.render();
+
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('setting-page', 'exe-reports', 'hidden');
+
+		container.innerHTML = `
+			<h1>Executing Reports</h1>
+						
+			<header class="toolbar block">
+				<input type="checkbox" name="auto-refresh"> Auto Refresh
+			</header>
+			
+			<table class="block">
+				<thead>
+					<tr>
+						<th>Account Id</th>
+						<th>Query Id</th>
+						<th>Report Name</th>
+						<th>User Id</th>
+						<th>User Name</th>
+						<th>Connection Type</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		`;
+
+		const autoRefresh = container.querySelector('input[name=auto-refresh]');
+
+		autoRefresh.on('change', async () => {
+
+			if(autoRefresh.checked) {
+
+				await Storage.set('auto-refresh', true);
+				Settings.autoRefreshInterval =  setInterval(async () => {
+					await this.load();
+				}, 5000);
+			}
+			else {
+
+				await Storage.set('auto-refresh', false);
+				clearInterval(Settings.autoRefreshInterval);
+			}
+		});
+
+		return container;
+	}
+
+	async render() {
+
+		if(!(await Storage.has('auto-refresh'))) {
+
+			await Storage.set('auto-refresh', true);
+		};
+
+		const getAutoRefresh = await Storage.get('auto-refresh');
+
+		if(getAutoRefresh) {
+
+			clearInterval(Settings.autoRefreshInterval);
+
+			Settings.autoRefreshInterval =  setInterval(async () => {
+				await this.load();
+			}, 5000);
+		}
+
+		this.container.querySelector('input[name=auto-refresh]').checked = getAutoRefresh ? true : false;
+
+		const tbody = this.container.querySelector('table tbody');
+
+		tbody.textContent = null;
+
+		if(!this.executingReports.size)
+			tbody.innerHTML = '<tr><td class="NA" colspan="4">No executing reports at this time.</td></tr>';
+
+		for(const report of this.executingReports.values())
+			tbody.appendChild(report.row);
+
+		this.container.classList.remove('hidden');
+	}
+
 });
 
 Settings.list.set('about', class About extends SettingPage {
@@ -1813,5 +1943,55 @@ class SettingsCategory {
 		this.container.querySelector('.red').on('click', () => this.delete());
 
 		return this.container;
+	}
+}
+
+class ExecutingReport {
+
+	constructor(report, reports) {
+
+		Object.assign(this, report);
+
+		this.reports = reports;
+	}
+
+	get row() {
+
+		const tr = document.createElement('tr');
+
+		tr.innerHTML = `
+			<td>${this.account_id}</td>
+			<td>${this.query_id}</td>
+			<td>${this.report_name}</td>
+			<td>${this.user_id}</td>
+			<td>${[this.user.first_name, this.user.middle_name, this.user.last_name].filter(x => x).join(' ')}</td>
+			<td>${this.params.type}</td>
+		`;
+
+		tr.on('click', () => {
+
+			if(!this.queryDialog)
+				this.queryDialog = new DialogBox();
+
+			this.queryDialog.heading = this.report_name;
+
+			const
+				editor = new CodeEditor({mode: 'sql'});
+
+			editor.editor.setTheme('ace/theme/clouds');
+			editor.editor.setReadOnly(true);
+
+			editor.value = this.params.request[0];
+
+			this.queryDialog.body.classList.add('exe-query-info');
+
+			this.queryDialog.body.innerHTML = `<h3>Query:</h3>`;
+
+			this.queryDialog.body.appendChild(editor.container);
+
+			this.queryDialog.show();
+		});
+
+		return tr;
 	}
 }
