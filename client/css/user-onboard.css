@@ -66,13 +66,20 @@
                 padding: calc(var(--gap) * 1);
             }
             .setup-stages .wrapper .stage span.status {
-                height: 20px;
-                width: 20px;
+                height: 22px;
+                width: 22px;
                 border: 1px solid var(--color-accent);
-                border-radius: 10px;
+                border-radius: 12px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
             .setup-stages .wrapper .stage span.hellip {
                 color: #ddd;
+            }
+            .setup-stages .wrapper .stage span.status.checked {
+                color: var(--color-accent);
+                font-size: 85%;
             }
     /*.setup-stages .stage-info {*/
         /*grid-row: 1;*/

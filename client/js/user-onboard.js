@@ -49,10 +49,10 @@ class UserOnboard {
 
 	get container() {
 
-		if(this.stateChanged) {
-
-			window.location = this.stage.url;
-		}
+		// if(this.stateChanged) {
+		//
+		// 	window.location = this.stage.url;
+		// }
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('setup-stages');
@@ -65,6 +65,11 @@ class UserOnboard {
 		const wrapper = container.querySelector('.wrapper');
 
 		for(const stage of this.stages) {
+
+			if(stage.completed) {
+
+				stage.checked();
+			}
 
 			wrapper.appendChild(stage.container);
 		}
@@ -166,6 +171,15 @@ class UserOnboardStage {
 		});
 
 		return container;
+	}
+
+	checked() {
+
+		const status = this.container.querySelector('.status');
+
+		status.innerHTML = '<i class="fas fa-check"></i>';
+		status.classList.add('checked');
+
 	}
 }
 
