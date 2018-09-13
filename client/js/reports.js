@@ -1596,11 +1596,9 @@ class DataSourceColumns extends Map {
 		container.classList.toggle('over-flow', container.offsetWidth < container.scrollWidth);
 	}
 }
-
 class DataSourceColumn {
 
 	constructor(column, source) {
-
 		DataSourceColumn.colors = [
 			'#3e7adc',
 			'#ef6692',
@@ -1619,7 +1617,6 @@ class DataSourceColumn {
 			'#1abb9c',
 			'#9da19c',
 		];
-
 		this.key = column;
 		this.source = source;
 		this.name = this.key.split('_').filter(w => w.trim()).map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
@@ -1643,6 +1640,9 @@ class DataSourceColumn {
 				format: '',
 			}
 		}
+
+		if(this.disabled)
+			this.container.classList.toggle('disabled', this.disabled);
 	}
 
 	get container() {
@@ -1752,27 +1752,28 @@ class DataSourceColumn {
 	}
 
 	edit() {
-
 		this.dialogueBox.body.appendChild(this.form);
 
 		for(const key in this) {
 
-			if(key in this.form)
+			if(key in this.form) {
+				if(key == 'disabled') {
+					this.form[key].checked = this[key];
+				}
 				this.form[key].value = this[key];
+			}
 		}
 
 		if(this.type)
 			this.form.type.value = this.type.name;
 
 		if(this.drilldown && this.drilldown.query_id) {
-
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
 		}
 		else {
 			this.drilldownQuery.clear();
 		}
-
-		this.form.disabled.value = parseInt(this.disabled) || 0;
+		this.form.disabled.checked = this.disabled;
 
 		this.dialogueBox.show();
 	}
@@ -1781,7 +1782,6 @@ class DataSourceColumn {
 
 		if(this.formContainer)
 			return this.formContainer;
-
 		const form = this.formContainer = document.createElement('form');
 
 		form.classList.add('block', 'form', 'column-form');
@@ -1843,11 +1843,8 @@ class DataSourceColumn {
 			</label>
 
 			<label>
-				<span>Disabled</span>
-				<select name="disabled">
-					<option value="0">No</option>
-					<option value="1">Yes</option>
-				</select>
+				<span><input type="checkbox" name="disabled"><span>Disabled</span></span>
+
 			</label>
 
 			<h3>Drill down</h3>
@@ -1955,21 +1952,20 @@ class DataSourceColumn {
 	}
 
 	async apply(e) {
-
 		if(e)
 			e.preventDefault();
 
-		for(const element of this.form.elements)
-			this[element.name] = element.value == '' ? null : element.value || null;
-
+		for(const element of this.form.elements) {
+			if(element.type == 'checkbox')
+				this[element.name] = element.checked;
+			else this[element.name] = element.value == '' ? null : element.value || null;
+		}
 		this.filters = this.columnFilters.json;
 
 		this.type = {
 			name: this.form.type.value,
 			format: '',
 		};
-
-		this.disabled = parseInt(this.disabled) || 0;
 
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
@@ -1983,6 +1979,9 @@ class DataSourceColumn {
 		await this.source.visualizations.selected.render();
 
 		this.dialogueBox.hide();
+		this.source.columns.render();
+
+		await this.update();
 
 		new SnackBar({
 			message: `Changes to <em>${this.name}</em> Applied`,
@@ -2003,9 +2002,11 @@ class DataSourceColumn {
 			response,
 			updated = 0;
 
-		for(const element of this.form.elements)
-			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
-
+		for(const element of this.form.elements) {
+			if(element.type == 'checkbox')
+				this[element.name] = element.checked;
+			else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+		}
 		this.filters = this.columnFilters.json;
 
 		this.type = {
@@ -2085,11 +2086,8 @@ class DataSourceColumn {
 	}
 
 	render() {
-
 		this.container.classList.toggle('hidden', this.hidden ? true : false);
-
 		this.container.querySelector('.label .name').textContent = this.name;
-
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
 	}
@@ -3732,7 +3730,6 @@ class LinearVisualization extends Visualization {
 					continue;
 
 				const column = this.source.columns.get(key);
-
 				if(!column || column.disabled)
 					continue;
 
@@ -5988,7 +5985,6 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 					continue;
 
 				const column = this.source.columns.get(key);
-
 				if(!column || column.disabled)
 					continue;
 
@@ -6930,7 +6926,6 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		} else {
 
 			for(const column of this.source.columns.values()) {
-
 				if(column.disabled)
 					continue;
 
@@ -8244,7 +8239,6 @@ class SpatialMapLayer {
 		const visibleCheck = container.querySelector('input[name=visible_layers]');
 
 		visibleCheck.on('change', e => {
-
 			container.classList.toggle('disabled');
 
 			if(visibleCheck.checked)

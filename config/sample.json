@@ -7,17 +7,17 @@
   "sql_db": {
     "read": {
       "connectionLimit": 10,
-      "host": "host address",
-      "user": "username",
-      "password": "password",
-      "database":"default db"
+      "host": "localhost",
+      "user": "root",
+      "password": "chirag@123",
+      "database":"demo_master"
     },
     "write": {
       "connectionLimit": 10,
-      "host": "host address",
-      "user": "username",
-      "password": "password",
-      "database":"default db"
+      "host": "localhost",
+      "user": "root",
+      "password": "chirag@123",
+      "database":"demo_master"
     }
   },
   "mailer": {
@@ -28,6 +28,6 @@
     "port": 6379,
     "db": 0
   },
-  "superAdmin_users": ["email1", "email2"],
+  "superAdmin_users": ["chiragkataria11@gmail.com"],
   "footer_powered_by": ""
 }
