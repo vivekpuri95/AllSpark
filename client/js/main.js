@@ -567,7 +567,7 @@ class Cookies {
 	 * @return boolean			The status of the set request.
 	 */
 	static set(key, value) {
-		document.cookie = `${key}=${encodeURIComponent(value)}`;
+		document.cookie = `${key}=${encodeURIComponent(value)};path=/`;
 		return true;
 	}
 
@@ -1272,10 +1272,9 @@ class API extends AJAX {
 
 		let
 			getToken = true,
-			token = await Storage.get('token'),
-			has_external_parameters = await Storage.has('external_parameters');
+			token = await Storage.get('token');
 
-		if(!has_external_parameters && Cookies.get('external_parameters')) {
+		if(Cookies.get('external_parameters')) {
 
 			await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
 			Cookies.set('external_parameters', '');
