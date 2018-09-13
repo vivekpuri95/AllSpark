@@ -21,12 +21,15 @@ class UserOnboard {
 	async load() {
 
 		this.progress = 0;
+		this.stages = [];
 
-		this.stage = (await this.getCurrentStage());
+		for(const stage of UserOnboard.stages.values()) {
 
-		if(!this.stage) {
+			const stageObj = new stage(this);
+			await stageObj.load();
 
-			await Storage.delete('newUser');
+			this.stages.push(stageObj);
+			this.progress = stageObj.progress;
 		}
 
 		if(document.querySelector('.setup-stages')) {
@@ -41,29 +44,7 @@ class UserOnboard {
 			await Storage.delete('newUser');
 		}
 
-		this.loadWelcomeDialogBox();
-	}
-
-	async getCurrentStage() {
-
-		this.stages = [];
-
-		for(const stage of UserOnboard.stages.values()) {
-
-			const stageObj = new stage(this);
-			await stageObj.load();
-
-			this.stages.push(stageObj);
-
-			if(!stageObj.completed) {
-
-				return stageObj;
-			}
-
-			this.progress = stageObj.progress;
-		}
-
-		return 0;
+		// this.loadWelcomeDialogBox();
 	}
 
 	get container() {
@@ -77,29 +58,20 @@ class UserOnboard {
 		container.classList.add('setup-stages');
 
 		container.innerHTML = `
+			<div class="wrapper"></div>
 			<a href="${demo_url}" target="_blank">View Demo <i class="fas fa-external-link-alt"></i></a>
-			<div class="progress-bar">
-				<div class="progress" style="width: ${this.progress}%"></div>
-			</div>
 		`;
+
+		const wrapper = container.querySelector('.wrapper');
+
+		for(const stage of this.stages) {
+
+			wrapper.appendChild(stage.container);
+		}
 
 		if(this.progress == 0) {
 
 			container.querySelector('.progress').classList.add('progress-zero');
-		}
-
-		if(this.stage) {
-
-			container.appendChild(this.stage.container);
-		}
-		else {
-			container.insertAdjacentHTML('beforeend', `
-				<div class="stage-info">
-					<div class="current">
-						<span class="NA">${this.progress}%</span><span>Setup Complete</span>
-					</div>
-				</div>
-			`);
 		}
 
 		return container;
@@ -177,7 +149,21 @@ class UserOnboardStage {
 		}
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('stage-info');
+		container.classList.add('stage');
+
+		container.innerHTML = `
+			<span class="hellip">
+				<i class="fas fa-ellipsis-v"></i>
+				<i class="fas fa-ellipsis-v"></i>
+			</span>
+			<span>${this.title}</span>
+			<span class="status"></span>
+		`;
+
+		container.on('click', () => {
+
+			window.location = this.url;
+		});
 
 		return container;
 	}
@@ -192,44 +178,44 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 		this.title = 'Add Connection';
 	}
 
-	get container() {
-
-		if(this.containerElement) {
-
-			return this.containerElement;
-		}
-
-		const container = this.containerElement = super.container;
-
-		container.innerHTML = `
-			<div class="current">
-				<span class="NA">${this.progress}%</span>
-				<span><i class="fa fa-server"></i> Add Connection</span>
-			</div>
-			<div class="next">
-				<span class="NA">Next</span>
-				<span><i class="fa fa-database"></i> Add Report</span>
-			</div>
-		`;
-
-		container.querySelector('.current').on('click', () => {
-
-			window.location = this.url;
-		});
-
-		container.querySelector('.next').on('click', () => {
-
-			window.location = '/reports/configure-report/add';
-		});
-
-		if(!this.completed) {
-
-			container.querySelector('.next').classList.add('disabled');
-		}
-
-
-		return container;
-	}
+	// get container() {
+	//
+	// 	if(this.containerElement) {
+	//
+	// 		return this.containerElement;
+	// 	}
+	//
+	// 	const container = this.containerElement = super.container;
+	//
+	// 	container.innerHTML = `
+	// 		<div class="current">
+	// 			<span class="NA">${this.progress}%</span>
+	// 			<span><i class="fa fa-server"></i> Add Connection</span>
+	// 		</div>
+	// 		<div class="next">
+	// 			<span class="NA">Next</span>
+	// 			<span><i class="fa fa-database"></i> Add Report</span>
+	// 		</div>
+	// 	`;
+	//
+	// 	container.querySelector('.current').on('click', () => {
+	//
+	// 		window.location = this.url;
+	// 	});
+	//
+	// 	container.querySelector('.next').on('click', () => {
+	//
+	// 		window.location = '/reports/configure-report/add';
+	// 	});
+	//
+	// 	if(!this.completed) {
+	//
+	// 		container.querySelector('.next').classList.add('disabled');
+	// 	}
+	//
+	//
+	// 	return container;
+	// }
 
 	get url() {
 
@@ -262,43 +248,43 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		this.title = 'Add Report';
 	}
 
-	get container() {
-
-		if(this.containerElement) {
-
-			return this.containerElement;
-		}
-
-		const container = this.containerElement = super.container;
-
-		container.innerHTML = `
-			<div class="current">
-				<span class="NA">${this.progress}%</span>
-				<span><i class="fa fa-database"></i> Add Report</span>
-			</div>
-			<div class="next">
-				<span class="NA">Next</span>
-				<span><i class="fa fa-newspaper"></i>Add Dashboard</span>
-			</div>
-		`;
-
-		container.querySelector('.current').on('click', () => {
-
-			window.location = this.url;
-		});
-
-		container.querySelector('.next').on('click', () => {
-
-			window.location = '/dashboards-manager/add';
-		});
-
-		if(!this.completed) {
-
-			container.querySelector('.next').classList.add('disabled');
-		}
-
-		return container;
-	}
+	// get container() {
+	//
+	// 	if(this.containerElement) {
+	//
+	// 		return this.containerElement;
+	// 	}
+	//
+	// 	const container = this.containerElement = super.container;
+	//
+	// 	container.innerHTML = `
+	// 		<div class="current">
+	// 			<span class="NA">${this.progress}%</span>
+	// 			<span><i class="fa fa-database"></i> Add Report</span>
+	// 		</div>
+	// 		<div class="next">
+	// 			<span class="NA">Next</span>
+	// 			<span><i class="fa fa-newspaper"></i>Add Dashboard</span>
+	// 		</div>
+	// 	`;
+	//
+	// 	container.querySelector('.current').on('click', () => {
+	//
+	// 		window.location = this.url;
+	// 	});
+	//
+	// 	container.querySelector('.next').on('click', () => {
+	//
+	// 		window.location = '/dashboards-manager/add';
+	// 	});
+	//
+	// 	if(!this.completed) {
+	//
+	// 		container.querySelector('.next').classList.add('disabled');
+	// 	}
+	//
+	// 	return container;
+	// }
 
 	get url() {
 
@@ -331,44 +317,44 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 		this.title = 'Add Dashboard';
 	}
 
-	get container() {
-
-		if(this.containerElement) {
-
-			return this.containerElement;
-		}
-
-		const container = this.containerElement = super.container;
-
-		container.innerHTML = `
-			<div class="current">
-				<span class="NA">${this.progress}%</span>
-				<span><i class="fa fa-newspaper"></i> Add Dashboard</span>
-			</div>
-			<div class="next">
-				<span class="NA">Next</span>
-				<span><i class="fa fa-chart-line"></i> Add Visualization</span>
-			</div>
-		`;
-
-		container.querySelector('.current').on('click', () => {
-
-			window.location = this.url;
-		});
-
-		container.querySelector('.next').on('click', () => {
-
-			window.location = this.stages[1].report ? `/reports/pick-visualization/${this.stages[1].report.query_id}` : '/reports';
-		});
-
-		if(!this.completed) {
-
-			container.querySelector('.next').classList.add('disabled');
-		}
-
-		return container;
-
-	}
+	// get container() {
+	//
+	// 	if(this.containerElement) {
+	//
+	// 		return this.containerElement;
+	// 	}
+	//
+	// 	const container = this.containerElement = super.container;
+	//
+	// 	container.innerHTML = `
+	// 		<div class="current">
+	// 			<span class="NA">${this.progress}%</span>
+	// 			<span><i class="fa fa-newspaper"></i> Add Dashboard</span>
+	// 		</div>
+	// 		<div class="next">
+	// 			<span class="NA">Next</span>
+	// 			<span><i class="fa fa-chart-line"></i> Add Visualization</span>
+	// 		</div>
+	// 	`;
+	//
+	// 	container.querySelector('.current').on('click', () => {
+	//
+	// 		window.location = this.url;
+	// 	});
+	//
+	// 	container.querySelector('.next').on('click', () => {
+	//
+	// 		window.location = this.stages[1].report ? `/reports/pick-visualization/${this.stages[1].report.query_id}` : '/reports';
+	// 	});
+	//
+	// 	if(!this.completed) {
+	//
+	// 		container.querySelector('.next').classList.add('disabled');
+	// 	}
+	//
+	// 	return container;
+	//
+	// }
 
 	get url() {
 
@@ -402,29 +388,29 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		this.title = 'Add Visualization';
 	}
 
-	get container() {
-
-		if(this.containerElement) {
-
-			return this.containerElement;
-		}
-
-		const container = this.containerElement = super.container;
-
-		container.innerHTML = `
-			<div class="current">
-				<span class="NA">${this.progress}%</span>
-				<span><i class="fa fa-chart-line"></i> Add Visualization</span>
-			</div>
-		`;
-
-		container.querySelector('.current').on('click', () => {
-
-			window.location = this.url;
-		});
-
-		return container;
-	}
+	// get container() {
+	//
+	// 	if(this.containerElement) {
+	//
+	// 		return this.containerElement;
+	// 	}
+	//
+	// 	const container = this.containerElement = super.container;
+	//
+	// 	container.innerHTML = `
+	// 		<div class="current">
+	// 			<span class="NA">${this.progress}%</span>
+	// 			<span><i class="fa fa-chart-line"></i> Add Visualization</span>
+	// 		</div>
+	// 	`;
+	//
+	// 	container.querySelector('.current').on('click', () => {
+	//
+	// 		window.location = this.url;
+	// 	});
+	//
+	// 	return container;
+	// }
 
 	get url() {
 
