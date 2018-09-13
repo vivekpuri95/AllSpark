@@ -102,16 +102,13 @@ main {
 				}
 				main .dashboards .dashboard .label .action {
 					color: #555;
-					transition: box-shadow var(--transition-duration),
-								background var(--transition-duration),
-								color var(--transition-duration);
+					transition: color var(--transition-duration);
 				}
-				main .dashboards .dashboard .label .action:active {
-					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
+				main .dashboards .dashboard .label .action.green:hover {
+					color: #2c9d58;
 				}
-				main .dashboards .dashboard .label .action:hover {
-					background: #ddd;
-					color: #333;
+				main .dashboards .dashboard .label .action.red:hover {
+					color: #db4437;
 				}
 				main .dashboards .dashboard .name {
 					letter-spacing: 0.5px;
