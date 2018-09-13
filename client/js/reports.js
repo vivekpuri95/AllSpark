@@ -755,8 +755,8 @@ class DataSource {
 		else {
 
 			const
-				[monthFilter] = Array.from(this.filters).filter(x.type == 'month'),
-				[dateFilter] = Array.from(this.filters).filter(x.type == 'date');
+				[monthFilter] = Array.from(this.filters.values()).filter(x => x.type == 'month'),
+				[dateFilter] = Array.from(this.filters.values()).filter(x => x.type == 'date');
 
 			if(monthFilter) {
 
@@ -953,7 +953,7 @@ class DataSourceFilters extends Map {
 		// The goal is to group together the start and end dates of any one filter name
 		for(const filter of filters.values()) {
 
-			if(filter.type != 'date' || (!filter.name.toLowerCase().includes('start') && !filter.name.toLowerCase().includes('end')))
+			if(filter.type != 'date' || !(filter.name.toLowerCase().includes('start') && filter.name.toLowerCase().includes('end')))
 				continue;
 
 			// Remove the 'start', 'end', 'date' and spaces to create a name that would (hopefuly) identify the filter pairs.
