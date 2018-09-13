@@ -683,7 +683,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 					</button>
 					<h1>Manage Dashboards</h1>
 				</div>
-				
+
 				<div class="dashboards"></div>
 			</section>
 
@@ -1210,7 +1210,6 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 		super();
 
 		this.stylesheets.push('/css/connections-manager.css');
-		this.stylesheets.push('/css/connections-manager-new.css');
 		this.scripts.push('/js/connections-manager.js');
 	}
 

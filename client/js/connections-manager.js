@@ -75,16 +75,9 @@ Page.class = class Connections extends Page {
 		this.oAuthProviders = new Map;
 		this.oAuthConnections = new Map;
 
-		const dataConnectionsList = {
-			mysql: [],
-			mssql: [],
-			pgsql: [],
-			oracle: [],
-			api: [],
-			bigquery: [],
-			file: [],
-			mongo: [],
-		};
+		const dataConnectionsList = {};
+
+		Array.from(DataConnection.types.keys()).map(c => dataConnectionsList[c] = []);
 
 		for(const connection of response[0])
 			dataConnectionsList[connection.type].push(connection);
@@ -101,7 +94,7 @@ Page.class = class Connections extends Page {
 
 	render(list) {
 
-		const container = this.connectionContainer;
+		const container = this.connectionsContainer;
 
 		const connContainer = container.querySelector('#data-connections');
 
@@ -112,17 +105,20 @@ Page.class = class Connections extends Page {
 		for(const connection of dataConnections.values())
 			connContainer.appendChild(connection.container);
 
+		if(!connContainer.childElementCount)
+			connContainer.innerHTML = '<div class="NA">No Connection Found</div>';
+
 		this.container.querySelector('section#list').appendChild(container);
 
 		Sections.show('list');
 	}
 
-	get connectionContainer() {
+	get connectionsContainer() {
 
-		if(this.connectionContainerElement)
-			return this.connectionContainerElement;
+		if(this.connectionsContainerElement)
+			return this.connectionsContainerElement;
 
-		const container = this.connectionContainerElement = document.createElement('div');
+		const container = this.connectionsContainerElement = document.createElement('div');
 		container.classList.add('connections');
 
 		container.innerHTML = `
@@ -160,17 +156,23 @@ Page.class = class Connections extends Page {
 
 	search(searchString) {
 
+		if(!searchString)
+			return this.render(this.dataConnections);
+
 		const result = new Map;
 
 		for(const [key,value] of this.dataConnections) {
 
-			if(key.includes(searchString))
-				result.set(key, value)
+			for(const data of value) {
+
+				if((key.includes(searchString) || data.connection_name.includes(searchString)) && !result.has(key))
+					result.set(key, value)
+			}
 		}
 
 		this.render(result);
 
-		this.connectionContainer.querySelector('.search-connections input').focus();
+		this.connectionsContainer.querySelector('.search-connections input').focus();
 	}
 }
 
