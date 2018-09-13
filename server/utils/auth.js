@@ -119,7 +119,7 @@ class Authenticate {
 
 		let connectionObj = reportObject.connectionObj || reportObject.connection_name;
 
-		if((await Authenticate.connection(reportObject.connection_name, userJWTObject)).error) {
+		if((await Authenticate.connection(connectionObj, userJWTObject)).error) {
 
 			return {
 				error: true,
@@ -397,7 +397,7 @@ class Authenticate {
 
 		let userPrivileges = [], connectionRoles , userConnections;
 
-		if(parseInt(connectionObj)) {
+		if(parseInt(connectionObj) == connectionObj) {
 
 			connectionObj = await mysql.query(`
 				SELECT 
