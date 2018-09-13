@@ -169,7 +169,7 @@ Page.class = class Connections extends Page {
 				result.set(key, value)
 
 			for(const data of value) {
-				if(data.connection_name.includes(string))
+				if(data.connection_name.toLowerCase().includes(string))
 					result.set(key, value);
 			}
 		}
