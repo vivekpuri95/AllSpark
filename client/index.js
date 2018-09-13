@@ -683,7 +683,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 					</button>
 					<h1>Manage Dashboards</h1>
 				</div>
-				
+
 				<div class="dashboards"></div>
 			</section>
 
@@ -1203,7 +1203,7 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
+router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
@@ -1215,73 +1215,8 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 
 	async main() {
 		return `
+
 			<section class="section" id="list">
-
-				<h1>Data Connections</h1>
-
-				<div class="toolbar filters">
-					<button type="button" id="add-data-connection" class="grey">
-						<i class="fa fa-plus"></i>
-						Add New Connection
-					</button>
-				</div>
-
-				<div class="block data-connections">
-					<table>
-						<thead>
-							<tr>
-								<th class="thin">ID</th>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="action">Edit</th>
-								<th class="action">Delete</th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-				</div>
-
-				<h1>OAuth Connections</h1>
-
-				<div class="oauth-connections">
-
-					<div class="test-result hidden"></div>
-
-					<table class="block">
-						<thead>
-							<tr>
-								<th class="thin">ID</th>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="action">Authenticate</th>
-								<th class="action">Delete</th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-
-					<form id="add-oauth-connection" class="form">
-						<select name="provider"></select>
-						<button type="submit">
-							<i class="fas fa-plus"></i> Add New Connection
-						</button>
-					</form>
-				</div>
-
-			</section>
-
-			<section class="section" id="add-connection">
-
-				<h1>Add New Connection</h1>
-
-				<div id="add-connection-picker">
-
-					<div class="toolbar">
-						<button id="connection-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
-					</div>
-
-					<form id="add-connection-form"></form>
-				</div>
 			</section>
 
 			<section class="section" id="form">
@@ -1311,6 +1246,7 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 			</section>
 		`;
 	}
+
 }));
 
 router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {

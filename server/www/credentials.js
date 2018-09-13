@@ -122,6 +122,10 @@ exports.list = class extends API {
 			connection.deletable = constants.adminCategory.some(x => deleteCategories.includes(x)) || deleteFlag;
 		}
 
+		for(const data of response) {
+			data.user_name = data.user;
+		}
+
 		return response;
 	}
 };

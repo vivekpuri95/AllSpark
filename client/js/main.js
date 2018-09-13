@@ -2574,11 +2574,11 @@ class ObjectRoles {
 		this.mapping = {};
 		for (const target of this.allowedTargets) {
 
-			for (const row of this.targets[target].data) {
+			if (!this.mapping[target]) {
+				this.mapping[target] = {};
+			}
 
-				if (!this.mapping[target]) {
-					this.mapping[target] = {};
-				}
+			for (const row of this.targets[target].data) {
 
 				this.mapping[target][row.value] = row;
 			}

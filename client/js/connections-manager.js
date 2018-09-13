@@ -6,23 +6,7 @@ Page.class = class Connections extends Page {
 
 		window.on('popstate', e => this.loadState(e.state));
 
-		DataConnection.setup(this);
-
-		this.listContainer = this.container.querySelector('section#list');
-
-
-		if(user.privileges.has('connection.insert')) {
-
-			this.container.querySelector('#add-data-connection').classList.remove('grey');
-			this.container.querySelector('#add-data-connection').on('click', () => {
-				DataConnection.add(this);
-				history.pushState({what: 'add'}, '', '/connections-manager/add');
-			});
-		}
-
-		this.container.querySelector('#add-oauth-connection').on('submit', e => OAuthConnection.insert(e));
-
-		OAuthConnection.validate();
+		this.container.querySelector('section#form .toolbar #back').on('click', () => this.back());
 
 		(async () => {
 
@@ -34,13 +18,25 @@ Page.class = class Connections extends Page {
 
 	async loadState(state) {
 
-		const what = state ? state.what : location.pathname.split('/').pop();
+		let what = state ? state.what : location.pathname.split('/');
 
-		if(what == 'add')
-			return DataConnection.add(this);
+		if(what[what.length - 2] == 'add') {
 
-		if(this.dataConnections.has(parseInt(what)))
-			return this.dataConnections.get(parseInt(what)).edit();
+			DataConnection.types.get(what[what.length - 1]).render(this);
+			this.dataConnections.get(what[what.length - 1]).addConnection();
+			return Sections.show('form');
+		}
+
+		what = what.pop();
+
+		for(const connections of this.dataConnections.values()) {
+
+			for(const connection of connections) {
+				if(connection.id == parseInt(what)) {
+					return connection.edit();
+				}
+			}
+		}
 
 		await Sections.show('list');
 	}
@@ -79,169 +75,233 @@ Page.class = class Connections extends Page {
 		this.oAuthProviders = new Map;
 		this.oAuthConnections = new Map;
 
-		for(const connection of response[0] || [])
-			this.dataConnections.set(connection.id, new DataConnection(connection, this));
+		const dataConnectionsList = {};
 
-		for(const provider of response[1] || [])
-			this.oAuthProviders.set(provider.provider_id, provider);
+		Array.from(DataConnection.types.keys()).map(c => dataConnectionsList[c] = []);
 
-		for(const connection of response[2] || [])
-			this.oAuthConnections.set(connection.id, new OAuthConnection(connection, this));
+		for(const connection of response[0])
+			dataConnectionsList[connection.type].push(connection);
+
+		for(const connection in dataConnectionsList)
+			this.dataConnections.set(connection, new DataConnections(dataConnectionsList[connection], connection, this));
+
+		// for(const provider of response[1] || [])
+		// 	this.oAuthProviders.set(provider.provider_id, provider);
+
+		// for(const connection of response[2] || [])
+		// 	this.oAuthConnections.set(connection.id, new OAuthConnection(connection, this));
 	}
 
-	render() {
+	render(list) {
 
-		const
-			dataConnectionsContainer = this.listContainer.querySelector('.data-connections tbody'),
-			oAuthConnectionsContainer = this.listContainer.querySelector('.oauth-connections tbody');
+		const container = this.connectionsContainer;
 
-		dataConnectionsContainer.textContent = null;
+		const connContainer = container.querySelector('#data-connections');
 
-		for(const item of this.dataConnections.values())
-			dataConnectionsContainer.appendChild(item.row);
+		connContainer.textContent = null;
 
-		if(!dataConnectionsContainer.textContent)
-			dataConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No data connections found!</td></tr>';
+		const dataConnections = list || this.dataConnections;
 
-		oAuthConnectionsContainer.textContent = null;
+		for(const connection of dataConnections.values())
+			connContainer.appendChild(connection.container);
 
-		for(const item of this.oAuthConnections.values())
-			oAuthConnectionsContainer.appendChild(item.row);
+		if(!connContainer.childElementCount)
+			connContainer.innerHTML = '<div class="NA">No Connection Found</div>';
 
-		if(!oAuthConnectionsContainer.textContent)
-			oAuthConnectionsContainer.innerHTML	 = '<tr class="NA"><td colspan="5">No OAuth connections found!</td></tr>';
+		this.container.querySelector('section#list').appendChild(container);
 
-		const providerList = this.listContainer.querySelector('#add-oauth-connection').provider;
+		Sections.show('list');
+	}
 
-		for(const provider of this.oAuthProviders.values())
-			providerList.insertAdjacentHTML('beforeend', `<option value="${provider.provider_id}">${provider.name}</option>`);
+	get connectionsContainer() {
+
+		if(this.connectionsContainerElement)
+			return this.connectionsContainerElement;
+
+		const container = this.connectionsContainerElement = document.createElement('div');
+		container.classList.add('connections');
+
+		container.innerHTML = `
+			<div class="heading-bar">
+				<span class="data-connection">Data Connections</span>
+				<span class="oAuth-connection hidden">OAuth Connection</span>
+
+				<div class="search-connections">
+					<i class="fa fa-search"></i>
+					<input autocomplete="off" type="search" placeholder="Search connections">
+				</div>
+			</div>
+
+			<div id="data-connections"></div>
+
+			<div class="hidden" id="oAuth-connections"></div>
+		`;
+
+		container.querySelector('.heading-bar .data-connection').on('click', () => {
+
+		});
+
+		container.querySelector('.heading-bar .oAuth-connection').on('click', () => {
+
+		});
+
+		const input = container.querySelector('.search-connections input');
+
+		input.on('keyup', () => {
+			this.search(input.value);
+		});
+
+		return container;
+	}
+
+	search(searchString) {
+
+		if(!searchString)
+			return this.render(this.dataConnections);
+
+		const string = searchString.toLowerCase();
+
+		const result = new Map;
+
+		for(const [key,value] of this.dataConnections) {
+
+			if(key.includes(string) || MetaData.datasources.get(key).name.toLowerCase().includes(string))
+				result.set(key, value)
+
+			for(const data of value) {
+				if(data.connection_name.toLowerCase().includes(string))
+					result.set(key, value);
+			}
+		}
+
+		this.render(result);
+
+		this.connectionsContainer.querySelector('.search-connections input').focus();
 	}
 }
 
-class DataConnection {
+class DataConnections extends Set {
 
-	static setup(page) {
+	constructor(connections, type, page) {
 
-		DataConnection.page = page;
-		DataConnection.container = page.container.querySelector('section#form');
+		super();
 
-		DataConnection.form = DataConnection.container.querySelector('form');
+		this.type = type;
 
-		DataConnection.container.querySelector('.toolbar #back').on('click', () => page.back());
-		page.container.querySelector('#connection-picker-back').on('click', () => page.back());
+		this.page = page;
+
+		this.connectionsContainer = this.page.container.querySelector('section#form');
+
+		this.form = this.connectionsContainer.querySelector('form');
+
+		for(const connection of connections)
+			this.add(new DataConnection(connection, page));
 	}
 
-	static async add(page) {
+	get container() {
 
-		DataConnection.form.removeEventListener('submit', DataConnection.submitListener);
-		DataConnection.form.reset();
+		if(this.containerElement)
+			return this.containerElement;
+
+		const connection = MetaData.datasources.get(this.type);
+
+		const container = this.containerElement = document.createElement('article');
+
+		container.innerHTML = `
+			<div class="article-toolbar">
+				<button type="button" class="disable" id="add-new"><i class="fa fa-plus"></i></button>
+				<span>&nbsp; ${connection.name}</span>
+				<figure>
+					<img alt="${connection.name}" src=${connection.image}>
+				</figure>
+			</div>
+			<div class="row">
+			</div>
+		`;
+
+		const row = container.querySelector('.row');
+
+		for(const connection of this)
+			row.appendChild(connection.row)
+
+		if(!row.childElementCount)
+			row.innerHTML = '<div class="NA">No connection added</div>'
+
+		if(user.privileges.has('connection.insert')) {
+
+			container.querySelector('#add-new').classList.remove('disable');
+
+			container.querySelector('#add-new').on('click', () => {
+
+				history.pushState({what: 'add'}, '', `/connections-manager/add/${connection.slug}`);
+
+				DataConnection.types.get(connection.slug).render(this.page);
+
+				this.addConnection();
+
+				Sections.show('form');
+
+			});
+		}
+
+		return container;
+	}
+
+	async addConnection() {
 
 		this.page.container.querySelector('#share-connections').innerHTML = `<div class="NA">You can share the connection once you create one.</div>`;
 
-		DataConnection.container.querySelector('.toolbar #test-connection').classList.add('hidden');
-		DataConnection.container.querySelector('.test-result').classList.add('hidden');
-		DataConnection.container.querySelector('h1').textContent = 'Add New Connection';
-		DataConnection.form.on('submit', DataConnection.submitListener = e => DataConnection.insert(e, page));
+		this.connectionsContainer.querySelector('.toolbar #test-connection').classList.add('hidden');
+		this.connectionsContainer.querySelector('.test-result').classList.add('hidden');
+		this.connectionsContainer.querySelector('h1').textContent = `Add New ${this.type} Connection`;
 
-		DataConnection.form.connection_name.focus();
+		if(DataConnection.eventListener)
+			this.form.removeEventListener('submit', DataConnection.eventListener);
 
-		const addConnectionForm = page.container.querySelector('#add-connection-form');
+		this.form.reset();
 
-		addConnectionForm.textContent = null;
+		this.form.on('submit', DataConnection.eventListener = async (e) => {
 
-		for(const connection of MetaData.datasources.values()) {
-
-			let feature;
-
-			for(const _feature of MetaData.features.values()) {
-
-				if(_feature.slug == connection.slug && _feature.type == 'source')
-					feature = _feature;
-			}
-
-			// if(!feature)
-			// 	continue;
-
-			const label = document.createElement('label');
-
-			label.dataset.slug = connection.slug;
-
-			label.innerHTML = `
-				<figure>
-					<img alt="${connection.name}">
-					<span class="loader"><i class="fa fa-spinner fa-spin"></i></span>
-					<span class="NA hidden">Preview not available!</span>
-					<figcaption>${connection.name}</figcaption>
-				</figure>
-			`;
-
-			const
-				img = label.querySelector('img'),
-				loader = label.querySelector('.loader'),
-				NA = label.querySelector('.NA');
-
-			img.on('load', () => {
-				img.classList.add('show');
-				loader.classList.add('hidden');
-			});
-
-			img.on('error', () => {
-				NA.classList.remove('hidden');
-				loader.classList.add('hidden');
-			});
-
-			img.src = connection.image;
-
-			label.on('click', async () => {
-
-				if(addConnectionForm.querySelector('figure.selected'))
-					addConnectionForm.querySelector('figure.selected').classList.remove('selected');
-
-				label.querySelector('figure').classList.add('selected');
-
-				DataConnection.types.get(connection.slug).render();
-
-				await Sections.show('form');
-			});
-
-			addConnectionForm.appendChild(label);
-		}
-
-		if(!MetaData.datasources.size)
-			addConnectionForm.innerHTML = `<div class="NA">No connections found</div>`;
-
-		await Sections.show('add-connection');
+			e.preventDefault();
+			await this.insert();
+		});
 	}
 
-	static async insert(e, page) {
-
-		e.preventDefault();
+	async insert() {
 
 		const
 			parameters = {
-				type: page.container.querySelector('#add-connection-form .selected').parentElement.dataset.slug,
+				type: this.type,
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(DataConnection.form),
+				form: new FormData(this.form),
 			};
 
 		try {
 
 			const response = await API.call('credentials/insert', parameters, options);
 
-			await DataConnection.page.load();
+			await this.page.load();
 
-			const connection = page.dataConnections.get(response.insertId);
+			const connections = this.page.dataConnections.get(this.type);
 
-			connection.edit();
+			let selectedConnection;
+
+			for(const connection of connections) {
+
+				if(connection.id == response.insertId) {
+					selectedConnection = connection;
+					selectedConnection.edit();
+				}
+			}
 
 			if(await Storage.get('newUser'))
 				await UserOnboard.setup(true);
 
 			new SnackBar({
-				message: `${connection.feature.name} Connection Added`,
-				subtitle: `${connection.connection_name} #${connection.id}`,
+				message: `${this.type} Connection Added`,
+				subtitle: `${selectedConnection.connection_name} #${selectedConnection.id}`,
 				icon: 'fas fa-plus',
 			});
 
@@ -256,31 +316,60 @@ class DataConnection {
 			throw e;
 		}
 	}
+}
 
-	constructor(item, page) {
+class DataConnection {
 
-		for(const key in item)
-			this[key] = item[key];
+	constructor(connection, page) {
+
+		Object.assign(this, connection);
 
 		this.page = page;
 
-		for(const feature of MetaData.features.values()) {
+		this.container = page.container.querySelector('section#form');
 
-			if(feature.slug == this.type && feature.type == 'source')
-				this.feature = feature;
+		this.form = this.container.querySelector('form');
+	}
+
+	get row() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('connection');
+
+		container.innerHTML = `
+			<span>${this.connection_name} <span class="hash-id">#${this.id}</span> </span>
+			<span title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></span>
+			<span title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></span>
+		`;
+
+		if(container.querySelector('.green')) {
+			container.querySelector('.green').on('click', () => {
+
+				history.pushState({what: this.id}, '', `/connections-manager/${this.id}`);
+
+				this.edit();
+			});
 		}
+
+		if(container.querySelector('.red'))
+			container.querySelector('.red').on('click', () => this.delete());
+
+		return container;
 	}
 
 	async edit() {
 
-		DataConnection.form.removeEventListener('submit', DataConnection.submitListener);
-		DataConnection.form.reset();
+		this.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
 
-		DataConnection.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
+		if(DataConnection.eventListener)
+			this.form.removeEventListener('submit', DataConnection.eventListener);
 
-		DataConnection.form.on('submit', DataConnection.submitListener = e => {
+		this.form.on('submit', DataConnection.eventListener = async e => {
 			e.preventDefault();
-			this.update();
+			await this.update();
 		});
 
 		this.objectRoles = new ObjectRoles('connection', this.id, ['user', 'role']);
@@ -291,9 +380,9 @@ class DataConnection {
 
 		this.page.container.querySelector('#share-connections').appendChild(this.objectRoles.container);
 
-		DataConnection.container.querySelector('.test-result').classList.add('hidden');
+		this.container.querySelector('.test-result').classList.add('hidden');
 
-		const test = DataConnection.container.querySelector('.toolbar #test-connection');
+		const test = this.container.querySelector('.toolbar #test-connection');
 
 		test.classList.remove('hidden');
 
@@ -302,15 +391,13 @@ class DataConnection {
 		test.on('click', DataConnection.test_listener = async () => this.test());
 
 		for(const key in this) {
-			if(DataConnection.form.elements[key])
-				DataConnection.form.elements[key].value = this[key];
+			if(this.form.elements[key])
+				this.form.elements[key].value = this[key];
 		}
 
 		DataConnection.types.get(this.type).render(this);
 
 		await Sections.show('form');
-
-		DataConnection.form.connection_name.focus();
 	}
 
 	async test() {
@@ -321,8 +408,7 @@ class DataConnection {
 			},
 			parameter = {
 				id: this.id,
-			},
-			container = DataConnection.container.querySelector('.test-result');
+			};
 
 		let response;
 		try {
@@ -362,7 +448,7 @@ class DataConnection {
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(DataConnection.form),
+				form: new FormData(this.form),
 			};
 
 		try {
@@ -373,8 +459,8 @@ class DataConnection {
 			await Sections.show('list');
 
 			new SnackBar({
-				message: `${this.feature.name} Connection Saved`,
-				subtitle: `${this.name} #${this.id} (${this.feature.name})`,
+				message: `${this.type} Connection Saved`,
+				subtitle: `${this.connection_name} #${this.id} (${this.type})`,
 				icon: 'far fa-save',
 			});
 
@@ -388,6 +474,8 @@ class DataConnection {
 
 			throw e;
 		}
+
+		Sections.show('form');
 	}
 
 	async delete() {
@@ -414,7 +502,7 @@ class DataConnection {
 				await UserOnboard.setup(true);
 
 			new SnackBar({
-				message: `${this.feature.name} Connection Removed`,
+				message: `${this.type} Connection Removed`,
 				subtitle: `${this.connection_name} #${this.id}`,
 				icon: 'far fa-trash-alt',
 			});
@@ -430,33 +518,6 @@ class DataConnection {
 			throw e;
 		}
 	}
-
-	get row() {
-
-		if(this.containerElement)
-			return this.containerElement;
-
-		const container = document.createElement('tr');
-
-		container.innerHTML = `
-			<td>${this.id}</td>
-			<td>${this.connection_name}</td>
-			<td>${this.feature ? this.feature.name : ''}</td>
-			<td title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></td>
-			<td title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></td>
-		`;
-
-		if(container.querySelector('.green'))
-			container.querySelector('.green').on('click', () => {
-        history.pushState({what: this.id}, '', `/connections-manager/${this.id}`);
-        this.edit();
-      });
-
-		if(container.querySelector('.red'))
-			container.querySelector('.red').on('click', () => this.delete());
-
-		return container;
-	}
 }
 
 DataConnection.types = new Map;
@@ -465,47 +526,49 @@ DataConnection.types.set('mysql', class {
 
 	static render(connections = {}) {
 
-		DataConnection.form.querySelector('#details').innerHTML = `
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="password" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 
 			<label>
 				<span>Database</span>
-				<input type="text" name="db" value="${connections.db || ''}">
+				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
 
-		DataConnection.form.password.on('click', () => {
-			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password': 'text';
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 		});
 	}
 
 	static get details() {
 
 		return JSON.stringify({
-			user: DataConnection.form.user.value,
-			password: DataConnection.form.password.value,
-			host: DataConnection.form.host.value,
-			port: DataConnection.form.port.value,
-			db: DataConnection.form.db.value,
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
+			db: connections.form.db.value,
 		});
 	}
 });
@@ -514,47 +577,49 @@ DataConnection.types.set('mssql', class {
 
 	static render(connections = {}) {
 
-		DataConnection.form.querySelector('#details').innerHTML = `
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="password" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 
 			<label>
 				<span>Database</span>
-				<input type="text" name="db" value="${connections.db || ''}">
+				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
 
-		DataConnection.form.password.on('click', () => {
-			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password' : 'text';
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password' : 'text';
 		});
 	}
 
 	static get details() {
 
 		return JSON.stringify({
-			user: DataConnection.form.user.value,
-			password: DataConnection.form.password.value,
-			host: DataConnection.form.host.value,
-			port: DataConnection.form.port.value,
-			db: DataConnection.form.db.value,
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
+			db: connections.form.db.value,
 		});
 	}
 });
@@ -563,47 +628,49 @@ DataConnection.types.set('pgsql', class {
 
 	static render(connections = {}) {
 
-		DataConnection.form.querySelector('#details').innerHTML = `
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="text" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 
 			<label>
 				<span>Database</span>
-				<input type="text" name="db" value="${connections.db || ''}">
+				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
 
-		DataConnection.form.password.on('click', () => {
-			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password': 'text';
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 		});
 	}
 
 	static get details() {
 
 		return JSON.stringify({
-			user: DataConnection.form.user.value,
-			password: DataConnection.form.password.value,
-			host: DataConnection.form.host.value,
-			port: DataConnection.form.port.value,
-			db: DataConnection.form.db.value,
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
+			db: connections.form.db.value,
 		});
 	}
 });
@@ -612,41 +679,43 @@ DataConnection.types.set('oracle', class {
 
 	static render(connections = {}) {
 
-		DataConnection.form.querySelector('#details').innerHTML = `
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="password" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 		`;
 
-		DataConnection.form.password.on('click', () => {
-			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password': 'text';
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 		});
 	}
 
 	static get details() {
 
 		return JSON.stringify({
-			user: DataConnection.form.user.value,
-			password: DataConnection.form.password.value,
-			host: DataConnection.form.host.value,
-			port: DataConnection.form.port.value,
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
 		});
 	}
 });
@@ -654,7 +723,9 @@ DataConnection.types.set('oracle', class {
 DataConnection.types.set('api', class {
 
 	static render(connections = {}) {
-		DataConnection.form.querySelector('#details').innerHTML = null;
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = null;
 	}
 
 	static get details() {
@@ -665,7 +736,9 @@ DataConnection.types.set('api', class {
 DataConnection.types.set('bigquery', class {
 
 	static render(connections = {}) {
-		DataConnection.form.querySelector('#details').innerHTML = null;
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = null;
 	}
 
 	static get details() {
@@ -676,7 +749,9 @@ DataConnection.types.set('bigquery', class {
 DataConnection.types.set('file', class {
 
 	static render(connections = {}) {
-		DataConnection.form.querySelector('#details').innerHTML = null;
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = null;
 	}
 
 	static get details() {
@@ -688,87 +763,88 @@ DataConnection.types.set('mongo', class {
 
 	static render(connections = {}) {
 
-		DataConnection.form.querySelector('#details').innerHTML = `
+		connections.form =  connections.container.querySelector('#connections-form');
+
+		connections.form.querySelector('#details').innerHTML = `
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="password" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 
 			<label>
 				<span>Database</span>
-				<input type="text" name="db" value="${connections.db || ''}">
+				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
 
-		DataConnection.form.password.on('click', () => {
-			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password': 'text';
+		connections.form.password.on('click', () => {
+			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 		});
 	}
 
 	static get details() {
 
 		return JSON.stringify({
-			user: DataConnection.form.user.value,
-			password: DataConnection.form.password.value,
-			host: DataConnection.form.host.value,
-			port: DataConnection.form.port.value,
-			db: DataConnection.form.db.value,
+			user: connections.form.user.value,
+			password: connections.form.password.value,
+			host: connections.form.host.value,
+			port: connections.form.port.value,
+			db: connections.form.db.value,
 		});
 	}
 });
 
 class OAuthConnection {
 
-	static async validate() {
+ 	static async validate() {
 
-		const search = new URLSearchParams(window.location.search);
+ 		const search = new URLSearchParams(window.location.search);
 
-		if(!search.has('state'))
+ 		if(!search.has('state'))
 			return;
 
-		const
+ 		const
 			parameters = {
 				state: search.get('state'),
 				code: search.get('code'),
 			},
 			options = {method: 'POST'};
 
-		if(search.get('error') == 'access_denied')
+ 		if(search.get('error') == 'access_denied')
 			return;
 
-		try {
+ 		try {
 			await API.call('oauth/connections/redirect_uri', parameters, options);
 		}
 		catch(e) {
-
-			alert(e.message);
+ 			alert(e.message);
 			return;
 		}
 
-		window.location = '/connections-manager';
+ 		window.location = '/connections-manager';
 	}
 
-	static async insert(e) {
+ 	static async insert(e) {
 
-		e.preventDefault();
+ 		e.preventDefault();
 
-		const
+ 		const
 			parameters = {
 				provider_id: DataConnection.page.container.querySelector('#add-oauth-connection').provider.value,
 			},
@@ -776,25 +852,25 @@ class OAuthConnection {
 				method: 'POST',
 			};
 
-		await API.call('oauth/connections/insert', parameters, options);
+ 		await API.call('oauth/connections/insert', parameters, options);
 
-		DataConnection.page.load();
+ 		DataConnection.page.load();
 	}
 
-	constructor(connection, page) {
+ 	constructor(connection, page) {
 
-		Object.assign(this, connection);
+ 		Object.assign(this, connection);
 		this.page = page;
 	}
 
-	get row() {
+ 	get row() {
 
-		if(this.containerElement)
+ 		if(this.containerElement)
 			return this.containerElement;
 
-		const container = this.containerElement = document.createElement('tr');
+ 		const container = this.containerElement = document.createElement('tr');
 
-		container.innerHTML = `
+ 		container.innerHTML = `
 			<td>${this.id}</td>
 			<td>${this.page.oAuthProviders.get(this.provider_id).name}</td>
 			<td>${this.page.oAuthProviders.get(this.provider_id).type}</td>
@@ -804,42 +880,40 @@ class OAuthConnection {
 			<td class="action red delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		container.querySelector('.authenticate').on('click', () => {
+ 		container.querySelector('.authenticate').on('click', () => {
 
-			if(this.access_token || this.refresh_token)
+ 			if(this.access_token || this.refresh_token)
 				this.test();
-
-			else this.authenticate();
+ 			else this.authenticate();
 		});
 
-		container.querySelector('.delete').on('click', () => this.delete());
+ 		container.querySelector('.delete').on('click', () => this.delete());
 
-		return container;
+ 		return container;
 	}
 
-	async test() {
+ 	async test() {
 
-		const
+ 		const
 			parameters = { id: this.id },
 			container = this.page.listContainer.querySelector('.test-result');
 
-		let response;
+ 		let response;
 
-		try {
+ 		try {
 			response = await API.call('oauth/connections/test', parameters);
 		}
 		catch (e) {
-
-			container.classList.remove('hidden');
+ 			container.classList.remove('hidden');
 			container.classList.add('warning');
 			container.classList.remove('notice');
 			container.textContent = e.message || e;
 			return;
 		}
 
-		container.classList.remove('hidden');
+ 		container.classList.remove('hidden');
 
-		if(response) {
+ 		if(response) {
 			container.classList.add('notice');
 			container.classList.remove('warning');
 			container.textContent = 'Connection Successful';
@@ -851,80 +925,63 @@ class OAuthConnection {
 		}
 	}
 
-	async authenticate() {
+ 	async authenticate() {
 
-		const provider = this.page.oAuthProviders.get(this.provider_id);
+ 		const provider = this.page.oAuthProviders.get(this.provider_id);
 
-		if(provider.name == 'Google Analytics') {
-
-			const parameters = new URLSearchParams();
-
-			parameters.set('client_id', provider.client_id);
+ 		if(provider.name == 'Google Analytics') {
+ 			const parameters = new URLSearchParams();
+ 			parameters.set('client_id', provider.client_id);
 			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/analytics.readonly');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
 			parameters.set('state', this.id);
 			parameters.set('login_hint', user.email);
-
-			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
+ 			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
 		}
-
-		else if(provider.name == 'Google AdWords') {
-
-			const parameters = new URLSearchParams();
-
-			parameters.set('client_id', provider.client_id);
+ 		else if(provider.name == 'Google AdWords') {
+ 			const parameters = new URLSearchParams();
+ 			parameters.set('client_id', provider.client_id);
 			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/adwords');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
 			parameters.set('state', this.id);
 			parameters.set('login_hint', user.email);
-
-			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
+ 			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
 		}
-
-		else if(provider.name == 'Google BigQuery') {
-
-			const parameters = new URLSearchParams();
-
-			parameters.set('client_id', provider.client_id);
+ 		else if(provider.name == 'Google BigQuery') {
+ 			const parameters = new URLSearchParams();
+ 			parameters.set('client_id', provider.client_id);
 			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/bigquery');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
 			parameters.set('state', this.id);
 			parameters.set('login_hint', user.email);
-
-			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
+ 			window.open(`https://accounts.google.com/o/oauth2/v2/auth?` + parameters);
 		}
-
-		else if(provider.name == 'Facebook Marketing') {
-
-			const parameters = new URLSearchParams();
-
-			parameters.set('client_id', provider.client_id);
+ 		else if(provider.name == 'Facebook Marketing') {
+ 			const parameters = new URLSearchParams();
+ 			parameters.set('client_id', provider.client_id);
 			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
 			parameters.set('scope', 'ads_read');
 			parameters.set('response_type', 'code');
 			parameters.set('state', this.id);
-
-			window.open(`https://www.facebook.com/v3.0/dialog/oauth?` + parameters);
+ 			window.open(`https://www.facebook.com/v3.0/dialog/oauth?` + parameters);
 		}
 	}
 
-	async delete() {
+ 	async delete() {
 
-		if(!confirm('Are you sure?! This will not delete the stored data.'))
+ 		if(!confirm('Are you sure?! This will not delete the stored data.'))
 			return;
-
-		const
+ 		const
 			parameters = { id: this.id },
 			options = { method: 'POST' };
-
-		await API.call('oauth/connections/delete', parameters, options);
-
-		this.page.load();
+ 		await API.call('oauth/connections/delete', parameters, options);
+ 		this.page.load();
 	}
 }
+

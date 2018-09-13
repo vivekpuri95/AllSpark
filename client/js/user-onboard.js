@@ -110,7 +110,7 @@ class UserOnboard {
 		if(this.stages.some(stage => stage.completed))
 			return;
 
-		if(window.location.pathname == '/connections-manager/add')
+		if(window.location.pathname == '/connections-manager')
 			return;
 
 		const newUser = await Storage.get('newUser');
@@ -145,11 +145,14 @@ class UserOnboard {
 		`;
 
 		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => {
-			window.location = '/connections-manager/add';
+
+			window.location = '/connections-manager';
 		});
 
 		if(window.loadWelcomeDialogBoxListener)
 			window.loadWelcomeDialogBoxListener(this);
+
+		await Storage.set('newUser', {skipWelcomeDialogBox: true});
 
 		this.dialogBox.show();
 	}
@@ -230,7 +233,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 	get url() {
 
-		return '/connections-manager/add';
+		return '/connections-manager';
 	}
 
 	async load() {
