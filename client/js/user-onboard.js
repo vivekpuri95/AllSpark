@@ -145,11 +145,14 @@ class UserOnboard {
 		`;
 
 		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => {
+
 			window.location = '/connections-manager';
 		});
 
 		if(window.loadWelcomeDialogBoxListener)
 			window.loadWelcomeDialogBoxListener(this);
+
+		await Storage.set('newUser', {skipWelcomeDialogBox: true});
 
 		this.dialogBox.show();
 	}
