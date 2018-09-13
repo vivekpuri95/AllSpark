@@ -110,7 +110,7 @@ class UserOnboard {
 		if(this.stages.some(stage => stage.completed))
 			return;
 
-		if(window.location.pathname == '/connections-manager/add')
+		if(window.location.pathname == '/connections-manager')
 			return;
 
 		const newUser = await Storage.get('newUser');

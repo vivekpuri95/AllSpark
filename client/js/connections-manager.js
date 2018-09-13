@@ -132,7 +132,7 @@ Page.class = class Connections extends Page {
 
 				<div class="search-connections">
 					<i class="fa fa-search"></i>
-					<input type="search" placeholder="Search connections">
+					<input autocomplete="off" type="search" placeholder="Search connections">
 				</div>
 			</div>
 
@@ -521,27 +521,27 @@ DataConnection.types.set('mysql', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user_name || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="password" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 
 			<label>
 				<span>Database</span>
-				<input type="text" name="db" value="${connections.db || ''}">
+				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
 
@@ -572,27 +572,27 @@ DataConnection.types.set('mssql', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user_name || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="password" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 
 			<label>
 				<span>Database</span>
-				<input type="text" name="db" value="${connections.db || ''}">
+				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
 
@@ -623,27 +623,27 @@ DataConnection.types.set('pgsql', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user_name || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="password" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 
 			<label>
 				<span>Database</span>
-				<input type="text" name="db" value="${connections.db || ''}">
+				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
 
@@ -674,22 +674,22 @@ DataConnection.types.set('oracle', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user_name || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="password" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 		`;
 
@@ -758,27 +758,27 @@ DataConnection.types.set('mongo', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user_name || ''}">
+				<input autocomplete="off" type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="password" name="password" value="${connections.password || ''}">
+				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
 				<span>Host</span>
-				<input type="text" name="host" value="${connections.host || ''}">
+				<input autocomplete="off" type="text" name="host" value="${connections.host || ''}">
 			</label>
 
 			<label>
 				<span>Port</span>
-				<input type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
 			</label>
 
 			<label>
 				<span>Database</span>
-				<input type="text" name="db" value="${connections.db || ''}">
+				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
 
