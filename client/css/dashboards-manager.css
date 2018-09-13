@@ -61,7 +61,7 @@ main {
 		display: flex;
 		flex-direction: column;
 	}
-		main .dashboards .parent {
+		main .dashboards .dashboard {
 			display: grid;
 			padding: 15px 10px;
 			border-bottom: 1px solid #ddd;
@@ -69,68 +69,70 @@ main {
 		}
 			main .dashboards .size {
 				padding: 5px 10px;
-				margin-left: 15px;
+				margin-left: 20px;
 				color: #888;
 			}
 			main .dashboards .sub-dashboards {
 				display: grid;
-				margin-left: 15px;
+				margin-left: 20px;
 				padding-left: 20px;
 				border-left: 1px dashed #ccc;
 				grid-gap: 5px;
 			}
-				main .dashboards .sub-dashboards .child {
+				main .dashboards .sub-dashboards .dashboard {
 					padding: 0;
-					margin: 0;
-					box-shadow: none;
 					border: none;
 				}
-					main .dashboards .sub-dashboards .child .first .name {
+					main .dashboards .sub-dashboards .dashboard .label .name {
 						font-size: 100%;
 					}
-			main .dashboards .parent .first {
+			main .dashboards .dashboard .label {
 				grid-template-columns: 1fr 200px repeat(2, max-content);
 				display: grid;
 				grid-gap: calc(var(--gap) * 2);
 				cursor: pointer;
 				align-items: center;
 				transition: background var(--transition-duration);
-				padding: 0 5px;
 			}
-			main .dashboards .parent .first:hover {
+			main .dashboards .dashboard .label:hover {
 				background: #eee;
 			}
-				main .dashboards .parent .first .action {
+				main .dashboards .dashboard .label > div {
+					padding: calc(var(--gap) * 2);
+				}
+				main .dashboards .dashboard .label .action {
 					color: #555;
-					padding: 10px;
 					transition: box-shadow var(--transition-duration),
 								background var(--transition-duration),
 								color var(--transition-duration);
 				}
-				main .dashboards .parent .first .action:active {
+				main .dashboards .dashboard .label .action:active {
 					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
 				}
-				main .dashboards .parent .first .action:hover {
+				main .dashboards .dashboard .label .action:hover {
 					background: #ddd;
 					color: #333;
 				}
-				main .dashboards .parent .name {
+				main .dashboards .dashboard .name {
 					letter-spacing: 0.5px;
 					align-items: center;
 					display: flex;
 					font-size: 110%;
 				}
-					main .dashboards .parent .name a {
-						margin: 0 5px;
+					main .dashboards .dashboard .name a {
 						font-weight: bold;
 						color: inherit;
 					}
-					main .dashboards .parent .name span {
+					main .dashboards .dashboard .name span {
 						color: #888;
 						font-size: 90%;
+						transition: transform var(--transition-duration);
+						padding: 0 5px;
+					}
+					main .dashboards .dashboard .label .name .arrow.right {
+						transform: rotate(-90deg);
 					}
 					main .dashboards .name i {
 						color: var(--color-accent);
-						font-size: 20px;
-						padding: 0 5px;
+						font-size: 17px;
 					}
