@@ -389,6 +389,47 @@ class DataConnection {
 		await Sections.show('form');
 	}
 
+	async test() {
+
+		const
+			options = {
+				method: 'POST',
+			},
+			parameter = {
+				id: this.id,
+			},
+			container = this.container.querySelector('.test-result');
+
+		let response;
+		try {
+			response = await API.call('credentials/testConnections', parameter, options);
+		}
+		catch (e) {
+
+			new SnackBar({
+				message: 'Connection Failed',
+				subtitle: e.message || JSON.stringify(e),
+				type: 'error',
+			});
+
+			throw e;
+		}
+
+		if(response.status) {
+
+			new SnackBar({
+				message: 'Connection Successful',
+			});
+		}
+		else {
+			new SnackBar({
+				message: 'Connection Failed',
+				subtitle: JSON.stringify(response.message || response),
+				type: 'error',
+			});
+		}
+	}
+
 	async update() {
 
 		const
