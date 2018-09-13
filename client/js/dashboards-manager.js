@@ -87,7 +87,7 @@ Page.class = class DashboardManager extends Page {
 
 			if(!dashboard.parent || !this.list.has(dashboard.parent)) {
 
-				container.appendChild(dashboard.getDashboardContainer());
+				container.appendChild(dashboard.container);
 			}
 		}
 
@@ -176,7 +176,9 @@ class DashboardsDashboard {
 
 			await DashboardsDashboard.page.load();
 
-			history.pushState({id: 'add'}, '', '/dashboards-manager/add');
+			DashboardsDashboard.page.list.get(response.insertId).edit();
+
+			history.pushState({what: response.insertId}, '', `/dashboards-manager/${response.insertId}`);
 
 			if(await Storage.get('newUser'))
 				UserOnboard.setup(true);
@@ -340,19 +342,17 @@ class DashboardsDashboard {
 		}
 	}
 
-	getDashboardContainer() {
+	get container() {
 
-		if(this.container)
-			return this.container;
+		if(this.containerElement)
+			return this.containerElement;
 
-		this.container = document.createElement('div');
-		this.container.classList.add('parent');
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('dashboard');
 
-		this.container.innerHTML = `
-			<div class="first">
+		container.innerHTML = `
+			<div class="label">
 				<div class="name">
-					<span class="arrow">
-					</span>
 					<a href="/dashboard/${this.id}">${this.name}</a>
 					<span>#${this.id}</span>
 				</div>
@@ -362,8 +362,8 @@ class DashboardsDashboard {
 			</div>
 		`;
 
-		if(this.container.querySelector('.green')) {
-			this.container.querySelector('.green').on('click', e => {
+		if(container.querySelector('.green')) {
+			container.querySelector('.green').on('click', e => {
 
 				e.stopPropagation();
 
@@ -372,8 +372,8 @@ class DashboardsDashboard {
 			});
 		}
 
-		if(this.container.querySelector('.red')) {
-			this.container.querySelector('.red').on('click', e => {
+		if(container.querySelector('.red')) {
+			container.querySelector('.red').on('click', e => {
 
 				e.stopPropagation();
 
@@ -383,39 +383,37 @@ class DashboardsDashboard {
 
 		if(this.children.size) {
 
-			this.container.insertAdjacentHTML('beforeend', `
-				<div class="size hidden">${this.children.size} child dashboard${this.children.size > 1 ? 's': ''}</div>
+			container.insertAdjacentHTML('beforeend', `
+				<div class="size hidden">${this.children.size} dashboard${this.children.size > 1 ? 's': ''}</div>
 				<div class="sub-dashboards"></div>
 			`);
 
-			const arrow = this.container.querySelector('.name .arrow');
+			container.querySelector('.label .name').insertAdjacentHTML('afterbegin', `
+				<span class="arrow">
+					<i class="fas fa-angle-down"></i>
+				</span>
+			`);
 
-			arrow.removeEventListener('click', arrow.clickListener);
-			arrow.innerHTML = `
-				<i class="fas fa-angle-right right-arrow hidden"></i>
-				<i class="fas fa-angle-down down-arrow"></i>
-`			;
+			const arrow = container.querySelector('.name .arrow');
 
-			this.container.querySelector('.first').on('click', arrow.clickListener = e => {
+			arrow.removeEventListener('click', this.arrowClickListener);
 
-				this.container.querySelector('div.sub-dashboards').classList.toggle('hidden');
-				this.container.querySelector('div.size').classList.toggle('hidden');
+			container.querySelector('.label').on('click', this.arrowClickListener = e => {
 
-				const subDashboardsHidden = this.container.querySelector('div.sub-dashboards').classList.contains('hidden');
+				container.querySelector('div.sub-dashboards').classList.toggle('hidden');
+				container.querySelector('div.size').classList.toggle('hidden');
 
-				arrow.querySelector('.right-arrow').classList.toggle('hidden', !subDashboardsHidden);
-				arrow.querySelector('.down-arrow').classList.toggle('hidden', subDashboardsHidden);
+				arrow.classList.toggle('right');
 
 			});
 
 			for(const child of this.children.values()) {
 
-				this.container.querySelector('div.sub-dashboards').appendChild(child.getDashboardContainer());
-				child.getDashboardContainer().classList.add('child');
+				container.querySelector('div.sub-dashboards').appendChild(child.container);
 			}
 		}
 
-		return this.container;
+		return container;
 	}
 
 	get parents() {
