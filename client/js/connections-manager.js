@@ -397,8 +397,7 @@ class DataConnection {
 			},
 			parameter = {
 				id: this.id,
-			},
-			container = this.container.querySelector('.test-result');
+			};
 
 		let response;
 		try {
@@ -522,7 +521,7 @@ DataConnection.types.set('mysql', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
@@ -573,7 +572,7 @@ DataConnection.types.set('mssql', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
@@ -624,7 +623,7 @@ DataConnection.types.set('pgsql', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
@@ -675,7 +674,7 @@ DataConnection.types.set('oracle', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
@@ -759,7 +758,7 @@ DataConnection.types.set('mongo', class {
 
 			<label>
 				<span>Username</span>
-				<input type="text" name="user" value="${connections.user || ''}">
+				<input type="text" name="user" value="${connections.user_name || ''}">
 			</label>
 
 			<label>
