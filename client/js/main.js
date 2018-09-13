@@ -2129,7 +2129,7 @@ class MultiSelect {
 
 			let hide = false;
 
-			const rowValue = row.name.concat(' ', row.value, ' ', row.subtitle || '');
+			const rowValue = (row.name || '').concat(' ', row.value, ' ', row.subtitle || '');
 
 			if(search.value && !rowValue.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
 				hide = true;
