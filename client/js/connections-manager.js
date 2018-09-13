@@ -159,14 +159,18 @@ Page.class = class Connections extends Page {
 		if(!searchString)
 			return this.render(this.dataConnections);
 
+		const string = searchString.toLowerCase();
+
 		const result = new Map;
 
 		for(const [key,value] of this.dataConnections) {
 
-			for(const data of value) {
+			if(key.includes(string) || MetaData.datasources.get(key).name.toLowerCase().includes(string))
+				result.set(key, value)
 
-				if((key.includes(searchString) || data.connection_name.includes(searchString)) && !result.has(key))
-					result.set(key, value)
+			for(const data of value) {
+				if((data.connection_name.includes(string)) && !result.has(key))
+					result.set(key, value);
 			}
 		}
 
