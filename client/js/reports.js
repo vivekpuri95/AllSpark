@@ -386,6 +386,10 @@ class DataSource {
 						<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
 					</div>
 
+					<div class="item">
+						<span class="label filtered-json-download"><i class="fas fa-code"></i> Filtered JSON</label>
+					</div>
+
 					<!--<div class="item">
 						<span class="label export-toggle"><i class="fa fa-download"></i> Export</label>
 					</div>>-->
@@ -510,6 +514,7 @@ class DataSource {
 		menu.querySelector('.csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
 		menu.querySelector('.filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
 		menu.querySelector('.json-download').on('click', (e) => this.download(e, {mode: 'json'}));
+		menu.querySelector('.filtered-json-download').on('click', (e) => this.download(e, {mode: 'filtered-json'}));
 		menu.querySelector('.xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
 		menu.querySelector('.expand-toggle').on('click', () => window.location = `/report/${this.query_id}`);
 
@@ -628,7 +633,7 @@ class DataSource {
 		let str = [],
 			response;
 
-		if(what.mode != 'filtered-csv')
+		if(!(['filtered-json', 'filtered-csv'].includes(what.mode)))
 			response = await this.fetch({download: 1});
 
 		if(what.mode == 'json') {
@@ -696,6 +701,25 @@ class DataSource {
 			what.mode = 'csv';
 		}
 
+		else if(what.mode == 'filtered-json') {
+
+			const response = await this.response();
+
+			for(const data of response) {
+
+				const line = [], rowObj = {}; 
+
+				for(let [key, value] of data) {
+					
+					rowObj[key] = value;
+				}
+
+				line.push(JSON.stringify(rowObj));
+
+				str.push(line);
+			}
+		}
+
 		else {
 
 			for(const data of response.data) {
@@ -718,11 +742,31 @@ class DataSource {
 				this.name,
 			];
 
-		if(this.filters.has('Start Date'))
-			fileName.push(this.filters.container.elements[this.filters.get('Start Date').placeholder].value);
+		if(this.filters.has("_date_range")) {
 
-		if(this.filters.has('End Date'))
-			fileName.push(this.filters.container.elements[this.filters.get('End Date').placeholder].value);
+			const
+				[startFilter] = this.filters.get("_date_range").companions.filter(x => x.name.toLowerCase().includes('start')),
+				[endFilter] = this.filters.get("_date_range").companions.filter(x => x.name.toLowerCase().includes('end'))
+			;
+
+			fileName.push(this.filters.container.elements[startFilter.placeholder].value);
+			fileName.push(this.filters.container.elements[endFilter.placeholder].value);
+		}
+		else {
+
+			const
+				[monthFilter] = Array.from(this.filters).filter(x.type == 'month'),
+				[dateFilter] = Array.from(this.filters).filter(x.type == 'date');
+
+			if(monthFilter) {
+
+				fileName.push(this.filters.container.elements[monthFilter.placeholder].value);
+			}
+			else if(dateFilter) {
+
+				fileName.push(this.filters.container.elements[dateFilter.placeholder].value);
+			}
+		}
 
 		if(fileName.length == 1)
 			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(new Date));
@@ -7304,7 +7348,7 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 		super.render(options);
 
-		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+		this.container.innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
 		await this.source.fetch(options);
 
