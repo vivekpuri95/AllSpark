@@ -83,6 +83,13 @@ main section .connections {
 						font-size: 130%;
 						box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
 					}
+					main .connections #data-connections article .article-toolbar button.disable {
+						background: #ccc;
+					}
+					main .connections #data-connections article .article-toolbar button.disable:hover {
+						outline: unset;
+						border: unset;
+					}
 						main .connections #data-connections article .article-toolbar button i {
 							margin: 0;
 						}
@@ -109,7 +116,7 @@ main section .connections {
 					main .connections #data-connections article .row .connection {
 						border-bottom: 1px solid #ccc;
 						padding: var(--gap);
-						color: #666;
+						color: inherit;
 						display: grid;
 						grid-template-columns: max-content 1fr max-content;
 						grid-gap: 10px;

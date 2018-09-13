@@ -209,7 +209,7 @@ class DataConnections extends Set {
 
 		container.innerHTML = `
 			<div class="article-toolbar">
-				<button type="button" id="add-new"><i class="fa fa-plus"></i></button>
+				<button type="button" class="disable" id="add-new"><i class="fa fa-plus"></i></button>
 				<span>&nbsp; ${connection.name}</span>
 				<figure>
 					<img alt="${connection.name}" src=${connection.image}>
@@ -227,17 +227,22 @@ class DataConnections extends Set {
 		if(!row.childElementCount)
 			row.innerHTML = '<div class="NA">No connection added</div>'
 
-		container.querySelector('#add-new').on('click', () => {
+		if(user.privileges.has('connection.insert')) {
 
-			history.pushState({what: 'add'}, '', `/connections-manager/add/${connection.slug}`);
+			container.querySelector('#add-new').classList.remove('disable');
 
-			DataConnection.types.get(connection.slug).render(this.page);
+			container.querySelector('#add-new').on('click', () => {
 
-			this.addConnection();
+				history.pushState({what: 'add'}, '', `/connections-manager/add/${connection.slug}`);
 
-			Sections.show('form');
+				DataConnection.types.get(connection.slug).render(this.page);
 
-		});
+				this.addConnection();
+
+				Sections.show('form');
+
+			});
+		}
 
 		return container;
 	}
