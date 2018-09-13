@@ -244,7 +244,12 @@ class DataConnections extends Set {
 		this.connectionsContainer.querySelector('.test-result').classList.add('hidden');
 		this.connectionsContainer.querySelector('h1').textContent = `Add New ${this.type} Connection`;
 
-		this.form.on('submit', async (e) => {
+		if(DataConnection.eventListener)
+			this.form.removeEventListener('submit', DataConnection.eventListener);
+
+		this.form.reset();
+
+		this.form.on('submit', DataConnection.eventListener = async (e) => {
 
 			e.preventDefault();
 			await this.insert();
@@ -348,9 +353,12 @@ class DataConnection {
 
 		this.container.querySelector('h1').textContent = 'Editing ' + this.connection_name;
 
-		this.form.on('submit', (e) => {
+		if(DataConnection.eventListener)
+			this.form.removeEventListener('submit', DataConnection.eventListener);
+
+		this.form.on('submit', DataConnection.eventListener = async e => {
 			e.preventDefault();
-			this.update();
+			await this.update();
 		});
 
 		this.objectRoles = new ObjectRoles('connection', this.id, ['user', 'role']);
@@ -401,7 +409,7 @@ class DataConnection {
 
 			new SnackBar({
 				message: `${this.type} Connection Saved`,
-				subtitle: `${this.name} #${this.id} (${this.type})`,
+				subtitle: `${this.connection_name} #${this.id} (${this.type})`,
 				icon: 'far fa-save',
 			});
 
@@ -415,6 +423,8 @@ class DataConnection {
 
 			throw e;
 		}
+
+		Sections.show('form');
 	}
 
 	async delete() {
@@ -578,7 +588,7 @@ DataConnection.types.set('pgsql', class {
 
 			<label>
 				<span class="password">Password <a class="show-password">Show</a></span>
-				<input type="text" name="password" value="${connections.password || ''}">
+				<input type="password" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
