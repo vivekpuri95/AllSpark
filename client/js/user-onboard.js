@@ -145,7 +145,7 @@ class UserOnboard {
 		`;
 
 		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => {
-			window.location = '/connections-manager/add';
+			window.location = '/connections-manager';
 		});
 
 		if(window.loadWelcomeDialogBoxListener)
@@ -230,7 +230,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 	get url() {
 
-		return '/connections-manager/add';
+		return '/connections-manager';
 	}
 
 	async load() {
