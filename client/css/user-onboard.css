@@ -1,6 +1,6 @@
 .setup-stages {
     position: fixed;
-    width: 15%;
+    width: 350px;
     bottom: 0;
     right: 0;
     z-index: 4;
@@ -23,7 +23,7 @@
         grid-row: 1 / 3;
     }
         .setup-stages a > i {
-            margin-left: 5px;
+            margin-right: 10px;
         }
     .setup-stages a:hover {
         box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
@@ -59,10 +59,10 @@
         .setup-stages .wrapper .stage:active {
             box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
         }
-            .setup-stages .wrapper .stage span {
+            .setup-stages .wrapper .stage div {
                 padding: calc(var(--gap) * 1);
             }
-            .setup-stages .wrapper .stage span.status {
+            .setup-stages .wrapper .stage div.status {
                 height: 20px;
                 width: 20px;
                 border: 1px solid var(--color-accent);
@@ -71,13 +71,20 @@
                 justify-content: center;
                 align-items: center;
             }
-            .setup-stages .wrapper .stage span.hellip {
+            .setup-stages .wrapper .stage div.hellip {
                 color: #ccc;
             }
-            .setup-stages .wrapper .stage span.status.checked {
+            .setup-stages .wrapper .stage div.status.checked {
                 color: var(--color-accent);
                 font-size: 85%;
             }
+            .setup-stages .wrapper .stage div.info {
+                display: flex;
+                flex-direction: column;
+            }
+                .setup-stages .wrapper .stage div.info .NA {
+                    margin-top: 5px;
+                }
 
 .dialog-box-blanket.user-onboarding-welcome header {
     color: inherit;

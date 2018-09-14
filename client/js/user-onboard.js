@@ -66,7 +66,7 @@ class UserOnboard {
 
 		container.innerHTML = `
 			<div class="wrapper"></div>
-			<a href="${demo_url}" target="_blank">View Demo <i class="fas fa-external-link-alt"></i></a>
+			<a href="${demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
 		`;
 
 		const wrapper = container.querySelector('.wrapper');
@@ -159,12 +159,12 @@ class UserOnboardStage {
 		container.classList.add('stage');
 
 		container.innerHTML = `
-			<span class="hellip">
+			<div class="hellip">
 				<i class="fas fa-ellipsis-v"></i>
 				<i class="fas fa-ellipsis-v"></i>
-			</span>
-			<span>${this.title}</span>
-			<span class="status"></span>
+			</div>
+			<div class="info">${this.title}<span class="NA">${this.subtitle || ''}</span></div>
+			<div class="status"></div>
 		`;
 
 		container.on('click', () => {
@@ -197,6 +197,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 		super(onboard);
 
 		this.title = 'Add Connection';
+		this.subtitle = 'Connect to an external datasource';
 	}
 
 	get url() {
@@ -228,6 +229,7 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		super(onboard);
 
 		this.title = 'Add Report';
+		this.subtitle = 'Define a query to extract data';
 	}
 
 	get url() {
@@ -259,6 +261,7 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 		super(onboard);
 
 		this.title = 'Add Dashboard';
+		this.subtitle = 'At-a-glance view of visualizations';
 	}
 
 	get url() {
@@ -291,6 +294,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		super(onboard);
 
 		this.title = 'Add Visualization';
+		this.subtitle = 'Visualize your data';
 	}
 
 	get url() {
