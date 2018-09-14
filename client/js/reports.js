@@ -1535,7 +1535,6 @@ class DataSourceRow extends Map {
 class DataSourceColumns extends Map {
 
 	constructor(source) {
-		debugger
 		super();
 
 		this.source = source;
