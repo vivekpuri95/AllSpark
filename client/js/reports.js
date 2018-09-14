@@ -718,6 +718,8 @@ class DataSource {
 
 				str.push(line);
 			}
+
+			what.mode = 'json';
 		}
 
 		else {
@@ -740,32 +742,43 @@ class DataSource {
 			blob = new Blob([str], {type: 'application\/octet-stream'}),
 			fileName = [
 				this.name,
-			];
+			],
+			values = {};
 
-		if(this.filters.has("_date_range")) {
+		for(const [name, filter] of this.filters) {
 
-			const
-				[startFilter] = this.filters.get("_date_range").companions.filter(x => x.name.toLowerCase().includes('start')),
-				[endFilter] = this.filters.get("_date_range").companions.filter(x => x.name.toLowerCase().includes('end'))
-			;
+			if(filter.type == 'daterange' && !values.date_range) {
 
-			fileName.push(this.filters.container.elements[startFilter.placeholder].value);
-			fileName.push(this.filters.container.elements[endFilter.placeholder].value);
+				values.date_range = {};
+
+				const
+					[startFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('start')),
+					[endFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('end'));
+
+				values.date_range.start = Format.date(this.filters.container.elements[startFilter.placeholder].value);
+				values.date_range.end = Format.date(this.filters.container.elements[endFilter.placeholder].value);
+			}
+			else if (filter.type == 'date' && !values.date) {
+
+				values.date = Format.date(this.filters.container.elements[filter.placeholder].value);
+			}
+			else if (filter.type == 'month' && !values.month) {
+
+				values.month = Format.month(this.filters.container.elements[filter.placeholder].value);
+			}
 		}
-		else {
 
-			const
-				[monthFilter] = Array.from(this.filters.values()).filter(x => x.type == 'month'),
-				[dateFilter] = Array.from(this.filters.values()).filter(x => x.type == 'date');
+		if(values.date_range) {
 
-			if(monthFilter) {
+			fileName.push(values.date_range.start, values.date_range.end);
+		}
+		else if(values.date) {
 
-				fileName.push(this.filters.container.elements[monthFilter.placeholder].value);
-			}
-			else if(dateFilter) {
+			fileName.push(values.date);
+		}
+		else if(values.month) {
 
-				fileName.push(this.filters.container.elements[dateFilter.placeholder].value);
-			}
+			fileName.push(values.month);
 		}
 
 		if(fileName.length == 1)
@@ -953,7 +966,7 @@ class DataSourceFilters extends Map {
 		// The goal is to group together the start and end dates of any one filter name
 		for(const filter of filters.values()) {
 
-			if(filter.type != 'date' || !(filter.name.toLowerCase().includes('start') && filter.name.toLowerCase().includes('end')))
+			if(filter.type != 'date' || (!filter.name.toLowerCase().includes('start') && !filter.name.toLowerCase().includes('end')))
 				continue;
 
 			// Remove the 'start', 'end', 'date' and spaces to create a name that would (hopefuly) identify the filter pairs.
