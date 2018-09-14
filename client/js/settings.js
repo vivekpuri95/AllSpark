@@ -10,7 +10,7 @@ class Settings extends Page {
 
 			for (const [key, settings] of Settings.list) {
 
-				if(key == 'accounts' && !this.user.privileges.has('superadmin'))
+				if(['executingReports', 'accounts'].includes(key) && !this.user.privileges.has('superadmin'))
 					continue;
 
 				const setting = new settings(this.container);
@@ -46,6 +46,8 @@ class Settings extends Page {
 	}
 
 	async loadDefault() {
+
+		clearInterval(Settings.autoRefreshInterval);
 
 		let byDefault;
 
@@ -337,9 +339,9 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 
 	setup() {
 
-		if(this.page.querySelector('.exe-reports')) {
+		if(this.page.querySelector('.executing-reports')) {
 
-			this.page.querySelector('.exe-reports').remove();
+			this.page.querySelector('.executing-reports').remove();
 		}
 
 		this.page.appendChild(this.container);
@@ -347,23 +349,12 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 
 	async load() {
 
-		const options = {
-			method: 'POST',
-		};
-
-		const [reports, users] = await Promise.all([
-			API.call('reports/engine/executingReports'),
-			API.call('users/list', {}, options)
-		]);
+		let reports = await API.call('reports/engine/executingReports');
 
 		this.executingReports = new Set();
 
-		await DataSource.load();
-
 		for(const report of reports) {
 
-			report.report_name = DataSource.list.get(report.query_id).name;
-			[report.user] = users.filter(x => report.user_id == x.user_id);
 			this.executingReports.add(new ExecutingReport(report, this));
 		}
 
@@ -377,7 +368,7 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('setting-page', 'exe-reports', 'hidden');
+		container.classList.add('setting-page', 'executing-reports', 'hidden');
 
 		container.innerHTML = `
 			<h1>Executing Reports</h1>
@@ -392,9 +383,9 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 						<th>Account Id</th>
 						<th>Query Id</th>
 						<th>Report Name</th>
-						<th>User Id</th>
 						<th>User Name</th>
 						<th>Connection Type</th>
+						<th>Execution Timestamp</th>
 					</tr>
 				</thead>
 				<tbody></tbody>
@@ -1960,20 +1951,20 @@ class ExecutingReport {
 		const tr = document.createElement('tr');
 
 		tr.innerHTML = `
-			<td>${this.account_id}</td>
-			<td>${this.query_id}</td>
-			<td>${this.report_name}</td>
-			<td>${this.user_id}</td>
-			<td>${[this.user.first_name, this.user.middle_name, this.user.last_name].filter(x => x).join(' ')}</td>
+			<td>${this.account.name}<span class="grey">${this.account.id}</span></td>
+			<td>${this.query.id}</td>
+			<td><a href="/report/${this.query.id}">${this.query.name}</a></td>
+			<td><a href="/user/profile/${this.user.id}">${this.user.name}</a></td>
 			<td>${this.params.type}</td>
+			<td>${Format.dateTime(this.execution_timestamp)}</td>
 		`;
 
 		tr.on('click', () => {
 
-			if(!this.queryDialog)
-				this.queryDialog = new DialogBox();
+			if(!ExecutingReport.queryDialog)
+				ExecutingReport.queryDialog = new DialogBox();
 
-			this.queryDialog.heading = this.report_name;
+			ExecutingReport.queryDialog.heading = this.report_name;
 
 			const
 				editor = new CodeEditor({mode: 'sql'});
@@ -1983,13 +1974,13 @@ class ExecutingReport {
 
 			editor.value = this.params.request[0];
 
-			this.queryDialog.body.classList.add('exe-query-info');
+			ExecutingReport.queryDialog.body.classList.add('executing-query-info');
 
-			this.queryDialog.body.innerHTML = `<h3>Query:</h3>`;
+			ExecutingReport.queryDialog.body.innerHTML = `<h3>Query:</h3>`;
 
-			this.queryDialog.body.appendChild(editor.container);
+			ExecutingReport.queryDialog.body.appendChild(editor.container);
 
-			this.queryDialog.show();
+			ExecutingReport.queryDialog.show();
 		});
 
 		return tr;

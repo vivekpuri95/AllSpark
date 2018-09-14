@@ -458,9 +458,10 @@ class report extends API {
 
 		const queryDetails = new Map;
 
-		queryDetails.set("query_id", this.reportObj.query_id);
-		queryDetails.set("account_id", this.account.account_id);
-		queryDetails.set("user_id", this.user.user_id);
+		queryDetails.set("query", {id: this.reportObj.query_id, name: this.reportObj.name});
+		queryDetails.set("account", {id: this.account.account_id, name: this.account.name});
+		queryDetails.set("user", {id: this.user.user_id, name: this.user.name});
+		queryDetails.set("execution_timestamp", new Date());
 		queryDetails.set("params", engine.parameters);
 		queryDetails.set("execute", engineExecution);
 
