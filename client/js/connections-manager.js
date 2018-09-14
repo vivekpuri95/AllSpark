@@ -536,7 +536,7 @@ DataConnection.types.set('mysql', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
+			<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -556,7 +556,7 @@ DataConnection.types.set('mysql', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
+		connections.form.querySelector('#showpassword').on('click', () => {
 			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 		});
 	}
@@ -587,7 +587,7 @@ DataConnection.types.set('mssql', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
+			<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -607,7 +607,7 @@ DataConnection.types.set('mssql', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
+		connections.form.querySelector('#showpassword').on('click', () => {
 			connections.form.password.type = connections.form.password.type == 'text' ? 'password' : 'text';
 		});
 	}
@@ -638,7 +638,7 @@ DataConnection.types.set('pgsql', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
+			<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -658,7 +658,7 @@ DataConnection.types.set('pgsql', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
+		connections.form.querySelector('#showpassword').on('click', () => {
 			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 		});
 	}
@@ -689,8 +689,8 @@ DataConnection.types.set('oracle', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
-				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
+				<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
+				<input type="text" autocomplete="off" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
@@ -704,7 +704,7 @@ DataConnection.types.set('oracle', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
+		connections.form.querySelector('#showpassword').on('click', () => {
 			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 		});
 	}
@@ -773,7 +773,7 @@ DataConnection.types.set('mongo', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
+			<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -793,7 +793,7 @@ DataConnection.types.set('mongo', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
+		connections.form.querySelector('#showpassword').on('click', () => {
 			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 		});
 	}

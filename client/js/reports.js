@@ -8836,15 +8836,3 @@ class Tooltip {
 DataSourceFilter.setup();
 DataSourceColumnFilter.setup();
 DataSourceColumnAccumulation.setup();
-
-
-// const form = DataConnection.form.querySelector('#details');
-// 		form.innerHTML =
-
-
-// <span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
-// 				<input type="text" name="password" value="${connections.password || ''}">
-
-// 				form.querySelector('#showpassword').on('click', () => {
-// 			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password': 'text';
-// 		});
