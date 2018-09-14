@@ -1645,7 +1645,7 @@ class DataSourceColumn {
 		}
 
 		if(this.disabled)
-			this.container.classList.toggle('disabled', this.disabled);
+			this.container.classList.add('disabled');
 	}
 
 	get container() {
@@ -1878,11 +1878,11 @@ class DataSourceColumn {
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
 
-		if(!user.privileges.has('report')) {
-			form.querySelector('footer .save').classList.add('disableSave');
-			let saveData = form.querySelector('footer .save'); 
-			saveData.setAttribute("tooltip", "You have no access to save this");
-			saveData.setAttribute("tooltip-position", "left");
+		if(!this.editable) {
+			let saveData = form.querySelector('footer .save');
+			saveData.classList.add('disabled');
+			saveData.setAttribute('tooltip', 'You have no access to save this');
+			saveData.setAttribute('tooltip-position', 'left');
 		}
 
 		form.elements.formula.on('keyup', async () => {
@@ -1904,13 +1904,8 @@ class DataSourceColumn {
 				form.parentElement.classList.add('hidden');
 		});
 
-		form.querySelector('.save').on('click',async e => {
-
-			if(!user.privileges.has('report'))
-				e.preventDefault();
-			else this.save();
-
-		});
+		if(this.editable)
+			form.querySelector('.save').on('click', () =>  this.save())
 
 		return form;
 	}
@@ -1975,6 +1970,7 @@ class DataSourceColumn {
 		for(const element of this.form.elements) {
 			if(element.type == 'checkbox')
 				this[element.name] = element.checked;
+
 			else this[element.name] = element.value == '' ? null : element.value || null;
 		}
 		this.filters = this.columnFilters.json;
@@ -8840,3 +8836,15 @@ class Tooltip {
 DataSourceFilter.setup();
 DataSourceColumnFilter.setup();
 DataSourceColumnAccumulation.setup();
+
+
+// const form = DataConnection.form.querySelector('#details');
+// 		form.innerHTML =
+
+
+// <span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
+// 				<input type="text" name="password" value="${connections.password || ''}">
+
+// 				form.querySelector('#showpassword').on('click', () => {
+// 			DataConnection.form.password.type = DataConnection.form.password.type == 'text' ? 'password': 'text';
+// 		});
