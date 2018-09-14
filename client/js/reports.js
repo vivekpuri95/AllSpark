@@ -755,8 +755,8 @@ class DataSource {
 					[startFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('start')),
 					[endFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('end'));
 
-				values.date_range.start = startFilter ? Format.date(this.filters.container.elements[startFilter.placeholder].value) : Format.date(new Date);
-				values.date_range.end = endFilter ? Format.date(this.filters.container.elements[endFilter.placeholder].value) : Format.date(new Date);
+				values.date_range.start = startFilter ? Format.date(this.filters.container.elements[startFilter.placeholder].value) : Format.date(new Date());
+				values.date_range.end = endFilter ? Format.date(this.filters.container.elements[endFilter.placeholder].value) : Format.date(new Date());
 			}
 			else if (filter.type == 'date' && !values.date) {
 
@@ -765,6 +765,10 @@ class DataSource {
 			else if (filter.type == 'month' && !values.month) {
 
 				values.month = Format.month(this.filters.container.elements[filter.placeholder].value);
+			}
+			else if (filter.type == 'datetime' && !values.date_time) {
+
+				values.date_time = Format.dateTime(this.filters.container.elements[filter.placeholder].value);
 			}
 		}
 
@@ -780,9 +784,13 @@ class DataSource {
 
 			fileName.push(values.month);
 		}
+		else if(values.date_time) {
+
+			fileName.push(values.date_time);
+		}
 
 		if(fileName.length == 1)
-			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(Format.date(new Date)));
+			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(new Date));
 
 		a.href = window.URL.createObjectURL(blob);
 
