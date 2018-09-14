@@ -68,6 +68,13 @@ select:active,
 button:active {
 	box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
 }
+button[disabled]:active,
+button[disabled]:hover {
+	background: #fff;
+	box-shadow: none;
+	border-color: #ccc;
+	color: #999;
+}
 
 button > i {
 	margin-right: calc(var(--gap) * 1);
