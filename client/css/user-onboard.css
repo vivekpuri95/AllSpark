@@ -56,18 +56,22 @@
             border-bottom: 1px solid #ccc;
             grid-gap: 5px;
         }
+        .setup-stages .wrapper .stage.active,
+        .setup-stages .wrapper .stage.active:hover {
+            background: #ddd;
+        }
         .setup-stages .wrapper .stage:hover {
             background: #eee;
         }
         .setup-stages .wrapper .stage:active {
-
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
         }
             .setup-stages .wrapper .stage span {
                 padding: calc(var(--gap) * 1);
             }
             .setup-stages .wrapper .stage span.status {
-                height: 22px;
-                width: 22px;
+                height: 20px;
+                width: 20px;
                 border: 1px solid var(--color-accent);
                 border-radius: 12px;
                 display: flex;
@@ -75,58 +79,12 @@
                 align-items: center;
             }
             .setup-stages .wrapper .stage span.hellip {
-                color: #ddd;
+                color: #ccc;
             }
             .setup-stages .wrapper .stage span.status.checked {
                 color: var(--color-accent);
                 font-size: 85%;
             }
-    /*.setup-stages .stage-info {*/
-        /*grid-row: 1;*/
-        /*display: flex;*/
-        /*justify-content: space-around;*/
-        /*text-shadow: 0.5px 0.5px #fff;*/
-    /*}*/
-        /*.setup-stages .stage-info div {*/
-            /*text-align: center;*/
-            /*display: flex;*/
-            /*flex-direction: column;*/
-            /*cursor: pointer;*/
-            /*background: rgba(0, 0, 0, 0.2);*/
-            /*padding: 5px 10px;*/
-        /*}*/
-        /*.setup-stages .stage-info div.next.disabled {*/
-            /*pointer-events: none;*/
-            /*color: #666;*/
-        /*}*/
-        /*.setup-stages .stage-info span i {*/
-            /*margin-right: 5px;*/
-        /*}*/
-    /*.setup-stages .progress-bar {*/
-        /*background: #ddd;*/
-        /*border-radius: 12px;*/
-        /*height: 20px;*/
-    /*}*/
-        /*.setup-stages .progress-bar .progress {*/
-            /*background-image: linear-gradient(to right, #7dabf6, #3e7adc);*/
-            /*border-radius: inherit;*/
-            /*height: 100%;*/
-            /*width: 0;*/
-            /*position: relative;*/
-        /*}*/
-        /*.setup-stages .progress-bar .progress::after {*/
-            /*content: "\00a0";*/
-            /*width: 16px;*/
-            /*height: 14px;*/
-            /*top: 3px;*/
-            /*background-color: #eee;*/
-            /*border-radius: 20px;*/
-            /*position: absolute;*/
-            /*right: 3px;*/
-        /*}*/
-        /*.setup-stages .progress-bar .progress.progress-zero::after {*/
-            /*display:none;*/
-        /*}*/
 
 .dialog-box-blanket.user-onboarding-welcome header {
     color: inherit;

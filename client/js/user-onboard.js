@@ -49,10 +49,17 @@ class UserOnboard {
 
 	get container() {
 
-		// if(this.stateChanged) {
-		//
-		// 	window.location = this.stage.url;
-		// }
+		const [nextStage] = this.stages.filter(x => !x.completed);
+
+		if(this.stateChanged && nextStage) {
+
+			window.location = nextStage.url;
+		}
+
+		if(nextStage) {
+			
+			nextStage.setActive();
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('setup-stages');
@@ -72,11 +79,6 @@ class UserOnboard {
 			}
 
 			wrapper.appendChild(stage.container);
-		}
-
-		if(this.progress == 0) {
-
-			container.querySelector('.progress').classList.add('progress-zero');
 		}
 
 		return container;
@@ -180,6 +182,11 @@ class UserOnboardStage {
 		status.innerHTML = '<i class="fas fa-check"></i>';
 		status.classList.add('checked');
 
+	}
+
+	setActive() {
+
+		this.container.classList.add('active');
 	}
 }
 

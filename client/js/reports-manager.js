@@ -1029,6 +1029,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				subtitle: `${this.report.name} #${this.report.query_id}`,
 			});
 
+			if(await Storage.get('newUser'))
+				await UserOnboard.setup(true);
+
 		} catch(e) {
 
 			new SnackBar({
