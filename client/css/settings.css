@@ -226,8 +226,10 @@ main .executing-reports {
 		padding: calc(var(--gap) * 2);
 		margin: calc(var(--gap) * 2) 0;
 	}
-	main .executing-reports table a {
-		color: inherit;
+	main .executing-reports table td.query-name:hover,
+	main .executing-reports table td.user-name:hover {
+		text-decoration: underline;
+		cursor: pointer;
 	}
 .dialog-box-blanket .body.executing-query-info {
 	padding: 0 calc(var(--gap) * 2);

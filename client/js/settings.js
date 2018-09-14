@@ -380,10 +380,10 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 			<table class="block">
 				<thead>
 					<tr>
-						<th>Account Id</th>
+						<th>Account Name</th>
 						<th>Query Id</th>
 						<th>Report Name</th>
-						<th>User Name</th>
+						<th>User</th>
 						<th>Connection Type</th>
 						<th>Execution Timestamp</th>
 					</tr>
@@ -1951,13 +1951,27 @@ class ExecutingReport {
 		const tr = document.createElement('tr');
 
 		tr.innerHTML = `
-			<td>${this.account.name}<span class="grey">${this.account.id}</span></td>
+			<td>${this.account.name} <span class="grey">#${this.account.id}</span></td>
 			<td>${this.query.id}</td>
-			<td><a href="/report/${this.query.id}">${this.query.name}</a></td>
-			<td><a href="/user/profile/${this.user.id}">${this.user.name}</a></td>
-			<td>${this.params.type}</td>
+			<td class="query-name">${this.query.name}</td>
+			<td class="user-name">${this.user.name}</td>
+			<td>${this.params.type} <span class="grey">#${this.params.request[2]}</span> </td>
 			<td>${Format.dateTime(this.execution_timestamp)}</td>
 		`;
+
+		tr.querySelector('.user-name').on('click', e => {
+
+			e.stopPropagation();
+
+			window.location = `/user/profile/${this.user.id}`;
+		});
+
+		tr.querySelector('.query-name').on('click', e => {
+
+			e.stopPropagation();
+
+			window.location = `/report/${this.query.id}`;
+		});
 
 		tr.on('click', () => {
 
