@@ -1270,21 +1270,20 @@ class API extends AJAX {
 	 */
 	static async refreshToken() {
 
-		let
-			getToken = true,
-			token = await Storage.get('token');
-
 		if(Cookies.get('external_parameters')) {
+
+			await Storage.clear();
 
 			await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
 			Cookies.set('external_parameters', '');
-		}
-
-		if(Cookies.get('refresh_token')) {
 
 			await Storage.set('refresh_token', Cookies.get('refresh_token'));
 			Cookies.set('refresh_token', '');
 		}
+
+		let
+			getToken = true,
+			token = await Storage.get('token');
 
 		if(token && token.body) {
 
