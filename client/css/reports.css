@@ -1251,7 +1251,7 @@ main .dataset {
 	grid-gap: calc(var(--gap) * 2);
 	box-shadow: none;
 	width: 100%;
-	overflow: auto;
+	overflow: hidden;
 	max-height: 200px;
 }
 	.column-form .filters,
@@ -1361,4 +1361,17 @@ main .dataset {
 			width: 100%;
 			height: 200px;
 			margin: calc(var(--gap) * 3) 0;
+		}
+		.disableSave {
+			background: #eee;
+			color: #9e9e9e;
+			outline: none
+		}
+		.disableSave:hover{
+			background: #eee;
+			color: #9e9e9e;
+			border: 1px solid #ccc;
+			border-bottom: 0;
+			border-right: 0;
+			box-shadow: none;
 		}

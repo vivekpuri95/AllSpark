@@ -1878,8 +1878,12 @@ class DataSourceColumn {
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
 
-		if(!user.privileges.has('report'))
-			form.querySelector('footer .save').classList.add('hidden');
+		if(!user.privileges.has('report')) {
+			form.querySelector('footer .save').classList.add('disableSave');
+			let saveData = form.querySelector('footer .save'); 
+			saveData.setAttribute("tooltip", "You have no access to save this");
+			saveData.setAttribute("tooltip-position", "left");
+		}
 
 		form.elements.formula.on('keyup', async () => {
 
@@ -1900,7 +1904,13 @@ class DataSourceColumn {
 				form.parentElement.classList.add('hidden');
 		});
 
-		form.querySelector('.save').on('click', () => this.save());
+		form.querySelector('.save').on('click',async e => {
+
+			if(!user.privileges.has('report'))
+				e.preventDefault();
+			else this.save();
+
+		});
 
 		return form;
 	}
