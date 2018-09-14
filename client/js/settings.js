@@ -1964,7 +1964,7 @@ class ExecutingReport {
 			if(!ExecutingReport.queryDialog)
 				ExecutingReport.queryDialog = new DialogBox();
 
-			ExecutingReport.queryDialog.heading = this.report_name;
+			ExecutingReport.queryDialog.heading = this.query.name;
 
 			const
 				editor = new CodeEditor({mode: 'sql'});

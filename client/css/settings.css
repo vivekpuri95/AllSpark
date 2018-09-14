@@ -226,6 +226,9 @@ main .executing-reports {
 		padding: calc(var(--gap) * 2);
 		margin: calc(var(--gap) * 2) 0;
 	}
+	main .executing-reports table a {
+		color: inherit;
+	}
 .dialog-box-blanket .body.executing-query-info {
 	padding: 0 calc(var(--gap) * 2);
 }
