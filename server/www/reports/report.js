@@ -401,6 +401,13 @@ exports.list = class extends API {
 		}
 		console.log(visualizationTime, 'VISUALIZATION TIME', visualizationCount, 'VISUALIZATION COUNT', visualizationTime/visualizationCount, 'AVG');
 		console.log(reportTime, 'REPORT TIME', reportCount, 'REPORT COUNT', reportTime/reportCount, 'AVG');
+
+		for(const row of response) {
+
+			delete row.connectionObj;
+			delete row.roles;
+		}
+
 		return response;
 	}
 };
