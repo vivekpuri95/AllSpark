@@ -1595,9 +1595,11 @@ class DataSourceColumns extends Map {
 		container.classList.toggle('over-flow', container.offsetWidth < container.scrollWidth);
 	}
 }
+
 class DataSourceColumn {
 
 	constructor(column, source) {
+
 		DataSourceColumn.colors = [
 			'#3e7adc',
 			'#ef6692',
@@ -1616,6 +1618,7 @@ class DataSourceColumn {
 			'#1abb9c',
 			'#9da19c',
 		];
+
 		this.key = column;
 		this.source = source;
 		this.name = this.key.split('_').filter(w => w.trim()).map(w => w.trim()[0].toUpperCase() + w.trim().slice(1)).join(' ');
