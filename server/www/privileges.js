@@ -114,7 +114,8 @@ exports.insertNewPrivileges = class extends API {
 			"connection.insert", "connection.update", "connection.delete", "connection.list", "connection",
 			"dashboard.insert", "dashboard.update", "dashboard.list", "dashboard.delete", "dashboard",
 			"report", "report.insert", "report.update",
-			"visualization", "visualization.insert", "visualization.update", "visualization.delete", "visualization.list"
+			"visualization", "visualization.insert", "visualization.update", "visualization.delete", "visualization.list",
+			"category", "category.insert", "category.update", "category.list", "category.delete",
 		];
 
 		const notInTable = [];
