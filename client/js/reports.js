@@ -1495,25 +1495,25 @@ class DataSourceRow extends Map {
 		if(!value)
 			value = this.get(key);
 
-		if(column.type == 'date')
+		if(column.type.name == 'date')
 			value = Format.date(value);
 
-		if(column.type == 'month')
+		if(column.type.name == 'month')
 			value = Format.month(value);
 
-		if(column.type == 'year')
+		if(column.type.name == 'year')
 			value = Format.year(value);
 
-		if(column.type == 'timeelapsed')
+		if(column.type.name == 'timeelapsed')
 			value = Format.ago(value);
 
-		if(column.type == 'time')
+		if(column.type.name == 'time')
 			value = Format.time(value);
 
-		if(column.type == 'datetime')
+		if(column.type.name == 'datetime')
 			value = Format.dateTime(value);
 
-		else if(column.type == 'number')
+		else if(column.type.name == 'number')
 			value = Format.number(value);
 
 		if(column.prefix)
@@ -1748,6 +1748,8 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
+		this.form.type.value = this.type.name;
+
 		if(this.drilldown && this.drilldown.query_id) {
 
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
@@ -1948,6 +1950,11 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
+		this.tpye = {
+			name: this.form.querySelector('.columnType select').value,
+			format: '',
+		};
+
 		this.disabled = parseInt(this.disabled) || 0;
 
 		this.container.querySelector('.label .name').textContent = this.name;
@@ -1977,6 +1984,11 @@ class DataSourceColumn {
 		if(!this.source.format.columns)
 			this.source.format.columns = [];
 
+		this.tpye = {
+			name: this.form.querySelector('.columnType select').value,
+			format: '',
+		}
+
 		let
 			response,
 			updated = 0;
@@ -1989,7 +2001,7 @@ class DataSourceColumn {
 		response = {
 			key : this.key,
 			name : this.name,
-			type : this.form.querySelector('.columnType select').value,
+			type : this.type,
 			disabled : this.disabled,
 			color : this.color,
 			searchType : this.searchType,
@@ -2812,7 +2824,7 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type == 'date')
+			if(column.type.name == 'date')
 				this.timingColumn = column;
 		}
 
@@ -4085,7 +4097,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				let rowJson = row.get(key);
 
-				if(column.type == 'html') {
+				if(column.type.name == 'html') {
 
 					td.innerHTML = row.getTypedValue(key);
 				}
