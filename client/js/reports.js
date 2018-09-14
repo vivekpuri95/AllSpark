@@ -386,6 +386,10 @@ class DataSource {
 						<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
 					</div>
 
+					<div class="item">
+						<span class="label filtered-json-download"><i class="fas fa-code"></i> Filtered JSON</label>
+					</div>
+
 					<!--<div class="item">
 						<span class="label export-toggle"><i class="fa fa-download"></i> Export</label>
 					</div>>-->
@@ -510,6 +514,7 @@ class DataSource {
 		menu.querySelector('.csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
 		menu.querySelector('.filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
 		menu.querySelector('.json-download').on('click', (e) => this.download(e, {mode: 'json'}));
+		menu.querySelector('.filtered-json-download').on('click', (e) => this.download(e, {mode: 'filtered-json'}));
 		menu.querySelector('.xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
 		menu.querySelector('.expand-toggle').on('click', () => window.location = `/report/${this.query_id}`);
 
@@ -628,7 +633,7 @@ class DataSource {
 		let str = [],
 			response;
 
-		if(what.mode != 'filtered-csv')
+		if(!(['filtered-json', 'filtered-csv'].includes(what.mode)))
 			response = await this.fetch({download: 1});
 
 		if(what.mode == 'json') {
@@ -696,6 +701,27 @@ class DataSource {
 			what.mode = 'csv';
 		}
 
+		else if(what.mode == 'filtered-json') {
+
+			const response = await this.response();
+
+			for(const data of response) {
+
+				const line = [], rowObj = {}; 
+
+				for(let [key, value] of data) {
+					
+					rowObj[key] = value;
+				}
+
+				line.push(JSON.stringify(rowObj));
+
+				str.push(line);
+			}
+
+			what.mode = 'json';
+		}
+
 		else {
 
 			for(const data of response.data) {
@@ -716,13 +742,52 @@ class DataSource {
 			blob = new Blob([str], {type: 'application\/octet-stream'}),
 			fileName = [
 				this.name,
-			];
+			],
+			values = {};
 
-		if(this.filters.has('Start Date'))
-			fileName.push(this.filters.container.elements[this.filters.get('Start Date').placeholder].value);
+		for(const [name, filter] of this.filters) {
 
-		if(this.filters.has('End Date'))
-			fileName.push(this.filters.container.elements[this.filters.get('End Date').placeholder].value);
+			if(filter.type == 'daterange' && !values.date_range) {
+
+				values.date_range = {};
+
+				const
+					[startFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('start')),
+					[endFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('end'));
+
+				values.date_range.start = startFilter ? Format.date(this.filters.container.elements[startFilter.placeholder].value) : Format.date(new Date());
+				values.date_range.end = endFilter ? Format.date(this.filters.container.elements[endFilter.placeholder].value) : Format.date(new Date());
+			}
+			else if (filter.type == 'date' && !values.date) {
+
+				values.date = Format.date(this.filters.container.elements[filter.placeholder].value);
+			}
+			else if (filter.type == 'month' && !values.month) {
+
+				values.month = Format.month(this.filters.container.elements[filter.placeholder].value);
+			}
+			else if (filter.type == 'datetime' && !values.date_time) {
+
+				values.date_time = Format.dateTime(this.filters.container.elements[filter.placeholder].value);
+			}
+		}
+
+		if(values.date_range) {
+
+			fileName.push(values.date_range.start, values.date_range.end);
+		}
+		else if(values.date) {
+
+			fileName.push(values.date);
+		}
+		else if(values.month) {
+
+			fileName.push(values.month);
+		}
+		else if(values.date_time) {
+
+			fileName.push(values.date_time);
+		}
 
 		if(fileName.length == 1)
 			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(new Date));
@@ -7304,7 +7369,7 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 		super.render(options);
 
-		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+		this.container.innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
 		await this.source.fetch(options);
 
