@@ -44,7 +44,7 @@ class UserOnboard {
 			await Storage.delete('newUser');
 		}
 
-		// this.loadWelcomeDialogBox();
+		this.loadWelcomeDialogBox();
 	}
 
 	get container() {
@@ -199,45 +199,6 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 		this.title = 'Add Connection';
 	}
 
-	// get container() {
-	//
-	// 	if(this.containerElement) {
-	//
-	// 		return this.containerElement;
-	// 	}
-	//
-	// 	const container = this.containerElement = super.container;
-	//
-	// 	container.innerHTML = `
-	// 		<div class="current">
-	// 			<span class="NA">${this.progress}%</span>
-	// 			<span><i class="fa fa-server"></i> Add Connection</span>
-	// 		</div>
-	// 		<div class="next">
-	// 			<span class="NA">Next</span>
-	// 			<span><i class="fa fa-database"></i> Add Report</span>
-	// 		</div>
-	// 	`;
-	//
-	// 	container.querySelector('.current').on('click', () => {
-	//
-	// 		window.location = this.url;
-	// 	});
-	//
-	// 	container.querySelector('.next').on('click', () => {
-	//
-	// 		window.location = '/reports/configure-report/add';
-	// 	});
-	//
-	// 	if(!this.completed) {
-	//
-	// 		container.querySelector('.next').classList.add('disabled');
-	// 	}
-	//
-	//
-	// 	return container;
-	// }
-
 	get url() {
 
 		return '/connections-manager';
@@ -268,44 +229,6 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 		this.title = 'Add Report';
 	}
-
-	// get container() {
-	//
-	// 	if(this.containerElement) {
-	//
-	// 		return this.containerElement;
-	// 	}
-	//
-	// 	const container = this.containerElement = super.container;
-	//
-	// 	container.innerHTML = `
-	// 		<div class="current">
-	// 			<span class="NA">${this.progress}%</span>
-	// 			<span><i class="fa fa-database"></i> Add Report</span>
-	// 		</div>
-	// 		<div class="next">
-	// 			<span class="NA">Next</span>
-	// 			<span><i class="fa fa-newspaper"></i>Add Dashboard</span>
-	// 		</div>
-	// 	`;
-	//
-	// 	container.querySelector('.current').on('click', () => {
-	//
-	// 		window.location = this.url;
-	// 	});
-	//
-	// 	container.querySelector('.next').on('click', () => {
-	//
-	// 		window.location = '/dashboards-manager/add';
-	// 	});
-	//
-	// 	if(!this.completed) {
-	//
-	// 		container.querySelector('.next').classList.add('disabled');
-	// 	}
-	//
-	// 	return container;
-	// }
 
 	get url() {
 
@@ -338,45 +261,6 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 		this.title = 'Add Dashboard';
 	}
 
-	// get container() {
-	//
-	// 	if(this.containerElement) {
-	//
-	// 		return this.containerElement;
-	// 	}
-	//
-	// 	const container = this.containerElement = super.container;
-	//
-	// 	container.innerHTML = `
-	// 		<div class="current">
-	// 			<span class="NA">${this.progress}%</span>
-	// 			<span><i class="fa fa-newspaper"></i> Add Dashboard</span>
-	// 		</div>
-	// 		<div class="next">
-	// 			<span class="NA">Next</span>
-	// 			<span><i class="fa fa-chart-line"></i> Add Visualization</span>
-	// 		</div>
-	// 	`;
-	//
-	// 	container.querySelector('.current').on('click', () => {
-	//
-	// 		window.location = this.url;
-	// 	});
-	//
-	// 	container.querySelector('.next').on('click', () => {
-	//
-	// 		window.location = this.stages[1].report ? `/reports/pick-visualization/${this.stages[1].report.query_id}` : '/reports';
-	// 	});
-	//
-	// 	if(!this.completed) {
-	//
-	// 		container.querySelector('.next').classList.add('disabled');
-	// 	}
-	//
-	// 	return container;
-	//
-	// }
-
 	get url() {
 
 		return '/dashboards-manager/add';
@@ -408,30 +292,6 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 		this.title = 'Add Visualization';
 	}
-
-	// get container() {
-	//
-	// 	if(this.containerElement) {
-	//
-	// 		return this.containerElement;
-	// 	}
-	//
-	// 	const container = this.containerElement = super.container;
-	//
-	// 	container.innerHTML = `
-	// 		<div class="current">
-	// 			<span class="NA">${this.progress}%</span>
-	// 			<span><i class="fa fa-chart-line"></i> Add Visualization</span>
-	// 		</div>
-	// 	`;
-	//
-	// 	container.querySelector('.current').on('click', () => {
-	//
-	// 		window.location = this.url;
-	// 	});
-	//
-	// 	return container;
-	// }
 
 	get url() {
 

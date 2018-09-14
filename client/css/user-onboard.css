@@ -1,17 +1,10 @@
 .setup-stages {
     position: fixed;
-    /* display: grid; */
     width: 15%;
     bottom: 0;
     right: 0;
     z-index: 4;
-    /* grid-column-gap: calc(var(--gap) * 2); */
     padding: 10px 15px;
-    /* grid-template-columns: 180px 1fr; */
-    /* align-items: end; */
-    /* grid-template-rows: max-content max-content; */
-    /* grid-row-gap: 5px; */
-    /* grid-template-columns: max-content; */
 }
     .setup-stages a {
         display: flex;
