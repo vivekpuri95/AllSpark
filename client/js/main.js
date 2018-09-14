@@ -2127,9 +2127,16 @@ class MultiSelect {
 
 			row.input.checked = this.selectedValues.has(row.input.value);
 
-			let hide = false;
+			let
+				hide = false,
+				name = row.name;
 
-			const rowValue = (row.name || '').concat(' ', row.value, ' ', row.subtitle || '');
+			if(!name)
+				name = '';
+
+			name = name.toString();
+
+			const rowValue = name.concat(' ', row.value, ' ', row.subtitle || '');
 
 			if(search.value && !rowValue.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
 				hide = true;
