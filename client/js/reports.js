@@ -1535,6 +1535,7 @@ class DataSourceRow extends Map {
 class DataSourceColumns extends Map {
 
 	constructor(source) {
+
 		super();
 
 		this.source = source;
@@ -1754,6 +1755,7 @@ class DataSourceColumn {
 	}
 
 	edit() {
+
 		this.dialogueBox.body.appendChild(this.form);
 
 		for(const key in this) {
@@ -1771,6 +1773,7 @@ class DataSourceColumn {
 			this.form.type.value = this.type.name;
 
 		if(this.drilldown && this.drilldown.query_id) {
+
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
 		}
 		else {
@@ -1785,6 +1788,7 @@ class DataSourceColumn {
 
 		if(this.formContainer)
 			return this.formContainer;
+
 		const form = this.formContainer = document.createElement('form');
 
 		form.classList.add('block', 'form', 'column-form');
@@ -1954,6 +1958,7 @@ class DataSourceColumn {
 	}
 
 	async apply(e) {
+
 		if(e)
 			e.preventDefault();
 
@@ -2088,8 +2093,11 @@ class DataSourceColumn {
 	}
 
 	render() {
+
 		this.container.classList.toggle('hidden', this.hidden ? true : false);
+
 		this.container.querySelector('.label .name').textContent = this.name;
+
 		this.container.classList.toggle('disabled', this.disabled);
 		this.container.classList.toggle('filtered', this.filtered ? true : false);
 	}
@@ -3732,6 +3740,7 @@ class LinearVisualization extends Visualization {
 					continue;
 
 				const column = this.source.columns.get(key);
+
 				if(!column || column.disabled)
 					continue;
 
@@ -5987,6 +5996,7 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 					continue;
 
 				const column = this.source.columns.get(key);
+
 				if(!column || column.disabled)
 					continue;
 
@@ -6928,6 +6938,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		} else {
 
 			for(const column of this.source.columns.values()) {
+
 				if(column.disabled)
 					continue;
 
@@ -8241,6 +8252,7 @@ class SpatialMapLayer {
 		const visibleCheck = container.querySelector('input[name=visible_layers]');
 
 		visibleCheck.on('change', e => {
+
 			container.classList.toggle('disabled');
 
 			if(visibleCheck.checked)
