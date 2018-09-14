@@ -40,9 +40,8 @@ class Page {
 	static async load() {
 
 		await Storage.load();
+		await Page.loadCredentialsFromCookie();
 		await Account.load();
-		await User.load();
-		await MetaData.load();
 
 		if(window.account && account.auth_api) {
 
@@ -64,10 +63,10 @@ class Page {
 
 		await API.refreshToken();
 
-		if(await Storage.get('newUser')) {
+		await User.load();
+		await MetaData.load();
 
-			Page.loadOnboardScripts();
-		}
+		Page.loadOnboardScripts();
 
 		DialogBox.container = document.querySelector('body');
 		SnackBar.setup();
@@ -228,7 +227,28 @@ class Page {
 		});
 	}
 
+	/**
+	 * Load credentials from cookies if the server's request provided them.
+	 * This is done when automatic login happens in third party integration scenerio.
+	 */
+	static async loadCredentialsFromCookie() {
+
+		if(!Cookies.get('external_parameters'))
+			return;
+
+		await Storage.clear();
+
+		await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
+		Cookies.set('external_parameters', '');
+
+		await Storage.set('refresh_token', Cookies.get('refresh_token'));
+		Cookies.set('refresh_token', '');
+	}
+
 	static async loadOnboardScripts() {
+
+		if(!await Storage.get('newUser'))
+			return;
 
 		try {
 
@@ -567,7 +587,7 @@ class Cookies {
 	 * @return boolean			The status of the set request.
 	 */
 	static set(key, value) {
-		document.cookie = `${key}=${encodeURIComponent(value)}`;
+		document.cookie = `${key}=${encodeURIComponent(value)};path=/`;
 		return true;
 	}
 
@@ -1214,7 +1234,6 @@ class API extends AJAX {
 
 			else
 				parameters.token = token.body;
-
 		}
 
 		// If a form id was supplied, then also load the data from that form
@@ -1272,20 +1291,7 @@ class API extends AJAX {
 
 		let
 			getToken = true,
-			token = await Storage.get('token'),
-			has_external_parameters = await Storage.has('external_parameters');
-
-		if(!has_external_parameters && Cookies.get('external_parameters')) {
-
-			await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
-			Cookies.set('external_parameters', '');
-		}
-
-		if(Cookies.get('refresh_token')) {
-
-			await Storage.set('refresh_token', Cookies.get('refresh_token'));
-			Cookies.set('refresh_token', '');
-		}
+			token = await Storage.get('token');
 
 		if(token && token.body) {
 
@@ -2128,9 +2134,16 @@ class MultiSelect {
 
 			row.input.checked = this.selectedValues.has(row.input.value);
 
-			let hide = false;
+			let
+				hide = false,
+				name = row.name;
 
-			const rowValue = row.name.concat(' ', row.value, ' ', row.subtitle || '');
+			if(!name)
+				name = '';
+
+			name = name.toString();
+
+			const rowValue = name.concat(' ', row.value, ' ', row.subtitle || '');
 
 			if(search.value && !rowValue.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
 				hide = true;

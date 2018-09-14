@@ -114,7 +114,7 @@ main .dataset {
 		display: flex;
 		align-items: center;
 		white-space: nowrap;
-		z-index: 1;
+		z-index: 3;
 	}
 	.data-source > header::-webkit-scrollbar {
 		display: none;
@@ -137,6 +137,9 @@ main .dataset {
 			overflow: auto;
 			cursor: default;
 			box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+		}
+		.data-source > header h2::-webkit-scrollbar {
+			display: none;
 		}
 			.data-source > header i {
 				margin-left: 5px;
@@ -171,7 +174,7 @@ main .dataset {
 		display: none;
 	}
 		.data-source .toolbar > * {
-			margin: 0 5px;
+			margin: var(--gap);
 		}
 			.data-source .toolbar .right {
 				order: 2000;
@@ -307,8 +310,6 @@ main .dataset {
 		}
 
 	.data-source .toolbar.filters {
-		grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
-		margin: 0;
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		align-items: flex-start;
 		flex-wrap: wrap;

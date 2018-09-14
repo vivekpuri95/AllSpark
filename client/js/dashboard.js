@@ -310,10 +310,11 @@ Page.class = class Dashboards extends Page {
 
 	async load(state) {
 
-		await DataSource.load();
-
 		const
-			dashboardList = await API.call('dashboards/list'),
+			[_, dashboardList] = await Promise.all([
+				DataSource.load(),
+				API.call('dashboards/list'),
+			]),
 			currentId = state ? state.filter : parseInt(window.location.pathname.split('/').pop()),
 			[loadReport] = window.location.pathname.split('/').filter(x => x === 'report');
 
