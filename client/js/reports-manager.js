@@ -1897,14 +1897,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization)
 			return;
 
-		await this.loadVisualizationForm();
-
 		await this.page.preview.load({
 			query_id: this.report.query_id,
 			visualization: {
 				id: this.visualization.visualization_id
 			},
 		});
+
+		await this.loadVisualizationForm();
 
 		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
 
@@ -2303,7 +2303,7 @@ class VisualizationLog extends ReportLog {
 		logInfo.querySelector('.toolbar .preview').on('click', () => {
 
 			if(this.logsVisualizationManager) {
-				
+
 				this.logsVisualizationManager.preview();
 			}
 
@@ -2318,7 +2318,7 @@ class VisualizationLog extends ReportLog {
 
 			this.logsVisualizationManager = new VisualizationManager(this.state, this.logs.page);
 		}
-		
+
 		queryInfo.appendChild(this.logsVisualizationManager.container);
 
 		this.logsVisualizationManager.load();
