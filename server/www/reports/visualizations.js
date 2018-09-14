@@ -1,5 +1,6 @@
 const API = require('../../utils/api');
 const reportHistory = require('../../utils/reportLogs');
+const auth = require('../../utils/auth');
 
 exports.insert = class extends API {
 
@@ -13,7 +14,13 @@ exports.insert = class extends API {
         	'Invalid visualization type'
 		);
 
-        let values = {query_id, name, type, options};
+	    this.user.privilege.needs("visualization.insert", "ignore");
+
+	    const authResponse = await auth.report(query_id, this.user);
+
+	    this.assert(!authResponse.error, authResponse.message);
+
+        let values = {query_id, name, type, options, added_by: this.user.user_id};
 
         const
             insertResponse = await this.mysql.query('INSERT INTO tb_query_visualizations SET  ?', [values], 'write'),
@@ -38,6 +45,8 @@ exports.update = class extends API {
 
     async update({visualization_id, name, type, options = null} = {}) {
 
+    	this.user.privilege.needs('visualization.update', 'ignore');
+
 		this.assert(visualization_id, 'Visualization id is required');
 		this.assert(name && type, 'Name or type is missing');
 
@@ -52,6 +61,10 @@ exports.update = class extends API {
             compareJson = {};
 
 		this.assert(updatedRow, 'Invalid visualization id');
+
+	    const authVisualizationResponse = await auth.visualization(visualization_id, this.user, updatedRow.query_id, this.account.settings.has("visualization_roles_from_query") && this.account.settings.get("visualization_roles_from_query"));
+
+	    this.assert(!authVisualizationResponse.error, authVisualizationResponse.message);
 
 		for(const key in values) {
 
@@ -85,9 +98,10 @@ exports.delete = class extends API {
 
     	this.assert(visualization_id, 'Visualization Id required');
 
+	    this.user.privilege.needs('visualization.delete', 'ignore');
+
         const
 			[updatedRow] =  await this.mysql.query('SELECT * FROM tb_query_visualizations WHERE visualization_id = ?', [visualization_id]),
-            deleteResponse = await this.mysql.query('DELETE FROM tb_query_visualizations WHERE visualization_id = ?', [visualization_id], 'write'),
             logs = {
                 owner: 'visualization',
                 owner_id: visualization_id,
@@ -95,8 +109,12 @@ exports.delete = class extends API {
                 operation:'delete',
             };
 
-		reportHistory.insert(this, logs);
+	    const authVisualizationResponse = await auth.visualization(visualization_id, this.user, updatedRow.query_id, this.account.settings.has("visualization_roles_from_query") && this.account.settings.get("visualization_roles_from_query"));
 
-        return deleteResponse;
+	    this.assert(!authVisualizationResponse.error, authVisualizationResponse.message);
+
+	    reportHistory.insert(this, logs);
+
+        return await this.mysql.query('DELETE FROM tb_query_visualizations WHERE visualization_id = ?', [visualization_id], 'write');
     }
 };

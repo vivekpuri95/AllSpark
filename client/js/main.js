@@ -120,8 +120,8 @@ class Page {
 		const
 			navList = [
 				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
-				{url: '/dashboards-manager', name: 'Dashboards', privileges: ['dashboard', 'dashboard.list', 'dashboard.insert', 'dashboard.delete'], icon: 'fa fa-newspaper'},
-				{url: '/reports', name: 'Reports', privileges: ['report', 'report.insert', 'report.update'], icon: 'fa fa-database'},
+				{url: '/dashboards-manager', name: 'Dashboards', privileges: [], icon: 'fa fa-newspaper'},
+				{url: '/reports', name: 'Reports', privileges: [], icon: 'fa fa-database'},
 				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
 				{url: '/tasks', name: 'Tasks', privileges: ['task'], icon: 'fas fa-tasks'},
 				{url: '/settings', name: 'Settings', privileges: ['administrator'], icon: 'fas fa-cog'},
@@ -189,7 +189,7 @@ class Page {
 
 		for(const item of navList) {
 
-			if(!window.user || item.privileges.every(p => !user.privileges.has(p)))
+			if(!window.user || (item.privileges.every(p => !user.privileges.has(p)) && item.privileges.length))
 				continue;
 
 			nav.insertAdjacentHTML('beforeend',`
@@ -2259,8 +2259,20 @@ class ObjectRoles {
 
 		this.owner = owner;
 		this.ownerId = owner_id;
-		this.allowedTargets = allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets);
+		this.allowedTargets = new Set(allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets));
+
+		if(!user.privileges.has('user.list')) {
+
+			this.allowedTargets.delete('user')
+		}
+
+		if(!(user.privileges.has('user.list') || user.privileges.has('visualization.list') || user.privileges.has('report.insert') || user.privileges.has('report.update'))) {
+
+			this.allowedTargets.delete('role')
+		}
+
 		this.alreadyVisible = [];
+		this.allowedTargets = [...this.allowedTargets];
 	}
 
 	async load() {
@@ -2325,6 +2337,12 @@ class ObjectRoles {
 			return this.getContainer;
 
 		const container = document.createElement('div');
+
+		if(!this.allowedTargets.length) {
+
+			container.classList.add('hidden');
+			return;
+		}
 
 		container.classList.add('object-roles');
 

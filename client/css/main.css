@@ -98,8 +98,8 @@ a:active {
 	color: #999;
 }
 .grey:hover {
-	background: none !important;
-	color: #999 !important;
+	background: none;
+	color: #999;
 }
 
 .notice, .warning {
@@ -775,6 +775,7 @@ body {
 		top: 0;
 		white-space: nowrap;
 		border-right: 1px solid #fff;
+		z-index: 0
 	}
 	#object-roles-already-viewed thead th:last-child {
 		border: 0;

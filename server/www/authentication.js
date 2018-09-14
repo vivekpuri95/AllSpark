@@ -498,6 +498,7 @@ exports.refresh = class extends cycleDetection {
 				category_id: constants.adminCategory[0],
 			})
 		}
+
 		return commonFun.makeJWT(obj, Math.floor(Date.now() / 1000) + (5 * 60));
 	}
 }

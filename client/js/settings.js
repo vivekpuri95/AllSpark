@@ -693,6 +693,12 @@ class SettingsAccount {
 				name: 'Disable "Powered By"',
 			},
 			{
+				key: 'visualization_roles_from_query',
+				type: 'toggle',
+				name: 'Visualization Roles From Query',
+				description: 'Apply Visualization Roles From Its Parent Report'
+			},
+			{
 				key: 'custom_js',
 				type: 'code',
 				mode: 'javascript',
