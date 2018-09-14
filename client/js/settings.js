@@ -13,7 +13,10 @@ class Settings extends Page {
 				if(['executingReports', 'accounts'].includes(key) && !this.user.privileges.has('superadmin'))
 					continue;
 
-				if(!user.privileges.has('category.insert') && !user.privileges.has('category.update') && !user.privileges.has('category.delete'))
+				if(key == 'categories' && !user.privileges.has('category.insert') && !user.privileges.has('category.update') && !user.privileges.has('category.delete'))
+					continue;
+
+				if(key != 'categories' && !user.privileges.has('administrator'))
 					continue;
 
 				const setting = new settings(this.container);
