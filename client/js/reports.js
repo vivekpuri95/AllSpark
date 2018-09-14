@@ -755,8 +755,8 @@ class DataSource {
 					[startFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('start')),
 					[endFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('end'));
 
-				values.date_range.start = Format.date(this.filters.container.elements[startFilter.placeholder].value);
-				values.date_range.end = Format.date(this.filters.container.elements[endFilter.placeholder].value);
+				values.date_range.start = startFilter ? Format.date(this.filters.container.elements[startFilter.placeholder].value) : Format.date(new Date);
+				values.date_range.end = endFilter ? Format.date(this.filters.container.elements[endFilter.placeholder].value) : Format.date(new Date);
 			}
 			else if (filter.type == 'date' && !values.date) {
 
@@ -782,7 +782,7 @@ class DataSource {
 		}
 
 		if(fileName.length == 1)
-			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(new Date));
+			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(Format.date(new Date)));
 
 		a.href = window.URL.createObjectURL(blob);
 
