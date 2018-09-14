@@ -1760,7 +1760,7 @@ class DataSourceColumn {
 
 		for(const key in this) {
 
-			if(!key in this.form)
+			if(!(key in this.form))
 				continue;
 
 			if(this.form[key].type == 'checkbox')
