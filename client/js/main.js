@@ -39,9 +39,8 @@ class Page {
 
 	static async load() {
 
-		Page.loadCredentialsFromCookie();
-
 		await Storage.load();
+		await Page.loadCredentialsFromCookie();
 		await Account.load();
 
 		if(window.account && account.auth_api) {
