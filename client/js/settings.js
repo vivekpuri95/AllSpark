@@ -1949,14 +1949,14 @@ class SettingsCategory {
 			edit = this.container.querySelector('.edit'),
 			delete_ = this.container.querySelector('.delete');
 
-		if(!user.privileges.has('category.update')) {
+		if(user.privileges.has('category.update')) {
 			edit.on('click', () => this.edit());
 			edit.classList.add('green');
 		}
 
 		else edit.classList.add('grey');
 
-		if(!user.privileges.has('category.delete')) {
+		if(user.privileges.has('category.delete')) {
 			delete_.on('click', () => this.delete());
 			delete_.classList.add('red');
 		}
