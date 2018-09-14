@@ -1535,7 +1535,7 @@ class DataSourceRow extends Map {
 class DataSourceColumns extends Map {
 
 	constructor(source) {
-
+		debugger
 		super();
 
 		this.source = source;
@@ -1756,12 +1756,13 @@ class DataSourceColumn {
 
 		for(const key in this) {
 
-			if(key in this.form) {
-				if(key == 'disabled') {
-					this.form[key].checked = this[key];
-				}
+			if(!key in this.form)
+				continue;
+
+			if(this.form[key].type == 'checkbox')
+				this.form[key].checked = this[key];
+			else
 				this.form[key].value = this[key];
-			}
 		}
 
 		if(this.type)
@@ -1843,8 +1844,7 @@ class DataSourceColumn {
 			</label>
 
 			<label>
-				<span><input type="checkbox" name="disabled"><span>Disabled</span></span>
-
+				<span><input type="checkbox" name="disabled"> <span>Disabled</span></span>
 			</label>
 
 			<h3>Drill down</h3>
