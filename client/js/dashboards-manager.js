@@ -214,9 +214,18 @@ class DashboardsDashboard {
 
 		for(const dashboard of dashboards) {
 
+			if(this.page.list.has(dashboard.id) ) {
+				
+				continue;
+			}
+
 			if(dashboard.parent == this.id) {
 
-				this.children.set(dashboard.id, new DashboardsDashboard(dashboard, dashboards, page))
+				this.page.list.set(dashboard.id, true);
+
+				const childObj = new DashboardsDashboard(dashboard, dashboards, page);
+
+				this.children.set(dashboard.id, childObj);
 			}
 		}
 	}
