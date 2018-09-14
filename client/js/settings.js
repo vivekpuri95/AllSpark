@@ -1956,7 +1956,7 @@ class ExecutingReport {
 			<td class="query-name">${this.query.name}</td>
 			<td class="user-name">${this.user.name}</td>
 			<td>${this.params.type} <span class="grey">#${this.params.request[2]}</span> </td>
-			<td>${Format.dateTime(this.execution_timestamp)}</td>
+			<td>${Format.ago(this.execution_timestamp)}</td>
 		`;
 
 		tr.querySelector('.user-name').on('click', e => {
