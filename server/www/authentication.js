@@ -213,7 +213,7 @@ exports.login = class extends API {
 		const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
 		const redisResult = await redis.get(redisHash);
 
-		if (redisResult) {
+		if(redisResult) {
 
 			throw("Failure, please try again");
 		}

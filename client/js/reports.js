@@ -1561,6 +1561,9 @@ class DataSourceColumns extends Map {
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
 
+		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideHeader)
+			this.source.container.querySelector('header').classList.add('hidden');
+
 		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
@@ -4304,10 +4307,10 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.orient('left');
 
 		if(['s'].includes(this.axes.bottom.format))
-				xAxis.tickFormat(d3.format(this.axes.left.format));
+			xAxis.tickFormat(d3.format(this.axes.left.format));
 
 		if(['s'].includes(this.axes.left.format))
-				yAxis.tickFormat(d3.format(this.axes.left.format));
+			yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = null,
@@ -4343,13 +4346,13 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -4616,13 +4619,13 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -4786,13 +4789,13 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -4966,13 +4969,13 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -5088,6 +5091,691 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)))
 				.attr('opacity', 1);
 		}
+	}
+});
+
+Visualization.list.set('linear', class Linear extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('visualization', 'linear');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(options = {}) {
+
+		super.render(options);
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch(options);
+
+		await this.render(options);
+	}
+
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		if(!this.axes)
+			this.axes = [];
+
+		this.axes = this.axes.sort((a, b) => a.depth - b.depth);
+		this.axes = this.axes.sort((a, b) => ['top', 'bottom'].includes(a.position) ? -1 : 1);
+
+		this.axes.top = {
+			size: 0,
+		};
+		this.axes.right = {
+			size: 0,
+		};
+		this.axes.bottom = {
+			size: 0,
+		};
+		this.axes.left = {
+			size: 0,
+		};
+
+		for(const axis of this.axes || []) {
+			axis.size = 0;
+			this.axes[axis.position] = axis;
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+	}
+
+	async render(options = {}) {
+
+		await this.draw();
+		await this.plot(options);
+	}
+
+	async draw() {
+
+		const rows = await this.source.response();
+
+		if(!rows || !rows.length)
+			return this.source.error();
+
+		this.rows = rows;
+
+		for(const axis of this.axes)
+			this.axes[axis.position].size = 0;
+
+		for(const axis of this.axes) {
+
+			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
+
+			if(!columns.length)
+				continue;
+
+			this.axes[axis.position].size += axis.position == 'left' ? 50 : axis.top == 'top' ? 20 : 30;
+
+			if(axis.label)
+				this.axes[axis.position].size += 15;
+		}
+
+		this.height = this.container.clientHeight - this.axes.top.size - this.axes.bottom.size - 20;
+		this.width = this.container.clientWidth - this.axes.left.size - this.axes.right.size - 40;
+
+		window.addEventListener('resize', () => {
+
+			const
+				height = this.container.clientHeight - this.axes.top.size - this.axes.bottom.size - 20,
+				width = this.container.clientWidth - this.axes.left.size - this.axes.right.size - 40;
+
+			if(this.width != width || this.height != height) {
+
+				this.width = width;
+				this.height = height;
+
+				this.plot({resize: true});
+			}
+		});
+	}
+
+	async plot(options = {})  {
+
+		const container = d3.selectAll(`#visualization-${this.id}`);
+
+		container.selectAll('*').remove();
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		this.svg = container
+			.append('svg');
+
+		if(this.zoomedIn) {
+
+			// Reset Zoom Button
+			const resetZoom = this.svg.append('g')
+				.attr('class', 'reset-zoom')
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('rect')
+				.attr('width', 80)
+				.attr('height', 20)
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('text')
+				.attr('y', 15)
+				.attr('x', (this.width / 2) - 35 + 40)
+				.attr('text-anchor', 'middle')
+				.style('font-size', '12px')
+				.text('Reset Zoom');
+
+			// Click on reset zoom function
+			resetZoom.on('click', async () => {
+				this.rows = await this.source.response();
+				this.zoomedIn = false;
+				this.plot();
+			});
+		}
+
+		const that = this;
+
+		for(const [axisIndex, axis] of this.axes.entries()) {
+
+			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
+
+			if(!columns.length)
+				continue;
+
+			axis.animate = !options.resize && !axis.dontAnimate && !this.options.dontAnimate;
+
+			if(['top', 'bottom'].includes(axis.position)) {
+
+				const
+					scale = d3.scale.ordinal(),
+					column = [],
+					ticks = [];
+
+				let biggestTick = '';
+
+				for(const row of this.rows) {
+
+					const value = row.getTypedValue(columns[0].key);
+
+					column.push(value);
+
+					if(biggestTick.length < value.length)
+						biggestTick = value;
+				}
+
+				scale.domain(column);
+				scale.rangeBands([0, this.width], 0.1, 0);
+
+				const
+					tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
+					tickInterval = parseInt(this.rows.length / tickNumber);
+
+				for(let i = 0; i < column.length; i++) {
+
+					if(!(i % tickInterval))
+						ticks.push(column[i]);
+				}
+
+				// Add the axis scale
+				if(!this.options.hideScales && !axis.hideScale) {
+
+					const d3Axis = d3.svg.axis()
+						.scale(scale)
+						.orient(axis.position);
+
+					d3Axis.tickValues(ticks);
+
+					const g = this.svg
+						.append('g')
+						.attr('class', 'scale ' + axis.position)
+						.call(d3Axis);
+
+					if(axis.position == 'bottom')
+						g.attr('transform', `translate(${this.axes.left.size}, ${this.height})`);
+					else
+						g.attr('transform', `translate(${this.axes.left.size}, ${axis.label ? 45 : 20})`);
+				}
+
+				if(axis.label) {
+
+					const text = this.svg
+						.append('text')
+						.attr('class', 'axis-label')
+						.style('text-anchor', 'middle')
+						.text(axis.label);
+
+					if(axis.position == 'bottom')
+						text.attr('transform', `translate(${(this.width / 2)}, ${this.height + 35})`)
+					else
+						text.attr('transform', `translate(${(this.width / 2)}, 10)`)
+				}
+
+				this.x = scale;
+
+				Object.assign(this.x, axis);
+
+				this.x.column = columns[0].key;
+				continue;
+			}
+
+			if(!this.x)
+				continue;
+
+			const scale = d3.scale.linear().range([this.height, 20]);
+
+			let columnsData = [];
+
+			for(const _column of columns) {
+
+				const column = [];
+
+				Object.assign(column, _column);
+
+				for(const [index, row] of this.rows.entries()) {
+
+					column.push({
+						x: index,
+						y: row.get(column.key),
+					});
+				}
+
+				columnsData.push(column);
+			}
+
+			if(axis.stacked)
+				columnsData = d3.layout.stack()(columnsData);
+
+			// Needed to show multiple columns
+			columns.scale = d3.scale.ordinal();
+			columns.scale.domain(columns.map(column => column.key));
+			columns.scale.rangeBands([0, this.x.rangeBand()]);
+
+			let
+				max = 0,
+				min = 0;
+
+			for(const row of this.rows) {
+
+				let total = 0;
+
+				for(const column of columns) {
+
+					total += parseFloat(row.get(column.key)) || 0;
+					max = Math.max(max, Math.ceil(row.get(column.key)) || 0);
+					min = Math.min(min, Math.floor(row.get(column.key)) || 0);
+				}
+
+				if(axis.stacked)
+					max = Math.max(max, Math.ceil(total) || 0);
+			}
+
+			scale.domain(this.x.position == 'bottom' ? [min, max] : [max, min]).nice();
+
+			if(axis.type == 'line') {
+
+				const
+					line = d3.svg.line()
+						.interpolate(axis.curve || 'linear')
+						.x((_, i) => this.x(this.rows[i].getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.y(d => scale(d.y + (d.y0 || 0)));
+
+				// Appending line in chart
+				this.svg.selectAll('.line-' + axisIndex)
+					.data(columnsData)
+					.enter()
+					.append('g')
+					.attr('class', `${axis.type} ${axis.position} line-${axisIndex}`)
+					.append('path')
+					.attr('class', 'line')
+					.attr('d', column => line(column))
+					.style('stroke', column => this.source.columns.get(column.key).color)
+					.style('stroke-width', axis.lineThickness || 2);
+
+				if(axis.animate) {
+
+					for(const path of this.svg.selectAll('path')[0]) {
+
+						const length = path.getTotalLength();
+
+						path.style.strokeDasharray = `${length} ${length}`;
+						path.style.strokeDashoffset = length;
+						path.getBoundingClientRect();
+
+						path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-out`;
+						path.style.strokeDashoffset = '0';
+					}
+				}
+			}
+
+			else if(axis.type == 'bar') {
+
+				let bars = this.svg
+					.append('g')
+					.attr('class', `${axis.type} ${axis.position}`)
+					.selectAll('g')
+					.data(columnsData)
+					.enter()
+					.append('g')
+					.style('fill', (column, i) => this.source.columns.get(columns[i].key).color)
+					.attr('transform', column => axis.stacked ? `translate(0, ${this.axes.top.size})` : `translate(${columns.scale(column.key)}, 0)`)
+					.selectAll('rect')
+					.data(column => column)
+					.enter()
+					.append('rect')
+					.on('click', function(_, row, column) {
+						that.source.columns.get(columns[column].key).initiateDrilldown(that.rows[row]);
+						d3.select(this).classed('hover', false);
+					})
+					.on('mouseover', function(_, __, column) {
+						that.hoverColumn = columns[column];
+						d3.select(this).classed('hover', true);
+					})
+					.on('mouseout', function() {
+						that.hoverColumn = null;
+						d3.select(this).classed('hover', false);
+					})
+					.attr('width', axis.stacked ? this.x.rangeBand() : columns.scale.rangeBand())
+					.attr('x', (cell, i) => this.x(this.rows[i].getTypedValue(this.x.column)) + this.axes.left.size);
+
+				if(axis.animate) {
+
+					bars = bars
+						.attr('y', _ => scale(0))
+						.attr('height', 0)
+						.transition()
+						.delay((_, i) => (Page.animationDuration / this.rows.length) * i)
+						.duration(Page.animationDuration)
+						.ease('exp-out');
+				}
+
+				bars
+					.attr('y', d => this.x.position == 'top' ? this.axes.top.size : scale((d.y + (d.y0 || 0)) > 0 ? d.y + (d.y0 || 0) : 0))
+					.attr('height', d => Math.abs(axis.stacked ? this.height - scale(d.y) : scale(d.y) - scale(d.y0 || 0)));
+			}
+
+			else if(axis.type == 'area') {
+
+				const area = d3.svg.area()
+					.interpolate(axis.curve)
+					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
+					.y0(d => scale(0))
+					.y1(d => scale(d.y + (d.y0 || 0)));
+
+				let areas = this.svg
+					.append('g')
+					.attr('class', `${axis.type} ${axis.position}`)
+					.selectAll('g')
+					.data(columnsData)
+					.enter()
+					.append('g')
+					.attr('transform', `translate(${this.axes.left.size}, 0)`)
+					.append('path')
+					.on('mouseover', function(column) {
+						that.hoverColumn = column;
+						d3.select(this).classed('hover', true);
+					})
+					.on('mouseout', function() {
+						that.hoverColumn = null;
+						d3.select(this).classed('hover', false);
+					})
+					.attr('d', column => area(column))
+					.style('fill', (column, i) => this.source.columns.get(columns[i].key).color);
+
+				if(!options.resize) {
+
+					areas = areas
+						.attr('opacity', 0)
+						.transition()
+						.duration(Page.animationDuration)
+						.ease('exp-out');
+				}
+
+				areas.attr('opacity', 0.8);
+			}
+
+			// Append the axis scale
+			if(!this.options.hideScales && !axis.hideScale) {
+
+				const d3Axis = d3.svg.axis()
+					.scale(scale)
+					.innerTickSize(this.width * (axis.position == 'right' ? 1 : -1))
+					.orient(axis.position == 'right' ? 'right' : 'left');
+
+				if(['s'].includes(axis.format))
+					d3Axis.tickFormat(d3.format(axis.format));
+
+				this.svg
+					.append('g')
+					.attr('class', 'scale ' + axis.position)
+					.classed('hide-scale-lines', this.options.hideScaleLines || axis.hideScaleLines)
+					.call(d3Axis)
+					.attr('transform', `translate(${this.axes.left.size}, 0)`);
+			}
+
+			if(axis.label) {
+
+				const text = this.svg
+					.append('text')
+					.attr('class', 'axis-label')
+					.style('text-anchor', 'middle')
+					.text(axis.label);
+
+				if(axis.position == 'right')
+					text.attr('transform', `rotate(90) translate(${(this.height / 2)}, ${(this.axes.left.size + this.width + 50) * -1})`);
+				else
+					text.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`);
+			}
+
+			// For each line appending the circle at each point
+			if(this.options.showPoints || axis.showPoints) {
+
+				for(const column of columns) {
+
+					let dots = this.svg.selectAll('dot')
+						.data(this.rows)
+						.enter()
+						.append('circle')
+						.attr('class', 'clips')
+						.style('fill', this.source.columns.get(column.key).color)
+						.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
+						.attr('cx', row => this.x(row.get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.attr('cy', row => scale(row.get(column.key)))
+						.on('mouseover', function(_, __, column) {
+							that.hoverColumn = column[1];
+							d3.select(this).classed('hover', true);
+						})
+						.on('mouseout', function() {
+							that.hoverColumn = null;
+							d3.select(this).classed('hover', false);
+						});
+
+					if(axis.animate) {
+
+						dots = dots
+							.attr('r', 0)
+							.transition()
+							.delay((_, i) => (Page.animationDuration / this.x.domain().length) * i)
+							.duration(0)
+							.ease('exp-out');
+					}
+
+					dots.attr('r', 5);
+				}
+			}
+
+			// Show the value of each point in the graph itself
+			if(this.options.showValues || axis.showValues) {
+
+				let points = this.svg
+					.append('g')
+					.selectAll('g')
+					.data(columns)
+					.enter()
+					.append('g')
+					.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
+					.selectAll('text')
+					.data(column => this.rows.map(row => [row, column]))
+					.enter()
+					.append('text')
+					.attr('width', columns.scale.rangeBand())
+					.attr('fill', '#666')
+					.text(([row, column]) => {
+
+						if(['s'].includes(axis.format))
+							return d3.format('.4s')(row.get(column.key));
+
+						else
+							return Format.number(row.get(column.key))
+					})
+					.attr('x', ([row, column]) => {
+
+						let value = Format.number(row.get(column.key));
+
+						if(['s'].includes(axis.format))
+							value = d3.format('.4s')(row.get(column.key));
+
+						return this.x(row.get(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
+					})
+					.attr('y', ([row, column]) => scale(row.get(column.key) > 0 ? row.get(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
+					.attr('height', ([row, column]) => Math.abs(scale(row.get(column.key)) - scale(0)));
+
+				if(axis.animate) {
+
+					points = points
+						.attr('opacity', 0)
+						.transition()
+						.delay((_, i) => (Page.animationDuration / this.x.domain().length) * i)
+						.duration(0)
+						.ease('exp-out');
+				}
+
+				points.attr('opacity', 1);
+			}
+		}
+
+		for(const g of this.svg.selectAll('svg > g')[0] || [])  {
+
+			if(g.classList.contains('scale'))
+				g.parentElement.insertBefore(g, g.parentElement.firstChild);
+		}
+
+		container
+
+		.on('mousemove', function() {
+
+			const mouse = d3.mouse(this);
+
+			if(that.zoomRectangle) {
+
+				const
+					filteredRows = that.rows.filter(row => {
+
+						const item = that.x(row.get(that.x.column)) + 100;
+
+						if(mouse[0] < that.zoomRectangle.origin[0])
+							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+						else
+							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+					}),
+					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+
+				// Assign width and height to the rectangle
+				that.zoomRectangle
+					.select('rect')
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]))
+					.attr('width', width)
+					.attr('height', that.height);
+
+				that.zoomRectangle
+					.select('g')
+					.selectAll('*')
+					.remove();
+
+				that.zoomRectangle
+					.select('g')
+					.append('text')
+					.text(`${Format.number(filteredRows.length)} Selected`)
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+					.attr('y', (that.height / 2) - 5);
+
+				if(filteredRows.length) {
+
+					that.zoomRectangle
+						.select('g')
+						.append('text')
+						.text(`${filteredRows[0].get(that.x.column)} - ${filteredRows[filteredRows.length - 1].get(that.x.column)}`)
+						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+						.attr('y', (that.height / 2) + 20);
+				}
+
+				return;
+			}
+
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
+
+ 			if(!row)
+				return;
+
+			const tooltip = [];
+
+			for(const [key, _] of row) {
+
+				if(key == that.x.column)
+					continue;
+
+				const column = row.source.columns.get(key);
+
+				if(column.disabled)
+					continue;
+
+				tooltip.push(`
+					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
+						<span class="circle" style="background:${column.color}"></span>
+						<span>
+							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
+							${column.name}
+						</span>
+						<span class="value">${row.getTypedValue(key)}</span>
+					</li>
+				`);
+			}
+
+			const content = `
+				<header>${row.getTypedValue(that.x.column)}</header>
+				<ul class="body">
+					${tooltip.reverse().join('')}
+				</ul>
+			`;
+
+			Tooltip.show(that.container, mouse, content, row);
+		})
+
+		.on('mouseleave', function() {
+			Tooltip.hide(that.container);
+		})
+
+		.on('mousedown', function() {
+
+			Tooltip.hide(that.container);
+
+			if(that.zoomRectangle)
+				return;
+
+			that.zoomRectangle = container.select('svg').append('g');
+
+			that.zoomRectangle
+				.attr('class', 'zoom')
+				.style('text-anchor', 'middle')
+				.append('rect')
+				.attr('class', 'zoom-rectangle');
+
+			that.zoomRectangle
+				.append('g');
+
+			that.zoomRectangle.origin = d3.mouse(this);
+		})
+
+		.on('mouseup', function() {
+
+			if(!that.zoomRectangle)
+				return;
+
+			that.zoomRectangle.remove();
+
+			const
+				mouse = d3.mouse(this),
+				filteredRows = that.rows.filter(row => {
+
+					const item = that.x(row.get(that.x.column)) + 100;
+
+					if(mouse[0] < that.zoomRectangle.origin[0])
+						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+					else
+						return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+				});
+
+			that.zoomRectangle = null;
+
+			if(!filteredRows.length)
+				return;
+
+			that.rows = filteredRows;
+			that.zoomedIn = true;
+
+			that.plot();
+		}, true);;
 	}
 });
 
@@ -5399,19 +6087,19 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(bottomAxis);
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(leftAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(rightAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
@@ -5776,13 +6464,13 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -6010,13 +6698,13 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -7156,7 +7844,11 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			container.insertAdjacentHTML('beforeend', `
 				<div class="left">
-					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
+					<h6 class="percentage ${this.getColor(this.left.percentage)}">
+						${this.options.changePrefix || ''}
+						${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}
+						${this.options.changePostfix || ''}
+					</h6>
 					<span class="value">
 						<span class="value-left">${this.dates.get(this.left.date) ? this.dates.get(this.left.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
 						<small title="${Format.date(this.left.date)}">
