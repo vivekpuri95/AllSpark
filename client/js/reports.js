@@ -1499,26 +1499,8 @@ class DataSourceRow extends Map {
 
 		if(column.type) {
 
-			if(column.type.name == 'date')
-				value = Format.customTimeFormat(value, column.type.value);
-
-			if(column.type.name == 'month')
-				value = Format.customTimeFormat(value, column.type.value);
-
-			if(column.type.name == 'year')
-				value = Format.customTimeFormat(value, column.type.value);
-
-			if(column.type.name == 'timeelapsed')
-				value = Format.ago(value);
-
-			if(column.type.name == 'time')
-				value = Format.customTimeFormat(value, column.type.value);
-
-			if(column.type.name == 'datetime')
-				value = Format.customTimeFormat(value, column.type.value);
-
-			if(column.type.name == 'custom')
-				value = Format.customTimeFormat(value, column.type.value);
+			if(['date','month','year','timeelapsed','time','datetime','custom'].includes(column.type.name))
+				value = Format.customTimeFormat(value, column.type.format);
 
 			else if(column.type.name == 'number')
 				value = Format.number(value);
@@ -1768,14 +1750,14 @@ class DataSourceColumn {
 
 		this.form.querySelector('.timing-type').classList.add('hidden');
 
-		this.timingFormat = this.type.value;
+		this.timingFormat = this.type.format;
 
 		if(this.type && this.type.name == 'custom') {
 
 			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
 
-			for(const key in this.type.value)
-				this.form[key].value = this.type.value[key];
+			for(const key in this.type.format)
+				this.form[key].value = this.type.format[key];
 
 
 			this.form.querySelector('.timing-type .result-date').textContent = Format.customTimeFormat(Date.now(), this.timingFormat);
