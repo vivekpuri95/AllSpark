@@ -215,7 +215,7 @@ class DashboardsDashboard {
 		for(const dashboard of dashboards) {
 
 			if(this.page.list.has(dashboard.id) ) {
-				
+
 				continue;
 			}
 

@@ -4238,7 +4238,7 @@ ConfigureVisualization.types.set('linear', class LinearOptions extends ReportVis
 			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('div');
-		
+
 		container.classList.add('liner-visualization-options');
 
 		container.innerHTML = `
@@ -4507,7 +4507,7 @@ ConfigureVisualization.types.set('json', class JSONOptions extends ReportVisuali
 ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportVisualizationOptions {
 
 	get form() {
-		
+
 		if(this.formContainer)
 			return this.formContainer;
 
@@ -4515,12 +4515,10 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 		let datalist = [];
 
-		for(const [key, column] of this.visualization.stage.page.preview.report.columns)
-				datalist.push({name: column.name, value: key});
+		for(const [key, column] of this.page.preview.report.columns)
+			datalist.push({name: column.name, value: key});
 
-		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true, multiple: false});
-
-		this.bigReportsColumns = container.multiSelectColumns;
+		this.bigReportsColumns = new MultiSelect({datalist: datalist, expand: true, multiple: false});
 
 		container.innerHTML = `
 			<div class="configuration-section">
@@ -4553,11 +4551,11 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 		return container;
 	}
 
-	get json(){
+	get json() {
 
 		const parentJSON = super.json;
 
-		if(this.bigReportsColumns) 
+		if(this.bigReportsColumns)
 			parentJSON.column = this.bigReportsColumns.value[0];
 
 		return parentJSON;
@@ -4846,7 +4844,7 @@ class ReportTransformations extends Set {
 	get json() {
 
 		const response = [];
-		
+
 		for(const transformation of this)
 			response.push(transformation.json);
 

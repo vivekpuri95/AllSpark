@@ -271,7 +271,7 @@ class DataSource {
 		if(this.visualizations.length) {
 
 			for(const visualization of this.visualizations) {
-				
+
 				if(visualization.default)
 					this.visualizations.selected = visualization;
 			}
@@ -707,10 +707,10 @@ class DataSource {
 
 			for(const data of response) {
 
-				const line = [], rowObj = {}; 
+				const line = [], rowObj = {};
 
 				for(let [key, value] of data) {
-					
+
 					rowObj[key] = value;
 				}
 
@@ -3509,7 +3509,7 @@ class Visualization {
 		this.id = Math.floor(Math.random() * 100000);
 
 		this.source = source;
-		
+
 		if(this.options && typeof this.options == 'string') {
 			try {
 				this.options = JSON.parse(this.options);
@@ -5466,7 +5466,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			}
 
 			else if(axis.type == 'area') {
-				
+
 				const area = d3.svg.area()
 					.interpolate(axis.curve)
 					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
@@ -7623,7 +7623,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 	async load(options = {}) {
 
 		super.render(options);
-		
+
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
@@ -7640,7 +7640,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 	async process() {
 
 		const [response] = await this.source.response();
-		
+
 		if(!this.options || !this.options.column)
 			return this.source.error('Value column not selected.');
 
