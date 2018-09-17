@@ -22,9 +22,32 @@ Page.class = class Connections extends Page {
 
 		if(what[what.length - 2] == 'add') {
 
-			DataConnection.types.get(what[what.length - 1]).render(this);
+			if(await Storage.get('newUser')) {
+
+				try {
+					onboard = JSON.parse(onboard);
+					onboard.connection.container =  this.container;
+				}
+				catch(e) {
+					onboard = {};
+				}
+
+				DataConnection.types.get(what[what.length - 1]).render(onboard.connection);
+			}
+			else {
+
+				DataConnection.types.get(what[what.length - 1]).render(this);
+			}
+
 			this.dataConnections.get(what[what.length - 1]).addConnection();
+
+			new SnackBar({
+				message: 'We\'ve added a default connection for you',
+				subtitle: 'Click save to continue'
+			});
+
 			return Sections.show('form');
+
 		}
 
 		what = what.pop();
@@ -524,7 +547,7 @@ DataConnection.types = new Map;
 
 DataConnection.types.set('mysql', class {
 
-	static render(connections = {}) {
+	static async render(connections = {}) {
 
 		connections.form =  connections.container.querySelector('#connections-form');
 
@@ -555,6 +578,21 @@ DataConnection.types.set('mysql', class {
 				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
+
+		if(await Storage.has('newUser')) {
+
+			connections.container.querySelector('#form .toolbar .submit button').classList.add('blink');
+
+			connections.container.querySelector('#form .toolbar .submit').insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue...</div>
+			`);
+
+			for(const key in connections) {
+
+				if(connections.form.elements[key])
+					connections.form.elements[key].value = connections[key];
+			}
+		}
 
 		connections.form.password.on('click', () => {
 			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';

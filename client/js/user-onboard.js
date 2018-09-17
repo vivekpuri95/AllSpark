@@ -57,16 +57,24 @@ class UserOnboard {
 		}
 
 		if(nextStage) {
-			
+
 			nextStage.setActive();
 		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('setup-stages');
 
+		try {
+			onboard = JSON.parse(onboard);
+		}
+		catch(e) {
+
+			onboard = {};
+		}
+
 		container.innerHTML = `
 			<div class="wrapper"></div>
-			<a href="${demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
+			<a href="${onboard.demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
 		`;
 
 		const wrapper = container.querySelector('.wrapper');
@@ -89,7 +97,7 @@ class UserOnboard {
 		if(this.stages.some(stage => stage.completed))
 			return;
 
-		if(window.location.pathname == '/connections-manager')
+		if(window.location.pathname == '/connections-manager/add/mysql')
 			return;
 
 		const newUser = await Storage.get('newUser');
@@ -110,7 +118,7 @@ class UserOnboard {
 
 			<h2>Let's Get <strong>You Started!</strong></h2>
 
-			<a href="${demo_url}" target="_blank" class="view-demo">
+			<a href="${onboard.demo_url}" target="_blank" class="view-demo">
 				<span class="figure"><img src="/images/onboarding/demo.svg"></span>
 				<span>View Demo</span>
 				<span class="NA">Check out an established demo with various visualisations</span>
@@ -125,7 +133,7 @@ class UserOnboard {
 
 		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => {
 
-			window.location = '/connections-manager';
+			window.location = '/connections-manager/add/mysql';
 		});
 
 		if(window.loadWelcomeDialogBoxListener)
@@ -163,8 +171,9 @@ class UserOnboardStage {
 				<i class="fas fa-ellipsis-v"></i>
 				<i class="fas fa-ellipsis-v"></i>
 			</div>
-			<div class="info">${this.title}<span class="NA">${this.subtitle || ''}</span></div>
+			<div class="info">${this.title}</div>
 			<div class="status"></div>
+			<div class="hover-info">${this.subtitle}</div>
 		`;
 
 		container.on('click', () => {
@@ -202,7 +211,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 	get url() {
 
-		return '/connections-manager';
+		return '/connections-manager/add/mysql';
 	}
 
 	async load() {

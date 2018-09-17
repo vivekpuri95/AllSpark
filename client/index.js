@@ -79,7 +79,7 @@ class HTMLAPI extends API {
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
 					<script>
-						const demo_url = "${config.has('demo_url') ? config.get('demo_url') : ''}";
+						let onboard = '${config.has('onboard') ? JSON.stringify(config.get('onboard')) : ''}';
 					</script>
 				</head>
 				<body>
@@ -692,7 +692,9 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 
 				<div class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="submit" form="dashboard-form"><i class="far fa-save"></i> Save</button>
+					<div class="submit">
+						<button type="submit" form="dashboard-form"><i class="far fa-save"></i> Save</button>
+					</div>
 				</div>
 
 				<form class="block form" id="dashboard-form">
@@ -793,7 +795,9 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-configure-report">
 
 					<header class="toolbar">
-						<button type="submit" form="configure-report-form"><i class="far fa-save"></i> Save</button>
+						<div class="submit">
+							<button type="submit" form="configure-report-form"><i class="far fa-save"></i> Save</button>
+						</div>
 						<small id="added-by"></small>
 					</header>
 
@@ -898,7 +902,9 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-define-report">
 
 					<header class="toolbar">
-						<button type="submit" form="define-report-form"><i class="far fa-save"></i> Save</button>
+						<div class="submit">
+							<button type="submit" form="define-report-form"><i class="far fa-save"></i> Save</button>
+						</div>
 						<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
 						<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
 						<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
@@ -1003,7 +1009,9 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div id="visualization-list">
 
 						<div class="toolbar">
-							<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></button>
+							<div class="submit">
+								<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></button>
+							</div>
 						</div>
 
 						<table>
@@ -1225,7 +1233,9 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 
 				<header class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-					<button type="submit" form="connections-form"><i class="far fa-save"></i> Save</button>
+					<div class="submit">
+						<button type="submit" form="connections-form"><i class="far fa-save"></i> Save</button>
+					</div>
 					<button type="button" id="test-connection"><i class="fas fa-flask"></i>Test</button>
 				</header>
 

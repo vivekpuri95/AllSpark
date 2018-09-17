@@ -694,7 +694,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		this.report ? this.edit() : this.add();
 	}
 
-	add() {
+	async add() {
 
 		this.form.removeEventListener('submit', this.form.listener);
 		this.form.on('submit', this.form.listener = e => this.insert(e));
@@ -709,6 +709,32 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.is_redis.classList.remove('hidden');
 
 		else this.form.is_redis.classList.add('hidden');
+
+		if(await Storage.has('newUser')) {
+
+			if(typeof onboard != 'object') {
+
+				try {
+
+					this.page.onboard = onboard = JSON.parse(onboard);
+				}
+				catch(e) {
+
+					onboard = {};
+				}
+			}
+
+			this.container.querySelector('.toolbar .submit button').classList.add('blink');
+
+			this.container.querySelector('.toolbar .submit').insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue...</div>
+			`);
+
+			for(const key in onboard.report) {
+				if(this.form.elements[key])
+					this.form.elements[key].value = onboard.report[key];
+			}
+		}
 
 		this.form.name.focus();
 	}
@@ -996,6 +1022,32 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.container.querySelector('#filter-form').classList.add('hidden');
 		this.container.querySelector('#filter-list').classList.remove('hidden');
+
+		if(await Storage.has('newUser')) {
+
+			if(typeof onboard != 'object') {
+
+				try {
+
+					onboard = JSON.parse(onboard);
+				}
+				catch(e) {
+
+					onboard = {};
+				}
+			}
+
+			this.container.querySelector('.toolbar .submit button').classList.add('blink');
+
+			if(!this.container.querySelector('.toolbar .submit .save-pop-up')) {
+
+				this.container.querySelector('.toolbar .submit').insertAdjacentHTML('beforeend', `
+					<div class="save-pop-up">Click save to continue...</div>
+				`);
+			}
+
+			this.report.connection.editor.value = this.page.onboard ? this.page.onboard.report.query : onboard.report.query;
+		}
 
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
@@ -1812,6 +1864,15 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		if(!this.report.visualizations.length)
 			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found!</td></tr>';
+
+		if(await Storage.has('newUser')) {
+
+			this.container.querySelector('#visualization-list .toolbar .submit button').classList.add('blink');
+
+			this.container.querySelector('#visualization-list .toolbar .submit').insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click to select a visualization</div>
+			`);
+		}
 
 		this.page.preview.position = 'right';
 	}

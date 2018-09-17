@@ -37,8 +37,10 @@ Page.class = class DashboardManager extends Page {
 
 		const what = state ? state.what : location.pathname.split('/').pop();
 
-		if(what == 'add')
+		if(what == 'add') {
+
 			return DashboardsDashboard.add();
+		}
 
 		if(this.list.has(parseInt(what)))
 			return this.list.get(parseInt(what)).edit();
@@ -150,6 +152,35 @@ class DashboardsDashboard {
 		DashboardsDashboard.form.on('submit', DashboardsDashboard.form_listener = e => DashboardsDashboard.insert(e));
 
 		DashboardsDashboard.editor.value = '';
+
+		if(await Storage.get('newUser')) {
+
+			if(typeof onboard != 'object') {
+
+				try {
+					onboard = JSON.parse(onboard);
+				}
+				catch(e) {
+					onboard = {};
+				}
+			}
+
+			this.container.querySelector('#form .toolbar .submit button').classList.add('blink');
+
+			this.container.querySelector('#form .toolbar .submit').insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue...</div>
+			`);
+
+			for(const element of DashboardsDashboard.form.elements) {
+				if(onboard.dashboard[element.name])
+					element.value = onboard.dashboard[element.name];
+			}
+
+			new SnackBar({
+				message: 'We\'ve added a default dashboard for you',
+				subtitle: 'Click save to continue'
+			});
+		}
 
 		await Sections.show('form');
 
