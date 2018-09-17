@@ -1500,26 +1500,28 @@ class DataSourceRow extends Map {
 		if(column.type) {
 
 			if(column.type.name == 'date')
-				value = Format.date(value);
+				value = Format.customTimeFormat(value, column.type.value);
 
 			if(column.type.name == 'month')
-				value = Format.month(value);
+				value = Format.customTimeFormat(value, column.type.value);
 
 			if(column.type.name == 'year')
-				value = Format.year(value);
+				value = Format.customTimeFormat(value, column.type.value);
 
 			if(column.type.name == 'timeelapsed')
 				value = Format.ago(value);
 
 			if(column.type.name == 'time')
-				value = Format.time(value);
+				value = Format.customTimeFormat(value, column.type.value);
 
 			if(column.type.name == 'datetime')
-				value = Format.dateTime(value);
+				value = Format.customTimeFormat(value, column.type.value);
+
+			if(column.type.name == 'custom')
+				value = Format.customTimeFormat(value, column.type.value);
 
 			else if(column.type.name == 'number')
 				value = Format.number(value);
-
 		}
 
 		if(column.prefix)
@@ -1764,6 +1766,25 @@ class DataSourceColumn {
 		if(this.type)
 			this.form.type.value = this.type.name;
 
+<<<<<<< HEAD
+=======
+		this.form.querySelector('.timing-type').classList.add('hidden');
+
+		this.timingFormat = this.type.value;
+
+		if(this.type && this.type.name == 'custom') {
+
+			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
+
+			for(const key in this.type.value)
+				this.form[key].value = this.type.value[key];
+
+
+			this.form.querySelector('.timing-type .result-date').textContent = Format.customTimeFormat(Date.now(), this.timingFormat);
+			this.form.querySelector('.timing-type').classList.remove('hidden');
+		}
+
+>>>>>>> custom time format can be selected and applied
 		if(this.drilldown && this.drilldown.query_id) {
 
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
@@ -1807,15 +1828,148 @@ class DataSourceColumn {
 						<option value="month">Month</option>
 						<option value="year">Year</option>
 						<option value="time">Time</option>
-						<option value="hour">Hour</option>
-						<option value="minute">Minute</option>
-						<option value="second">Second</option>
 						<option value="datetime">Date Time</option>
+						<option value="custom">Custom</option>
 					</optgroup>
 					<option value="timeelapsed">Time Elapsed</option>
 					<option value="html">HTML</option>
 				</select>
 			</label>
+
+			<div class="timing-type hidden">
+
+				<span>Select Timing type Format</span>
+
+				<div class="timing-format">
+
+					<fieldset>
+
+						<legend>Weekday</legend>
+
+						<label>
+							<input type="radio" name="weekday" value="narrow">
+							<span>M</span>
+						</label>
+
+						<label>
+							<input type="radio" name="weekday" value="short">
+							<span>Mon</span>
+						</label>
+
+						<label>
+							<input type="radio" name="weekday" value="long">
+							<span>Monday</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Day</legend>
+
+						<label>
+							<input type="radio" name="day" value="numeric">
+							<span>D</span>
+						</label>
+
+						<label>
+							<input type="radio" name="day" value="2-digit">
+							<span>DD</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Month</legend>
+
+						<label>
+							<input type="radio" name="month" value="numeric">
+							<span>M</span>
+						</label>
+
+						<label>
+							<input type="radio" name="month" value="2-digit">
+							<span>MM</span>
+						</label>
+
+						<label>
+							<input type="radio" name="month" value="narrow">
+							<span>J</span>
+						</label>
+
+						<label>
+							<input type="radio" name="month" value="short">
+							<span>Jan</span>
+						</label>
+
+						<label>
+							<input type="radio" name="month" value="long">
+							<span>January</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Year</legend>
+
+						<label>
+							<input type="radio" name="year" value="2-digit">
+							<span>YY</span>
+						</label>
+
+						<label>
+							<input type="radio" name="year" value="numeric">
+							<span>YYYY</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Hour</legend>
+
+						<label>
+							<input type="radio" name="hour" value="numeric">
+							<span>H</span>
+						</label>
+
+						<label>
+							<input type="radio" name="hour" value="2-digit">
+							<span>HH</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Minute</legend>
+
+						<label>
+							<input type="radio" name="minute" value="numeric">
+							<span>M</span>
+						</label>
+
+						<label>
+							<input type="radio" name="minute" value="2-digit">
+							<span>MM</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Second</legend>
+
+						<label>
+							<input type="radio" name="second" value="numeric">
+							<span>S</span>
+						</label>
+
+						<label>
+							<input type="radio" name="second" value="2-digit">
+							<span>SS</span>
+						</label>
+					</fieldset>
+				</div>
+
+				<span class="result-date"></span>
+			</div>
 
 			<label>
 				<span>Color</span>
@@ -1876,6 +2030,115 @@ class DataSourceColumn {
 				</button>
 			</footer>
 		`;
+
+		let checkedRadio = [];
+		const format = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'];
+		const resultDate = form.querySelector('.timing-type .result-date');
+
+		for(const radio of form.querySelectorAll('.timing-type input')) {
+
+			radio.on('click', () => {
+
+				const tempArray = checkedRadio;
+
+				for(const [index, _radio] of tempArray.entries()) {
+					if((_radio.name == radio.name) && (_radio.value == radio.value)) {
+						radio.checked = false;
+						checkedRadio.splice(index, 1);
+					}
+				};
+
+				if(radio.checked)
+					checkedRadio.push(radio);
+
+				this.timingFormat = {};
+
+				format.map(f => {
+					if(form[f].value)
+						this.timingFormat[f] = form[f].value;
+				});
+
+				if(this.interval)
+					clearInterval(this.interval);
+
+				if(!this.timingFormat) {
+					resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
+					return;
+				}
+
+				this.interval = setInterval(() => {
+					resultDate.textContent = Format.customTimeFormat(Date.now(), this.timingFormat);
+				}, 100);
+			});
+		};
+
+		form.type.on('change', () => {
+
+			form.querySelector('.timing-type').classList.add('hidden');
+
+			if(form.type.value == 'date') {
+
+				this.timingFormat = {
+					day: 'numeric',
+				};
+			}
+
+			else if(form.type.value == 'month') {
+
+				this.timingFormat = {
+					month: 'long',
+				};
+			}
+
+			else if(form.type.value == 'year') {
+
+				this.timingFormat = {
+					year: 'numeric',
+				};
+			}
+
+			else if(form.type.value == 'time') {
+
+				this.timingFormat = {
+					hour: 'numeric',
+					minute: 'numeric',
+					second: 'numeric',
+				};
+			}
+
+			else if(form.type.value == 'datetime') {
+
+				this.timingFormat = {
+					year: 'numeric',
+					month: 'short',
+					day: 'numeric',
+					hour: 'numeric',
+					minute: 'numeric'
+				};
+			}
+
+			else if(form.type.value == 'custom') {
+
+				form.querySelector('.timing-type').classList.toggle('hidden', form.type.value != 'custom');
+			}
+
+			if(!this.timingFormat) {
+				resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
+				return;
+			}
+
+			resultDate.textContent = Format.customTimeFormat(Date.now(), this.timingFormat);
+
+			for(const key of format) {
+
+				if(this.timingFormat[key]) {
+					form[key].value = this.timingFormat[key];
+				}
+				else if(form.querySelector(`input[name=${key}]:checked`)) {
+					form.querySelector(`input[name=${key}]:checked`).checked = false;
+				}
+			}
+		});
 
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
@@ -1969,9 +2232,18 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
+<<<<<<< HEAD
 		this.type = {
 			name: this.form.type.value,
 			format: '',
+=======
+		if(this.interval)
+			clearInterval(this.interval);
+
+		this.type = {
+			name: this.form.type.value,
+			value: this.timingFormat ? this.timingFormat : '',
+>>>>>>> custom time format can be selected and applied
 		};
 
 		this.disabled = parseInt(this.disabled) || 0;
@@ -2013,9 +2285,18 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
+<<<<<<< HEAD
 		this.type = {
 			name: this.form.type.value,
 			format: '',
+=======
+		if(this.interval)
+			clearInterval(this.interval);
+
+		this.type = {
+			name: this.form.type.value,
+			value: this.timingFormat ? this.timingFormat : '',
+>>>>>>> custom time format can be selected and applied
 		};
 
 		response = {
@@ -3366,7 +3647,7 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !response[0].get(timingColumn.key))
 			return response;
 
 		const result = new Map;

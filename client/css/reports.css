@@ -1312,6 +1312,61 @@ main .dataset {
 	.column-form > label {
 		margin-left: calc(var(--gap) * 2);
 	}
+	.column-form > div,
+	.column-form > label {
+		margin-left: calc(var(--gap) * 2);
+	}
+	.column-form > div {
+		display: grid;
+		grid-gap: var(--gap);
+		max-width: 200px;
+		white-space: nowrap;
+	}
+	.column-form .timing-type {
+		max-width: 100%;
+	}
+		.column-form .timing-format {
+			display: flex;
+			overflow: auto;
+		}
+			.column-form .timing-format fieldset {
+				border: 1px solid #ccc;
+				margin: 0 var(--gap);
+				color: #999;
+				font-size: 80%;
+			}
+			.column-form .timing-format fieldset {
+				border: 1px solid #ccc;
+				margin: 0 var(--gap);
+				color: #999;
+				font-size: 80%;
+			}
+				.column-form .timing-format fieldset label {
+					display: inline;
+				}
+				.column-form .timing-format fieldset label:hover {
+					cursor: pointer;
+				}
+				.column-form .timing-format fieldset input[type=radio] {
+					display: none;
+				}
+				.column-form .timing-format fieldset input:checked + span {
+					color: #333;
+				}
+				.column-form .timing-format fieldset label span {
+					color: #ccc;
+					transition: color var(--transition-duration);
+					font-weight: normal;
+				}
+			.column-form .timing-type .result-date {
+				color: #999;
+				font-size: 80%;
+			}
+		.column-form > div > span {
+			font-size: 90%;
+			color: #444;
+			font-weight: bold;
+		}
 		.column-form > label .color {
 			width: 100%;
 			padding: 0;

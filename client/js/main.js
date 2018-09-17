@@ -1643,70 +1643,20 @@ class Format {
 		return Format.time.formatter.format(time);
 	}
 
-	static hour(hour) {
+	static customTimeFormat(time, format) {
 
-		const options = {
-			hour: 'numeric',
-			minute: 'numeric',
-			second: 'numeric',
-		};
+		Format.customTimeFormat.formatter = new Intl.DateTimeFormat(undefined, format);
 
-		if(!Format.hour.formatter)
-			Format.hour.formatter = new Intl.DateTimeFormat(undefined, options);
+		if(typeof time == 'string')
+			time = Date.parse(time);
 
-		if(typeof hour == 'string')
-			hour = Date.parse(hour);
+		if(typeof time == 'object' && time)
+			time = time.getTime();
 
-		if(typeof hour == 'object' && hour)
-			hour = hour.getTime();
-
-		if(!hour)
+		if(!time)
 			return '';
 
-		return Format.hour.formatter.format(hour);
-	}
-
-	static minute(minute) {
-
-		const options = {
-			minute: 'numeric',
-			second: 'numeric',
-		};
-
-		if(!Format.minute.formatter)
-			Format.minute.formatter = new Intl.DateTimeFormat(undefined, options);
-
-		if(typeof minute == 'string')
-			minute = Date.parse(minute);
-
-		if(typeof minute == 'object' && minute)
-			minute = minute.getTime();
-
-		if(!minute)
-			return '';
-
-		return Format.minute.formatter.format(minute);
-	}
-
-	static second(second) {
-
-		const options = {
-			second: 'numeric',
-		};
-
-		if(!Format.second.formatter)
-			Format.second.formatter = new Intl.DateTimeFormat(undefined, options);
-
-		if(typeof second == 'string')
-			second = Date.parse(second);
-
-		if(typeof second == 'object' && second)
-			second = second.getTime();
-
-		if(!second)
-			return '';
-
-		return Format.second.formatter.format(second);
+		return Format.customTimeFormat.formatter.format(time);
 	}
 
 	static dateTime(dateTime) {
