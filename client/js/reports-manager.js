@@ -112,7 +112,7 @@ class ReportsMangerPreview {
 			this.report.definition = options.definition;
 			this.report.definitionOverride = true;
 		}
-
+		
 		if(options.visualizationOptions)
 			this.report.visualizations[0].options = options.visualizationOptions;
 
@@ -1966,14 +1966,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.visualizationManager.load();
 	}
 });
-
+ 
 class VisualizationManager {
 
 	constructor(visualization, stage) {
 
 		Object.assign(this, visualization);
 		this.stage = stage;
-
+		
 		if(!this.options) {
 
 			this.options = {};
@@ -2032,6 +2032,7 @@ class VisualizationManager {
 		`;
 
 		this.form = container.querySelector('#configure-visualization-form');
+		
 		this.optionsForm = new (ConfigureVisualization.types.get(this.type))(this, this.stage.page, this.stage);
 
 		this.transformations = new ReportTransformations(this, this.stage);
@@ -2063,6 +2064,7 @@ class VisualizationManager {
 		this.reportVisualizationFilters.load();
 
 		this.transformations.load();
+		
 		this.container.querySelector('.options').appendChild(this.optionsForm.form);
 
 		this.setupConfigurationSetions();
@@ -2091,7 +2093,7 @@ class VisualizationManager {
 			};
 
 		options.form.set('options', JSON.stringify(this.json.options));
-
+			
 		try {
 
 			await API.call('reports/visualizations/update', parameters, options);
@@ -3723,6 +3725,7 @@ class LinearAxis {
 class ReportVisualizationOptions {
 
 	constructor(visualization, page, stage, readOnly = false) {
+		
 		this.visualization = visualization;
 		this.page = page;
 		this.stage = stage;
@@ -3738,7 +3741,8 @@ class ReportVisualizationOptions {
 		const result = {};
 
 		for(const element of this.form.querySelectorAll('input, select'))
-			result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+			if(element.type != 'radio')
+				result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
 
 		return result;
 	}
@@ -4236,7 +4240,7 @@ ConfigureVisualization.types.set('linear', class LinearOptions extends ReportVis
 			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('div');
-
+		
 		container.classList.add('liner-visualization-options');
 
 		container.innerHTML = `
@@ -4505,20 +4509,30 @@ ConfigureVisualization.types.set('json', class JSONOptions extends ReportVisuali
 ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportVisualizationOptions {
 
 	get form() {
-
+		
 		if(this.formContainer)
 			return this.formContainer;
 
 		const container = this.formContainer = document.createElement('div');
+
+		let datalist = [];
+
+		for(const [key, column] of this.visualization.stage.page.preview.report.columns)
+			datalist.push({name: column.name, value: key});
+
+		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true, multiple: false});
+
+		this.bigReportsColumns = container.multiSelectColumns;
 
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
-						<label>
-							<span>Column</span>
-							<select name="column"></select>
+						
+
+						<label class="axis-column">
+							<span>Columns</span>
 						</label>
 
 						<label>
@@ -4531,19 +4545,26 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 			</div>
 		`;
 
-		const columnSelect = container.querySelector('select[name=column]');
+		container.querySelector('.axis-column').appendChild(this.bigReportsColumns.container);
 
-		for(const [key, column] of this.page.preview.report.columns) {
+		this.bigReportsColumns.value = this.visualization.options && this.visualization.options.column || [];
 
-			columnSelect.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
+		for(const element of this.formContainer.querySelectorAll('select, input')) {
+			if(element.type != 'radio')
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
 		}
 
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
-
 		return container;
+	}
+
+	get json(){
+
+		const parentJSON = super.json;
+
+		if(this.bigReportsColumns) 
+			parentJSON.column = this.bigReportsColumns.value[0];
+
+		return parentJSON;
 	}
 });
 
@@ -4829,7 +4850,7 @@ class ReportTransformations extends Set {
 	get json() {
 
 		const response = [];
-
+		
 		for(const transformation of this)
 			response.push(transformation.json);
 

@@ -54,7 +54,7 @@ class DataSource {
 			parameters.set('query', this.definition.query);
 
 		for(const filter of this.filters.values()) {
-
+			
 			if(this.visualizations.selected && this.visualizations.selected.options && this.visualizations.selected.options.filters && !this.filters.containerElement) {
 
 				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.filter_id == filter.filter_id);
@@ -271,7 +271,7 @@ class DataSource {
 		if(this.visualizations.length) {
 
 			for(const visualization of this.visualizations) {
-
+				
 				if(visualization.default)
 					this.visualizations.selected = visualization;
 			}
@@ -3509,7 +3509,7 @@ class Visualization {
 		this.id = Math.floor(Math.random() * 100000);
 
 		this.source = source;
-
+		
 		if(this.options && typeof this.options == 'string') {
 			try {
 				this.options = JSON.parse(this.options);
@@ -5466,7 +5466,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			}
 
 			else if(axis.type == 'area') {
-
+				
 				const area = d3.svg.area()
 					.interpolate(axis.curve)
 					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
@@ -7623,7 +7623,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 	async load(options = {}) {
 
 		super.render(options);
-
+		
 		this.container.querySelector('.container').innerHTML = `
 			<div class="loading">
 				<i class="fa fa-spinner fa-spin"></i>
@@ -7640,18 +7640,20 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 	async process() {
 
 		const [response] = await this.source.response();
-
-		if(!this.options.column)
+		
+		if(!this.options || !this.options.column)
 			return this.source.error('Value column not selected.');
 
 		if(!response)
 			return this.source.error('Invalid Response.');
 
-		if(!response.has(this.options.column))
+		if(!response.has(this.options && this.options.column))
 			return this.source.error(`<em>${this.options.column}</em> column not found.`);
 	}
 
 	async render(options = {}) {
+		if(!this.options)
+			return;
 
 		const [response] = await this.source.response();
 
