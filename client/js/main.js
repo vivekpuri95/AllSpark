@@ -39,6 +39,8 @@ class Page {
 
 	static async load() {
 
+		DialogBox.container = document.querySelector('body');
+
 		await Storage.load();
 		await Page.loadCredentialsFromCookie();
 		await Account.load();
@@ -68,7 +70,6 @@ class Page {
 
 		Page.loadOnboardScripts();
 
-		DialogBox.container = document.querySelector('body');
 		SnackBar.setup();
 	}
 
