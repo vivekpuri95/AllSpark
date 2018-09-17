@@ -228,10 +228,10 @@ exports.list = class extends API {
 					category_id: [],
 					dashboard_roles: [],
 				};
-
-				reportRoleMapping[row.owner_id].roles.push(row.target_id);
-				reportRoleMapping[row.owner_id].category_id.push(row.category_id);
 			}
+
+			reportRoleMapping[row.owner_id].roles.push(row.target_id);
+			reportRoleMapping[row.owner_id].category_id.push(row.category_id);
 		}
 
 		for (const queryDashboardRole of results[3]) {
