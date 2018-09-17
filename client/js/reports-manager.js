@@ -5492,7 +5492,7 @@ class ReportVisualizationDashboards extends Set {
 
 							<label class="create-new">
 								<span>&nbsp;</span>
-								<button type="button"><i class="fa fa-plus"></i> Create New</button>
+								<button type="button" disabled><i class="fa fa-plus"></i> Create New</button>
 							</label>
 						</div>
 					</fieldset>
@@ -5500,9 +5500,14 @@ class ReportVisualizationDashboards extends Set {
 			</div>
 		`;
 
-		this.container.querySelector('.create-new').on('click', () => {
-			window.open('/dashboards-manager/add');
-		})
+		if(user.privileges.has('dashboard.insert')) {
+
+			this.container.querySelector('.create-new button').disabled = false;
+
+			this.container.querySelector('.create-new').on('click', () => {
+				window.open('/dashboards-manager/add');
+			})
+		}
 		this.container.querySelector('form').on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
 
 		this.dashboardMultiSelect = new MultiSelect({multiple: false, dropDownPosition: 'top'});
@@ -5704,7 +5709,7 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>&nbsp;</span>
-				<button type="button" class="view-dashboard"><i class="fas fa-external-link-alt"></i></button>
+				<button type="button" class="view-dashboard disabled"><i class="fas fa-external-link-alt"></i></button>
 			</label>
 		`;
 
@@ -5750,7 +5755,14 @@ class ReportVisualizationDashboard {
 
 		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
 
-		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + this.dashboardMultiSelect.value[0]));
+		if(this.dashboardMultiSelect.value.length) {
+
+			const externalLink = form.querySelector('.view-dashboard');
+
+			externalLink.classList.disabled = false;
+			externalLink.on('click', () => window.open('/dashboard/' + this.dashboardMultiSelect.value[0]));
+		}
+
 		form.querySelector('.delete').on('click', () => this.delete());
 
 		form.on('submit', async e => this.update(e))
