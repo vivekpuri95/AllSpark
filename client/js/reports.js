@@ -2231,7 +2231,7 @@ class DataSourceColumn {
 
 		this.type = {
 			name: this.form.type.value,
-			format: '',
+			format: this.timingFormat ? this.timingFormat : '',
 		};
 
 		if(this.interval)
@@ -2278,7 +2278,7 @@ class DataSourceColumn {
 
 		this.type = {
 			name: this.form.type.value,
-			format: '',
+			format: this.timingFormat ? this.timingFormat : '',
 		};
 
 		if(this.interval)
