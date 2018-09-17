@@ -112,6 +112,7 @@ class ReportsMangerPreview {
 			this.report.definition = options.definition;
 			this.report.definitionOverride = true;
 		}
+
 		if(options.visualizationOptions)
 			this.report.visualizations[0].options = options.visualizationOptions;
 
@@ -1965,12 +1966,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.visualizationManager.load();
 	}
 });
+
 class VisualizationManager {
 
 	constructor(visualization, stage) {
 
 		Object.assign(this, visualization);
 		this.stage = stage;
+
 		if(!this.options) {
 
 			this.options = {};
@@ -2088,6 +2091,7 @@ class VisualizationManager {
 			};
 
 		options.form.set('options', JSON.stringify(this.json.options));
+		
 		try {
 
 			await API.call('reports/visualizations/update', parameters, options);
