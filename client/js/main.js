@@ -268,10 +268,17 @@ class Page {
 		}
 		catch(e) {
 
-			const onboardScript = document.createElement('script');
+			const
+				onboardScript = document.createElement('script'),
+				onboardCSS = document.createElement('link');
+
+			onboardCSS.rel = 'stylesheet';
+			onboardCSS.type = 'text/css';
+			onboardCSS.href = '/css/user-onboard.css';
 
 			onboardScript.src = '/js/user-onboard.js';
 			document.head.appendChild(onboardScript);
+			document.head.appendChild(onboardCSS);
 		}
 	}
 }

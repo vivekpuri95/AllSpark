@@ -21,12 +21,15 @@ class UserOnboard {
 	async load() {
 
 		this.progress = 0;
+		this.stages = [];
 
-		this.stage = (await this.getCurrentStage());
+		for(const stage of UserOnboard.stages.values()) {
 
-		if(!this.stage) {
+			const stageObj = new stage(this);
+			await stageObj.load();
 
-			await Storage.delete('newUser');
+			this.stages.push(stageObj);
+			this.progress = stageObj.progress;
 		}
 
 		if(document.querySelector('.setup-stages')) {
@@ -44,62 +47,38 @@ class UserOnboard {
 		this.loadWelcomeDialogBox();
 	}
 
-	async getCurrentStage() {
-
-		this.stages = [];
-
-		for(const stage of UserOnboard.stages.values()) {
-
-			const stageObj = new stage(this);
-			await stageObj.load();
-
-			this.stages.push(stageObj);
-
-			if(!stageObj.completed) {
-
-				return stageObj;
-			}
-
-			this.progress = stageObj.progress;
-		}
-
-		return 0;
-	}
-
 	get container() {
 
-		if(this.stateChanged) {
+		const [nextStage] = this.stages.filter(x => !x.completed);
 
-			window.location = this.stage.url;
+		if(this.stateChanged && nextStage) {
+
+			window.location = nextStage.url;
+		}
+
+		if(nextStage) {
+			
+			nextStage.setActive();
 		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('setup-stages');
 
 		container.innerHTML = `
-			<a href="${demo_url}" target="_blank">View Demo <i class="fas fa-external-link-alt"></i></a>
-			<div class="progress-bar">
-				<div class="progress" style="width: ${this.progress}%"></div>
-			</div>
+			<div class="wrapper"></div>
+			<a href="${demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
 		`;
 
-		if(this.progress == 0) {
+		const wrapper = container.querySelector('.wrapper');
 
-			container.querySelector('.progress').classList.add('progress-zero');
-		}
+		for(const stage of this.stages) {
 
-		if(this.stage) {
+			if(stage.completed) {
 
-			container.appendChild(this.stage.container);
-		}
-		else {
-			container.insertAdjacentHTML('beforeend', `
-				<div class="stage-info">
-					<div class="current">
-						<span class="NA">${this.progress}%</span><span>Setup Complete</span>
-					</div>
-				</div>
-			`);
+				stage.checked();
+			}
+
+			wrapper.appendChild(stage.container);
 		}
 
 		return container;
@@ -177,9 +156,37 @@ class UserOnboardStage {
 		}
 
 		const container = this.containerElement = document.createElement('div');
-		container.classList.add('stage-info');
+		container.classList.add('stage');
+
+		container.innerHTML = `
+			<div class="hellip">
+				<i class="fas fa-ellipsis-v"></i>
+				<i class="fas fa-ellipsis-v"></i>
+			</div>
+			<div class="info">${this.title}<span class="NA">${this.subtitle || ''}</span></div>
+			<div class="status"></div>
+		`;
+
+		container.on('click', () => {
+
+			window.location = this.url;
+		});
 
 		return container;
+	}
+
+	checked() {
+
+		const status = this.container.querySelector('.status');
+
+		status.innerHTML = '<i class="fas fa-check"></i>';
+		status.classList.add('checked');
+
+	}
+
+	setActive() {
+
+		this.container.classList.add('active');
 	}
 }
 
@@ -190,45 +197,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 		super(onboard);
 
 		this.title = 'Add Connection';
-	}
-
-	get container() {
-
-		if(this.containerElement) {
-
-			return this.containerElement;
-		}
-
-		const container = this.containerElement = super.container;
-
-		container.innerHTML = `
-			<div class="current">
-				<span class="NA">${this.progress}%</span>
-				<span><i class="fa fa-server"></i> Add Connection</span>
-			</div>
-			<div class="next">
-				<span class="NA">Next</span>
-				<span><i class="fa fa-database"></i> Add Report</span>
-			</div>
-		`;
-
-		container.querySelector('.current').on('click', () => {
-
-			window.location = this.url;
-		});
-
-		container.querySelector('.next').on('click', () => {
-
-			window.location = '/reports/configure-report/add';
-		});
-
-		if(!this.completed) {
-
-			container.querySelector('.next').classList.add('disabled');
-		}
-
-
-		return container;
+		this.subtitle = 'Connect to an external datasource';
 	}
 
 	get url() {
@@ -260,44 +229,7 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		super(onboard);
 
 		this.title = 'Add Report';
-	}
-
-	get container() {
-
-		if(this.containerElement) {
-
-			return this.containerElement;
-		}
-
-		const container = this.containerElement = super.container;
-
-		container.innerHTML = `
-			<div class="current">
-				<span class="NA">${this.progress}%</span>
-				<span><i class="fa fa-database"></i> Add Report</span>
-			</div>
-			<div class="next">
-				<span class="NA">Next</span>
-				<span><i class="fa fa-newspaper"></i>Add Dashboard</span>
-			</div>
-		`;
-
-		container.querySelector('.current').on('click', () => {
-
-			window.location = this.url;
-		});
-
-		container.querySelector('.next').on('click', () => {
-
-			window.location = '/dashboards-manager/add';
-		});
-
-		if(!this.completed) {
-
-			container.querySelector('.next').classList.add('disabled');
-		}
-
-		return container;
+		this.subtitle = 'Define a query to extract data';
 	}
 
 	get url() {
@@ -329,45 +261,7 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 		super(onboard);
 
 		this.title = 'Add Dashboard';
-	}
-
-	get container() {
-
-		if(this.containerElement) {
-
-			return this.containerElement;
-		}
-
-		const container = this.containerElement = super.container;
-
-		container.innerHTML = `
-			<div class="current">
-				<span class="NA">${this.progress}%</span>
-				<span><i class="fa fa-newspaper"></i> Add Dashboard</span>
-			</div>
-			<div class="next">
-				<span class="NA">Next</span>
-				<span><i class="fa fa-chart-line"></i> Add Visualization</span>
-			</div>
-		`;
-
-		container.querySelector('.current').on('click', () => {
-
-			window.location = this.url;
-		});
-
-		container.querySelector('.next').on('click', () => {
-
-			window.location = this.stages[1].report ? `/reports/pick-visualization/${this.stages[1].report.query_id}` : '/reports';
-		});
-
-		if(!this.completed) {
-
-			container.querySelector('.next').classList.add('disabled');
-		}
-
-		return container;
-
+		this.subtitle = 'At-a-glance view of visualizations';
 	}
 
 	get url() {
@@ -400,30 +294,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		super(onboard);
 
 		this.title = 'Add Visualization';
-	}
-
-	get container() {
-
-		if(this.containerElement) {
-
-			return this.containerElement;
-		}
-
-		const container = this.containerElement = super.container;
-
-		container.innerHTML = `
-			<div class="current">
-				<span class="NA">${this.progress}%</span>
-				<span><i class="fa fa-chart-line"></i> Add Visualization</span>
-			</div>
-		`;
-
-		container.querySelector('.current').on('click', () => {
-
-			window.location = this.url;
-		});
-
-		return container;
+		this.subtitle = 'Visualize your data';
 	}
 
 	get url() {

@@ -1,0 +1,174 @@
+.setup-stages {
+    position: fixed;
+    width: 350px;
+    bottom: 0;
+    right: 0;
+    z-index: 4;
+    padding: 10px 15px;
+}
+    .setup-stages a {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        color: #fff;
+        letter-spacing: 0.5px;
+        border-radius: 3.6px;
+        text-decoration: none;
+        transition: background var(--transition-duration), box-shadow var(--transition-duration);
+        cursor: pointer;
+    }
+    .setup-stages a {
+        background: var(--color-accent);
+        grid-row: 1 / 3;
+    }
+        .setup-stages a > i {
+            margin-right: 10px;
+        }
+    .setup-stages a:hover {
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+        background: #4880db;
+    }
+    .setup-stages a:active {
+        box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
+    }
+    .setup-stages .wrapper {
+        background: #fff;
+        box-shadow: 0 0px 10px rgba(0, 0, 0, 0.2);
+        margin-bottom: calc(var(--gap) * 2);
+        display: flex;
+        flex-direction: column;
+        border-radius: 3px;
+    }
+        .setup-stages .wrapper .stage {
+            padding: 10px;
+            cursor: pointer;
+            display: grid;
+            grid-template-columns: max-content 1fr max-content;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            grid-gap: 5px;
+        }
+        .setup-stages .wrapper .stage.active,
+        .setup-stages .wrapper .stage.active:hover {
+            background: #ddd;
+        }
+        .setup-stages .wrapper .stage:hover {
+            background: #eee;
+        }
+        .setup-stages .wrapper .stage:active {
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
+        }
+            .setup-stages .wrapper .stage div {
+                padding: calc(var(--gap) * 1);
+            }
+            .setup-stages .wrapper .stage div.status {
+                height: 20px;
+                width: 20px;
+                border: 1px solid var(--color-accent);
+                border-radius: 12px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .setup-stages .wrapper .stage div.hellip {
+                color: #ccc;
+            }
+            .setup-stages .wrapper .stage div.status.checked {
+                color: var(--color-accent);
+                font-size: 85%;
+            }
+            .setup-stages .wrapper .stage div.info {
+                display: flex;
+                flex-direction: column;
+            }
+                .setup-stages .wrapper .stage div.info .NA {
+                    margin-top: 5px;
+                }
+
+.dialog-box-blanket.user-onboarding-welcome header {
+    color: inherit;
+    background: #fff;
+    box-shadow: none;
+}
+    .dialog-box-blanket.user-onboarding-welcome header .close {
+        padding: 10px;
+    }
+.dialog-box-blanket.user-onboarding-welcome .body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: max-content 1fr max-content max-content max-content;
+    padding: 20px;
+    grid-gap: calc(var(--gap) * 4);
+}
+    .dialog-box-blanket.user-onboarding-welcome .body h2 {
+        margin: 0;
+        grid-column: 1 / 3;
+        padding-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+        letter-spacing: 0.5px;
+        font-size: 175%;
+    }
+    .dialog-box-blanket.user-onboarding-welcome .body a {
+        color: inherit;
+    }
+    .dialog-box-blanket.user-onboarding-welcome .body a:hover {
+        text-decoration: none;
+    }
+    .dialog-box-blanket.user-onboarding-welcome .body .view-demo,
+    .dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough {
+        font-size: calc(100% + 0.25vw);
+        height: 175px;
+        grid-row: 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        max-width: 200px;
+        margin: 25px auto;
+        transition: background var(--transition-duration),
+        box-shadow var(--transition-duration);
+    }
+    .dialog-box-blanket.user-onboarding-welcome .body .figure {
+        font-size: calc(25px + 1.8vw);
+        margin-bottom: 15px;
+        height: 110px;
+        align-items: flex-end;
+        display: flex;
+        justify-content: center;
+    }
+        .dialog-box-blanket.user-onboarding-welcome .body .view-demo .NA,
+        .dialog-box-blanket.user-onboarding-welcome .body .initiate-walkthrough .NA {
+            font-size: 75%;
+            margin-top: 10px;
+        }
+        .dialog-box-blanket.user-onboarding-welcome .body .or {
+            text-align: center;
+            color: #666;
+            grid-column: 1 / 3;
+        }
+        .dialog-box-blanket.user-onboarding-welcome .body .initiate-chat {
+            grid-column: 1 / 3;
+            text-align: center;
+            font-size: 115%;
+            margin: 0 auto;
+            padding: 8px 15px;
+            border: 1px solid transparent;
+            transition: border var(--transition-duration);
+        }
+        .dialog-box-blanket.user-onboarding-welcome .body .initiate-chat:hover {
+            border-color: #999;
+        }
+        .dialog-box-blanket.user-onboarding-welcome .body .skip {
+            grid-column: 2;
+            text-align: right;
+            margin-left: auto;
+            border: 1px solid transparent;
+            padding: 5px 10px;
+            transition: border var(--transition-duration),
+            box-shadow var(--transition-duration);
+        }
+        .dialog-box-blanket.user-onboarding-welcome .body .skip:hover {
+            border: 1px solid #999;
+        }
