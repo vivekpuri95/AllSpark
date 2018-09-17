@@ -45,8 +45,6 @@ exports.update = class extends API {
 
     async update({visualization_id, name, type, options = null} = {}) {
 
-    	this.user.privilege.needs('visualization.update', 'ignore');
-
 		this.assert(visualization_id, 'Visualization id is required');
 		this.assert(name && type, 'Name or type is missing');
 
@@ -61,6 +59,11 @@ exports.update = class extends API {
             compareJson = {};
 
 		this.assert(updatedRow, 'Invalid visualization id');
+
+		if(updatedRow.added_by !== this.user.user_id) {
+
+			this.user.privilege.needs('visualization.update', 'ignore');
+		}
 
 	    const authVisualizationResponse = await auth.visualization(visualization_id, this.user, updatedRow.query_id, this.account.settings.has("visualization_roles_from_query") && this.account.settings.get("visualization_roles_from_query"));
 
@@ -98,8 +101,6 @@ exports.delete = class extends API {
 
     	this.assert(visualization_id, 'Visualization Id required');
 
-	    this.user.privilege.needs('visualization.delete', 'ignore');
-
         const
 			[updatedRow] =  await this.mysql.query('SELECT * FROM tb_query_visualizations WHERE visualization_id = ?', [visualization_id]),
             logs = {
@@ -110,6 +111,11 @@ exports.delete = class extends API {
             };
 
 	    const authVisualizationResponse = await auth.visualization(visualization_id, this.user, updatedRow.query_id, this.account.settings.has("visualization_roles_from_query") && this.account.settings.get("visualization_roles_from_query"));
+
+	    if(updatedRow.added_by !== this.user.user_id) {
+
+		    this.user.privilege.needs('visualization.delete', 'ignore');
+	    }
 
 	    this.assert(!authVisualizationResponse.error, authVisualizationResponse.message);
 
