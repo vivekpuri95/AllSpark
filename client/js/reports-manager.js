@@ -4555,8 +4555,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 		const parentJSON = super.json;
 
-		if(this.bigReportsColumns)
-			parentJSON.column = this.bigReportsColumns.value[0];
+		parentJSON.column = this.bigReportsColumns.value[0];
 
 		return parentJSON;
 	}
