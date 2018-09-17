@@ -1766,8 +1766,6 @@ class DataSourceColumn {
 		if(this.type)
 			this.form.type.value = this.type.name;
 
-<<<<<<< HEAD
-=======
 		this.form.querySelector('.timing-type').classList.add('hidden');
 
 		this.timingFormat = this.type.value;
@@ -1784,7 +1782,6 @@ class DataSourceColumn {
 			this.form.querySelector('.timing-type').classList.remove('hidden');
 		}
 
->>>>>>> custom time format can be selected and applied
 		if(this.drilldown && this.drilldown.query_id) {
 
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
@@ -2232,19 +2229,13 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
-<<<<<<< HEAD
 		this.type = {
 			name: this.form.type.value,
 			format: '',
-=======
+		};
+
 		if(this.interval)
 			clearInterval(this.interval);
-
-		this.type = {
-			name: this.form.type.value,
-			value: this.timingFormat ? this.timingFormat : '',
->>>>>>> custom time format can be selected and applied
-		};
 
 		this.disabled = parseInt(this.disabled) || 0;
 
@@ -2285,19 +2276,13 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
-<<<<<<< HEAD
 		this.type = {
 			name: this.form.type.value,
 			format: '',
-=======
+		};
+
 		if(this.interval)
 			clearInterval(this.interval);
-
-		this.type = {
-			name: this.form.type.value,
-			value: this.timingFormat ? this.timingFormat : '',
->>>>>>> custom time format can be selected and applied
-		};
 
 		response = {
 			key : this.key,
