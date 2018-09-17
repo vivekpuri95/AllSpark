@@ -1495,26 +1495,30 @@ class DataSourceRow extends Map {
 		if(!value)
 			value = this.get(key);
 
-		if(column.type == 'date')
-			value = Format.date(value);
+		if(column.type) {
 
-		if(column.type == 'month')
-			value = Format.month(value);
+			if(column.type.name == 'date')
+				value = Format.date(value);
 
-		if(column.type == 'year')
-			value = Format.year(value);
+			if(column.type.name == 'month')
+				value = Format.month(value);
 
-		if(column.type == 'timeelapsed')
-			value = Format.ago(value);
+			if(column.type.name == 'year')
+				value = Format.year(value);
 
-		if(column.type == 'time')
-			value = Format.time(value);
+			if(column.type.name == 'timeelapsed')
+				value = Format.ago(value);
 
-		if(column.type == 'datetime')
-			value = Format.dateTime(value);
+			if(column.type.name == 'time')
+				value = Format.time(value);
 
-		else if(column.type == 'number')
-			value = Format.number(value);
+			if(column.type.name == 'datetime')
+				value = Format.dateTime(value);
+
+			else if(column.type.name == 'number')
+				value = Format.number(value);
+
+		}
 
 		if(column.prefix)
 			value = column.prefix + value;
@@ -1630,6 +1634,13 @@ class DataSourceColumn {
 
 		this.columnFilters = new DataSourceColumnFilters(this);
 		this.columnAccumulations = new DataSourceColumnAccumulations(this);
+
+		if(typeof this.type == 'string') {
+			this.type = {
+				name: this.type,
+				format: '',
+			}
+		}
 	}
 
 	get container() {
@@ -1747,6 +1758,9 @@ class DataSourceColumn {
 			if(key in this.form)
 				this.form[key].value = this[key];
 		}
+
+		if(this.type)
+			this.form.type.value = this.type.name;
 
 		if(this.drilldown && this.drilldown.query_id) {
 
@@ -1948,6 +1962,11 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
+		this.type = {
+			name: this.form.type.value,
+			format: '',
+		};
+
 		this.disabled = parseInt(this.disabled) || 0;
 
 		this.container.querySelector('.label .name').textContent = this.name;
@@ -1977,6 +1996,7 @@ class DataSourceColumn {
 		if(!this.source.format.columns)
 			this.source.format.columns = [];
 
+
 		let
 			response,
 			updated = 0;
@@ -1986,10 +2006,15 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
+		this.type = {
+			name: this.form.type.value,
+			format: '',
+		};
+
 		response = {
 			key : this.key,
 			name : this.name,
-			type : this.form.querySelector('.columnType select').value,
+			type : this.type,
 			disabled : this.disabled,
 			color : this.color,
 			searchType : this.searchType,
@@ -2812,7 +2837,7 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type == 'date')
+			if(column.type && column.type.name == 'date')
 				this.timingColumn = column;
 		}
 
@@ -4085,7 +4110,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				let rowJson = row.get(key);
 
-				if(column.type == 'html') {
+				if(column.type && column.type.name == 'html') {
 
 					td.innerHTML = row.getTypedValue(key);
 				}
