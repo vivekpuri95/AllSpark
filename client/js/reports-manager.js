@@ -1662,48 +1662,66 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			this.page.preview.hidden = false;
 		});
 
-		for(const visualization of MetaData.visualizations.values()) {
+		let newUser;
 
-			const label = document.createElement('label');
+		(async () => {
 
-			label.innerHTML = `
-				<figure>
-					<img alt="${visualization.name}">
-					<span class="loader"><i class="fa fa-spinner fa-spin"></i></span>
-					<span class="NA hidden">Preview not available!</span>
-					<figcaption>${visualization.name}</figcaption>
-				</figure>
-			`;
+			newUser = await Storage.has('newUser');
 
-			const
-				img = label.querySelector('img'),
-				loader = label.querySelector('.loader'),
-				NA = label.querySelector('.NA');
+			for(const visualization of MetaData.visualizations.values()) {
 
-			img.on('load', () => {
-				img.classList.add('show');
-				loader.classList.add('hidden');
-			});
+				const label = document.createElement('label');
 
-			img.on('error', () => {
-				NA.classList.remove('hidden');
-				loader.classList.add('hidden');
-			});
+				label.innerHTML = `
+					<figure>
+						<img alt="${visualization.name}">
+						<span class="loader"><i class="fa fa-spinner fa-spin"></i></span>
+						<span class="NA hidden">Preview not available!</span>
+						<figcaption>${visualization.name}</figcaption>
+					</figure>
+				`;
 
-			img.src = visualization.image;
+				const
+					img = label.querySelector('img'),
+					loader = label.querySelector('.loader'),
+					NA = label.querySelector('.NA');
 
-			label.on('click', () => {
+				img.on('load', () => {
+					img.classList.add('show');
+					loader.classList.add('hidden');
+				});
 
-				if(this.form.querySelector('figure.selected'))
-					this.form.querySelector('figure.selected').classList.remove('selected');
+				img.on('error', () => {
+					NA.classList.remove('hidden');
+					loader.classList.add('hidden');
+				});
 
-				label.querySelector('figure').classList.add('selected');
+				img.src = visualization.image;
 
-				this.insert(visualization);
-			});
+				if(newUser && visualization.name != 'Line') {
 
-			this.form.appendChild(label);
-		}
+					this.form.appendChild(label);
+					continue;
+				}
+
+				label.insertAdjacentHTML('beforeend', `
+					<div class="save-pop-up">Select line visualization</div>
+				`);
+
+				label.on('click', () => {
+
+					if(this.form.querySelector('figure.selected'))
+						this.form.querySelector('figure.selected').classList.remove('selected');
+
+					label.querySelector('figure').classList.add('selected');
+
+					this.insert(visualization);
+				});
+
+				this.form.appendChild(label);
+			}
+
+		})();
 
 		if(!MetaData.visualizations.size)
 			this.form.innerHTML = `<div class="NA">No visualizations found</div>`;
@@ -1958,6 +1976,13 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
 
+		if(!this.container.querySelector('.toolbar .submit .save-pop-up')) {
+
+			this.container.querySelector('.toolbar .submit').insertAdjacentHTML('beforeend', `
+					<div class="save-pop-up">Click save to continue...</div>
+				`);
+		}
+
 		if(!this.visualization)
 			return;
 
@@ -1991,11 +2016,18 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.page.stages.get('pick-report').switcher.querySelector('small').textContent = this.report.name + ` #${this.report.query_id}`;
 	}
 
-	loadVisualizationForm(visualization) {
+	async loadVisualizationForm(visualization) {
 
 		if(visualization) {
 
 			this.visualization = visualization;
+		}
+
+		if(await Storage.has('newUser')) {
+
+			this.visualization.options = onboard.visualization.options;
+			this.visualization.name = onboard.visualization.name;
+			this.visualization.description = onboard.visualization.description;
 		}
 
 		if(this.container.querySelector('.visualization-form.stage-form'))
@@ -3387,6 +3419,7 @@ class Axis {
 			restcolumns: this.container.querySelector('input[name=restcolumns]').checked,
 			format: this.container.querySelector('select[name=format]').value,
 			showValues: this.container.querySelector('input[name=axisShowValues]').checked,
+			position: this.position,
 		};
 	}
 }
