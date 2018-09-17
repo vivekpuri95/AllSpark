@@ -3740,8 +3740,10 @@ class ReportVisualizationOptions {
 
 		const result = {};
 
-		for(const element of this.form.querySelectorAll('input, select'))
-			result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+		for(const element of this.form.querySelectorAll('input, select')) {
+			if(element.type != 'radio')
+				result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+		}
 
 		return result;
 	}
@@ -4514,14 +4516,20 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 		const container = this.formContainer = document.createElement('div');
 
+		let datalist = [];
+
+		for(const [key, column] of this.page.preview.report.columns)
+			datalist.push({name: column.name, value: key});
+
+		this.bigReportsColumns = new MultiSelect({datalist: datalist, expand: true, multiple: false});
+
 		container.innerHTML = `
 			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
-						<label>
-							<span>Column</span>
-							<select name="column"></select>
+						<label class="axis-column">
+							<span>Columns</span>
 						</label>
 
 						<label>
@@ -4534,19 +4542,25 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 			</div>
 		`;
 
-		const columnSelect = container.querySelector('select[name=column]');
+		container.querySelector('.axis-column').appendChild(this.bigReportsColumns.container);
 
-		for(const [key, column] of this.page.preview.report.columns) {
+		this.bigReportsColumns.value = this.visualization.options && this.visualization.options.column || [];
 
-			columnSelect.insertAdjacentHTML('beforeend', `
-				<option value="${key}">${column.name}</option>
-			`);
+		for(const element of this.formContainer.querySelectorAll('select, input')) {
+			if(element.type != 'radio')
+				element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
 		}
 
-		for(const element of this.formContainer.querySelectorAll('select, input'))
-			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
-
 		return container;
+	}
+
+	get json() {
+
+		const parentJSON = super.json;
+
+		parentJSON.column = this.bigReportsColumns.value[0];
+
+		return parentJSON;
 	}
 });
 

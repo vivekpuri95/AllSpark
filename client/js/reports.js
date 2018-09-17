@@ -707,10 +707,10 @@ class DataSource {
 
 			for(const data of response) {
 
-				const line = [], rowObj = {}; 
+				const line = [], rowObj = {};
 
 				for(let [key, value] of data) {
-					
+
 					rowObj[key] = value;
 				}
 
@@ -7641,7 +7641,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		const [response] = await this.source.response();
 
-		if(!this.options.column)
+		if(!this.options || !this.options.column)
 			return this.source.error('Value column not selected.');
 
 		if(!response)
@@ -7652,6 +7652,8 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 	}
 
 	async render(options = {}) {
+		if(!this.options)
+			return;
 
 		const [response] = await this.source.response();
 
