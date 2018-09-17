@@ -2091,7 +2091,7 @@ class VisualizationManager {
 			};
 
 		options.form.set('options', JSON.stringify(this.json.options));
-		
+
 		try {
 
 			await API.call('reports/visualizations/update', parameters, options);
@@ -3723,7 +3723,6 @@ class LinearAxis {
 class ReportVisualizationOptions {
 
 	constructor(visualization, page, stage, readOnly = false) {
-		
 		this.visualization = visualization;
 		this.page = page;
 		this.stage = stage;
@@ -3738,9 +3737,10 @@ class ReportVisualizationOptions {
 
 		const result = {};
 
-		for(const element of this.form.querySelectorAll('input, select'))
+		for(const element of this.form.querySelectorAll('input, select')) {
 			if(element.type != 'radio')
 				result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+		}
 
 		return result;
 	}
@@ -4516,7 +4516,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 		let datalist = [];
 
 		for(const [key, column] of this.visualization.stage.page.preview.report.columns)
-			datalist.push({name: column.name, value: key});
+				datalist.push({name: column.name, value: key});
 
 		container.multiSelectColumns = new MultiSelect({datalist: datalist, expand: true, multiple: false});
 
@@ -4527,8 +4527,6 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
-						
-
 						<label class="axis-column">
 							<span>Columns</span>
 						</label>

@@ -54,7 +54,7 @@ class DataSource {
 			parameters.set('query', this.definition.query);
 
 		for(const filter of this.filters.values()) {
-			
+
 			if(this.visualizations.selected && this.visualizations.selected.options && this.visualizations.selected.options.filters && !this.filters.containerElement) {
 
 				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.filter_id == filter.filter_id);
@@ -7647,7 +7647,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		if(!response)
 			return this.source.error('Invalid Response.');
 
-		if(!response.has(this.options && this.options.column))
+		if(!response.has(this.options.column))
 			return this.source.error(`<em>${this.options.column}</em> column not found.`);
 	}
 
