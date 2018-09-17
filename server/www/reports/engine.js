@@ -1229,8 +1229,9 @@ class executingReports extends API {
 				}
 
 				obj[k] = v;
-				result.push(obj)
 			}
+
+			result.push(obj)
 		}
 
 		return result;
