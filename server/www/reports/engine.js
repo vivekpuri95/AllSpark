@@ -61,6 +61,8 @@ class report extends API {
                 			AND query_id = ?
                 			AND OWNER = 'dashboard'
                 			AND target = 'user'
+                			AND qv.is_enabled = 1
+                			and qv.is_deleted = 0
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id

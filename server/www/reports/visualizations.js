@@ -55,7 +55,7 @@ exports.update = class extends API {
 
         let
 			values = {name, type, options},
-			[updatedRow] =  await this.mysql.query('SELECT * FROM tb_query_visualizations WHERE visualization_id = ?', [visualization_id]),
+			[updatedRow] =  await this.mysql.query('SELECT * FROM tb_query_visualizations WHERE visualization_id = ? and is_enabled = 1 and is_deleted = 0', [visualization_id]),
             compareJson = {};
 
 		this.assert(updatedRow, 'Invalid visualization id');
@@ -102,7 +102,7 @@ exports.delete = class extends API {
     	this.assert(visualization_id, 'Visualization Id required');
 
         const
-			[updatedRow] =  await this.mysql.query('SELECT * FROM tb_query_visualizations WHERE visualization_id = ?', [visualization_id]),
+			[updatedRow] =  await this.mysql.query('SELECT * FROM tb_query_visualizations WHERE visualization_id = ? and is_enabled = 1 and is_deleted = 0', [visualization_id]),
             logs = {
                 owner: 'visualization',
                 owner_id: visualization_id,
@@ -121,6 +121,6 @@ exports.delete = class extends API {
 
 	    reportHistory.insert(this, logs);
 
-        return await this.mysql.query('DELETE FROM tb_query_visualizations WHERE visualization_id = ?', [visualization_id], 'write');
+        return await this.mysql.query('UPDATE tb_query_visualizations SET is_deleted = 1 WHERE visualization_id = ?', [visualization_id], 'write');
     }
 };

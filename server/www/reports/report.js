@@ -74,6 +74,8 @@ exports.list = class extends API {
                  OWNER = "dashboard"
                  AND target = "user"
                  AND target_id = ?
+                 AND qv.is_enabled = 1 
+                 and qv.is_deleted = 0
             GROUP BY query_id
         `;
 
@@ -359,12 +361,15 @@ exports.list = class extends API {
 				const userVisualizationUpdateCategories = new Set(this.user.privileges.filter(x => [constants.privilege['visualization.update']].includes(x.privilege_name)).map(x => x.category_id));
 				const userVisualizationDeleteCategories = new Set(this.user.privileges.filter(x => [constants.privilege['visualization.delete']].includes(x.privilege_name)).map(x => x.category_id));
 
-				if(isAdmin || visualizationCategories.some(x => userVisualizationUpdateCategories.has(x)) || visualization.added_by == this.user.user_id) {
+				const updateFlag = this.user.privilege.has('visualization.update', 'ignore') && visualization.users.some(x => this.user.user_id == x.target_id);
+				const deleteFlag = this.user.privilege.has('visualization.delete', 'ignore') && visualization.users.some(x => this.user.user_id == x.target_id);
+
+				if(isAdmin || updateFlag || visualizationCategories.some(x => userVisualizationUpdateCategories.has(x)) || visualization.added_by == this.user.user_id) {
 
 					visualization.editable = true
 				}
 
-				if(isAdmin || visualizationCategories.some(x => userVisualizationDeleteCategories.has(x)) || visualization.added_by == this.user.user_id) {
+				if(isAdmin || deleteFlag ||visualizationCategories.some(x => userVisualizationDeleteCategories.has(x)) || visualization.added_by == this.user.user_id) {
 
 					visualization.deletable = true
 				}
@@ -663,6 +668,8 @@ exports.userPrvList = class extends API {
                 			USING(visualization_id)
                 		WHERE
                 			 query_id = ?
+                			 and qv.is_enabled = 1 
+                			 and qv.is_deleted = 0
                 	) dashboard_user
                USING(user_id)
                 	LEFT JOIN

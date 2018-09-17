@@ -478,7 +478,8 @@ class Authenticate {
 
 			[visualization] = await mysql.query(`
 				select
-					*
+					qv.*,
+					q.account_id
 				from
 					tb_query_visualizations qv
 				join
