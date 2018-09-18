@@ -101,7 +101,7 @@ class DataSource {
 		const params = parameters.toString();
 
 		const options = {
-			method = params.length <= 62000 ? 'GET' : 'POST'
+			method = params.length <= 62000 ? 'GET' : 'POST',
 		};
 
 		this.resetError();
