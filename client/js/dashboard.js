@@ -308,10 +308,12 @@ Page.class = class Dashboards extends Page {
 			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found!</td></tr>`;
 	}
 
-	cycle() {
+	/**
+	 * 0 parent means root, ie any dashboard with 0 parent means that dashboard is root dashboard.
+	 flattens dashboard hierarchy and checks if there is single node cycle found.
+	 */
 
-		// 0 parent means root, ie any dashboard with 0 parent means that dashboard is root dashboard.
-		//flattens dashboard hierarchy and checks if there is single node cycle found
+	cycle() {
 
 		let simplifiedTreeMapping = new Map;
 
@@ -1132,7 +1134,7 @@ class Navbar {
 	}
 
 	render() {
-		;
+
 		const dashboardHirachy = this.page.nav.querySelector('.dashboard-hierarchy');
 		const search = this.page.nav.querySelector('.dashboard-search');
 
