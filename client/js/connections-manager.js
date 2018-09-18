@@ -581,11 +581,25 @@ DataConnection.types.set('mysql', class {
 
 		if(await Storage.has('newUser')) {
 
-			connections.container.querySelector('#form .toolbar .submit button').classList.add('blink');
+			const submitButton = connections.container.querySelector('#form .toolbar button[type=submit]');
 
-			connections.container.querySelector('#form .toolbar .submit').insertAdjacentHTML('beforeend', `
+			submitButton.classList.add('blink');
+
+			const rect = submitButton.getBoundingClientRect();
+
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+			}
+
+			document.body.insertAdjacentHTML('beforeend', `
 				<div class="save-pop-up">Click save to continue...</div>
 			`);
+
+			const popUp = document.body.querySelector('.save-pop-up');
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`; 
 
 			for(const key in connections) {
 

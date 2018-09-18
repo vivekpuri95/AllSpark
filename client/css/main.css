@@ -95,7 +95,7 @@ a:active {
 }
 
 .grey {
-	color: #999;
+	/* color: #999; */
 }
 .grey:hover {
 	background: none !important;
@@ -1018,10 +1018,6 @@ body {
 		.snack-bar .close:hover {
 			color: #fff;
 		}
-.submit {
-	position: relative;
-	display: flex;
-}
 .save-pop-up {
 	width: 200px;
 	background: #ddd;
@@ -1031,9 +1027,13 @@ body {
 	border-radius: 3px;
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 	margin-left: 15px;
+	position: absolute;
+	top: calc(96px - 10px);
+	z-index: 7;
+	height: 50px;
 }
 .save-pop-up::before {
-	left: 28%;
+	left: -10px;
 	content: '';
 	border-right: 10px solid #ddd;
 	border-top: 10px solid transparent;

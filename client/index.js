@@ -692,9 +692,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 
 				<div class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-					<div class="submit">
-						<button type="submit" form="dashboard-form"><i class="far fa-save"></i> Save</button>
-					</div>
+					<button type="submit" form="dashboard-form"><i class="far fa-save"></i> Save</button>
 				</div>
 
 				<form class="block form" id="dashboard-form">
@@ -795,9 +793,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-configure-report">
 
 					<header class="toolbar">
-						<div class="submit">
-							<button type="submit" form="configure-report-form"><i class="far fa-save"></i> Save</button>
-						</div>
+						<button type="submit" form="configure-report-form"><i class="far fa-save"></i> Save</button>
 						<small id="added-by"></small>
 					</header>
 
@@ -902,9 +898,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-define-report">
 
 					<header class="toolbar">
-						<div class="submit">
-							<button type="submit" form="define-report-form"><i class="far fa-save"></i> Save</button>
-						</div>
+						<button type="submit" form="define-report-form"><i class="far fa-save"></i> Save</button>
 						<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
 						<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
 						<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
@@ -1009,9 +1003,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div id="visualization-list">
 
 						<div class="toolbar">
-							<div class="submit">
-								<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></button>
-							</div>
+							<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></button>
 						</div>
 
 						<table>
@@ -1044,9 +1036,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 					<div class="toolbar">
 						<button type="button" id="configure-visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
-						<div class="submit">
-							<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
-						</div>
+						<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
 						<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>
 						<button type="button" id="history-configure-visualization"><i class="fa fa-history"></i> History</button>
 					</div>
@@ -1235,9 +1225,7 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 
 				<header class="toolbar">
 					<button id="back"><i class="fa fa-arrow-left"></i> Back</button>
-					<div class="submit">
-						<button type="submit" form="connections-form"><i class="far fa-save"></i> Save</button>
-					</div>
+					<button type="submit" form="connections-form"><i class="far fa-save"></i> Save</button>
 					<button type="button" id="test-connection"><i class="fas fa-flask"></i>Test</button>
 				</header>
 

@@ -165,11 +165,7 @@ class DashboardsDashboard {
 				}
 			}
 
-			this.container.querySelector('#form .toolbar .submit button').classList.add('blink');
-
-			this.container.querySelector('#form .toolbar .submit').insertAdjacentHTML('beforeend', `
-				<div class="save-pop-up">Click save to continue...</div>
-			`);
+			this.container.querySelector('#form .toolbar button[type=submit]').classList.add('blink');
 
 			for(const element of DashboardsDashboard.form.elements) {
 				if(onboard.dashboard[element.name])
@@ -185,6 +181,22 @@ class DashboardsDashboard {
 		await Sections.show('form');
 
 		DashboardsDashboard.form.name.focus();
+
+		const rect = this.container.querySelector('#form .toolbar button[type=submit]').getBoundingClientRect();
+
+		if(document.body.querySelector('.save-pop-up')) {
+
+			document.body.querySelector('.save-pop-up').remove();
+		}
+
+		document.body.insertAdjacentHTML('beforeend', `
+			<div class="save-pop-up">Click save to continue...</div>
+		`);
+
+		const popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.left = `${rect.right}px`;
 	}
 
 	static async insert(e) {
