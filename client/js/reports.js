@@ -1878,13 +1878,6 @@ class DataSourceColumn {
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
 
-		if(!this.source.editable) {
-			let saveData = form.querySelector('footer .save');
-			saveData.classList.add('disabled');
-			saveData.setAttribute('tooltip', 'You have no access to save this');
-			saveData.setAttribute('tooltip-position', 'left');
-		}
-
 		form.elements.formula.on('keyup', async () => {
 
 			if(formulaTimeout)

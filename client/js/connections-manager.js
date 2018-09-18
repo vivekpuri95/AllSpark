@@ -536,7 +536,7 @@ DataConnection.types.set('mysql', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
+			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -587,7 +587,7 @@ DataConnection.types.set('mssql', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
+			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -638,7 +638,7 @@ DataConnection.types.set('pgsql', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
+			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -689,7 +689,7 @@ DataConnection.types.set('oracle', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
+				<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input type="text" autocomplete="off" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -773,7 +773,7 @@ DataConnection.types.set('mongo', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="show-password" id="showpassword" tooltip='Show Password'>Show</a></span></input>
+			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 

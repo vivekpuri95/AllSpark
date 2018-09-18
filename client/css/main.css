@@ -1026,12 +1026,12 @@ body {
 	}
 }
 
-[tooltip] {
+[data-tooltip] {
 	position: relative;
 	display: inline-block;
 }
 
-[tooltip]::before {
+[data-tooltip]::before {
 	content: "";
 	position: absolute;
 	top: -6px;
@@ -1044,31 +1044,31 @@ body {
 	display: none;
 }
 
-[tooltip-position='left']::before {
+[data-tooltip-position='left']::before {
 	left: 0%;
 	top: 50%;
 	margin-left: -12px;
-	transform: translatey(-50%) rotate(-90deg)
+	transform: translateY(-50%) rotate(-90deg)
 }
 
-[tooltip-position='top']::before {
+[data-tooltip-position='top']::before {
 	left: 50%;
 }
 
-[tooltip-position='buttom']::before {
+[data-tooltip-position='buttom']::before {
 	top: 100%;
 	margin-top: 8px;
-	transform: translateX(-50%) translatey(-100%) rotate(-180deg)
+	transform: translateX(-50%) translateY(-100%) rotate(-180deg)
 }
-[tooltip-position='right']::before {
+[data-tooltip-position='right']::before {
 	left: 99%;
 	top: 50%;
 	margin-left: 1px;
-	transform: translatey(-50%) rotate(90deg)
+	transform: translateY(-50%) rotate(90deg)
 }
 
-[tooltip]::after {
-	content: attr(tooltip);
+[data-tooltip]::after {
+	content: attr(data-tooltip);
 	position: absolute;
 	white-space: pre;
 	left: 50%;
@@ -1088,31 +1088,31 @@ body {
 	display: none;
 }
 
-[tooltip-position='left']::after {
+[data-tooltip-position='left']::after {
 	left: 0%;
 	top: 50%;
 	margin-left: -8px;
 	transform: translateX(-100%) translateY(-50%);
 }
 
-[tooltip-position='top']::after {
+[data-tooltip-position='top']::after {
 	left: 50%;
 }
 
-[tooltip-position='bottom']::after {
+[data-tooltip-position='bottom']::after {
 	top: 100%;
 	margin-top: 8px;
 	transform: translateX(-50%) translateY(0%);
 }
 
-[tooltip-position='right']::after {
+[data-tooltip-position='right']::after {
 	left: 100%;
 	top: 50%;
 	margin-left: 8px;
 	transform: translateX(0%) translateY(-50%);
 }
 
-[tooltip]:hover::after,
-[tooltip]:hover::before {
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
 	display: block;
 }
