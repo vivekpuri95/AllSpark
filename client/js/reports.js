@@ -98,11 +98,11 @@ class DataSource {
 
 		let response = null;
 
-		const paramsLength = parameters.toString().length;
+		const params = parameters.toString();
 
-		const options = { };
-
-		paramsLength <= 62000 ? options.method = 'GET' : options.method = 'POST';
+		const options = {
+			method = params.length <= 62000 ? 'GET' : 'POST'
+		 };
 
 		this.resetError();
 
@@ -117,7 +117,7 @@ class DataSource {
 		}
 
 		try {
-			response = await API.call('reports/engine/report', parameters.toString(), options);
+			response = await API.call('reports/engine/report', params.toString(), options);
 		}
 
 		catch(e) {
