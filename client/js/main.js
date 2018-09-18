@@ -1850,6 +1850,11 @@ class DialogBox {
 		document.querySelector('header').classList.remove('blur');
 
 		this.container.classList.add('hidden');
+
+		if(this.closeCallback) {
+
+			this.closeCallback();
+		}
 	}
 
 	/**
@@ -1874,6 +1879,14 @@ class DialogBox {
 		document.querySelector('header').classList.add('blur');
 
 		this.container.classList.remove('hidden');
+	}
+
+	on(event, callback) {
+
+		if(event != 'close')
+			throw new Page.exception('Only Close event is supported...');
+
+		this.closeCallback = callback;
 	}
 }
 
