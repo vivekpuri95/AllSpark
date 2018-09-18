@@ -1025,13 +1025,14 @@ body {
 	align-items: center;
 	padding: 10px;
 	border-radius: 3px;
-	box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
 	margin-left: 15px;
 	position: absolute;
 	justify-content: center;
 	z-index: 7;
 	height: 50px;
 	color: #fff;
+	letter-spacing: 0.5px;
 }
 .save-pop-up::before {
 	left: -10px;
