@@ -126,26 +126,39 @@ class DataSource {
 		}
 
 		try {
-			response = await API.call('reports/engine/report', params, options);
+			response = await new Promise((resolve, reject) => {
+
+				const channel = page.webWorker.send({
+					action: 'stream',
+					params: params.toString(),
+					options: options,
+				});
+
+				channel.onmessage = event => {
+
+					if(event.data.type == 'error')
+						reject(event.data.error);
+
+					if(event.data.type == 'complete')
+						resolve(event.data.response);
+				};
+			});
 		}
 
 		catch(e) {
 
 			response = {};
 
-			let message = e.message;
-
 			if(typeof e.body == 'object') {
-				message = message.replace('You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use', '');
+
+				const message = e.message.replace('You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use', '');
+
 				this.error(JSON.stringify(message, 0, 4));
-
-				throw e;
 			}
-			else {
 
-				this.error('Click here to retry', {retry: true});
-				throw e;
-			}
+			else this.error('Click here to retry', {retry: true});
+
+			throw e;
 		}
 
 		if(parameters.get('download'))

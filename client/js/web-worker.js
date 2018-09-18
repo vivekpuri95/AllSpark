@@ -2,37 +2,29 @@ importScripts('main.js', 'streams.js')
 
 self.onmessage = async function(e) {
 
-	await IndexedDb.load();
+	try {
 
-	let message = {
-		reference: e.data.reference,
-	};
+		if(e.data.action == 'setup') {
 
-	if(e.data.action == 'loadDataStream')
-		message.response = await dataStreamWorker.load(e.data.request);
+			await IndexedDb.load();
 
-	else
-		throw 'Invalid Web Worker action!';
+			e.ports[0].postMessage({type: 'success'});
 
-	self.postMessage(message);
-}
+			return;
+		}
 
-class DataStreamWorker {
+		else if(e.data.action == 'stream') {
 
-	constructor() {
-		this.streams = new DataStreams();
-	}
+			const stream = new DataStream(e.ports[0], e.data);
 
-	async load(id) {
+			await stream.load();
+		}
 
-		await this.streams.load();
+	} catch(error) {
 
-		const stream = new DataStream(this.streams.get(id));
-
-		await stream.fetch();
-
-		return stream;
+		e.ports[0].postMessage({
+			type: 'error',
+			error,
+		});
 	}
 }
-
-const dataStreamWorker = new DataStreamWorker();

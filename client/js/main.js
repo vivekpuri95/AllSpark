@@ -44,7 +44,10 @@ class Page {
 
 		DialogBox.container = document.querySelector('body');
 
-		await Storage.load();
+		await Promise.all([
+			Storage.load(),
+			Page.webWorker.setup(),
+		]);
 		await Page.loadCredentialsFromURL();
 		await Account.load();
 
@@ -113,8 +116,8 @@ class Page {
 		this.keyboardShortcuts = new Map;
 
 		this.serviceWorker = new Page.serviceWorker(this);
-		this.webWorker = new Page.webWorker(this);
 		this.header = new PageHeader(this);
+		this.webWorker = Page.webWorker.instance;
 
 		if(container)
 			return;
@@ -893,39 +896,39 @@ if(typeof Worker != 'undefined') {
 
 	Page.webWorker = class PageWebWorker extends Worker {
 
+		static async setup(page) {
+
+			Page.webWorker.instance = new Page.webWorker(page);
+
+			await Page.webWorker.instance.setup();
+		}
+
 		constructor(page) {
 
 			super('/js/web-worker.js');
 
 			this.page = page;
-			this.requests = new Map();
-
-			this.onmessage = e => this.message(e);
-			this.onerror = e => this.error(e);
 		}
 
-		send(action, request) {
+		setup() {
 
-			const reference = Math.random();
+			return new Promise((resolve, reject) => {
 
-			return new Promise(resolve => {
+				const channel = this.send({action: 'setup'});
 
-				this.requests.set(reference, response => resolve(response));
-
-				this.postMessage({reference, action, request});
+				channel.onmessage = event => {
+					event.data.type == 'success' ? resolve() : reject();
+				};
 			});
 		}
 
-		message(e) {
+		send(request = {}) {
 
-			if(!this.requests.has(e.data.reference))
-				throw new Page.exception(`Invalid web worker response for reference ${e.data.reference}`, e.data.response);
+			const messageChannel = new MessageChannel();
 
-			this.requests.get(e.data.reference)(e.data.response);
-		}
+			this.postMessage(request, [messageChannel.port2]);
 
-		error(e) {
-			throw new Page.exception(e);
+			return messageChannel.port1;
 		}
 	}
 }
