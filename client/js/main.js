@@ -1669,7 +1669,7 @@ class Format {
 			Format.cachedFormat.push(selectedFormat);
 		}
 
-		Format.customTimeFormat.formatter = selectedFormat.formatter;
+		Format.customTime.formatter = selectedFormat.formatter;
 
 		if(time && typeof time == 'string')
 			time = Date.parse(time);
@@ -1680,7 +1680,7 @@ class Format {
 		if(!time)
 			return '';
 
-		return Format.customTimeFormat.formatter.format(time);
+		return Format.customTime.formatter.format(time);
 	}
 
 	static dateTime(dateTime) {
