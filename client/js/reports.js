@@ -1748,8 +1748,21 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		if(this.type)
-			this.form.type.value = this.type.name;
+
+		if(this.drilldown && this.drilldown.query_id) {
+
+			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
+		}
+		else {
+			this.drilldownQuery.clear();
+		}
+
+		this.form.disabled.value = parseInt(this.disabled) || 0;
+
+		if(!this.type)
+			return this.dialogueBox.show();;
+
+		this.form.type.value = this.type.name;
 
 		this.form.querySelector('.timing-type').classList.add('hidden');
 
@@ -1761,7 +1774,7 @@ class DataSourceColumn {
 				this.form[key].value = this.type.format[key];
 		}
 
-		if(this.type && this.type.name == 'custom') {
+		if(this.type.name == 'custom') {
 
 			this.form.querySelector('.timing-type .result-date').textContent = Format.customTime(Date.now(), this.type.format);
 			this.form.querySelector('.timing-type').classList.remove('hidden');
@@ -1773,16 +1786,6 @@ class DataSourceColumn {
 			if(radio.checked)
 				this.checkedRadio.push(radio);
 		}
-
-		if(this.drilldown && this.drilldown.query_id) {
-
-			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
-		}
-		else {
-			this.drilldownQuery.clear();
-		}
-
-		this.form.disabled.value = parseInt(this.disabled) || 0;
 
 		this.dialogueBox.show();
 	}
@@ -1847,7 +1850,7 @@ class DataSourceColumn {
 
 						<label>
 							<input type="radio" name="weekday" value="long">
-							<span>WWWWW</span>
+							<span>WWWW</span>
 						</label>
 					</fieldset>
 
@@ -2023,6 +2026,7 @@ class DataSourceColumn {
 		const
 			format = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'],
 			resultDate = form.querySelector('.timing-type .result-date');
+
 
 		for(const radio of form.querySelectorAll('.timing-type input')) {
 
@@ -2217,16 +2221,19 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-		const format = this.type.format;
+		for(const element of this.form.elements) {
 
-		for(const element of this.form.elements)
+			if(element.name == 'type')
+				continue;
+
 			this[element.name] = element.value == '' ? null : element.value || null;
+		}
 
 		this.filters = this.columnFilters.json;
 
 		this.type = {
 			name: this.form.type.value,
-			format: format || '',
+			format: this.type.format || '',
 		};
 
 		if(this.interval)
@@ -2266,16 +2273,19 @@ class DataSourceColumn {
 			response,
 			updated = 0;
 
-		const format = this.type.format;
+		for(const element of this.form.elements) {
 
-		for(const element of this.form.elements)
+			if(element.name == 'type')
+				continue;
+
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+		}
 
 		this.filters = this.columnFilters.json;
 
 		this.type = {
 			name: this.form.type.value,
-			format: format || '',
+			format: this.type.format || '',
 		};
 
 		if(this.interval)
