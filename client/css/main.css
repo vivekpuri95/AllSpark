@@ -95,7 +95,7 @@ a:active {
 }
 
 .grey {
-	/* color: #999; */
+	color: #999;
 }
 .grey:hover {
 	background: none !important;
@@ -1018,45 +1018,6 @@ body {
 		.snack-bar .close:hover {
 			color: #fff;
 		}
-.save-pop-up {
-	width: 195px;
-	background: var(--color-accent);
-	display: flex;
-	align-items: center;
-	padding: 10px;
-	border-radius: 3px;
-	box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
-	margin-left: 15px;
-	position: absolute;
-	justify-content: center;
-	z-index: 7;
-	height: 50px;
-	color: #fff;
-	letter-spacing: 0.5px;
-}
-.save-pop-up::before {
-	left: -10px;
-	content: '';
-	border-right: 10px solid var(--color-accent);
-	border-top: 10px solid transparent;
-	border-bottom: 10px solid transparent;
-	position: absolute;
-}
-
-.blink {
-	animation: submit-blink 1s infinite;
-	transition: background var(--transition-duration);
-}
-
-@keyframes submit-blink {
-	from {
-		background: #fff;
-	}
-	to {
-		background: #e5edf9;
-		color: #333;
-	}
-}
 @media (max-width: 750px) {
 
 	.snack-bar-container {

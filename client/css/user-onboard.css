@@ -191,3 +191,47 @@
         .dialog-box-blanket.user-onboarding-welcome .body .skip:hover {
             border: 1px solid #999;
         }
+.save-pop-up {
+    width: 195px;
+    background: var(--color-accent);
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+    margin-left: 15px;
+    position: absolute;
+    justify-content: center;
+    z-index: 7;
+    height: 50px;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+.save-pop-up::before {
+    left: -10px;
+    content: '';
+    border-right: 10px solid var(--color-accent);
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    position: absolute;
+}
+
+.blink {
+    animation: submit-blink 1s infinite;
+    transition: background var(--transition-duration);
+}
+main .toolbar button.blink:hover {
+    color: #333;
+}
+@keyframes submit-blink {
+    from {
+        background: #fff;
+    }
+    15% {
+        background: #dc563e;
+        color: #fff;
+    }
+    to {
+        background: #fff;
+    }
+}

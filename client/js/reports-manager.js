@@ -2034,18 +2034,22 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
 
+		if(document.body.querySelector('.save-pop-up')) {
+
+			document.body.querySelector('.save-pop-up').remove();
+			this.container.querySelector('.toolbar button[type=submit]').classList.remove('blink');
+		}
+
 		if(await Storage.has('newUser')) {
-
-			if(document.body.querySelector('.save-pop-up')) {
-
-				document.body.querySelector('.save-pop-up').remove();
-			}
 
 			document.body.insertAdjacentHTML('beforeend', `
 				<div class="save-pop-up">Click save to finish</div>
 			`);
 
-			const rect = this.container.querySelector('.toolbar button[type=submit]').getBoundingClientRect();
+			const submitButton = this.container.querySelector('.toolbar button[type=submit]');
+			submitButton.classList.add('blink');
+
+			const rect = submitButton.getBoundingClientRect();
 			const popUp = document.body.querySelector('.save-pop-up');
 			popUp.textContent = 'Click save to finish';
 
@@ -2261,11 +2265,6 @@ class VisualizationManager {
 		try {
 
 			await API.call('reports/visualizations/update', parameters, options);
-
-			if(document.body.querySelector('.save-pop-up')) {
-
-				document.body.querySelector('.save-pop-up').remove();
-			}
 
 			await DataSource.load(true);
 
