@@ -1499,8 +1499,11 @@ class DataSourceRow extends Map {
 
 		if(column.type) {
 
-			if(['date','month','year','timeelapsed','time','datetime','custom'].includes(column.type.name))
-				value = Format.customTimeFormat(value, column.type.format);
+			if(['date', 'month', 'year', 'time', 'datetime', 'custom'].includes(column.type.name))
+				value = Format.customTime(value, column.type.format);
+
+			else if(column.type.name == 'timeelapsed')
+				value = Format.ago(value);
 
 			else if(column.type.name == 'number')
 				value = Format.number(value);
@@ -1750,15 +1753,17 @@ class DataSourceColumn {
 
 		this.form.querySelector('.timing-type').classList.add('hidden');
 
-		if(this.type && this.type.name == 'custom') {
+		if(this.type.format) {
 
 			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
 
 			for(const key in this.type.format)
 				this.form[key].value = this.type.format[key];
+		}
 
+		if(this.type && this.type.name == 'custom') {
 
-			this.form.querySelector('.timing-type .result-date').textContent = Format.customTimeFormat(Date.now(), this.type.format);
+			this.form.querySelector('.timing-type .result-date').textContent = Format.customTime(Date.now(), this.type.format);
 			this.form.querySelector('.timing-type').classList.remove('hidden');
 		}
 
@@ -1832,17 +1837,17 @@ class DataSourceColumn {
 
 						<label>
 							<input type="radio" name="weekday" value="narrow">
-							<span>M</span>
+							<span>W</span>
 						</label>
 
 						<label>
 							<input type="radio" name="weekday" value="short">
-							<span>Mon</span>
+							<span>WWW</span>
 						</label>
 
 						<label>
 							<input type="radio" name="weekday" value="long">
-							<span>Monday</span>
+							<span>WWWWW</span>
 						</label>
 					</fieldset>
 
@@ -1867,27 +1872,27 @@ class DataSourceColumn {
 
 						<label>
 							<input type="radio" name="month" value="numeric">
-							<span>M</span>
+							<span>1</span>
 						</label>
 
 						<label>
 							<input type="radio" name="month" value="2-digit">
-							<span>MM</span>
+							<span>01</span>
 						</label>
 
 						<label>
 							<input type="radio" name="month" value="narrow">
-							<span>J</span>
+							<span>M</span>
 						</label>
 
 						<label>
 							<input type="radio" name="month" value="short">
-							<span>Jan</span>
+							<span>MMM</span>
 						</label>
 
 						<label>
 							<input type="radio" name="month" value="long">
-							<span>January</span>
+							<span>MMMM</span>
 						</label>
 					</fieldset>
 
@@ -2052,8 +2057,8 @@ class DataSourceColumn {
 				}
 
 				this.interval = setInterval(() => {
-					resultDate.textContent = Format.customTimeFormat(Date.now(), this.type.format);
-				}, 100);
+					resultDate.textContent = Format.customTime(Date.now(), this.type.format);
+				}, 500);
 			});
 		};
 
@@ -2112,7 +2117,7 @@ class DataSourceColumn {
 				return;
 			}
 
-			resultDate.textContent = Format.customTimeFormat(Date.now(), this.type.format);
+			resultDate.textContent = Format.customTime(Date.now(), this.type.format, form.type.value);
 
 			for(const key of format) {
 
@@ -3595,7 +3600,7 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		return response.filter(r => new Date(r.get(timingColumn.key)).getDay() == this.value)
@@ -3624,7 +3629,7 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn || !response[0].get(timingColumn.key))
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		const result = new Map;
@@ -3715,7 +3720,7 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		const
@@ -3776,7 +3781,7 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		const

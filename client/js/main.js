@@ -1643,14 +1643,38 @@ class Format {
 		return Format.time.formatter.format(time);
 	}
 
-	static customTimeFormat(time, format) {
+	static customTime(time, format) {
 
-		Format.customTimeFormat.formatter = new Intl.DateTimeFormat(undefined, format);
+		if(!format)
+			return 'No Format Selected';
 
-		if(typeof time == 'string')
+		if(!Format.cachedFormat)
+			Format.cachedFormat = [];
+
+		let selectedFormat;
+
+		for(const data of Format.cachedFormat) {
+
+			if(JSON.stringify(data.format) == JSON.stringify(format))
+				selectedFormat = data;
+		}
+
+		if(!selectedFormat) {
+
+			selectedFormat = {
+				format: format,
+				formatter: new Intl.DateTimeFormat(undefined, format),
+			};
+
+			Format.cachedFormat.push(selectedFormat);
+		}
+
+		Format.customTimeFormat.formatter = selectedFormat.formatter;
+
+		if(time && typeof time == 'string')
 			time = Date.parse(time);
 
-		if(typeof time == 'object' && time)
+		if(time && typeof time == 'object')
 			time = time.getTime();
 
 		if(!time)
