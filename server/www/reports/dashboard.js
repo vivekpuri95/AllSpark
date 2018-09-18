@@ -36,7 +36,11 @@ exports.delete = class extends API {
 		const mandatoryData = ["id"];
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 
-		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
+		const [dashboard] = await this.mysql.query("select * from tb_visualization_dashboard where id = ?", [this.request.body.id]);
+
+		this.assert(dashboard && dashboard.dashboard_id, "Visualization Dashboard not found, incorrect id");
+
+		const authResponse = await auth.dashboard({dashboard: dashboard.dashboard_id, userObj: this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 
