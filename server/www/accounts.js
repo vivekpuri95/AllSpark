@@ -117,12 +117,12 @@ exports.get = class extends API {
 
 exports.insert = class extends API {
 
-	async insert({name, url, icon, logo, auth_api = null}) {
+	async insert({name, url, icon = null, logo = null, auth_api = null}) {
 
 		this.user.privilege.needs('superadmin');
 
 		const result = await this.mysql.query(
-			`INSERT INTO tb_accounts SET ?`,
+			'INSERT INTO tb_accounts SET ?',
 			{ name, url, icon, logo, auth_api },
 			'write'
 		);
@@ -132,13 +132,13 @@ exports.insert = class extends API {
 		const [category, role] = await Promise.all([
 
 			this.mysql.query(
-				`INSERT INTO tb_categories (account_id, name, slug, is_admin) VALUES(?, "Main", "main", 1)`,
+				'INSERT INTO tb_categories (account_id, name, slug, is_admin) VALUES(?, "Main", "main", 1)',
 				[result.insertId],
 				'write'
 			),
 
 			this.mysql.query(
-				`INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Main", 1)`,
+				'INSERT INTO tb_roles (account_id, name, is_admin) VALUES (?, "Main", 1)',
 				[result.insertId],
 				'write'
 			)
@@ -156,10 +156,10 @@ exports.insert = class extends API {
 
 exports.update = class extends API {
 
-	async update({account_id, name, url, icon, logo, auth_api = null}) {
+	async update({account_id, name, url, icon = null, logo = null, auth_api = null}) {
 
 		const result = await this.mysql.query(
-			`UPDATE tb_accounts SET ? WHERE account_id = ?`,
+			'UPDATE tb_accounts SET ? WHERE account_id = ?',
 			[{ name, url, icon, logo, auth_api }, account_id],
 			'write'
 		);
@@ -174,7 +174,7 @@ exports.delete = class extends API {
 	async delete({account_id}) {
 
 		const result = await this.mysql.query(
-			`UPDATE tb_accounts SET status = 0 WHERE account_id = ?`,
+			'UPDATE tb_accounts SET status = 0 WHERE account_id = ?',
 			[account_id],
 			'write'
 		);
