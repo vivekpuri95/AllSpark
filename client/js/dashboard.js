@@ -337,7 +337,7 @@ Page.class = class Dashboards extends Page {
 
 				for (const parent of parents) {
 
-					if (parents.has(0) || parents.has(parent)) {
+					if (parents.has(0) || parents.has(dashboardId)) {
 
 						this.list.delete(parent);
 						moved = false;
