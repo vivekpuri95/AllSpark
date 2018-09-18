@@ -315,7 +315,7 @@ Page.class = class Dashboards extends Page {
 
 	cycle() {
 
-		let simplifiedTreeMapping = new Map;
+		const simplifiedTreeMapping = new Map;
 
 		for (const node of this.list.keys()) {
 
