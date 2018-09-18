@@ -1,4 +1,4 @@
-Page.class = class Connections extends Page {
+class Connections extends Page {
 
 	constructor() {
 
@@ -51,11 +51,6 @@ Page.class = class Connections extends Page {
 		await Sections.show('list');
 
 		history.pushState(null, '', `/connections-manager`);
-
-		if((await Storage.has('newUser')) && document.body.querySelector('.save-pop-up')) {
-
-			document.body.querySelector('.save-pop-up').remove();
-		}
 	}
 
 	async load() {
@@ -186,6 +181,8 @@ Page.class = class Connections extends Page {
 		this.connectionsContainer.querySelector('.search-connections input').focus();
 	}
 }
+
+Page.class = Connections;
 
 class DataConnections extends Set {
 
@@ -562,44 +559,6 @@ DataConnection.types.set('mysql', class {
 				<input autocomplete="off" type="text" name="db" value="${connections.db || ''}">
 			</label>
 		`;
-
-		if(await Storage.has('newUser')) {
-
-			try {
-
-				connections = Object.assign(connections, JSON.parse(onboard));
-			}
-			catch(e) {
-			}
-
-			const submitButton = connections.container.querySelector('#form .toolbar button[type=submit]');
-
-			submitButton.classList.add('blink');
-			const rect = submitButton.getBoundingClientRect();
-
-			if(!document.body.querySelector('.save-pop-up')) {
-
-				document.body.insertAdjacentHTML('beforeend', `
-					<div class="save-pop-up">Click save to continue</div>
-				`);
-			}
-
-			const popUp = document.body.querySelector('.save-pop-up');
-
-			popUp.style.top = `${rect.top - 10}px`;
-			popUp.style.left = `${rect.right}px`;
-
-			for(const key in connections.connection) {
-
-				if(connections.form.elements[key])
-					connections.form.elements[key].value = connections.connection[key];
-			}
-
-			new SnackBar({
-				message: 'We\'ve added a default connection for you',
-				subtitle: 'Click save to continue'
-			});
-		}
 
 		connections.form.password.on('click', () => {
 			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';

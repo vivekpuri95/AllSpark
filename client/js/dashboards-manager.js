@@ -1,4 +1,4 @@
-Page.class = class DashboardManager extends Page {
+class DashboardManager extends Page {
 
 	constructor() {
 
@@ -116,6 +116,8 @@ Page.class = class DashboardManager extends Page {
 		this.parentDashboardMultiselect.render();
 	}
 }
+
+Page.class = DashboardManager;
 
 class DashboardsDashboard {
 

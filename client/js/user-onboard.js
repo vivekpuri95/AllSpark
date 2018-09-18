@@ -42,6 +42,8 @@ class UserOnboard {
 			this.progress = stageObj.progress;
 		}
 
+		[this.nextStage] = this.stages.filter(x => !x.completed);
+
 		if(document.querySelector('.setup-stages')) {
 
 			document.querySelector('.setup-stages').remove();
@@ -59,16 +61,14 @@ class UserOnboard {
 
 	get container() {
 
-		const [nextStage] = this.stages.filter(x => !x.completed);
+		if(this.stateChanged && this.nextStage) {
 
-		if(this.stateChanged && nextStage) {
-
-			window.location = nextStage.url;
+			window.location = this.nextStage.url;
 		}
 
-		if(nextStage) {
+		if(this.nextStage) {
 
-			nextStage.setActive();
+			this.nextStage.setActive();
 		}
 
 		const container = this.containerElement = document.createElement('div');
@@ -156,6 +156,8 @@ class UserOnboardStage {
 
 		this.stages = onboard.stages;
 		this.progress = onboard.progress;
+		this.page = onboard.page;
+		this.onboard = onboard.onboard;
 	}
 
 	get container() {
@@ -181,7 +183,10 @@ class UserOnboardStage {
 		container.on('click', () => {
 
 			window.location = this.url;
+			this.autoFillForm();
 		});
+
+		this.autoFillForm();
 
 		return container;
 	}
@@ -209,6 +214,18 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 		this.title = 'Add Connection';
 		this.subtitle = 'Connect to an external datasource';
+
+		try {
+
+			if(this.page instanceof Connections) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {
+
+			this.currentStage = false;
+		}
 	}
 
 	get url() {
@@ -231,6 +248,55 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 		this.progress = this.progress + 10;
 	}
 
+	autoFillForm() {
+		
+		if(!this.currentStage) {
+
+			return;
+		}
+
+		const
+			submitButton = this.page.container.querySelector('#form .toolbar button[type=submit]'),
+			connectionsForm = this.page.container.querySelector('#connections-form');
+
+		const rect = submitButton.getBoundingClientRect();
+
+		this.page.container.querySelector('section#form .toolbar #back').on('click', () => {
+
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+			}
+
+			submitButton.classList.remove('blink');
+		});
+
+		if(!document.body.querySelector('.save-pop-up') && this.page.container.querySelector('section#form').classList.contains('show')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue</div>
+			`);
+
+			const popUp = document.body.querySelector('.save-pop-up');
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
+
+			submitButton.classList.add('blink');
+		}
+
+		for(const key in this.onboard.connection) {
+
+			if(connectionsForm.elements[key])
+				connectionsForm.elements[key].value = this.onboard.connection[key];
+		}
+
+		new SnackBar({
+			message: 'We\'ve added a default connection for you',
+			subtitle: 'Click save to continue'
+		});
+	}
+
 });
 
 UserOnboard.stages.add(class AddReport extends UserOnboardStage {
@@ -241,6 +307,18 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 		this.title = 'Add Report';
 		this.subtitle = 'Define a query to extract data';
+
+		try {
+
+			if(this.page instanceof ReportsManger) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {
+
+			this.currentStage = false;
+		}
 	}
 
 	get url() {
@@ -263,6 +341,11 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		this.progress = this.progress + 40;
 	}
 
+	autoFillForm() {
+
+		const a = 5;
+	}
+
 });
 
 UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
@@ -273,6 +356,18 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
 		this.title = 'Add Dashboard';
 		this.subtitle = 'At-a-glance view of visualizations';
+
+		try {
+
+			if(this.page instanceof DashboardManager) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {
+
+			this.currentStage = false;
+		}
 	}
 
 	get url() {
@@ -294,6 +389,11 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
 		this.completed = true;
 		this.progress = this.progress + 25;
+	}
+
+	autoFillForm() {
+
+		const a = 5;
 	}
 
 });
@@ -332,6 +432,11 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 		this.completed = true;
 		this.progress = this.progress + 25;
+	}
+
+	autoFillForm() {
+
+		const a = 5;
 	}
 
 });
