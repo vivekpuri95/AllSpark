@@ -1750,8 +1750,6 @@ class DataSourceColumn {
 
 		this.form.querySelector('.timing-type').classList.add('hidden');
 
-		this.timingFormat = this.type.format;
-
 		if(this.type && this.type.name == 'custom') {
 
 			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
@@ -1760,8 +1758,15 @@ class DataSourceColumn {
 				this.form[key].value = this.type.format[key];
 
 
-			this.form.querySelector('.timing-type .result-date').textContent = Format.customTimeFormat(Date.now(), this.timingFormat);
+			this.form.querySelector('.timing-type .result-date').textContent = Format.customTimeFormat(Date.now(), this.type.format);
 			this.form.querySelector('.timing-type').classList.remove('hidden');
+		}
+
+		this.checkedRadio = [];
+
+		for(const radio of this.form.querySelectorAll('.timing-type input')) {
+			if(radio.checked)
+				this.checkedRadio.push(radio);
 		}
 
 		if(this.drilldown && this.drilldown.query_id) {
@@ -2010,43 +2015,44 @@ class DataSourceColumn {
 			</footer>
 		`;
 
-		let checkedRadio = [];
-		const format = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'];
-		const resultDate = form.querySelector('.timing-type .result-date');
+		const
+			format = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'],
+			resultDate = form.querySelector('.timing-type .result-date');
 
 		for(const radio of form.querySelectorAll('.timing-type input')) {
 
 			radio.on('click', () => {
 
-				const tempArray = checkedRadio;
-
-				for(const [index, _radio] of tempArray.entries()) {
+				for(const [index, _radio] of this.checkedRadio.entries()) {
 					if((_radio.name == radio.name) && (_radio.value == radio.value)) {
 						radio.checked = false;
-						checkedRadio.splice(index, 1);
+						this.checkedRadio.splice(index, 1);
+					}
+					else if(_radio.name == radio.name) {
+						this.checkedRadio.splice(index, 1);
 					}
 				};
 
 				if(radio.checked)
-					checkedRadio.push(radio);
+					this.checkedRadio.push(radio);
 
-				this.timingFormat = {};
+				this.type.format = {};
 
 				format.map(f => {
 					if(form[f].value)
-						this.timingFormat[f] = form[f].value;
+						this.type.format[f] = form[f].value;
 				});
 
 				if(this.interval)
 					clearInterval(this.interval);
 
-				if(!this.timingFormat) {
+				if(!this.type.format) {
 					resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
 					return;
 				}
 
 				this.interval = setInterval(() => {
-					resultDate.textContent = Format.customTimeFormat(Date.now(), this.timingFormat);
+					resultDate.textContent = Format.customTimeFormat(Date.now(), this.type.format);
 				}, 100);
 			});
 		};
@@ -2057,28 +2063,28 @@ class DataSourceColumn {
 
 			if(form.type.value == 'date') {
 
-				this.timingFormat = {
+				this.type.format = {
 					day: 'numeric',
 				};
 			}
 
 			else if(form.type.value == 'month') {
 
-				this.timingFormat = {
+				this.type.format = {
 					month: 'long',
 				};
 			}
 
 			else if(form.type.value == 'year') {
 
-				this.timingFormat = {
+				this.type.format = {
 					year: 'numeric',
 				};
 			}
 
 			else if(form.type.value == 'time') {
 
-				this.timingFormat = {
+				this.type.format = {
 					hour: 'numeric',
 					minute: 'numeric',
 					second: 'numeric',
@@ -2087,7 +2093,7 @@ class DataSourceColumn {
 
 			else if(form.type.value == 'datetime') {
 
-				this.timingFormat = {
+				this.type.format = {
 					year: 'numeric',
 					month: 'short',
 					day: 'numeric',
@@ -2101,17 +2107,17 @@ class DataSourceColumn {
 				form.querySelector('.timing-type').classList.toggle('hidden', form.type.value != 'custom');
 			}
 
-			if(!this.timingFormat) {
+			if(!this.type.format) {
 				resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
 				return;
 			}
 
-			resultDate.textContent = Format.customTimeFormat(Date.now(), this.timingFormat);
+			resultDate.textContent = Format.customTimeFormat(Date.now(), this.type.format);
 
 			for(const key of format) {
 
-				if(this.timingFormat[key]) {
-					form[key].value = this.timingFormat[key];
+				if(this.type.format[key]) {
+					form[key].value = this.type.format[key];
 				}
 				else if(form.querySelector(`input[name=${key}]:checked`)) {
 					form.querySelector(`input[name=${key}]:checked`).checked = false;
@@ -2206,6 +2212,8 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
+		const format = this.type.format;
+
 		for(const element of this.form.elements)
 			this[element.name] = element.value == '' ? null : element.value || null;
 
@@ -2213,7 +2221,7 @@ class DataSourceColumn {
 
 		this.type = {
 			name: this.form.type.value,
-			format: this.timingFormat ? this.timingFormat : '',
+			format: format || '',
 		};
 
 		if(this.interval)
@@ -2253,6 +2261,8 @@ class DataSourceColumn {
 			response,
 			updated = 0;
 
+		const format = this.type.format;
+
 		for(const element of this.form.elements)
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 
@@ -2260,7 +2270,7 @@ class DataSourceColumn {
 
 		this.type = {
 			name: this.form.type.value,
-			format: this.timingFormat ? this.timingFormat : '',
+			format: format || '',
 		};
 
 		if(this.interval)
