@@ -1878,7 +1878,7 @@ class DataSourceColumn {
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
 
-		if(!this.editable) {
+		if(!this.source.editable) {
 			let saveData = form.querySelector('footer .save');
 			saveData.classList.add('disabled');
 			saveData.setAttribute('tooltip', 'You have no access to save this');
@@ -1904,7 +1904,7 @@ class DataSourceColumn {
 				form.parentElement.classList.add('hidden');
 		});
 
-		if(this.editable)
+		if(this.source.editable)
 			form.querySelector('.save').on('click', () =>  this.save())
 
 		return form;
