@@ -22,29 +22,8 @@ Page.class = class Connections extends Page {
 
 		if(what[what.length - 2] == 'add') {
 
-			if(await Storage.get('newUser')) {
-
-				try {
-					onboard = JSON.parse(onboard);
-					onboard.connection.container =  this.container;
-				}
-				catch(e) {
-					onboard = {};
-				}
-
-				DataConnection.types.get(what[what.length - 1]).render(onboard.connection);
-			}
-			else {
-
-				DataConnection.types.get(what[what.length - 1]).render(this);
-			}
-
+			DataConnection.types.get(what[what.length - 1]).render(this);
 			this.dataConnections.get(what[what.length - 1]).addConnection();
-
-			new SnackBar({
-				message: 'We\'ve added a default connection for you',
-				subtitle: 'Click save to continue'
-			});
 
 			return Sections.show('form');
 
@@ -72,6 +51,11 @@ Page.class = class Connections extends Page {
 		await Sections.show('list');
 
 		history.pushState(null, '', `/connections-manager`);
+
+		if((await Storage.has('newUser')) && document.body.querySelector('.save-pop-up')) {
+
+			document.body.querySelector('.save-pop-up').remove();
+		}
 	}
 
 	async load() {
@@ -581,10 +565,16 @@ DataConnection.types.set('mysql', class {
 
 		if(await Storage.has('newUser')) {
 
+			try {
+
+				connections = Object.assign(connections, JSON.parse(onboard));
+			}
+			catch(e) {
+			}
+
 			const submitButton = connections.container.querySelector('#form .toolbar button[type=submit]');
 
 			submitButton.classList.add('blink');
-
 			const rect = submitButton.getBoundingClientRect();
 
 			if(!document.body.querySelector('.save-pop-up')) {
@@ -597,13 +587,18 @@ DataConnection.types.set('mysql', class {
 			const popUp = document.body.querySelector('.save-pop-up');
 
 			popUp.style.top = `${rect.top - 10}px`;
-			popUp.style.left = `${rect.right}px`; 
+			popUp.style.left = `${rect.right}px`;
 
-			for(const key in connections) {
+			for(const key in connections.connection) {
 
 				if(connections.form.elements[key])
-					connections.form.elements[key].value = connections[key];
+					connections.form.elements[key].value = connections.connection[key];
 			}
+
+			new SnackBar({
+				message: 'We\'ve added a default connection for you',
+				subtitle: 'Click save to continue'
+			});
 		}
 
 		connections.form.password.on('click', () => {

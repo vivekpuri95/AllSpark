@@ -206,6 +206,11 @@ class ReportsMangerStage {
 
 			if(this.disabled)
 				return;
+			
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+			}
 
 			this.select();
 
@@ -1667,20 +1672,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			this.container.querySelector('#add-visualization-picker').classList.remove('hidden');
 			this.container.querySelector('#visualization-list').classList.add('hidden');
 
-			const rect = this.container.querySelector('#add-visualization-form label:not(.grey)').getBoundingClientRect();
-
-			if(!document.body.querySelector('.save-pop-up')) {
-
-				document.body.insertAdjacentHTML('beforeend', `
-					<div class="save-pop-up">Select line visualization</div>
-				`);
-			}
-
-			const popUp = document.body.querySelector('.save-pop-up');
-			popUp.textContent = 'Select line visualization';
-
-			popUp.style.top = `${rect.top + 30}px`;
-			popUp.style.left = `${rect.right - 30}px`;
+			this.savePopUp();
 		});
 
 		this.container.querySelector('#visualization-picker-back').on('click', () => {
@@ -1689,6 +1681,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			this.container.querySelector('#visualization-list').classList.remove('hidden');
 
 			this.page.preview.hidden = false;
+			this.savePopUp();
 		});
 
 		let newUser;
@@ -1751,6 +1744,49 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		if(!MetaData.visualizations.size)
 			this.form.innerHTML = `<div class="NA">No visualizations found</div>`;
+	}
+
+	savePopUp() {
+
+		if(document.body.querySelector('.save-pop-up')) {
+
+			document.body.querySelector('.save-pop-up').remove();
+		}
+
+		if(this.container.querySelector('#visualization-list').classList.contains('hidden')) {
+
+			const rect = this.container.querySelector('#add-visualization-form label:not(.grey)').getBoundingClientRect();
+
+			this.container.querySelector('#add-visualization-form label:not(.grey)').insertAdjacentHTML('beforeend', `
+					<div class="save-pop-up">Select line visualization</div>
+				`);
+
+			const popUp = document.body.querySelector('.save-pop-up');
+			popUp.textContent = 'Select line visualization';
+
+			this.container.querySelector('#add-visualization-form label:not(.grey)').style.position = 'relative';
+			popUp.style.top = `${rect.top - 330}px`;
+			popUp.style.left = `${rect.right - 30}px`;
+
+		}
+		else {
+
+			const addButton = this.container.querySelector('#visualization-list .toolbar button');
+			addButton.classList.add('blink');
+
+			const rect = addButton.getBoundingClientRect();
+
+			document.body.insertAdjacentHTML('beforeend', `
+					<div class="save-pop-up">Click to pick visualization</div>
+				`);
+
+			const popUp = document.body.querySelector('.save-pop-up');
+			popUp.textContent = 'Click to pick visualization';
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
+		}
+
 	}
 
 	get url() {
@@ -1911,24 +1947,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		if(await Storage.has('newUser')) {
 
-			const addButton = this.container.querySelector('#visualization-list .toolbar button');
-
-			addButton.classList.add('blink');
-
-			const rect = addButton.getBoundingClientRect();
-
-			if(!document.body.querySelector('.save-pop-up')) {
-
-				document.body.insertAdjacentHTML('beforeend', `
-					<div class="save-pop-up">Click to pick visualization</div>
-				`);
-			}
-
-			const popUp = document.body.querySelector('.save-pop-up');
-			popUp.textContent = 'Click to pick visualization';
-
-			popUp.style.top = `${rect.top - 10}px`;
-			popUp.style.left = `${rect.right}px`;
+			this.savePopUp();
 		}
 
 		this.page.preview.position = 'right';
@@ -2017,12 +2036,14 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		if(await Storage.has('newUser')) {
 
-			if(!document.body.querySelector('.save-pop-up')) {
+			if(document.body.querySelector('.save-pop-up')) {
 
-				document.body.insertAdjacentHTML('beforeend', `
-					<div class="save-pop-up">Click save to finish</div>
-				`);
+				document.body.querySelector('.save-pop-up').remove();
 			}
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to finish</div>
+			`);
 
 			const rect = this.container.querySelector('.toolbar button[type=submit]').getBoundingClientRect();
 			const popUp = document.body.querySelector('.save-pop-up');
@@ -2240,6 +2261,11 @@ class VisualizationManager {
 		try {
 
 			await API.call('reports/visualizations/update', parameters, options);
+
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+			}
 
 			await DataSource.load(true);
 

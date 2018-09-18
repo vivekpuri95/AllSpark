@@ -57,6 +57,11 @@ Page.class = class DashboardManager extends Page {
 		await Sections.show('list');
 
 		history.pushState(null, '', `/dashboards-manager/`);
+
+		if((await Storage.has('newUser')) && document.body.querySelector('.save-pop-up')) {
+
+			document.body.querySelector('.save-pop-up').remove();
+		}
 	}
 
 	async load() {
@@ -176,25 +181,30 @@ class DashboardsDashboard {
 				message: 'We\'ve added a default dashboard for you',
 				subtitle: 'Click save to continue'
 			});
-		}
 
-		await Sections.show('form');
+			await Sections.show('form');
 
-		DashboardsDashboard.form.name.focus();
+			DashboardsDashboard.form.name.focus();
 
-		const rect = this.container.querySelector('#form .toolbar button[type=submit]').getBoundingClientRect();
+			const rect = this.container.querySelector('#form .toolbar button[type=submit]').getBoundingClientRect();
 
-		if(!document.body.querySelector('.save-pop-up')) {
+			if(!document.body.querySelector('.save-pop-up')) {
 
-			document.body.insertAdjacentHTML('beforeend', `
+				document.body.insertAdjacentHTML('beforeend', `
 				<div class="save-pop-up">Click save to continue</div>
 			`);
+			}
+
+			const popUp = document.body.querySelector('.save-pop-up');
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
 		}
+		else  {
 
-		const popUp = document.body.querySelector('.save-pop-up');
-
-		popUp.style.top = `${rect.top - 10}px`;
-		popUp.style.left = `${rect.right}px`;
+			await Sections.show('form');
+			DashboardsDashboard.form.name.focus();
+		}
 	}
 
 	static async insert(e) {

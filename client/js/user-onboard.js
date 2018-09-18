@@ -15,6 +15,16 @@ class UserOnboard {
 			UserOnboard.instance = new UserOnboard(stateChanged);
 
 		UserOnboard.instance.stateChanged = stateChanged;
+
+		try {
+
+			UserOnboard.instance.onboard = JSON.parse(onboard);
+		}
+		catch(e) {
+
+			UserOnboard.instance.onboard = {};
+		}
+		
 		await UserOnboard.instance.load();
 	}
 
@@ -64,17 +74,9 @@ class UserOnboard {
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('setup-stages');
 
-		try {
-			onboard = JSON.parse(onboard);
-		}
-		catch(e) {
-
-			onboard = {};
-		}
-
 		container.innerHTML = `
 			<div class="wrapper"></div>
-			<a href="${onboard.demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
+			<a href="${this.onboard.demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
 		`;
 
 		const wrapper = container.querySelector('.wrapper');
@@ -118,7 +120,7 @@ class UserOnboard {
 
 			<h2>Let's Get <strong>You Started!</strong></h2>
 
-			<a href="${onboard.demo_url}" target="_blank" class="view-demo">
+			<a href="${this.onboard.demo_url}" target="_blank" class="view-demo">
 				<span class="figure"><img src="/images/onboarding/demo.svg"></span>
 				<span>View Demo</span>
 				<span class="NA">Check out an established demo with various visualisations</span>
