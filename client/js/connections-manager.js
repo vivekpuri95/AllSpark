@@ -587,14 +587,12 @@ DataConnection.types.set('mysql', class {
 
 			const rect = submitButton.getBoundingClientRect();
 
-			if(document.body.querySelector('.save-pop-up')) {
+			if(!document.body.querySelector('.save-pop-up')) {
 
-				document.body.querySelector('.save-pop-up').remove();
+				document.body.insertAdjacentHTML('beforeend', `
+					<div class="save-pop-up">Click save to continue</div>
+				`);
 			}
-
-			document.body.insertAdjacentHTML('beforeend', `
-				<div class="save-pop-up">Click save to continue...</div>
-			`);
 
 			const popUp = document.body.querySelector('.save-pop-up');
 

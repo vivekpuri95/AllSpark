@@ -184,14 +184,12 @@ class DashboardsDashboard {
 
 		const rect = this.container.querySelector('#form .toolbar button[type=submit]').getBoundingClientRect();
 
-		if(document.body.querySelector('.save-pop-up')) {
+		if(!document.body.querySelector('.save-pop-up')) {
 
-			document.body.querySelector('.save-pop-up').remove();
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue</div>
+			`);
 		}
-
-		document.body.insertAdjacentHTML('beforeend', `
-			<div class="save-pop-up">Click save to continue...</div>
-		`);
 
 		const popUp = document.body.querySelector('.save-pop-up');
 
