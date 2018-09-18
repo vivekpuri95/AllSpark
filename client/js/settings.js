@@ -372,11 +372,11 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 
 		container.innerHTML = `
 			<h1>Executing Reports</h1>
-						
+
 			<header class="toolbar block">
 				<input type="checkbox" name="auto-refresh"> Auto Refresh
 			</header>
-			
+
 			<table class="block">
 				<thead>
 					<tr>
@@ -577,8 +577,8 @@ class SettingsAccount {
 
 		page.form.querySelector('h1').textContent = 'Add New Account';
 
-		page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
-		page.form.on('submit', SettingsAccount.submitEventListener = e => SettingsAccount.insert(e, page));
+		SettingsAccount.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+		SettingsAccount.form.on('submit', SettingsAccount.submitEventListener = e => SettingsAccount.insert(e, page));
 
 		SettingsAccount.form.name.focus();
 	}

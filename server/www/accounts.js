@@ -117,21 +117,13 @@ exports.get = class extends API {
 
 exports.insert = class extends API {
 
-	async insert() {
+	async insert({name, url, icon, logo, auth_api = null}) {
 
-		const
-			payload = {},
-			account_cols = ['name', 'url', 'icon', 'logo'];
-
-		for (const values in this.request.body) {
-
-			if(account_cols.includes(values))
-				payload[values] = this.request.body[values];
-		}
+		this.user.privilege.needs('superadmin');
 
 		const result = await this.mysql.query(
 			`INSERT INTO tb_accounts SET ?`,
-			payload,
+			{ name, url, icon, logo, auth_api },
 			'write'
 		);
 
@@ -153,6 +145,7 @@ exports.insert = class extends API {
 		]);
 
 		await account.loadAccounts();
+
 		return {
 			account_id: result.insertId,
 			category_id: category.insertId,
@@ -163,19 +156,11 @@ exports.insert = class extends API {
 
 exports.update = class extends API {
 
-	async update() {
-
-		const setParams = {...this.request.body};
-
-		delete setParams.account_id;
-		delete setParams.token;
-		delete setParams.refresh_token;
-
-		const values = [setParams, this.request.body.account_id];
+	async update({account_id, name, url, icon, logo, auth_api = null}) {
 
 		const result = await this.mysql.query(
 			`UPDATE tb_accounts SET ? WHERE account_id = ?`,
-			values,
+			[{ name, url, icon, logo, auth_api }, account_id],
 			'write'
 		);
 
@@ -186,17 +171,17 @@ exports.update = class extends API {
 
 exports.delete = class extends API {
 
-	async delete() {
+	async delete({account_id}) {
 
 		const result = await this.mysql.query(
 			`UPDATE tb_accounts SET status = 0 WHERE account_id = ?`,
-			this.request.body.account_id,
+			[account_id],
 			'write'
 		);
 
 		await this.mysql.query(
 			"update tb_settings set status = 0 where account_id = ?",
-			[this.request.body.account_id],
+			[account_id],
 			"write"
 		);
 
