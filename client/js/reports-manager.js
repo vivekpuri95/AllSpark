@@ -2030,20 +2030,23 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		[this.visualization] = this.report.visualizations.filter(v => v.visualization_id == window.location.pathname.split('/').pop());
 
-		if(document.body.querySelector('.save-pop-up')) {
+		if(await Storage.has('newUser')) {
 
-			document.body.querySelector('.save-pop-up').remove();
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+			}
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to finish.</div>
+			`);
+
+			const rect = this.container.querySelector('.toolbar button[type=submit]').getBoundingClientRect();
+			const popUp = document.body.querySelector('.save-pop-up');
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
 		}
-
-		document.body.insertAdjacentHTML('beforeend', `
-			<div class="save-pop-up">Click save to continue...</div>
-		`);
-
-		const rect = this.container.querySelector('.toolbar button[type=submit]').getBoundingClientRect();
-		const popUp = document.body.querySelector('.save-pop-up');
-
-		popUp.style.top = `${rect.top - 10}px`;
-		popUp.style.left = `${rect.right}px`;
 
 		if(!this.visualization)
 			return;

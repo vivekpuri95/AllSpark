@@ -1020,7 +1020,7 @@ body {
 		}
 .save-pop-up {
 	width: 200px;
-	background: #ddd;
+	background: var(--color-accent);
 	display: flex;
 	align-items: center;
 	padding: 10px;
@@ -1031,11 +1031,12 @@ body {
 	top: calc(96px - 10px);
 	z-index: 7;
 	height: 50px;
+	color: #fff;
 }
 .save-pop-up::before {
 	left: -10px;
 	content: '';
-	border-right: 10px solid #ddd;
+	border-right: 10px solid var(--color-accent);
 	border-top: 10px solid transparent;
 	border-bottom: 10px solid transparent;
 	position: absolute;
