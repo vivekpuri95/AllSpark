@@ -1772,13 +1772,22 @@ class DataSourceColumn {
 
 			for(const key in this.type.format)
 				this.form[key].value = this.type.format[key];
-		}
+		};
 
 		if(this.type.name == 'custom') {
 
-			this.form.querySelector('.timing-type .result-date').textContent = Format.customTime(Date.now(), this.type.format);
+			this.form.querySelector('.timing-type .result-date').innerHTML = '<div class="NA">Example:</div> ' + Format.customTime(Date.now(), this.type.format);
 			this.form.querySelector('.timing-type').classList.remove('hidden');
-		}
+
+			if(this.interval)
+				clearInterval(this.interval);
+
+			this.interval = setInterval(() => {
+				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+			}, 1000);
+		};
+
+		const resultDate = this.form.querySelector('.timing-type .result-date');
 
 		this.checkedRadio = [];
 
@@ -2027,7 +2036,6 @@ class DataSourceColumn {
 			format = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'],
 			resultDate = form.querySelector('.timing-type .result-date');
 
-
 		for(const radio of form.querySelectorAll('.timing-type input')) {
 
 			radio.on('click', () => {
@@ -2052,17 +2060,12 @@ class DataSourceColumn {
 						this.type.format[f] = form[f].value;
 				});
 
-				if(this.interval)
-					clearInterval(this.interval);
-
 				if(!this.type.format) {
 					resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
 					return;
-				}
+				};
 
-				this.interval = setInterval(() => {
-					resultDate.textContent = Format.customTime(Date.now(), this.type.format);
-				}, 500);
+				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
 			});
 		};
 
@@ -2114,6 +2117,13 @@ class DataSourceColumn {
 			else if(form.type.value == 'custom') {
 
 				form.querySelector('.timing-type').classList.toggle('hidden', form.type.value != 'custom');
+
+				if(this.interval)
+					clearInterval(this.interval);
+
+				this.interval = setInterval(() => {
+					resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+				}, 1000);
 			}
 
 			if(!this.type.format) {
@@ -2121,7 +2131,7 @@ class DataSourceColumn {
 				return;
 			}
 
-			resultDate.textContent = Format.customTime(Date.now(), this.type.format, form.type.value);
+			resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
 
 			for(const key of format) {
 

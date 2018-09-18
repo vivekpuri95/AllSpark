@@ -534,6 +534,7 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	padding: 0 20px;
 }
 	.dialog-box {
 		display: flex;
@@ -542,7 +543,7 @@ body {
 		box-shadow: 0 0 100px rgba(0, 0, 0, 0.5);
 		position: fixed;
 		max-height: 80%;
-		width: 40%;
+		min-width: 40%;
 		align-self: center;
 		justify-self: center;
 	}
