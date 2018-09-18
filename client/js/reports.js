@@ -102,7 +102,7 @@ class DataSource {
 
 		const options = {
 			method = params.length <= 62000 ? 'GET' : 'POST'
-		 };
+		};
 
 		this.resetError();
 
