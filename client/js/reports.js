@@ -101,7 +101,7 @@ class DataSource {
 		const params = parameters.toString();
 
 		const options = {
-			method: params.length <= 12198 ? 'GET' : 'POST',
+			method: params.length <= 12198 ? 'GET' : 'POST', //12198 is used as our server was not accepting more then this query param length
 		};
 
 		this.resetError();
