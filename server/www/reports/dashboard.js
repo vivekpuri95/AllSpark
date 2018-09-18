@@ -36,7 +36,7 @@ exports.delete = class extends API {
 		const mandatoryData = ["id"];
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 
-		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, user:this.user});
+		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 
