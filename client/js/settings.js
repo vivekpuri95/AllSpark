@@ -586,8 +586,8 @@ class SettingsAccount {
 
 		page.form.querySelector('h1').textContent = 'Add New Account';
 
-		page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
-		page.form.on('submit', SettingsAccount.submitEventListener = e => SettingsAccount.insert(e, page));
+		SettingsAccount.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+		SettingsAccount.form.on('submit', SettingsAccount.submitEventListener = e => SettingsAccount.insert(e, page));
 
 		SettingsAccount.form.name.focus();
 	}

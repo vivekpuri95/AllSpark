@@ -117,7 +117,7 @@ class DataSource {
 		}
 
 		try {
-			response = await API.call('reports/engine/report', params.toString(), options);
+			response = await API.call('reports/engine/report', params, options);
 		}
 
 		catch(e) {
