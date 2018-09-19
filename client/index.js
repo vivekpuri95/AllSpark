@@ -79,7 +79,7 @@ class HTMLAPI extends API {
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
 					<script>
-						const demo_url = "${config.has('demo_url') ? config.get('demo_url') : ''}";
+						let onboard = '${config.has('onboard') ? JSON.stringify(config.get('onboard')) : ''}';
 					</script>
 				</head>
 				<body>

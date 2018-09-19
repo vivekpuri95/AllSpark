@@ -139,7 +139,6 @@ main section .connections {
 							cursor: pointer;
 							color: #e77;
 						}
-
 section#list h1:last-of-type {
 	margin: calc(var(--gap) * 2) 0;
 }

@@ -15,6 +15,16 @@ class UserOnboard {
 			UserOnboard.instance = new UserOnboard(stateChanged);
 
 		UserOnboard.instance.stateChanged = stateChanged;
+
+		try {
+
+			UserOnboard.instance.onboard = JSON.parse(onboard);
+		}
+		catch(e) {
+
+			UserOnboard.instance.onboard = {};
+		}
+		
 		await UserOnboard.instance.load();
 	}
 
@@ -31,6 +41,8 @@ class UserOnboard {
 			this.stages.push(stageObj);
 			this.progress = stageObj.progress;
 		}
+
+		[this.nextStage] = this.stages.filter(x => !x.completed);
 
 		if(document.querySelector('.setup-stages')) {
 
@@ -49,16 +61,14 @@ class UserOnboard {
 
 	get container() {
 
-		const [nextStage] = this.stages.filter(x => !x.completed);
+		if(this.stateChanged && this.nextStage) {
 
-		if(this.stateChanged && nextStage) {
-
-			window.location = nextStage.url;
+			window.location = this.nextStage.url;
 		}
 
-		if(nextStage) {
-			
-			nextStage.setActive();
+		if(this.nextStage) {
+
+			this.nextStage.setActive();
 		}
 
 		const container = this.containerElement = document.createElement('div');
@@ -66,7 +76,7 @@ class UserOnboard {
 
 		container.innerHTML = `
 			<div class="wrapper"></div>
-			<a href="${demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
+			<a href="${this.onboard.demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
 		`;
 
 		const wrapper = container.querySelector('.wrapper');
@@ -89,7 +99,7 @@ class UserOnboard {
 		if(this.stages.some(stage => stage.completed))
 			return;
 
-		if(window.location.pathname == '/connections-manager')
+		if(window.location.pathname == '/connections-manager/add/mysql')
 			return;
 
 		const newUser = await Storage.get('newUser');
@@ -110,7 +120,7 @@ class UserOnboard {
 
 			<h2>Let's Get <strong>You Started!</strong></h2>
 
-			<a href="${demo_url}" target="_blank" class="view-demo">
+			<a href="${this.onboard.demo_url}" target="_blank" class="view-demo">
 				<span class="figure"><img src="/images/onboarding/demo.svg"></span>
 				<span>View Demo</span>
 				<span class="NA">Check out an established demo with various visualisations</span>
@@ -125,7 +135,7 @@ class UserOnboard {
 
 		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => {
 
-			window.location = '/connections-manager';
+			window.location = '/connections-manager/add/mysql';
 		});
 
 		if(window.loadWelcomeDialogBoxListener)
@@ -146,6 +156,8 @@ class UserOnboardStage {
 
 		this.stages = onboard.stages;
 		this.progress = onboard.progress;
+		this.page = onboard.page;
+		this.onboard = onboard.onboard;
 	}
 
 	get container() {
@@ -163,14 +175,18 @@ class UserOnboardStage {
 				<i class="fas fa-ellipsis-v"></i>
 				<i class="fas fa-ellipsis-v"></i>
 			</div>
-			<div class="info">${this.title}<span class="NA">${this.subtitle || ''}</span></div>
+			<div class="info">${this.title}</div>
 			<div class="status"></div>
+			<div class="hover-info">${this.subtitle}</div>
 		`;
 
 		container.on('click', () => {
 
 			window.location = this.url;
+			this.autoFillForm();
 		});
+
+		this.autoFillForm();
 
 		return container;
 	}
@@ -198,11 +214,23 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 		this.title = 'Add Connection';
 		this.subtitle = 'Connect to an external datasource';
+
+		try {
+
+			if(this.page instanceof Connections) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {
+
+			this.currentStage = false;
+		}
 	}
 
 	get url() {
 
-		return '/connections-manager';
+		return '/connections-manager/add/mysql';
 	}
 
 	async load() {
@@ -220,6 +248,55 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 		this.progress = this.progress + 10;
 	}
 
+	autoFillForm() {
+		
+		if(!this.currentStage) {
+
+			return;
+		}
+
+		const
+			submitButton = this.page.container.querySelector('#form .toolbar button[type=submit]'),
+			connectionsForm = this.page.container.querySelector('#connections-form');
+
+		const rect = submitButton.getBoundingClientRect();
+
+		this.page.container.querySelector('section#form .toolbar #back').on('click', () => {
+
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+			}
+
+			submitButton.classList.remove('blink');
+		});
+
+		if(!document.body.querySelector('.save-pop-up') && this.page.container.querySelector('section#form').classList.contains('show')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue</div>
+			`);
+
+			const popUp = document.body.querySelector('.save-pop-up');
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
+
+			submitButton.classList.add('blink');
+		}
+
+		for(const key in this.onboard.connection) {
+
+			if(connectionsForm.elements[key])
+				connectionsForm.elements[key].value = this.onboard.connection[key];
+		}
+
+		new SnackBar({
+			message: 'We\'ve added a default connection for you',
+			subtitle: 'Click save to continue'
+		});
+	}
+
 });
 
 UserOnboard.stages.add(class AddReport extends UserOnboardStage {
@@ -230,6 +307,18 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 		this.title = 'Add Report';
 		this.subtitle = 'Define a query to extract data';
+
+		try {
+
+			if(this.page instanceof ReportsManger) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {
+
+			this.currentStage = false;
+		}
 	}
 
 	get url() {
@@ -252,6 +341,11 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		this.progress = this.progress + 40;
 	}
 
+	autoFillForm() {
+
+		const a = 5;
+	}
+
 });
 
 UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
@@ -262,6 +356,18 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
 		this.title = 'Add Dashboard';
 		this.subtitle = 'At-a-glance view of visualizations';
+
+		try {
+
+			if(this.page instanceof DashboardManager) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {
+
+			this.currentStage = false;
+		}
 	}
 
 	get url() {
@@ -283,6 +389,11 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
 		this.completed = true;
 		this.progress = this.progress + 25;
+	}
+
+	autoFillForm() {
+
+		const a = 5;
 	}
 
 });
@@ -321,6 +432,11 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 		this.completed = true;
 		this.progress = this.progress + 25;
+	}
+
+	autoFillForm() {
+
+		const a = 5;
 	}
 
 });
