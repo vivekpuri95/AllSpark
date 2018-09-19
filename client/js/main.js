@@ -127,7 +127,6 @@ class Page {
 				{url: '/dashboards-manager', name: 'Dashboards', privileges: [], icon: 'fa fa-newspaper'},
 				{url: '/reports', name: 'Reports', privileges: [], icon: 'fa fa-database'},
 				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
-				{url: '/tasks', name: 'Tasks', privileges: ['task'], icon: 'fas fa-tasks'},
 				{url: '/settings', name: 'Settings', privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'], icon: 'fas fa-cog'},
 			],
 			header = document.querySelector('body > header'),

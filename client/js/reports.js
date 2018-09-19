@@ -6069,7 +6069,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
 
- 			if(!row)
+ 			if(!row || !this.x)
 				return;
 
 			const tooltip = [];
