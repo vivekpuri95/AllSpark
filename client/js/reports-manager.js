@@ -419,7 +419,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
 					${report.filters.length}
 				</td>
-				<td class="action visualizations ${!report.editable ? 'grey' : 'green'}" title="${report.visualizations.map(f => f.name).join(', ')}" >
+				<td class="action visualizations green" title="${report.visualizations.map(f => f.name).join(', ')}" >
 					${report.visualizations.length}
 				</td>
 				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
@@ -1592,15 +1592,20 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 
 		this.form = this.page.container.querySelector('#add-visualization-form');
 
-		this.container.querySelector('#add-visualization').on('click', () => {
+		if(user.privileges.has('visualization.insert')) {
 
-			this.form.reset();
+			this.container.querySelector('#add-visualization').classList.remove('grey');
 
-			this.page.preview.hidden = true;
-			this.form.classList.remove('hidden');
-			this.container.querySelector('#add-visualization-picker').classList.remove('hidden');
-			this.container.querySelector('#visualization-list').classList.add('hidden');
-		});
+			this.container.querySelector('#add-visualization').on('click', () => {
+
+				this.form.reset();
+
+				this.page.preview.hidden = true;
+				this.form.classList.remove('hidden');
+				this.container.querySelector('#add-visualization-picker').classList.remove('hidden');
+				this.container.querySelector('#visualization-list').classList.add('hidden');
+			});
+		}
 
 		this.container.querySelector('#visualization-picker-back').on('click', () => {
 
@@ -1778,8 +1783,8 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				<td>${visualization.description || ''}</td>
 				<td>${type ? type.name : ''}</td>
 				<td class="action preview"><i class="fas fa-eye"></i></td>
-				<td class="action edit"><i class="fas fa-cog"></i></td>
-				<td class="action red delete"><i class="far fa-trash-alt"></i></td>
+				<td title="${!visualization.editable ? 'Not enough privileges' : ''}" class="action edit ${visualization.editable ? 'green': 'grey'}"><i class="fas fa-cog"></i></td>
+				<td title="${!visualization.deletable ? 'Not enough privileges' : ''}" class="action delete ${visualization.deletable ? 'red': 'grey'}"><i class="far fa-trash-alt"></i></td>
 			`;
 
 			if(this.visualization == visualization)
@@ -1795,17 +1800,22 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				});
 			});
 
-			row.querySelector('.edit').on('click', () => {
+			if(visualization.editable) {
 
-				window.history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
+				row.querySelector('.edit').on('click', () => {
 
-				this.page.stages.get('configure-visualization').disabled = false;
-				this.page.stages.get('configure-visualization').lastSelectedVisualizationId = visualization.visualization_id;
+					window.history.pushState({}, '', `/reports/configure-visualization/${visualization.visualization_id}`);
 
-				this.page.load();
-			});
+					this.page.stages.get('configure-visualization').disabled = false;
+					this.page.stages.get('configure-visualization').lastSelectedVisualizationId = visualization.visualization_id;
 
-			row.querySelector('.delete').on('click', () => this.delete(visualization));
+					this.page.load();
+				});
+			}
+
+			if(visualization.deletable) {
+				row.querySelector('.delete').on('click', () => this.delete(visualization));
+			}
 
 			tbody.appendChild(row);
 		}
@@ -1967,6 +1977,48 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.dashboards.load();
 
 		this.visualizationManager.load();
+
+		if(!(account.settings.has('visualization_roles_from_query') && account.settings.get('visualization_roles_from_query'))) {
+
+			(async () => {
+
+				const allowedTargets = ['role'];
+
+				if (page.user.privileges.has('user.list') || page.user.privileges.has('report')) {
+
+					allowedTargets.push('user');
+				}
+
+				this.objectRoles = new ObjectRoles('visualization', this.visualization.visualization_id, allowedTargets);
+
+				await this.objectRoles.load();
+
+				const objectRolesContainer = document.createElement('div');
+				objectRolesContainer.classList.add('configuration-section');
+
+				objectRolesContainer.innerHTML = `
+				<h3>
+					<i class="fas fa-angle-right"></i>
+					<i class="fas fa-angle-down hidden"></i>
+					Share <span class="count"></span>
+				</h3>
+				<div id="share-visualization" class="hidden"></div>
+			`;
+
+				const h3 = objectRolesContainer.querySelector('h3');
+
+				h3.on('click', () => {
+
+					objectRolesContainer.querySelector('#share-visualization').classList.toggle('hidden');
+					objectRolesContainer.querySelector('.fa-angle-right').classList.toggle('hidden');
+					objectRolesContainer.querySelector('.fa-angle-down').classList.toggle('hidden');
+				});
+
+				objectRolesContainer.querySelector('#share-visualization').appendChild(this.objectRoles.container);
+				this.container.querySelector('.visualization-form.stage-form').appendChild(objectRolesContainer);
+
+			})();
+		}
 	}
 });
 
@@ -5454,7 +5506,7 @@ class ReportVisualizationDashboards extends Set {
 
 							<label class="create-new">
 								<span>&nbsp;</span>
-								<button type="button"><i class="fa fa-plus"></i> Create New</button>
+								<button type="button" disabled><i class="fa fa-plus"></i> Create New</button>
 							</label>
 						</div>
 					</fieldset>
@@ -5462,9 +5514,14 @@ class ReportVisualizationDashboards extends Set {
 			</div>
 		`;
 
-		this.container.querySelector('.create-new').on('click', () => {
-			window.open('/dashboards-manager/add');
-		})
+		if(user.privileges.has('dashboard.insert')) {
+
+			this.container.querySelector('.create-new button').disabled = false;
+
+			this.container.querySelector('.create-new').on('click', () => {
+				window.open('/dashboards-manager/add');
+			})
+		}
 		this.container.querySelector('form').on('submit', e => ReportVisualizationDashboards.insert(e, this.stage));
 
 		this.dashboardMultiSelect = new MultiSelect({multiple: false, dropDownPosition: 'top'});
@@ -5528,6 +5585,9 @@ class ReportVisualizationDashboards extends Set {
 		if(this.response) {
 
 			for(const dashboard of this.response.values()) {
+
+				if(!dashboard.editable)
+					continue;
 
 				const
 					parents = [],
@@ -5663,7 +5723,7 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>&nbsp;</span>
-				<button type="button" class="view-dashboard"><i class="fas fa-external-link-alt"></i></button>
+				<button type="button" class="view-dashboard disabled"><i class="fas fa-external-link-alt"></i></button>
 			</label>
 		`;
 
@@ -5672,6 +5732,9 @@ class ReportVisualizationDashboard {
 		if(this.stage.dashboards.response) {
 
 			for(const dashboard of this.stage.dashboards.response.values()) {
+
+				if(!dashboard.editable)
+					continue;
 
 				const
 					parents = [],
@@ -5706,7 +5769,14 @@ class ReportVisualizationDashboard {
 
 		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
 
-		form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + this.dashboardMultiSelect.value[0]));
+		if(this.dashboardMultiSelect.value.length) {
+
+			const externalLink = form.querySelector('.view-dashboard');
+
+			externalLink.classList.disabled = false;
+			externalLink.on('click', () => window.open('/dashboard/' + this.dashboardMultiSelect.value[0]));
+		}
+
 		form.querySelector('.delete').on('click', () => this.delete());
 
 		form.on('submit', async e => this.update(e))

@@ -437,12 +437,15 @@ class DataSource {
 			const elementsToShow = [
 				'.menu .expand-toggle',
 				'.menu .query-toggle',
-				'.menu .configure-visualization',
 				'.menu .define-visualization',
 			];
 
 			for(const element of elementsToShow)
 				menu.querySelector(element).parentElement.classList.remove('hidden');
+		}
+
+		if(this.visualizations.selected.editable) {
+			menu.querySelector('.menu .configure-visualization').parentElement.classList.remove('hidden');
 		}
 
 		menu.querySelector('.reload').on('click', () => this.visualizations.selected.load());
@@ -1661,24 +1664,21 @@ class DataSourceColumn {
 			</span>
 		`;
 
-		if(user.privileges.has('report')) {
+		const edit = document.createElement('a');
 
-			const edit = document.createElement('a');
+		edit.classList.add('edit-column');
+		edit.title = 'Edit Column';
+		edit.on('click', e => {
 
-			edit.classList.add('edit-column');
-			edit.title = 'Edit Column';
-			edit.on('click', e => {
+			e.stopPropagation();
 
-				e.stopPropagation();
+			this.form.classList.remove('compact');
+			this.edit();
+		});
 
-				this.form.classList.remove('compact');
-				this.edit();
-			});
+		edit.innerHTML = `&#8285;`;
 
-			edit.innerHTML = `&#8285;`;
-
-			this.container.querySelector('.label').appendChild(edit);
-		}
+		this.container.querySelector('.label').appendChild(edit);
 
 		let timeout;
 
@@ -1875,8 +1875,8 @@ class DataSourceColumn {
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
 
-		if(!user.privileges.has('report'))
-			form.querySelector('footer .save').classList.add('hidden');
+		if(!this.source.editable)
+			form.querySelector('.save').classList.add('hidden');
 
 		form.elements.formula.on('keyup', async () => {
 

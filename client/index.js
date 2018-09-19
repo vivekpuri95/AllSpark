@@ -1003,7 +1003,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div id="visualization-list">
 
 						<div class="toolbar">
-							<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></button>
+							<button id="add-visualization" class="grey"><i class="fas fa-plus"></i> Add New Visualization</button></button>
 						</div>
 
 						<table>

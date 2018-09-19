@@ -63,20 +63,20 @@ class Authenticate {
 				        AND target_id = ? -- user
 				        AND OWNER = 'query'
 				        AND target = 'user'
-				        
+
 				    UNION ALL
-				    
+
 				    SELECT
 				        NULL AS user_id
-				        
+
 					LIMIT 1
 				) AS queryUser
-				
+
 				JOIN
 					tb_credentials c
 				ON
 					q.connection_name = c.id
-					
+
                 WHERE
 					q.query_id = ?
 					AND is_enabled = 1
@@ -97,8 +97,10 @@ class Authenticate {
 				}
 			}
 			const roles = reportObject[1].map(x => x.target_id);
+			const categories = reportObject[1].map(x => x.category_id);
 			reportObject = reportObject[0][0];
 			reportObject.roles = roles;
+			reportObject.category_id = categories;
 		}
 
 		if (reportObject.flag) {
@@ -184,7 +186,6 @@ class Authenticate {
 			}
 		}
 
-
 		let objectPrivileges = [[reportObject.account_id], Array.isArray(reportObject.category_id) ? reportObject.category_id : [reportObject.category_id]];
 
 		objectPrivileges[2] = reportObject.roles;
@@ -251,7 +252,7 @@ class Authenticate {
 					AND target = 'user'
 					AND target_id = ?
 					AND (category_id <= 0 OR category_id IS NULL)
-				WHERE 
+				WHERE
 					d.id = ?
 					and owner_id = ?
 				`,
@@ -305,7 +306,7 @@ class Authenticate {
 					q.*
 				FROM
 					tb_visualization_dashboard vd
-				JOIN 
+				JOIN
 					tb_query_visualizations
 					USING(visualization_id)
 				JOIN
@@ -372,7 +373,7 @@ class Authenticate {
 
 				return {
 					error: false,
-					message: "authenticated for Report id:" + query.query_id + ".",
+					message: "authenticated for Report id:" + query.query_id || query + ".",
 				}
 			}
 		}
@@ -400,12 +401,12 @@ class Authenticate {
 		if(parseInt(connectionObj) == connectionObj) {
 
 			connectionObj = await mysql.query(`
-				SELECT 
-					* 
-				FROM 
+				SELECT
+					*
+				FROM
 					tb_credentials c
-				WHERE 
-					c.id = ? 
+				WHERE
+					c.id = ?
 					AND status = 1
 				`, [connectionObj]);
 
@@ -453,7 +454,7 @@ class Authenticate {
 
 		for (const row of connectionRoles) {
 
-			let authResponse = await commonFun.authenticatePrivileges(userPrivileges, [row]);
+			let authResponse = commonFun.authenticatePrivileges(userPrivileges, [row]);
 
 			if (!authResponse.error) {
 
@@ -469,6 +470,143 @@ class Authenticate {
 			message: 'User not authenticated!'
 		}
 
+	}
+
+	static async visualization(visualization, user, report, visualizationRolesFromQuery = false) {
+
+		if(parseInt(visualization) == visualization) {
+
+			[visualization] = await mysql.query(`
+				select
+					qv.*,
+					q.account_id
+				from
+					tb_query_visualizations qv
+				join
+					tb_query q
+					using(query_id)
+				where
+					visualization_id = ?
+					and q.is_enabled = 1
+					and q.is_deleted = 0
+			`, [visualization]);
+
+			if(!visualization) {
+
+				return {
+					error: true,
+					message: "invalid visualization",
+				}
+			}
+		}
+
+		if(user.user_id == visualization.added_by && user.user_id > 0) {
+
+			return {
+				error: false,
+				message: "visualization added by the user."
+			}
+		}
+
+		let reportAuth;
+
+		if(report == parseInt(report)) {
+
+			reportAuth = await Authenticate.report(report, user);
+		}
+
+		if(!report.skip) {
+
+			if (report) {
+
+				if(!Array.isArray(report)) {
+
+					reportAuth = await Authenticate.report(report, user)
+				}
+
+				else {
+
+					reportAuth = await Authenticate.report(...report, user)
+				}
+			}
+
+			else {
+
+				reportAuth = await Authenticate.report(visualization.query_id, user);
+			}
+
+			if (reportAuth.error) {
+
+				return {
+					error: true,
+					message: "report error: " + reportAuth.message,
+				}
+			}
+		}
+
+		if(!visualization.roles) {
+
+			const objRole = new getRole();
+			visualization.roles = await objRole.get(visualization.account_id, visualizationRolesFromQuery ? "report" : "visualization", "role", visualization.visualization_id);
+		}
+
+		if(!visualization.users) {
+
+			const objRole = new getRole();
+			visualization.users = await objRole.get(visualization.account_id, visualizationRolesFromQuery ? "report" : "visualization", "user", visualization.visualization_id);
+		}
+
+		if(visualization.users.some(x => x.target_id == user.user_id)) {
+
+			return {
+				error: false,
+				message: "shared with user",
+			}
+		}
+
+		let userPrivileges = [];
+
+		if (!(user.roles && user.roles.length)) {
+
+			return {
+				error: true,
+				message: "User does not have any role.",
+			}
+		}
+
+		visualization.roles =  visualization.roles.map(x => [x.account_id, x.category_id, x.target_id]);
+
+		for (const row of user.roles) {
+
+			userPrivileges.push([user.account_id, row.category_id, row.role]);
+		}
+
+		for (const row of visualization.roles) {
+
+			let authResponse = commonFun.authenticatePrivileges(userPrivileges, [row]);
+
+			if (!authResponse.error) {
+
+				return {
+					error: false,
+					message: "Visualization shared with the role and category of current user.",
+				}
+			}
+		}
+
+
+		if(user.privilege.has('administrator')) {
+
+			return {
+				error: false,
+				message: "user is admin",
+			}
+		}
+
+		return {
+			error: true,
+			message: "Visualization not shared with the user of user's role, and its not created by the user",
+		}
 	}
 }
 

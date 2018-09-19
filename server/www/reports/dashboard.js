@@ -6,7 +6,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs("dashboard.insert", "ignore");
+		this.user.privilege.needs("visualization.insert", "ignore");
 
 		const mandatoryData = ["dashboard_id", "visualization_id"];
 
@@ -31,7 +31,7 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		this.user.privilege.needs("dashboard.delete", "ignore");
+		this.user.privilege.needs("visualization.delete", "ignore");
 
 		const mandatoryData = ["id"];
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
@@ -57,7 +57,7 @@ exports.updateFormat = class extends API {
 
 	async updateFormat() {
 
-		this.user.privilege.needs('dashboard.update', 'ignore');
+		this.user.privilege.needs('visualization.update', 'ignore');
 
 		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
 
@@ -79,7 +79,7 @@ exports.update = class extends API {
 
 	async update() {
 
-		this.user.privilege.needs('dashboard.update', 'ignore');
+		this.user.privilege.needs('visualization.update', 'ignore');
 
 		const [dashboard] = await this.mysql.query(
 			`SELECT * FROM tb_visualization_dashboard WHERE id = ?`,
