@@ -28,6 +28,10 @@ main > #list .visualizations {
 			font-size: 125%;
 			grid-column: 2;
 		}
+			main > #list .visualization h2 a {
+				color: inherit;
+				margin-right: var(--gap);
+			}
 			main > #list .visualization .id {
 				font-weight: normal;
 				color: #999;

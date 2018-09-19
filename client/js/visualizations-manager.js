@@ -130,7 +130,9 @@ class VisualizationManager {
 			<img src="${this.visualization.image}">
 
 			<h2>
-				${this.name}
+				<a href="/visualization/${this.visualization_id}" target="_blank">
+					${this.name}
+				</a>
 				<span class="id">#${this.visualization_id}</span>
 			</h2>
 

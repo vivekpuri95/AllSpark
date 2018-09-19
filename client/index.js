@@ -535,7 +535,7 @@ router.get('/streams', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
+router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 

@@ -521,7 +521,13 @@ class DataSource {
 		menu.querySelector('.json-download').on('click', (e) => this.download(e, {mode: 'json'}));
 		menu.querySelector('.filtered-json-download').on('click', (e) => this.download(e, {mode: 'filtered-json'}));
 		menu.querySelector('.xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
-		menu.querySelector('.expand-toggle').on('click', () => window.location = `/report/${this.query_id}`);
+		menu.querySelector('.expand-toggle').on('click', () => {
+
+			if(this.visualizations.selected.visualization_id)
+				window.location = `/visualization/${this.visualizations.selected.visualization_id}`
+			else
+				window.location = `/report/${this.query_id}`;
+		});
 
 		if(this.visualizations.length) {
 
