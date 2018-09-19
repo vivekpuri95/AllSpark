@@ -1643,6 +1643,46 @@ class Format {
 		return Format.time.formatter.format(time);
 	}
 
+	static customTime(time, format) {
+
+		if(!format)
+			return 'No Format Selected';
+
+		if(!Format.cachedFormat)
+			Format.cachedFormat = [];
+
+		let selectedFormat;
+
+		for(const data of Format.cachedFormat) {
+
+			if(JSON.stringify(data.format) == JSON.stringify(format))
+				selectedFormat = data;
+		}
+
+		if(!selectedFormat) {
+
+			selectedFormat = {
+				format: format,
+				formatter: new Intl.DateTimeFormat(undefined, format),
+			};
+
+			Format.cachedFormat.push(selectedFormat);
+		}
+
+		Format.customTime.formatter = selectedFormat.formatter;
+
+		if(time && typeof time == 'string')
+			time = Date.parse(time);
+
+		if(time && typeof time == 'object')
+			time = time.getTime();
+
+		if(!time)
+			return '';
+
+		return Format.customTime.formatter.format(time);
+	}
+
 	static dateTime(dateTime) {
 
 		const options = {
