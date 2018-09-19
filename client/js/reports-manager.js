@@ -1786,7 +1786,12 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 			let type = MetaData.visualizations.get(visualization.type);
 
 			row.innerHTML = `
-				<td>${visualization.name}</td>
+				<td>
+					<a href="/visualization/${visualization.visualization_id}" target="_blank">
+						${visualization.name}
+					</a>
+					<span class="NA">#${visualization.visualization_id}</span>
+				</td>
 				<td>${visualization.description || ''}</td>
 				<td>${type ? type.name : ''}</td>
 				<td class="action preview"><i class="fas fa-eye"></i></td>
