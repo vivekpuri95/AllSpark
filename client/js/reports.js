@@ -1780,21 +1780,22 @@ class DataSourceColumn {
 
 		if(this.type.name == 'custom') {
 
-			this.form.querySelector('.timing-type .result-date').innerHTML = '<div class="NA">Example:</div> ' + Format.customTime(Date.now(), this.type.format);
+			this.form.querySelector('.timing-type .result-date').innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+
 			this.form.querySelector('.timing-type').classList.remove('hidden');
 
 			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
 
 			for(const key in this.type.format)
 				this.form[key].value = this.type.format[key];
-
-			if(this.interval)
-				clearInterval(this.interval);
-
-			this.interval = setInterval(() => {
-				this.form.querySelector('.timing-type .result-date').innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
-			}, 1000);
 		};
+
+		if(this.interval)
+			clearInterval(this.interval);
+
+		this.interval = setInterval(() => {
+			this.form.querySelector('.timing-type .result-date').innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+		}, 1000);
 
 		this.checkedRadio = [];
 
@@ -2097,9 +2098,6 @@ class DataSourceColumn {
 
 				form.querySelector('.timing-type').classList.toggle('hidden', form.type.value != 'custom');
 
-				if(this.interval)
-					clearInterval(this.interval);
-
 				this.type.format = {};
 
 				format.map(f => {
@@ -2113,18 +2111,26 @@ class DataSourceColumn {
 
 				selectedFormat = this.type.format;
 
-				this.interval = setInterval(() => {
-					resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
-				}, 1000);
+				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
 			}
 
-			for(const key of format) {
+			this.checkedRadio = [];
 
-				if(selectedFormat[key]) {
-					form[key].value = selectedFormat[key];
-				}
-				else if(form.querySelector(`input[name=${key}]:checked`)) {
-					form.querySelector(`input[name=${key}]:checked`).checked = false;
+			for(const radio of form.querySelectorAll('.timing-type input')) {
+				if(radio.checked)
+					this.checkedRadio.push(radio);
+			}
+
+			if(selectedFormat) {
+
+				for(const key of format) {
+
+					if(selectedFormat[key]) {
+						form[key].value = selectedFormat[key];
+					}
+					else if(form.querySelector(`input[name=${key}]:checked`)) {
+						form.querySelector(`input[name=${key}]:checked`).checked = false;
+					}
 				}
 			}
 		});
