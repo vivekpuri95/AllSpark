@@ -2676,7 +2676,7 @@ class ObjectRoles {
 			}
 		}
 
-		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in this.mapping[row.target]);
+		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in (this.mapping[row.target] || {}));
 
 		for (const row of this.alreadyVisible) {
 
