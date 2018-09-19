@@ -182,7 +182,7 @@ exports.list = class extends API {
 
 			for(const row of reportRoles || []) {
 
-				for(const vis of visualizationQueryMapping[row.owner_id]) {
+				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
 
 					const obj = JSON.parse(JSON.stringify(row));
 
@@ -195,7 +195,7 @@ exports.list = class extends API {
 
 			for(const row of userSharedQueries || []) {
 
-				for(const vis of visualizationQueryMapping[row.owner_id]) {
+				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
 
 					const obj = JSON.parse(JSON.stringify(row));
 					obj.owner_id = vis.visualization_id;
