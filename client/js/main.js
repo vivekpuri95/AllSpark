@@ -121,11 +121,11 @@ class Page {
 		const
 			navList = [
 				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
-				{url: '/dashboards-manager', name: 'Dashboards', privileges: ['dashboard', 'dashboard.list', 'dashboard.insert', 'dashboard.delete'], icon: 'fa fa-newspaper'},
-				{url: '/reports', name: 'Reports', privileges: ['report', 'report.insert', 'report.update'], icon: 'fa fa-database'},
+				{url: '/dashboards-manager', name: 'Dashboards', privileges: [], icon: 'fa fa-newspaper'},
+				{url: '/reports', name: 'Reports', privileges: [], icon: 'fa fa-database'},
 				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
 				{url: '/tasks', name: 'Tasks', privileges: ['task'], icon: 'fas fa-tasks'},
-				{url: '/settings', name: 'Settings', privileges: ['administrator'], icon: 'fas fa-cog'},
+				{url: '/settings', name: 'Settings', privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'], icon: 'fas fa-cog'},
 			],
 			header = document.querySelector('body > header'),
 			navContainer = header.querySelector('.nav-container'),
@@ -190,7 +190,7 @@ class Page {
 
 		for(const item of navList) {
 
-			if(!window.user || item.privileges.every(p => !user.privileges.has(p)))
+			if(!window.user || (item.privileges.every(p => !user.privileges.has(p)) && item.privileges.length))
 				continue;
 
 			nav.insertAdjacentHTML('beforeend',`
@@ -1643,6 +1643,46 @@ class Format {
 		return Format.time.formatter.format(time);
 	}
 
+	static customTime(time, format) {
+
+		if(!format)
+			return 'No Format Selected';
+
+		if(!Format.cachedFormat)
+			Format.cachedFormat = [];
+
+		let selectedFormat;
+
+		for(const data of Format.cachedFormat) {
+
+			if(JSON.stringify(data.format) == JSON.stringify(format))
+				selectedFormat = data;
+		}
+
+		if(!selectedFormat) {
+
+			selectedFormat = {
+				format: format,
+				formatter: new Intl.DateTimeFormat(undefined, format),
+			};
+
+			Format.cachedFormat.push(selectedFormat);
+		}
+
+		Format.customTime.formatter = selectedFormat.formatter;
+
+		if(time && typeof time == 'string')
+			time = Date.parse(time);
+
+		if(time && typeof time == 'object')
+			time = time.getTime();
+
+		if(!time)
+			return '';
+
+		return Format.customTime.formatter.format(time);
+	}
+
 	static dateTime(dateTime) {
 
 		const options = {
@@ -1850,6 +1890,11 @@ class DialogBox {
 		document.querySelector('header').classList.remove('blur');
 
 		this.container.classList.add('hidden');
+
+		if(this.closeCallback) {
+
+			this.closeCallback();
+		}
 	}
 
 	/**
@@ -1874,6 +1919,14 @@ class DialogBox {
 		document.querySelector('header').classList.add('blur');
 
 		this.container.classList.remove('hidden');
+	}
+
+	on(event, callback) {
+
+		if(event != 'close')
+			throw new Page.exception('Only Close event is supported...');
+
+		this.closeCallback = callback;
 	}
 }
 
@@ -2260,8 +2313,20 @@ class ObjectRoles {
 
 		this.owner = owner;
 		this.ownerId = owner_id;
-		this.allowedTargets = allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets);
+		this.allowedTargets = new Set(allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets));
+
+		if(!user.privileges.has('user.list')) {
+
+			this.allowedTargets.delete('user')
+		}
+
+		if(!(user.privileges.has('user.list') || user.privileges.has('visualization.list') || user.privileges.has('report.insert') || user.privileges.has('report.update'))) {
+
+			this.allowedTargets.delete('role')
+		}
+
 		this.alreadyVisible = [];
+		this.allowedTargets = [...this.allowedTargets];
 	}
 
 	async load() {
@@ -2326,6 +2391,12 @@ class ObjectRoles {
 			return this.getContainer;
 
 		const container = document.createElement('div');
+
+		if(!this.allowedTargets.length) {
+
+			container.classList.add('hidden');
+			return;
+		}
 
 		container.classList.add('object-roles');
 

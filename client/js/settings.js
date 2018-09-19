@@ -13,6 +13,12 @@ class Settings extends Page {
 				if(['executingReports', 'accounts'].includes(key) && !this.user.privileges.has('superadmin'))
 					continue;
 
+				if(key == 'categories' && !user.privileges.has('category.insert') && !user.privileges.has('category.update') && !user.privileges.has('category.delete'))
+					continue;
+
+				if(key != 'categories' && !user.privileges.has('administrator'))
+					continue;
+
 				const setting = new settings(this.container);
 
 				const a = document.createElement('a');
@@ -298,7 +304,11 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		this.container = this.page.querySelector('.category-page');
 		this.form = this.page.querySelector('#category-edit');
 
-		this.container.querySelector('#category-list #add-category').on('click', () => SettingsCategory.add(this));
+		if(user.privileges.has('category.insert'))
+			this.container.querySelector('#category-list #add-category').on('click', () => SettingsCategory.add(this));
+		else
+			this.container.querySelector('#category-list #add-category').disabled = true;
+
 		this.container.querySelector('#category-edit #back').on('click', () => Sections.show('category-list'));
 	}
 
@@ -372,11 +382,11 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 
 		container.innerHTML = `
 			<h1>Executing Reports</h1>
-						
+
 			<header class="toolbar block">
 				<input type="checkbox" name="auto-refresh"> Auto Refresh
 			</header>
-			
+
 			<table class="block">
 				<thead>
 					<tr>
@@ -445,7 +455,6 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 
 		this.container.classList.remove('hidden');
 	}
-
 });
 
 Settings.list.set('about', class About extends SettingPage {
@@ -577,8 +586,8 @@ class SettingsAccount {
 
 		page.form.querySelector('h1').textContent = 'Add New Account';
 
-		page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
-		page.form.on('submit', SettingsAccount.submitEventListener = e => SettingsAccount.insert(e, page));
+		SettingsAccount.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+		SettingsAccount.form.on('submit', SettingsAccount.submitEventListener = e => SettingsAccount.insert(e, page));
 
 		SettingsAccount.form.name.focus();
 	}
@@ -691,6 +700,12 @@ class SettingsAccount {
 				key: 'disable_powered_by',
 				type: 'toggle',
 				name: 'Disable "Powered By"',
+			},
+			{
+				key: 'visualization_roles_from_query',
+				type: 'toggle',
+				name: 'Visualization Roles From Query',
+				description: 'Apply Visualization Roles From Its Parent Report'
 			},
 			{
 				key: 'custom_js',
@@ -1926,12 +1941,27 @@ class SettingsCategory {
 			<td>${this.slug}</td>
 			<td>${parseInt(this.parent) || ''}</td>
 			<td>${this.is_admin ? 'Yes' : 'No'}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			<td class="action edit" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action delete" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		this.container.querySelector('.green').on('click', () => this.edit());
-		this.container.querySelector('.red').on('click', () => this.delete());
+		const
+			edit = this.container.querySelector('.edit'),
+			delete_ = this.container.querySelector('.delete');
+
+		if(user.privileges.has('category.update')) {
+			edit.on('click', () => this.edit());
+			edit.classList.add('green');
+		}
+
+		else edit.classList.add('grey');
+
+		if(user.privileges.has('category.delete')) {
+			delete_.on('click', () => this.delete());
+			delete_.classList.add('red');
+		}
+
+		else delete_.classList.add('grey');
 
 		return this.container;
 	}

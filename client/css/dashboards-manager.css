@@ -46,6 +46,10 @@ main {
 			margin-right: 20px;
 			cursor: pointer;
 		}
+		main #add-dashboard.grey {
+			background: #ccc;
+			color: #fff;
+		}
 			main section .heading button > i {
 				margin-right: 0;
 				font-size: 15px;

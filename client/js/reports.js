@@ -101,7 +101,7 @@ class DataSource {
 		const params = parameters.toString();
 
 		const options = {
-			method: params.length <= 62000 ? 'GET' : 'POST',
+			method: params.length <= 12198 ? 'GET' : 'POST', //12198 is used as our server was not accepting more then this query param length
 		};
 
 		this.resetError();
@@ -117,7 +117,7 @@ class DataSource {
 		}
 
 		try {
-			response = await API.call('reports/engine/report', params.toString(), options);
+			response = await API.call('reports/engine/report', params, options);
 		}
 
 		catch(e) {
@@ -437,12 +437,15 @@ class DataSource {
 			const elementsToShow = [
 				'.menu .expand-toggle',
 				'.menu .query-toggle',
-				'.menu .configure-visualization',
 				'.menu .define-visualization',
 			];
 
 			for(const element of elementsToShow)
 				menu.querySelector(element).parentElement.classList.remove('hidden');
+		}
+
+		if(this.visualizations.selected.editable) {
+			menu.querySelector('.menu .configure-visualization').parentElement.classList.remove('hidden');
 		}
 
 		menu.querySelector('.reload').on('click', () => this.visualizations.selected.load());
@@ -1499,27 +1502,14 @@ class DataSourceRow extends Map {
 
 		if(column.type) {
 
-			if(column.type.name == 'date')
-				value = Format.date(value);
+			if(['date', 'month', 'year', 'time', 'datetime', 'custom'].includes(column.type.name))
+				value = Format.customTime(value, column.type.format);
 
-			if(column.type.name == 'month')
-				value = Format.month(value);
-
-			if(column.type.name == 'year')
-				value = Format.year(value);
-
-			if(column.type.name == 'timeelapsed')
+			else if(column.type.name == 'timeelapsed')
 				value = Format.ago(value);
-
-			if(column.type.name == 'time')
-				value = Format.time(value);
-
-			if(column.type.name == 'datetime')
-				value = Format.dateTime(value);
 
 			else if(column.type.name == 'number')
 				value = Format.number(value);
-
 		}
 
 		if(column.prefix)
@@ -1661,24 +1651,21 @@ class DataSourceColumn {
 			</span>
 		`;
 
-		if(user.privileges.has('report')) {
+		const edit = document.createElement('a');
 
-			const edit = document.createElement('a');
+		edit.classList.add('edit-column');
+		edit.title = 'Edit Column';
+		edit.on('click', e => {
 
-			edit.classList.add('edit-column');
-			edit.title = 'Edit Column';
-			edit.on('click', e => {
+			e.stopPropagation();
 
-				e.stopPropagation();
+			this.form.classList.remove('compact');
+			this.edit();
+		});
 
-				this.form.classList.remove('compact');
-				this.edit();
-			});
+		edit.innerHTML = `&#8285;`;
 
-			edit.innerHTML = `&#8285;`;
-
-			this.container.querySelector('.label').appendChild(edit);
-		}
+		this.container.querySelector('.label').appendChild(edit);
 
 		let timeout;
 
@@ -1761,8 +1748,6 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		if(this.type)
-			this.form.type.value = this.type.name;
 
 		if(this.drilldown && this.drilldown.query_id) {
 
@@ -1773,6 +1758,43 @@ class DataSourceColumn {
 		}
 
 		this.form.disabled.value = parseInt(this.disabled) || 0;
+
+		if(!this.type)
+			return this.dialogueBox.show();;
+
+		this.form.type.value = this.type.name;
+
+		this.form.querySelector('.timing-type').classList.add('hidden');
+
+		if(this.type.format) {
+
+			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
+
+			for(const key in this.type.format)
+				this.form[key].value = this.type.format[key];
+		};
+
+		if(this.type.name == 'custom') {
+
+			this.form.querySelector('.timing-type .result-date').innerHTML = '<div class="NA">Example:</div> ' + Format.customTime(Date.now(), this.type.format);
+			this.form.querySelector('.timing-type').classList.remove('hidden');
+
+			if(this.interval)
+				clearInterval(this.interval);
+
+			this.interval = setInterval(() => {
+				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+			}, 1000);
+		};
+
+		const resultDate = this.form.querySelector('.timing-type .result-date');
+
+		this.checkedRadio = [];
+
+		for(const radio of this.form.querySelectorAll('.timing-type input')) {
+			if(radio.checked)
+				this.checkedRadio.push(radio);
+		}
 
 		this.dialogueBox.show();
 	}
@@ -1802,15 +1824,153 @@ class DataSourceColumn {
 				<select name="type">
 					<option value="string">String</option>
 					<option value="number">Number</option>
-					<option value="date">Date</option>
-					<option value="month">Month</option>
-					<option value="year">Year</option>
-					<option value="time">Time</option>
-					<option value="datetime">Date Time</option>
+					<optgroup label="Timing">
+						<option value="date">Date</option>
+						<option value="month">Month</option>
+						<option value="year">Year</option>
+						<option value="time">Time</option>
+						<option value="datetime">Date Time</option>
+						<option value="custom">Custom</option>
+					</optgroup>
 					<option value="timeelapsed">Time Elapsed</option>
 					<option value="html">HTML</option>
 				</select>
 			</label>
+
+			<div class="timing-type hidden">
+
+				<span>Select Timing type Format</span>
+
+				<div class="timing-format">
+
+					<fieldset>
+
+						<legend>Weekday</legend>
+
+						<label>
+							<input type="radio" name="weekday" value="narrow">
+							<span>W</span>
+						</label>
+
+						<label>
+							<input type="radio" name="weekday" value="short">
+							<span>WWW</span>
+						</label>
+
+						<label>
+							<input type="radio" name="weekday" value="long">
+							<span>WWWW</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Day</legend>
+
+						<label>
+							<input type="radio" name="day" value="numeric">
+							<span>D</span>
+						</label>
+
+						<label>
+							<input type="radio" name="day" value="2-digit">
+							<span>DD</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Month</legend>
+
+						<label>
+							<input type="radio" name="month" value="numeric">
+							<span>1</span>
+						</label>
+
+						<label>
+							<input type="radio" name="month" value="2-digit">
+							<span>01</span>
+						</label>
+
+						<label>
+							<input type="radio" name="month" value="narrow">
+							<span>M</span>
+						</label>
+
+						<label>
+							<input type="radio" name="month" value="short">
+							<span>MMM</span>
+						</label>
+
+						<label>
+							<input type="radio" name="month" value="long">
+							<span>MMMM</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Year</legend>
+
+						<label>
+							<input type="radio" name="year" value="2-digit">
+							<span>YY</span>
+						</label>
+
+						<label>
+							<input type="radio" name="year" value="numeric">
+							<span>YYYY</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Hour</legend>
+
+						<label>
+							<input type="radio" name="hour" value="numeric">
+							<span>H</span>
+						</label>
+
+						<label>
+							<input type="radio" name="hour" value="2-digit">
+							<span>HH</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Minute</legend>
+
+						<label>
+							<input type="radio" name="minute" value="numeric">
+							<span>M</span>
+						</label>
+
+						<label>
+							<input type="radio" name="minute" value="2-digit">
+							<span>MM</span>
+						</label>
+					</fieldset>
+
+					<fieldset>
+
+						<legend>Second</legend>
+
+						<label>
+							<input type="radio" name="second" value="numeric">
+							<span>S</span>
+						</label>
+
+						<label>
+							<input type="radio" name="second" value="2-digit">
+							<span>SS</span>
+						</label>
+					</fieldset>
+				</div>
+
+				<span class="result-date"></span>
+			</div>
 
 			<label>
 				<span>Color</span>
@@ -1872,11 +2032,123 @@ class DataSourceColumn {
 			</footer>
 		`;
 
+		const
+			format = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'],
+			resultDate = form.querySelector('.timing-type .result-date');
+
+		for(const radio of form.querySelectorAll('.timing-type input')) {
+
+			radio.on('click', () => {
+
+				for(const [index, _radio] of this.checkedRadio.entries()) {
+					if((_radio.name == radio.name) && (_radio.value == radio.value)) {
+						radio.checked = false;
+						this.checkedRadio.splice(index, 1);
+					}
+					else if(_radio.name == radio.name) {
+						this.checkedRadio.splice(index, 1);
+					}
+				};
+
+				if(radio.checked)
+					this.checkedRadio.push(radio);
+
+				this.type.format = {};
+
+				format.map(f => {
+					if(form[f].value)
+						this.type.format[f] = form[f].value;
+				});
+
+				if(!this.type.format) {
+					resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
+					return;
+				};
+
+				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+			});
+		};
+
+		form.type.on('change', () => {
+
+			form.querySelector('.timing-type').classList.add('hidden');
+
+			if(form.type.value == 'date') {
+
+				this.type.format = {
+					day: 'numeric',
+				};
+			}
+
+			else if(form.type.value == 'month') {
+
+				this.type.format = {
+					month: 'long',
+				};
+			}
+
+			else if(form.type.value == 'year') {
+
+				this.type.format = {
+					year: 'numeric',
+				};
+			}
+
+			else if(form.type.value == 'time') {
+
+				this.type.format = {
+					hour: 'numeric',
+					minute: 'numeric',
+					second: 'numeric',
+				};
+			}
+
+			else if(form.type.value == 'datetime') {
+
+				this.type.format = {
+					year: 'numeric',
+					month: 'short',
+					day: 'numeric',
+					hour: 'numeric',
+					minute: 'numeric'
+				};
+			}
+
+			else if(form.type.value == 'custom') {
+
+				form.querySelector('.timing-type').classList.toggle('hidden', form.type.value != 'custom');
+
+				if(this.interval)
+					clearInterval(this.interval);
+
+				this.interval = setInterval(() => {
+					resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+				}, 1000);
+			}
+
+			if(!this.type.format) {
+				resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
+				return;
+			}
+
+			resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+
+			for(const key of format) {
+
+				if(this.type.format[key]) {
+					form[key].value = this.type.format[key];
+				}
+				else if(form.querySelector(`input[name=${key}]:checked`)) {
+					form.querySelector(`input[name=${key}]:checked`).checked = false;
+				}
+			}
+		});
+
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
 
-		if(!user.privileges.has('report'))
-			form.querySelector('footer .save').classList.add('hidden');
+		if(!this.source.editable)
+			form.querySelector('.save').classList.add('hidden');
 
 		form.elements.formula.on('keyup', async () => {
 
@@ -1959,15 +2231,23 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-		for(const element of this.form.elements)
+		for(const element of this.form.elements) {
+
+			if(element.name == 'type')
+				continue;
+
 			this[element.name] = element.value == '' ? null : element.value || null;
+		}
 
 		this.filters = this.columnFilters.json;
 
 		this.type = {
 			name: this.form.type.value,
-			format: '',
+			format: this.type.format || '',
 		};
+
+		if(this.interval)
+			clearInterval(this.interval);
 
 		this.disabled = parseInt(this.disabled) || 0;
 
@@ -2003,15 +2283,23 @@ class DataSourceColumn {
 			response,
 			updated = 0;
 
-		for(const element of this.form.elements)
+		for(const element of this.form.elements) {
+
+			if(element.name == 'type')
+				continue;
+
 			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+		}
 
 		this.filters = this.columnFilters.json;
 
 		this.type = {
 			name: this.form.type.value,
-			format: '',
+			format: this.type.format || '',
 		};
+
+		if(this.interval)
+			clearInterval(this.interval);
 
 		response = {
 			key : this.key,
@@ -3332,7 +3620,7 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		return response.filter(r => new Date(r.get(timingColumn.key)).getDay() == this.value)
@@ -3348,6 +3636,10 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 	get domain() {
 
 		return new Map([
+			['second', 'Second'],
+			['minute', 'Minute'],
+			['hour', 'Hour'],
+			['day', 'Day'],
 			['week', 'Week'],
 			['month', 'Month'],
 		]);
@@ -3357,25 +3649,50 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		const result = new Map;
 
 		for(const row of response) {
 
-			let period;
+			let
+				period,
+				timing;
 
 			const periodDate = new Date(row.get(timingColumn.key));
 
 			// Week starts from monday, not sunday
-			if(this.value == 'week')
-				period = periodDate.getDay() ? periodDate.getDay() - 1 : 6;
+			if(this.value == 'week') {
+				period = (periodDate.getDay() ? periodDate.getDay() - 1 : 6) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
 
-			else if(this.value == 'month')
-				period = periodDate.getDate() - 1;
+			else if(this.value == 'month') {
+				period = (periodDate.getDate() - 1) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
 
-			const timing = new Date(Date.parse(row.get(timingColumn.key)) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			else if(this.value == 'day') {
+				period = periodDate.getHours() * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
+
+			else if(this.value == 'hour') {
+				period = periodDate.getMinutes() * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13);
+			}
+
+			else if(this.value == 'minute') {
+				period = periodDate.getSeconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16);
+			}
+
+			else if(this.value == 'second') {
+				period = periodDate.getMilliseconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 19);
+			}
+
 
 			if(!result.has(timing)) {
 
@@ -3423,7 +3740,7 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		const
@@ -3484,7 +3801,7 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		const

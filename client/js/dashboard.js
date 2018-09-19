@@ -85,7 +85,7 @@ Page.class = class Dashboards extends Page {
 
 	get menuBarToggle() {
 
-		if(this.menuBarToggleElement)
+		if (this.menuBarToggleElement)
 			return this.menuBarToggleElement;
 
 		const div = this.element = document.createElement('div');
@@ -181,7 +181,7 @@ Page.class = class Dashboards extends Page {
 
 				const label = this.nav.querySelector(`#${element}`);
 
-				if(!label) {
+				if (!label) {
 
 					continue;
 				}
@@ -308,6 +308,85 @@ Page.class = class Dashboards extends Page {
 			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found!</td></tr>`;
 	}
 
+	/**
+	 * 0 parent means root, ie any dashboard with 0 parent means that dashboard is root dashboard.
+	 flattens dashboard hierarchy and checks if there is single node cycle found.
+	 */
+
+	cycle() {
+
+		const simplifiedTreeMapping = new Map;
+
+		for (const node of this.list.keys()) {
+
+			if (!simplifiedTreeMapping.has(node)) {
+
+				simplifiedTreeMapping.set(node, new Set);
+			}
+
+			simplifiedTreeMapping.get(node).add(this.list.get(node).parent || 0);
+		}
+
+		for (const [dashboardId, parents] of simplifiedTreeMapping.entries()) {
+
+			let moved = true;
+
+			let toDelete = [], toReplace = [];
+
+			while (moved) {
+
+				for (const parent of parents) {
+
+					if (parents.has(0) || parents.has(dashboardId)) {
+
+						this.list.delete(parent);
+						moved = false;
+						break;
+					}
+
+					moved = false;
+
+					if (simplifiedTreeMapping.has(parent)) {
+
+						toDelete = [parent];
+						moved = true;
+
+						if (simplifiedTreeMapping.get(parent).has(0)) {
+
+							toDelete = [...parents];
+							toReplace = [parent];
+							moved = false;
+							break;
+						}
+
+						else {
+
+							toReplace.push(...simplifiedTreeMapping.get(parent));
+						}
+					}
+				}
+
+				for (const element of toDelete) {
+
+					simplifiedTreeMapping.get(dashboardId).delete(element);
+				}
+
+				for (const element of toReplace) {
+
+					simplifiedTreeMapping.get(dashboardId).add(element);
+				}
+			}
+		}
+
+		for (const [k, v] of simplifiedTreeMapping) {
+
+			if (v.has(k)) {
+
+				this.list.delete(k);
+			}
+		}
+	}
+
 	async load(state) {
 
 		const
@@ -324,6 +403,8 @@ Page.class = class Dashboards extends Page {
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 		}
 
+		this.cycle();
+
 		for (const dashboard of this.list.values()) {
 
 			if (dashboard.parent && this.list.has(dashboard.parent)) {
@@ -333,6 +414,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		const emptyDashboards = [];
+
 
 		for (const dashboard of this.list.values()) {
 
@@ -351,7 +433,7 @@ Page.class = class Dashboards extends Page {
 
 		this.navbar.render();
 
-		if(await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
+		if (await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
 
 			await Storage.set('newUser', (await Storage.get('newUser')) || {});
 
@@ -429,7 +511,7 @@ Page.class = class Dashboards extends Page {
 
 		this.container.querySelector('#reports .global-filters').classList.add('hidden');
 
-		if(!report.container.contains(report.menu))
+		if (!report.container.contains(report.menu))
 			report.container.appendChild(report.menu);
 
 		report.menu.classList.remove('hidden')
@@ -905,12 +987,20 @@ class Dashboard {
 		dashboardName.innerHTML = `
 			<span>${this.page.parents(this.id).filter(x => this.page.list.has(x)).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
 			<div>
-				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
+				<span class="toggle-dashboard-toolbar hidden"><i class="fas fa-ellipsis-v"></i></span>
 			</div>
 		`;
 
 		dashboardName.classList.remove('hidden');
-		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
+
+		if(this.editable) {
+
+			const toggleDashboardToolbar =  dashboardName.querySelector('.toggle-dashboard-toolbar');
+
+			toggleDashboardToolbar.classList.remove('hidden');
+
+			toggleDashboardToolbar.on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
+		}
 
 		this.page.render({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
 
@@ -1066,7 +1156,7 @@ class Navbar {
 			}
 		}
 
-		if(dashboardHirachy.querySelectorAll('.item:not(.hidden)').length > 40) {
+		if (dashboardHirachy.querySelectorAll('.item:not(.hidden)').length > 40) {
 
 			search.classList.remove('hidden');
 		}
@@ -1181,7 +1271,7 @@ class Nav {
 			submenu.appendChild(this.page.navbar.list.get(child.id).menuItem);
 		}
 
-		if(this.dashboard.format && this.dashboard.format.hidden) {
+		if (this.dashboard.format && this.dashboard.format.hidden) {
 
 			container.classList.add('hidden');
 		}
@@ -1358,15 +1448,15 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 	async apply(options = {}) {
 
-		for(const report of this.dashboard.visibleVisuliaztions) {
+		for (const report of this.dashboard.visibleVisuliaztions) {
 
 			let found = false;
 
-			for(const filter of report.filters.values()) {
+			for (const filter of report.filters.values()) {
 
 				let [matchingFilter] = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))
 
-				if(!matchingFilter)
+				if (!matchingFilter)
 					continue;
 
 				filter.value = matchingFilter.value;
@@ -1374,10 +1464,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				found = true;
 			}
 
-			if(options.dontLoad)
+			if (options.dontLoad)
 				return;
 
-			if(found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
+			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
 				report.visualizations.selected.load(options);
 
 			report.container.style.opacity = found ? 1 : 0.4;
