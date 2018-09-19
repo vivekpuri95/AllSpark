@@ -183,7 +183,6 @@ class UserOnboardStage {
 		container.on('click', () => {
 
 			window.location = this.url;
-			this.autoFillForm();
 		});
 
 		this.autoFillForm();
@@ -205,14 +204,17 @@ class UserOnboardStage {
 		this.container.classList.add('active');
 	}
 
-	hidePopUp(submitButton) {
+	hidePopUp() {
 
 		if(document.body.querySelector('.save-pop-up')) {
 
 			document.body.querySelector('.save-pop-up').remove();
 		}
 
-		submitButton.classList.remove('blink');
+		for(const element of document.body.querySelectorAll('.blink')) {
+
+			element.classList.remove('blink');
+		}
 	}
 }
 
@@ -271,7 +273,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 		const rect = submitButton.getBoundingClientRect();
 
-		this.page.container.querySelector('section#form .toolbar #back').on('click', () => this.hidePopUp(submitButton));
+		this.page.container.querySelector('section#form .toolbar #back').on('click', () => this.hidePopUp());
 
 		if(!document.body.querySelector('.save-pop-up') && this.page.container.querySelector('section#form').classList.contains('show')) {
 
@@ -393,9 +395,17 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 			}
 		}
 
-		this.page.container.querySelector('#stage-switcher .stage').on('click', () => this.hidePopUp(submitButton));
+		for(const stage of this.page.container.querySelectorAll('#stage-switcher .stage')) {
 
-		submitButton.on('click', () => this.hidePopUp(submitButton))
+			if(stage.disabled) {
+
+				return;
+			}
+
+			stage.on('click', () => this.hidePopUp());
+		}
+
+		submitButton.on('click', () => this.hidePopUp())
 
 		new SnackBar({
 			message: 'We\'ve added a default report for you',
@@ -410,7 +420,7 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		
 		if(this.report && this.report.query) {
 
-			this.hidePopUp(submitButton);
+			this.hidePopUp();
 			return;
 		}
 
@@ -432,7 +442,7 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 		this.page.stages.selected.report.connection.editor.value = this.onboard.report.query;
 
-		submitButton.on('click', () => this.hidePopUp(submitButton));
+		submitButton.on('click', () => this.hidePopUp());
 
 		new SnackBar({
 			message: 'Default query has been added for you',
@@ -517,8 +527,8 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 		popUp.style.top = `${rect.top - 10}px`;
 		popUp.style.left = `${rect.right}px`;
 
-		DashboardsDashboard.container.querySelector('#back').on('click', () => this.hidePopUp(submitButton));
-		submitButton.on('click', () => this.hidePopUp(submitButton));
+		DashboardsDashboard.container.querySelector('#back').on('click', () => this.hidePopUp());
+		submitButton.on('click', () => this.hidePopUp());
 
 		new SnackBar({
 			message: 'We\'ve added a default dashboard for you',
@@ -644,7 +654,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 					return;
 				}
 
-				stage.on('click', () => this.hidePopUp(addButton));
+				stage.on('click', () => this.hidePopUp());
 			}
 
 			addButton.classList.add('blink');
@@ -673,24 +683,18 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 			`);
 		}
 
-		this.page.container.querySelector('#stage-switcher .stage').on('click', () => {
+		for(const stage of this.page.container.querySelectorAll('#stage-switcher .stage')) {
 
-			if(document.body.querySelector('.save-pop-up')) {
+			if(stage.disabled) {
 
-				document.body.querySelector('.save-pop-up').remove();
+				return;
 			}
 
-			submitButton.classList.remove('blink');
-		});
+			stage.on('click', () => this.hidePopUp());
+		}
 
-		submitButton.on('click', () => {
-
-			if(document.body.querySelector('.save-pop-up')) {
-
-				document.body.querySelector('.save-pop-up').remove();
-				submitButton.classList.remove('blink');
-			}
-		});
+		submitButton.on('click', () => this.hidePopUp());
+		this.page.stages.selected.container.querySelector('#configure-visualization-back').on('click', () => this.hidePopUp());
 
 		const
 			rect = submitButton.getBoundingClientRect(),
@@ -703,7 +707,6 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		popUp.style.left = `${rect.right}px`;
 		document.body.appendChild(popUp);
 	}
-
 });
 
 UserOnboard.setup();
