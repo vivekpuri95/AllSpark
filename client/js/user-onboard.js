@@ -343,7 +343,92 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 	autoFillForm() {
 
-		const a = 5;
+		if(!this.currentStage) {
+
+			return;
+		}
+
+		if(this.page.stages.selected instanceof ReportsManger.stages.get('configure-report')) {
+
+			this.loadConfigureReportForm();
+		}
+
+		if(this.page.stages.selected instanceof ReportsManger.stages.get('define-report')) {
+
+			this.loadDefineReportForm();
+		}
+	}
+
+	loadConfigureReportForm() {
+
+		const
+			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]'),
+			configureForm = this.page.stages.selected.container.querySelector('#configure-report-form');
+
+		document.body.insertAdjacentHTML('beforeend', `
+			<div class="save-pop-up">Click save to continue</div>
+		`);
+
+		const
+			rect = submitButton.getBoundingClientRect(),
+			popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.left = `${rect.right}px`;
+
+		submitButton.classList.add('blink');
+
+		for(const key in this.onboard.report) {
+
+			if(configureForm.elements[key]) {
+
+				configureForm.elements[key].value = this.onboard.report[key];
+			}
+		}
+
+		this.page.container.querySelector('#stage-switcher .stage').on('click', () => {
+
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+			}
+
+			submitButton.classList.remove('blink');
+		});
+
+		new SnackBar({
+			message: 'We\'ve added a default report for you',
+			subtitle: 'Click save to continue'
+		});
+	}
+
+	loadDefineReportForm() {
+
+		const
+			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
+
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue</div>
+			`);
+		}
+
+		submitButton.classList.add('blink');
+
+		const
+			rect = submitButton.getBoundingClientRect(),
+			popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.left = `${rect.right}px`;
+
+		this.page.stages.selected.report.connection.editor.value = this.onboard.report.query;
+
+		new SnackBar({
+			message: 'Default query has been added for you',
+			subtitle: 'Click save to continue'
+		});
 	}
 
 });
@@ -393,7 +478,49 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
 	autoFillForm() {
 
-		const a = 5;
+		if(!this.currentStage) {
+
+			return;
+		}
+
+		const submitButton = this.page.container.querySelector('#form .toolbar button[type=submit]');
+
+		for(const element of DashboardsDashboard.form.elements) {
+
+			if(this.onboard.dashboard[element.name]) {
+
+				element.value = this.onboard.dashboard[element.name];
+			}
+		}
+
+		const rect = submitButton.getBoundingClientRect();
+
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue</div>
+			`);
+			submitButton.classList.add('blink');
+		}
+
+		const popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.left = `${rect.right}px`;
+
+		DashboardsDashboard.container.querySelector('#back').on('click', () => {
+
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+				submitButton.classList.remove('blink');
+			}
+		});
+
+		new SnackBar({
+			message: 'We\'ve added a default dashboard for you',
+			subtitle: 'Click save to continue'
+		});
 	}
 
 });
@@ -406,6 +533,18 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 		this.title = 'Add Visualization';
 		this.subtitle = 'Visualize your data';
+
+		try {
+
+			if((this.page.stages.selected instanceof ReportsManger.stages.get('pick-visualization')) || (this.page.stages.selected instanceof ReportsManger.stages.get('configure-visualization'))) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {
+
+			this.currentStage = false;
+		}
 	}
 
 	get url() {
@@ -436,7 +575,110 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 	autoFillForm() {
 
-		const a = 5;
+		if(!this.currentStage) {
+
+			return;
+		}
+
+		if(this.page.stages.selected instanceof ReportsManger.stages.get('pick-visualization')) {
+
+			const visualizationPickerForm = this.page.stages.selected.container.querySelector('#add-visualization-form');
+
+			for(const element of visualizationPickerForm.querySelectorAll('label')) {
+
+				if(element.name != 'Line') {
+
+					element.removeEventListener('click', element.clickListener);
+					element.classList.add('grey');
+				}
+			}
+
+			this.setPickVisualizationStage();
+
+			this.page.stages.selected.container.querySelector('#add-visualization').on('click', () => this.setPickVisualizationStage());
+			this.page.stages.selected.container.querySelector('#visualization-picker-back').on('click', () => this.setPickVisualizationStage());
+		}
+
+		if(this.page.stages.selected instanceof ReportsManger.stages.get('configure-visualization')) {
+
+			this.loadConfigureVisualizationForm();
+		}
+	}
+
+	setPickVisualizationStage() {
+
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click to pick visualization</div>
+			`);
+		}
+
+		if(this.page.stages.selected.container.querySelector('#visualization-list').classList.contains('hidden')) {
+
+			const
+				label = this.page.stages.selected.container.querySelector('#add-visualization-form label:not(.grey)'),
+				rect = label.getBoundingClientRect();
+
+			const popUp = document.body.querySelector('.save-pop-up');
+			popUp.textContent = 'Select line visualization';
+
+			label.appendChild(popUp);
+
+			this.page.stages.selected.container.querySelector('#add-visualization-form label:not(.grey)').style.position = 'relative';
+			popUp.style.top = `${rect.top - 330}px`;
+			popUp.style.left = `${rect.right - 30}px`;
+
+		}
+		else {
+
+			const addButton = this.page.stages.selected.container.querySelector('#add-visualization');
+
+			addButton.classList.add('blink');
+
+			const rect = addButton.getBoundingClientRect();
+
+			const popUp = document.body.querySelector('.save-pop-up');
+			popUp.textContent = 'Click to pick visualization';
+
+			document.body.appendChild(popUp);
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
+		}
+
+	}
+
+	async loadConfigureVisualizationForm() {
+
+		const submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
+
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to finish</div>
+			`);
+		}
+
+		submitButton.on('click', () => {
+
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+				submitButton.classList.remove('blink');
+			}
+		});
+
+		const
+			rect = submitButton.getBoundingClientRect(),
+			popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.textContent = 'Click save to finish';
+		submitButton.classList.add('blink');
+
+		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.left = `${rect.right}px`;
+		document.body.appendChild(popUp);
 	}
 
 });

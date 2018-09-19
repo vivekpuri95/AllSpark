@@ -57,11 +57,6 @@ class DashboardManager extends Page {
 		await Sections.show('list');
 
 		history.pushState(null, '', `/dashboards-manager/`);
-
-		if((await Storage.has('newUser')) && document.body.querySelector('.save-pop-up')) {
-
-			document.body.querySelector('.save-pop-up').remove();
-		}
 	}
 
 	async load() {
@@ -160,53 +155,8 @@ class DashboardsDashboard {
 
 		DashboardsDashboard.editor.value = '';
 
-		if(await Storage.get('newUser')) {
-
-			if(typeof onboard != 'object') {
-
-				try {
-					onboard = JSON.parse(onboard);
-				}
-				catch(e) {
-					onboard = {};
-				}
-			}
-
-			this.container.querySelector('#form .toolbar button[type=submit]').classList.add('blink');
-
-			for(const element of DashboardsDashboard.form.elements) {
-				if(onboard.dashboard[element.name])
-					element.value = onboard.dashboard[element.name];
-			}
-
-			new SnackBar({
-				message: 'We\'ve added a default dashboard for you',
-				subtitle: 'Click save to continue'
-			});
-
-			await Sections.show('form');
-
-			DashboardsDashboard.form.name.focus();
-
-			const rect = this.container.querySelector('#form .toolbar button[type=submit]').getBoundingClientRect();
-
-			if(!document.body.querySelector('.save-pop-up')) {
-
-				document.body.insertAdjacentHTML('beforeend', `
-				<div class="save-pop-up">Click save to continue</div>
-			`);
-			}
-
-			const popUp = document.body.querySelector('.save-pop-up');
-
-			popUp.style.top = `${rect.top - 10}px`;
-			popUp.style.left = `${rect.right}px`;
-		}
-		else  {
-
-			await Sections.show('form');
-			DashboardsDashboard.form.name.focus();
-		}
+		await Sections.show('form');
+		DashboardsDashboard.form.name.focus();
 	}
 
 	static async insert(e) {
