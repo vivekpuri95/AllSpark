@@ -192,6 +192,7 @@
             border: 1px solid #999;
         }
 .save-pop-up {
+    /* width: 190px; */
     background: var(--color-accent);
     display: flex;
     align-items: center;

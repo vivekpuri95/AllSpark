@@ -1917,15 +1917,21 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(!this.visualization)
 			return;
 
-		await Promise.all([
-			this.loadVisualizationForm(),
-			this.page.preview.load({
-				query_id: this.report.query_id,
-				visualization: {
-					id: this.visualization.visualization_id
-				},
-			})
-		]);
+		if(await Storage.has('newUser')) {
+
+			this.visualization.options = this.page.onboard.visualization.options;
+			this.visualization.name = this.page.onboard.visualization.name;
+			this.visualization.description = this.page.onboard.visualization.description;
+		}
+
+		await this.page.preview.load({
+			query_id: this.report.query_id,
+			visualization: {
+				id: this.visualization.visualization_id
+			},
+		});
+
+		await this.loadVisualizationForm();
 
 		this.visualizationLogs = new ReportLogs(this.visualization, this, {class: VisualizationLog, name: 'visualization'});
 
@@ -1953,13 +1959,6 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		if(visualization) {
 
 			this.visualization = visualization;
-		}
-
-		if(await Storage.has('newUser')) {
-
-			this.visualization.options = this.page.onboard.visualization.options;
-			this.visualization.name = this.page.onboard.visualization.name;
-			this.visualization.description = this.page.onboard.visualization.description;
 		}
 
 		if(this.container.querySelector('.visualization-form.stage-form'))

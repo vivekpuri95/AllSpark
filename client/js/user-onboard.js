@@ -204,6 +204,16 @@ class UserOnboardStage {
 
 		this.container.classList.add('active');
 	}
+
+	hidePopUp(submitButton) {
+
+		if(document.body.querySelector('.save-pop-up')) {
+
+			document.body.querySelector('.save-pop-up').remove();
+		}
+
+		submitButton.classList.remove('blink');
+	}
 }
 
 UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
@@ -250,7 +260,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 	autoFillForm() {
 		
-		if(!this.currentStage) {
+		if(!this.currentStage || this.connection) {
 
 			return;
 		}
@@ -261,15 +271,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 		const rect = submitButton.getBoundingClientRect();
 
-		this.page.container.querySelector('section#form .toolbar #back').on('click', () => {
-
-			if(document.body.querySelector('.save-pop-up')) {
-
-				document.body.querySelector('.save-pop-up').remove();
-			}
-
-			submitButton.classList.remove('blink');
-		});
+		this.page.container.querySelector('section#form .toolbar #back').on('click', () => this.hidePopUp(submitButton));
 
 		if(!document.body.querySelector('.save-pop-up') && this.page.container.querySelector('section#form').classList.contains('show')) {
 
@@ -361,6 +363,11 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 	loadConfigureReportForm() {
 
+		if(this.report) {
+			
+			return;
+		}
+
 		const
 			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]'),
 			configureForm = this.page.stages.selected.container.querySelector('#configure-report-form');
@@ -386,15 +393,9 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 			}
 		}
 
-		this.page.container.querySelector('#stage-switcher .stage').on('click', () => {
+		this.page.container.querySelector('#stage-switcher .stage').on('click', () => this.hidePopUp(submitButton));
 
-			if(document.body.querySelector('.save-pop-up')) {
-
-				document.body.querySelector('.save-pop-up').remove();
-			}
-
-			submitButton.classList.remove('blink');
-		});
+		submitButton.on('click', () => this.hidePopUp(submitButton))
 
 		new SnackBar({
 			message: 'We\'ve added a default report for you',
@@ -403,6 +404,12 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 	}
 
 	loadDefineReportForm() {
+
+		if(this.report && this.report.query) {
+
+			this.hidePopUp(submitButton);
+			return;
+		}
 
 		const
 			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
@@ -424,6 +431,8 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		popUp.style.left = `${rect.right}px`;
 
 		this.page.stages.selected.report.connection.editor.value = this.onboard.report.query;
+
+		submitButton.on('click', () => this.hidePopUp(submitButton));
 
 		new SnackBar({
 			message: 'Default query has been added for you',
@@ -478,7 +487,7 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
 	autoFillForm() {
 
-		if(!this.currentStage) {
+		if(!this.currentStage || this.dashboard) {
 
 			return;
 		}
@@ -508,14 +517,8 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 		popUp.style.top = `${rect.top - 10}px`;
 		popUp.style.left = `${rect.right}px`;
 
-		DashboardsDashboard.container.querySelector('#back').on('click', () => {
-
-			if(document.body.querySelector('.save-pop-up')) {
-
-				document.body.querySelector('.save-pop-up').remove();
-				submitButton.classList.remove('blink');
-			}
-		});
+		DashboardsDashboard.container.querySelector('#back').on('click', () => this.hidePopUp(submitButton));
+		submitButton.on('click', () => this.hidePopUp(submitButton));
 
 		new SnackBar({
 			message: 'We\'ve added a default dashboard for you',
@@ -659,6 +662,16 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 				<div class="save-pop-up">Click save to finish</div>
 			`);
 		}
+
+		this.page.container.querySelector('#stage-switcher .stage').on('click', () => {
+
+			if(document.body.querySelector('.save-pop-up')) {
+
+				document.body.querySelector('.save-pop-up').remove();
+			}
+
+			submitButton.classList.remove('blink');
+		});
 
 		submitButton.on('click', () => {
 
