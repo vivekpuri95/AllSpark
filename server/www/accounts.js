@@ -158,6 +158,8 @@ exports.update = class extends API {
 
 	async update({account_id, name, url, icon = null, logo = null, auth_api = null}) {
 
+		this.user.privilege.needs('superadmin');
+
 		const result = await this.mysql.query(
 			'UPDATE tb_accounts SET ? WHERE account_id = ?',
 			[{ name, url, icon, logo, auth_api }, account_id],
@@ -172,6 +174,8 @@ exports.update = class extends API {
 exports.delete = class extends API {
 
 	async delete({account_id}) {
+
+		this.user.privilege.needs('superadmin');
 
 		const result = await this.mysql.query(
 			'UPDATE tb_accounts SET status = 0 WHERE account_id = ?',
