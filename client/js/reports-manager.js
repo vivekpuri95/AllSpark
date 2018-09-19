@@ -3399,7 +3399,7 @@ class Axis {
 
 class LinearAxes extends Set {
 
-	constructor(axes, stage) {
+	constructor(axes = [], stage) {
 		super();
 
 		this.stage = stage;
