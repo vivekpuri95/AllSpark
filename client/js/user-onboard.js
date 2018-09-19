@@ -405,14 +405,14 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 	loadDefineReportForm() {
 
+		const
+			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
+		
 		if(this.report && this.report.query) {
 
 			this.hidePopUp(submitButton);
 			return;
 		}
-
-		const
-			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
 
 		if(!document.body.querySelector('.save-pop-up')) {
 
@@ -636,6 +636,16 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		else {
 
 			const addButton = this.page.stages.selected.container.querySelector('#add-visualization');
+
+			for(const stage of this.page.container.querySelectorAll('#stage-switcher .stage')) {
+
+				if(stage.disabled) {
+
+					return;
+				}
+
+				stage.on('click', () => this.hidePopUp(addButton));
+			}
 
 			addButton.classList.add('blink');
 
