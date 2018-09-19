@@ -1499,7 +1499,10 @@ class DataSourceRow extends Map {
 
 		if(column.type) {
 
-			if(['date', 'month', 'year', 'time', 'datetime', 'custom'].includes(column.type.name))
+			if(DataSourceColumn.formatType.has(column.type.name))
+				value = Format.customTime(value, DataSourceColumn.formatType.get(column.type.name));
+
+			if(column.type.name == 'custom')
 				value = Format.customTime(value, column.type.format);
 
 			else if(column.type.name == 'timeelapsed')
@@ -1748,7 +1751,6 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-
 		if(this.drilldown && this.drilldown.query_id) {
 
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
@@ -1766,12 +1768,14 @@ class DataSourceColumn {
 
 		this.form.querySelector('.timing-type').classList.add('hidden');
 
-		if(this.type.format) {
+		const format = DataSourceColumn.formatType.get(this.type.name) || {};
+
+		if(format) {
 
 			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
 
-			for(const key in this.type.format)
-				this.form[key].value = this.type.format[key];
+			for(const key in format)
+				this.form[key].value = format[key];
 		};
 
 		if(this.type.name == 'custom') {
@@ -1779,15 +1783,18 @@ class DataSourceColumn {
 			this.form.querySelector('.timing-type .result-date').innerHTML = '<div class="NA">Example:</div> ' + Format.customTime(Date.now(), this.type.format);
 			this.form.querySelector('.timing-type').classList.remove('hidden');
 
+			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
+
+			for(const key in this.type.format)
+				this.form[key].value = this.type.format[key];
+
 			if(this.interval)
 				clearInterval(this.interval);
 
 			this.interval = setInterval(() => {
-				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+				this.form.querySelector('.timing-type .result-date').innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
 			}, 1000);
 		};
-
-		const resultDate = this.form.querySelector('.timing-type .result-date');
 
 		this.checkedRadio = [];
 
@@ -2071,47 +2078,19 @@ class DataSourceColumn {
 
 		form.type.on('change', () => {
 
+			let
+				typeFormat,
+				selectedFormat;
+
 			form.querySelector('.timing-type').classList.add('hidden');
 
-			if(form.type.value == 'date') {
+			if(DataSourceColumn.formatType.has(form.type.value)) {
 
-				this.type.format = {
-					day: 'numeric',
-				};
-			}
+				typeFormat = DataSourceColumn.formatType.get(form.type.value);
 
-			else if(form.type.value == 'month') {
+				selectedFormat = typeFormat;
 
-				this.type.format = {
-					month: 'long',
-				};
-			}
-
-			else if(form.type.value == 'year') {
-
-				this.type.format = {
-					year: 'numeric',
-				};
-			}
-
-			else if(form.type.value == 'time') {
-
-				this.type.format = {
-					hour: 'numeric',
-					minute: 'numeric',
-					second: 'numeric',
-				};
-			}
-
-			else if(form.type.value == 'datetime') {
-
-				this.type.format = {
-					year: 'numeric',
-					month: 'short',
-					day: 'numeric',
-					hour: 'numeric',
-					minute: 'numeric'
-				};
+				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), typeFormat);
 			}
 
 			else if(form.type.value == 'custom') {
@@ -2121,22 +2100,28 @@ class DataSourceColumn {
 				if(this.interval)
 					clearInterval(this.interval);
 
+				this.type.format = {};
+
+				format.map(f => {
+					if(form[f].value)
+						this.type.format[f] = form[f].value;
+				});
+
+				if(!this.type.format) {
+					return resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
+				}
+
+				selectedFormat = this.type.format;
+
 				this.interval = setInterval(() => {
 					resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
 				}, 1000);
 			}
 
-			if(!this.type.format) {
-				resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
-				return;
-			}
-
-			resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
-
 			for(const key of format) {
 
-				if(this.type.format[key]) {
-					form[key].value = this.type.format[key];
+				if(selectedFormat[key]) {
+					form[key].value = selectedFormat[key];
 				}
 				else if(form.querySelector(`input[name=${key}]:checked`)) {
 					form.querySelector(`input[name=${key}]:checked`).checked = false;
@@ -2241,10 +2226,14 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
+		const customType = this.type.format;
+
 		this.type = {
 			name: this.form.type.value,
-			format: this.type.format || '',
 		};
+
+		if(this.form.type.value == 'custom')
+			this.type.format = customType;
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2293,10 +2282,14 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
+		const customType = this.type.format;
+
 		this.type = {
 			name: this.form.type.value,
-			format: this.type.format || '',
 		};
+
+		if(this.form.type.value == 'custom')
+			this.type.format = customType;
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2514,6 +2507,44 @@ class DataSourceColumn {
 		destination.visualizations.selected.load();
 	}
 }
+
+DataSourceColumn.formatType = new Map;
+
+DataSourceColumn.formatType.set('date',
+	{
+		day: 'numeric',
+	}
+);
+
+DataSourceColumn.formatType.set('month',
+	{
+		month: 'long',
+	}
+);
+
+DataSourceColumn.formatType.set('year',
+	{
+		year: 'numeric',
+	}
+);
+
+DataSourceColumn.formatType.set('datetime',
+	{
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric',
+		hour: 'numeric',
+		minute: 'numeric'
+	}
+);
+
+DataSourceColumn.formatType.set('time',
+	{
+		hour: 'numeric',
+		minute: 'numeric',
+		second: 'numeric',
+	}
+);
 
 class DataSourceColumnDrilldownParameters extends Set {
 
