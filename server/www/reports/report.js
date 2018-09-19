@@ -151,12 +151,10 @@ exports.list = class extends API {
 
 		let [reportRoles, visualizationRoles, visualizationUsers, userSharedQueries] = await Promise.all([
 			role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],),
-			role.get(this.account.account_id, visualizationRolesFromQuery ? "query" : "visualization", "role",),
-			role.get(this.account.account_id, visualizationRolesFromQuery ? "query" : "visualization", "user",),
+			visualizationRolesFromQuery ? Promise.resolve([]) : role.get(this.account.account_id, "visualization", "role",),
+			visualizationRolesFromQuery ? Promise.resolve([]) : role.get(this.account.account_id, "visualization", "user",),
 			role.get(this.account.account_id, "query", "user", results[0].length ? results[0].map(x => x.query_id) : [-1], this.user.user_id)
 		]);
-
-		userSharedQueries = new Set(userSharedQueries.map(x => x.owner_id));
 
 		const dashboardSharedQueries = new Set(results[4].map(x => parseInt(x.query_id)));
 
@@ -176,6 +174,39 @@ exports.list = class extends API {
 			visualizationQueryMapping[visualization.query_id].push(visualization);
 			visualizationMapping[visualization.visualization_id] = visualization;
 		}
+
+		if(visualizationRolesFromQuery) {
+
+			visualizationRoles = [];
+			visualizationUsers = [];
+
+			for(const row of reportRoles || []) {
+
+				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
+
+					const obj = JSON.parse(JSON.stringify(row));
+
+					obj.owner_id = vis.visualization_id;
+					obj.owner = 'visualization';
+
+					visualizationRoles.push(obj);
+				}
+			}
+
+			for(const row of userSharedQueries || []) {
+
+				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
+
+					const obj = JSON.parse(JSON.stringify(row));
+					obj.owner_id = vis.visualization_id;
+					obj.owner = 'visualization';
+
+					visualizationUsers.push(obj);
+				}
+			}
+		}
+
+		userSharedQueries = new Set(userSharedQueries.map(x => x.owner_id));
 
 		for(const visualizationRole of visualizationRoles) {
 
