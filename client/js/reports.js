@@ -2512,13 +2512,16 @@ DataSourceColumn.formatType = new Map;
 
 DataSourceColumn.formatType.set('date',
 	{
+		year: 'numeric',
+		month: 'short',
 		day: 'numeric',
 	}
 );
 
 DataSourceColumn.formatType.set('month',
 	{
-		month: 'long',
+		year: 'numeric',
+		month: 'short',
 	}
 );
 
