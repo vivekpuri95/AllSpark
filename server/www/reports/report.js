@@ -177,9 +177,10 @@ exports.list = class extends API {
 
 		if(visualizationRolesFromQuery) {
 
-			visualizationRoles = [], visualizationUsers = [];
+			visualizationRoles = [];
+			visualizationUsers = [];
 
-			for(const row of reportRoles) {
+			for(const row of reportRoles || []) {
 
 				for(const vis of visualizationQueryMapping[row.owner_id]) {
 
@@ -192,7 +193,7 @@ exports.list = class extends API {
 				}
 			}
 
-			for(const row of userSharedQueries) {
+			for(const row of userSharedQueries || []) {
 
 				for(const vis of visualizationQueryMapping[row.owner_id]) {
 
