@@ -709,4 +709,62 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 	}
 });
 
+UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage {
+
+	constructor(onboard) {
+
+		super(onboard);
+
+		this.title = 'Add visualization to dashboard';
+		this.subtitle= '';
+
+		try {
+
+			if((this.page.stages.selected instanceof ReportsManger.stages.get('configure-visualization'))) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {
+
+			this.currentStage = false;
+		}
+	}
+
+	get url() {
+
+		return this.report ? `/reports/pick-visualization/${this.report.query_id}` : '/reports';
+
+	}
+
+	async load() {
+
+		await DataSource.load();
+
+		if(!DataSource.list.size) {
+
+			return;
+		}
+
+		this.report = DataSource.list.values().next().value;
+
+		if(!this.report.visualizations.length) {
+
+			return;
+		}
+
+		this.visualization = this.report.visualizations[0];
+
+		this.completed = true;
+		this.progress = this.progress + 25;
+	}
+
+	autoFillForm() {
+
+		if(!this.currentStage) {
+
+			return;
+		}
+	}
+})
 UserOnboard.setup();
