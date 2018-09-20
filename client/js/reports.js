@@ -2232,7 +2232,7 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
-		const customType = this.type.format;
+		const customType = this.type ? this.type.format : {};
 
 		this.type = {
 			name: this.form.type.value,
@@ -2288,7 +2288,7 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
-		const customType = this.type.format;
+		const customType = this.type ? this.type.format : {};
 
 		this.type = {
 			name: this.form.type.value,
