@@ -154,6 +154,8 @@ class UserOnboardStage {
 
 	constructor(onboard) {
 
+		this.stagesObj = onboard;
+
 		this.stages = onboard.stages;
 		this.progress = onboard.progress;
 		this.page = onboard.page;
@@ -259,7 +261,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 	autoFillForm() {
 		
-		if(!this.currentStage || this.connection) {
+		if(!this.currentStage || this.completed) {
 
 			return;
 		}
@@ -346,6 +348,16 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 			return;
 		}
 
+		for(const stage of this.page.container.querySelectorAll('#stage-switcher .stage')) {
+
+			if(stage.disabled) {
+
+				return;
+			}
+
+			stage.on('click', () => this.hidePopUp());
+		}
+
 		if(this.page.stages.selected instanceof ReportsManger.stages.get('configure-report')) {
 
 			this.loadConfigureReportForm();
@@ -389,16 +401,6 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 			}
 		}
 
-		for(const stage of this.page.container.querySelectorAll('#stage-switcher .stage')) {
-
-			if(stage.disabled) {
-
-				return;
-			}
-
-			stage.on('click', () => this.hidePopUp());
-		}
-
 		submitButton.on('click', () => this.hidePopUp())
 
 		new SnackBar({
@@ -408,6 +410,11 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 	}
 
 	loadDefineReportForm() {
+
+		if(this.report && this.report.query) {
+
+			return;
+		}
 
 		const
 			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
@@ -510,8 +517,8 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 			if(!document.body.querySelector('.save-pop-up')) {
 
 				document.body.insertAdjacentHTML('beforeend', `
-				<div class="save-pop-up">Click save to continue</div>
-			`);
+					<div class="save-pop-up">Click save to continue</div>
+				`);
 				submitButton.classList.add('blink');
 			}
 
@@ -574,6 +581,8 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 			return;
 		}
+
+		this.visualization = this.report.visualizations[0];
 
 		this.completed = true;
 		this.progress = this.progress + 20;
@@ -657,11 +666,19 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 	async loadConfigureVisualizationForm() {
 
+		if(this.visualization && this.visualization.options) {
+
+			return;
+		}
+
 		const submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
 
-		document.body.insertAdjacentHTML('beforeend', `
-			<div class="save-pop-up">Click save to continue</div>
-		`);
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue</div>
+			`);
+		}
 
 		submitButton.on('click', () => {
 
@@ -686,7 +703,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 			rect = submitButton.getBoundingClientRect(),
 			popUp = document.body.querySelector('.save-pop-up');
 
-		popUp.textContent = 'Click save to finish';
+		popUp.textContent = 'Click save to continue';
 		submitButton.classList.add('blink');
 
 		popUp.style.top = `${rect.top - 10}px`;
@@ -702,7 +719,7 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 		super(onboard);
 
 		this.title = 'Add visualization to dashboard';
-		this.subtitle= '';
+		this.subtitle= 'Views on dashboard';
 
 		try {
 
@@ -744,7 +761,7 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 
 	autoFillForm() {
 
-		if(!this.currentStage || !this.page.stages || !this.page.stages.selected.dashboards) {
+		if(!this.currentStage || !this.page.stages || !this.page.stages.selected.dashboards || this.completed) {
 
 			return;
 		}
@@ -754,7 +771,7 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 		if(!document.body.querySelector('.save-pop-up')) {
 
 			addDashboardForm.insertAdjacentHTML('beforeend', `
-				<div class="save-pop-up">Click save to finish</div>
+				<div class="save-pop-up">Click add to finish</div>
 			`);
 		}
 
@@ -764,7 +781,7 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 			rect = submitButton.getBoundingClientRect(),
 			popUp = document.body.querySelector('.save-pop-up');
 
-		popUp.textContent = 'Click save to finish';
+		popUp.textContent = 'Click add to finish';
 		addDashboardForm.appendChild(popUp);
 		submitButton.classList.add('blink');
 
@@ -779,7 +796,7 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 			this.hidePopUp();
 
 			this.completed = true;
-			this.checked();
+			this.stagesObj.load();
 
 			new SnackBar({
 				message: 'Setup Complete'

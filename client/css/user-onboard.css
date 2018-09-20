@@ -218,7 +218,7 @@
     animation: submit-blink 1s infinite;
     transition: background var(--transition-duration);
 }
-main .toolbar button.blink:hover {
+main button.blink:hover {
     color: #333;
 }
 main .toolbar button.unsaved.blink {
