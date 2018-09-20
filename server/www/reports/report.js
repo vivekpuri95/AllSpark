@@ -379,7 +379,7 @@ exports.list = class extends API {
 					visualization.users = [];
 				}
 				let e1 = performance.now();
-				const visualizationAuthResponse = await auth.visualization(visualization, this.user, [row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || []])
+				const visualizationAuthResponse = await auth.visualization(visualization, this.user, [row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || []], visualizationRolesFromQuery);
 				visualizationTime += performance.now() - e1;
 				visualizationCount++;
 
