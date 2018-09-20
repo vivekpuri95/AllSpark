@@ -1788,14 +1788,15 @@ class DataSourceColumn {
 
 			for(const key in this.type.format)
 				this.form[key].value = this.type.format[key];
+
+			if(this.interval)
+				clearInterval(this.interval);
+
+			this.interval = setInterval(() => {
+				this.form.querySelector('.timing-type .result-date').innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+			}, 1000);
 		};
 
-		if(this.interval)
-			clearInterval(this.interval);
-
-		this.interval = setInterval(() => {
-			this.form.querySelector('.timing-type .result-date').innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
-		}, 1000);
 
 		this.checkedRadio = [];
 
@@ -2061,19 +2062,14 @@ class DataSourceColumn {
 				if(radio.checked)
 					this.checkedRadio.push(radio);
 
-				this.type.format = {};
+				this.customTypeFormat = {};
 
 				format.map(f => {
 					if(form[f].value)
-						this.type.format[f] = form[f].value;
+						this.customTypeFormat[f] = form[f].value;
 				});
 
-				if(!this.type.format) {
-					resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
-					return;
-				};
-
-				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.customTypeFormat);
 			});
 		};
 
@@ -2098,20 +2094,20 @@ class DataSourceColumn {
 
 				form.querySelector('.timing-type').classList.toggle('hidden', form.type.value != 'custom');
 
-				this.type.format = {};
+				this.customTypeFormat = {};
 
 				format.map(f => {
 					if(form[f].value)
-						this.type.format[f] = form[f].value;
+						this.customTypeFormat[f] = form[f].value;
 				});
 
-				if(!this.type.format) {
+				if(!this.customTypeFormat) {
 					return resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
 				}
 
-				selectedFormat = this.type.format;
+				selectedFormat = this.customTypeFormat;
 
-				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.customTypeFormat);
 			}
 
 			this.checkedRadio = [];
@@ -2135,6 +2131,13 @@ class DataSourceColumn {
 			}
 		});
 
+		if(this.interval)
+			clearInterval(this.interval);
+
+		this.interval = setInterval(() => {
+			this.form.querySelector('.timing-type .result-date').innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.customTypeFormat || {});
+		}, 1000);
+
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
 
@@ -2155,6 +2158,8 @@ class DataSourceColumn {
 		form.querySelector('.cancel').on('click', () => {
 
 			this.dialogueBox.hide();
+
+			this.customTypeFormat = {};
 
 			if(!form.parentElement.classList.contains('body'))
 				form.parentElement.classList.add('hidden');
@@ -2232,14 +2237,12 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
-		const customType = this.type ? this.type.format : {};
-
 		this.type = {
 			name: this.form.type.value,
 		};
 
 		if(this.form.type.value == 'custom')
-			this.type.format = customType;
+			this.type.format = this.customTypeFormat;
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2288,14 +2291,12 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
-		const customType = this.type ? this.type.format : {};
-
 		this.type = {
 			name: this.form.type.value,
 		};
 
 		if(this.form.type.value == 'custom')
-			this.type.format = customType;
+			this.type.format = this.customTypeFormat;
 
 		if(this.interval)
 			clearInterval(this.interval);

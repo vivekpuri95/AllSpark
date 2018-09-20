@@ -1356,7 +1356,7 @@ main .dataset {
 					color: #333;
 				}
 				.column-form .timing-format fieldset label span {
-					color: #999;
+					color: #ccc;
 					transition: color var(--transition-duration);
 					font-weight: normal;
 				}
