@@ -18,11 +18,11 @@ class UserOnboard {
 
 		try {
 
-			UserOnboard.instance.onboard = JSON.parse(onboard);
+			UserOnboard.instance.onboardData = JSON.parse(onboard);
 		}
 		catch(e) {
 
-			UserOnboard.instance.onboard = {};
+			UserOnboard.instance.onboardData = {};
 		}
 		
 		await UserOnboard.instance.load();
@@ -76,7 +76,7 @@ class UserOnboard {
 
 		container.innerHTML = `
 			<div class="wrapper"></div>
-			<a href="${this.onboard.demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
+			<a href="${this.onboardData.demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
 		`;
 
 		const wrapper = container.querySelector('.wrapper');
@@ -120,7 +120,7 @@ class UserOnboard {
 
 			<h2>Let's Get <strong>You Started!</strong></h2>
 
-			<a href="${this.onboard.demo_url}" target="_blank" class="view-demo">
+			<a href="${this.onboardData.demo_url}" target="_blank" class="view-demo">
 				<span class="figure"><img src="/images/onboarding/demo.svg"></span>
 				<span>View Demo</span>
 				<span class="NA">Check out an established demo with various visualisations</span>
@@ -157,7 +157,7 @@ class UserOnboardStage {
 		this.stages = onboard.stages;
 		this.progress = onboard.progress;
 		this.page = onboard.page;
-		this.onboard = onboard.onboard;
+		this.onboard = onboard.onboardData;
 	}
 
 	get container() {
@@ -234,10 +234,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 				this.currentStage = true;
 			}
 		}
-		catch(e) {
-
-			this.currentStage = false;
-		}
+		catch(e) {}
 	}
 
 	get url() {
@@ -319,10 +316,7 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 				this.currentStage = true;
 			}
 		}
-		catch(e) {
-
-			this.currentStage = false;
-		}
+		catch(e) {}
 	}
 
 	get url() {
@@ -468,10 +462,7 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 				this.currentStage = true;
 			}
 		}
-		catch(e) {
-
-			this.currentStage = false;
-		}
+		catch(e) {}
 	}
 
 	get url() {
@@ -492,43 +483,48 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 		this.dashboard =  response;
 
 		this.completed = true;
-		this.progress = this.progress + 25;
+		this.progress = this.progress + 20;
 	}
 
 	autoFillForm() {
 
-		if(!this.currentStage || this.dashboard) {
+		if(!this.currentStage || this.completed) {
 
 			return;
 		}
 
-		const submitButton = this.page.container.querySelector('#form .toolbar button[type=submit]');
+		setTimeout(() => {
 
-		for(const element of DashboardsDashboard.form.elements) {
+			const submitButton = this.page.container.querySelector('#form .toolbar button[type=submit]');
 
-			if(this.onboard.dashboard[element.name]) {
+			for(const element of DashboardsDashboard.form.elements) {
 
-				element.value = this.onboard.dashboard[element.name];
+				if(this.onboard.dashboard[element.name]) {
+
+					element.value = this.onboard.dashboard[element.name];
+				}
 			}
-		}
 
-		const rect = submitButton.getBoundingClientRect();
+			const rect = submitButton.getBoundingClientRect();
 
-		if(!document.body.querySelector('.save-pop-up')) {
+			if(!document.body.querySelector('.save-pop-up')) {
 
-			document.body.insertAdjacentHTML('beforeend', `
+				document.body.insertAdjacentHTML('beforeend', `
 				<div class="save-pop-up">Click save to continue</div>
 			`);
-			submitButton.classList.add('blink');
-		}
+				submitButton.classList.add('blink');
+			}
 
-		const popUp = document.body.querySelector('.save-pop-up');
+			const popUp = document.body.querySelector('.save-pop-up');
 
-		popUp.style.top = `${rect.top - 10}px`;
-		popUp.style.left = `${rect.right}px`;
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
+
+			submitButton.on('click', () => this.hidePopUp());
+
+		}, 500);
 
 		DashboardsDashboard.container.querySelector('#back').on('click', () => this.hidePopUp());
-		submitButton.on('click', () => this.hidePopUp());
 
 		new SnackBar({
 			message: 'We\'ve added a default dashboard for you',
@@ -554,10 +550,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 				this.currentStage = true;
 			}
 		}
-		catch(e) {
-
-			this.currentStage = false;
-		}
+		catch(e) {}
 	}
 
 	get url() {
@@ -583,7 +576,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		}
 
 		this.completed = true;
-		this.progress = this.progress + 25;
+		this.progress = this.progress + 20;
 	}
 
 	autoFillForm() {
@@ -647,16 +640,6 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 			const addButton = this.page.stages.selected.container.querySelector('#add-visualization');
 
-			for(const stage of this.page.container.querySelectorAll('#stage-switcher .stage')) {
-
-				if(stage.disabled) {
-
-					return;
-				}
-
-				stage.on('click', () => this.hidePopUp());
-			}
-
 			addButton.classList.add('blink');
 
 			const rect = addButton.getBoundingClientRect();
@@ -676,24 +659,27 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 		const submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
 
-		if(!document.body.querySelector('.save-pop-up')) {
+		document.body.insertAdjacentHTML('beforeend', `
+			<div class="save-pop-up">Click save to continue</div>
+		`);
 
-			document.body.insertAdjacentHTML('beforeend', `
-				<div class="save-pop-up">Click save to finish</div>
-			`);
-		}
+		submitButton.on('click', () => {
 
-		for(const stage of this.page.container.querySelectorAll('#stage-switcher .stage')) {
+			this.hidePopUp();
 
-			if(stage.disabled) {
+			setTimeout(() => {
 
-				return;
-			}
+				const dashboardSection = this.page.stages.selected.visualizationManager.container.querySelector('.configuration-section.dashboards');
 
-			stage.on('click', () => this.hidePopUp());
-		}
+				if (dashboardSection && dashboardSection.querySelector('.body.hidden')) {
 
-		submitButton.on('click', () => this.hidePopUp());
+					dashboardSection.querySelector('h3').click();
+				}
+
+				this.stages[4].autoFillForm();
+			}, 1000);
+
+		});
 		this.page.stages.selected.container.querySelector('#configure-visualization-back').on('click', () => this.hidePopUp());
 
 		const
@@ -720,15 +706,12 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 
 		try {
 
-			if((this.page.stages.selected instanceof ReportsManger.stages.get('configure-visualization'))) {
+			if(this.page.stages.selected instanceof ReportsManger.stages.get('configure-visualization')) {
 
 				this.currentStage = true;
 			}
 		}
-		catch(e) {
-
-			this.currentStage = false;
-		}
+		catch(e) {}
 	}
 
 	get url() {
@@ -739,32 +722,72 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 
 	async load() {
 
-		await DataSource.load();
+		const [response] = await API.call('dashboards/list');
 
-		if(!DataSource.list.size) {
-
-			return;
-		}
-
-		this.report = DataSource.list.values().next().value;
-
-		if(!this.report.visualizations.length) {
+		if(!response) {
 
 			return;
 		}
 
-		this.visualization = this.report.visualizations[0];
+		this.dashboard = response;
+
+		if(!response.visualizations.length) {
+
+			return;
+		}
+
+		this.dashboardVisualization =  response.visualizations[0];
 
 		this.completed = true;
-		this.progress = this.progress + 25;
+		this.progress = this.progress + 10;
 	}
 
 	autoFillForm() {
 
-		if(!this.currentStage) {
+		if(!this.currentStage || !this.page.stages || !this.page.stages.selected.dashboards) {
 
 			return;
 		}
+
+		const addDashboardForm = this.page.stages.selected.dashboards.container.querySelector('fieldset .form');
+
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			addDashboardForm.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to finish</div>
+			`);
+		}
+
+		const submitButton = this.page.stages.selected.dashboards.container.querySelector('button[type=submit]');
+
+		const
+			rect = submitButton.getBoundingClientRect(),
+			popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.textContent = 'Click save to finish';
+		addDashboardForm.appendChild(popUp);
+		submitButton.classList.add('blink');
+
+		console.log(rect.top, rect.right, rect.bottom);
+
+		popUp.style.top = 0;
+		popUp.style.left = `${rect.right - 10}px`;
+		addDashboardForm.style.position = 'relative';
+
+		submitButton.on('click', () => {
+
+			this.hidePopUp();
+
+			this.completed = true;
+			this.checked();
+
+			new SnackBar({
+				message: 'Setup Complete'
+			});
+		});
+
+		this.page.stages.selected.dashboards.dashboardMultiSelect.value = this.dashboard.id;
 	}
 })
+
 UserOnboard.setup();
