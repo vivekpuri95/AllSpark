@@ -126,7 +126,7 @@ class Page {
 				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
 				{url: '/dashboards-manager', name: 'Dashboards', privileges: [], icon: 'fa fa-newspaper'},
 				{url: '/reports', name: 'Reports', privileges: [], icon: 'fa fa-database'},
-				{url: '/visualizations-manager', name: 'Visualizations', privileges: ['superadmin'], icon: 'far fa-chart-bar'},
+				{url: '/visualizations-manager', name: 'Visualizations', privileges: [], icon: 'far fa-chart-bar'},
 				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
 				{url: '/settings', name: 'Settings', privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'], icon: 'fas fa-cog'},
 			],

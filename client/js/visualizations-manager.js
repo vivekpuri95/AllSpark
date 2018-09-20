@@ -40,15 +40,23 @@ class VisualizationsManagerList extends Map {
 		container.id = 'list';
 
 		container.innerHTML = `
-			<div class="toolbar"></div>
-			<div class="visualizations">Loading&hellip;</div>
+
+			<h1>Visualizations Manager</h1>
+
+			<form class="toolbar form">
+				<input type="search" placeholder="Search...">
+			</form>
+
+			<div class="visualizations"></div>
 		`;
 
-		if(this.page.user.privileges.has('visualization.insert')) {
+		container.querySelector('input[type=search]').on('keyup', () => this.render());
 
-			container.querySelector('.toolbar').innerHTML = `
-				<button><i class="fas fa-plus"></i> Create New Visualization</button>
-			`;
+		if(0 && this.page.user.privileges.has('visualization.insert')) {
+
+			container.querySelector('.toolbar').insertAdjacentHTML('beforebegin', `
+				<button tpe="button"><i class="fas fa-plus"></i> Create New Visualization</button>
+			`);
 
 			container.querySelector('.toolbar button').on('click', () => VisualizationsManagerVisualization.add(this.page));
 		}
@@ -82,12 +90,25 @@ class VisualizationsManagerList extends Map {
 
 	render() {
 
-		const list = this.container.querySelector('.visualizations');
+		const
+			list = this.container.querySelector('.visualizations'),
+			query = this.container.querySelector('input[type=search]').value.toLowerCase();
 
 		list.textContent = null;
 
-		for(const visualization of this.values())
+		for(const visualization of this.values()) {
+
+			if(query && !(
+				visualization.name.toLowerCase().includes(query) ||
+				visualization.visualization_id == query ||
+				visualization.report.name.toLowerCase().includes(query) ||
+				visualization.report.query_id == query ||
+				visualization.visualization.name.toLowerCase().includes(query)
+			))
+				continue;
+
 			list.appendChild(visualization.row);
+		}
 	}
 }
 
@@ -136,11 +157,19 @@ class VisualizationManager {
 				<span class="id">#${this.visualization_id}</span>
 			</h2>
 
-			<span class="report">
-				<a href="/report/${this.report.query_id}" target="_blank">
-					${this.report.name}
-				</a>
-				<span class="id">#${this.query_id}</span>
+			<span class="subtitle">
+
+				<span>Type: <strong>${this.visualization.name}</strong></span>
+
+				<span>
+					Report:
+					<strong>
+						<a href="/report/${this.report.query_id}" target="_blank">
+							${this.report.name}
+						</a>
+					</strong>
+					<span class="id">#${this.query_id}</span>
+				</span>
 			</span>
 
 			<div class="actions"></div>
@@ -152,7 +181,7 @@ class VisualizationManager {
 
 			edit.textContent = 'Edit';
 
-			edit.on('click', () => this.edit());
+			edit.on('click', () => window.location = `/reports/configure-visualization/${this.visualization_id}`);
 
 			row.querySelector('.actions').appendChild(edit);
 		}
@@ -199,9 +228,7 @@ class VisualizationManager {
 
 			const response = await API.call('reports/visualizations/delete', parameters, options);
 
-			await DataSource.load(true);
-
-			this.select();
+			await this.page.list.load();
 
 			const type = MetaData.visualizations.get(this.type);
 
@@ -477,7 +504,6 @@ class VisualizationLog extends ReportLog {
 		queryInfo.appendChild(this.logsVisualizationManager.container);
 
 		this.logsVisualizationManager.load();
-
 	}
 }
 

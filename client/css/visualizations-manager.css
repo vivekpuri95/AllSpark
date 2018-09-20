@@ -1,15 +1,20 @@
 main > #list .visualizations {
-	display: grid;
-	grid-template-columns: 1fr;
-	grid-gap: calc(var(--gap) * 2);
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	margin: 0px -10px;
 }
 	main > #list .visualization {
 		background: #fff;
 		padding: 10px;
-		box-shadow: 0 2px 4px 0 rgba(172, 172, 172, 0.5);
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		display: grid;
-		grid-template-columns: 125px max-content;
-		grid-gap: var(--gap);
+		grid-template-columns: 125px 1fr;
+		grid-template-rows: 20px 1fr max-content;
+		grid-gap: 5px;
+		margin: 10px;
+		flex: 0 0 500px;
+		max-width: 500px;
 	}
 		main > #list .visualization .id {
 			opacity: 0;
@@ -25,8 +30,12 @@ main > #list .visualizations {
 		}
 		main > #list .visualization h2 {
 			margin: 0;
-			font-size: 125%;
+			font-size: 120%;
 			grid-column: 2;
+			overflow: hidden;
+			max-width: 100%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
 			main > #list .visualization h2 a {
 				color: inherit;
@@ -36,23 +45,48 @@ main > #list .visualizations {
 				font-weight: normal;
 				color: #999;
 			}
-		main > #list .visualization .report {
+		main > #list .visualization .subtitle {
 			color: #999;
 			font-size: 90%;
 			grid-column: 2;
+			display: grid;
+			grid-gap: 10px;
+			grid-auto-flow: column;
+			width: max-content;
+			overflow: hidden;
+			max-width: 100%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
-			main > #list .visualization .report a {
+			main > #list .visualization .subtitle a {
 				color: #999;
 			}
 		main > #list .visualization .actions {
 			display: grid;
 			grid-auto-flow: column;
-			grid-gap: var(--gap);
+			grid-gap: 10px;
 			font-size: 90%;
 			grid-column: 2;
 			width: max-content;
+			color: #666;
 		}
 
+@media (max-width: 750px) {
+
+	main > #list .visualizations {
+		display: grid;
+		margin: 0;
+		grid-gap: 10px;
+		grid-template-columns: 1fr;
+		max-width: 100%;
+	}
+		main > #list .visualization {
+			flex: 1 0 100%;
+			max-width: initial;
+			margin: 0;
+			overflow: hidden;
+		}
+}
 #stage-pick-visualization table {
 	background: #fff;
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
