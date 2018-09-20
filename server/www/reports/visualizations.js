@@ -64,8 +64,9 @@ exports.update = class extends API {
 
 			this.user.privilege.needs('visualization.update', 'ignore');
 		}
+	    const visualizationRolesFromQuery = this.account.settings.has("visualization_roles_from_query") ? !this.account.settings.get("visualization_roles_from_query") : this.account.settings.has("visualization_roles_from_query");
 
-	    const authVisualizationResponse = await auth.visualization(visualization_id, this.user, updatedRow.query_id, this.account.settings.has("visualization_roles_from_query") && this.account.settings.get("visualization_roles_from_query"));
+	    const authVisualizationResponse = await auth.visualization(visualization_id, this.user, updatedRow.query_id, visualizationRolesFromQuery);
 
 	    this.assert(!authVisualizationResponse.error, authVisualizationResponse.message);
 
@@ -110,7 +111,9 @@ exports.delete = class extends API {
                 operation:'delete',
             };
 
-	    const authVisualizationResponse = await auth.visualization(visualization_id, this.user, updatedRow.query_id, this.account.settings.has("visualization_roles_from_query") && this.account.settings.get("visualization_roles_from_query"));
+	    const visualizationRolesFromQuery = this.account.settings.has("visualization_roles_from_query") ? !this.account.settings.get("visualization_roles_from_query") : this.account.settings.has("visualization_roles_from_query");
+
+	    const authVisualizationResponse = await auth.visualization(visualization_id, this.user, updatedRow.query_id, visualizationRolesFromQuery);
 
 	    if(updatedRow.added_by !== this.user.user_id) {
 

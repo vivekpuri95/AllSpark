@@ -147,7 +147,7 @@ exports.list = class extends API {
 			credentialObjectRoles
 		]);
 
-		const visualizationRolesFromQuery = !(this.account.settings.has("visualization_roles_from_query") && this.account.settings.get("visualization_roles_from_query"));
+		const visualizationRolesFromQuery = this.account.settings.has("visualization_roles_from_query") ? !this.account.settings.get("visualization_roles_from_query") : this.account.settings.has("visualization_roles_from_query");
 
 		let [reportRoles, visualizationRoles, visualizationUsers, userSharedQueries] = await Promise.all([
 			role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],),
@@ -379,7 +379,7 @@ exports.list = class extends API {
 					visualization.users = [];
 				}
 				let e1 = performance.now();
-				const visualizationAuthResponse = await auth.visualization(visualization, this.user, [row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || []])
+				const visualizationAuthResponse = await auth.visualization(visualization, this.user, [row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || []], visualizationRolesFromQuery);
 				visualizationTime += performance.now() - e1;
 				visualizationCount++;
 
