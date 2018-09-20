@@ -542,6 +542,14 @@ class Authenticate {
 					message: "report error: " + reportAuth.message,
 				}
 			}
+
+			else if(visualizationRolesFromQuery) {
+
+				return {
+					error: false,
+					message: "visualizationRolesFromQuery"
+				}
+			}
 		}
 
 		if(!visualization.roles) {
