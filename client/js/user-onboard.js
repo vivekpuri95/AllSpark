@@ -156,10 +156,8 @@ class UserOnboardStage {
 
 		this.stagesObj = onboard;
 
-		this.stages = onboard.stages;
 		this.progress = onboard.progress;
 		this.page = onboard.page;
-		this.onboard = onboard.onboardData;
 	}
 
 	get container() {
@@ -222,9 +220,9 @@ class UserOnboardStage {
 
 UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
-	constructor(onboard) {
+	constructor(stagesObj) {
 
-		super(onboard);
+		super(stagesObj);
 
 		this.title = 'Add Connection';
 		this.subtitle = 'Connect to an external datasource';
@@ -288,10 +286,10 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 			submitButton.classList.add('blink');
 		}
 
-		for(const key in this.onboard.connection) {
+		for(const key in this.stagesObj.onboardData.connection) {
 
 			if(connectionsForm.elements[key])
-				connectionsForm.elements[key].value = this.onboard.connection[key];
+				connectionsForm.elements[key].value = this.stagesObj.onboardData.connection[key];
 		}
 
 		new SnackBar({
@@ -304,9 +302,9 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 
 UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
-	constructor(onboard) {
+	constructor(stagesObj) {
 
-		super(onboard);
+		super(stagesObj);
 
 		this.title = 'Add Report';
 		this.subtitle = 'Define a query to extract data';
@@ -393,11 +391,11 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 		submitButton.classList.add('blink');
 
-		for(const key in this.onboard.report) {
+		for(const key in this.stagesObj.onboardData.report) {
 
 			if(configureForm.elements[key]) {
 
-				configureForm.elements[key].value = this.onboard.report[key];
+				configureForm.elements[key].value = this.stagesObj.onboardData.report[key];
 			}
 		}
 
@@ -441,7 +439,7 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 		popUp.style.top = `${rect.top - 10}px`;
 		popUp.style.left = `${rect.right}px`;
 
-		this.page.stages.selected.report.connection.editor.value = this.onboard.report.query;
+		this.page.stages.selected.report.connection.editor.value = this.stagesObj.onboardData.report.query;
 
 		submitButton.on('click', () => this.hidePopUp());
 
@@ -455,9 +453,9 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
-	constructor(onboard) {
+	constructor(stagesObj) {
 
-		super(onboard);
+		super(stagesObj);
 
 		this.title = 'Add Dashboard';
 		this.subtitle = 'At-a-glance view of visualizations';
@@ -506,9 +504,9 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
 			for(const element of DashboardsDashboard.form.elements) {
 
-				if(this.onboard.dashboard[element.name]) {
+				if(this.stagesObj.onboardData.dashboard[element.name]) {
 
-					element.value = this.onboard.dashboard[element.name];
+					element.value = this.stagesObj.onboardData.dashboard[element.name];
 				}
 			}
 
@@ -543,9 +541,9 @@ UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
 UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
-	constructor(onboard) {
+	constructor(stagesObj) {
 
-		super(onboard);
+		super(stagesObj);
 
 		this.title = 'Add Visualization';
 		this.subtitle = 'Visualize your data';
@@ -584,6 +582,11 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 		this.visualization = this.report.visualizations[0];
 
+		if(!this.visualization.options) {
+
+			return;
+		}
+
 		this.completed = true;
 		this.progress = this.progress + 20;
 	}
@@ -596,6 +599,11 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		}
 
 		if(this.page.stages.selected instanceof ReportsManger.stages.get('pick-visualization')) {
+
+			if(this.visualization) {
+
+				return;
+			}
 
 			const visualizationPickerForm = this.page.stages.selected.container.querySelector('#add-visualization-form');
 
@@ -684,18 +692,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 			this.hidePopUp();
 
-			setTimeout(() => {
-
-				const dashboardSection = this.page.stages.selected.visualizationManager.container.querySelector('.configuration-section.dashboards');
-
-				if (dashboardSection && dashboardSection.querySelector('.body.hidden')) {
-
-					dashboardSection.querySelector('h3').click();
-				}
-
-				this.stages[4].autoFillForm();
-			}, 1000);
-
+			this.stagesObj.load();
 		});
 		this.page.stages.selected.container.querySelector('#configure-visualization-back').on('click', () => this.hidePopUp());
 
@@ -714,9 +711,9 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage {
 
-	constructor(onboard) {
+	constructor(stagesObj) {
 
-		super(onboard);
+		super(stagesObj);
 
 		this.title = 'Add visualization to dashboard';
 		this.subtitle= 'Views on dashboard';
@@ -733,27 +730,36 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 
 	get url() {
 
-		return this.report ? `/reports/pick-visualization/${this.report.query_id}` : '/reports';
+		return this.visualization ? `/reports/configure-visualization/${this.visualization.visualization_id}` : '/reports';
 
 	}
 
 	async load() {
 
-		const [response] = await API.call('dashboards/list');
+		const response = await Promise.all([
+			DataSource.load(),
+			API.call('dashboards/list')
+		]);
 
-		if(!response) {
-
-			return;
-		}
-
-		this.dashboard = response;
-
-		if(!response.visualizations.length) {
+		if(!DataSource.list.size || !(response[1].length)) {
 
 			return;
 		}
 
-		this.dashboardVisualization =  response.visualizations[0];
+		this.report = DataSource.list.values().next().value;
+		[this.dashboard] = response[1];
+
+		if(this.report.visualizations.length) {
+
+			this.visualization = this.report.visualizations[0];
+		}
+
+		if(!this.report.visualizations.length || !this.dashboard.visualizations.length) {
+			return;
+
+		}
+		
+		this.dashboardVisualization =  this.dashboard.visualizations[0];
 
 		this.completed = true;
 		this.progress = this.progress + 10;
@@ -761,9 +767,16 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 
 	autoFillForm() {
 
-		if(!this.currentStage || !this.page.stages || !this.page.stages.selected.dashboards || this.completed) {
+		if(!this.currentStage || this.completed || (this.visualization && !this.visualization.options)) {
 
 			return;
+		}
+
+		const dashboardSection = this.page.stages.selected.visualizationManager.container.querySelector('.configuration-section.dashboards');
+
+		if (dashboardSection && dashboardSection.querySelector('.body.hidden')) {
+
+			dashboardSection.querySelector('h3').click();
 		}
 
 		const addDashboardForm = this.page.stages.selected.dashboards.container.querySelector('fieldset .form');
