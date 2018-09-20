@@ -335,6 +335,11 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 		this.report = DataSource.list.values().next().value;
 
+		if(!this.report.query) {
+
+			return;
+		}
+
 		this.completed = true;
 		this.progress = this.progress + 40;
 	}
@@ -817,6 +822,7 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 		});
 
 		this.page.stages.selected.dashboards.dashboardMultiSelect.value = this.dashboard.id;
+		addDashboardForm.querySelector('input[name=position]').value = 1;
 	}
 })
 
