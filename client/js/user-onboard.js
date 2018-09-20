@@ -635,6 +635,11 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 	setPickVisualizationStage() {
 
+		if(this.stagesObj.stages[3].completed) {
+
+			return;
+		}
+
 		if(!document.body.querySelector('.save-pop-up')) {
 
 			document.body.insertAdjacentHTML('beforeend', `
@@ -656,6 +661,8 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 			this.page.stages.selected.container.querySelector('#add-visualization-form label:not(.grey)').style.position = 'relative';
 			popUp.style.top = `${rect.top - 330}px`;
 			popUp.style.left = `${rect.right - 30}px`;
+
+			label.on('click', () => this.hidePopUp());
 
 		}
 		else {
