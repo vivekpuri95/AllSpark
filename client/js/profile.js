@@ -199,34 +199,23 @@ class Session {
 		for(const error of errors)
 			error.type = 'error';
 
-		const updatedReports = [], updatedVisualizations = [];
+		const activity = [...reports, ...errors];
 
 		for(const row of reportsHistory) {
 
-			if(row.owner == 'query') {
-
-				row.type = 'queryLog';
-				updatedReports.push(row);
-			}
-			else if(row.owner == 'visualization') {
-
-				row.type = 'visualizationLog'
-				updatedVisualizations.push(row);
-			}
+			row.type = `${row.operation.concat(row.owner, 'log')}`;
+			activity.push(row);
 		}
-
 
 		this.reportsCount = reports.length;
 		this.errorsCount = errors.length;
 
-		const groupedActivity = this.groupedActivity([...reports, ...errors, ...updatedReports, ...updatedVisualizations]);
+		const groupedActivity = this.groupedActivity(activity);
 
 		this.activityGroups = new ActivityGroups(groupedActivity);
 	}
 
 	groupedActivity(activity) {
-
-		// let activity = reports.concat(errors);
 
 		activity = activity.sort((a, b) => {
 			if(a.created_at < b.created_at)
@@ -349,6 +338,7 @@ class ActivityGroup extends Set {
 		super();
 
 		this.type = activityGroup[0].type;
+		this.operation = activityGroup[0].operation;
 
 		for(const activity of activityGroup) {
 
@@ -356,7 +346,7 @@ class ActivityGroup extends Set {
 
 				this.add(new ActivityReport(activity));
 			}
-			else if(['queryLog', 'visualizationLog'].includes(activity.type)) {
+			else if(activity.type.includes('visualizationlog') || activity.type.includes('querylog')) {
 
 				this.add(new ActivityHistory(activity));
 			}
@@ -376,16 +366,16 @@ class ActivityGroup extends Set {
 			icon = 'far fa-file';
 			name = `Report${this.size == 1 ? '' : 's'} loaded`;
 		}
-		else if(this.type == 'visualizationLog') {
+		else if(this.type.includes('visualizationlog')) {
 
 			icon = 'fas fa-chart-line';
-			name = `Visualization${this.size == 1 ? '' : 's'} updated`;
+			name = `Visualization${this.size == 1 ? '' : 's'} ${this.operation == 'insert' ? 'inserted' : (this.operation + 'd')}`;
 
 		}
-		else if(this.type == 'queryLog') {
+		else if(this.type.includes('querylog')) {
 
 			icon = 'fas fa-history';
-			name = `Report${this.size == 1 ? '' : 's'} updated`;
+			name = `Report${this.size == 1 ? '' : 's'} ${this.operation == 'insert' ? 'inserted' : (this.operation + 'd')}`;
 		}
 		else {
 			icon = 'fas fa-exclamation';
