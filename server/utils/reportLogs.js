@@ -15,7 +15,8 @@ class ReportHistory {
 		logs.user_agent = obj.request.get('user-agent');
 		logs.os = userAgent.os;
 		logs.browser = userAgent.browser;
-		logs.updated_by = obj.user.user_id;
+		logs.session_id = obj.user.session_id;
+		logs.user_id = obj.user.user_id;
 
 		await mysql.query(
 			`INSERT INTO ${db}.tb_history SET ? `,

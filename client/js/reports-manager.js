@@ -2270,7 +2270,7 @@ class QueryLog extends ReportLog {
 			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
 			<button class="run"><i class="fas fa-sync"></i> Run</button>
 			<span class="log-title">
-				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
+				<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
 			</span>
 		`;
 
@@ -2349,7 +2349,7 @@ class VisualizationLog extends ReportLog {
 			<button class="restore"><i class="fa fa-window-restore"></i> Restore</button>
 			<button class="preview"><i class="fas fa-eye"></i> Preview</button>
 			<span class="log-title">
-				<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
+				<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a> &#183; ${Format.dateTime(this.created_at)}
 			</span>
 		`;
 

@@ -182,15 +182,16 @@ class Session {
 				method: 'GET',
 			};
 
-		const [reports, errors] = await Promise.all([
+		const [reportsLoaded, errors, reportsHistory] = await Promise.all([
 			API.call('reports/logs/log', parameters, options),
 			API.call('errors/list', parameters, options),
+			API.call('reports/logs/history', parameters, options)
 		]);
 
-		this.process(reports, errors);
+		this.process(reportsLoaded, errors, reportsHistory);
 	}
 
-	process(reports, errors) {
+	process(reports, errors, reportsHistory) {
 
 		for(const report of reports)
 			report.type = 'report';
@@ -198,17 +199,34 @@ class Session {
 		for(const error of errors)
 			error.type = 'error';
 
+		const updatedReports = [], updatedVisualizations = [];
+
+		for(const row of reportsHistory) {
+
+			if(row.owner == 'query') {
+
+				row.type = 'queryLog';
+				updatedReports.push(row);
+			}
+			else if(row.owner == 'visualization') {
+
+				row.type = 'visualizationLog'
+				updatedVisualizations.push(row);
+			}
+		}
+
+
 		this.reportsCount = reports.length;
 		this.errorsCount = errors.length;
 
-		const groupedActivity = this.groupedActivity(reports, errors);
+		const groupedActivity = this.groupedActivity([...reports, ...errors, ...updatedReports, ...updatedVisualizations]);
 
 		this.activityGroups = new ActivityGroups(groupedActivity);
 	}
 
-	groupedActivity(reports, errors) {
+	groupedActivity(activity) {
 
-		let activity = reports.concat(errors);
+		// let activity = reports.concat(errors);
 
 		activity = activity.sort((a, b) => {
 			if(a.created_at < b.created_at)
@@ -286,7 +304,7 @@ class Session {
 
 			await this.load();
 
-			container.querySelector('.activity-details').innerHTML = `Reports: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)}`;
+			container.querySelector('.activity-details').innerHTML = `Reports loaded: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)}`;
 
 			container.appendChild(this.activityGroups.container);
 
@@ -334,13 +352,47 @@ class ActivityGroup extends Set {
 
 		for(const activity of activityGroup) {
 
-			if(activity.result_query) {
+			if(activity.type == 'report') {
+
 				this.add(new ActivityReport(activity));
 			}
-			else {
+			else if(['queryLog', 'visualizationLog'].includes(activity.type)) {
+
+				this.add(new ActivityHistory(activity));
+			}
+			else if(activity.type == 'error') {
+
 				this.add(new ActivityError(activity));
 			}
 		}
+	}
+
+	get titleInfo() {
+
+		let icon, name;
+
+		if(this.type == 'report') {
+
+			icon = 'far fa-file';
+			name = `Report${this.size == 1 ? '' : 's'} loaded`;
+		}
+		else if(this.type == 'visualizationLog') {
+
+			icon = 'fas fa-chart-line';
+			name = `Visualization${this.size == 1 ? '' : 's'} updated`;
+
+		}
+		else if(this.type == 'queryLog') {
+
+			icon = 'fas fa-history';
+			name = `Report${this.size == 1 ? '' : 's'} updated`;
+		}
+		else {
+			icon = 'fas fa-exclamation';
+			name = `Error${this.size == 1 ? '' : 's'}`
+		}
+
+		return {icon, name};
 	}
 
 	get container() {
@@ -352,14 +404,14 @@ class ActivityGroup extends Set {
 
 		container.classList.add('activity-group');
 
-		const icon = this.type == 'report' ? 'far fa-file' : 'fas fa-exclamation';
+		const title = this.titleInfo;
 
 		container.innerHTML = `
 			<div class="info-grid">
-				<div class="icon"><i class="${icon}"></i></div>
+				<div class="icon"><i class="${title.icon}"></i></div>
 				<div class="title">
 					<span class="NA">${Format.number(this.size)}</span>
-					<span class="type">${this.type}${this.size == 1 ? '' : 's'}</span>
+					<span class="type">${title.name}</span>
 				</div>
 				<div class="down">
 					<i class="fas fa-angle-right"></i>
@@ -442,7 +494,7 @@ class Activity {
 				dialogueBox.body.appendChild(span);
 
 				try {
-					const value = JSON.parse(this[key]);
+					const value = typeof this[key] == 'object' ? this[key] : JSON.parse(this[key]);
 
 					if(typeof value == 'object') {
 
@@ -592,6 +644,72 @@ class ActivityError extends Activity {
 		extraInfo.textContent = 'Type:' + this.type;
 
 		return extraInfo;
+	}
+}
+
+class ActivityHistory extends Activity {
+
+	constructor(row) {
+
+		super(row);
+
+		try {
+
+			this.state = JSON.parse(this.state);
+		}
+		catch(e) {
+
+			this.state = {};
+		}
+	}
+
+	get name() {
+
+		if(this.nameElement)
+			return this.nameElement;
+
+		const title = this.nameElement = document.createElement('div');
+		title.classList.add('title');
+
+		title.textContent = this.state.name;
+
+		const span = document.createElement('span');
+		span.classList.add('NA');
+		span.textContent = '#' + this.owner_id;
+
+		title.appendChild(span);
+
+		return title;
+	}
+
+	get heading() {
+
+		if(this.headingElement)
+			return this.headingElement;
+
+		const span = this.headingElement = document.createElement('span');
+
+		span.textContent = 'Report History';
+
+		return span;
+	}
+
+	get extraInfo() {
+
+		if(this.extraInfoElement)
+			return this.extraInfoElement;
+
+		const extraInfo = this.extraInfoElement = document.createElement('div');
+		extraInfo.classList.add('extra-info');
+
+		extraInfo.textContent = `Updated by: ${this.user_id}`;
+
+		return extraInfo;
+	}
+
+	get keys() {
+
+		return ['user_id', 'session_id', 'owner_id', 'state', 'operation'];
 	}
 }
 

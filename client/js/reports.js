@@ -9067,10 +9067,11 @@ class ReportLogs extends Set {
 		if(!this.size) {
 
 			logList.innerHTML = '<li class="NA block">No Report History Available</li>';
+			this.container.querySelector('.list .loading').classList.add('hidden');
 			return;
 		}
 
-		this.container.querySelector('.list .footer .more').classList.remove('hidden');
+
 		this.container.querySelector('.info').classList.add('hidden');
 		this.container.querySelector('.list').classList.remove('hidden');
 
@@ -9127,7 +9128,7 @@ class ReportLog {
 		container.innerHTML = `
 			<span class="clock"><i class="fa fa-history"></i></span>
 			<span class="timing" title="${Format.dateTime(this.created_at)}">${(this.operation == 'insert'? 'Created ' : 'Updated ') + Format.ago(this.created_at)}</span>
-			<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a>
+			<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a>
 		`;
 
 		container.on('click', () => this.load());
