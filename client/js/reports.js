@@ -9071,7 +9071,7 @@ class ReportLogs extends Set {
 			return;
 		}
 
-
+		this.container.querySelector('.list .footer .more').classList.remove('hidden');
 		this.container.querySelector('.info').classList.add('hidden');
 		this.container.querySelector('.list').classList.remove('hidden');
 
