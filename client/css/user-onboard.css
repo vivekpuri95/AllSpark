@@ -214,6 +214,10 @@
     position: absolute;
 }
 
+.faded {
+    opacity: 0.3;
+}
+
 .blink {
     animation: submit-blink 1s infinite;
     transition: background var(--transition-duration);

@@ -24,7 +24,7 @@ class UserOnboard {
 
 			UserOnboard.instance.onboardData = {};
 		}
-		
+
 		await UserOnboard.instance.load();
 	}
 
@@ -258,7 +258,7 @@ UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
 	}
 
 	autoFillForm() {
-		
+
 		if(!this.currentStage || this.completed) {
 
 			return;
@@ -375,7 +375,7 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 	loadConfigureReportForm() {
 
 		if(this.report) {
-			
+
 			return;
 		}
 
@@ -421,7 +421,7 @@ UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
 		const
 			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
-		
+
 		if(this.report && this.report.query) {
 
 			this.hidePopUp();
@@ -617,7 +617,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 				if(element.name != 'Line') {
 
 					element.removeEventListener('click', element.clickListener);
-					element.classList.add('grey');
+					element.classList.add('faded');
 				}
 			}
 
@@ -650,7 +650,7 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 		if(this.page.stages.selected.container.querySelector('#visualization-list').classList.contains('hidden')) {
 
 			const
-				label = this.page.stages.selected.container.querySelector('#add-visualization-form label:not(.grey)'),
+				label = this.page.stages.selected.container.querySelector('#add-visualization-form label:not(.faded)'),
 				rect = label.getBoundingClientRect();
 
 			const popUp = document.body.querySelector('.save-pop-up');
@@ -658,9 +658,11 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
 			label.appendChild(popUp);
 
-			this.page.stages.selected.container.querySelector('#add-visualization-form label:not(.grey)').style.position = 'relative';
+			this.page.stages.selected.container.querySelector('#add-visualization-form label:not(.faded)').style.position = 'relative';
 			popUp.style.top = `${rect.top - 330}px`;
 			popUp.style.left = `${rect.right - 30}px`;
+
+			label.scrollIntoView({behavior: "smooth"})
 
 			label.on('click', () => this.hidePopUp());
 
@@ -700,11 +702,11 @@ UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 			`);
 		}
 
-		submitButton.on('click', () => {
+		submitButton.on('click', async () => {
 
 			this.hidePopUp();
 
-			this.stagesObj.load();
+			await this.stagesObj.load();
 		});
 		this.page.stages.selected.container.querySelector('#configure-visualization-back').on('click', () => this.hidePopUp());
 
@@ -770,7 +772,7 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 			return;
 
 		}
-		
+
 		this.dashboardVisualization =  this.dashboard.visualizations[0];
 
 		this.completed = true;
@@ -790,6 +792,8 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 
 			dashboardSection.querySelector('h3').click();
 		}
+
+		dashboardSection.scrollIntoView({behavior: "smooth"});
 
 		const addDashboardForm = this.page.stages.selected.dashboards.container.querySelector('fieldset .form');
 
@@ -816,16 +820,20 @@ UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage 
 		popUp.style.left = `${rect.right - 10}px`;
 		addDashboardForm.style.position = 'relative';
 
-		submitButton.on('click', () => {
+		submitButton.on('click', async () => {
 
 			this.hidePopUp();
 
 			this.completed = true;
-			this.stagesObj.load();
+			await this.stagesObj.load();
 
-			new SnackBar({
-				message: 'Setup Complete'
-			});
+			window.location.href = `/dashboard/${this.dashboard.id}`;
+
+			setTimeout(() => {
+				new SnackBar({
+					message: 'Setup Complete'
+				})
+			}, 1000);
 		});
 
 		this.page.stages.selected.dashboards.dashboardMultiSelect.value = this.dashboard.id;
