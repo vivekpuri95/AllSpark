@@ -480,10 +480,16 @@ class Activity {
 
 		container.on('click', () => {
 
-			const dialogueBox = new DialogBox();
+			if(this.dialogBox) {
 
-			dialogueBox.heading = this.heading;
-			dialogueBox.body.classList.add('activity-popup');
+				this.dialogBox.show();
+				return;
+			}
+
+			this.dialogBox = new DialogBox();
+
+			this.dialogBox.heading = this.heading;
+			this.dialogBox.body.classList.add('activity-popup');
 
 			for(const key of this.keys) {
 
@@ -491,7 +497,7 @@ class Activity {
 				span.classList.add('key');
 				span.textContent = key + ':';
 
-				dialogueBox.body.appendChild(span);
+				this.dialogBox.body.appendChild(span);
 
 				try {
 					const value = typeof this[key] == 'object' ? this[key] : JSON.parse(this[key]);
@@ -502,7 +508,7 @@ class Activity {
 						pre.classList.add('value', 'json');
 						pre.textContent = JSON.stringify(value, 0, 4);
 
-						dialogueBox.body.appendChild(pre);
+						this.dialogBox.body.appendChild(pre);
 					}
 					else {
 
@@ -510,21 +516,21 @@ class Activity {
 						span.classList.add('value');
 						span.textContent = this[key];
 
-						dialogueBox.body.appendChild(span);
+						this.dialogBox.body.appendChild(span);
 					}
 				}
 				catch(e) {
 
 					const pre = document.createElement('pre');
-						pre.classList.add('value', 'sql');
 
-						pre.textContent = new FormatSQL(this[key]).query;
+					pre.classList.add('value', 'sql');
+					pre.textContent = new FormatSQL(this[key]).query;
 
-						dialogueBox.body.appendChild(pre);
+					this.dialogBox.body.appendChild(pre);
 				}
 			}
 
-			dialogueBox.show();
+			this.dialogBox.show();
 		});
 
 		container.appendChild(this.name);
@@ -663,6 +669,27 @@ class ActivityHistory extends Activity {
 		}
 	}
 
+	get container() {
+
+		if(this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		const container = this.containerElement = super.container;
+
+		container.on('click', () => {
+
+			if(this.dialogBox) {
+
+				this.dialogBox.container.classList.add('history');
+			}
+
+		});
+
+		return container;
+	}
+
 	get name() {
 
 		if(this.nameElement)
@@ -702,7 +729,7 @@ class ActivityHistory extends Activity {
 		const extraInfo = this.extraInfoElement = document.createElement('div');
 		extraInfo.classList.add('extra-info');
 
-		extraInfo.textContent = `Updated by: ${this.user_id}`;
+		extraInfo.textContent = `Operation: ${this.operation}`;
 
 		return extraInfo;
 	}

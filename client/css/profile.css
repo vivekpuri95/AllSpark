@@ -241,3 +241,7 @@ main .switch {
 	 		background: #eee;
 	 		padding: 10px;
 	 	}
+
+.dialog-box-blanket.history .dialog-box {
+	max-width: 80%;
+}
