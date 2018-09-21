@@ -35,6 +35,9 @@ class Page {
 		AJAXLoader.setup();
 
 		await Page.load();
+
+		if(await Storage.get('disable-custom-theme'))
+			document.querySelector('html > head link[href^="/css/custom.css"]').remove();
 	}
 
 	static async load() {
@@ -215,8 +218,15 @@ class Page {
 				return;
 
 			// Alt + K
-			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]'))
+			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]')) {
 				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
+				await Storage.set('disable-custom-theme', true);
+
+				new SnackBar({
+					message: 'Custom theme removed',
+					icon: 'far fa-trash-alt',
+				});
+			}
 
 			// Alt + L
 			if(e.keyCode == 76)
