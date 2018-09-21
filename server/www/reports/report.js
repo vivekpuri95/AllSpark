@@ -592,11 +592,11 @@ exports.insert = class extends API {
 
 exports.logs = class extends API {
 
-	async logs() {
+	async logs({offset = 0, owner, owner_id} = {}) {
 
 		const db = dbConfig.write.database.concat('_logs');
 
-		this.request.query.offset = this.request.query.offset ? parseInt(this.request.query.offset) : 0;
+		this.assert(owner && owner_id, 'Owner or Owner Id missing');
 
 		return await this.mysql.query(`
 			SELECT
@@ -607,7 +607,7 @@ exports.logs = class extends API {
 			LEFT JOIN
 				tb_users u
 			ON
-				h.updated_by = u.user_id
+				h.user_id = u.user_id
 			WHERE
 				owner = ?
 				AND h.account_id = ?
@@ -615,7 +615,7 @@ exports.logs = class extends API {
 			ORDER BY
 				h.id DESC
 			LIMIT 10 OFFSET ?`,
-			[this.request.query.owner, this.account.account_id, this.request.query.owner_id, this.request.query.offset]
+			[owner, this.account.account_id, owner_id, parseInt(offset)]
 		);
 	}
 }
