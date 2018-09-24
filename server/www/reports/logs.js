@@ -15,7 +15,7 @@ class Logs extends API {
 		);
 	}
 
-	async history({user_id, session_id} = {}) {
+	async history({user_id, owner = 0, session_id} = {}) {
 
 		this.assert(user_id && session_id, 'User Id or Session Id missing');
 
@@ -28,10 +28,10 @@ class Logs extends API {
 				${db}.tb_history 
 			WHERE
 				user_id = ?
-				AND owner IN ('query', 'visualization')
+				AND (owner IN (?) or (0) in (?))
 				AND session_id = ?
 			`,
-			[user_id, session_id]);
+			[user_id, owner, owner, session_id]);
 	}
 }
 
