@@ -174,18 +174,20 @@ class Session {
 	async load() {
 
 		const
-			parameters = {
-				user_id: this.user_id,
-				session_id: this.id,
-			},
+			parameters = new URLSearchParams(),
 			options = {
 				method: 'GET',
 			};
 
+		parameters.set('user_id', this.user_id);
+		parameters.set('session_id', this.id);
+
+		['query', 'visualization'].map(x => parameters.append('owner', x));
+
 		const [reportsLoaded, errors, reportsHistory] = await Promise.all([
-			API.call('reports/logs/log', parameters, options),
-			API.call('errors/list', parameters, options),
-			API.call('reports/logs/history', parameters, options)
+			API.call('reports/logs/log', parameters.toString(), options),
+			API.call('errors/list', parameters.toString(), options),
+			API.call('reports/logs/history', parameters.toString(), options)
 		]);
 
 		this.process(reportsLoaded, errors, reportsHistory);
@@ -201,7 +203,12 @@ class Session {
 
 		const activity = [...reports, ...errors];
 
+		this.reportsManaged = 0;
+		this.visualizationsManaged = 0;
+
 		for(const row of reportsHistory) {
+
+			row.owner == 'query' ? this.reportsManaged++ : this.visualizationsManaged++;
 
 			row.type = `${row.operation.concat(row.owner, 'log')}`;
 			activity.push(row);
@@ -293,7 +300,10 @@ class Session {
 
 			await this.load();
 
-			container.querySelector('.activity-details').innerHTML = `Reports loaded: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)}`;
+			container.querySelector('.activity-details').innerHTML = `
+				Reports loaded: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)} &middot; 
+				Reports: ${this.reportsManaged} &middot; Visualizations: ${this.visualizationsManaged}
+			`;
 
 			container.appendChild(this.activityGroups.container);
 
@@ -394,14 +404,12 @@ class ActivityGroup extends Set {
 
 		container.classList.add('activity-group');
 
-		const title = this.titleInfo;
-
 		container.innerHTML = `
 			<div class="info-grid">
-				<div class="icon"><i class="${title.icon}"></i></div>
+				<div class="icon"><i class="${this.titleInfo.icon}"></i></div>
 				<div class="title">
 					<span class="NA">${Format.number(this.size)}</span>
-					<span class="type">${title.name}</span>
+					<span class="type">${this.titleInfo.name}</span>
 				</div>
 				<div class="down">
 					<i class="fas fa-angle-right"></i>
@@ -479,6 +487,8 @@ class Activity {
 			this.dialogBox = new DialogBox();
 
 			this.dialogBox.heading = this.heading;
+			this.dialogBox.container.classList.add('logs');
+
 			this.dialogBox.body.classList.add('activity-popup');
 
 			for(const key of this.keys) {
@@ -657,27 +667,6 @@ class ActivityHistory extends Activity {
 
 			this.state = {};
 		}
-	}
-
-	get container() {
-
-		if(this.containerElement) {
-
-			return this.containerElement;
-		}
-
-		const container = this.containerElement = super.container;
-
-		container.on('click', () => {
-
-			if(this.dialogBox) {
-
-				this.dialogBox.container.classList.add('history');
-			}
-
-		});
-
-		return container;
 	}
 
 	get name() {

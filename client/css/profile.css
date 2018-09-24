@@ -3,7 +3,7 @@ main {
 	margin: 0 auto;
 	overflow: hidden;
 	width: 100%;
-	max-width: 600px;
+	max-width: 700px;
 }
 main .section > h2 {
 	margin: calc(var(--gap) * 2) 0;
@@ -242,6 +242,6 @@ main .switch {
 	 		padding: 10px;
 	 	}
 
-.dialog-box-blanket.history .dialog-box {
+.dialog-box-blanket.logs .dialog-box {
 	max-width: 80%;
 }
