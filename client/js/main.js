@@ -1645,9 +1645,6 @@ class Format {
 
 	static customTime(time, format) {
 
-		if(!Object.keys(format).length)
-			return 'No Format Selected';
-
 		if(!Format.cachedFormat)
 			Format.cachedFormat = [];
 

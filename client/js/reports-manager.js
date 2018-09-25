@@ -206,7 +206,7 @@ class ReportsMangerStage {
 
 			if(this.disabled)
 				return;
-			
+
 			if(document.body.querySelector('.save-pop-up')) {
 
 				document.body.querySelector('.save-pop-up').remove();
@@ -1675,7 +1675,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 				this.form.classList.remove('hidden');
 				this.container.querySelector('#add-visualization-picker').classList.remove('hidden');
 				this.container.querySelector('#visualization-list').classList.add('hidden');
-  
+
         this.savePopUp();
 			});
 		}
