@@ -1642,6 +1642,8 @@ class DataSourceColumn {
 				format: '',
 			}
 		}
+
+		this.customDateType = new DataSourceColumnCustomDateType()
 	}
 
 	get container() {
@@ -1772,42 +1774,19 @@ class DataSourceColumn {
 
 		this.form.type.value = this.type.name;
 
-		this.form.querySelector('.timing-type').classList.add('hidden');
-
 		const format = DataSourceColumn.formatType.get(this.type.name) || {};
 
-		if(format) {
+		if(this.form.querySelector('.timing-type-custom'))
+			this.form.querySelector('.timing-type-custom').remove();
 
-			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
-
-			for(const key in format)
-				this.form[key].value = format[key];
-		};
+		if(Object.keys(format).length)
+			this.customDateType.value = format;
 
 		if(this.type.name == 'custom') {
 
-			this.form.querySelector('.timing-type .result-date').innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+			this.form.insertBefore(this.customDateType.container, this.form.querySelector('label.color'));
 
-			this.form.querySelector('.timing-type').classList.remove('hidden');
-
-			Array.from(this.form.querySelectorAll('.timing-type input')).map(i => i.checked = false);
-
-			for(const key in this.type.format)
-				this.form[key].value = this.type.format[key];
-		};
-
-		if(this.interval)
-			clearInterval(this.interval);
-
-		this.interval = setInterval(() => {
-			this.form.querySelector('.timing-type .result-date').innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
-		}, 1000);
-
-		this.checkedRadio = [];
-
-		for(const radio of this.form.querySelectorAll('.timing-type input')) {
-			if(radio.checked)
-				this.checkedRadio.push(radio);
+			this.customDateType.value = this.type.format;
 		}
 
 		this.dialogueBox.show();
@@ -1851,142 +1830,7 @@ class DataSourceColumn {
 				</select>
 			</label>
 
-			<div class="timing-type hidden">
-
-				<span>Select Timing type Format</span>
-
-				<div class="timing-format">
-
-					<fieldset>
-
-						<legend>Weekday</legend>
-
-						<label>
-							<input type="radio" name="weekday" value="narrow">
-							<span>W</span>
-						</label>
-
-						<label>
-							<input type="radio" name="weekday" value="short">
-							<span>WWW</span>
-						</label>
-
-						<label>
-							<input type="radio" name="weekday" value="long">
-							<span>WWWW</span>
-						</label>
-					</fieldset>
-
-					<fieldset>
-
-						<legend>Day</legend>
-
-						<label>
-							<input type="radio" name="day" value="numeric">
-							<span>D</span>
-						</label>
-
-						<label>
-							<input type="radio" name="day" value="2-digit">
-							<span>DD</span>
-						</label>
-					</fieldset>
-
-					<fieldset>
-
-						<legend>Month</legend>
-
-						<label>
-							<input type="radio" name="month" value="numeric">
-							<span>1</span>
-						</label>
-
-						<label>
-							<input type="radio" name="month" value="2-digit">
-							<span>01</span>
-						</label>
-
-						<label>
-							<input type="radio" name="month" value="narrow">
-							<span>M</span>
-						</label>
-
-						<label>
-							<input type="radio" name="month" value="short">
-							<span>MMM</span>
-						</label>
-
-						<label>
-							<input type="radio" name="month" value="long">
-							<span>MMMM</span>
-						</label>
-					</fieldset>
-
-					<fieldset>
-
-						<legend>Year</legend>
-
-						<label>
-							<input type="radio" name="year" value="2-digit">
-							<span>YY</span>
-						</label>
-
-						<label>
-							<input type="radio" name="year" value="numeric">
-							<span>YYYY</span>
-						</label>
-					</fieldset>
-
-					<fieldset>
-
-						<legend>Hour</legend>
-
-						<label>
-							<input type="radio" name="hour" value="numeric">
-							<span>H</span>
-						</label>
-
-						<label>
-							<input type="radio" name="hour" value="2-digit">
-							<span>HH</span>
-						</label>
-					</fieldset>
-
-					<fieldset>
-
-						<legend>Minute</legend>
-
-						<label>
-							<input type="radio" name="minute" value="numeric">
-							<span>M</span>
-						</label>
-
-						<label>
-							<input type="radio" name="minute" value="2-digit">
-							<span>MM</span>
-						</label>
-					</fieldset>
-
-					<fieldset>
-
-						<legend>Second</legend>
-
-						<label>
-							<input type="radio" name="second" value="numeric">
-							<span>S</span>
-						</label>
-
-						<label>
-							<input type="radio" name="second" value="2-digit">
-							<span>SS</span>
-						</label>
-					</fieldset>
-				</div>
-
-				<span class="result-date"></span>
-			</div>
-
-			<label>
+			<label class="color">
 				<span>Color</span>
 				<input type="color" name="color" class="color">
 			</label>
@@ -2046,99 +1890,33 @@ class DataSourceColumn {
 			</footer>
 		`;
 
-		const
-			format = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'],
-			resultDate = form.querySelector('.timing-type .result-date');
-
-		for(const radio of form.querySelectorAll('.timing-type input')) {
-
-			radio.on('click', () => {
-
-				for(const [index, _radio] of this.checkedRadio.entries()) {
-					if((_radio.name == radio.name) && (_radio.value == radio.value)) {
-						radio.checked = false;
-						this.checkedRadio.splice(index, 1);
-					}
-					else if(_radio.name == radio.name) {
-						this.checkedRadio.splice(index, 1);
-					}
-				};
-
-				if(radio.checked)
-					this.checkedRadio.push(radio);
-
-				this.type.format = {};
-
-				format.map(f => {
-					if(form[f].value)
-						this.type.format[f] = form[f].value;
-				});
-
-				if(!this.type.format) {
-					resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
-					return;
-				};
-
-				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
-			});
-		};
-
 		form.type.on('change', () => {
 
 			let
 				typeFormat,
 				selectedFormat;
 
-			form.querySelector('.timing-type').classList.add('hidden');
+			if(form.querySelector('.timing-type-custom'))
+				form.querySelector('.timing-type-custom').remove();
 
 			if(DataSourceColumn.formatType.has(form.type.value)) {
 
 				typeFormat = DataSourceColumn.formatType.get(form.type.value);
 
 				selectedFormat = typeFormat;
-
-				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), typeFormat);
 			}
 
 			else if(form.type.value == 'custom') {
 
-				form.querySelector('.timing-type').classList.toggle('hidden', form.type.value != 'custom');
+				selectedFormat = this.customDateType.value;
 
-				this.type.format = {};
+				form.insertBefore(this.customDateType.container, form.querySelector('label.color'));
 
-				format.map(f => {
-					if(form[f].value)
-						this.type.format[f] = form[f].value;
-				});
-
-				if(!this.type.format) {
-					return resultDate.innerHTML = '<div class="NA">No Format Selected</div>';
-				}
-
-				selectedFormat = this.type.format;
-
-				resultDate.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), this.type.format);
+				this.customDateType.render(selectedFormat);
 			}
 
-			this.checkedRadio = [];
-
-			for(const radio of form.querySelectorAll('.timing-type input')) {
-				if(radio.checked)
-					this.checkedRadio.push(radio);
-			}
-
-			if(selectedFormat) {
-
-				for(const key of format) {
-
-					if(selectedFormat[key]) {
-						form[key].value = selectedFormat[key];
-					}
-					else if(form.querySelector(`input[name=${key}]:checked`)) {
-						form.querySelector(`input[name=${key}]:checked`).checked = false;
-					}
-				}
-			}
+			if(selectedFormat)
+				this.customDateType.value = selectedFormat;
 		});
 
 		form.on('submit', async e => this.apply(e));
@@ -2238,14 +2016,12 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
-		const customType = this.type ? this.type.format : {};
-
 		this.type = {
 			name: this.form.type.value,
 		};
 
 		if(this.form.type.value == 'custom')
-			this.type.format = customType;
+			this.type.format = this.customDateType.value;
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2294,14 +2070,12 @@ class DataSourceColumn {
 
 		this.filters = this.columnFilters.json;
 
-		const customType = this.type ? this.type.format : {};
-
 		this.type = {
 			name: this.form.type.value,
 		};
 
 		if(this.form.type.value == 'custom')
-			this.type.format = customType;
+			this.type.format = this.customDateType.value;
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2517,6 +2291,233 @@ class DataSourceColumn {
 		destination.container.querySelector('.drilldown').classList.remove('hidden');
 
 		destination.visualizations.selected.load();
+	}
+}
+
+class DataSourceColumnCustomDateType {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('timing-type-custom');
+
+		container.innerHTML = `
+
+			<div class="timing-format">
+
+				<fieldset>
+
+					<legend>Weekday</legend>
+
+					<label>
+						<input type="radio" name="weekday" value="narrow">
+						<span>W</span>
+					</label>
+
+					<label>
+						<input type="radio" name="weekday" value="short">
+						<span>WWW</span>
+					</label>
+
+					<label>
+						<input type="radio" name="weekday" value="long">
+						<span>WWWW</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Day</legend>
+
+					<label>
+						<input type="radio" name="day" value="numeric">
+						<span>D</span>
+					</label>
+
+					<label>
+						<input type="radio" name="day" value="2-digit">
+						<span>DD</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Month</legend>
+
+					<label>
+						<input type="radio" name="month" value="numeric">
+						<span>1</span>
+					</label>
+
+					<label>
+						<input type="radio" name="month" value="2-digit">
+						<span>01</span>
+					</label>
+
+					<label>
+						<input type="radio" name="month" value="narrow">
+						<span>M</span>
+					</label>
+
+					<label>
+						<input type="radio" name="month" value="short">
+						<span>MMM</span>
+					</label>
+
+					<label>
+						<input type="radio" name="month" value="long">
+						<span>MMMM</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Year</legend>
+
+					<label>
+						<input type="radio" name="year" value="2-digit">
+						<span>YY</span>
+					</label>
+
+					<label>
+						<input type="radio" name="year" value="numeric">
+						<span>YYYY</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Hour</legend>
+
+					<label>
+						<input type="radio" name="hour" value="numeric">
+						<span>H</span>
+					</label>
+
+					<label>
+						<input type="radio" name="hour" value="2-digit">
+						<span>HH</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Minute</legend>
+
+					<label>
+						<input type="radio" name="minute" value="numeric">
+						<span>M</span>
+					</label>
+
+					<label>
+						<input type="radio" name="minute" value="2-digit">
+						<span>MM</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Second</legend>
+
+					<label>
+						<input type="radio" name="second" value="numeric">
+						<span>S</span>
+					</label>
+
+					<label>
+						<input type="radio" name="second" value="2-digit">
+						<span>SS</span>
+					</label>
+				</fieldset>
+			</div>
+
+			<span class="example"></span>
+		`;
+
+		const resultDate = container.querySelector('.example');
+
+		for(const radio of container.querySelectorAll('input[type="radio"]')) {
+
+			radio.on('click', () => {
+
+				for(const [index, _radio] of this.checkedradio.entries()) {
+
+					if(_radio.name == radio.name) {
+
+						if(_radio.value == radio.value)
+							radio.checked = false;
+
+						this.checkedradio.splice(index, 1);
+					}
+				}
+
+				if(radio.checked)
+					this.checkedradio.push(radio);
+
+				this.render(this.value);
+			})
+		}
+
+		return container;
+	}
+
+	set value(format) {
+
+		if(!this.containerElement)
+			return this.customValueCache = format;
+
+		for(const radio of this.container.querySelectorAll('input[type=radio]'))
+			radio.checked = (format[radio.name] == radio.value);
+
+		this.render(format);
+
+		this.checkedradio = [];
+
+		for(const radio of this.container.querySelectorAll('input[type="radio"]')) {
+
+			if(radio.checked)
+				this.checkedradio.push(radio);
+		}
+	}
+
+	get value() {
+
+		if(!this.containerElement)
+			return this.customValueCache;
+
+		const
+			formats = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'],
+			checkedradio = {};
+
+		for(const format of formats) {
+
+			const input = this.container.querySelector(`input[name=${format}]:checked`);
+
+			if(input)
+				checkedradio[format] = input.value;
+		}
+
+		return checkedradio;
+	}
+
+	render(format) {
+
+		const example = this.container.querySelector('.example');
+
+		if(!format)
+			return example.innerHTML = '<span class="NA">No Format Selected</span>';
+
+		example.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), format);
+
+		if(this.interval)
+			clearInterval(this.interval);
+
+		this.interval = setInterval(() => {
+			example.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), format);
+		}, 1000);
 	}
 }
 

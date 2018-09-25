@@ -1322,22 +1322,27 @@ main .dataset {
 		max-width: 200px;
 		white-space: nowrap;
 	}
-	.column-form .timing-type {
+	.column-form .timing-type-custom {
 		max-width: 100%;
 	}
 		.column-form .timing-format {
-			display: flex;
+			display: grid;
 			overflow: auto;
+			grid-gap: calc(var(--gap) * 2);
+			grid-auto-flow: column;
 		}
 			.column-form .timing-format fieldset {
 				border: 1px solid #ccc;
-				margin: 0 var(--gap);
 				color: #333;
-				font-size: 80%;
+				font-size: 90%;
+				margin: 0;
 			}
+				.column-form .timing-format fieldset legend {
+					font-size: 90%;
+				}
 				.column-form .timing-format fieldset label {
 					display: inline-block;
-					padding: 3px;
+					padding: 0 3px;
 					text-align: center;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
@@ -1356,11 +1361,11 @@ main .dataset {
 					color: #333;
 				}
 				.column-form .timing-format fieldset label span {
-					color: #999;
+					color: #ccc;
 					transition: color var(--transition-duration);
 					font-weight: normal;
 				}
-			.column-form .timing-type .result-date {
+			.column-form .timing-type-custom .result-date {
 				color: #333;
 				font-size: 80%;
 				font-weight: normal;
