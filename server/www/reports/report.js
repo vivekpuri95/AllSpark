@@ -147,16 +147,14 @@ exports.list = class extends API {
 			credentialObjectRoles
 		]);
 
-		const visualizationRolesFromQuery = this.account.settings.has("visualization_roles_from_query") && this.account.settings.get("visualization_roles_from_query");
+		const visualizationRolesFromQuery = this.account.settings.has("visualization_roles_from_query") ? !this.account.settings.get("visualization_roles_from_query") : !this.account.settings.has("visualization_roles_from_query");
 
 		let [reportRoles, visualizationRoles, visualizationUsers, userSharedQueries] = await Promise.all([
 			role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],),
-			role.get(this.account.account_id, visualizationRolesFromQuery ? "query" : "visualization", "role",),
-			role.get(this.account.account_id, visualizationRolesFromQuery ? "query" : "visualization", "user",),
+			visualizationRolesFromQuery ? Promise.resolve([]) : role.get(this.account.account_id, "visualization", "role",),
+			visualizationRolesFromQuery ? Promise.resolve([]) : role.get(this.account.account_id, "visualization", "user",),
 			role.get(this.account.account_id, "query", "user", results[0].length ? results[0].map(x => x.query_id) : [-1], this.user.user_id)
 		]);
-
-		userSharedQueries = new Set(userSharedQueries.map(x => x.owner_id));
 
 		const dashboardSharedQueries = new Set(results[4].map(x => parseInt(x.query_id)));
 
@@ -176,6 +174,39 @@ exports.list = class extends API {
 			visualizationQueryMapping[visualization.query_id].push(visualization);
 			visualizationMapping[visualization.visualization_id] = visualization;
 		}
+
+		if(visualizationRolesFromQuery) {
+
+			visualizationRoles = [];
+			visualizationUsers = [];
+
+			for(const row of reportRoles || []) {
+
+				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
+
+					const obj = JSON.parse(JSON.stringify(row));
+
+					obj.owner_id = vis.visualization_id;
+					obj.owner = 'visualization';
+
+					visualizationRoles.push(obj);
+				}
+			}
+
+			for(const row of userSharedQueries || []) {
+
+				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
+
+					const obj = JSON.parse(JSON.stringify(row));
+					obj.owner_id = vis.visualization_id;
+					obj.owner = 'visualization';
+
+					visualizationUsers.push(obj);
+				}
+			}
+		}
+
+		userSharedQueries = new Set(userSharedQueries.map(x => x.owner_id));
 
 		for(const visualizationRole of visualizationRoles) {
 
@@ -348,7 +379,7 @@ exports.list = class extends API {
 					visualization.users = [];
 				}
 				let e1 = performance.now();
-				const visualizationAuthResponse = await auth.visualization(visualization, this.user, [row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || []])
+				const visualizationAuthResponse = await auth.visualization(visualization, this.user, [row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || []], visualizationRolesFromQuery);
 				visualizationTime += performance.now() - e1;
 				visualizationCount++;
 
@@ -561,11 +592,11 @@ exports.insert = class extends API {
 
 exports.logs = class extends API {
 
-	async logs() {
+	async logs({offset = 0, owner, owner_id} = {}) {
 
 		const db = dbConfig.write.database.concat('_logs');
 
-		this.request.query.offset = this.request.query.offset ? parseInt(this.request.query.offset) : 0;
+		this.assert(owner && owner_id, 'Owner or Owner Id missing');
 
 		return await this.mysql.query(`
 			SELECT
@@ -576,7 +607,7 @@ exports.logs = class extends API {
 			LEFT JOIN
 				tb_users u
 			ON
-				h.updated_by = u.user_id
+				h.user_id = u.user_id
 			WHERE
 				owner = ?
 				AND h.account_id = ?
@@ -584,7 +615,7 @@ exports.logs = class extends API {
 			ORDER BY
 				h.id DESC
 			LIMIT 10 OFFSET ?`,
-			[this.request.query.owner, this.account.account_id, this.request.query.owner_id, this.request.query.offset]
+			[owner, this.account.account_id, owner_id, parseInt(offset)]
 		);
 	}
 }

@@ -35,6 +35,9 @@ class Page {
 		AJAXLoader.setup();
 
 		await Page.load();
+
+		if(await Storage.get('disable-custom-theme'))
+			document.querySelector('html > head link[href^="/css/custom.css"]').remove();
 	}
 
 	static async load() {
@@ -123,8 +126,8 @@ class Page {
 				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
 				{url: '/dashboards-manager', name: 'Dashboards', privileges: [], icon: 'fa fa-newspaper'},
 				{url: '/reports', name: 'Reports', privileges: [], icon: 'fa fa-database'},
+				{url: '/visualizations-manager', name: 'Visualizations', privileges: [], icon: 'far fa-chart-bar'},
 				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
-				{url: '/tasks', name: 'Tasks', privileges: ['task'], icon: 'fas fa-tasks'},
 				{url: '/settings', name: 'Settings', privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'], icon: 'fas fa-cog'},
 			],
 			header = document.querySelector('body > header'),
@@ -215,8 +218,15 @@ class Page {
 				return;
 
 			// Alt + K
-			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]'))
+			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]')) {
 				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
+				await Storage.set('disable-custom-theme', true);
+
+				new SnackBar({
+					message: 'Custom theme removed',
+					icon: 'far fa-trash-alt',
+				});
+			}
 
 			// Alt + L
 			if(e.keyCode == 76)
@@ -2673,7 +2683,7 @@ class ObjectRoles {
 			}
 		}
 
-		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in this.mapping[row.target]);
+		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in (this.mapping[row.target] || {}));
 
 		for (const row of this.alreadyVisible) {
 

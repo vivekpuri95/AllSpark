@@ -192,18 +192,16 @@
             border: 1px solid #999;
         }
 .save-pop-up {
-    width: 195px;
     background: var(--color-accent);
     display: flex;
     align-items: center;
-    padding: 10px;
+    padding: 15px;
     border-radius: 3px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
     margin-left: 15px;
     position: absolute;
     justify-content: center;
     z-index: 7;
-    height: 50px;
     color: #fff;
     letter-spacing: 0.5px;
 }
@@ -216,12 +214,19 @@
     position: absolute;
 }
 
+.faded {
+    opacity: 0.3;
+}
+
 .blink {
     animation: submit-blink 1s infinite;
     transition: background var(--transition-duration);
 }
-main .toolbar button.blink:hover {
+main button.blink:hover {
     color: #333;
+}
+main .toolbar button.unsaved.blink {
+    color: #fff;
 }
 @keyframes submit-blink {
     from {

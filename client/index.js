@@ -106,7 +106,7 @@ class HTMLAPI extends API {
 					</header>
 
 					<main>
-						${await this.main() || ''}
+						${this.main ? await this.main() || '' : ''}
 					</main>
 				</body>
 			</html>
@@ -535,7 +535,7 @@ router.get('/streams', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
+router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
@@ -1049,6 +1049,18 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
+router.get('/visualizations-manager/:id?', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/visualizations-manager.css');
+		this.scripts.push('/js/reports.js');
+		this.scripts.push('/js/visualizations-manager.js');
+	}
+}));
+
 router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
@@ -1246,7 +1258,6 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 			</section>
 		`;
 	}
-
 }));
 
 router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {

@@ -40,7 +40,7 @@ exports.list = class extends API {
 
 		accountList.map(x => {
 
-			if(!accountObj[x.account_id]) {
+			if (!accountObj[x.account_id]) {
 
 				accountObj[x.account_id] = JSON.parse(JSON.stringify(x));
 			}
@@ -123,7 +123,7 @@ exports.insert = class extends API {
 
 		const result = await this.mysql.query(
 			'INSERT INTO tb_accounts SET ?',
-			{ name, url, icon, logo, auth_api },
+			{name, url, icon, logo, auth_api},
 			'write'
 		);
 
@@ -162,7 +162,7 @@ exports.update = class extends API {
 
 		const result = await this.mysql.query(
 			'UPDATE tb_accounts SET ? WHERE account_id = ?',
-			[{ name, url, icon, logo, auth_api }, account_id],
+			[{name, url, icon, logo, auth_api}, account_id],
 			'write'
 		);
 
@@ -220,11 +220,18 @@ exports.userQueryLogs = class extends API {
 
 	async initialSetup(credentials) {
 
-		await this.mysql.query(
-			`CREATE DATABASE IF NOT EXISTS ${credentials.db || constants.saveQueryResultDb}`,
-			[],
-			credentials.id
-		);
+		let db = await this.mysql.query("show databases", [], credentials.id);
+
+		db = db.filter(x => x === (credentials.db || constants.saveQueryResultDb));
+
+		if (!db) {
+
+			await this.mysql.query(
+				`CREATE DATABASE IF NOT EXISTS ${credentials.db || constants.saveQueryResultDb}`,
+				[],
+				credentials.id
+			);
+		}
 
 		await this.mysql.query(`
 			CREATE TABLE IF NOT EXISTS ??.?? (
@@ -263,7 +270,7 @@ exports.signup = class extends API {
 
 	async signup() {
 
-		if(!this.account.settings.get("enable_account_signup")) {
+		if (!this.account.settings.get("enable_account_signup")) {
 			throw new API.Exception(400, 'Account Signup restricted!');
 		}
 
@@ -273,7 +280,7 @@ exports.signup = class extends API {
 		try {
 			account_res = await account_obj.insert();
 		}
-		catch(e) {
+		catch (e) {
 
 			throw new API.Exception(400, "Account not created")
 		}
@@ -304,9 +311,9 @@ exports.signup = class extends API {
 					VALUES (?, ?, ?)
 				`,
 				[account_res.account_id, "user", user.insertId, "role", account_res.role_id, account_res.category_id]
-				,'write'
+				, 'write'
 			),
-			this.mysql.query(`INSERT INTO tb_user_privilege (user_id, category_id, privilege_id) VALUES (?, ?, 1)`,[user.insertId, account_res.category_id],'write'),
+			this.mysql.query(`INSERT INTO tb_user_privilege (user_id, category_id, privilege_id) VALUES (?, ?, 1)`, [user.insertId, account_res.category_id], 'write'),
 		]);
 
 		return "User signup successful";

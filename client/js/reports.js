@@ -101,7 +101,7 @@ class DataSource {
 		const params = parameters.toString();
 
 		const options = {
-			method: params.length <= 12198 ? 'GET' : 'POST', //12198 is used as our server was not accepting more then this query param length
+			method: params.length <= 2500 ? 'GET' : 'POST', //2500 is used as our server was not accepting more then this query param length
 		};
 
 		this.resetError();
@@ -521,7 +521,13 @@ class DataSource {
 		menu.querySelector('.json-download').on('click', (e) => this.download(e, {mode: 'json'}));
 		menu.querySelector('.filtered-json-download').on('click', (e) => this.download(e, {mode: 'filtered-json'}));
 		menu.querySelector('.xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
-		menu.querySelector('.expand-toggle').on('click', () => window.location = `/report/${this.query_id}`);
+		menu.querySelector('.expand-toggle').on('click', () => {
+
+			if(this.visualizations.selected.visualization_id)
+				window.location = `/visualization/${this.visualizations.selected.visualization_id}`
+			else
+				window.location = `/report/${this.query_id}`;
+		});
 
 		if(this.visualizations.length) {
 
@@ -6070,7 +6076,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
 
- 			if(!row)
+ 			if(!row || !this.x)
 				return;
 
 			const tooltip = [];
@@ -9068,6 +9074,7 @@ class ReportLogs extends Set {
 		if(!this.size) {
 
 			logList.innerHTML = '<li class="NA block">No Report History Available</li>';
+			this.container.querySelector('.list .loading').classList.add('hidden');
 			return;
 		}
 
@@ -9128,7 +9135,7 @@ class ReportLog {
 		container.innerHTML = `
 			<span class="clock"><i class="fa fa-history"></i></span>
 			<span class="timing" title="${Format.dateTime(this.created_at)}">${(this.operation == 'insert'? 'Created ' : 'Updated ') + Format.ago(this.created_at)}</span>
-			<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a>
+			<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a>
 		`;
 
 		container.on('click', () => this.load());
