@@ -2159,6 +2159,8 @@ class MultiSelect {
 					input.checked ? this.selectedValues.add(input.value.toString()) : this.selectedValues.delete(input.value.toString());
 				}
 
+				input.parentElement.classList.toggle('selected', input.checked);
+
 				if(this.changeCallback)
 					this.changeCallback();
 
