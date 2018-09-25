@@ -4858,7 +4858,12 @@ class ReportTransformations extends Set {
 				</form>
 			</div>`;
 
-		const preview = container.querySelector('h3 #transformations-preview');
+		const
+			preview = container.querySelector('h3 #transformations-preview'),
+			select = this.container.querySelector('.add-transformation select');
+
+		for(const [key, type] of ReportTransformation.types)
+			select.insertAdjacentHTML('beforeend', `<option value="${key}">${new type({}, this.stage).name}</option>`);
 
 		preview.removeEventListener('click', ReportTransformations.previewListener);
 
@@ -4904,11 +4909,6 @@ class ReportTransformations extends Set {
 
 		if(!this.size)
 			transformationsList.innerHTML = '<div class="NA">No transformation added yet!</div>';
-
-		const select = this.container.querySelector('.add-transformation select');
-
-		for(const [key, type] of ReportTransformation.types)
-			select.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
 
 		this.container.querySelector('h3 .count').innerHTML = `
 			${this.size ? this.size + ' transformation' + (this.size == 1 ? ' applied' : 's applied') : ''}
@@ -4984,9 +4984,6 @@ class ReportTransformation {
 		this.page = this.stage.page;
 
 		Object.assign(this, transformation);
-
-		if(!ReportTransformation.types.has(this.type))
-			throw new Page.exception(`Invalid transformation type ${this.type}!`);
 	}
 }
 
@@ -5004,7 +5001,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 			return this.containerElement;
 
 		if(!this.page.preview.report.originalResponse)
-			return this.containerElement;
+			return;
 
 		const
 			container = this.containerElement = document.createElement('fieldset'),
@@ -5202,7 +5199,7 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 			return this.containerElement;
 
 		if(!this.page.preview.report.originalResponse)
-			return this.containerElement;
+			return;
 
 		const
 			container = this.containerElement = document.createElement('fieldset'),
@@ -5294,7 +5291,103 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 	}
 });
 
-ReportTransformation.types.set('stream', class ReportTransformationFilters extends ReportTransformation {
+ReportTransformation.types.set('autofill', class ReportTransformationAutofill extends ReportTransformation {
+
+	get name() {
+		return 'Auto Fill';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		if(!this.page.preview.report.originalResponse)
+			return;
+
+		const container = this.containerElement = document.createElement('fieldset');
+
+		container.classList.add('subform', 'form');
+
+		container.innerHTML	= `
+			<legend>${this.name}</legend>
+			<div class="transformation autofill">
+
+				<label>
+					<span>Column</span>
+					<select name="column"></select>
+				</label>
+
+				<label>
+					<span>Granularity</span>
+					<select name="granularity">
+						<option value="number">Number</option>
+						<option value="second">Second</option>
+						<option value="minute">Minute</option>
+						<option value="hour">Hour</option>
+						<option value="date">Date</option>
+						<option value="month">Month</option>
+						<option value="year">Year</option>
+					</select>
+				</label>
+
+				<label>
+					<span>Fill With</span>
+					<input type="text" name="content" value="${this.content || ''}">
+				</label>
+
+				<label>
+					<span>Start Filter</span>
+					<select name="start_filter">
+						<option value=""></option>
+					</select>
+				</label>
+
+				<label>
+					<span>End Filter</span>
+					<select name="end_filter">
+						<option value=""></option>
+					</select>
+				</label>
+			</div>
+		`;
+
+		const
+			column = container.querySelector('select[name=column]'),
+			granularity = container.querySelector('select[name=granularity]'),
+			startFilter = container.querySelector('select[name=start_filter]'),
+			endFilter = container.querySelector('select[name=end_filter]');
+
+		for(const _column of this.page.preview.report.columns.values())
+			column.insertAdjacentHTML('beforeend', `<option value="${_column.key}">${_column.name}</option>`);
+
+		for(const filter of this.page.preview.report.filters.values()) {
+			startFilter.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+			endFilter.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
+		}
+
+		column.value = this.column;
+		granularity.value = this.granularity;
+		startFilter.value = this.start_filter || '';
+		endFilter.value = this.end_filter || '';
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			type: 'autofill',
+			column: this.container.querySelector('[name=column]').value,
+			granularity: this.container.querySelector('[name=granularity]').value,
+			content: this.container.querySelector('[name=content]').value,
+			start_filter: this.container.querySelector('[name=start_filter]').value,
+			end_filter: this.container.querySelector('[name=end_filter]').value,
+		};
+	}
+});
+
+ReportTransformation.types.set('stream', class ReportTransformationStream extends ReportTransformation {
 
 	get name() {
 		return 'Stream';
@@ -5306,7 +5399,7 @@ ReportTransformation.types.set('stream', class ReportTransformationFilters exten
 			return this.containerElement;
 
 		if(!this.page.preview.report.originalResponse)
-			return this.containerElement;
+			return;
 
 		const
 			container = this.containerElement = document.createElement('fieldset'),
