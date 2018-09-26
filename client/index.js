@@ -79,7 +79,7 @@ class HTMLAPI extends API {
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
 					<script>
-						const demo_url = "${config.has('demo_url') ? config.get('demo_url') : ''}";
+						let onboard = '${config.has('onboard') ? JSON.stringify(config.get('onboard')) : ''}';
 					</script>
 				</head>
 				<body>
@@ -106,7 +106,7 @@ class HTMLAPI extends API {
 					</header>
 
 					<main>
-						${await this.main() || ''}
+						${this.main ? await this.main() || '' : ''}
 					</main>
 				</body>
 			</html>
@@ -535,7 +535,7 @@ router.get('/streams', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
+router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
@@ -1003,7 +1003,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div id="visualization-list">
 
 						<div class="toolbar">
-							<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></button>
+							<button id="add-visualization" class="grey"><i class="fas fa-plus"></i> Add New Visualization</button></button>
 						</div>
 
 						<table>
@@ -1046,6 +1046,18 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 			<div id="preview" class="hidden"></div>
 		`;
+	}
+}));
+
+router.get('/visualizations-manager/:id?', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/visualizations-manager.css');
+		this.scripts.push('/js/reports.js');
+		this.scripts.push('/js/visualizations-manager.js');
 	}
 }));
 
@@ -1246,7 +1258,6 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 			</section>
 		`;
 	}
-
 }));
 
 router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {

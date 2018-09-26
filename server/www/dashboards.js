@@ -190,6 +190,8 @@ class Dashboard extends API {
 				continue;
 			}
 
+			dashboard.visibilityReason = authResponse.message;
+
 			const dashboardCategories = (dashboardRolesMapping[dashboard.id] || []).map(x => x[1]);
 
 			const updateFlag = dashboardUpdateCategories.some(cat => dashboardCategories.includes(parseInt(cat)));

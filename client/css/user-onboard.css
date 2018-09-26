@@ -48,6 +48,7 @@
             align-items: center;
             border-bottom: 1px solid #ccc;
             grid-gap: 5px;
+            position: relative;
         }
         .setup-stages .wrapper .stage.active,
         .setup-stages .wrapper .stage.active:hover {
@@ -78,13 +79,31 @@
                 color: var(--color-accent);
                 font-size: 85%;
             }
-            .setup-stages .wrapper .stage div.info {
+            .setup-stages .wrapper .stage:hover .hover-info {
                 display: flex;
-                flex-direction: column;
+                font-size: 90%;
             }
-                .setup-stages .wrapper .stage div.info .NA {
-                    margin-top: 5px;
-                }
+            .setup-stages .wrapper .stage .hover-info {
+                position: absolute;
+                background: #ddd;
+                height: 45px;
+                width: 220px;
+                align-items: center;
+                right: 335px;
+                padding: 10px;
+                border-radius: 3px 0px 3px 3px;
+                display: none;
+                justify-content: center;
+            }
+            .setup-stages .wrapper .stage .hover-info::after {
+                content: '';
+                border-left: 10px solid #ddd;
+                border-top: 0px solid transparent;
+                border-bottom: 10px solid transparent;
+                position: absolute;
+                top: 0;
+                left: 100%;
+            }
 
 .dialog-box-blanket.user-onboarding-welcome header {
     color: inherit;
@@ -172,3 +191,52 @@
         .dialog-box-blanket.user-onboarding-welcome .body .skip:hover {
             border: 1px solid #999;
         }
+.save-pop-up {
+    background: var(--color-accent);
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-radius: 3px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+    margin-left: 15px;
+    position: absolute;
+    justify-content: center;
+    z-index: 7;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+.save-pop-up::before {
+    left: -10px;
+    content: '';
+    border-right: 10px solid var(--color-accent);
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    position: absolute;
+}
+
+.faded {
+    opacity: 0.3;
+}
+
+.blink {
+    animation: submit-blink 1s infinite;
+    transition: background var(--transition-duration);
+}
+main button.blink:hover {
+    color: #333;
+}
+main .toolbar button.unsaved.blink {
+    color: #fff;
+}
+@keyframes submit-blink {
+    from {
+        background: #fff;
+    }
+    15% {
+        background: #dc563e;
+        color: #fff;
+    }
+    to {
+        background: #fff;
+    }
+}

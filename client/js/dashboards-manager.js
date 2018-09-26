@@ -1,4 +1,4 @@
-Page.class = class DashboardManager extends Page {
+class DashboardManager extends Page {
 
 	constructor() {
 
@@ -37,8 +37,10 @@ Page.class = class DashboardManager extends Page {
 
 		const what = state ? state.what : location.pathname.split('/').pop();
 
-		if(what == 'add')
+		if(what == 'add') {
+
 			return DashboardsDashboard.add();
+		}
 
 		if(this.list.has(parseInt(what)))
 			return this.list.get(parseInt(what)).edit();
@@ -110,6 +112,8 @@ Page.class = class DashboardManager extends Page {
 	}
 }
 
+Page.class = DashboardManager;
+
 class DashboardsDashboard {
 
 	static setup(page) {
@@ -152,7 +156,6 @@ class DashboardsDashboard {
 		DashboardsDashboard.editor.value = '';
 
 		await Sections.show('form');
-
 		DashboardsDashboard.form.name.focus();
 	}
 

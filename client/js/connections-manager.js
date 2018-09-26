@@ -1,4 +1,4 @@
-Page.class = class Connections extends Page {
+class Connections extends Page {
 
 	constructor() {
 
@@ -24,7 +24,9 @@ Page.class = class Connections extends Page {
 
 			DataConnection.types.get(what[what.length - 1]).render(this);
 			this.dataConnections.get(what[what.length - 1]).addConnection();
+
 			return Sections.show('form');
+
 		}
 
 		what = what.pop();
@@ -179,6 +181,8 @@ Page.class = class Connections extends Page {
 		this.connectionsContainer.querySelector('.search-connections input').focus();
 	}
 }
+
+Page.class = Connections;
 
 class DataConnections extends Set {
 
@@ -524,7 +528,7 @@ DataConnection.types = new Map;
 
 DataConnection.types.set('mysql', class {
 
-	static render(connections = {}) {
+	static async render(connections = {}) {
 
 		connections.form =  connections.container.querySelector('#connections-form');
 

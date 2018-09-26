@@ -174,23 +174,26 @@ class Session {
 	async load() {
 
 		const
-			parameters = {
-				user_id: this.user_id,
-				session_id: this.id,
-			},
+			parameters = new URLSearchParams(),
 			options = {
 				method: 'GET',
 			};
 
-		const [reports, errors] = await Promise.all([
-			API.call('reports/logs/log', parameters, options),
-			API.call('errors/list', parameters, options),
+		parameters.set('user_id', this.user_id);
+		parameters.set('session_id', this.id);
+
+		['query', 'visualization'].map(x => parameters.append('owner', x));
+
+		const [reportsLoaded, errors, reportsHistory] = await Promise.all([
+			API.call('reports/logs/log', parameters.toString(), options),
+			API.call('errors/list', parameters.toString(), options),
+			API.call('reports/logs/history', parameters.toString(), options)
 		]);
 
-		this.process(reports, errors);
+		this.process(reportsLoaded, errors, reportsHistory);
 	}
 
-	process(reports, errors) {
+	process(reports, errors, reportsHistory) {
 
 		for(const report of reports)
 			report.type = 'report';
@@ -198,17 +201,28 @@ class Session {
 		for(const error of errors)
 			error.type = 'error';
 
+		const activity = [...reports, ...errors];
+
+		this.reportsManaged = 0;
+		this.visualizationsManaged = 0;
+
+		for(const row of reportsHistory) {
+
+			row.owner == 'query' ? this.reportsManaged++ : this.visualizationsManaged++;
+
+			row.type = `${row.operation.concat(row.owner, 'log')}`;
+			activity.push(row);
+		}
+
 		this.reportsCount = reports.length;
 		this.errorsCount = errors.length;
 
-		const groupedActivity = this.groupedActivity(reports, errors);
+		const groupedActivity = this.groupedActivity(activity);
 
 		this.activityGroups = new ActivityGroups(groupedActivity);
 	}
 
-	groupedActivity(reports, errors) {
-
-		let activity = reports.concat(errors);
+	groupedActivity(activity) {
 
 		activity = activity.sort((a, b) => {
 			if(a.created_at < b.created_at)
@@ -286,7 +300,10 @@ class Session {
 
 			await this.load();
 
-			container.querySelector('.activity-details').innerHTML = `Reports: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)}`;
+			container.querySelector('.activity-details').innerHTML = `
+				Reports loaded: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)} &middot; 
+				Reports: ${this.reportsManaged} &middot; Visualizations: ${this.visualizationsManaged}
+			`;
 
 			container.appendChild(this.activityGroups.container);
 
@@ -331,16 +348,51 @@ class ActivityGroup extends Set {
 		super();
 
 		this.type = activityGroup[0].type;
+		this.operation = activityGroup[0].operation;
 
 		for(const activity of activityGroup) {
 
-			if(activity.result_query) {
+			if(activity.type == 'report') {
+
 				this.add(new ActivityReport(activity));
 			}
-			else {
+			else if(activity.type.includes('visualizationlog') || activity.type.includes('querylog')) {
+
+				this.add(new ActivityHistory(activity));
+			}
+			else if(activity.type == 'error') {
+
 				this.add(new ActivityError(activity));
 			}
 		}
+	}
+
+	get titleInfo() {
+
+		let icon, name;
+
+		if(this.type == 'report') {
+
+			icon = 'far fa-file';
+			name = `Report${this.size == 1 ? '' : 's'} loaded`;
+		}
+		else if(this.type.includes('visualizationlog')) {
+
+			icon = 'fas fa-chart-line';
+			name = `Visualization${this.size == 1 ? '' : 's'} ${this.operation == 'insert' ? 'inserted' : (this.operation + 'd')}`;
+
+		}
+		else if(this.type.includes('querylog')) {
+
+			icon = 'fas fa-history';
+			name = `Report${this.size == 1 ? '' : 's'} ${this.operation == 'insert' ? 'inserted' : (this.operation + 'd')}`;
+		}
+		else {
+			icon = 'fas fa-exclamation';
+			name = `Error${this.size == 1 ? '' : 's'}`
+		}
+
+		return {icon, name};
 	}
 
 	get container() {
@@ -352,14 +404,12 @@ class ActivityGroup extends Set {
 
 		container.classList.add('activity-group');
 
-		const icon = this.type == 'report' ? 'far fa-file' : 'fas fa-exclamation';
-
 		container.innerHTML = `
 			<div class="info-grid">
-				<div class="icon"><i class="${icon}"></i></div>
+				<div class="icon"><i class="${this.titleInfo.icon}"></i></div>
 				<div class="title">
 					<span class="NA">${Format.number(this.size)}</span>
-					<span class="type">${this.type}${this.size == 1 ? '' : 's'}</span>
+					<span class="type">${this.titleInfo.name}</span>
 				</div>
 				<div class="down">
 					<i class="fas fa-angle-right"></i>
@@ -428,10 +478,18 @@ class Activity {
 
 		container.on('click', () => {
 
-			const dialogueBox = new DialogBox();
+			if(this.dialogBox) {
 
-			dialogueBox.heading = this.heading;
-			dialogueBox.body.classList.add('activity-popup');
+				this.dialogBox.show();
+				return;
+			}
+
+			this.dialogBox = new DialogBox();
+
+			this.dialogBox.heading = this.heading;
+			this.dialogBox.container.classList.add('logs');
+
+			this.dialogBox.body.classList.add('activity-popup');
 
 			for(const key of this.keys) {
 
@@ -439,10 +497,10 @@ class Activity {
 				span.classList.add('key');
 				span.textContent = key + ':';
 
-				dialogueBox.body.appendChild(span);
+				this.dialogBox.body.appendChild(span);
 
 				try {
-					const value = JSON.parse(this[key]);
+					const value = typeof this[key] == 'object' ? this[key] : JSON.parse(this[key]);
 
 					if(typeof value == 'object') {
 
@@ -450,7 +508,7 @@ class Activity {
 						pre.classList.add('value', 'json');
 						pre.textContent = JSON.stringify(value, 0, 4);
 
-						dialogueBox.body.appendChild(pre);
+						this.dialogBox.body.appendChild(pre);
 					}
 					else {
 
@@ -458,21 +516,21 @@ class Activity {
 						span.classList.add('value');
 						span.textContent = this[key];
 
-						dialogueBox.body.appendChild(span);
+						this.dialogBox.body.appendChild(span);
 					}
 				}
 				catch(e) {
 
 					const pre = document.createElement('pre');
-						pre.classList.add('value', 'sql');
 
-						pre.textContent = new FormatSQL(this[key]).query;
+					pre.classList.add('value', 'sql');
+					pre.textContent = new FormatSQL(this[key]).query;
 
-						dialogueBox.body.appendChild(pre);
+					this.dialogBox.body.appendChild(pre);
 				}
 			}
 
-			dialogueBox.show();
+			this.dialogBox.show();
 		});
 
 		container.appendChild(this.name);
@@ -592,6 +650,72 @@ class ActivityError extends Activity {
 		extraInfo.textContent = 'Type:' + this.type;
 
 		return extraInfo;
+	}
+}
+
+class ActivityHistory extends Activity {
+
+	constructor(row) {
+
+		super(row);
+
+		try {
+
+			this.state = JSON.parse(this.state);
+		}
+		catch(e) {
+
+			this.state = {};
+		}
+	}
+
+	get name() {
+
+		if(this.nameElement)
+			return this.nameElement;
+
+		const title = this.nameElement = document.createElement('div');
+		title.classList.add('title');
+
+		title.textContent = this.state.name;
+
+		const span = document.createElement('span');
+		span.classList.add('NA');
+		span.textContent = '#' + this.owner_id;
+
+		title.appendChild(span);
+
+		return title;
+	}
+
+	get heading() {
+
+		if(this.headingElement)
+			return this.headingElement;
+
+		const span = this.headingElement = document.createElement('span');
+
+		span.textContent = 'Report History';
+
+		return span;
+	}
+
+	get extraInfo() {
+
+		if(this.extraInfoElement)
+			return this.extraInfoElement;
+
+		const extraInfo = this.extraInfoElement = document.createElement('div');
+		extraInfo.classList.add('extra-info');
+
+		extraInfo.textContent = `Operation: ${this.operation}`;
+
+		return extraInfo;
+	}
+
+	get keys() {
+
+		return ['user_id', 'session_id', 'owner_id', 'state', 'operation'];
 	}
 }
 

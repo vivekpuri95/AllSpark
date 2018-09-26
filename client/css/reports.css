@@ -1312,6 +1312,69 @@ main .dataset {
 	.column-form > label {
 		margin-left: calc(var(--gap) * 2);
 	}
+	.column-form > div,
+	.column-form > label {
+		margin-left: calc(var(--gap) * 2);
+	}
+	.column-form > div {
+		display: grid;
+		grid-gap: calc(var(--gap) * 2);
+		max-width: 200px;
+		white-space: nowrap;
+	}
+	.column-form .timing-type-custom {
+		max-width: 100%;
+	}
+		.column-form .timing-format {
+			display: grid;
+			overflow: auto;
+			grid-gap: calc(var(--gap) * 2);
+			grid-auto-flow: column;
+		}
+			.column-form .timing-format fieldset {
+				border: 1px solid #ccc;
+				color: #333;
+				font-size: 90%;
+				margin: 0;
+			}
+				.column-form .timing-format fieldset legend {
+					font-size: 90%;
+				}
+				.column-form .timing-format fieldset label {
+					display: inline-block;
+					padding: 0 3px;
+					text-align: center;
+					transition: background var(--transition-duration),
+								box-shadow var(--transition-duration);
+				}
+				.column-form .timing-format fieldset label:hover {
+					cursor: pointer;
+					background: #eee;
+				}
+				.column-form .timing-format fieldset label:active {
+					box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.25);
+				}
+				.column-form .timing-format fieldset input[type=radio] {
+					display: none;
+				}
+				.column-form .timing-format fieldset input:checked + span {
+					color: #333;
+				}
+				.column-form .timing-format fieldset label span {
+					color: #ccc;
+					transition: color var(--transition-duration);
+					font-weight: normal;
+				}
+			.column-form .timing-type-custom .result-date {
+				color: #333;
+				font-size: 80%;
+				font-weight: normal;
+			}
+		.column-form > div > span {
+			font-size: 90%;
+			color: #444;
+			font-weight: bold;
+		}
 		.column-form > label .color {
 			width: 100%;
 			padding: 0;

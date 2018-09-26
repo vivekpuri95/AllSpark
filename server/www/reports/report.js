@@ -6,11 +6,12 @@ const role = new (require("../object_roles")).get();
 const reportHistory = require('../../utils/reportLogs');
 const constants = require("../../utils/constants");
 const dbConfig = require('config').get("sql_db");
+const {performance} = require('perf_hooks');
 
 exports.list = class extends API {
 
 	async list() {
-
+		const st = performance.now();
 		let query = `
 			SELECT
 				q.*,
@@ -73,6 +74,8 @@ exports.list = class extends API {
                  OWNER = "dashboard"
                  AND target = "user"
                  AND target_id = ?
+                 AND qv.is_enabled = 1 
+                 and qv.is_deleted = 0
             GROUP BY query_id
         `;
 
@@ -90,9 +93,10 @@ exports.list = class extends API {
 		let credentialObjectRoles = role.get(this.account.account_id, 'connection', ['user', 'role']);
 
 		let userCategories = new Set(this.user.privileges.filter(x => [constants.privilege.administrator, constants.privilege["report.update"]].includes(x.privilege_name)).map(x => x.category_id));
+
 		let isAdmin = false;
 
-		if(constants.adminPrivilege.some(x => userCategories.has(x))) {
+		if (constants.adminPrivilege.some(x => userCategories.has(x))) {
 
 			userCategories = new Set([0]);
 			isAdmin = true;
@@ -100,21 +104,151 @@ exports.list = class extends API {
 
 
 		const results = await Promise.all([
+
 			this.mysql.query(query, [`%${this.request.body.text}%`, `%${this.request.body.text}%`, `%${this.request.body.text}%`]),
-			this.mysql.query('SELECT * FROM tb_query_filters'),
-			this.mysql.query('SELECT * FROM tb_query_visualizations'),
+
+			this.mysql.query(`
+				SELECT
+					qf.*
+				FROM
+					tb_query_filters qf
+				JOIN
+					tb_query q
+					using(query_id)
+				WHERE
+					q.is_enabled = 1
+					AND q.is_deleted = 0
+					AND q.account_id = ?
+				`,
+				[this.account.account_id]
+			),
+			this.mysql.query(`
+				SELECT
+					qv.*
+				FROM
+					tb_query_visualizations qv
+				JOIN
+					tb_query q
+					USING(query_id)
+				WHERE
+					qv.is_enabled = 1
+					AND qv.is_deleted = 0
+					AND q.is_enabled = 1
+					AND q.is_deleted = 0
+					AND q.account_id = ?
+				`,
+				[this.account.account_id]
+			),
+
 			this.mysql.query(dashboardRoleQuery),
+
 			this.mysql.query(dashboardToReportAccessQuery, [this.user.user_id]),
+
 			credentialObjectRoles
 		]);
 
-		const reportRoles = await role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],);
+		const visualizationRolesFromQuery = this.account.settings.has("visualization_roles_from_query") ? !this.account.settings.get("visualization_roles_from_query") : !this.account.settings.has("visualization_roles_from_query");
 
-		const userSharedQueries = new Set((await role.get(this.account.account_id, "query", "user", results[0].length ? results[0].map(x => x.query_id) : [-1], this.user.user_id)).map(x => x.owner_id));
+		let [reportRoles, visualizationRoles, visualizationUsers, userSharedQueries] = await Promise.all([
+			role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],),
+			visualizationRolesFromQuery ? Promise.resolve([]) : role.get(this.account.account_id, "visualization", "role",),
+			visualizationRolesFromQuery ? Promise.resolve([]) : role.get(this.account.account_id, "visualization", "user",),
+			role.get(this.account.account_id, "query", "user", results[0].length ? results[0].map(x => x.query_id) : [-1], this.user.user_id)
+		]);
+
 		const dashboardSharedQueries = new Set(results[4].map(x => parseInt(x.query_id)));
+
 		credentialObjectRoles = results[5];
 
 		const reportRoleMapping = {};
+
+		const visualizationQueryMapping = {}, visualizationMapping = {};
+
+		for (const visualization of results[2]) {
+
+			if (!visualizationQueryMapping.hasOwnProperty(visualization.query_id)) {
+
+				visualizationQueryMapping[visualization.query_id] = [];
+			}
+
+			visualizationQueryMapping[visualization.query_id].push(visualization);
+			visualizationMapping[visualization.visualization_id] = visualization;
+		}
+
+		if(visualizationRolesFromQuery) {
+
+			visualizationRoles = [];
+			visualizationUsers = [];
+
+			for(const row of reportRoles || []) {
+
+				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
+
+					const obj = JSON.parse(JSON.stringify(row));
+
+					obj.owner_id = vis.visualization_id;
+					obj.owner = 'visualization';
+
+					visualizationRoles.push(obj);
+				}
+			}
+
+			for(const row of userSharedQueries || []) {
+
+				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
+
+					const obj = JSON.parse(JSON.stringify(row));
+					obj.owner_id = vis.visualization_id;
+					obj.owner = 'visualization';
+
+					visualizationUsers.push(obj);
+				}
+			}
+		}
+
+		userSharedQueries = new Set(userSharedQueries.map(x => x.owner_id));
+
+		for(const visualizationRole of visualizationRoles) {
+
+			if(!visualizationMapping[visualizationRole.owner_id]) {
+
+				continue;
+			}
+
+			if(!visualizationMapping[visualizationRole.owner_id].hasOwnProperty("roles")) {
+
+				visualizationMapping[visualizationRole.owner_id].roles = [];
+			}
+
+			visualizationMapping[visualizationRole.owner_id].roles.push(visualizationRole);
+		}
+
+		for(const visualizationUser of visualizationUsers) {
+
+			if(!visualizationMapping[visualizationUser.owner_id]) {
+
+				continue;
+			}
+
+			if(!visualizationMapping[visualizationUser.owner_id].hasOwnProperty("users")) {
+
+				visualizationMapping[visualizationUser.owner_id].users = [];
+			}
+
+			visualizationMapping[visualizationUser.owner_id].users.push(visualizationUser);
+		}
+
+		const queryFilterMapping = {};
+
+		for (const filter of results[1]) {
+
+			if (!queryFilterMapping.hasOwnProperty(filter.query_id)) {
+
+				queryFilterMapping[filter.query_id] = [];
+			}
+
+			queryFilterMapping[filter.query_id].push(filter);
+		}
 
 		for (const row of reportRoles) {
 
@@ -125,15 +259,15 @@ exports.list = class extends API {
 					category_id: [],
 					dashboard_roles: [],
 				};
-
-				reportRoleMapping[row.owner_id].roles.push(row.target_id);
-				reportRoleMapping[row.owner_id].category_id.push(row.category_id);
 			}
+
+			reportRoleMapping[row.owner_id].roles.push(row.target_id);
+			reportRoleMapping[row.owner_id].category_id.push(row.category_id);
 		}
 
-		for(const queryDashboardRole of results[3]) {
+		for (const queryDashboardRole of results[3]) {
 
-			if(!reportRoleMapping[queryDashboardRole.query_id]) {
+			if (!reportRoleMapping[queryDashboardRole.query_id]) {
 
 				reportRoleMapping[queryDashboardRole.query_id] = {
 					roles: null,
@@ -147,9 +281,9 @@ exports.list = class extends API {
 
 		const connectionMapping = {};
 
-		for(const row of credentialObjectRoles) {
+		for (const row of credentialObjectRoles) {
 
-			if(!connectionMapping[row.owner_id]) {
+			if (!connectionMapping[row.owner_id]) {
 
 				connectionMapping[row.owner_id] = {
 					role: [],
@@ -172,6 +306,17 @@ exports.list = class extends API {
 
 		const response = [];
 
+		const e = performance.now() - st;
+
+		console.log(e, 'INITIAL QUERIES PERFORMANCE(MS)');
+
+		let
+			reportTime = 0,
+			reportCount = 0,
+			visualizationTime = 0,
+			visualizationCount = 0
+		;
+
 		for (const row of results[0]) {
 
 			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [];
@@ -179,7 +324,7 @@ exports.list = class extends API {
 
 			row.flag = userSharedQueries.has(row.query_id) || dashboardSharedQueries.has(row.query_id);
 
-			if(!connectionMapping[row.connection_name]) {
+			if (!connectionMapping[row.connection_name]) {
 
 				row.connectionObj = {
 					role: [],
@@ -196,11 +341,20 @@ exports.list = class extends API {
 
 			row.connectionObj.added_by = row.connection_added_by;
 
-			if ((await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || [])).error) {
+			const s = performance.now();
+			const authResponse = await auth.report(row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || []);
+
+			reportTime += performance.now() - s;
+			reportCount++;
+
+			if (authResponse.error) {
+
 				continue;
 			}
 
-			if(isAdmin || row.category_id.every(x => userCategories.has(x))) {
+			row.visibilityReason = authResponse.message;
+
+			if (isAdmin || (row.category_id.every(x => userCategories.has(x)) && row.category_id.length) || row.added_by == this.user.user_id) {
 
 				row.editable = true;
 			}
@@ -210,18 +364,64 @@ exports.list = class extends API {
 				delete row.query;
 			}
 
-			row.filters = results[1].filter(filter => filter.query_id === row.query_id);
-			row.visualizations = results[2].filter(visualization => visualization.query_id === row.query_id);
+			row.filters = queryFilterMapping[row.query_id] || [];
+			row.visualizations = [];
+
+			for (const visualization of visualizationQueryMapping[row.query_id] || []) {
+
+				if(!visualization.roles) {
+
+					visualization.roles = []
+				}
+
+				if(!visualization.users) {
+
+					visualization.users = [];
+				}
+				let e1 = performance.now();
+				const visualizationAuthResponse = await auth.visualization(visualization, this.user, [row, this.user, (reportRoleMapping[row.query_id] || {}).dashboard_roles || []], visualizationRolesFromQuery);
+				visualizationTime += performance.now() - e1;
+				visualizationCount++;
+
+				if(visualizationAuthResponse.error) {
+
+					continue;
+				}
+
+				const visualizationCategories = visualization.roles.map(x => x[1] || x.category_id);
+				const userVisualizationUpdateCategories = new Set(this.user.privileges.filter(x => [constants.privilege['visualization.update']].includes(x.privilege_name)).map(x => x.category_id));
+				const userVisualizationDeleteCategories = new Set(this.user.privileges.filter(x => [constants.privilege['visualization.delete']].includes(x.privilege_name)).map(x => x.category_id));
+
+				const updateFlag = this.user.privilege.has('visualization.update', 'ignore') && visualization.users.some(x => this.user.user_id == x.target_id);
+				const deleteFlag = this.user.privilege.has('visualization.delete', 'ignore') && visualization.users.some(x => this.user.user_id == x.target_id);
+
+				if(isAdmin || updateFlag || visualizationCategories.some(x => userVisualizationUpdateCategories.has(x)) || visualization.added_by == this.user.user_id) {
+
+					visualization.editable = true
+				}
+
+				if(isAdmin || deleteFlag ||visualizationCategories.some(x => userVisualizationDeleteCategories.has(x)) || visualization.added_by == this.user.user_id) {
+
+					visualization.deletable = true
+				}
+
+				visualization.visibilityReason = visualizationAuthResponse.message;
+
+				row.visualizations.push(visualization)
+			}
+
 			row.href = `/report/${row.query_id}`;
 			row.superset = 'Reports';
 
 			try {
+
 				row.definition = JSON.parse(row.definition);
-			} catch(e) {
+
+			}
+			catch (e) {
+
 				row.definition = {};
 			}
-
-			response.push(row);
 
 			try {
 
@@ -232,6 +432,16 @@ exports.list = class extends API {
 
 				row.format = null;
 			}
+
+			response.push(row);
+		}
+		console.log(visualizationTime, 'VISUALIZATION TIME', visualizationCount, 'VISUALIZATION COUNT', visualizationTime/visualizationCount, 'AVG');
+		console.log(reportTime, 'REPORT TIME', reportCount, 'REPORT COUNT', reportTime/reportCount, 'AVG');
+
+		for(const row of response) {
+
+			delete row.connectionObj;
+			delete row.roles;
 		}
 
 		return response;
@@ -246,7 +456,7 @@ exports.update = class extends API {
 			categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id),
 			[updatedRow] = await this.mysql.query(`SELECT * FROM tb_query WHERE query_id = ?`, [this.request.body.query_id]);
 
-		for(const category of categories || [0]) {
+		for (const category of categories || [0]) {
 
 			this.user.privilege.needs('report.update', category);
 		}
@@ -284,7 +494,7 @@ exports.update = class extends API {
 			}
 		}
 
-		if(JSON.stringify(compareJson) == JSON.stringify(values)) {
+		if (JSON.stringify(compareJson) == JSON.stringify(values)) {
 
 			return "0 rows affected";
 		}
@@ -305,12 +515,12 @@ exports.update = class extends API {
 		}
 
 		const
-			updateResponse =  await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write'),
+			updateResponse = await this.mysql.query('UPDATE tb_query SET ? WHERE query_id = ? and account_id = ?', [values, this.request.body.query_id, this.account.account_id], 'write'),
 			logs = {
 				owner: 'query',
 				owner_id: this.request.body.query_id,
 				state: JSON.stringify(updatedRow),
-				operation:'update',
+				operation: 'update',
 			};
 
 		reportHistory.insert(this, logs);
@@ -371,7 +581,7 @@ exports.insert = class extends API {
 				owner: 'query',
 				owner_id: insertResponse.insertId,
 				state: JSON.stringify(loggedRow),
-				operation:'insert',
+				operation: 'insert',
 			};
 
 		reportHistory.insert(this, logs);
@@ -382,22 +592,22 @@ exports.insert = class extends API {
 
 exports.logs = class extends API {
 
-	async logs() {
+	async logs({offset = 0, owner, owner_id} = {}) {
 
 		const db = dbConfig.write.database.concat('_logs');
 
-		this.request.query.offset = this.request.query.offset ? parseInt(this.request.query.offset) : 0;
+		this.assert(owner && owner_id, 'Owner or Owner Id missing');
 
 		return await this.mysql.query(`
 			SELECT
 				h.*,
 				CONCAT_WS(' ', first_name, middle_name, last_name) AS user_name
-			FROM 
+			FROM
 				${db}.tb_history h
 			LEFT JOIN
 				tb_users u
 			ON
-				h.updated_by = u.user_id
+				h.user_id = u.user_id
 			WHERE
 				owner = ?
 				AND h.account_id = ?
@@ -405,7 +615,7 @@ exports.logs = class extends API {
 			ORDER BY
 				h.id DESC
 			LIMIT 10 OFFSET ?`,
-			[this.request.query.owner, this.account.account_id, this.request.query.owner_id, this.request.query.offset]
+			[owner, this.account.account_id, owner_id, parseInt(offset)]
 		);
 	}
 }
@@ -489,6 +699,8 @@ exports.userPrvList = class extends API {
                 			USING(visualization_id)
                 		WHERE
                 			 query_id = ?
+                			 and qv.is_enabled = 1 
+                			 and qv.is_deleted = 0
                 	) dashboard_user
                USING(user_id)
                 	LEFT JOIN
@@ -544,7 +756,7 @@ exports.userPrvList = class extends API {
 		}// User Details
 
 
-			const reportDetails = await this.mysql.query(`
+		const reportDetails = await this.mysql.query(`
 				SELECT
                   q.*
                 FROM

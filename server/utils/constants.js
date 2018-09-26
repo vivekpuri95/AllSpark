@@ -26,8 +26,16 @@ exports.privilege = {
 	"report.insert": "report.insert",
 	"report.update": "report.update",
 	superadmin: "superadmin",
-	ignore_category: ["connection.list",],
-	ignore_privilege: ["dashboard.list"]
+	ignore_category: ["connection.list","category.list", "visualization.list"],
+	ignore_privilege: ["dashboard.list", "visualization.list", "connection.list", "category.list"],
+	"visualization.insert": "visualization.insert",
+	"visualization.update": "visualization.update",
+	"visualization.delete": "visualization.delete",
+	"visualization.list": "visualization.list",
+	"category.list": "category.list",
+	"category.update":"category.update",
+	"category.insert": "category.insert",
+	"category.delete": "category.delete"
 };
 
 exports.publicEndpoints = [

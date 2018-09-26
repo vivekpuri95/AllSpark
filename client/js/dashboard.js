@@ -337,7 +337,7 @@ Page.class = class Dashboards extends Page {
 
 				for (const parent of parents) {
 
-					if (parents.has(0) || parents.has(parent)) {
+					if (parents.has(0) || parents.has(dashboardId)) {
 
 						this.list.delete(parent);
 						moved = false;
@@ -394,8 +394,7 @@ Page.class = class Dashboards extends Page {
 				DataSource.load(),
 				API.call('dashboards/list'),
 			]),
-			currentId = state ? state.filter : parseInt(window.location.pathname.split('/').pop()),
-			[loadReport] = window.location.pathname.split('/').filter(x => x === 'report');
+			currentId = state ? state.filter : parseInt(window.location.pathname.split('/').pop());
 
 		for (const dashboard of dashboardList) {
 
@@ -469,10 +468,11 @@ Page.class = class Dashboards extends Page {
 			return await Sections.show('list');
 		}
 
-		if (loadReport) {
-
+		if(window.location.pathname.split('/').some(x => x == 'report'))
 			return await this.report(currentId);
-		}
+
+		if(window.location.pathname.split('/').some(x => x == 'visualization'))
+			return await this.report(currentId, true);
 
 		else {
 
@@ -480,11 +480,20 @@ Page.class = class Dashboards extends Page {
 		}
 	}
 
-	async report(id) {
+	async report(id, visualization = false) {
 
-		const
-			report = new DataSource(DataSource.list.get(id)),
-			container = this.reports.querySelector(':scope > .list');
+		let report = DataSource.list.get(id);
+
+		if(visualization) {
+			for(const source of DataSource.list.values()) {
+				if(source.visualizations.some(v => v.visualization_id == id))
+					report = source;
+			}
+		}
+
+		report = new DataSource(report);
+
+		const container = this.reports.querySelector(':scope > .list');
 
 		this.loadedVisualizations.clear();
 		this.loadedVisualizations.add(report);
@@ -514,7 +523,10 @@ Page.class = class Dashboards extends Page {
 		if (!report.container.contains(report.menu))
 			report.container.appendChild(report.menu);
 
-		report.menu.classList.remove('hidden')
+		report.menu.classList.remove('hidden');
+
+		if(visualization)
+			[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == id);
 
 		container.appendChild(report.container);
 
@@ -987,12 +999,20 @@ class Dashboard {
 		dashboardName.innerHTML = `
 			<span>${this.page.parents(this.id).filter(x => this.page.list.has(x)).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
 			<div>
-				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
+				<span class="toggle-dashboard-toolbar hidden"><i class="fas fa-ellipsis-v"></i></span>
 			</div>
 		`;
 
 		dashboardName.classList.remove('hidden');
-		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
+
+		if(this.editable) {
+
+			const toggleDashboardToolbar =  dashboardName.querySelector('.toggle-dashboard-toolbar');
+
+			toggleDashboardToolbar.classList.remove('hidden');
+
+			toggleDashboardToolbar.on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
+		}
 
 		this.page.render({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
 
