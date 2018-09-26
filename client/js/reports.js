@@ -1852,7 +1852,7 @@ class DataSourceColumn {
 				</select>
 			</label>
 
-			<label>
+			<label class="hidden">
 				<span>Formula</span>
 				<input type="text" name="formula">
 				<small></small>
