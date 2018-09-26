@@ -1643,7 +1643,10 @@ class DataSourceColumn {
 			}
 		}
 
-		this.customDateType = new DataSourceColumnCustomDateType()
+		if(this.disabled)
+			this.container.classList.add('disabled');
+
+		this.customDateType = new DataSourceColumnCustomDateType();
 	}
 
 	get container() {
@@ -1755,7 +1758,12 @@ class DataSourceColumn {
 
 		for(const key in this) {
 
-			if(key in this.form)
+			if(!(key in this.form))
+				continue;
+
+			if(this.form[key].type == 'checkbox')
+				this.form[key].checked = this[key];
+			else
 				this.form[key].value = this[key];
 		}
 
@@ -1767,7 +1775,7 @@ class DataSourceColumn {
 			this.drilldownQuery.clear();
 		}
 
-		this.form.disabled.value = parseInt(this.disabled) || 0;
+		this.form.disabled.checked = this.disabled;
 
 		if(!this.type)
 			return this.dialogueBox.show();;
@@ -1844,7 +1852,7 @@ class DataSourceColumn {
 				</select>
 			</label>
 
-			<label>
+			<label class="hidden">
 				<span>Formula</span>
 				<input type="text" name="formula">
 				<small></small>
@@ -1860,12 +1868,8 @@ class DataSourceColumn {
 				<input type="text" name="postfix">
 			</label>
 
-			<label>
-				<span>Disabled</span>
-				<select name="disabled">
-					<option value="0">No</option>
-					<option value="1">Yes</option>
-				</select>
+			<label class="disable-column">
+				<span><input type="checkbox" name="disabled"> <span>Disabled</span></span>
 			</label>
 
 			<h3>Drill down</h3>
@@ -1889,6 +1893,13 @@ class DataSourceColumn {
 				</button>
 			</footer>
 		`;
+
+		if(!this.source.editable) {
+			const saveData = form.querySelector('footer .save');
+			saveData.disabled = true;
+			saveData.dataset.tooltip = 'Insufficient Privileges';
+			saveData.dataset.tooltipPosition = 'left';
+		}
 
 		form.type.on('change', () => {
 
@@ -1922,9 +1933,6 @@ class DataSourceColumn {
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
 
-		if(!this.source.editable)
-			form.querySelector('.save').classList.add('hidden');
-
 		form.elements.formula.on('keyup', async () => {
 
 			if(formulaTimeout)
@@ -1944,7 +1952,8 @@ class DataSourceColumn {
 				form.parentElement.classList.add('hidden');
 		});
 
-		form.querySelector('.save').on('click', () => this.save());
+		if(this.source.editable)
+			form.querySelector('.save').on('click', () =>  this.save())
 
 		return form;
 	}
@@ -2011,7 +2020,10 @@ class DataSourceColumn {
 			if(element.name == 'type')
 				continue;
 
-			this[element.name] = element.value == '' ? null : element.value || null;
+			if(element.type == 'checkbox')
+				this[element.name] = element.checked;
+
+			else this[element.name] = element.value == '' ? null : element.value || null;
 		}
 
 		this.filters = this.columnFilters.json;
@@ -2026,8 +2038,6 @@ class DataSourceColumn {
 		if(this.interval)
 			clearInterval(this.interval);
 
-		this.disabled = parseInt(this.disabled) || 0;
-
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
 
@@ -2040,6 +2050,9 @@ class DataSourceColumn {
 		await this.source.visualizations.selected.render();
 
 		this.dialogueBox.hide();
+		this.source.columns.render();
+
+		await this.update();
 
 		new SnackBar({
 			message: `Changes to <em>${this.name}</em> Applied`,
@@ -2065,7 +2078,10 @@ class DataSourceColumn {
 			if(element.name == 'type')
 				continue;
 
-			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+			if(element.type == 'checkbox')
+				this[element.name] = element.checked;
+
+			else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 		}
 
 		this.filters = this.columnFilters.json;

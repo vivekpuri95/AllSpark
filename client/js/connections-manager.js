@@ -540,7 +540,7 @@ DataConnection.types.set('mysql', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
+			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -560,8 +560,16 @@ DataConnection.types.set('mysql', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
+
+			if(connections.form.password.value) {
+
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
 	}
 
@@ -591,7 +599,7 @@ DataConnection.types.set('mssql', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
+			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -611,8 +619,16 @@ DataConnection.types.set('mssql', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password' : 'text';
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
+
+			if(connections.form.password.value) {
+
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
 	}
 
@@ -642,7 +658,7 @@ DataConnection.types.set('pgsql', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
+			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -662,8 +678,16 @@ DataConnection.types.set('pgsql', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
+
+			if(connections.form.password.value) {
+
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
 	}
 
@@ -693,8 +717,8 @@ DataConnection.types.set('oracle', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
-				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
+				<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span>
+				<input type="password" autocomplete="off" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
@@ -708,9 +732,18 @@ DataConnection.types.set('oracle', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
+
+			if(connections.form.password.value) {
+
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
+
 	}
 
 	static get details() {
@@ -777,7 +810,7 @@ DataConnection.types.set('mongo', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password">Show</a></span>
+			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -797,8 +830,16 @@ DataConnection.types.set('mongo', class {
 			</label>
 		`;
 
-		connections.form.password.on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
+
+			if(connections.form.password.value) {
+
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
 	}
 
