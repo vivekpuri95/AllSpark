@@ -1127,17 +1127,17 @@ class DataSourceFilter {
 				name: 'Yesterday',
 			},
 			{
-				start: -7,
+				start: -6,
 				end: 0,
 				name: 'Last 7 Days',
 			},
 			{
-				start: -30,
+				start: -29,
 				end: 0,
 				name: 'Last 30 Days',
 			},
 			{
-				start: -90,
+				start: -89,
 				end: 0,
 				name: 'Last 90 days',
 			},
@@ -1213,7 +1213,7 @@ class DataSourceFilter {
 			input.value = this.value;
 		}
 
-		container.innerHTML = `<span>${this.name}<span>`;
+		container.innerHTML = `<span>${this.name}</span>`;
 		container.appendChild(input);
 
 		// Timing of this is critical
@@ -3474,7 +3474,7 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 	}
 });
 
-DataSourceTransformation.types.set('filters', class DataSourceTransformationPivot extends DataSourceTransformation {
+DataSourceTransformation.types.set('filters', class DataSourceTransformationFilters extends DataSourceTransformation {
 
 	async run(response = []) {
 
@@ -3509,7 +3509,90 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationPivo
 	}
 });
 
-DataSourceTransformation.types.set('stream', class DataSourceTransformationPivot extends DataSourceTransformation {
+DataSourceTransformation.types.set('autofill', class DataSourceTransformationAutofill extends DataSourceTransformation {
+
+	async run(response = []) {
+
+		if(!response || !response.length)
+			return response;
+
+		let
+			start = null,
+			end = null;
+
+		if(this.start_filter  && this.source.filters.has(this.start_filter) && this.end_filter && this.source.filters.has(this.end_filter)) {
+
+			start = Date.parse(this.source.filters.get(this.start_filter).value);
+			end = Date.parse(this.source.filters.get(this.end_filter).value);
+		}
+
+		else {
+
+			for(const row of response) {
+
+				if(!start || row[this.column] < start)
+					start = row[this.column];
+
+				if(!end || row[this.column] > end)
+					end = row[this.column];
+			}
+
+			start = Date.parse(start);
+			end = Date.parse(end);
+		}
+
+		if(!start || !end)
+			return response;
+
+		const
+			newResponse = {},
+			mappedResponse = {},
+			step = {
+				number: d => parseFloat(d) + 1,
+				second: d => d + (1000),
+				minute: d => d + (60 * 1000),
+				hour: d => d + (60 * 60 * 1000),
+				date: d => d + (24 * 60 * 60 * 1000),
+				month: d => new Date(d).setMonth(d.getMonth + 1),
+				year: d => new Date(d).setYear(d.getYear + 1),
+			};
+
+		for(const row of response) {
+
+			let key;
+
+			if(this.granularity == 'number')
+				key = parseFloat(row[this.column]);
+
+			else
+				key = Date.parse(row[this.column]);
+
+			mappedResponse[key] = row;
+		}
+
+		while(start <= end) {
+
+			newResponse[start] = {};
+
+			if(start in mappedResponse)
+				newResponse[start] = mappedResponse[start];
+
+			else {
+
+				for(const key in response[0])
+					newResponse[start][key] = this.content;
+
+				newResponse[start][this.column] = start;
+			}
+
+			start = step[this.granularity](start);
+		}
+
+		return Object.values(newResponse);
+	}
+});
+
+DataSourceTransformation.types.set('stream', class DataSourceTransformationStream extends DataSourceTransformation {
 
 	async run(response = []) {
 
