@@ -1774,6 +1774,7 @@ class DataSourceColumn {
 		else {
 			this.drilldownQuery.clear();
 		}
+
 		this.form.disabled.checked = this.disabled;
 
 		if(!this.type)
@@ -1894,7 +1895,7 @@ class DataSourceColumn {
 		`;
 
 		if(!this.source.editable) {
-			let saveData = form.querySelector('footer .save');
+			const saveData = form.querySelector('footer .save');
 			saveData.disabled = true;
 			saveData.dataset.tooltip = 'Insufficient Privileges';
 			saveData.dataset.tooltipPosition = 'left';

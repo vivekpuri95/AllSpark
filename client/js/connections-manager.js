@@ -560,12 +560,14 @@ DataConnection.types.set('mysql', class {
 			</label>
 		`;
 
-		connections.form.querySelector('#showpassword').on('click', () => {
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
 
 			if(connections.form.password.value) {
 
-				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
-				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
 				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 			}
 		});
@@ -617,12 +619,14 @@ DataConnection.types.set('mssql', class {
 			</label>
 		`;
 
-		connections.form.querySelector('#showpassword').on('click', () => {
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
 
 			if(connections.form.password.value) {
 
-				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
-				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
 				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 			}
 		});
@@ -674,12 +678,14 @@ DataConnection.types.set('pgsql', class {
 			</label>
 		`;
 
-		connections.form.querySelector('#showpassword').on('click', () => {
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
 
 			if(connections.form.password.value) {
 
-				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
-				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
 				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 			}
 		});
@@ -726,12 +732,14 @@ DataConnection.types.set('oracle', class {
 			</label>
 		`;
 
-		connections.form.querySelector('#showpassword').on('click', () => {
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
 
 			if(connections.form.password.value) {
 
-				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
-				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
 				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 			}
 		});
@@ -822,12 +830,14 @@ DataConnection.types.set('mongo', class {
 			</label>
 		`;
 
-		connections.form.querySelector('#showpassword').on('click', () => {
+		const togglePassword = connections.form.querySelector('#showpassword');
+
+		togglePassword.on('click', () => {
 
 			if(connections.form.password.value) {
 
-				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
-				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				togglePassword.textContent = togglePassword.textContent == 'Show' ? 'Hide' : 'Show';
+				togglePassword.dataset.tooltip = togglePassword.dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
 				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
 			}
 		});
