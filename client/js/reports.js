@@ -183,11 +183,6 @@ class DataSource {
 				<div class="footer hidden">
 
 					<span>
-						<span class="label">Role:</span>
-						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : '<span class="NA">NA</span>'}</span>
-					</span>
-
-					<span>
 						<span class="label">Added On:</span>
 						<span title="${Format.date(this.created_at)}">${Format.ago(this.created_at)}</span>
 					</span>
@@ -212,7 +207,7 @@ class DataSource {
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
 
-					<span class="api-documentation">
+					<span class="documentation-api">
 						<span>&nbsp;</span>
 						<a>API documentation</a>
 					</span>
@@ -223,112 +218,113 @@ class DataSource {
 
 		const menuToggle = container.querySelector('header .menu-toggle');
 
-		container.querySelector('.api-documentation').on('click', async () => {
+		container.querySelector('.documentation-api').on('click', async () => {
 
 			if(this.apiDocumentationDialogueBox)
 				return this.apiDocumentationDialogueBox.show();
 
+			const resultUrl = new URLSearchParams();
+
+			resultUrl.set('query_id', this.query_id);
+			resultUrl.set('refresh_token', await Storage.get('refresh_token'));
+			resultUrl.set('token', (await Storage.get('token')).body);
+
+			for(const entry of this.filters.values()) {
+
+				if(entry.placeholder != 'daterange')
+					resultUrl.set('param_' + entry.placeholder, entry.default_value);
+			}
+
 			this.apiDocumentationDialogueBox = new DialogBox();
-			this.apiDocumentationDialogueBox.container.classList.add('documentation-dialogue-box');
+			this.apiDocumentationDialogueBox.container.querySelector('section').classList.add('api-documentation');
 
 			this.apiDocumentationDialogueBox.heading = 'API Documentation';
-			this.apiDocumentationDialogueBox.body.classList.add('documentation');
 
 			this.apiDocumentationDialogueBox.body.innerHTML = `
 
-				<div class="documentation-type">
-					<span class="key">Url</span>
-					<div class="value">${location.origin}/api/v2/reports/engine/report</div>
-				</div>
+				<h4>Url</h4>
+				<div class="url">${location.origin}/api/v2/reports/engine/report</div>
 
-				<div class="documentation-type parameter">
-					<span class="key">Required Parameters</span>
-					<p class="NA">asdlkasjasjkldasjlkdsakljdsalkjdasljkadsljkdsaljk</p>
-					<table>
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Key</th>
-								<th>Description</th>
-								<th>Expiry time</th>
-							</tr>
-						</thead>
+				<h4>Required Parameters</h4>
+				<p class="NA">The parameters needed to fetch data from a report.</p>
+				<table>
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Key</th>
+							<th>Description</th>
+							<th>Expiry time</th>
+						</tr>
+					</thead>
 
-						<tbody>
-							<tr>
-								<td>Query Id</td>
-								<td>query_id</td>
-								<td>The query_id for which the response is required.</td>
-								<td></td>
-							</tr>
-							<tr>
-								<td>Refresh Token</td>
-								<td>refresh_token</td>
-								<td>This is the long term token.</td>
-								<td>7 Days</td>
-							</tr>
-							<tr>
-								<td>Token</td>
-								<td>token</td>
-								<td>This is the token which is generated from long term token in every 5 minutes.</td>
-								<td>5 Minutes</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
+					<tbody>
+						<tr>
+							<td>Query Id</td>
+							<td>query_id</td>
+							<td>The query_id for which the response is required.</td>
+							<td></td>
+						</tr>
+						<tr>
+							<td>Refresh Token</td>
+							<td>refresh_token</td>
+							<td>This is the long term token.</td>
+							<td>7 Days</td>
+						</tr>
+						<tr>
+							<td>Token</td>
+							<td>token</td>
+							<td>This is the token which is generated from long term token in every 5 minutes.</td>
+							<td>5 Minutes</td>
+						</tr>
+					</tbody>
+				</table>
 
-				<div class="documentation-type report-parameter hidden">
-					<span class="key">Report Parameters</span>
-					<p class="NA">asdlkasjasjkldasjlkdsakljdsalkjdasljkadsljkdsaljk</p>
-					<table>
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Key</th>
-								<th>Description</th>
-								<th>Type</th>
-								<th>Multiple</th>
-							</tr>
-						</thead>
+				<h4>Report Parameters</h4>
+				<p class="NA">Report specific parameters that usually filter the data.</p>
+				<table class="report-parameter">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Key</th>
+							<th>Default Value</th>
+							<th>Description</th>
+							<th>Type</th>
+							<th>Multiple</th>
+						</tr>
+					</thead>
 
-						<tbody></tbody>
-					</table>
-				</div>
+					<tbody></tbody>
+				</table>
 
-				<div class="documentation-type result-url">
-					<span class="key">Result Url</span>
-					<div class="value"></div>
-				</div>
+				<h4>Result Url</h4>
+				<div class="url">${location.origin}/api/v2/reports/engine/report?${resultUrl}</div>
 			`;
 
-			const container = this.apiDocumentationDialogueBox.body.querySelector('tbody');
-			let resultUrl = new URLSearchParams();
-
-			const refresh_token = await Storage.get('refresh_token');
-			const token = (await Storage.get('token')).body;
-
-			resultUrl.set('query_id', this.query_id);
-			resultUrl.set('refresh_token', refresh_token);
-			resultUrl.set('token', token);
+			const tbody = this.apiDocumentationDialogueBox.body.querySelector('.report-parameter tbody');
 
 			if(this.filters.size) {
 
-				const data = [];
-
 				for(const entry of this.filters.values()) {
 
-					data.push(`<tr><td>${entry.name}</td><td>${entry.placeholder}</td><td>${entry.description}</td><td>${entry.type}</td><td>${entry.multiple ? 'Yes' : 'No'}</td></tr>`)
+					if(entry.placeholder == 'daterange')
+						continue;
 
-					resultUrl.set(entry.placeholder, entry.default_value);
+					const tr = document.createElement('tr');
+					tr.innerHTML = `
+						<td>${entry.name}</td>
+						<td>${entry.placeholder}</td>
+						<td>${entry.default_value || ''}</td>
+						<td>${entry.description || ''}</td>
+						<td>${entry.type}</td>
+						<td>${entry.multiple ? 'Yes' : 'No'}</td>
+					`;
 
-				}
-
-				this.apiDocumentationDialogueBox.body.querySelector('.report-parameter tbody').innerHTML = data.join();
-
-				this.apiDocumentationDialogueBox.body.querySelector('.report-parameter').classList.remove('hidden');
+					tbody.appendChild(tr);
+				};
 			}
-
-			this.apiDocumentationDialogueBox.body.querySelector('.result-url .value').textContent = location.origin + '/api/v2/reports/engine/report' + '?' + resultUrl.toString();
+			else {
+				tbody.innerHTML = '<tr><td colspan="6">No Filters Found</td></tr>';
+			}
 
 			this.apiDocumentationDialogueBox.show();
 		});
