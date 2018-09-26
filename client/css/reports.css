@@ -335,12 +335,17 @@ main .dataset {
 			border-top: 1px dashed #ccc;
 			padding: 10px;
 			font-size: 90%;
-			display: flex;
+			display: grid;
 			margin-top:  auto;
 			background: rgba(255, 255, 255, 0.5);
+			grid-auto-flow: column;
+			grid-gap: 20px;
+			overflow: auto;
 		}
 			.data-source > .description .footer > * {
-				margin-right: calc(var(--gap) * 2);
+				display: flex;
+				flex-direction: column;
+				white-space: nowrap;
 			}
 			.data-source > .description .footer > *:last-child {
 				margin-right: 0;
@@ -360,6 +365,41 @@ main .dataset {
 				font-size: 100%;
 				color: #999;
 			}
+			.documentation-dialogue-box > section {
+				max-width: 50%;
+			}
+			.dialog-box .documentation {
+				display: grid;
+				padding: calc(var(--gap) * 2);
+				grid-gap: calc(var(--gap) * 3);
+			}
+				.dialog-box .documentation .documentation-type {
+					display: grid;
+					grid-gap: var(--gap);
+				}
+					.dialog-box .documentation .documentation-type p {
+						margin: 0;
+						color: #999;
+					}
+					.dialog-box .documentation table {
+					font-size: 85%;
+					}
+					.dialog-box .documentation .key {
+						color: #333;
+					}
+					.dialog-box .documentation .value {
+						padding: calc(var(--gap) * 2);
+						background: rgba(0, 0, 0, 0.05);
+						color: #666;
+						user-select: text;
+						max-width: 100%;
+						overflow: auto;
+					}
+					.dialog-box .documentation .body {
+						display: grid;
+						grid-template-columns: max-content max-content;
+						grid-gap: calc(var(--gap) * 3);
+					}
 	.data-source > .query {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		user-select: text;

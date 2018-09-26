@@ -211,12 +211,127 @@ class DataSource {
 						<span class="label">Added By:</span>
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
+
+					<span class="api-documentation">
+						<span>&nbsp;</span>
+						<a>API documentation</a>
+					</span>
 				</div>
 				<div class="close">&times;</div>
 			</div>
 		`;
 
 		const menuToggle = container.querySelector('header .menu-toggle');
+
+		container.querySelector('.api-documentation').on('click', async () => {
+
+			if(this.apiDocumentationDialogueBox)
+				return this.apiDocumentationDialogueBox.show();
+
+			this.apiDocumentationDialogueBox = new DialogBox();
+			this.apiDocumentationDialogueBox.container.classList.add('documentation-dialogue-box');
+
+			this.apiDocumentationDialogueBox.heading = 'API Documentation';
+			this.apiDocumentationDialogueBox.body.classList.add('documentation');
+
+			this.apiDocumentationDialogueBox.body.innerHTML = `
+
+				<div class="documentation-type">
+					<span class="key">Url</span>
+					<div class="value">${location.origin}/api/v2/reports/engine/report</div>
+				</div>
+
+				<div class="documentation-type parameter">
+					<span class="key">Required Parameters</span>
+					<p class="NA">asdlkasjasjkldasjlkdsakljdsalkjdasljkadsljkdsaljk</p>
+					<table>
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Key</th>
+								<th>Description</th>
+								<th>Expiry time</th>
+							</tr>
+						</thead>
+
+						<tbody>
+							<tr>
+								<td>Query Id</td>
+								<td>query_id</td>
+								<td>The query_id for which the response is required.</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>Refresh Token</td>
+								<td>refresh_token</td>
+								<td>This is the long term token.</td>
+								<td>7 Days</td>
+							</tr>
+							<tr>
+								<td>Token</td>
+								<td>token</td>
+								<td>This is the token which is generated from long term token in every 5 minutes.</td>
+								<td>5 Minutes</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="documentation-type report-parameter hidden">
+					<span class="key">Report Parameters</span>
+					<p class="NA">asdlkasjasjkldasjlkdsakljdsalkjdasljkadsljkdsaljk</p>
+					<table>
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Key</th>
+								<th>Description</th>
+								<th>Type</th>
+								<th>Multiple</th>
+							</tr>
+						</thead>
+
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<div class="documentation-type result-url">
+					<span class="key">Result Url</span>
+					<div class="value"></div>
+				</div>
+			`;
+
+			const container = this.apiDocumentationDialogueBox.body.querySelector('tbody');
+			let resultUrl = new URLSearchParams();
+
+			const refresh_token = await Storage.get('refresh_token');
+			const token = (await Storage.get('token')).body;
+
+			resultUrl.set('query_id', this.query_id);
+			resultUrl.set('refresh_token', refresh_token);
+			resultUrl.set('token', token);
+
+			if(this.filters.size) {
+
+				const data = [];
+
+				for(const entry of this.filters.values()) {
+
+					data.push(`<tr><td>${entry.name}</td><td>${entry.placeholder}</td><td>${entry.description}</td><td>${entry.type}</td><td>${entry.multiple ? 'Yes' : 'No'}</td></tr>`)
+
+					resultUrl.set(entry.placeholder, entry.default_value);
+
+				}
+
+				this.apiDocumentationDialogueBox.body.querySelector('.report-parameter tbody').innerHTML = data.join();
+
+				this.apiDocumentationDialogueBox.body.querySelector('.report-parameter').classList.remove('hidden');
+			}
+
+			this.apiDocumentationDialogueBox.body.querySelector('.result-url .value').textContent = location.origin + '/api/v2/reports/engine/report' + '?' + resultUrl.toString();
+
+			this.apiDocumentationDialogueBox.show();
+		});
 
 		menuToggle.on('click', e => {
 
