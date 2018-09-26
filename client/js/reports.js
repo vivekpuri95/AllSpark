@@ -1642,10 +1642,10 @@ class DataSourceColumn {
 				format: '',
 			}
 		}
-    
+
 		if(this.disabled)
 			this.container.classList.add('disabled');
-    
+
 		this.customDateType = new DataSourceColumnCustomDateType();
 	}
 
@@ -1893,6 +1893,13 @@ class DataSourceColumn {
 			</footer>
 		`;
 
+		if(!this.source.editable) {
+			let saveData = form.querySelector('footer .save');
+			saveData.disabled = true;
+			saveData.dataset.tooltip = 'Insufficient Priviledges';
+			saveData.dataset.tooltipPosition = 'left';
+		}
+
 		form.type.on('change', () => {
 
 			let
@@ -2007,29 +2014,29 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-		for(const element of this.form.elements) {      
+		for(const element of this.form.elements) {
 
 			if(element.name == 'type')
 				continue;
-      
+
 			if(element.type == 'checkbox')
 				this[element.name] = element.checked;
-      
+
 			else this[element.name] = element.value == '' ? null : element.value || null;
 		}
-    
+
 		this.filters = this.columnFilters.json;
 
 		this.type = {
 			name: this.form.type.value,
 		};
-    
+
 		if(this.form.type.value == 'custom')
 			this.type.format = this.customDateType.value;
 
 		if(this.interval)
 			clearInterval(this.interval);
-    
+
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
 
@@ -2072,7 +2079,7 @@ class DataSourceColumn {
 
 			if(element.type == 'checkbox')
 				this[element.name] = element.checked;
-    
+
 			else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
 		}
 

@@ -694,7 +694,7 @@ DataConnection.types.set('oracle', class {
 
 			<label>
 				<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
-				<input type="text" autocomplete="off" name="password" value="${connections.password || ''}">
+				<input type="password" autocomplete="off" name="password" value="${connections.password || ''}">
 			</label>
 
 			<label>
