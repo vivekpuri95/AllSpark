@@ -433,16 +433,16 @@ body {
 		padding: 2px 0;
 	}
 
-	main table {
+	table {
 		border-collapse: collapse;
 		width: 100%;
 	}
-		main table thead {
+		table thead {
 			background: var(--color-primary);
 			color: var(--color-primary-text);
 			font-size: 90%;
 		}
-			main table thead tr th {
+			table thead tr th {
 				padding: 5px 8px;
 				top: 0px;
 				z-index: 2;
@@ -450,10 +450,10 @@ body {
 				background: var(--color-primary);
 				color: var(--color-primary-text);
 			}
-			main table thead th:last-child {
+			table thead th:last-child {
 				border-right: 0;
 			}
-				main table thead .sort svg {
+				table thead .sort svg {
 					float: right;
 					margin: 2px 0 0 var(--gap);
 					display: block;
@@ -462,52 +462,52 @@ body {
 					opacity: 0;
 					transition: opacity var(--transition-duration);
 				}
-				main table thead th:hover .sort svg {
+				table thead th:hover .sort svg {
 					opacity: 1;
 				}
-		main table tbody tr {
+		table tbody tr {
 			transition: var(--transition-duration);
 		}
-		main table tbody tr:nth-child(2n) {
+		table tbody tr:nth-child(2n) {
 			 background: #efefef;
 		}
-		main table:not(.static) tbody tr:hover {
+		table:not(.static) tbody tr:hover {
 			background: var(--color-hover);
 			color: var(--color-hover-text);
 		}
-		main table tbody tr.selected {
+		table tbody tr.selected {
 			background: var(--color-selected);
 			color: var(--color-selected-text);
 		}
-			main table td {
+			table td {
 				padding: 8px;
 				position: relative;
 			}
-				main table .thin,
-				main table .action {
+				table .thin,
+				table .action {
 					width: 80px;
 					text-align: center;
 				}
-				main table tbody th.action,
-				main table td.action {
+				table tbody th.action,
+				table td.action {
 					cursor: pointer;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
-				main table tbody th.action.green:not(.NA):hover,
-				main table td.action.green:not(.NA):hover {
+				table tbody th.action.green:not(.NA):hover,
+				table td.action.green:not(.NA):hover {
 					background: #5b5;
 				}
-				main table tbody th.action.red:not(.NA):hover,
-				main table td.action.red:not(.NA):hover {
+				table tbody th.action.red:not(.NA):hover,
+				table td.action.red:not(.NA):hover {
 					background: #e77;
 				}
-				main table tbody th.action:active,
-				main table td.action:active {
+				table tbody th.action:active,
+				table td.action:active {
 					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
 				}
-				main table tbody th.action:not(.NA):hover,
-				main table td.action:not(.NA):hover {
+				table tbody th.action:not(.NA):hover,
+				table td.action:not(.NA):hover {
 					background: var(--color-accent);
 					color: var(--color-accent-text);
 					cursor: pointer;

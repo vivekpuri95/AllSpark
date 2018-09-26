@@ -335,12 +335,18 @@ main .dataset {
 			border-top: 1px dashed #ccc;
 			padding: 10px;
 			font-size: 90%;
-			display: flex;
+			display: grid;
 			margin-top:  auto;
 			background: rgba(255, 255, 255, 0.5);
+			grid-auto-flow: column;
+			grid-gap: 20px;
+			overflow: auto;
+			justify-content: flex-start;
 		}
 			.data-source > .description .footer > * {
-				margin-right: calc(var(--gap) * 2);
+				display: flex;
+				flex-direction: column;
+				white-space: nowrap;
 			}
 			.data-source > .description .footer > *:last-child {
 				margin-right: 0;
@@ -360,6 +366,35 @@ main .dataset {
 				font-size: 100%;
 				color: #999;
 			}
+			.dialog-box.api-documentation {
+				max-width: 50%;
+			}
+				.dialog-box.api-documentation .body {
+					display: grid;
+					padding: calc(var(--gap) * 2);
+				}
+					.dialog-box.api-documentation .body h4:first-child {
+						margin-top: 0;
+					}
+					.dialog-box.api-documentation .body h4 {
+						margin: 25px 0 5px;
+					}
+					.dialog-box.api-documentation .body h4 + p {
+						margin: 0 0 calc(var(--gap) * 2);
+						color: #999;
+					}
+					.dialog-box.api-documentation .body table {
+						font-size: 85%;
+						box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+					}
+					.dialog-box.api-documentation .body .url {
+						padding: calc(var(--gap) * 2);
+						background: rgba(0, 0, 0, 0.05);
+						color: #666;
+						user-select: text;
+						font-size: 85%;
+						overflow: auto;
+					}
 	.data-source > .query {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		user-select: text;
