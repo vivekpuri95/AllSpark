@@ -7161,6 +7161,9 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				if(this.source.columns.get(name).disabled)
 					continue;
 
+				if(this.source.columns.get(name).hidden)
+					continue;
+
 				total += parseFloat(value) || 0;
 				min = Math.min(min, Math.floor(value) || 0);
 			}
