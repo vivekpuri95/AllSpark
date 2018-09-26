@@ -5772,6 +5772,34 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		this.rows = rows;
 
+		for(const axis of this.axes) {
+
+			if(!axis.restcolumns)
+				continue;
+
+			axis.columns = [];
+
+			for(const [key, column] of this.source.columns) {
+
+				if(!column.disabled && !column.hidden && !this.axes.some(a => a.columns.some(c => c.key == key)))
+					axis.columns.push({key});
+			}
+
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+
+		outer:
+		for(const [key, column] of this.source.columns) {
+
+			for(const axis of this.axes) {
+				if(axis.columns.some(c => c.key == key))
+					continue outer;
+			}
+
+			column.hidden = true;
+			column.render();
+		}
+
 		for(const axis of this.axes)
 			this.axes[axis.position].size = 0;
 
@@ -6300,7 +6328,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				const column = row.source.columns.get(key);
 
-				if(column.disabled)
+				if(column.disabled || column.hidden)
 					continue;
 
 				tooltip.push(`
