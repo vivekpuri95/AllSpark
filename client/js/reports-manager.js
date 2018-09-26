@@ -3755,7 +3755,7 @@ class LinearAxis {
 		container.querySelector('select[name=axis-type]').value = this.type;
 		container.querySelector('select[name=position]').value = this.position;
 		container.querySelector('select[name=format]').value = this.format || '';
-		container.querySelector('select[name=curve]').value = this.curve || '';
+		container.querySelector('select[name=curve]').value = this.curve || 'linear';
 		container.querySelector('input[name=axisDepth]').value = this.depth;
 		container.querySelector('input[name=axisLineThickness]').value = this.lineThickness;
 		container.querySelector('input[name=axisStacked]').checked = this.stacked;

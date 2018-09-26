@@ -6098,6 +6098,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			else if(axis.type == 'area') {
 
+				this.x.rangePoints([0, this.width], 0.1, 0);
+
 				const area = d3.svg.area()
 					.interpolate(axis.curve)
 					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
@@ -6111,8 +6113,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.data(columnsData)
 					.enter()
 					.append('g')
-					.attr('transform', `translate(${this.axes.left.size}, 0)`)
 					.append('path')
+					.attr('transform', `translate(${this.axes.left.size}, 0)`)
 					.on('mouseover', function(column) {
 						that.hoverColumn = column;
 						d3.select(this).classed('hover', true);
@@ -6134,6 +6136,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				}
 
 				areas.attr('opacity', 0.8);
+
+				this.x.rangeBands([0, this.width], 0.1, 0);
 			}
 
 			// Append the axis scale
