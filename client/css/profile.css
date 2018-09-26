@@ -3,7 +3,10 @@ main {
 	margin: 0 auto;
 	overflow: hidden;
 	width: 100%;
-	max-width: 600px;
+	max-width: 700px;
+}
+main .section > h2 {
+	margin: calc(var(--gap) * 2) 0;
 }
 .angle-rotate {
 	transform: rotate(90deg);
@@ -214,27 +217,31 @@ main .switch {
 			background: #eee;
 		}
 
-	main .activity-popup {
+	.activity-popup {
 		padding: calc(var(--gap) * 2);
 		display: grid;
 		grid-template-columns: max-content 1fr;
 		user-select: text;
 	}
-		main .activity-popup .key {
+		.activity-popup .key {
 			color: #999;
 			text-transform: capitalize;
 		}
-		main .activity-popup .value {
+		.activity-popup .value {
 			color: #666;
 		}
-		main .activity-popup .key,
-		main .activity-popup .value {
+		.activity-popup .key,
+		.activity-popup .value {
 			margin: var(--gap);
 		}
-	 	main .activity-popup .sql,
-	 	main .activity-popup .json {
+	 	.activity-popup .sql,
+	 	.activity-popup .json {
 	 		max-height: 150px;
 	 		overflow: auto;
 	 		background: #eee;
 	 		padding: 10px;
 	 	}
+
+.dialog-box-blanket.logs .dialog-box {
+	max-width: 80%;
+}

@@ -96,4 +96,82 @@ exports.delete = class extends API {
 
 		return result;
 	}
+};
+
+exports.insertNewPrivileges = class extends API {
+
+	async insertNewPrivileges() {
+
+		const privilegeTable = 'tb_privileges';
+		const privilegeTreeTable = 'tb_privileges_tree';
+
+		let privileges = await this.mysql.query("select * from ?? where account_id = 0 and status = 1", [privilegeTable]);
+
+		const privilegeNameIdMapping = {};
+
+		const newPrivileges = [
+			"user", "user.insert", "user.update", "user.delete", "user.list",
+			"connection.insert", "connection.update", "connection.delete", "connection.list", "connection",
+			"dashboard.insert", "dashboard.update", "dashboard.list", "dashboard.delete", "dashboard",
+			"report", "report.insert", "report.update",
+			"visualization", "visualization.insert", "visualization.update", "visualization.delete", "visualization.list",
+			"category", "category.insert", "category.update", "category.list", "category.delete",
+		];
+
+		const notInTable = [];
+
+		for (const privilege of privileges) {
+
+			privilegeNameIdMapping[privilege.name] = privilege.privilege_id;
+		}
+
+		for (const privilege of newPrivileges) {
+
+			if (!privilegeNameIdMapping.hasOwnProperty(privilege)) {
+
+				notInTable.push(privilege)
+			}
+		}
+
+		if(notInTable.length) {
+
+			await this.mysql.query('insert into ?? (name, account_id, is_admin, status) values ?', [privilegeTable, notInTable.map(x => [x, 0, 0, 1])], "write");
+
+			privileges = await this.mysql.query("select * from ?? where account_id = 0 and status = 1", [privilegeTable]);
+		}
+
+		let insertObj = [];
+
+		for (const privilege of privileges) {
+
+			privilegeNameIdMapping[privilege.name] = privilege.privilege_id;
+		}
+
+		const privTreeMap = {};
+
+		for (const privilege in privilegeNameIdMapping) {
+
+			if (!privTreeMap.hasOwnProperty(privilegeNameIdMapping[privilege.split(".")[0]])) {
+
+				privTreeMap[privilegeNameIdMapping[privilege.split(".")[0]]] = new Set;
+			}
+
+			if (privilege.split(".").length > 1) {
+
+				privTreeMap[privilegeNameIdMapping[privilege.split(".")[0]]].add(privilegeNameIdMapping[privilege]);
+			}
+		}
+
+		for (const privilege in privTreeMap) {
+
+			if(privTreeMap[parseInt(privilege)].size) {
+
+				insertObj = [...([...privTreeMap[parseInt(privilege)]]).map(x => [privilege, x]), ...insertObj];
+			}
+
+			insertObj = [...([...privTreeMap[parseInt(privilege)]]).map(x => [x, 0]), ...insertObj];
+		}
+
+		return await this.mysql.query("insert ignore into ?? (privilege_id, parent) values ?", [privilegeTreeTable, insertObj], "write");
+	}
 }

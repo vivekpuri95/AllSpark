@@ -69,7 +69,7 @@ exports.insert = class extends cycleDetection {
 
 		if (parents.__proto__.constructor.name !== "Array") {
 
-			parents = [parents]
+			parents = [parseInt(parents)]
 		}
 
 		let [requestPrivilege] = await this.mysql.query(
@@ -110,7 +110,7 @@ exports.insert = class extends cycleDetection {
 		}
 		const insertObj = [];
 
-		for (const parent of this.request.body.parent || [0]) {
+		for (const parent of [this.request.body.parent] || [0]) {
 
 			insertObj.push([this.request.body.privilege_id, parent])
 		}

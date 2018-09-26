@@ -58,7 +58,7 @@ class HTMLAPI extends API {
 				           _ _  _____                  _
 				     /\\   | | |/ ____|                | |
 				    /  \\  | | | (___  _ __   __ _ _ __| | __
-				   / /\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
+				   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
 				  / ____ \\| | |____) | |_) | (_| | |  |   <
 				 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
 				                     | |
@@ -79,7 +79,7 @@ class HTMLAPI extends API {
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
 					<script>
-						const demo_url = "${config.has('demo_url') ? config.get('demo_url') : ''}";
+						let onboard = '${config.has('onboard') ? JSON.stringify(config.get('onboard')) : ''}';
 					</script>
 				</head>
 				<body>
@@ -106,7 +106,7 @@ class HTMLAPI extends API {
 					</header>
 
 					<main>
-						${await this.main() || ''}
+						${this.main ? await this.main() || '' : ''}
 					</main>
 				</body>
 			</html>
@@ -535,7 +535,7 @@ router.get('/streams', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
+router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
@@ -618,15 +618,11 @@ router.get('/:type(dashboard|report)/:id?', API.serve(class extends HTMLAPI {
 						Edit
 					</button>
 
-					<button id="export-dashboard" class="hidden">
-						<i class="fa fa-download"></i>
-						Export
-					</button>
-
 					<button id="mailto" class="hidden">
 						<i class="fas fa-envelope"></i>
 						Email
 					</button>
+
 					<button id="configure" class="hidden">
 						<i class="fas fa-cog"></i>
 						Configure
@@ -681,35 +677,14 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 		return `
 			<section class="section" id="list">
 
-				<h1>Dashboard Manager</h1>
-
-				<form class="toolbar">
-					<button type="button" id="add-dashboard">
+				<div class="heading">
+					<button id="add-dashboard" type="button" class="grey">
 						<i class="fa fa-plus"></i>
-						Add New Dashboard
 					</button>
+					<h1>Manage Dashboards</h1>
+				</div>
 
-					<button type="button" id="import-dashboard">
-						<i class="fa fa-upload"></i>
-						Import
-					</button>
-				</form>
-
-				<table class="block">
-					<thead>
-						<tr>
-							<th class="thin">ID</th>
-							<th>Name</th>
-							<th>Parents</th>
-							<th>Icon</th>
-							<th>Order</th>
-							<th class="action">Edit</th>
-							<th class="action">Delete</th>
-						</tr>
-					</thead>
-
-					<tbody></tbody>
-				</table>
+				<div class="dashboards"></div>
 			</section>
 
 			<section class="section" id="form">
@@ -786,7 +761,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 					<form class="toolbar filters">
 
-						<button type="button" id="add-report">
+						<button type="button" class="grey" id="add-report">
 							<i class="fa fa-plus"></i>
 							Add New Report
 						</button>
@@ -1028,7 +1003,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div id="visualization-list">
 
 						<div class="toolbar">
-							<button id="add-visualization"><i class="fas fa-plus"></i> Add New Visualization</button></button>
+							<button id="add-visualization" class="grey"><i class="fas fa-plus"></i> Add New Visualization</button></button>
 						</div>
 
 						<table>
@@ -1062,7 +1037,8 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 					<div class="toolbar">
 						<button type="button" id="configure-visualization-back"><i class="fa fa-arrow-left"></i> Back</button>
 						<button type="submit" form="configure-visualization-form" class="right"><i class="far fa-save"></i> Save</button>
-						<!--<button type="button" id="history-configure-visualization"><i class="fa fa-history"></i> History</button>-->
+						<button type="button" id="preview-configure-visualization"><i class="fa fa-eye"></i> Preview</button>
+						<button type="button" id="history-configure-visualization"><i class="fa fa-history"></i> History</button>
 					</div>
 
 				</section>
@@ -1070,6 +1046,18 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 			<div id="preview" class="hidden"></div>
 		`;
+	}
+}));
+
+router.get('/visualizations-manager/:id?', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/visualizations-manager.css');
+		this.scripts.push('/js/reports.js');
+		this.scripts.push('/js/visualizations-manager.js');
 	}
 }));
 
@@ -1090,7 +1078,7 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 				<h1>Manage Users</h1>
 
 				<header class="toolbar">
-					<button id="add-user"><i class="fa fa-plus"></i> Add New User</button>
+					<button id="add-user" class="grey"><i class="fa fa-plus"></i> Add New User</button>
 				</header>
 
                 <form class="user-search block form">
@@ -1227,7 +1215,7 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
+router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
@@ -1239,73 +1227,8 @@ router.get('/connections-manager/:id?', API.serve(class extends HTMLAPI {
 
 	async main() {
 		return `
+
 			<section class="section" id="list">
-
-				<h1>Data Connections</h1>
-
-				<div class="toolbar filters">
-					<button type="button" id="add-data-connection">
-						<i class="fa fa-plus"></i>
-						Add New Connection
-					</button>
-				</div>
-
-				<div class="block data-connections">
-					<table>
-						<thead>
-							<tr>
-								<th class="thin">ID</th>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="action">Edit</th>
-								<th class="action">Delete</th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-				</div>
-
-				<h1>OAuth Connections</h1>
-
-				<div class="oauth-connections">
-
-					<div class="test-result hidden"></div>
-
-					<table class="block">
-						<thead>
-							<tr>
-								<th class="thin">ID</th>
-								<th>Name</th>
-								<th>Type</th>
-								<th class="action">Authenticate</th>
-								<th class="action">Delete</th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-
-					<form id="add-oauth-connection" class="form">
-						<select name="provider"></select>
-						<button type="submit">
-							<i class="fas fa-plus"></i> Add New Connection
-						</button>
-					</form>
-				</div>
-
-			</section>
-
-			<section class="section" id="add-connection">
-
-				<h1>Add New Connection</h1>
-
-				<div id="add-connection-picker">
-
-					<div class="toolbar">
-						<button id="connection-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
-					</div>
-
-					<form id="add-connection-form"></form>
-				</div>
 			</section>
 
 			<section class="section" id="form">

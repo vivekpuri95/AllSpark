@@ -212,6 +212,33 @@ main .about-list {
 		main .about-list .info .key {
 			color: #999;
 		}
+		main .about-list .info .value .NA {
+			margin-top: var(--gap);
+			display: inline-block;
+		}
 	main .about-list button.clear-cache {
 		width: 10%;
+	}
+main .executing-reports {
+	padding: calc(var(--gap) * 2);
+}
+	main .executing-reports .toolbar {
+		padding: calc(var(--gap) * 2);
+		margin: calc(var(--gap) * 2) 0;
+	}
+	main .executing-reports table td.query-name:hover,
+	main .executing-reports table td.user-name:hover {
+		text-decoration: underline;
+		cursor: pointer;
+	}
+.dialog-box-blanket .body.executing-query-info {
+	padding: 0 calc(var(--gap) * 2);
+}
+	.dialog-box-blanket .body.executing-query-info h3 {
+		margin: 0;
+		font-size: 100%;
+		padding: calc(var(--gap) * 2) 0;
+	}
+	.dialog-box-blanket .body.executing-query-info .code-editor {
+		height: 400px;
 	}

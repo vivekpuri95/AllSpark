@@ -85,7 +85,7 @@ Page.class = class Dashboards extends Page {
 
 	get menuBarToggle() {
 
-		if(this.menuBarToggleElement)
+		if (this.menuBarToggleElement)
 			return this.menuBarToggleElement;
 
 		const div = this.element = document.createElement('div');
@@ -127,7 +127,7 @@ Page.class = class Dashboards extends Page {
 			return parents
 		}
 
-		while (dashboard && dashboard.parent) {
+		while (dashboard && dashboard.parent && this.list.has(dashboard.parent)) {
 
 			parents.push(dashboard.parent);
 			dashboard = this.list.get(dashboard.parent);
@@ -180,6 +180,12 @@ Page.class = class Dashboards extends Page {
 			for (const element of parentDashboards) {
 
 				const label = this.nav.querySelector(`#${element}`);
+
+				if (!label) {
+
+					continue;
+				}
+
 				const submenu = label.parentElement.querySelector('.submenu');
 
 				submenu && submenu.classList.remove('hidden');
@@ -302,20 +308,101 @@ Page.class = class Dashboards extends Page {
 			tbody.innerHTML = `<tr class="NA no-reports"><td colspan="6">No Reports Found!</td></tr>`;
 	}
 
+	/**
+	 * 0 parent means root, ie any dashboard with 0 parent means that dashboard is root dashboard.
+	 flattens dashboard hierarchy and checks if there is single node cycle found.
+	 */
+
+	cycle() {
+
+		const simplifiedTreeMapping = new Map;
+
+		for (const node of this.list.keys()) {
+
+			if (!simplifiedTreeMapping.has(node)) {
+
+				simplifiedTreeMapping.set(node, new Set);
+			}
+
+			simplifiedTreeMapping.get(node).add(this.list.get(node).parent || 0);
+		}
+
+		for (const [dashboardId, parents] of simplifiedTreeMapping.entries()) {
+
+			let moved = true;
+
+			let toDelete = [], toReplace = [];
+
+			while (moved) {
+
+				for (const parent of parents) {
+
+					if (parents.has(0) || parents.has(dashboardId)) {
+
+						this.list.delete(parent);
+						moved = false;
+						break;
+					}
+
+					moved = false;
+
+					if (simplifiedTreeMapping.has(parent)) {
+
+						toDelete = [parent];
+						moved = true;
+
+						if (simplifiedTreeMapping.get(parent).has(0)) {
+
+							toDelete = [...parents];
+							toReplace = [parent];
+							moved = false;
+							break;
+						}
+
+						else {
+
+							toReplace.push(...simplifiedTreeMapping.get(parent));
+						}
+					}
+				}
+
+				for (const element of toDelete) {
+
+					simplifiedTreeMapping.get(dashboardId).delete(element);
+				}
+
+				for (const element of toReplace) {
+
+					simplifiedTreeMapping.get(dashboardId).add(element);
+				}
+			}
+		}
+
+		for (const [k, v] of simplifiedTreeMapping) {
+
+			if (v.has(k)) {
+
+				this.list.delete(k);
+			}
+		}
+	}
+
 	async load(state) {
 
-		await DataSource.load();
-
 		const
-			dashboardList = await API.call('dashboards/list'),
-			currentId = state ? state.filter : parseInt(window.location.pathname.split('/').pop()),
-			[loadReport] = window.location.pathname.split('/').filter(x => x === 'report');
+			[_, dashboardList] = await Promise.all([
+				DataSource.load(),
+				API.call('dashboards/list'),
+			]),
+			currentId = state ? state.filter : parseInt(window.location.pathname.split('/').pop());
 
 		for (const dashboard of dashboardList) {
 
 			dashboard.children = new Set;
 			this.list.set(dashboard.id, new Dashboard(dashboard, this));
 		}
+
+		this.cycle();
 
 		for (const dashboard of this.list.values()) {
 
@@ -326,6 +413,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		const emptyDashboards = [];
+
 
 		for (const dashboard of this.list.values()) {
 
@@ -344,7 +432,7 @@ Page.class = class Dashboards extends Page {
 
 		this.navbar.render();
 
-		if(await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
+		if (await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
 
 			await Storage.set('newUser', (await Storage.get('newUser')) || {});
 
@@ -380,10 +468,11 @@ Page.class = class Dashboards extends Page {
 			return await Sections.show('list');
 		}
 
-		if (loadReport) {
-
+		if(window.location.pathname.split('/').some(x => x == 'report'))
 			return await this.report(currentId);
-		}
+
+		if(window.location.pathname.split('/').some(x => x == 'visualization'))
+			return await this.report(currentId, true);
 
 		else {
 
@@ -391,11 +480,20 @@ Page.class = class Dashboards extends Page {
 		}
 	}
 
-	async report(id) {
+	async report(id, visualization = false) {
 
-		const
-			report = new DataSource(DataSource.list.get(id)),
-			container = this.reports.querySelector(':scope > .list');
+		let report = DataSource.list.get(id);
+
+		if(visualization) {
+			for(const source of DataSource.list.values()) {
+				if(source.visualizations.some(v => v.visualization_id == id))
+					report = source;
+			}
+		}
+
+		report = new DataSource(report);
+
+		const container = this.reports.querySelector(':scope > .list');
 
 		this.loadedVisualizations.clear();
 		this.loadedVisualizations.add(report);
@@ -422,10 +520,13 @@ Page.class = class Dashboards extends Page {
 
 		this.container.querySelector('#reports .global-filters').classList.add('hidden');
 
-		if(!report.container.contains(report.menu))
+		if (!report.container.contains(report.menu))
 			report.container.appendChild(report.menu);
 
-		report.menu.classList.remove('hidden')
+		report.menu.classList.remove('hidden');
+
+		if(visualization)
+			[report.visualizations.selected] = report.visualizations.filter(v => v.visualization_id == id);
 
 		container.appendChild(report.container);
 
@@ -501,27 +602,6 @@ class Dashboard {
 
 			dataSource.container.appendChild(dataSource.selectedVisualization.container);
 		}
-	}
-
-	get export() {
-		const data = {
-			dashboard: {
-				name: this.name,
-				parent: this.parent,
-				type: this.type,
-				icon: this.icon,
-				status: this.status,
-				roles: this.roles,
-				format: this.format
-			},
-			query: []
-		};
-
-		for (const report of this.format.reports) {
-			data.query.push(DataSource.list.get(report.query_id));
-		}
-
-		return data;
 	}
 
 	static setup(page) {
@@ -644,6 +724,8 @@ class Dashboard {
 
 		edit.classList.add('hidden');
 
+		Dashboard.container.classList.add('editing');
+
 		for (let {query: report} of this.page.loadedVisualizations) {
 
 			const [selectedVisualizationProperties] = this.page.list.get(this.id).visualizations.filter(x => x.visualization_id === report.selectedVisualization.visualization_id);
@@ -761,19 +843,19 @@ class Dashboard {
 				this.page.load();
 			});
 
-			header.querySelector('.remove').on('click', () => {
+			header.querySelector('.remove').on('click', async () => {
 
 				const
 					parameters = {
-						id: this.format.reports.filter(r => r.visualization_id == report.visualizations.selected.visualization_id)[0].id,
+						id: this.visualizations.filter(r => r.visualization_id == report.visualizations.selected.visualization_id)[0].id,
 					},
 					options = {
 						method: 'POST',
 					};
 
-				API.call('reports/dashboard/delete', parameters, options);
+				await API.call('reports/dashboard/delete', parameters, options);
 
-				this.page.load();
+				await this.page.load();
 			});
 
 			report.container.insertAdjacentHTML('beforeend', `
@@ -908,19 +990,29 @@ class Dashboard {
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 		}
 
+		Sections.show('reports');
+
+		await API.refreshToken();
+
 		const dashboardName = this.page.container.querySelector('.dashboard-name');
 
 		dashboardName.innerHTML = `
-			<span>${this.page.parents(this.id).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
+			<span>${this.page.parents(this.id).filter(x => this.page.list.has(x)).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
 			<div>
-				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
+				<span class="toggle-dashboard-toolbar hidden"><i class="fas fa-ellipsis-v"></i></span>
 			</div>
 		`;
 
 		dashboardName.classList.remove('hidden');
-		dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
 
-		await Sections.show('reports');
+		if(this.editable) {
+
+			const toggleDashboardToolbar =  dashboardName.querySelector('.toggle-dashboard-toolbar');
+
+			toggleDashboardToolbar.classList.remove('hidden');
+
+			toggleDashboardToolbar.on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
+		}
 
 		this.page.render({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
 
@@ -946,8 +1038,6 @@ class Dashboard {
 		}
 
 		this.maxScrollHeightAchieved = Math.max(Dashboard.screenHeightOffset, main.scrollTop);
-
-		await API.refreshToken();
 
 		this.globalFilters.apply({dontLoad: true});
 		this.lazyLoad(this.maxScrollHeightAchieved, resize);
@@ -994,20 +1084,6 @@ class Dashboard {
 
 				edit.click();
 			}
-
-			const exportButton = Dashboard.toolbar.querySelector('#export-dashboard');
-			exportButton.classList.remove('hidden');
-
-			exportButton.removeEventListener('click', Dashboard.toolbar.exportListener);
-
-			exportButton.on('click', Dashboard.toolbar.exportListener = () => {
-				const jsonFile = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.export));
-
-				const downloadAnchor = document.createElement('a');
-				downloadAnchor.setAttribute('href', jsonFile);
-				downloadAnchor.setAttribute('download', 'dashboard.json');
-				downloadAnchor.click();
-			});
 
 			const configure = Dashboard.toolbar.querySelector('#configure');
 			configure.on('click', () => location.href = `/dashboards-manager/${this.id}`);
@@ -1092,7 +1168,7 @@ class Navbar {
 			}
 		}
 
-		if(dashboardHirachy.querySelectorAll('.item:not(.hidden)').length > 40) {
+		if (dashboardHirachy.querySelectorAll('.item:not(.hidden)').length > 40) {
 
 			search.classList.remove('hidden');
 		}
@@ -1207,7 +1283,7 @@ class Nav {
 			submenu.appendChild(this.page.navbar.list.get(child.id).menuItem);
 		}
 
-		if(this.dashboard.format && this.dashboard.format.hidden) {
+		if (this.dashboard.format && this.dashboard.format.hidden) {
 
 			container.classList.add('hidden');
 		}
@@ -1384,15 +1460,15 @@ class DashboardGlobalFilters extends DataSourceFilters {
 
 	async apply(options = {}) {
 
-		for(const report of this.dashboard.visibleVisuliaztions) {
+		for (const report of this.dashboard.visibleVisuliaztions) {
 
 			let found = false;
 
-			for(const filter of report.filters.values()) {
+			for (const filter of report.filters.values()) {
 
 				let [matchingFilter] = Array.from(this.values()).filter(gfl => gfl.placeholders.includes(filter.placeholder))
 
-				if(!matchingFilter)
+				if (!matchingFilter)
 					continue;
 
 				filter.value = matchingFilter.value;
@@ -1400,10 +1476,10 @@ class DashboardGlobalFilters extends DataSourceFilters {
 				found = true;
 			}
 
-			if(options.dontLoad)
+			if (options.dontLoad)
 				return;
 
-			if(found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
+			if (found && Array.from(this.page.loadedVisualizations).some(v => v.query == report))
 				report.visualizations.selected.load(options);
 
 			report.container.style.opacity = found ? 1 : 0.4;

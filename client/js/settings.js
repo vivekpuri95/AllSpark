@@ -10,7 +10,13 @@ class Settings extends Page {
 
 			for (const [key, settings] of Settings.list) {
 
-				if(key == 'accounts' && !this.user.privileges.has('superadmin'))
+				if(['executingReports', 'accounts'].includes(key) && !this.user.privileges.has('superadmin'))
+					continue;
+
+				if(key == 'categories' && !user.privileges.has('category.insert') && !user.privileges.has('category.update') && !user.privileges.has('category.delete'))
+					continue;
+
+				if(key != 'categories' && !user.privileges.has('administrator'))
 					continue;
 
 				const setting = new settings(this.container);
@@ -22,6 +28,7 @@ class Settings extends Page {
 				a.on('click', async () => {
 
 					await Storage.set('settingsCurrentTab', setting.name);
+					clearInterval(Settings.autoRefreshInterval);
 
 					for (const a of nav.querySelectorAll('a.selected'))
 						a.classList.remove('selected');
@@ -45,6 +52,8 @@ class Settings extends Page {
 	}
 
 	async loadDefault() {
+
+		clearInterval(Settings.autoRefreshInterval);
 
 		let byDefault;
 
@@ -295,7 +304,11 @@ Settings.list.set('categories', class Categories extends SettingPage {
 		this.container = this.page.querySelector('.category-page');
 		this.form = this.page.querySelector('#category-edit');
 
-		this.container.querySelector('#category-list #add-category').on('click', () => SettingsCategory.add(this));
+		if(user.privileges.has('category.insert'))
+			this.container.querySelector('#category-list #add-category').on('click', () => SettingsCategory.add(this));
+		else
+			this.container.querySelector('#category-list #add-category').disabled = true;
+
 		this.container.querySelector('#category-edit #back').on('click', () => Sections.show('category-list'));
 	}
 
@@ -327,6 +340,123 @@ Settings.list.set('categories', class Categories extends SettingPage {
 	}
 });
 
+Settings.list.set('executingReports', class ExecutingReports extends SettingPage {
+
+	get name() {
+
+		return 'Executing Reports';
+	}
+
+	setup() {
+
+		if(this.page.querySelector('.executing-reports')) {
+
+			this.page.querySelector('.executing-reports').remove();
+		}
+
+		this.page.appendChild(this.container);
+	}
+
+	async load() {
+
+		let reports = await API.call('reports/engine/executingReports');
+
+		this.executingReports = new Set();
+
+		for(const report of reports) {
+
+			this.executingReports.add(new ExecutingReport(report, this));
+		}
+
+		await this.render();
+
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('setting-page', 'executing-reports', 'hidden');
+
+		container.innerHTML = `
+			<h1>Executing Reports</h1>
+
+			<header class="toolbar block">
+				<input type="checkbox" name="auto-refresh"> Auto Refresh
+			</header>
+
+			<table class="block">
+				<thead>
+					<tr>
+						<th>Account Name</th>
+						<th>Query Id</th>
+						<th>Report Name</th>
+						<th>User</th>
+						<th>Connection Type</th>
+						<th>Execution Timestamp</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		`;
+
+		const autoRefresh = container.querySelector('input[name=auto-refresh]');
+
+		autoRefresh.on('change', async () => {
+
+			if(autoRefresh.checked) {
+
+				await Storage.set('auto-refresh', true);
+				Settings.autoRefreshInterval =  setInterval(async () => {
+					await this.load();
+				}, 5000);
+			}
+			else {
+
+				await Storage.set('auto-refresh', false);
+				clearInterval(Settings.autoRefreshInterval);
+			}
+		});
+
+		return container;
+	}
+
+	async render() {
+
+		if(!(await Storage.has('auto-refresh'))) {
+
+			await Storage.set('auto-refresh', true);
+		};
+
+		const getAutoRefresh = await Storage.get('auto-refresh');
+
+		if(getAutoRefresh) {
+
+			clearInterval(Settings.autoRefreshInterval);
+
+			Settings.autoRefreshInterval =  setInterval(async () => {
+				await this.load();
+			}, 5000);
+		}
+
+		this.container.querySelector('input[name=auto-refresh]').checked = getAutoRefresh ? true : false;
+
+		const tbody = this.container.querySelector('table tbody');
+
+		tbody.textContent = null;
+
+		if(!this.executingReports.size)
+			tbody.innerHTML = '<tr><td class="NA" colspan="4">No executing reports at this time.</td></tr>';
+
+		for(const report of this.executingReports.values())
+			tbody.appendChild(report.row);
+
+		this.container.classList.remove('hidden');
+	}
+});
+
 Settings.list.set('about', class About extends SettingPage {
 
 	get name() {
@@ -345,15 +475,17 @@ Settings.list.set('about', class About extends SettingPage {
 
 	async load() {
 
-		this.response = await API.call('env-info/envInfo');
+		this.environment = await API.call('environment/about');
+		this.serviceWorkerLoadTime = await page.serviceWorker.message('startTime');
 
 		this.render();
 	}
 
 	render() {
 
-		const infoContainer = this.infoContainer;
-		const clearCacheContainer = this.clearCacheContainer;
+		const
+			infoContainer = this.infoContainer,
+			clearCacheContainer = this.clearCacheContainer;
 
 		this.section.appendChild(infoContainer);
 		this.section.appendChild(clearCacheContainer);
@@ -381,21 +513,38 @@ Settings.list.set('about', class About extends SettingPage {
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
+
 		container.classList.add('info');
+
+		let serviceWorkerLoadTime = `
+			${Format.ago(this.serviceWorkerLoadTime)}<br>
+			<span class="NA">${Format.dateTime(this.serviceWorkerLoadTime)}</span>
+		`;
+
+		if(!page.serviceWorker.status)
+			serviceWorkerLoadTime = `<span>Service Worker Not Active</span>`;
 
 		container.innerHTML = `
 			<span class="key">Account Id</span>
 			<span class="value">${account.account_id}</span>
-			<span class="key">Connectivity </span>
-			<span class="value">${navigator.onLine ? 'online' : 'offline'}</span>
-			<span class="key">Environment</span>
-			<span class="value">${this.response.name}</span>
+
+			<span class="key">environment</span>
+			<span class="value">${this.environment.name}</span>
+
 			<span class="key">Deployed On</span>
-			<span class="value">${this.response.deployed_on} - (<span class="NA">${Format.ago(this.response.deployed_on)}</span>)</span>
+			<span class="value">
+				${Format.ago(this.environment.deployed_on)}<br>
+				<span class="NA">${Format.dateTime(this.environment.deployed_on)}</span>
+			</span>
+
+			<span class="key">Service Worker Deployed On</span>
+			<span class="value">${serviceWorkerLoadTime}</span>
+
 			<span class="key">Git Checksum</span>
-			<span class="value">${this.response.gitChecksum}</span>
+			<span class="value">${this.environment.gitChecksum}</span>
+
 			<span class="key">Branch</span>
-			<span class="value">${this.response.branch}</span>
+			<span class="value">${this.environment.branch}</span>
 		`;
 
 		return container;
@@ -437,8 +586,8 @@ class SettingsAccount {
 
 		page.form.querySelector('h1').textContent = 'Add New Account';
 
-		page.form.removeEventListener('submit', SettingsAccount.submitEventListener);
-		page.form.on('submit', SettingsAccount.submitEventListener = e => SettingsAccount.insert(e, page));
+		SettingsAccount.form.removeEventListener('submit', SettingsAccount.submitEventListener);
+		SettingsAccount.form.on('submit', SettingsAccount.submitEventListener = e => SettingsAccount.insert(e, page));
 
 		SettingsAccount.form.name.focus();
 	}
@@ -483,7 +632,10 @@ class SettingsAccount {
 
 		this.page.container.querySelector('#accounts-form h1').textContent = `Editing ${this.name}`;
 
+		this.form.querySelector('#icon').classList.toggle('hidden', !this.icon);
 		this.form.querySelector('#icon').src = this.icon;
+
+		this.form.querySelector('#logo').classList.toggle('hidden', !this.logo);
 		this.form.querySelector('#logo').src = this.logo;
 
 		for(const input of this.form.elements) {
@@ -497,17 +649,6 @@ class SettingsAccount {
 			this.form.parentElement.querySelector('.feature-form').remove();
 
 		const settings_json = [
-			{
-				key: 'top_nav_position',
-				type: 'multiselect',
-				name: 'Top Navigation Bar Position',
-				description: 'The main navigation bar of the site',
-				datalist: [
-					{name: 'Top', value: 'top'},
-					{name: 'Left', value: 'left'},
-				],
-				multiple: false,
-			},
 			{
 				key: 'logout_redirect_url',
 				type: 'url',
@@ -562,6 +703,12 @@ class SettingsAccount {
 				key: 'disable_powered_by',
 				type: 'toggle',
 				name: 'Disable "Powered By"',
+			},
+			{
+				key: 'visualization_roles_from_query',
+				type: 'toggle',
+				name: 'Visualization Roles From Query',
+				description: 'Apply Visualization Roles From Its Parent Report'
 			},
 			{
 				key: 'custom_js',
@@ -740,7 +887,7 @@ class AccountsFeatures {
 					<thead>
 						<tr>
 							<th class="action">ID</th>
-							<th>Types</th>
+							<th>Type</th>
 							<th>Name</th>
 							<th>Slug</th>
 							<th>Status</th>
@@ -1443,10 +1590,10 @@ class PrivilegeComponent {
 					method: "POST",
 				},
 				parameter = {
-					privilege_id: this.privilege_id,
+					id: this.id,
 				};
 
-			const response = await API.call('privileges_manager/delete', parameter, options);
+			const response = await API.call('privileges_manager/sever', parameter, options);
 
 			await this.privilegeComponents.load();
 
@@ -1797,13 +1944,92 @@ class SettingsCategory {
 			<td>${this.slug}</td>
 			<td>${parseInt(this.parent) || ''}</td>
 			<td>${this.is_admin ? 'Yes' : 'No'}</td>
-			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
-			<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+			<td class="action edit" title="Edit"><i class="far fa-edit"></i></td>
+			<td class="action delete" title="Delete"><i class="far fa-trash-alt"></i></td>
 		`;
 
-		this.container.querySelector('.green').on('click', () => this.edit());
-		this.container.querySelector('.red').on('click', () => this.delete());
+		const
+			edit = this.container.querySelector('.edit'),
+			delete_ = this.container.querySelector('.delete');
+
+		if(user.privileges.has('category.update')) {
+			edit.on('click', () => this.edit());
+			edit.classList.add('green');
+		}
+
+		else edit.classList.add('grey');
+
+		if(user.privileges.has('category.delete')) {
+			delete_.on('click', () => this.delete());
+			delete_.classList.add('red');
+		}
+
+		else delete_.classList.add('grey');
 
 		return this.container;
+	}
+}
+
+class ExecutingReport {
+
+	constructor(report, reports) {
+
+		Object.assign(this, report);
+
+		this.reports = reports;
+	}
+
+	get row() {
+
+		const tr = document.createElement('tr');
+
+		tr.innerHTML = `
+			<td>${this.account.name} <span class="grey">#${this.account.id}</span></td>
+			<td>${this.query.id}</td>
+			<td class="query-name">${this.query.name}</td>
+			<td class="user-name">${this.user.name}</td>
+			<td>${this.params.type} <span class="grey">#${this.params.request[2]}</span> </td>
+			<td>${Format.ago(this.execution_timestamp)}</td>
+		`;
+
+		tr.querySelector('.user-name').on('click', e => {
+
+			e.stopPropagation();
+
+			window.location = `/user/profile/${this.user.id}`;
+		});
+
+		tr.querySelector('.query-name').on('click', e => {
+
+			e.stopPropagation();
+
+			window.location = `/report/${this.query.id}`;
+		});
+
+		tr.on('click', () => {
+
+			if(!ExecutingReport.queryDialog)
+				ExecutingReport.queryDialog = new DialogBox();
+
+			ExecutingReport.queryDialog.heading = this.query.name;
+
+			const
+				editor = new CodeEditor({mode: 'sql'});
+
+			editor.editor.setTheme('ace/theme/clouds');
+			editor.editor.setReadOnly(true);
+
+			editor.value = this.params.request[0];
+
+			ExecutingReport.queryDialog.body.classList.add('executing-query-info');
+
+			ExecutingReport.queryDialog.body.innerHTML = `<h3>Query:</h3>`;
+
+			ExecutingReport.queryDialog.body.appendChild(editor.container);
+
+			ExecutingReport.queryDialog.show();
+		});
+
+		return tr;
 	}
 }

@@ -141,10 +141,17 @@ class UserManage {
 		UserManage.form = UserManage.container.querySelector('form');
 		UserManage.heading = UserManage.container.querySelector('h1');
 
-		document.querySelector('section#list #add-user').on('click', () => {
-			UserManage.add();
-			history.pushState({what: 'add'}, '', `/users-manager/add`);
-		});
+		if(user.privileges.has('user.insert')) {
+
+			const addUser = document.querySelector('section#list #add-user');
+
+			addUser.classList.remove('grey');
+
+			addUser.on('click', () => {
+				UserManage.add();
+				history.pushState({what: 'add'}, '', `/users-manager/add`);
+			});
+		}
 
 		UserManage.container.querySelector('#cancel-form').on('click', UserManage.back);
 	}
@@ -363,16 +370,20 @@ class UserManage {
 			<td><a href="/user/profile/${this.id}" target="_blank">${this.name}</a></td>
 			<td>${this.email}</td>
 			<td title="${Format.dateTime(this.last_login)}">${Format.ago(this.last_login)}</td>
-			<td class="action green" title="Edit">Edit</i></td>
-			<td class="action red" title="Delete">Delete</td>
+			<td title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}">Edit</td>
+			<td title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}">Delete</td>
 		`;
 
-		this.container.querySelector('.green').on('click', () => {
-			this.edit();
-			history.pushState({what: this.id}, '', `/users-manager/${this.id}`);
-		});
+		if(this.container.querySelector('.green')) {
+			this.container.querySelector('.green').on('click', () => {
+				this.edit();
+				history.pushState({what: this.id}, '', `/users-manager/${this.id}`);
+			});
+		}
 
-		this.container.querySelector('.red').on('click', () => this.delete());
+		if(this.container.querySelector('.red')) {
+			this.container.querySelector('.red').on('click', () => this.delete());
+		}
 
 		return this.container;
 	}

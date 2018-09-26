@@ -13,7 +13,7 @@ const errorLogs = require('./errorLogs');
 const msssql = require("./mssql").MsSql;
 const child_process = require('child_process');
 
-const env = {
+const environment = {
 	name: process.env.NODE_ENV,
 	deployed_on: new Date(),
 	gitChecksum: child_process.execSync('git rev-parse --short HEAD').toString().trim(),
@@ -27,7 +27,7 @@ class API {
 		this.mysql = mysql;
 		this.pgsql = pgsql;
 		this.mssql = msssql;
-		this.env = env;
+		this.environment = environment;
 
 		if(context) {
 			this.user = context.user;
@@ -126,14 +126,14 @@ class API {
 				}
 
 				const checksums = [
-					env.gitChecksum,
+					environment.gitChecksum,
 					crypto.createHash('md5').update(JSON.stringify(obj.account)).digest('hex'),
 					crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex'),
 					crypto.createHash('md5').update(JSON.stringify(obj.user || '')).digest('hex'),
 				];
 
 				obj.checksum = crypto.createHash('md5').update(checksums.join()).digest('hex').substring(0, 10);
-				obj.env = env;
+				obj.environment = environment;
 
 				if (clientEndpoint) {
 					return response.send(await obj.body());
@@ -144,9 +144,14 @@ class API {
 					throw new API.Exception(401, 'User Not Authenticated!');
 				}
 
-				const params = {...request.query, ...request.body};
+				const
+					params = {...request.query, ...request.body},
+					entryName = path.split(pathSeparator).pop();
 
-				const result = await obj[path.split(pathSeparator).pop()](params);
+				if(!obj[entryName] || typeof obj[entryName] != 'function')
+					throw new API.Exception(400, `The API class has no function named "${entryName}"`);
+
+				const result = await obj[entryName](params);
 
 				obj.result = {
 					status: result ? true : false,

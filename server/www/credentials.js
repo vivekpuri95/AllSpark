@@ -9,13 +9,14 @@ const {MongoClient} = require('mongodb');
 const auth = require('../utils/auth');
 const commonFun = require('../utils/commonFunctions');
 const oracle = require('../utils/oracle').Oracle;
+const constants = require("../utils/constants");
 
 
 exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('connection');
+		this.user.privilege.needs('connection.insert', 'ignore');
 
 		const response = await this.mysql.query(
 			'INSERT INTO tb_credentials(account_id, connection_name, host, port, user, password, db, `limit`, type, file, project_name, added_by) VALUES (?)',
@@ -57,28 +58,83 @@ exports.list = class extends API {
 
 	async list() {
 
+		this.user.privilege.needs('connection.list', 'ignore');
+
 		const
 			response = [],
-			connections = await this.mysql.query(
-				'SELECT * FROM tb_credentials WHERE account_id = ? AND status = 1',
-				[this.account.account_id]
-			);
+			[connections, object_roles] = await Promise.all([
+				this.mysql.query(
+					'SELECT * FROM tb_credentials WHERE account_id = ? AND status = 1',
+					[this.account.account_id]
+				),
+				this.mysql.query(
+					`SELECT * FROM tb_object_roles WHERE account_id = ? && owner = 'connection'`,
+					[this.account.account_id]
+				)
+			]);
+
+		let connectionMap = {};
+
+		for (const row of object_roles) {
+
+			if (!connectionMap[row.owner_id]) {
+
+				connectionMap[row.owner_id] = {
+					role: [],
+					user: []
+				}
+			}
+			if (row.target == 'role') {
+
+				connectionMap[row.owner_id]["role"].push(row);
+			}
+
+			if (row.target == 'user' && row.target_id == this.user.user_id) {
+
+				connectionMap[row.owner_id]["user"].push(row);
+			}
+		}
 
 		for (const row of connections) {
 
-			if (!(await auth.connection(row, this.user)).error)
+			row.role = connectionMap[row.id] ? connectionMap[row.id].role : [];
+			row.users = connectionMap[row.id] ? connectionMap[row.id].user : [];
+
+			if (!(await auth.connection(row, this.user)).error) {
+
 				response.push(row);
+			}
+		}
+
+		const updatePrivileges = [constants.privilege["connection.update"], constants.privilege["connection"], constants.privilege["administrator"]];
+		const deletePrivileges = [constants.privilege["connection.delete"], constants.privilege["connection"], constants.privilege["administrator"]];
+		const updateCategories = this.user.privileges.filter(x => updatePrivileges.includes(x.privilege_name)).map(x => x.category_id);
+		const deleteCategories = this.user.privileges.filter(x => deletePrivileges.includes(x.privilege_name)).map(x => x.category_id);
+
+		for (const connection of response) {
+
+			const categories = connection.role.map(u => parseInt(u.category_id));
+
+			const updateFlag = updateCategories.some(cat => categories.includes(parseInt(cat))) || (!categories.length && updateCategories.length);
+			const deleteFlag = deleteCategories.some(cat => categories.includes(parseInt(cat))) || (!categories.length && deleteCategories.length);
+
+			connection.editable = constants.adminCategory.some(x => updateCategories.includes(x)) || updateFlag;
+			connection.deletable = constants.adminCategory.some(x => deleteCategories.includes(x)) || deleteFlag;
+		}
+
+		for(const data of response) {
+			data.user_name = data.user;
 		}
 
 		return response;
 	}
-}
+};
 
 exports.delete = class extends API {
 
 	async delete() {
 
-		this.user.privilege.needs('connection');
+		this.user.privilege.needs('connection.delete', 'ignore');
 
 		const authResponse = await auth.connection(this.request.body.id, this.user);
 		this.assert(!authResponse.error, authResponse.message);
@@ -104,11 +160,13 @@ exports.delete = class extends API {
 
 		return response;
 	}
-}
+};
 
 exports.update = class extends API {
 
 	async update() {
+
+		this.user.privilege.needs('connection.update', 'ignore');
 
 		const authResponse = await auth.connection(this.request.body.id, this.user);
 
@@ -156,6 +214,8 @@ exports.testConnections = class extends API {
 
 	async testConnections() {
 
+		this.user.privilege.needs('connection.list', 'ignore');
+
 		const authResponse = await auth.connection(this.request.body.id, this.user);
 		this.assert(!authResponse.error, authResponse.message);
 
@@ -189,6 +249,7 @@ exports.testConnections = class extends API {
 };
 
 const testClasses = new Map();
+
 testClasses.set("mysql",
 	class {
 
@@ -323,9 +384,10 @@ exports.schema = class extends API {
 
 	async schema() {
 
+		this.user.privilege.needs('connection.list', 'ignore');
+
 		const authResponse = await auth.connection(this.request.query.id, this.user);
 		this.assert(!authResponse.error, authResponse.message);
-
 
 		const databases = [];
 
@@ -465,12 +527,12 @@ class MongoScehma {
 	async mongoSchema() {
 
 		const connectionString = `mongodb://${this.credential.user ? this.credential.user + ':' + this.credential.password + '@' : ''}${this.credential.host}:${this.credential.port || 27017}/${this.credential.db}`;
-		const connection = (await MongoClient.connect(connectionString ,{useNewUrlParser: true})).db(this.credential.db);
+		const connection = (await MongoClient.connect(connectionString, {useNewUrlParser: true})).db(this.credential.db);
 		const collections = await connection.listCollections().toArray();
 
 		const schemaPromiseList = [];
 
-		for(const collection of collections) {
+		for (const collection of collections) {
 
 			schemaPromiseList.push(connection.collection(collection.name).findOne({}));
 		}
@@ -483,7 +545,7 @@ class MongoScehma {
 
 		const tables = [];
 
-		for(const [index, collection] of collections.entries()) {
+		for (const [index, collection] of collections.entries()) {
 
 
 			let columns;
@@ -498,7 +560,7 @@ class MongoScehma {
 				});
 			}
 
-			catch(e) {
+			catch (e) {
 
 				columns = [];
 			}

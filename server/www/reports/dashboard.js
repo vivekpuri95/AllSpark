@@ -6,13 +6,13 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs("dashboard");
+		this.user.privilege.needs("visualization.insert", "ignore");
 
 		const mandatoryData = ["dashboard_id", "visualization_id"];
 
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 
-		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
+		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 
@@ -31,12 +31,16 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		this.user.privilege.needs("dashboard");
+		this.user.privilege.needs("visualization.delete", "ignore");
 
 		const mandatoryData = ["id"];
 		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
 
-		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
+		const [dashboard] = await this.mysql.query("select * from tb_visualization_dashboard where id = ?", [this.request.body.id]);
+
+		this.assert(dashboard && dashboard.dashboard_id, "Visualization Dashboard not found, incorrect id");
+
+		const authResponse = await auth.dashboard({dashboard: dashboard.dashboard_id, userObj: this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 
@@ -53,9 +57,9 @@ exports.updateFormat = class extends API {
 
 	async updateFormat() {
 
-		this.user.privilege.needs('dashboard');
+		this.user.privilege.needs('visualization.update', 'ignore');
 
-		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
+		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 
@@ -75,11 +79,18 @@ exports.update = class extends API {
 
 	async update() {
 
-		this.user.privilege.needs('dashboard');
+		this.user.privilege.needs('visualization.update', 'ignore');
+
+		const [dashboard] = await this.mysql.query(
+			`SELECT * FROM tb_visualization_dashboard WHERE id = ?`,
+			[this.request.body.id]
+		);
+
+		this.assert(dashboard, 'Invalid id');
 
 		const
 			values = {},
-			columns = ['format', 'dashboard_id', 'visualization_id'];
+			columns = ['format', 'visualization_id'];
 
 		for(const key in this.request.body) {
 
@@ -89,7 +100,7 @@ exports.update = class extends API {
 			}
 		}
 
-		const authResponse = auth.dashboard(this.request.body.dashboard_id, this.user);
+		const authResponse = await auth.dashboard({dashboard: dashboard.dashboard_id, userObj: this.user});
 
 		this.assert(!authResponse.error, authResponse.message);
 

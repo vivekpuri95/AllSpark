@@ -1,51 +1,59 @@
 class UserOnboard {
 
-	static async setup() {
+	constructor(stateChanged) {
+
+		this.page = window.page;
+		this.stateChanged = stateChanged;
+	}
+
+	static async setup(stateChanged) {
 
 		if(document.querySelector('.setup-stages'))
 			document.querySelector('.setup-stages').remove();
 
 		if(!UserOnboard.instance)
-			UserOnboard.instance = new UserOnboard();
+			UserOnboard.instance = new UserOnboard(stateChanged);
+
+		UserOnboard.instance.stateChanged = stateChanged;
+
+		try {
+
+			UserOnboard.instance.onboardData = JSON.parse(onboard);
+		}
+		catch(e) {
+
+			UserOnboard.instance.onboardData = {};
+		}
 
 		await UserOnboard.instance.load();
 	}
 
-	constructor() {
-
-		this.page = window.page;
-		this.stages = [];
-	}
-
 	async load() {
 
-		this.stages = [];
 		this.progress = 0;
+		this.stages = [];
 
 		for(const stage of UserOnboard.stages.values()) {
 
-			const stageObj = new stage();
+			const stageObj = new stage(this);
 			await stageObj.load();
 
-			this.progress = this.progress + (stageObj.progress || 0);
-
-			if(!stageObj.isCompleted) {
-				this.stages.push(stageObj);
-				break;
-			}
+			this.stages.push(stageObj);
+			this.progress = stageObj.progress;
 		}
+
+		[this.nextStage] = this.stages.filter(x => !x.completed);
 
 		if(document.querySelector('.setup-stages')) {
 
 			document.querySelector('.setup-stages').remove();
 		}
 
-
 		document.body.appendChild(this.container);
 
-		if(this.stages.every(stage => stage.isCompleted)) {
-			
-			return await Storage.delete('newUser');
+		if(this.progress == 100) {
+
+			await Storage.delete('newUser');
 		}
 
 		this.loadWelcomeDialogBox();
@@ -53,65 +61,34 @@ class UserOnboard {
 
 	get container() {
 
-		const container = this.containerElement = document.createElement('div');
+		if(this.stateChanged && this.nextStage) {
 
+			window.location = this.nextStage.url;
+		}
+
+		if(this.nextStage) {
+
+			this.nextStage.setActive();
+		}
+
+		const container = this.containerElement = document.createElement('div');
 		container.classList.add('setup-stages');
 
 		container.innerHTML = `
-			<a href="${demo_url}" target="_blank">View Demo</a>
+			<div class="wrapper"></div>
+			<a href="${this.onboardData.demo_url}" target="_blank"><i class="fas fa-external-link-alt"></i> View Demo</a>
 		`;
 
-		let next;
+		const wrapper = container.querySelector('.wrapper');
 
 		for(const stage of this.stages) {
 
-			container.appendChild(stage.container);
-			stage.container.style.background = `linear-gradient(to right,  #b3f0b3 0%,#b3f0b3 ${this.progress}%, #d9e3f7 ${this.progress}%, #d9e3f7 100%)`;
-			next = stage.next;
-		}
+			if(stage.completed) {
 
-		container.insertAdjacentHTML('beforeend', `
-			<div class="next stage">Next:</div>
-			<div class="skip">Skip</div>
-		`);
-
-		const nextStep = container.querySelector('.next');
-
-		if(next) {
-
-			nextStep.insertAdjacentHTML('beforeend', `<span>${next.title}</span>`);
-
-			nextStep.on('click', () => {
-
-				window.location = next.url;
-			});
-
-			container.querySelector('.skip').on('click', async () => {
-
-			container.remove();
-
-			await Storage.delete('newUser');
-		});
-		}
-		else {
-
-			nextStep.textContent = 'Dismiss';
-
-			nextStep.on('click', async () => {
-
-				container.remove();
-
-				await Storage.delete('newUser');
-			});
-			container.querySelector('.skip').remove();
-
-			if(!this.stages.length) {
-
-				container.classList.add('last');
+				stage.checked();
 			}
-			else {
-				container.style['grid-template-columns'] = '180px 1fr 150px';
-			}
+
+			wrapper.appendChild(stage.container);
 		}
 
 		return container;
@@ -119,256 +96,749 @@ class UserOnboard {
 
 	async loadWelcomeDialogBox() {
 
-		if(this.stages.some(stage => stage.isCompleted))
+		if(this.stages.some(stage => stage.completed))
+			return;
+
+		if(window.location.pathname == '/connections-manager/add/mysql')
 			return;
 
 		const newUser = await Storage.get('newUser');
 
-		if(newUser.skipWelcomeDialogBox == true)
+		if(newUser.skipWelcomeDialogBox)
 			return;
 
 		if(!this.dialogBox) {
 
-			this.dialogBox = new DialogBox();
+			this.dialogBox = new DialogBox({closable: false});
 
 			this.dialogBox.container.classList.add('user-onboarding-welcome');
 		}
 
+		document.body.querySelector('.setup-stages').classList.add('blur');
+
 		this.dialogBox.body.innerHTML = `
 
-			<h2>Lets Get You Started</h2>
+			<h2>Let's Get <strong>You Started!</strong></h2>
 
-			<a href="${demo_url}" target="_blank" class="view-demo">
-				<span class="figure"><i class="fas fa-external-link-alt"></i></span>
+			<a href="${this.onboardData.demo_url}" target="_blank" class="view-demo">
+				<span class="figure"><img src="/images/onboarding/demo.svg"></span>
 				<span>View Demo</span>
+				<span class="NA">Check out an established demo with various visualisations</span>
 			</a>
 
 			<a class="initiate-walkthrough">
-				<span class="figure"><i class="fas fa-cogs"></i></span>
+				<span class="figure"><img src="/images/onboarding/manual.svg"></span>
 				<span>Configure Manually</span>
+				<span class="NA">Connect to a data source and define the data query</span>
 			</a>
-
-			<a class="skip">Skip &nbsp;<i class="fas fa-arrow-right"></i></a>
 		`;
 
-		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => this.dialogBox.hide);
+		this.dialogBox.body.querySelector('.initiate-walkthrough').on('click', () => {
+
+			window.location = '/connections-manager/add/mysql';
+		});
 
 		if(window.loadWelcomeDialogBoxListener)
 			window.loadWelcomeDialogBoxListener(this);
 
-		this.dialogBox.body.querySelector('.skip').on('click', async () => {
-
-			this.dialogBox.hide();
-
-			const newUser = await Storage.get('newUser');
-
-			newUser.skipWelcomeDialogBox = true;
-
-			await Storage.set('newUser', newUser);
-		});
+		await Storage.set('newUser', {skipWelcomeDialogBox: true});
 
 		this.dialogBox.show();
 	}
+
 }
 
-UserOnboard.stages = new Map();
+UserOnboard.stages = new Set();
 
-UserOnboard.stages.set('add-connection', class AddConnection {
+class UserOnboardStage {
+
+	constructor(onboard) {
+
+		this.stagesObj = onboard;
+
+		this.progress = onboard.progress;
+		this.page = onboard.page;
+	}
 
 	get container() {
 
-		if(this.containerElement)
+		if(this.containerElement) {
+
 			return this.containerElement;
+		}
 
 		const container = this.containerElement = document.createElement('div');
 		container.classList.add('stage');
 
-		container.innerHTML = `<span>Add Connection</span>`;
+		container.innerHTML = `
+			<div class="hellip">
+				<i class="fas fa-ellipsis-v"></i>
+				<i class="fas fa-ellipsis-v"></i>
+			</div>
+			<div class="info">${this.title}</div>
+			<div class="status"></div>
+			<div class="hover-info">${this.subtitle}</div>
+		`;
 
 		container.on('click', () => {
 
 			window.location = this.url;
 		});
 
-		if(window.location.pathname.split('/').pop() == 'connections-manager') {
-
-			container.classList.add('active');
-		}
-
-		if(this.isCompleted) {
-			container.classList.add('completed');
-		}
+		this.autoFillForm();
 
 		return container;
+	}
+
+	checked() {
+
+		const status = this.container.querySelector('.status');
+
+		status.innerHTML = '<i class="fas fa-check"></i>';
+		status.classList.add('checked');
+
+	}
+
+	setActive() {
+
+		this.container.classList.add('active');
+	}
+
+	hidePopUp() {
+
+		if(document.body.querySelector('.save-pop-up')) {
+
+			document.body.querySelector('.save-pop-up').remove();
+		}
+
+		for(const element of document.body.querySelectorAll('.blink')) {
+
+			element.classList.remove('blink');
+		}
+	}
+}
+
+UserOnboard.stages.add(class AddConnection extends UserOnboardStage {
+
+	constructor(stagesObj) {
+
+		super(stagesObj);
+
+		this.title = 'Add Connection';
+		this.subtitle = 'Connect to an external datasource';
+
+		try {
+
+			if(this.page instanceof Connections) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {}
 	}
 
 	get url() {
 
-		return '/connections-manager';
+		return '/connections-manager/add/mysql';
 	}
 
 	async load() {
 
-		const response = await API.call('credentials/list');
+		const [response] = await API.call('credentials/list');
 
-		if(response.length) {
+		if(!response) {
 
-			this.connection = response[0];
-
-			this.isCompleted = true;
-			this.progress = 10;
+			return;
 		}
 
-		this.next = {
-			title: 'Add Report',
-			url: '/reports'
-		};
+		this.connection = response;
+
+		this.completed = true;
+		this.progress = this.progress + 10;
 	}
+
+	autoFillForm() {
+
+		if(!this.currentStage || this.completed) {
+
+			return;
+		}
+
+		const
+			submitButton = this.page.container.querySelector('#form .toolbar button[type=submit]'),
+			connectionsForm = this.page.container.querySelector('#connections-form');
+
+		const rect = submitButton.getBoundingClientRect();
+
+		this.page.container.querySelector('section#form .toolbar #back').on('click', () => this.hidePopUp());
+
+		if(!document.body.querySelector('.save-pop-up') && this.page.container.querySelector('section#form').classList.contains('show')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue</div>
+			`);
+
+			const popUp = document.body.querySelector('.save-pop-up');
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
+
+			submitButton.classList.add('blink');
+		}
+
+		for(const key in this.stagesObj.onboardData.connection) {
+
+			if(connectionsForm.elements[key])
+				connectionsForm.elements[key].value = this.stagesObj.onboardData.connection[key];
+		}
+
+		new SnackBar({
+			message: 'We\'ve added a default connection for you',
+			subtitle: 'Click save to continue'
+		});
+	}
+
 });
 
-UserOnboard.stages.set('add-report', class AddReport {
+UserOnboard.stages.add(class AddReport extends UserOnboardStage {
 
-	get container() {
+	constructor(stagesObj) {
 
-		if(this.containerElement)
-			return this.containerElement;
+		super(stagesObj);
 
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('stage');
+		this.title = 'Add Report';
+		this.subtitle = 'Define a query to extract data';
 
-		container.innerHTML = `<span>Create Report</span>`;
+		try {
 
-		container.on('click', () => {
+			if(this.page instanceof ReportsManger) {
 
-			window.location = this.report ? `/reports/define-report/${this.report.query_id}` : '/reports';
-		});
-
-		if(['reports', 'pick-report'].includes(window.location.pathname.split('/').pop())) {
-
-			container.classList.add('active');
+				this.currentStage = true;
+			}
 		}
+		catch(e) {}
+	}
 
-		if(this.isCompleted) {
-			container.classList.add('completed');
-		}
+	get url() {
 
-		return container;
+		return this.report ? `/reports/define-report/${this.report.query_id}` : '/reports/configure-report/add';
 	}
 
 	async load() {
 
 		await DataSource.load(true);
 
-		if(DataSource.list.size) {
+		if(!DataSource.list.size) {
 
-			this.report = DataSource.list.values().next().value;
-
-			this.isCompleted = true;
-			this.progress = 40;
+			return;
 		}
 
-		this.next = {
-			title: 'Add Dashboard',
-			url: '/dashboards-manager/add'
-		};
+		this.report = DataSource.list.values().next().value;
+
+		if(!this.report.query) {
+
+			return;
+		}
+
+		this.completed = true;
+		this.progress = this.progress + 40;
 	}
+
+	autoFillForm() {
+
+		if(!this.currentStage) {
+
+			return;
+		}
+
+		for(const stage of this.page.container.querySelectorAll('#stage-switcher .stage')) {
+
+			if(stage.disabled) {
+
+				return;
+			}
+
+			stage.on('click', () => this.hidePopUp());
+		}
+
+		if(this.page.stages.selected instanceof ReportsManger.stages.get('configure-report')) {
+
+			this.loadConfigureReportForm();
+		}
+
+		if(this.page.stages.selected instanceof ReportsManger.stages.get('define-report')) {
+
+			this.loadDefineReportForm();
+		}
+	}
+
+	loadConfigureReportForm() {
+
+		if(this.report) {
+
+			return;
+		}
+
+		const
+			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]'),
+			configureForm = this.page.stages.selected.container.querySelector('#configure-report-form');
+
+		document.body.insertAdjacentHTML('beforeend', `
+			<div class="save-pop-up">Click save to continue</div>
+		`);
+
+		const
+			rect = submitButton.getBoundingClientRect(),
+			popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.left = `${rect.right}px`;
+
+		submitButton.classList.add('blink');
+
+		for(const key in this.stagesObj.onboardData.report) {
+
+			if(configureForm.elements[key]) {
+
+				configureForm.elements[key].value = this.stagesObj.onboardData.report[key];
+			}
+		}
+
+		submitButton.on('click', () => this.hidePopUp())
+
+		new SnackBar({
+			message: 'We\'ve added a default report for you',
+			subtitle: 'Click save to continue'
+		});
+	}
+
+	loadDefineReportForm() {
+
+		if(this.report && this.report.query) {
+
+			return;
+		}
+
+		const
+			submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
+
+		if(this.report && this.report.query) {
+
+			this.hidePopUp();
+			return;
+		}
+
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue</div>
+			`);
+		}
+
+		submitButton.classList.add('blink');
+
+		const
+			rect = submitButton.getBoundingClientRect(),
+			popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.left = `${rect.right}px`;
+
+		this.page.stages.selected.report.connection.editor.value = this.stagesObj.onboardData.report.query;
+
+		submitButton.on('click', () => this.hidePopUp());
+
+		new SnackBar({
+			message: 'Default query has been added for you',
+			subtitle: 'Click save to continue'
+		});
+	}
+
 });
 
-UserOnboard.stages.set('add-dashboard', class AddDashboard {
+UserOnboard.stages.add(class AddDashboard extends UserOnboardStage {
 
-	get container() {
+	constructor(stagesObj) {
 
-		if(this.containerElement)
-			return this.containerElement;
+		super(stagesObj);
 
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('stage');
+		this.title = 'Add Dashboard';
+		this.subtitle = 'At-a-glance view of visualizations';
 
-		container.innerHTML = `<span>Create Dashboard</span>`;
+		try {
 
-		container.on('click', () => {
+			if(this.page instanceof DashboardManager) {
 
-			window.location = this.dashboard ? `/dashboards-manager/${this.dashboard.id}` : '/dashboards-manager/add';
-		});
-
-		if(window.location.pathname.split('/').pop() == 'dashboards-manager') {
-
-			container.classList.add('active');
+				this.currentStage = true;
+			}
 		}
+		catch(e) {}
+	}
 
-		if(this.isCompleted) {
-			container.classList.add('completed');
-		}
+	get url() {
 
-		return container;
+		return '/dashboards-manager/add';
+
 	}
 
 	async load() {
 
-		const response = await API.call('dashboards/list');
+		const [response] = await API.call('dashboards/list');
 
-		if(response.length) {
+		if(!response) {
 
-			this.dashboard =  response[0];
-
-			this.isCompleted = true;
-			this.container.classList.add('completed');
-
-			this.progress = 25;
+			return;
 		}
 
-		this.next = {
-			title: 'Add Visualization',
-			url: '/reports'
-		};
+		this.dashboard =  response;
+
+		this.completed = true;
+		this.progress = this.progress + 20;
 	}
+
+	autoFillForm() {
+
+		if(!this.currentStage || this.completed) {
+
+			return;
+		}
+
+		setTimeout(() => {
+
+			const submitButton = this.page.container.querySelector('#form .toolbar button[type=submit]');
+
+			for(const element of DashboardsDashboard.form.elements) {
+
+				if(this.stagesObj.onboardData.dashboard[element.name]) {
+
+					element.value = this.stagesObj.onboardData.dashboard[element.name];
+				}
+			}
+
+			const rect = submitButton.getBoundingClientRect();
+
+			if(!document.body.querySelector('.save-pop-up')) {
+
+				document.body.insertAdjacentHTML('beforeend', `
+					<div class="save-pop-up">Click save to continue</div>
+				`);
+				submitButton.classList.add('blink');
+			}
+
+			const popUp = document.body.querySelector('.save-pop-up');
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
+
+			submitButton.on('click', () => this.hidePopUp());
+
+		}, 500);
+
+		DashboardsDashboard.container.querySelector('#back').on('click', () => this.hidePopUp());
+
+		new SnackBar({
+			message: 'We\'ve added a default dashboard for you',
+			subtitle: 'Click save to continue'
+		});
+	}
+
 });
 
-UserOnboard.stages.set('add-visualization', class AddVisualization {
+UserOnboard.stages.add(class AddVisualization extends UserOnboardStage {
 
-	get container() {
+	constructor(stagesObj) {
 
-		if(this.containerElement)
-			return this.containerElement;
+		super(stagesObj);
 
-		const container = this.containerElement = document.createElement('div');
-		container.classList.add('stage');
+		this.title = 'Add Visualization';
+		this.subtitle = 'Visualize your data';
 
-		container.innerHTML = `<span>Create Visualization</span>`;
+		try {
 
-		container.on('click', () => {
+			if((this.page.stages.selected instanceof ReportsManger.stages.get('pick-visualization')) || (this.page.stages.selected instanceof ReportsManger.stages.get('configure-visualization'))) {
 
-			window.location = this.report ? `/reports/pick-visualization/${this.report.query_id}` : '/reports'
-		});
-
-		if(window.location.pathname.split('/').pop() == 'pick-visualization') {
-
-			container.classList.add('active');
+				this.currentStage = true;
+			}
 		}
+		catch(e) {}
+	}
 
-		if(this.isCompleted) {
-			container.classList.add('completed');
-		}
+	get url() {
 
-		return container;
+		return this.report ? `/reports/pick-visualization/${this.report.query_id}` : '/reports';
+
 	}
 
 	async load() {
 
 		await DataSource.load();
 
-		if(DataSource.list.size) {
+		if(!DataSource.list.size) {
 
-			this.report = DataSource.list.values().next().value;
+			return;
+		}
 
-			if(this.report.visualizations.length) {
+		this.report = DataSource.list.values().next().value;
 
-				this.isCompleted = true;
-				this.progress = 25;
-				this.container.classList.add('completed');
+		if(!this.report.visualizations.length) {
+
+			return;
+		}
+
+		this.visualization = this.report.visualizations[0];
+
+		if(!this.visualization.options) {
+
+			return;
+		}
+
+		this.completed = true;
+		this.progress = this.progress + 20;
+	}
+
+	autoFillForm() {
+
+		if(!this.currentStage) {
+
+			return;
+		}
+
+		if(this.page.stages.selected instanceof ReportsManger.stages.get('pick-visualization')) {
+
+			if(this.visualization) {
+
+				return;
 			}
+
+			const visualizationPickerForm = this.page.stages.selected.container.querySelector('#add-visualization-form');
+
+			for(const element of visualizationPickerForm.querySelectorAll('label')) {
+
+				if(element.name != 'Line') {
+
+					element.removeEventListener('click', element.clickListener);
+					element.classList.add('faded');
+				}
+			}
+
+			this.setPickVisualizationStage();
+
+			this.page.stages.selected.container.querySelector('#add-visualization').on('click', () => this.setPickVisualizationStage());
+			this.page.stages.selected.container.querySelector('#visualization-picker-back').on('click', () => this.setPickVisualizationStage());
+		}
+
+		if(this.page.stages.selected instanceof ReportsManger.stages.get('configure-visualization')) {
+
+			this.loadConfigureVisualizationForm();
 		}
 	}
+
+	setPickVisualizationStage() {
+
+		if(this.stagesObj.stages[3].completed) {
+
+			return;
+		}
+
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click to pick visualization</div>
+			`);
+		}
+
+		if(this.page.stages.selected.container.querySelector('#visualization-list').classList.contains('hidden')) {
+
+			const
+				label = this.page.stages.selected.container.querySelector('#add-visualization-form label:not(.faded)'),
+				rect = label.getBoundingClientRect();
+
+			const popUp = document.body.querySelector('.save-pop-up');
+			popUp.textContent = 'Select line visualization';
+
+			label.appendChild(popUp);
+
+			this.page.stages.selected.container.querySelector('#add-visualization-form label:not(.faded)').style.position = 'relative';
+			popUp.style.top = `${rect.top - 330}px`;
+			popUp.style.left = `${rect.right - 30}px`;
+
+			label.scrollIntoView({behavior: "smooth"})
+
+			label.on('click', () => this.hidePopUp());
+
+		}
+		else {
+
+			const addButton = this.page.stages.selected.container.querySelector('#add-visualization');
+
+			addButton.classList.add('blink');
+
+			const rect = addButton.getBoundingClientRect();
+
+			const popUp = document.body.querySelector('.save-pop-up');
+			popUp.textContent = 'Click to pick visualization';
+
+			document.body.appendChild(popUp);
+
+			popUp.style.top = `${rect.top - 10}px`;
+			popUp.style.left = `${rect.right}px`;
+		}
+
+	}
+
+	async loadConfigureVisualizationForm() {
+
+		if(this.visualization && this.visualization.options) {
+
+			return;
+		}
+
+		const submitButton = this.page.stages.selected.container.querySelector('.toolbar button[type=submit]');
+
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			document.body.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click save to continue</div>
+			`);
+		}
+
+		submitButton.on('click', async () => {
+
+			this.hidePopUp();
+
+			await this.stagesObj.load();
+		});
+		this.page.stages.selected.container.querySelector('#configure-visualization-back').on('click', () => this.hidePopUp());
+
+		const
+			rect = submitButton.getBoundingClientRect(),
+			popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.textContent = 'Click save to continue';
+		submitButton.classList.add('blink');
+
+		popUp.style.top = `${rect.top - 10}px`;
+		popUp.style.left = `${rect.right}px`;
+		document.body.appendChild(popUp);
+	}
 });
+
+UserOnboard.stages.add(class AddVisualizationDashboard extends UserOnboardStage {
+
+	constructor(stagesObj) {
+
+		super(stagesObj);
+
+		this.title = 'Add visualization to dashboard';
+		this.subtitle= 'Views on dashboard';
+
+		try {
+
+			if(this.page.stages.selected instanceof ReportsManger.stages.get('configure-visualization')) {
+
+				this.currentStage = true;
+			}
+		}
+		catch(e) {}
+	}
+
+	get url() {
+
+		return this.visualization ? `/reports/configure-visualization/${this.visualization.visualization_id}` : '/reports';
+
+	}
+
+	async load() {
+
+		const response = await Promise.all([
+			DataSource.load(),
+			API.call('dashboards/list')
+		]);
+
+		if(!DataSource.list.size || !(response[1].length)) {
+
+			return;
+		}
+
+		this.report = DataSource.list.values().next().value;
+		[this.dashboard] = response[1];
+
+		if(this.report.visualizations.length) {
+
+			this.visualization = this.report.visualizations[0];
+		}
+
+		if(!this.report.visualizations.length || !this.dashboard.visualizations.length) {
+			return;
+
+		}
+
+		this.dashboardVisualization =  this.dashboard.visualizations[0];
+
+		this.completed = true;
+		this.progress = this.progress + 10;
+	}
+
+	autoFillForm() {
+
+		if(!this.currentStage || this.completed || (this.visualization && !this.visualization.options)) {
+
+			return;
+		}
+
+		const dashboardSection = this.page.stages.selected.visualizationManager.container.querySelector('.configuration-section.dashboards');
+
+		if (dashboardSection && dashboardSection.querySelector('.body.hidden')) {
+
+			dashboardSection.querySelector('h3').click();
+		}
+
+		dashboardSection.scrollIntoView({behavior: "smooth"});
+
+		const addDashboardForm = this.page.stages.selected.dashboards.container.querySelector('fieldset .form');
+
+		if(!document.body.querySelector('.save-pop-up')) {
+
+			addDashboardForm.insertAdjacentHTML('beforeend', `
+				<div class="save-pop-up">Click add to finish</div>
+			`);
+		}
+
+		const submitButton = this.page.stages.selected.dashboards.container.querySelector('button[type=submit]');
+
+		const
+			rect = submitButton.getBoundingClientRect(),
+			popUp = document.body.querySelector('.save-pop-up');
+
+		popUp.textContent = 'Click add to finish';
+		addDashboardForm.appendChild(popUp);
+		submitButton.classList.add('blink');
+
+		console.log(rect.top, rect.right, rect.bottom);
+
+		popUp.style.top = 0;
+		popUp.style.left = `${rect.right - 10}px`;
+		addDashboardForm.style.position = 'relative';
+
+		submitButton.on('click', async () => {
+
+			this.hidePopUp();
+
+			this.completed = true;
+			await this.stagesObj.load();
+
+			window.location.href = `/dashboard/${this.dashboard.id}`;
+
+			setTimeout(() => {
+				new SnackBar({
+					message: 'Setup Complete'
+				})
+			}, 1000);
+		});
+
+		this.page.stages.selected.dashboards.dashboardMultiSelect.value = this.dashboard.id;
+		addDashboardForm.querySelector('input[name=position]').value = 1;
+	}
+})
 
 UserOnboard.setup();

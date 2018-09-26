@@ -8,14 +8,14 @@ if(typeof window != 'undefined') {
 		if(!user || !user.privileges.has('superadmin')) {
 
 			console.log(`%c
-						           _ _  _____                  _
-						     /\\   | | |/ ____|                | |
-						    /  \\  | | | (___  _ __   __ _ _ __| | __
+								   _ _  _____                  _
+							 /\\   | | |/ ____|                | |
+							/  \\  | | | (___  _ __   __ _ _ __| | __
 						   / /\\ \\ | | |\\___ \\| '_ \\ / _\` | '__| |/ /
 						  / ____ \\| | |____) | |_) | (_| | |  |   <
 						 /_/    \\_\\_|_|_____/| .__/ \\__,_|_|  |_|\\_\\
-						                     | |
-						                     |_|
+											 | |
+											 |_|
 						   %cWelcome to the source, enjoy your stay.
 				Find the entire code at https://github.com/Jungle-Works/AllSpark
 			`, 'color: #f33; font-weight: bold;', 'color: #777');
@@ -35,14 +35,18 @@ class Page {
 		AJAXLoader.setup();
 
 		await Page.load();
+
+		if(await Storage.get('disable-custom-theme'))
+			document.querySelector('html > head link[href^="/css/custom.css"]').remove();
 	}
 
 	static async load() {
 
+		DialogBox.container = document.querySelector('body');
+
 		await Storage.load();
+		await Page.loadCredentialsFromCookie();
 		await Account.load();
-		await User.load();
-		await MetaData.load();
 
 		if(window.account && account.auth_api) {
 
@@ -64,12 +68,11 @@ class Page {
 
 		await API.refreshToken();
 
-		if(await Storage.get('newUser')) {
+		await User.load();
+		await MetaData.load();
 
-			Page.loadOnboardScripts();
-		}
+		Page.loadOnboardScripts();
 
-		DialogBox.container = document.querySelector('main');
 		SnackBar.setup();
 	}
 
@@ -79,6 +82,11 @@ class Page {
 
 		await Storage.clear();
 
+		if(navigator.serviceWorker) {
+			for(const registration of await navigator.serviceWorker.getRegistrations())
+				registration.unregister();
+		}
+
 		Storage.set('refresh_token', refresh_token);
 
 		await API.refreshToken();
@@ -86,7 +94,7 @@ class Page {
 
 		new SnackBar({
 			message: 'Cache Cleared',
-			subtitle: '',
+			subtitle: 'Reloaded website metadata, local cache and user access level information.',
 			icon: 'fas fa-check',
 		});
 	}
@@ -115,12 +123,12 @@ class Page {
 
 		const
 			navList = [
-				{url: '/users-manager', name: 'Users', privilege: 'user', icon: 'fas fa-users'},
-				{url: '/dashboards-manager', name: 'Dashboards', privilege: 'dashboard', icon: 'fa fa-newspaper'},
-				{url: '/reports', name: 'Reports', privilege: 'report', icon: 'fa fa-database'},
-				{url: '/connections-manager', name: 'Connections', privilege: 'connection', icon: 'fa fa-server'},
-				{url: '/tasks', name: 'Tasks', privilege: 'task', icon: 'fas fa-tasks'},
-				{url: '/settings', name: 'Settings', privilege: 'administrator', icon: 'fas fa-cog'},
+				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
+				{url: '/dashboards-manager', name: 'Dashboards', privileges: [], icon: 'fa fa-newspaper'},
+				{url: '/reports', name: 'Reports', privileges: [], icon: 'fa fa-database'},
+				{url: '/visualizations-manager', name: 'Visualizations', privileges: [], icon: 'far fa-chart-bar'},
+				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
+				{url: '/settings', name: 'Settings', privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'], icon: 'fas fa-cog'},
 			],
 			header = document.querySelector('body > header'),
 			navContainer = header.querySelector('.nav-container'),
@@ -185,7 +193,7 @@ class Page {
 
 		for(const item of navList) {
 
-			if(!window.user || !user.privileges.has(item.privilege))
+			if(!window.user || (item.privileges.every(p => !user.privileges.has(p)) && item.privileges.length))
 				continue;
 
 			nav.insertAdjacentHTML('beforeend',`
@@ -210,8 +218,15 @@ class Page {
 				return;
 
 			// Alt + K
-			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]'))
+			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]')) {
 				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
+				await Storage.set('disable-custom-theme', true);
+
+				new SnackBar({
+					message: 'Custom theme removed',
+					icon: 'far fa-trash-alt',
+				});
+			}
 
 			// Alt + L
 			if(e.keyCode == 76)
@@ -223,7 +238,28 @@ class Page {
 		});
 	}
 
+	/**
+	 * Load credentials from cookies if the server's request provided them.
+	 * This is done when automatic login happens in third party integration scenerio.
+	 */
+	static async loadCredentialsFromCookie() {
+
+		if(!Cookies.get('external_parameters'))
+			return;
+
+		await Storage.clear();
+
+		await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
+		Cookies.set('external_parameters', '');
+
+		await Storage.set('refresh_token', Cookies.get('refresh_token'));
+		Cookies.set('refresh_token', '');
+	}
+
 	static async loadOnboardScripts() {
+
+		if(!await Storage.get('newUser'))
+			return;
 
 		try {
 
@@ -243,10 +279,17 @@ class Page {
 		}
 		catch(e) {
 
-			const onboardScript = document.createElement('script');
+			const
+				onboardScript = document.createElement('script'),
+				onboardCSS = document.createElement('link');
+
+			onboardCSS.rel = 'stylesheet';
+			onboardCSS.type = 'text/css';
+			onboardCSS.href = '/css/user-onboard.css';
 
 			onboardScript.src = '/js/user-onboard.js';
 			document.head.appendChild(onboardScript);
+			document.head.appendChild(onboardCSS);
 		}
 	}
 }
@@ -263,6 +306,9 @@ Page.exception = class PageException extends Error {
 	}
 }
 
+/**
+ * The main service worker for the website.
+ */
 Page.serviceWorker = class PageServiceWorker {
 
 	constructor(page) {
@@ -272,6 +318,9 @@ Page.serviceWorker = class PageServiceWorker {
 		this.setup();
 	}
 
+	/**
+	 * Register the service worker and save it's instance in the worker property.
+	 */
 	async setup() {
 
 		if(!('serviceWorker' in navigator)) {
@@ -281,10 +330,25 @@ Page.serviceWorker = class PageServiceWorker {
 
 		this.worker = await navigator.serviceWorker.register('/service-worker.js');
 
-		if(navigator.serviceWorker.controller)
-			navigator.serviceWorker.controller.addEventListener('statechange', e => this.statechange(e));
+		if(!this.status)
+			return;
+
+		navigator.serviceWorker.controller.addEventListener('statechange', e => this.statechange(e));
+
+		window.on('online', () => this.online());
+		window.on('offline', () => this.offline());
+
+		// Update the offline status if needed but without the snackBar
+		this.offline({snackBar: false});
 	}
 
+	/**
+	 * Signifies that the service worker's state has been changed.
+	 * This will show a banner on the site that lets the user know that the site has been updated
+	 * and they need to reload the page to see fresh code.
+	 *
+	 * @param Object	event	The service worker's state change event.
+	 */
 	statechange(event = {}) {
 
 		if(event.target && event.target.state != 'redundant')
@@ -294,7 +358,7 @@ Page.serviceWorker = class PageServiceWorker {
 
 			const message = document.createElement('div');
 
-			message.classList.add('warning', 'site-outdated');
+			message.classList.add('warning', 'service-worker-message', 'site-outdated');
 
 			message.innerHTML = `The site has been updated in the background. Click here to reload the page.`;
 
@@ -306,6 +370,88 @@ Page.serviceWorker = class PageServiceWorker {
 			this.page.container.parentElement.insertBefore(message, this.page.container);
 
 		}, 1000);
+	}
+
+	/**
+	 * Removes the offline bar and shows an online notification.
+	 */
+	online() {
+
+		if(!navigator.onLine)
+			return;
+
+		if(this.page.container.parentElement.querySelector('.service-worker-message'))
+			this.page.container.parentElement.querySelector('.service-worker-message').remove();
+
+		new SnackBar({
+			message: 'You\'re online!',
+			subtitle: 'You can continue browsing freely.',
+			icon: 'fas fa-wifi',
+		});
+	}
+
+	/**
+	 * Shows the offline bar and snackbar if needed.
+	 *
+	 * @param boolean	snackBar	Wether the snackbar will be shown or not.
+	 */
+	offline({snackBar = true} = {}) {
+
+		if(navigator.onLine)
+			return;
+
+		if(this.page.container.parentElement.querySelector('.service-worker-message'))
+			this.page.container.parentElement.querySelector('.service-worker-message').remove();
+
+		const message = document.createElement('div');
+
+		message.classList.add('warning', 'service-worker-message');
+
+		message.innerHTML = 'You\'re offline!';
+
+		this.page.container.parentElement.insertBefore(message, this.page.container);
+
+		if(!snackBar)
+			return;
+
+		new SnackBar({
+			message: 'You\'re offline!',
+			subtitle: 'Now you can only see things that were loaded atleast once before.',
+			icon: 'fas fa-ban',
+			type: 'error',
+		});
+	}
+
+	/**
+	 * Send a message to the service worker with an action and a body and return it's response.
+	 *
+	 * @param  sring	action	The unique string to identify the action on service worker's end.
+	 * @param  any		body	The optional request body that the service worker will work on to prepare a response.
+	 * @return Promise			That resolves when the worker is done with the request and has sent a response.
+	 */
+	async message(action, body = null) {
+
+		if(!this.status)
+			return false;
+
+		return new Promise(resolve => {
+
+			const channel = new MessageChannel();
+
+			channel.port1.onmessage = event => resolve(event.data.response);
+
+			navigator.serviceWorker.controller.postMessage({action, body}, [channel.port2]);
+		});
+	}
+
+
+	/**
+	 * Returns the status of the service worker in current environment.
+	 *
+	 * @return boolean
+	 */
+	get status() {
+		return navigator.serviceWorker.controller ? true : false;
 	}
 }
 
@@ -348,7 +494,7 @@ class IndexedDb {
 
 		return new Promise((resolve, reject) => {
 
- 			this.request = indexedDB.open('MainDb', 1);
+			this.request = indexedDB.open('MainDb', 1);
 
 			this.request.onupgradeneeded = e => this.setup(e.target.result);
 			this.request.onsuccess = e => {
@@ -459,7 +605,7 @@ class Cookies {
 	 * @return boolean			The status of the set request.
 	 */
 	static set(key, value) {
-		document.cookie = `${key}=${encodeURIComponent(value)}`;
+		document.cookie = `${key}=${encodeURIComponent(value)};path=/`;
 		return true;
 	}
 
@@ -868,7 +1014,7 @@ class User {
 					registration.unregister();
 			}
 
-			if(account.settings.get('logout_redirect_url'))
+			if(account && account.settings.get('logout_redirect_url') && redirect)
 				window.open(account.settings.get('logout_redirect_url')+'?'+parameters.toString(), '_self');
 
 			else if(redirect)
@@ -952,7 +1098,7 @@ class MetaData {
 			} catch(e) {}
 		}
 
-		if(!timestamp || Date.now() - timestamp > MetaData.timeout) {
+		if(navigator.onLine && (!timestamp || Date.now() - timestamp > MetaData.timeout)) {
 
 			metadata = await API.call('users/metadata');
 
@@ -1106,7 +1252,6 @@ class API extends AJAX {
 
 			else
 				parameters.token = token.body;
-
 		}
 
 		// If a form id was supplied, then also load the data from that form
@@ -1164,20 +1309,7 @@ class API extends AJAX {
 
 		let
 			getToken = true,
-			token = await Storage.get('token'),
-			has_external_parameters = await Storage.has('external_parameters');
-
-		if(!has_external_parameters && Cookies.get('external_parameters')) {
-
-			await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
-			Cookies.set('external_parameters', '');
-		}
-
-		if(Cookies.get('refresh_token')) {
-
-			await Storage.set('refresh_token', Cookies.get('refresh_token'));
-			Cookies.set('refresh_token', '');
-		}
+			token = await Storage.get('token');
 
 		if(token && token.body) {
 
@@ -1194,7 +1326,7 @@ class API extends AJAX {
 			} catch(e) {}
 		}
 
-		if(!(await Storage.has('refresh_token')) || !getToken)
+		if(!(await Storage.has('refresh_token')) || !getToken || !navigator.onLine)
 			return;
 
 		const
@@ -1326,7 +1458,7 @@ class Format {
 			return '';
 
 		const
-			currentSeconds = Date.parse(timestamp),
+			currentSeconds = typeof timestamp == 'number' ? timestamp : Date.parse(timestamp),
 			agoFormat = [
 				{
 					unit: 60,
@@ -1519,6 +1651,43 @@ class Format {
 			return '';
 
 		return Format.time.formatter.format(time);
+	}
+
+	static customTime(time, format) {
+
+		if(!Format.cachedFormat)
+			Format.cachedFormat = [];
+
+		let selectedFormat;
+
+		for(const data of Format.cachedFormat) {
+
+			if(JSON.stringify(data.format) == JSON.stringify(format))
+				selectedFormat = data;
+		}
+
+		if(!selectedFormat) {
+
+			selectedFormat = {
+				format: format,
+				formatter: new Intl.DateTimeFormat(undefined, format),
+			};
+
+			Format.cachedFormat.push(selectedFormat);
+		}
+
+		Format.customTime.formatter = selectedFormat.formatter;
+
+		if(time && typeof time == 'string')
+			time = Date.parse(time);
+
+		if(time && typeof time == 'object')
+			time = time.getTime();
+
+		if(!time)
+			return '';
+
+		return Format.customTime.formatter.format(time);
 	}
 
 	static dateTime(dateTime) {
@@ -1724,7 +1893,15 @@ class DialogBox {
 	 */
 	hide() {
 
+		document.querySelector('main').classList.remove('blur');
+		document.querySelector('header').classList.remove('blur');
+
 		this.container.classList.add('hidden');
+
+		if(this.closeCallback) {
+
+			this.closeCallback();
+		}
 	}
 
 	/**
@@ -1745,7 +1922,18 @@ class DialogBox {
 			});
 		}
 
+		document.querySelector('main').classList.add('blur');
+		document.querySelector('header').classList.add('blur');
+
 		this.container.classList.remove('hidden');
+	}
+
+	on(event, callback) {
+
+		if(event != 'close')
+			throw new Page.exception('Only Close event is supported...');
+
+		this.closeCallback = callback;
 	}
 }
 
@@ -2014,9 +2202,16 @@ class MultiSelect {
 
 			row.input.checked = this.selectedValues.has(row.input.value);
 
-			let hide = false;
+			let
+				hide = false,
+				name = row.name;
 
-			const rowValue = row.name.concat(' ', row.value, ' ', row.subtitle || '');
+			if(!name)
+				name = '';
+
+			name = name.toString();
+
+			const rowValue = name.concat(' ', row.value, ' ', row.subtitle || '');
 
 			if(search.value && !rowValue.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
 				hide = true;
@@ -2125,8 +2320,20 @@ class ObjectRoles {
 
 		this.owner = owner;
 		this.ownerId = owner_id;
-		this.allowedTargets = allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets);
+		this.allowedTargets = new Set(allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets));
+
+		if(!user.privileges.has('user.list')) {
+
+			this.allowedTargets.delete('user')
+		}
+
+		if(!(user.privileges.has('user.list') || user.privileges.has('visualization.list') || user.privileges.has('report.insert') || user.privileges.has('report.update'))) {
+
+			this.allowedTargets.delete('role')
+		}
+
 		this.alreadyVisible = [];
+		this.allowedTargets = [...this.allowedTargets];
 	}
 
 	async load() {
@@ -2191,6 +2398,12 @@ class ObjectRoles {
 			return this.getContainer;
 
 		const container = document.createElement('div');
+
+		if(!this.allowedTargets.length) {
+
+			container.classList.add('hidden');
+			return;
+		}
 
 		container.classList.add('object-roles');
 
@@ -2460,17 +2673,17 @@ class ObjectRoles {
 		this.mapping = {};
 		for (const target of this.allowedTargets) {
 
-			for (const row of this.targets[target].data) {
+			if (!this.mapping[target]) {
+				this.mapping[target] = {};
+			}
 
-				if (!this.mapping[target]) {
-					this.mapping[target] = {};
-				}
+			for (const row of this.targets[target].data) {
 
 				this.mapping[target][row.value] = row;
 			}
 		}
 
-		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in this.mapping[row.target]);
+		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in (this.mapping[row.target] || {}));
 
 		for (const row of this.alreadyVisible) {
 

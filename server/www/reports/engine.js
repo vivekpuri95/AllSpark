@@ -39,17 +39,11 @@ class report extends API {
 			this.mysql.query(`
 				SELECT
                   q.*,
-                  IF(user_id IS NULL AND d.query_id is null, 0, 1) AS flag,
+                  IF(user_id IS NULL AND userDashboard.query_id IS NULL, 0, 1) AS flag,
                   c.type,
 				  c.project_name
                 FROM
 				tb_query q
-				
-				JOIN
-					tb_credentials c
-				ON 
-					q.connection_name = c.id
-					
                 JOIN
           			(
                 		SELECT
@@ -63,30 +57,51 @@ class report extends API {
                 			tb_query_visualizations qv
                 			USING(visualization_id)
                 		WHERE
-                			target_id = ?
+                			target_id = ? -- user_id
                 			AND query_id = ?
                 			AND OWNER = 'dashboard'
                 			AND target = 'user'
-                			and account_id = ?
+                			AND qv.is_enabled = 1
+                			and qv.is_deleted = 0
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id
                 		LIMIT 1
-                	) d
-                LEFT JOIN
-				 tb_user_query uq ON
-				 uq.query_id = q.query_id
-				 AND user_id = ?
+                	) userDashboard
+                JOIN
+				(
+				    SELECT
+				        owner_id AS user_id
+				    FROM
+				        tb_object_roles o
+				    WHERE
+				        owner_id = ? -- query
+				        AND target_id = ? -- user
+				        AND OWNER = 'query'
+				        AND target = 'user'
+				        
+				    UNION ALL
+				    
+				    SELECT
+				        NULL AS user_id
+				        
+					LIMIT 1
+				) AS queryUser
+				
+				JOIN
+					tb_credentials c
+				ON
+					q.connection_name = c.id
+					
                 WHERE
-				q.query_id = ?
-				AND is_enabled = 1
-				AND is_deleted = 0
-				AND q.account_id = ?
-				AND c.account_id = ?
-				AND c.status = 1
-					`,
+					q.query_id = ?
+					AND is_enabled = 1
+					AND is_deleted = 0
+					AND q.account_id = ?
+					AND c.status = 1
+				`,
 
-				[this.user.user_id, this.reportId, this.account.account_id, this.user.user_id, this.reportId, this.account.account_id, this.account.account_id],
+				[this.user.user_id, this.reportId, this.reportId, this.user.user_id, this.reportId, this.account.account_id, this.account.account_id],
 			),
 
 			this.mysql.query(`select * from tb_query_filters where query_id = ?`, [this.reportId]),
@@ -287,6 +302,8 @@ class report extends API {
 
 	async report(queryId, reportObj, filterList) {
 
+		this.request.body = {...this.request.body, ...this.request.query};
+
 		this.reportId = this.request.body.query_id || queryId;
 		this.reportObjStartTime = Date.now();
 		const forcedRun = parseInt(this.request.body.cached) === 0;
@@ -443,9 +460,10 @@ class report extends API {
 
 		const queryDetails = new Map;
 
-		queryDetails.set("query_id", this.reportObj.query_id);
-		queryDetails.set("account_id", this.account.account_id);
-		queryDetails.set("user_id", this.user.user_id);
+		queryDetails.set("query", {id: this.reportObj.query_id, name: this.reportObj.name});
+		queryDetails.set("account", {id: this.account.account_id, name: this.account.name});
+		queryDetails.set("user", {id: this.user.user_id, name: this.user.name});
+		queryDetails.set("execution_timestamp", new Date());
 		queryDetails.set("params", engine.parameters);
 		queryDetails.set("execute", engineExecution);
 
@@ -455,17 +473,23 @@ class report extends API {
 
 			result = await engineExecution;
 			await this.storeQueryResult(result);
-			global.executingReports.delete(engine.hash);
 
 		}
 		catch (e) {
 
 			console.error(e.stack);
-			if (e.message.includes("<!DOCTYPE")) {
+
+			if(e.message.includes("<!DOCTYPE")) {
 
 				e.message = e.message.slice(0, e.message.indexOf("<!DOCTYPE")).trim();
 			}
+
 			throw new API.Exception(400, e.message);
+		}
+
+		finally {
+
+			global.executingReports.delete(engine.hash);
 		}
 
 		await engine.log(this.reportObj.query_id, result.query, result.runtime,
@@ -504,7 +528,7 @@ class SQL {
 
 	prepareQuery() {
 
-		this.reportObj.query = this.reportObj.query
+		this.reportObj.query = (this.reportObj.query || '')
 			.replace(/--.*(\n|$)/g, "")
 			.replace(/\s+/g, ' ');
 
@@ -1207,8 +1231,9 @@ class executingReports extends API {
 				}
 
 				obj[k] = v;
-				result.push(obj)
 			}
+
+			result.push(obj)
 		}
 
 		return result;

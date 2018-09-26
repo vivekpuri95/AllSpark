@@ -71,13 +71,13 @@ main .dataset {
 			text-align: center;
 		}
 
-main .data-source {
+.data-source {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
 	position: relative;
 }
-	main .data-source > .warning {
+	.data-source > .warning {
 		margin: 0;
 		overflow: auto;
 		user-select: text;
@@ -91,41 +91,44 @@ main .data-source {
 		justify-content: center;
 		align-items: center;
 	}
-		main .data-source > .warning h2 {
+		.data-source > .warning h2 {
 			font-size: calc(15px + 0.8vw);
 			font-weight: normal;
 			margin: 10px 0;
 		}
-		main .data-source > .warning span {
+		.data-source > .warning span {
 			font-size: calc(10px + 0.3vw);
 			color: #bbb;
 		}
-		main .data-source > .warning.retry:hover {
+		.data-source > .warning.retry:hover {
 			cursor: pointer;
 			background: rgba(255, 0, 0, 0.15);
 		}
-		main .data-source > .warning.retry:active {
+		.data-source > .warning.retry:active {
 			box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.15);
 		}
-	main .data-source > header {
+	.singleton .data-source > header {
+		z-index: 7;
+	}
+	.data-source > header {
 		display: flex;
 		align-items: center;
 		white-space: nowrap;
+		z-index: 3;
 	}
-	main .data-source > header::-webkit-scrollbar {
+	.data-source > header::-webkit-scrollbar {
 		display: none;
 	}
-		main .data-source > header > .right {
+		.data-source > header > .right {
 			margin-left: auto;
 		}
-		main .data-source > header h2 {
+		.data-source > header h2 {
 			font-size: 100%;
 			font-weight: normal;
 			white-space: nowrap;
 			line-height: inherit;
 			user-select: text;
 			margin: 0 0 -22px 15px;
-			z-index: 5;
 			padding: 6px 10px 6px 15px;
 			background: var(--color-accent);
 			color: var(--color-accent-text);
@@ -135,16 +138,16 @@ main .data-source {
 			cursor: default;
 			box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 		}
-		main .singleton .data-source > header h2 {
-			z-index: 7;
+		.data-source > header h2::-webkit-scrollbar {
+			display: none;
 		}
-			main .data-source > header i {
+			.data-source > header i {
 				margin-left: 5px;
 			}
-		main .data-source > header .actions {
+		.data-source > header .actions {
 			height: 22px;
 		}
-			main .data-source > header .actions > * {
+			.data-source > header .actions > * {
 				font-size: 85%;
 				padding: 4px 6px;
 				width: 24px;
@@ -152,40 +155,40 @@ main .data-source {
 				text-align: center;
 				color: #999;
 			}
-			main .data-source > header .actions .card-info {
+			.data-source > header .actions .card-info {
 				cursor: pointer;
 				padding: 4px 0;
 				width: 12px;
 			}
-			main .data-source > header .grey {
+			.data-source > header .grey {
 				color: #999;
 			}
-	main .data-source .toolbar {
+	.data-source .toolbar {
 		background: transparent;
 		padding: 0 var(--gap);
 		margin: calc(var(--gap) * 2) 0;
 		font-size: 95%;
 		display: flex;
 	}
-	main .data-source .toolbar::-webkit-scrollbar {
+	.data-source .toolbar::-webkit-scrollbar {
 		display: none;
 	}
-		main .data-source .toolbar > * {
-			margin: 0 5px;
+		.data-source .toolbar > * {
+			margin: var(--gap);
 		}
-			main .data-source .toolbar .right {
+			.data-source .toolbar .right {
 				order: 2000;
 			}
-		main .data-source .menu-toggle.selected {
+		.data-source .menu-toggle.selected {
 			background: var(--color-accent);
 			color: var(--color-accent-text);
 			border-color: var(--color-accent);
 		}
-		main .singleton .data-source .menu-toggle {
+		.singleton .data-source .menu-toggle {
 			display: none;
 		}
 
-	main .data-source > .menu {
+	.data-source > .menu {
 		position: absolute;
 		top: 25px;
 		background: #fff;
@@ -197,7 +200,7 @@ main .data-source {
 		font-size: 90%;
 		flex-wrap: wrap;
 	}
-	main .singleton .data-source > .menu {
+	.singleton .data-source > .menu {
 		position: static;
 		flex-direction: row;
 		width: 100%;
@@ -206,10 +209,10 @@ main .data-source {
 		border-top: 20px solid #fff;
 		border-bottom: 1px solid #ccc;
 	}
-		main .data-source > .menu .item {
+		.data-source > .menu .item {
 			position: relative;
 		}
-			main .data-source > .menu .item .submenu {
+			.data-source > .menu .item .submenu {
 				display: none;
 				flex-direction: column;
 				width: 150px;
@@ -220,14 +223,14 @@ main .data-source {
 				background: #fff;
 				box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 			}
-			main .data-source > .menu .item:hover > .submenu {
+			.data-source > .menu .item:hover > .submenu {
 				display: flex;
 			}
-			main .singleton .data-source > .menu > .item > .submenu {
+			.singleton .data-source > .menu > .item > .submenu {
 				top: 100%;
 				right: 0;
 			}
-			main .data-source > .menu .label {
+			.data-source > .menu .label {
 				display: grid;
 				padding: calc(var(--gap) * 2);
 				grid-template-columns: 20px 1fr;
@@ -240,45 +243,45 @@ main .data-source {
 							box-shadow var(--transition-duration),
 							color var(--transition-duration);
 			}
-			main .singleton .data-source > .menu .label {
+			.singleton .data-source > .menu .label {
 				padding: 8px calc(var(--gap) * 2);
 			}
-			main .data-source > .menu a.label {
+			.data-source > .menu a.label {
 				color: inherit;
 			}
-			main .data-source > .menu a.label:hover {
+			.data-source > .menu a.label:hover {
 				text-decoration: none;
 			}
-			main .data-source > .menu .item:hover > .label {
+			.data-source > .menu .item:hover > .label {
 				background: var(--color-accent);
 				cursor: pointer;
 				color: #fff;
 			}
-			main .data-source > .menu .item.selected > .label {
+			.data-source > .menu .item.selected > .label {
 				background: var(--color-selected);
 				box-shadow: inset 5px 0px 0 0px #a9a059;
 				color: #333;
 			}
-			main .data-source > .menu .label:active {
+			.data-source > .menu .label:active {
 				box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 			}
-				main .data-source > .menu .label .no-icon {
+				.data-source > .menu .label .no-icon {
 					grid-column: 1 / 3;
 				}
-				main .data-source > .menu .label i {
+				.data-source > .menu .label i {
 					text-align: center;
 					color: #666;
 				}
-				main .data-source > .menu .item:hover > .label .NA,
-				main .data-source > .menu .item:hover > .label i {
+				.data-source > .menu .item:hover > .label .NA,
+				.data-source > .menu .item:hover > .label i {
 					color: #eee;
 				}
-				main .data-source > .menu .item.selected > .label .NA,
-				main .data-source > .menu .item.selected > .label i {
+				.data-source > .menu .item.selected > .label .NA,
+				.data-source > .menu .item.selected > .label i {
 					color: #666;
 				}
 
-	main .data-source > .overlay {
+	.data-source > .overlay {
 		background: rgba(255, 255, 255, 0.5);
 		position: absolute;
 		padding-top: 15px;
@@ -290,10 +293,10 @@ main .data-source {
 		max-height: 100%;
 		overflow: auto;
 	}
-	main .singleton .data-source > .overlay {
+	.singleton .data-source > .overlay {
 		top: 74px;
 	}
-		main .data-source > .overlay > .close {
+		.data-source > .overlay > .close {
 			cursor: pointer;
 			font-size: 175%;
 			color: #999;
@@ -302,35 +305,33 @@ main .data-source {
 			right: 15px;
 			transition: color var(--transition-duration);
 		}
-		main .data-source > .overlay > .close:hover {
+		.data-source > .overlay > .close:hover {
 			color: #333;
 		}
 
-	main .data-source .toolbar.filters {
-		grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
-		margin: 0;
+	.data-source .toolbar.filters {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		align-items: flex-start;
 		flex-wrap: wrap;
 	}
 
-	main .data-source > .description {
+	.data-source > .description {
 		display: flex;
 		flex-direction: column;
 	}
-		main .data-source > .description .body {
+		.data-source > .description .body {
 			white-space: pre-wrap;
 			padding: calc(var(--gap) * 2);
 		}
-			main .data-source > .description .body h3 {
+			.data-source > .description .body h3 {
 				margin: calc(var(--gap) * 2) 0 var(--gap);
 				color: #999;
 				font-size: 80%;
 			}
-			main .data-source > .description .body h3:first-child {
+			.data-source > .description .body h3:first-child {
 				margin-top: 0;
 			}
-		main .data-source > .description .footer {
+		.data-source > .description .footer {
 			border-top: 1px dashed #ccc;
 			padding: 10px;
 			font-size: 90%;
@@ -338,28 +339,28 @@ main .data-source {
 			margin-top:  auto;
 			background: rgba(255, 255, 255, 0.5);
 		}
-			main .data-source > .description .footer > * {
+			.data-source > .description .footer > * {
 				margin-right: calc(var(--gap) * 2);
 			}
-			main .data-source > .description .footer > *:last-child {
+			.data-source > .description .footer > *:last-child {
 				margin-right: 0;
 			}
-			main .data-source > .description .footer .right {
+			.data-source > .description .footer .right {
 				margin-left: auto;
 			}
-			main .data-source > .description .footer a {
+			.data-source > .description .footer a {
 				color: #333;
 				cursor: pointer;
 			}
-			main .data-source > .description .footer .visible-to .count:hover {
+			.data-source > .description .footer .visible-to .count:hover {
 				text-decoration: underline;
 				cursor: pointer;
 			}
-			main .data-source > .description .footer .label {
+			.data-source > .description .footer .label {
 				font-size: 100%;
 				color: #999;
 			}
-	main .data-source > .query {
+	.data-source > .query {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		user-select: text;
 		white-space: pre;
@@ -367,7 +368,7 @@ main .data-source {
 		flex-direction: column;
 	}
 
-    main .data-source > .export-json {
+    .data-source > .export-json {
           background: #fff;
           box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
           padding: 10px;
@@ -377,38 +378,40 @@ main .data-source {
           max-height: 150px;
           overflow: auto;
     }
-	main .data-source > .share-link {
+	.data-source > .share-link {
 		background: #fff;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		padding: 10px;
 		margin-top: calc(var(--gap) * 2);
 	}
-		main .data-source > .share-link input {
+		.data-source > .share-link input {
 			width: 100%;
 		}
-	main .data-source > .drilldown {
-		margin: calc(var(--gap) * 2);
+	.data-source > .drilldown {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(0, auto));
 		justify-content: flex-start;
 		grid-gap: calc(var(--gap) * 2);
 		align-items: center;
+		padding: calc(var(--gap) * 2);
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+		border-top: 15px solid #fff;
+		background: #fff;
 	}
-		main .data-source > .drilldown a {
+		.data-source > .drilldown a {
 			padding: var(--gap) calc(var(--gap) * 2);
-			border: 1px solid #ccc;
-			background: #fff;
-			transition: background var(--transition-duration),
+			border: 1px solid transparent;
+			transition: border var(--transition-duration),
 						box-shadow var(--transition-duration);
 		}
-		main .data-source > .drilldown a:hover {
+		.data-source > .drilldown a:hover {
 			text-decoration: none;
-			background: #eff;
+			border-color: #ccc;
 		}
-		main .data-source > .drilldown a:active {
+		.data-source > .drilldown a:active {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
 		}
-	main .data-source > .columns {
+	.data-source > .columns {
 		display: flex;
 		width: 100%;
 		overflow: auto;
@@ -420,10 +423,10 @@ main .data-source {
 		background: #fff;
 		z-index: 1;
 	}
-	main .data-source > .columns.blur {
+	.data-source > .columns.blur {
 		filter: blur(2px);
 	}
-	main .data-source > .columns.over-flow::after {
+	.data-source > .columns.over-flow::after {
 		background: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.15));
 		content: "\00a0\00a0\00a0\00a0\00a0";
 		margin-left: auto;
@@ -432,21 +435,21 @@ main .data-source {
 		height: inherit;
 		position: absolute;
 	}
-	main .data-source > .columns::-webkit-scrollbar {
+	.data-source > .columns::-webkit-scrollbar {
 		display: none;
 	}
-		main .data-source > .columns .column {
+		.data-source > .columns .column {
 			display: flex;
 			position: relative;
 			margin-right: var(--gap);
 			transition: opacity var(--transition-duration);
 		}
-		main .data-source > .columns .column.disabled > span,
-		main .data-source > .columns .column.disabled > button {
+		.data-source > .columns .column.disabled > span,
+		.data-source > .columns .column.disabled > button {
 			background: #eee;
 			opacity: 0.5;
 		}
-		main .data-source > .columns .column.drag-enter:before {
+		.data-source > .columns .column.drag-enter:before {
 			content: "";
 			position: absolute;
 			left: -6.5px;
@@ -455,19 +458,19 @@ main .data-source {
 			background: blue;
 			width: 2px;
 		}
-		main .data-source .column.filtered {
+		.data-source .column.filtered {
 			background: #ff9;
 		}
-		main .data-source .column.error {
+		.data-source .column.error {
 			background: #fcc;
 		}
-			main .data-source > .columns.being-dragged .column * {
+			.data-source > .columns.being-dragged .column * {
 				pointer-events: none;
 			}
-			main .data-source .column.disabled > .label .color {
+			.data-source .column.disabled > .label .color {
 				background: #aaa !important;
 			}
-			main .data-source .column > .label {
+			.data-source .column > .label {
 				display: flex;
 				cursor: pointer;
 				align-items: center;
@@ -476,17 +479,17 @@ main .data-source {
 				transition: background var(--transition-duration),
 							box-shadow var(--transition-duration);
 			}
-			main .data-source > .columns .column.being-dragged > .label {
+			.data-source > .columns .column.being-dragged > .label {
 				border: 1px blue dashed;
 				opacity: 0.5;
 			}
-			main .data-source .column > .label:hover {
+			.data-source .column > .label:hover {
 				background: #eee;
 			}
-			main .data-source .column > .label:active {
+			.data-source .column > .label:active {
 				box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
 			}
-				main .data-source .column > .label .color {
+				.data-source .column > .label .color {
 					border-radius: 10px;
 					width: 20px;
 					height: 20px;
@@ -501,7 +504,7 @@ main .data-source {
 					font-weight: bold;
 					font-size: 110%;
 				}
-				main .data-source .column > .label .name {
+				.data-source .column > .label .name {
 					padding: 0px 5px;
 					display: flex;
 					flex: 1;
@@ -509,7 +512,7 @@ main .data-source {
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
-				main .data-source .column > .label .edit-column {
+				.data-source .column > .label .edit-column {
 					opacity: 0;
 					padding: 0 var(--gap);
 					font-size: 118%;
@@ -518,15 +521,15 @@ main .data-source {
 					transition: opacity var(--transition-duration),
 								border var(--transition-duration);
 				}
-				main .data-source .column > .label .edit-column:hover {
+				.data-source .column > .label .edit-column:hover {
 					text-decoration: none;
 				}
-				main .data-source .column > .label:hover .edit-column {
+				.data-source .column > .label:hover .edit-column {
 					opacity: 1;
 				}
 
-						main .data-source .column form h3,
-						main .dialog-box form h3{
+						.data-source .column form h3,
+						.dialog-box form h3{
 							margin: 0;
 							padding: var(--gap) 10px;
 							background: var(--color-secondary);
@@ -537,43 +540,43 @@ main .data-source {
 							font-size: 100%;
 							z-index: 1;
 						}
-						main .data-source .column form label {
+						.data-source .column form label {
 							margin: 0 calc(var(--gap) * 2);
 						}
-						main .data-source .column form label.drilldown-dropdown {
+						.data-source .column form label.drilldown-dropdown {
 							max-width: 100%;
 						}
-							main .data-source .column form .category-group {
+							.data-source .column form .category-group {
 								grid-template-columns: auto 200px;
 								display: grid;
 								grid-gap: calc(var(--gap));
 							}
-								main .data-source .column form .category-group input {
+								.data-source .column form .category-group input {
 									flex: 1;
 									margin-left: calc(var(--gap) * 2);
 									width: calc(100% - 20px);
 								}
-							main .data-source .column form input {
+							.data-source .column form input {
 								transition: background var(--transition-duration);
 							}
-							main .data-source .column form input[type=color] {
+							.data-source .column form input[type=color] {
 								width: 200px;
 								background: transparent;
 								padding: 0;
 							}
-							main .data-source .column form input.error {
+							.data-source .column form input.error {
 								background: rgba(255, 0, 0, 0.25);
 							}
-							main .data-source .column form small {
+							.data-source .column form small {
 								margin-top: 5px;
 								color: #999;
 								font-weight: normal;
 								display: none;
 							}
-							main .data-source .column form .parameter-list .NA {
+							.data-source .column form .parameter-list .NA {
 								padding: 0 calc(var(--gap) * 2);
 							}
-	main .data-source .visualization {
+	.data-source .visualization {
 		position: relative;
 		flex: 1;
 		transition: filter var(--transition-duration);
@@ -583,55 +586,55 @@ main .data-source {
 		border-radius: 6px 6px 0 0;
 		border-top: 10px #fff solid;
 	}
-	main .singleton .data-source > .visualization {
+	.singleton .data-source > .visualization {
 		border-radius: 0;
 		border-top: 0;
 	}
 
-	main .data-source:not(.flush) .visualization:hover {
+	.data-source:not(.flush) .visualization:hover {
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
 	}
-	main .data-source.flush .visualization {
+	.data-source.flush .visualization {
 		box-shadow: none;
 		background: #eee;
 		border-radius: 0;
 		border: 0;
 	}
 
-	main .data-source .visualization.blur {
+	.data-source .visualization.blur {
 		filter: blur(3px);
 	}
-		main .data-source .visualization .NA {
+		.data-source .visualization .NA {
 			padding: 8px 16px;
 		}
-		main .data-source .visualization .container {
+		.data-source .visualization .container {
 			width: 100%;
 			overflow: auto;
 			margin: 0;
 			padding: 0;
 			height: 100%;
 		}
-		main .data-source .visualization.table .container {
+		.data-source .visualization.table .container {
 			overflow: initial;
 		}
-			main .data-source .visualization.table .container td.json {
+			.data-source .visualization.table .container td.json {
 				color: #666;
 				padding: 4px;
 				user-select: none;
 				transition: background var(--transition-duration);
 			}
-			main .data-source .visualization.table .container td.json:hover {
+			.data-source .visualization.table .container td.json:hover {
 				cursor: pointer;
 				background: #ccf;
 			}
-			main .data-source .visualization.table .container td.json:active {
+			.data-source .visualization.table .container td.json:active {
 				box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
 			}
-				main .data-source .visualization.table .container .code-editor {
+				.data-source .visualization.table .container .code-editor {
 					margin: 0;
 					height: 250px;
 				}
-				main .data-source .visualization.table .container td.json .close {
+				.data-source .visualization.table .container td.json .close {
 					color: rgba(0, 0, 0, 0.5);
 					position: absolute;
 					cursor: pointer;
@@ -643,10 +646,10 @@ main .data-source {
 					transition: opacity var(--transition-duration),
 								color var(--transition-duration);
 				}
-				main .data-source .visualization.table .container td.json > div:hover .close {
+				.data-source .visualization.table .container td.json > div:hover .close {
 					opacity: 1;
 				}
-				main .data-source .visualization.table .container td.json .close:hover {
+				.data-source .visualization.table .container td.json .close:hover {
 					color: #333;
 					opacity: 1;
 				}
@@ -660,7 +663,7 @@ main .data-source {
 				justify-content: center;
 			}
 
-		main .data-source .visualization .tooltip {
+		.data-source .visualization .tooltip {
 			background: var(--color-primary);
 			color: var(--color-primary-text);
 			box-shadow: 0 0 35px rgba(0, 0, 0, 0.25);
@@ -670,19 +673,19 @@ main .data-source {
 			transition: left 100ms,
 						top 100ms;
 		}
-			main .data-source .visualization .tooltip header {
+			.data-source .visualization .tooltip header {
 				padding: var(--gap) calc(var(--gap) * 2);
 				border-bottom: 1px solid var(--color-primary-text);
 				display: flex;
 			}
-			main .data-source .visualization .tooltip footer {
+			.data-source .visualization .tooltip footer {
 				padding: var(--gap) calc(var(--gap) * 2);
 				border-top: 1px dashed #999;
 				display: grid;
 				grid-template-columns: auto 1fr;
 				grid-column-gap: var(--gap);
 			}
-			main .data-source .visualization .tooltip .body {
+			.data-source .visualization .tooltip .body {
 				list-style: none;
 				margin: 0;
 				padding: var(--gap);
@@ -690,27 +693,27 @@ main .data-source {
 				grid-template-columns: 100%;
 				background: rgba(255, 255, 255, 0.1);
 			}
-				main .data-source .visualization .tooltip li {
+				.data-source .visualization .tooltip li {
 					display: grid;
 					grid-template-columns: 16px auto 1fr;
 					grid-column-gap: var(--gap);
 					align-items: center;
 					padding: var(--gap);
 				}
-				main .data-source .visualization .tooltip li.hover {
+				.data-source .visualization .tooltip li.hover {
 					background: rgba(0, 0, 0, 0.1);
 				}
-					main .data-source .visualization .tooltip .circle {
+					.data-source .visualization .tooltip .circle {
 						width: 80%;
 						border-radius: 8px;
 						display: inline-block;
 						height: 80%;
 					}
-					main .data-source .visualization .tooltip .value {
+					.data-source .visualization .tooltip .value {
 						text-align: right;
 						margin-left: 10px;
 					}
-		main .data-source .visualization.table .row-summary {
+		.data-source .visualization.table .row-summary {
 			font-size: 90%;
 			text-align: right;
 			position: sticky;
@@ -722,13 +725,13 @@ main .data-source {
 			right: 0;
 			left: 0;
 		}
-		main .data-source .visualization.table .row-summary:hover {
+		.data-source .visualization.table .row-summary:hover {
 			background: #fff;
 		}
-			main .data-source .visualization.table .row-summary > span {
+			.data-source .visualization.table .row-summary > span {
 				margin-right: 15px;
 			}
-			main .data-source .visualization.table .row-summary .label {
+			.data-source .visualization.table .row-summary .label {
 				color: #666;
 				font-weight: normal;
 				font-size: 100%;
@@ -737,13 +740,13 @@ main .data-source {
 				vertical-align: initial;
 			}
 
-		main .data-source .visualization.json {
+		.data-source .visualization.json {
 			background: #272822;
 		}
-			main .data-source .visualization.json .ace_editor {
+			.data-source .visualization.json .ace_editor {
 				height: 100%;
 			}
-		main .data-source .visualization.table {
+		.data-source .visualization.table {
 			overflow: auto;
 			width: initial;
 			max-width: initial;
@@ -1013,13 +1016,17 @@ main .data-source {
 	display: flex;
 	padding: calc(var(--gap) * 2);
 }
-.visualization .container > svg .axis path,
-.visualization .container > svg .axis line {
+.visualization .container > svg .scale path,
+.visualization .container > svg .scale line {
 	fill: none;
 	stroke: #ddd;
 }
-.visualization.dualaxisbar .container > svg .axis path,
-.visualization.dualaxisbar .container > svg .axis line {
+.visualization.dualaxisbar .container > svg .scale path,
+.visualization.dualaxisbar .container > svg .scale line {
+	display: none;
+}
+.visualization.linear .container > svg .scale.hide-scale-lines path,
+.visualization.linear .container > svg .scale.hide-scale-lines line {
 	display: none;
 }
 
@@ -1116,7 +1123,7 @@ main .data-source {
 	height: 100%;
 	font-size: calc(18px + 5vw);
 }
-main .data-source .visualization.livenumber {
+.data-source .visualization.livenumber {
 	overflow: hidden;
 }
 	.visualization.livenumber .container {
@@ -1219,27 +1226,27 @@ main .data-source .visualization.livenumber {
 			display: none;
 		}
 
-main .data-source-column form .parameter-list {
+.data-source-column form .parameter-list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2);
 	margin-top: 10px;
 }
-	main .data-source-column form .parameter {
+	.data-source-column form .parameter {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr max-content;
 	}
-		main .dialog-box form .parameter .delete:hover {
+		.dialog-box form .parameter .delete:hover {
 			background-color: #c11;
 			border-color: #c11;
 		}
-	main .data-source-column form .drilldown-parameters > label {
+	.data-source-column form .drilldown-parameters > label {
 		margin-left: calc(var(--gap) * 2);
 	}
-main .column-form {
+.column-form {
 	padding: calc(var(--gap) * 2) 0 0;
 }
-main .column-form.compact {
+.column-form.compact {
 	padding: 0;
 	grid-gap: calc(var(--gap) * 2);
 	box-shadow: none;
@@ -1247,19 +1254,19 @@ main .column-form.compact {
 	overflow: auto;
 	max-height: 200px;
 }
-	main .column-form .filters,
-	main .column-form .accumulations {
+	.column-form .filters,
+	.column-form .accumulations {
 		margin: 0 calc(var(--gap) * 2);
 		display: grid;
 		grid-gap: var(--gap);
 	}
-		main .column-form .filters .list,
-		main .column-form .accumulations .list {
+		.column-form .filters .list,
+		.column-form .accumulations .list {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
 		}
-		main .column-form .filters span,
-		main .column-form .accumulations span {
+		.column-form .filters span,
+		.column-form .accumulations span {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
@@ -1267,61 +1274,127 @@ main .column-form.compact {
 			font-size: 90%;
 			color: #444;
 		}
-			main .column-form .filters .add-filter,
-			main .column-form .accumulations .add-accumulation {
+			.column-form .filters .add-filter,
+			.column-form .accumulations .add-accumulation {
 				border: 0;
 				height: auto;
 				width: 36px;
 			}
-				main .column-form .filters .add-filter svg,
-				main .column-form .accumulations .add-accumulation svg,
-				main .column-form .delete svg {
+				.column-form .filters .add-filter svg,
+				.column-form .accumulations .add-accumulation svg,
+				.column-form .delete svg {
 					margin: 0;
 				}
-		main .column-form.compact label {
+		.column-form.compact label {
 			max-width: none;
 			margin: 0;
 		}
-			main .column-form label .category-group {
+			.column-form label.disable-column {
+				max-width: max-content;
+			}
+			.column-form label .category-group {
 				display: grid;
 				grid-template-columns: 1fr 1.5fr max-content;
 				grid-gap: calc(var(--gap) * 2);
 			}
-				main .column-form label .category-group button:hover {
+				.column-form label .category-group button:hover {
 					background: #c33;
 					border-color: transparent;
 				}
-					main .column-form label .category-group button svg {
+					.column-form label .category-group button svg {
 						margin: 0;
 					}
-				main .column-form:not(.compact) label .category-group select {
+				.column-form:not(.compact) label .category-group select {
 					width: 100px;
 				}
-				main .column-form label .category-group input,
-				main .column-form label .category-group select {
+				.column-form label .category-group input,
+				.column-form label .category-group select {
 					margin-bottom: 0;
 					text-align: initial !important;
 				}
-	main .column-form > label {
+	.column-form > label {
 		margin-left: calc(var(--gap) * 2);
 	}
-		main .column-form > label .color {
+	.column-form > div,
+	.column-form > label {
+		margin-left: calc(var(--gap) * 2);
+	}
+	.column-form > div {
+		display: grid;
+		grid-gap: calc(var(--gap) * 2);
+		max-width: 200px;
+		white-space: nowrap;
+	}
+	.column-form .timing-type-custom {
+		max-width: 100%;
+	}
+		.column-form .timing-format {
+			display: grid;
+			overflow: auto;
+			grid-gap: calc(var(--gap) * 2);
+			grid-auto-flow: column;
+		}
+			.column-form .timing-format fieldset {
+				border: 1px solid #ccc;
+				color: #333;
+				font-size: 90%;
+				margin: 0;
+			}
+				.column-form .timing-format fieldset legend {
+					font-size: 90%;
+				}
+				.column-form .timing-format fieldset label {
+					display: inline-block;
+					padding: 0 3px;
+					text-align: center;
+					transition: background var(--transition-duration),
+								box-shadow var(--transition-duration);
+				}
+				.column-form .timing-format fieldset label:hover {
+					cursor: pointer;
+					background: #eee;
+				}
+				.column-form .timing-format fieldset label:active {
+					box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.25);
+				}
+				.column-form .timing-format fieldset input[type=radio] {
+					display: none;
+				}
+				.column-form .timing-format fieldset input:checked + span {
+					color: #333;
+				}
+				.column-form .timing-format fieldset label span {
+					color: #ccc;
+					transition: color var(--transition-duration);
+					font-weight: normal;
+				}
+			.column-form .timing-type-custom .result-date {
+				color: #333;
+				font-size: 80%;
+				font-weight: normal;
+			}
+		.column-form > div > span {
+			font-size: 90%;
+			color: #444;
+			font-weight: bold;
+		}
+		.column-form > label .color {
 			width: 100%;
 			padding: 0;
 		}
-	main .column-form .drilldown-dropdown {
+	.column-form .drilldown-dropdown {
 		max-width: initial;
 	}
-	main .column-form > footer {
+	.column-form > footer {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		position: sticky;
 		bottom: 0;
 		font-size: 110%;
-		z-index: 1;
+		z-index: 6;
 	}
-		main .column-form > footer button {
+		.column-form > footer button {
 			padding: calc(var(--gap) * 2);
 			height: auto;
 			border-right: 0;
@@ -1331,25 +1404,37 @@ main .column-form.compact {
 			align-items: center;
 			flex: 1;
 		}
-		main .column-form.compact > footer button {
-			padding: calc(var(--gap));
+		.column-form.compact > footer button {
+			padding: 10px;
 		}
-		main .column-form > footer button:first-child {
+		.column-form > footer button:first-child {
 			border-left: 0;
 		}
+		.column-form > footer .disabled {
+			background: #eee;
+			color: #9e9e9e;
+			outline: none
+		}
+		.column-form > footer .disabled:hover {
+			background: #eee;
+			color: #9e9e9e;
+			border: 1px solid #ccc;
+			border-bottom: 0;
+			border-right: 0;
+			box-shadow: none;
+		}
 
-main .sub-reports-dialog .dialog-box {
+.sub-reports-dialog .dialog-box {
 	width: 50%;
 	background: #eee;
 }
-	main .sub-reports-dialog .body {
+	.sub-reports-dialog .body {
 		padding: calc(var(--gap) * 2) 0;
-		margin: 0 calc(var(--gap) * 2);
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: space-around;
 	}
-		main .sub-reports-dialog .data-source {
+		.sub-reports-dialog .data-source {
 			min-width: 150px;
 			max-width: 350px;
 			width: 100%;

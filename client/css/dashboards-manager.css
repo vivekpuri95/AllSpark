@@ -1,32 +1,139 @@
-main #form .report {
-	display: flex;
-	transition: opacity var(--transition-duration);
+body {
+	height: 100vh;
+	background: #fff;
 }
-	main #form .report label {
-		margin: 5px;
-		min-width: 125px;
+main {
+	background: inherit;
+}
+	main #form .report {
+		display: flex;
+		transition: opacity var(--transition-duration);
 	}
-		main #form .report input {
-			margin: 0 !important;
+		main #form .report label {
+			margin: 5px;
+			min-width: 125px;
 		}
-
-		main #form .save,
-		main #form .delete {
-			min-width: 60px !important;
-			max-width: 60px;
-		}
-		main #dashboard-form .red {
-			box-shadow: inset -15px 0 #f66;
-		}
-
-		main #form #format {
-			max-width: inherit;
-		}
-			main #form #format .ace_editor {
-				height: 250px;
-				margin: 0;
+			main #form .report input {
+				margin: 0 !important;
 			}
-
-main h2.share-heading {
-	margin: calc(var(--gap) * 2) 0;
-}
+			main #form .save,
+			main #form .delete {
+				min-width: 60px !important;
+				max-width: 60px;
+			}
+			main #dashboard-form .red {
+				box-shadow: inset -15px 0 #f66;
+			}
+			main #form #format {
+				max-width: inherit;
+			}
+				main #form #format .ace_editor {
+					height: 250px;
+					margin: 0;
+				}
+	main section .heading {
+		display: flex;
+		align-items: center;
+		margin-bottom: 10px;
+		border-bottom: 1px solid #ccc;
+		padding: 10px;
+	}
+		main section .heading button {
+			background: var(--color-accent);
+			color: #fff;
+			border-radius: 25px;
+			height: 40px;
+			margin-right: 20px;
+			cursor: pointer;
+		}
+		main #add-dashboard.grey {
+			background: #ccc;
+			color: #fff;
+		}
+			main section .heading button > i {
+				margin-right: 0;
+				font-size: 15px;
+			}
+		main section .heading h1 {
+			margin: 0;
+			color: #888;
+		}
+	main h2.share-heading {
+		margin: calc(var(--gap) * 2) 0;
+	}
+	main .dashboards {
+		display: flex;
+		flex-direction: column;
+	}
+		main .dashboards .dashboard {
+			display: grid;
+			padding: 15px 10px;
+			border-bottom: 1px solid #ddd;
+			grid-gap: 5px;
+		}
+			main .dashboards .size {
+				padding: 5px 10px;
+				margin-left: 20px;
+				color: #888;
+			}
+			main .dashboards .sub-dashboards {
+				display: grid;
+				margin-left: 20px;
+				padding-left: 20px;
+				border-left: 1px dashed #ccc;
+				grid-gap: 5px;
+			}
+				main .dashboards .sub-dashboards .dashboard {
+					padding: 0;
+					border: none;
+				}
+					main .dashboards .sub-dashboards .dashboard .label .name {
+						font-size: 100%;
+					}
+			main .dashboards .dashboard .label {
+				grid-template-columns: 1fr 200px repeat(2, max-content);
+				display: grid;
+				grid-gap: calc(var(--gap) * 2);
+				cursor: pointer;
+				align-items: center;
+				transition: background var(--transition-duration);
+			}
+			main .dashboards .dashboard .label:hover {
+				background: #eee;
+			}
+				main .dashboards .dashboard .label > div {
+					padding: calc(var(--gap) * 2);
+				}
+				main .dashboards .dashboard .label .action {
+					color: #555;
+					transition: color var(--transition-duration);
+				}
+				main .dashboards .dashboard .label .action.green:hover {
+					color: #2c9d58;
+				}
+				main .dashboards .dashboard .label .action.red:hover {
+					color: #db4437;
+				}
+				main .dashboards .dashboard .name {
+					letter-spacing: 0.5px;
+					align-items: center;
+					display: flex;
+					font-size: 110%;
+				}
+					main .dashboards .dashboard .name a {
+						font-weight: bold;
+						color: inherit;
+					}
+					main .dashboards .dashboard .name span {
+						color: #888;
+						font-size: 90%;
+						transition: transform var(--transition-duration);
+						padding: 0 5px;
+					}
+					main .dashboards .dashboard .label .name .arrow.right {
+						transform: rotate(-90deg);
+					}
+					main .dashboards .name i {
+						color: var(--color-accent);
+						font-size: 17px;
+					}

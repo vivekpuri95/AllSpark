@@ -15,6 +15,14 @@ Page.class = class Tests extends Page {
 
 	async load() {
 
+		if(!this.user.privileges.has('superadmin'))
+			throw new Page.exception('Only superadmins can run tests.');
+
+		const environment = await API.call('environment/about');
+
+		if(['production', 'staging'].includes(environment.name))
+			throw new Page.exception('Tests cannot be run on production or staging.');
+
 		await this.process();
 
 		this.render();
@@ -291,7 +299,7 @@ class TestUser {
 		this.test.section.tests.progress();
 
 		SnackBar.container['bottom-left'] = document.querySelector('.snack-bar-container.bottom-left');
-		DialogBox.container = document.querySelector('main');
+		DialogBox.container = document.body;
 	}
 
 	show() {
@@ -547,6 +555,17 @@ const tests = {
 
 				snackbar.show();
 				snackbar.hide();
+			}
+		},
+	},
+
+	ServiceWorker: {
+
+		message: class SnackBarShowHide extends Test {
+
+			async execute() {
+
+				this.assert(await page.serviceWorker.message('test') == 'test response');
 			}
 		},
 	},

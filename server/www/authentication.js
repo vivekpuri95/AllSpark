@@ -213,7 +213,7 @@ exports.login = class extends API {
 		const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
 		const redisResult = await redis.get(redisHash);
 
-		if (redisResult) {
+		if(redisResult) {
 
 			throw("Failure, please try again");
 		}
@@ -472,13 +472,6 @@ exports.refresh = class extends cycleDetection {
 
 		}
 
-		privilegeObj = {};
-
-		privileges.map(x => privilegeObj[x.privilege_id] = x);
-
-		privileges = Object.values(privilegeObj)
-
-
 		const roles = userPrivilegesRoles.filter(privilegeRoles => privilegeRoles.owner === "roles").map(x => {
 
 			return {
@@ -505,6 +498,7 @@ exports.refresh = class extends cycleDetection {
 				category_id: constants.adminCategory[0],
 			})
 		}
+
 		return commonFun.makeJWT(obj, Math.floor(Date.now() / 1000) + (5 * 60));
 	}
 }

@@ -98,8 +98,10 @@ class DataSource {
 
 		let response = null;
 
+		const params = parameters.toString();
+
 		const options = {
-			method: 'POST',
+			method: params.length <= 2500 ? 'GET' : 'POST', //2500 is used as our server was not accepting more then this query param length
 		};
 
 		this.resetError();
@@ -115,7 +117,7 @@ class DataSource {
 		}
 
 		try {
-			response = await API.call('reports/engine/report', parameters.toString(), options);
+			response = await API.call('reports/engine/report', params, options);
 		}
 
 		catch(e) {
@@ -386,6 +388,10 @@ class DataSource {
 						<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
 					</div>
 
+					<div class="item">
+						<span class="label filtered-json-download"><i class="fas fa-code"></i> Filtered JSON</label>
+					</div>
+
 					<!--<div class="item">
 						<span class="label export-toggle"><i class="fa fa-download"></i> Export</label>
 					</div>>-->
@@ -431,12 +437,15 @@ class DataSource {
 			const elementsToShow = [
 				'.menu .expand-toggle',
 				'.menu .query-toggle',
-				'.menu .configure-visualization',
 				'.menu .define-visualization',
 			];
 
 			for(const element of elementsToShow)
 				menu.querySelector(element).parentElement.classList.remove('hidden');
+		}
+
+		if(this.visualizations.selected.editable) {
+			menu.querySelector('.menu .configure-visualization').parentElement.classList.remove('hidden');
 		}
 
 		menu.querySelector('.reload').on('click', () => this.visualizations.selected.load());
@@ -510,8 +519,15 @@ class DataSource {
 		menu.querySelector('.csv-download').on('click', (e) => this.download(e, {mode: 'csv'}));
 		menu.querySelector('.filtered-csv-download').on('click', (e) => this.download(e, {mode: 'filtered-csv'}));
 		menu.querySelector('.json-download').on('click', (e) => this.download(e, {mode: 'json'}));
+		menu.querySelector('.filtered-json-download').on('click', (e) => this.download(e, {mode: 'filtered-json'}));
 		menu.querySelector('.xlsx-download').on('click', (e) => this.download(e, {mode: 'xlsx'}));
-		menu.querySelector('.expand-toggle').on('click', () => window.location = `/report/${this.query_id}`);
+		menu.querySelector('.expand-toggle').on('click', () => {
+
+			if(this.visualizations.selected.visualization_id)
+				window.location = `/visualization/${this.visualizations.selected.visualization_id}`
+			else
+				window.location = `/report/${this.query_id}`;
+		});
 
 		if(this.visualizations.length) {
 
@@ -628,7 +644,7 @@ class DataSource {
 		let str = [],
 			response;
 
-		if(what.mode != 'filtered-csv')
+		if(!(['filtered-json', 'filtered-csv'].includes(what.mode)))
 			response = await this.fetch({download: 1});
 
 		if(what.mode == 'json') {
@@ -696,6 +712,27 @@ class DataSource {
 			what.mode = 'csv';
 		}
 
+		else if(what.mode == 'filtered-json') {
+
+			const response = await this.response();
+
+			for(const data of response) {
+
+				const line = [], rowObj = {};
+
+				for(let [key, value] of data) {
+
+					rowObj[key] = value;
+				}
+
+				line.push(JSON.stringify(rowObj));
+
+				str.push(line);
+			}
+
+			what.mode = 'json';
+		}
+
 		else {
 
 			for(const data of response.data) {
@@ -716,13 +753,52 @@ class DataSource {
 			blob = new Blob([str], {type: 'application\/octet-stream'}),
 			fileName = [
 				this.name,
-			];
+			],
+			values = {};
 
-		if(this.filters.has('Start Date'))
-			fileName.push(this.filters.container.elements[this.filters.get('Start Date').placeholder].value);
+		for(const [name, filter] of this.filters) {
 
-		if(this.filters.has('End Date'))
-			fileName.push(this.filters.container.elements[this.filters.get('End Date').placeholder].value);
+			if(filter.type == 'daterange' && !values.date_range) {
+
+				values.date_range = {};
+
+				const
+					[startFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('start')),
+					[endFilter] = filter.companions.filter(x => x.name.toLowerCase().includes('end'));
+
+				values.date_range.start = startFilter ? Format.date(this.filters.container.elements[startFilter.placeholder].value) : Format.date(new Date());
+				values.date_range.end = endFilter ? Format.date(this.filters.container.elements[endFilter.placeholder].value) : Format.date(new Date());
+			}
+			else if (filter.type == 'date' && !values.date) {
+
+				values.date = Format.date(this.filters.container.elements[filter.placeholder].value);
+			}
+			else if (filter.type == 'month' && !values.month) {
+
+				values.month = Format.month(this.filters.container.elements[filter.placeholder].value);
+			}
+			else if (filter.type == 'datetime' && !values.date_time) {
+
+				values.date_time = Format.dateTime(this.filters.container.elements[filter.placeholder].value);
+			}
+		}
+
+		if(values.date_range) {
+
+			fileName.push(values.date_range.start, values.date_range.end);
+		}
+		else if(values.date) {
+
+			fileName.push(values.date);
+		}
+		else if(values.month) {
+
+			fileName.push(values.month);
+		}
+		else if(values.date_time) {
+
+			fileName.push(values.date_time);
+		}
 
 		if(fileName.length == 1)
 			fileName.push(new Intl.DateTimeFormat('en-IN', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(new Date));
@@ -1051,17 +1127,17 @@ class DataSourceFilter {
 				name: 'Yesterday',
 			},
 			{
-				start: -7,
+				start: -6,
 				end: 0,
 				name: 'Last 7 Days',
 			},
 			{
-				start: -30,
+				start: -29,
 				end: 0,
 				name: 'Last 30 Days',
 			},
 			{
-				start: -90,
+				start: -89,
 				end: 0,
 				name: 'Last 90 days',
 			},
@@ -1137,7 +1213,7 @@ class DataSourceFilter {
 			input.value = this.value;
 		}
 
-		container.innerHTML = `<span>${this.name}<span>`;
+		container.innerHTML = `<span>${this.name}</span>`;
 		container.appendChild(input);
 
 		// Timing of this is critical
@@ -1430,26 +1506,20 @@ class DataSourceRow extends Map {
 		if(!value)
 			value = this.get(key);
 
-		if(column.type == 'date')
-			value = Format.date(value);
+		if(column.type) {
 
-		if(column.type == 'month')
-			value = Format.month(value);
+			if(DataSourceColumn.formatType.has(column.type.name))
+				value = Format.customTime(value, DataSourceColumn.formatType.get(column.type.name));
 
-		if(column.type == 'year')
-			value = Format.year(value);
+			if(column.type.name == 'custom')
+				value = Format.customTime(value, column.type.format);
 
-		if(column.type == 'timeelapsed')
-			value = Format.ago(value);
+			else if(column.type.name == 'timeelapsed')
+				value = Format.ago(value);
 
-		if(column.type == 'time')
-			value = Format.time(value);
-
-		if(column.type == 'datetime')
-			value = Format.dateTime(value);
-
-		else if(column.type == 'number')
-			value = Format.number(value);
+			else if(column.type.name == 'number')
+				value = Format.number(value);
+		}
 
 		if(column.prefix)
 			value = column.prefix + value;
@@ -1495,6 +1565,9 @@ class DataSourceColumns extends Map {
 
 		if(!this.size)
 			container.innerHTML = '&nbsp;';
+
+		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideHeader)
+			this.source.container.querySelector('header').classList.add('hidden');
 
 		if(this.source.visualizations.selected && this.source.visualizations.selected.options && this.source.visualizations.selected.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
@@ -1562,6 +1635,18 @@ class DataSourceColumn {
 
 		this.columnFilters = new DataSourceColumnFilters(this);
 		this.columnAccumulations = new DataSourceColumnAccumulations(this);
+
+		if(typeof this.type == 'string') {
+			this.type = {
+				name: this.type,
+				format: '',
+			}
+		}
+
+		if(this.disabled)
+			this.container.classList.add('disabled');
+
+		this.customDateType = new DataSourceColumnCustomDateType();
 	}
 
 	get container() {
@@ -1580,24 +1665,21 @@ class DataSourceColumn {
 			</span>
 		`;
 
-		if(user.privileges.has('report')) {
+		const edit = document.createElement('a');
 
-			const edit = document.createElement('a');
+		edit.classList.add('edit-column');
+		edit.title = 'Edit Column';
+		edit.on('click', e => {
 
-			edit.classList.add('edit-column');
-			edit.title = 'Edit Column';
-			edit.on('click', e => {
+			e.stopPropagation();
 
-				e.stopPropagation();
+			this.form.classList.remove('compact');
+			this.edit();
+		});
 
-				this.form.classList.remove('compact');
-				this.edit();
-			});
+		edit.innerHTML = `&#8285;`;
 
-			edit.innerHTML = `&#8285;`;
-
-			this.container.querySelector('.label').appendChild(edit);
-		}
+		this.container.querySelector('.label').appendChild(edit);
 
 		let timeout;
 
@@ -1676,7 +1758,12 @@ class DataSourceColumn {
 
 		for(const key in this) {
 
-			if(key in this.form)
+			if(!(key in this.form))
+				continue;
+
+			if(this.form[key].type == 'checkbox')
+				this.form[key].checked = this[key];
+			else
 				this.form[key].value = this[key];
 		}
 
@@ -1688,7 +1775,27 @@ class DataSourceColumn {
 			this.drilldownQuery.clear();
 		}
 
-		this.form.disabled.value = parseInt(this.disabled) || 0;
+		this.form.disabled.checked = this.disabled;
+
+		if(!this.type)
+			return this.dialogueBox.show();;
+
+		this.form.type.value = this.type.name;
+
+		const format = DataSourceColumn.formatType.get(this.type.name) || {};
+
+		if(this.form.querySelector('.timing-type-custom'))
+			this.form.querySelector('.timing-type-custom').remove();
+
+		if(Object.keys(format).length)
+			this.customDateType.value = format;
+
+		if(this.type.name == 'custom') {
+
+			this.form.insertBefore(this.customDateType.container, this.form.querySelector('label.color'));
+
+			this.customDateType.value = this.type.format;
+		}
 
 		this.dialogueBox.show();
 	}
@@ -1718,17 +1825,20 @@ class DataSourceColumn {
 				<select name="type">
 					<option value="string">String</option>
 					<option value="number">Number</option>
-					<option value="date">Date</option>
-					<option value="month">Month</option>
-					<option value="year">Year</option>
-					<option value="time">Time</option>
-					<option value="datetime">Date Time</option>
+					<optgroup label="Timing">
+						<option value="date">Date</option>
+						<option value="month">Month</option>
+						<option value="year">Year</option>
+						<option value="time">Time</option>
+						<option value="datetime">Date Time</option>
+						<option value="custom">Custom</option>
+					</optgroup>
 					<option value="timeelapsed">Time Elapsed</option>
 					<option value="html">HTML</option>
 				</select>
 			</label>
 
-			<label>
+			<label class="color">
 				<span>Color</span>
 				<input type="color" name="color" class="color">
 			</label>
@@ -1742,7 +1852,7 @@ class DataSourceColumn {
 				</select>
 			</label>
 
-			<label>
+			<label class="hidden">
 				<span>Formula</span>
 				<input type="text" name="formula">
 				<small></small>
@@ -1758,12 +1868,8 @@ class DataSourceColumn {
 				<input type="text" name="postfix">
 			</label>
 
-			<label>
-				<span>Disabled</span>
-				<select name="disabled">
-					<option value="0">No</option>
-					<option value="1">Yes</option>
-				</select>
+			<label class="disable-column">
+				<span><input type="checkbox" name="disabled"> <span>Disabled</span></span>
 			</label>
 
 			<h3>Drill down</h3>
@@ -1788,11 +1894,44 @@ class DataSourceColumn {
 			</footer>
 		`;
 
+		if(!this.source.editable) {
+			const saveData = form.querySelector('footer .save');
+			saveData.disabled = true;
+			saveData.dataset.tooltip = 'Insufficient Privileges';
+			saveData.dataset.tooltipPosition = 'left';
+		}
+
+		form.type.on('change', () => {
+
+			let
+				typeFormat,
+				selectedFormat;
+
+			if(form.querySelector('.timing-type-custom'))
+				form.querySelector('.timing-type-custom').remove();
+
+			if(DataSourceColumn.formatType.has(form.type.value)) {
+
+				typeFormat = DataSourceColumn.formatType.get(form.type.value);
+
+				selectedFormat = typeFormat;
+			}
+
+			else if(form.type.value == 'custom') {
+
+				selectedFormat = this.customDateType.value;
+
+				form.insertBefore(this.customDateType.container, form.querySelector('label.color'));
+
+				this.customDateType.render(selectedFormat);
+			}
+
+			if(selectedFormat)
+				this.customDateType.value = selectedFormat;
+		});
+
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
-
-		if(!user.privileges.has('report'))
-			form.querySelector('footer .save').classList.add('hidden');
 
 		form.elements.formula.on('keyup', async () => {
 
@@ -1813,7 +1952,8 @@ class DataSourceColumn {
 				form.parentElement.classList.add('hidden');
 		});
 
-		form.querySelector('.save').on('click', () => this.save());
+		if(this.source.editable)
+			form.querySelector('.save').on('click', () =>  this.save())
 
 		return form;
 	}
@@ -1875,12 +2015,28 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-		for(const element of this.form.elements)
-			this[element.name] = element.value == '' ? null : element.value || null;
+		for(const element of this.form.elements) {
+
+			if(element.name == 'type')
+				continue;
+
+			if(element.type == 'checkbox')
+				this[element.name] = element.checked;
+
+			else this[element.name] = element.value == '' ? null : element.value || null;
+		}
 
 		this.filters = this.columnFilters.json;
 
-		this.disabled = parseInt(this.disabled) || 0;
+		this.type = {
+			name: this.form.type.value,
+		};
+
+		if(this.form.type.value == 'custom')
+			this.type.format = this.customDateType.value;
+
+		if(this.interval)
+			clearInterval(this.interval);
 
 		this.container.querySelector('.label .name').textContent = this.name;
 		this.container.querySelector('.label .color').style.background = this.color;
@@ -1894,6 +2050,9 @@ class DataSourceColumn {
 		await this.source.visualizations.selected.render();
 
 		this.dialogueBox.hide();
+		this.source.columns.render();
+
+		await this.update();
 
 		new SnackBar({
 			message: `Changes to <em>${this.name}</em> Applied`,
@@ -1909,19 +2068,38 @@ class DataSourceColumn {
 		if(!this.source.format.columns)
 			this.source.format.columns = [];
 
+
 		let
 			response,
 			updated = 0;
 
-		for(const element of this.form.elements)
-			this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+		for(const element of this.form.elements) {
+
+			if(element.name == 'type')
+				continue;
+
+			if(element.type == 'checkbox')
+				this[element.name] = element.checked;
+
+			else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+		}
 
 		this.filters = this.columnFilters.json;
+
+		this.type = {
+			name: this.form.type.value,
+		};
+
+		if(this.form.type.value == 'custom')
+			this.type.format = this.customDateType.value;
+
+		if(this.interval)
+			clearInterval(this.interval);
 
 		response = {
 			key : this.key,
 			name : this.name,
-			type : this.form.querySelector('.columnType select').value,
+			type : this.type,
 			disabled : this.disabled,
 			color : this.color,
 			searchType : this.searchType,
@@ -2131,6 +2309,274 @@ class DataSourceColumn {
 		destination.visualizations.selected.load();
 	}
 }
+
+class DataSourceColumnCustomDateType {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('timing-type-custom');
+
+		container.innerHTML = `
+
+			<div class="timing-format">
+
+				<fieldset>
+
+					<legend>Weekday</legend>
+
+					<label>
+						<input type="radio" name="weekday" value="narrow">
+						<span>W</span>
+					</label>
+
+					<label>
+						<input type="radio" name="weekday" value="short">
+						<span>WWW</span>
+					</label>
+
+					<label>
+						<input type="radio" name="weekday" value="long">
+						<span>WWWW</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Day</legend>
+
+					<label>
+						<input type="radio" name="day" value="numeric">
+						<span>D</span>
+					</label>
+
+					<label>
+						<input type="radio" name="day" value="2-digit">
+						<span>DD</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Month</legend>
+
+					<label>
+						<input type="radio" name="month" value="numeric">
+						<span>1</span>
+					</label>
+
+					<label>
+						<input type="radio" name="month" value="2-digit">
+						<span>01</span>
+					</label>
+
+					<label>
+						<input type="radio" name="month" value="narrow">
+						<span>M</span>
+					</label>
+
+					<label>
+						<input type="radio" name="month" value="short">
+						<span>MMM</span>
+					</label>
+
+					<label>
+						<input type="radio" name="month" value="long">
+						<span>MMMM</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Year</legend>
+
+					<label>
+						<input type="radio" name="year" value="2-digit">
+						<span>YY</span>
+					</label>
+
+					<label>
+						<input type="radio" name="year" value="numeric">
+						<span>YYYY</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Hour</legend>
+
+					<label>
+						<input type="radio" name="hour" value="numeric">
+						<span>H</span>
+					</label>
+
+					<label>
+						<input type="radio" name="hour" value="2-digit">
+						<span>HH</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Minute</legend>
+
+					<label>
+						<input type="radio" name="minute" value="numeric">
+						<span>M</span>
+					</label>
+
+					<label>
+						<input type="radio" name="minute" value="2-digit">
+						<span>MM</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Second</legend>
+
+					<label>
+						<input type="radio" name="second" value="numeric">
+						<span>S</span>
+					</label>
+
+					<label>
+						<input type="radio" name="second" value="2-digit">
+						<span>SS</span>
+					</label>
+				</fieldset>
+			</div>
+
+			<span class="example"></span>
+		`;
+
+		const resultDate = container.querySelector('.example');
+
+		for(const radio of container.querySelectorAll('input[type="radio"]')) {
+
+			radio.on('click', () => {
+
+				for(const [index, _radio] of this.checkedradio.entries()) {
+
+					if(_radio.name == radio.name) {
+
+						if(_radio.value == radio.value)
+							radio.checked = false;
+
+						this.checkedradio.splice(index, 1);
+					}
+				}
+
+				if(radio.checked)
+					this.checkedradio.push(radio);
+
+				this.render(this.value);
+			})
+		}
+
+		return container;
+	}
+
+	set value(format) {
+
+		if(!this.containerElement)
+			return this.customValueCache = format;
+
+		for(const radio of this.container.querySelectorAll('input[type=radio]'))
+			radio.checked = (format[radio.name] == radio.value);
+
+		this.render(format);
+
+		this.checkedradio = [];
+
+		for(const radio of this.container.querySelectorAll('input[type="radio"]')) {
+
+			if(radio.checked)
+				this.checkedradio.push(radio);
+		}
+	}
+
+	get value() {
+
+		if(!this.containerElement)
+			return this.customValueCache;
+
+		const
+			formats = ['weekday', 'day', 'month', 'year', 'hour', 'minute', 'second'],
+			checkedradio = {};
+
+		for(const format of formats) {
+
+			const input = this.container.querySelector(`input[name=${format}]:checked`);
+
+			if(input)
+				checkedradio[format] = input.value;
+		}
+
+		return checkedradio;
+	}
+
+	render(format) {
+
+		const example = this.container.querySelector('.example');
+
+		if(!format)
+			return example.innerHTML = '<span class="NA">No Format Selected</span>';
+
+		example.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), format);
+
+		if(this.interval)
+			clearInterval(this.interval);
+
+		this.interval = setInterval(() => {
+			example.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), format);
+		}, 1000);
+	}
+}
+
+DataSourceColumn.formatType = new Map;
+
+DataSourceColumn.formatType.set('date',
+	{
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric',
+	}
+);
+
+DataSourceColumn.formatType.set('month',
+	{
+		year: 'numeric',
+		month: 'short',
+	}
+);
+
+DataSourceColumn.formatType.set('year',
+	{
+		year: 'numeric',
+	}
+);
+
+DataSourceColumn.formatType.set('datetime',
+	{
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric',
+		hour: 'numeric',
+		minute: 'numeric'
+	}
+);
+
+DataSourceColumn.formatType.set('time',
+	{
+		hour: 'numeric',
+		minute: 'numeric',
+		second: 'numeric',
+	}
+);
 
 class DataSourceColumnDrilldownParameters extends Set {
 
@@ -2744,7 +3190,7 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type == 'date')
+			if(column.type && column.type.name == 'date')
 				this.timingColumn = column;
 		}
 
@@ -3028,7 +3474,7 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 	}
 });
 
-DataSourceTransformation.types.set('filters', class DataSourceTransformationPivot extends DataSourceTransformation {
+DataSourceTransformation.types.set('filters', class DataSourceTransformationFilters extends DataSourceTransformation {
 
 	async run(response = []) {
 
@@ -3063,7 +3509,90 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationPivo
 	}
 });
 
-DataSourceTransformation.types.set('stream', class DataSourceTransformationPivot extends DataSourceTransformation {
+DataSourceTransformation.types.set('autofill', class DataSourceTransformationAutofill extends DataSourceTransformation {
+
+	async run(response = []) {
+
+		if(!response || !response.length)
+			return response;
+
+		let
+			start = null,
+			end = null;
+
+		if(this.start_filter  && this.source.filters.has(this.start_filter) && this.end_filter && this.source.filters.has(this.end_filter)) {
+
+			start = Date.parse(this.source.filters.get(this.start_filter).value);
+			end = Date.parse(this.source.filters.get(this.end_filter).value);
+		}
+
+		else {
+
+			for(const row of response) {
+
+				if(!start || row[this.column] < start)
+					start = row[this.column];
+
+				if(!end || row[this.column] > end)
+					end = row[this.column];
+			}
+
+			start = Date.parse(start);
+			end = Date.parse(end);
+		}
+
+		if(!start || !end)
+			return response;
+
+		const
+			newResponse = {},
+			mappedResponse = {},
+			step = {
+				number: d => parseFloat(d) + 1,
+				second: d => d + (1000),
+				minute: d => d + (60 * 1000),
+				hour: d => d + (60 * 60 * 1000),
+				date: d => d + (24 * 60 * 60 * 1000),
+				month: d => new Date(d).setMonth(d.getMonth + 1),
+				year: d => new Date(d).setYear(d.getYear + 1),
+			};
+
+		for(const row of response) {
+
+			let key;
+
+			if(this.granularity == 'number')
+				key = parseFloat(row[this.column]);
+
+			else
+				key = Date.parse(row[this.column]);
+
+			mappedResponse[key] = row;
+		}
+
+		while(start <= end) {
+
+			newResponse[start] = {};
+
+			if(start in mappedResponse)
+				newResponse[start] = mappedResponse[start];
+
+			else {
+
+				for(const key in response[0])
+					newResponse[start][key] = this.content;
+
+				newResponse[start][this.column] = start;
+			}
+
+			start = step[this.granularity](start);
+		}
+
+		return Object.values(newResponse);
+	}
+});
+
+DataSourceTransformation.types.set('stream', class DataSourceTransformationStream extends DataSourceTransformation {
 
 	async run(response = []) {
 
@@ -3237,7 +3766,7 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		return response.filter(r => new Date(r.get(timingColumn.key)).getDay() == this.value)
@@ -3253,6 +3782,10 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 	get domain() {
 
 		return new Map([
+			['second', 'Second'],
+			['minute', 'Minute'],
+			['hour', 'Hour'],
+			['day', 'Day'],
 			['week', 'Week'],
 			['month', 'Month'],
 		]);
@@ -3262,25 +3795,50 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		const result = new Map;
 
 		for(const row of response) {
 
-			let period;
+			let
+				period,
+				timing;
 
 			const periodDate = new Date(row.get(timingColumn.key));
 
 			// Week starts from monday, not sunday
-			if(this.value == 'week')
-				period = periodDate.getDay() ? periodDate.getDay() - 1 : 6;
+			if(this.value == 'week') {
+				period = (periodDate.getDay() ? periodDate.getDay() - 1 : 6) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
 
-			else if(this.value == 'month')
-				period = periodDate.getDate() - 1;
+			else if(this.value == 'month') {
+				period = (periodDate.getDate() - 1) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
 
-			const timing = new Date(Date.parse(row.get(timingColumn.key)) - period * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			else if(this.value == 'day') {
+				period = periodDate.getHours() * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
+
+			else if(this.value == 'hour') {
+				period = periodDate.getMinutes() * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13);
+			}
+
+			else if(this.value == 'minute') {
+				period = periodDate.getSeconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16);
+			}
+
+			else if(this.value == 'second') {
+				period = periodDate.getMilliseconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 19);
+			}
+
 
 			if(!result.has(timing)) {
 
@@ -3328,7 +3886,7 @@ DataSourcePostProcessors.processors.set('RollingAverage', class extends DataSour
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		const
@@ -3389,7 +3947,7 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 
 		const timingColumn = this.source.postProcessors.timingColumn;
 
-		if(!timingColumn)
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
 			return response;
 
 		const
@@ -3560,7 +4118,6 @@ class LinearVisualization extends Visualization {
 				continue;
 
 			column.hidden = true;
-			column.disabled = true;
 			column.render();
 		}
 
@@ -3776,7 +4333,7 @@ class LinearVisualization extends Visualization {
 
 				const column = row.source.columns.get(key);
 
-				if(column.disabled)
+				if(column.hidden)
 					continue;
 
 				tooltip.push(`
@@ -4018,7 +4575,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				let rowJson = row.get(key);
 
-				if(column.type == 'html') {
+				if(column.type && column.type.name == 'html') {
 
 					td.innerHTML = row.getTypedValue(key);
 				}
@@ -4240,10 +4797,10 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 				.orient('left');
 
 		if(['s'].includes(this.axes.bottom.format))
-				xAxis.tickFormat(d3.format(this.axes.left.format));
+			xAxis.tickFormat(d3.format(this.axes.left.format));
 
 		if(['s'].includes(this.axes.left.format))
-				yAxis.tickFormat(d3.format(this.axes.left.format));
+			yAxis.tickFormat(d3.format(this.axes.left.format));
 
 		let
 			max = null,
@@ -4279,13 +4836,13 @@ Visualization.list.set('line', class Line extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -4552,13 +5109,13 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -4722,13 +5279,13 @@ Visualization.list.set('scatter', class Scatter extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -4902,13 +5459,13 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -5024,6 +5581,691 @@ Visualization.list.set('bar', class Bar extends LinearVisualization {
 				.attr('height', cell => Math.abs(this.y(cell.y) - this.y(0)))
 				.attr('opacity', 1);
 		}
+	}
+});
+
+Visualization.list.set('linear', class Linear extends LinearVisualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('visualization', 'linear');
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(options = {}) {
+
+		super.render(options);
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch(options);
+
+		await this.render(options);
+	}
+
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		if(!this.axes)
+			this.axes = [];
+
+		this.axes = this.axes.sort((a, b) => a.depth - b.depth);
+		this.axes = this.axes.sort((a, b) => ['top', 'bottom'].includes(a.position) ? -1 : 1);
+
+		this.axes.top = {
+			size: 0,
+		};
+		this.axes.right = {
+			size: 0,
+		};
+		this.axes.bottom = {
+			size: 0,
+		};
+		this.axes.left = {
+			size: 0,
+		};
+
+		for(const axis of this.axes || []) {
+			axis.size = 0;
+			this.axes[axis.position] = axis;
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+	}
+
+	async render(options = {}) {
+
+		await this.draw();
+		await this.plot(options);
+	}
+
+	async draw() {
+
+		const rows = await this.source.response();
+
+		if(!rows || !rows.length)
+			return this.source.error();
+
+		this.rows = rows;
+
+		for(const axis of this.axes)
+			this.axes[axis.position].size = 0;
+
+		for(const axis of this.axes) {
+
+			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
+
+			if(!columns.length)
+				continue;
+
+			this.axes[axis.position].size += axis.position == 'left' ? 50 : axis.top == 'top' ? 20 : 30;
+
+			if(axis.label)
+				this.axes[axis.position].size += 15;
+		}
+
+		this.height = this.container.clientHeight - this.axes.top.size - this.axes.bottom.size - 20;
+		this.width = this.container.clientWidth - this.axes.left.size - this.axes.right.size - 40;
+
+		window.addEventListener('resize', () => {
+
+			const
+				height = this.container.clientHeight - this.axes.top.size - this.axes.bottom.size - 20,
+				width = this.container.clientWidth - this.axes.left.size - this.axes.right.size - 40;
+
+			if(this.width != width || this.height != height) {
+
+				this.width = width;
+				this.height = height;
+
+				this.plot({resize: true});
+			}
+		});
+	}
+
+	async plot(options = {})  {
+
+		const container = d3.selectAll(`#visualization-${this.id}`);
+
+		container.selectAll('*').remove();
+
+		if(!this.rows || !this.rows.length)
+			return;
+
+		this.svg = container
+			.append('svg');
+
+		if(this.zoomedIn) {
+
+			// Reset Zoom Button
+			const resetZoom = this.svg.append('g')
+				.attr('class', 'reset-zoom')
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('rect')
+				.attr('width', 80)
+				.attr('height', 20)
+				.attr('y', 0)
+				.attr('x', (this.width / 2) - 35);
+
+			resetZoom.append('text')
+				.attr('y', 15)
+				.attr('x', (this.width / 2) - 35 + 40)
+				.attr('text-anchor', 'middle')
+				.style('font-size', '12px')
+				.text('Reset Zoom');
+
+			// Click on reset zoom function
+			resetZoom.on('click', async () => {
+				this.rows = await this.source.response();
+				this.zoomedIn = false;
+				this.plot();
+			});
+		}
+
+		const that = this;
+
+		for(const [axisIndex, axis] of this.axes.entries()) {
+
+			const columns = axis.columns.filter(column => this.source.columns.has(column.key) && !this.source.columns.get(column.key).disabled);
+
+			if(!columns.length)
+				continue;
+
+			axis.animate = !options.resize && !axis.dontAnimate && !this.options.dontAnimate;
+
+			if(['top', 'bottom'].includes(axis.position)) {
+
+				const
+					scale = d3.scale.ordinal(),
+					column = [],
+					ticks = [];
+
+				let biggestTick = '';
+
+				for(const row of this.rows) {
+
+					const value = row.getTypedValue(columns[0].key);
+
+					column.push(value);
+
+					if(biggestTick.length < value.length)
+						biggestTick = value;
+				}
+
+				scale.domain(column);
+				scale.rangeBands([0, this.width], 0.1, 0);
+
+				const
+					tickNumber = Math.max(Math.floor(this.container.clientWidth / (biggestTick.length * 12)), 1),
+					tickInterval = parseInt(this.rows.length / tickNumber);
+
+				for(let i = 0; i < column.length; i++) {
+
+					if(!(i % tickInterval))
+						ticks.push(column[i]);
+				}
+
+				// Add the axis scale
+				if(!this.options.hideScales && !axis.hideScale) {
+
+					const d3Axis = d3.svg.axis()
+						.scale(scale)
+						.orient(axis.position);
+
+					d3Axis.tickValues(ticks);
+
+					const g = this.svg
+						.append('g')
+						.attr('class', 'scale ' + axis.position)
+						.call(d3Axis);
+
+					if(axis.position == 'bottom')
+						g.attr('transform', `translate(${this.axes.left.size}, ${this.height})`);
+					else
+						g.attr('transform', `translate(${this.axes.left.size}, ${axis.label ? 45 : 20})`);
+				}
+
+				if(axis.label) {
+
+					const text = this.svg
+						.append('text')
+						.attr('class', 'axis-label')
+						.style('text-anchor', 'middle')
+						.text(axis.label);
+
+					if(axis.position == 'bottom')
+						text.attr('transform', `translate(${(this.width / 2)}, ${this.height + 35})`)
+					else
+						text.attr('transform', `translate(${(this.width / 2)}, 10)`)
+				}
+
+				this.x = scale;
+
+				Object.assign(this.x, axis);
+
+				this.x.column = columns[0].key;
+				continue;
+			}
+
+			if(!this.x)
+				continue;
+
+			const scale = d3.scale.linear().range([this.height, 20]);
+
+			let columnsData = [];
+
+			for(const _column of columns) {
+
+				const column = [];
+
+				Object.assign(column, _column);
+
+				for(const [index, row] of this.rows.entries()) {
+
+					column.push({
+						x: index,
+						y: row.get(column.key),
+					});
+				}
+
+				columnsData.push(column);
+			}
+
+			if(axis.stacked)
+				columnsData = d3.layout.stack()(columnsData);
+
+			// Needed to show multiple columns
+			columns.scale = d3.scale.ordinal();
+			columns.scale.domain(columns.map(column => column.key));
+			columns.scale.rangeBands([0, this.x.rangeBand()]);
+
+			let
+				max = 0,
+				min = 0;
+
+			for(const row of this.rows) {
+
+				let total = 0;
+
+				for(const column of columns) {
+
+					total += parseFloat(row.get(column.key)) || 0;
+					max = Math.max(max, Math.ceil(row.get(column.key)) || 0);
+					min = Math.min(min, Math.floor(row.get(column.key)) || 0);
+				}
+
+				if(axis.stacked)
+					max = Math.max(max, Math.ceil(total) || 0);
+			}
+
+			scale.domain(this.x.position == 'bottom' ? [min, max] : [max, min]).nice();
+
+			if(axis.type == 'line') {
+
+				const
+					line = d3.svg.line()
+						.interpolate(axis.curve || 'linear')
+						.x((_, i) => this.x(this.rows[i].getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.y(d => scale(d.y + (d.y0 || 0)));
+
+				// Appending line in chart
+				this.svg.selectAll('.line-' + axisIndex)
+					.data(columnsData)
+					.enter()
+					.append('g')
+					.attr('class', `${axis.type} ${axis.position} line-${axisIndex}`)
+					.append('path')
+					.attr('class', 'line')
+					.attr('d', column => line(column))
+					.style('stroke', column => this.source.columns.get(column.key).color)
+					.style('stroke-width', axis.lineThickness || 2);
+
+				if(axis.animate) {
+
+					for(const path of this.svg.selectAll('path')[0]) {
+
+						const length = path.getTotalLength();
+
+						path.style.strokeDasharray = `${length} ${length}`;
+						path.style.strokeDashoffset = length;
+						path.getBoundingClientRect();
+
+						path.style.transition  = `stroke-dashoffset ${Page.animationDuration}ms ease-out`;
+						path.style.strokeDashoffset = '0';
+					}
+				}
+			}
+
+			else if(axis.type == 'bar') {
+
+				let bars = this.svg
+					.append('g')
+					.attr('class', `${axis.type} ${axis.position}`)
+					.selectAll('g')
+					.data(columnsData)
+					.enter()
+					.append('g')
+					.style('fill', (column, i) => this.source.columns.get(columns[i].key).color)
+					.attr('transform', column => axis.stacked ? `translate(0, ${this.axes.top.size})` : `translate(${columns.scale(column.key)}, 0)`)
+					.selectAll('rect')
+					.data(column => column)
+					.enter()
+					.append('rect')
+					.on('click', function(_, row, column) {
+						that.source.columns.get(columns[column].key).initiateDrilldown(that.rows[row]);
+						d3.select(this).classed('hover', false);
+					})
+					.on('mouseover', function(_, __, column) {
+						that.hoverColumn = columns[column];
+						d3.select(this).classed('hover', true);
+					})
+					.on('mouseout', function() {
+						that.hoverColumn = null;
+						d3.select(this).classed('hover', false);
+					})
+					.attr('width', axis.stacked ? this.x.rangeBand() : columns.scale.rangeBand())
+					.attr('x', (cell, i) => this.x(this.rows[i].getTypedValue(this.x.column)) + this.axes.left.size);
+
+				if(axis.animate) {
+
+					bars = bars
+						.attr('y', _ => scale(0))
+						.attr('height', 0)
+						.transition()
+						.delay((_, i) => (Page.animationDuration / this.rows.length) * i)
+						.duration(Page.animationDuration)
+						.ease('exp-out');
+				}
+
+				bars
+					.attr('y', d => this.x.position == 'top' ? this.axes.top.size : scale((d.y + (d.y0 || 0)) > 0 ? d.y + (d.y0 || 0) : 0))
+					.attr('height', d => Math.abs(axis.stacked ? this.height - scale(d.y) : scale(d.y) - scale(d.y0 || 0)));
+			}
+
+			else if(axis.type == 'area') {
+
+				const area = d3.svg.area()
+					.interpolate(axis.curve)
+					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
+					.y0(d => scale(0))
+					.y1(d => scale(d.y + (d.y0 || 0)));
+
+				let areas = this.svg
+					.append('g')
+					.attr('class', `${axis.type} ${axis.position}`)
+					.selectAll('g')
+					.data(columnsData)
+					.enter()
+					.append('g')
+					.attr('transform', `translate(${this.axes.left.size}, 0)`)
+					.append('path')
+					.on('mouseover', function(column) {
+						that.hoverColumn = column;
+						d3.select(this).classed('hover', true);
+					})
+					.on('mouseout', function() {
+						that.hoverColumn = null;
+						d3.select(this).classed('hover', false);
+					})
+					.attr('d', column => area(column))
+					.style('fill', (column, i) => this.source.columns.get(columns[i].key).color);
+
+				if(!options.resize) {
+
+					areas = areas
+						.attr('opacity', 0)
+						.transition()
+						.duration(Page.animationDuration)
+						.ease('exp-out');
+				}
+
+				areas.attr('opacity', 0.8);
+			}
+
+			// Append the axis scale
+			if(!this.options.hideScales && !axis.hideScale) {
+
+				const d3Axis = d3.svg.axis()
+					.scale(scale)
+					.innerTickSize(this.width * (axis.position == 'right' ? 1 : -1))
+					.orient(axis.position == 'right' ? 'right' : 'left');
+
+				if(['s'].includes(axis.format))
+					d3Axis.tickFormat(d3.format(axis.format));
+
+				this.svg
+					.append('g')
+					.attr('class', 'scale ' + axis.position)
+					.classed('hide-scale-lines', this.options.hideScaleLines || axis.hideScaleLines)
+					.call(d3Axis)
+					.attr('transform', `translate(${this.axes.left.size}, 0)`);
+			}
+
+			if(axis.label) {
+
+				const text = this.svg
+					.append('text')
+					.attr('class', 'axis-label')
+					.style('text-anchor', 'middle')
+					.text(axis.label);
+
+				if(axis.position == 'right')
+					text.attr('transform', `rotate(90) translate(${(this.height / 2)}, ${(this.axes.left.size + this.width + 50) * -1})`);
+				else
+					text.attr('transform', `rotate(-90) translate(${(this.height / 2 * -1)}, 12)`);
+			}
+
+			// For each line appending the circle at each point
+			if(this.options.showPoints || axis.showPoints) {
+
+				for(const column of columns) {
+
+					let dots = this.svg.selectAll('dot')
+						.data(this.rows)
+						.enter()
+						.append('circle')
+						.attr('class', 'clips')
+						.style('fill', this.source.columns.get(column.key).color)
+						.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
+						.attr('cx', row => this.x(row.get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.attr('cy', row => scale(row.get(column.key)))
+						.on('mouseover', function(_, __, column) {
+							that.hoverColumn = column[1];
+							d3.select(this).classed('hover', true);
+						})
+						.on('mouseout', function() {
+							that.hoverColumn = null;
+							d3.select(this).classed('hover', false);
+						});
+
+					if(axis.animate) {
+
+						dots = dots
+							.attr('r', 0)
+							.transition()
+							.delay((_, i) => (Page.animationDuration / this.x.domain().length) * i)
+							.duration(0)
+							.ease('exp-out');
+					}
+
+					dots.attr('r', 5);
+				}
+			}
+
+			// Show the value of each point in the graph itself
+			if(this.options.showValues || axis.showValues) {
+
+				let points = this.svg
+					.append('g')
+					.selectAll('g')
+					.data(columns)
+					.enter()
+					.append('g')
+					.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
+					.selectAll('text')
+					.data(column => this.rows.map(row => [row, column]))
+					.enter()
+					.append('text')
+					.attr('width', columns.scale.rangeBand())
+					.attr('fill', '#666')
+					.text(([row, column]) => {
+
+						if(['s'].includes(axis.format))
+							return d3.format('.4s')(row.get(column.key));
+
+						else
+							return Format.number(row.get(column.key))
+					})
+					.attr('x', ([row, column]) => {
+
+						let value = Format.number(row.get(column.key));
+
+						if(['s'].includes(axis.format))
+							value = d3.format('.4s')(row.get(column.key));
+
+						return this.x(row.get(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
+					})
+					.attr('y', ([row, column]) => scale(row.get(column.key) > 0 ? row.get(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
+					.attr('height', ([row, column]) => Math.abs(scale(row.get(column.key)) - scale(0)));
+
+				if(axis.animate) {
+
+					points = points
+						.attr('opacity', 0)
+						.transition()
+						.delay((_, i) => (Page.animationDuration / this.x.domain().length) * i)
+						.duration(0)
+						.ease('exp-out');
+				}
+
+				points.attr('opacity', 1);
+			}
+		}
+
+		for(const g of this.svg.selectAll('svg > g')[0] || [])  {
+
+			if(g.classList.contains('scale'))
+				g.parentElement.insertBefore(g, g.parentElement.firstChild);
+		}
+
+		container
+
+		.on('mousemove', function() {
+
+			const mouse = d3.mouse(this);
+
+			if(that.zoomRectangle) {
+
+				const
+					filteredRows = that.rows.filter(row => {
+
+						const item = that.x(row.get(that.x.column)) + 100;
+
+						if(mouse[0] < that.zoomRectangle.origin[0])
+							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+						else
+							return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+					}),
+					width = Math.abs(mouse[0] - that.zoomRectangle.origin[0]);
+
+				// Assign width and height to the rectangle
+				that.zoomRectangle
+					.select('rect')
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]))
+					.attr('width', width)
+					.attr('height', that.height);
+
+				that.zoomRectangle
+					.select('g')
+					.selectAll('*')
+					.remove();
+
+				that.zoomRectangle
+					.select('g')
+					.append('text')
+					.text(`${Format.number(filteredRows.length)} Selected`)
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+					.attr('y', (that.height / 2) - 5);
+
+				if(filteredRows.length) {
+
+					that.zoomRectangle
+						.select('g')
+						.append('text')
+						.text(`${filteredRows[0].get(that.x.column)} - ${filteredRows[filteredRows.length - 1].get(that.x.column)}`)
+						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+						.attr('y', (that.height / 2) + 20);
+				}
+
+				return;
+			}
+
+			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
+
+ 			if(!row || !this.x)
+				return;
+
+			const tooltip = [];
+
+			for(const [key, _] of row) {
+
+				if(key == that.x.column)
+					continue;
+
+				const column = row.source.columns.get(key);
+
+				if(column.disabled)
+					continue;
+
+				tooltip.push(`
+					<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
+						<span class="circle" style="background:${column.color}"></span>
+						<span>
+							${column.drilldown && column.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
+							${column.name}
+						</span>
+						<span class="value">${row.getTypedValue(key)}</span>
+					</li>
+				`);
+			}
+
+			const content = `
+				<header>${row.getTypedValue(that.x.column)}</header>
+				<ul class="body">
+					${tooltip.reverse().join('')}
+				</ul>
+			`;
+
+			Tooltip.show(that.container, mouse, content, row);
+		})
+
+		.on('mouseleave', function() {
+			Tooltip.hide(that.container);
+		})
+
+		.on('mousedown', function() {
+
+			Tooltip.hide(that.container);
+
+			if(that.zoomRectangle)
+				return;
+
+			that.zoomRectangle = container.select('svg').append('g');
+
+			that.zoomRectangle
+				.attr('class', 'zoom')
+				.style('text-anchor', 'middle')
+				.append('rect')
+				.attr('class', 'zoom-rectangle');
+
+			that.zoomRectangle
+				.append('g');
+
+			that.zoomRectangle.origin = d3.mouse(this);
+		})
+
+		.on('mouseup', function() {
+
+			if(!that.zoomRectangle)
+				return;
+
+			that.zoomRectangle.remove();
+
+			const
+				mouse = d3.mouse(this),
+				filteredRows = that.rows.filter(row => {
+
+					const item = that.x(row.get(that.x.column)) + 100;
+
+					if(mouse[0] < that.zoomRectangle.origin[0])
+						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
+					else
+						return item <= mouse[0] && item >= that.zoomRectangle.origin[0];
+				});
+
+			that.zoomRectangle = null;
+
+			if(!filteredRows.length)
+				return;
+
+			that.rows = filteredRows;
+			that.zoomedIn = true;
+
+			that.plot();
+		}, true);;
 	}
 });
 
@@ -5335,19 +6577,19 @@ Visualization.list.set('dualaxisbar', class DualAxisBar extends LinearVisualizat
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(bottomAxis);
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(leftAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(rightAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
@@ -5712,13 +6954,13 @@ Visualization.list.set('stacked', class Stacked extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -5919,6 +7161,9 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 				if(this.source.columns.get(name).disabled)
 					continue;
 
+				if(this.source.columns.get(name).hidden)
+					continue;
+
 				total += parseFloat(value) || 0;
 				min = Math.min(min, Math.floor(value) || 0);
 			}
@@ -5946,13 +7191,13 @@ Visualization.list.set('area', class Area extends LinearVisualization {
 
 		this.svg
 			.append('g')
-			.attr('class', 'y axis')
+			.attr('class', 'y scale')
 			.call(yAxis)
 			.attr('transform', `translate(${this.axes.left.width}, 0)`);
 
 		this.svg
 			.append('g')
-			.attr('class', 'x axis')
+			.attr('class', 'x scale')
 			.attr('transform', `translate(${this.axes.left.width}, ${this.height})`)
 			.call(xAxis);
 
@@ -6889,7 +8134,7 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 
 		const [response] = await this.source.response();
 
-		if(!this.options.column)
+		if(!this.options || !this.options.column)
 			return this.source.error('Value column not selected.');
 
 		if(!response)
@@ -6900,6 +8145,8 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 	}
 
 	async render(options = {}) {
+		if(!this.options)
+			return;
 
 		const [response] = await this.source.response();
 
@@ -7092,7 +8339,11 @@ Visualization.list.set('livenumber', class LiveNumber extends Visualization {
 
 			container.insertAdjacentHTML('beforeend', `
 				<div class="left">
-					<h6 class="percentage ${this.getColor(this.left.percentage)}">${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}</h6>
+					<h6 class="percentage ${this.getColor(this.left.percentage)}">
+						${this.options.changePrefix || ''}
+						${this.left.percentage ? Format.number(this.left.percentage) + '%' : '-'}
+						${this.options.changePostfix || ''}
+					</h6>
 					<span class="value">
 						<span class="value-left">${this.dates.get(this.left.date) ? this.dates.get(this.left.date).getTypedValue(this.options.valueColumn) : ''}</span><br>
 						<small title="${Format.date(this.left.date)}">
@@ -7305,7 +8556,7 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 		super.render(options);
 
-		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+		this.container.innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
 		await this.source.fetch(options);
 
@@ -7864,7 +9115,11 @@ class ReportLogs extends Set {
 
 		container.innerHTML = `
 			<div class="list">
+				<h3>${this.ownerName.slice(0,1).toUpperCase() + this.ownerName.slice(1)} History</h3>
 				<ul></ul>
+				<div class="loading">
+					<span><i class="fa fa-spinner fa-spin"></i></span>
+				</div>
 				<div class="footer hidden">
 					<span class="more">
 						<i class="fa fa-angle-down"></i>
@@ -7895,8 +9150,7 @@ class ReportLogs extends Set {
 
 	async load() {
 
-		this.container.querySelector('.list ul').innerHTML = '<li class="loading"><span><i class="fa fa-spinner fa-spin"></i></span></li>';
-		this.container.querySelector('.list .footer').classList.add('hidden');
+		this.container.querySelector('.list .loading').classList.remove('hidden');
 
 		const
 			parameters = {
@@ -7922,12 +9176,9 @@ class ReportLogs extends Set {
 		if(!this.size) {
 
 			logList.innerHTML = '<li class="NA block">No Report History Available</li>';
+			this.container.querySelector('.list .loading').classList.add('hidden');
 			return;
 		}
-
-		this.container.querySelector('.list .footer').classList.remove('hidden');
-
-		logList.textContent = null;
 
 		this.container.querySelector('.list .footer .more').classList.remove('hidden');
 		this.container.querySelector('.info').classList.add('hidden');
@@ -7935,8 +9186,13 @@ class ReportLogs extends Set {
 
 		for(const log of this.values()) {
 
+			if(logList.contains(log.container))
+				continue;
+
 			logList.appendChild(log.container);
 		}
+
+		this.container.querySelector('.list .loading').classList.add('hidden');
 
 		if(this.currentResponse.length < 10) {
 
@@ -7944,6 +9200,7 @@ class ReportLogs extends Set {
 		}
 
 		this.container.querySelector('.list .showing').textContent = `Showing: ${this.size}`;
+		this.container.querySelector('.list .footer').classList.remove('hidden');
 	}
 
 	toggle(condition) {
@@ -7979,8 +9236,8 @@ class ReportLog {
 
 		container.innerHTML = `
 			<span class="clock"><i class="fa fa-history"></i></span>
-			<span class="timing">${Format.dateTime(this.created_at)}</span>
-			<a href="/user/profile/${this.updated_by}" target="_blank">${this.user_name}</a>
+			<span class="timing" title="${Format.dateTime(this.created_at)}">${(this.operation == 'insert'? 'Created ' : 'Updated ') + Format.ago(this.created_at)}</span>
+			<a href="/user/profile/${this.user_id}" target="_blank">${this.user_name}</a>
 		`;
 
 		container.on('click', () => this.load());
