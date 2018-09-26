@@ -8641,14 +8641,12 @@ SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 
 	plot() {
 
-		if(this.heatmap.getMap()) {
-
-			this.heatmap.setData(this.markers);
-			return;
-		}
-
 		this.heatmap.setData(this.markers);
-		this.heatmap.setMap(this.layers.visualization.map);
+
+		if(!this.heatmap.getMap()) {
+
+			this.heatmap.setMap(this.layers.visualization.map);
+		}
 	}
 
 	clear() {
