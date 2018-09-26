@@ -207,7 +207,7 @@ class DataSource {
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
 
-					<span class="documentation-api">
+					<span class="api-documentation">
 						<span>&nbsp;</span>
 						<a>API documentation</a>
 					</span>
@@ -218,7 +218,7 @@ class DataSource {
 
 		const menuToggle = container.querySelector('header .menu-toggle');
 
-		container.querySelector('.documentation-api').on('click', async () => {
+		container.querySelector('.api-documentation').on('click', async () => {
 
 			if(this.apiDocumentationDialogueBox)
 				return this.apiDocumentationDialogueBox.show();
