@@ -3504,7 +3504,7 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 			start = null,
 			end = null;
 
-		if(0 && this.start_filter  && this.source.filters.has(this.start_filter) && this.end_filter && this.source.filters.has(this.end_filter)) {
+		if(this.start_filter  && this.source.filters.has(this.start_filter) && this.end_filter && this.source.filters.has(this.end_filter)) {
 
 			start = Date.parse(this.source.filters.get(this.start_filter).value);
 			end = Date.parse(this.source.filters.get(this.end_filter).value);
