@@ -147,6 +147,66 @@ exports.test = class extends API {
 	}
 }
 
+exports.reportsData = class extends API {
+
+	async reportsData({id, viewId, startDate, endDate} = {}) {
+
+		// this.user.privilege.needs('connection.list');
+
+		const [oAuthProvider] = await this.mysql.query(
+			`SELECT
+				c.id connection_id,
+				p.*
+			FROM
+				tb_oauth_connections c
+			JOIN
+				tb_oauth_providers p USING (provider_id)
+			WHERE
+				c.id = ? AND
+				c.user_id = ? AND
+				c.status = 1`,
+			[id, 1]
+		);
+
+		this.assert(oAuthProvider, 'Invalid connection id');
+
+		let connection;
+
+		if(oAuthProvider.type == 'Google') {
+
+			connection =  new GoogleAPIs(this, oAuthProvider);
+		}
+
+		this.assert(connection, 'Invalid provider type!');
+
+		await connection.validate();
+
+		const
+			[oAuthConnection] = await this.mysql.query('SELECT * FROM WHERE id = ?', [id]),
+			options = {
+				method: 'POST',
+				body: {
+					'reportRequests': [
+						{
+							'viewId': viewId,
+							'dateRanges': [{'startDate': startDate, 'endDate': endDate}],
+							'metrics': [{'expression': 'ga:users'}]
+						}
+					]
+				},
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+					'access_token': oAuthConnection.access_token
+				},
+			},
+			response = await fetch('https://analyticsreporting.googleapis.com/v4/reports:batchGet', options);
+
+
+		return response;
+
+	}
+}
+
 class OAuthConnection {
 
 	constructor(endpoint, provider) {
