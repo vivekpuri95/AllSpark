@@ -4834,8 +4834,7 @@ class ReportTransformations extends Set {
 		container.innerHTML = `
 			<h3>
 				<i class="fas fa-angle-right"></i> Transformations
-				<button id="transformations-preview" title="preview"><i class="fas fa-eye"></i></button>
-				<span class="count transformation"></span>
+				<span class="count"></span>
 			</h3>
 			<div class="body">
 				<div class="list"></div>
@@ -4858,19 +4857,10 @@ class ReportTransformations extends Set {
 				</form>
 			</div>`;
 
-		const
-			preview = container.querySelector('h3 #transformations-preview'),
-			select = this.container.querySelector('.add-transformation select');
+		const select = this.container.querySelector('.add-transformation select');
 
 		for(const [key, type] of ReportTransformation.types)
-			select.insertAdjacentHTML('beforeend', `<option value="${key}">${new type({}, this.stage).name}</option>`);
-
-		preview.removeEventListener('click', ReportTransformations.previewListener);
-
-		preview.on('click', ReportTransformations.previewListener = e => {
-			e.stopPropagation();
-			this.preview();
-		});
+			select.insertAdjacentHTML('beforeend', `<option value="${key}">${new type({}, this).name}</option>`);
 
 		this.container.querySelector('.add-transformation').on('submit', e => this.insert(e));
 
@@ -4894,7 +4884,7 @@ class ReportTransformations extends Set {
 		for(const transformation of this.visualization.options.transformations || []) {
 
 			if(ReportTransformation.types.has(transformation.type))
-				this.add(new (ReportTransformation.types.get(transformation.type))(transformation, this.stage));
+				this.add(new (ReportTransformation.types.get(transformation.type))(transformation, this));
 		}
 	}
 
@@ -4969,7 +4959,7 @@ class ReportTransformations extends Set {
 
 		const type = this.container.querySelector('.add-transformation select').value;
 
-		this.add(new (ReportTransformation.types.get(type))({type}, this.stage));
+		this.add(new (ReportTransformation.types.get(type))({type}, this));
 
 		this.render();
 		this.preview();
@@ -4978,12 +4968,54 @@ class ReportTransformations extends Set {
 
 class ReportTransformation {
 
-	constructor(transformation, stage) {
+	constructor(transformation, transformations) {
 
-		this.stage = stage;
+		this.transformations = transformations;
+		this.stage = this.transformations.stage;
 		this.page = this.stage.page;
 
 		Object.assign(this, transformation);
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('fieldset');
+
+		container.classList.add('subform', 'form');
+
+		container.innerHTML = `
+			<div class="actions">
+				<!--<div class="disabled" title="Disable Transformation"><i class="fas fa-ban"></i></div>-->
+				<div class="preview" title="Preview Data"><i class="fas fa-eye"></i></div>
+				<div class="remove" title="Remove Transformation"><i class="fa fa-times"></i></div>
+			</div>
+			<legend>${this.name}</legend>
+			<div class="transformation ${this.key}"></div>
+		`;
+
+		// container.classList.toggle('disabled', this.disabled);
+
+		// container.querySelector('.actions .disabled').on('click', () => {
+		// 	this.disabled = !this.disabled;
+		// 	this.transformations.render();
+		// 	this.transformations.preview();
+		// });
+
+		container.querySelector('.actions .preview').on('click', () => {
+			this.transformations.render();
+			this.transformations.preview();
+		});
+
+		container.querySelector('.actions .remove').on('click', () => {
+			this.transformations.delete(this);
+			this.transformations.render();
+			this.transformations.preview();
+		});
+
+		return container;
 	}
 }
 
@@ -4995,6 +5027,10 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 		return 'Pivot Table';
 	}
 
+	get key() {
+		return 'pivot';
+	}
+
 	get container() {
 
 		if(this.containerElement)
@@ -5004,12 +5040,10 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 			return;
 
 		const
-			container = this.containerElement = document.createElement('fieldset'),
+			container = super.container.querySelector('.transformation'),
 			rows = document.createElement('div'),
 			columns = document.createElement('div'),
 			values = document.createElement('div');
-
-		container.classList.add('subform', 'form');
 
 		rows.classList.add('rows');
 		columns.classList.add('columns');
@@ -5052,24 +5086,17 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		values.appendChild(addValue);
 
-		container.innerHTML	= `
-			<legend>${this.name}</legend>
-			<div class="transformation pivot"></div>
-		`;
+		container.appendChild(rows);
+		container.appendChild(columns);
+		container.appendChild(values);
 
-		const transformation = container.querySelector('.transformation');
-
-		transformation.appendChild(rows);
-		transformation.appendChild(columns);
-		transformation.appendChild(values);
-
-		return container;
+		return super.container;
 	}
 
 	get json() {
 
 		const response = {
-			type: 'pivot',
+			type: this.key,
 			rows: [],
 			columns: [],
 			values: [],
@@ -5193,6 +5220,10 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 		return 'Filters';
 	}
 
+	get key() {
+		return 'filters';
+	}
+
 	get container() {
 
 		if(this.containerElement)
@@ -5202,10 +5233,8 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 			return;
 
 		const
-			container = this.containerElement = document.createElement('fieldset'),
+			container = super.container.querySelector('.transformation'),
 			filters = document.createElement('div');
-
-		container.classList.add('subform', 'form');
 
 		filters.classList.add('filters');
 
@@ -5220,20 +5249,15 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 		filters.appendChild(addFilter);
 
-		container.innerHTML	= `
-			<legend>${this.name}</legend>
-			<div class="transformation filters"></div>
-		`;
+		container.appendChild(filters);
 
-		container.querySelector('.transformation').appendChild(filters);
-
-		return container;
+		return super.container;
 	}
 
 	get json() {
 
 		const response = {
-			type: 'filters',
+			type: this.key,
 			filters: [],
 		};
 
@@ -5297,6 +5321,10 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 		return 'Auto Fill';
 	}
 
+	get key() {
+		return 'autofill';
+	}
+
 	get container() {
 
 		if(this.containerElement)
@@ -5305,52 +5333,49 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 		if(!this.page.preview.report.originalResponse)
 			return;
 
-		const container = this.containerElement = document.createElement('fieldset');
+		const container = super.container.querySelector('.transformation');
 
-		container.classList.add('subform', 'form');
+		container.classList.add('autofill')
 
-		container.innerHTML	= `
-			<legend>${this.name}</legend>
-			<div class="transformation autofill">
+		container.insertAdjacentHTML('beforeend', `
 
-				<label>
-					<span>Column</span>
-					<select name="column"></select>
-				</label>
+			<label>
+				<span>Column</span>
+				<select name="column"></select>
+			</label>
 
-				<label>
-					<span>Granularity</span>
-					<select name="granularity">
-						<option value="number">Number</option>
-						<option value="second">Second</option>
-						<option value="minute">Minute</option>
-						<option value="hour">Hour</option>
-						<option value="date">Date</option>
-						<option value="month">Month</option>
-						<option value="year">Year</option>
-					</select>
-				</label>
+			<label>
+				<span>Granularity</span>
+				<select name="granularity">
+					<option value="number">Number</option>
+					<option value="second">Second</option>
+					<option value="minute">Minute</option>
+					<option value="hour">Hour</option>
+					<option value="date">Date</option>
+					<option value="month">Month</option>
+					<option value="year">Year</option>
+				</select>
+			</label>
 
-				<label>
-					<span>Fill With</span>
-					<input type="text" name="content" value="${this.content || ''}">
-				</label>
+			<label>
+				<span>Fill With</span>
+				<input type="text" name="content" value="${this.content || ''}">
+			</label>
 
-				<label>
-					<span>Start Filter</span>
-					<select name="start_filter">
-						<option value=""></option>
-					</select>
-				</label>
+			<label>
+				<span>Start Filter</span>
+				<select name="start_filter">
+					<option value=""></option>
+				</select>
+			</label>
 
-				<label>
-					<span>End Filter</span>
-					<select name="end_filter">
-						<option value=""></option>
-					</select>
-				</label>
-			</div>
-		`;
+			<label>
+				<span>End Filter</span>
+				<select name="end_filter">
+					<option value=""></option>
+				</select>
+			</label>
+		`);
 
 		const
 			column = container.querySelector('select[name=column]'),
@@ -5371,13 +5396,13 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 		startFilter.value = this.start_filter || '';
 		endFilter.value = this.end_filter || '';
 
-		return container;
+		return super.container;
 	}
 
 	get json() {
 
 		return {
-			type: 'autofill',
+			type: this.key,
 			column: this.container.querySelector('[name=column]').value,
 			granularity: this.container.querySelector('[name=granularity]').value,
 			content: this.container.querySelector('[name=content]').value,
@@ -5393,6 +5418,10 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 		return 'Stream';
 	}
 
+	get key() {
+		return 'stream';
+	}
+
 	get container() {
 
 		if(this.containerElement)
@@ -5402,12 +5431,10 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 			return;
 
 		const
-			container = this.containerElement = document.createElement('fieldset'),
+			container = super.container.querySelector('.transformation'),
 			joins = document.createElement('div'),
 			columns = document.createElement('div'),
 			reports = [];
-
-		container.classList.add('subform', 'form');
 
 		joins.classList.add('joins');
 		columns.classList.add('columns');
@@ -5438,17 +5465,12 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 		columns.appendChild(addColumn);
 
 		container.innerHTML	= `
-			<legend>${this.name}</legend>
-			<div class="transformation stream">
-				<div class="visualization">
-					<h4>Columns</h4>
-				</div>
+			<div class="visualization">
+				<h4>Columns</h4>
 			</div>
 		`;
 
-		const
-			transformation = container.querySelector('.transformation'),
-			datalist = [];
+		const datalist = [];
 
 		for(const [index, report] of DataSource.list.entries()) {
 
@@ -5469,17 +5491,17 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 
 		this.visualizations.value = this.visualization_id;
 
-		transformation.querySelector('.visualization').appendChild(this.visualizations.container);
-		transformation.appendChild(joins);
-		transformation.appendChild(columns);
+		container.querySelector('.visualization').appendChild(this.visualizations.container);
+		container.appendChild(joins);
+		container.appendChild(columns);
 
-		return container;
+		return super.container;
 	}
 
 	get json() {
 
 		const response = {
-			type: 'stream',
+			type: this.key,
 			visualization_id: this.visualizations.value[0],
 			joins: [],
 			columns: [],

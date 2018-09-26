@@ -1127,17 +1127,17 @@ class DataSourceFilter {
 				name: 'Yesterday',
 			},
 			{
-				start: -7,
+				start: -6,
 				end: 0,
 				name: 'Last 7 Days',
 			},
 			{
-				start: -30,
+				start: -29,
 				end: 0,
 				name: 'Last 30 Days',
 			},
 			{
-				start: -90,
+				start: -89,
 				end: 0,
 				name: 'Last 90 days',
 			},
@@ -1213,7 +1213,7 @@ class DataSourceFilter {
 			input.value = this.value;
 		}
 
-		container.innerHTML = `<span>${this.name}<span>`;
+		container.innerHTML = `<span>${this.name}</span>`;
 		container.appendChild(input);
 
 		// Timing of this is critical

@@ -547,57 +547,91 @@ main.preview-left #stages {
 		display: flex;
 		flex-direction: column;
 	}
-	.visualization-form #transformations-preview {
-		height: 15px;
-		margin-left: auto;
-		display: flex;
-		align-items: center;
-		padding: 0 10px;
-		font-size: 70%;
+	.visualization-form .transformations .list {
+		display: grid;
+		grid-gap: calc(var--gap) * 2);
 	}
-		.visualization-form #transformations-preview svg {
-			margin: 0;
+		.visualization-form .transformations fieldset {
+			position: relative;
 		}
-	.visualization-form .transformations {
-	}
-		.visualization-form .transformations .transformation {
-			display: grid;
-			grid-template-columns: 1fr 1fr 1fr;
-			grid-gap: calc(var(--gap) * 2);
-			align-items: flex-start;
+		.visualization-form .transformations fieldset.disabled {
+			opacity: 0.6;
+			background: #ccc;
 		}
-			.visualization-form .transformations .transformation > div {
-				display: grid;
-				grid-template-columns: 1fr;
-				grid-gap: calc(var(--gap) * 2);
+			.visualization-form .transformations fieldset > .actions {
+				position: absolute;
+				right: 0;
+				top: 11px;
+				border-top-right-radius: 3px;
+				font-size: 90%;
+				display: flex;
 			}
-				.visualization-form .transformations .transformation h4 {
-					margin: 0;
-					border-bottom: 1px dashed #ccc;
-					padding-bottom: var(--gap);
-					font-size: 90%;
+				.visualization-form .transformations fieldset > .actions > div {
+					cursor: pointer;
+					padding: 5px 8px;
+					color: #666;
+					transition: color var(--transition-duration),
+								background var(--transition-duration),
+								box-shadow var(--transition-duration);
 				}
+				.visualization-form .transformations fieldset > .actions > div:last-child {
+					border-top-right-radius: 3px;
+				}
+				.visualization-form .transformations fieldset > .actions > div:hover {
+					background: #ddd;
+					color: inherit;
+				}
+				.visualization-form .transformations fieldset > .transformation.disabled .actions > div.disabled {
+					background: #ccc;
+				}
+				.visualization-form .transformations fieldset > .actions > div.remove:hover {
+					color: var(--color-red);
+				}
+				.visualization-form .transformations fieldset > .actions > div:active {
+					box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
+				}
+			.visualization-form .transformations .transformation {
+				display: grid;
+				grid-template-columns: 1fr 1fr 1fr;
+				grid-gap: calc(var(--gap) * 2);
+				align-items: flex-start;
+			}
+				.visualization-form .transformations .transformation > div {
+					display: grid;
+					grid-template-columns: 1fr;
+					grid-gap: calc(var(--gap) * 2);
+				}
+					.visualization-form .transformations .transformation h4 {
+						margin: 0;
+						border-bottom: 1px dashed #ccc;
+						padding-bottom: var(--gap);
+						font-size: 90%;
+					}
 
-			.visualization-form .transformations .transformation .form-row {
-				display: grid;
-				grid-auto-flow: column;
-				grid-gap: calc(var(--gap) * 2);
-			}
-			.visualization-form .transformations .transformation .form-row button svg {
-				margin: 0;
-			}
-				.visualization-form .transformations .transformation input[type=text] {
-					width: 100px;
+				.visualization-form .transformations .transformation .form-row {
+					display: grid;
+					grid-auto-flow: column;
+					grid-gap: calc(var(--gap) * 2);
 				}
-			.visualization-form .transformations .transformation button {
-				white-space: nowrap;
-			}
-			.visualization-form .transformations .transformation.stream .joins,
-			.visualization-form .transformations .transformation.stream .columns {
-				grid-row: 2;
-			}
+				.visualization-form .transformations .transformation .form-row button svg {
+					margin: 0;
+				}
+					.visualization-form .transformations .transformation input[type=text] {
+						width: 100px;
+					}
+				.visualization-form .transformations .transformation button {
+					white-space: nowrap;
+				}
+				.visualization-form .transformations .transformation.stream .joins,
+				.visualization-form .transformations .transformation.stream .columns {
+					grid-row: 2;
+				}
 	#stage-configure-visualization .dashboards {
 	}
+		#stage-configure-visualization .list {
+			display: grid;
+			grid-gap: calc(var(--gap) * 2);
+		}
 		#stage-configure-visualization .dashboards .form {
 			grid-template-columns: repeat(5, max-content);
 			grid-gap: calc(var(--gap) * 2);
@@ -642,10 +676,6 @@ main.preview-left #stages {
 		margin-left: auto;
 		font-weight: normal;
 		letter-spacing: 0.25px;
-	}
-	.visualization-form .configuration-section h3 .count.transformation {
-		margin-left: 3px;
-		display: flex;
 	}
 	.visualization-form .configuration-section fieldset .form {
 		box-shadow: none;
