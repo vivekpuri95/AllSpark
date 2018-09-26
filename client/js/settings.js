@@ -632,7 +632,10 @@ class SettingsAccount {
 
 		this.page.container.querySelector('#accounts-form h1').textContent = `Editing ${this.name}`;
 
+		this.icon ? this.form.querySelector('#icon').classList.remove('hidden') : this.form.querySelector('#icon').classList.add('hidden');
 		this.form.querySelector('#icon').src = this.icon;
+
+		this.logo ? this.form.querySelector('#logo').classList.remove('hidden') : this.form.querySelector('#logo').classList.add('hidden');
 		this.form.querySelector('#logo').src = this.logo;
 
 		for(const input of this.form.elements) {
