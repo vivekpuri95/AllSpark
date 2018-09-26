@@ -7858,14 +7858,15 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		this.rows = await this.source.response();
 
-		if(!this.map)
-			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {
-				zoom,
-				center: {
-					lat: this.options.centerLatitude || parseFloat(this.rows[0].get(this.options.layers[0].latitudeColumn)),
-					lng: this.options.centerLongitude || parseFloat(this.rows[0].get(this.options.layers[0].longitudeColumn))
-				}
-			});
+		if(!this.map) {
+
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {zoom});
+		}
+
+		this.map.setCenter({
+			lat: this.options.centerLatitude || parseFloat(this.rows[0].get(this.options.layers[0].latitudeColumn)),
+			lng: this.options.centerLongitude || parseFloat(this.rows[0].get(this.options.layers[0].longitudeColumn))
+		});
 
 		this.map.set('styles', this.themes.get(this.options.theme).config || []);
 
@@ -8640,8 +8641,11 @@ SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 
 	plot() {
 
-		if(this.heatmap.getMap())
+		if(this.heatmap.getMap()) {
+
+			this.heatmap.setData(this.markers);
 			return;
+		}
 
 		this.heatmap.setData(this.markers);
 		this.heatmap.setMap(this.layers.visualization.map);
@@ -8681,8 +8685,13 @@ SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer
 
 	plot() {
 
-		if(this.clusterer)
+		if(this.clusterer) {
+
+			this.clusterer.clearMarkers();
+			this.clusterer.addMarkers(this.markers);
+
 			return;
+		}
 
 		this.clusterer = new MarkerClusterer(this.layers.visualization.map, this.markers, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
 	}
@@ -8737,9 +8746,6 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 	}
 
 	get markers() {
-
-		if(this.existingMarkers)
-			return this.existingMarkers;
 
 		const markers = this.existingMarkers = [];
 
@@ -8823,9 +8829,6 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 	}
 
 	get markers() {
-
-		if(this.existingMarkers)
-			return this.existingMarkers;
 
 		const
 			markers = this.existingMarkers = [],

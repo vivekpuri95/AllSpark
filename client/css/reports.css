@@ -900,10 +900,10 @@ main .dataset {
 		}
 		.visualization.spatial-map .columns-toggle {
 			background: #fff;
-			height: 28px;
-			width: 28px;
+			height: 40px;
+			width: 40px;
 			position: absolute;
-			bottom: 128px;
+			bottom: 175px;
 			right: 10px;
 			border-radius: 2px;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
@@ -916,7 +916,7 @@ main .dataset {
 				align-items: center;
 				justify-content: center;
 				color: #666;
-				font-size: 18px;
+				font-size: 22px;
 			}
 			.visualization.spatial-map .columns-toggle .columns {
 				bottom: 100%;
