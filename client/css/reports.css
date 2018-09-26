@@ -1289,7 +1289,7 @@ main .dataset {
 			max-width: none;
 			margin: 0;
 		}
-			.column-form label.disable-max {
+			.column-form label.disable-column {
 				max-width: max-content;
 			}
 			.column-form label .category-group {
