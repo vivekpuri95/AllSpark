@@ -1867,7 +1867,7 @@ class DataSourceColumn {
 				<input type="text" name="postfix">
 			</label>
 
-			<label>
+			<label class="disable-max">
 				<span><input type="checkbox" name="disabled"> <span>Disabled</span></span>
 			</label>
 

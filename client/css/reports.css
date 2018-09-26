@@ -1289,6 +1289,9 @@ main .dataset {
 			max-width: none;
 			margin: 0;
 		}
+			.column-form label.disable-max {
+				max-width: max-content;
+			}
 			.column-form label .category-group {
 				display: grid;
 				grid-template-columns: 1fr 1.5fr max-content;
