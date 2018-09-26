@@ -561,7 +561,13 @@ DataConnection.types.set('mysql', class {
 		`;
 
 		connections.form.querySelector('#showpassword').on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+
+			if(connections.form.password.value) {
+
+				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
+				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
 	}
 
@@ -612,7 +618,13 @@ DataConnection.types.set('mssql', class {
 		`;
 
 		connections.form.querySelector('#showpassword').on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password' : 'text';
+
+			if(connections.form.password.value) {
+
+				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
+				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
 	}
 
@@ -663,7 +675,13 @@ DataConnection.types.set('pgsql', class {
 		`;
 
 		connections.form.querySelector('#showpassword').on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+
+			if(connections.form.password.value) {
+
+				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
+				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
 	}
 
@@ -693,7 +711,7 @@ DataConnection.types.set('oracle', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
+				<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span>
 				<input type="password" autocomplete="off" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -709,8 +727,15 @@ DataConnection.types.set('oracle', class {
 		`;
 
 		connections.form.querySelector('#showpassword').on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+
+			if(connections.form.password.value) {
+
+				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
+				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
+
 	}
 
 	static get details() {
@@ -798,7 +823,13 @@ DataConnection.types.set('mongo', class {
 		`;
 
 		connections.form.querySelector('#showpassword').on('click', () => {
-			connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+
+			if(connections.form.password.value) {
+
+				connections.form.querySelector('#showpassword').textContent = connections.form.querySelector('#showpassword').textContent == 'Show' ? 'Hide' : 'Show';
+				connections.form.querySelector('#showpassword').dataset.tooltip = connections.form.querySelector('#showpassword').dataset.tooltip == 'Show Password' ? 'Hide Password' : 'Show Password';
+				connections.form.password.type = connections.form.password.type == 'text' ? 'password': 'text';
+			}
 		});
 	}
 
