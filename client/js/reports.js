@@ -207,9 +207,9 @@ class DataSource {
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
 
-					<span class="api-documentation">
+					<span>
 						<span>&nbsp;</span>
-						<a>API documentation</a>
+						<a class="api-documentation">API documentation</a>
 					</span>
 				</div>
 				<div class="close">&times;</div>
@@ -242,12 +242,12 @@ class DataSource {
 
 			this.apiDocumentationDialogueBox.body.innerHTML = `
 
-				<h4>Url</h4>
-				<div class="url">${location.origin}/api/v2/reports/engine/report</div>
+				<h4>Endpoint</h4>
+				<pre class="url">${location.origin}/api/v2/reports/engine/report</pre>
 
 				<h4>Required Parameters</h4>
 				<p class="NA">The parameters needed to fetch data from a report.</p>
-				<table>
+				<table class="static">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -281,7 +281,7 @@ class DataSource {
 
 				<h4>Report Parameters</h4>
 				<p class="NA">Report specific parameters that usually filter the data.</p>
-				<table class="report-parameter">
+				<table class="report-parameter static">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -296,9 +296,11 @@ class DataSource {
 					<tbody></tbody>
 				</table>
 
-				<h4>Result Url</h4>
-				<div class="url">${location.origin}/api/v2/reports/engine/report?${resultUrl}</div>
+				<h4>Request Url</h4>
+				<pre class="request url"></pre>
 			`;
+
+			this.apiDocumentationDialogueBox.body.querySelector('.request.url').textContent = `${location.origin}/api/v2/reports/engine/report?${resultUrl}`;
 
 			const tbody = this.apiDocumentationDialogueBox.body.querySelector('.report-parameter tbody');
 
@@ -323,7 +325,7 @@ class DataSource {
 				};
 			}
 			else {
-				tbody.innerHTML = '<tr><td colspan="6">No Filters Found</td></tr>';
+				tbody.innerHTML = '<tr><td class="NA" colspan="6">No Filters Found</td></tr>';
 			}
 
 			this.apiDocumentationDialogueBox.show();
