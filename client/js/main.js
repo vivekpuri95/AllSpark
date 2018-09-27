@@ -2298,7 +2298,7 @@ class MultiSelect {
 
 class ObjectRoles {
 
-	constructor(owner, owner_id, allowedTargets = []) {
+	constructor(owner, owner_id, allowedTargets = [], allowMultiple = true) {
 
 		this.targets = {
 			user: {
@@ -2308,26 +2308,42 @@ class ObjectRoles {
 				subtitle: 'email',
 				data: [],
 				ignore_categories: true,
+				actual_target: 'user',
+				multiple: false,
 			},
 
 			role: {
-				API: 'roles/list',
+				API: 'category/list',
 				name_fields: ['name'],
-				value_field: 'role_id',
+				value_field: 'category_id',
 				data: [],
+				actual_target: 'category',
+				multiple: true,
+				is_category: true,
+				target_field: 'category_id',
+				editable: true,
 			},
 		};
+
+		if (!allowMultiple) {
+
+			for (const target in this.targets) {
+
+				this.targets[target].multiple = false;
+				this.targets[target].editable = false;
+			}
+		}
 
 		this.owner = owner;
 		this.ownerId = owner_id;
 		this.allowedTargets = new Set(allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets));
 
-		if(!user.privileges.has('user.list')) {
+		if (!user.privileges.has('user.list')) {
 
 			this.allowedTargets.delete('user')
 		}
 
-		if(!(user.privileges.has('user.list') || user.privileges.has('visualization.list') || user.privileges.has('report.insert') || user.privileges.has('report.update'))) {
+		if (!(user.privileges.has('user.list') || user.privileges.has('visualization.list') || user.privileges.has('report.insert') || user.privileges.has('report.update'))) {
 
 			this.allowedTargets.delete('role')
 		}
@@ -2340,16 +2356,31 @@ class ObjectRoles {
 
 		this.data = [];
 
+		const [role] = [...MetaData.roles.values()].filter(x => x.is_admin);
+
+		this.role = role.role_id;
+
 		const listRequestParams = new URLSearchParams();
 
 		listRequestParams.append('owner', this.owner);
 		listRequestParams.append('owner_id', this.ownerId);
 
 		for (const target of this.allowedTargets) {
+
 			listRequestParams.append('target[]', target);
 		}
 
-		this.alreadyVisible = await API.call('object_roles/list', listRequestParams.toString());
+		const objectRoles = await API.call('object_roles/list', listRequestParams.toString());
+
+		this.alreadyVisible = [];
+
+		for (const row of objectRoles) {
+
+			for (const categoryId of row.category_id) {
+
+				this.alreadyVisible.push({...row, category_id: categoryId});
+			}
+		}
 
 		for (const target of this.allowedTargets) {
 
@@ -2371,7 +2402,7 @@ class ObjectRoles {
 
 			this.targets[target].multiSelect = new MultiSelect({
 				datalist: this.targets[target].data,
-				multiple: false,
+				multiple: this.targets[target].multiple,
 				dropDownPosition: 'top',
 			});
 		}
@@ -2383,7 +2414,7 @@ class ObjectRoles {
 
 	render() {
 
-		if(!this.getContainer)
+		if (!this.getContainer)
 			this.container;
 
 		const table = this.getContainer.querySelector('.object-roles > table');
@@ -2394,12 +2425,12 @@ class ObjectRoles {
 
 	get container() {
 
-		if(this.getContainer)
+		if (this.getContainer)
 			return this.getContainer;
 
 		const container = document.createElement('div');
 
-		if(!this.allowedTargets.length) {
+		if (!this.allowedTargets.length) {
 
 			container.classList.add('hidden');
 			return;
@@ -2417,7 +2448,7 @@ class ObjectRoles {
 
 	get form() {
 
-		if(this.submitForm)
+		if (this.submitForm)
 			return this.submitForm;
 
 		const form = document.createElement('form');
@@ -2426,35 +2457,15 @@ class ObjectRoles {
 		submitButton.type = 'submit';
 		submitButton.innerHTML = `<i class="fa fa-paper-plane"></i> Share`;
 
-		this.categorySelect = this.selectDropDown([...MetaData.categories.values()].map(x => {
+		this.targetSelectDropdown = this.selectDropDown(this.allowedTargets.map(target => {
 
 			return {
-				value: x.category_id,
-				text: x.name,
-			}
-		}));
-
-		this.targetSelectDropdown = this.selectDropDown(this.allowedTargets.map(x => {
-
-			return {
-				value: x,
-				text: x.charAt(0).toUpperCase() + x.slice(1),
+				value: target,
+				text: target.charAt(0).toUpperCase() + target.slice(1),
 			}
 		}));
 
 		this.multiSelect = this.targets[this.targetSelectDropdown.value].multiSelect;
-
-		if (this.targets[this.targetSelectDropdown.value].ignore_categories) {
-
-			this.categorySelect.classList.add('hidden');
-			this.categorySelect.value = 0;
-		}
-
-		else {
-
-			this.targetSelectDropdown.classList.remove('hidden');
-			this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0] : 0;
-		}
 
 		this.targetSelectDropdown.addEventListener('change', (e) => {
 
@@ -2463,19 +2474,9 @@ class ObjectRoles {
 			this.multiSelect = this.targets[e.target.value].multiSelect;
 			form.insertBefore(this.multiSelect.container, submitButton);
 
-			if (this.targets[e.target.value].ignore_categories) {
-
-				this.categorySelect.classList.add('hidden');
-				this.categorySelect.value = 0;
-			}
-			else {
-				this.categorySelect.classList.remove('hidden');
-				this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0].value : 0;
-			}
 		});
 
 		form.appendChild(this.targetSelectDropdown);
-		form.appendChild(this.categorySelect);
 		form.appendChild(this.multiSelect.container);
 		form.appendChild(submitButton);
 		form.addEventListener('submit', (e) => this.insert(e));
@@ -2541,8 +2542,8 @@ class ObjectRoles {
 			<thead>
 				<tr>
 					<th>Shared With</th>
-					<th>Category</th>
 					<th>Name</th>
+					<th class="action">Save</th>
 					<th class="action">Delete</th>
 				</tr>
 			</thead>
@@ -2551,23 +2552,55 @@ class ObjectRoles {
 
 		const tbody = table.querySelector('tbody');
 
-		for(const row of this.alreadyVisible) {
+		for (const row of this.alreadyVisible) {
 
 			const tr = document.createElement('tr');
 
 			tr.innerHTML = `
 				<td>${row.target.charAt(0).toUpperCase() + row.target.slice(1)}</td>
-				<td>${row.category.charAt(0).toUpperCase() + row.category.slice(1)}</td>
-				<td>${row.name}</td>
-				<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+				<td id="targetMultiSelect"></td>
+				<td title="Save" class="action ${this.targets[row.target].editable ? 'green' : 'grey'}"><i class="far fa-save"></i></td>
+				<td title="Delete" class="action red"><i class="far fa-trash-alt"></i></td>
 			`;
 
+
+			if (this.targets[row.target].multiple) {
+
+				const targetMultiSelect = new MultiSelect({
+					datalist: this.targets[row.target].data.map(x => {
+						return {
+							name: x.name,
+							value: x.value
+						}
+					}),
+					multiple: this.targets[row.target].multiple,
+				});
+
+				targetMultiSelect.value = row.category_id;
+
+				tr.querySelector('#targetMultiSelect').appendChild(targetMultiSelect.container);
+
+				row.multiSelect = targetMultiSelect;
+			}
+
+			else {
+
+				tr.querySelector('#targetMultiSelect').textContent = row.name
+			}
+
 			tbody.appendChild(tr);
-			tr.querySelector('.red').addEventListener('click', () => this.delete(row.id));
+			tr.querySelector('.red').addEventListener('click', () => this.delete(row.group_id));
+
+			if (tr.querySelector('.green')) {
+
+				tr.querySelector('.green').addEventListener('click', () => this.update(row.group_id, row.multiSelect.value));
+			}
 		}
 
-		if(!this.alreadyVisible.length)
+		if (!this.alreadyVisible.length) {
+
 			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet!</td></tr>'
+		}
 
 		return table;
 	}
@@ -2578,39 +2611,33 @@ class ObjectRoles {
 			e.preventDefault();
 		}
 
-		if (
-			this.alreadyVisible.filter(x =>
-				x.owner == this.owner
-				&& x.owner_id == this.ownerId
-				&& x.target == this.selectedType.value
-				&& x.target_id == [...this.multiSelect.selectedValues][0]
-				&& x.category_id == (parseInt(this.categorySelect.value) || 0)
-			).length) {
+		const insertParams = new URLSearchParams();
 
-			new SnackBar({
-				message: 'Alread Exists',
-				subtitle: 'The association you\'re trying to create already exists.',
-				type: 'warning',
-			});
+		insertParams.append('owner', this.owner);
+		insertParams.append('owner_id', this.ownerId);
+		insertParams.append('target', this.selectedType.value);
+		insertParams.append('target_id', this.targets[this.selectedType.value].is_category ? this.role : [...this.multiSelect.selectedValues][0]);
 
-			return;
+		if (this.targets[this.selectedType.value].ignore_categories) {
+
+			insertParams.append('category_id', null);
 		}
 
-		const
-			parameters = {
-				owner_id: this.ownerId,
-				owner: this.owner,
-				target: this.selectedType.value,
-				target_id: [...this.multiSelect.selectedValues][0],
-				category_id: this.categorySelect.value || null,
-			},
-			options = {
-				method: 'POST',
-			};
+		else {
+
+			for (const categoryId of [...this.multiSelect.selectedValues]) {
+
+				insertParams.append('category_id', categoryId);
+			}
+		}
+
+		const options = {
+			method: 'POST',
+		};
 
 		try {
 
-			await API.call('object_roles/insert', parameters, options);
+			await API.call('object_roles/insert', insertParams.toString(), options);
 
 			await this.load();
 
@@ -2621,7 +2648,7 @@ class ObjectRoles {
 				icon: 'fas fa-share-alt',
 			});
 
-		} catch(e) {
+		} catch (e) {
 
 			new SnackBar({
 				message: 'Request Failed',
@@ -2633,11 +2660,11 @@ class ObjectRoles {
 		}
 	}
 
-	async delete(id) {
+	async delete(group_id) {
 
 		const
 			parameters = {
-				id: id,
+				group_id: group_id,
 			},
 			options = {
 				method: 'POST',
@@ -2656,7 +2683,47 @@ class ObjectRoles {
 				icon: 'far fa-trash-alt',
 			});
 
-		} catch(e) {
+		} catch (e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async update(group_id, categories) {
+
+		const updateParams = new URLSearchParams();
+
+		updateParams.append('group_id', group_id);
+
+		for (const categoryId of categories) {
+
+			updateParams.append('category_id', categoryId);
+		}
+
+		const options = {
+			method: 'POST',
+		};
+
+		try {
+
+			await API.call('object_roles/update', updateParams.toString(), options);
+
+			await this.load();
+
+			this.render();
+
+			new SnackBar({
+				message: 'Share Updated',
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch (e) {
 
 			new SnackBar({
 				message: 'Request Failed',
@@ -2683,13 +2750,26 @@ class ObjectRoles {
 			}
 		}
 
-		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in (this.mapping[row.target] || {}));
+		this.alreadyVisible = this.alreadyVisible.filter(row => row[this.targets[row.target].target_field || 'target_id'] in this.mapping[row.target]);
 
 		for (const row of this.alreadyVisible) {
 
-			row.name = this.mapping[row.target][row.target_id].name;
-			row.category = (MetaData.categories.get(row.category_id) || {name: ''}).name
+			row.name = this.mapping[row.target][row[this.targets[row.target].target_field || 'target_id']].name;
 		}
+
+		const groupIdMapping = {};
+
+		for (const row of this.alreadyVisible) {
+
+			if (!groupIdMapping.hasOwnProperty(row.group_id)) {
+
+				groupIdMapping[row.group_id] = {...row, category_id: []}
+			}
+
+			groupIdMapping[row.group_id].category_id.push(row.category_id);
+		}
+
+		this.alreadyVisible = Object.values(groupIdMapping);
 	}
 }
 

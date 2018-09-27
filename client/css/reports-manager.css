@@ -652,6 +652,10 @@ main.preview-left #stages {
 			#stage-configure-visualization .dashboards .dashboard_id {
 				width: 200px;
 			}
+			#stage-configure-visualization .dashboards button[disabled]:hover {
+				background: unset;
+				border: 1px solid #ccc;
+			}
 
 	.visualization-form .filters {
 	}

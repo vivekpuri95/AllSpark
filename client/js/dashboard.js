@@ -344,6 +344,19 @@ Page.class = class Dashboards extends Page {
 						break;
 					}
 
+					if(!simplifiedTreeMapping.has(parent)) {
+
+						moved = false;
+						break;
+					}
+
+					if(simplifiedTreeMapping.has(parent) && simplifiedTreeMapping.get(parent).has(parent)) {
+
+						this.list.delete(parent);
+						moved = false;
+						break;
+					}
+
 					moved = false;
 
 					if (simplifiedTreeMapping.has(parent)) {
@@ -351,11 +364,12 @@ Page.class = class Dashboards extends Page {
 						toDelete = [parent];
 						moved = true;
 
-						if (simplifiedTreeMapping.get(parent).has(0)) {
+						if (simplifiedTreeMapping.has(parent) && simplifiedTreeMapping.get(parent).has(0)) {
 
 							toDelete = [...parents];
 							toReplace = [parent];
 							moved = false;
+
 							break;
 						}
 

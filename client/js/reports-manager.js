@@ -5751,8 +5751,13 @@ class ReportVisualizationDashboards extends Set {
 			}
 		}
 
-		this.dashboardMultiSelect.datalist = datalist;
-		this.dashboardMultiSelect.render();
+		if(!datalist.length) {
+			this.container.querySelector('fieldset .form').innerHTML = '<div class="NA">No Dashboard Found</div>'
+		}
+		else {
+			this.dashboardMultiSelect.datalist = datalist;
+			this.dashboardMultiSelect.render();
+		}
 	}
 
 	clear() {
@@ -5846,7 +5851,7 @@ class ReportVisualizationDashboard {
 				<input type="number" name="position" value="${this.visualization.format.position || ''}">
 			</label>
 
-			<label>
+			<label class="save">
 				<span>&nbsp;</span>
 				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</label>
@@ -5858,15 +5863,20 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>&nbsp;</span>
-				<button type="button" class="view-dashboard disabled"><i class="fas fa-external-link-alt"></i></button>
+				<button type="button" class="view-dashboard"><i class="fas fa-external-link-alt"></i></button>
 			</label>
 		`;
 
 		const datalist = [];
+		let selectedDashboard;
 
 		if(this.stage.dashboards.response) {
 
 			for(const dashboard of this.stage.dashboards.response.values()) {
+
+				if(dashboard.id == this.visualization.dashboard_id) {
+					selectedDashboard = dashboard.name;
+				}
 
 				if(!dashboard.editable)
 					continue;
@@ -5902,14 +5912,25 @@ class ReportVisualizationDashboard {
 
 		this.dashboardMultiSelect.value = this.visualization.dashboard_id;
 
-		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
-
 		if(this.dashboardMultiSelect.value.length) {
 
-			const externalLink = form.querySelector('.view-dashboard');
+			form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + this.dashboardMultiSelect.value[0]));
 
-			externalLink.classList.disabled = false;
-			externalLink.on('click', () => window.open('/dashboard/' + this.dashboardMultiSelect.value[0]));
+			form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
+		}
+		else {
+
+			const input = document.createElement('input');
+			input.value = selectedDashboard;
+			input.disabled = true;
+
+			form.position.disabled = true;
+
+			form.querySelector('.view-dashboard').disabled = true;
+			form.querySelector('.save button').disabled = true;
+			form.querySelector('.delete').disabled = true;
+
+			form.querySelector('.dashboard_id').appendChild(input);
 		}
 
 		form.querySelector('.delete').on('click', () => this.delete());
