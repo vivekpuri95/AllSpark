@@ -4,7 +4,7 @@ class GlobalFilters extends API {
 
 	async list() {
 
-        this.user.privilege.needs("administrator");
+        this.user.privilege.needs('administrator', 'ignore');
 
 		const result = await this.mysql.query(
 			`SELECT * FROM tb_global_filters WHERE account_id = ?`,
@@ -21,7 +21,7 @@ class GlobalFilters extends API {
 
 	async insert({name, placeholder, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
 
-		this.user.privilege.needs('administrator');
+		this.user.privilege.needs('administrator', 'ignore');
 
         this.assert(name && placeholder, 'Name or Placeholder is missing');
 
@@ -45,7 +45,7 @@ class GlobalFilters extends API {
 
 	async update({id, name, placeholder, default_value = '', multiple = null, type = null, offset, dataset} = {}) {
 
-		this.user.privilege.needs('administrator');
+		this.user.privilege.needs('administrator', 'ignore');
 
 		this.assert(id, 'Global filter id is required');
 		this.assert(name && placeholder, 'Name or Placeholder cannot be null or empty');
@@ -65,7 +65,7 @@ class GlobalFilters extends API {
 
 	async delete({id} = {}) {
 
-		this.user.privilege.needs('administrator');
+		this.user.privilege.needs('administrator', 'ignore');
 
 		this.assert(id, 'Global filter id is required');
 
