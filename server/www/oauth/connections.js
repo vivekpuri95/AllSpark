@@ -147,15 +147,17 @@ exports.test = class extends API {
 	}
 }
 
-exports.reportsData = class extends API {
+exports.gaReports = class extends API {
 
-	async reportsData({id, viewId, startDate, endDate} = {}) {
+	async gaReports({id, viewId, startDate, endDate} = {}) {
 
-		// this.user.privilege.needs('connection.list');
+		this.user.privilege.needs('connection.list');
 
 		const [oAuthProvider] = await this.mysql.query(
 			`SELECT
 				c.id connection_id,
+				c.access_token,
+				c.refresh_token,
 				p.*
 			FROM
 				tb_oauth_connections c
@@ -165,7 +167,7 @@ exports.reportsData = class extends API {
 				c.id = ? AND
 				c.user_id = ? AND
 				c.status = 1`,
-			[id, 1]
+			[id, this.user.user_id]
 		);
 
 		this.assert(oAuthProvider, 'Invalid connection id');
@@ -179,13 +181,12 @@ exports.reportsData = class extends API {
 
 		this.assert(connection, 'Invalid provider type!');
 
-		await connection.validate();
+		const access_token = await connection.test();
 
 		const
-			[oAuthConnection] = await this.mysql.query('SELECT * FROM WHERE id = ?', [id]),
 			options = {
 				method: 'POST',
-				body: {
+				body: JSON.stringify({
 					'reportRequests': [
 						{
 							'viewId': viewId,
@@ -193,14 +194,16 @@ exports.reportsData = class extends API {
 							'metrics': [{'expression': 'ga:users'}]
 						}
 					]
-				},
+				}),
 				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-					'access_token': oAuthConnection.access_token
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${access_token}`
 				},
-			},
-			response = await fetch('https://analyticsreporting.googleapis.com/v4/reports:batchGet', options);
+			};
 
+		let response = await fetch('https://analyticsreporting.googleapis.com/v4/reports:batchGet', options);
+
+		response = await response.json();
 
 		return response;
 
@@ -212,30 +215,34 @@ class OAuthConnection {
 	constructor(endpoint, provider) {
 
 		this.endpoint = endpoint;
+
+		Object.assign(this, provider);
+
 		this.provider = provider;
 
-		this.endpoint.assert(this.provider.connection_id, 'Connection ID not found!');
-		this.endpoint.assert(this.provider.client_id, 'Client ID not found!');
-		this.endpoint.assert(this.provider.client_secret, 'Client secret not found!');
+		this.endpoint.assert(this.connection_id, 'Connection ID not found!');
+		this.endpoint.assert(this.client_id, 'Client ID not found!');
+		this.endpoint.assert(this.client_secret, 'Client secret not found!');
 	}
 
 	async validate() {
 
 		const
-			connection = {},
-			refresh_token = await this.refreshToken(connection),
-			access_token = await this.accessToken(connection);
+			connection = {};
+
+		await this.getRefreshToken(connection);
+		await this.getAccessToken(connection);
 
 		this.endpoint.mysql.query(
 			'UPDATE tb_oauth_connections SET ? WHERE id = ?',
-			[connection, this.provider.connection_id]
+			[connection, this.connection_id]
 		);
 	}
 }
 
 class GoogleAPIs extends OAuthConnection {
 
-	async refreshToken(connection) {
+	async getRefreshToken(connection) {
 
 		const
 			parameters = new URLSearchParams(),
@@ -246,9 +253,9 @@ class GoogleAPIs extends OAuthConnection {
 			};
 
 		parameters.set('code', this.endpoint.request.body.code);
-		parameters.set('client_id', this.provider.client_id);
-		parameters.set('client_secret', this.provider.client_secret);
-		parameters.set('redirect_uri', `https://${this.endpoint.account.url}/connections-manager`);
+		parameters.set('client_id', this.client_id);
+		parameters.set('client_secret', this.client_secret);
+		parameters.set('redirect_uri', `http://${this.endpoint.request.headers.host}/connections-manager`);
 		parameters.set('grant_type', 'authorization_code');
 
 		let response = await fetch('https://www.googleapis.com/oauth2/v4/token', options);
@@ -257,10 +264,10 @@ class GoogleAPIs extends OAuthConnection {
 
 		this.endpoint.assert(response.refresh_token, `Refresh token not recieved from google, ${JSON.stringify(response)}!`);
 
-		connection.refresh_token = response.refresh_token;
+		this.refreshToken = connection.refresh_token = response.refresh_token;
 	}
 
-	async accessToken(connection) {
+	async getAccessToken(connection) {
 
 		const
 			parameters = new URLSearchParams(),
@@ -281,29 +288,29 @@ class GoogleAPIs extends OAuthConnection {
 
 		this.endpoint.assert(response.access_token, 'Access Token not recieved form Google!');
 
-		connection.access_token = response.access_token;
+		this.accessToken = connection.access_token = response.access_token;
 		connection.expires_at = new Date(Date.now() + (response.expires_in * 1000)).toISOString().replace('T', ' ').replace('Z', '');
 	}
 
 	async test() {
 
-		this.endpoint.assert(this.provider.access_token, 'Access Token not found!');
-		this.endpoint.assert(this.provider.refresh_token, 'Refresh Token not found!');
+		this.endpoint.assert(this.access_token, 'Access Token not found!');
+		this.endpoint.assert(this.refresh_token, 'Refresh Token not found!');
 
-		await this.accessToken(this.provider);
+		await this.getAccessToken(this);
 
-		return this.provider.access_token;
+		return this.access_token;
 	}
 }
 
 class FacebookMarketing extends OAuthConnection {
 
-	async refreshToken() {
+	async getRefreshToken() {
 
 		return null;
 	}
 
-	async accessToken(connection) {
+	async getAccessToken(connection) {
 
 		const
 			parameters = new URLSearchParams(),
@@ -314,7 +321,7 @@ class FacebookMarketing extends OAuthConnection {
 			};
 
 		parameters.set('client_id', this.provider.client_id);
-		parameters.set('redirect_uri', `https://${this.endpoint.account.url}/connections-manager`);
+		parameters.set('redirect_uri', `http://${this.endpoint.request.headers.host}/connections-manager`);
 		parameters.set('client_secret', this.provider.client_secret);
 		parameters.set('code', this.endpoint.request.body.code);
 

@@ -123,6 +123,12 @@ class Connections extends Page {
 
 		this.container.querySelector('section#list').appendChild(container);
 
+		const providerList = this.container.querySelector('#add-oauth-connection').provider;
+		providerList.textContent = null;
+
+		for(const provider of this.oAuthProviders.values())
+			providerList.insertAdjacentHTML('beforeend', `<option value="${provider.provider_id}">${provider.name}</option>`);
+
 		Sections.show('list');
 	}
 
@@ -953,7 +959,7 @@ class OAuthConnection {
 
  		const
 			parameters = { id: this.id },
-			container = this.page.listContainer.querySelector('.test-result');
+			container = this.page.container.querySelector('.test-result');
 
  		let response;
 
@@ -989,7 +995,7 @@ class OAuthConnection {
  		if(provider.name == 'Google Analytics') {
  			const parameters = new URLSearchParams();
  			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
+			parameters.set('redirect_uri', `http://${window.location.host}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/analytics.readonly');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');

@@ -1255,9 +1255,7 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 					</table>
 
 					<form id="add-oauth-connection" class="form">
-						<select name="provider">
-							<option value="1">Google Adwords</option>
-						</select>
+						<select name="provider"></select>
 						<button type="submit">
 							<i class="fas fa-plus"></i> Add New Connection
 						</button>
