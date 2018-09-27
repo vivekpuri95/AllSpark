@@ -207,9 +207,9 @@ class DataSource {
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
 
-					<span class="api-documentation">
+					<span>
 						<span>&nbsp;</span>
-						<a>API documentation</a>
+						<a class="api-documentation">API documentation</a>
 					</span>
 				</div>
 				<div class="close">&times;</div>
@@ -242,12 +242,12 @@ class DataSource {
 
 			this.apiDocumentationDialogueBox.body.innerHTML = `
 
-				<h4>Url</h4>
-				<div class="url">${location.origin}/api/v2/reports/engine/report</div>
+				<h4>Endpoint</h4>
+				<pre class="url">${location.origin}/api/v2/reports/engine/report</pre>
 
 				<h4>Required Parameters</h4>
 				<p class="NA">The parameters needed to fetch data from a report.</p>
-				<table>
+				<table class="static">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -281,7 +281,7 @@ class DataSource {
 
 				<h4>Report Parameters</h4>
 				<p class="NA">Report specific parameters that usually filter the data.</p>
-				<table class="report-parameter">
+				<table class="report-parameter static">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -296,9 +296,11 @@ class DataSource {
 					<tbody></tbody>
 				</table>
 
-				<h4>Result Url</h4>
-				<div class="url">${location.origin}/api/v2/reports/engine/report?${resultUrl}</div>
+				<h4>Request Url</h4>
+				<pre class="request url"></pre>
 			`;
+
+			this.apiDocumentationDialogueBox.body.querySelector('.request.url').textContent = `${location.origin}/api/v2/reports/engine/report?${resultUrl}`;
 
 			const tbody = this.apiDocumentationDialogueBox.body.querySelector('.report-parameter tbody');
 
@@ -323,7 +325,7 @@ class DataSource {
 				};
 			}
 			else {
-				tbody.innerHTML = '<tr><td colspan="6">No Filters Found</td></tr>';
+				tbody.innerHTML = '<tr><td class="NA" colspan="6">No Filters Found</td></tr>';
 			}
 
 			this.apiDocumentationDialogueBox.show();
@@ -5770,6 +5772,34 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		this.rows = rows;
 
+		for(const axis of this.axes) {
+
+			if(!axis.restcolumns)
+				continue;
+
+			axis.columns = [];
+
+			for(const [key, column] of this.source.columns) {
+
+				if(!column.disabled && !column.hidden && !this.axes.some(a => a.columns.some(c => c.key == key)))
+					axis.columns.push({key});
+			}
+
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+
+		outer:
+		for(const [key, column] of this.source.columns) {
+
+			for(const axis of this.axes) {
+				if(axis.columns.some(c => c.key == key))
+					continue outer;
+			}
+
+			column.hidden = true;
+			column.render();
+		}
+
 		for(const axis of this.axes)
 			this.axes[axis.position].size = 0;
 
@@ -6068,6 +6098,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			else if(axis.type == 'area') {
 
+				this.x.rangePoints([0, this.width], 0.1, 0);
+
 				const area = d3.svg.area()
 					.interpolate(axis.curve)
 					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
@@ -6081,8 +6113,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.data(columnsData)
 					.enter()
 					.append('g')
-					.attr('transform', `translate(${this.axes.left.size}, 0)`)
 					.append('path')
+					.attr('transform', `translate(${this.axes.left.size}, 0)`)
 					.on('mouseover', function(column) {
 						that.hoverColumn = column;
 						d3.select(this).classed('hover', true);
@@ -6104,6 +6136,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				}
 
 				areas.attr('opacity', 0.8);
+
+				this.x.rangeBands([0, this.width], 0.1, 0);
 			}
 
 			// Append the axis scale
@@ -6286,7 +6320,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
 
- 			if(!row || !this.x)
+ 			if(!row || !that.x)
 				return;
 
 			const tooltip = [];
@@ -6298,7 +6332,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				const column = row.source.columns.get(key);
 
-				if(column.disabled)
+				if(column.disabled || column.hidden)
 					continue;
 
 				tooltip.push(`

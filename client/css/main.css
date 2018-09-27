@@ -673,7 +673,6 @@ body {
 .multi-select {
 	width: 100%;
 	position: relative;
-	z-index: 6;
 }
 	.multi-select > input {
 		width: 100%;
@@ -710,11 +709,7 @@ body {
 			grid-template-columns: auto auto;
 			grid-gap: calc(var(--gap) * 2);
 			justify-content: flex-start;
-			top: 0;
-			position: sticky;
-			background: #fff;
 			color: #999;
-			z-index: auto;
 		}
 		.multi-select .options > .NA,
 		.multi-select .options .list > .NA {
@@ -723,6 +718,8 @@ body {
 		}
 		.multi-select .options .list {
 			padding: var(--gap) 0;
+			max-height: 200px;
+			overflow: auto;
 		}
 			.multi-select .options .list label {
 				display: grid;
@@ -761,15 +758,15 @@ body {
 			grid-template-columns: auto auto auto;
 			grid-gap: calc(var(--gap) * 2);
 			padding: var(--gap);
-			position: sticky;
-			bottom: 0;
-			background: #fff;
 			font-size: 85%;
 			box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
 			color: #999;
 			white-space: normal;
 			border-top: 1px dashed #999;
 		}
+			.multi-select footer > span strong {
+				margin-left: 3px;
+			}
 
 .object-roles {
 	min-height: 300px;

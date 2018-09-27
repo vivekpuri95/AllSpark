@@ -450,7 +450,7 @@ main.preview-left #stages {
 		align-items: center;
 		font-size: 100%;
 		font-weight: normal;
-		z-index: 6;
+		z-index: 3;
 		background: #eee;
 		transition: color var(--transition-duration);
 	}
@@ -592,7 +592,7 @@ main.preview-left #stages {
 				}
 			.visualization-form .transformations .transformation {
 				display: grid;
-				grid-template-columns: 1fr 1fr 1fr;
+				grid-template-columns: max-content;
 				grid-gap: calc(var(--gap) * 2);
 				align-items: flex-start;
 			}
@@ -600,6 +600,7 @@ main.preview-left #stages {
 					display: grid;
 					grid-template-columns: 1fr;
 					grid-gap: calc(var(--gap) * 2);
+					width: max-content;
 				}
 					.visualization-form .transformations .transformation h4 {
 						margin: 0;
@@ -616,15 +617,8 @@ main.preview-left #stages {
 				.visualization-form .transformations .transformation .form-row button svg {
 					margin: 0;
 				}
-					.visualization-form .transformations .transformation input[type=text] {
-						width: 100px;
-					}
 				.visualization-form .transformations .transformation button {
 					white-space: nowrap;
-				}
-				.visualization-form .transformations .transformation.stream .joins,
-				.visualization-form .transformations .transformation.stream .columns {
-					grid-row: 2;
 				}
 	#stage-configure-visualization .dashboards {
 	}
