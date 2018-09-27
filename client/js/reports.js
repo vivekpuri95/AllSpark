@@ -6125,7 +6125,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				const area = d3.svg.area()
 					.interpolate(axis.curve)
 					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
-					.y0(d => scale(0))
+					.y0(d => scale(axis.stacked ? d.y0 : 0))
 					.y1(d => scale(d.y + (d.y0 || 0)));
 
 				let areas = this.svg
