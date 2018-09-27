@@ -261,7 +261,7 @@ class UserManage {
 			await this.privileges.insert();
 		});
 
-		this.objectRoles = new ObjectRoles('user', this.id, ['role']);
+		this.objectRoles = new ObjectRoles('user', this.id, ['role'], false);
 
 		await this.objectRoles.load();
 
