@@ -355,11 +355,11 @@ exports.list = class extends API {
 
 			const categories = user.roles.map(u => parseInt(u.category_id));
 
-			const updateFlag = userUpdateCategories.some(cat => categories.includes(parseInt(cat))) || user.added_by == this.user.user_id;
+			const updateFlag = userUpdateCategories.some(cat => categories.includes(parseInt(cat))) || user.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 
 			user.editable = constants.adminCategory.some(x => userCategories.includes(x)) || updateFlag;
 
-			const deleteFlag = deleteUserCategories.some(cat => categories.includes(parseInt(cat))) || user.added_by == this.user.user_id;
+			const deleteFlag = deleteUserCategories.some(cat => categories.includes(parseInt(cat))) || user.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 
 			user.deletable = constants.adminCategory.some(x => userCategories.includes(x)) || deleteFlag;
 		}

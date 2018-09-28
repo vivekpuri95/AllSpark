@@ -196,15 +196,15 @@ class Dashboard extends API {
 
 			for(const categories of dashboardCategories) {
 
-				const updateFlag = dashboardUpdateCategories.some(cat => categories.includes(parseInt(cat)));
-				const deleteFlag = dashboardDeleteCategories.some(cat => categories.includes(parseInt(cat)));
+				const updateFlag = dashboardUpdateCategories.some(cat => categories.includes(parseInt(cat))) || this.user.privilege.has('superadmin');
+				const deleteFlag = dashboardDeleteCategories.some(cat => categories.includes(parseInt(cat))) || this.user.privilege.has('superadmin');
 
 				dashboard.editable = dashboard.editable || constants.adminCategory.some(x => userCategories.includes(x)) || updateFlag;
 				dashboard.deletable = dashboard.deletable || constants.adminCategory.some(x => userCategories.includes(x)) || deleteFlag;
 			}
 
-			dashboard.editable = dashboard.editable || dashboard.added_by == this.user.user_id;
-			dashboard.deletable = dashboard.deletable || dashboard.added_by == this.user.user_id;
+			dashboard.editable = dashboard.editable || dashboard.added_by == this.user.user_id || this.user.privilege.has('superadmin');
+			dashboard.deletable = dashboard.deletable || dashboard.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 
 			result.push(dashboard);
 		}
