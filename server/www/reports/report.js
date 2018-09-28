@@ -104,7 +104,7 @@ exports.list = class extends API {
 
 		let userCategories = new Set(this.user.privileges.filter(x => [constants.privilege.administrator, constants.privilege["report.update"]].includes(x.privilege_name)).map(x => x.category_id));
 
-		let isAdmin = false;
+		let isAdmin = this.user.privilege.has('superadmin');
 
 		if (constants.adminPrivilege.some(x => userCategories.has(x))) {
 
