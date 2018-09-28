@@ -9,6 +9,14 @@ class Authenticate {
 
 	static async report(reportObject, userJWTObject, reportDashboardRoles,) {
 
+		if(userJWTObject.privilege.has("superadmin")) {
+
+			return {
+				error: false,
+				message: "superadmin user"
+			}
+		}
+
 		if (config.has("role_ignore") && config.has("privilege_ignore")) {
 
 			if (config.get("role_ignore") && config.get("privilege_ignore")) {
@@ -442,6 +450,14 @@ class Authenticate {
 
 	static async connection(connectionObj, user) {
 
+		if(user.privilege.has("superadmin")) {
+
+			return {
+				error: false,
+				message: "superadmin user"
+			}
+		}
+
 		const objRole = new getRole();
 
 		let userPrivileges = [], connectionRoles, userConnections;
@@ -534,6 +550,14 @@ class Authenticate {
 	}
 
 	static async visualization(visualization, user, report, visualizationRolesFromQuery = false) {
+
+		if(user.privilege.has("superadmin")) {
+
+			return {
+				error: false,
+				message: "superadmin user"
+			}
+		}
 
 		if (parseInt(visualization) == visualization) {
 
