@@ -1125,9 +1125,13 @@ main .dataset {
 	fill: #89b;
 	fill-opacity: 0.5;
 }
-	.visualization .container > svg .zoom text {
+	.visualization .container > svg .zoom-rectangle-text {
 		font-size: 110%;
 		font-weight: bold;
+	}
+	.visualization .container > svg .zoom-rectangle-text .range {
+		font-weight: normal;
+		font-size: 90%;
 	}
 .visualization .container > svg .bar {
 	transition: opacity var(--transition-duration);

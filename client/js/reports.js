@@ -3660,14 +3660,35 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 		const
 			newResponse = {},
 			mappedResponse = {},
-			step = {
-				number: d => parseFloat(d) + 1,
-				second: d => d + (1000),
-				minute: d => d + (60 * 1000),
-				hour: d => d + (60 * 60 * 1000),
-				date: d => d + (24 * 60 * 60 * 1000),
-				month: d => new Date(d).setMonth(d.getMonth + 1),
-				year: d => new Date(d).setYear(d.getYear + 1),
+			granularity = {
+				number: {
+					step: d => parseFloat(d) + 1,
+					output: d => d,
+				},
+				second: {
+					step: d => d + (1000),
+					output: d => new Date(d).toISOString().replace('T', ' '),
+				},
+				minute: {
+					step: d => d + (60 * 1000),
+					output: d => new Date(d).toISOString().replace('T', ' '),
+				},
+				hour: {
+					step: d => d + (60 * 60 * 1000),
+					output: d => new Date(d).toISOString().replace('T', ' '),
+				},
+				date: {
+					step: d => d + (24 * 60 * 60 * 1000),
+					output: d => new Date(d).toISOString().substring(0, 10),
+				},
+				month: {
+					step: d => new Date(d).setMonth(d.getMonth + 1),
+					output: d => new Date(d).toISOString().substring(0, 7),
+				},
+				year: {
+					step: d => new Date(d).setYear(d.getYear + 1),
+					output: d => new Date(d).toISOString().substring(0, 4),
+				},
 			};
 
 		for(const row of response) {
@@ -3695,10 +3716,10 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 				for(const key in response[0])
 					newResponse[start][key] = this.content;
 
-				newResponse[start][this.column] = start;
+				newResponse[start][this.column] = granularity[this.granularity].output(start);
 			}
 
-			start = step[this.granularity](start);
+			start = granularity[this.granularity].step(start);
 		}
 
 		return Object.values(newResponse);
@@ -5870,7 +5891,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			// Click on reset zoom function
 			resetZoom.on('click', async () => {
-				this.rows = await this.source.response();
+				this.rows = that.rowsMaster
 				this.zoomedIn = false;
 				this.plot();
 			});
@@ -5907,6 +5928,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				}
 
 				scale.domain(column);
+
 				scale.rangeBands([0, this.width], 0.1, 0);
 
 				const
@@ -6103,7 +6125,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				const area = d3.svg.area()
 					.interpolate(axis.curve)
 					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
-					.y0(d => scale(0))
+					.y0(d => scale(axis.stacked ? d.y0 : 0))
 					.y1(d => scale(d.y + (d.y0 || 0)));
 
 				let areas = this.svg
@@ -6277,7 +6299,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				const
 					filteredRows = that.rows.filter(row => {
 
-						const item = that.x(row.get(that.x.column)) + 100;
+						const item = that.x(row.getTypedValue(that.x.column)) + 100;
 
 						if(mouse[0] < that.zoomRectangle.origin[0])
 							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -6310,7 +6332,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					that.zoomRectangle
 						.select('g')
 						.append('text')
-						.text(`${filteredRows[0].get(that.x.column)} - ${filteredRows[filteredRows.length - 1].get(that.x.column)}`)
+						.attr('class', 'range')
+						.html(`${filteredRows[0].getTypedValue(that.x.column)} &hellip; ${filteredRows[filteredRows.length - 1].getTypedValue(that.x.column)}`)
 						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
 						.attr('y', (that.height / 2) + 20);
 				}
@@ -6371,13 +6394,13 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			that.zoomRectangle = container.select('svg').append('g');
 
 			that.zoomRectangle
-				.attr('class', 'zoom')
 				.style('text-anchor', 'middle')
 				.append('rect')
 				.attr('class', 'zoom-rectangle');
 
 			that.zoomRectangle
-				.append('g');
+				.append('g')
+				.attr('class', 'zoom-rectangle-text');
 
 			that.zoomRectangle.origin = d3.mouse(this);
 		})
@@ -6393,7 +6416,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				mouse = d3.mouse(this),
 				filteredRows = that.rows.filter(row => {
 
-					const item = that.x(row.get(that.x.column)) + 100;
+					const item = that.x(row.getTypedValue(that.x.column)) + 100;
 
 					if(mouse[0] < that.zoomRectangle.origin[0])
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -6405,6 +6428,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			if(!filteredRows.length)
 				return;
+
+			if(!that.zoomedIn)
+				that.rowsMaster = that.rows;
 
 			that.rows = filteredRows;
 			that.zoomedIn = true;
