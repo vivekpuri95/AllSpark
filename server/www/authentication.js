@@ -335,6 +335,8 @@ exports.login = class extends API {
 
 		Object.assign(finalObj, this.authResponseObj);
 
+		this.response.cookie('refresh_token', finalObj.jwt, { maxAge: 365 * 24 * 60 * 60 * 1000});
+
 		return finalObj;
 	}
 };
@@ -452,8 +454,7 @@ exports.refresh = class extends cycleDetection {
 					category_id: privilege.category_id,
 				});
 			}
-		}
-		;
+		};
 
 		let privilegeObj = {};
 
@@ -499,6 +500,10 @@ exports.refresh = class extends cycleDetection {
 			})
 		}
 
-		return commonFun.makeJWT(obj, Math.floor(Date.now() / 1000) + (5 * 60));
+		const token = commonFun.makeJWT(obj, Math.floor(Date.now() / 1000) + (5 * 60));
+
+		this.response.cookie('token', token, { maxAge: 365 * 24 * 60 * 60 * 1000 });
+
+		return token;
 	}
 }

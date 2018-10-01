@@ -90,9 +90,12 @@ class API {
 				obj.request = request;
 				obj.response = response;
 
-				const token = request.query.token || request.body.token;
+				let
+					token = request.query.token || request.body.token,
+					userDetails;
 
-				let userDetails;
+				if(request.cookies.token)
+					token = request.cookies.token;
 
 				if (token) {
 

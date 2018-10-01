@@ -2657,6 +2657,7 @@ DataSourceColumn.formatType.set('date',
 		year: 'numeric',
 		month: 'short',
 		day: 'numeric',
+		timeZone: 'UTC',
 	}
 );
 
@@ -2664,12 +2665,14 @@ DataSourceColumn.formatType.set('month',
 	{
 		year: 'numeric',
 		month: 'short',
+		timeZone: 'UTC',
 	}
 );
 
 DataSourceColumn.formatType.set('year',
 	{
 		year: 'numeric',
+		timeZone: 'UTC',
 	}
 );
 
