@@ -845,15 +845,18 @@ class Bigquery {
 			this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), `@${filter.placeholder}`);
 
 			if (!filter.type) {
+				try {
 
-				if ((filter.value.match(/^-{0,1}\d+$/))) {
+					if ((filter.value.match(/^-{0,1}\d+$/))) {
 
-					filter.type = 'number';
+						filter.type = 'number';
+					}
+					else {
+
+						filter.type = 'text';
+					}
 				}
-				else {
-
-					filter.type = 'text';
-				}
+				catch (e) {}
 			}
 
 			this.makeFilters(filter.value, filter.placeholder, filter.type, filter.multiple);
