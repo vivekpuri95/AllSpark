@@ -2356,7 +2356,7 @@ class ObjectRoles {
 
 		this.data = [];
 
-		const [role] = [...MetaData.roles.values()].filter(x => x.is_admin);
+		const [role] = [...MetaData.roles.values()].filter(x => x.role_id);
 
 		this.role = role.role_id;
 
