@@ -247,7 +247,7 @@ router.get('/login', API.serve(class extends HTMLAPI {
 
 			this.request.body.account_id = this.account.account_id;
 
-			const loginObj = new authLogin();
+			const loginObj = new authLogin(this);
 
 			loginObj.request = this.request;
 
