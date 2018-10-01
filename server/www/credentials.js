@@ -166,7 +166,7 @@ exports.delete = class extends API {
 				WHERE
 					c.id = ?
 					AND status = 1
-					AND account_id = 1
+					AND account_id = ?
 				`, [this.request.body.id, this.account.account_id]
 		);
 
@@ -223,7 +223,7 @@ exports.update = class extends API {
 				WHERE
 					c.id = ?
 					AND status = 1
-					AND account_id = 1
+					AND account_id = ?
 				`, [this.request.body.id, this.account.account_id]
 		);
 
