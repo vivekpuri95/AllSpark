@@ -335,7 +335,7 @@ exports.login = class extends API {
 
 		Object.assign(finalObj, this.authResponseObj);
 
-		this.response.cookie('refresh_token', finalObj.jwt, { maxAge: 365 * 24 * 60 * 60 * 1000});
+		//this.response.cookie('refresh_token', finalObj.jwt, { maxAge: 365 * 24 * 60 * 60 * 1000});
 
 		return finalObj;
 	}
