@@ -88,6 +88,7 @@ class Page {
 		}
 
 		Storage.set('refresh_token', refresh_token);
+		Cookies.set('refresh_token', refresh_token);
 
 		await API.refreshToken();
 		await MetaData.load();
@@ -253,7 +254,6 @@ class Page {
 		Cookies.set('external_parameters', '');
 
 		await Storage.set('refresh_token', Cookies.get('refresh_token'));
-		Cookies.set('refresh_token', '');
 	}
 
 	static async loadOnboardScripts() {
@@ -1361,7 +1361,6 @@ class API extends AJAX {
 		};
 
 		await Storage.set('token', token);
-		Cookies.set('token', token);
 
 		Page.load();
 	}
