@@ -4,7 +4,7 @@ const mysql = require("../mysql").MySQL;
 const dbConfig = require('config').get("sql_db");
 const Task = require("./task");
 const {performance} = require("perf_hooks");
-
+const Contact = require("./contact");
 
 class Job {
 
@@ -17,10 +17,12 @@ class Job {
 	async load() {
 
 		await this.fetchInfo();
+		await this.contact.getUsers();
 
 		if (!this.tasks.length) {
 
 			await this.log("no tasks in the job", false);
+			await this.contact.send(0, "no tasks in the job");
 
 			return {
 				error: false,
@@ -36,11 +38,13 @@ class Job {
 			this.jobRunTime = performance.now() - startTime;
 
 			await this.log("Successful");
+			await this.contact.send(1);
 		}
 
 		catch (e) {
 
 			await this.log(e.message, true);
+			await this.contact.send(0, e.message);
 
 			return {
 				error: true,
@@ -70,6 +74,8 @@ class Job {
 
 			this.error = "job or job tasks not found";
 		}
+
+		this.contact = new Contact(this.job.job_id);
 
 		for (let taskIndex = 0; taskIndex < this.tasks.length; taskIndex++) {
 
