@@ -605,7 +605,7 @@ class DataSource {
 
 			if(user.privileges.has('report') && user.privileges.has('user')) {
 
-				await this.userList();
+				//await this.userList();
 				this.container.querySelector('.visible-to').classList.remove('hidden');
 				this.container.querySelector('.description .count').textContent = `${this.visibleTo.length} people`;
 			}
