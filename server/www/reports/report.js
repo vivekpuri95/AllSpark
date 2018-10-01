@@ -387,7 +387,7 @@ exports.list = class extends API {
 				row.editable = row.editable || categoryIds.every(x => userCategories.has(x));
 			}
 
-			row.editable = (row.editable && row.category_id.length) || row.added_by == this.user.user_id;
+			row.editable = (row.editable && (row.category_id.length || isAdmin)) || row.added_by == this.user.user_id;
 
 			if(!row.editable) {
 
