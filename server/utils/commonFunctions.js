@@ -75,11 +75,11 @@ async function getUserDetailsJWT(token) {
 
 	const details = await verifyJWT(token);
 
-	if(!details.error) {
+	if (!details.error) {
 		return details;
 	}
 
-	if(details.error && details.message != 'jwt expired') {
+	if (details.error && details.message != 'jwt expired') {
 		return details;
 	}
 
@@ -88,7 +88,7 @@ async function getUserDetailsJWT(token) {
 	try {
 		token_details = JSON.parse(atob(token.split('.')[1]))
 	}
-	catch(e) {
+	catch (e) {
 	}
 
 	return token_details;
@@ -268,17 +268,17 @@ class UserAgent {
 
 	get os() {
 
-		if(this.userAgent.includes('linux')) {
+		if (this.userAgent.includes('linux')) {
 
 			return 'linux';
 		}
 
-		else if(this.userAgent.includes('macintosh')) {
+		else if (this.userAgent.includes('macintosh')) {
 
 			return 'macintosh';
 		}
 
-		else if(this.userAgent.includes('windows')) {
+		else if (this.userAgent.includes('windows')) {
 
 			return 'windows';
 		}
@@ -291,7 +291,7 @@ class UserAgent {
 
 	get browser() {
 
-		if(this.userAgent.includes('chrome')) {
+		if (this.userAgent.includes('chrome')) {
 
 			return 'chrome';
 		}
@@ -301,7 +301,7 @@ class UserAgent {
 			return 'firefox';
 		}
 
-		else if(this.userAgent.includes('safari') && !this.userAgent.includes('chrome')) {
+		else if (this.userAgent.includes('safari') && !this.userAgent.includes('chrome')) {
 
 			return 'safari';
 		}
@@ -311,6 +311,32 @@ class UserAgent {
 			return 'others';
 		}
 	}
+}
+
+function promiseTimeout(promise, seconds, rejectPromise = () => Promise.resolve()) {
+
+	return new Promise(function (resolve, reject) {
+
+		let timer = setTimeout(() => {
+
+			if (rejectPromise) {
+
+				rejectPromise();
+			}
+
+			reject(new Error("timeout"));
+		}, seconds * 1000);
+
+		promise
+			.then(res => {
+				clearTimeout(timer);
+				resolve(res);
+			})
+			.catch(err => {
+				clearTimeout(timer);
+				reject(err);
+			});
+	});
 }
 
 exports.UserAgent = UserAgent;
@@ -326,3 +352,4 @@ exports.authenticatePrivileges = authenticatePrivileges;
 exports.promiseParallelLimit = promiseParallelLimit;
 exports.getIndicesOf = getIndicesOf;
 exports.flattenObject = flattenObject;
+exports.promiseTimeout = promiseTimeout;
