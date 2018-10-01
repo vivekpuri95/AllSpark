@@ -488,7 +488,7 @@ exports.update = class extends API {
 			categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id),
 			[updatedRow] = await this.mysql.query(`SELECT * FROM tb_query WHERE query_id = ?`, [this.request.body.query_id]);
 
-		let flag = false;
+		let flag = this.user.privilege.has('superadmin');
 
 		for (const categoryList of categories || [0]) {
 
