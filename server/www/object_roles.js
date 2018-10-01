@@ -186,6 +186,7 @@ exports.get = class extends API {
 				and (account_id = ? or ? = 0)
 				and (category_id in (?) or 0 in (?))
 				and group_id is not null
+				and group_id > 0
 			`,
 			[owner, ownerId, ownerId, target, targetId, targetId, accountId, accountId, categoryId, categoryId],
 		);
