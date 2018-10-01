@@ -32,6 +32,8 @@ class API {
 		if(context) {
 			this.user = context.user;
 			this.account = context.account;
+			this.request = context.request;
+			this.response = context.response;
 		}
 	}
 
