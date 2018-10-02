@@ -841,7 +841,9 @@ class Bigquery {
 	prepareQuery() {
 
 		this.filterList = [];
+
 		for (const filter of this.filters) {
+
 			this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), `@${filter.placeholder}`);
 
 			if (!filter.type) {
@@ -856,7 +858,10 @@ class Bigquery {
 						filter.type = 'text';
 					}
 				}
-				catch (e) {}
+				catch (e) {
+
+					continue;
+				}
 			}
 
 			this.makeFilters(filter.value, filter.placeholder, filter.type, filter.multiple);
