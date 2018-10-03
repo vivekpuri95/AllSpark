@@ -1,57 +1,10 @@
-/*Css for nav bar at left only on dashboard page*/
-@media (min-width: 750px) {
-
-	body > header .menu-header-toggle {
-		display: flex;
-		padding: 15px 20px;
-		justify-content: center;
-		align-items: center;
-		transition: background var(--transition-duration);
-	}
-	body > header .menu-header-toggle.selcted {
-		background: #fff;
-		color: #333;
-	}
-	body > header .menu-header-toggle:hover {
-		background: rgba(0, 0, 0, 0.25);
-		cursor: pointer;
-	}
-	body > header .nav-container .global-search {
-		margin-left: auto;
-	}
-	body > header .nav-container nav.toggle-right {
-		position: absolute;
-		display: grid;
-		right: 0;
-		top: 50px;
-		background: #fff;
-		box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-	}
-		body > header .nav-container nav.toggle-right a {
-			color: #333;
-		}
-		body > header .nav-container nav.toggle-right a:hover {
-			background: rgba(0, 0, 0, 0.15);
-		}
-}
-@media (max-width: 750px) {
-
-	body > header .menu-header-toggle {
-		display: none !important;
-	}
-		body > header .nav-container nav {
-			display: block !important;
-		}
-}
-/*end*/
-
 main {
 	display: grid !important;
 	grid-template-rows: 1fr max-content;
 	grid-template-columns: 220px calc(100% - 220px);
 }
 
-header > .nav-toggle {
+header > .menu-toggle {
 	display: none;
 	padding: 15px 20px;
 	color: var(--color-primary-text);
@@ -60,13 +13,13 @@ header > .nav-toggle {
 	justify-content: center;
 	white-space: nowrap;
 }
-header > .nav-toggle:hover {
+header > .menu-toggle:hover {
 	text-decoration: none;
 	background: rgba(255, 255, 255, 0.3);
 	cursor: pointer;
 	transition: box-shadow var(--transition-duration);
 }
-header > .nav-toggle:active {
+header > .menu-toggle:active {
 	background: rgba(255, 255, 255, 0.3);
 	box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 }
@@ -551,7 +504,7 @@ main #reports > .list.editing {
 
 @media (max-width: 750px) {
 
-	header .nav-toggle {
+	body > header .menu-toggle {
 		display: flex;
 	}
 
@@ -601,7 +554,7 @@ main #reports > .list.editing {
 					}
 }
 
-body.floating header > .nav-toggle  {
+body.floating header > .menu-toggle  {
 	display: flex;
 }
 body.floating main  {

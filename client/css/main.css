@@ -214,139 +214,162 @@ body {
 				max-width: 85%;
 				height: 80%;
 			}
-		body > header .nav-container {
+		body > header nav {
 			display: flex;
-			width: 100%;
-			background: var(--color-secondary);
+			flex-direction: column;
+			margin-right: auto;
+			background: #fff;
+			position: absolute;
+			right: 0;
+			top: 100%;
+			box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 		}
-			body > header nav {
-				display: flex;
-				margin-right: auto;
-			}
-			body > header nav > a,
-			body > header .user-toggle,
-			body > header .menu-toggle {
-				display: flex;
-				color: var(--color-secondary-text);
+			body > header nav a {
 				padding: 15px 20px;
-				letter-spacing: 1px;
-				transition: background var(--transition-duration);
-				align-items: center;
-				white-space: nowrap;
+				transition: background var(--transition-duration),
+							color var(--transition-duration),
+							box-shadow var(--transition-duration);
 			}
-			body > header a:hover,
-			body > header .menu-toggle:hover {
+			body > header nav a.selected {
+				background: rgba(0, 0, 0, 0.1);
+			}
+			body > header nav a:hover {
 				text-decoration: none;
-				background: rgba(255, 255, 255, 0.3);
+				background: var(--color-accent);
+				color: #fff;
+			}
+			body > header nav a:active {
+				color: inherit;
+				box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2)
+			}
+		body > header .user-toggle,
+		body > header .menu-toggle,
+		body > header .nav-toggle {
+			display: flex;
+			color: var(--color-secondary-text);
+			padding: 15px 20px;
+			letter-spacing: 1px;
+			transition: background var(--transition-duration);
+			align-items: center;
+			white-space: nowrap;
+		}
+		body > header .menu-toggle:hover,
+		body > header .nav-toggle:hover {
+			text-decoration: none;
+			background: rgba(255, 255, 255, 0.3);
+			cursor: pointer;
+			transition: box-shadow var(--transition-duration);
+		}
+
+		body > header .selected,
+		body > header .menu-toggle:active,
+		body > header .nav-toggle:active {
+			background: rgba(255, 255, 255, 0.3);
+			box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+		}
+
+		body > header .global-search {
+			width: 250px;
+			align-self:  center;
+			margin: 0 10px 0 auto;
+		}
+
+		body > header .user-toggle {
+			white-space: nowrap;
+			display: flex;
+		}
+		body > header .user-popup {
+			position: absolute;
+			right: 0;
+			top: 100%;
+			background: #fff;
+			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+			color: #333;
+			padding: calc(var(--gap) * 2);
+			display: flex;
+			width: 250px;
+			flex-wrap: wrap;
+		}
+			body > header .user-popup .name {
+				grid-column: 1 / 3;
+				font-size: 125%;
+				font-weight: bold;
+				margin-bottom:  var(--gap);
+				width: 100%;
+			}
+			body > header .user-popup .email {
+				color: #999;
+				width: 100%;
+				margin-bottom: calc(var(--gap) * 2);
+				user-select: text;
+			}
+			body > header .user-popup .profile {
+				margin: var(--gap) var(--gap) 0 0;
+			}
+			body > header .user-popup .logout {
+				margin: var(--gap) 0 0 var(--gap);
+			}
+			body > header .user-popup a:hover {
+				text-decoration: underline;
 				cursor: pointer;
-				transition: box-shadow var(--transition-duration);
 			}
-			body > header a:active,
-			body > header .selected,
-			body > header .menu-toggle:active {
-				background: rgba(255, 255, 255, 0.3);
-				box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
-			}
-
-			body > header .global-search {
-				width: 250px;
-				align-self:  center;
-				margin: 0 10px;
-			}
-
-			body > header .user-toggle {
-				white-space: nowrap;
-				display: flex;
-			}
-			body > header .user-popup {
-				position: absolute;
-				right: 0;
-				top: 100%;
-				background: #fff;
-				box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-				color: #333;
-				padding: calc(var(--gap) * 2);
-				display: flex;
-				width: 250px;
-				flex-wrap: wrap;
-			}
-				body > header .user-popup .name {
-					grid-column: 1 / 3;
-					font-size: 125%;
-					font-weight: bold;
-					margin-bottom:  var(--gap);
-					width: 100%;
-				}
-				body > header .user-popup .email {
-					color: #999;
-					width: 100%;
-					margin-bottom: calc(var(--gap) * 2);
-					user-select: text;
-				}
-				body > header .user-popup .profile-link {
-					margin: var(--gap) var(--gap) 0 0;
-				}
-				body > header .user-popup .logout {
-					margin: var(--gap) 0 0 var(--gap);
-				}
-				body > header .user-popup a:hover {
-					text-decoration: underline;
-					cursor: pointer;
-				}
-			body > header .menu-toggle {
-				display: none;
-				margin-left: auto;
-			}
+		body > header .menu-toggle {
+			display: none;
+			margin-left: auto;
+		}
 
 		@media (max-width: 750px) {
 
-			body > header .logo {
-				margin-left: auto;
+			body > header {
+				height: auto;
+				display: grid;
+				grid-template-columns: max-content 1fr max-content;
 			}
-			body > header .nav-container {
-				display: none;
-				flex-direction: column;
-				background: var(--color-secondary);
-				position: absolute;
-				top: 100%;
-			}
-			body > header .nav-container.show {
-				display: flex;
-			}
-				body > header nav {
-					flex-direction: column;
+				body > header .menu-toggle {
+					order: 1;
+				}
+				body > header .logo {
+					order: 2;
+					margin: 0 auto;
+				}
+				body > header .nav-toggle {
 					order: 3;
-					margin: 0;
-					padding: calc(var(--gap) * 2) 0;
+				}
+				body > header .global-search {
+					display: none;
+					order: 4;
+					grid-column: 1 / 4;
+					width: 100%;
+					border-bottom: 1px solid #ccc;
+				}
+				body > header .global-search.show {
+					display: initial;
+				}
+					body > header .global-search > input.search-input {
+						border-radius: 0;
+						padding: 10px;
+						height: auto;
+					}
+				body > header .user-popup.show {
+					display: flex !important;
+					position: static;
+					order: 5;
+					width: 100%;
+					grid-column: 1 / 4;
+					box-shadow: none;
+					border-bottom: 1px dashed #ccc;
 				}
 				body > header .user-toggle {
 					display: none;
 				}
-				body > header .user-popup {
+				body > header nav {
 					position: static;
-					display: flex !important;
-					order: 2;
-					background: transparent;
-					color: #fff;
-					padding: 10px 20px;
-					box-shadow: none;
+					order: 6;
+					grid-column: 1 / 4;
 					width: 100%;
-					border-bottom: 1px dashed #999;
+					box-shadow: none;
 				}
-					body > header .user-popup a {
-						color: #fff;
-					}
-					body > header .user-popup .email {
-						color: #ccc;
-					}
-				body > header .global-search {
-					order: 1;
-					width: calc(100% - 40px);
-					margin: 10px 20px;
-				}
-			body > header .menu-toggle {
-				display: flex;
-			}
+
 			main .dialog-box {
 				width: calc(100% - calc(var(--gap) * 3)) !important;
 				max-height: calc(100% - calc(var(--gap) * 10));
