@@ -122,6 +122,9 @@ class Page {
 
 	renderPage() {
 
+		if(!this.account || !this.user)
+			return;
+
 		document.body.insertBefore(this.header.container, this.container);
 
 		if(window.account) {
