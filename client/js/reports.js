@@ -3039,7 +3039,7 @@ class DataSourceColumnFilter {
 			{
 				slug: 'regularexpression',
 				name: 'RegExp',
-				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
+				apply: (q, v) => v.toString().match(new RegExp(q, 'i')),
 			},
 		];
 	}
