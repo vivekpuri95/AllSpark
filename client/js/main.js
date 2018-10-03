@@ -2976,7 +2976,7 @@ class SearchColumnFilters extends Set {
 
 		this.globalSearch = new GlobalColumnSearchFilter(this, advancedSearch);
 
-
+		this.add(this.globalSearch);
 
 		this.render();
 	}
@@ -3165,18 +3165,7 @@ class GlobalColumnSearchFilter extends SearchColumnFilter {
 		if(this.advancedSearch) {
 
 			container.insertAdjacentHTML('beforeend','<button type="button" class="advanced"><i class="fa fa-angle-down"></i></button>');
-			container.querySelector('.advanced').on('click', () => {
-
-				if(!this.searchColumns.size) {
-
-					this.searchColumns.add(new SearchColumnFilter(this.searchColumns));
-					this.searchColumns.add(this.searchColumns.globalSearch);
-					this.searchColumns.render();
-				}
-
-				this.searchColumns.container.classList.toggle('hidden');
-			});
-
+			container.querySelector('.advanced').on('click', () => this.searchColumns.container.classList.toggle('hidden'));
 		}
 		return container;
 	}

@@ -596,7 +596,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		searchContainer.querySelector('.searchValue').value = 'Tags';
 		searchContainer.querySelector('.searchType').value = 'equalto';
 
-		this.load()
+		this.load();
 	}
 
 	get reports() {
