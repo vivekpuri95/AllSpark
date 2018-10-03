@@ -141,8 +141,8 @@ exports.list = class extends API {
 				connection.deletable = connection.deletable || constants.adminCategory.some(x => deleteCategories.includes(x)) || deleteFlag;
 			}
 
-			connection.editable = connection.editable || connection.added_by == this.user.user_id
-			connection.deletable = connection.deletable || connection.added_by == this.user.user_id;
+			connection.editable = connection.editable || connection.added_by == this.user.user_id || this.user.privilege.has('superadmin');
+			connection.deletable = connection.deletable || connection.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 		}
 
 		for(const data of response) {
