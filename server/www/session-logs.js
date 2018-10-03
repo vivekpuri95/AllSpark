@@ -52,7 +52,6 @@ class SessionLogs extends API {
 				user_id: this.request.body.user_id,
 				type: this.request.body.type,
 				user_agent: this.request.body.user_agent || this.request.get('user-agent'),
-				expire_time: this.request.body.expire_time,
 				os: userAgent.os,
 				browser: userAgent.browser,
 				ip: this.request.headers['x-real-ip'],

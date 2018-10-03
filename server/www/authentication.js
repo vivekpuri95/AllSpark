@@ -297,8 +297,6 @@ exports.login = class extends API {
 
 		const user_agent = new commonFun.UserAgent(this.request.get('user-agent'));
 
-		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 7) * 86400);
-
 		let session = {};
 
 		try {
@@ -309,7 +307,6 @@ exports.login = class extends API {
 			sessionLogs.request.body = {
 				user_id: this.userDetails.user_id,
 				type: 'login',
-				expire_time: expiryTime,
 				description: 'Login',
 				user_agent: this.request.get('user-agent'),
 				os: user_agent.os,
@@ -330,7 +327,7 @@ exports.login = class extends API {
 		};
 
 		const finalObj = {
-			jwt: commonFun.makeJWT(obj, expiryTime),
+			jwt: commonFun.makeJWT(obj),
 		};
 
 		Object.assign(finalObj, this.authResponseObj);
