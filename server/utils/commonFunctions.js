@@ -40,9 +40,11 @@ async function verifyBcryptHash(pass, hash) {
 	return await bcrypt.compare(pass, hash)
 }
 
-function makeJWT(obj, expiresIn = Math.floor(Date.now() / 1000) + (86400 * 7)) {
+function makeJWT(obj, expiresIn) {
 
-	obj.exp = expiresIn;
+	if(expiresIn) {
+		obj.exp = expiresIn;
+	}
 
 	return jwt.sign(obj, config.get('secret_key'));
 
