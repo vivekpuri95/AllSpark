@@ -351,6 +351,9 @@ Page.serviceWorker = class PageServiceWorker {
 	 */
 	statechange(event = {}) {
 
+		if(!user.privileges.has('superadmin'))
+			return;
+
 		if(event.target && event.target.state != 'redundant')
 			return;
 
