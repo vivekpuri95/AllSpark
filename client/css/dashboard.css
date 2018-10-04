@@ -504,9 +504,13 @@ main #reports > .list.editing {
 
 @media (max-width: 1000px) {
 
-	body > header .menu-toggle {
-		display: flex;
+
+	body > header {
+		grid-template-columns: max-content 1fr max-content;
 	}
+		body > header .menu-toggle {
+			display: flex;
+		}
 
 	main {
 		grid-template-columns: 1fr;
