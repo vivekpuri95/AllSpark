@@ -226,6 +226,8 @@ body {
 		}
 			body > header nav a {
 				padding: 15px 20px;
+				letter-spacing: 1px;
+				color: #222;
 				transition: background var(--transition-duration),
 							color var(--transition-duration),
 							box-shadow var(--transition-duration);
@@ -243,7 +245,6 @@ body {
 				box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2)
 			}
 		body > header .user-toggle,
-		body > header .menu-toggle,
 		body > header .nav-toggle {
 			display: flex;
 			color: var(--color-secondary-text);
@@ -313,10 +314,6 @@ body {
 				text-decoration: underline;
 				cursor: pointer;
 			}
-		body > header .menu-toggle {
-			display: none;
-			margin-left: auto;
-		}
 
 		@media (max-width: 750px) {
 
@@ -331,6 +328,7 @@ body {
 				body > header .logo {
 					order: 2;
 					margin: 0 auto;
+					height: 50px;
 				}
 				body > header .nav-toggle {
 					order: 3;

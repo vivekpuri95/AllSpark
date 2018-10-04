@@ -502,7 +502,7 @@ main #reports > .list.editing {
 					max-height: calc(100vh - 200px);
 				}
 
-@media (max-width: 750px) {
+@media (max-width: 1000px) {
 
 	body > header .menu-toggle {
 		display: flex;
