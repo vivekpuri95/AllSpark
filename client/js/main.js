@@ -88,7 +88,6 @@ class Page {
 		}
 
 		Storage.set('refresh_token', refresh_token);
-		Cookies.set('refresh_token', refresh_token);
 
 		await API.refreshToken();
 		await MetaData.load();
@@ -181,7 +180,10 @@ class Page {
 		userPopup.on('click', e => e.stopPropagation());
 		navContainer.on('click', e => e.stopPropagation());
 
-		header.querySelector('.logout').on('click', () => User.logout());
+		header.querySelector('.logout').on('click', () => {
+			Cookies.set('bypassLogin', '')
+			User.logout();
+		});
 
 		menuToggle.on('click', e => {
 			e.stopPropagation();
@@ -984,6 +986,9 @@ class User {
 	}
 
 	static async logout({next, callback, redirect = true, message = ''} = {}) {
+
+		Cookies.set('refresh_token', '');
+		Cookies.set('token', '');
 
 		try {
 

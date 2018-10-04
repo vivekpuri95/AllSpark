@@ -334,7 +334,7 @@ exports.login = class extends API {
 
 		Object.assign(finalObj, this.authResponseObj);
 
-		//this.response.cookie('refresh_token', finalObj.jwt, { maxAge: 365 * 24 * 60 * 60 * 1000});
+		this.response.cookie('refresh_token', finalObj.jwt, { maxAge: 365 * 24 * 60 * 60 * 1000, path: '/'});
 
 		return finalObj;
 	}
@@ -501,7 +501,7 @@ exports.refresh = class extends cycleDetection {
 
 		const token = commonFun.makeJWT(obj, Math.floor(Date.now() / 1000) + (5 * 60));
 
-		this.response.cookie('token', token, { maxAge: 365 * 24 * 60 * 60 * 1000 });
+		this.response.cookie('token', token, { maxAge: 365 * 24 * 60 * 60 * 1000, path: '/' });
 
 		return token;
 	}
