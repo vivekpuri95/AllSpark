@@ -299,6 +299,8 @@ exports.login = class extends API {
 
 		let session = {};
 
+		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 30) * 86400);
+
 		try {
 			sessionLogs.request = {};
 
@@ -327,7 +329,7 @@ exports.login = class extends API {
 		};
 
 		const finalObj = {
-			jwt: commonFun.makeJWT(obj),
+			jwt: commonFun.makeJWT(obj, expiryTime),
 		};
 
 		Object.assign(finalObj, this.authResponseObj);
