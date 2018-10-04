@@ -1,6 +1,7 @@
 const API = require('../../utils/api');
 const Providers = require('./providers');
 const fetch = require('node-fetch');
+const constants = require('../../utils/constants');
 
 exports.list = class extends API {
 
@@ -149,9 +150,7 @@ exports.test = class extends API {
 
 exports.gaReports = class extends API {
 
-	async gaReports({id, viewId, startDate, endDate} = {}) {
-
-		this.user.privilege.needs('connection.list');
+	async gaReports({id, viewId, startDate, endDate, metrics, dimensions} = {}) {
 
 		const [oAuthProvider] = await this.mysql.query(
 			`SELECT
@@ -164,9 +163,9 @@ exports.gaReports = class extends API {
 			JOIN
 				tb_oauth_providers p USING (provider_id)
 			WHERE
-				c.id = ? AND
-				c.user_id = ? AND
-				c.status = 1`,
+				c.id = ? 
+				AND c.user_id = ?
+				AND c.status = 1`,
 			[id, this.user.user_id]
 		);
 
@@ -181,7 +180,74 @@ exports.gaReports = class extends API {
 
 		this.assert(connection, 'Invalid provider type!');
 
-		const access_token = await connection.test();
+		const response = await this.fetch(viewId, startDate, endDate, metrics, dimensions);
+
+		const processedData = [];
+
+		for(const row of response.data.rows) {
+
+			const rowObj = {};
+
+			for(const [i, dimension] of row.dimensions.entries()) {
+
+				rowObj[response.columnHeader.dimensions[i].replace('ga:', '')] = dimension;
+			}
+
+			for(const [i, metric] of row.metrics[0].values.entries()) {
+
+				rowObj[response.columnHeader.metricHeader.metricHeaderEntries[i].name.replace('ga:', '')] = metric;
+			}
+
+			processedData.push(rowObj);
+		}
+
+		if(!this.account.settings.has("load_saved_connection")) {
+
+			return {
+				status: true,
+				message: 'Save connection missing'
+			}
+		}
+		else {
+
+			const database = await this.initializeDb();
+
+			const insertResponse = await this.mysql.query(
+				`INSERT INTO ${database}.${constants.saveQueryResultTable} (type, user_id, data) VALUES ('ga', ?, ?)`,
+				[this.user.user_id, processedData],
+				this.account.settings.get("load_saved_connection")
+			);
+
+			return {
+				status: true,
+				data: {
+					message: `Data saved in the table ${constants.saveQueryResultTable}`,
+					response: insertResponse
+				}
+			}
+		}
+
+	}
+
+	async fetch(viewId, startDate, endDate, metrics, dimensions) {
+
+		const
+			access_token = await connection.test(),
+			gaMetrics = [], gaDimensions = [];
+
+		for(const metric of typeof metrics == 'string' ? [metrics] : metrics) {
+
+			gaMetrics.push({
+				"expression": `ga:${metric}`
+			});
+		}
+
+		for(const dimension of typeof dimensions == 'string' ? [dimensions] : dimensions) {
+
+			gaDimensions.push({
+				"name": `ga:${dimension}`
+			});
+		}
 
 		const
 			options = {
@@ -191,7 +257,8 @@ exports.gaReports = class extends API {
 						{
 							'viewId': viewId,
 							'dateRanges': [{'startDate': startDate, 'endDate': endDate}],
-							'metrics': [{'expression': 'ga:users'}]
+							'metrics': gaMetrics,
+							"dimensions": gaDimensions
 						}
 					]
 				}),
@@ -205,9 +272,55 @@ exports.gaReports = class extends API {
 
 		response = await response.json();
 
-		return response;
-
+		return response.reports[0];
 	}
+
+	async initializeDb() {
+
+		let
+			conn = this.account.settings.get("load_saved_connection"),
+			db = await this.mysql.query("show databases", [], conn);
+
+		db = db.filter(x => x === (this.account.settings.get("load_saved_database") || constants.saveQueryResultDb));
+
+		if (!db) {
+
+			await this.mysql.query(
+				`CREATE DATABASE IF NOT EXISTS ${credentials.db || constants.saveQueryResultDb}`,
+				[],
+				conn
+			);
+		}
+
+		await this.mysql.query(`
+			CREATE TABLE IF NOT EXISTS ??.?? (
+			  \`id\` int(11) unsigned NOT NULL AUTO_INCREMENT,
+			  \`type\` varchar(20) DEFAULT NULL,
+			  \`user_id\` int(11) DEFAULT NULL,
+			  \`data\` longblob,
+			  \`created_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+			  \`updated_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			  PRIMARY KEY (\`id\`),
+			  KEY \`type\` (\`type\`),
+			  KEY \`user_id\` (\`user_id\`),
+			  KEY \`created_at\` (\`created_at\`)
+			) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
+			[this.account.settings.get("load_saved_database") || constants.saveQueryResultDb, constants.saveQueryResultTable],
+			conn,
+		);
+
+		if (!credentials.db) {
+
+			await this.mysql.query(
+				`update tb_credentials set db = ? where id = ?`,
+				[this.account.settings.get("load_saved_database") || constants.saveQueryResultDb, credentials.id],
+				"write"
+			);
+		}
+
+		return this.account.settings.get("load_saved_database") || constants.saveQueryResultDb;
+	}
+
 }
 
 class OAuthConnection {

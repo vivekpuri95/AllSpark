@@ -1,6 +1,5 @@
 const API = require('../../utils/api');
 const Google = require('./google');
-const oauthConnections = require('./connections');
 
 class GoogleAnalytics extends API {
 
