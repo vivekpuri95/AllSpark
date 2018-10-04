@@ -1,0 +1,34 @@
+:root {
+
+	--color-primary: #212121;
+	--color-primary-text: #eee;
+
+	--color-secondary: #FFC107;
+	--color-secondary-text: #333;
+
+	--color-selected: #FFC107;
+	--color-selected-text: #333;
+
+	--color-hover: #666666;
+	--color-hover-text: #eee;
+
+	--color-background: #303030;
+	--color-background-text: #eee;
+
+	--color-surface: #444;
+	--color-surface-text: #eee;
+}
+
+a {
+	color: #fff;
+}
+.NA {
+	color: #ccc;
+}
+
+input:not([type=checkbox]):not([type=radio]),
+select,
+button {
+	background: var(--color-hover);
+	color: var(--color-hover-text);
+}

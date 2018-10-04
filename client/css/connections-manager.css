@@ -1,9 +1,4 @@
-main,
-body {
-	background: #fff;
-}
 main section#list {
-	background: #fff;
 	padding: 5px calc(var(--gap) * 4);
 }
 main section .connections {
@@ -19,12 +14,11 @@ main section .connections {
 	main section .connections .heading-bar {
 		display: flex;
 		justify-content: center;
-		background: #fff;
 		padding: calc(var(--gap) * 3) 0;
 	}
 		main section .connections .heading-bar .data-connection {
-			background: var(--color-accent);
-			color: #fff;
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
 			padding: var(--gap) calc(var(--gap) * 2);
 			box-shadow: 0 0 20px rgba(0, 0, 0, 0.45);
 			border-radius: 4px;
@@ -36,13 +30,12 @@ main section .connections {
 			align-items: center;
 			flex: 1;
 			margin-left: 20px;
-			background: #eee;
+			background: var(--color-hover);
+			color: var(--color-hover-text);
 			padding: 0 10px;
-			color: #999;
 			border-radius: 4px;
 		}
 			main section .connections .heading-bar .search-connections input {
-				background: #eee;
 				width: 100%;
 				border: 0;
 				outline: 0;
@@ -55,14 +48,16 @@ main section .connections {
 		}
 			main .connections #data-connections article {
 				min-height: 300px;
-				background: #fff;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 				box-shadow:  0 2px 4px 0 rgba(172, 172, 172, 0.5);
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+				border-radius: 3px;
 				min-width: 300px;
 				transition: box-shadow var(--transition-duration);
 			}
 			main .connections #data-connections article:hover {
 				box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
-				cursor: pointer;
 			}
 				main .connections #data-connections article .article-toolbar {
 					display: grid;
@@ -73,8 +68,8 @@ main section .connections {
 					border-bottom: 1px solid #eee;
 				}
 					main .connections #data-connections article .article-toolbar button {
-						background: var(--color-accent);
-						color: var(--color-accent-text);
+						background: var(--color-secondary);
+						color: var(--color-secondary-text);
 						border-radius: 20px;
 						height: 40px;
 						width: 40px;

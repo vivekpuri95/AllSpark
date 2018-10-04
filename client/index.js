@@ -32,8 +32,9 @@ class HTMLAPI extends API {
 
 	async body() {
 
+		this.stylesheets.push('/css/themes/dark.css');
+
 		if(this.account.settings.has('custom_css'))
-			this.stylesheets.push('/css/custom.css');
 
 		if(this.account.settings.has('custom_js'))
 			this.scripts.push('/js/custom.js');

@@ -6,7 +6,8 @@ main {
 	max-width: 700px;
 }
 main .section > h2 {
-	margin: calc(var(--gap) * 2) 0;
+	margin: 25px 0 10px;
+	padding-bottom: 5px;
 }
 .angle-rotate {
 	transform: rotate(90deg);
@@ -49,7 +50,8 @@ main .section > h2 {
 main .profile-details,
 main .privileges,
 main .roles {
-	background: #fff;
+	background: var(--color-surface);
+	color: var(--color-surface-text);
 	table-layout: fixed;
 	overflow: hidden;
 }
@@ -120,7 +122,8 @@ main .switch {
 				margin: 0;
 			}
 		main .activity-info article {
-			background: #fff;
+			background: var(--color-surface);
+			color: var(--color-surface-text);
 			overflow: hidden;
 			display: flex;
 			flex-direction:  column;
@@ -153,6 +156,7 @@ main .switch {
 		main .activity-info article .info-grid:hover {
 			cursor: pointer;
 			background: var(--color-hover);
+			color: var(--color-hover-text);
 		}
 			main .activity-info article .info-grid .down {
 				text-align: right;
@@ -184,7 +188,6 @@ main .switch {
 			main .activity-info article .info-grid .title {
 				grid-column: 2;
 				font-size: 125%;
-				color: #333;
 			}
 			main .activity-info article .activity-groups {
 				display: grid;

@@ -11,13 +11,13 @@ main {
 	}
 		main > nav a {
 			padding: 12px 16px;
-			color: #333;
 			transition: background var(--transition-duration),
 						color var(--transition-duration),
 						box-shadow var(--transition-duration);
 		}
 		main > nav a:hover {
-			background: #ddd;
+			background: var(--color-hover);
+			color: var(--color-hover-text);
 			text-decoration: none;
 		}
 		main > nav a.selected {
@@ -205,8 +205,9 @@ main .about-list {
 		display: grid;
 		grid-template-columns: max-content max-content;
 		grid-gap: calc(var(--gap) * 3);
-		background: #fff;
-		padding: calc(var(--gap) * 2);
+		background: var(--color-surface);
+		color: var(--color-surface-text);
+		padding: 25px;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
 		main .about-list .info .key {

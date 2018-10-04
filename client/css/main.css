@@ -1,20 +1,29 @@
 @import url('https://fonts.googleapis.com/css?family=Roboto');
 
 :root {
-	--color-primary: #2a313f;
+
+	--color-primary: #3e7adc;
 	--color-primary-text: #fff;
-	--color-secondary: #3e7adc;
-	--color-secondary-text: #fff;
-	--color-accent: #3e7adc;
-	--color-accent-text: #fff;
+
+	--color-secondary: #FFC107;
+	--color-secondary-text: #333;
+
 	--color-selected: #fff59d;
 	--color-selected-text: inherit;
+
 	--color-hover: #c3d6e8;
 	--color-hover-text: inherit;
+
+	--color-background: #eee;
+	--color-background-text: #222;
+
+	--color-surface: #fff;
+	--color-surface-text: #222;
 
 	--transition-duration: 300ms;
 	--gap: 5px;
 }
+
 * {
 	box-sizing: border-box;
 }
@@ -28,7 +37,7 @@ button {
 	outline-width: 2px;
 	font-size: 90%;
 	border: 1px solid #ccc;
-	background: #fff;
+	background: transparent;
 	transition: background var(--transition-duration),
 				color var(--transition-duration),
 				box-shadow var(--transition-duration),
@@ -36,6 +45,8 @@ button {
 }
 textarea {
 	border: 1px solid #ccc;
+	background: var(--color-hover);
+	color: var(--color-hover-text);
 }
 input[type=button],
 input[type=reset],
@@ -48,18 +59,18 @@ input[type=button].selected,
 input[type=reset].selected,
 input[type=submit].selected,
 button.selected {
-	background: var(--color-accent);
-	color: var(--color-accent-text);
-	border: 1px solid var(--color-accent);
+	background: var(--color-selected);
+	color: var(--color-selected-text);
+	border: 1px solid var(--color-selected);
 }
 input[type=button]:hover,
 input[type=reset]:hover,
 input[type=submit]:hover,
 button:hover {
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-	background: var(--color-accent);
-	color: var(--color-accent-text);
-	border-color: var(--color-accent);
+	background: var(--color-hover);
+	color: var(--color-hover-text);
+	border-color: var(--color-hover);
 }
 input[type=button]:active,
 input[type=reset]:active,
@@ -81,8 +92,8 @@ button > i {
 }
 
 input[type=submit] {
-	background: var(--color-accent);
-	color: var(--color-accent-text) ;
+	background: var(--color-secondary);
+	color: var(--color-secondary-text);
 	letter-spacing: 1px;
 }
 
@@ -156,8 +167,8 @@ body {
 	flex-direction: column;
 	user-select: none;
 	font-size: 14px !important;
-	color: #222;
-	background: #eee;
+	background: var(--color-background);
+	color: var(--color-background-text);
 }
 	body > #ajax-working {
 		position: fixed;
@@ -170,8 +181,8 @@ body {
 		letter-spacing: 1px;
 		transition: opacity var(--transition-duration);
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-		background: var(--color-accent-text);
-		color: var(--color-accent);
+		background: var(--color-secondary);
+		color: var(--color-secondary-text);
 		width: 80px;
 		z-index: 11;
 	}
@@ -187,8 +198,8 @@ body {
 		transition: background var(--transition-duration);
 	}
 	body > header {
-		background: var(--color-secondary);
-		color: var(--color-secondary-text);
+		background: var(--color-primary);
+		color: var(--color-primary-text);
 		display: flex;
 		position: sticky;
 		top: 0;
@@ -214,17 +225,22 @@ body {
 				max-width: 85%;
 				height: 80%;
 			}
-		body > header nav {
-			display: flex;
-			flex-direction: column;
-			margin-right: auto;
-			background: #fff;
-			position: absolute;
-			right: 0;
-			top: 100%;
-			box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-		}
-			body > header nav a {
+			body > header nav {
+				display: flex;
+				margin-right: auto;
+				flex-direction: column;
+				margin-right: auto;
+				background: #fff;
+				position: absolute;
+				right: 0;
+				top: 100%;
+				box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+			}
+			body > header nav > a,
+			body > header .user-toggle,
+			body > header .menu-toggle {
+				display: flex;
+				color: var(--color-accent-text);
 				padding: 15px 20px;
 				letter-spacing: 1px;
 				color: #222;
@@ -283,9 +299,9 @@ body {
 			position: absolute;
 			right: 0;
 			top: 100%;
-			background: #fff;
+			background: var(--color-surface);
+			color: var(--color-surface-text);
 			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-			color: #333;
 			padding: calc(var(--gap) * 2);
 			display: flex;
 			width: 250px;
@@ -374,12 +390,9 @@ body {
 			}
 		}
 
-	main {
-		background: #eee;
-	}
-
 	main .block {
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
 
@@ -401,16 +414,6 @@ body {
 				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
-			}
-			main section .export-form {
-				background: #fff;
-				box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-				padding: 10px;
-				margin-top: calc(var(--gap) * 2);
-				user-select: text;
-				font-family: monospace;
-				max-height: 150px;
-				overflow: auto;
 			}
 
 	main .loading {
@@ -487,10 +490,11 @@ body {
 					opacity: 1;
 				}
 		main table tbody tr {
-			transition: var(--transition-duration);
+			transition: background var(--transition-duration),
+						color var(--transition-duration);
 		}
 		main table tbody tr:nth-child(2n) {
-			 background: #efefef;
+			background: rgba(0, 0, 0, 0.1);
 		}
 		main table:not(.static) tbody tr:hover {
 			background: var(--color-hover);
@@ -551,8 +555,8 @@ body {
 		}
 			.form label > span {
 				font-size: 90%;
-				color: #444;
 				font-weight: bold;
+				letter-spacing: 0.5px;
 			}
 
 .dialog-box-blanket {
@@ -571,7 +575,8 @@ body {
 	.dialog-box {
 		display: flex;
 		flex-direction: column;
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		box-shadow: 0 0 100px rgba(0, 0, 0, 0.5);
 		position: fixed;
 		max-height: 80%;
@@ -585,8 +590,8 @@ body {
 		.dialog-box > header {
 			display: grid;
 			grid-template-columns: max-content 1fr;
-			background: var(--color-accent);
-			color: var(--color-accent-text);
+			background: var(--color-primary);
+			color: var(--color-primary-text);
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
 		}
 			.dialog-box header h3 {
@@ -633,8 +638,8 @@ body {
 		margin: 0;
 		padding: 5px 0;
 		list-style-type: none;
-		color: #333;
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
 		position: absolute;
 		right: 0;
@@ -653,7 +658,8 @@ body {
 		}
 		.global-search ul li:focus,
 		.global-search ul li:hover {
-			background: #eee;
+			background: var(--color-hover);
+			color: var(--color-hover-text);
 		}
 			.global-search ul li > span.loading {
 				display: flex;
@@ -665,7 +671,6 @@ body {
 				background: #eee;
 			}
 			.global-search ul li a {
-				color: #333;
 				outline: 0;
 				padding: 10px;
 				height: 100%;
@@ -702,7 +707,8 @@ body {
 		display: flex;
 		flex-direction: column;
 		border: 1px solid #ccc;
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		max-height: 250px;
 		width: 100%;
@@ -755,7 +761,8 @@ body {
 				box-shadow var(--transition-duration);
 			}
 			.multi-select .options .list label:hover {
-				background: #ddd;
+				background: var(--color-hover);
+				color: var(--color-hover-text);
 				cursor: pointer;
 			}
 			.multi-select .options .list label:active {
@@ -794,7 +801,8 @@ body {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	background: #fff;
+	background: var(--color-surface);
+	color: var(--color-surface-text);
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 .dialog-box .object-roles {
@@ -816,7 +824,8 @@ body {
 		display: grid;
 		position: sticky;
 		bottom: 0;
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		grid-auto-flow: column;
 		grid-gap: calc(var(--gap) * 2);
 		padding: calc(var(--gap) * 2);

@@ -12,7 +12,7 @@ main > * {
 }
 	main .logo {
 		width: 100%;
-		background: var(--color-secondary);
+		background: var(--color-accent);
 		padding: 20px 50px;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 		border-radius: 2px;

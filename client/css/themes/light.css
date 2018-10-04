@@ -1,27 +1,20 @@
 :root {
-	--color-primary: #282828;
-	--color-primary-text: #eee;
-	--color-secondary: #666;
-	--color-secondary-text: #ddd;
-	--color-accent: #1984ff;
-	--color-accent-text: #fff;
-	--color-hover: #ddf;
-	--transition-duration: 300ms;
-	--gap: 5px;
+
+	--color-primary: #3e7adc;
+	--color-primary-text: #fff;
+
+	--color-secondary: #3e7adc;
+	--color-secondary-text: #fff;
+
+	--color-selected: #fff59d;
+	--color-selected-text: inherit;
+
+	--color-hover: #c3d6e8;
+	--color-hover-text: inherit;
+
+	--color-background: #eee;
+	--color-background-text: #222;
+
+	--color-surface: #fff;
+	--color-surface-text: #222;
 }
-body > main > nav {
-	background: #eee;
-	color: #333;
-	border-right: 1px solid #ccc;
-}
-	body > main > nav .label {
-		color: #333;
-	}
-	body > main > nav .label:hover {
-		background: #ddd;
-		color: #222;
-	}
-	body > main > nav .label.selected {
-		background: #ccc;
-		color: #222;
-	}

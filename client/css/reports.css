@@ -14,7 +14,7 @@ main .dataset {
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 		max-height: 250px;
 		overflow: auto;
-		border:  1px solid #ccc;
+		border: 1px solid #ccc;
 		border-top: 0;
 	}
 		main .dataset label {
@@ -82,9 +82,8 @@ main .dataset {
 		overflow: auto;
 		user-select: text;
 		font-family: inherit;
-		background: #f1f1f1;
+		background: rgba(0, 0, 0, 0.15);
 		box-shadow: none;
-		color: #aaa;
 		flex: 1;
 		display: flex;
 		flex-direction: column;
@@ -130,8 +129,8 @@ main .dataset {
 			user-select: text;
 			margin: 0 0 -22px 15px;
 			padding: 6px 10px 6px 15px;
-			background: var(--color-accent);
-			color: var(--color-accent-text);
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
 			border-radius: 4px;
 			letter-spacing: 0.5px;
 			overflow: auto;
@@ -143,6 +142,7 @@ main .dataset {
 		}
 			.data-source > header i {
 				margin-left: 5px;
+				color: var(--color-secondary-text);
 			}
 		.data-source > header .actions {
 			height: 22px;
@@ -180,9 +180,9 @@ main .dataset {
 				order: 2000;
 			}
 		.data-source .menu-toggle.selected {
-			background: var(--color-accent);
-			color: var(--color-accent-text);
-			border-color: var(--color-accent);
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
+			border-color: var(--color-secondary);
 		}
 		.singleton .data-source .menu-toggle {
 			display: none;
@@ -191,7 +191,8 @@ main .dataset {
 	.data-source > .menu {
 		position: absolute;
 		top: 25px;
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		z-index: 6;
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 		display: flex;
@@ -206,7 +207,7 @@ main .dataset {
 		width: 100%;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		border-radius: 0;
-		border-top: 20px solid #fff;
+		border-top: 20px solid var(--color-surface);
 		border-bottom: 1px solid #ccc;
 	}
 		.data-source > .menu .item {
@@ -220,7 +221,8 @@ main .dataset {
 				right: 100%;
 				top: 0;
 				z-index: 7;
-				background: #fff;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 				box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 			}
 			.data-source > .menu .item:hover > .submenu {
@@ -253,14 +255,14 @@ main .dataset {
 				text-decoration: none;
 			}
 			.data-source > .menu .item:hover > .label {
-				background: var(--color-accent);
+				background: var(--color-hover);
+				color: var(--color-hover-text);
 				cursor: pointer;
-				color: var(--color-accent-text);
 			}
 			.data-source > .menu .item.selected > .label {
 				background: var(--color-selected);
-				box-shadow: inset 5px 0px 0 0px #a9a059;
-				color: #333;
+				color: var(--color-selected-text);
+				box-shadow: inset 5px 0px 0 0px rgba(0, 0, 0, 0.25);
 			}
 			.data-source > .menu .label:active {
 				box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
@@ -270,7 +272,7 @@ main .dataset {
 				}
 				.data-source > .menu .label i {
 					text-align: center;
-					color: #666;
+					color: #888;
 				}
 				.data-source > .menu .item:hover > .label .NA,
 				.data-source > .menu .item:hover > .label i {
@@ -406,16 +408,6 @@ main .dataset {
 		flex-direction: column;
 	}
 
-    .data-source > .export-json {
-          background: #fff;
-          box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-          padding: 10px;
-          margin-top: calc(var(--gap) * 2);
-          user-select: text;
-          font-family: monospace;
-          max-height: 150px;
-          overflow: auto;
-    }
 	.data-source > .share-link {
 		background: #fff;
 		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
@@ -458,11 +450,12 @@ main .dataset {
 		height: 37px;
 		transition: filter var(--transition-duration);
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		z-index: 1;
 	}
 	.data-source > .columns.blur {
-		filter: blur(2px);
+		filter: blur(6px);
 	}
 	.data-source > .columns.over-flow::after {
 		background: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0.15));
@@ -522,7 +515,7 @@ main .dataset {
 				opacity: 0.5;
 			}
 			.data-source .column > .label:hover {
-				background: #eee;
+				background: rgba(0, 0, 0, 0.2);
 			}
 			.data-source .column > .label:active {
 				box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
@@ -555,7 +548,7 @@ main .dataset {
 					padding: 0 var(--gap);
 					font-size: 118%;
 					font-weight: bold;
-				    border-left: 1px solid transparent;
+					border-left: 1px solid transparent;
 					transition: opacity var(--transition-duration),
 								border var(--transition-duration);
 				}
@@ -565,64 +558,64 @@ main .dataset {
 				.data-source .column > .label:hover .edit-column {
 					opacity: 1;
 				}
-
-						.data-source .column form h3,
-						.dialog-box form h3{
-							margin: 0;
-							padding: var(--gap) 10px;
-							background: var(--color-secondary);
-							color: var(--color-secondary-text);
-							position: sticky;
-							top: 0px;
+					.data-source .column form h3,
+					.dialog-box form h3 {
+						margin: 0;
+						padding: 10px;
+						background: var(--color-primary);
+						color: var(--color-primary-text);
+						position: sticky;
+						top: 0px;
+						font-weight: normal;
+						font-size: 100%;
+						z-index: 1;
+					}
+					.data-source .column form label {
+						margin: 0 calc(var(--gap) * 2);
+					}
+					.data-source .column form label.drilldown-dropdown {
+						max-width: 100%;
+					}
+						.data-source .column form .category-group {
+							grid-template-columns: auto 200px;
+							display: grid;
+							grid-gap: calc(var(--gap));
+						}
+							.data-source .column form .category-group input {
+								flex: 1;
+								margin-left: calc(var(--gap) * 2);
+								width: calc(100% - 20px);
+							}
+						.data-source .column form input {
+							transition: background var(--transition-duration);
+						}
+						.data-source .column form input[type=color] {
+							width: 200px;
+							background: transparent;
+							padding: 0;
+						}
+						.data-source .column form input.error {
+							background: rgba(255, 0, 0, 0.25);
+						}
+						.data-source .column form small {
+							margin-top: 5px;
+							color: #999;
 							font-weight: normal;
-							font-size: 100%;
-							z-index: 1;
+							display: none;
 						}
-						.data-source .column form label {
-							margin: 0 calc(var(--gap) * 2);
+						.data-source .column form .parameter-list .NA {
+							padding: 0 calc(var(--gap) * 2);
 						}
-						.data-source .column form label.drilldown-dropdown {
-							max-width: 100%;
-						}
-							.data-source .column form .category-group {
-								grid-template-columns: auto 200px;
-								display: grid;
-								grid-gap: calc(var(--gap));
-							}
-								.data-source .column form .category-group input {
-									flex: 1;
-									margin-left: calc(var(--gap) * 2);
-									width: calc(100% - 20px);
-								}
-							.data-source .column form input {
-								transition: background var(--transition-duration);
-							}
-							.data-source .column form input[type=color] {
-								width: 200px;
-								background: transparent;
-								padding: 0;
-							}
-							.data-source .column form input.error {
-								background: rgba(255, 0, 0, 0.25);
-							}
-							.data-source .column form small {
-								margin-top: 5px;
-								color: #999;
-								font-weight: normal;
-								display: none;
-							}
-							.data-source .column form .parameter-list .NA {
-								padding: 0 calc(var(--gap) * 2);
-							}
 	.data-source .visualization {
 		position: relative;
 		flex: 1;
 		transition: filter var(--transition-duration);
 		overflow: auto;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		border-radius: 6px 6px 0 0;
-		border-top: 10px #fff solid;
+		border-top: 10px var(--color-surface) solid;
 	}
 	.singleton .data-source > .visualization {
 		border-radius: 0;
@@ -634,13 +627,14 @@ main .dataset {
 	}
 	.data-source.flush .visualization {
 		box-shadow: none;
-		background: #eee;
+		background: var(--color-background);
+		color: var(--color-background-text);
 		border-radius: 0;
 		border: 0;
 	}
 
 	.data-source .visualization.blur {
-		filter: blur(3px);
+		filter: blur(6px);
 	}
 		.data-source .visualization .NA {
 			padding: 8px 16px;
@@ -751,32 +745,6 @@ main .dataset {
 						text-align: right;
 						margin-left: 10px;
 					}
-		.data-source .visualization.table .row-summary {
-			font-size: 90%;
-			text-align: right;
-			position: sticky;
-			bottom: 0;
-			background: rgba(255, 255, 255, 0.9);
-			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-			padding: var(--gap);
-			transition: background var(--transition-duration);
-			right: 0;
-			left: 0;
-		}
-		.data-source .visualization.table .row-summary:hover {
-			background: #fff;
-		}
-			.data-source .visualization.table .row-summary > span {
-				margin-right: 15px;
-			}
-			.data-source .visualization.table .row-summary .label {
-				color: #666;
-				font-weight: normal;
-				font-size: 100%;
-				padding: 0;
-				border-radius: 0;
-				vertical-align: initial;
-			}
 
 		.data-source .visualization.json {
 			background: #272822;
@@ -792,13 +760,14 @@ main .dataset {
 		}
 			.visualization.table table {
 				caption-side: bottom;
-				background: #fff;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 				margin-bottom: 25px;
 			}
 			.visualization.table thead tr th.heading {
 				padding-right: 0;
-				background: #fff;
-				color: #222;
+				background: var(--color-primary);
+				color: var(--color-primary-text);
 			}
 			.visualization.table thead tr th.heading > div {
 				display: flex;
@@ -827,11 +796,11 @@ main .dataset {
 					position: absolute;
 					top: 100%;
 					left: 0;
-					color: #333;
 					min-width: 300px;
 					text-align: initial;
 					padding-top: calc(var(--gap) * 2);
-					background: #fff;
+					background: var(--color-surface);
+					color: var(--color-surface-text);
 					box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 					max-width: 500px;
 				}
@@ -842,8 +811,8 @@ main .dataset {
 				.visualization.table thead input,
 				.visualization.table thead select {
 					width: 100%;
-					background-color: white;
-					color: #333 !important;
+					background: var(--color-surface);
+					color: var(--color-surface-text);
 					padding: 5px 8px;
 					font-family: sans-serif;
 					text-align: center;
@@ -882,7 +851,7 @@ main .dataset {
 					}
 					.visualization.table table thead th .name {
 						margin-left: auto;
- 					}
+					}
 					.visualization.table table thead th .fa {
 						opacity: 0;
 						transition: opacity var(--transition-duration);
@@ -895,7 +864,9 @@ main .dataset {
 			transform: translateY(0);
 			opacity: 1;
 			transition: transform var(--transition-duration),
-						opacity var(--transition-duration);
+						opacity var(--transition-duration),
+						background var(--transition-duration),
+						color var(--transition-duration);
 		}
 		.visualization.table table tr.NA {
 			text-align: center;
@@ -912,16 +883,11 @@ main .dataset {
 				background: #fcc;
 			}
 		.visualization.table table tbody tr.show-rows {
-			color:  #666;
 			font-size: 90%;
-			background: #fff;
 			border-top: 1px solid #bbb;
 			cursor: pointer;
 			transition: box-shadow var(--transition-duration),
 						background var(--transition-duration);
-		}
-		.visualization.table table tbody tr.show-rows:hover {
-			background: #ddd !important;
 		}
 		.visualization.table table tbody tr.show-rows:active {
 			box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
@@ -931,6 +897,33 @@ main .dataset {
 			}
 			.visualization.table table tbody tr.show-rows span {
 				margin: 0 15px;
+			}
+		.visualization.table .row-summary {
+			font-size: 90%;
+			text-align: right;
+			position: sticky;
+			bottom: 0;
+			background: var(--color-surface);
+			color: var(--color-surface-text);
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+			padding: var(--gap);
+			transition: background var(--transition-duration);
+			right: 0;
+			left: 0;
+		}
+		.visualization.table .row-summary:hover {
+			background: var(--color-hover);
+			color: var(--color-hover-text);
+		}
+			.visualization.table .row-summary > span {
+				margin-right: 15px;
+			}
+			.visualization.table .row-summary .label {
+				font-weight: normal;
+				font-size: 100%;
+				padding: 0;
+				border-radius: 0;
+				vertical-align: initial;
 			}
 
 		.visualization.spatial-map .container {

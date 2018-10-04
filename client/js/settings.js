@@ -667,6 +667,17 @@ class SettingsAccount {
 				multiple: false,
 			},
 			{
+				key: 'theme',
+				type: 'multiselect',
+				name: 'Theme',
+				description: 'Will be used by default for all users',
+				datalist: [
+					{name: 'Light', value: 'light'},
+					{name: 'Dark', value: 'dark'},
+				],
+				multiple: false,
+			},
+			{
 				key: 'pre_report_api',
 				type: 'url',
 				name: 'Pre Report API',
