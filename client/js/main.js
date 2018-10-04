@@ -337,7 +337,12 @@ class PageHeader {
 			userPopup.classList.toggle('show');
 		});
 
-		container.querySelector('.logout').on('click', () => User.logout());
+		container.querySelector('.logout').on('click', () => {
+
+			Cookies.set('bypassLogin', '');
+
+			User.logout();
+		});
 
 		userPopup.on('click', e => e.stopPropagation());
 
