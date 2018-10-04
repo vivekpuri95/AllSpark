@@ -171,8 +171,8 @@ class Dashboard extends API {
 		const result = [];
 
 		const userCategories = this.user.privileges.filter(x => possiblePrivileges.includes(x.privilege_name)).map(x => x.category_id);
-		const dashboardUpdateCategories = this.user.privileges.filter(x => [constants.privilege["dashboard.update"], "dashboard"].includes(x.privilege_name)).map(x => x.category_id);
-		const dashboardDeleteCategories = this.user.privileges.filter(x => [constants.privilege["dashboard.delete"], "dashboard"].includes(x.privilege_name)).map(x => x.category_id);
+		const dashboardUpdateCategories = this.user.privileges.filter(x => [constants.privilege["dashboard.update"], "dashboard", constants.privilege["administrator"]].includes(x.privilege_name)).map(x => x.category_id);
+		const dashboardDeleteCategories = this.user.privileges.filter(x => [constants.privilege["dashboard.delete"], "dashboard", constants.privilege["administrator"]].includes(x.privilege_name)).map(x => x.category_id);
 
 		for (const dashboard of Object.values(dashboardObject)) {
 
