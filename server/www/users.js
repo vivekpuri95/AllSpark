@@ -4,12 +4,6 @@ const constants = require('../utils/constants');
 const getRole = (require('./object_roles')).get;
 const dbConfig = require('config').get("sql_db");
 
-exports.foo = class extends API {
-	async foo() {
-		throw new API.Exception(401, 'fsdfdsf');
-	}
-}
-
 exports.insert = class extends API {
 
 	async insert() {
