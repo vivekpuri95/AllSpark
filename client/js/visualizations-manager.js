@@ -214,8 +214,6 @@ class VisualizationsManagerList extends Map {
 
 		const filterData = this.searchBar.filterData;
 
-		console.log(filterData,'filter');
-
 		for(const report of filterData) {
 
 			for(const visualization of report.visualizations)
