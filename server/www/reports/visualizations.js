@@ -60,7 +60,7 @@ exports.update = class extends API {
 
 		this.assert(updatedRow, 'Invalid visualization id');
 
-		if(updatedRow.added_by !== this.user.user_id) {
+		if(updatedRow.added_by !== this.user.user_id && !visualizationRolesFromQuery) {
 
 			this.user.privilege.needs('visualization.update', 'ignore');
 		}
@@ -115,7 +115,7 @@ exports.delete = class extends API {
 
 	    const authVisualizationResponse = await auth.visualization(visualization_id, this.user, updatedRow.query_id, visualizationRolesFromQuery);
 
-	    if(updatedRow.added_by !== this.user.user_id) {
+	    if(updatedRow.added_by !== this.user.user_id && !visualizationRolesFromQuery) {
 
 		    this.user.privilege.needs('visualization.delete', 'ignore');
 	    }
