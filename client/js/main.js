@@ -983,7 +983,7 @@ class User {
 		return window.user = new User(user);
 	}
 
-	static async logout({next, callback, redirect = true} = {}) {
+	static async logout({next, callback, redirect = true, message = ''} = {}) {
 
 		try {
 
@@ -991,6 +991,7 @@ class User {
 				parameters = {
 					user_id: user.user_id,
 					type: 'logout',
+					description: message,
 				},
 				options = {
 					method: 'POST',
@@ -1215,8 +1216,10 @@ class AJAX {
 
 		AJAXLoader.hide();
 
-		if(response.status == 401)
-			return User.logout({next: true, redirect: options.redirectOnLogout});
+		if(response.status == 401) {
+			const message = (await response.json()).message;
+			return User.logout({next: true, redirect: options.redirectOnLogout, message: message});
+		}
 
 		return response.headers.get('content-type').includes('json') ? await response.json() : await response.text();
 	}

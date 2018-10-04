@@ -63,6 +63,13 @@ class SessionLogs extends API {
 
 		if(params.type == 'logout' && refresh_token) {
 
+			const description = {
+				message: this.request.body.description,
+				token: refresh_token,
+			}
+
+			params.description = JSON.stringify(description);
+
 			const token_details = await commonFun.getUserDetailsJWT(refresh_token);
 
 			if(token_details.error) {
