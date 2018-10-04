@@ -113,11 +113,10 @@ class DashboardManager extends Page {
 
 	render() {
 
-		const
-			container = this.container.querySelector('.dashboards'),
-			filterData = this.searchBar.filterData;
-			this.filter = {};
+		const filterData = this.searchBar.filterData;
+		this.filter = {};
 
+		const container = this.container.querySelector('.dashboards');
 		container.textContent = null;
 
 		for(const data of filterData)
@@ -125,7 +124,7 @@ class DashboardManager extends Page {
 
 		for(const dashboard of this.list.values()) {
 
-			if(dashboard.id in this.filter)
+			if(dashboard.visible && !dashboard.parent)
 				container.appendChild(dashboard.container);
 		}
 
@@ -392,6 +391,7 @@ class DashboardsDashboard {
 
 	get container() {
 
+
 		if(this.containerElement)
 			return this.containerElement;
 
@@ -457,12 +457,27 @@ class DashboardsDashboard {
 
 			for(const child of this.children.values()) {
 
-				if(child.id in this.page.filter)
+				if(child.visible)
 					container.querySelector('div.sub-dashboards').appendChild(child.container);
 			}
 		}
 
 		return container;
+	}
+
+	get visible() {
+
+		if(this.parent && !this.page.list.has(this.parent))
+			return false;
+
+		if(this.id in this.page.filter)
+			return true;
+
+		for(const child of this.children.values()) {
+
+			if(child.visible)
+				return true;
+		}
 	}
 
 	get parents() {

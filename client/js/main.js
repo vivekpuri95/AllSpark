@@ -3130,6 +3130,7 @@ class SearchColumnFilter {
 			return false;
 
 		for(const column of DataSourceColumnFilter.types) {
+
 			if(functionName != column.slug)
 				continue;
 
