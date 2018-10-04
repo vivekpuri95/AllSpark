@@ -98,15 +98,19 @@ class VisualizationsManagerList extends Map {
 			},
 			{
 				key: 'Filters Name',
-				rowValue: row => row.filters.map(f => f.name),
+				rowValue: row => row.filters.map(f => f.name ? f.name : []),
 			},
 			{
 				key: 'Filters Placeholder',
-				rowValue: row => row.filters.map(f => f.placeholder),
+				rowValue: row => row.filters.map(f => f.placeholder ? f.placeholder : []),
+			},
+			{
+				key: 'Visualizations ID',
+				rowValue: row => row.visualizations.map(f => f.visualization_id ? f.visualization_id : []),
 			},
 			{
 				key: 'Visualizations Name',
-				rowValue: row => row.visualizations.map(f => f.name),
+				rowValue: row => row.visualizations.map(f => f.name ? f.name : []),
 			},
 			{
 				key: 'Visualizations Type Name',
@@ -208,7 +212,11 @@ class VisualizationsManagerList extends Map {
 
 		this.clear();
 
-		for(const report of this.searchBar.filterData) {
+		const filterData = this.searchBar.filterData;
+
+		console.log(filterData,'filter');
+
+		for(const report of filterData) {
 
 			for(const visualization of report.visualizations)
 				this.set(visualization.visualization_id, new VisualizationManager(visualization, report, this.page));
