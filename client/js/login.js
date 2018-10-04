@@ -51,16 +51,21 @@ Page.class = class Login extends Page {
 	 */
 	async bypassLogin() {
 
-		if(!this.account.auth_api || !(await Storage.get('external_parameters')))
+		let parameters;
+
+		try {
+
+			parameters = JSON.parse(Cookies.get('bypassLogin'));
+		} catch(e) {}
+
+		if(!parameters && (!this.account.auth_api || !(await Storage.get('external_parameters'))))
 			return this.acceptEmail();
 
 		Sections.show('loading');
 
-		const
-			parameters = {},
-			options = {
-				method: 'POST',
-			};
+		const options = {
+			method: 'POST',
+		};
 
 		await this.authenticate(parameters, options);
 	}
@@ -237,11 +242,12 @@ Page.class = class Login extends Page {
 
 			const response = await API.call('authentication/login', parameters, options);
 
+			Cookies.set('bypassLogin', JSON.stringify(parameters))
+
 			if(!response.jwt && response.length)
 				return this.message('Ambigious email!', 'warning');
 
 			await Storage.set('refresh_token', response.jwt);
-			this.cookies.set('refresh_token', response.jwt);
 
 			// If the login response has an external parameters flag then add their values to the stored external parameters.
 			if(response.external_parameters && Array.isArray(account.settings.get('external_parameters'))) {
@@ -274,8 +280,16 @@ Page.class = class Login extends Page {
 			window.location = param.get('continue') || '../';
 
 		} catch(error) {
-			this.message(error.message || error, 'warning');
+
 			this.container.querySelector('#loading').classList.add('hidden');
+
+			if(Cookies.get('bypassLogin'))
+				await Sections.show('accept-email');
+
+			else
+				this.message(error.message || error, 'warning');
+
+			Cookies.set('bypassLogin', '');
 		}
 	}
 

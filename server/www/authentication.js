@@ -214,8 +214,7 @@ exports.login = class extends API {
 		const redisResult = await redis.get(redisHash);
 
 		if(redisResult) {
-
-			throw("Failure, please try again");
+			throw new API.Exception(400, "You're doing that too often. Please wait 3 seconds.");
 		}
 
 		await redis.set(redisHash, 1);
@@ -334,7 +333,7 @@ exports.login = class extends API {
 
 		Object.assign(finalObj, this.authResponseObj);
 
-		//this.response.cookie('refresh_token', finalObj.jwt, { maxAge: 365 * 24 * 60 * 60 * 1000});
+		this.response.cookie('refresh_token', finalObj.jwt, { maxAge: 365 * 24 * 60 * 60 * 1000, path: '/'});
 
 		return finalObj;
 	}
@@ -501,7 +500,7 @@ exports.refresh = class extends cycleDetection {
 
 		const token = commonFun.makeJWT(obj, Math.floor(Date.now() / 1000) + (5 * 60));
 
-		this.response.cookie('token', token, { maxAge: 365 * 24 * 60 * 60 * 1000 });
+		this.response.cookie('token', token, { maxAge: 365 * 24 * 60 * 60 * 1000, path: '/' });
 
 		return token;
 	}
