@@ -23,7 +23,7 @@ main > * {
 	main > section {
 		background: #fff;
 		box-shadow: 1px 1px 15px rgba(0, 0, 0, 0.1);
-		border-radius: 2px;
+		border-radius: 2px !important;
 	}
 	main section:not(#message) {
 		padding: 30px 20px;

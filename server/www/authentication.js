@@ -214,8 +214,7 @@ exports.login = class extends API {
 		const redisResult = await redis.get(redisHash);
 
 		if(redisResult) {
-
-			throw("Failure, please try again");
+			throw new API.Exception(400, "You're doing that too often. Please wait 3 seconds.");
 		}
 
 		await redis.set(redisHash, 1);

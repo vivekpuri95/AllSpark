@@ -240,9 +240,9 @@ Page.class = class Login extends Page {
 				}
 			}
 
-			Cookies.set('bypassLogin', JSON.stringify(parameters))
-
 			const response = await API.call('authentication/login', parameters, options);
+
+			Cookies.set('bypassLogin', JSON.stringify(parameters))
 
 			if(!response.jwt && response.length)
 				return this.message('Ambigious email!', 'warning');
@@ -280,8 +280,16 @@ Page.class = class Login extends Page {
 			window.location = param.get('continue') || '../';
 
 		} catch(error) {
-			this.message(error.message || error, 'warning');
+
 			this.container.querySelector('#loading').classList.add('hidden');
+
+			if(Cookies.get('bypassLogin'))
+				await Sections.show('accept-email');
+
+			else
+				this.message(error.message || error, 'warning');
+
+			Cookies.set('bypassLogin', '');
 		}
 	}
 
