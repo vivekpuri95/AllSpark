@@ -35,7 +35,7 @@ class SessionLogs extends API {
 			WHERE
 				s1.type = 'login'
 				AND s2.id is  null
-				AND s1.expire_time >  unix_timestamp(now())
+				AND s1.created_at >  now() - interval 5 day
 				AND s1.user_id = ?
 			`,
 			[db, db, this.request.query.user_id]
