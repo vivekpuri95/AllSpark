@@ -894,7 +894,7 @@ class Storage {
 
 if(typeof Worker != 'undefined') {
 
-	Page.webWorker = class PageWebWorker extends Worker {
+	Page.webWorker = class PageWebWorker {
 
 		static async setup(page) {
 
@@ -905,7 +905,7 @@ if(typeof Worker != 'undefined') {
 
 		constructor(page) {
 
-			super('/js/web-worker.js');
+			this.instance = new Worker('/js/web-worker.js');
 
 			this.page = page;
 		}
@@ -926,7 +926,7 @@ if(typeof Worker != 'undefined') {
 
 			const messageChannel = new MessageChannel();
 
-			this.postMessage(request, [messageChannel.port2]);
+			this.instance.postMessage(request, [messageChannel.port2]);
 
 			return messageChannel.port1;
 		}
