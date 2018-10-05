@@ -86,25 +86,6 @@ class HTMLAPI extends API {
 
 					<div id="ajax-working"></div>
 
-					<header>
-						<a class="logo" href="/dashboard/first"><img></a>
-
-						<div class="nav-container">
-
-							<nav></nav>
-
-							<span class="user-toggle"></span>
-
-							<div class="user-popup hidden">
-								<span class="name"></span>
-								<span class="email"></span>
-								<a href="#" class="logout">Logout</a>
-							</div>
-						</div>
-
-						<div class="menu-toggle"><i class="fas fa-chevron-down"></i></div>
-					</header>
-
 					<main>
 						${this.main ? await this.main() || '' : ''}
 					</main>

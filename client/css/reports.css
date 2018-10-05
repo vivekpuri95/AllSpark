@@ -255,7 +255,7 @@ main .dataset {
 			.data-source > .menu .item:hover > .label {
 				background: var(--color-accent);
 				cursor: pointer;
-				color: #fff;
+				color: var(--color-accent-text);
 			}
 			.data-source > .menu .item.selected > .label {
 				background: var(--color-selected);

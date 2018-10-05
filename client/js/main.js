@@ -111,6 +111,7 @@ class Page {
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
+		this.header = new PageHeader(this);
 
 		if(container)
 			return;
@@ -121,95 +122,17 @@ class Page {
 
 	renderPage() {
 
-		const
-			navList = [
-				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
-				{url: '/dashboards-manager', name: 'Dashboards', privileges: [], icon: 'fa fa-newspaper'},
-				{url: '/reports', name: 'Reports', privileges: [], icon: 'fa fa-database'},
-				{url: '/visualizations-manager', name: 'Visualizations', privileges: [], icon: 'far fa-chart-bar'},
-				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
-				{url: '/settings', name: 'Settings', privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'], icon: 'fas fa-cog'},
-			],
-			header = document.querySelector('body > header'),
-			navContainer = header.querySelector('.nav-container'),
-			nav = header.querySelector('nav'),
-			userPopup = header.querySelector('.user-popup'),
-			userToggle = header.querySelector('.user-toggle'),
-			menuToggle = header.querySelector('.menu-toggle'),
-			profileLink = document.createElement('a');
+		if(!this.account || !this.user)
+			return;
+
+		document.body.insertBefore(this.header.container, this.container);
 
 		if(window.account) {
-
-			if(account.settings.get('hideHeader')) {
-				header.classList.add('hidden');
-				return;
-			}
 
 			if(account.icon)
 				document.getElementById('favicon').href = account.icon;
 
-			if(account.logo)
-				header.querySelector('.logo img').src = account.logo;
-
 			document.title = account.name;
-		}
-
-		userToggle.innerHTML = '<i class="fa fa-user"></i>&nbsp; '+ this.user.name;
-
-		profileLink.textContent = 'Profile';
-		profileLink.href = `/user/profile/${this.user.user_id}`;
-		profileLink.classList.add('profile-link');
-
-		header.querySelector('.name').innerHTML = this.user.name;
-		header.querySelector('.email').innerHTML = this.user.email;
-		header.querySelector('.user-popup').insertBefore(profileLink, header.querySelector('.logout'));
-
-		userToggle.on('click', e => {
-			e.stopPropagation();
-			userPopup.classList.toggle('hidden');
-			userToggle.classList.toggle('selected');
-		});
-
-		document.body.on('click', () => {
-			userPopup.classList.add('hidden');
-			userToggle.classList.remove('selected');
-			navContainer.classList.remove('show');
-			menuToggle.classList.remove('selected');
-		});
-
-		userPopup.on('click', e => e.stopPropagation());
-		navContainer.on('click', e => e.stopPropagation());
-
-		header.querySelector('.logout').on('click', () => {
-			Cookies.set('bypassLogin', '')
-			User.logout();
-		});
-
-		menuToggle.on('click', e => {
-			e.stopPropagation();
-			navContainer.classList.toggle('show');
-			menuToggle.classList.toggle('selected');
-		});
-
-		if(user.id)
-			navContainer.insertBefore(new GlobalSearch().container, header.querySelector('.user-toggle'));
-
-		for(const item of navList) {
-
-			if(!window.user || (item.privileges.every(p => !user.privileges.has(p)) && item.privileges.length))
-				continue;
-
-			nav.insertAdjacentHTML('beforeend',`
-				<a href='${item.url}'>
-					<i class="${item.icon}"></i>&nbsp;
-					${item.name}
-				</a>
-			`);
-		}
-
-		for(const item of nav.querySelectorAll('a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname))
-				item.classList.add('selected');
 		}
 	}
 
@@ -293,6 +216,149 @@ class Page {
 			document.head.appendChild(onboardScript);
 			document.head.appendChild(onboardCSS);
 		}
+	}
+}
+
+class PageHeader {
+
+	constructor(page) {
+
+		this.page = page;
+
+		this.globalSearch = new GlobalSearch();
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('header');
+
+		container.innerHTML = `
+
+			<a class="logo" href="/dashboard/first"><img src="${this.page.account.logo}"></a>
+
+			<span class="user-toggle"><i class="fa fa-user"></i>&nbsp; ${this.page.user.name || ''}</span>
+
+			<div class="user-popup hidden">
+				<span class="name">${this.page.user.name}</span>
+				<span class="email">${this.page.user.email}</span>
+				<a href="/user/profile/${this.page.user.user_id}" class="profile">Profile</a>
+				<a href="#" class="logout">Logout</a>
+			</div>
+
+			<div class="nav-toggle"><i class="fas fa-chevron-down"></i></div>
+
+			<nav class="hidden"></nav>
+		`;
+
+		const
+			navList = [
+				{
+					url: '/users-manager',
+					name: 'Users',
+					privileges: ['user.list', 'user'],
+					icon: 'fas fa-users',
+				},
+				{
+					url: '/dashboards-manager',
+					name: 'Dashboards',
+					privileges: [],
+					icon: 'fa fa-newspaper',
+				},
+				{
+					url: '/reports',
+					name: 'Reports',
+					privileges: [],
+					icon: 'fa fa-database',
+				},
+				{
+					url: '/visualizations-manager',
+					name: 'Visualizations',
+					privileges: [],
+					icon: 'far fa-chart-bar',
+				},
+				{
+					url: '/connections-manager',
+					name: 'Connections',
+					privileges: ['connection', 'connection.list'],
+					icon: 'fa fa-server',
+				},
+				{
+					url: '/settings',
+					name: 'Settings',
+					privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'],
+					icon: 'fas fa-cog',
+				},
+			],
+			nav = container.querySelector('nav'),
+			navToggle = container.querySelector('.nav-toggle'),
+			userToggle = container.querySelector('.user-toggle'),
+			userPopup = container.querySelector('.user-popup');
+
+		for(const item of navList) {
+
+			if((item.privileges.every(p => !this.page.user.privileges.has(p)) && item.privileges.length))
+				continue;
+
+			nav.insertAdjacentHTML('beforeend',`
+				<a href="${item.url}" class="${window.location.pathname.startsWith(item.url) ? 'selected' : ''}">
+					<i class="${item.icon}"></i>&nbsp;
+					${item.name}
+				</a>
+			`);
+		}
+
+		container.insertBefore(this.globalSearch.container, userToggle);
+
+		userToggle.on('click', e => {
+
+			e.stopPropagation();
+
+			nav.classList.add('hidden');
+			navToggle.classList.remove('selected');
+
+			userPopup.classList.toggle('hidden');
+			userToggle.classList.toggle('selected');
+		});
+
+		navToggle.on('click', e => {
+
+			e.stopPropagation();
+
+			userPopup.classList.add('hidden');
+			userToggle.classList.remove('selected');
+
+			nav.classList.toggle('hidden');
+			navToggle.classList.toggle('selected');
+
+			this.globalSearch.container.classList.toggle('show');
+			userPopup.classList.toggle('show');
+		});
+
+		container.querySelector('.logout').on('click', () => {
+
+			Cookies.set('bypassLogin', '');
+
+			User.logout();
+		});
+
+		userPopup.on('click', e => e.stopPropagation());
+
+		document.on('click', () => {
+
+			userPopup.classList.add('hidden');
+			userToggle.classList.remove('selected');
+
+			nav.classList.add('hidden');
+			navToggle.classList.remove('selected');
+
+			this.globalSearch.container.classList.remove('show');
+			userPopup.classList.remove('show');
+		});
+
+		return container;
 	}
 }
 
