@@ -41,7 +41,8 @@ main > nav .dashboard-search {
 	box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
 	position: sticky;
 	top: 0;
-	background: #fff;
+	background: var(--color-primary);
+	color: var(--color-primary-text);
 }
 main > nav .dashboard-search input[type=search] {
 	background: transparent;
@@ -139,7 +140,6 @@ main > nav::-webkit-scrollbar-track {
 				}
 	main > nav footer {
 		margin-top: auto;
-		color: #666;
 		display: flex;
 		align-items: center;
 		min-height: max-content;
@@ -157,9 +157,6 @@ main > nav::-webkit-scrollbar-track {
 			text-align: center;
 			flex: 1;
 		}
-			main > nav footer .powered-by a {
-				color: #333;
-			}
 main #reports.show {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
@@ -254,7 +251,8 @@ main #reports > .global-filters.right {
 	right: 0px;
 	top: 50px;
 	bottom: 0;
-	background: #fff;
+	background: var(--color-surface);
+	color: var(--color-surface-text);
 	padding: 0 calc(var(--gap) * 2);
 	box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
 	transform: translateX(260px);
@@ -296,7 +294,8 @@ main #reports > .global-filters.top.scrolled {
 		border-bottom: 1px solid #ddd;
 		position: sticky;
 		top: 0;
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		z-index: 1;
 		padding-top: var(--gap);
 	}
@@ -309,6 +308,8 @@ main #reports > .global-filters.top.scrolled {
 				border: 0;
 				width: 100%;
 				outline: 0;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 			}
 			main #reports > .global-filters > .head.heading i {
 				color: #999;
@@ -571,7 +572,8 @@ body.floating main  {
 		top: 50px;
 		left: 0;
 		opacity: 0;
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		border: 0;
 		box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
 		transition: transform var(--transition-duration),

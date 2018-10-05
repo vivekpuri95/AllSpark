@@ -230,7 +230,8 @@ body {
 				margin-right: auto;
 				flex-direction: column;
 				margin-right: auto;
-				background: #fff;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 				position: absolute;
 				right: 0;
 				top: 100%;
@@ -240,10 +241,8 @@ body {
 			body > header .user-toggle,
 			body > header .menu-toggle {
 				display: flex;
-				color: var(--color-accent-text);
 				padding: 15px 20px;
 				letter-spacing: 1px;
-				color: #222;
 				transition: background var(--transition-duration),
 							color var(--transition-duration),
 							box-shadow var(--transition-duration);
@@ -253,8 +252,8 @@ body {
 			}
 			body > header nav a:hover {
 				text-decoration: none;
-				background: var(--color-accent);
-				color: #fff;
+				background: var(--color-hover);
+				color: var(--color-hover-text);
 			}
 			body > header nav a:active {
 				color: inherit;
@@ -263,7 +262,6 @@ body {
 		body > header .user-toggle,
 		body > header .nav-toggle {
 			display: flex;
-			color: var(--color-secondary-text);
 			padding: 15px 20px;
 			letter-spacing: 1px;
 			transition: background var(--transition-duration);
