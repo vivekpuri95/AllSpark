@@ -184,6 +184,8 @@ main.preview-left #stages {
 }
 	#stage-pick-report table thead tr th {
 		position: sticky;
+		--webkit-position: sticky;
+		top: 48px;
 		cursor: pointer;
 	}
 	#stage-pick-report table thead tr.search th {
@@ -326,6 +328,7 @@ main.preview-left #stages {
 				border: 0;
 				border-bottom: 1px solid var(--color-border);
 				position: sticky;
+				--webkit-position: sticky;
 				top: 0;
 				z-index: 2;
 			}
@@ -467,6 +470,7 @@ main.preview-left #stages {
 			}
 			#stage-define-report #filters .toolbar {
 				position: sticky;
+				--webkit-position: sticky;
 				top: 0;
 				background: var(--color-background);
 				color: var(--color-background-text);
@@ -534,6 +538,7 @@ main.preview-left #stages {
 	#stage-configure-visualization .toolbar {
 		padding: 0;
 		position: sticky;
+		--webkit-position: sticky;
 		top: 0;
 		z-index: 7;
 		background: var(--color-background);
@@ -546,6 +551,7 @@ main.preview-left #stages {
 		border-bottom: 1px dashed var(--color-border);
 		cursor: pointer;
 		position: sticky;
+		--webkit-position: sticky;
 		top: 28px;
 		padding: var(--gap);
 		margin: var(--gap) 0 calc(var(--gap) * 2);

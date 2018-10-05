@@ -101,6 +101,7 @@ main > #edit.show {
 	main > #edit .toolbar {
 		padding: 0;
 		position: sticky;
+		--webkit-position: sticky;
 		top: 0;
 		z-index: 7;
 		background: #eee;
@@ -113,6 +114,7 @@ main > #edit.show {
 		border-bottom: 1px dashed #999;
 		cursor: pointer;
 		position: sticky;
+		--webkit-position: sticky;
 		top: 28px;
 		padding: var(--gap);
 		margin: var(--gap) 0 calc(var(--gap) * 2);

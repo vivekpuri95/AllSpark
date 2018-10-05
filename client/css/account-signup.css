@@ -6,6 +6,7 @@ main section form#signup-form {
     }
 main section .toolbar {
     position: sticky;
+    --webkit-position: sticky;
     top: 0;
 }
     main section .toolbar span {
