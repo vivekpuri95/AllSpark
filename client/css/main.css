@@ -1170,9 +1170,13 @@ body {
 	.search-column-filters .filters {
 		display: grid;
 		grid-gap: calc(var(--gap) * 2);
-		height: 28px;
 		align-items: center;
 	}
+		.search-column-filters .filters > .NA {
+			height: 28px;
+			align-items: center;
+			display: flex;
+		}
 		.search-column-filters .search-column-filter {
 			display: grid;
 			grid-gap: calc(var(--gap) * 2);
