@@ -378,6 +378,9 @@ exports.list = class extends API {
 				continue;
 			}
 
+			if(row.tags)
+				row.tags = row.tags.split(',').map(q => q.trim()).join();
+
 			row.visibilityReason = authResponse.message;
 
 			row.editable = isAdmin;
