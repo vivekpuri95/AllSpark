@@ -4,7 +4,7 @@ main {
 	grid-template-columns: 220px calc(100% - 220px);
 }
 
-header > .menu-toggle {
+body > header > .menu-toggle {
 	display: none;
 	padding: 15px 20px;
 	color: var(--color-primary-text);
@@ -30,7 +30,6 @@ main > nav {
 	top: 50px;
 	overflow-y: auto;
 	height: calc(100vh - 50px);
-	border-right: 1px solid #ccc
 }
 main > nav.show {
 	transform: translateX(0px) !important;
@@ -108,7 +107,7 @@ main > nav::-webkit-scrollbar-track {
 	}
 	main > nav .label.selected {
 		background: rgba(0, 0, 0, 0.15);
-		box-shadow: inset 6px 0px 0 var(--color-accent);
+		box-shadow: inset 6px 0px 0 var(--color-selected);
 	}
 		main > nav .submenu {
 			display: flex;
@@ -165,14 +164,11 @@ main #reports.show {
 }
 
 main #reports > h1.dashboard-name {
-	border: 0;
-	font-size: 150%;
-	border-bottom:  1px dashed #ccc;
 	font-weight: normal;
 	display: flex;
 	justify-content: space-between;
 	max-width: 100%;
-    overflow: auto;
+	overflow: auto;
 }
 main #reports > h1.dashboard-name::-webkit-scrollbar {
 	display: none;
@@ -268,7 +264,8 @@ main #reports > .global-filters.top {
 	margin: 0 calc(var(--gap) * -3);
 	position: sticky;
 	top: 50px;
-	background: #eee;
+	background: var(--color-background);
+	color: var(--color-background-text);
 	z-index: 4;
 }
 main #reports > .global-filters.top.scrolled {
@@ -291,7 +288,7 @@ main #reports > .global-filters.top.scrolled {
 		align-items: center;
 	}
 	main #reports > .global-filters > .heading {
-		border-bottom: 1px solid #ddd;
+		border-bottom: 1px solid var(--color-border);
 		position: sticky;
 		top: 0;
 		background: var(--color-surface);
@@ -342,17 +339,17 @@ main #reports > .global-filters.top.scrolled {
 		flex-wrap: wrap;
 	}
 		main #reports > .global-filters .apply {
-			background: var(--color-accent);
-			color: var(--color-accent-text);
-			border-color: var(--color-accent);
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
+			border-color: var(--color-secondary);
 			letter-spacing: 1px;
 			transition: background var(--transition-duration),
 						box-shadow var(--transition-duration),
 						color var(--transition-duration);
 		}
 		main #reports > .global-filters .apply:hover {
-			background: var(--color-accent-text);
-			color: var(--color-accent);
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
 			cursor: pointer;
 		}
 	main #reports > .global-filters.right .filters {
@@ -463,7 +460,7 @@ main #reports > .list.editing {
 		bottom: 0;
 		right: 0;
 		z-index: 5;
-		border: double #aaa;
+		border: double var(--color-border);
 		border-width: 0 3px 3px 0;
 	}
 	main .data-source.add-new {

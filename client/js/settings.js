@@ -381,25 +381,30 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 		container.classList.add('setting-page', 'executing-reports', 'hidden');
 
 		container.innerHTML = `
-			<h1>Executing Reports</h1>
+			<section class="section show" id="executing-reports">
+				<h1>Executing Reports</h1>
 
-			<header class="toolbar block">
-				<input type="checkbox" name="auto-refresh"> Auto Refresh
-			</header>
+				<header class="toolbar block">
+					<label>
+						<input type="checkbox" name="auto-refresh">
+						Auto Refresh
+					</label>
+				</header>
 
-			<table class="block">
-				<thead>
-					<tr>
-						<th>Account Name</th>
-						<th>Query Id</th>
-						<th>Report Name</th>
-						<th>User</th>
-						<th>Connection Type</th>
-						<th>Execution Timestamp</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
+				<table class="block">
+					<thead>
+						<tr>
+							<th>Account Name</th>
+							<th>Query Id</th>
+							<th>Report Name</th>
+							<th>User</th>
+							<th>Connection Type</th>
+							<th>Execution Timestamp</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
 		`;
 
 		const autoRefresh = container.querySelector('input[name=auto-refresh]');
@@ -500,7 +505,7 @@ Settings.list.set('about', class About extends SettingPage {
 
 		const button = this.cacheContainerElement = document.createElement('button');
 		button.classList.add('clear-cache');
-		button.textContent = 'Clear Cache';
+		button.innerHTML = '<i class="fas fa-eraser"></i> Clear Cache';
 
 		button.on('click', async (e) => await Page.clearCache());
 

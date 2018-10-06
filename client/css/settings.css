@@ -7,7 +7,9 @@ main {
 		flex-direction: column;
 		color: var(--color-primary-text);
 		height: calc(100vh - 50px);
-		border-right: 1px solid #ccc;
+		border-right: 1px solid var(--color-border);
+		position: sticky;
+		top: 50px;
 	}
 		main > nav a {
 			padding: 12px 16px;
@@ -21,11 +23,11 @@ main {
 			text-decoration: none;
 		}
 		main > nav a.selected {
-			box-shadow: inset 6px 0px 0 var(--color-accent);
+			box-shadow: inset 6px 0px 0 var(--color-selected);
 			font-weight: bold;
 		}
 	main #account-form label img {
-		border: 1px solid #ccc;
+		border: 1px solid var(--color-border);
 		padding: var(--gap);
 	}
 
@@ -33,7 +35,7 @@ main .settings-manager {
 	display: grid;
 	grid-template-columns: 300px auto;
 	margin-top: calc(var(--gap) * 2);
-	background: #fff;
+	background: var(--color-surface);
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 	main .settings-manager > aside {
@@ -55,14 +57,14 @@ main .settings-manager {
 		main .settings-manager > aside footer {
 			display: flex;
 			margin-top: auto;
-			border-top: 1px solid #ccc;
+			border-top: 1px solid var(--color-border);
 		}
 			main .settings-manager aside form {
 				grid-template-columns: 1fr 1fr;
 				grid-gap: calc(var(--gap) * 2);
 			}
 	main .settings-manager .profile {
-		border-left: 1px solid #ccc;
+		border-left: 1px solid var(--color-border);
 		max-height: 600px;
 		overflow: auto;
 	}
@@ -70,7 +72,8 @@ main .settings-manager {
 			display: grid;
 			align-items: center;
 			padding: calc(var(--gap) * 2);
-			background: rgba(255, 255, 255, 0.85);
+			background: var(--color-primary);
+			color: var(--color-primary-text);
 			grid-template-columns: 1fr auto auto;
 			grid-gap: calc(var(--gap) * 2);
 			position: sticky;
@@ -107,7 +110,7 @@ main .settings-manager {
 			main .settings-manager .click-to-edit {
 				display: flex;
 				background: rgba(0, 0, 0, 0.05);
-				border: 1px solid #ddd;
+				border: 1px solid var(--color-border);
 				position: absolute;
 				font-size: 110%;
 				width: 100%;
@@ -115,7 +118,7 @@ main .settings-manager {
 				align-items: center;
 				justify-content: center;
 				cursor: pointer;
-				color: #999;
+				color: var(--color-surface-text);
 				transition: background var(--transition-duration),
 							box-shadow var(--transition-duration);
 			}
@@ -129,43 +132,45 @@ main .settings-manager {
 				display: flex;
 				align-items: center;
 				padding: calc(var(--gap) * 2);
+				color: var(--color-surface-text);
 			}
 
 main .feature-form h3 {
 	border-bottom: 1px dashed #999;
 	margin-bottom: 0;
+	padding-bottom: var(--gap);
 }
 main .feature-form .table-container {
 	max-height: 600px;
 	overflow: auto;
+	background: var(--color-surface);
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
-	main .feature-form table {
-		background: #fff;
+	main .feature-form table thead th {
+		position: sticky;
 	}
-		main .feature-form table thead th {
-			position: sticky;
+	main .feature-form table .feature-toggle {
+		padding: 0;
+		width: 250px;
+	}
+		main .feature-form table .feature-toggle div {
+			display: flex;
 		}
-		main .feature-form table .feature-toggle {
-			padding: 0;
-			width: 250px;
-		}
-			main .feature-form table .feature-toggle div {
-				display: flex;
+			main .feature-form table .feature-toggle label {
+				flex: 1;
+				text-align: center;
+				padding: 8px;
+				transition: background var(--transition-duration),
+							box-shadow var(--transition-duration);
 			}
-				main .feature-form table .feature-toggle label {
-					flex: 1;
-					text-align: center;
-					padding: 8px;
-					transition: background var(--transition-duration),
-								box-shadow var(--transition-duration);
-				}
-				main .feature-form table .feature-toggle label:hover {
-					cursor: pointer;
-					background: #ccc;
-				}
-				main .feature-form table .feature-toggle label:active {
-					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
-				}
+			main .feature-form table .feature-toggle label:hover {
+				cursor: pointer;
+				background: var(--color-selected);
+				color: var(--color-selected-text);
+			}
+			main .feature-form table .feature-toggle label:active {
+				box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+			}
 
 main .privilege-component {
 	display: grid;
@@ -211,22 +216,29 @@ main .about-list {
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	}
 		main .about-list .info .key {
-			color: #999;
+			color: var(--color-grey);
 		}
 		main .about-list .info .value .NA {
 			margin-top: var(--gap);
 			display: inline-block;
 		}
 	main .about-list button.clear-cache {
-		width: 10%;
+		width: max-content;
+		background: var(--color-secondary);
+		color: var(--color-secondary-text);
 	}
 main .executing-reports {
-	padding: calc(var(--gap) * 2);
 }
 	main .executing-reports .toolbar {
 		padding: calc(var(--gap) * 2);
 		margin: calc(var(--gap) * 2) 0;
 	}
+		main .executing-reports .toolbar label {
+			display: grid;
+			grid-template-columns: max-content max-content;
+			grid-gap: var(--gap);
+			align-items: center;			
+		}
 	main .executing-reports table td.query-name:hover,
 	main .executing-reports table td.user-name:hover {
 		text-decoration: underline;

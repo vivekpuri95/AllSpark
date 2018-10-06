@@ -402,7 +402,7 @@ class DashboardsDashboard {
 			<div class="label">
 				<div class="name">
 					<a href="/dashboard/${this.id}">${this.name}</a>
-					<span>#${this.id}</span>
+					<span class="NA">#${this.id}</span>
 				</div>
 				<div>${this.order ? ('Order: ' + this.order) : ''}</div>
 				<div title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></div>
@@ -432,12 +432,12 @@ class DashboardsDashboard {
 		if(this.children.size) {
 
 			container.insertAdjacentHTML('beforeend', `
-				<div class="size hidden">${this.children.size} dashboard${this.children.size > 1 ? 's': ''}</div>
+				<div class="size hidden">${this.children.size} child dashboard${this.children.size > 1 ? 's': ''}</div>
 				<div class="sub-dashboards"></div>
 			`);
 
 			container.querySelector('.label .name').insertAdjacentHTML('afterbegin', `
-				<span class="arrow">
+				<span class="NA arrow">
 					<i class="fas fa-angle-down"></i>
 				</span>
 			`);

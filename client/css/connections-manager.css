@@ -6,7 +6,7 @@ main section .connections {
 	grid-template-rows: max-content 1fr;
 	grid-gap: calc(var(--gap) * 3);
 }
-	main section .connections .NA {
+	main section .connections article .row > .NA {
 		display: flex;
 		justify-content: center;
 		color: #999;
@@ -64,8 +64,8 @@ main section .connections {
 					grid-template-columns: max-content max-content 1fr;
 					align-items: center;
 					grid-gap: var(--gap);
-					padding: 0 calc(var(--gap) * 2);
-					border-bottom: 1px solid #eee;
+					padding-left: 10px;
+					border-bottom: 1px solid var(--color-border);
 				}
 					main .connections #data-connections article .article-toolbar button {
 						background: var(--color-secondary);
@@ -75,6 +75,7 @@ main section .connections {
 						width: 40px;
 						font-size: 70%;
 						padding: 0;
+						border: 0;
 						font-size: 130%;
 						box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
 					}
@@ -95,7 +96,8 @@ main section .connections {
 					main .connections #data-connections article figure {
 						margin: 0;
 						margin-left: auto;
-						padding: var(--gap);
+						padding: 10px;
+						height: 80px;
 					}
 						main .connections #data-connections article figure img {
 							height: 60px;
@@ -109,9 +111,9 @@ main section .connections {
 					margin: calc(var(--gap) * 2);
 				}
 					main .connections #data-connections article .row .connection {
-						border-bottom: 1px solid #ccc;
+						border-bottom: 1px solid var(--color-border);
 						padding: var(--gap);
-						color: inherit;
+						/* color: inherit; */
 						display: grid;
 						grid-template-columns: max-content 1fr max-content;
 						grid-gap: 10px;
@@ -154,8 +156,6 @@ section#list h1:last-of-type {
 }
 	#form .password .show-password {
 		margin-left: auto;
-		font-size: 90%;
-		color: #666;
 		font-weight: normal;
 	}
 main h2.share-heading {

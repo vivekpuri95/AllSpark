@@ -97,7 +97,7 @@ main .dataset {
 		}
 		.data-source > .warning span {
 			font-size: calc(10px + 0.3vw);
-			color: #bbb;
+			color: var(--color-grey);
 		}
 		.data-source > .warning.retry:hover {
 			cursor: pointer;
@@ -113,7 +113,7 @@ main .dataset {
 		display: flex;
 		align-items: center;
 		white-space: nowrap;
-		z-index: 3;
+		z-index: 5;
 	}
 	.data-source > header::-webkit-scrollbar {
 		display: none;
@@ -216,7 +216,7 @@ main .dataset {
 			.data-source > .menu .item .submenu {
 				display: none;
 				flex-direction: column;
-				width: 150px;
+				width: max-content;
 				position: absolute;
 				right: 100%;
 				top: 0;
@@ -260,9 +260,9 @@ main .dataset {
 				cursor: pointer;
 			}
 			.data-source > .menu .item.selected > .label {
-				background: var(--color-selected);
+				background: rgba(0, 0, 0, 0.2);
 				color: var(--color-selected-text);
-				box-shadow: inset 5px 0px 0 0px rgba(0, 0, 0, 0.25);
+				box-shadow: inset 5px 0px 0 0px var(--color-selected);
 			}
 			.data-source > .menu .label:active {
 				box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
@@ -449,7 +449,7 @@ main .dataset {
 		padding: 0 var(--gap);
 		height: 37px;
 		transition: filter var(--transition-duration);
-		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 		background: var(--color-surface);
 		color: var(--color-surface-text);
 		z-index: 1;
@@ -707,7 +707,7 @@ main .dataset {
 		}
 			.data-source .visualization .tooltip header {
 				padding: var(--gap) calc(var(--gap) * 2);
-				border-bottom: 1px solid var(--color-primary-text);
+				border-bottom: 1px solid var(--color-border);
 				display: flex;
 			}
 			.data-source .visualization .tooltip footer {
@@ -733,7 +733,8 @@ main .dataset {
 					padding: var(--gap);
 				}
 				.data-source .visualization .tooltip li.hover {
-					background: rgba(0, 0, 0, 0.1);
+					background: var(--color-hover);
+					color: var(--color-hover-text);
 				}
 					.data-source .visualization .tooltip .circle {
 						width: 80%;
@@ -1050,7 +1051,8 @@ main .dataset {
 .visualization .container > svg .scale path,
 .visualization .container > svg .scale line {
 	fill: none;
-	stroke: #ddd;
+	stroke: var(--color-border);
+	stroke-width: 0.5px;
 }
 .visualization.dualaxisbar .container > svg .scale path,
 .visualization.dualaxisbar .container > svg .scale line {
@@ -1078,7 +1080,7 @@ main .dataset {
 	writing-mode: vertical-lr;
 }
 .visualization .container > svg .tick text {
-	fill: #888;
+	fill: var(--color-grey);
 	font-size: 90%;
 }
 
@@ -1102,13 +1104,13 @@ main .dataset {
 }
 
 .visualization .container > svg .reset-zoom {
-	fill: #ccc;
+	fill: var(--color-grey);
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 	cursor: pointer;
 	transition: fill var(--transition-duration);
 }
 .visualization .container > svg .reset-zoom:hover {
-	fill: #ddd;
+	fill: var(--color-grey);
 }
 	.visualization .container > svg .reset-zoom text {
 		fill: #555;
@@ -1265,7 +1267,7 @@ main .dataset {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2);
-	margin-top: 10px;
+	margin-top: 20px;
 }
 	.data-source-column form .parameter {
 		display: grid;
@@ -1307,7 +1309,6 @@ main .dataset {
 			justify-content: space-between;
 			font-weight: bold;
 			font-size: 90%;
-			color: #444;
 		}
 			.column-form .filters .add-filter,
 			.column-form .accumulations .add-accumulation {
@@ -1349,16 +1350,6 @@ main .dataset {
 				}
 	.column-form > label {
 		margin-left: calc(var(--gap) * 2);
-	}
-	.column-form > div,
-	.column-form > label {
-		margin-left: calc(var(--gap) * 2);
-	}
-	.column-form > div {
-		display: grid;
-		grid-gap: calc(var(--gap) * 2);
-		max-width: 200px;
-		white-space: nowrap;
 	}
 	.column-form .timing-type-custom {
 		max-width: 100%;
@@ -1408,11 +1399,6 @@ main .dataset {
 				font-size: 80%;
 				font-weight: normal;
 			}
-		.column-form > div > span {
-			font-size: 90%;
-			color: #444;
-			font-weight: bold;
-		}
 		.column-form > label .color {
 			width: 100%;
 			padding: 0;
