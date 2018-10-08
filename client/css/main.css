@@ -932,7 +932,7 @@ body {
 		.query-history .info .toolbar {
 			position: sticky;
 			top: 0;
-			background: #eee;
+			background: var(--color-background);
 			z-index: 2;
 			display: flex;
 			align-items: center;

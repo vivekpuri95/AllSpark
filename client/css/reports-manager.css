@@ -847,7 +847,6 @@ main.preview-left #preview {
 	height: calc(100vh - 135px);
 }
 	#preview .unsaved .container {
-		background: #fcc;
 	}
 	#preview .data-source {
 		max-height: 600px;
