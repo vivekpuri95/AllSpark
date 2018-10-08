@@ -322,7 +322,6 @@ main .dataset {
 				margin-left: auto;
 			}
 			.data-source > .description .footer a {
-				/* color: #333; */
 				cursor: pointer;
 			}
 			.data-source > .description .footer .visible-to .count:hover {

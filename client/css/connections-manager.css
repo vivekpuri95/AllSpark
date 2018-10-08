@@ -112,7 +112,6 @@ main section .connections {
 					main .connections #data-connections article .row .connection {
 						border-bottom: 1px solid var(--color-border);
 						padding: var(--gap);
-						/* color: inherit; */
 						display: grid;
 						grid-template-columns: max-content 1fr max-content;
 						grid-gap: 10px;
