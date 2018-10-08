@@ -243,10 +243,10 @@ main.preview-left #stages {
 			#stage-define-report #schema input[type=search] {
 				width: 100%;
 				border: 0;
-				border-bottom: 1px solid #ccc;
+				border-bottom: 1px solid var(--color-border);
 				position: sticky;
 				top: 0;
-				z-index: 1;
+				z-index: 2;
 			}
 			#stage-define-report #schema ul {
 				padding: 0;
@@ -288,7 +288,10 @@ main.preview-left #stages {
 					}
 					#stage-define-report #schema li.opened > .name {
 						background: var(--color-selected);
+						position: sticky;
 						color: var(--color-selected-text);
+						top: 28px;
+						z-index: 1;
 					}
 						#stage-define-report #schema li .name span {
 							overflow: hidden;
@@ -296,7 +299,7 @@ main.preview-left #stages {
 						}
 						#stage-define-report #schema li .name small {
 							margin-left: auto;
-							color: #999;
+							color: var(--color-grey);
 						}
 
 		#stage-define-report #define-report-form {
