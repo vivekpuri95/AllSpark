@@ -42,7 +42,6 @@ main .settings-manager {
 		flex-direction: column;
 	}
 		main .settings-manager > aside table {
-			background: #fff;
 		}
 			main .settings-manager > aside table tr.selected {
 				background: var(--color-selected);
@@ -236,7 +235,7 @@ main .executing-reports {
 			display: grid;
 			grid-template-columns: max-content max-content;
 			grid-gap: var(--gap);
-			align-items: center;			
+			align-items: center;
 		}
 	main .executing-reports table td.query-name:hover,
 	main .executing-reports table td.user-name:hover {

@@ -1,16 +1,22 @@
 :root {
 	--color-primary: #212121;
 	--color-primary-text: #eee;
+
 	--color-secondary: #FFC107;
 	--color-secondary-text: #333;
-	--color-selected: #EF5350;
+
+	--color-selected: #a55a59;
 	--color-selected-text: #fff;
+
 	--color-hover: #666666;
 	--color-hover-text: #eee;
+
 	--color-background: #303030;
 	--color-background-text: #eee;
+
 	--color-surface: #444;
 	--color-surface-text: #eee;
+
 	--color-grey: #aaa;
 	--color-border: #888;
 }

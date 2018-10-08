@@ -19,7 +19,8 @@
         cursor: pointer;
     }
     .setup-stages a {
-        background: var(--color-accent);
+        background: var(--color-secondary);
+        color: var(--color-secondary-text);
         grid-row: 1 / 3;
     }
         .setup-stages a > i {
@@ -33,7 +34,8 @@
         box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);
     }
     .setup-stages .wrapper {
-        background: #fff;
+        background: var(--color-surface);
+        color: var(--color-surface-text);
         box-shadow: 0 0px 10px rgba(0, 0, 0, 0.2);
         margin-bottom: calc(var(--gap) * 2);
         display: flex;
@@ -46,16 +48,21 @@
             display: grid;
             grid-template-columns: max-content 1fr max-content;
             align-items: center;
-            border-bottom: 1px solid #ccc;
+            border-bottom: 1px solid var(--color-border);
             grid-gap: 5px;
             position: relative;
         }
+        .setup-stages .wrapper .stage:last-child {
+            border-bottom: 0;
+        }
         .setup-stages .wrapper .stage.active,
         .setup-stages .wrapper .stage.active:hover {
-            background: #ddd;
+            background: var(--color-selected);
+            border-bottom: 0;
         }
         .setup-stages .wrapper .stage:hover {
-            background: #eee;
+            background: var(--color-hover);
+            color: var(--color-hover-text);
         }
         .setup-stages .wrapper .stage:active {
             box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
@@ -66,7 +73,7 @@
             .setup-stages .wrapper .stage div.status {
                 height: 20px;
                 width: 20px;
-                border: 1px solid var(--color-accent);
+                border: 1px solid var(--color-secondary);
                 border-radius: 12px;
                 display: flex;
                 justify-content: center;
@@ -76,7 +83,7 @@
                 color: #ccc;
             }
             .setup-stages .wrapper .stage div.status.checked {
-                color: var(--color-accent);
+                color: var(--color-secondary);
                 font-size: 85%;
             }
             .setup-stages .wrapper .stage:hover .hover-info {
@@ -85,7 +92,8 @@
             }
             .setup-stages .wrapper .stage .hover-info {
                 position: absolute;
-                background: #ddd;
+                background: var(--color-primary);
+                color: var(--color-primary-text);
                 height: 45px;
                 width: 220px;
                 align-items: center;
@@ -97,7 +105,7 @@
             }
             .setup-stages .wrapper .stage .hover-info::after {
                 content: '';
-                border-left: 10px solid #ddd;
+                border-left: 10px solid var(--color-primary);
                 border-top: 0px solid transparent;
                 border-bottom: 10px solid transparent;
                 position: absolute;
@@ -106,8 +114,8 @@
             }
 
 .dialog-box-blanket.user-onboarding-welcome header {
-    color: inherit;
-    background: #fff;
+    color: var(--color-surface-text);
+    background: var(--color-surface);
     box-shadow: none;
 }
     .dialog-box-blanket.user-onboarding-welcome header .close {
@@ -164,7 +172,7 @@
         }
         .dialog-box-blanket.user-onboarding-welcome .body .or {
             text-align: center;
-            color: #666;
+            color: var(--color-grey);
             grid-column: 1 / 3;
         }
         .dialog-box-blanket.user-onboarding-welcome .body .initiate-chat {
@@ -177,7 +185,7 @@
             transition: border var(--transition-duration);
         }
         .dialog-box-blanket.user-onboarding-welcome .body .initiate-chat:hover {
-            border-color: #999;
+            border-color: var(--color-border);
         }
         .dialog-box-blanket.user-onboarding-welcome .body .skip {
             grid-column: 2;
@@ -192,7 +200,8 @@
             border: 1px solid #999;
         }
 .save-pop-up {
-    background: var(--color-accent);
+    background: var(--color-secondary);
+    color: var(--color-secondary-text);
     display: flex;
     align-items: center;
     padding: 15px;
@@ -202,13 +211,12 @@
     position: absolute;
     justify-content: center;
     z-index: 7;
-    color: #fff;
     letter-spacing: 0.5px;
 }
 .save-pop-up::before {
     left: -10px;
     content: '';
-    border-right: 10px solid var(--color-accent);
+    border-right: 10px solid var(--color-secondary);
     border-top: 10px solid transparent;
     border-bottom: 10px solid transparent;
     position: absolute;
@@ -230,13 +238,15 @@ main .toolbar button.unsaved.blink {
 }
 @keyframes submit-blink {
     from {
-        background: #fff;
+        background: var(--color-hover);
+        color: var(--color-hover-text);
     }
     15% {
         background: #dc563e;
-        color: #fff;
+        color: var(--color-hover-text);
     }
     to {
-        background: #fff;
+        background: var(--color-hover);
+        color: var(--color-hover-text);
     }
 }

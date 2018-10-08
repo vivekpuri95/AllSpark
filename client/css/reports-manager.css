@@ -287,7 +287,8 @@ main.preview-left #stages {
 						box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.4);
 					}
 					#stage-define-report #schema li.opened > .name {
-						background: rgba(0, 0, 0, 0.10);
+						background: var(--color-selected);
+						color: var(--color-selected-text);
 					}
 						#stage-define-report #schema li .name span {
 							overflow: hidden;

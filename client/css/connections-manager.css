@@ -9,7 +9,7 @@ main section .connections {
 	main section .connections article .row > .NA {
 		display: flex;
 		justify-content: center;
-		color: #999;
+		color: var(--color-grey);
 	}
 	main section .connections .heading-bar {
 		display: flex;
@@ -30,8 +30,8 @@ main section .connections {
 			align-items: center;
 			flex: 1;
 			margin-left: 20px;
-			background: var(--color-hover);
-			color: var(--color-hover-text);
+			background: var(--color-surface);
+			color: var(--color-surface-text);
 			padding: 0 10px;
 			border-radius: 4px;
 		}
@@ -90,7 +90,6 @@ main section .connections {
 							margin: 0;
 						}
 					main .connections #data-connections article .article-toolbar span {
-						color:  #666;
 						font-size: 120%;
 					}
 					main .connections #data-connections article figure {

@@ -7,14 +7,6 @@ main .dataset {
 		width: 100%;
 	}
 	main .dataset .options {
-		position: absolute;
-		background: #fff;
-		z-index: 3;
-		width: 100%;
-		box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
-		max-height: 250px;
-		overflow: auto;
-		border: 1px solid #ccc;
 		border-top: 0;
 	}
 		main .dataset label {
@@ -41,35 +33,6 @@ main .dataset {
 			main .dataset label input {
 				margin: 0;
 			}
-		main .dataset .options header,
-		main .dataset .options footer {
-			background: #fff;
-			position: sticky;
-			font-size: 85%;
-			padding: var(--gap);
-			color: #999;
-			display: grid;
-			grid-template-columns: auto auto auto;
-			grid-gap: calc(var(--gap) * 2);
-			justify-content: flex-start;
-			box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-		}
-		main .dataset .options header {
-			border-bottom: 1px dashed #999;
-			top: 0;
-		}
-			main .dataset .options header a {
-				cursor: pointer;
-			}
-		main .dataset .options footer {
-			border-top: 1px dashed #999;
-			bottom: 0;
-		}
-		main .dataset .options .NA {
-			padding: calc(var(--gap) * 2);
-			color: #999;
-			text-align: center;
-		}
 
 .data-source {
 	display: flex;
@@ -89,6 +52,7 @@ main .dataset {
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
+		border-radius: 6px 6px 0 0;
 	}
 		.data-source > .warning h2 {
 			font-size: calc(15px + 0.8vw);
@@ -276,7 +240,7 @@ main .dataset {
 				}
 				.data-source > .menu .item:hover > .label .NA,
 				.data-source > .menu .item:hover > .label i {
-					color: #eee;
+					color: var(--color-surface-text);
 				}
 				.data-source > .menu .item.selected > .label .NA,
 				.data-source > .menu .item.selected > .label i {
@@ -302,14 +266,14 @@ main .dataset {
 		.data-source > .overlay > .close {
 			cursor: pointer;
 			font-size: 175%;
-			color: #666;
+			color: var(--color-surface-text);
 			position: absolute;
 			top: 10px;
 			right: 15px;
 			transition: color var(--transition-duration);
 		}
 		.data-source > .overlay > .close:hover {
-			color: #333;
+			color: var(--color-hover-text);
 		}
 
 	.data-source .toolbar.filters {
@@ -385,17 +349,19 @@ main .dataset {
 					}
 					.dialog-box.api-documentation .body h4 + p {
 						margin: 0;
-						color: #999;
+						color: var(--color-grey);
 					}
 					.dialog-box.api-documentation .body table {
 						font-size: 95%;
 						box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
 						user-select: text;
+						background: var(--color-surface);
+						color: var(--color-surface-text);
 					}
 					.dialog-box.api-documentation .body .url {
 						padding: calc(var(--gap) * 2);
-						background: rgba(0, 0, 0, 0.05);
-						color: #666;
+						background: var(--color-surface);
+						color: var(--color-surface-text);
 						font-size: 95%;
 						user-select: text;
 						overflow: auto;
@@ -1313,6 +1279,7 @@ main .dataset {
 			.column-form .accumulations .add-accumulation {
 				border: 0;
 				height: auto;
+				width: 33px;
 			}
 				.column-form .filters .add-filter i,
 				.column-form .accumulations .add-accumulation i,

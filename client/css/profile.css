@@ -160,6 +160,7 @@ main .switch {
 		}
 			main .activity-info article .info-grid .down {
 				text-align: right;
+				transition: transform var(--transition-duration);
 			}
 				main .activity-info article .info-grid .down i {
 					transition: transform var(--transition-duration);
@@ -193,11 +194,13 @@ main .switch {
 				display: grid;
 				max-height: 300px;
 				overflow: auto;
-				background-color: #fff;
+				background-color: var(--color-surface);
+				color: var(--color-surface-text);
 			}
 
 		main .activity-groups .info-grid.selected {
 			background: var(--color-selected) !important;
+			color: var(--color-selected-text);
 			z-index: 1;
 		}
 		main .activity-groups .info-grid:active {
@@ -208,7 +211,6 @@ main .switch {
 		}
 		main .activity-groups .activity-group .info-grid .title {
 			font-size: 110%;
-			color: #333;
 		}
 			main .activity-groups .activity-group .info-grid .type {
 				text-transform: capitalize;
@@ -217,7 +219,8 @@ main .switch {
 			font-size: 125%;
 		}
 		main .activity-groups .activity-group .activity-list {
-			background: #eee;
+			background: var(--color-background);
+			color: var(--color-background-text);
 		}
 
 	.activity-popup {
