@@ -3,7 +3,6 @@ from flask import request
 import config
 from .common_functions import get_function_signature
 
-
 class API(Principal):
     def __init__(self):
         """log API """
@@ -13,16 +12,16 @@ class API(Principal):
         self.config = config
 
         if self.request.method == 'POST':
-
-            form_data = {i: self.request.form[i] for i in self.request.form}
-            request_json = {i: self.request.json[i] for i in self.request.json}
+            form_data = {i: dict(self.request.form)[i] if len(dict(self.request.form)[i]) > 1 else dict(self.request.form)[i][0] for i in dict(self.request.form or {})}
+            request_json = {i: dict(self.request.json)[i] if len(dict(self.request.json)[i]) > 1 else dict(self.request.json)[i][0] for i in dict(self.request.json or {})}
             form_data.update(request_json)
 
             for i in self.request.files:
                 form_data[i] = request.files[i]
 
         else:
-            form_data = {i: request.values[i] for i in request.values}
+
+            form_data = {i: dict(self.request.values)[i] if len(dict(self.request.values)[i]) > 1 else dict(self.request.values)[i][0] for i in dict(request.values or {})}
         self.host = request.headers['Host']
         self.formatted_request_body = form_data
 

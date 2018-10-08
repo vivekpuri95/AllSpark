@@ -171,16 +171,18 @@ exports.gaReports = class extends API {
 
 		this.assert(oAuthProvider, 'Invalid connection id');
 
-		let connection;
+        let connection;
 
-		if(oAuthProvider.type == 'Google') {
+        if(oAuthProvider.type == 'Google') {
 
-			connection =  new GoogleAPIs(this, oAuthProvider);
-		}
+            connection =  new GoogleAPIs(this, oAuthProvider);
+        }
 
-		this.assert(connection, 'Invalid provider type!');
+        this.assert(connection, 'Invalid provider type!');
 
-		const response = await this.fetch(viewId, startDate, endDate, metrics, dimensions);
+        const access_token = await connection.test();
+
+		const response = await this.fetch(viewId, startDate, endDate, metrics, dimensions, access_token);
 
 		const processedData = [];
 
@@ -205,7 +207,7 @@ exports.gaReports = class extends API {
 
 			return {
 				status: true,
-				message: 'Save connection missing'
+				data: "save connection missing"
 			}
 		}
 		else {
@@ -214,7 +216,7 @@ exports.gaReports = class extends API {
 
 			const insertResponse = await this.mysql.query(
 				`INSERT INTO ${database}.${constants.saveQueryResultTable} (type, user_id, data) VALUES ('ga', ?, ?)`,
-				[this.user.user_id, processedData],
+				[this.user.user_id, JSON.stringify(processedData)],
 				this.account.settings.get("load_saved_connection")
 			);
 
@@ -229,11 +231,9 @@ exports.gaReports = class extends API {
 
 	}
 
-	async fetch(viewId, startDate, endDate, metrics, dimensions) {
+	async fetch(viewId, startDate, endDate, metrics, dimensions, access_token) {
 
-		const
-			access_token = await connection.test(),
-			gaMetrics = [], gaDimensions = [];
+		const gaMetrics = [], gaDimensions = [];
 
 		for(const metric of typeof metrics == 'string' ? [metrics] : metrics) {
 
@@ -279,14 +279,15 @@ exports.gaReports = class extends API {
 
 		let
 			conn = this.account.settings.get("load_saved_connection"),
+			savedDatabase = this.account.settings.get("load_saved_database"),
 			db = await this.mysql.query("show databases", [], conn);
 
-		db = db.filter(x => x === (this.account.settings.get("load_saved_database") || constants.saveQueryResultDb));
+		[db] = db.filter(x => x === (savedDatabase || constants.saveQueryResultDb));
 
 		if (!db) {
 
 			await this.mysql.query(
-				`CREATE DATABASE IF NOT EXISTS ${credentials.db || constants.saveQueryResultDb}`,
+				`CREATE DATABASE IF NOT EXISTS ${savedDatabase || constants.saveQueryResultDb}`,
 				[],
 				conn
 			);
@@ -305,20 +306,20 @@ exports.gaReports = class extends API {
 			  KEY \`user_id\` (\`user_id\`),
 			  KEY \`created_at\` (\`created_at\`)
 			) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
-			[this.account.settings.get("load_saved_database") || constants.saveQueryResultDb, constants.saveQueryResultTable],
+			[savedDatabase || constants.saveQueryResultDb, constants.saveQueryResultTable],
 			conn,
 		);
 
-		if (!credentials.db) {
+		if (!savedDatabase ) {
 
 			await this.mysql.query(
 				`update tb_credentials set db = ? where id = ?`,
-				[this.account.settings.get("load_saved_database") || constants.saveQueryResultDb, credentials.id],
+				[savedDatabase || constants.saveQueryResultDb, conn],
 				"write"
 			);
 		}
 
-		return this.account.settings.get("load_saved_database") || constants.saveQueryResultDb;
+		return savedDatabase || constants.saveQueryResultDb;
 	}
 
 }

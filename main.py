@@ -1,9 +1,11 @@
 import config
 from server.utils.Application import *
 from server.www.xlsx import xlsx
+from server.www.oauth.googleAdwords import ga
 
 BLUEPRINTS = {
     xlsx: "/xlsx",
+    ga: "/adwords",
 }
 
 app = Application(BLUEPRINTS)
@@ -17,10 +19,10 @@ for blueprint in BLUEPRINTS:
 def hello_world():
     return app.send_response('Hello world')
 
-
-@application.errorhandler(Exception)
-def handle_error(e):
-    return app.send_response(str(e), False)
+#
+# @application.errorhandler(Exception)
+# def handle_error(e):
+#     return app.send_response(str(e), False)
 
 
 if __name__ == '__main__':

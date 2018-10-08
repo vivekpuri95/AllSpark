@@ -51,7 +51,6 @@ exports.publicEndpoints = [
 	'/v2/session-logs/insert',
 	'/v2/tests/test',
 	'/v2/scheduler/jobs/run',
-	'/v2/oauth/google-adwords/getData',
 ];
 
 exports.filterPrefix = "param_";

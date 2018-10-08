@@ -121,7 +121,7 @@ class Connections extends Page {
 		if(!connContainer.childElementCount)
 			connContainer.innerHTML = '<div class="NA">No Connection Found</div>';
 
-		this.container.querySelector('section#list').appendChild(container);
+        this.container.querySelector('section#list').insertBefore(container, this.container.querySelector('h1'))
 
 		const providerList = this.container.querySelector('#add-oauth-connection').provider;
 		providerList.textContent = null;
