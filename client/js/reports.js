@@ -6256,26 +6256,26 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.enter()
 					.append('text')
 					.attr('width', columns.scale.rangeBand())
-					.attr('fill', '#666')
+					.attr('fill', 'var(--color-surface-text)')
 					.text(([row, column]) => {
 
 						if(['s'].includes(axis.format))
-							return d3.format('.4s')(row.get(column.key));
+							return d3.format('.4s')(row.getTypedValue(column.key));
 
 						else
-							return Format.number(row.get(column.key))
+							return row.getTypedValue(column.key);
 					})
 					.attr('x', ([row, column]) => {
 
-						let value = Format.number(row.get(column.key));
+						let value = row.getTypedValue(column.key);
 
 						if(['s'].includes(axis.format))
-							value = d3.format('.4s')(row.get(column.key));
+							value = d3.format('.4s')(value);
 
-						return this.x(row.get(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
+						return this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
 					})
-					.attr('y', ([row, column]) => scale(row.get(column.key) > 0 ? row.get(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
-					.attr('height', ([row, column]) => Math.abs(scale(row.get(column.key)) - scale(0)));
+					.attr('y', ([row, column]) => scale(row.getTypedValue(column.key) > 0 ? row.getTypedValue(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
+					.attr('height', ([row, column]) => Math.abs(scale(row.getTypedValue(column.key)) - scale(0)));
 
 				if(axis.animate) {
 
