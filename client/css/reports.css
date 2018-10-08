@@ -1066,16 +1066,19 @@ main .dataset {
 }
 
 .visualization .container > svg .reset-zoom {
-	fill: var(--color-grey);
+	fill: var(--color-background);
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
 	cursor: pointer;
 	transition: fill var(--transition-duration);
 }
 .visualization .container > svg .reset-zoom:hover {
-	fill: var(--color-grey);
+	fill: var(--color-hover);
 }
 	.visualization .container > svg .reset-zoom text {
-		fill: #555;
+		fill: var(--color-background-text);
+	}
+	.visualization .container > svg .reset-zoom:hover text {
+		fill: var(--color-hover-text);
 	}
 
 .visualization .container > svg rect.zoom-rectangle {
@@ -1313,10 +1316,13 @@ main .dataset {
 					text-align: initial !important;
 				}
 	.column-form > label {
-		margin-left: calc(var(--gap) * 2);
+		margin: 0 calc(var(--gap) * 2);
 	}
 	.column-form .timing-type-custom {
 		max-width: 100%;
+		margin: 0 calc(var(--gap) * 2);
+		display: grid;
+		grid-gap: 10px;
 	}
 		.column-form .timing-format {
 			display: grid;
@@ -1325,8 +1331,7 @@ main .dataset {
 			grid-auto-flow: column;
 		}
 			.column-form .timing-format fieldset {
-				border: 1px solid #ccc;
-				color: #333;
+				border: 1px solid var(--color-border);
 				font-size: 90%;
 				margin: 0;
 			}
@@ -1342,7 +1347,8 @@ main .dataset {
 				}
 				.column-form .timing-format fieldset label:hover {
 					cursor: pointer;
-					background: #eee;
+					background: var(--color-hover);
+					color: var(--color-hover-text);
 				}
 				.column-form .timing-format fieldset label:active {
 					box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.25);
@@ -1351,7 +1357,7 @@ main .dataset {
 					display: none;
 				}
 				.column-form .timing-format fieldset input:checked + span {
-					color: #333;
+					color: var(--color-selected);
 				}
 				.column-form .timing-format fieldset label span {
 					color: #ccc;

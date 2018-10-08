@@ -341,6 +341,7 @@ class DataSource {
 			this.menu.classList.toggle('hidden');
 			this.menu.style.left = menuToggle.offsetLeft + 'px';
 			menuToggle.classList.toggle('selected');
+			this.postProcessors.render();
 
 			document.body.removeEventListener('click', this.menuToggleListener);
 
@@ -1965,12 +1966,6 @@ class DataSourceColumn {
 				</select>
 			</label>
 
-			<label class="hidden">
-				<span>Formula</span>
-				<input type="text" name="formula">
-				<small></small>
-			</label>
-
 			<label>
 				<span>Prefix</span>
 				<input type="text" name="prefix">
@@ -1983,6 +1978,19 @@ class DataSourceColumn {
 
 			<label class="disable-column">
 				<span><input type="checkbox" name="disabled"> <span>Disabled</span></span>
+			</label>
+
+			<label>
+				<span>Collapse To</span>
+				<select name="collapseTo">
+					<option value="">None</option>
+					<option value="second">Second</option>
+					<option value="minute">Minute</option>
+					<option value="hour">Hour</option>
+					<option value="date">Date</option>
+					<option value="week">Week</option>
+					<option value="month">Month</option>
+				</select>
 			</label>
 
 			<h3>Drill down</h3>
@@ -2045,14 +2053,6 @@ class DataSourceColumn {
 
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
-
-		form.elements.formula.on('keyup', async () => {
-
-			if(formulaTimeout)
-				clearTimeout(formulaTimeout);
-
-			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
-		});
 
 		form.insertBefore(this.columnFilters.container, form.querySelector('.columnType'));
 		form.insertBefore(this.columnAccumulations.container, form.querySelector('.columnType'));
@@ -2220,7 +2220,7 @@ class DataSourceColumn {
 			sort : this.sort,
 			prefix : this.prefix,
 			postfix : this.postfix,
-			formula : this.formula,
+			collapseTo : this.collapseTo,
 			drilldown : {
 				query_id : parseInt(this.drilldownQuery.value[0]) || 0,
 				parameters : this.drilldownParameters.json
@@ -3306,8 +3306,14 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type && column.type.name == 'date')
+			if(column.type && ['dateTime', 'date'].includes(column.type.name))
 				this.timingColumn = column;
+		}
+
+		if(!this.selected && this.timingColumn.collapseTo) {
+
+			this.selected = this.list.get('CollapseTo');
+			this.selected.value = this.timingColumn.collapseTo;
 		}
 
 		const label = this.source.container.querySelector('.postprocessors');
