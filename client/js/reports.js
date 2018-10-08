@@ -3306,11 +3306,11 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type && ['dateTime', 'date'].includes(column.type.name))
+			if(column.type && ['datetime', 'date'].includes(column.type.name))
 				this.timingColumn = column;
 		}
 
-		if(!this.selected && this.timingColumn.collapseTo) {
+		if(!this.selected && this.timingColumn && this.timingColumn.collapseTo) {
 
 			this.selected = this.list.get('CollapseTo');
 			this.selected.value = this.timingColumn.collapseTo;
