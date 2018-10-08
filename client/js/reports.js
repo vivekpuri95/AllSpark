@@ -6216,8 +6216,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.attr('class', 'clips')
 						.style('fill', this.source.columns.get(column.key).color)
 						.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
-						.attr('cx', row => this.x(row.get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
-						.attr('cy', row => scale(row.get(column.key)))
+						.attr('cx', row => this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.attr('cy', row => scale(row.getTypedValue(column.key)))
 						.on('mouseover', function(_, __, column) {
 							that.hoverColumn = column[1];
 							d3.select(this).classed('hover', true);
