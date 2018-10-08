@@ -5,7 +5,6 @@ main {
 	main > nav {
 		display: flex;
 		flex-direction: column;
-		color: var(--color-primary-text);
 		height: calc(100vh - 50px);
 		border-right: 1px solid var(--color-border);
 		position: sticky;
@@ -165,7 +164,7 @@ main .feature-form .table-container {
 			}
 			main .feature-form table .feature-toggle label:hover {
 				cursor: pointer;
-				background: var(--color-selected);
+				background: #D4E157;
 				color: var(--color-selected-text);
 			}
 			main .feature-form table .feature-toggle label:active {

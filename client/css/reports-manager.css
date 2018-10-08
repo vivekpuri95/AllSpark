@@ -72,12 +72,13 @@ main.preview-bottom {
 		cursor: default;
 		background: var(--color-background);
 		color: var(--color-background-text);
+		opacity: 0.5;
 	}
 		#stage-switcher .stage > .order {
 			grid-row: 1 / 3;
 			font-size: calc(14px + 0.6vw);
-			color: #aaa;
-			border: 1px solid #ccc;
+			color: var(--color-grey);
+			border: 1px solid var(--color-grey);
 			border-radius: 100px;
 			width: calc(20px + 1.25vw);
 			height: calc(20px + 1.25vw);
@@ -88,13 +89,9 @@ main.preview-bottom {
 			transition: color var(--transition-duration),
 						border var(--transition-duration);
 		}
-		#stage-switcher .stage.selected > .order,
-		#stage-switcher .stage:not(.disabled):hover > .order {
+		#stage-switcher .stage.selected > .order {
 			border: 1px solid var(--color-selected-text);
 			color: var(--color-selected-text);
-		}
-		#stage-switcher .stage.disabled > .order {
-			color: #ccc;
 		}
 		#stage-switcher .stage > .title {
 			font-size: 110%;
@@ -108,12 +105,6 @@ main.preview-bottom {
 		}
 		#stage-switcher .stage.selected > small {
 			color: var(--color-selected-text);
-		}
-		#stage-switcher .stage:not(.disabled):hover {
-			color: #666;
-		}
-		#stage-switcher .stage.disabled > small {
-			color: #ccc;
 		}
 
 main .form {
@@ -584,9 +575,11 @@ main.preview-left #stages {
 			}
 				.visualization-form .transformations fieldset > .actions > div {
 					cursor: pointer;
+					margin-top: 2px;
 					padding: 5px 8px;
-					color: #666;
-					transition: color var(--transition-duration),
+					color: var(--color-grey);
+					transition: color var(
+					--transition-duration),
 								background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
@@ -594,8 +587,8 @@ main.preview-left #stages {
 					border-top-right-radius: 3px;
 				}
 				.visualization-form .transformations fieldset > .actions > div:hover {
-					background: #ddd;
-					color: inherit;
+					background: var(--color-hover);
+					color: var(--color-hover-text);
 				}
 				.visualization-form .transformations fieldset > .transformation.disabled .actions > div.disabled {
 					background: #ccc;

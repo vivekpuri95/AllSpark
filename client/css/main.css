@@ -2,17 +2,17 @@
 
 :root {
 
-	--color-primary: #3e7adc;
+	--color-primary: #2588f0;
 	--color-primary-text: #fff;
 
-	--color-secondary: #FFC107;
-	--color-secondary-text: #333;
+	--color-secondary: #2588f0;
+	--color-secondary-text: #fff;
 
-	--color-selected: #fff59d;
-	--color-selected-text: inherit;
+	--color-selected: #f8b060;
+	--color-selected-text: #333;
 
 	--color-hover: #c3d6e8;
-	--color-hover-text: inherit;
+	--color-hover-text: #333;
 
 	--color-background: #eee;
 	--color-background-text: #222;
@@ -21,7 +21,7 @@
 	--color-surface-text: #222;
 
 	--color-grey: #666;
-	--color-border: #999;
+	--color-border: #ccc;
 
 	--transition-duration: 300ms;
 	--gap: 5px;
@@ -40,7 +40,8 @@ button {
 	outline-width: 2px;
 	font-size: 90%;
 	border: 1px solid #ccc;
-	background: transparent;
+	background: var(--color-surface);
+	color: var(--color-surface-text);
 	transition: background var(--transition-duration),
 				color var(--transition-duration),
 				box-shadow var(--transition-duration),
@@ -187,8 +188,8 @@ body {
 		letter-spacing: 1px;
 		transition: opacity var(--transition-duration);
 		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-		background: var(--color-secondary);
-		color: var(--color-secondary-text);
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		width: 80px;
 		z-index: 11;
 	}
@@ -577,8 +578,8 @@ body {
 	.dialog-box {
 		display: flex;
 		flex-direction: column;
-		background: var(--color-surface);
-		color: var(--color-surface-text);
+		background: var(--color-background);
+		color: var(--color-background-text);
 		box-shadow: 0 0 100px rgba(0, 0, 0, 0.5);
 		position: fixed;
 		max-height: 80%;
@@ -750,7 +751,7 @@ body {
 				display: grid;
 				grid-template-columns: auto 1fr;
 				align-items: center;
-				padding: calc(var(--gap) * 1.5);
+				padding: calc(var(--gap) * 2);
 				margin: 0;
 				max-width: inherit;
 				overflow: hidden;

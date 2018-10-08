@@ -173,7 +173,7 @@ main .switch {
 				color: #999;
 			}
 			main .activity-info article .info-grid .icon {
-				color: #999;
+				color: var(--color-grey);
 				grid-row: 1 / 3;
 				display: flex;
 				justify-content: center;
@@ -183,7 +183,7 @@ main .switch {
 			main .activity-info article .info-grid .extra-info {
 				grid-column: 2;
 				font-size: 90%;
-				color: #999;
+				color: var(--color-grey);
 			}
 			main .activity-info article .info-grid .title {
 				grid-column: 2;
@@ -231,7 +231,7 @@ main .switch {
 			text-transform: capitalize;
 		}
 		.activity-popup .value {
-			color: #666;
+			color: var(--color-grey);
 		}
 		.activity-popup .key,
 		.activity-popup .value {
@@ -241,7 +241,8 @@ main .switch {
 	 	.activity-popup .json {
 	 		max-height: 150px;
 	 		overflow: auto;
-	 		background: #eee;
+	 		background: var(--color-surface);
+	 		box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
 	 		padding: 10px;
 	 	}
 

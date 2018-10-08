@@ -32,11 +32,13 @@ class HTMLAPI extends API {
 
 	async body() {
 
-		this.stylesheets.push('/css/themes/dark.css');
+		if(this.account.settings.get('theme'))
+			this.stylesheets.push(`/css/themes/${this.account.settings.get('theme') || 'light'}.css`);
 
-		if(this.account.settings.has('custom_css'))
+		if(this.account.settings.get('custom_css'))
+			this.stylesheets.push('/js/custom.css');
 
-		if(this.account.settings.has('custom_js'))
+		if(this.account.settings.get('custom_js'))
 			this.scripts.push('/js/custom.js');
 
 		let ga = '';

@@ -1,23 +1,20 @@
 :root {
-
-	--color-primary: #3e7adc;
+	--color-primary: #2588f0;
 	--color-primary-text: #fff;
-
-	--color-secondary: #3e7adc;
+	--color-secondary: #2588f0;
 	--color-secondary-text: #fff;
-
-	--color-selected: #fff59d;
-	--color-selected-text: inherit;
-
+	--color-selected: #f8b060;
+	--color-selected-text: #333;
 	--color-hover: #c3d6e8;
-	--color-hover-text: inherit;
-
+	--color-hover-text: #333;
 	--color-background: #eee;
 	--color-background-text: #222;
-
 	--color-surface: #fff;
 	--color-surface-text: #222;
-
 	--color-grey: #666;
-	--color-border: #999;
+	--color-border: #ccc;
+}
+
+a {
+	color: #333;
 }

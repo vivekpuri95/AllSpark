@@ -208,7 +208,6 @@ main .dataset {
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		border-radius: 0;
 		border-top: 20px solid var(--color-surface);
-		border-bottom: 1px solid #ccc;
 	}
 		.data-source > .menu .item {
 			position: relative;
@@ -217,6 +216,7 @@ main .dataset {
 				display: none;
 				flex-direction: column;
 				width: max-content;
+				min-width: 150px;
 				position: absolute;
 				right: 100%;
 				top: 0;
@@ -284,8 +284,9 @@ main .dataset {
 				}
 
 	.data-source > .overlay {
-		background: rgba(255, 255, 255, 0.5);
+		background: rgba(255, 255, 255, 0.1);
 		position: absolute;
+		border-radius: 6px 6px 0 0;
 		padding-top: 15px;
 		bottom: 0;
 		top: 22px;
@@ -301,7 +302,7 @@ main .dataset {
 		.data-source > .overlay > .close {
 			cursor: pointer;
 			font-size: 175%;
-			color: #999;
+			color: #666;
 			position: absolute;
 			top: 10px;
 			right: 15px;
@@ -334,12 +335,12 @@ main .dataset {
 				margin-top: 0;
 			}
 		.data-source > .description .footer {
-			border-top: 1px dashed #ccc;
+			border-top: 1px dashed var(--color-border);
 			padding: 10px;
 			font-size: 90%;
 			display: grid;
 			margin-top:  auto;
-			background: rgba(255, 255, 255, 0.5);
+			background: rgba(255, 255, 255, 0.1);
 			grid-auto-flow: column;
 			grid-gap: 20px;
 			overflow: auto;
@@ -357,7 +358,7 @@ main .dataset {
 				margin-left: auto;
 			}
 			.data-source > .description .footer a {
-				color: #333;
+				/* color: #333; */
 				cursor: pointer;
 			}
 			.data-source > .description .footer .visible-to .count:hover {
@@ -366,7 +367,7 @@ main .dataset {
 			}
 			.data-source > .description .footer .label {
 				font-size: 100%;
-				color: #999;
+				color: var(--color-grey);
 			}
 			.dialog-box.api-documentation {
 				max-width: 50%;
@@ -477,8 +478,8 @@ main .dataset {
 		}
 		.data-source > .columns .column.disabled > span,
 		.data-source > .columns .column.disabled > button {
-			background: #eee;
-			opacity: 0.5;
+			background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,.3) 0px, rgba(0,0,05,.3) 8px);
+			opacity: 0.6;
 		}
 		.data-source > .columns .column.drag-enter:before {
 			content: "";
@@ -497,9 +498,6 @@ main .dataset {
 		}
 			.data-source > .columns.being-dragged .column * {
 				pointer-events: none;
-			}
-			.data-source .column.disabled > .label .color {
-				background: #aaa !important;
 			}
 			.data-source .column > .label {
 				display: flex;
@@ -800,8 +798,8 @@ main .dataset {
 					min-width: 300px;
 					text-align: initial;
 					padding-top: calc(var(--gap) * 2);
-					background: var(--color-surface);
-					color: var(--color-surface-text);
+					background: var(--color-background);
+					color: var(--color-background-text);
 					box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
 					max-width: 500px;
 				}
@@ -818,7 +816,6 @@ main .dataset {
 					font-family: sans-serif;
 					text-align: center;
 					font-size: 12px;
-					border-left: 1px solid #999;
 					margin-bottom: 10px;
 				}
 				.visualization.table thead td:first-child input,
@@ -853,7 +850,7 @@ main .dataset {
 					.visualization.table table thead th .name {
 						margin-left: auto;
 					}
-					.visualization.table table thead th .fa {
+					.visualization.table table thead th > .fa {
 						opacity: 0;
 						transition: opacity var(--transition-duration);
 					}
@@ -1290,6 +1287,8 @@ main .dataset {
 	width: 100%;
 	overflow: auto;
 	max-height: 200px;
+	background: var(--color-background);
+	color: var(--color-background-text);
 }
 	.column-form .filters,
 	.column-form .accumulations {
@@ -1314,11 +1313,10 @@ main .dataset {
 			.column-form .accumulations .add-accumulation {
 				border: 0;
 				height: auto;
-				width: 36px;
 			}
-				.column-form .filters .add-filter svg,
-				.column-form .accumulations .add-accumulation svg,
-				.column-form .delete svg {
+				.column-form .filters .add-filter i,
+				.column-form .accumulations .add-accumulation i,
+				.column-form .delete i {
 					margin: 0;
 				}
 		.column-form.compact label {
@@ -1337,7 +1335,7 @@ main .dataset {
 					background: #c33;
 					border-color: transparent;
 				}
-					.column-form label .category-group button svg {
+					.column-form label .category-group button i {
 						margin: 0;
 					}
 				.column-form:not(.compact) label .category-group select {

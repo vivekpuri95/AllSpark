@@ -74,9 +74,7 @@ main {
 			grid-gap: 5px;
 		}
 			main .dashboards .size {
-				padding: 5px 10px;
-				margin-left: 20px;
-				color: #888;
+				margin-left: 10px;
 			}
 			main .dashboards .sub-dashboards {
 				display: grid;

@@ -431,8 +431,11 @@ class DashboardsDashboard {
 
 		if(this.children.size) {
 
+			container.querySelector('.name').insertAdjacentHTML('beforeend', `
+				<div class="NA size hidden">(${this.children.size} child dashboard${this.children.size > 1 ? 's': ''})</div>
+			`);
+
 			container.insertAdjacentHTML('beforeend', `
-				<div class="size hidden">${this.children.size} child dashboard${this.children.size > 1 ? 's': ''}</div>
 				<div class="sub-dashboards"></div>
 			`);
 

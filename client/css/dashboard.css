@@ -247,8 +247,8 @@ main #reports > .global-filters.right {
 	right: 0px;
 	top: 50px;
 	bottom: 0;
-	background: var(--color-surface);
-	color: var(--color-surface-text);
+	background: var(--color-background);
+	color: var(--color-background-text);
 	padding: 0 calc(var(--gap) * 2);
 	box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
 	transform: translateX(260px);
@@ -291,8 +291,8 @@ main #reports > .global-filters.top.scrolled {
 		border-bottom: 1px solid var(--color-border);
 		position: sticky;
 		top: 0;
-		background: var(--color-surface);
-		color: var(--color-surface-text);
+		background: var(--color-background);
+		color: var(--color-background-text);
 		z-index: 1;
 		padding-top: var(--gap);
 	}
@@ -305,8 +305,8 @@ main #reports > .global-filters.top.scrolled {
 				border: 0;
 				width: 100%;
 				outline: 0;
-				background: var(--color-surface);
-				color: var(--color-surface-text);
+				background: var(--color-background);
+				color: var(--color-background-text);
 			}
 			main #reports > .global-filters > .head.heading i {
 				color: #999;
@@ -520,7 +520,8 @@ main #reports > .list.editing {
 			top: 50px;
 			left: 0;
 			opacity: 0;
-			background: #fff;
+			color: var(--color-surface-text);
+			background: var(--color-surface);
 			border: 0;
 			box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
 			transition: transform var(--transition-duration),
