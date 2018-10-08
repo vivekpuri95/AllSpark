@@ -210,16 +210,19 @@ exports.login = class extends API {
 	async login() {
 
 
-		const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
-		const redisResult = await redis.get(redisHash);
+		if(redis) {
 
-		if(redisResult) {
-			throw new API.Exception(400, "You're doing that too often. Please wait 3 seconds.");
+			const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
+			const redisResult = await redis.get(redisHash);
+
+			if(redisResult) {
+				throw new API.Exception(400, "You're doing that too often. Please wait 3 seconds.");
+			}
+
+			await redis.set(redisHash, 1);
+
+			await redis.expire(redisHash, 3);
 		}
-
-		await redis.set(redisHash, 1);
-
-		await redis.expire(redisHash, 3);
 
 		this.load();
 

@@ -8742,8 +8742,6 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 		this.editor = new CodeEditor({mode: 'json'});
 
-		this.editor.editor.setTheme('ace/theme/clouds');
-
 		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
 		this.editor.editor.setReadOnly(true);
 

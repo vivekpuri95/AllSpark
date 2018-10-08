@@ -4,7 +4,7 @@ main {
 	grid-template-columns: 220px calc(100% - 220px);
 }
 
-header > .menu-toggle {
+body > header > .menu-toggle {
 	display: none;
 	padding: 15px 20px;
 	color: var(--color-primary-text);
@@ -30,7 +30,6 @@ main > nav {
 	top: 50px;
 	overflow-y: auto;
 	height: calc(100vh - 50px);
-	border-right: 1px solid #ccc
 }
 main > nav.show {
 	transform: translateX(0px) !important;
@@ -41,7 +40,8 @@ main > nav .dashboard-search {
 	box-shadow:  0 0 10px rgba(0, 0, 0, 0.15);
 	position: sticky;
 	top: 0;
-	background: #fff;
+	background: var(--color-primary);
+	color: var(--color-primary-text);
 }
 main > nav .dashboard-search input[type=search] {
 	background: transparent;
@@ -61,11 +61,11 @@ nav > .item .left span {
 	padding: 0 5px;
 }
 nav > .item.list-open {
-	box-shadow: inset 10px 0px 0 var(--color-accent);
+	box-shadow: inset 10px 0px 0 var(--color-secondary);
 }
 
 main > nav::-webkit-scrollbar {
-	background: #fff;
+	background: var(--color-surface);
 	width: 8px;
 	display: none;
 }
@@ -73,7 +73,7 @@ main > nav:hover::-webkit-scrollbar {
 	display: block;
 }
 main > nav::-webkit-scrollbar-thumb {
-	background: var(--color-accent);
+	background: var(--color-secondary);
 }
 main > nav::-webkit-scrollbar-track {
 	box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
@@ -107,7 +107,7 @@ main > nav::-webkit-scrollbar-track {
 	}
 	main > nav .label.selected {
 		background: rgba(0, 0, 0, 0.15);
-		box-shadow: inset 6px 0px 0 var(--color-accent);
+		box-shadow: inset 6px 0px 0 var(--color-selected);
 	}
 		main > nav .submenu {
 			display: flex;
@@ -139,7 +139,6 @@ main > nav::-webkit-scrollbar-track {
 				}
 	main > nav footer {
 		margin-top: auto;
-		color: #666;
 		display: flex;
 		align-items: center;
 		min-height: max-content;
@@ -157,9 +156,6 @@ main > nav::-webkit-scrollbar-track {
 			text-align: center;
 			flex: 1;
 		}
-			main > nav footer .powered-by a {
-				color: #333;
-			}
 main #reports.show {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
@@ -168,14 +164,11 @@ main #reports.show {
 }
 
 main #reports > h1.dashboard-name {
-	border: 0;
-	font-size: 150%;
-	border-bottom:  1px dashed #ccc;
 	font-weight: normal;
 	display: flex;
 	justify-content: space-between;
 	max-width: 100%;
-    overflow: auto;
+	overflow: auto;
 }
 main #reports > h1.dashboard-name::-webkit-scrollbar {
 	display: none;
@@ -254,7 +247,8 @@ main #reports > .global-filters.right {
 	right: 0px;
 	top: 50px;
 	bottom: 0;
-	background: #fff;
+	background: var(--color-background);
+	color: var(--color-background-text);
 	padding: 0 calc(var(--gap) * 2);
 	box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
 	transform: translateX(260px);
@@ -270,7 +264,8 @@ main #reports > .global-filters.top {
 	margin: 0 calc(var(--gap) * -3);
 	position: sticky;
 	top: 50px;
-	background: #eee;
+	background: var(--color-background);
+	color: var(--color-background-text);
 	z-index: 4;
 }
 main #reports > .global-filters.top.scrolled {
@@ -293,10 +288,11 @@ main #reports > .global-filters.top.scrolled {
 		align-items: center;
 	}
 	main #reports > .global-filters > .heading {
-		border-bottom: 1px solid #ddd;
+		border-bottom: 1px solid var(--color-border);
 		position: sticky;
 		top: 0;
-		background: #fff;
+		background: var(--color-background);
+		color: var(--color-background-text);
 		z-index: 1;
 		padding-top: var(--gap);
 	}
@@ -309,6 +305,8 @@ main #reports > .global-filters.top.scrolled {
 				border: 0;
 				width: 100%;
 				outline: 0;
+				background: var(--color-background);
+				color: var(--color-background-text);
 			}
 			main #reports > .global-filters > .head.heading i {
 				color: #999;
@@ -320,7 +318,7 @@ main #reports > .global-filters.top.scrolled {
 				justify-content: center;
 			}
 			main #reports > .global-filters > .head input[type=checkbox]:checked {
-				color: var(--color-accent);
+				color: var(--color-secondary);
 				border: 3px solid blue;
 			}
 			main #reports > .global-filters > .head .reload i {
@@ -341,17 +339,17 @@ main #reports > .global-filters.top.scrolled {
 		flex-wrap: wrap;
 	}
 		main #reports > .global-filters .apply {
-			background: var(--color-accent);
-			color: var(--color-accent-text);
-			border-color: var(--color-accent);
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
+			border-color: var(--color-secondary);
 			letter-spacing: 1px;
 			transition: background var(--transition-duration),
 						box-shadow var(--transition-duration),
 						color var(--transition-duration);
 		}
 		main #reports > .global-filters .apply:hover {
-			background: var(--color-accent-text);
-			color: var(--color-accent);
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
 			cursor: pointer;
 		}
 	main #reports > .global-filters.right .filters {
@@ -409,7 +407,7 @@ main #reports > .list.editing {
 		opacity: 0.5;
 	}
 	main #reports .list .data-source.drag-enter {
-		box-shadow: -6px 0px var(--color-accent);
+		box-shadow: -6px 0px var(--color-secondary);
 	}
 
 	main #reports .side {
@@ -419,8 +417,8 @@ main #reports > .list.editing {
 		width: 40px;
 		height: 40px;
 		border-radius: 20px;
-		background: var(--color-accent);
-		color: var(--color-accent-text);
+		background: var(--color-secondary);
+		color: var(--color-secondary-text);
 		z-index: 6;
 		display: flex;
 		justify-content: center;
@@ -432,8 +430,8 @@ main #reports > .list.editing {
 		border: 1px solid #999;
 	}
 	main #reports .side.selected {
-		border: 3px solid #fff;
-		color: #fff;
+		border: 3px solid var(--color-surface);
+		color: var(--color-surface);
 	}
 	main #reports .side.selected:focus {
 		outline: 0;
@@ -462,7 +460,7 @@ main #reports > .list.editing {
 		bottom: 0;
 		right: 0;
 		z-index: 5;
-		border: double #aaa;
+		border: double var(--color-border);
 		border-width: 0 3px 3px 0;
 	}
 	main .data-source.add-new {
@@ -522,7 +520,8 @@ main #reports > .list.editing {
 			top: 50px;
 			left: 0;
 			opacity: 0;
-			background: #fff;
+			color: var(--color-surface-text);
+			background: var(--color-surface);
 			border: 0;
 			box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
 			transition: transform var(--transition-duration),
@@ -571,7 +570,8 @@ body.floating main  {
 		top: 50px;
 		left: 0;
 		opacity: 0;
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		border: 0;
 		box-shadow: 0 0 50px rgba(0, 0, 0, 0.4);
 		transition: transform var(--transition-duration),
@@ -601,8 +601,8 @@ main #reports #blanket {
 	z-index: 5;
 }
 main table tbody tr .tag {
-	background: var(--color-accent);
-	color: var(--color-accent-text);
+	background: var(--color-secondary);
+	color: var(--color-secondary-text);
 	cursor: pointer;
 	text-decoration: none;
 	text-transform: uppercase;

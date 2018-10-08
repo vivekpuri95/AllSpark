@@ -6,13 +6,14 @@ main {
 	max-width: 700px;
 }
 main .section > h2 {
-	margin: calc(var(--gap) * 2) 0;
+	margin: 25px 0 10px;
+	padding-bottom: 8px;
 }
 .angle-rotate {
 	transform: rotate(90deg);
 }
 	main h1 {
-		border-bottom: 1px dashed black;
+		border-bottom: 1px dashed var(--color-border);
 		margin: 0 0 calc(var(--gap) * 2);
 		display: flex;
 		justify-content: space-between;
@@ -41,15 +42,16 @@ main .section > h2 {
 	}
 	main p {
 		line-height: 20px;
-		margin: calc(var(--gap) * 2) 0;
-		border: 1px solid #ccc;
+		margin: calc(var(--gap) * 4) 0;
+		border: 1px solid var(--color-border);
 		padding: calc(var(--gap) * 2);
 	}
 
 main .profile-details,
 main .privileges,
 main .roles {
-	background: #fff;
+	background: var(--color-surface);
+	color: var(--color-surface-text);
 	table-layout: fixed;
 	overflow: hidden;
 }
@@ -59,7 +61,7 @@ main .profile-details {
 	user-select: text;
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 	grid-template-columns: max-content 1fr;
-	grid-gap: calc(var(--gap) * 2);
+	grid-gap: calc(var(--gap) * 3);
 }
 	.profile-details span {
 		font-weight: bold;
@@ -82,7 +84,7 @@ main .switch {
 	}
 		main .switch .heading-bar {
 			display: flex;
-			border-bottom: 1px solid #ccc;
+			border-bottom: 1px solid var(--color-border);
 		}
 			main .heading-bar h3 {
 				margin: 0;
@@ -98,12 +100,12 @@ main .switch {
 							background var(--transition-duration);
 			}
 			main .switch .heading-bar label.selected {
-				box-shadow: inset 0px -6px 0px var(--color-accent) !important;
+				box-shadow: inset 0px -6px 0px var(--color-secondary) !important;
 				margin-bottom: -1px;
 			}
 			main .switch .heading-bar label:hover {
 				cursor: pointer;
-				box-shadow: inset 0px -6px 0px #999;
+				box-shadow: inset 0px -6px 0px var(--color-border);
 				margin-bottom: -1px;
 			}
 
@@ -120,7 +122,8 @@ main .switch {
 				margin: 0;
 			}
 		main .activity-info article {
-			background: #fff;
+			background: var(--color-surface);
+			color: var(--color-surface-text);
 			overflow: hidden;
 			display: flex;
 			flex-direction:  column;
@@ -153,9 +156,11 @@ main .switch {
 		main .activity-info article .info-grid:hover {
 			cursor: pointer;
 			background: var(--color-hover);
+			color: var(--color-hover-text);
 		}
 			main .activity-info article .info-grid .down {
 				text-align: right;
+				transition: transform var(--transition-duration);
 			}
 				main .activity-info article .info-grid .down i {
 					transition: transform var(--transition-duration);
@@ -169,7 +174,7 @@ main .switch {
 				color: #999;
 			}
 			main .activity-info article .info-grid .icon {
-				color: #999;
+				color: var(--color-grey);
 				grid-row: 1 / 3;
 				display: flex;
 				justify-content: center;
@@ -179,22 +184,23 @@ main .switch {
 			main .activity-info article .info-grid .extra-info {
 				grid-column: 2;
 				font-size: 90%;
-				color: #999;
+				color: var(--color-grey);
 			}
 			main .activity-info article .info-grid .title {
 				grid-column: 2;
 				font-size: 125%;
-				color: #333;
 			}
 			main .activity-info article .activity-groups {
 				display: grid;
 				max-height: 300px;
 				overflow: auto;
-				background-color: #fff;
+				background-color: var(--color-surface);
+				color: var(--color-surface-text);
 			}
 
 		main .activity-groups .info-grid.selected {
 			background: var(--color-selected) !important;
+			color: var(--color-selected-text);
 			z-index: 1;
 		}
 		main .activity-groups .info-grid:active {
@@ -205,7 +211,6 @@ main .switch {
 		}
 		main .activity-groups .activity-group .info-grid .title {
 			font-size: 110%;
-			color: #333;
 		}
 			main .activity-groups .activity-group .info-grid .type {
 				text-transform: capitalize;
@@ -214,7 +219,8 @@ main .switch {
 			font-size: 125%;
 		}
 		main .activity-groups .activity-group .activity-list {
-			background: #eee;
+			background: var(--color-background);
+			color: var(--color-background-text);
 		}
 
 	.activity-popup {
@@ -228,7 +234,7 @@ main .switch {
 			text-transform: capitalize;
 		}
 		.activity-popup .value {
-			color: #666;
+			color: var(--color-grey);
 		}
 		.activity-popup .key,
 		.activity-popup .value {
@@ -238,7 +244,8 @@ main .switch {
 	 	.activity-popup .json {
 	 		max-height: 150px;
 	 		overflow: auto;
-	 		background: #eee;
+	 		background: var(--color-surface);
+	 		box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
 	 		padding: 10px;
 	 	}
 

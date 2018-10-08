@@ -25,11 +25,11 @@ main.preview-bottom {
 
 #stage-switcher {
 	display: flex;
-	background: #fff;
+	background: var(--color-surface);
+	color: var(--color-surface-text);
 	min-height: 64px;
 	grid-column: 1 / 4;
 	grid-row: 1;
-	border: 1px solid #ccc;
 	border-top: 0;
 	overflow: auto;
 }
@@ -43,7 +43,8 @@ main.preview-bottom {
 		flex: 1;
 		text-align: center;
 		justify-content: center;
-		border-left: 1px solid #ccc;
+		border: solid var(--color-border);
+		border-width: 0 0 1px 1px;
 		cursor: pointer;
 		position: relative;
 		grid-row-gap: var(--gap);
@@ -52,11 +53,12 @@ main.preview-bottom {
 					box-shadow var(--transition-duration),
 					color var(--transition-duration);
 	}
-	#stage-switcher .stage:first-child {
-		border-left: 0;
+	#stage-switcher .stage:last-child {
+		border-right-width: 1px;
 	}
 	#stage-switcher .stage:not(.disabled):not(.selected):hover {
-		background: #ffe;
+		background: var(--color-hover);
+		color: var(--color-hover-text);
 	}
 	#stage-switcher .stage:not(.disabled):active {
 		box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
@@ -64,17 +66,19 @@ main.preview-bottom {
 	#stage-switcher .stage.selected {
 		background: var(--color-selected);
 		color: var(--color-selected-text);
+		border-bottom-color: var(--color-selected);
 	}
 	#stage-switcher .stage.disabled {
-		color: #ccc;
 		cursor: default;
-		background: #eee;
+		background: var(--color-background);
+		color: var(--color-background-text);
+		opacity: 0.5;
 	}
 		#stage-switcher .stage > .order {
 			grid-row: 1 / 3;
 			font-size: calc(14px + 0.6vw);
-			color: #aaa;
-			border: 1px solid #ccc;
+			color: var(--color-grey);
+			border: 1px solid var(--color-grey);
 			border-radius: 100px;
 			width: calc(20px + 1.25vw);
 			height: calc(20px + 1.25vw);
@@ -85,13 +89,9 @@ main.preview-bottom {
 			transition: color var(--transition-duration),
 						border var(--transition-duration);
 		}
-		#stage-switcher .stage.selected > .order,
-		#stage-switcher .stage:not(.disabled):hover > .order {
-			border: 1px solid #999;
-			color: #999;
-		}
-		#stage-switcher .stage.disabled > .order {
-			color: #ccc;
+		#stage-switcher .stage.selected > .order {
+			border: 1px solid var(--color-selected-text);
+			color: var(--color-selected-text);
 		}
 		#stage-switcher .stage > .title {
 			font-size: 110%;
@@ -100,18 +100,16 @@ main.preview-bottom {
 			font-weight: bold;
 		}
 		#stage-switcher .stage > small {
-			color: #999;
+			color: var(--color-grey);
 			transition: color var(--transition-duration);
 		}
-		#stage-switcher .stage:not(.disabled):hover {
-			color: #666;
-		}
-		#stage-switcher .stage.disabled > small {
-			color: #ccc;
+		#stage-switcher .stage.selected > small {
+			color: var(--color-selected-text);
 		}
 
 main .form {
-	background: #fff;
+	background: var(--color-surface);
+	color: var(--color-surface-text);
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
@@ -173,7 +171,8 @@ main.preview-left #stages {
 }
 
 #stage-pick-report table {
-	background: #fff;
+	background: var(--color-surface);
+	color: var(--color-surface-text);
 	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 	#stage-pick-report table thead tr th {
@@ -183,14 +182,15 @@ main.preview-left #stages {
 	#stage-pick-report table thead tr.search th {
 		padding: calc(var(--gap) * 2) var(--gap);
 		top: 0;
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 	}
 		#stage-pick-report table thead tr.search th input {
 			width: 100%;
 		}
 	#stage-pick-report table tbody tr .tag {
-		background: var(--color-accent);
-		color: var(--color-accent-text);
+		background: var(--color-secondary);
+		color: var(--color-secondary-text);
 		cursor: pointer;
 		text-decoration: none;
 		text-transform: uppercase;
@@ -231,7 +231,8 @@ main.preview-left #stages {
 			flex: 1 300px;
 			max-width: 300px;
 			flex-direction: column;
-			background: #fff;
+			background: var(--color-surface);
+			color: var(--color-surface-text);
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			margin-right: calc(var(--gap) * 2);
 		}
@@ -286,7 +287,8 @@ main.preview-left #stages {
 						box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.4);
 					}
 					#stage-define-report #schema li.opened > .name {
-						background: rgba(0, 0, 0, 0.10);
+						background: var(--color-selected);
+						color: var(--color-selected-text);
 					}
 						#stage-define-report #schema li .name span {
 							overflow: hidden;
@@ -377,7 +379,8 @@ main.preview-left #stages {
 			}
 			#stage-define-report #filters table,
 			#stage-define-report #filters .form {
-				background: #fff;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			}
 		#stage-define-report .query-history {
@@ -422,7 +425,7 @@ main.preview-left #stages {
 					box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
 				}
 #stage-pick-visualization table {
-	background: #fff;
+	background: var(--color-surface);
 	box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 }
 
@@ -436,14 +439,14 @@ main.preview-left #stages {
 		position: sticky;
 		top: 0;
 		z-index: 7;
-		background: #eee;
+		background: var(--color-background);
+		color: var(--color-background-text);
 	}
 	#stage-configure-visualization .toolbar .right {
 		margin-left: auto;
 	}
 	.visualization-form h3 {
-		color: #444;
-		border-bottom: 1px dashed #999;
+		border-bottom: 1px dashed var(--color-border);
 		cursor: pointer;
 		position: sticky;
 		top: 28px;
@@ -454,8 +457,9 @@ main.preview-left #stages {
 		font-size: 100%;
 		font-weight: normal;
 		z-index: 3;
-		background: #eee;
 		transition: color var(--transition-duration);
+		background: var(--color-background);
+		color: var(--color-background-text);
 	}
 	.visualization-form h3:hover {
 		color: inherit;
@@ -472,8 +476,9 @@ main.preview-left #stages {
 		margin: 0 0 calc(var(--gap) * 2)
 	}
 	.visualization-form fieldset {
-		background: #fff;
-		padding: calc(var(--gap) * 2);
+		background: var(--color-surface);
+		color: var(--color-surface-text);
+		padding: 15px;
 		margin: 0;
 		border-radius: 3px;
 		border: 0;
@@ -481,11 +486,10 @@ main.preview-left #stages {
 	}
 		.visualization-form fieldset legend {
 			font-size: 90%;
-			border: 1px solid #ccc;
-			padding: 2px 8px;
+			padding: 5px 10px;
 			border-radius: 5px;
-			color: #888;
-			background: #fff;
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
 			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 			transition: background var(--transition-duration),
 						color var(--transition-duration);
@@ -507,6 +511,7 @@ main.preview-left #stages {
 
 	.visualization-form .axes,
 	.visualization-form .layers {
+		background: transparent;
 	}
 		.visualization-form .axes .form,
 		.visualization-form .layers .form {
@@ -571,9 +576,11 @@ main.preview-left #stages {
 			}
 				.visualization-form .transformations fieldset > .actions > div {
 					cursor: pointer;
+					margin-top: 2px;
 					padding: 5px 8px;
-					color: #666;
-					transition: color var(--transition-duration),
+					color: var(--color-grey);
+					transition: color var(
+					--transition-duration),
 								background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
@@ -581,8 +588,8 @@ main.preview-left #stages {
 					border-top-right-radius: 3px;
 				}
 				.visualization-form .transformations fieldset > .actions > div:hover {
-					background: #ddd;
-					color: inherit;
+					background: var(--color-hover);
+					color: var(--color-hover-text);
 				}
 				.visualization-form .transformations fieldset > .transformation.disabled .actions > div.disabled {
 					background: #ccc;
@@ -607,7 +614,7 @@ main.preview-left #stages {
 				}
 					.visualization-form .transformations .transformation h4 {
 						margin: 0;
-						border-bottom: 1px dashed #ccc;
+						border-bottom: 1px dashed var(--color-border);
 						padding-bottom: var(--gap);
 						font-size: 90%;
 					}
@@ -625,10 +632,6 @@ main.preview-left #stages {
 				}
 	#stage-configure-visualization .dashboards {
 	}
-		#stage-configure-visualization .list {
-			display: grid;
-			grid-gap: calc(var(--gap) * 2);
-		}
 		#stage-configure-visualization .dashboards .form {
 			grid-template-columns: repeat(5, max-content);
 			grid-gap: calc(var(--gap) * 2);
@@ -687,12 +690,12 @@ main.preview-left #stages {
 		}
 		.visualization-form .configuration-section .body {
 			display: grid;
-			grid-gap: calc(var(--gap) * 2);
-			padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2) 0;
-			background: #eee;
+			grid-gap: 20px;
+			padding: 0 var(--gap) calc(var(--gap) * 2) 0;
 		}
 			.visualization-form .configuration-section .body .list .NA {
-				background: #fff;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 				padding: calc(var(--gap) * 2);
 				box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 				border-radius: 3px;
@@ -812,7 +815,8 @@ main.preview-left #stages {
 			top: 0;
 		}
 		#add-visualization-form figcaption {
-			background: #D7CCC8;
+			background: var(--color-surface);
+			color: var(--color-surface-text);
 			width: 100%;
 			padding: calc(var(--gap) * 2);
 			text-align: center;
@@ -843,7 +847,6 @@ main.preview-left #preview {
 	height: calc(100vh - 135px);
 }
 	#preview .unsaved .container {
-		background: #fcc;
 	}
 	#preview .data-source {
 		max-height: 600px;

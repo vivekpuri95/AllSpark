@@ -2515,11 +2515,6 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.logsEditor) {
-
-			this.editor.editor.setTheme('ace/theme/clouds');
-		}
-
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
 		setTimeout(() => {
@@ -4977,7 +4972,7 @@ class ReportTransformations extends Set {
 		if(!report.transformationVisualization) {
 
 			const visualization = {
-				visualization_id: Math.floor(Math.random() * 1000) + 1000,
+				visualization_id: 0,
 				name: 'Table',
 				type: 'table',
 				options: {
