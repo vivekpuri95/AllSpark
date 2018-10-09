@@ -24,7 +24,7 @@ class DashboardManager extends Page {
 		DashboardsDashboard.container.querySelector('.parent-dashboard').appendChild(this.parentDashboardMultiselect.container);
 
 		(async () => {
-
+			this.setup();
 			await this.load();
 
 			this.loadState();
@@ -69,11 +69,43 @@ class DashboardManager extends Page {
 		this.render();
 	}
 
+	setup() {
+
+		const filters = [
+			{
+				key: 'ID',
+				rowValue: row => [row.id],
+			},
+			{
+				key: 'Name',
+				rowValue: row => row.name ? [row.name] : [],
+			},
+			{
+				key: 'Order',
+				rowValue: row => row.order ? [row.order] : [],
+			},
+		];
+
+		this.searchBar = new SearchColumnFilters({ filters });
+
+		const heading = this.container.querySelector('.section .heading');
+
+		heading.insertAdjacentElement('beforeend', this.searchBar.globalSearch.container);
+		heading.insertAdjacentElement('afterend', this.searchBar.container);
+
+		this.searchBar.on('change', () => {
+			this.process();
+			this.render();
+		});
+	}
+
 	process() {
+
+		this.searchBar.data = this.response;
 
 		this.list.clear();
 
-		for(const dashboard of this.response || []) {
+		for(const dashboard of this.response) {
 
 			this.list.set(dashboard.id, new DashboardsDashboard(dashboard, this.response, this));
 		}
@@ -81,19 +113,22 @@ class DashboardManager extends Page {
 
 	render() {
 
-		const container = this.container.querySelector('.dashboards');
+		const filterData = this.searchBar.filterData;
+		this.filter = {};
 
+		const container = this.container.querySelector('.dashboards');
 		container.textContent = null;
+
+		for(const data of filterData)
+			this.filter[data.id] = data;
 
 		for(const dashboard of this.list.values()) {
 
-			if(!dashboard.parent || !this.list.has(dashboard.parent)) {
-
+			if(dashboard.visible && !dashboard.parent)
 				container.appendChild(dashboard.container);
-			}
 		}
 
-		if(!this.list.size)
+		if(!this.list.size || !filterData.length)
 			container.innerHTML = `<div class="NA">No dashboards found!</div>`;
 
 		const datalist = [];
@@ -356,6 +391,7 @@ class DashboardsDashboard {
 
 	get container() {
 
+
 		if(this.containerElement)
 			return this.containerElement;
 
@@ -366,7 +402,7 @@ class DashboardsDashboard {
 			<div class="label">
 				<div class="name">
 					<a href="/dashboard/${this.id}">${this.name}</a>
-					<span>#${this.id}</span>
+					<span class="NA">#${this.id}</span>
 				</div>
 				<div>${this.order ? ('Order: ' + this.order) : ''}</div>
 				<div title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></div>
@@ -395,13 +431,16 @@ class DashboardsDashboard {
 
 		if(this.children.size) {
 
+			container.querySelector('.name').insertAdjacentHTML('beforeend', `
+				<div class="NA size hidden">(${this.children.size} child dashboard${this.children.size > 1 ? 's': ''})</div>
+			`);
+
 			container.insertAdjacentHTML('beforeend', `
-				<div class="size hidden">${this.children.size} dashboard${this.children.size > 1 ? 's': ''}</div>
 				<div class="sub-dashboards"></div>
 			`);
 
 			container.querySelector('.label .name').insertAdjacentHTML('afterbegin', `
-				<span class="arrow">
+				<span class="NA arrow">
 					<i class="fas fa-angle-down"></i>
 				</span>
 			`);
@@ -421,11 +460,27 @@ class DashboardsDashboard {
 
 			for(const child of this.children.values()) {
 
-				container.querySelector('div.sub-dashboards').appendChild(child.container);
+				if(child.visible)
+					container.querySelector('div.sub-dashboards').appendChild(child.container);
 			}
 		}
 
 		return container;
+	}
+
+	get visible() {
+
+		if(this.parent && !this.page.list.has(this.parent))
+			return false;
+
+		if(this.id in this.page.filter)
+			return true;
+
+		for(const child of this.children.values()) {
+
+			if(child.visible)
+				return true;
+		}
 	}
 
 	get parents() {

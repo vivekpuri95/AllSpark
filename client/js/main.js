@@ -88,7 +88,6 @@ class Page {
 		}
 
 		Storage.set('refresh_token', refresh_token);
-		Cookies.set('refresh_token', refresh_token);
 
 		await API.refreshToken();
 		await MetaData.load();
@@ -112,6 +111,7 @@ class Page {
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
+		this.header = new PageHeader(this);
 
 		if(container)
 			return;
@@ -122,92 +122,17 @@ class Page {
 
 	renderPage() {
 
-		const
-			navList = [
-				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
-				{url: '/dashboards-manager', name: 'Dashboards', privileges: [], icon: 'fa fa-newspaper'},
-				{url: '/reports', name: 'Reports', privileges: [], icon: 'fa fa-database'},
-				{url: '/visualizations-manager', name: 'Visualizations', privileges: [], icon: 'far fa-chart-bar'},
-				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
-				{url: '/settings', name: 'Settings', privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'], icon: 'fas fa-cog'},
-			],
-			header = document.querySelector('body > header'),
-			navContainer = header.querySelector('.nav-container'),
-			nav = header.querySelector('nav'),
-			userPopup = header.querySelector('.user-popup'),
-			userToggle = header.querySelector('.user-toggle'),
-			menuToggle = header.querySelector('.menu-toggle'),
-			profileLink = document.createElement('a');
+		if(!this.account || !this.user)
+			return;
+
+		document.body.insertBefore(this.header.container, this.container);
 
 		if(window.account) {
-
-			if(account.settings.get('hideHeader')) {
-				header.classList.add('hidden');
-				return;
-			}
 
 			if(account.icon)
 				document.getElementById('favicon').href = account.icon;
 
-			if(account.logo)
-				header.querySelector('.logo img').src = account.logo;
-
 			document.title = account.name;
-		}
-
-		userToggle.innerHTML = '<i class="fa fa-user"></i>&nbsp; '+ this.user.name;
-
-		profileLink.textContent = 'Profile';
-		profileLink.href = `/user/profile/${this.user.user_id}`;
-		profileLink.classList.add('profile-link');
-
-		header.querySelector('.name').innerHTML = this.user.name;
-		header.querySelector('.email').innerHTML = this.user.email;
-		header.querySelector('.user-popup').insertBefore(profileLink, header.querySelector('.logout'));
-
-		userToggle.on('click', e => {
-			e.stopPropagation();
-			userPopup.classList.toggle('hidden');
-			userToggle.classList.toggle('selected');
-		});
-
-		document.body.on('click', () => {
-			userPopup.classList.add('hidden');
-			userToggle.classList.remove('selected');
-			navContainer.classList.remove('show');
-			menuToggle.classList.remove('selected');
-		});
-
-		userPopup.on('click', e => e.stopPropagation());
-		navContainer.on('click', e => e.stopPropagation());
-
-		header.querySelector('.logout').on('click', () => User.logout());
-
-		menuToggle.on('click', e => {
-			e.stopPropagation();
-			navContainer.classList.toggle('show');
-			menuToggle.classList.toggle('selected');
-		});
-
-		if(user.id)
-			navContainer.insertBefore(new GlobalSearch().container, header.querySelector('.user-toggle'));
-
-		for(const item of navList) {
-
-			if(!window.user || (item.privileges.every(p => !user.privileges.has(p)) && item.privileges.length))
-				continue;
-
-			nav.insertAdjacentHTML('beforeend',`
-				<a href='${item.url}'>
-					<i class="${item.icon}"></i>&nbsp;
-					${item.name}
-				</a>
-			`);
-		}
-
-		for(const item of nav.querySelectorAll('a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname))
-				item.classList.add('selected');
 		}
 	}
 
@@ -291,6 +216,149 @@ class Page {
 			document.head.appendChild(onboardScript);
 			document.head.appendChild(onboardCSS);
 		}
+	}
+}
+
+class PageHeader {
+
+	constructor(page) {
+
+		this.page = page;
+
+		this.globalSearch = new GlobalSearch();
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('header');
+
+		container.innerHTML = `
+
+			<a class="logo" href="/dashboard/first"><img src="${this.page.account.logo}"></a>
+
+			<span class="user-toggle"><i class="fa fa-user"></i>&nbsp; ${this.page.user.name || ''}</span>
+
+			<div class="user-popup hidden">
+				<span class="name">${this.page.user.name}</span>
+				<span class="email">${this.page.user.email}</span>
+				<a href="/user/profile/${this.page.user.user_id}" class="profile">Profile</a>
+				<a href="#" class="logout">Logout</a>
+			</div>
+
+			<div class="nav-toggle"><i class="fas fa-chevron-down"></i></div>
+
+			<nav class="hidden"></nav>
+		`;
+
+		const
+			navList = [
+				{
+					url: '/users-manager',
+					name: 'Users',
+					privileges: ['user.list', 'user'],
+					icon: 'fas fa-users',
+				},
+				{
+					url: '/dashboards-manager',
+					name: 'Dashboards',
+					privileges: [],
+					icon: 'fa fa-newspaper',
+				},
+				{
+					url: '/reports',
+					name: 'Reports',
+					privileges: [],
+					icon: 'fa fa-database',
+				},
+				{
+					url: '/visualizations-manager',
+					name: 'Visualizations',
+					privileges: [],
+					icon: 'far fa-chart-bar',
+				},
+				{
+					url: '/connections-manager',
+					name: 'Connections',
+					privileges: ['connection', 'connection.list'],
+					icon: 'fa fa-server',
+				},
+				{
+					url: '/settings',
+					name: 'Settings',
+					privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'],
+					icon: 'fas fa-cog',
+				},
+			],
+			nav = container.querySelector('nav'),
+			navToggle = container.querySelector('.nav-toggle'),
+			userToggle = container.querySelector('.user-toggle'),
+			userPopup = container.querySelector('.user-popup');
+
+		for(const item of navList) {
+
+			if((item.privileges.every(p => !this.page.user.privileges.has(p)) && item.privileges.length))
+				continue;
+
+			nav.insertAdjacentHTML('beforeend',`
+				<a href="${item.url}" class="${window.location.pathname.startsWith(item.url) ? 'selected' : ''}">
+					<i class="${item.icon}"></i>&nbsp;
+					${item.name}
+				</a>
+			`);
+		}
+
+		container.insertBefore(this.globalSearch.container, userToggle);
+
+		userToggle.on('click', e => {
+
+			e.stopPropagation();
+
+			nav.classList.add('hidden');
+			navToggle.classList.remove('selected');
+
+			userPopup.classList.toggle('hidden');
+			userToggle.classList.toggle('selected');
+		});
+
+		navToggle.on('click', e => {
+
+			e.stopPropagation();
+
+			userPopup.classList.add('hidden');
+			userToggle.classList.remove('selected');
+
+			nav.classList.toggle('hidden');
+			navToggle.classList.toggle('selected');
+
+			this.globalSearch.container.classList.toggle('show');
+			userPopup.classList.toggle('show');
+		});
+
+		container.querySelector('.logout').on('click', () => {
+
+			Cookies.set('bypassLogin', '');
+
+			User.logout();
+		});
+
+		userPopup.on('click', e => e.stopPropagation());
+
+		document.on('click', () => {
+
+			userPopup.classList.add('hidden');
+			userToggle.classList.remove('selected');
+
+			nav.classList.add('hidden');
+			navToggle.classList.remove('selected');
+
+			this.globalSearch.container.classList.remove('show');
+			userPopup.classList.remove('show');
+		});
+
+		return container;
 	}
 }
 
@@ -984,6 +1052,9 @@ class User {
 	}
 
 	static async logout({next, callback, redirect = true, message = ''} = {}) {
+
+		Cookies.set('refresh_token', '');
+		Cookies.set('token', '');
 
 		try {
 
@@ -2887,6 +2958,236 @@ class SnackBar {
 				SnackBar.container[this.position].classList.add('hidden');
 
 		}, Page.transitionDuration);
+	}
+}
+
+
+/**
+ *  Global and advance search bar
+ */
+class SearchColumnFilters extends Set {
+
+	constructor({ filters, advancedSearch = true, data = [] } = {}) {
+
+		super();
+
+		this.data = data;
+		this.filters = filters;
+
+		this.globalSearch = new GlobalColumnSearchFilter(this, advancedSearch);
+
+		this.add(this.globalSearch);
+
+		this.render();
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('hidden', 'search-column-filters');
+
+		container.innerHTML = `
+			<div class="filters"></div>
+			<button type="button" class="add-filter">
+				<i class="fa fa-plus"></i>
+				Add New Parameter
+			</button>
+		`;
+
+		container.querySelector('.add-filter').on('click', () => {
+
+			this.add(new SearchColumnFilter(this));
+			this.render();
+			container.scrollTop = container.scrollHeight;
+
+		});
+
+		return container;
+	}
+
+	render() {
+
+		const filters = this.container.querySelector('.filters');
+		filters.textContent = null;
+
+		for(const filter of this) {
+
+			if(filter != this.globalSearch)
+				filters.appendChild(filter.container);
+		}
+
+		if(this.size < 2)
+			filters.innerHTML = '<div class="NA">No Filters Added</div>';
+	}
+
+	on(event, callback) {
+
+		if(event != 'change')
+			return;
+
+		this.changeCallback = callback;
+	}
+
+	get filterData() {
+
+		const filterData = [];
+
+		outer:
+		for(const row of this.data) {
+
+			for(const filter of this) {
+
+				if(!filter.checkRow(row))
+					continue outer;
+			}
+
+			filterData.push(row);
+		}
+
+		return filterData;
+	}
+}
+
+class SearchColumnFilter {
+
+	constructor(searchColumns) {
+
+		this.searchColumns = searchColumns;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('search-column-filter');
+
+		container.innerHTML = `
+			<select class="searchValue"></select>
+			<select class="searchType"></select>
+			<input type="search" class="searchQuery" placeholder="Search">
+			<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+		`;
+
+		const
+			searchType = container.querySelector('select.searchType'),
+			searchQuery = container.querySelector('.searchQuery');
+
+		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
+		searchQuery.on('search', () => this.searchColumns.changeCallback());
+
+		for(const filter of DataSourceColumnFilter.types) {
+
+			searchType.insertAdjacentHTML('beforeend', `
+				<option value="${filter.slug}">
+					${filter.name}
+				</option>
+			`);
+		}
+
+		const searchValue = container.querySelector('select.searchValue');
+
+		for(const column of this.searchColumns.filters) {
+
+			searchValue.insertAdjacentHTML('beforeend', `
+				<option value="${column.key}">
+					${column.key}
+				</option>
+			`);
+		}
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.searchColumns.delete(this);
+
+			if (this.searchColumns.changeCallback)
+				this.searchColumns.changeCallback();
+
+			this.searchColumns.render();
+		});
+
+		return container;
+	}
+
+	checkRow(row) {
+
+		const
+			columnName = this.container.querySelector('select.searchValue').value,
+			functionName = this.container.querySelector('select.searchType').value,
+			query = this.container.querySelector('.searchQuery').value;
+
+		if(!query)
+			return true;
+
+		const [columnValue] = this.searchColumns.filters.filter(fil => fil.key == columnName).map(m => m.rowValue(row));
+
+		if(!columnValue || !columnValue.length)
+			return false;
+
+		for(const column of DataSourceColumnFilter.types) {
+
+			if(functionName != column.slug)
+				continue;
+
+			for(const value of columnValue) {
+				if(column.apply(query, value))
+					return true;
+			}
+
+			return false;
+		}
+	}
+}
+
+class GlobalColumnSearchFilter extends SearchColumnFilter {
+
+	constructor(searchColumns, advancedSearch){
+
+		super(searchColumns);
+
+		this.searchColumns = searchColumns;
+		this.advancedSearch = advancedSearch;
+	}
+
+	get container() {
+
+		const container = super.container;
+
+		container.classList.add('global-filter');
+		container.querySelector('select.searchValue').classList.add('hidden');
+		container.querySelector('select.searchType').classList.add('hidden');
+		container.querySelector('.delete').classList.add('hidden');
+
+		if(this.advancedSearch) {
+
+			container.insertAdjacentHTML('beforeend','<button type="button" class="advanced"><i class="fa fa-angle-down"></i></button>');
+			container.querySelector('.advanced').on('click', () => this.searchColumns.container.classList.toggle('hidden'));
+		}
+		return container;
+	}
+
+	checkRow(row) {
+
+		const
+			query = super.container.querySelector('.searchQuery').value,
+			[contains] = DataSourceColumnFilter.types.filter(x => x.slug == 'contains');
+
+		if(!query)
+			return true;
+
+		for(const column of this.searchColumns.filters) {
+
+			for(const value of column.rowValue(row)) {
+
+				if(value && contains.apply(query, value))
+					return true;
+			}
+		}
 	}
 }
 

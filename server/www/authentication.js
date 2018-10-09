@@ -210,17 +210,19 @@ exports.login = class extends API {
 	async login() {
 
 
-		const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
-		const redisResult = await redis.get(redisHash);
+		if(redis) {
 
-		if(redisResult) {
+			const redisHash = `userLoginTimeout#${crypto.createHash('md5').update(JSON.stringify(this.request.body) || "").digest('hex')}`;
+			const redisResult = await redis.get(redisHash);
 
-			throw("Failure, please try again");
+			if(redisResult) {
+				throw new API.Exception(400, "You're doing that too often. Please wait 3 seconds.");
+			}
+
+			await redis.set(redisHash, 1);
+
+			await redis.expire(redisHash, 3);
 		}
-
-		await redis.set(redisHash, 1);
-
-		await redis.expire(redisHash, 3);
 
 		this.load();
 
@@ -299,6 +301,8 @@ exports.login = class extends API {
 
 		let session = {};
 
+		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 30) * 86400);
+
 		try {
 			sessionLogs.request = {};
 
@@ -327,12 +331,12 @@ exports.login = class extends API {
 		};
 
 		const finalObj = {
-			jwt: commonFun.makeJWT(obj),
+			jwt: commonFun.makeJWT(obj, expiryTime),
 		};
 
 		Object.assign(finalObj, this.authResponseObj);
 
-		//this.response.cookie('refresh_token', finalObj.jwt, { maxAge: 365 * 24 * 60 * 60 * 1000});
+		this.response.cookie('refresh_token', finalObj.jwt, { maxAge: 365 * 24 * 60 * 60 * 1000, path: '/'});
 
 		return finalObj;
 	}
@@ -499,7 +503,7 @@ exports.refresh = class extends cycleDetection {
 
 		const token = commonFun.makeJWT(obj, Math.floor(Date.now() / 1000) + (5 * 60));
 
-		this.response.cookie('token', token, { maxAge: 365 * 24 * 60 * 60 * 1000 });
+		this.response.cookie('token', token, { maxAge: 365 * 24 * 60 * 60 * 1000, path: '/' });
 
 		return token;
 	}

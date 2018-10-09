@@ -32,10 +32,13 @@ class HTMLAPI extends API {
 
 	async body() {
 
-		if(this.account.settings.has('custom_css'))
+		if(this.account.settings.get('theme'))
+			this.stylesheets.push(`/css/themes/${this.account.settings.get('theme') || 'light'}.css`);
+
+		if(this.account.settings.get('custom_css'))
 			this.stylesheets.push('/css/custom.css');
 
-		if(this.account.settings.has('custom_js'))
+		if(this.account.settings.get('custom_js'))
 			this.scripts.push('/js/custom.js');
 
 		let ga = '';
@@ -85,25 +88,6 @@ class HTMLAPI extends API {
 				<body>
 
 					<div id="ajax-working"></div>
-
-					<header>
-						<a class="logo" href="/dashboard/first"><img></a>
-
-						<div class="nav-container">
-
-							<nav></nav>
-
-							<span class="user-toggle"></span>
-
-							<div class="user-popup hidden">
-								<span class="name"></span>
-								<span class="email"></span>
-								<a href="#" class="logout">Logout</a>
-							</div>
-						</div>
-
-						<div class="menu-toggle"><i class="fas fa-chevron-down"></i></div>
-					</header>
 
 					<main>
 						${this.main ? await this.main() || '' : ''}

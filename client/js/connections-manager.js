@@ -344,7 +344,7 @@ class DataConnection {
 		container.classList.add('connection');
 
 		container.innerHTML = `
-			<span>${this.connection_name} <span class="hash-id">#${this.id}</span> </span>
+			<span>${this.connection_name} <span class="NA">#${this.id}</span> </span>
 			<span title="${!this.editable ? 'Not enough privileges' : 'Edit'}" class="action ${!this.editable ? 'grey' : 'green'}"><i class="far fa-edit"></i></span>
 			<span title="${!this.deletable ? 'Not enough privileges' : 'Delete'}" class="action ${!this.deletable ? 'grey' : 'red'}"><i class="far fa-trash-alt"></i></span>
 		`;
@@ -540,7 +540,7 @@ DataConnection.types.set('mysql', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
+			<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -599,7 +599,7 @@ DataConnection.types.set('mssql', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
+			<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -658,7 +658,7 @@ DataConnection.types.set('pgsql', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
+			<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -717,7 +717,7 @@ DataConnection.types.set('oracle', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span>
+				<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span>
 				<input type="password" autocomplete="off" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -810,7 +810,7 @@ DataConnection.types.set('mongo', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
+			<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
