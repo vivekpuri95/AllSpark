@@ -13,7 +13,12 @@ class Task {
 		this.task = task;
 	}
 
-	async load() {
+	async load(params) {
+
+		if (params) {
+
+			this.externalParams = params;
+		}
 
 		try {
 
@@ -23,32 +28,33 @@ class Task {
 
 			let response = await this.execute();
 
-			try {
+			const status = response.status;
 
-				response = await response.json();
-				this.taskRunTime = performance.now() - taskStartTime;
+			response = await response.json();
+			this.taskRunTime = performance.now() - taskStartTime;
 
-				await this.log(JSON.stringify(response));
+			if (!(status == 200 || response.status)) {
+
+				throw({message: response});
 			}
-			catch(e) {
 
-				await this.log(JSON.stringify(response));
+			await this.log(JSON.stringify(response));
+
+			return {
+
+				error: false,
+				message: response
 			}
 		}
+
 		catch (e) {
 
-			await this.log(e.message, true);
+			await this.log(JSON.stringify(e.message), true);
 
 			return {
 				error: true,
 				message: e.message
 			}
-		}
-
-		return {
-
-			error: false,
-			message: "Successful"
 		}
 	}
 
@@ -105,6 +111,11 @@ class Task {
 
 		this.task.definition = JSON.parse(this.task.definition);
 		this.task.parameters = JSON.parse(this.task.parameters);
+
+		if (this.externalParams) {
+
+			this.task.parameters.push(this.externalParams)
+		}
 
 		this.fetchParameters = new apiRequest({definition: JSON.stringify(this.task.definition)}, this.task.parameters);
 
