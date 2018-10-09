@@ -341,6 +341,7 @@ class DataSource {
 			this.menu.classList.toggle('hidden');
 			this.menu.style.left = menuToggle.offsetLeft + 'px';
 			menuToggle.classList.toggle('selected');
+			this.postProcessors.render();
 
 			document.body.removeEventListener('click', this.menuToggleListener);
 
@@ -1965,12 +1966,6 @@ class DataSourceColumn {
 				</select>
 			</label>
 
-			<label class="hidden">
-				<span>Formula</span>
-				<input type="text" name="formula">
-				<small></small>
-			</label>
-
 			<label>
 				<span>Prefix</span>
 				<input type="text" name="prefix">
@@ -1983,6 +1978,19 @@ class DataSourceColumn {
 
 			<label class="disable-column">
 				<span><input type="checkbox" name="disabled"> <span>Disabled</span></span>
+			</label>
+
+			<label>
+				<span>Collapse To</span>
+				<select name="collapseTo">
+					<option value="">None</option>
+					<option value="second">Second</option>
+					<option value="minute">Minute</option>
+					<option value="hour">Hour</option>
+					<option value="date">Date</option>
+					<option value="week">Week</option>
+					<option value="month">Month</option>
+				</select>
 			</label>
 
 			<h3>Drill down</h3>
@@ -2045,14 +2053,6 @@ class DataSourceColumn {
 
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
-
-		form.elements.formula.on('keyup', async () => {
-
-			if(formulaTimeout)
-				clearTimeout(formulaTimeout);
-
-			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
-		});
 
 		form.insertBefore(this.columnFilters.container, form.querySelector('.columnType'));
 		form.insertBefore(this.columnAccumulations.container, form.querySelector('.columnType'));
@@ -2220,7 +2220,7 @@ class DataSourceColumn {
 			sort : this.sort,
 			prefix : this.prefix,
 			postfix : this.postfix,
-			formula : this.formula,
+			collapseTo : this.collapseTo,
 			drilldown : {
 				query_id : parseInt(this.drilldownQuery.value[0]) || 0,
 				parameters : this.drilldownParameters.json
@@ -3306,8 +3306,14 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type && column.type.name == 'date')
+			if(column.type && ['datetime', 'date'].includes(column.type.name))
 				this.timingColumn = column;
+		}
+
+		if(!this.selected && this.timingColumn && this.timingColumn.collapseTo) {
+
+			this.selected = this.list.get('CollapseTo');
+			this.selected.value = this.timingColumn.collapseTo;
 		}
 
 		const label = this.source.container.querySelector('.postprocessors');
@@ -6210,8 +6216,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.attr('class', 'clips')
 						.style('fill', this.source.columns.get(column.key).color)
 						.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
-						.attr('cx', row => this.x(row.get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
-						.attr('cy', row => scale(row.get(column.key)))
+						.attr('cx', row => this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.attr('cy', row => scale(row.getTypedValue(column.key)))
 						.on('mouseover', function(_, __, column) {
 							that.hoverColumn = column[1];
 							d3.select(this).classed('hover', true);
@@ -6250,26 +6256,26 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.enter()
 					.append('text')
 					.attr('width', columns.scale.rangeBand())
-					.attr('fill', '#666')
+					.attr('fill', 'var(--color-surface-text)')
 					.text(([row, column]) => {
 
 						if(['s'].includes(axis.format))
-							return d3.format('.4s')(row.get(column.key));
+							return d3.format('.4s')(row.getTypedValue(column.key));
 
 						else
-							return Format.number(row.get(column.key))
+							return row.getTypedValue(column.key);
 					})
 					.attr('x', ([row, column]) => {
 
-						let value = Format.number(row.get(column.key));
+						let value = row.getTypedValue(column.key);
 
 						if(['s'].includes(axis.format))
-							value = d3.format('.4s')(row.get(column.key));
+							value = d3.format('.4s')(value);
 
-						return this.x(row.get(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
+						return this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
 					})
-					.attr('y', ([row, column]) => scale(row.get(column.key) > 0 ? row.get(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
-					.attr('height', ([row, column]) => Math.abs(scale(row.get(column.key)) - scale(0)));
+					.attr('y', ([row, column]) => scale(row.getTypedValue(column.key) > 0 ? row.getTypedValue(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
+					.attr('height', ([row, column]) => Math.abs(scale(row.getTypedValue(column.key)) - scale(0)));
 
 				if(axis.animate) {
 
