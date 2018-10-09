@@ -105,19 +105,31 @@ class Job {
 
 		for (const task of this.tasks) {
 
-			if (!taskOrderMapping.hasOwnProperty(task.sequence)) {
+			if (!taskOrderMapping.hasOwnProperty(task.task.sequence)) {
 
-				taskOrderMapping[task.sequence] = [];
+				taskOrderMapping[task.task.sequence] = [];
 			}
 
-			taskOrderMapping[task.sequence].push(task);
+			taskOrderMapping[task.task.sequence].push(task);
 		}
 
-		let lastOrder, erred = false;
+		let lastOrder, erred = false, previousOutput;
 
 		for (const order of Object.keys(taskOrderMapping).sort()) {
 
-			const promiseArr = taskOrderMapping[order].map(task => task.load());
+
+			const promiseArr = taskOrderMapping[order].map(task => {
+
+				if(task.task.inherit_data && !erred) {
+
+					return task.load({
+						placeholder: "data",
+						value: JSON.stringify(previousOutput.length > 1 ? previousOutput : previousOutput[0])
+					})
+				}
+
+				return task.load();
+			});
 
 			const tasksExecuteResponse = await commonFun.promiseParallelLimit(10, promiseArr);
 
@@ -133,6 +145,8 @@ class Job {
 					message: this.error
 				})
 			}
+
+			previousOutput = erred ? [] : tasksExecuteResponse;
 
 			lastOrder = order;
 		}
