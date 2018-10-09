@@ -74,6 +74,7 @@ class Page {
 		Page.loadOnboardScripts();
 
 		SnackBar.setup();
+		NotificationBar.setup();
 	}
 
 	static async clearCache() {
@@ -427,18 +428,14 @@ Page.serviceWorker = class PageServiceWorker {
 
 		setTimeout(() => {
 
-			const message = document.createElement('div');
-
-			message.classList.add('warning', 'service-worker-message', 'site-outdated');
-
-			message.innerHTML = `The site has been updated in the background. Click here to reload the page.`;
+			const message = new NotificationBar({
+				message: 'The site has been updated in the background. Click here to reload the page.',
+				type: 'error',
+			});
 
 			message.on('click', () => {
 				window.location.reload();
-				message.innerHTML = 'Reloading&hellip;';
 			});
-
-			this.page.container.parentElement.insertBefore(message, this.page.container);
 
 		}, 1000);
 	}
@@ -451,8 +448,8 @@ Page.serviceWorker = class PageServiceWorker {
 		if(!navigator.onLine)
 			return;
 
-		if(this.page.container.parentElement.querySelector('.service-worker-message'))
-			this.page.container.parentElement.querySelector('.service-worker-message').remove();
+		if(this.offlineMessage)
+			this.offlineMessage.hide();
 
 		new SnackBar({
 			message: 'You\'re online!',
@@ -471,16 +468,10 @@ Page.serviceWorker = class PageServiceWorker {
 		if(navigator.onLine)
 			return;
 
-		if(this.page.container.parentElement.querySelector('.service-worker-message'))
-			this.page.container.parentElement.querySelector('.service-worker-message').remove();
-
-		const message = document.createElement('div');
-
-		message.classList.add('warning', 'service-worker-message');
-
-		message.innerHTML = 'You\'re offline!';
-
-		this.page.container.parentElement.insertBefore(message, this.page.container);
+		this.offlineMessage = new NotificationBar({
+			message: 'You\'re offline!',
+			type: 'error',
+		});
 
 		if(!snackBar)
 			return;
@@ -1971,6 +1962,7 @@ class DialogBox {
 
 		document.querySelector('main').classList.remove('blur');
 		document.querySelector('header').classList.remove('blur');
+		NotificationBar.container.classList.remove('blur');
 
 		this.container.classList.add('hidden');
 
@@ -2000,6 +1992,7 @@ class DialogBox {
 
 		document.querySelector('main').classList.add('blur');
 		document.querySelector('header').classList.add('blur');
+		NotificationBar.container.classList.add('blur');
 
 		this.container.classList.remove('hidden');
 	}
@@ -2940,7 +2933,7 @@ class SnackBar {
 
 		SnackBar.container[this.position].classList.remove('hidden');
 		SnackBar.container[this.position].appendChild(this.container);
-		SnackBar.container[this.position].scrollTop = SnackBar.container[this.position].scrollHeight
+		SnackBar.container[this.position].scrollTop = SnackBar.container[this.position].scrollHeight;
 	}
 
 	/**
@@ -3188,6 +3181,90 @@ class GlobalColumnSearchFilter extends SearchColumnFilter {
 					return true;
 			}
 		}
+	}
+}
+
+class NotificationBar {
+
+	static setup() {
+
+		NotificationBar.container = document.createElement('div');
+
+		NotificationBar.container.classList.add('notification-bar-container');
+
+		document.body.appendChild(NotificationBar.container);
+	}
+
+	/**
+	 * Create a new NotificationBar notification instance. This will show the notfication instantly.
+	 *
+	 * @param String	options.message		The message body.
+	 * @param String	options.type		notification (green), warning (yellow), error (red).
+	 * @param boolean	options.allowClose	(true or false) Will show close button and close the navbar on clicking it.
+	 */
+	constructor({ message, type = 'success', allowClose = false } = {}) {
+
+		this.container = document.createElement('div');
+		this.page = window.page;
+
+		this.message = message;
+		this.allowClose = allowClose;
+		this.type = type;
+
+		if(!this.message) {
+			return console.error('error - message is required');
+		}
+
+		if(!['warning', 'error', 'success'].includes(this.type)) {
+			return console.error('error - type must be of success, error, warning.');
+		}
+
+		this.container.classList.add('notification-bar');
+
+		this.page.container.parentElement.insertBefore(NotificationBar.container, this.page.container);
+
+		this.show();
+	}
+
+	show() {
+
+		this.container.innerHTML = `
+			<div class="title">${this.message}</div>
+		`;
+
+		// Add close button if allowClose is true
+		if(this.allowClose) {
+			this.container.insertAdjacentHTML('beforeend', '<div class="close"><i class="far fa-times-circle" aria-hidden="true"></i></div>');
+			this.on('click', () => this.hide());
+		}
+
+		this.container.classList.add(this.type);
+
+		// Add the show class out of the current event loop so that CSS transitions have time to initiate.
+		this.container.classList.add('show');
+
+		NotificationBar.container.appendChild(this.container);
+	}
+
+	/**
+	 * Hide the snack bar and also hide the container if no other snackbar is in the container.
+	 */
+	hide() {
+
+		this.container.classList.remove('show');
+		this.container.remove();
+
+	}
+
+	on(event, callback) {
+
+		this.container.classList.add('action');
+
+		if(event != 'click') {
+			return console.error('error - only click event supported.');
+		}
+
+		this.container.on('click', () => callback());
 	}
 }
 
