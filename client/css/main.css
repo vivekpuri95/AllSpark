@@ -21,10 +21,13 @@
 
 	--color-grey: #666;
 	--color-border: #ccc;
+
 	--color-green: #55bb55;
 	--color-green-hover: #81C784;
+
 	--color-yellow: #ffa000;
 	--color-yellow-hover: #FFCC80;
+
 	--color-red: #ee7777;
 	--color-red-hover: #EF9A9A;
 
@@ -1212,7 +1215,7 @@ body {
 		text-align: center;
 		color: #fff;
 		padding: var(--gap);
-		border-top: 1px solid #eeeeee;
+		border-top: 1px solid var(--color-border);
 		box-shadow: none;
 		display: flex;
 		transition: background var(--transition-duration),
