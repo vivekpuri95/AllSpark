@@ -105,14 +105,22 @@ class Jobs extends API {
 			[job_id, this.account.account_id, this.account.account_id],
 		);
 
-		const taskObjects = [];
+		const
+			taskObjects = [],
+			taskClassMapping = {
+				none: Task
+			},
+			jobClassMapping = {
+				none: Job
+			}
+		;
 
 		for (const task of jobTasks) {
 
-			taskObjects.push(new Task(task));
+			taskObjects.push(new taskClassMapping[job.type](task));
 		}
 
-		const jobObject = new Job(job, taskObjects);
+		const jobObject = new jobClassMapping[job.type](job, taskObjects);
 
 		const jobResponse = await jobObject.load();
 
@@ -167,7 +175,15 @@ class Jobs extends API {
 			return "no jobs found";
 		}
 
-		const jobTasksMapping = {};
+		const
+			jobTasksMapping = {},
+			taskClassMapping = {
+				none: Task
+			},
+			jobClassMapping = {
+				none: Job
+			}
+		;
 
 		for (const row of jobsNow) {
 
@@ -181,20 +197,25 @@ class Jobs extends API {
 
 			if (jobTasksMapping[row.job_id]) {
 
-				jobTasksMapping[row.job_id].tasks.push(new Task(row));
+				jobTasksMapping[row.job_id].tasks.push(new taskClassMapping[row.type](row));
 			}
 		}
 
 		const responses = [];
 
-		for(const job of Object.values(jobTasksMapping)) {
+		for (const job of Object.values(jobTasksMapping)) {
 
-			if(!job.tasks.length) {
+			if (!job.tasks.length && job.job.type === "none") {
 
-				continue
+				continue;
 			}
 
-			const jobObject = new Job(job.job, job.tasks);
+			if(!job.job.type) {
+
+				continue;
+			}
+
+			const jobObject = new jobClassMapping[job.job.type](job.job, job.tasks);
 
 			const response = await jobObject.load();
 
