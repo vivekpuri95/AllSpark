@@ -1692,7 +1692,7 @@ router.get('/tests', API.serve(class extends HTMLAPI {
 	main() {
 
 		if(!this.user || this.environment.name.includes('production') || this.environment.name.includes('staging'))
-			throw new API.Exception(401, 'Tests cannot be run on production database');
+			throw new API.Exception(401, 'Tests cannot run on production database');
 
 		this.user.privilege.needs('superadmin');
 

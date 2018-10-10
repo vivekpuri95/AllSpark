@@ -1892,7 +1892,7 @@ class DataSourceColumn {
 		this.form.disabled.checked = this.disabled;
 
 		if(!this.type)
-			return this.dialogueBox.show();;
+			return this.dialogueBox.show();
 
 		this.form.type.value = this.type.name;
 
@@ -4007,13 +4007,13 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 		}
 
 		if(['week', 'day'].includes(this.value))
-			timingColumn.type = 'date';
+			timingColumn.type.name = 'date';
 
 		else if(['month'].includes(this.value))
-			timingColumn.type = 'month';
+			timingColumn.type.name = 'month';
 
 		else if(['hour', 'minute', 'second'].includes(this.value))
-			timingColumn.type = 'datetime';
+			timingColumn.type.name = 'datetime';
 
 		return Array.from(result.values());
 	}
