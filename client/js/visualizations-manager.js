@@ -8,7 +8,7 @@ Page.class = class VisualizationsManager extends Page {
 
 		this.list = new VisualizationsManagerList(this);
 
-		this.list.load();
+		this.load();
 
 		this.container.appendChild(this.list.container);
 
@@ -17,6 +17,36 @@ Page.class = class VisualizationsManager extends Page {
 		`);
 
 		Sections.show('list');
+	}
+
+	async load() {
+
+		await this.loadConnections();
+		this.list.setup();
+		await this.list.load();
+	}
+
+	async loadConnections() {
+
+		this.connections = await API.call('credentials/list')
+
+		const connections = new Map;
+
+		for(const connection of this.connections) {
+
+			for(const feature of MetaData.features.values()) {
+
+				if(feature.slug == connection.type && feature.type == 'source')
+					connection.feature = feature;
+			}
+
+			if(!connection.feature)
+				continue;
+
+			connections.set(connections.id, connection);
+		}
+
+		this.connections = new Map(this.connections.map(c => [c.id, c]));
 	}
 }
 
@@ -27,6 +57,111 @@ class VisualizationsManagerList extends Map {
 		super();
 
 		this.page = page;
+	}
+
+	setup() {
+
+		const filters = [
+			{
+				key: 'Query ID',
+				rowValue: row => [row.query_id],
+			},
+			{
+				key: 'Name',
+				rowValue: row => row.name ? [row.name] : [],
+			},
+			{
+				key: 'Description',
+				rowValue: row => row.description ? [row.description] : [],
+			},
+			{
+				key: 'Connection Name',
+				rowValue: row => {
+					if(page.connections.has(parseInt(row.connection_name)))
+						return [page.connections.get(parseInt(row.connection_name)).connection_name];
+					else
+						return [];
+				},
+			},
+			{
+				key: 'Connection Type',
+				rowValue: row => {
+					if(page.connections.has(parseInt(row.connection_name)))
+						return [page.connections.get(parseInt(row.connection_name)).feature.name];
+					else
+						return [];
+				},
+			},
+			{
+				key: 'Filters Length',
+				rowValue: row => [row.filters.length]
+			},
+			{
+				key: 'Filters Name',
+				rowValue: row => row.filters.map(f => f.name ? f.name : []),
+			},
+			{
+				key: 'Filters Placeholder',
+				rowValue: row => row.filters.map(f => f.placeholder ? f.placeholder : []),
+			},
+			{
+				key: 'Visualizations ID',
+				rowValue: row => row.visualizations.map(f => f.visualization_id ? f.visualization_id : []),
+			},
+			{
+				key: 'Visualizations Name',
+				rowValue: row => row.visualizations.map(f => f.name ? f.name : []),
+			},
+			{
+				key: 'Visualizations Type Name',
+				rowValue: row => {
+					return row.visualizations.map(f => f.type)
+											   .map(m => MetaData.visualizations.has(m) ?
+											   (MetaData.visualizations.get(m)).name : []);
+				},
+			},
+			{
+				key: 'Visualizations Length',
+				rowValue: row => [row.visualizations.length],
+			},
+			{
+				key: 'Report Enabled',
+				rowValue: row => row.is_enabled ? ['yes'] : ['no'],
+			},
+			{
+				key: 'Report Creation',
+				rowValue: row => row.created_at ? [row.created_at] : [],
+			},
+			{
+				key: 'Definition',
+				rowValue: row => row.query ? [row.query] : [],
+			},
+			{
+				key: 'Report Refresh Rate',
+				rowValue: row => row.refresh_rate ? [row.refresh_rate] : [],
+			},
+			{
+				key: 'Subtitle',
+				rowValue: row => {
+					if(MetaData.categories.has(parseInt(row.subtitle)))
+						return [MetaData.categories.get(parseInt(row.subtitle)).name];
+					else
+						return [];
+				},
+			},
+			{
+				key: 'Report Last Updated At',
+				rowValue: row => row.updated_at ? [row.updated_at] : [],
+			}
+		];
+
+		this.searchBar = new SearchColumnFilters({ filters });
+
+		this.container.querySelector('.section .toolbar').appendChild(this.searchBar.globalSearch.container);
+
+		this.container.querySelector('.section .toolbar').insertAdjacentElement('afterend', this.searchBar.container);
+
+		this.searchBar.on('change', () => this.load(false) );
 	}
 
 	get container() {
@@ -42,15 +177,9 @@ class VisualizationsManagerList extends Map {
 		container.innerHTML = `
 
 			<h1>Visualizations Manager</h1>
-
-			<form class="toolbar form">
-				<input type="search" placeholder="Search...">
-			</form>
-
+			<form class="toolbar form"></form>
 			<div class="visualizations"></div>
 		`;
-
-		container.querySelector('input[type=search]').on('keyup', () => this.render());
 
 		if(0 && this.page.user.privileges.has('visualization.insert')) {
 
@@ -64,24 +193,28 @@ class VisualizationsManagerList extends Map {
 		return container;
 	}
 
-	async load() {
+	async load(force = true) {
 
-		await this.fetch();
+		await this.fetch(force);
 
 		this.process();
 
 		this.render();
 	}
 
-	async fetch() {
-		await DataSource.load(true);
+	async fetch(force) {
+		await DataSource.load(force);
 	}
 
 	process() {
 
+		this.searchBar.data = Array.from(DataSource.list.values());
+
 		this.clear();
 
-		for(const report of DataSource.list.values()) {
+		const filterData = this.searchBar.filterData;
+
+		for(const report of filterData) {
 
 			for(const visualization of report.visualizations)
 				this.set(visualization.visualization_id, new VisualizationManager(visualization, report, this.page));
@@ -90,22 +223,11 @@ class VisualizationsManagerList extends Map {
 
 	render() {
 
-		const
-			list = this.container.querySelector('.visualizations'),
-			query = this.container.querySelector('input[type=search]').value.toLowerCase();
+		const list = this.container.querySelector('.visualizations');
 
 		list.textContent = null;
 
 		for(const visualization of this.values()) {
-
-			if(query && !(
-				visualization.name.toLowerCase().includes(query) ||
-				visualization.visualization_id == query ||
-				visualization.report.name.toLowerCase().includes(query) ||
-				visualization.report.query_id == query ||
-				visualization.visualization.name.toLowerCase().includes(query)
-			))
-				continue;
 
 			list.appendChild(visualization.row);
 		}

@@ -841,18 +841,26 @@ class Bigquery {
 	prepareQuery() {
 
 		this.filterList = [];
+
 		for (const filter of this.filters) {
+
 			this.reportObj.query = this.reportObj.query.replace((new RegExp(`{{${filter.placeholder}}}`, "g")), `@${filter.placeholder}`);
 
 			if (!filter.type) {
+				try {
 
-				if ((filter.value.match(/^-{0,1}\d+$/))) {
+					if ((filter.value.match(/^-{0,1}\d+$/))) {
 
-					filter.type = 'number';
+						filter.type = 'number';
+					}
+					else {
+
+						filter.type = 'text';
+					}
 				}
-				else {
+				catch (e) {
 
-					filter.type = 'text';
+					continue;
 				}
 			}
 
@@ -1193,11 +1201,13 @@ class download extends API {
 			]
 		};
 
-		const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
+		if(config.has("allspark_python_base_api")) {
 
-		this.response.sendFile(data.body.response);
-		throw({"pass": true})
+            const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
 
+            this.response.sendFile(data.body.response);
+            throw({"pass": true})
+		}
 	}
 }
 

@@ -49,6 +49,12 @@ class BigQuery {
 
 
 	static async setup() {
+
+        if(!config.has("bigquery_files_destination")) {
+
+            return;
+        }
+
 		const bigQueryConnections = await mysql.query(`
             select
                 c.*,

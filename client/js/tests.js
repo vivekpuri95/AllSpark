@@ -267,6 +267,7 @@ class TestUser {
 
 		DialogBox.container = document.createElement('div');
 		SnackBar.container['bottom-left'] = document.createElement('div');
+		NotificationBar.container =  document.createElement('div');
 
 		const start = Date.now();
 
@@ -298,6 +299,7 @@ class TestUser {
 
 		this.test.section.tests.progress();
 
+		NotificationBar.container = document.querySelector('.notification-bar-container');
 		SnackBar.container['bottom-left'] = document.querySelector('.snack-bar-container.bottom-left');
 		DialogBox.container = document.body;
 	}
@@ -555,6 +557,19 @@ const tests = {
 
 				snackbar.show();
 				snackbar.hide();
+			}
+		},
+	},
+
+	NotificationBar: {
+
+		ShowHide: class NotificationBarShowHide extends Test {
+
+			async execute() {
+
+				const notificationBar = new NotificationBar({ message: 'Test', type: 'success', allowClose: true});
+
+				notificationBar.hide();
 			}
 		},
 	},

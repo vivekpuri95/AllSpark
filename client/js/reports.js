@@ -183,11 +183,6 @@ class DataSource {
 				<div class="footer hidden">
 
 					<span>
-						<span class="label">Role:</span>
-						<span>${MetaData.roles.has(this.roles) ? MetaData.roles.has(this.roles).name : '<span class="NA">NA</span>'}</span>
-					</span>
-
-					<span>
 						<span class="label">Added On:</span>
 						<span title="${Format.date(this.created_at)}">${Format.ago(this.created_at)}</span>
 					</span>
@@ -211,12 +206,130 @@ class DataSource {
 						<span class="label">Added By:</span>
 						<span><a href="/user/profile/${this.added_by}">${this.added_by_name || 'NA'}</a></span>
 					</span>
+
+					<span>
+						<span>&nbsp;</span>
+						<a class="api-documentation">API documentation</a>
+					</span>
 				</div>
 				<div class="close">&times;</div>
 			</div>
 		`;
 
 		const menuToggle = container.querySelector('header .menu-toggle');
+
+		container.querySelector('.api-documentation').on('click', async () => {
+
+			if(this.apiDocumentationDialogueBox)
+				return this.apiDocumentationDialogueBox.show();
+
+			const resultUrl = new URLSearchParams();
+
+			resultUrl.set('query_id', this.query_id);
+			resultUrl.set('refresh_token', await Storage.get('refresh_token'));
+			resultUrl.set('token', (await Storage.get('token')).body);
+
+			for(const entry of this.filters.values()) {
+
+				if(entry.placeholder != 'daterange')
+					resultUrl.set('param_' + entry.placeholder, entry.default_value);
+			}
+
+			this.apiDocumentationDialogueBox = new DialogBox();
+			this.apiDocumentationDialogueBox.container.querySelector('section').classList.add('api-documentation');
+
+			this.apiDocumentationDialogueBox.heading = 'API Documentation';
+
+			this.apiDocumentationDialogueBox.body.innerHTML = `
+
+				<h4>Endpoint</h4>
+				<pre class="url">${location.origin}/api/v2/reports/engine/report</pre>
+
+				<h4>Required Parameters</h4>
+				<p class="NA">The parameters needed to fetch data from a report.</p>
+				<table class="static">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Key</th>
+							<th>Description</th>
+							<th>Expiry time</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						<tr>
+							<td>Query Id</td>
+							<td>query_id</td>
+							<td>The query_id for which the response is required.</td>
+							<td></td>
+						</tr>
+						<tr>
+							<td>Refresh Token</td>
+							<td>refresh_token</td>
+							<td>This is the long term token.</td>
+							<td>7 Days</td>
+						</tr>
+						<tr>
+							<td>Token</td>
+							<td>token</td>
+							<td>This is the token which is generated from long term token in every 5 minutes.</td>
+							<td>5 Minutes</td>
+						</tr>
+					</tbody>
+				</table>
+
+				<h4>Report Parameters</h4>
+				<p class="NA">Report specific parameters that usually filter the data.</p>
+				<table class="report-parameter static">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Key</th>
+							<th>Default Value</th>
+							<th>Description</th>
+							<th>Type</th>
+							<th>Multiple</th>
+						</tr>
+					</thead>
+
+					<tbody></tbody>
+				</table>
+
+				<h4>Request Url</h4>
+				<pre class="request url"></pre>
+			`;
+
+			this.apiDocumentationDialogueBox.body.querySelector('.request.url').textContent = `${location.origin}/api/v2/reports/engine/report?${resultUrl}`;
+
+			const tbody = this.apiDocumentationDialogueBox.body.querySelector('.report-parameter tbody');
+
+			if(this.filters.size) {
+
+				for(const entry of this.filters.values()) {
+
+					if(entry.placeholder == 'daterange')
+						continue;
+
+					const tr = document.createElement('tr');
+					tr.innerHTML = `
+						<td>${entry.name}</td>
+						<td>${entry.placeholder}</td>
+						<td>${entry.default_value || ''}</td>
+						<td>${entry.description || ''}</td>
+						<td>${entry.type}</td>
+						<td>${entry.multiple ? 'Yes' : 'No'}</td>
+					`;
+
+					tbody.appendChild(tr);
+				};
+			}
+			else {
+				tbody.innerHTML = '<tr><td class="NA" colspan="6">No Filters Found</td></tr>';
+			}
+
+			this.apiDocumentationDialogueBox.show();
+		});
 
 		menuToggle.on('click', e => {
 
@@ -228,6 +341,7 @@ class DataSource {
 			this.menu.classList.toggle('hidden');
 			this.menu.style.left = menuToggle.offsetLeft + 'px';
 			menuToggle.classList.toggle('selected');
+			this.postProcessors.render();
 
 			document.body.removeEventListener('click', this.menuToggleListener);
 
@@ -492,7 +606,7 @@ class DataSource {
 
 			if(user.privileges.has('report') && user.privileges.has('user')) {
 
-				await this.userList();
+				//await this.userList();
 				this.container.querySelector('.visible-to').classList.remove('hidden');
 				this.container.querySelector('.description .count').textContent = `${this.visibleTo.length} people`;
 			}
@@ -1852,12 +1966,6 @@ class DataSourceColumn {
 				</select>
 			</label>
 
-			<label class="hidden">
-				<span>Formula</span>
-				<input type="text" name="formula">
-				<small></small>
-			</label>
-
 			<label>
 				<span>Prefix</span>
 				<input type="text" name="prefix">
@@ -1870,6 +1978,19 @@ class DataSourceColumn {
 
 			<label class="disable-column">
 				<span><input type="checkbox" name="disabled"> <span>Disabled</span></span>
+			</label>
+
+			<label>
+				<span>Collapse To</span>
+				<select name="collapseTo">
+					<option value="">None</option>
+					<option value="second">Second</option>
+					<option value="minute">Minute</option>
+					<option value="hour">Hour</option>
+					<option value="date">Date</option>
+					<option value="week">Week</option>
+					<option value="month">Month</option>
+				</select>
 			</label>
 
 			<h3>Drill down</h3>
@@ -1932,14 +2053,6 @@ class DataSourceColumn {
 
 		form.on('submit', async e => this.apply(e));
 		form.on('click', async e => e.stopPropagation());
-
-		form.elements.formula.on('keyup', async () => {
-
-			if(formulaTimeout)
-				clearTimeout(formulaTimeout);
-
-			formulaTimeout = setTimeout(() => this.validateFormula(), 200);
-		});
 
 		form.insertBefore(this.columnFilters.container, form.querySelector('.columnType'));
 		form.insertBefore(this.columnAccumulations.container, form.querySelector('.columnType'));
@@ -2107,7 +2220,7 @@ class DataSourceColumn {
 			sort : this.sort,
 			prefix : this.prefix,
 			postfix : this.postfix,
-			formula : this.formula,
+			collapseTo : this.collapseTo,
 			drilldown : {
 				query_id : parseInt(this.drilldownQuery.value[0]) || 0,
 				parameters : this.drilldownParameters.json
@@ -2544,6 +2657,7 @@ DataSourceColumn.formatType.set('date',
 		year: 'numeric',
 		month: 'short',
 		day: 'numeric',
+		timeZone: 'UTC',
 	}
 );
 
@@ -2551,12 +2665,14 @@ DataSourceColumn.formatType.set('month',
 	{
 		year: 'numeric',
 		month: 'short',
+		timeZone: 'UTC',
 	}
 );
 
 DataSourceColumn.formatType.set('year',
 	{
 		year: 'numeric',
+		timeZone: 'UTC',
 	}
 );
 
@@ -2923,7 +3039,7 @@ class DataSourceColumnFilter {
 			{
 				slug: 'regularexpression',
 				name: 'RegExp',
-				apply: (q, v) => q.toString().match(new RegExp(q, 'i')),
+				apply: (q, v) => v.toString().match(new RegExp(q, 'i')),
 			},
 		];
 	}
@@ -3190,8 +3306,14 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type && column.type.name == 'date')
+			if(column.type && ['datetime', 'date'].includes(column.type.name))
 				this.timingColumn = column;
+		}
+
+		if(!this.selected && this.timingColumn && this.timingColumn.collapseTo) {
+
+			this.selected = this.list.get('CollapseTo');
+			this.selected.value = this.timingColumn.collapseTo;
 		}
 
 		const label = this.source.container.querySelector('.postprocessors');
@@ -3547,14 +3669,35 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 		const
 			newResponse = {},
 			mappedResponse = {},
-			step = {
-				number: d => parseFloat(d) + 1,
-				second: d => d + (1000),
-				minute: d => d + (60 * 1000),
-				hour: d => d + (60 * 60 * 1000),
-				date: d => d + (24 * 60 * 60 * 1000),
-				month: d => new Date(d).setMonth(d.getMonth + 1),
-				year: d => new Date(d).setYear(d.getYear + 1),
+			granularity = {
+				number: {
+					step: d => parseFloat(d) + 1,
+					output: d => d,
+				},
+				second: {
+					step: d => d + (1000),
+					output: d => new Date(d).toISOString().replace('T', ' '),
+				},
+				minute: {
+					step: d => d + (60 * 1000),
+					output: d => new Date(d).toISOString().replace('T', ' '),
+				},
+				hour: {
+					step: d => d + (60 * 60 * 1000),
+					output: d => new Date(d).toISOString().replace('T', ' '),
+				},
+				date: {
+					step: d => d + (24 * 60 * 60 * 1000),
+					output: d => new Date(d).toISOString().substring(0, 10),
+				},
+				month: {
+					step: d => new Date(d).setMonth(d.getMonth + 1),
+					output: d => new Date(d).toISOString().substring(0, 7),
+				},
+				year: {
+					step: d => new Date(d).setYear(d.getYear + 1),
+					output: d => new Date(d).toISOString().substring(0, 4),
+				},
 			};
 
 		for(const row of response) {
@@ -3582,10 +3725,10 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 				for(const key in response[0])
 					newResponse[start][key] = this.content;
 
-				newResponse[start][this.column] = start;
+				newResponse[start][this.column] = granularity[this.granularity].output(start);
 			}
 
-			start = step[this.granularity](start);
+			start = granularity[this.granularity].step(start);
 		}
 
 		return Object.values(newResponse);
@@ -5659,6 +5802,34 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		this.rows = rows;
 
+		for(const axis of this.axes) {
+
+			if(!axis.restcolumns)
+				continue;
+
+			axis.columns = [];
+
+			for(const [key, column] of this.source.columns) {
+
+				if(!column.disabled && !column.hidden && !this.axes.some(a => a.columns.some(c => c.key == key)))
+					axis.columns.push({key});
+			}
+
+			axis.column = axis.columns.length ? axis.columns[0].key : '';
+		}
+
+		outer:
+		for(const [key, column] of this.source.columns) {
+
+			for(const axis of this.axes) {
+				if(axis.columns.some(c => c.key == key))
+					continue outer;
+			}
+
+			column.hidden = true;
+			column.render();
+		}
+
 		for(const axis of this.axes)
 			this.axes[axis.position].size = 0;
 
@@ -5729,7 +5900,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			// Click on reset zoom function
 			resetZoom.on('click', async () => {
-				this.rows = await this.source.response();
+				this.rows = that.rowsMaster
 				this.zoomedIn = false;
 				this.plot();
 			});
@@ -5766,6 +5937,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				}
 
 				scale.domain(column);
+
 				scale.rangeBands([0, this.width], 0.1, 0);
 
 				const
@@ -5957,10 +6129,12 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			else if(axis.type == 'area') {
 
+				this.x.rangePoints([0, this.width], 0.1, 0);
+
 				const area = d3.svg.area()
 					.interpolate(axis.curve)
 					.x((data, i) => this.x(this.rows[i].getTypedValue(this.x.column)))
-					.y0(d => scale(0))
+					.y0(d => scale(axis.stacked ? d.y0 : 0))
 					.y1(d => scale(d.y + (d.y0 || 0)));
 
 				let areas = this.svg
@@ -5970,8 +6144,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.data(columnsData)
 					.enter()
 					.append('g')
-					.attr('transform', `translate(${this.axes.left.size}, 0)`)
 					.append('path')
+					.attr('transform', `translate(${this.axes.left.size}, 0)`)
 					.on('mouseover', function(column) {
 						that.hoverColumn = column;
 						d3.select(this).classed('hover', true);
@@ -5993,6 +6167,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				}
 
 				areas.attr('opacity', 0.8);
+
+				this.x.rangeBands([0, this.width], 0.1, 0);
 			}
 
 			// Append the axis scale
@@ -6040,8 +6216,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 						.attr('class', 'clips')
 						.style('fill', this.source.columns.get(column.key).color)
 						.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
-						.attr('cx', row => this.x(row.get(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
-						.attr('cy', row => scale(row.get(column.key)))
+						.attr('cx', row => this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.attr('cy', row => scale(row.getTypedValue(column.key)))
 						.on('mouseover', function(_, __, column) {
 							that.hoverColumn = column[1];
 							d3.select(this).classed('hover', true);
@@ -6080,26 +6256,26 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.enter()
 					.append('text')
 					.attr('width', columns.scale.rangeBand())
-					.attr('fill', '#666')
+					.attr('fill', 'var(--color-surface-text)')
 					.text(([row, column]) => {
 
 						if(['s'].includes(axis.format))
-							return d3.format('.4s')(row.get(column.key));
+							return d3.format('.4s')(row.getTypedValue(column.key));
 
 						else
-							return Format.number(row.get(column.key))
+							return row.getTypedValue(column.key);
 					})
 					.attr('x', ([row, column]) => {
 
-						let value = Format.number(row.get(column.key));
+						let value = row.getTypedValue(column.key);
 
 						if(['s'].includes(axis.format))
-							value = d3.format('.4s')(row.get(column.key));
+							value = d3.format('.4s')(value);
 
-						return this.x(row.get(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
+						return this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
 					})
-					.attr('y', ([row, column]) => scale(row.get(column.key) > 0 ? row.get(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
-					.attr('height', ([row, column]) => Math.abs(scale(row.get(column.key)) - scale(0)));
+					.attr('y', ([row, column]) => scale(row.getTypedValue(column.key) > 0 ? row.getTypedValue(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
+					.attr('height', ([row, column]) => Math.abs(scale(row.getTypedValue(column.key)) - scale(0)));
 
 				if(axis.animate) {
 
@@ -6132,7 +6308,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				const
 					filteredRows = that.rows.filter(row => {
 
-						const item = that.x(row.get(that.x.column)) + 100;
+						const item = that.x(row.getTypedValue(that.x.column)) + 100;
 
 						if(mouse[0] < that.zoomRectangle.origin[0])
 							return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -6165,7 +6341,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					that.zoomRectangle
 						.select('g')
 						.append('text')
-						.text(`${filteredRows[0].get(that.x.column)} - ${filteredRows[filteredRows.length - 1].get(that.x.column)}`)
+						.attr('class', 'range')
+						.html(`${filteredRows[0].getTypedValue(that.x.column)} &hellip; ${filteredRows[filteredRows.length - 1].getTypedValue(that.x.column)}`)
 						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
 						.attr('y', (that.height / 2) + 20);
 				}
@@ -6175,7 +6352,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			const row = that.rows[parseInt((mouse[0] - that.axes.left.size - 10) / (that.width / that.rows.length))];
 
- 			if(!row || !this.x)
+ 			if(!row || !that.x)
 				return;
 
 			const tooltip = [];
@@ -6187,7 +6364,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 				const column = row.source.columns.get(key);
 
-				if(column.disabled)
+				if(column.disabled || column.hidden)
 					continue;
 
 				tooltip.push(`
@@ -6226,13 +6403,13 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			that.zoomRectangle = container.select('svg').append('g');
 
 			that.zoomRectangle
-				.attr('class', 'zoom')
 				.style('text-anchor', 'middle')
 				.append('rect')
 				.attr('class', 'zoom-rectangle');
 
 			that.zoomRectangle
-				.append('g');
+				.append('g')
+				.attr('class', 'zoom-rectangle-text');
 
 			that.zoomRectangle.origin = d3.mouse(this);
 		})
@@ -6248,7 +6425,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 				mouse = d3.mouse(this),
 				filteredRows = that.rows.filter(row => {
 
-					const item = that.x(row.get(that.x.column)) + 100;
+					const item = that.x(row.getTypedValue(that.x.column)) + 100;
 
 					if(mouse[0] < that.zoomRectangle.origin[0])
 						return item >= mouse[0] && item <= that.zoomRectangle.origin[0];
@@ -6260,6 +6437,9 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 			if(!filteredRows.length)
 				return;
+
+			if(!that.zoomedIn)
+				that.rowsMaster = that.rows;
 
 			that.rows = filteredRows;
 			that.zoomedIn = true;
@@ -7960,14 +8140,15 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 
 		this.rows = await this.source.response();
 
-		if(!this.map)
-			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {
-				zoom,
-				center: {
-					lat: this.options.centerLatitude || parseFloat(this.rows[0].get(this.options.layers[0].latitudeColumn)),
-					lng: this.options.centerLongitude || parseFloat(this.rows[0].get(this.options.layers[0].longitudeColumn))
-				}
-			});
+		if(!this.map) {
+
+			this.map = new google.maps.Map(this.containerElement.querySelector('.container'), {zoom});
+		}
+
+		this.map.setCenter({
+			lat: this.options.centerLatitude || parseFloat(this.rows[0].get(this.options.layers[0].latitudeColumn)),
+			lng: this.options.centerLongitude || parseFloat(this.rows[0].get(this.options.layers[0].longitudeColumn))
+		});
 
 		this.map.set('styles', this.themes.get(this.options.theme).config || []);
 
@@ -8567,8 +8748,6 @@ Visualization.list.set('json', class JSONVisualization extends Visualization {
 
 		this.editor = new CodeEditor({mode: 'json'});
 
-		this.editor.editor.setTheme('ace/theme/clouds');
-
 		this.editor.value = JSON.stringify(this.source.originalResponse.data, 0, 4);
 		this.editor.editor.setReadOnly(true);
 
@@ -8742,11 +8921,12 @@ SpatialMapLayer.types.set('heatmap', class HeatMap extends SpatialMapLayer {
 
 	plot() {
 
-		if(this.heatmap.getMap())
-			return;
-
 		this.heatmap.setData(this.markers);
-		this.heatmap.setMap(this.layers.visualization.map);
+
+		if(!this.heatmap.getMap()) {
+
+			this.heatmap.setMap(this.layers.visualization.map);
+		}
 	}
 
 	clear() {
@@ -8783,8 +8963,13 @@ SpatialMapLayer.types.set('clustermap', class ClusterMap extends SpatialMapLayer
 
 	plot() {
 
-		if(this.clusterer)
+		if(this.clusterer) {
+
+			this.clusterer.clearMarkers();
+			this.clusterer.addMarkers(this.markers);
+
 			return;
+		}
 
 		this.clusterer = new MarkerClusterer(this.layers.visualization.map, this.markers, { imagePath: 'https://raw.githubusercontent.com/googlemaps/js-marker-clusterer/gh-pages/images/m' });
 	}
@@ -8839,9 +9024,6 @@ SpatialMapLayer.types.set('scattermap', class ScatterMap extends SpatialMapLayer
 	}
 
 	get markers() {
-
-		if(this.existingMarkers)
-			return this.existingMarkers;
 
 		const markers = this.existingMarkers = [];
 
@@ -8925,9 +9107,6 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 	}
 
 	get markers() {
-
-		if(this.existingMarkers)
-			return this.existingMarkers;
 
 		const
 			markers = this.existingMarkers = [],

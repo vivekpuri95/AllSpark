@@ -5,7 +5,8 @@ main > #list .visualizations {
 	margin: 0px -10px;
 }
 	main > #list .visualization {
-		background: #fff;
+		background: var(--color-surface);
+		color: var(--color-surface-text);
 		padding: 10px;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		display: grid;

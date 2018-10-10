@@ -10,6 +10,7 @@ const auth = require('../utils/auth');
 const commonFun = require('../utils/commonFunctions');
 const oracle = require('../utils/oracle').Oracle;
 const constants = require("../utils/constants");
+const getRole = require("../www/object_roles").get;
 
 
 exports.insert = class extends API {
@@ -73,9 +74,24 @@ exports.list = class extends API {
 				)
 			]);
 
+		const groupIdObject = {};
+
+		for(const row of object_roles) {
+
+			if(!groupIdObject.hasOwnProperty(row.group_id)) {
+
+				groupIdObject[row.group_id] = {...row, category_id: [row.category_id]};
+			}
+
+			else {
+
+				groupIdObject[row.group_id].category_id.push(row.category_id);
+			}
+		}
+
 		let connectionMap = {};
 
-		for (const row of object_roles) {
+		for (const row of Object.values(groupIdObject)) {
 
 			if (!connectionMap[row.owner_id]) {
 
@@ -84,6 +100,7 @@ exports.list = class extends API {
 					user: []
 				}
 			}
+
 			if (row.target == 'role') {
 
 				connectionMap[row.owner_id]["role"].push(row);
@@ -100,7 +117,9 @@ exports.list = class extends API {
 			row.role = connectionMap[row.id] ? connectionMap[row.id].role : [];
 			row.users = connectionMap[row.id] ? connectionMap[row.id].user : [];
 
-			if (!(await auth.connection(row, this.user)).error) {
+			const authResponse = await auth.connection(row, this.user);
+
+			if (!authResponse.error) {
 
 				response.push(row);
 			}
@@ -113,16 +132,21 @@ exports.list = class extends API {
 
 		for (const connection of response) {
 
-			const categories = connection.role.map(u => parseInt(u.category_id));
+			for(const role of connection.role) {
 
-			const updateFlag = updateCategories.some(cat => categories.includes(parseInt(cat))) || (!categories.length && updateCategories.length);
-			const deleteFlag = deleteCategories.some(cat => categories.includes(parseInt(cat))) || (!categories.length && deleteCategories.length);
+				const updateFlag = role.category_id.every(cat => updateCategories.includes(parseInt(cat))) || (!role.category_id.length && updateCategories.length);
+				const deleteFlag = role.category_id.every(cat => deleteCategories.includes(parseInt(cat))) || (!role.category_id.length && deleteCategories.length);
 
-			connection.editable = constants.adminCategory.some(x => updateCategories.includes(x)) || updateFlag;
-			connection.deletable = constants.adminCategory.some(x => deleteCategories.includes(x)) || deleteFlag;
+				connection.editable = connection.editable || constants.adminCategory.some(x => updateCategories.includes(x)) || updateFlag;
+				connection.deletable = connection.deletable || constants.adminCategory.some(x => deleteCategories.includes(x)) || deleteFlag;
+			}
+
+			connection.editable = connection.editable || connection.added_by == this.user.user_id || this.user.privilege.has('superadmin');
+			connection.deletable = connection.deletable || connection.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 		}
 
 		for(const data of response) {
+
 			data.user_name = data.user;
 		}
 
@@ -134,9 +158,34 @@ exports.delete = class extends API {
 
 	async delete() {
 
-		this.user.privilege.needs('connection.delete', 'ignore');
+		const [connectionObj] = await this.mysql.query(`
+				SELECT
+					*
+				FROM
+					tb_credentials c
+				WHERE
+					c.id = ?
+					AND status = 1
+					AND account_id = ?
+				`, [this.request.body.id, this.account.account_id]
+		);
 
-		const authResponse = await auth.connection(this.request.body.id, this.user);
+		if(connectionObj.added_by !== this.user.user_id) {
+
+			this.user.privilege.needs('connection.delete', 'ignore');
+		}
+
+		this.assert(connectionObj, "Connection does not exist");
+
+		const objRole = new getRole();
+
+		[connectionObj.users, connectionObj.role] = await Promise.all([
+			objRole.get(connectionObj.account_id, 'connection', 'user', connectionObj.id, this.user.user_id),
+			objRole.get(connectionObj.account_id, 'connection', 'role', connectionObj.id)
+		]);
+
+		const authResponse = await auth.connection(connectionObj, this.user);
+
 		this.assert(!authResponse.error, authResponse.message);
 
 		const response = await this.mysql.query(
@@ -166,9 +215,33 @@ exports.update = class extends API {
 
 	async update() {
 
-		this.user.privilege.needs('connection.update', 'ignore');
+		const [connectionObj] = await this.mysql.query(`
+				SELECT
+					*
+				FROM
+					tb_credentials c
+				WHERE
+					c.id = ?
+					AND status = 1
+					AND account_id = ?
+				`, [this.request.body.id, this.account.account_id]
+		);
 
-		const authResponse = await auth.connection(this.request.body.id, this.user);
+		if(connectionObj.added_by !== this.user.user_id) {
+
+			this.user.privilege.needs('connection.update', 'ignore');
+		}
+
+		this.assert(connectionObj, "Connection does not exist");
+
+		const objRole = new getRole();
+
+		[connectionObj.users, connectionObj.role] = await Promise.all([
+			objRole.get(connectionObj.account_id, 'connection', 'user', connectionObj.id, this.user.user_id),
+			objRole.get(connectionObj.account_id, 'connection', 'role', connectionObj.id)
+		]);
+
+		const authResponse = await auth.connection(connectionObj, this.user);
 
 		this.assert(!authResponse.error, authResponse.message);
 

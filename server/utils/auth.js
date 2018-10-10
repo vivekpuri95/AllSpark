@@ -9,6 +9,14 @@ class Authenticate {
 
 	static async report(reportObject, userJWTObject, reportDashboardRoles,) {
 
+		if(userJWTObject.privilege.has("superadmin")) {
+
+			return {
+				error: false,
+				message: "superadmin user"
+			}
+		}
+
 		if (config.has("role_ignore") && config.has("privilege_ignore")) {
 
 			if (config.get("role_ignore") && config.get("privilege_ignore")) {
@@ -111,7 +119,7 @@ class Authenticate {
 			}
 		}
 
-		if(reportObject.added_by === userJWTObject.user_id) {
+		if (reportObject.added_by === userJWTObject.user_id) {
 
 			return {
 				error: false,
@@ -121,7 +129,9 @@ class Authenticate {
 
 		let connectionObj = reportObject.connectionObj || reportObject.connection_name;
 
-		if((await Authenticate.connection(connectionObj, userJWTObject)).error) {
+		let connectionAuthResponse = await Authenticate.connection(connectionObj, userJWTObject)
+
+		if (connectionAuthResponse.error) {
 
 			return {
 				error: true,
@@ -152,6 +162,23 @@ class Authenticate {
 				`,
 				[reportObject.query_id ? reportObject.query_id : parseInt(reportObject) || 0]
 			);
+
+			const groupIdObject = {};
+
+			for (const row of reportDashboardRoles) {
+
+				if (!groupIdObject.hasOwnProperty(row.group_id)) {
+
+					groupIdObject[row.group_id] = {...row, category_id: [row.category_id]};
+				}
+
+				else {
+
+					groupIdObject[row.group_id].category_id.push(row.category_id);
+				}
+			}
+
+			reportDashboardRoles = Object.values(groupIdObject)
 		}
 
 		const userPrivileges = [];
@@ -168,17 +195,22 @@ class Authenticate {
 
 		for (const row of reportDashboardRoles) {
 
-			const objectRoles = [[row.account_id, row.category_id, row.target_id]];
+			const objectRoles = [];
+
+			for(const categoryId of [...new Set(row.category_id)]) {
+
+				objectRoles.push([row.account_id, categoryId, row.target_id]);
+			}
 
 			const authResponse = commonFun.authenticatePrivileges(userPrivileges, objectRoles);
 
 			if (!authResponse.error) {
 
-				return authResponse
+				return {...authResponse, message: authResponse.message + " : dashboard " + row.owner_id};
 			}
 		}
 
-		if(!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
+		if (!reportObject.roles.length && reportObject.added_by != userJWTObject.user_id) {
 
 			return {
 				error: true,
@@ -186,17 +218,36 @@ class Authenticate {
 			}
 		}
 
-		let objectPrivileges = [[reportObject.account_id], Array.isArray(reportObject.category_id) ? reportObject.category_id : [reportObject.category_id]];
+		let failedResponse = "";
 
-		objectPrivileges[2] = reportObject.roles;
+		for (const categoryIds of reportObject.category_id) {
 
-		objectPrivileges = commonFun.listOfArrayToMatrix(objectPrivileges);
+			let objectPrivileges = [[reportObject.account_id], Array.isArray(categoryIds) ? categoryIds : [categoryIds]];
 
-		return commonFun.authenticatePrivileges(userPrivileges, objectPrivileges);
+			objectPrivileges[2] = reportObject.roles;
+
+			objectPrivileges = commonFun.listOfArrayToMatrix(objectPrivileges);
+
+			const authResponse = commonFun.authenticatePrivileges(userPrivileges, objectPrivileges);
+
+			if (!authResponse.error) {
+
+				return {...authResponse, message: authResponse.message + ` category_ids : ${categoryIds.join(", ")}}`};
+			}
+
+			failedResponse += `(${categoryIds.join(", ")}) : ${authResponse.message}\n`;
+		}
+
+		return {
+
+			error: true,
+			message: failedResponse,
+		}
+
 	}
 
 
-	static async dashboard({userObj, dashboard = null, dashboardRoles, dashboardUserPrivileges, dashboardQueryList , visibleQueryList} = {})  {
+	static async dashboard({userObj, dashboard = null, dashboardRoles, dashboardUserPrivileges, dashboardQueryList, visibleQueryList} = {}) {
 
 		//dashboard = dashboard row.
 		//dashboardRoles = object role owner dashboard, target dashboard row
@@ -207,8 +258,6 @@ class Authenticate {
 		// objectRoles dashboard user .
 		//dashboard roles .
 		//dashboard visualizations(query visualizations) .
-
-
 
 		let userPrivileges = [];
 
@@ -238,7 +287,7 @@ class Authenticate {
 			};
 		}
 
-		if(!dashboardUserPrivileges) {
+		if (!dashboardUserPrivileges) {
 
 			dashboardUserPrivileges = await mysql.query(`
 				SELECT
@@ -262,7 +311,7 @@ class Authenticate {
 
 		const objRole = new getRole();
 
-		if(!dashboardRoles) {
+		if (!dashboardRoles) {
 
 			dashboardRoles = await objRole.get(dashboard.account_id, "dashboard", "role", dashboard.id,)
 			dashboardRoles = dashboardRoles.map(x => [x.account_id, x.category_id, x.target_id]);
@@ -288,18 +337,25 @@ class Authenticate {
 
 		for (const row of dashboardRoles) {
 
-			let authResponse = commonFun.authenticatePrivileges(userPrivileges, [row]);
+			let objectPrivileges = [];
+
+			for (const categoryId of row[1]) {
+
+				objectPrivileges.push([row[0], categoryId, row[2]])
+			}
+
+			let authResponse = commonFun.authenticatePrivileges(userPrivileges, objectPrivileges);
 
 			if (!authResponse.error) {
 
 				return {
 					error: false,
-					message: "Dashboard shared with the role and category of current user.",
+					message: `Dashboard shared with the category of current user. categories: ${row[1].join(", ")}`,
 				}
 			}
 		}
 
-		if(!dashboardQueryList) {
+		if (!dashboardQueryList) {
 
 			dashboardQueryList = await mysql.query(`
 				SELECT
@@ -322,21 +378,21 @@ class Authenticate {
 
 		const reportRoleMapping = {};
 
-		if(!visibleQueryList) {
+		if (!visibleQueryList) {
 
-			let reportRoles = await objRole.get(userObj.account_id, "query", "role", dashboardQueryList.length ?  dashboardQueryList.map(x => x.query_id) : 0,);
+			let reportRoles = await objRole.get(userObj.account_id, "query", "role", dashboardQueryList.length ? dashboardQueryList.map(x => x.query_id) : 0,);
 
 			for (const row of reportRoles) {
 
-				if (!reportRoleMapping[row.query_id]) {
+				if (!reportRoleMapping[row.owner_id]) {
 
-					reportRoleMapping[row.query_id] = {
+					reportRoleMapping[row.owner_id] = {
 						roles: [],
 						category_id: [],
 					};
 
-					reportRoleMapping[row.query_id].roles.push(row.target_id);
-					reportRoleMapping[row.query_id].category_id.push(row.category_id);
+					reportRoleMapping[row.owner_id].roles.push(row.target_id);
+					reportRoleMapping[row.owner_id].category_id.push(row.category_id);
 				}
 			}
 
@@ -357,7 +413,7 @@ class Authenticate {
 
 			let authResponse;
 
-			if(visibleQueryList) {
+			if (visibleQueryList) {
 
 				authResponse = {
 					error: !visibleQueryList.has(query.query_id || query)
@@ -373,12 +429,12 @@ class Authenticate {
 
 				return {
 					error: false,
-					message: "authenticated for Report id:" + query.query_id || query + ".",
+					message: "authenticated for Report id:" + (query.query_id || query) + ".",
 				}
 			}
 		}
 
-		if(userObj.privilege.has("superadmin") || dashboard.added_by == userObj.user_id) {
+		if (userObj.privilege.has("superadmin") || dashboard.added_by == userObj.user_id) {
 
 			return {
 				error: false,
@@ -394,11 +450,19 @@ class Authenticate {
 
 	static async connection(connectionObj, user) {
 
+		if(user.privilege.has("superadmin")) {
+
+			return {
+				error: false,
+				message: "superadmin user"
+			}
+		}
+
 		const objRole = new getRole();
 
-		let userPrivileges = [], connectionRoles , userConnections;
+		let userPrivileges = [], connectionRoles, userConnections;
 
-		if(parseInt(connectionObj) == connectionObj) {
+		if (parseInt(connectionObj) == connectionObj) {
 
 			connectionObj = await mysql.query(`
 				SELECT
@@ -412,7 +476,7 @@ class Authenticate {
 
 			connectionObj = connectionObj[0];
 
-			if(!connectionObj) {
+			if (!connectionObj) {
 
 				return {
 					"error": true,
@@ -424,14 +488,13 @@ class Authenticate {
 				objRole.get(connectionObj.account_id, 'connection', 'user', connectionObj.id, user.user_id),
 				objRole.get(connectionObj.account_id, 'connection', 'role', connectionObj.id)
 			]);
-
 		}
 
 		user.roles && user.roles.map(x => {
 			userPrivileges.push([user.account_id, x.category_id, x.role]);
 		});
 
-		if(connectionObj.added_by == user.user_id) {
+		if (connectionObj.added_by == user.user_id) {
 
 			return {
 				error: false,
@@ -444,7 +507,7 @@ class Authenticate {
 
 		connectionRoles = connectionRoles.map(x => [x.account_id, x.category_id, x.target_id]);
 
-		if(userConnections[0]) {
+		if (userConnections[0]) {
 
 			return {
 				error: false,
@@ -452,29 +515,51 @@ class Authenticate {
 			}
 		}
 
+		let failedResponse = "";
+
 		for (const row of connectionRoles) {
 
-			let authResponse = commonFun.authenticatePrivileges(userPrivileges, [row]);
+			const objectPrivileges = [];
+
+			for (const categoryId of row.category_id || row[1]) {
+
+				objectPrivileges.push([row[0], categoryId, row[2]]);
+			}
+
+			let authResponse = commonFun.authenticatePrivileges(userPrivileges, objectPrivileges);
+
+			if (authResponse.error) {
+
+				failedResponse += `(${(row.category_id || row[1]).join(", ")}) : ${authResponse.message}\n`;
+			}
 
 			if (!authResponse.error) {
 
 				return {
 					error: false,
-					message: "Connection shared with the role and category of current user.",
+					message: `${authResponse.message} Categories: ${(row.category_id || row[1]).join(", ")}`
 				}
 			}
 		}
 
+
 		return {
 			error: true,
-			message: 'User not authenticated!'
+			message: failedResponse
 		}
-
 	}
 
 	static async visualization(visualization, user, report, visualizationRolesFromQuery = false) {
 
-		if(parseInt(visualization) == visualization) {
+		if(user.privilege.has("superadmin")) {
+
+			return {
+				error: false,
+				message: "superadmin user"
+			}
+		}
+
+		if (parseInt(visualization) == visualization) {
 
 			[visualization] = await mysql.query(`
 				select
@@ -491,7 +576,7 @@ class Authenticate {
 					and q.is_deleted = 0
 			`, [visualization]);
 
-			if(!visualization) {
+			if (!visualization) {
 
 				return {
 					error: true,
@@ -500,7 +585,7 @@ class Authenticate {
 			}
 		}
 
-		if(user.user_id == visualization.added_by && user.user_id > 0) {
+		if (user.user_id == visualization.added_by && user.user_id > 0) {
 
 			return {
 				error: false,
@@ -510,16 +595,16 @@ class Authenticate {
 
 		let reportAuth;
 
-		if(report == parseInt(report)) {
+		if (report == parseInt(report)) {
 
 			reportAuth = await Authenticate.report(report, user);
 		}
 
-		if(!report.skip) {
+		if (!report.skip) {
 
 			if (report) {
 
-				if(!Array.isArray(report)) {
+				if (!Array.isArray(report)) {
 
 					reportAuth = await Authenticate.report(report, user)
 				}
@@ -552,19 +637,19 @@ class Authenticate {
 			}
 		}
 
-		if(!visualization.roles) {
+		if (!visualization.roles) {
 
 			const objRole = new getRole();
 			visualization.roles = await objRole.get(visualization.account_id, visualizationRolesFromQuery ? "report" : "visualization", "role", visualization.visualization_id);
 		}
 
-		if(!visualization.users) {
+		if (!visualization.users) {
 
 			const objRole = new getRole();
 			visualization.users = await objRole.get(visualization.account_id, visualizationRolesFromQuery ? "report" : "visualization", "user", visualization.visualization_id);
 		}
 
-		if(visualization.users.some(x => x.target_id == user.user_id)) {
+		if (visualization.users.some(x => x.target_id == user.user_id)) {
 
 			return {
 				error: false,
@@ -582,28 +667,32 @@ class Authenticate {
 			}
 		}
 
-		visualization.roles =  visualization.roles.map(x => [x.account_id, x.category_id, x.target_id]);
-
 		for (const row of user.roles) {
 
 			userPrivileges.push([user.account_id, row.category_id, row.role]);
 		}
 
-		for (const row of visualization.roles) {
+		for (const row of visualization.roles.map(x => [x.account_id, x.category_id, x.target_id])) {
 
-			let authResponse = commonFun.authenticatePrivileges(userPrivileges, [row]);
+			const objectRoles = [];
+
+			for (const categoryId of row[1]) {
+
+				objectRoles.push([row[0], categoryId, row[2]]);
+			}
+
+			const authResponse = commonFun.authenticatePrivileges(userPrivileges, objectRoles);
 
 			if (!authResponse.error) {
 
 				return {
 					error: false,
-					message: "Visualization shared with the role and category of current user.",
+					message: `Visualization shared with the role and category of current user category_ids: ${row[1].join(", ")}`,
 				}
 			}
 		}
 
-
-		if(user.privilege.has('administrator')) {
+		if (user.privilege.has('administrator')) {
 
 			return {
 				error: false,

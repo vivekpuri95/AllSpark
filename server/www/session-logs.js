@@ -35,7 +35,7 @@ class SessionLogs extends API {
 			WHERE
 				s1.type = 'login'
 				AND s2.id is  null
-				AND s1.expire_time >  unix_timestamp(now())
+				AND s1.created_at >  now() - interval 5 day
 				AND s1.user_id = ?
 			`,
 			[db, db, this.request.query.user_id]
@@ -52,7 +52,6 @@ class SessionLogs extends API {
 				user_id: this.request.body.user_id,
 				type: this.request.body.type,
 				user_agent: this.request.body.user_agent || this.request.get('user-agent'),
-				expire_time: this.request.body.expire_time,
 				os: userAgent.os,
 				browser: userAgent.browser,
 				ip: this.request.headers['x-real-ip'],
@@ -63,6 +62,13 @@ class SessionLogs extends API {
 		}
 
 		if(params.type == 'logout' && refresh_token) {
+
+			const description = {
+				message: this.request.body.description,
+				token: refresh_token,
+			}
+
+			params.description = JSON.stringify(description);
 
 			const token_details = await commonFun.getUserDetailsJWT(refresh_token);
 

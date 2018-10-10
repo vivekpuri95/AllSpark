@@ -61,6 +61,115 @@ class ReportsManger extends Page {
 			connections.set(connections.id, connection);
 		}
 		this.connections = new Map(this.connections.map(c => [c.id, c]));
+
+		const filters = [
+			{
+				key: 'Query ID',
+				rowValue: row => [row.query_id],
+			},
+			{
+				key: 'Name',
+				rowValue: row => row.name ? [row.name] : [],
+			},
+			{
+				key: 'Description',
+				rowValue: row => row.description ? [row.description] : [],
+			},
+			{
+				key: 'Connection name',
+				rowValue: row => {
+					if(page.connections.has(parseInt(row.connection_name)))
+						return [page.connections.get(parseInt(row.connection_name)).connection_name];
+					else
+						return [];
+				},
+			},
+			{
+				key: 'Connection Type',
+				rowValue: row => {
+					if(page.connections.has(parseInt(row.connection_name)))
+						return [page.connections.get(parseInt(row.connection_name)).feature.name];
+					else
+						return [];
+				},
+			},
+			{
+				key: 'Tags',
+				rowValue: row => row.tags ? row.tags.split(',') : [],
+			},
+			{
+				key: 'Filters Length',
+				rowValue: row => [row.filters.length]
+			},
+			{
+				key: 'Filters Name',
+				rowValue: row => row.filters.map(f => f.name),
+			},
+			{
+				key: 'Filters Placeholder',
+				rowValue: row => row.filters.map(f => f.placeholder),
+			},
+			{
+				key: 'Visualizations Name',
+				rowValue: row => row.visualizations.map(f => f.name),
+			},
+			{
+				key: 'Visualizations Type Name',
+				rowValue: row => {
+					return row.visualizations.map(f => f.type)
+											 .map(m => MetaData.visualizations.has(m) ?
+											 (MetaData.visualizations.get(m)).name : []);
+				},
+			},
+			{
+				key: 'Visualizations Length',
+				rowValue: row => [row.visualizations.length],
+			},
+			{
+				key: 'Report Enabled',
+				rowValue: row => row.is_enabled ? ['yes'] : ['no'],
+			},
+			{
+				key: 'Report Creation',
+				rowValue: row => row.created_at ? [row.created_at] : [],
+			},
+			{
+				key: 'Definition',
+				rowValue: row => row.query ? [row.query] : [],
+			},
+			{
+				key: 'Report Refresh Rate',
+				rowValue: row => row.refresh_rate ? [row.refresh_rate] : [],
+			},
+			{
+				key: 'Subtitle',
+				rowValue: row => {
+					if(MetaData.categories.has(parseInt(row.subtitle)))
+						return [MetaData.categories.get(parseInt(row.subtitle)).name];
+					else
+						return [];
+				},
+			},
+			{
+				key: 'Report Last Updated At',
+				rowValue: row => row.updated_at ? [row.updated_at] : [],
+			}
+		];
+
+		this.searchBar = new SearchColumnFilters({
+			data: Array.from(DataSource.list.values()),
+			filters: filters,
+			advanceSearch: true,
+			page,
+		});
+
+		this.container.querySelector('#stages .section').insertBefore(this.searchBar.container, this.container.querySelector('#stages .section #list-container'));
+
+		this.container.querySelector('#stages .section .toolbar').appendChild(this.searchBar.globalSearch.container);
+
+		this.container.querySelector('#stages .section .toolbar').on('submit', e => e.preventDefault());
+
+		this.searchBar.on('change', () => this.stages.get('pick-report').load() );
 	}
 
 	async load() {
@@ -342,29 +451,9 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 	prepareSearch() {
 
-		const
-			search = this.container.querySelector('table thead tr.search'),
-			columns = this.container.querySelectorAll('table thead th');
+		const columns = this.container.querySelectorAll('table thead th');
 
 		for(const column of columns) {
-
-			const searchColumn = document.createElement('th');
-
-			search.appendChild(searchColumn);
-
-			if(column.classList.contains('action'))
-				searchColumn.classList.add('action');
-
-			if(!column.classList.contains('search'))
-				continue;
-
-			searchColumn.innerHTML = `
-				<input type="search" class="column-search ${column.dataset.key}" data-key="${column.dataset.key}" placeholder="Search ${column.textContent}">
-			`;
-
-			searchColumn.querySelector('.column-search').on('keyup', () => this.load());
-
-			search.appendChild(searchColumn);
 
 			if(column.classList.contains('sort')) {
 
@@ -385,9 +474,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		this.page.stages.get('configure-visualization').lastSelectedVisualizationId = null;
 
-		const
-			theadSearch = document.querySelectorAll('.column-search'),
-			tbody = this.container.querySelector('tbody');
+		const tbody = this.container.querySelector('tbody');
 
 		tbody.textContent = null;
 
@@ -411,6 +498,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				a.on('click', e => this.tagSearch(e));
 				return a;
 			});
+
 
 			row.innerHTML = `
 				<td>${report.query_id}</td>
@@ -493,67 +581,27 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		e.stopPropagation();
 
+		this.page.searchBar.container.classList.remove('hidden');
+
 		const
 			value = e.currentTarget.textContent,
-			column = this.container.querySelector('table thead tr.search .tags');
+			tagFilter = new SearchColumnFilter(this.page.searchBar);
 
-		column.value = `"${value}"`;
+		this.page.searchBar.add(tagFilter);
 
-		this.load()
+		this.page.searchBar.render();
+		const searchContainer = tagFilter.container;
+
+		searchContainer.querySelector('.searchQuery').value = value;
+		searchContainer.querySelector('.searchValue').value = 'Tags';
+		searchContainer.querySelector('.searchType').value = 'equalto';
+
+		this.load();
 	}
 
 	get reports() {
 
-		let reports = JSON.parse(JSON.stringify(Array.from(DataSource.list.values())));
-
-		const inputs = this.container.querySelectorAll('thead tr.search th input');
-
-		reports = reports.filter(report => {
-
-			for(const input of inputs) {
-
-				const query = input.value.toLowerCase();
-
-				if(!query)
-					continue;
-
-				if(query.startsWith('"') && input.classList.contains('tags')) {
-
-					return report.tags.split(',').some(tag => `"${tag.trim().toLowerCase()}"` == query);
-				}
-
-				else if(['filters', 'visualization'].includes(input.dataset.key)) {
-
-					if(!report.filters.some(filter => filter.name.toLowerCase().includes(query)))
-						return false;
-				}
-
-				else if(input.dataset.key == 'connection') {
-
-					let connection = this.page.connections.get(parseInt(report.connection_name)) || '';
-
-					if(!connection)
-						return false;
-
-					if(!connection.connection_name.toLowerCase().includes(query) && !connection.type.toLowerCase().includes(query))
-						return false;
-				}
-
-				else if(input.dataset.key == 'is_enabled') {
-
-					if(!(report.is_enabled ? 'yes' : 'no').includes(query))
-						return false;
-				}
-
-				else {
-
-					if(!report[input.dataset.key] || !report[input.dataset.key].toString().toLowerCase().includes(query))
-						return false;
-				}
-			}
-
-			return true;
-		});
+		let reports = this.page.searchBar.filterData;
 
 		if(this.sort.column) {
 
@@ -723,6 +771,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		e.preventDefault();
 
+		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(q => q.trim()).join();
+
 		const options = {
 			method: 'POST',
 			form: new FormData(this.form),
@@ -803,6 +853,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 	async update(e) {
 
 		e.preventDefault();
+
+		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(q => q.trim()).join();
 
 		const
 			parameters = {
@@ -2463,11 +2515,6 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.logsEditor) {
-
-			this.editor.editor.setTheme('ace/theme/clouds');
-		}
-
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
 		setTimeout(() => {
@@ -3755,7 +3802,7 @@ class LinearAxis {
 		container.querySelector('select[name=axis-type]').value = this.type;
 		container.querySelector('select[name=position]').value = this.position;
 		container.querySelector('select[name=format]').value = this.format || '';
-		container.querySelector('select[name=curve]').value = this.curve || '';
+		container.querySelector('select[name=curve]').value = this.curve || 'linear';
 		container.querySelector('input[name=axisDepth]').value = this.depth;
 		container.querySelector('input[name=axisLineThickness]').value = this.lineThickness;
 		container.querySelector('input[name=axisStacked]').checked = this.stacked;
@@ -4925,7 +4972,7 @@ class ReportTransformations extends Set {
 		if(!report.transformationVisualization) {
 
 			const visualization = {
-				visualization_id: Math.floor(Math.random() * 1000) + 1000,
+				visualization_id: 0,
 				name: 'Table',
 				type: 'table',
 				options: {
@@ -5751,8 +5798,13 @@ class ReportVisualizationDashboards extends Set {
 			}
 		}
 
-		this.dashboardMultiSelect.datalist = datalist;
-		this.dashboardMultiSelect.render();
+		if(!datalist.length) {
+			this.container.querySelector('fieldset .form').innerHTML = '<div class="NA">No Dashboard Found</div>'
+		}
+		else {
+			this.dashboardMultiSelect.datalist = datalist;
+			this.dashboardMultiSelect.render();
+		}
 	}
 
 	clear() {
@@ -5846,7 +5898,7 @@ class ReportVisualizationDashboard {
 				<input type="number" name="position" value="${this.visualization.format.position || ''}">
 			</label>
 
-			<label>
+			<label class="save">
 				<span>&nbsp;</span>
 				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</label>
@@ -5858,15 +5910,20 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>&nbsp;</span>
-				<button type="button" class="view-dashboard disabled"><i class="fas fa-external-link-alt"></i></button>
+				<button type="button" class="view-dashboard"><i class="fas fa-external-link-alt"></i></button>
 			</label>
 		`;
 
 		const datalist = [];
+		let selectedDashboard;
 
 		if(this.stage.dashboards.response) {
 
 			for(const dashboard of this.stage.dashboards.response.values()) {
+
+				if(dashboard.id == this.visualization.dashboard_id) {
+					selectedDashboard = dashboard.name;
+				}
 
 				if(!dashboard.editable)
 					continue;
@@ -5902,14 +5959,25 @@ class ReportVisualizationDashboard {
 
 		this.dashboardMultiSelect.value = this.visualization.dashboard_id;
 
-		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
-
 		if(this.dashboardMultiSelect.value.length) {
 
-			const externalLink = form.querySelector('.view-dashboard');
+			form.querySelector('.view-dashboard').on('click', () => window.open('/dashboard/' + this.dashboardMultiSelect.value[0]));
 
-			externalLink.classList.disabled = false;
-			externalLink.on('click', () => window.open('/dashboard/' + this.dashboardMultiSelect.value[0]));
+			form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
+		}
+		else {
+
+			const input = document.createElement('input');
+			input.value = selectedDashboard;
+			input.disabled = true;
+
+			form.position.disabled = true;
+
+			form.querySelector('.view-dashboard').disabled = true;
+			form.querySelector('.save button').disabled = true;
+			form.querySelector('.delete').disabled = true;
+
+			form.querySelector('.dashboard_id').appendChild(input);
 		}
 
 		form.querySelector('.delete').on('click', () => this.delete());
@@ -6381,7 +6449,6 @@ class EditReportData {
 
 			th.textContent = column;
 			th.dataset.sorted = 'desc';
-
 			th.on('click', () =>this.sort(index, th));
 
 			headings.appendChild(th);

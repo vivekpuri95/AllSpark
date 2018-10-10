@@ -49,6 +49,7 @@ exports.publicEndpoints = [
 	'/v2/oauth/connections/redirect_uri',
 	'/v2/session-logs/insert',
 	'/v2/tests/test',
+	'/v2/scheduler/jobs/run',
 ];
 
 exports.filterPrefix = "param_";

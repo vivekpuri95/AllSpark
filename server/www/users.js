@@ -61,14 +61,22 @@ exports.update = class extends API {
 	async update() {
 		const objRole = new getRole();
 
-		const requiredCategories = (await objRole.get(this.account.account_id, 'user', 'role', this.request.body.user_id)).map(x => x.category_id);
+		const [existingUser] = await this.mysql.query(
+			`select * from tb_users where user_id = ? and account_id = ?`,
+			[this.request.body.user_id, this.account.account_id]
+		);
 
-		if(requiredCategories.length) {
+		this.assert(existingUser, "User does not exists now.");
 
-			this.assert(requiredCategories.some(x => this.user.privilege.has('user.update', x)), 'User does not have enough privileges');
+		if(existingUser.added_by != this.user.user_id) {
+
+			const requiredCategories = (await objRole.get(this.account.account_id, 'user', 'role', this.request.body.user_id)).map(x => x.category_id[0]);
+
+			if(requiredCategories.length) {
+
+				this.assert(requiredCategories.some(x => this.user.privilege.has('user.update', x)), 'User does not have enough privileges');
+			}
 		}
-
-		this.user.privilege.needs('user.update', "ignore");
 
 		var keys = ['first_name', 'last_name', 'middle_name', 'phone', 'password', 'email', 'status'];
 
@@ -339,7 +347,7 @@ exports.list = class extends API {
 
 				const categories = x.roles.map(c => parseInt(c.category_id));
 
-				return userCategories.every(cat => categories.includes(parseInt(cat))) || x.added_by == this.user.user_id;
+				return (categories.every(cat => userCategories.includes(parseInt(cat))) && categories.length) || x.added_by == this.user.user_id;
 			});
 		}
 
@@ -347,11 +355,11 @@ exports.list = class extends API {
 
 			const categories = user.roles.map(u => parseInt(u.category_id));
 
-			const updateFlag = userUpdateCategories.some(cat => categories.includes(parseInt(cat)));
+			const updateFlag = userUpdateCategories.some(cat => categories.includes(parseInt(cat))) || user.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 
 			user.editable = constants.adminCategory.some(x => userCategories.includes(x)) || updateFlag;
 
-			const deleteFlag = deleteUserCategories.some(cat => categories.includes(parseInt(cat)));
+			const deleteFlag = deleteUserCategories.some(cat => categories.includes(parseInt(cat))) || user.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 
 			user.deletable = constants.adminCategory.some(x => userCategories.includes(x)) || deleteFlag;
 		}
@@ -399,7 +407,7 @@ exports.metadata = class extends API {
 			sourceTypes,
 			features,
 			spatialMapThemes,
-			datasources
+			datasources,
 		] = await Promise.all([
 
 			this.mysql.query(`
@@ -487,7 +495,7 @@ exports.metadata = class extends API {
 
 			this.mysql.query('select * from tb_spatial_map_themes'),
 
-			this.mysql.query('select * from tb_datasources'),
+			this.mysql.query('select * from tb_datasources')
 		]);
 
 		const metadata = {};
@@ -509,6 +517,15 @@ exports.metadata = class extends API {
 		metadata.spatialMapThemes = spatialMapThemes;
 		metadata.visualizations = visualizations;
 		metadata.datasources = datasources;
+
+		await this.user.settings.load();
+
+		metadata.userSettings = [];
+
+		for(const [key, value] of this.user.settings) {
+
+			metadata.userSettings.push({key, value});
+		}
 
 		for (const data of metadata.globalFilters) {
 

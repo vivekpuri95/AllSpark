@@ -9,23 +9,22 @@ Page.class = class Dashboards extends Page {
 		this.list = new Map;
 		this.loadedVisualizations = new Set;
 		this.nav = document.querySelector('main > nav');
-		//document.querySelector('body').classList.add('floating');
 
 		this.listContainer = this.container.querySelector('section#list');
 		this.reports = this.container.querySelector('section#reports');
 		this.listContainer.form = this.listContainer.querySelector('.form.toolbar');
 
-		const navToggle = document.createElement('span');
-		navToggle.classList.add('nav-toggle');
-		navToggle.innerHTML = `<i class="fa fa-bars"></i>`;
-		document.querySelector('header').insertAdjacentElement('afterbegin', navToggle);
+		const menuToggle = document.createElement('span');
+		menuToggle.classList.add('menu-toggle');
+		menuToggle.innerHTML = `<i class="fa fa-bars"></i>`;
+		document.querySelector('header').insertAdjacentElement('afterbegin', menuToggle);
 
 		const navBlanket = this.container.querySelector('.nav-blanket');
 
-		navToggle.on('click', () => {
+		menuToggle.on('click', () => {
 			this.nav.classList.toggle('show');
 			navBlanket.classList.toggle('hidden');
-			navToggle.classList.toggle('selected');
+			menuToggle.classList.toggle('selected');
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
@@ -33,7 +32,7 @@ Page.class = class Dashboards extends Page {
 
 			this.nav.classList.remove('show');
 			navBlanket.classList.add('hidden');
-			navToggle.classList.remove('selected');
+			menuToggle.classList.remove('selected');
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
@@ -54,56 +53,17 @@ Page.class = class Dashboards extends Page {
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
-		for (const category of MetaData.categories.values()) {
-
+		for(const category of MetaData.categories.values())
 			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
-		}
-
-		const menuBar = document.querySelector('header');
-		menuBar.querySelector('.nav-container nav').classList.add('toggle-right', 'hidden');
-		menuBar.appendChild(this.menuBarToggle);
-
-		document.querySelector('body').on('click', () => {
-			menuBar.querySelector('.menu-header-toggle').classList.remove('selected');
-			document.querySelector('.nav-container nav').classList.add('hidden');
-		})
 
 		this.listContainer.form.subtitle.on('change', () => this.renderList());
 		this.listContainer.form.search.on('keyup', () => this.renderList());
 
-		window.on('popstate', e => {
-			this.load(e.state)
-		});
+		window.on('popstate', e => this.load(e.state));
 
 		this.navbar = new Navbar(new Map, this);
 
-		(async () => {
-
-			await this.load();
-		})();
-	}
-
-	get menuBarToggle() {
-
-		if (this.menuBarToggleElement)
-			return this.menuBarToggleElement;
-
-		const div = this.element = document.createElement('div');
-		div.classList.add('menu-header-toggle');
-
-		div.innerHTML = `
-			<i class="fas fa-chevron-down"></i>
-		`;
-
-		div.on('click', (e) => {
-
-			e.stopPropagation();
-
-			div.classList.toggle('selected');
-			document.querySelector('.nav-container nav').classList.toggle('hidden');
-		})
-
-		return div;
+		this.load();
 	}
 
 	get currentDashboard() {
@@ -337,7 +297,27 @@ Page.class = class Dashboards extends Page {
 
 				for (const parent of parents) {
 
+					if(simplifiedTreeMapping.has(parent) && simplifiedTreeMapping.get(parent).has(parent)) {
+
+						this.list.delete(parent);
+						moved = false;
+						break;
+					}
+
 					if (parents.has(0) || parents.has(dashboardId)) {
+
+						this.list.delete(parent);
+						moved = false;
+						break;
+					}
+
+					if(!simplifiedTreeMapping.has(parent)) {
+
+						moved = false;
+						break;
+					}
+
+					if(simplifiedTreeMapping.has(parent) && simplifiedTreeMapping.get(parent).has(parent)) {
 
 						this.list.delete(parent);
 						moved = false;
@@ -351,11 +331,12 @@ Page.class = class Dashboards extends Page {
 						toDelete = [parent];
 						moved = true;
 
-						if (simplifiedTreeMapping.get(parent).has(0)) {
+						if (simplifiedTreeMapping.has(parent) && simplifiedTreeMapping.get(parent).has(0)) {
 
 							toDelete = [...parents];
 							toReplace = [parent];
 							moved = false;
+
 							break;
 						}
 

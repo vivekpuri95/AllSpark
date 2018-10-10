@@ -171,8 +171,8 @@ class Dashboard extends API {
 		const result = [];
 
 		const userCategories = this.user.privileges.filter(x => possiblePrivileges.includes(x.privilege_name)).map(x => x.category_id);
-		const dashboardUpdateCategories = this.user.privileges.filter(x => [constants.privilege["dashboard.update"], "dashboard"].includes(x.privilege_name)).map(x => x.category_id);
-		const dashboardDeleteCategories = this.user.privileges.filter(x => [constants.privilege["dashboard.delete"], "dashboard"].includes(x.privilege_name)).map(x => x.category_id);
+		const dashboardUpdateCategories = this.user.privileges.filter(x => [constants.privilege["dashboard.update"], "dashboard", constants.privilege["administrator"]].includes(x.privilege_name)).map(x => x.category_id);
+		const dashboardDeleteCategories = this.user.privileges.filter(x => [constants.privilege["dashboard.delete"], "dashboard", constants.privilege["administrator"]].includes(x.privilege_name)).map(x => x.category_id);
 
 		for (const dashboard of Object.values(dashboardObject)) {
 
@@ -194,11 +194,17 @@ class Dashboard extends API {
 
 			const dashboardCategories = (dashboardRolesMapping[dashboard.id] || []).map(x => x[1]);
 
-			const updateFlag = dashboardUpdateCategories.some(cat => dashboardCategories.includes(parseInt(cat)));
-			const deleteFlag = dashboardDeleteCategories.some(cat => dashboardCategories.includes(parseInt(cat)));
+			for(const categories of dashboardCategories) {
 
-			dashboard.editable = constants.adminCategory.some(x => userCategories.includes(x)) || updateFlag;
-			dashboard.deletable = constants.adminCategory.some(x => userCategories.includes(x)) || deleteFlag;
+				const updateFlag = dashboardUpdateCategories.some(cat => categories.includes(parseInt(cat))) || this.user.privilege.has('superadmin');
+				const deleteFlag = dashboardDeleteCategories.some(cat => categories.includes(parseInt(cat))) || this.user.privilege.has('superadmin');
+
+				dashboard.editable = dashboard.editable || constants.adminCategory.some(x => userCategories.includes(x)) || updateFlag;
+				dashboard.deletable = dashboard.deletable || constants.adminCategory.some(x => userCategories.includes(x)) || deleteFlag;
+			}
+
+			dashboard.editable = dashboard.editable || dashboard.added_by == this.user.user_id || this.user.privilege.has('superadmin');
+			dashboard.deletable = dashboard.deletable || dashboard.added_by == this.user.user_id || this.user.privilege.has('superadmin');
 
 			result.push(dashboard);
 		}

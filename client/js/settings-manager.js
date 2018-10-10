@@ -1,9 +1,11 @@
 class SettingsManager {
 
-	constructor(owner, owner_id, format) {
+	constructor({owner, owner_id, format, disable_aside = false} = {}) {
+
 		this.owner = owner;
 		this.owner_id = owner_id;
 		this.format = format;
+		this.disable_aside = disable_aside;
 		this.profiles = new Map;
 	}
 
@@ -21,7 +23,8 @@ class SettingsManager {
 				method: "GET",
 			},
 			parameter = {
-				account_id: this.owner_id,
+				owner_id: this.owner_id,
+				owner: this.owner,
 			};
 
 		this.response = await API.call('settings/list', parameter, option);
@@ -31,15 +34,17 @@ class SettingsManager {
 
 		this.profiles.clear();
 
-		for(const data of this.response) {
+		for(const data of this.response)
 			this.profiles.set(data.id, new SettingsManagerProfile(data, this));
-		}
+
+		if(!this.profiles.selected && this.profiles.size)
+			this.profiles.selected = Array.from(this.profiles.values())[0];
 	}
 
 	render() {
 
-		const formContainer = this.form;
-		const tbody = formContainer.querySelector('table tbody');
+		const tbody = this.container.querySelector('table tbody');
+
 		tbody.textContent = null;
 
 		for(const data of this.profiles.values())
@@ -48,10 +53,21 @@ class SettingsManager {
 		if(!this.profiles.size)
 			tbody.innerHTML = `<tr><td colspan="2" class="NA">No profile found</td></tr>`;
 
-		tbody.querySelector('tr').click();
+		if(this.container.querySelector('section.profile'))
+			this.container.querySelector('section.profile').remove();
+
+		this.container.querySelector('.no-profile').classList.toggle('hidden', this.profiles.selected ? true : false);
+
+		for(const [key, profiles] of this.profiles)
+			profiles.row.classList.remove('selected');
+
+		if(this.profiles.selected) {
+			this.profiles.selected.row.classList.add('selected');
+			this.container.appendChild(this.profiles.selected.section);
+		}
 	}
 
-	get form() {
+	get container() {
 
 		if(this.containerElement)
 			return this.containerElement;
@@ -75,7 +91,7 @@ class SettingsManager {
 				<footer>
 					<form class="form">
 						<label>
-							<input type="text" name="name" placeholder="New Profile Name" required>
+							<input type="text" name="profile"  maxLength="30" placeholder="New Profile Name" required>
 						</label>
 
 						<label>
@@ -84,7 +100,13 @@ class SettingsManager {
 					</form>
 				</footer>
 			</aside>
+
+			<div class="no-profile">No Profile Selected</div>
 		`;
+
+		if(this.disable_aside) {
+			container.classList.add('aside-hidden');
+		}
 
 		container.querySelector('form').on('submit', e => this.add(e));
 
@@ -95,20 +117,24 @@ class SettingsManager {
 
 		e.preventDefault();
 
+		const form = this.container.querySelector('form');
+
 		const
 			parameter = {
-				account_id: this.owner_id,
-				profile: this.form.querySelector('form').name.value,
+				owner_id: this.owner_id,
 				owner: this.owner,
 				value: JSON.stringify([]),
 			},
 			options = {
 				method: 'POST',
+				form: new FormData(form),
 			};
 
 		try {
 
 			const response = await API.call('settings/insert', parameter, options);
+
+			form.profile.value = null;
 
 			await this.load();
 
@@ -116,7 +142,7 @@ class SettingsManager {
 
 			new SnackBar({
 				message: this.owner + ' Settings Profile Added',
-				subtitle: `${this.form.querySelector('form').name.value}`,
+				subtitle: `${form.profile.value}`,
 				icon: 'fa fa-plus',
 			});
 
@@ -163,15 +189,9 @@ class SettingsManagerProfile {
 
 	edit() {
 
-		if(this.parent.form.querySelector('.settings-manager > aside tr.selected'))
-			this.parent.form.querySelector('.settings-manager > aside tr.selected').classList.remove('selected');
+		this.parent.profiles.selected = this;
 
-		this.tr.classList.add('selected');
-
-		if(this.parent.form.querySelector('.profile'))
-			this.parent.form.querySelector('.profile').remove();
-
-		this.parent.form.appendChild(this.section);
+		this.parent.render();
 	}
 
 	get section() {
@@ -193,7 +213,7 @@ class SettingsManagerProfile {
 			<form id="settings-form" class="form">
 				<label>
 					<span>Profile Name</span>
-					<input type="text" required name="name" placeholder="Name" value="${this.profile}">
+					<input type="text" required name="name" maxLength="30" placeholder="Name" value="${this.profile}">
 				</label>
 			</form>
 		`;
@@ -245,6 +265,8 @@ class SettingsManagerProfile {
 				profile: this.section.querySelector('form').name.value,
 				id: this.id,
 				value: JSON.stringify(value),
+				owner: this.owner,
+				owner_id: this.owner_id,
 			},
 			options = {
 				method: 'POST',
@@ -253,6 +275,8 @@ class SettingsManagerProfile {
 		try {
 
 			await API.call('settings/update', parameters, options);
+
+			await page.serviceWorker.clear();
 
 			await this.parent.load();
 
@@ -289,11 +313,17 @@ class SettingsManagerProfile {
 			},
 			parameters = {
 				id: this.id,
+				owner: this.owner,
+				owner_id: this.owner_id,
 			};
 
 		try {
 
 			await API.call('settings/delete', parameters, options);
+
+			await page.serviceWorker.clear();
+
+			this.parent.profiles.selected = null;
 
 			await this.parent.load();
 
@@ -587,7 +617,7 @@ SettingsManager.types.set('multiselect', class extends SettingsManagerType {
 
 		super(format);
 
-		this.multiselect = new MultiSelect({datalist: this.datalist, multiple: this.multiple});
+		this.multiselect = new MultiSelect({datalist: this.datalist, multiple: this.multiple, dropDownPosition: this.dropDownPosition});
 	}
 
 	get container() {

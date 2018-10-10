@@ -381,25 +381,30 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 		container.classList.add('setting-page', 'executing-reports', 'hidden');
 
 		container.innerHTML = `
-			<h1>Executing Reports</h1>
+			<section class="section show" id="executing-reports">
+				<h1>Executing Reports</h1>
 
-			<header class="toolbar block">
-				<input type="checkbox" name="auto-refresh"> Auto Refresh
-			</header>
+				<header class="toolbar block">
+					<label>
+						<input type="checkbox" name="auto-refresh">
+						Auto Refresh
+					</label>
+				</header>
 
-			<table class="block">
-				<thead>
-					<tr>
-						<th>Account Name</th>
-						<th>Query Id</th>
-						<th>Report Name</th>
-						<th>User</th>
-						<th>Connection Type</th>
-						<th>Execution Timestamp</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
+				<table class="block">
+					<thead>
+						<tr>
+							<th>Account Name</th>
+							<th>Query Id</th>
+							<th>Report Name</th>
+							<th>User</th>
+							<th>Connection Type</th>
+							<th>Execution Timestamp</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
 		`;
 
 		const autoRefresh = container.querySelector('input[name=auto-refresh]');
@@ -500,7 +505,7 @@ Settings.list.set('about', class About extends SettingPage {
 
 		const button = this.cacheContainerElement = document.createElement('button');
 		button.classList.add('clear-cache');
-		button.textContent = 'Clear Cache';
+		button.innerHTML = '<i class="fas fa-eraser"></i> Clear Cache';
 
 		button.on('click', async (e) => await Page.clearCache());
 
@@ -667,6 +672,17 @@ class SettingsAccount {
 				multiple: false,
 			},
 			{
+				key: 'theme',
+				type: 'multiselect',
+				name: 'Theme',
+				description: 'Will be used by default for all users',
+				datalist: [
+					{name: 'Light', value: 'light'},
+					{name: 'Dark', value: 'dark'},
+				],
+				multiple: false,
+			},
+			{
 				key: 'pre_report_api',
 				type: 'url',
 				name: 'Pre Report API',
@@ -732,14 +748,14 @@ class SettingsAccount {
 			},
 		];
 
-		const settingsContainer = new SettingsManager('account', this.account_id, settings_json);
+		const settingsContainer = new SettingsManager({owner: 'account', owner_id: this.account_id, format: settings_json});
 
 		await settingsContainer.load();
 
 		if(this.form.parentElement.querySelector('.settings-manager'))
 			this.form.parentElement.querySelector('.settings-manager').remove();
 
-		this.form.parentElement.appendChild(settingsContainer.form);
+		this.form.parentElement.appendChild(settingsContainer.container);
 
 		this.form.parentElement.appendChild(features.container);
 

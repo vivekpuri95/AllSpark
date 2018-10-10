@@ -12,3 +12,4 @@ env
 excel_exports/*
 config.py
 bigquery_files/*
+python_env/*

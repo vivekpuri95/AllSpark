@@ -74,6 +74,7 @@ class Page {
 		Page.loadOnboardScripts();
 
 		SnackBar.setup();
+		NotificationBar.setup();
 	}
 
 	static async clearCache() {
@@ -111,6 +112,7 @@ class Page {
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
+		this.header = new PageHeader(this);
 
 		if(container)
 			return;
@@ -121,92 +123,17 @@ class Page {
 
 	renderPage() {
 
-		const
-			navList = [
-				{url: '/users-manager', name: 'Users', privileges: ['user.list', 'user'], icon: 'fas fa-users'},
-				{url: '/dashboards-manager', name: 'Dashboards', privileges: [], icon: 'fa fa-newspaper'},
-				{url: '/reports', name: 'Reports', privileges: [], icon: 'fa fa-database'},
-				{url: '/visualizations-manager', name: 'Visualizations', privileges: [], icon: 'far fa-chart-bar'},
-				{url: '/connections-manager', name: 'Connections', privileges: ['connection', 'connection.list'], icon: 'fa fa-server'},
-				{url: '/settings', name: 'Settings', privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'], icon: 'fas fa-cog'},
-			],
-			header = document.querySelector('body > header'),
-			navContainer = header.querySelector('.nav-container'),
-			nav = header.querySelector('nav'),
-			userPopup = header.querySelector('.user-popup'),
-			userToggle = header.querySelector('.user-toggle'),
-			menuToggle = header.querySelector('.menu-toggle'),
-			profileLink = document.createElement('a');
+		if(!this.account || !this.user)
+			return;
+
+		document.body.insertBefore(this.header.container, this.container);
 
 		if(window.account) {
-
-			if(account.settings.get('hideHeader')) {
-				header.classList.add('hidden');
-				return;
-			}
 
 			if(account.icon)
 				document.getElementById('favicon').href = account.icon;
 
-			if(account.logo)
-				header.querySelector('.logo img').src = account.logo;
-
 			document.title = account.name;
-		}
-
-		userToggle.innerHTML = '<i class="fa fa-user"></i>&nbsp; '+ this.user.name;
-
-		profileLink.textContent = 'Profile';
-		profileLink.href = `/user/profile/${this.user.user_id}`;
-		profileLink.classList.add('profile-link');
-
-		header.querySelector('.name').innerHTML = this.user.name;
-		header.querySelector('.email').innerHTML = this.user.email;
-		header.querySelector('.user-popup').insertBefore(profileLink, header.querySelector('.logout'));
-
-		userToggle.on('click', e => {
-			e.stopPropagation();
-			userPopup.classList.toggle('hidden');
-			userToggle.classList.toggle('selected');
-		});
-
-		document.body.on('click', () => {
-			userPopup.classList.add('hidden');
-			userToggle.classList.remove('selected');
-			navContainer.classList.remove('show');
-			menuToggle.classList.remove('selected');
-		});
-
-		userPopup.on('click', e => e.stopPropagation());
-		navContainer.on('click', e => e.stopPropagation());
-
-		header.querySelector('.logout').on('click', () => User.logout());
-
-		menuToggle.on('click', e => {
-			e.stopPropagation();
-			navContainer.classList.toggle('show');
-			menuToggle.classList.toggle('selected');
-		});
-
-		if(user.id)
-			navContainer.insertBefore(new GlobalSearch().container, header.querySelector('.user-toggle'));
-
-		for(const item of navList) {
-
-			if(!window.user || (item.privileges.every(p => !user.privileges.has(p)) && item.privileges.length))
-				continue;
-
-			nav.insertAdjacentHTML('beforeend',`
-				<a href='${item.url}'>
-					<i class="${item.icon}"></i>&nbsp;
-					${item.name}
-				</a>
-			`);
-		}
-
-		for(const item of nav.querySelectorAll('a')) {
-			if(window.location.pathname.startsWith(new URL(item.href).pathname))
-				item.classList.add('selected');
 		}
 	}
 
@@ -253,7 +180,6 @@ class Page {
 		Cookies.set('external_parameters', '');
 
 		await Storage.set('refresh_token', Cookies.get('refresh_token'));
-		Cookies.set('refresh_token', '');
 	}
 
 	static async loadOnboardScripts() {
@@ -291,6 +217,152 @@ class Page {
 			document.head.appendChild(onboardScript);
 			document.head.appendChild(onboardCSS);
 		}
+	}
+}
+
+class PageHeader {
+
+	constructor(page) {
+
+		this.page = page;
+
+		this.globalSearch = new GlobalSearch();
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('header');
+
+		container.innerHTML = `
+
+			<a class="logo" href="/dashboard/first"><img src="${this.page.account.logo}"></a>
+
+			<span class="user-toggle"><i class="fa fa-user"></i>&nbsp; ${this.page.user.name || ''}</span>
+
+			<div class="user-popup hidden">
+				<span class="name">${this.page.user.name}</span>
+				<span class="email">${this.page.user.email}</span>
+				<div class="links">
+					<a href="/user/profile/${this.page.user.user_id}">Profile</a>
+					<a href="/user/settings/${this.page.user.user_id}">Settings</a>
+					<a href="#" class="logout">Logout</a>
+				</div>
+			</div>
+
+			<div class="nav-toggle"><i class="fas fa-chevron-down"></i></div>
+
+			<nav class="hidden"></nav>
+		`;
+
+		const
+			navList = [
+				{
+					url: '/users-manager',
+					name: 'Users',
+					privileges: ['user.list', 'user'],
+					icon: 'fas fa-users',
+				},
+				{
+					url: '/dashboards-manager',
+					name: 'Dashboards',
+					privileges: [],
+					icon: 'fa fa-newspaper',
+				},
+				{
+					url: '/reports',
+					name: 'Reports',
+					privileges: [],
+					icon: 'fa fa-database',
+				},
+				{
+					url: '/visualizations-manager',
+					name: 'Visualizations',
+					privileges: [],
+					icon: 'far fa-chart-bar',
+				},
+				{
+					url: '/connections-manager',
+					name: 'Connections',
+					privileges: ['connection', 'connection.list'],
+					icon: 'fa fa-server',
+				},
+				{
+					url: '/settings',
+					name: 'Settings',
+					privileges: ['administrator', 'category.insert', 'category.update', 'category.delete'],
+					icon: 'fas fa-cog',
+				},
+			],
+			nav = container.querySelector('nav'),
+			navToggle = container.querySelector('.nav-toggle'),
+			userToggle = container.querySelector('.user-toggle'),
+			userPopup = container.querySelector('.user-popup');
+
+		for(const item of navList) {
+
+			if((item.privileges.every(p => !this.page.user.privileges.has(p)) && item.privileges.length))
+				continue;
+
+			nav.insertAdjacentHTML('beforeend',`
+				<a href="${item.url}" class="${window.location.pathname.startsWith(item.url) ? 'selected' : ''}">
+					<i class="${item.icon}"></i>&nbsp;
+					${item.name}
+				</a>
+			`);
+		}
+
+		container.insertBefore(this.globalSearch.container, userToggle);
+
+		userToggle.on('click', e => {
+
+			e.stopPropagation();
+
+			nav.classList.add('hidden');
+			navToggle.classList.remove('selected');
+
+			userPopup.classList.toggle('hidden');
+			userToggle.classList.toggle('selected');
+		});
+
+		navToggle.on('click', e => {
+
+			e.stopPropagation();
+
+			userPopup.classList.add('hidden');
+			userToggle.classList.remove('selected');
+
+			nav.classList.toggle('hidden');
+			navToggle.classList.toggle('selected');
+
+			this.globalSearch.container.classList.toggle('show');
+			userPopup.classList.toggle('show');
+		});
+
+		container.querySelector('.logout').on('click', () => {
+
+			Cookies.set('bypassLogin', '');
+
+			User.logout();
+		});
+
+		userPopup.on('click', e => e.stopPropagation());
+
+		document.on('click', () => {
+
+			userPopup.classList.add('hidden');
+			userToggle.classList.remove('selected');
+
+			nav.classList.add('hidden');
+			navToggle.classList.remove('selected');
+
+			this.globalSearch.container.classList.remove('show');
+			userPopup.classList.remove('show');
+		});
+
+		return container;
 	}
 }
 
@@ -351,23 +423,22 @@ Page.serviceWorker = class PageServiceWorker {
 	 */
 	statechange(event = {}) {
 
+		if(!user.privileges.has('superadmin'))
+			return;
+
 		if(event.target && event.target.state != 'redundant')
 			return;
 
 		setTimeout(() => {
 
-			const message = document.createElement('div');
-
-			message.classList.add('warning', 'service-worker-message', 'site-outdated');
-
-			message.innerHTML = `The site has been updated in the background. Click here to reload the page.`;
+			const message = new NotificationBar({
+				message: 'The site has been updated in the background. Click here to reload the page.',
+				type: 'error',
+			});
 
 			message.on('click', () => {
 				window.location.reload();
-				message.innerHTML = 'Reloading&hellip;';
 			});
-
-			this.page.container.parentElement.insertBefore(message, this.page.container);
 
 		}, 1000);
 	}
@@ -380,8 +451,8 @@ Page.serviceWorker = class PageServiceWorker {
 		if(!navigator.onLine)
 			return;
 
-		if(this.page.container.parentElement.querySelector('.service-worker-message'))
-			this.page.container.parentElement.querySelector('.service-worker-message').remove();
+		if(this.offlineMessage)
+			this.offlineMessage.hide();
 
 		new SnackBar({
 			message: 'You\'re online!',
@@ -400,16 +471,10 @@ Page.serviceWorker = class PageServiceWorker {
 		if(navigator.onLine)
 			return;
 
-		if(this.page.container.parentElement.querySelector('.service-worker-message'))
-			this.page.container.parentElement.querySelector('.service-worker-message').remove();
-
-		const message = document.createElement('div');
-
-		message.classList.add('warning', 'service-worker-message');
-
-		message.innerHTML = 'You\'re offline!';
-
-		this.page.container.parentElement.insertBefore(message, this.page.container);
+		this.offlineMessage = new NotificationBar({
+			message: 'You\'re offline!',
+			type: 'error',
+		});
 
 		if(!snackBar)
 			return;
@@ -452,6 +517,15 @@ Page.serviceWorker = class PageServiceWorker {
 	 */
 	get status() {
 		return navigator.serviceWorker.controller ? true : false;
+	}
+
+	async clear() {
+
+		if(!this.status)
+			return false;
+
+		for(const registration of await navigator.serviceWorker.getRegistrations())
+			registration.unregister();
 	}
 }
 
@@ -980,7 +1054,10 @@ class User {
 		return window.user = new User(user);
 	}
 
-	static async logout({next, callback, redirect = true} = {}) {
+	static async logout({next, callback, redirect = true, message = ''} = {}) {
+
+		Cookies.set('refresh_token', '');
+		Cookies.set('token', '');
 
 		try {
 
@@ -988,6 +1065,7 @@ class User {
 				parameters = {
 					user_id: user.user_id,
 					type: 'logout',
+					description: message,
 				},
 				options = {
 					method: 'POST',
@@ -1009,10 +1087,7 @@ class User {
 			if(callback)
 				await callback();
 
-			if(navigator.serviceWorker) {
-				for(const registration of await navigator.serviceWorker.getRegistrations())
-					registration.unregister();
-			}
+			await page.serviceWorker.clear();
 
 			if(account && account.settings.get('logout_redirect_url') && redirect)
 				window.open(account.settings.get('logout_redirect_url')+'?'+parameters.toString(), '_self');
@@ -1077,6 +1152,7 @@ class MetaData {
 		MetaData.features = new Set;
 		MetaData.spatialMapThemes = new Map;
 		MetaData.globalFilters = new Set;
+		user.settings = new Map;
 
 		if(!user.id)
 			return;
@@ -1140,6 +1216,7 @@ class MetaData {
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
 		MetaData.globalFilters = new Map(metadata.globalFilters.map(d => [d.id, d]));
+		user.settings = new Map(metadata.userSettings.map(us => [us.key, us.value]));
 	}
 }
 
@@ -1212,8 +1289,10 @@ class AJAX {
 
 		AJAXLoader.hide();
 
-		if(response.status == 401)
-			return User.logout({next: true, redirect: options.redirectOnLogout});
+		if(response.status == 401) {
+			const message = (await response.json()).message;
+			return User.logout({next: true, redirect: options.redirectOnLogout, message: message});
+		}
 
 		return response.headers.get('content-type').includes('json') ? await response.json() : await response.text();
 	}
@@ -1361,7 +1440,6 @@ class API extends AJAX {
 		};
 
 		await Storage.set('token', token);
-		Cookies.set('token', token);
 
 		Page.load();
 	}
@@ -1895,6 +1973,7 @@ class DialogBox {
 
 		document.querySelector('main').classList.remove('blur');
 		document.querySelector('header').classList.remove('blur');
+		NotificationBar.container.classList.remove('blur');
 
 		this.container.classList.add('hidden');
 
@@ -1924,6 +2003,7 @@ class DialogBox {
 
 		document.querySelector('main').classList.add('blur');
 		document.querySelector('header').classList.add('blur');
+		NotificationBar.container.classList.add('blur');
 
 		this.container.classList.remove('hidden');
 	}
@@ -2298,7 +2378,7 @@ class MultiSelect {
 
 class ObjectRoles {
 
-	constructor(owner, owner_id, allowedTargets = []) {
+	constructor(owner, owner_id, allowedTargets = [], allowMultiple = true) {
 
 		this.targets = {
 			user: {
@@ -2308,26 +2388,42 @@ class ObjectRoles {
 				subtitle: 'email',
 				data: [],
 				ignore_categories: true,
+				actual_target: 'user',
+				multiple: false,
 			},
 
 			role: {
-				API: 'roles/list',
+				API: 'category/list',
 				name_fields: ['name'],
-				value_field: 'role_id',
+				value_field: 'category_id',
 				data: [],
+				actual_target: 'category',
+				multiple: true,
+				is_category: true,
+				target_field: 'category_id',
+				editable: true,
 			},
 		};
+
+		if (!allowMultiple) {
+
+			for (const target in this.targets) {
+
+				this.targets[target].multiple = false;
+				this.targets[target].editable = false;
+			}
+		}
 
 		this.owner = owner;
 		this.ownerId = owner_id;
 		this.allowedTargets = new Set(allowedTargets.length ? allowedTargets.filter(x => x in this.targets) : Object.keys(this.targets));
 
-		if(!user.privileges.has('user.list')) {
+		if (!user.privileges.has('user.list')) {
 
 			this.allowedTargets.delete('user')
 		}
 
-		if(!(user.privileges.has('user.list') || user.privileges.has('visualization.list') || user.privileges.has('report.insert') || user.privileges.has('report.update'))) {
+		if (!(user.privileges.has('user.list') || user.privileges.has('visualization.list') || user.privileges.has('report.insert') || user.privileges.has('report.update'))) {
 
 			this.allowedTargets.delete('role')
 		}
@@ -2340,16 +2436,31 @@ class ObjectRoles {
 
 		this.data = [];
 
+		const [role] = [...MetaData.roles.values()].filter(x => x.role_id);
+
+		this.role = role.role_id;
+
 		const listRequestParams = new URLSearchParams();
 
 		listRequestParams.append('owner', this.owner);
 		listRequestParams.append('owner_id', this.ownerId);
 
 		for (const target of this.allowedTargets) {
+
 			listRequestParams.append('target[]', target);
 		}
 
-		this.alreadyVisible = await API.call('object_roles/list', listRequestParams.toString());
+		const objectRoles = await API.call('object_roles/list', listRequestParams.toString());
+
+		this.alreadyVisible = [];
+
+		for (const row of objectRoles) {
+
+			for (const categoryId of row.category_id) {
+
+				this.alreadyVisible.push({...row, category_id: categoryId});
+			}
+		}
 
 		for (const target of this.allowedTargets) {
 
@@ -2371,7 +2482,7 @@ class ObjectRoles {
 
 			this.targets[target].multiSelect = new MultiSelect({
 				datalist: this.targets[target].data,
-				multiple: false,
+				multiple: this.targets[target].multiple,
 				dropDownPosition: 'top',
 			});
 		}
@@ -2383,7 +2494,7 @@ class ObjectRoles {
 
 	render() {
 
-		if(!this.getContainer)
+		if (!this.getContainer)
 			this.container;
 
 		const table = this.getContainer.querySelector('.object-roles > table');
@@ -2394,12 +2505,12 @@ class ObjectRoles {
 
 	get container() {
 
-		if(this.getContainer)
+		if (this.getContainer)
 			return this.getContainer;
 
 		const container = document.createElement('div');
 
-		if(!this.allowedTargets.length) {
+		if (!this.allowedTargets.length) {
 
 			container.classList.add('hidden');
 			return;
@@ -2417,7 +2528,7 @@ class ObjectRoles {
 
 	get form() {
 
-		if(this.submitForm)
+		if (this.submitForm)
 			return this.submitForm;
 
 		const form = document.createElement('form');
@@ -2426,35 +2537,15 @@ class ObjectRoles {
 		submitButton.type = 'submit';
 		submitButton.innerHTML = `<i class="fa fa-paper-plane"></i> Share`;
 
-		this.categorySelect = this.selectDropDown([...MetaData.categories.values()].map(x => {
+		this.targetSelectDropdown = this.selectDropDown(this.allowedTargets.map(target => {
 
 			return {
-				value: x.category_id,
-				text: x.name,
-			}
-		}));
-
-		this.targetSelectDropdown = this.selectDropDown(this.allowedTargets.map(x => {
-
-			return {
-				value: x,
-				text: x.charAt(0).toUpperCase() + x.slice(1),
+				value: target,
+				text: target.charAt(0).toUpperCase() + target.slice(1),
 			}
 		}));
 
 		this.multiSelect = this.targets[this.targetSelectDropdown.value].multiSelect;
-
-		if (this.targets[this.targetSelectDropdown.value].ignore_categories) {
-
-			this.categorySelect.classList.add('hidden');
-			this.categorySelect.value = 0;
-		}
-
-		else {
-
-			this.targetSelectDropdown.classList.remove('hidden');
-			this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0] : 0;
-		}
 
 		this.targetSelectDropdown.addEventListener('change', (e) => {
 
@@ -2463,19 +2554,9 @@ class ObjectRoles {
 			this.multiSelect = this.targets[e.target.value].multiSelect;
 			form.insertBefore(this.multiSelect.container, submitButton);
 
-			if (this.targets[e.target.value].ignore_categories) {
-
-				this.categorySelect.classList.add('hidden');
-				this.categorySelect.value = 0;
-			}
-			else {
-				this.categorySelect.classList.remove('hidden');
-				this.categorySelect.value = this.categorySelect.options.length ? this.categorySelect.options[0].value : 0;
-			}
 		});
 
 		form.appendChild(this.targetSelectDropdown);
-		form.appendChild(this.categorySelect);
 		form.appendChild(this.multiSelect.container);
 		form.appendChild(submitButton);
 		form.addEventListener('submit', (e) => this.insert(e));
@@ -2541,8 +2622,8 @@ class ObjectRoles {
 			<thead>
 				<tr>
 					<th>Shared With</th>
-					<th>Category</th>
 					<th>Name</th>
+					<th class="action">Save</th>
 					<th class="action">Delete</th>
 				</tr>
 			</thead>
@@ -2551,23 +2632,55 @@ class ObjectRoles {
 
 		const tbody = table.querySelector('tbody');
 
-		for(const row of this.alreadyVisible) {
+		for (const row of this.alreadyVisible) {
 
 			const tr = document.createElement('tr');
 
 			tr.innerHTML = `
 				<td>${row.target.charAt(0).toUpperCase() + row.target.slice(1)}</td>
-				<td>${row.category.charAt(0).toUpperCase() + row.category.slice(1)}</td>
-				<td>${row.name}</td>
-				<td class="action red" title="Delete"><i class="far fa-trash-alt"></i></td>
+				<td id="targetMultiSelect"></td>
+				<td title="Save" class="action ${this.targets[row.target].editable ? 'green' : 'grey'}"><i class="far fa-save"></i></td>
+				<td title="Delete" class="action red"><i class="far fa-trash-alt"></i></td>
 			`;
 
+
+			if (this.targets[row.target].multiple) {
+
+				const targetMultiSelect = new MultiSelect({
+					datalist: this.targets[row.target].data.map(x => {
+						return {
+							name: x.name,
+							value: x.value
+						}
+					}),
+					multiple: this.targets[row.target].multiple,
+				});
+
+				targetMultiSelect.value = row.category_id;
+
+				tr.querySelector('#targetMultiSelect').appendChild(targetMultiSelect.container);
+
+				row.multiSelect = targetMultiSelect;
+			}
+
+			else {
+
+				tr.querySelector('#targetMultiSelect').textContent = row.name
+			}
+
 			tbody.appendChild(tr);
-			tr.querySelector('.red').addEventListener('click', () => this.delete(row.id));
+			tr.querySelector('.red').addEventListener('click', () => this.delete(row.group_id));
+
+			if (tr.querySelector('.green')) {
+
+				tr.querySelector('.green').addEventListener('click', () => this.update(row.group_id, row.multiSelect.value));
+			}
 		}
 
-		if(!this.alreadyVisible.length)
+		if (!this.alreadyVisible.length) {
+
 			tbody.innerHTML = '<tr class="NA"><td colspan="4">Not shared with anyone yet!</td></tr>'
+		}
 
 		return table;
 	}
@@ -2578,39 +2691,33 @@ class ObjectRoles {
 			e.preventDefault();
 		}
 
-		if (
-			this.alreadyVisible.filter(x =>
-				x.owner == this.owner
-				&& x.owner_id == this.ownerId
-				&& x.target == this.selectedType.value
-				&& x.target_id == [...this.multiSelect.selectedValues][0]
-				&& x.category_id == (parseInt(this.categorySelect.value) || 0)
-			).length) {
+		const insertParams = new URLSearchParams();
 
-			new SnackBar({
-				message: 'Alread Exists',
-				subtitle: 'The association you\'re trying to create already exists.',
-				type: 'warning',
-			});
+		insertParams.append('owner', this.owner);
+		insertParams.append('owner_id', this.ownerId);
+		insertParams.append('target', this.selectedType.value);
+		insertParams.append('target_id', this.targets[this.selectedType.value].is_category ? this.role : [...this.multiSelect.selectedValues][0]);
 
-			return;
+		if (this.targets[this.selectedType.value].ignore_categories) {
+
+			insertParams.append('category_id', null);
 		}
 
-		const
-			parameters = {
-				owner_id: this.ownerId,
-				owner: this.owner,
-				target: this.selectedType.value,
-				target_id: [...this.multiSelect.selectedValues][0],
-				category_id: this.categorySelect.value || null,
-			},
-			options = {
-				method: 'POST',
-			};
+		else {
+
+			for (const categoryId of [...this.multiSelect.selectedValues]) {
+
+				insertParams.append('category_id', categoryId);
+			}
+		}
+
+		const options = {
+			method: 'POST',
+		};
 
 		try {
 
-			await API.call('object_roles/insert', parameters, options);
+			await API.call('object_roles/insert', insertParams.toString(), options);
 
 			await this.load();
 
@@ -2621,7 +2728,7 @@ class ObjectRoles {
 				icon: 'fas fa-share-alt',
 			});
 
-		} catch(e) {
+		} catch (e) {
 
 			new SnackBar({
 				message: 'Request Failed',
@@ -2633,11 +2740,11 @@ class ObjectRoles {
 		}
 	}
 
-	async delete(id) {
+	async delete(group_id) {
 
 		const
 			parameters = {
-				id: id,
+				group_id: group_id,
 			},
 			options = {
 				method: 'POST',
@@ -2656,7 +2763,47 @@ class ObjectRoles {
 				icon: 'far fa-trash-alt',
 			});
 
-		} catch(e) {
+		} catch (e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async update(group_id, categories) {
+
+		const updateParams = new URLSearchParams();
+
+		updateParams.append('group_id', group_id);
+
+		for (const categoryId of categories) {
+
+			updateParams.append('category_id', categoryId);
+		}
+
+		const options = {
+			method: 'POST',
+		};
+
+		try {
+
+			await API.call('object_roles/update', updateParams.toString(), options);
+
+			await this.load();
+
+			this.render();
+
+			new SnackBar({
+				message: 'Share Updated',
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch (e) {
 
 			new SnackBar({
 				message: 'Request Failed',
@@ -2683,13 +2830,26 @@ class ObjectRoles {
 			}
 		}
 
-		this.alreadyVisible = this.alreadyVisible.filter(row => row.target_id in (this.mapping[row.target] || {}));
+		this.alreadyVisible = this.alreadyVisible.filter(row => row[this.targets[row.target].target_field || 'target_id'] in this.mapping[row.target]);
 
 		for (const row of this.alreadyVisible) {
 
-			row.name = this.mapping[row.target][row.target_id].name;
-			row.category = (MetaData.categories.get(row.category_id) || {name: ''}).name
+			row.name = this.mapping[row.target][row[this.targets[row.target].target_field || 'target_id']].name;
 		}
+
+		const groupIdMapping = {};
+
+		for (const row of this.alreadyVisible) {
+
+			if (!groupIdMapping.hasOwnProperty(row.group_id)) {
+
+				groupIdMapping[row.group_id] = {...row, category_id: []}
+			}
+
+			groupIdMapping[row.group_id].category_id.push(row.category_id);
+		}
+
+		this.alreadyVisible = Object.values(groupIdMapping);
 	}
 }
 
@@ -2784,7 +2944,7 @@ class SnackBar {
 
 		SnackBar.container[this.position].classList.remove('hidden');
 		SnackBar.container[this.position].appendChild(this.container);
-		SnackBar.container[this.position].scrollTop = SnackBar.container[this.position].scrollHeight
+		SnackBar.container[this.position].scrollTop = SnackBar.container[this.position].scrollHeight;
 	}
 
 	/**
@@ -2802,6 +2962,320 @@ class SnackBar {
 				SnackBar.container[this.position].classList.add('hidden');
 
 		}, Page.transitionDuration);
+	}
+}
+
+
+/**
+ *  Global and advance search bar
+ */
+class SearchColumnFilters extends Set {
+
+	constructor({ filters, advancedSearch = true, data = [] } = {}) {
+
+		super();
+
+		this.data = data;
+		this.filters = filters;
+
+		this.globalSearch = new GlobalColumnSearchFilter(this, advancedSearch);
+
+		this.add(this.globalSearch);
+
+		this.render();
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('hidden', 'search-column-filters');
+
+		container.innerHTML = `
+			<div class="filters"></div>
+			<button type="button" class="add-filter">
+				<i class="fa fa-plus"></i>
+				Add New Parameter
+			</button>
+		`;
+
+		container.querySelector('.add-filter').on('click', () => {
+
+			this.add(new SearchColumnFilter(this));
+			this.render();
+			container.scrollTop = container.scrollHeight;
+
+		});
+
+		return container;
+	}
+
+	render() {
+
+		const filters = this.container.querySelector('.filters');
+		filters.textContent = null;
+
+		for(const filter of this) {
+
+			if(filter != this.globalSearch)
+				filters.appendChild(filter.container);
+		}
+
+		if(this.size < 2)
+			filters.innerHTML = '<div class="NA">No Filters Added</div>';
+	}
+
+	on(event, callback) {
+
+		if(event != 'change')
+			return;
+
+		this.changeCallback = callback;
+	}
+
+	get filterData() {
+
+		const filterData = [];
+
+		outer:
+		for(const row of this.data) {
+
+			for(const filter of this) {
+
+				if(!filter.checkRow(row))
+					continue outer;
+			}
+
+			filterData.push(row);
+		}
+
+		return filterData;
+	}
+}
+
+class SearchColumnFilter {
+
+	constructor(searchColumns) {
+
+		this.searchColumns = searchColumns;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('search-column-filter');
+
+		container.innerHTML = `
+			<select class="searchValue"></select>
+			<select class="searchType"></select>
+			<input type="search" class="searchQuery" placeholder="Search">
+			<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+		`;
+
+		const
+			searchType = container.querySelector('select.searchType'),
+			searchQuery = container.querySelector('.searchQuery');
+
+		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
+		searchQuery.on('search', () => this.searchColumns.changeCallback());
+
+		for(const filter of DataSourceColumnFilter.types) {
+
+			searchType.insertAdjacentHTML('beforeend', `
+				<option value="${filter.slug}">
+					${filter.name}
+				</option>
+			`);
+		}
+
+		const searchValue = container.querySelector('select.searchValue');
+
+		for(const column of this.searchColumns.filters) {
+
+			searchValue.insertAdjacentHTML('beforeend', `
+				<option value="${column.key}">
+					${column.key}
+				</option>
+			`);
+		}
+
+		container.querySelector('.delete').on('click', () => {
+
+			this.searchColumns.delete(this);
+
+			if (this.searchColumns.changeCallback)
+				this.searchColumns.changeCallback();
+
+			this.searchColumns.render();
+		});
+
+		return container;
+	}
+
+	checkRow(row) {
+
+		const
+			columnName = this.container.querySelector('select.searchValue').value,
+			functionName = this.container.querySelector('select.searchType').value,
+			query = this.container.querySelector('.searchQuery').value;
+
+		if(!query)
+			return true;
+
+		const [columnValue] = this.searchColumns.filters.filter(fil => fil.key == columnName).map(m => m.rowValue(row));
+
+		if(!columnValue || !columnValue.length)
+			return false;
+
+		for(const column of DataSourceColumnFilter.types) {
+
+			if(functionName != column.slug)
+				continue;
+
+			for(const value of columnValue) {
+				if(column.apply(query, value))
+					return true;
+			}
+
+			return false;
+		}
+	}
+}
+
+class GlobalColumnSearchFilter extends SearchColumnFilter {
+
+	constructor(searchColumns, advancedSearch){
+
+		super(searchColumns);
+
+		this.searchColumns = searchColumns;
+		this.advancedSearch = advancedSearch;
+	}
+
+	get container() {
+
+		const container = super.container;
+
+		container.classList.add('global-filter');
+		container.querySelector('select.searchValue').classList.add('hidden');
+		container.querySelector('select.searchType').classList.add('hidden');
+		container.querySelector('.delete').classList.add('hidden');
+
+		if(this.advancedSearch) {
+
+			container.insertAdjacentHTML('beforeend','<button type="button" class="advanced"><i class="fa fa-angle-down"></i></button>');
+			container.querySelector('.advanced').on('click', () => this.searchColumns.container.classList.toggle('hidden'));
+		}
+		return container;
+	}
+
+	checkRow(row) {
+
+		const
+			query = super.container.querySelector('.searchQuery').value,
+			[contains] = DataSourceColumnFilter.types.filter(x => x.slug == 'contains');
+
+		if(!query)
+			return true;
+
+		for(const column of this.searchColumns.filters) {
+
+			for(const value of column.rowValue(row)) {
+
+				if(value && contains.apply(query, value))
+					return true;
+			}
+		}
+	}
+}
+
+class NotificationBar {
+
+	static setup() {
+
+		NotificationBar.container = document.createElement('div');
+
+		NotificationBar.container.classList.add('notification-bar-container');
+
+		document.body.appendChild(NotificationBar.container);
+	}
+
+	/**
+	 * Create a new NotificationBar notification instance. This will show the notfication instantly.
+	 *
+	 * @param String	options.message		The message body.
+	 * @param String	options.type		notification (green), warning (yellow), error (red).
+	 * @param boolean	options.allowClose	(true or false) Will show close button and close the navbar on clicking it.
+	 */
+	constructor({ message, type = 'success', allowClose = false } = {}) {
+
+		this.container = document.createElement('div');
+		this.page = window.page;
+
+		this.message = message;
+		this.allowClose = allowClose;
+		this.type = type;
+
+		if(!this.message) {
+			return console.error('error - message is required');
+		}
+
+		if(!['warning', 'error', 'success'].includes(this.type)) {
+			return console.error('error - type must be of success, error, warning.');
+		}
+
+		this.container.classList.add('notification-bar');
+
+		this.page.container.parentElement.insertBefore(NotificationBar.container, this.page.container);
+
+		this.show();
+	}
+
+	show() {
+
+		this.container.innerHTML = `
+			<div class="title">${this.message}</div>
+		`;
+
+		// Add close button if allowClose is true
+		if(this.allowClose) {
+			this.container.insertAdjacentHTML('beforeend', '<div class="close"><i class="far fa-times-circle" aria-hidden="true"></i></div>');
+			this.on('click', () => this.hide());
+		}
+
+		this.container.classList.add(this.type);
+
+		// Add the show class out of the current event loop so that CSS transitions have time to initiate.
+		this.container.classList.add('show');
+
+		NotificationBar.container.appendChild(this.container);
+	}
+
+	/**
+	 * Hide the snack bar and also hide the container if no other snackbar is in the container.
+	 */
+	hide() {
+
+		this.container.classList.remove('show');
+		this.container.remove();
+
+	}
+
+	on(event, callback) {
+
+		this.container.classList.add('action');
+
+		if(event != 'click') {
+			return console.error('error - only click event supported.');
+		}
+
+		this.container.on('click', () => callback());
 	}
 }
 

@@ -47,12 +47,17 @@ exports.list = class extends API {
 			JOIN
 				tb_object_roles o
 				ON o.owner_id = vd.dashboard_id
-
+			JOIN
+				tb_dashboards d
+			ON
+				d.id = o.owner_id
 			WHERE
 				o.owner = "dashboard"
 				AND o.target = "role"
 				AND q.is_enabled = 1
 				AND q.is_deleted = 0
+				AND d.account_id = ?
+				AND d.status = 1
 		`;
 
 		const dashboardToReportAccessQuery = `
@@ -70,12 +75,17 @@ exports.list = class extends API {
                 tb_object_roles o
             ON
                 o.owner_id = vd.dashboard_id
+            JOIN
+                tb_dashboards d
+            ON
+                d.id = o.owner_id
             WHERE
                  OWNER = "dashboard"
                  AND target = "user"
                  AND target_id = ?
-                 AND qv.is_enabled = 1 
+                 AND qv.is_enabled = 1
                  and qv.is_deleted = 0
+                 AND d.status = 1
             GROUP BY query_id
         `;
 
@@ -94,14 +104,13 @@ exports.list = class extends API {
 
 		let userCategories = new Set(this.user.privileges.filter(x => [constants.privilege.administrator, constants.privilege["report.update"]].includes(x.privilege_name)).map(x => x.category_id));
 
-		let isAdmin = false;
+		let isAdmin = this.user.privilege.has('superadmin');
 
 		if (constants.adminPrivilege.some(x => userCategories.has(x))) {
 
 			userCategories = new Set([0]);
 			isAdmin = true;
 		}
-
 
 		const results = await Promise.all([
 
@@ -140,14 +149,31 @@ exports.list = class extends API {
 				[this.account.account_id]
 			),
 
-			this.mysql.query(dashboardRoleQuery),
+			this.mysql.query(dashboardRoleQuery, [this.account.account_id]),
 
 			this.mysql.query(dashboardToReportAccessQuery, [this.user.user_id]),
 
 			credentialObjectRoles
 		]);
 
-		const visualizationRolesFromQuery = this.account.settings.has("visualization_roles_from_query") ? !this.account.settings.get("visualization_roles_from_query") : !this.account.settings.has("visualization_roles_from_query");
+		const groupIdObject = {};
+
+		for (const row of results[3]) {
+
+			if (!groupIdObject.hasOwnProperty(row.group_id)) {
+
+				groupIdObject[row.group_id] = {...row, category_id: [row.category_id]};
+			}
+
+			else {
+
+				groupIdObject[row.group_id].category_id.push(row.category_id);
+			}
+		}
+
+		results[3] = Object.values(groupIdObject);
+
+		const visualizationRolesFromQuery = this.account.settings.has("visualization_roles_from_query") ? this.account.settings.get("visualization_roles_from_query") : !this.account.settings.has("visualization_roles_from_query");
 
 		let [reportRoles, visualizationRoles, visualizationUsers, userSharedQueries] = await Promise.all([
 			role.get(this.account.account_id, "query", "role", results[0].length ? results[0].map(x => x.query_id) : [-1],),
@@ -352,14 +378,21 @@ exports.list = class extends API {
 				continue;
 			}
 
+			if(row.tags)
+				row.tags = row.tags.split(',').map(q => q.trim()).join();
+
 			row.visibilityReason = authResponse.message;
 
-			if (isAdmin || (row.category_id.every(x => userCategories.has(x)) && row.category_id.length) || row.added_by == this.user.user_id) {
+			row.editable = isAdmin;
 
-				row.editable = true;
+			for(const categoryIds of row.category_id) {
+
+				row.editable = row.editable || categoryIds.every(x => userCategories.has(x));
 			}
 
-			else {
+			row.editable = (row.editable && (row.category_id.length || isAdmin)) || row.added_by == this.user.user_id;
+
+			if(!row.editable) {
 
 				delete row.query;
 			}
@@ -388,26 +421,29 @@ exports.list = class extends API {
 					continue;
 				}
 
-				const visualizationCategories = visualization.roles.map(x => x[1] || x.category_id);
+				const visualizationCategories = visualization.roles.map(x => x.category_id);
+
 				const userVisualizationUpdateCategories = new Set(this.user.privileges.filter(x => [constants.privilege['visualization.update']].includes(x.privilege_name)).map(x => x.category_id));
 				const userVisualizationDeleteCategories = new Set(this.user.privileges.filter(x => [constants.privilege['visualization.delete']].includes(x.privilege_name)).map(x => x.category_id));
 
-				const updateFlag = this.user.privilege.has('visualization.update', 'ignore') && visualization.users.some(x => this.user.user_id == x.target_id);
-				const deleteFlag = this.user.privilege.has('visualization.delete', 'ignore') && visualization.users.some(x => this.user.user_id == x.target_id);
+				const updateFlag = this.user.privilege.has('visualization.update', 'ignore');
+				const deleteFlag = this.user.privilege.has('visualization.delete', 'ignore');
 
-				if(isAdmin || updateFlag || visualizationCategories.some(x => userVisualizationUpdateCategories.has(x)) || visualization.added_by == this.user.user_id) {
+				visualization.editable = isAdmin || updateFlag || visualization.added_by == this.user.user_id;
+				visualization.deletable = isAdmin || deleteFlag || visualization.added_by == this.user.user_id;
 
-					visualization.editable = true
-				}
+				if(!(visualization.editable || visualization.deletable)) {
 
-				if(isAdmin || deleteFlag ||visualizationCategories.some(x => userVisualizationDeleteCategories.has(x)) || visualization.added_by == this.user.user_id) {
+					for (const categoryIds of visualizationCategories) {
 
-					visualization.deletable = true
+						visualization.editable = visualization.editable || categoryIds.every(x => userVisualizationUpdateCategories.has(x));
+						visualization.editable = visualization.editable || categoryIds.every(x => userVisualizationDeleteCategories.has(x));
+					}
 				}
 
 				visualization.visibilityReason = visualizationAuthResponse.message;
 
-				row.visualizations.push(visualization)
+				row.visualizations.push(visualization);
 			}
 
 			row.href = `/report/${row.query_id}`;
@@ -416,8 +452,8 @@ exports.list = class extends API {
 			try {
 
 				row.definition = JSON.parse(row.definition);
-
 			}
+
 			catch (e) {
 
 				row.definition = {};
@@ -441,7 +477,6 @@ exports.list = class extends API {
 		for(const row of response) {
 
 			delete row.connectionObj;
-			delete row.roles;
 		}
 
 		return response;
@@ -456,10 +491,21 @@ exports.update = class extends API {
 			categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id),
 			[updatedRow] = await this.mysql.query(`SELECT * FROM tb_query WHERE query_id = ?`, [this.request.body.query_id]);
 
-		for (const category of categories || [0]) {
+		let flag = this.user.privilege.has('superadmin');
 
-			this.user.privilege.needs('report.update', category);
+		for (const categoryList of categories || [0]) {
+
+			let categoryFlag = false;
+
+			for(const category of categoryList) {
+
+				categoryFlag = categoryFlag || this.user.privilege.has("report.update", category);
+			}
+
+			flag = flag || categoryFlag;
 		}
+
+		this.assert(flag || updatedRow.added_by == this.user.user_id, "User cannot update the report");
 
 		this.assert(updatedRow, 'Invalid query id');
 
@@ -499,7 +545,10 @@ exports.update = class extends API {
 			return "0 rows affected";
 		}
 
-		values.refresh_rate = parseInt(values.refresh_rate) || null;
+		if("refresh_rate" in values) {
+
+            values.refresh_rate = parseInt(values.refresh_rate) || null;
+		}
 
 		if (values.hasOwnProperty("format")) {
 
@@ -699,7 +748,7 @@ exports.userPrvList = class extends API {
                 			USING(visualization_id)
                 		WHERE
                 			 query_id = ?
-                			 and qv.is_enabled = 1 
+                			 and qv.is_enabled = 1
                 			 and qv.is_deleted = 0
                 	) dashboard_user
                USING(user_id)

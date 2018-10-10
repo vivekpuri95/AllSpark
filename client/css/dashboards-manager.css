@@ -1,7 +1,3 @@
-body {
-	height: 100vh;
-	background: #fff;
-}
 main {
 	background: inherit;
 }
@@ -35,16 +31,23 @@ main {
 		display: flex;
 		align-items: center;
 		margin-bottom: 10px;
-		border-bottom: 1px solid #ccc;
+		border-bottom: 1px solid var(--color-border);
 		padding: 10px;
 	}
-		main section .heading button {
-			background: var(--color-accent);
-			color: #fff;
+		main section .heading > button {
+			background: var(--color-secondary);
+			color: var(--color-secondary-text);
 			border-radius: 25px;
 			height: 40px;
+			width: 40px;
 			margin-right: 20px;
 			cursor: pointer;
+		}
+		main section .heading > .search-column-filter.global-filter {
+			margin-left: auto;
+		}
+		main section > .search-column-filters {
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 		}
 		main #add-dashboard.grey {
 			background: #ccc;
@@ -56,7 +59,6 @@ main {
 			}
 		main section .heading h1 {
 			margin: 0;
-			color: #888;
 		}
 	main h2.share-heading {
 		margin: calc(var(--gap) * 2) 0;
@@ -68,19 +70,17 @@ main {
 		main .dashboards .dashboard {
 			display: grid;
 			padding: 15px 10px;
-			border-bottom: 1px solid #ddd;
+			border-bottom: 1px solid var(--color-border);
 			grid-gap: 5px;
 		}
 			main .dashboards .size {
-				padding: 5px 10px;
-				margin-left: 20px;
-				color: #888;
+				margin-left: 10px;
 			}
 			main .dashboards .sub-dashboards {
 				display: grid;
 				margin-left: 20px;
 				padding-left: 20px;
-				border-left: 1px dashed #ccc;
+				border-left: 1px dashed var(--color-border);
 				grid-gap: 5px;
 			}
 				main .dashboards .sub-dashboards .dashboard {
@@ -99,13 +99,13 @@ main {
 				transition: background var(--transition-duration);
 			}
 			main .dashboards .dashboard .label:hover {
-				background: #eee;
+				background: var(--color-hover);
+				color: var(--color-hover-text);
 			}
 				main .dashboards .dashboard .label > div {
 					padding: calc(var(--gap) * 2);
 				}
 				main .dashboards .dashboard .label .action {
-					color: #555;
 					transition: color var(--transition-duration);
 				}
 				main .dashboards .dashboard .label .action.green:hover {
@@ -120,20 +120,19 @@ main {
 					display: flex;
 					font-size: 110%;
 				}
-					main .dashboards .dashboard .name a {
-						font-weight: bold;
-						color: inherit;
+					main .dashboards .dashboard .name > .NA {
+						padding: 0 var(--gap);
 					}
-					main .dashboards .dashboard .name span {
-						color: #888;
-						font-size: 90%;
+					main .dashboards .dashboard .name .arrow {
 						transition: transform var(--transition-duration);
-						padding: 0 5px;
+						font-size: 120%;
+						color: var(--color-secondary);
 					}
 					main .dashboards .dashboard .label .name .arrow.right {
 						transform: rotate(-90deg);
 					}
-					main .dashboards .name i {
-						color: var(--color-accent);
-						font-size: 17px;
+					main .dashboards .dashboard .name a {
+						font-weight: bold;
+						letter-spacing: 1px;
+						color: inherit;
 					}
