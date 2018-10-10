@@ -1210,13 +1210,13 @@ class MetaData {
 			MetaData.categories.set(category.category_id, category);
 		}
 
-		MetaData.spatialMapThemes =  new Map(metadata.spatialMapThemes.map(x => [x.name, JSON.parse(x.theme)]));
-		MetaData.filterTypes = new Map(metadata.filterTypes.map(x => [x.name.toLowerCase(), x]));
-		MetaData.datasources = new Map(metadata.datasources.map(v => [v.slug, v]));
-		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
-		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
-		MetaData.globalFilters = new Map(metadata.globalFilters.map(d => [d.id, d]));
-		user.settings = new Map(metadata.userSettings.map(us => [us.key, us.value]));
+		MetaData.spatialMapThemes =  new Map(metadata.spatialMapThemes ? metadata.spatialMapThemes.map(x => [x.name, JSON.parse(x.theme)]) : []);
+		MetaData.filterTypes = new Map(metadata.filterTypes ? metadata.filterTypes.map(x => [x.name.toLowerCase(), x]) : []);
+		MetaData.datasources = new Map(metadata.datasources ? metadata.datasources.map(v => [v.slug, v]) : []);
+		MetaData.visualizations = new Map(metadata.visualizations ? metadata.visualizations.map(v => [v.slug, v]) : []);
+		MetaData.features = new Map(metadata.features ? metadata.features.map(f => [f.feature_id, f]) : []);
+		MetaData.globalFilters = new Map(metadata.globalFilters ? metadata.globalFilters.map(d => [d.id, d]) : []);
+		user.settings = new Map(metadata.userSettings ? metadata.userSettings.map(us => [us.key, us.value]) : []);
 	}
 }
 
