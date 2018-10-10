@@ -96,14 +96,17 @@ class API {
 					token = request.query.token || request.body.token,
 					userDetails;
 
-				if(request.cookies.token)
+				if(request.cookies.token) {
 					token = request.cookies.token;
+				}
 
 				if (token) {
 
 					userDetails = await commonFun.verifyJWT(token);
 
-					obj.user = new User(userDetails);
+					if(!userDetails.error) {
+						obj.user = new User(userDetails);
+					}
 				}
 
 
@@ -134,7 +137,7 @@ class API {
 					environment.gitChecksum,
 					crypto.createHash('md5').update(JSON.stringify(obj.account)).digest('hex'),
 					crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex'),
-					crypto.createHash('md5').update(JSON.stringify(obj.user || '')).digest('hex'),
+					crypto.createHash('md5').update(JSON.stringify(obj.user ? obj.user.json : '')).digest('hex'),
 				];
 
 				obj.checksum = crypto.createHash('md5').update(checksums.join()).digest('hex').substring(0, 10);

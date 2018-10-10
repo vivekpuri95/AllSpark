@@ -1,5 +1,7 @@
 const constants = require("./constants");
 const config = require("config");
+const mysql = require('./mysql').MySQL;
+const redis = require("./redis").Redis;
 
 class User {
 
@@ -9,9 +11,85 @@ class User {
 
 		this.privilege = privilege(userObj);
 		this.role = roles(userObj);
+		this.settings = new Settings(this);
+	}
+
+	get json() {
+
+		return {
+			user_id: this.user_id,
+			account_id: this.account_id,
+			email: this.email,
+			name: this.name,
+			roles: this.roles,
+			privileges: this.privileges,
+			session_id: this.session_id,
+			exp: this.exp,
+			iat: this.iat,
+		};
 	}
 }
 
+class Settings extends Map {
+
+	constructor(user) {
+
+		super();
+
+		this.user = user;
+	}
+
+	async load() {
+
+		let userSetting = await redis.hget(`user.settings.${this.user.user_id}`, 'main');
+
+		if(!userSetting) {
+
+			[{value: userSetting} = {}] =
+				await mysql.query(`
+					SELECT
+						s.*
+					FROM
+						tb_settings s
+					JOIN
+						tb_users u
+					ON
+						s.owner_id = u.user_id
+					WHERE
+						s.status = 1
+						AND u.status = 1
+						AND s.owner = 'user'
+						AND s.owner_id = ?
+					LIMIT 1
+					`,
+					[this.user.user_id]
+				);
+
+			if(!userSetting) {
+				return;
+			}
+
+			await redis.hset(`user.settings.${this.user.user_id}`, 'main', userSetting);
+		}
+
+		try {
+
+			for(const data of JSON.parse(userSetting)) {
+				this.set(data.key, data.value);
+			}
+		}
+		catch(e) {}
+	}
+
+	async get(key) {
+
+		if(!this.has(key)) {
+			await this.load();
+		}
+
+		return super.get(key);
+	}
+}
 
 function privilege(userObj) {
 

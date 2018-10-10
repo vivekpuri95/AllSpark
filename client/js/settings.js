@@ -748,14 +748,14 @@ class SettingsAccount {
 			},
 		];
 
-		const settingsContainer = new SettingsManager('account', this.account_id, settings_json);
+		const settingsContainer = new SettingsManager({owner: 'account', owner_id: this.account_id, format: settings_json});
 
 		await settingsContainer.load();
 
 		if(this.form.parentElement.querySelector('.settings-manager'))
 			this.form.parentElement.querySelector('.settings-manager').remove();
 
-		this.form.parentElement.appendChild(settingsContainer.form);
+		this.form.parentElement.appendChild(settingsContainer.container);
 
 		this.form.parentElement.appendChild(features.container);
 
