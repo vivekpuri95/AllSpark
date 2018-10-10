@@ -4006,6 +4006,15 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 			newRow.set(timingColumn.key, timing);
 		}
 
+		if(['week', 'day'].includes(this.value))
+			timingColumn.type = 'date';
+
+		else if(['month'].includes(this.value))
+			timingColumn.type = 'month';
+
+		else if(['hour', 'minute', 'second'].includes(this.value))
+			timingColumn.type = 'datetime';
+
 		return Array.from(result.values());
 	}
 });
