@@ -545,7 +545,10 @@ exports.update = class extends API {
 			return "0 rows affected";
 		}
 
-		values.refresh_rate = parseInt(values.refresh_rate) || null;
+		if("refresh_rate" in values) {
+
+            values.refresh_rate = parseInt(values.refresh_rate) || null;
+		}
 
 		if (values.hasOwnProperty("format")) {
 

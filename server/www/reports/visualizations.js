@@ -38,13 +38,13 @@ exports.insert = class extends API {
 
 exports.update = class extends API {
 
-    async update({visualization_id, name, type, options = null} = {}) {
+    async update({visualization_id, name, type, options = null, description = null} = {}) {
 
 		this.assert(visualization_id, 'Visualization id is required');
 		this.assert(name && type, 'Name or type is missing');
 
         let
-			values = {name, type, options},
+			values = {name, type, options, description},
 			[updatedRow] =  await this.mysql.query('SELECT * FROM tb_query_visualizations WHERE visualization_id = ? and is_enabled = 1 and is_deleted = 0', [visualization_id]),
             compareJson = {};
 
