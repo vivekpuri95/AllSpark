@@ -1497,7 +1497,7 @@ class DataSourceFilter {
 			if(date === undefined)
 				continue;
 
-			companion.value = new Date(Date.now() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			companion.value = new Date(Date.nowUTC() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 		}
 	}
 }
