@@ -3969,19 +3969,18 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 			else if(this.value == 'hour') {
 				period = periodDate.getMinutes() * 60 * 1000;
-				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13);
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13) + ':00:00';
 			}
 
 			else if(this.value == 'minute') {
 				period = periodDate.getSeconds() * 1000;
-				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16);
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16) + ':00';
 			}
 
 			else if(this.value == 'second') {
 				period = periodDate.getMilliseconds() * 1000;
 				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 19);
 			}
-
 
 			if(!result.has(timing)) {
 
