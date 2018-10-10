@@ -1,16 +1,23 @@
 const API = require("../utils/api");
 const account = require('../onServerStart');
 const commonFun = require("../utils/commonFunctions");
+const redis = require("../utils/redis").Redis;
+const getRole = (require('./object_roles')).get;
 
 exports.insert = class extends API {
 
-	async insert({profile, owner, value, account_id} = {}) {
+	async insert({profile, owner, value, owner_id} = {}) {
 
-		this.user.privilege.needs("administrator");
+		if(owner == 'account') {
+			this.user.privilege.needs("superadmin");
+		}
+		else if(owner == 'user') {
+			this.assert(owner_id == this.user.user_id || this.user.privilege.has("superadmin"), 'You cannot insert settings for user other than you.')
+		}
 
 		this.assert(profile, "profile not found");
 		this.assert(owner, "owner not found");
-		this.assert(account_id, "account id not found");
+		this.assert(owner_id, `${owner} not found`);
 		this.assert(commonFun.isJson(value), "Please send valid JSON");
 
 		return await this.mysql.query(`
@@ -20,43 +27,78 @@ exports.insert = class extends API {
 						account_id,
 						profile,
 						owner,
+						owner_id,
 						value
 					)
 				VALUES
-					(?, ?, ?, ?)
+					(?, ?, ?, ?, ?)
 				`,
-			[account_id, profile, owner, value],
+			[this.account.account_id, profile, owner, owner_id, value],
 			"write");
 	}
 };
 
 exports.update = class extends API {
 
-	async update({id, value, profile} = {}) {
+	async update({id, value, profile, owner, owner_id} = {}) {
 
-		this.user.privilege.needs("administrator");
+		if(owner == 'account') {
+			this.user.privilege.needs("superadmin");
+		}
+
+		if(owner == 'user') {
+			await redis.del(`user.settings.${this.user.user_id}`);
+		}
+
+		if(owner == 'user' && !this.user.privilege.has('superadmin') && this.user.user_id != owner_id) {
+
+			const objRole = new getRole();
+
+			const requiredCategories = (await objRole.get(this.account.account_id, 'user', 'role', owner_id)).map(x => x.category_id[0]);
+
+			this.assert(requiredCategories.length, 'No categories found');
+
+			this.assert(requiredCategories.every(x => ['user.update', 'administrator'].map(p => this.user.privilege.has(p, x))), 'User does not have enough privileges to update');
+		};
 
 		this.assert(id, "no id found to update");
 		this.assert(commonFun.isJson(value), "Please send valid JSON");
 
-		await account.loadAccounts();
-
-		return await this.mysql.query(
+		const response = await this.mysql.query(
 			"UPDATE tb_settings SET profile = ?, value = ? WHERE id = ?",
 			[profile || null, value, id],
 			"write"
 		);
+
+		if(owner == 'account') {
+
+			await account.loadAccounts();
+		}
+
+		return response;
 	}
 };
 
-
 exports.delete = class extends API {
 
-	async delete({id} = {}) {
+	async delete({id, owner_id, owner} = {}) {
 
-		this.user.privilege.needs("administrator");
+		this.assert(id, "No id found to delete");
 
-		this.assert(id, "no id found to delete");
+		if(owner == 'user') {
+			await redis.del(`user.settings.${this.user.user_id}`);
+		}
+
+		if(owner == 'user' && !this.user.privilege.has('superadmin') && this.user.user_id != owner_id) {
+
+			const objRole = new getRole();
+
+			const requiredCategories = (await objRole.get(this.account.account_id, 'user', 'role', owner_id)).map(x => x.category_id[0]);
+
+			this.assert(requiredCategories.length, 'No categories found');
+
+			this.assert(requiredCategories.every(x => ['user.delete', 'administrator'].map(p => this.user.privilege.has(p, x))), 'User does not have enough privileges to delete');
+		};
 
 		await account.loadAccounts();
 
@@ -66,13 +108,15 @@ exports.delete = class extends API {
 
 exports.list = class extends API {
 
-	async list({account_id} = {}) {
+	async list({owner, owner_id} = {}) {
 
-		this.user.privilege.needs("administrator");
+		if(owner == 'account') {
+			this.user.privilege.needs("superadmin");
+		}
 
-		this.assert(account_id, 'No account id found');
+		this.assert(owner && owner_id, 'Owner or Owner_id not found');
 
-		const settingsList = await this.mysql.query("select * from tb_settings where account_id = ?", [account_id]);
+		const settingsList = await this.mysql.query("select * from tb_settings where status = 1 and account_id = ? and owner = ? and owner_id = ?", [this.account.account_id, owner, owner_id]);
 
 		for(const row of settingsList) {
 			try {

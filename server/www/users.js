@@ -407,7 +407,7 @@ exports.metadata = class extends API {
 			sourceTypes,
 			features,
 			spatialMapThemes,
-			datasources
+			datasources,
 		] = await Promise.all([
 
 			this.mysql.query(`
@@ -495,7 +495,7 @@ exports.metadata = class extends API {
 
 			this.mysql.query('select * from tb_spatial_map_themes'),
 
-			this.mysql.query('select * from tb_datasources'),
+			this.mysql.query('select * from tb_datasources')
 		]);
 
 		const metadata = {};
@@ -517,6 +517,15 @@ exports.metadata = class extends API {
 		metadata.spatialMapThemes = spatialMapThemes;
 		metadata.visualizations = visualizations;
 		metadata.datasources = datasources;
+
+		await this.user.settings.load();
+
+		metadata.userSettings = [];
+
+		for(const [key, value] of this.user.settings) {
+
+			metadata.userSettings.push({key, value});
+		}
 
 		for (const data of metadata.globalFilters) {
 

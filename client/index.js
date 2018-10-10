@@ -6,18 +6,17 @@ const config = require('config');
 const {promisify} = require('util');
 const fs = require('fs');
 const API = require('../server/utils/api');
+const User = require('../server/utils/User');
+const commonFunctions = require('../server/utils/commonFunctions');
 const authLogin = require('../server/www/authentication').login;
 
 router.use(express.static('./client'));
 
 class HTMLAPI extends API {
 
-	constructor(request, response) {
+	constructor() {
 
 		super();
-
-		this.request = request;
-		this.response = response;
 
 		this.stylesheets = [
 			'/css/main.css',
@@ -32,10 +31,24 @@ class HTMLAPI extends API {
 
 	async body() {
 
-		if(this.account.settings.get('theme'))
-			this.stylesheets.push(`/css/themes/${this.account.settings.get('theme') || 'light'}.css`);
+		let theme = 'light';
 
-		if(this.account.settings.get('custom_css'))
+		if(!this.user && this.request.cookies.token) {
+			const token_details = await commonFunctions.getUserDetailsJWT(this.request.cookies.token);
+
+			if(!token_details.error)
+				this.user = new User(token_details);
+		}
+
+		if(await this.account.settings.get('theme'))
+			theme = await this.account.settings.get('theme');
+
+		if(this.user && await this.user.settings.get('theme'))
+			theme = await this.user.settings.get('theme');
+
+		this.stylesheets.push(`/css/themes/${theme}.css`);
+
+		if(this.account.settings.has('custom_css'))
 			this.stylesheets.push('/css/custom.css');
 
 		if(this.account.settings.get('custom_js'))
@@ -380,18 +393,24 @@ router.get('/login/reset', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/user/profile/edit', API.serve(class extends HTMLAPI {
+router.get('/user/settings/:id?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
 		super();
 
-		this.scripts.push('/js/user/profile/edit.js');
+		this.stylesheets.push('/css/user/settings.css');
+		this.stylesheets.push('/css/settings-manager.css');
+		this.scripts.push('/js/user/settings.js');
+		this.scripts.push('/js/settings-manager.js');
 	}
 
 	async main() {
+
 		return `
-			<section class="section" id="form">
+
+			<div class="change-password">
+				<h3>Change Password</h3>
 				<form class="block form">
 
 					<label>
@@ -411,12 +430,14 @@ router.get('/user/profile/edit', API.serve(class extends HTMLAPI {
 							Change
 						</button>
 					</label>
-
-					<label>
-						<div class="notice hidden" id="message"></div>
-					</label>
 				</form>
-			</section>
+			</div>
+
+			<div class="user-settings">
+
+				<h3>User Settings</h3>
+
+			</div>
 		`;
 	}
 }));
@@ -427,9 +448,9 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 
 		super();
 
-		this.stylesheets.push('/css/profile.css');
+		this.stylesheets.push('/css/user/profile.css');
 		this.scripts.push('/js/reports.js');
-		this.scripts.push('/js/profile.js');
+		this.scripts.push('/js/user/profile.js');
 	}
 
 	async main() {
@@ -439,7 +460,6 @@ router.get('/user/profile/:id?', API.serve(class extends HTMLAPI {
 
 				<h1>
 					<span>&nbsp;</span>
-					<a href="/user/profile/edit" class="edit"><i class="fa fa-edit"></i> Edit</a>
 				</h1>
 			</div>
 
@@ -1251,6 +1271,7 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 		super();
 
 		this.stylesheets.push('/css/settings.css');
+		this.stylesheets.push('/css/settings-manager.css');
 		this.scripts.push('/js/reports.js');
 		this.scripts.push('/js/settings.js');
 		this.scripts.push('/js/settings-manager.js');

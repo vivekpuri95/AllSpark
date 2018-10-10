@@ -1,0 +1,14 @@
+main {
+	padding: calc(var(--gap) * 2);
+	display: grid;
+	grid-gap: calc(var(--gap) * 3);
+}
+	main > div {
+		display: grid;
+		grid-gap: calc(var(--gap) * 2);
+	}
+		main > div h3 {
+			margin: 0;
+			border-bottom: 1px dashed var(--color-border);
+			padding-bottom: var(--gap);
+		}

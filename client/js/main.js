@@ -245,8 +245,11 @@ class PageHeader {
 			<div class="user-popup hidden">
 				<span class="name">${this.page.user.name}</span>
 				<span class="email">${this.page.user.email}</span>
-				<a href="/user/profile/${this.page.user.user_id}" class="profile">Profile</a>
-				<a href="#" class="logout">Logout</a>
+				<div class="links">
+					<a href="/user/profile/${this.page.user.user_id}">Profile</a>
+					<a href="/user/settings/${this.page.user.user_id}">Settings</a>
+					<a href="#" class="logout">Logout</a>
+				</div>
 			</div>
 
 			<div class="nav-toggle"><i class="fas fa-chevron-down"></i></div>
@@ -514,6 +517,15 @@ Page.serviceWorker = class PageServiceWorker {
 	 */
 	get status() {
 		return navigator.serviceWorker.controller ? true : false;
+	}
+
+	async clear() {
+
+		if(!this.status)
+			return false;
+
+		for(const registration of await navigator.serviceWorker.getRegistrations())
+			registration.unregister();
 	}
 }
 
@@ -1075,10 +1087,7 @@ class User {
 			if(callback)
 				await callback();
 
-			if(navigator.serviceWorker) {
-				for(const registration of await navigator.serviceWorker.getRegistrations())
-					registration.unregister();
-			}
+			await page.serviceWorker.clear();
 
 			if(account && account.settings.get('logout_redirect_url') && redirect)
 				window.open(account.settings.get('logout_redirect_url')+'?'+parameters.toString(), '_self');
@@ -1143,6 +1152,7 @@ class MetaData {
 		MetaData.features = new Set;
 		MetaData.spatialMapThemes = new Map;
 		MetaData.globalFilters = new Set;
+		user.settings = new Map;
 
 		if(!user.id)
 			return;
@@ -1206,6 +1216,7 @@ class MetaData {
 		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
 		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
 		MetaData.globalFilters = new Map(metadata.globalFilters.map(d => [d.id, d]));
+		user.settings = new Map(metadata.userSettings.map(us => [us.key, us.value]));
 	}
 }
 

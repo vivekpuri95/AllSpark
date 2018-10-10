@@ -36,8 +36,6 @@ class UserProfile extends Page {
 		if(!this.data.user_id)
 			return this.container.innerHTML = '<div class="NA">No User found</div>';
 
-		this.container.querySelector('.edit').classList.toggle('hidden', user.id != this.id);
-
 		this.container.querySelector('h1 span').textContent = [this.data.first_name, this.data.middle_name, this.data.last_name].filter(a => a).join(' ');
 
 		this.container.querySelector('#profile-info').innerHTML = `
@@ -61,7 +59,6 @@ class UserProfile extends Page {
 			info = this.container.querySelector('.heading-bar .info'),
 			activity = this.container.querySelector('.heading-bar .activity'),
 			access = this.container.querySelector('.heading-bar .access');
-
 
 		info.on('click',() => {
 
@@ -301,7 +298,7 @@ class Session {
 			await this.load();
 
 			container.querySelector('.activity-details').innerHTML = `
-				Reports loaded: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)} &middot; 
+				Reports loaded: ${Format.number(this.reportsCount)} &middot; Errors: ${Format.number(this.errorsCount)} &middot;
 				Reports: ${this.reportsManaged} &middot; Visualizations: ${this.visualizationsManaged}
 			`;
 

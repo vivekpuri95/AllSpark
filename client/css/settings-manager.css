@@ -1,0 +1,122 @@
+main .settings-manager {
+	display: grid;
+	grid-template-columns: 300px auto;
+	margin-top: calc(var(--gap) * 2);
+	background: var(--color-surface);
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+	min-height: 250px;
+}
+main .settings-manager.aside-hidden {
+	grid-template-columns: auto;
+}
+	main .settings-manager > aside {
+		display: flex;
+		flex-direction: column;
+		border-right: 1px solid var(--color-border);
+	}
+	main .settings-manager.aside-hidden > aside {
+		display: none;
+	}
+		main .settings-manager > aside table {
+			background: var(--color-surface);
+			color: var(--color-surface-text);
+		}
+			main .settings-manager > aside table tr {
+				transition: background var(--transition-duration);
+			}
+			main .settings-manager > aside table tr.selected {
+				background: var(--color-selected);
+			}
+			main .settings-manager > aside table tr:active {
+				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
+			}
+			main .settings-manager > aside table tbody tr:hover {
+				cursor: pointer;
+			}
+		main .settings-manager > aside footer {
+			display: flex;
+			margin-top: auto;
+			border-top: 1px solid var(--color-border);
+		}
+			main .settings-manager aside form {
+				grid-template-columns: 1fr 1fr;
+				grid-gap: calc(var(--gap) * 2);
+			}
+			main .settings-manager .no-profile {
+				min-height: 250px;
+				color: var(--color-grey);
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				font-size: 200%;
+			}
+	main .settings-manager .profile {
+		max-height: 600px;
+		overflow: auto;
+	}
+		main .settings-manager .profile > header {
+			display: grid;
+			align-items: center;
+			padding: calc(var(--gap) * 2);
+			background: rgba(255, 255, 255, 0.85);
+			grid-template-columns: 1fr auto auto;
+			grid-gap: calc(var(--gap) * 2);
+			position: sticky;
+			top: 0;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+			z-index: 6;
+			background: var(--color-primary);
+			color: var(--color-primary-text);
+		}
+			main .settings-manager .profile > header h3 {
+				margin: 0;
+				margin-right: auto;
+			}
+		main label.code-editor {
+			max-width: 100%;
+			position: relative;
+		}
+			main .settings-manager .profile label > input {
+				max-width: 200px;
+			}
+		main .code-editor .ace_editor {
+			display: flex;
+			height: 300px;
+			width: 100%;
+		}
+		main .settings-manager .edit {
+			display: flex;
+			position: relative;
+			color: rgba(0 ,0, 0, 0.5);
+			width: 100%;
+			height: 50px;
+		}
+			main .settings-manager .edit .content {
+				filter: blur(1.5px);
+			}
+			main .settings-manager .click-to-edit {
+				display: flex;
+				background: rgba(0, 0, 0, 0.05);
+				border: 1px solid #ddd;
+				position: absolute;
+				font-size: 110%;
+				width: 100%;
+				height: 50px;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				color: #999;
+				transition: background var(--transition-duration),
+							box-shadow var(--transition-duration);
+			}
+			main .settings-manager .click-to-edit:hover {
+				background: rgba(0, 0, 0, 0.1);
+			}
+			main .settings-manager .click-to-edit:active {
+				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.1)
+			}
+			main .settings-manager .edit .content {
+				display: flex;
+				align-items: center;
+				padding: calc(var(--gap) * 2);
+			}
