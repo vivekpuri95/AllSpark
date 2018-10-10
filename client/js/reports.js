@@ -4003,7 +4003,7 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 				else newRow.set(key, value);
 			}
 
-			newRow.set(timingColumn.key, row.get(timingColumn.key));
+			newRow.set(timingColumn.key, timing);
 		}
 
 		return Array.from(result.values());
