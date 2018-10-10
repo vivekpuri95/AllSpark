@@ -1201,11 +1201,13 @@ class download extends API {
 			]
 		};
 
-		const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
+		if(config.has("allspark_python_base_api")) {
 
-		this.response.sendFile(data.body.response);
-		throw({"pass": true})
+            const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
 
+            this.response.sendFile(data.body.response);
+            throw({"pass": true})
+		}
 	}
 }
 
