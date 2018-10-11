@@ -8,11 +8,15 @@ exports.insert = class extends API {
 
 	async insert({profile, owner, value, owner_id} = {}) {
 
+		let account_id;
+
 		if(owner == 'account') {
 			this.user.privilege.needs("superadmin");
+			account_id = null;
 		}
 		else if(owner == 'user') {
-			this.assert(owner_id == this.user.user_id || this.user.privilege.has("superadmin"), 'You cannot insert settings for user other than you.')
+			this.assert(owner_id == this.user.user_id, 'You cannot insert settings for user other than you.');
+			account_id = owner_id;
 		}
 
 		this.assert(profile, "profile not found");
@@ -33,7 +37,7 @@ exports.insert = class extends API {
 				VALUES
 					(?, ?, ?, ?, ?)
 				`,
-			[this.account.account_id, profile, owner, owner_id, value],
+			[account_id, profile, owner, owner_id, value],
 			"write");
 	}
 };
