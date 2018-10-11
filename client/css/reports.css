@@ -391,8 +391,8 @@ main .dataset {
 		align-items: center;
 		padding: calc(var(--gap) * 2);
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-		border-top: 15px solid #fff;
-		background: #fff;
+		border-top: 15px solid var(--color-surface);
+		background: var(--color-surface);
 	}
 		.data-source > .drilldown a {
 			padding: var(--gap) calc(var(--gap) * 2);
@@ -402,7 +402,7 @@ main .dataset {
 		}
 		.data-source > .drilldown a:hover {
 			text-decoration: none;
-			border-color: #ccc;
+			border-color: var(--color-border);
 		}
 		.data-source > .drilldown a:active {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
@@ -843,7 +843,7 @@ main .dataset {
 				transition: background var(--transition-duration);
 			}
 			.visualization.table table tbody tr td.drilldown:hover {
-				background: #fcc;
+				background: var(--color-hover);
 			}
 		.visualization.table table tbody tr.show-rows {
 			font-size: 90%;
@@ -1420,7 +1420,6 @@ main .dataset {
 
 .sub-reports-dialog .dialog-box {
 	width: 50%;
-	background: #eee;
 }
 	.sub-reports-dialog .body {
 		padding: calc(var(--gap) * 2) 0;

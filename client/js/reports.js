@@ -1497,7 +1497,7 @@ class DataSourceFilter {
 			if(date === undefined)
 				continue;
 
-			companion.value = new Date(Date.now() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			companion.value = new Date(Date.nowUTC() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 		}
 	}
 }
@@ -1892,7 +1892,7 @@ class DataSourceColumn {
 		this.form.disabled.checked = this.disabled;
 
 		if(!this.type)
-			return this.dialogueBox.show();;
+			return this.dialogueBox.show();
 
 		this.form.type.value = this.type.name;
 
@@ -3969,19 +3969,18 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 			else if(this.value == 'hour') {
 				period = periodDate.getMinutes() * 60 * 1000;
-				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13);
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13) + ':00:00';
 			}
 
 			else if(this.value == 'minute') {
 				period = periodDate.getSeconds() * 1000;
-				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16);
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16) + ':00';
 			}
 
 			else if(this.value == 'second') {
 				period = periodDate.getMilliseconds() * 1000;
 				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 19);
 			}
-
 
 			if(!result.has(timing)) {
 
@@ -4003,8 +4002,17 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 				else newRow.set(key, value);
 			}
 
-			newRow.set(timingColumn.key, row.get(timingColumn.key));
+			newRow.set(timingColumn.key, timing);
 		}
+
+		if(['week', 'day'].includes(this.value))
+			timingColumn.type.name = 'date';
+
+		else if(['month'].includes(this.value))
+			timingColumn.type.name = 'month';
+
+		else if(['hour', 'minute', 'second'].includes(this.value))
+			timingColumn.type.name = 'datetime';
 
 		return Array.from(result.values());
 	}
@@ -6207,17 +6215,16 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			// For each line appending the circle at each point
 			if(this.options.showPoints || axis.showPoints) {
 
-				for(const column of columns) {
+				for(const [i, column] of columns.entries()) {
 
 					let dots = this.svg.selectAll('dot')
-						.data(this.rows)
+						.data(columnsData[i])
 						.enter()
 						.append('circle')
 						.attr('class', 'clips')
 						.style('fill', this.source.columns.get(column.key).color)
-						.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
-						.attr('cx', row => this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
-						.attr('cy', row => scale(row.getTypedValue(column.key)))
+						.attr('cx', (_, i) => this.x(this.rows[i].getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.attr('cy', row => scale(row.y + (row.y0 || 0)))
 						.on('mouseover', function(_, __, column) {
 							that.hoverColumn = column[1];
 							d3.select(this).classed('hover', true);
@@ -6250,7 +6257,6 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.data(columns)
 					.enter()
 					.append('g')
-					.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
 					.selectAll('text')
 					.data(column => this.rows.map(row => [row, column]))
 					.enter()
@@ -6274,7 +6280,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 						return this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
 					})
-					.attr('y', ([row, column]) => scale(row.getTypedValue(column.key) > 0 ? row.getTypedValue(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
+					.attr('y', ([row, column], i, j) => scale((columnsData[j][i].y > 0 ? columnsData[j][i].y : 0) + (columnsData[j][i].y0 || 0)) - (5 * (this.x.position == 'top' ? -5 : 1)))
 					.attr('height', ([row, column]) => Math.abs(scale(row.getTypedValue(column.key)) - scale(0)));
 
 				if(axis.animate) {
