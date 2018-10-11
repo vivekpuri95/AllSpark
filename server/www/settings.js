@@ -116,7 +116,7 @@ exports.list = class extends API {
 
 		this.assert(owner && owner_id, 'Owner or Owner_id not found');
 
-		const settingsList = await this.mysql.query("select * from tb_settings where status = 1 and account_id = ? and owner = ? and owner_id = ?", [this.account.account_id, owner, owner_id]);
+		const settingsList = await this.mysql.query("select * from tb_settings where status = 1 and owner = ? and owner_id = ?", [owner, owner_id]);
 
 		for(const row of settingsList) {
 			try {
