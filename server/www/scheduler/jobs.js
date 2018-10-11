@@ -154,7 +154,8 @@ class Jobs extends API {
 				this.mysql.query(`
 					select
 						t.*,
-						j.next_interval
+						j.next_interval,
+						j.type
 					from
 						tb_jobs j
 					join
