@@ -119,8 +119,9 @@ class Job {
 
 		for (const order of Object.keys(taskOrderMapping).sort()) {
 
-			let externalParameters = this.externalParameters;
 			const promiseArr = taskOrderMapping[order].map(task => {
+
+                let externalParameters = JSON.parse(JSON.stringify(this.externalParameters));
 
 				if (task.task.inherit_data && !erred) {
 

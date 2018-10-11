@@ -61,7 +61,6 @@ class GoogleAdwords extends Job {
 				timeout: 30,
 				sequence: 1,
 				config: this.job.config,
-				inherit_data: 1
 			}),
 			new ProcessAdwords({
 				job_id: this.job.job_id,
@@ -106,7 +105,7 @@ class FetchAdwords extends Task {
 
 	}
 
-	async fetchInfo({startDate = '2018-09-10', endDate = '2018-09-11'} = {}) {
+	async fetchInfo() {
 
 		const test = async () => {
 
@@ -135,13 +134,22 @@ class FetchAdwords extends Task {
 
 			let credentails = fs.readFileSync('server/www/oauth/cred.yaml', 'utf8');
 
+            const extParameters = {};
+
+            for(const param of this.externalParams) {
+
+                extParameters[param.placeholder] = param.value;
+            }
+
 			const
 				parameters = new URLSearchParams(),
 				options = {
 					method: 'POST',
 					body: parameters,
 					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-				};
+				},
+				startDate = extParameters.start_date ? extParameters.start_date : new Date().toISOString().substr(0, 10),
+				endDate = extParameters.end_date ? extParameters.end_date : new Date().toISOString().substr(0, 10);
 
 			credentails = credentails
 				.replace('DEVELOPER_TOKEN', this.task.config.developer_token)
@@ -208,7 +216,9 @@ class ProcessAdwords extends Task {
 
 			try {
 
-				data = JSON.parse(this.externalParams.value).message.data;
+                [data] = this.externalParams.filter(x => x.placeholder == 'data');
+
+                data = JSON.parse(data.value).message.data;
 			}
 			catch(e) {
 
@@ -302,7 +312,9 @@ class SaveAdwords extends Task {
 
 			try {
 
-				data = JSON.parse(this.externalParams.value).message.data;
+                [data] = this.externalParams.filter(x => x.placeholder == 'data');
+
+                data = JSON.parse(data.value).message.data;
 			}
 			catch (e) {
 
@@ -337,63 +349,63 @@ class SaveAdwords extends Task {
 
 			const tables = await Promise.all([
 				mysql.query(`
-				CREATE TABLE IF NOT EXISTS tb_adwords_campaigns (
-					campaign_id int(11) NOT NULL,
-					campaign_name varchar(1000) NOT NULL,
-					campaign_status varchar(10) NOT NULL,
-					campaign_date date NOT NULL,
-					client_id varchar(50) NOT NULL,
-					category_id int(11) NOT NULL,
-					created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-					updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-				PRIMARY KEY (campaign_id),
-				KEY campaign_name (campaign_name)
-				) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
+					CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns (
+						campaign_id int(11) NOT NULL,
+						campaign_name varchar(1000) NOT NULL,
+						campaign_status varchar(10) NOT NULL,
+						campaign_date date NOT NULL,
+						client_id varchar(50) NOT NULL,
+						category_id int(11) NOT NULL,
+						created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+						updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+					PRIMARY KEY (campaign_id),
+					KEY campaign_name (campaign_name)
+					) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
 					[savedDatabase],
 					conn,
 				),
 				mysql.query(
 					`CREATE TABLE IF NOT EXISTS ??.tb_adwords_labels (
-					label_id int(11) NOT NULL,
-					label_name varchar(100) DEFAULT '',
-					created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-					updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-					PRIMARY KEY (label_id)
-				) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
+						label_id int(11) NOT NULL,
+						label_name varchar(100) DEFAULT '',
+						created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+						updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+						PRIMARY KEY (label_id)
+					) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
 					[savedDatabase],
 					conn,
 				),
 				mysql.query(
-					`CREATE TABLE IF NOT EXISTS tb_adwords_campaigns_performance (
-					id int(11) unsigned NOT NULL AUTO_INCREMENT,
-					client_id varchar(50) DEFAULT NULL,
-					campaign_id int(11) NOT NULL,
-					campaign_date date NOT NULL,
-					clicks int(11) NOT NULL,
-					impressions int(11) NOT NULL,
-					cost bigint(20) NOT NULL,
-					conversions float NOT NULL,
-					created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-					updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-				PRIMARY KEY (id),
-				UNIQUE KEY date_2 (campaign_id, campaign_date, client_id),
-				KEY campaign_id (campaign_id),
-				KEY created_at (created_at),
-				KEY campaign_date (campaign_date)
-				) ENGINE=InnoDB AUTO_INCREMENT=332527 DEFAULT CHARSET=latin1;`,
+					`CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns_performance (
+						id int(11) unsigned NOT NULL AUTO_INCREMENT,
+						client_id varchar(50) DEFAULT NULL,
+						campaign_id int(11) NOT NULL,
+						campaign_date date NOT NULL,
+						clicks int(11) NOT NULL,
+						impressions int(11) NOT NULL,
+						cost bigint(20) NOT NULL,
+						conversions float NOT NULL,
+						created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+						updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+					PRIMARY KEY (id),
+					UNIQUE KEY date_2 (campaign_id, campaign_date, client_id),
+					KEY campaign_id (campaign_id),
+					KEY created_at (created_at),
+					KEY campaign_date (campaign_date)
+					) ENGINE=InnoDB AUTO_INCREMENT=332527 DEFAULT CHARSET=latin1;`,
 					[savedDatabase],
 					conn
 				),
 				mysql.query(
-					`CREATE TABLE IF NOT EXISTS tb_adwords_campaigns_labels (
-					campaign_id int(11) NOT NULL,
-					label_id int(11) NOT NULL,
-					created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-					updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-					is_enabled int(11) NOT NULL DEFAULT '0',
-					KEY label_id (label_id),
-					KEY campaign_id (campaign_id)
-				) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
+					`CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns_labels (
+						campaign_id int(11) NOT NULL,
+						label_id int(11) NOT NULL,
+						created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+						updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+						is_enabled int(11) NOT NULL DEFAULT '0',
+						KEY label_id (label_id),
+						KEY campaign_id (campaign_id)
+					) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
 					[savedDatabase],
 					conn
 				)

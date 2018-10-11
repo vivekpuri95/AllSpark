@@ -60,7 +60,6 @@ class GoogleAnalytics extends Job {
                 timeout: 30,
                 sequence: 1,
                 config: this.job.config,
-                inherit_data: 1
             }),
             new ProcessGA({
                 job_id: this.job.job_id,
@@ -68,8 +67,7 @@ class GoogleAnalytics extends Job {
                 timeout: 30,
                 sequence: 2,
                 config: this.job.config,
-                inherit_data: 1
-
+                inherit_data: 1,
             }),
             new SaveGA({
                 job_id: this.job.job_id,
@@ -77,7 +75,7 @@ class GoogleAnalytics extends Job {
                 timeout: 30,
                 sequence: 3,
                 config: this.job.config,
-                inherit_data: 1
+                inherit_data: 1,
             })
         ];
 
@@ -104,7 +102,7 @@ class FetchGA extends Task {
 
     }
 
-    async fetchInfo({startDate = '2018-09-01', endDate = '2018-09-02'} = {}) {
+    async fetchInfo() {
 
         const test = async () => {
 
@@ -132,11 +130,20 @@ class FetchGA extends Task {
                 };
             }
 
+            const parameters = {};
+
+            for(const param of this.externalParams) {
+
+                parameters[param.placeholder] = param.value;
+            }
+
             const
                 connection = new GoogleAPIs(this, oAuthProvider),
                 access_token = await connection.test(),
                 gaMetrics = [],
-                gaDimensions = [];
+                gaDimensions = [],
+                startDate = parameters.start_date || new Date().toISOString().substr(0, 10),
+                endDate = parameters.end_date || new Date().toISOString().substr(0, 10);
 
             for (const metric of typeof this.task.config.metrics == 'string' ? [this.task.config.metrics] : this.task.config.metrics) {
 
@@ -213,7 +220,9 @@ class ProcessGA extends Task {
 
             try {
 
-                response = JSON.parse(this.externalParams.value).message.data;
+                [response] = this.externalParams.filter(x => x.placeholder == 'data');
+
+                response = JSON.parse(response.value).message.data;
             }
             catch (e) {
 
@@ -298,7 +307,9 @@ class SaveGA extends Task {
 
             try {
 
-                response = JSON.parse(this.externalParams.value).message.data;
+                [response] = this.externalParams.filter(x => x.placeholder == 'data');
+
+                response = JSON.parse(response.value).message.data;
             }
             catch (e) {
 

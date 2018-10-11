@@ -115,8 +115,8 @@ class Jobs extends API {
 			if(key.startsWith(constants.filterPrefix)) {
 
 				externalParams.push({
-					placeholder: key.replace(constants.filterPrefix, ""),
-					value: this.request.body.key
+					placeholder: key.replace(constants.filterPrefix, ''),
+					value: this.request.body[key]
 				})
 			}
 		}
