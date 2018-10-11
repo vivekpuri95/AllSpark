@@ -114,7 +114,7 @@ class Task {
 
 		if (this.externalParams) {
 
-			this.task.parameters.push(this.externalParams)
+			this.task.parameters = this.task.parameters.concat(this.externalParams)
 		}
 
 		this.fetchParameters = new apiRequest({definition: JSON.stringify(this.task.definition)}, this.task.parameters);

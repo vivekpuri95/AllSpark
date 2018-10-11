@@ -2,6 +2,7 @@ const API = require("../../utils/api");
 const parser = require('cron-parser');
 const Job = require("../../utils/jobs/job");
 const Task = require("../../utils/jobs/task");
+const constants = require("../../utils/constants");
 
 
 class Jobs extends API {
@@ -105,6 +106,19 @@ class Jobs extends API {
 			[job_id, this.account.account_id, this.account.account_id],
 		);
 
+		const externalParams = [];
+
+		for(const key in this.request.body) {
+
+			if(key.startsWith(constants.filterPrefix)) {
+
+				externalParams.push({
+					placeholder: key.replace(constants.filterPrefix),
+					value: this.request.body.key
+				})
+			}
+		}
+
 		const
 			taskObjects = [],
 			taskClassMapping = {
@@ -122,7 +136,7 @@ class Jobs extends API {
 
 		const jobObject = new jobClassMapping[job.type](job, taskObjects);
 
-		const jobResponse = await jobObject.load();
+		const jobResponse = await jobObject.load(externalParams);
 
 		this.assert(!jobResponse.error, jobResponse.message);
 
@@ -211,7 +225,7 @@ class Jobs extends API {
 				continue;
 			}
 
-			if(!job.job.type) {
+			if (!job.job.type) {
 
 				continue;
 			}
