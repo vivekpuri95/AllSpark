@@ -487,11 +487,15 @@ exports.update = class extends API {
 
 	async update() {
 
-		const
-			categories = (await role.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id),
-			[updatedRow] = await this.mysql.query(`SELECT * FROM tb_query WHERE query_id = ?`, [this.request.body.query_id]);
+		let [categories, [updatedRow], queryUsers] = await Promise.all([
+			role.get(this.account.account_id, 'query', 'role', this.request.body.query_id),
+			this.mysql.query(`SELECT * FROM tb_query WHERE query_id = ?`, [this.request.body.query_id]),
+			role.get(this.account.account_id, 'query', 'user', this.request.body.query_id),
+		]);
 
-		let flag = this.user.privilege.has('superadmin');
+		categories = categories.map(x => x.category_id);
+
+		let flag = this.user.privilege.has('superadmin') || queryUsers.filter(x => x.target_id == this.user.user_id).length;
 
 		for (const categoryList of categories || [0]) {
 
