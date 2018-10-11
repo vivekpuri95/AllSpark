@@ -14,7 +14,9 @@ class Job {
 		this.tasks = tasks;
 	}
 
-	async load() {
+	async load(externalParamters) {
+
+		this.externalParameters = externalParamters;
 
 		await this.fetchInfo();
 		await this.contact.getUsers();
@@ -94,7 +96,7 @@ class Job {
 
 		await mysql.query(
 			"insert into ??.tb_jobs_history (owner, successful, timing, owner_id, response, runtime) values(?, ?, ?, ?, ?, ?)",
-			[db, "job", !(error || this.error) ? 1 : 0, this.job.next_interval, this.job.job_id, this.error || response, (this.jobRunTime|| 0).toFixed(4) ],
+			[db, "job", !(error || this.error) ? 1 : 0, this.job.next_interval, this.job.job_id, this.error || response, (this.jobRunTime || 0).toFixed(4)],
 			"write"
 		)
 	}
@@ -120,12 +122,21 @@ class Job {
 
 			const promiseArr = taskOrderMapping[order].map(task => {
 
-				if(task.task.inherit_data && !erred) {
+				if (task.task.inherit_data && !erred) {
 
-					return task.load({
-						placeholder: "data",
-						value: JSON.stringify(previousOutput.length > 1 ? previousOutput : previousOutput[0])
-					})
+					let externalParameters = [
+						{
+							placeholder: "data",
+							value: JSON.stringify(previousOutput.length > 1 ? previousOutput : previousOutput[0])
+						}
+					];
+
+					if (this.externalParameters) {
+
+						externalParameters = externalParameters.concat(this.externalParameters)
+					}
+
+					return task.load(externalParameters);
 				}
 
 				return task.load();
