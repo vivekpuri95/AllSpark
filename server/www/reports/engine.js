@@ -816,6 +816,11 @@ class Bigquery {
 				arrayValues: [],
 			};
 
+			if(!Array.isArray(data)) {
+
+				data = [data]
+			}
+
 			for (const item of data) {
 
 				filterObj.parameterValue.arrayValues.push({
