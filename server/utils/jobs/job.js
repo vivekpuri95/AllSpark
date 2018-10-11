@@ -14,9 +14,9 @@ class Job {
 		this.tasks = tasks;
 	}
 
-	async load(externalParamters) {
+	async load(externalParameters = []) {
 
-		this.externalParameters = externalParamters;
+		this.externalParameters = externalParameters;
 
 		await this.fetchInfo();
 		await this.contact.getUsers();
@@ -119,27 +119,18 @@ class Job {
 
 		for (const order of Object.keys(taskOrderMapping).sort()) {
 
-
+			let externalParameters = this.externalParameters;
 			const promiseArr = taskOrderMapping[order].map(task => {
 
 				if (task.task.inherit_data && !erred) {
 
-					let externalParameters = [
-						{
-							placeholder: "data",
-							value: JSON.stringify(previousOutput.length > 1 ? previousOutput : previousOutput[0])
-						}
-					];
-
-					if (this.externalParameters) {
-
-						externalParameters = externalParameters.concat(this.externalParameters)
-					}
-
-					return task.load(externalParameters);
+					externalParameters.push({
+						placeholder: "data",
+						value: JSON.stringify(previousOutput.length > 1 ? previousOutput : previousOutput[0])
+					});
 				}
 
-				return task.load();
+				return task.load(externalParameters);
 			});
 
 			const tasksExecuteResponse = await commonFun.promiseParallelLimit(10, promiseArr);
