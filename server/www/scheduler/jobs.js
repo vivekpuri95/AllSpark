@@ -2,6 +2,8 @@ const API = require("../../utils/api");
 const parser = require('cron-parser');
 const Job = require("../../utils/jobs/job");
 const Task = require("../../utils/jobs/task");
+const GoogleAdwords = require('../../utils/googleAdwords');
+const GoogleAnalytics = require('../../utils/googleAnalytics');
 const constants = require("../../utils/constants");
 
 
@@ -125,7 +127,9 @@ class Jobs extends API {
 				none: Task
 			},
 			jobClassMapping = {
-				none: Job
+				none: Job,
+				adwords: GoogleAdwords,
+				ga: GoogleAnalytics
 			}
 		;
 
@@ -145,23 +149,23 @@ class Jobs extends API {
 
 	async run() {
 
-		const [jobsNow, jobTasks] = await Promise.all(
-			[
-				this.mysql.query(`
-				select
+		const [jobsNow, jobTasks] = await Promise.all([
+			this.mysql.query(`
+				SELECT
 					j.*
-				from 
+				FROM
 					tb_jobs j
-				join 
+				LEFT JOIN
 					tb_tasks t 
-					using(job_id)
-				where
-					next_interval <= now() 
-					and j.is_enabled = 1 
-					and j.is_deleted = 0
-					and t.is_enabled = 1 
-					and t.is_deleted = 0
-				group by 
+				ON 
+					j.job_id = t.job_id
+					AND t.is_enabled = 1 
+					AND t.is_deleted = 0
+				WHERE
+					next_interval <= now()
+					AND j.is_enabled = 1
+					AND j.is_deleted = 0
+				GROUP BY
 					job_id
 			`
 				),
@@ -196,7 +200,9 @@ class Jobs extends API {
 				none: Task
 			},
 			jobClassMapping = {
-				none: Job
+				none: Job,
+                adwords: GoogleAdwords,
+                ga: GoogleAnalytics
 			}
 		;
 
@@ -209,6 +215,11 @@ class Jobs extends API {
 		}
 
 		for (const row of jobTasks) {
+
+			if(!row.type) {
+
+				continue;
+			}
 
 			if (jobTasksMapping[row.job_id]) {
 
