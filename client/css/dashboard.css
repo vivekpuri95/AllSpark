@@ -2,8 +2,6 @@ main {
 	display: grid !important;
 	grid-template-rows: 1fr max-content;
 	grid-template-columns: 220px calc(100% - 220px);
-}
-main.full-screen {
 	background: var(--color-background);
 	color: var(--color-background-text);
 }
