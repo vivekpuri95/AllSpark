@@ -623,9 +623,9 @@ class Dashboard {
 
 		page.container.querySelector('section#reports .toolbar #full-screen').on('click', () => {
 
-		    document.body.querySelector('main').classList.add('full-screen');
-		    document.body.querySelector('main').webkitRequestFullScreen();
-        });
+			document.body.querySelector('main').classList.add('full-screen');
+			document.body.querySelector('main').webkitRequestFullScreen();
+		});
 
 		container.on('click', () => {
 
