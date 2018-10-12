@@ -1004,20 +1004,15 @@ class Dashboard {
 		dashboardName.innerHTML = `
 			<span>${this.page.parents(this.id).filter(x => this.page.list.has(x)).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
 			<div>
-				<span class="toggle-dashboard-toolbar hidden"><i class="fas fa-ellipsis-v"></i></span>
+				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
 			</div>
 		`;
 
 		dashboardName.classList.remove('hidden');
 
-		if(this.editable) {
+        const toggleDashboardToolbar =  dashboardName.querySelector('.toggle-dashboard-toolbar');
 
-			const toggleDashboardToolbar =  dashboardName.querySelector('.toggle-dashboard-toolbar');
-
-			toggleDashboardToolbar.classList.remove('hidden');
-
-			toggleDashboardToolbar.on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
-		}
+        toggleDashboardToolbar.on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
 
 		this.page.render({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
 
