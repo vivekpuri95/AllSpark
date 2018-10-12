@@ -623,7 +623,7 @@ class Dashboard {
 
 		page.container.querySelector('section#reports .toolbar #full-screen').on('click', () => {
 
-			page.container.webkitRequestFullScreen();
+			page.container.webkitRequestFullScreen() || page.container.mozRequestFullScreen() || page.container.requestFullscreen();
 		});
 
 		container.on('click', () => {
