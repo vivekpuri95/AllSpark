@@ -17,7 +17,7 @@ class ErrorLogs {
 		params = {...params, os, browser};
 
 
-	    return await mysql.query(`INSERT INTO ${db}.tb_errors SET ?`, params, 'write');
+	    return await mysql.query(`INSERT INTO ${db}.tb_errors SET ?, creation_date = curdate()`, params, 'write');
 	}
 
 }

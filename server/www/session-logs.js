@@ -80,7 +80,7 @@ class SessionLogs extends API {
 		}
 
 		const result = await this.mysql.query(
-			`INSERT INTO ??.tb_sessions SET ?`,
+			`INSERT INTO ??.tb_sessions SET ?, creation_date = curdate()`,
 			[db, params],
 			'write'
 		);

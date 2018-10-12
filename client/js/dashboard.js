@@ -36,15 +36,17 @@ Page.class = class Dashboards extends Page {
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
-		this.nav.querySelector('.collapse-panel').on('click', () => {
+		this.nav.querySelector('.collapse-panel').on('click', async () => {
 
 			document.querySelector('body').classList.toggle('floating');
+
+			await Storage.set('menu-collapsed', document.querySelector('body').classList.contains('floating'));
 			this.nav.classList.remove('show');
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
 		if (this.account.settings.get('disable_powered_by'))
-			this.nav.querySelector('footer').classList.add('hidden');
+			this.nav.querySelector('footer .powered-by').classList.add('hidden');
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
@@ -418,6 +420,11 @@ Page.class = class Dashboards extends Page {
 			await Storage.set('newUser', (await Storage.get('newUser')) || {});
 
 			Page.loadOnboardScripts();
+		}
+
+		if((await Storage.has('menu-collapsed')) && (await Storage.get('menu-collapsed'))) {
+
+			document.querySelector('body').classList.toggle('floating', !document.querySelector('body').classList.contains('floating'));
 		}
 
 		if (window.location.pathname.split('/').pop() === 'first') {
