@@ -621,6 +621,23 @@ class Dashboard {
 			}
 		});
 
+		page.container.querySelector('section#reports .toolbar #full-screen').on('click', () => {
+
+			if(page.container.requestFullscreen) {
+
+				page.container.requestFullscreen();
+			}
+			else if(page.container.webkitRequestFullScreen) {
+
+				page.container.webkitRequestFullScreen();
+			}
+			else if(page.container.mozRequestFullScreen) {
+
+				page.container.mozRequestFullScreen();
+			}
+
+		});
+
 		container.on('click', () => {
 
 			container.classList.add('hidden');
