@@ -623,7 +623,19 @@ class Dashboard {
 
 		page.container.querySelector('section#reports .toolbar #full-screen').on('click', () => {
 
-			page.container.webkitRequestFullScreen() || page.container.mozRequestFullScreen() || page.container.requestFullscreen();
+		    if(page.container.requestFullscreen) {
+
+                page.container.requestFullscreen();
+            }
+		    else if(page.container.webkitRequestFullScreen) {
+
+                page.container.webkitRequestFullScreen();
+            }
+            else if(page.container.mozRequestFullScreen) {
+
+                page.container.mozRequestFullScreen();
+            }
+
 		});
 
 		container.on('click', () => {
