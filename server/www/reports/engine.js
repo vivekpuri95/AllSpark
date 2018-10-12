@@ -1106,10 +1106,11 @@ class ReportEngine extends API {
 						user_id,
 						session_id,
 						cache,
-						\`rows\`
+						\`rows\`,
+						creation_date
 					)
 				VALUES
-					(?,?,?,?,?,?,?,?)`,
+					(?,?,?,?,?,?,?,?, DATE(NOW()))`,
 				[query_id, result_query, executionTime, type, userId, session_id, is_redis, rows],
 				"write"
 			);

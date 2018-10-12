@@ -95,7 +95,7 @@ class Job {
 		const db = dbConfig.write.database.concat('_logs');
 
 		await mysql.query(
-			"insert into ??.tb_jobs_history (owner, successful, timing, owner_id, response, runtime) values(?, ?, ?, ?, ?, ?)",
+			"insert into ??.tb_jobs_history (owner, successful, timing, owner_id, response, runtime, creation_date) values(?, ?, ?, ?, ?, ?, DATE(NOW()))",
 			[db, "job", !(error || this.error) ? 1 : 0, this.job.next_interval, this.job.job_id, this.error || response, (this.jobRunTime || 0).toFixed(4)],
 			"write"
 		)
