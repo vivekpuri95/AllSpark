@@ -621,23 +621,6 @@ class Dashboard {
 			}
 		});
 
-		page.container.querySelector('section#reports .toolbar #full-screen').on('click', () => {
-
-			if(page.container.requestFullscreen) {
-
-				page.container.requestFullscreen();
-			}
-			else if(page.container.webkitRequestFullScreen) {
-
-				page.container.webkitRequestFullScreen();
-			}
-			else if(page.container.mozRequestFullScreen) {
-
-				page.container.mozRequestFullScreen();
-			}
-
-		});
-
 		container.on('click', () => {
 
 			container.classList.add('hidden');
@@ -1004,15 +987,37 @@ class Dashboard {
 		dashboardName.innerHTML = `
 			<span>${this.page.parents(this.id).filter(x => this.page.list.has(x)).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
 			<div>
-				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
+				<span class="toggle-dashboard-toolbar hidden"><i class="fas fa-ellipsis-v"></i></span>
+			    <div class="full-screen" title="Full Screen"><i class="fas fa-expand"></i></div>
 			</div>
 		`;
 
 		dashboardName.classList.remove('hidden');
 
-        const toggleDashboardToolbar =  dashboardName.querySelector('.toggle-dashboard-toolbar');
+		dashboardName.querySelector('.full-screen').on('click',() => {
 
-        toggleDashboardToolbar.on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
+            if(page.container.requestFullscreen) {
+
+                page.container.requestFullscreen();
+            }
+            else if(page.container.webkitRequestFullScreen) {
+
+                page.container.webkitRequestFullScreen();
+            }
+            else if(page.container.mozRequestFullScreen) {
+
+                page.container.mozRequestFullScreen();
+            }
+        });
+
+		if(this.editable) {
+
+			const toggleDashboardToolbar =  dashboardName.querySelector('.toggle-dashboard-toolbar');
+
+			toggleDashboardToolbar.classList.remove('hidden');
+
+			toggleDashboardToolbar.on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
+		}
 
 		this.page.render({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
 

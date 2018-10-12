@@ -631,11 +631,6 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 						<i class="fas fa-cog"></i>
 						Configure
 					</button>
-					
-					<button id="full-screen">
-						<i class="fas fa-expand"></i>
-						Full screen
-					</button>
 				</div>
 
 				<form class="form mailto-content hidden">
