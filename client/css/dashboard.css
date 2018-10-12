@@ -203,6 +203,13 @@ main #reports > h1.dashboard-name::-webkit-scrollbar {
 				cursor: pointer;
 			}
 
+			main #reports > h1.dashboard-name .full-screen {
+				font-size: 80%;
+				display: flex;
+				align-items: center;
+				cursor: pointer;
+			}
+
 main #reports > .toolbar {
 	align-items: flex-end;
 	background: transparent;

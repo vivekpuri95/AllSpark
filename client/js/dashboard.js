@@ -621,23 +621,6 @@ class Dashboard {
 			}
 		});
 
-		page.container.querySelector('section#reports .toolbar #full-screen').on('click', () => {
-
-			if(page.container.requestFullscreen) {
-
-				page.container.requestFullscreen();
-			}
-			else if(page.container.webkitRequestFullScreen) {
-
-				page.container.webkitRequestFullScreen();
-			}
-			else if(page.container.mozRequestFullScreen) {
-
-				page.container.mozRequestFullScreen();
-			}
-
-		});
-
 		container.on('click', () => {
 
 			container.classList.add('hidden');
@@ -1005,10 +988,27 @@ class Dashboard {
 			<span>${this.page.parents(this.id).filter(x => this.page.list.has(x)).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
 			<div>
 				<span class="toggle-dashboard-toolbar hidden"><i class="fas fa-ellipsis-v"></i></span>
+			    <div class="full-screen" title="Full Screen"><i class="fas fa-expand"></i></div>
 			</div>
 		`;
 
 		dashboardName.classList.remove('hidden');
+
+		dashboardName.querySelector('.full-screen').on('click',() => {
+
+            if(page.container.requestFullscreen) {
+
+                page.container.requestFullscreen();
+            }
+            else if(page.container.webkitRequestFullScreen) {
+
+                page.container.webkitRequestFullScreen();
+            }
+            else if(page.container.mozRequestFullScreen) {
+
+                page.container.mozRequestFullScreen();
+            }
+        });
 
 		if(this.editable) {
 
