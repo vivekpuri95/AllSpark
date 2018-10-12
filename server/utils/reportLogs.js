@@ -19,7 +19,7 @@ class ReportHistory {
 		logs.user_id = obj.user.user_id;
 
 		await mysql.query(
-			`INSERT INTO ${db}.tb_history SET ? `,
+			`INSERT INTO ${db}.tb_history SET ?, creation_date = curdate()`,
 			[logs],
 			'write'
 		);
