@@ -1684,7 +1684,8 @@ router.get('/tests', API.serve(class extends HTMLAPI {
 			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 
 			'/js/reports.js',
-			'/js/profile.js',
+			'/js/user/profile.js',
+			'/js/settings-manager.js',
 			'/js/tests.js',
 		]);
 	}

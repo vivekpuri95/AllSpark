@@ -708,6 +708,100 @@ const tests = {
 		},
 	},
 
+	SettingsManager: {
+
+		Load: class SettingsManagerLoad extends Test {
+
+			async execute() {
+
+				const settings_json = [
+					{
+						key: 'test',
+						type: 'url',
+						name: 'test',
+					},
+				];
+
+				const settingsManger = new SettingsManager({
+					owner: 'user',
+					owner_id: user.user_id,
+					format: settings_json,
+					disable_aside: false,
+				});
+
+				await settingsManger.load();
+			}
+		},
+
+		Add: class SettingsManagerAdd extends Test {
+
+			async execute() {
+
+				const settings_json = [
+					{
+						key: 'test',
+						type: 'url',
+						name: 'test',
+					},
+				];
+
+				const settingsManger = new SettingsManager({
+					owner: 'user',
+					owner_id: user.user_id,
+					format: settings_json,
+					disable_aside: false,
+				});
+
+				await settingsManger.load();
+
+				const string = 'test' + Math.random();
+
+				settingsManger.container.querySelector('aside form').profile.value = string;
+
+				await settingsManger.add();
+
+				await settingsManger.load();
+
+				this.assert(Array.from(settingsManger.profiles.values()).some(s => s.profile.includes(string)));
+			}
+		},
+
+		Delete: class SettingsManagerDelete extends Test {
+
+			async execute() {
+
+				const settings_json = [
+					{
+						key: 'test',
+						type: 'url',
+						name: 'test',
+					},
+				];
+
+				const settingsManger = new SettingsManager({
+					owner: 'user',
+					owner_id: user.user_id,
+					format: settings_json,
+					disable_aside: false,
+				});
+
+				await settingsManger.load();
+
+				const string = 'test' + Math.random();
+
+				settingsManger.container.querySelector('aside form').profile.value = string;
+
+				await settingsManger.add();
+
+				await settingsManger.container.querySelector('aside tr.selected td.action.red').click();
+
+				await settingsManger.load();
+
+				this.assert(Array.from(settingsManger.profiles.values()).some(s => s.profile.includes(string)));
+			}
+		},
+	},
+
 	ObjectRoles: {
 
 		Load: class ObjectRolesLoad extends Test {

@@ -108,14 +108,16 @@ class SettingsManager {
 			container.classList.add('aside-hidden');
 		}
 
-		container.querySelector('form').on('submit', e => this.add(e));
+		container.querySelector('form').on('submit', e => {
+
+			e.preventDefault();
+			this.add();
+		});
 
 		return container;
 	}
 
-	async add(e) {
-
-		e.preventDefault();
+	async add() {
 
 		const form = this.container.querySelector('form');
 
