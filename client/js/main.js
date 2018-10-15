@@ -395,10 +395,8 @@ Page.serviceWorker = class PageServiceWorker {
 	 */
 	async setup() {
 
-		if(!('serviceWorker' in navigator)) {
-			this.status = false;
+		if(!('serviceWorker' in navigator))
 			return;
-		}
 
 		this.worker = await navigator.serviceWorker.register('/service-worker.js');
 
@@ -516,7 +514,7 @@ Page.serviceWorker = class PageServiceWorker {
 	 * @return boolean
 	 */
 	get status() {
-		return navigator.serviceWorker.controller ? true : false;
+		return ('serviceWorker' in navigator) && navigator.serviceWorker.controller ? true : false;
 	}
 
 	async clear() {
