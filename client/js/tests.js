@@ -733,7 +733,7 @@ const tests = {
 			}
 		},
 
-		Add: class SettingsManagerAdd extends Test {
+		Add: class SettingsManagerProfileAdd extends Test {
 
 			async execute() {
 
@@ -759,14 +759,12 @@ const tests = {
 				settingsManger.container.querySelector('aside form').profile.value = string;
 
 				await settingsManger.add();
-
-				await settingsManger.load();
 
 				this.assert(Array.from(settingsManger.profiles.values()).some(s => s.profile.includes(string)));
 			}
 		},
 
-		Delete: class SettingsManagerDelete extends Test {
+		Delete: class SettingsManagerProfileDelete extends Test {
 
 			async execute() {
 
@@ -793,11 +791,9 @@ const tests = {
 
 				await settingsManger.add();
 
-				await settingsManger.container.querySelector('aside tr.selected td.action.red').click();
+				await Array.from(settingsManger.profiles.values()).filter(s => s.profile.includes(string))[0].delete();
 
-				await settingsManger.load();
-
-				this.assert(Array.from(settingsManger.profiles.values()).some(s => s.profile.includes(string)));
+				this.assert(!Array.from(settingsManger.profiles.values()).filter(s => s.profile.includes(string)).length);
 			}
 		},
 	},
