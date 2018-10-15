@@ -387,6 +387,8 @@ Page.serviceWorker = class PageServiceWorker {
 
 		this.page = page;
 
+		this.status = true;
+
 		this.setup();
 	}
 
