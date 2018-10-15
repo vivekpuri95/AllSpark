@@ -79,20 +79,20 @@ class report extends API {
 				        AND target_id = ? -- user
 				        AND OWNER = 'query'
 				        AND target = 'user'
-				        
+
 				    UNION ALL
-				    
+
 				    SELECT
 				        NULL AS user_id
-				        
+
 					LIMIT 1
 				) AS queryUser
-				
+
 				JOIN
 					tb_credentials c
 				ON
 					q.connection_name = c.id
-					
+
                 WHERE
 					q.query_id = ?
 					AND is_enabled = 1
@@ -119,7 +119,7 @@ class report extends API {
 		this.reportObj.category_id = [...new Set(reportDetails[2].map(x => x.category_id))];
 
 		let [preReportApi] = await this.mysql.query(
-			`select value from tb_settings where owner = 'account' and profile = 'pre_report_api' and account_id = ?`,
+			`select value from tb_settings where owner = 'account' and profile = 'pre_report_api' and owner_id = ?`,
 			[this.account.account_id],
 		);
 
