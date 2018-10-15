@@ -84,11 +84,11 @@ class Settings {
 		];
 
 		const settingsManger = new SettingsManager({
-				owner: 'user',
-				owner_id: user.user_id,
-				format: settings_json,
-				disable_aside: false,
-			});
+			owner: 'user',
+			owner_id: user.user_id,
+			format: settings_json,
+			disable_aside: false,
+		});
 
 		await settingsManger.load();
 

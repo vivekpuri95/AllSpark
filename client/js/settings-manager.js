@@ -108,14 +108,16 @@ class SettingsManager {
 			container.classList.add('aside-hidden');
 		}
 
-		container.querySelector('form').on('submit', e => this.add(e));
+		container.querySelector('form').on('submit', e => {
+
+			e.preventDefault();
+			this.add();
+		});
 
 		return container;
 	}
 
-	async add(e) {
-
-		e.preventDefault();
+	async add() {
 
 		const form = this.container.querySelector('form');
 
@@ -182,7 +184,10 @@ class SettingsManagerProfile {
 		`;
 
 		tr.on('click', () => this.edit());
-		tr.querySelector('.action').on('click', (e) => this.delete(e));
+		tr.querySelector('.action').on('click', (e) => {
+			e.stopPropagation();
+			this.delete()
+		});
 
 		return tr;
 	}
@@ -301,11 +306,6 @@ class SettingsManagerProfile {
 	}
 
 	async delete(e) {
-
-		e.stopPropagation();
-
-		if(!confirm('Are you sure?'))
-			return;
 
 		const
 			options = {
