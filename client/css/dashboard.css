@@ -2,8 +2,6 @@ main {
 	display: grid !important;
 	grid-template-rows: 1fr max-content;
 	grid-template-columns: 220px calc(100% - 220px);
-	background: var(--color-background);
-	color: var(--color-background-text);
 }
 body > header > .menu-toggle {
 	display: none;
@@ -157,6 +155,10 @@ main > nav::-webkit-scrollbar-track {
 			text-align: center;
 			flex: 1;
 		}
+main #reports {
+	background: var(--color-background);s
+	color: var(--color-background-text);
+}
 main #reports.show {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);

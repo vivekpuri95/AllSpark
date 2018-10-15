@@ -638,17 +638,19 @@ class Dashboard {
 
 		page.container.querySelector('#reports .toolbar #full-screen').on('click', () => {
 
-			if(page.container.requestFullscreen) {
+			const dashboardList = page.container.querySelector('#reports');
 
-				page.container.requestFullscreen();
+			if(dashboardList.requestFullscreen) {
+
+				dashboardList.requestFullscreen();
 			}
-			else if(page.container.webkitRequestFullScreen) {
+			else if(dashboardList.webkitRequestFullScreen) {
 
-				page.container.webkitRequestFullScreen();
+				dashboardList.webkitRequestFullScreen();
 			}
-			else if(page.container.mozRequestFullScreen) {
+			else if(dashboardList.mozRequestFullScreen) {
 
-				page.container.mozRequestFullScreen();
+				dashboardList.mozRequestFullScreen();
 			}
 		});
 	}
