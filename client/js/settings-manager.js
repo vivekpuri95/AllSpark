@@ -307,9 +307,6 @@ class SettingsManagerProfile {
 
 	async delete(e) {
 
-		if(!confirm('Are you sure?'))
-			return;
-
 		const
 			options = {
 				method: "POST"
