@@ -156,8 +156,9 @@ main > nav::-webkit-scrollbar-track {
 			flex: 1;
 		}
 main #reports {
-	background: var(--color-background);s
+	background: var(--color-background);
 	color: var(--color-background-text);
+	overflow: auto;
 }
 main #reports.show {
 	display: grid;
