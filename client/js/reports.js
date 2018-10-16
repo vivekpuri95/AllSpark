@@ -7852,7 +7852,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 					.append('path')
 					.attr('class', 'link')
 					.attr('d', diagonal)
-					.attr('stroke', '#2a3f54')
+					.attr('class', 'line-stroke')
 					.attr('stroke-width', 1)
 					.attr('fill', 'none');
 			}

@@ -1239,6 +1239,9 @@ main .dataset {
 	.visualization.funnel .text {
 		fill: var(--color-grey);
 	}
+	.visualization.funnel .line-stroke {
+		stroke: var(--color-grey);
+	}
 
 .data-source-column form .parameter-list {
 	display: grid;
