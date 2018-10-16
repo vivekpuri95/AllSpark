@@ -778,7 +778,7 @@ class Bigquery {
 			"number": "integer",
 			"text": "string",
 			"date": "date",
-			"month": "integer",
+			"month": "string",
 			"hidden": "string",
 			"datetime": "string"
 		};
