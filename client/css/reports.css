@@ -1230,6 +1230,9 @@ main .dataset {
 		.visualization.livenumber .graph svg .y .domain {
 			display: none;
 		}
+	.visualization.funnel .funnel-background {
+		fill: var(--color-surface);
+	}
 
 .data-source-column form .parameter-list {
 	display: grid;

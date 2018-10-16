@@ -7726,7 +7726,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.data([poly2, poly1])
 				.enter().append("polygon")
 				.attr('points', d =>  d.map(d => [d.x, d.y].join()).join(' '))
-				.attr('fill', '#fff');
+				.attr('class', 'funnel-background');
 
 			//selecting all the paths
 			var path = svg.selectAll('rect'),
