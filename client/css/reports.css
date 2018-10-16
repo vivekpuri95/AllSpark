@@ -1419,7 +1419,7 @@ main .dataset {
 		}
 
 .sub-reports-dialog .dialog-box {
-	width: 50%;
+	width: 70%;
 }
 	.sub-reports-dialog .body {
 		padding: calc(var(--gap) * 2) 0;
