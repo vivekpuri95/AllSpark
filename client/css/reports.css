@@ -1230,8 +1230,17 @@ main .dataset {
 		.visualization.livenumber .graph svg .y .domain {
 			display: none;
 		}
-	.visualization.funnel .funnel-background {
+	.visualization.funnel .background {
 		fill: var(--color-surface);
+	}
+	.visualization.funnel .text {
+		fill: var(--color-surface-text);
+	}
+	.visualization.funnel .text {
+		fill: var(--color-grey);
+	}
+	.visualization.funnel .line-stroke {
+		stroke: var(--color-grey);
 	}
 
 .data-source-column form .parameter-list {
