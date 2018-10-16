@@ -25,6 +25,7 @@ class DataSource {
 		this.filters = new DataSourceFilters(this.filters, this);
 		this.columns = new DataSourceColumns(this);
 		this.transformations = new DataSourceTransformations(this);
+		this.pipeline = new DataSourcePipeline(this);
 		this.visualizations = [];
 
 		if(!source.visualizations)
@@ -40,6 +41,8 @@ class DataSource {
 	}
 
 	async fetch(_parameters = {}) {
+
+		this.pipeline.clear();
 
 		const parameters = new URLSearchParams(_parameters);
 
@@ -143,6 +146,12 @@ class DataSource {
 			return response;
 
 		this.originalResponse = response;
+
+		this.pipeline.add(new DataSourcePipelineEvent({
+			title: 'Report Executed',
+			duration: response.runtime,
+			rows: response.data.length,
+		}));
 
 		this.columns.update();
 		this.postProcessors.update();
@@ -476,6 +485,10 @@ class DataSource {
 			</div>
 
 			<div class="item">
+				<span class="label pipeline-toggle"><i class="fas fa-sitemap"></i> Pipeline</span>
+			</div>
+
+			<div class="item">
 				<span class="label change-visualization"><i class="fas fa-chart-line"></i> Visualizations</span>
 				<div class="submenu"></div>
 			</div>
@@ -544,6 +557,7 @@ class DataSource {
 		const
 			filtersToggle = menu.querySelector('.filters-toggle'),
 			descriptionToggle = menu.querySelector('.description-toggle'),
+			pipelineToggle = menu.querySelector('.pipeline-toggle'),
 			queryToggle = menu.querySelector('.query-toggle');
 
 		if(this.editable) {
@@ -573,6 +587,9 @@ class DataSource {
 
 			if(descriptionToggle.parentElement.classList.contains('selected'))
 				descriptionToggle.click();
+
+			if(pipelineToggle.parentElement.classList.contains('selected'))
+				pipelineToggle.click();
 
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
@@ -604,12 +621,31 @@ class DataSource {
 
 			this.visualizations.selected.render({resize: true});
 
-			if(user.privileges.has('report') && user.privileges.has('user')) {
+			if(user.privileges.has('report') && user.privileges.has('user') && this.visibleTo) {
 
 				//await this.userList();
 				this.container.querySelector('.visible-to').classList.remove('hidden');
-				this.container.querySelector('.description .count').textContent = `${this.visibleTo.length} people`;
+				this.container.querySelector('.description .count').textContent = `${Format.number(this.visibleTo.length)} people`;
 			}
+		});
+
+		pipelineToggle.on('click', async () => {
+
+			if(queryToggle.parentElement.classList.contains('selected'))
+				queryToggle.click();
+
+			if(filtersToggle.parentElement.classList.contains('selected'))
+				filtersToggle.click();
+
+			if(!this.container.contains(this.pipeline.container))
+				this.container.appendChild(this.pipeline.container);
+
+			this.container.querySelector('.pipeline').classList.toggle('hidden');
+			pipelineToggle.parentElement.classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			this.container.querySelector('.columns').classList.toggle('blur');
+
+			this.visualizations.selected.render({resize: true});
 		});
 
 		queryToggle.on('click', () => {
@@ -619,6 +655,9 @@ class DataSource {
 
 			if(descriptionToggle.parentElement.classList.contains('selected'))
 				descriptionToggle.click();
+
+			if(pipelineToggle.parentElement.classList.contains('selected'))
+				pipelineToggle.click();
 
 			this.container.querySelector('.query').classList.toggle('hidden');
 			queryToggle.parentElement.classList.toggle('selected');
@@ -693,14 +732,17 @@ class DataSource {
 
 	async response() {
 
+		for(const event of this.pipeline) {
+			if(event.title != 'Report Executed')
+				this.pipeline.delete(event);
+		}
+
 		this.resetError();
 
 		if(!this.originalResponse || !this.originalResponse.data)
 			return [];
 
 		let response = [];
-
-		this.originalResponse.groupedAnnotations = new Map;
 
 		if(!Array.isArray(this.originalResponse.data))
 			return [];
@@ -718,8 +760,18 @@ class DataSource {
 				response.push(row);
 		}
 
-		if(this.postProcessors.selected)
+		if(this.postProcessors.selected) {
+
+			const time = performance.now();
+
 			response = this.postProcessors.selected.processor(response);
+
+			this.pipeline.add(new DataSourcePipelineEvent({
+				title: `${this.postProcessors.selected.name} (${this.postProcessors.selected.value})`,
+				duration: performance.now() - time,
+				rows: response.length,
+			}));
+		}
 
 		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key)) {
 			response.sort((a, b) => {
@@ -2128,6 +2180,8 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
+		const [sourceColumn] = this.source.format && this.source.format.columns ? this.source.format.columns.filter(c => c.key == this.key) : [];
+
 		for(const element of this.form.elements) {
 
 			if(element.name == 'type')
@@ -2136,7 +2190,13 @@ class DataSourceColumn {
 			if(element.type == 'checkbox')
 				this[element.name] = element.checked;
 
-			else this[element.name] = element.value == '' ? null : element.value || null;
+			else {
+
+				this[element.name] = element.value == '' ? null : element.value || null;
+
+				if(sourceColumn)
+					sourceColumn[element.name] = element.value == '' ? null : element.value || null;
+			}
 		}
 
 		this.filters = this.columnFilters.json;
@@ -2160,6 +2220,7 @@ class DataSourceColumn {
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
+		this.source.postProcessors.update();
 		await this.source.visualizations.selected.render();
 
 		this.dialogueBox.hide();
@@ -3306,7 +3367,7 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type && ['datetime', 'date'].includes(column.type.name))
+			if(column.type && ['datetime', 'date', 'week', 'year', 'custom'].includes(column.type.name))
 				this.timingColumn = column;
 		}
 
@@ -3370,6 +3431,15 @@ class DataSourcePostProcessor {
 		if(this.key == 'Orignal') {
 
 			container.querySelector('.label').on('click', () => {
+
+				for(const column of this.source.columns.values()) {
+
+					if(!column.type.originalName)
+						continue;
+
+					column.type.name = column.type.originalName;
+					delete column.type.originalName;
+				}
 
 				delete this.source.postProcessors.selected;
 
@@ -3435,8 +3505,18 @@ class DataSourceTransformations extends Set {
 
 		response = JSON.parse(JSON.stringify(response));
 
-		for(const transformation of this)
+		for(const transformation of this) {
+
+			const time = performance.now();
+
 			response = await transformation.run(response);
+
+			this.source.pipeline.add(new DataSourcePipelineEvent({
+				title: transformation.type,
+				duration: performance.now() - time,
+				rows: response.length,
+			}));
+		}
 
 		if(this.size) {
 			this.source.columns.update(response);
@@ -4005,6 +4085,9 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 			newRow.set(timingColumn.key, timing);
 		}
 
+		if(!timingColumn.type.originalName)
+			timingColumn.type.originalName = timingColumn.type.name;
+
 		if(['week', 'day'].includes(this.value))
 			timingColumn.type.name = 'date';
 
@@ -4139,6 +4222,88 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 		return Array.from(result.values());
 	}
 });
+
+class DataSourcePipeline extends Set {
+
+	constructor(source) {
+
+		super();
+		this.source = source;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('overlay', 'pipeline', 'hidden');
+
+		container.innerHTML = `
+			<span class="close" title="close">&times;</span>
+			<div class="snapshot"><div class="NA">Snapshot Not Available</div></div>
+			<div class="list"></div>
+		`;
+
+		container.querySelector('.close').on('click', () => this.source.menu.querySelector('.pipeline-toggle').click());
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		if(!this.containerElement)
+			return;
+
+		const container = this.container.querySelector('.list');
+
+		container.textContent = null;
+
+		for(const event of this)
+			container.appendChild(event.container);
+
+		if(!this.size)
+			container.innerHTML = '<div class="NA">Data Pipeline Not available.</div>';
+	}
+
+	add(event) {
+
+		super.add(event);
+		this.render();
+	}
+}
+
+class DataSourcePipelineEvent {
+
+	constructor(properties) {
+
+		for(const key in properties)
+			this[key] = properties[key];
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('event');
+
+		container.innerHTML = `
+			<h2>${this.title}</h2>
+			<div class="subtitle">
+				<span>Duration: <strong>${Format.number(this.duration)}ms</strong></span>
+				<span>Rows: <strong>${Format.number(this.rows)}</strong></span>
+			</div>
+		`;
+
+		return container;
+	}
+}
 
 class Visualization {
 

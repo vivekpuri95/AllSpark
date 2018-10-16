@@ -366,6 +366,7 @@ main .dataset {
 						overflow: auto;
 						margin: 0;
 					}
+
 	.data-source > .query {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		user-select: text;
@@ -373,6 +374,53 @@ main .dataset {
 		display: flex;
 		flex-direction: column;
 	}
+
+	.data-source > .pipeline {
+		padding: 25px 0 0;
+		display: grid;
+		grid-template-columns: 1fr 300px;
+		grid-gap: calc(var(--gap) * 2);
+	}
+		.data-source > .pipeline .snapshot {
+		}
+			.data-source > .pipeline .snapshot > .NA {
+				text-align: center;
+			}
+		.data-source > .pipeline .list {
+			overflow: auto;
+			border-left: 1px solid var(--color-border);
+		}
+			.data-source > .pipeline .event {
+				display: grid;
+				grid-gap: calc(var(--gap) * 2);
+				padding: 15px;
+				border-bottom: 1px solid var(--color-border);
+				transition: background var(--transition-duration),
+							color var(--transition-duration),
+							box-shadow var(--transition-duration);
+			}
+			.data-source > .pipeline .event:last-child {
+				border-bottom: 0;
+			}
+			.data-source > .pipeline .event:hover {
+				background: var(--color-hover);
+				color: var(--color-hover-text);
+				cursor: pointer;
+			}
+			.data-source > .pipeline .event:active {
+				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
+			}
+				.data-source > .pipeline .event h2 {
+					margin: 0;
+					font-size: 120%;
+				}
+				.data-source > .pipeline .event .subtitle {
+					color: var(--grey);
+					font-size: 90%;
+				}
+					.data-source > .pipeline .event .subtitle > span {
+						margin-right: calc(var(--gap) * 2);
+					}
 
 	.data-source > .share-link {
 		background: #fff;
@@ -1399,6 +1447,7 @@ main .dataset {
 		bottom: 0;
 		font-size: 110%;
 		z-index: 6;
+		background: var(--color-background);
 	}
 		.column-form > footer button {
 			padding: calc(var(--gap) * 2);

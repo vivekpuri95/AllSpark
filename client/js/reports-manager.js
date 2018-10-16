@@ -5395,6 +5395,7 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 			<label>
 				<span>Granularity</span>
 				<select name="granularity">
+					<option value=""></option>
 					<option value="number">Number</option>
 					<option value="second">Second</option>
 					<option value="minute">Minute</option>
