@@ -48,7 +48,7 @@ class MySQL {
 			}
 
 			poolObj[credential.id] = {
-				connection: credential
+				connection: {...credential, database: credential.db}
 			};
 		}
 
