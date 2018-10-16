@@ -7836,12 +7836,14 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1em')
+						.attr('class', 'text')
 						.text(series[i].data[0].label);
 
 					text.append('tspan')
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1.2em')
+						.attr('class', 'sub-text')
 						.style('font-size', '13px')
 						.text(`${series[i].data[0].y} (${(series[i].data[0].y / series[series.length - 1].data[0].y * 100).toFixed(2)}%)`);
 				}

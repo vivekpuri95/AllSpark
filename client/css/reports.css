@@ -1236,7 +1236,7 @@ main .dataset {
 	.visualization.funnel .text {
 		fill: var(--color-surface-text);
 	}
-	.visualization.funnel .text {
+	.visualization.funnel .sub-text {
 		fill: var(--color-grey);
 	}
 	.visualization.funnel .line-stroke {
