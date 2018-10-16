@@ -1,7 +1,9 @@
 const mysql = require('./utils/mysql').MySQL;
 const bigquery = require('./utils/bigquery').setup;
 const settings = require('./utils/settings');
+const redis = require("./utils/redis").Redis;
 
+console.log(new redis());
 
 async function loadAccounts() {
 

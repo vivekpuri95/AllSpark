@@ -160,18 +160,30 @@ exports.list = class extends API {
 
 		for (const row of results[3]) {
 
-			if (!groupIdObject.hasOwnProperty(row.group_id)) {
+			if (!groupIdObject.hasOwnProperty(row.query_id)) {
 
-				groupIdObject[row.group_id] = {...row, category_id: [row.category_id]};
+				groupIdObject[row.query_id] = {};
+			}
+
+			if(!groupIdObject[row.query_id].hasOwnProperty(row.group_id)) {
+
+				groupIdObject[row.query_id][row.group_id] = {...row, category_id: [row.category_id]}
 			}
 
 			else {
 
-				groupIdObject[row.group_id].category_id.push(row.category_id);
+				groupIdObject[row.query_id][row.group_id].category_id.push(row.category_id)
 			}
 		}
 
-		results[3] = Object.values(groupIdObject);
+		let tempArr = [];
+
+		for(const row of Object.values(groupIdObject)) {
+
+			tempArr = tempArr.concat(...Object.values(row))
+		}
+
+		results[3] = tempArr;
 
 		const visualizationRolesFromQuery = this.account.settings.has("visualization_roles_from_query") ? this.account.settings.get("visualization_roles_from_query") : !this.account.settings.has("visualization_roles_from_query");
 
