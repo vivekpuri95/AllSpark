@@ -104,7 +104,7 @@ main .dataset {
 		.data-source > header h2::-webkit-scrollbar {
 			display: none;
 		}
-			.data-source > header i {
+			.data-source > header h2 i {
 				margin-left: 5px;
 				color: var(--color-secondary-text);
 			}
@@ -117,7 +117,7 @@ main .dataset {
 				width: 24px;
 				display: inline-block;
 				text-align: center;
-				color: #999;
+				color: var(--color-grey);
 			}
 			.data-source > header .actions .card-info {
 				cursor: pointer;
@@ -125,7 +125,7 @@ main .dataset {
 				width: 12px;
 			}
 			.data-source > header .grey {
-				color: #999;
+				color: var(--color-grey);
 			}
 	.data-source .toolbar {
 		background: transparent;
@@ -388,19 +388,19 @@ main .dataset {
 			}
 		.data-source > .pipeline .list {
 			overflow: auto;
-			border-left: 1px solid var(--color-border);
+			padding: calc(var(--gap) * 2) !important;
 		}
 			.data-source > .pipeline .event {
 				display: grid;
 				grid-gap: calc(var(--gap) * 2);
+				border: 1px solid var(--color-border);
+				border-radius: 15px;
 				padding: 15px;
-				border-bottom: 1px solid var(--color-border);
+				position: relative;
+				background: rgba(255, 255, 255, 0.1);
 				transition: background var(--transition-duration),
 							color var(--transition-duration),
 							box-shadow var(--transition-duration);
-			}
-			.data-source > .pipeline .event:last-child {
-				border-bottom: 0;
 			}
 			.data-source > .pipeline .event:hover {
 				background: var(--color-hover);
@@ -410,6 +410,20 @@ main .dataset {
 			.data-source > .pipeline .event:active {
 				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
 			}
+				.data-source > .pipeline .event .order {
+					position: absolute;
+					left: -10px;
+					top: -10px;
+					background: var(--color-secondary);
+					color: var(--color-secondary-text);
+					width: 25px;
+					height: 25px;
+					border-radius: 15px;
+					display: flex;
+					align-items: center;
+					font-size: 90%;
+					justify-content: center;
+				}
 				.data-source > .pipeline .event h2 {
 					margin: 0;
 					font-size: 120%;
@@ -421,6 +435,12 @@ main .dataset {
 					.data-source > .pipeline .event .subtitle > span {
 						margin-right: calc(var(--gap) * 2);
 					}
+			.data-source > .pipeline .next-connector {
+				justify-content: center;
+				display: flex;
+				padding: 15px;
+				font-size: 175%;
+			}
 
 	.data-source > .share-link {
 		background: #fff;

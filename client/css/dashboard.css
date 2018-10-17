@@ -158,7 +158,6 @@ main > nav::-webkit-scrollbar-track {
 main #reports {
 	background: var(--color-background);
 	color: var(--color-background-text);
-	overflow: auto;
 }
 main #reports.show {
 	display: grid;

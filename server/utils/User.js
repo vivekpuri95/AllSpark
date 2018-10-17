@@ -24,6 +24,7 @@ class User {
 			roles: this.roles,
 			privileges: this.privileges,
 			session_id: this.session_id,
+			settings: Array.from(this.settings),
 			exp: this.exp,
 			iat: this.iat,
 		};

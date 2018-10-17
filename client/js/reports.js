@@ -752,12 +752,33 @@ class DataSource {
 		if(!this.columns.list.size)
 			return this.error();
 
+		const time = performance.now();
+
 		for(const _row of data) {
 
 			const row = new DataSourceRow(_row, this);
 
 			if(!row.skip)
 				response.push(row);
+		}
+
+		let filters = [];
+
+		for(const column of this.columns.list.values()) {
+
+			if(column.filters && column.filters.length)
+				filters.push(column.filters.length);
+		}
+
+		if(filters.length) {
+
+			const sum = filters.reduce((a, v) => a + v, 0);
+
+			this.pipeline.add(new DataSourcePipelineEvent({
+				title: `Apply ${sum} filter${sum > 1 ? 's' : ''} on ${filters.length} column${filters.length > 1 ? 's' : ''}`,
+				duration: performance.now() - time,
+				rows: response.length,
+			}));
 		}
 
 		if(this.postProcessors.selected) {
@@ -774,6 +795,9 @@ class DataSource {
 		}
 
 		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key)) {
+
+			const time = performance.now();
+
 			response.sort((a, b) => {
 
 				const
@@ -798,6 +822,12 @@ class DataSource {
 
 				return result;
 			});
+
+			this.pipeline.add(new DataSourcePipelineEvent({
+				title: `Sort by ${this.columns.sortBy.name} ${parseInt(this.columns.sortBy.sort) === 0 ? 'Descending' : 'Ascending'}`,
+				duration: performance.now() - time,
+				rows: response.length,
+			}));
 		}
 
 		return response;
@@ -4262,14 +4292,21 @@ class DataSourcePipeline extends Set {
 
 		container.textContent = null;
 
-		for(const event of this)
+		for(const event of this) {
+
 			container.appendChild(event.container);
+
+			if(event.order != this.size)
+				container.insertAdjacentHTML('beforeend', '<div class="next-connector"><i class="fas fa-long-arrow-alt-down"></i></div>')
+		}
 
 		if(!this.size)
 			container.innerHTML = '<div class="NA">Data Pipeline Not available.</div>';
 	}
 
 	add(event) {
+
+		event.order = this.size + 1;
 
 		super.add(event);
 		this.render();
@@ -4294,6 +4331,7 @@ class DataSourcePipelineEvent {
 		container.classList.add('event');
 
 		container.innerHTML = `
+			<div class="order">${Format.number(this.order)}</div>
 			<h2>${this.title}</h2>
 			<div class="subtitle">
 				<span>Duration: <strong>${Format.number(this.duration)}ms</strong></span>
