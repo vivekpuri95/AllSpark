@@ -9140,9 +9140,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
-		var
-			formatNumber = d3.format(',.0f'),
-			format = d => `${formatNumber(d)} Units`;
+		var format = d => `${d3.format(',.0f')(d)} Units`;
 
 		container.selectAll('*').remove();
 
