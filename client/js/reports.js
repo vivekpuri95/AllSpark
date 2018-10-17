@@ -1728,6 +1728,9 @@ class DataSourceRow extends Map {
 			if(column.type.name == 'custom')
 				value = Format.customTime(value, column.type.format);
 
+			else if(column.type.name == 'customNumber')
+				value = Format.number(value, column.type.formatNumber);
+
 			else if(column.type.name == 'timeelapsed')
 				value = Format.ago(value);
 
@@ -1861,6 +1864,7 @@ class DataSourceColumn {
 			this.container.classList.add('disabled');
 
 		this.customDateType = new DataSourceColumnCustomDateType();
+		this.customNumberType = new DataSourceColumnCustomNumberType();
 	}
 
 	get container() {
@@ -2001,8 +2005,10 @@ class DataSourceColumn {
 		if(this.form.querySelector('.timing-type-custom'))
 			this.form.querySelector('.timing-type-custom').remove();
 
-		if(Object.keys(format).length)
-			this.customDateType.value = format;
+		else if(this.form.querySelector('.number-type-custom'))
+			this.form.querySelector('.number-type-custom').remove();
+
+		this.customDateType.value = format;
 
 		if(this.type.name == 'custom') {
 
@@ -2011,6 +2017,12 @@ class DataSourceColumn {
 			this.customDateType.value = this.type.format;
 		}
 
+		else if(this.type.name == 'customNumber') {
+
+			this.form.insertBefore(this.customNumberType.container, this.form.querySelector('label.color'));
+
+			this.customNumberType.value = this.type.formatNumber;
+		}
 		this.dialogueBox.show();
 	}
 
@@ -2038,7 +2050,10 @@ class DataSourceColumn {
 				<span>Type</span>
 				<select name="type">
 					<option value="string">String</option>
-					<option value="number">Number</option>
+					<optgroup label="Numerical">
+						<option value="number">Number</option>
+						<option value="customNumber">Custom</option>
+					</optgroup>
 					<optgroup label="Timing">
 						<option value="date">Date</option>
 						<option value="month">Month</option>
@@ -2131,6 +2146,9 @@ class DataSourceColumn {
 			if(form.querySelector('.timing-type-custom'))
 				form.querySelector('.timing-type-custom').remove();
 
+			else if(this.form.querySelector('.number-type-custom'))
+				this.form.querySelector('.number-type-custom').remove();
+
 			if(DataSourceColumn.formatType.has(form.type.value)) {
 
 				typeFormat = DataSourceColumn.formatType.get(form.type.value);
@@ -2146,9 +2164,19 @@ class DataSourceColumn {
 
 				this.customDateType.render(selectedFormat);
 			}
+			else if(form.type.value == 'customNumber') {
 
-			if(selectedFormat)
+				form.insertBefore(this.customNumberType.container, form.querySelector('label.color'));
+
+				selectedFormat = this.customNumberType.value;
+
+				this.customNumberType.render(selectedFormat);
+			}
+
+			if(selectedFormat && form.type.value == 'custom')
 				this.customDateType.value = selectedFormat;
+			else if(selectedFormat && form.type.value == 'customNumber')
+				this.customNumberType.value = selectedFormat;
 		});
 
 		form.on('submit', async e => this.apply(e));
@@ -2256,6 +2284,9 @@ class DataSourceColumn {
 		if(this.form.type.value == 'custom')
 			this.type.format = this.customDateType.value;
 
+		else if(this.form.type.value == 'customNumber')
+			this.type.formatNumber = this.customNumberType.value;
+
 		if(this.interval)
 			clearInterval(this.interval);
 
@@ -2314,6 +2345,9 @@ class DataSourceColumn {
 
 		if(this.form.type.value == 'custom')
 			this.type.format = this.customDateType.value;
+
+		else if(this.form.type.value == 'customNumber')
+			this.type.formatNumber = this.customNumberType.value;
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2758,6 +2792,227 @@ class DataSourceColumnCustomDateType {
 		}, 1000);
 	}
 }
+
+class DataSourceColumnCustomNumberType {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('number-type-custom');
+
+		container.innerHTML = `
+
+			<div class="number-format">
+
+				<fieldset>
+
+					<legend>Style</legend>
+
+					<label>
+						<input type="radio" name="style" value="currency">
+						<span>Currency</span>
+					</label>
+
+					<label>
+						<input type="radio" name="style" value="percent">
+						<span>Percent</span>
+					</label>
+
+					<label>
+						<input type="radio" name="style" value="decimal">
+						<span>Decimal</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Round off</legend>
+
+					<label>
+						<input type="radio" name="roundOff" value="round">
+						<span>Round</span>
+					</label>
+
+					<label>
+						<input type="radio" name="roundOff" value="ceil">
+						<span>Ceil</span>
+					</label>
+
+					<label>
+						<input type="radio" name="roundOff" value="floor">
+						<span>Floor</span>
+					</label>
+				</fieldset>
+
+				<fieldset>
+
+					<legend>Use Grouping</legend>
+
+					<label>
+						<input type="radio" name="useGrouping" value="true">
+						<span>Yes</span>
+					</label>
+
+					<label>
+						<input type="radio" name="useGrouping" value="false">
+						<span>No</span>
+					</label>
+				</fieldset>
+			</div>
+
+			<div class="form">
+
+				<label class="currency-symbol hidden">
+					<span>Currency Symbol</span>
+					<input type="text" name="currency">
+				</label>
+
+				<label>
+					<span>Minimum Integer Digits</span>
+					<input type="number" name="minimumIntegerDigits" min="1" step="1" max="21">
+				</label>
+
+				<label>
+					<span>Minimum Fraction Digits</span>
+					<input type="number" name="minimumFractionDigits" min="0" step="1" max="21">
+				</label>
+
+				<label>
+					<span>Maximum Fraction Digits</span>
+					<input type="number" name="maximumFractionDigits" min="0" step="1" max="21">
+				</label>
+
+				<label>
+					<span>Minimum Significant Digits</span>
+					<input type="number" name="minimumSignificantDigits" min="1" step="1" max="21">
+				</label>
+
+				<label>
+					<span>Maximum Significant Digits</span>
+					<input type="number" name="maximumSignificantDigits" min="1" step="1" max="21">
+				</label>
+			</div>
+
+			<span>Example: <span class="example">123456.789</span></span>
+		`;
+
+		for(const value of container.querySelectorAll('input')) {
+
+			if(value.type != 'radio')
+				continue;
+
+			value.on('keyup', () => this.render(this.value));
+		}
+
+		for(const radio of container.querySelectorAll('input[type="radio"]')) {
+
+			radio.on('click', () => {
+
+				for(const [index, _radio] of this.checkedradio.entries()) {
+
+					if(_radio.name == radio.name) {
+
+						if(_radio.value == radio.value) {
+
+							radio.checked = false;
+							radio.form[radio.name].value = '';
+						}
+
+						this.checkedradio.splice(index, 1);
+					}
+				}
+
+				if(radio.checked)
+					this.checkedradio.push(radio);
+
+				container.querySelector('.currency-symbol').classList.toggle('hidden', radio.value == 'percent' || radio.value == 'decimal');
+
+				this.render(this.value);
+			});
+		}
+
+		return container;
+	}
+
+	set value(format) {
+
+		if(!this.container)
+			return this.customNumberValueCache = format;
+
+		this.render(format);
+
+		this.checkedradio = [];
+
+		for(const input of this.container.querySelectorAll('input')) {
+
+			if(input.type == 'radio' && input.name != 'useGrouping') {
+
+				input.checked = input.value == format[input.name];
+				if(input.checked)
+					this.checkedradio.push(input);
+			}
+
+			else if(input.type == 'radio' && input.name == 'useGrouping') {
+				input.checked = JSON.parse(input.value) == format[input.name];
+				if(input.checked)
+					this.checkedradio.push(input);
+			}
+
+			else if(format[input.name])
+				input.value = format[input.name];
+		}
+	}
+
+	get value() {
+
+		if(!this.container)
+			return this.customNumberValueCache;
+
+		const selectedInputs = {};
+
+		for(const format of ['style', 'roundOff', 'useGrouping']) {
+
+			const input = this.container.querySelector(`input[name=${format}]`);
+
+			if(input.form[input.name].value && format == 'useGrouping')
+				selectedInputs[input.name] = JSON.parse(input.form[input.name].value);
+
+			else if(input.form[input.name].value)
+				selectedInputs[input.name] = input.form[input.name].value;
+		}
+
+		for(const input of this.container.querySelectorAll('input')) {
+
+			if(input.type == 'radio')
+				continue;
+
+			if(input.value)
+				selectedInputs[input.name] = input.value;
+		}
+
+		return selectedInputs;
+	}
+
+	render(format) {
+
+		const number = 123456.789;
+
+		if(!format || !Object.keys(format).length || (format && format.style == 'currency' && !format.currency)) {
+			this.container.querySelector('.example').innerHTML = number;
+			return;
+		}
+
+		if(format && format.style != 'currency' && !this.container.querySelector('.currency-symbol').classList.contains('hidden')) {
+			this.container.querySelector('.currency-symbol').classList.add('hidden');
+		}
+
+		this.container.querySelector('.example').innerHTML = new Intl.NumberFormat(undefined, format).format(number);
+	}
+}
+
 
 DataSourceColumn.formatType = new Map;
 

@@ -1789,12 +1789,53 @@ class Format {
 		return Format.dateTime.formatter.format(dateTime);
 	}
 
-	static number(number) {
+	static number(number, format) {
 
-		if(!Format.number.formatter)
-			Format.number.formatter = new Intl.NumberFormat(undefined, {maximumFractionDigits: 2});
+		if(!format)
+			format = {maximumFractionDigits: 2};
 
-		return Format.number.formatter.format(number);
+		else if(format && format.useGrouping != false)
+			format.useGrouping = true;
+
+		if(!Format.cachedFormat)
+			Format.cachedFormat = [];
+
+		let selectedFormat;
+
+		for(const data of Format.cachedFormat) {
+
+			if(JSON.stringify(data.format) == JSON.stringify(format))
+				selectedFormat = data;
+		}
+
+		if(!selectedFormat) {
+
+			selectedFormat = {
+				format: format,
+				formatter: new Intl.NumberFormat(undefined, format),
+			};
+
+			Format.cachedFormat.push(selectedFormat);
+		}
+
+		if(format && format.roundOff && format.useGrouping == true) {
+
+			const formatNumber = selectedFormat.formatter.format(number);
+			const roundOff = Math[format.roundOff](formatNumber);
+			Format.number.formatter = selectedFormat.formatter.format(roundOff);
+		}
+
+		else if(format && format.roundOff && format.useGrouping == false) {
+
+			const formatNumber = selectedFormat.formatter.format(number);
+			Format.number.formatter = Math[format.roundOff](formatNumber);
+		}
+
+		else {
+			Format.number.formatter = selectedFormat.formatter.format(number);
+		}
+
+		return Format.number.formatter;
 	}
 }
 

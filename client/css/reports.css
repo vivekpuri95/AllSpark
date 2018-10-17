@@ -1404,49 +1404,65 @@ main .dataset {
 	.column-form > label {
 		margin: 0 calc(var(--gap) * 2);
 	}
-	.column-form .timing-type-custom {
+	.column-form .timing-type-custom,
+	.column-form .number-type-custom {
 		max-width: 100%;
 		margin: 0 calc(var(--gap) * 2);
 		display: grid;
 		grid-gap: 10px;
+		background: rgba(0,0,0,0.05);
+    	padding: calc(var(--gap) * 2);
 	}
-		.column-form .timing-format {
+		.column-form .number-type-custom .form {
+			margin: 0 -10px;
+		}
+		.column-form .timing-format,
+		.column-form .number-format {
 			display: grid;
 			overflow: auto;
 			grid-gap: calc(var(--gap) * 2);
 			grid-auto-flow: column;
 		}
-			.column-form .timing-format fieldset {
+			.column-form .timing-format fieldset,
+			.column-form .number-format fieldset {
 				border: 1px solid var(--color-border);
 				font-size: 90%;
 				margin: 0;
 			}
-				.column-form .timing-format fieldset legend {
+				.column-form .timing-format fieldset legend,
+				.column-form .number-format fieldset legend {
 					font-size: 90%;
 				}
-				.column-form .timing-format fieldset label {
+
+				.column-form .timing-format fieldset label,
+				.column-form .number-format fieldset label {
 					display: inline-block;
-					padding: 0 3px;
+					padding: 2px 5px;
 					text-align: center;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
-				.column-form .timing-format fieldset label:hover {
+				.column-form .timing-format fieldset label:hover,
+				.column-form .number-format fieldset label:hover {
 					cursor: pointer;
 					background: var(--color-hover);
 					color: var(--color-hover-text);
 				}
-				.column-form .timing-format fieldset label:active {
+				.column-form .timing-format fieldset label:active,
+				.column-form .number-format fieldset label:active {
 					box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.25);
 				}
-				.column-form .timing-format fieldset input[type=radio] {
+				.column-form .timing-format fieldset input[type=radio],
+				.column-form .number-format fieldset input[type=radio] {
 					display: none;
 				}
-				.column-form .timing-format fieldset input:checked + span {
+				.column-form .timing-format fieldset input:checked + span ,
+				.column-form .number-format fieldset input:checked + span{
 					color: var(--color-selected);
 				}
-				.column-form .timing-format fieldset label span {
-					color: #ccc;
+				.column-form .timing-format fieldset label span,
+				.column-form .number-format fieldset label span {
+					color: var(--color-grey);
 					transition: color var(--transition-duration);
 					font-weight: normal;
 				}
