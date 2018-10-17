@@ -1794,7 +1794,7 @@ class Format {
 		if(!format)
 			format = {maximumFractionDigits: 2};
 
-		else if(format && format.useGrouping != false)
+		else if(format && !format.useGrouping in format)
 			format.useGrouping = true;
 
 		if(!Format.cachedFormat)

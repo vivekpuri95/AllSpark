@@ -2902,9 +2902,7 @@ class DataSourceColumnCustomNumberType {
 		for(const value of container.querySelectorAll('input')) {
 
 			if(value.type != 'radio')
-				continue;
-
-			value.on('keyup', () => this.render(this.value));
+				value.on('keyup', () => this.render(this.value));
 		}
 
 		for(const radio of container.querySelectorAll('input[type="radio"]')) {
