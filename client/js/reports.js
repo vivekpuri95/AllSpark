@@ -9140,7 +9140,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 		const container = d3.selectAll(`#visualization-${this.id}`);
 
-		var format = d => `${d3.format(',.0f')(d)} Units`;
+		const format = d => `${d3.format(',.0f')(d)} Units`;
 
 		container.selectAll('*').remove();
 
@@ -9149,7 +9149,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 			this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
 		}
 
-		var svg = container.append('svg')
+		const svg = container.append('svg')
 			.attr('width', this.width + margin.left + margin.right)
 			.attr('height', this.height + margin.top + margin.bottom)
 			.append('g')
@@ -9157,19 +9157,19 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 		const nodeWidth = this.width % 30 < 20 ? 20 : this.width % 30;
 
-		var sankey = d3.sankey()
+		const sankey = d3.sankey()
 			.nodeWidth(nodeWidth)
 			.nodePadding(10)
 			.size([this.width, this.height]);
 
-		var path = sankey.link();
+		const path = sankey.link();
 
 		sankey
 			.nodes(Object.values(nodeMap))
 			.links(links)
 			.layout(32);
 
-		var link = svg.append('g')
+		const link = svg.append('g')
 			.selectAll('.link')
 			.data(links)
 			.enter()
@@ -9181,7 +9181,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 		const that = this;
 
-		var mouse, content;
+		let
+			mouse,
+			content;
 
 		container
 			.on('mousemove', function(d) {
@@ -9208,7 +9210,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 				Tooltip.hide(that.container);
 			});
 
-		var node = svg.append('g')
+		const node = svg.append('g')
 				.selectAll('.node')
 				.data(Object.values(nodeMap))
 				.enter()
@@ -9250,7 +9252,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 			return;
 
 		d3.sankey = function() {
-			var
+			let
 				sankey = {},
 				nodeWidth = 24,
 				nodePadding = 8,
@@ -9324,11 +9326,11 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 			sankey.link = function() {
 
-				var curvature = .5;
+				let curvature = .5;
 
 				function link(d) {
 
-					var
+					let
 						x0 = d.source.x + d.source.dx,
 						x1 = d.target.x,
 						xi = d3.interpolateNumber(x0, x1),
@@ -9367,7 +9369,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 				for(const link of links) {
 
-					var
+					let
 						source = link.source,
 						target = link.target;
 
@@ -9401,7 +9403,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 			function computeNodeBreadths() {
 
-				var
+				let
 					remainingNodes = nodes,
 					nextNodes,
 					x = 0;
@@ -9457,7 +9459,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 			function computeNodeDepths(iterations) {
 
-				var nodesByBreadth = d3.nest()
+				let nodesByBreadth = d3.nest()
 						.key(d => d.x)
 						.sortKeys(d3.ascending)
 						.entries(nodes)
@@ -9466,7 +9468,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 				initializeNodeDepth();
 				resolveCollisions();
 
-				for (var alpha = 1; iterations > 0; --iterations) {
+				for (let alpha = 1; iterations > 0; --iterations) {
 
 					relaxRightToLeft(alpha *= .99);
 					resolveCollisions();
@@ -9476,7 +9478,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 				function initializeNodeDepth() {
 
-					var ky = d3.min(nodesByBreadth, function(nodes) {
+					let ky = d3.min(nodesByBreadth, function(nodes) {
 						return (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value);
 					});
 
@@ -9502,7 +9504,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 						for(const node of nodes) {
 
 							if(node.targetLinks.length) {
-								var y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
+								let y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
 								node.y += (y - center(node)) * alpha;
 							}
 						}
@@ -9520,7 +9522,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 						for(const node of nodes) {
 
 							if(node.sourceLinks.length) {
-								var y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
+								let y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
 								node.y += (y - center(node)) * alpha;
 							}
 						}
@@ -9535,7 +9537,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 					for(const nodes of nodesByBreadth) {
 
-						var
+						let
 							node,
 							dy,
 							y0 = 0,
@@ -9584,7 +9586,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 				for(const node of nodes) {
 
-					var sy = 0, ty = 0;
+					let sy = 0, ty = 0;
 
 					for(const link of node.sourceLinks) {
 
