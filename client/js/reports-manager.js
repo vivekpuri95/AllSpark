@@ -519,7 +519,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
 				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action configure ${!report.editable ? 'grey' : 'green'}">Configure</td>
 				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action define ${!report.editable ? 'grey' : 'green'}">Define</td>
-				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action delete ${!report.editable ? 'grey' : 'red'}">Delete</td>
+				<td title="${!report.deletable ? 'Not enough privileges' : ''}" class="action delete ${!report.deletable ? 'grey' : 'red'}">Delete</td>
 			`;
 
 			for(const tag of tags)

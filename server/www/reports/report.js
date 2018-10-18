@@ -102,14 +102,25 @@ exports.list = class extends API {
 
 		let credentialObjectRoles = role.get(this.account.account_id, 'connection', ['user', 'role']);
 
-		let userCategories = new Set(this.user.privileges.filter(x => [constants.privilege.administrator, constants.privilege["report.update"]].includes(x.privilege_name)).map(x => x.category_id));
+		let userUpdateCategories = new Set(this.user.privileges.filter(x => [constants.privilege.administrator, constants.privilege["report.update"]].includes(x.privilege_name)).map(x => x.category_id));
+		let userDeleteCategories = new Set(this.user.privileges.filter(x => [constants.privilege.administrator, constants.privilege["report.delete"]].includes(x.privilege_name)).map(x => x.category_id));
 
-		let isAdmin = this.user.privilege.has('superadmin');
+		let
+			isAdmin = this.user.privilege.has('superadmin'),
+			editable = this.user.privilege.has('superadmin'),
+			deletable = this.user.privilege.has('superadmin')
+		;
 
-		if (constants.adminPrivilege.some(x => userCategories.has(x))) {
+		if (constants.adminPrivilege.some(x => userUpdateCategories.has(x))) {
 
-			userCategories = new Set([0]);
-			isAdmin = true;
+			userUpdateCategories = new Set([0]);
+			editable = true;
+		}
+
+		if (constants.adminPrivilege.some(x => userDeleteCategories.has(x))) {
+
+			userDeleteCategories = new Set([0]);
+			deletable = true;
 		}
 
 		const results = await Promise.all([
@@ -395,14 +406,21 @@ exports.list = class extends API {
 
 			row.visibilityReason = authResponse.message;
 
-			row.editable = isAdmin;
+			row.editable = isAdmin || editable;
+			row.deletable = isAdmin || deletable;
 
 			for(const categoryIds of row.category_id) {
 
-				row.editable = row.editable || categoryIds.every(x => userCategories.has(x));
+				row.editable = row.editable || categoryIds.every(x => userUpdateCategories.has(x));
 			}
 
-			row.editable = (row.editable && (row.category_id.length || isAdmin)) || row.added_by == this.user.user_id;
+			for(const categoryIds of row.category_id) {
+
+				row.deletable = row.deletable || categoryIds.every(x => userDeleteCategories.has(x));
+			}
+
+			row.editable = (row.editable && (row.category_id.length || (isAdmin || editable))) || row.added_by == this.user.user_id;
+			row.deletable = (row.deletable && (row.category_id.length || (isAdmin || deletable))) || row.added_by == this.user.user_id;
 
 			if(!row.editable) {
 
@@ -449,7 +467,7 @@ exports.list = class extends API {
 					for (const categoryIds of visualizationCategories) {
 
 						visualization.editable = visualization.editable || categoryIds.every(x => userVisualizationUpdateCategories.has(x));
-						visualization.editable = visualization.editable || categoryIds.every(x => userVisualizationDeleteCategories.has(x));
+						visualization.deletable = visualization.deletable || categoryIds.every(x => userVisualizationDeleteCategories.has(x));
 					}
 				}
 

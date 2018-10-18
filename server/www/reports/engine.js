@@ -186,6 +186,32 @@ class report extends API {
 		this.account.features.needs(this.reportObj.type + '-source');
 
 		const authResponse = await auth.report(this.reportObj, this.user);
+
+		if(this.request.body.query) {
+
+			const objRole = new getRole();
+
+			const possiblePrivileges = ["report.edit", "admin", "superadmin"];
+
+			const categories = (await objRole.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
+
+			let userCategories = this.user.privileges.filter(x => possiblePrivileges.includes(x.privilege_name)).map(x => x.category_id);
+
+			let flag = false;
+
+			for(let category of categories) {
+
+				category = category.map(x => x.toString());
+
+				flag = flag || category.every(x => userCategories.includes(x.toString()));
+			}
+
+			flag = flag || this.user.privilege.has('superadmin') || this.reportObj.added_by == this.user.user_id;
+
+			this.assert(flag, "Query not editable by user");
+		}
+
+
 		this.assert(!authResponse.error, "user not authorised to get the report");
 	}
 
@@ -479,7 +505,7 @@ class report extends API {
 
 			console.error(e.stack);
 
-			if(e.message.includes("<!DOCTYPE")) {
+			if (e.message.includes("<!DOCTYPE")) {
 
 				e.message = e.message.slice(0, e.message.indexOf("<!DOCTYPE")).trim();
 			}
@@ -816,7 +842,7 @@ class Bigquery {
 				arrayValues: [],
 			};
 
-			if(!Array.isArray(data)) {
+			if (!Array.isArray(data)) {
 
 				data = [data]
 			}
@@ -1128,8 +1154,35 @@ class query extends API {
 	async query() {
 
 		const [type] = await this.mysql.query("select type from tb_credentials where id = ?", [this.request.body.connection_id]);
+		const [queryRow] = await this.mysql.query(
+			"select * from tb_query where query_id = ? and account_id = ? and is_enabled = 1 and is_deleted = 0",
+			[this.account.account_id, this.request.body.query_id]
+		);
+
+		this.assert(queryRow, "Query not found");
 
 		this.assert(type, "credential id " + this.request.body.connection_id + " not found");
+
+		const objRole = new getRole();
+
+		const possiblePrivileges = ["report.edit", "admin", "superadmin"];
+
+		const categories = (await objRole.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
+
+		let userCategories = this.user.privileges.filter(x => possiblePrivileges.includes(x.privilege_name)).map(x => x.category_id);
+
+		let flag = false;
+
+		for(let category of categories) {
+
+			category = category.map(x => x.toString());
+
+			flag = flag || category.every(x => userCategories.includes(x.toString()));
+		}
+
+		flag = flag || this.user.privilege.has('superadmin') || queryRow.added_by == this.user.user_id;
+
+		this.assert(flag, "Query not editable by user");
 
 		this.parameters = {
 			request: [this.request.body.query, [], this.request.body.connection_id],
@@ -1207,12 +1260,12 @@ class download extends API {
 			]
 		};
 
-		if(config.has("allspark_python_base_api")) {
+		if (config.has("allspark_python_base_api")) {
 
-            const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
+			const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
 
-            this.response.sendFile(data.body.response);
-            throw({"pass": true})
+			this.response.sendFile(data.body.response);
+			throw({"pass": true})
 		}
 	}
 }
