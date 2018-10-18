@@ -645,7 +645,7 @@ class DataSource {
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
 
-			this.visualizations.selected.render({resize: true});
+			this.pipeline.render();
 		});
 
 		queryToggle.on('click', () => {
@@ -794,7 +794,7 @@ class DataSource {
 			}));
 		}
 
-		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key)) {
+		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key) && this.columns.sortBy.sort >= 0) {
 
 			const time = performance.now();
 
@@ -8113,29 +8113,6 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 	process() {
 
-		const
-			response = this.source.originalResponse,
-			newResponse = {};
-
-		if(!response || !response.data || !response.data.length)
-			return;
-
-		for(const row of this.source.originalResponse.data) {
-
-			const value = parseFloat(row.value);
-
-			if(!value)
-				continue;
-
-			newResponse[row.name] = value;
-		}
-
-		this.source.originalResponse.data = [newResponse];
-
-		this.source.columns.clear();
-		this.source.columns.update();
-		this.source.columns.render();
-
 		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
 
 		if(visualizationToggle)
@@ -8270,8 +8247,11 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			slice.attr('d', row => arc(row));
 		}
 
+		if(!this.options)
+			return;
+
 		// Add the text
-		if(this.options && this.options.showValue == 'value') {
+		if(this.options.showValue == 'value') {
 
 			arcs.append('text')
 				.attr('transform', row => {
@@ -8283,7 +8263,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				.text(row => Format.number(row.data.value));
 		}
 
-		else {
+		else if(this.options.showValue == 'percentage') {
 
 			arcs.append('text')
 				.attr('transform', row => {

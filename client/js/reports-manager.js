@@ -4487,9 +4487,11 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+
 						<label>
 							<span>Show</span>
 							<select name="showValue">
+								<option value="">None</option>
 								<option value="value">Value</option>
 								<option value="percentage">Percentage</option>
 							</select>
