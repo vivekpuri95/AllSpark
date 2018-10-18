@@ -721,6 +721,11 @@ class SettingsAccount {
 				name: 'Disable "Powered By"',
 			},
 			{
+				key: 'user_onboarding',
+				type: 'toggle',
+				name: 'Enable user onboarding'
+			},
+			{
 				key: 'visualization_roles_from_query',
 				type: 'toggle',
 				name: 'Visualization Roles From Query',
