@@ -467,7 +467,7 @@ exports.list = class extends API {
 					for (const categoryIds of visualizationCategories) {
 
 						visualization.editable = visualization.editable || categoryIds.every(x => userVisualizationUpdateCategories.has(x));
-						visualization.editable = visualization.editable || categoryIds.every(x => userVisualizationDeleteCategories.has(x));
+						visualization.deletable = visualization.deletable || categoryIds.every(x => userVisualizationDeleteCategories.has(x));
 					}
 				}
 
