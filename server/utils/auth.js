@@ -259,6 +259,22 @@ class Authenticate {
 		//dashboard roles .
 		//dashboard visualizations(query visualizations) .
 
+		if(!userObj) {
+
+			return {
+				error: true,
+				message: "User object not found"
+			}
+		}
+
+		if(userObj.privilege.has("superadmin")) {
+
+			return {
+				error: false,
+				message: "Super Admin User."
+			}
+		}
+
 		let userPrivileges = [];
 
 		if (!(userObj.roles && userObj.roles.length)) {
@@ -434,7 +450,7 @@ class Authenticate {
 			}
 		}
 
-		if (userObj.privilege.has("superadmin") || dashboard.added_by == userObj.user_id) {
+		if (dashboard.added_by == userObj.user_id) {
 
 			return {
 				error: false,
