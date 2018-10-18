@@ -415,7 +415,7 @@ Page.class = class Dashboards extends Page {
 
 		this.navbar.render();
 
-		if (await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
+		if (this.account.settings.get('user_onboarding') && (await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size))) {
 
 			await Storage.set('newUser', (await Storage.get('newUser')) || {});
 
