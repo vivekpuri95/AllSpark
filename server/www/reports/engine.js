@@ -186,6 +186,32 @@ class report extends API {
 		this.account.features.needs(this.reportObj.type + '-source');
 
 		const authResponse = await auth.report(this.reportObj, this.user);
+
+		if(this.request.body.query) {
+
+			const objRole = new getRole();
+
+			const possiblePrivileges = ["report.edit", "admin", "superadmin"];
+
+			const categories = (await objRole.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
+
+			let userCategories = this.user.privileges.filter(x => possiblePrivileges.includes(x.privilege_name)).map(x => x.category_id);
+
+			let flag = false;
+
+			for(let category of categories) {
+
+				category = category.map(x => x.toString());
+
+				flag = flag || category.every(x => userCategories.includes(x.toString()));
+			}
+
+			flag = flag || this.user.privilege.has('superadmin') || this.reportObj.added_by == this.user.user_id;
+
+			this.assert(flag, "Query not editable by user");
+		}
+
+
 		this.assert(!authResponse.error, "user not authorised to get the report");
 	}
 
@@ -1128,7 +1154,12 @@ class query extends API {
 	async query() {
 
 		const [type] = await this.mysql.query("select type from tb_credentials where id = ?", [this.request.body.connection_id]);
-		const query = await this.mysql.query("select * from tb_query where query_id = ? and account_id = ? and is_enabled = 1 and is_deleted = 0");
+		const [queryRow] = await this.mysql.query(
+			"select * from tb_query where query_id = ? and account_id = ? and is_enabled = 1 and is_deleted = 0",
+			[this.account.account_id, this.request.body.query_id]
+		);
+
+		this.assert(queryRow, "Query not found");
 
 		this.assert(type, "credential id " + this.request.body.connection_id + " not found");
 
@@ -1144,14 +1175,14 @@ class query extends API {
 
 		for(let category of categories) {
 
-			category = category.map(x => x.toString())
+			category = category.map(x => x.toString());
 
 			flag = flag || category.every(x => userCategories.includes(x.toString()));
 		}
 
-		flag = flag || this.user.privilege.has('superadmin');
+		flag = flag || this.user.privilege.has('superadmin') || queryRow.added_by == this.user.user_id;
 
-
+		this.assert(flag, "Query not editable by user");
 
 		this.parameters = {
 			request: [this.request.body.query, [], this.request.body.connection_id],
