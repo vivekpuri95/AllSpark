@@ -580,8 +580,6 @@ class DataSource {
 
 		filtersToggle.on('click', () => {
 
-			filtersToggle.parentElement.classList.toggle('selected');
-
 			if(queryToggle.parentElement.classList.contains('selected'))
 				queryToggle.click();
 
@@ -591,6 +589,8 @@ class DataSource {
 			if(pipelineToggle.parentElement.classList.contains('selected'))
 				pipelineToggle.click();
 
+			filtersToggle.parentElement.classList.toggle('selected');
+
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
 
@@ -598,8 +598,6 @@ class DataSource {
 				this.container.removeChild(this.filters.container);
 
 			else this.container.insertBefore(this.filters.container, this.container.querySelector('.columns'));
-
-			this.visualizations.selected.render({resize: true});
 		});
 
 		// If there are filters and every filter is not of hidden type then show the filters toggle
@@ -614,12 +612,14 @@ class DataSource {
 			if(filtersToggle.parentElement.classList.contains('selected'))
 				filtersToggle.click();
 
+			if(pipelineToggle.parentElement.classList.contains('selected'))
+				pipelineToggle.click();
+
 			this.container.querySelector('.description').classList.toggle('hidden');
+
 			descriptionToggle.parentElement.classList.toggle('selected');
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
-
-			this.visualizations.selected.render({resize: true});
 
 			if(user.privileges.has('report') && user.privileges.has('user') && this.visibleTo) {
 
@@ -631,6 +631,9 @@ class DataSource {
 
 		pipelineToggle.on('click', async () => {
 
+			if(descriptionToggle.parentElement.classList.contains('selected'))
+				descriptionToggle.click();
+
 			if(queryToggle.parentElement.classList.contains('selected'))
 				queryToggle.click();
 
@@ -641,6 +644,7 @@ class DataSource {
 				this.container.appendChild(this.pipeline.container);
 
 			this.container.querySelector('.pipeline').classList.toggle('hidden');
+
 			pipelineToggle.parentElement.classList.toggle('selected');
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
@@ -660,11 +664,10 @@ class DataSource {
 				pipelineToggle.click();
 
 			this.container.querySelector('.query').classList.toggle('hidden');
+
 			queryToggle.parentElement.classList.toggle('selected');
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
-
-			this.visualizations.selected.render({resize: true});
 		});
 
 		menu.insertBefore(this.postProcessors.container, menu.querySelector('.change-visualization').parentElement);

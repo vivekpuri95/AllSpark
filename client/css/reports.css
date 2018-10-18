@@ -276,10 +276,11 @@ main .dataset {
 			color: var(--color-hover-text);
 		}
 
-	.data-source .toolbar.filters {
+	.data-source .filters {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		align-items: flex-start;
 		flex-wrap: wrap;
+		margin: 0;
 	}
 
 	.data-source > .description {
@@ -378,7 +379,7 @@ main .dataset {
 	.data-source > .pipeline {
 		padding: 25px 0 0;
 		display: grid;
-		grid-template-columns: 1fr 300px;
+		grid-template-columns: 1fr 350px;
 		grid-gap: calc(var(--gap) * 2);
 	}
 		.data-source > .pipeline .snapshot {
@@ -388,16 +389,17 @@ main .dataset {
 			}
 		.data-source > .pipeline .list {
 			overflow: auto;
-			padding: calc(var(--gap) * 2) !important;
+			padding: 15px !important;
 		}
 			.data-source > .pipeline .event {
 				display: grid;
 				grid-gap: calc(var(--gap) * 2);
 				border: 1px solid var(--color-border);
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
 				border-radius: 15px;
 				padding: 15px;
 				position: relative;
-				background: rgba(255, 255, 255, 0.1);
+				background: rgba(255, 255, 0, 0.05);
 				transition: background var(--transition-duration),
 							color var(--transition-duration),
 							box-shadow var(--transition-duration);
@@ -423,6 +425,7 @@ main .dataset {
 					align-items: center;
 					font-size: 90%;
 					justify-content: center;
+					box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
 				}
 				.data-source > .pipeline .event h2 {
 					margin: 0;
