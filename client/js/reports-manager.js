@@ -654,7 +654,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		const
 			parameters = {
 				query_id: report.query_id,
-				is_deleted: 1,
 			},
 			options = {
 				method: 'POST',
@@ -662,7 +661,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		try {
 
-			await API.call('reports/report/update', parameters, options);
+			await API.call('reports/report/delete', parameters, options);
 
 			await DataSource.load(true);
 

@@ -184,7 +184,7 @@ exports.delete = class extends API {
 		);
 
 		await this.mysql.query(
-			"update tb_settings set status = 0 where owner_id = ? ond owner = 'account'",
+			"update tb_settings set status = 0 where owner_id = ? and owner = 'account'",
 			[account_id],
 			"write"
 		);
