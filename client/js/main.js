@@ -1794,9 +1794,6 @@ class Format {
 		if(!format)
 			format = {maximumFractionDigits: 2};
 
-		else if(format && !format.useGrouping in format)
-			format.useGrouping = true;
-
 		if(!Format.cachedFormat)
 			Format.cachedFormat = [];
 
@@ -1818,21 +1815,29 @@ class Format {
 			Format.cachedFormat.push(selectedFormat);
 		}
 
-		if(format && format.roundOff && format.useGrouping == true) {
+		if(format && !format.roundOff) {
 
-			const formatNumber = selectedFormat.formatter.format(number);
-			const roundOff = Math[format.roundOff](formatNumber);
-			Format.number.formatter = selectedFormat.formatter.format(roundOff);
-		}
-
-		else if(format && format.roundOff && format.useGrouping == false) {
-
-			const formatNumber = selectedFormat.formatter.format(number);
-			Format.number.formatter = Math[format.roundOff](formatNumber);
-		}
-
-		else {
 			Format.number.formatter = selectedFormat.formatter.format(number);
+		}
+
+		else if(format && format.roundOff) {
+
+			const formatWhitelist = Object.assign({}, format);
+
+			for(const value in formatWhitelist) {
+
+				if(!parseInt(formatWhitelist[value]))
+					delete formatWhitelist[value];
+			}
+
+			const
+				filterWhiteList = this.number(number, formatWhitelist),
+				roundOff = Math[format.roundOff](filterWhiteList),
+				formatBlacklist =  Object.assign({}, format);
+
+			delete formatBlacklist.roundOff;
+
+			this.number(roundOff, formatBlacklist);
 		}
 
 		return Format.number.formatter;
