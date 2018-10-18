@@ -495,6 +495,48 @@ exports.list = class extends API {
 	}
 };
 
+exports.delete = class extends API {
+
+	async delete() {
+
+		let [categories, [updatedRow], queryUsers] = await Promise.all([
+			role.get(this.account.account_id, 'query', 'role', this.request.body.query_id),
+			this.mysql.query(`SELECT * FROM tb_query WHERE query_id = ?`, [this.request.body.query_id]),
+			role.get(this.account.account_id, 'query', 'user', this.request.body.query_id),
+		]);
+
+		categories = categories.map(x => x.category_id);
+
+		let flag = this.user.privilege.has('superadmin') || queryUsers.filter(x => x.target_id == this.user.user_id).length;
+
+		for (const categoryList of categories || [0]) {
+
+			let categoryFlag = false;
+
+			for(const category of categoryList) {
+
+				categoryFlag = categoryFlag || this.user.privilege.has("report.delete", category);
+			}
+
+			flag = flag || categoryFlag;
+		}
+
+		this.assert(flag || updatedRow.added_by == this.user.user_id, "User cannot delete the report");
+
+		const
+			deletedRow = await this.mysql.query('UPDATE tb_query SET is_deleted = 1 WHERE query_id = ? AND account_id = ?', [this.request.body.query_id, this.account.account_id], 'write'),
+			logs = {
+				owner: 'query',
+				owner_id: this.request.body.query_id,
+				operation: 'delete',
+			};
+
+		reportHistory.insert(this, logs);
+
+		return deletedRow;
+	}
+}
+
 exports.update = class extends API {
 
 	async update() {
@@ -591,7 +633,6 @@ exports.update = class extends API {
 		reportHistory.insert(this, logs);
 
 		return updateResponse;
-
 	}
 };
 
