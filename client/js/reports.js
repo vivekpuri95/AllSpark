@@ -695,7 +695,22 @@ class DataSource {
 
 				item.classList.add('item');
 
-				item.on('click', () => visualization.load());
+				item.on('click', () => {
+
+				if(descriptionToggle.parentElement.classList.contains('selected'))
+					descriptionToggle.click();
+
+				if(queryToggle.parentElement.classList.contains('selected'))
+					queryToggle.click();
+
+				if(filtersToggle.parentElement.classList.contains('selected'))
+					filtersToggle.click();
+
+				if(pipelineToggle.parentElement.classList.contains('selected'))
+					pipelineToggle.click();
+
+					visualization.load();
+				});
 
 				item.dataset.id =  visualization.visualization_id;
 
@@ -8124,9 +8139,12 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			return;
 
 		for(const row of this.source.originalResponse.data) {
+
 			const value = parseFloat(row.value);
+
 			if(!value)
 				continue;
+
 			newResponse[row.name] = value;
 		}
 
