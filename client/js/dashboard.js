@@ -636,22 +636,44 @@ class Dashboard {
 			}
 		});
 
-		page.container.querySelector('#reports .toolbar #full-screen').on('click', () => {
+		const fullScreenButton = page.container.querySelector('#reports .toolbar #full-screen');
+
+		fullScreenButton.on('click', () => {
 
 			const dashboardList = page.container.querySelector('#reports');
 
-			if(dashboardList.requestFullscreen) {
+			if(document.isFullScreen || document.webkitIsFullScreen || document.mozIsFullScreen) {
 
-				dashboardList.requestFullscreen();
-			}
-			else if(dashboardList.webkitRequestFullScreen) {
+				if(document.exitFullscreen)
+					document.exitFullscreen();
 
-				dashboardList.webkitRequestFullScreen();
-			}
-			else if(dashboardList.mozRequestFullScreen) {
+				else if(document.webkitExitFullscreen)
+					document.webkitExitFullscreen();
 
-				dashboardList.mozRequestFullScreen();
+				else if(document.mozExitFullscreen)
+					document.mozExitFullscreen();
 			}
+
+			else {
+
+				if(dashboardList.requestFullscreen)
+					dashboardList.requestFullscreen();
+
+				else if(dashboardList.webkitRequestFullscreen)
+					dashboardList.webkitRequestFullscreen();
+
+				else if(dashboardList.mozRequestFullscreen)
+					dashboardList.mozRequestFullscreen();
+			}
+		});
+
+		document.on('webkitfullscreenchange', () => {
+
+			if(document.isFullScreen || document.webkitIsFullScreen || document.mozIsFullScreen)
+				fullScreenButton.innerHTML = `<i class="fas fa-compress"></i> Exit Full Screen`;
+
+			else
+				fullScreenButton.innerHTML = `<i class="fas fa-expand"></i> Full Screen`;
 		});
 	}
 

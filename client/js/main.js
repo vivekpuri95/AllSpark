@@ -1085,8 +1085,6 @@ class User {
 			if(callback)
 				await callback();
 
-			await page.serviceWorker.clear();
-
 			if(account && account.settings.get('logout_redirect_url') && redirect)
 				window.open(account.settings.get('logout_redirect_url')+'?'+parameters.toString(), '_self');
 

@@ -137,7 +137,7 @@ class API {
 					environment.gitChecksum,
 					crypto.createHash('md5').update(JSON.stringify(obj.account)).digest('hex'),
 					crypto.createHash('md5').update(JSON.stringify([...obj.account.settings.entries()])).digest('hex'),
-					crypto.createHash('md5').update(JSON.stringify(obj.user ? obj.user.json : '')).digest('hex'),
+					crypto.createHash('md5').update(JSON.stringify(obj.user ? obj.user.json.settings || '' : '')).digest('hex'),
 				];
 
 				obj.checksum = crypto.createHash('md5').update(checksums.join()).digest('hex').substring(0, 10);

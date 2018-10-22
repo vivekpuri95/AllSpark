@@ -4487,9 +4487,11 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+
 						<label>
 							<span>Show</span>
 							<select name="showValue">
+								<option value="">None</option>
 								<option value="value">Value</option>
 								<option value="percentage">Percentage</option>
 							</select>
@@ -5395,6 +5397,7 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 			<label>
 				<span>Granularity</span>
 				<select name="granularity">
+					<option value=""></option>
 					<option value="number">Number</option>
 					<option value="second">Second</option>
 					<option value="minute">Minute</option>

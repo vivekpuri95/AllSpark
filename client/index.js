@@ -34,6 +34,7 @@ class HTMLAPI extends API {
 		let theme = 'light';
 
 		if(!this.user && this.request.cookies.token) {
+
 			const token_details = await commonFunctions.getUserDetailsJWT(this.request.cookies.token);
 
 			if(!token_details.error)
@@ -631,7 +632,7 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 						<i class="fas fa-cog"></i>
 						Configure
 					</button>
-					
+
 					<button id="full-screen">
 						<i class="fas fa-expand"></i>
 						Full Screen
