@@ -2793,6 +2793,62 @@ class DataSourceColumnCustomDateType {
 	}
 }
 
+	// <fieldset>
+
+	// <legend>Style</legend>
+
+	// <label>
+	// 	<input type="radio" name="style" value="currency">
+	// 	<span>Currency</span>
+	// </label>
+
+	// <label>
+	// 	<input type="radio" name="style" value="percent">
+	// 	<span>Percent</span>
+	// </label>
+
+	// <label>
+	// 	<input type="radio" name="style" value="decimal">
+	// 	<span>Decimal</span>
+	// </label>
+	// </fieldset>
+
+
+	// 	<fieldset class="currency-display hidden">
+
+	// 	<legend>Currency Display</legend>
+
+	// 	<label>
+	// 		<input type="radio" name="currencyDisplay" value="symbol">
+	// 		<span>Symbol</span>
+	// 	</label>
+
+	// 	<label>
+	// 		<input type="radio" name="currencyDisplay" value="code">
+	// 		<span>Code</span>
+	// 	</label>
+
+	// 	<label>
+	// 		<input type="radio" name="currencyDisplay" value="name">
+	// 		<span>Name</span>
+	// 	</label>
+	// </fieldset>
+
+
+// 	<fieldset>
+
+// 	<legend>Use Grouping</legend>
+
+// 	<label>
+// 		<input type="radio" name="useGrouping" value="true">
+// 		<span>Yes</span>
+// 	</label>
+
+// 	<label>
+// 		<input type="radio" name="useGrouping" value="false">
+// 		<span>No</span>
+// 	</label>
+// </fieldset>
 class DataSourceColumnCustomNumberType {
 
 	get container() {
@@ -2807,45 +2863,23 @@ class DataSourceColumnCustomNumberType {
 
 			<div class="number-format">
 
-				<fieldset>
+				<label>
+					Style
+					<select name="style">
+						<option value="currency">Currency</option>
+						<option value="percent">Percent</option>
+						<option value="decimal" selected>Decimal</option>
+					</select>
+				</label>
 
-					<legend>Style</legend>
-
-					<label>
-						<input type="radio" name="style" value="currency">
-						<span>Currency</span>
-					</label>
-
-					<label>
-						<input type="radio" name="style" value="percent">
-						<span>Percent</span>
-					</label>
-
-					<label>
-						<input type="radio" name="style" value="decimal">
-						<span>Decimal</span>
-					</label>
-				</fieldset>
-
-				<fieldset class="currency-display hidden">
-
-					<legend>Currency Display</legend>
-
-					<label>
-						<input type="radio" name="currencyDisplay" value="symbol">
-						<span>Symbol</span>
-					</label>
-
-					<label>
-						<input type="radio" name="currencyDisplay" value="code">
-						<span>Code</span>
-					</label>
-
-					<label>
-						<input type="radio" name="currencyDisplay" value="name">
-						<span>Name</span>
-					</label>
-				</fieldset>
+				<label class="currency-display">
+					Currency Display
+					<select name="currencyDisplay">
+						<option value="symbol">Symbol</option>
+						<option value="code">Code</option>
+						<option value="name">Name</option>
+					</select>
+				</label>
 
 				<fieldset>
 
@@ -2867,20 +2901,14 @@ class DataSourceColumnCustomNumberType {
 					</label>
 				</fieldset>
 
-				<fieldset>
+				<label>
+					Use Grouping
+					<select name="useGrouping">
+						<option value="true">Yes</option>
+						<option value="false">No</option>
+					</select>
+				</label>
 
-					<legend>Use Grouping</legend>
-
-					<label>
-						<input type="radio" name="useGrouping" value="true">
-						<span>Yes</span>
-					</label>
-
-					<label>
-						<input type="radio" name="useGrouping" value="false">
-						<span>No</span>
-					</label>
-				</fieldset>
 			</div>
 
 			<div class="form">
@@ -2953,12 +2981,24 @@ class DataSourceColumnCustomNumberType {
 				if(radio.checked)
 					this.checkedradio.push(radio);
 
-				container.querySelector('.currency-symbol').classList.toggle('hidden', radio.value == 'percent' || radio.value == 'decimal');
-				container.querySelector('.currency-display').classList.toggle('hidden', radio.value == 'percent' || radio.value == 'decimal');
+				// container.querySelector('.currency-symbol').classList.toggle('hidden', radio.value == 'percent' || radio.value == 'decimal');
+				// container.querySelector('.currency-display').classList.toggle('hidden', radio.value == 'percent' || radio.value == 'decimal');
 				container.querySelector('.round-precision').classList.toggle('hidden', radio.value == 'ceil' || radio.value == 'floor');
 
 				this.render(this.value);
 			});
+		}
+
+		for(const select of container.querySelectorAll('select')) {
+
+			select.on('change', () => {
+
+				container.querySelector('.currency-symbol').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
+				container.querySelector('.currency-display').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
+
+				this.render(this.value);
+			})
+
 		}
 
 		return container;
@@ -2975,26 +3015,35 @@ class DataSourceColumnCustomNumberType {
 
 		for(const input of this.container.querySelectorAll('input')) {
 
-			if(input.type == 'radio' && input.name != 'useGrouping') {
+			// if(input.type == 'radio' && input.name != 'useGrouping') {
 
-				input.checked = input.value == format[input.name];
+			// 	input.checked = input.value == format[input.name];
 
-				if(input.checked)
-					this.checkedradio.push(input);
-			}
+			// 	if(input.checked)
+			// 		this.checkedradio.push(input);
+			// }
 
-			else if(input.type == 'radio' && input.name == 'useGrouping') {
+			// else if(input.type == 'radio' && input.name == 'useGrouping') {
 
-				input.checked = JSON.parse(input.value) == format[input.name];
+			// 	input.checked = JSON.parse(input.value) == format[input.name];
 
-				if(input.checked)
-					this.checkedradio.push(input);
-			}
+			// 	if(input.checked)
+			// 		this.checkedradio.push(input);
+			// }
 
-			else if(format[input.name]) {
+			if(format[input.name]) {
 
 				input.value = format[input.name];
 			}
+		}
+
+		for(const select of this.container.querySelectorAll('select')) {
+
+			if(format[select.name] == select.name && format.name == 'useGrouping')
+				select.value = JSON.parse(format[select.name]);
+
+			else if(format[select.name] == select.name)
+				select.value = format[select.name]
 		}
 	}
 
@@ -3005,15 +3054,25 @@ class DataSourceColumnCustomNumberType {
 
 		const selectedInputs = {};
 
-		for(const format of ['style', 'roundOff', 'useGrouping', 'currencyDisplay']) {
+		for(const format of ['roundOff']) {
 
 			const input = this.container.querySelector(`input[name=${format}]`);
 
-			if(input.form[input.name].value && format == 'useGrouping')
-				selectedInputs[input.name] = JSON.parse(input.form[input.name].value);
+			// if(input.form[input.name].value && format == 'useGrouping')
+			// 	selectedInputs[input.name] = JSON.parse(input.form[input.name].value);
 
-			else if(input.form[input.name].value)
+			// else
+			if(input.form[input.name].value)
 				selectedInputs[input.name] = input.form[input.name].value;
+		}
+
+		for(const format of this.container.querySelectorAll('select')) {
+
+			if(format.name == 'useGrouping')
+				selectedInputs[format.name] = JSON.parse(format.value);
+
+			else
+				selectedInputs[format.name] = format.value;
 		}
 
 		for(const input of this.container.querySelectorAll('input')) {
@@ -3038,7 +3097,7 @@ class DataSourceColumnCustomNumberType {
 
 		const number = 123456.789;
 
-		if(!format || !Object.keys(format).length || (format && format.style == 'currency' && !format.currency)) {
+		if(!format || !Object.keys(format).length) {
 			this.container.querySelector('.example').innerHTML = number;
 			return;
 		}
