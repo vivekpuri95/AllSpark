@@ -1806,7 +1806,12 @@ class Format {
 
 		else {
 
-			const formatter = new Intl.NumberFormat(undefined, format);
+			let formatter;
+
+			try {
+				formatter = new Intl.NumberFormat(undefined, format);
+			}
+			catch(error) {}
 
 			selectedFormat = formatter;
 
@@ -1815,7 +1820,10 @@ class Format {
 
 		if(format && !format.roundOff) {
 
-			Format.number.formatter = selectedFormat.format(number);
+			try {
+				Format.number.formatter = selectedFormat.format(number);
+			}
+			catch(error) {}
 		}
 
 		else if(format && format.roundOff) {
