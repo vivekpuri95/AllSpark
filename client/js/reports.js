@@ -697,17 +697,17 @@ class DataSource {
 
 				item.on('click', () => {
 
-				if(descriptionToggle.parentElement.classList.contains('selected'))
-					descriptionToggle.click();
+					if(descriptionToggle.parentElement.classList.contains('selected'))
+						descriptionToggle.click();
 
-				if(queryToggle.parentElement.classList.contains('selected'))
-					queryToggle.click();
+					if(queryToggle.parentElement.classList.contains('selected'))
+						queryToggle.click();
 
-				if(filtersToggle.parentElement.classList.contains('selected'))
-					filtersToggle.click();
+					if(filtersToggle.parentElement.classList.contains('selected'))
+						filtersToggle.click();
 
-				if(pipelineToggle.parentElement.classList.contains('selected'))
-					pipelineToggle.click();
+					if(pipelineToggle.parentElement.classList.contains('selected'))
+						pipelineToggle.click();
 
 					visualization.load();
 				});
@@ -738,6 +738,8 @@ class DataSource {
 
 		if(this.visualizations.selected.visualization_id)
 			menu.querySelector('.configure-visualization').href = `/reports/configure-visualization/${this.visualizations.selected.visualization_id}`;
+
+		return menu;
 	}
 
 	async userList() {
@@ -1131,7 +1133,7 @@ class DataSource {
 				description.insertAdjacentHTML('beforeend', '<h3>Visualization Description</h3>' + this.visualizations.selected.description);
 		}
 
-		for(const item of this.container.querySelectorAll('.change-visualization + .submenu .item'))
+		for(const item of this.menu.querySelectorAll('.change-visualization + .submenu .item'))
 			item.classList.toggle('selected', item.dataset.id == this.visualizations.selected.visualization_id);
 
 		this.container.querySelector('.query code').innerHTML = new FormatSQL(this.originalResponse.query).query;

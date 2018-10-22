@@ -182,7 +182,7 @@ main .dataset {
 				width: max-content;
 				min-width: 150px;
 				position: absolute;
-				right: 100%;
+				left: 100%;
 				top: 0;
 				z-index: 7;
 				background: var(--color-surface);
