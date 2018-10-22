@@ -2827,6 +2827,26 @@ class DataSourceColumnCustomNumberType {
 					</label>
 				</fieldset>
 
+				<fieldset class="currency-display hidden">
+
+					<legend>Currency Display</legend>
+
+					<label>
+						<input type="radio" name="currencyDisplay" value="symbol">
+						<span>Symbol</span>
+					</label>
+
+					<label>
+						<input type="radio" name="currencyDisplay" value="code">
+						<span>Code</span>
+					</label>
+
+					<label>
+						<input type="radio" name="currencyDisplay" value="name">
+						<span>Name</span>
+					</label>
+				</fieldset>
+
 				<fieldset>
 
 					<legend>Round off</legend>
@@ -2870,6 +2890,11 @@ class DataSourceColumnCustomNumberType {
 					<input type="text" name="currency">
 				</label>
 
+				<label class="round-precision hidden">
+					<span>Round Precision</span>
+					<input type="number" name="roundPrecision" min="0" step="1" max="21">
+				</label>
+
 				<label>
 					<span>Minimum Integer Digits</span>
 					<input type="number" name="minimumIntegerDigits" min="1" step="1" max="21">
@@ -2901,8 +2926,10 @@ class DataSourceColumnCustomNumberType {
 
 		for(const value of container.querySelectorAll('input')) {
 
-			if(value.type != 'radio')
+			if(value.type != 'radio') {
 				value.on('keyup', () => this.render(this.value));
+				value.on('change', () => this.render(this.value));
+			}
 		}
 
 		for(const radio of container.querySelectorAll('input[type="radio"]')) {
@@ -2927,6 +2954,8 @@ class DataSourceColumnCustomNumberType {
 					this.checkedradio.push(radio);
 
 				container.querySelector('.currency-symbol').classList.toggle('hidden', radio.value == 'percent' || radio.value == 'decimal');
+				container.querySelector('.currency-display').classList.toggle('hidden', radio.value == 'percent' || radio.value == 'decimal');
+				container.querySelector('.round-precision').classList.toggle('hidden', radio.value == 'ceil' || radio.value == 'floor');
 
 				this.render(this.value);
 			});
@@ -2949,18 +2978,23 @@ class DataSourceColumnCustomNumberType {
 			if(input.type == 'radio' && input.name != 'useGrouping') {
 
 				input.checked = input.value == format[input.name];
+
 				if(input.checked)
 					this.checkedradio.push(input);
 			}
 
 			else if(input.type == 'radio' && input.name == 'useGrouping') {
+
 				input.checked = JSON.parse(input.value) == format[input.name];
+
 				if(input.checked)
 					this.checkedradio.push(input);
 			}
 
-			else if(format[input.name])
+			else if(format[input.name]) {
+
 				input.value = format[input.name];
+			}
 		}
 	}
 
@@ -2971,7 +3005,7 @@ class DataSourceColumnCustomNumberType {
 
 		const selectedInputs = {};
 
-		for(const format of ['style', 'roundOff', 'useGrouping']) {
+		for(const format of ['style', 'roundOff', 'useGrouping', 'currencyDisplay']) {
 
 			const input = this.container.querySelector(`input[name=${format}]`);
 
@@ -2991,6 +3025,12 @@ class DataSourceColumnCustomNumberType {
 				selectedInputs[input.name] = input.value;
 		}
 
+		if(selectedInputs.style != 'currency' && (selectedInputs.currency || selectedInputs.currencyDisplay)) {
+
+			delete selectedInputs.currency;
+			delete selectedInputs.currencyDisplay;
+		}
+
 		return selectedInputs;
 	}
 
@@ -3003,11 +3043,34 @@ class DataSourceColumnCustomNumberType {
 			return;
 		}
 
-		if(format && format.style != 'currency' && !this.container.querySelector('.currency-symbol').classList.contains('hidden')) {
-			this.container.querySelector('.currency-symbol').classList.add('hidden');
+		let
+			currencySymbol,
+			currencyDisplay,
+			roundPrecision;
+
+		if(!currencySymbol)
+			currencySymbol = this.container.querySelector('.currency-symbol');
+
+		if(!currencyDisplay)
+			currencyDisplay = this.container.querySelector('.currency-display');
+
+		if(!roundPrecision)
+			roundPrecision = this.container.querySelector('.round-precision');
+
+		currencySymbol.classList.add('hidden');
+		currencyDisplay.classList.add('hidden');
+		roundPrecision.classList.add('hidden');
+
+		if(format.style == 'currency') {
+
+			currencySymbol.classList.remove('hidden');
+			currencyDisplay.classList.remove('hidden');
 		}
 
-		this.container.querySelector('.example').innerHTML = new Intl.NumberFormat(undefined, format).format(number);
+		if(format.roundOff == 'round')
+			roundPrecision.classList.remove('hidden');
+
+		this.container.querySelector('.example').innerHTML = Format.number(number, format);
 	}
 }
 

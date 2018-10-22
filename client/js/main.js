@@ -1794,46 +1794,55 @@ class Format {
 		if(!format)
 			format = {maximumFractionDigits: 2};
 
-		if(!Format.cachedFormat)
-			Format.cachedFormat = [];
-
 		let selectedFormat;
 
-		for(const data of Format.cachedFormat) {
+		if(!Format.cachedFormat)
+			Format.cachedFormat = new Map();
 
-			if(JSON.stringify(data.format) == JSON.stringify(format))
-				selectedFormat = data;
+		if(Format.cachedFormat.has(format)) {
+
+			selectedFormat = Format.cachedFormat.get(format);
 		}
 
-		if(!selectedFormat) {
+		else {
 
-			selectedFormat = {
-				format: format,
-				formatter: new Intl.NumberFormat(undefined, format),
-			};
+			const formatter = new Intl.NumberFormat(undefined, format);
 
-			Format.cachedFormat.push(selectedFormat);
+			selectedFormat = formatter;
+
+			Format.cachedFormat.set(format,formatter);
 		}
 
 		if(format && !format.roundOff) {
 
-			Format.number.formatter = selectedFormat.formatter.format(number);
+			Format.number.formatter = selectedFormat.format(number);
 		}
 
 		else if(format && format.roundOff) {
 
 			const formatWhitelist = Object.assign({}, format);
 
-			for(const value in formatWhitelist) {
+			delete formatWhitelist.style;
+			delete formatWhitelist.currencyDisplay;
+			delete formatWhitelist.roundOff;
+			delete formatWhitelist.currency;
 
-				if(!parseInt(formatWhitelist[value]))
-					delete formatWhitelist[value];
-			}
+			formatWhitelist.useGrouping = false;
 
-			const
-				filterWhiteList = this.number(number, formatWhitelist),
-				roundOff = Math[format.roundOff](filterWhiteList),
-				formatBlacklist =  Object.assign({}, format);
+			if(!format.roundPrecision && format.roundOff == 'round')
+				format.roundPrecision = 0;
+
+			const filterWhiteList = this.number(number, formatWhitelist);
+
+			let roundOff;
+
+			if(format.roundOff == 'round')
+				roundOff = (JSON.parse(filterWhiteList)).toFixed(format.roundPrecision);
+
+			else
+				roundOff = Math[format.roundOff](JSON.parse(filterWhiteList));
+
+			const formatBlacklist =  Object.assign({}, format);
 
 			delete formatBlacklist.roundOff;
 
@@ -1842,6 +1851,7 @@ class Format {
 
 		return Format.number.formatter;
 	}
+
 }
 
 class Sections {

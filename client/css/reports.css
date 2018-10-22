@@ -1410,7 +1410,7 @@ main .dataset {
 		margin: 0 calc(var(--gap) * 2);
 		display: grid;
 		grid-gap: 10px;
-		background: rgba(0,0,0,0.05);
+		background: rgba(0, 0, 0, 0.05);
 		padding: calc(var(--gap) * 2);
 	}
 		.column-form .number-type-custom .form {
