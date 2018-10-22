@@ -472,6 +472,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 	async load() {
 
+		this.page.searchBar.data = Array.from(DataSource.list.values());
+
 		this.page.stages.get('configure-visualization').lastSelectedVisualizationId = null;
 
 		const tbody = this.container.querySelector('tbody');
