@@ -560,7 +560,7 @@ main.preview-left #stages {
 	}
 	.visualization-form .transformations .list {
 		display: grid;
-		grid-gap: calc(var--gap) * 2;
+		grid-gap: calc(var(--gap) * 2);
 	}
 		.visualization-form .transformations fieldset {
 			position: relative;
@@ -615,7 +615,10 @@ main.preview-left #stages {
 					grid-gap: calc(var(--gap) * 2);
 					width: max-content;
 				}
-				.visualization-form .transformations .transformation > .restrict_type {display: grid;grid-template-columns: repeat(2, max-content);}
+				.visualization-form .transformations .transformation > .restrict_type {
+					display: grid;
+					grid-template-columns: repeat(2, max-content);
+				}
 					.visualization-form .transformations .transformation h4 {
 						margin: 0;
 						border-bottom: 1px dashed var(--color-border);

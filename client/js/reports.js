@@ -3591,12 +3591,12 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 
 	async run(response = []) {
 
-		if(!response || !response.length || !this.columns.length)
+		if(!response || !response.length || !this.restrict_columns.columns.length)
 			return response;
 
 		const newResponse = [];
 
-		if(this.exclude) {
+		if(this.restrict_columns.exclude) {
 
 			for(const data of response) {
 
@@ -3604,7 +3604,7 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 
 				for(const key of Object.keys(data)) {
 
-					if(!this.columns.includes(key)) {
+					if(!this.restrict_columns.columns.includes(key)) {
 						temp[key] = data[key];
 					}
 				}
@@ -3618,7 +3618,7 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 
 				const temp = {};
 
-				for(const column of this.columns) {
+				for(const column of this.restrict_columns.columns) {
 					temp[column] = data[column];
 				}
 

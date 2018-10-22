@@ -5107,6 +5107,11 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 			<span>Exclude</span>
 		`;
 
+		if(this.restrict_columns) {
+			this.multiSelect.value = this.restrict_columns.columns;
+			label.querySelector('input').checked = this.restrict_columns.exclude;
+		}
+
 		container.appendChild(columns);
 		container.appendChild(label);
 
@@ -5117,8 +5122,10 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 
 		return {
 			type: this.key,
-			columns: this.multiSelect.value,
-			exclude: this.container.querySelector('label input[name="exclude"]').checked,
+			restrict_columns: {
+				columns: this.multiSelect.value,
+				exclude: this.container.querySelector('label input[name="exclude"]').checked,
+			}
 		};
 	};
 });
