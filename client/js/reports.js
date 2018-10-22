@@ -8116,6 +8116,26 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 	process() {
 
+		const
+			response = this.source.originalResponse,
+			newResponse = {};
+
+		if(!response || !response.data || !response.data.length)
+			return;
+
+		for(const row of this.source.originalResponse.data) {
+			const value = parseFloat(row.value);
+			if(!value)
+				continue;
+			newResponse[row.name] = value;
+		}
+
+		this.source.originalResponse.data = [newResponse];
+
+		this.source.columns.clear();
+		this.source.columns.update();
+		this.source.columns.render();
+
 		const visualizationToggle = this.source.container.querySelector('header .change-visualization');
 
 		if(visualizationToggle)
