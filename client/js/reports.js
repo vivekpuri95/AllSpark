@@ -3587,6 +3587,49 @@ class DataSourceTransformation {
 
 DataSourceTransformation.types = new Map;
 
+DataSourceTransformation.types.set('restrict-columns', class DataSourceTransformationRestrict extends DataSourceTransformation {
+
+	async run(response = []) {
+
+		if(!response || !response.length || !this.columns.length)
+			return response;
+
+		const newResponse = [];
+
+		if(this.exclude) {
+
+			for(const data of response) {
+
+				const temp = {};
+
+				for(const key of Object.keys(data)) {
+
+					if(!this.columns.includes(key)) {
+						temp[key] = data[key];
+					}
+				}
+
+				newResponse.push(temp);
+			}
+		}
+		else {
+
+			for(const data of response) {
+
+				const temp = {};
+
+				for(const column of this.columns) {
+					temp[column] = data[column];
+				}
+
+				newResponse.push(temp);
+			}
+		}
+
+		return newResponse;
+	}
+});
+
 DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot extends DataSourceTransformation {
 
 	async run(response = []) {
