@@ -5122,10 +5122,8 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 
 		return {
 			type: this.key,
-			restrict_columns: {
-				columns: this.multiSelect.value,
-				exclude: this.container.querySelector('label input[name="exclude"]').checked,
-			}
+			columns: this.multiSelect.value,
+			exclude: this.container.querySelector('label input[name="exclude"]').checked,
 		};
 	};
 });

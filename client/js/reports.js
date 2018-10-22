@@ -3591,39 +3591,28 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 
 	async run(response = []) {
 
-		if(!response || !response.length || !this.restrict_columns.columns.length)
+		if(!response || !response.length || !this.columns.length)
 			return response;
 
 		const newResponse = [];
 
-		if(this.restrict_columns.exclude) {
+		for(const data of response) {
 
-			for(const data of response) {
+			const temp = {};
 
-				const temp = {};
+			for(const key of Object.keys(data)) {
 
-				for(const key of Object.keys(data)) {
+				if(this.exclude){
 
-					if(!this.restrict_columns.columns.includes(key)) {
+					if(!this.columns.includes(key))
 						temp[key] = data[key];
-					}
 				}
-
-				newResponse.push(temp);
-			}
-		}
-		else {
-
-			for(const data of response) {
-
-				const temp = {};
-
-				for(const column of this.restrict_columns.columns) {
-					temp[column] = data[column];
+				else if(this.columns.includes(key)) {
+					temp[key] = data[key];
 				}
-
-				newResponse.push(temp);
 			}
+
+			newResponse.push(temp);
 		}
 
 		return newResponse;
