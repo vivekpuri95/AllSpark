@@ -3019,9 +3019,6 @@ class DataSourceColumnCustomNumberType {
 				if(input.checked)
 					this.checkedradio.push(input);
 			}
-
-			if(format[input.name])
-				input.value = format[input.name];
 		}
 
 		for(const select of this.container.querySelectorAll('select')) {

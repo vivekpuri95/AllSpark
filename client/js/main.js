@@ -1808,8 +1808,17 @@ class Format {
 
 			let formatter;
 
+			const formatList =  Object.assign({}, format);
+
+			if(formatList.style == 'currency' && (!formatList.currencyDisplay || !formatList.currency)) {
+
+				delete formatList.style;
+				delete formatList.currencyDisplay;
+				delete formatList.currency;
+			}
+
 			try {
-				formatter = new Intl.NumberFormat(undefined, format);
+				formatter = new Intl.NumberFormat(undefined, formatList);
 			}
 			catch(error) {}
 
