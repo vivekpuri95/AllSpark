@@ -2864,7 +2864,7 @@ class DataSourceColumnCustomNumberType {
 			<div class="number-format">
 
 				<label>
-					Style
+					<span>Style</span>
 					<select name="style">
 						<option value="currency">Currency</option>
 						<option value="percent">Percent</option>
@@ -2873,11 +2873,19 @@ class DataSourceColumnCustomNumberType {
 				</label>
 
 				<label class="currency-display">
-					Currency Display
+					<span>Currency Display</span>
 					<select name="currencyDisplay">
-						<option value="symbol">Symbol</option>
+						<option value="symbol" selected>Symbol</option>
 						<option value="code">Code</option>
 						<option value="name">Name</option>
+					</select>
+				</label>
+
+				<label>
+					<span>Use Grouping</span>
+					<select name="useGrouping">
+						<option value="true" selected>Yes</option>
+						<option value="false">No</option>
 					</select>
 				</label>
 
@@ -2900,15 +2908,6 @@ class DataSourceColumnCustomNumberType {
 						<span>Floor</span>
 					</label>
 				</fieldset>
-
-				<label>
-					Use Grouping
-					<select name="useGrouping">
-						<option value="true">Yes</option>
-						<option value="false">No</option>
-					</select>
-				</label>
-
 			</div>
 
 			<div class="form">
@@ -2981,8 +2980,6 @@ class DataSourceColumnCustomNumberType {
 				if(radio.checked)
 					this.checkedradio.push(radio);
 
-				// container.querySelector('.currency-symbol').classList.toggle('hidden', radio.value == 'percent' || radio.value == 'decimal');
-				// container.querySelector('.currency-display').classList.toggle('hidden', radio.value == 'percent' || radio.value == 'decimal');
 				container.querySelector('.round-precision').classList.toggle('hidden', radio.value == 'ceil' || radio.value == 'floor');
 
 				this.render(this.value);
@@ -2997,7 +2994,7 @@ class DataSourceColumnCustomNumberType {
 				container.querySelector('.currency-display').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
 
 				this.render(this.value);
-			})
+			});
 
 		}
 
@@ -3015,26 +3012,16 @@ class DataSourceColumnCustomNumberType {
 
 		for(const input of this.container.querySelectorAll('input')) {
 
-			// if(input.type == 'radio' && input.name != 'useGrouping') {
+			if(input.type == 'radio') {
 
-			// 	input.checked = input.value == format[input.name];
+				input.checked = input.value == format[input.name];
 
-			// 	if(input.checked)
-			// 		this.checkedradio.push(input);
-			// }
-
-			// else if(input.type == 'radio' && input.name == 'useGrouping') {
-
-			// 	input.checked = JSON.parse(input.value) == format[input.name];
-
-			// 	if(input.checked)
-			// 		this.checkedradio.push(input);
-			// }
-
-			if(format[input.name]) {
-
-				input.value = format[input.name];
+				if(input.checked)
+					this.checkedradio.push(input);
 			}
+
+			if(format[input.name])
+				input.value = format[input.name];
 		}
 
 		for(const select of this.container.querySelectorAll('select')) {
@@ -3058,21 +3045,17 @@ class DataSourceColumnCustomNumberType {
 
 			const input = this.container.querySelector(`input[name=${format}]`);
 
-			// if(input.form[input.name].value && format == 'useGrouping')
-			// 	selectedInputs[input.name] = JSON.parse(input.form[input.name].value);
-
-			// else
 			if(input.form[input.name].value)
 				selectedInputs[input.name] = input.form[input.name].value;
 		}
 
-		for(const format of this.container.querySelectorAll('select')) {
+		for(const select of this.container.querySelectorAll('select')) {
 
-			if(format.name == 'useGrouping')
-				selectedInputs[format.name] = JSON.parse(format.value);
+			if(select.name == 'useGrouping')
+				selectedInputs[select.name] = JSON.parse(select.value);
 
 			else
-				selectedInputs[format.name] = format.value;
+				selectedInputs[select.name] = select.value;
 		}
 
 		for(const input of this.container.querySelectorAll('input')) {
