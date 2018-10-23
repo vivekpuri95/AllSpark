@@ -737,6 +737,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			}
 		}
 
+		this.form.subtitle.textContent = null;
+
 		for(const category of MetaData.categories.values()) {
 
 			this.form.subtitle.insertAdjacentHTML('beforeend', `
