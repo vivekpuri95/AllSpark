@@ -9069,6 +9069,11 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 		if(!this.options.sourceColumn || !this.options.targetColumn || !this.options.valueColumn)
 			return;
 
+		const flag = this.cycleDetection();
+
+		if(flag)
+			return this.source.error('Circular data present.');
+
 		await this.plot(options);
 	}
 
@@ -9085,6 +9090,9 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 		if(!this.options.valueColumn)
 			return this.source.error('Value column not selected.');
+
+		if(this.options.sourceColumn == this.options.targetColumn)
+			return this.source.error('Source and Target columns are same');
 
 		const response = await this.response;
 
@@ -9111,9 +9119,58 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 		});
 	}
 
+	cycleDetection() {
+
+		const
+			response = this.response,
+			sourceTargetMap = new Map;
+
+		for(const data of response) {
+
+			if(!sourceTargetMap.has(data.get(this.options.sourceColumn)))
+				sourceTargetMap.set(data.get(this.options.sourceColumn), new Set);
+
+			sourceTargetMap.get(data.get(this.options.sourceColumn)).add(data.get(this.options.targetColumn))
+		}
+
+		let cyclePresent = false;
+
+		for(const [key, value] of sourceTargetMap) {
+
+			cyclePresent = cycle(key, value, key)
+
+			if(cyclePresent)
+				break;
+		}
+
+		function cycle(key, value, source) {
+
+			if(!value)
+				return;
+
+			const valueArray = Array.from(value);
+
+			if(valueArray.includes(source))
+				return true;
+
+			let x = false;
+
+			for(const data of valueArray) {
+				x = cycle(data, sourceTargetMap.get(data), source)
+			}
+
+			return x;
+		}
+
+		return cyclePresent;
+	}
+
 	async plot(options = {}) {
 
 		this.sankey();
+
+		if(isNaN(this.response[0].get(this.options.valueColumn)))
+			return this.source.error('Value is not a number');
 
 		const nodeMap = {};
 
@@ -9409,6 +9466,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 					x = 0;
 
 				while(remainingNodes.length) {
+
 					nextNodes = [];
 
 					for(const node of remainingNodes) {

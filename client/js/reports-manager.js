@@ -4858,7 +4858,7 @@ ConfigureVisualization.types.set('sankey', class SankeyOptions extends ReportVis
 
 						<label>
 							<span>
-								<input type="checkbox" name="hideLegend"> Hide Legend
+								<input type="checkbox" name="hideLegend" checked=true> Hide Legend
 							</span>
 						</label>
 
