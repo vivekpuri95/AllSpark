@@ -1794,48 +1794,25 @@ class Format {
 		if(!format)
 			format = {maximumFractionDigits: 2};
 
-		let selectedFormat;
+		if(!Format.cachedNumberFormat)
+			Format.cachedNumberFormat = new Map();
 
-		if(!Format.cachedFormat)
-			Format.cachedFormat = new Map();
+		let cacheKey = JSON.stringify(format);
 
-		if(Format.cachedFormat.has(format)) {
-
-			selectedFormat = Format.cachedFormat.get(format);
-		}
-
-		else {
-
-			let formatter;
-
-			const formatList =  Object.assign({}, format);
-
-			if(formatList.style == 'currency' && (!formatList.currencyDisplay || !formatList.currency)) {
-
-				delete formatList.style;
-				delete formatList.currencyDisplay;
-				delete formatList.currency;
-			}
+		if(!Format.cachedNumberFormat.has(cacheKey)) {
 
 			try {
-				formatter = new Intl.NumberFormat(undefined, formatList);
+				Format.cachedNumberFormat.set(cacheKey, new Intl.NumberFormat(undefined, format));
 			}
-			catch(error) {}
-
-			selectedFormat = formatter;
-
-			Format.cachedFormat.set(format,formatter);
+			catch(e) {
+				Format.cachedNumberFormat.set(cacheKey, new Intl.NumberFormat());
+			}
 		}
 
-		if(format && !format.roundOff) {
+		if(!format.roundOff)
+			Format.number.formatter = Format.cachedNumberFormat.get(cacheKey.format(number));
 
-			try {
-				Format.number.formatter = selectedFormat.format(number);
-			}
-			catch(error) {}
-		}
-
-		else if(format && format.roundOff) {
+		else if(format.roundOff) {
 
 			const formatWhitelist = Object.assign({}, format);
 
