@@ -48,7 +48,6 @@ exports.list = class extends API {
 				tb_object_roles o
 			ON 
 				o.owner_id = vd.owner_id
-				AND vd.owner = 'dashboard'
 			JOIN
 				tb_dashboards d
 			ON
@@ -60,6 +59,7 @@ exports.list = class extends API {
 				AND q.is_deleted = 0
 				AND d.account_id = ?
 				AND d.status = 1
+				AND vd.owner = 'dashboard'
 		`;
 
 		const dashboardToReportAccessQuery = `
@@ -77,7 +77,6 @@ exports.list = class extends API {
                 tb_object_roles o
             ON
                 o.owner_id = vd.owner_id
-                AND vd.owner = 'dashboard' 
             JOIN
                 tb_dashboards d
             ON
@@ -89,6 +88,7 @@ exports.list = class extends API {
                  AND qv.is_enabled = 1
                  and qv.is_deleted = 0
                  AND d.status = 1
+                 AND vd.owner = 'dashboard'
             GROUP BY query_id
         `;
 
@@ -821,8 +821,7 @@ exports.userPrvList = class extends API {
                 		JOIN
                 			tb_user_dashboard ud
                 		ON
-                			vd.owner_id = ud.dashboard_id
-                			AND vd.owner = 'dashboard'
+                			vd.owner_id = ud.dashboard_id                			
                 		JOIN
                 			tb_query_visualizations qv
                 			USING(visualization_id)
@@ -830,6 +829,7 @@ exports.userPrvList = class extends API {
                 			 query_id = ?
                 			 and qv.is_enabled = 1
                 			 and qv.is_deleted = 0
+                			 AND vd.owner = 'dashboard'
                 	) dashboard_user
                USING(user_id)
                 	LEFT JOIN

@@ -47,8 +47,7 @@ class Authenticate {
                 		JOIN
                 			tb_object_roles r
                 		ON 
-                			vd.owner_id = r.owner_id
-                			AND vd.owner = 'dashboard'
+                			vd.owner_id = r.owner_id                			
                 		JOIN
                 			tb_query_visualizations qv
                 			USING(visualization_id)
@@ -57,6 +56,7 @@ class Authenticate {
                 			AND query_id = ?
                 			AND r.owner = 'dashboard'
                 			AND target = 'user'
+                			AND vd.owner = 'dashboard'
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id
@@ -157,12 +157,12 @@ class Authenticate {
 					JOIN
 						tb_object_roles o
 					ON 
-						o.owner_id = vd.owner_id
-						AND vd.owner = 'dashboard' 
+						o.owner_id = vd.owner_id						
 					WHERE
 						o.owner = "dashboard"
 						AND o.target = "role"
 						AND query_id = ?
+						AND vd.owner = 'dashboard' 
 				`,
 				[reportObject.query_id ? reportObject.query_id : parseInt(reportObject) || 0]
 			);

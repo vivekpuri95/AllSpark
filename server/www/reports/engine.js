@@ -53,7 +53,6 @@ class report extends API {
                 		JOIN
                 			tb_object_roles r
                 			ON vd.owner_id = r.owner_id
-                			AND vd.owner = 'dashboard'
                 		JOIN
                 			tb_query_visualizations qv
                 			USING(visualization_id)
@@ -63,7 +62,8 @@ class report extends API {
                 			AND r.owner = 'dashboard'
                 			AND target = 'user'
                 			AND qv.is_enabled = 1
-                			and qv.is_deleted = 0
+                			AND qv.is_deleted = 0
+                			AND vd.owner = 'dashboard'
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id

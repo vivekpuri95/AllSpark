@@ -45,13 +45,13 @@ class Dashboard extends API {
 			join
 				tb_dashboards d
 			on
-				d.id = vd.owner_id
-				AND vd.owner = 'dashboard'
+				d.id = vd.owner_id				
 			where
 				d.status = 1
 				and q.is_enabled = 1 
 				and q.is_deleted = 0
 				and q.account_id = ?
+				AND vd.owner = 'dashboard'
 			group by 
 				dashboard_id,
 				query_id
@@ -69,15 +69,15 @@ class Dashboard extends API {
 			JOIN
 				tb_dashboards d 
 			ON 
-				d.id = vd.owner_id
-				AND vd.owner = 'dashboard' 
+				d.id = vd.owner_id				
 			JOIN
 				tb_query q USING(query_id)
 			WHERE
-				d.status = 1 AND
-				d.account_id = ? AND
-				q.is_enabled = 1 AND
-				q.is_deleted = 0
+				d.status = 1 
+				AND d.account_id = ? 
+				AND q.is_enabled = 1 
+				AND q.is_deleted = 0
+				AND vd.owner = 'dashboard' 
 			`,
 			[this.account.account_id]
 		);
