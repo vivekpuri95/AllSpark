@@ -9130,6 +9130,8 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 			sourceTargetMap.get(data.get(this.options.sourceColumn)).add(data.get(this.options.targetColumn))
 		}
 
+		const that = this;
+
 		let cyclePresent = false;
 
 		for(const [key, value] of sourceTargetMap) {
@@ -9143,12 +9145,14 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 		function cycle(key, value, source) {
 
 			if(!value)
-				return;
+				return false;
 
 			const valueArray = Array.from(value);
 
-			if(valueArray.includes(source))
-				return true;
+			if(valueArray.includes(source)) {
+
+				throw that.source.error('Circular data present.');
+			}
 
 			let x = false;
 
@@ -9164,10 +9168,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 	async plot(options = {}) {
 
-		const flag = this.cycleDetection();
-
-		if(flag)
-			return this.source.error('Circular data present.');
+		this.cycleDetection();
 
 		this.sankey();
 

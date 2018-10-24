@@ -4864,7 +4864,7 @@ ConfigureVisualization.types.set('sankey', class SankeyOptions extends ReportVis
 
 						<label>
 							<span>
-								<input type="checkbox" name="hideTooltip"> Hide ToolTip
+								<input type="checkbox" name="hideTooltip"> Hide Tooltip
 							</span>
 						</label>
 
