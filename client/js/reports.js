@@ -4871,7 +4871,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		const
 			container = this.container.querySelector('.container'),
-			rows = await this.source.response();
+			rows = await this.source.response() || [];
 
 		container.textContent = null;
 
