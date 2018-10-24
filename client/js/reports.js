@@ -149,8 +149,11 @@ class DataSource {
 
 		this.pipeline.add(new DataSourcePipelineEvent({
 			title: 'Report Executed',
-			duration: response.runtime,
-			rows: response.data.length,
+			subtitle: [
+				{key: 'Duration', value: `${Format.number(response.runtime)}ms`},
+				{key: 'Rows', value: Format.number(response.data.length)},
+				{key: 'Columns', value: Format.number(Object.keys(response.data[0]).length)},
+			],
 		}));
 
 		this.columns.update();
@@ -552,8 +555,6 @@ class DataSource {
 			</div>
 		`;
 
-		// menu.on('click', e => e.stopPropagation());
-
 		const
 			filtersToggle = menu.querySelector('.filters-toggle'),
 			descriptionToggle = menu.querySelector('.description-toggle'),
@@ -787,8 +788,10 @@ class DataSource {
 
 			this.pipeline.add(new DataSourcePipelineEvent({
 				title: `${this.postProcessors.selected.name} (${this.postProcessors.selected.value})`,
-				duration: performance.now() - time,
-				rows: response.length,
+				subtitle: [
+					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
+					{key: 'Rows', value: Format.number(response.length)},
+				],
 			}));
 		}
 
@@ -823,8 +826,10 @@ class DataSource {
 
 			this.pipeline.add(new DataSourcePipelineEvent({
 				title: `Sort by ${this.columns.sortBy.name} ${parseInt(this.columns.sortBy.sort) === 0 ? 'Descending' : 'Ascending'}`,
-				duration: performance.now() - time,
-				rows: response.length,
+				subtitle: [
+					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
+					{key: 'Rows', value: Format.number(response.length)},
+				],
 			}));
 		}
 
@@ -1714,7 +1719,7 @@ class DataSourceColumns extends Map {
 
 	update(response) {
 
-		if(!this.source.originalResponse.data || !this.source.originalResponse.data.length)
+		if(!this.source.originalResponse || !this.source.originalResponse.data || !this.source.originalResponse.data.length)
 			return;
 
 		this.clear();
@@ -3783,18 +3788,8 @@ class DataSourceTransformations extends Set {
 
 		response = JSON.parse(JSON.stringify(response));
 
-		for(const transformation of this) {
-
-			const time = performance.now();
-
+		for(const transformation of this)
 			response = await transformation.run(response);
-
-			this.source.pipeline.add(new DataSourcePipelineEvent({
-				title: transformation.name,
-				duration: performance.now() - time,
-				rows: response.length,
-			}));
-		}
 
 		if(this.size) {
 			this.source.columns.update(response);
@@ -3852,6 +3847,45 @@ class DataSourceTransformation {
 		this.source = source;
 
 		Object.assign(this, transformation);
+
+		this.dataColumns = {
+			incoming: new DataSourceColumns(this.source),
+			outgoing: new DataSourceColumns(this.source),
+		};
+	}
+
+	async run(response) {
+
+		if(!response || !response.length)
+			return response;
+
+		const time = performance.now();
+
+		this.dataColumns.incoming.update(response);
+
+		response = await this.execute(response);
+
+		this.dataColumns.outgoing.update(response);
+
+		this.source.pipeline.add(new DataSourcePipelineEvent({
+			title: this.name,
+			subtitle: [
+				{
+					key: 'Duration',
+					value: `${Format.number(performance.now() - time)}ms`
+				},
+				{
+					key: 'Rows',
+					value: Format.number(response.length || 0)
+				},
+				{
+					key: 'Columns',
+					value: Format.number(this.dataColumns.outgoing.size)
+				},
+			],
+		}));
+
+		return response;
 	}
 }
 
@@ -3895,7 +3929,7 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 		return 'Pivot Table';
 	}
 
-	async run(response = []) {
+	async execute(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -4036,7 +4070,7 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 		return 'Filters';
 	}
 
-	async run(response = []) {
+	async execute(response = []) {
 
 		if(!response || !response.length || !this.filters || !this.filters.length)
 			return response;
@@ -4075,7 +4109,7 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 		return 'Auto Fill';
 	}
 
-	async run(response = []) {
+	async execute(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -4183,7 +4217,7 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 		return 'Stream';
 	}
 
-	async run(response = []) {
+	async execute(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -4813,11 +4847,23 @@ class DataSourcePipelineEvent {
 		container.innerHTML = `
 			<div class="order">${Format.number(this.order)}</div>
 			<h2>${this.title}</h2>
-			<div class="subtitle">
-				<span>Duration: <strong>${Format.number(this.duration)}ms</strong></span>
-				<span>Rows: <strong>${Format.number(this.rows)}</strong></span>
-			</div>
 		`;
+
+		if(this.subtitle && this.subtitle.length) {
+
+			const subtitleContainer = document.createElement('div');
+
+			subtitleContainer.classList.add('subtitle');
+
+			for(const subtitle of this.subtitle) {
+
+				subtitleContainer.insertAdjacentHTML('beforeend', `
+					<span>${subtitle.key}: <strong>${subtitle.value}</strong></span>
+				`);
+			}
+
+			container.appendChild(subtitleContainer);
+		}
 
 		return container;
 	}
