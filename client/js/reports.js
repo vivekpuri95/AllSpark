@@ -2249,7 +2249,6 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-			debugger
 		try {
 
 		const [sourceColumn] = this.source.format && this.source.format.columns ? this.source.format.columns.filter(c => c.key == this.key) : [];
@@ -2284,7 +2283,7 @@ class DataSourceColumn {
 			this.type.formatNumber = this.customNumberType.value;
 	}
 	catch(err) {
-		console.log(err,'error')
+		// console.log(err,'error')
 	}
 		// if(!this.customNumberType.value)
 		if(this.interval)
@@ -2971,6 +2970,9 @@ class DataSourceColumnCustomNumberType {
 
 		return selectedInputs;
 	}
+
+	//render will call getter and getter will call render
+	// if we return using try catch in getter , render functionality will not work
 
 	render() {
 

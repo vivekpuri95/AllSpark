@@ -1789,6 +1789,21 @@ class Format {
 		return Format.dateTime.formatter.format(dateTime);
 	}
 
+	/**
+	 * Static number is used for formatting numbers according to javascript Intl.NumberFormat
+	 * It accepts two parameters i.e number and format, number is mandatory and formal is optional.
+	 * If no format is passed then by default it is set as format = {maximumFractionDigits: 2}
+	 *
+	 * This will do things like
+	 * - Rounding off digits using toFixed, ceil and floor.
+	 * - Setting up currency for the number
+	 * - Limiting number of integer, fractional, significant digits.
+	 *
+	 * @param  number	number	A mandatory value, The number on which selected format will be applied
+	 * @param  object	format	An optional value, format passed into the function as an object that contains
+	 * 							paramters required for formatting the number.
+	 */
+
 	static number(number, format = {maximumFractionDigits: 2}) {
 
 		if(!Format.cachedNumberFormat)
