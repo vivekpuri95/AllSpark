@@ -9050,6 +9050,8 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 
 	async load(options = {}) {
 
+		super.render(options);
+
 		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
 
 		await this.source.fetch();
