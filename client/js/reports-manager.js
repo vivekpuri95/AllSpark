@@ -5511,10 +5511,12 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 		const
 			columnSelect = container.querySelector('select[name=column]'),
 			functionSelect = container.querySelector('select[name=function]'),
-			valueInput = container.querySelector('input[name=value]');
+			valueInput = container.querySelector('input[name=value]'),
+			position = Array.from(this.transformations).indexOf(this),
+			transformation = Array.from(this.page.preview.report.transformations)[position];
 
-		for(const column in this.page.preview.report.originalResponse.data[0])
-			columnSelect.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
+		for(const column of transformation ? transformation.incoming.columns.values() : this.page.preview.report.columns.values())
+			columnSelect.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
 
 		columnSelect.value = filter.column;
 

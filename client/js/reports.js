@@ -3848,9 +3848,14 @@ class DataSourceTransformation {
 
 		Object.assign(this, transformation);
 
-		this.dataColumns = {
-			incoming: new DataSourceColumns(this.source),
-			outgoing: new DataSourceColumns(this.source),
+		this.incoming = {
+			rows: null,
+			columns: new DataSourceColumns(this.source),
+		};
+
+		this.outgoing = {
+			rows: null,
+			columns: new DataSourceColumns(this.source),
 		};
 	}
 
@@ -3861,11 +3866,11 @@ class DataSourceTransformation {
 
 		const time = performance.now();
 
-		this.dataColumns.incoming.update(response);
+		this.incoming.columns.update(response);
 
 		response = await this.execute(response);
 
-		this.dataColumns.outgoing.update(response);
+		this.outgoing.columns.update(response);
 
 		this.source.pipeline.add(new DataSourcePipelineEvent({
 			title: this.name,
@@ -3880,7 +3885,7 @@ class DataSourceTransformation {
 				},
 				{
 					key: 'Columns',
-					value: Format.number(this.dataColumns.outgoing.size)
+					value: Format.number(this.outgoing.columns.size)
 				},
 			],
 		}));
