@@ -9071,11 +9071,6 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 		if(!this.options.sourceColumn || !this.options.targetColumn || !this.options.valueColumn)
 			return;
 
-		const flag = this.cycleDetection();
-
-		if(flag)
-			return this.source.error('Circular data present.');
-
 		await this.plot(options);
 	}
 
@@ -9168,6 +9163,11 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 	}
 
 	async plot(options = {}) {
+
+		const flag = this.cycleDetection();
+
+		if(flag)
+			return this.source.error('Circular data present.');
 
 		this.sankey();
 
