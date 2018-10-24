@@ -1799,8 +1799,6 @@ class Format {
 
 		const cacheKey = JSON.stringify(format);
 
-		let result;
-
 		if(!Format.cachedNumberFormat.has(cacheKey)) {
 
 			try {
@@ -1812,10 +1810,11 @@ class Format {
 		}
 
 		if(!format.roundOff)
-			result = Format.cachedNumberFormat.get(cacheKey).format(number);
+			return Format.cachedNumberFormat.get(cacheKey).format(number);
 
-		else {
+		let result;
 
+		{
 			const formatWhiteList = JSON.parse(JSON.stringify(format));
 
 			for(const format in formatWhiteList) {
@@ -1824,26 +1823,23 @@ class Format {
 					delete formatWhiteList[format];
 			}
 
-			const filterWhiteList = Format.number(number, {...formatWhiteList, useGrouping: false});
-
-			let roundOff;
-
-			if(format.roundOff == 'round')
-				roundOff = (JSON.parse(filterWhiteList)).toFixed(format.roundPrecision || 0);
-
-			else
-				roundOff = Math[format.roundOff](JSON.parse(filterWhiteList));
-
-			const formatBlacklist =  Object.assign({}, format);
-
-			delete formatBlacklist.roundOff;
-
-			result = Format.number(roundOff, formatBlacklist);
+			result = parseFloat(Format.number(number, {...formatWhiteList, useGrouping: false}));
 		}
 
-		return result;
-	}
+		{
+			if(format.roundOff == 'round')
+				result = result.toFixed(format.roundPrecision || 0);
 
+			else if(['ceil', 'floor'].includes(format.roundOff))
+				result = Math[format.roundOff](result);
+		}
+
+		{
+			const {roundOff:_, ...formatBlacklist} =  JSON.parse(JSON.stringify(format));
+
+			return Format.number(result, formatBlacklist);
+		}
+	}
 }
 
 class Sections {
