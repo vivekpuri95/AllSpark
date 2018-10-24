@@ -1789,10 +1789,7 @@ class Format {
 		return Format.dateTime.formatter.format(dateTime);
 	}
 
-	static number(number, format) {
-
-		if(!format)
-			format = {maximumFractionDigits: 2};
+	static number(number, format = {maximumFractionDigits: 2}) {
 
 		if(!Format.cachedNumberFormat)
 			Format.cachedNumberFormat = new Map();
@@ -1835,7 +1832,7 @@ class Format {
 		}
 
 		{
-			const {roundOff:_, ...formatBlacklist} =  JSON.parse(JSON.stringify(format));
+			const {roundOff: _, ...formatBlacklist} =  JSON.parse(JSON.stringify(format));
 
 			return Format.number(result, formatBlacklist);
 		}

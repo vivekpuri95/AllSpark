@@ -2005,8 +2005,7 @@ class DataSourceColumn {
 		if(this.form.querySelector('.timing-type-custom'))
 			this.form.querySelector('.timing-type-custom').remove();
 
-		else if(this.form.querySelector('.number-type-custom'))
-			this.form.querySelector('.number-type-custom').remove();
+		this.customNumberType.container.remove();
 
 		this.customDateType.value = format;
 
@@ -2146,8 +2145,7 @@ class DataSourceColumn {
 			if(form.querySelector('.timing-type-custom'))
 				form.querySelector('.timing-type-custom').remove();
 
-			else if(this.form.querySelector('.number-type-custom'))
-				this.form.querySelector('.number-type-custom').remove();
+			this.customNumberType.container.remove();
 
 			if(DataSourceColumn.formatType.has(form.type.value)) {
 
@@ -2164,13 +2162,15 @@ class DataSourceColumn {
 
 				this.customDateType.render(selectedFormat);
 			}
+
 			else if(form.type.value == 'customNumber') {
 
 				form.insertBefore(this.customNumberType.container, form.querySelector('label.color'));
 
 				selectedFormat = this.customNumberType.value;
 
-				this.customNumberType.render(selectedFormat);
+				// this.customNumberType.render(selectedFormat);
+				// (remove render from here)
 			}
 
 			if(selectedFormat && form.type.value == 'custom')
@@ -2793,62 +2793,6 @@ class DataSourceColumnCustomDateType {
 	}
 }
 
-	// <fieldset>
-
-	// <legend>Style</legend>
-
-	// <label>
-	// 	<input type="radio" name="style" value="currency">
-	// 	<span>Currency</span>
-	// </label>
-
-	// <label>
-	// 	<input type="radio" name="style" value="percent">
-	// 	<span>Percent</span>
-	// </label>
-
-	// <label>
-	// 	<input type="radio" name="style" value="decimal">
-	// 	<span>Decimal</span>
-	// </label>
-	// </fieldset>
-
-
-	// 	<fieldset class="currency-display hidden">
-
-	// 	<legend>Currency Display</legend>
-
-	// 	<label>
-	// 		<input type="radio" name="currencyDisplay" value="symbol">
-	// 		<span>Symbol</span>
-	// 	</label>
-
-	// 	<label>
-	// 		<input type="radio" name="currencyDisplay" value="code">
-	// 		<span>Code</span>
-	// 	</label>
-
-	// 	<label>
-	// 		<input type="radio" name="currencyDisplay" value="name">
-	// 		<span>Name</span>
-	// 	</label>
-	// </fieldset>
-
-
-// 	<fieldset>
-
-// 	<legend>Use Grouping</legend>
-
-// 	<label>
-// 		<input type="radio" name="useGrouping" value="true">
-// 		<span>Yes</span>
-// 	</label>
-
-// 	<label>
-// 		<input type="radio" name="useGrouping" value="false">
-// 		<span>No</span>
-// 	</label>
-// </fieldset>
 class DataSourceColumnCustomNumberType {
 
 	get container() {
