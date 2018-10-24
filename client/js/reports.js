@@ -752,7 +752,9 @@ class DataSource {
 
 	async response() {
 
+		// Empty out the pipeline
 		for(const event of this.pipeline) {
+
 			if(event.title != 'Report Executed')
 				this.pipeline.delete(event);
 		}
@@ -774,32 +776,8 @@ class DataSource {
 
 		const time = performance.now();
 
-		for(const _row of data) {
-
-			const row = new DataSourceRow(_row, this);
-
-			if(!row.skip)
-				response.push(row);
-		}
-
-		let filters = [];
-
-		for(const column of this.columns.list.values()) {
-
-			if(column.filters && column.filters.length)
-				filters.push(column.filters.length);
-		}
-
-		if(filters.length) {
-
-			const sum = filters.reduce((a, v) => a + v, 0);
-
-			this.pipeline.add(new DataSourcePipelineEvent({
-				title: `Apply ${sum} filter${sum > 1 ? 's' : ''} on ${filters.length} column${filters.length > 1 ? 's' : ''}`,
-				duration: performance.now() - time,
-				rows: response.length,
-			}));
-		}
+		for(const row of data)
+			response.push(new DataSourceRow(row, this));
 
 		if(this.postProcessors.selected) {
 
@@ -1654,31 +1632,6 @@ class DataSourceRow extends Map {
 
 				} catch(e) {
 					row[key] = null;
-				}
-			}
-
-			if(column.filters && column.filters.length) {
-
-				for(const search of column.filters) {
-
-					if(search.value === '')
-						continue;
-
-					if(!row[key])
-						this.skip = true;
-
-					if(!search.slug)
-						continue;
-
-					// Look for a filter with the selected filter's slug
-					const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == search.slug);
-
-					if(!filter)
-						continue;
-
-					// Apply the filter. It checks if a row passes a filter or not.
-					if(!filter.apply(search.value, row[key] === null ? '' : row[key]))
-						this.skip = true;
 				}
 			}
 
@@ -3824,15 +3777,9 @@ class DataSourceTransformations extends Set {
 
 		this.clear();
 
-		const
-			visualization = this.source.visualizations.selected,
-			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
+		this.reset();
 
-		for(const transformation of transformations) {
-
-			if(DataSourceTransformation.types.has(transformation.type))
-				this.add(new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source));
-		}
+		this.loadFilters();
 
 		response = JSON.parse(JSON.stringify(response));
 
@@ -3843,7 +3790,7 @@ class DataSourceTransformations extends Set {
 			response = await transformation.run(response);
 
 			this.source.pipeline.add(new DataSourcePipelineEvent({
-				title: transformation.type,
+				title: transformation.name,
 				duration: performance.now() - time,
 				rows: response.length,
 			}));
@@ -3855,6 +3802,46 @@ class DataSourceTransformations extends Set {
 		}
 
 		return response;
+	}
+
+	reset() {
+
+		const
+			visualization = this.source.visualizations.selected,
+			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
+
+		for(const transformation of transformations) {
+
+			if(DataSourceTransformation.types.has(transformation.type))
+				this.add(new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source));
+		}
+	}
+
+	loadFilters() {
+
+		const filters = [];
+
+		for(const column of this.source.columns.list.values()) {
+
+			if(!column.filters || !column.filters.length)
+				continue;
+
+			for(const filter of column.filters) {
+
+				filters.push({
+					column: column.key,
+					function: filter.slug,
+					value: filter.value,
+				});
+			}
+		}
+
+		if(!filters.length)
+			return;
+
+		const type = DataSourceTransformation.types.get('filters');
+
+		this.add(new type({type: 'filters', filters}, this));
 	}
 }
 
@@ -3903,6 +3890,10 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 });
 
 DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot extends DataSourceTransformation {
+
+	get name() {
+		return 'Pivot Table';
+	}
 
 	async run(response = []) {
 
@@ -4041,6 +4032,10 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 
 DataSourceTransformation.types.set('filters', class DataSourceTransformationFilters extends DataSourceTransformation {
 
+	get name() {
+		return 'Filters';
+	}
+
 	async run(response = []) {
 
 		if(!response || !response.length || !this.filters || !this.filters.length)
@@ -4075,6 +4070,10 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 });
 
 DataSourceTransformation.types.set('autofill', class DataSourceTransformationAutofill extends DataSourceTransformation {
+
+	get name() {
+		return 'Auto Fill';
+	}
 
 	async run(response = []) {
 
@@ -4179,6 +4178,10 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 });
 
 DataSourceTransformation.types.set('stream', class DataSourceTransformationStream extends DataSourceTransformation {
+
+	get name() {
+		return 'Stream';
+	}
 
 	async run(response = []) {
 

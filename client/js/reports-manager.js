@@ -4991,8 +4991,8 @@ class ReportTransformations extends Set {
 
 		const select = this.container.querySelector('.add-transformation select');
 
-		for(const [key, type] of ReportTransformation.types)
-			select.insertAdjacentHTML('beforeend', `<option value="${key}">${new type({}, this).name}</option>`);
+		for(const [key, type] of DataSourceTransformation.types)
+			select.insertAdjacentHTML('beforeend', `<option value="${key}">${new type().name}</option>`);
 
 		this.container.querySelector('.add-transformation').on('submit', e => this.insert(e));
 
@@ -5120,21 +5120,12 @@ class ReportTransformation {
 
 		container.innerHTML = `
 			<div class="actions">
-				<!--<div class="disabled" title="Disable Transformation"><i class="fas fa-ban"></i></div>-->
 				<div class="preview" title="Preview Data"><i class="fas fa-eye"></i></div>
 				<div class="remove" title="Remove Transformation"><i class="fa fa-times"></i></div>
 			</div>
 			<legend>${this.name}</legend>
 			<div class="transformation ${this.key}"></div>
 		`;
-
-		// container.classList.toggle('disabled', this.disabled);
-
-		// container.querySelector('.actions .disabled').on('click', () => {
-		// 	this.disabled = !this.disabled;
-		// 	this.transformations.render();
-		// 	this.transformations.preview();
-		// });
 
 		container.querySelector('.actions .preview').on('click', () => {
 			this.transformations.render();
@@ -5212,10 +5203,6 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 });
 
 ReportTransformation.types.set('pivot', class ReportTransformationPivot extends ReportTransformation {
-
-	get name() {
-		return 'Pivot Table';
-	}
 
 	get key() {
 		return 'pivot';
@@ -5406,10 +5393,6 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 ReportTransformation.types.set('filters', class ReportTransformationFilters extends ReportTransformation {
 
-	get name() {
-		return 'Filters';
-	}
-
 	get key() {
 		return 'filters';
 	}
@@ -5507,10 +5490,6 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 ReportTransformation.types.set('autofill', class ReportTransformationAutofill extends ReportTransformation {
 
-	get name() {
-		return 'Auto Fill';
-	}
-
 	get key() {
 		return 'autofill';
 	}
@@ -5604,10 +5583,6 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 });
 
 ReportTransformation.types.set('stream', class ReportTransformationStream extends ReportTransformation {
-
-	get name() {
-		return 'Stream';
-	}
 
 	get key() {
 		return 'stream';
