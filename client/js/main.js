@@ -1803,7 +1803,6 @@ class Format {
 	 * @param  object	format	An optional value, format passed into the function as an object that contains
 	 * 							paramters required for formatting the number.
 	 */
-
 	static number(number, format = {maximumFractionDigits: 2}) {
 
 		if(!Format.cachedNumberFormat)
@@ -1847,7 +1846,7 @@ class Format {
 		}
 
 		{
-			const {roundOff: _, ...formatBlacklist} =  JSON.parse(JSON.stringify(format));
+			const {roundOff: _, ...formatBlacklist} = JSON.parse(JSON.stringify(format));
 
 			return Format.number(result, formatBlacklist);
 		}

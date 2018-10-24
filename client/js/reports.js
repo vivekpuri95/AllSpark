@@ -2804,7 +2804,7 @@ class DataSourceColumnCustomNumberType {
 
 		container.innerHTML = `
 
-			<span class="NA">Example: <span class="example">123456.789</span></span>
+			<span class="NA">Example: <span class="example"></span></span>
 
 			<div class="number-format">
 
@@ -2887,10 +2887,8 @@ class DataSourceColumnCustomNumberType {
 
 		for(const value of container.querySelectorAll('input')) {
 
-			if(value.type != 'radio') {
-				value.on('keyup', () => this.render());
-				value.on('change', () => this.render());
-			}
+			value.on('keyup', () => this.render());
+			value.on('change', () => this.render());
 		}
 
 		for(const select of container.querySelectorAll('select')) {
@@ -2905,33 +2903,20 @@ class DataSourceColumnCustomNumberType {
 			});
 		}
 
+		this.render();
+
 		return container;
 	}
 
 	set value(format) {
 
-		if(!this.container)
+		if(!this.containerElement)
 			return this.customNumberValueCache = format;
 
-		for(const input of this.container.querySelectorAll('input')) {
+		for(const input of this.container.querySelectorAll('input, select')) {
 
-			for(const key in format) {
-
-				if(input.name == key)
-					input.value = format[key];
-			}
-		}
-
-		for(const select of this.container.querySelectorAll('select')) {
-
-			for(const key in format) {
-
-				if(key == select.name && key == 'useGrouping')
-					select.value = JSON.parse(format[key]);
-
-				else if(key == select.name)
-					select.value = format[key];
-			}
+			if(input.name in format)
+				input.value = format[input.name];
 		}
 
 		this.render();
@@ -2939,7 +2924,7 @@ class DataSourceColumnCustomNumberType {
 
 	get value() {
 
-		if(!this.container)
+		if(!this.containerElement)
 			return this.customNumberValueCache;
 
 		const selectedInputs = {};
@@ -2959,20 +2944,8 @@ class DataSourceColumnCustomNumberType {
 				selectedInputs[input.name] = input.value;
 		}
 
-		// if(!this.render())
-		// 	throw 'abc';
-		// try {
-		// 	new Intl.NumberFormat(undefined, selectedInputs);
-		// }
-		// catch(e){
-		// 	console.log(e,'lll');
-		// }
-
 		return selectedInputs;
 	}
-
-	//render will call getter and getter will call render
-	// if we return using try catch in getter , render functionality will not work
 
 	render() {
 
