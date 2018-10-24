@@ -5107,6 +5107,10 @@ class ReportTransformation {
 		this.page = this.stage.page;
 
 		Object.assign(this, transformation);
+
+		const type = DataSourceTransformation.types.get(this.key);
+
+		this.name = new type().name;
 	}
 
 	get container() {
@@ -5120,12 +5124,56 @@ class ReportTransformation {
 
 		container.innerHTML = `
 			<div class="actions">
+				<div class="move-up" title="Move Up"><i class="fas fa-angle-up"></i></div>
+				<div class="move-down" title="Move Down"><i class="fas fa-angle-down"></i></div>
 				<div class="preview" title="Preview Data"><i class="fas fa-eye"></i></div>
 				<div class="remove" title="Remove Transformation"><i class="fa fa-times"></i></div>
 			</div>
 			<legend>${this.name}</legend>
 			<div class="transformation ${this.key}"></div>
 		`;
+
+		container.querySelector('.actions .move-up').on('click', () => {
+
+			const
+				list = Array.from(this.transformations),
+				position = list.indexOf(this);
+
+			if(position == 0)
+				return;
+
+			list.splice(position, 1);
+			list.splice(position - 1, 0, this);
+
+			this.transformations.clear();
+
+			for(const transformation of list)
+				this.transformations.add(transformation);
+
+			this.transformations.render();
+			this.transformations.preview();
+		});
+
+		container.querySelector('.actions .move-down').on('click', () => {
+
+			const
+				list = Array.from(this.transformations),
+				position = list.indexOf(this);
+
+			if(position == list.length - 1)
+				return;
+
+			list.splice(position, 1);
+			list.splice(position + 1, 0, this);
+
+			this.transformations.clear();
+
+			for(const transformation of list)
+				this.transformations.add(transformation);
+
+			this.transformations.render();
+			this.transformations.preview();
+		});
 
 		container.querySelector('.actions .preview').on('click', () => {
 			this.transformations.render();
