@@ -2249,6 +2249,9 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
+			debugger
+		try {
+
 		const [sourceColumn] = this.source.format && this.source.format.columns ? this.source.format.columns.filter(c => c.key == this.key) : [];
 
 		for(const element of this.form.elements) {
@@ -2279,7 +2282,11 @@ class DataSourceColumn {
 
 		else if(this.form.type.value == 'customNumber')
 			this.type.formatNumber = this.customNumberType.value;
-
+	}
+	catch(err) {
+		console.log(err,'error')
+	}
+		// if(!this.customNumberType.value)
 		if(this.interval)
 			clearInterval(this.interval);
 
@@ -2828,25 +2835,16 @@ class DataSourceColumnCustomNumberType {
 					</select>
 				</label>
 
-				<fieldset>
+				<label>
+					<span>Round off</span>
+					<select name="roundOff">
+						<option value="" selected>None</option>
+						<option value="round">Round</option>
+						<option value="ceil">Ceil</option>
+						<option value="floor">Floor</option>
+					</select>
+				</label>
 
-					<legend>Round off</legend>
-
-					<label>
-						<input type="radio" name="roundOff" value="round">
-						<span>Round</span>
-					</label>
-
-					<label>
-						<input type="radio" name="roundOff" value="ceil">
-						<span>Ceil</span>
-					</label>
-
-					<label>
-						<input type="radio" name="roundOff" value="floor">
-						<span>Floor</span>
-					</label>
-				</fieldset>
 			</div>
 
 			<div class="form">
@@ -2891,36 +2889,9 @@ class DataSourceColumnCustomNumberType {
 		for(const value of container.querySelectorAll('input')) {
 
 			if(value.type != 'radio') {
-				value.on('keyup', () => this.render(this.value));
-				value.on('change', () => this.render(this.value));
+				value.on('keyup', () => this.render());
+				value.on('change', () => this.render());
 			}
-		}
-
-		for(const radio of container.querySelectorAll('input[type="radio"]')) {
-
-			radio.on('click', () => {
-
-				for(const [index, _radio] of this.checkedradio.entries()) {
-
-					if(_radio.name == radio.name) {
-
-						if(_radio.value == radio.value) {
-
-							radio.checked = false;
-							radio.form[radio.name].value = '';
-						}
-
-						this.checkedradio.splice(index, 1);
-					}
-				}
-
-				if(radio.checked)
-					this.checkedradio.push(radio);
-
-				container.querySelector('.round-precision').classList.toggle('hidden', radio.value == 'ceil' || radio.value == 'floor');
-
-				this.render(this.value);
-			});
 		}
 
 		for(const select of container.querySelectorAll('select')) {
@@ -2929,10 +2900,10 @@ class DataSourceColumnCustomNumberType {
 
 				container.querySelector('.currency-symbol').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
 				container.querySelector('.currency-display').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
+				container.querySelector('.round-precision').classList.toggle('hidden', select.value == 'ceil' || select.value == 'floor');
 
-				this.render(this.value);
+				this.render();
 			});
-
 		}
 
 		return container;
@@ -2943,18 +2914,12 @@ class DataSourceColumnCustomNumberType {
 		if(!this.container)
 			return this.customNumberValueCache = format;
 
-		this.render(format);
-
-		this.checkedradio = [];
-
 		for(const input of this.container.querySelectorAll('input')) {
 
-			if(input.type == 'radio') {
+			for(const key in format) {
 
-				input.checked = input.value == format[input.name];
-
-				if(input.checked)
-					this.checkedradio.push(input);
+				if(input.name == key)
+					input.value = format[key];
 			}
 		}
 
@@ -2969,6 +2934,8 @@ class DataSourceColumnCustomNumberType {
 					select.value = format[key];
 			}
 		}
+
+		this.render();
 	}
 
 	get value() {
@@ -2978,90 +2945,85 @@ class DataSourceColumnCustomNumberType {
 
 		const selectedInputs = {};
 
-		for(const format of ['roundOff']) {
-
-			const input = this.container.querySelector(`input[name=${format}]`);
-
-			if(input.form[input.name].value)
-				selectedInputs[input.name] = input.form[input.name].value;
-		}
-
 		for(const select of this.container.querySelectorAll('select')) {
 
 			if(select.name == 'useGrouping')
 				selectedInputs[select.name] = JSON.parse(select.value);
 
-			else
+			else if(select.value)
 				selectedInputs[select.name] = select.value;
 		}
 
 		for(const input of this.container.querySelectorAll('input')) {
 
-			if(input.type == 'radio')
-				continue;
-
 			if(input.value)
 				selectedInputs[input.name] = input.value;
 		}
 
-		if(selectedInputs.style != 'currency' && (selectedInputs.currency || selectedInputs.currencyDisplay)) {
-
-			delete selectedInputs.currency;
-			delete selectedInputs.currencyDisplay;
-		}
+		// if(!this.render())
+		// 	throw 'abc';
+		// try {
+		// 	new Intl.NumberFormat(undefined, selectedInputs);
+		// }
+		// catch(e){
+		// 	console.log(e,'lll');
+		// }
 
 		return selectedInputs;
 	}
 
-	render(format) {
+	render() {
 
-		const number = 123456.789;
-
-		if(!format || !Object.keys(format).length) {
-			this.container.querySelector('.example').innerHTML = number;
-			return;
-		}
-
-		let
-			currencySymbol,
-			currencyDisplay,
-			roundPrecision;
-
-		if(!currencySymbol)
-			currencySymbol = this.container.querySelector('.currency-symbol');
-
-		if(!currencyDisplay)
-			currencyDisplay = this.container.querySelector('.currency-display');
-
-		if(!roundPrecision)
-			roundPrecision = this.container.querySelector('.round-precision');
-
-		currencySymbol.classList.add('hidden');
-		currencyDisplay.classList.add('hidden');
-		roundPrecision.classList.add('hidden');
-
-		if(format.style == 'currency') {
-
-			currencySymbol.classList.remove('hidden');
-			currencyDisplay.classList.remove('hidden');
-		}
-
-		if(format.roundOff == 'round')
-			roundPrecision.classList.remove('hidden');
+		const example = this.container.querySelector('.example');
 
 		try {
+
+			const
+				format = this.value,
+				number = 123456.789;
+
+			if(!format || !Object.keys(format).length) {
+
+				example.innerHTML = number;
+				return;
+			}
+
+			if(!this.currencySymbol)
+				this.currencySymbol = this.container.querySelector('.currency-symbol');
+
+			if(!this.currencyDisplay)
+				this.currencyDisplay = this.container.querySelector('.currency-display');
+
+			if(!this.roundPrecision)
+				this.roundPrecision = this.container.querySelector('.round-precision');
+
+			this.currencySymbol.classList.add('hidden');
+			this.currencyDisplay.classList.add('hidden');
+			this.roundPrecision.classList.add('hidden');
+
+			if(format.style == 'currency') {
+
+				this.currencySymbol.classList.remove('hidden');
+				this.currencyDisplay.classList.remove('hidden');
+			}
+
+			if(format.roundOff == 'round')
+				this.roundPrecision.classList.remove('hidden');
+
 			new Intl.NumberFormat(undefined, format);
-			this.container.querySelector('.example').classList.remove('example-error');
+
+			example.classList.remove('example-error');
+
+			return example.innerHTML = Format.number(number, format);
 		}
+
 		catch(e) {
 
-			this.container.querySelector('.example').classList.add('example-error');
-			this.container.querySelector('.example').innerHTML = e;
+			example.classList.add('example-error');
+			example.innerHTML = e;
 
 			return;
 		}
-
-		return this.container.querySelector('.example').innerHTML = Format.number(number, format);
 	}
 }
 
