@@ -2166,17 +2166,10 @@ class DataSourceColumn {
 			else if(form.type.value == 'customNumber') {
 
 				form.insertBefore(this.customNumberType.container, form.querySelector('label.color'));
-
-				selectedFormat = this.customNumberType.value;
-
-				// this.customNumberType.render(selectedFormat);
-				// (remove render from here)
 			}
 
 			if(selectedFormat && form.type.value == 'custom')
 				this.customDateType.value = selectedFormat;
-			else if(selectedFormat && form.type.value == 'customNumber')
-				this.customNumberType.value = selectedFormat;
 		});
 
 		form.on('submit', async e => this.apply(e));
@@ -2967,11 +2960,14 @@ class DataSourceColumnCustomNumberType {
 
 		for(const select of this.container.querySelectorAll('select')) {
 
-			if(format[select.name] == select.name && format.name == 'useGrouping')
-				select.value = JSON.parse(format[select.name]);
+			for(const key in format) {
 
-			else if(format[select.name] == select.name)
-				select.value = format[select.name]
+				if(key == select.name && key == 'useGrouping')
+					select.value = JSON.parse(format[key]);
+
+				else if(key == select.name)
+					select.value = format[key];
+			}
 		}
 	}
 
