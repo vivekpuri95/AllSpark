@@ -40,12 +40,13 @@ class Dashboard extends API {
 				tb_query_visualizations qv
 				using(query_id)
 			join
-				tb_visualization_dashboard vd
+				tb_visualization_canvas vd
 				using(visualization_id)
 			join
 				tb_dashboards d
 			on
-				d.id = vd.dashboard_id
+				d.id = vd.owner_id
+				AND vd.owner = 'dashboard'
 			where
 				d.status = 1
 				and q.is_enabled = 1 
@@ -62,11 +63,14 @@ class Dashboard extends API {
 				vd.*,
 				query_id
 			FROM
-				tb_visualization_dashboard vd
+				tb_visualization_canvas vd
 			JOIN
 				tb_query_visualizations qv USING(visualization_id)
 			JOIN
-				tb_dashboards d ON d.id = vd.dashboard_id
+				tb_dashboards d 
+			ON 
+				d.id = vd.owner_id
+				AND vd.owner = 'dashboard' 
 			JOIN
 				tb_query q USING(query_id)
 			WHERE
@@ -146,7 +150,7 @@ class Dashboard extends API {
 
 		for (const queryDashboard of visualizationDashboards) {
 
-			if (!dashboardObject[queryDashboard.dashboard_id]) {
+			if (!dashboardObject[queryDashboard.owner_id]) {
 
 				continue;
 			}
@@ -159,7 +163,7 @@ class Dashboard extends API {
 				queryDashboard.format = [];
 			}
 
-			dashboardObject[queryDashboard.dashboard_id].visualizations.push(queryDashboard);
+			dashboardObject[queryDashboard.owner_id].visualizations.push(queryDashboard);
 		}
 
 		for (const d in dashboardObject) {

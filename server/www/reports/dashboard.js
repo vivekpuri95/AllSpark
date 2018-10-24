@@ -4,23 +4,25 @@ const auth = require('../../utils/auth');
 
 exports.insert = class extends API {
 
-	async insert() {
+	async insert({owner, owner_id, visualization_id, format = null} = {}) {
 
 		this.user.privilege.needs("visualization.insert", "ignore");
 
-		const mandatoryData = ["dashboard_id", "visualization_id"];
+		const mandatoryData = [owner, owner_id, visualization_id];
 
-		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
+		mandatoryData.map(x => this.assert(x, 'Owner, Owner Id and Visualization Id required'));
 
-		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
+		if(owner == 'dashboard') {
 
-		this.assert(!authResponse.error, authResponse.message);
+			const authResponse = await auth.dashboard({dashboard: owner_id, userObj: this.user});
+			this.assert(!authResponse.error, authResponse.message);
+		}
 
-		this.assert(commonFun.isJson(this.request.body.format), "format is invalid");
+		this.assert(commonFun.isJson(format), "format is invalid");
 
 		return await this.mysql.query(
-			"INSERT INTO tb_visualization_dashboard (dashboard_id, visualization_id, format) VALUES (?, ?, ?)",
-			[this.request.body.dashboard_id, this.request.body.visualization_id, this.request.body.format],
+			"INSERT INTO tb_visualization_canvas (owner, owner_id, visualization_id, format) VALUES (?, ?, ?, ?)",
+			[owner, owner_id, visualization_id, format],
 			"write"
 		);
 	}
@@ -29,24 +31,25 @@ exports.insert = class extends API {
 
 exports.delete = class extends API {
 
-	async delete() {
+	async delete({id} = {}) {
 
 		this.user.privilege.needs("visualization.delete", "ignore");
 
-		const mandatoryData = ["id"];
-		mandatoryData.map(x => this.assert(this.request.body[x], x + " is missing"));
+		this.assert(id, 'Id is missing')
 
-		const [dashboard] = await this.mysql.query("select * from tb_visualization_dashboard where id = ?", [this.request.body.id]);
+		const [canvasRow] = await this.mysql.query("select * from tb_visualization_canvas where id = ?", [id]);
 
-		this.assert(dashboard && dashboard.dashboard_id, "Visualization Dashboard not found, incorrect id");
+		this.assert(canvasRow, "Visualization row not found, incorrect id");
 
-		const authResponse = await auth.dashboard({dashboard: dashboard.dashboard_id, userObj: this.user});
+		if(canvasRow.owner == 'dashboard') {
 
-		this.assert(!authResponse.error, authResponse.message);
+			const authResponse = await auth.dashboard({dashboard: canvasRow.owner_id, userObj: this.user});
+			this.assert(!authResponse.error, authResponse.message);
+		}
 
 		return await this.mysql.query(
-			"DELETE FROM tb_visualization_dashboard WHERE id = ?",
-			[this.request.body.id],
+			"DELETE FROM tb_visualization_canvas WHERE id = ?",
+			[id],
 			"write"
 		);
 	}
@@ -55,20 +58,25 @@ exports.delete = class extends API {
 
 exports.updateFormat = class extends API {
 
-	async updateFormat() {
+	async updateFormat({id, owner, owner_id, format}) {
 
 		this.user.privilege.needs('visualization.update', 'ignore');
 
-		const authResponse = await auth.dashboard({dashboard: this.request.body.dashboard_id, userObj: this.user});
+        if(owner != 'dashboard') {
 
-		this.assert(!authResponse.error, authResponse.message);
+        	return;
+        }
 
-		// Make sure the format is valid JSON
-		this.assert(commonFun.isJson(this.request.body.format), "format is invalid");
+        const authResponse = await auth.dashboard({dashboard: owner_id, userObj: this.user});
+
+        this.assert(!authResponse.error, authResponse.message);
+
+        // Make sure the format is valid JSON
+		this.assert(commonFun.isJson(format), "format is invalid");
 
 		return await this.mysql.query(
-			'UPDATE tb_visualization_dashboard SET format = ? WHERE id = ? and (select true from tb_dashboards where id = ? and account_id = ?)',
-			[this.request.body.format, this.request.body.id, this.request.body.dashboard_id, this.account.account_id],
+			'UPDATE tb_visualization_canvas SET format = ? WHERE id = ? and (select true from tb_dashboards where id = ? and account_id = ?)',
+			[format, id, owner_id, this.account.account_id],
 			'write'
 		);
 	}
@@ -77,39 +85,34 @@ exports.updateFormat = class extends API {
 
 exports.update = class extends API {
 
-	async update() {
+	async update({id, owner, owner_id, visualization_id, format = null} = {}) {
 
 		this.user.privilege.needs('visualization.update', 'ignore');
 
-		const [dashboard] = await this.mysql.query(
-			`SELECT * FROM tb_visualization_dashboard WHERE id = ?`,
-			[this.request.body.id]
+		const [canvasRow] = await this.mysql.query(
+			`SELECT * FROM tb_visualization_canvas WHERE id = ?`,
+			[id]
 		);
 
-		this.assert(dashboard, 'Invalid id');
+		this.assert(canvasRow, 'Invalid id');
 
-		const
-			values = {},
-			columns = ['format', 'visualization_id'];
+		let values =  {
+			visualization_id: visualization_id || canvasRow.visualization_id,
+			format: format
+		};
 
-		for(const key in this.request.body) {
+		if(canvasRow.owner == 'dashboard') {
 
-			if (columns.includes(key)) {
-
-				values[key] = this.request.body[key] || null;
-			}
+			const authResponse = await auth.dashboard({dashboard: canvasRow.owner_id, userObj: this.user});
+			this.assert(!authResponse.error, authResponse.message);
 		}
 
-		const authResponse = await auth.dashboard({dashboard: dashboard.dashboard_id, userObj: this.user});
-
-		this.assert(!authResponse.error, authResponse.message);
-
 		// Make sure the format is valid JSON
-		this.assert(commonFun.isJson(this.request.body.format), "format is invalid");
+		this.assert(commonFun.isJson(format), "format is invalid");
 
 		return await this.mysql.query(
-			'UPDATE tb_visualization_dashboard SET ? WHERE id = ?',
-			[values, this.request.body.id],
+			'UPDATE tb_visualization_canvas SET ? WHERE id = ?',
+			[values, id],
 			'write'
 		);
 	}
