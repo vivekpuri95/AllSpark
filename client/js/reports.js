@@ -2929,19 +2929,13 @@ class DataSourceColumnCustomNumberType {
 
 		const selectedInputs = {};
 
-		for(const select of this.container.querySelectorAll('select')) {
+		for(const select of this.container.querySelectorAll('select, input')) {
 
-			if(select.name == 'useGrouping')
+			if(select.name == 'useGrouping' && select.value)
 				selectedInputs[select.name] = JSON.parse(select.value);
 
-			else if(select.value)
+			if(select.value)
 				selectedInputs[select.name] = select.value;
-		}
-
-		for(const input of this.container.querySelectorAll('input')) {
-
-			if(input.value)
-				selectedInputs[input.name] = input.value;
 		}
 
 		return selectedInputs;
