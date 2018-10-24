@@ -619,6 +619,9 @@ main.preview-left #stages {
 					display: grid;
 					grid-template-columns: repeat(2, max-content);
 				}
+				.visualization-form .transformations .transformation > .restrict-column input:not(:checked) + span {
+					color: #ccc;
+				}
 					.visualization-form .transformations .transformation h4 {
 						margin: 0;
 						border-bottom: 1px dashed var(--color-border);

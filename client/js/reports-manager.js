@@ -5103,9 +5103,14 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 		columns.appendChild(this.multiSelect.container);
 
 		label.innerHTML = `
-			<input type="checkbox" name="exclude">
+			<input type="checkbox" name="exclude" disabled>
 			<span>Exclude</span>
 		`;
+
+		this.multiSelect.on('change', () => {
+
+			label.querySelector('input').disabled = this.multiSelect.value.length ? false : true;
+		});
 
 		this.multiSelect.value = this.columns || [];
 		label.querySelector('input').checked = this.exclude || '';
