@@ -3600,7 +3600,7 @@ DataSourceTransformation.types.set('restrict-columns', class DataSourceTransform
 
 			const temp = {};
 
-			for(const key of Object.keys(data)) {
+			for(const key in data) {
 
 				if(this.exclude){
 
