@@ -1416,6 +1416,9 @@ main .dataset {
 		.column-form .number-type-custom .form {
 			margin: 0 -10px;
 		}
+		.column-form .number-type-custom .NA .example-error {
+			color: var(--color-red);
+		}
 		.column-form .timing-format,
 		.column-form .number-format {
 			display: grid;

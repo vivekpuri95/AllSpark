@@ -2861,6 +2861,8 @@ class DataSourceColumnCustomNumberType {
 
 		container.innerHTML = `
 
+			<span class="NA">Example: <span class="example">123456.789</span></span>
+
 			<div class="number-format">
 
 				<label>
@@ -2947,8 +2949,6 @@ class DataSourceColumnCustomNumberType {
 					<input type="number" name="maximumSignificantDigits" min="1" step="1" max="21">
 				</label>
 			</div>
-
-			<span>Example: <span class="example">123456.789</span></span>
 		`;
 
 		for(const value of container.querySelectorAll('input')) {
@@ -3109,7 +3109,19 @@ class DataSourceColumnCustomNumberType {
 		if(format.roundOff == 'round')
 			roundPrecision.classList.remove('hidden');
 
-		this.container.querySelector('.example').innerHTML = Format.number(number, format);
+		try {
+			new Intl.NumberFormat(undefined, format);
+			this.container.querySelector('.example').classList.remove('example-error');
+		}
+		catch(e) {
+
+			this.container.querySelector('.example').classList.add('example-error');
+			this.container.querySelector('.example').innerHTML = e;
+
+			return;
+		}
+
+		return this.container.querySelector('.example').innerHTML = Format.number(number, format);
 	}
 }
 

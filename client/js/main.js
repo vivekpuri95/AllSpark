@@ -1797,7 +1797,9 @@ class Format {
 		if(!Format.cachedNumberFormat)
 			Format.cachedNumberFormat = new Map();
 
-		let cacheKey = JSON.stringify(format);
+		const cacheKey = JSON.stringify(format);
+
+		let result;
 
 		if(!Format.cachedNumberFormat.has(cacheKey)) {
 
@@ -1810,28 +1812,24 @@ class Format {
 		}
 
 		if(!format.roundOff)
-			Format.number.formatter = Format.cachedNumberFormat.get(cacheKey.format(number));
+			result = Format.cachedNumberFormat.get(cacheKey).format(number);
 
-		else if(format.roundOff) {
+		else {
 
-			const formatWhitelist = Object.assign({}, format);
+			const formatWhiteList = JSON.parse(JSON.stringify(format));
 
-			delete formatWhitelist.style;
-			delete formatWhitelist.currencyDisplay;
-			delete formatWhitelist.roundOff;
-			delete formatWhitelist.currency;
+			for(const format in formatWhiteList) {
 
-			formatWhitelist.useGrouping = false;
+				if(!format.endsWith('Digits'))
+					delete formatWhiteList[format];
+			}
 
-			if(!format.roundPrecision && format.roundOff == 'round')
-				format.roundPrecision = 0;
-
-			const filterWhiteList = this.number(number, formatWhitelist);
+			const filterWhiteList = Format.number(number, {...formatWhiteList, useGrouping: false});
 
 			let roundOff;
 
 			if(format.roundOff == 'round')
-				roundOff = (JSON.parse(filterWhiteList)).toFixed(format.roundPrecision);
+				roundOff = (JSON.parse(filterWhiteList)).toFixed(format.roundPrecision || 0);
 
 			else
 				roundOff = Math[format.roundOff](JSON.parse(filterWhiteList));
@@ -1840,10 +1838,10 @@ class Format {
 
 			delete formatBlacklist.roundOff;
 
-			this.number(roundOff, formatBlacklist);
+			result = Format.number(roundOff, formatBlacklist);
 		}
 
-		return Format.number.formatter;
+		return result;
 	}
 
 }
