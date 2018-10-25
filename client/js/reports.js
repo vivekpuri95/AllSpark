@@ -4044,10 +4044,154 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 	}
 });
 
+DataSourcePostProcessors.processors.set('CollapseToAverage', class extends DataSourcePostProcessor {
+
+	get name() {
+		return 'Collapse To (Average)';
+	}
+
+	get domain() {
+
+		return new Map([
+			['second', 'Second'],
+			['minute', 'Minute'],
+			['hour', 'Hour'],
+			['day', 'Day'],
+			['week', 'Week'],
+			['month', 'Month'],
+		]);
+	}
+
+	processor(response) {
+
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
+			return response;
+
+		const result = new Map;
+
+		let monthCount;
+
+		for(const row of response) {
+
+			let
+				period,
+				timing;
+
+			const periodDate = new Date(row.get(timingColumn.key));
+
+			// Week starts from monday, not sunday
+			if(this.value == 'week') {
+				period = (periodDate.getDay() ? periodDate.getDay() - 1 : 6) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
+
+			else if(this.value == 'month') {
+				period = (periodDate.getDate() - 1) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+
+				if(monthCount && (monthCount != timing)) {
+
+					const count = new Date(new Date(monthCount).getFullYear(), new Date(monthCount).getMonth() + 1, 0).getDate();
+
+					const xx = result.get(monthCount);
+
+					for(const [key, value] of row) {
+
+						if(!isNaN(value)) {
+							xx.set(key, xx.get(key) / count);
+						}
+					}
+				}
+
+				monthCount = timing;
+			}
+
+			else if(this.value == 'day') {
+				period = periodDate.getHours() * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
+
+			else if(this.value == 'hour') {
+				period = periodDate.getMinutes() * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13) + ':00:00';
+			}
+
+			else if(this.value == 'minute') {
+				period = periodDate.getSeconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16) + ':00';
+			}
+
+			else if(this.value == 'second') {
+				period = periodDate.getMilliseconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 19);
+			}
+
+			if(!result.has(timing)) {
+
+				result.set(timing, new DataSourceRow(null, this.source));
+
+				let newRow = result.get(timing);
+
+				for(const key of row.keys())
+					newRow.set(key, 0);
+			}
+
+			const newRow = result.get(timing);
+
+			for(const [key, value] of row) {
+
+				if(!isNaN(value)) {
+					newRow.set(key, newRow.get(key) + parseFloat(value));
+				}
+
+				else newRow.set(key, value);
+			}
+
+			newRow.set(timingColumn.key, timing);
+		}
+
+		const countArray = {
+			'week' : 7,
+			'day' : 1,
+			'hour' : 60,
+			'minute' : 60,
+			'second' : 1000,
+		}
+
+		if(this.value != 'month') {
+
+			for(const row of [...result.values()]) {
+
+				for(const [key, value] of row) {
+
+					if(!isNaN(value))
+						row.set(key, row.get(key) / countArray[this.value])
+				}
+			}
+		}
+
+		if(!timingColumn.type.originalName)
+			timingColumn.type.originalName = timingColumn.type.name;
+
+		if(['week', 'day'].includes(this.value))
+			timingColumn.type.name = 'date';
+
+		else if(['month'].includes(this.value))
+			timingColumn.type.name = 'month';
+
+		else if(['hour', 'minute', 'second'].includes(this.value))
+			timingColumn.type.name = 'datetime';
+
+		return Array.from(result.values());
+	}
+});
+
 DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePostProcessor {
 
 	get name() {
-		return 'Collapse To';
+		return 'Collapse To (Sum)';
 	}
 
 	get domain() {
