@@ -9699,6 +9699,143 @@ class Tooltip {
 	}
 }
 
+class VisualizationsCanvas {
+
+    constructor(visualizations, page) {
+
+        this.page = page;
+
+        VisualizationsCanvas.grid = {
+            columns: 32,
+            rows: 10,
+            rowHeight: 50,
+        };
+
+        VisualizationsCanvas.screenHeightOffset = 1.5 * screen.availHeight;
+
+        this.visualizations = new Set();
+
+        for(const visualization of visualizations) {
+
+            if (!visualization.format) {
+
+                visualization.format = {};
+            }
+
+            if (!DataSource.list.has(visualization.query_id)) {
+
+                continue;
+            }
+
+            const dataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))), this.page);
+
+            dataSource.container.setAttribute('style', `
+				order: ${visualization.format.position || 0};
+				grid-column: auto / span ${visualization.format.width || VisualizationsCanvas.grid.columns};
+				grid-row: auto / span ${visualization.format.height || VisualizationsCanvas.grid.rows};
+			`);
+
+            [dataSource.selectedVisualization] = dataSource.visualizations.filter(v => v.visualization_id === visualization.visualization_id);
+
+            if (!dataSource.selectedVisualization) {
+
+                continue;
+            }
+
+            this.visualizations.add(dataSource);
+            dataSource.container.appendChild(dataSource.selectedVisualization.container);
+        }
+    }
+
+    get container() {
+
+        if(this.containerElement) {
+
+            return this.containerElement;
+        }
+
+        const container = this.containerElement = document.createElement('div');
+
+        container.classList.add('canvas');
+
+        return container;
+    }
+
+    lazyLoad(resize, offset = VisualizationsCanvas.screenHeightOffset) {
+
+        const visitedVisualizations = new Set;
+
+        for (const [visualization_id, visualization] of this.visualizationTrack) {
+
+            if ((parseInt(visualization.position) < this.maxScrollHeightAchieved + offset) && !visualization.loaded) {
+
+                visualization.query.selectedVisualization.load();
+                visualization.loaded = true;
+
+                this.page.loadedVisualizations.add(visualization);
+
+                visitedVisualizations.add(visualization_id);
+            }
+
+            if (visualization.loaded) {
+
+                visitedVisualizations.add(visualization_id);
+            }
+        }
+        for (const visualizationId of visitedVisualizations.values()) {
+
+            this.visualizationTrack.delete(visualizationId);
+        }
+    }
+
+    async render(resize) {
+
+        this.visualizationTrack = new Map();
+
+        for (const queryDataSource of this.visualizations) {
+
+            queryDataSource.container.appendChild(queryDataSource.selectedVisualization.container);
+
+            this.container.appendChild(queryDataSource.container);
+
+            this.visualizationTrack.set(queryDataSource.selectedVisualization.visualization_id, ({
+                position: queryDataSource.container.getBoundingClientRect().y,
+                query: queryDataSource,
+                loaded: false,
+            }));
+        }
+
+        const main = document.querySelector('main');
+
+        this.maxScrollHeightAchieved = Math.max(VisualizationsCanvas.screenHeightOffset, main.scrollTop);
+
+        this.lazyLoad(this.maxScrollHeightAchieved, resize);
+
+        document.addEventListener(
+            'scroll',
+            () => {
+                for (const queryDataSource of this.visualizations) {
+
+                    if (this.visualizationTrack.get(queryDataSource.selectedVisualization.visualization_id)) {
+
+                        this.visualizationTrack.get(queryDataSource.selectedVisualization.visualization_id).position = queryDataSource.container.getBoundingClientRect().y;
+                    }
+                }
+
+                this.maxScrollHeightAchieved = Math.max(main.scrollTop, this.maxScrollHeightAchieved);
+                this.lazyLoad(resize,);
+            }, {
+                passive: true
+            }
+        );
+
+        if (!this.page.loadedVisualizations.size) {
+
+            this.container.innerHTML = '<div class="NA no-reports">No reports found!</div>';
+        }
+    }
+}
+
 DataSourceFilter.setup();
 DataSourceColumnFilter.setup();
 DataSourceColumnAccumulation.setup();

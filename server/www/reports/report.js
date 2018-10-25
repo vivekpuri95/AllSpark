@@ -42,11 +42,12 @@ exports.list = class extends API {
 				tb_query_visualizations qv
 				USING(query_id)
 			JOIN
-				tb_visualization_dashboard vd
+				tb_visualization_canvas vd
 				USING(visualization_id)
 			JOIN
 				tb_object_roles o
-				ON o.owner_id = vd.dashboard_id
+			ON 
+				o.owner_id = vd.owner_id
 			JOIN
 				tb_dashboards d
 			ON
@@ -58,6 +59,7 @@ exports.list = class extends API {
 				AND q.is_deleted = 0
 				AND d.account_id = ?
 				AND d.status = 1
+				AND vd.owner = 'dashboard'
 		`;
 
 		const dashboardToReportAccessQuery = `
@@ -69,23 +71,24 @@ exports.list = class extends API {
                 tb_query_visualizations qv
                 USING(query_id)
             JOIN
-                tb_visualization_dashboard vd
+                tb_visualization_canvas vd
                 USING(visualization_id)
             JOIN
                 tb_object_roles o
             ON
-                o.owner_id = vd.dashboard_id
+                o.owner_id = vd.owner_id
             JOIN
                 tb_dashboards d
             ON
                 d.id = o.owner_id
             WHERE
-                 OWNER = "dashboard"
+                 o.owner = "dashboard"
                  AND target = "user"
                  AND target_id = ?
                  AND qv.is_enabled = 1
                  and qv.is_deleted = 0
                  AND d.status = 1
+                 AND vd.owner = 'dashboard'
             GROUP BY query_id
         `;
 
@@ -814,10 +817,11 @@ exports.userPrvList = class extends API {
                 			query_id AS query_id_from_dashboards,
                 			user_id
                 		FROM
-                			tb_visualization_dashboard vd
+                			tb_visualization_canvas vd
                 		JOIN
                 			tb_user_dashboard ud
-                			USING(dashboard_id)
+                		ON
+                			vd.owner_id = ud.dashboard_id                			
                 		JOIN
                 			tb_query_visualizations qv
                 			USING(visualization_id)
@@ -825,6 +829,7 @@ exports.userPrvList = class extends API {
                 			 query_id = ?
                 			 and qv.is_enabled = 1
                 			 and qv.is_deleted = 0
+                			 AND vd.owner = 'dashboard'
                 	) dashboard_user
                USING(user_id)
                 	LEFT JOIN

@@ -49,20 +49,21 @@ class report extends API {
                 		SELECT
                 			query_id
                 		FROM
-                			tb_visualization_dashboard vd
+                			tb_visualization_canvas vd
                 		JOIN
                 			tb_object_roles r
-                			ON vd.dashboard_id = r.owner_id
+                			ON vd.owner_id = r.owner_id
                 		JOIN
                 			tb_query_visualizations qv
                 			USING(visualization_id)
                 		WHERE
                 			target_id = ? -- user_id
                 			AND query_id = ?
-                			AND OWNER = 'dashboard'
+                			AND r.owner = 'dashboard'
                 			AND target = 'user'
                 			AND qv.is_enabled = 1
-                			and qv.is_deleted = 0
+                			AND qv.is_deleted = 0
+                			AND vd.owner = 'dashboard'
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id
@@ -77,7 +78,7 @@ class report extends API {
 				    WHERE
 				        owner_id = ? -- query
 				        AND target_id = ? -- user
-				        AND OWNER = 'query'
+				        AND o.owner = 'query'
 				        AND target = 'user'
 
 				    UNION ALL

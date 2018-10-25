@@ -43,18 +43,20 @@ class Authenticate {
                 		SELECT
                 			query_id
                 		FROM
-                			tb_visualization_dashboard vd
+                			tb_visualization_canvas vd
                 		JOIN
                 			tb_object_roles r
-                			ON vd.dashboard_id = r.owner_id
+                		ON 
+                			vd.owner_id = r.owner_id                			
                 		JOIN
                 			tb_query_visualizations qv
                 			USING(visualization_id)
                 		WHERE
                 			target_id = ? -- user_id
                 			AND query_id = ?
-                			AND OWNER = 'dashboard'
+                			AND r.owner = 'dashboard'
                 			AND target = 'user'
+                			AND vd.owner = 'dashboard'
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id
@@ -69,7 +71,7 @@ class Authenticate {
 				    WHERE
 				        owner_id = ? -- query
 				        AND target_id = ? -- user
-				        AND OWNER = 'query'
+				        AND o.owner = 'query'
 				        AND target = 'user'
 
 				    UNION ALL
@@ -150,15 +152,17 @@ class Authenticate {
 						tb_query_visualizations qv
 						USING(query_id)
 					JOIN
-						tb_visualization_dashboard vd
+						tb_visualization_canvas vd
 						USING(visualization_id)
 					JOIN
 						tb_object_roles o
-						on o.owner_id = vd.dashboard_id
+					ON 
+						o.owner_id = vd.owner_id						
 					WHERE
 						o.owner = "dashboard"
 						AND o.target = "role"
 						AND query_id = ?
+						AND vd.owner = 'dashboard' 
 				`,
 				[reportObject.query_id ? reportObject.query_id : parseInt(reportObject) || 0]
 			);
@@ -377,7 +381,7 @@ class Authenticate {
 				SELECT
 					q.*
 				FROM
-					tb_visualization_dashboard vd
+					tb_visualization_canvas vd
 				JOIN
 					tb_query_visualizations
 					USING(visualization_id)
@@ -385,7 +389,8 @@ class Authenticate {
 					tb_query q
 					USING(query_id)
 				WHERE
-					vd.dashboard_id = ?
+					vd.owner_id = ?
+					AND vd.owner = 'dashboard'
 					AND q.is_enabled = 1
 					AND q.is_deleted = 0
 				`,
