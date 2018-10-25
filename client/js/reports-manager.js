@@ -5095,7 +5095,7 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 
 		const datalist = Object.keys(this.page.preview.report.originalResponse.data[0]).map(key => { return {name: key, value: key}});
 
-		this.multiSelect = new MultiSelect({datalist: datalist, multiple: true});
+		this.multiSelect = new MultiSelect({datalist: datalist, multiple: true, expand: true});
 
 		columns.classList.add('columns');
 		label.classList.add('restrict-column');
