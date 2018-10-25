@@ -1041,10 +1041,12 @@ main .dataset {
 				background: var(--color-primary);
 			}
 			.visualization.cohort table td.sticky {
-				background: #fff;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 			}
 			.visualization.cohort table td.sticky:nth-child(2n) {
 				background: #f1f1f9;
+				color: var(--color-grey);
 			}
 			.visualization.cohort table .sticky:nth-child(2) {
 				left: 100px;
