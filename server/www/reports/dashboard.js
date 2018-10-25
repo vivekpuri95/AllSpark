@@ -85,7 +85,7 @@ exports.updateFormat = class extends API {
 
 exports.update = class extends API {
 
-	async update({id, owner, owner_id, visualization_id, format = null} = {}) {
+	async update({id, owner, owner_id, visualization_id, format} = {}) {
 
 		this.user.privilege.needs('visualization.update', 'ignore');
 
