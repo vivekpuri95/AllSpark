@@ -2249,43 +2249,52 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-		try {
 
 		const [sourceColumn] = this.source.format && this.source.format.columns ? this.source.format.columns.filter(c => c.key == this.key) : [];
 
-		for(const element of this.form.elements) {
+		try {
 
-			if(element.name == 'type')
-				continue;
+			for(const element of this.form.elements) {
 
-			if(element.type == 'checkbox')
-				this[element.name] = element.checked;
+				if(element.name == 'type')
+					continue;
 
-			else {
+				if(element.type == 'checkbox')
+					this[element.name] = element.checked;
 
-				this[element.name] = element.value == '' ? null : element.value || null;
+				else {
 
-				if(sourceColumn)
-					sourceColumn[element.name] = element.value == '' ? null : element.value || null;
+					this[element.name] = element.value == '' ? null : element.value || null;
+
+					if(sourceColumn)
+						sourceColumn[element.name] = element.value == '' ? null : element.value || null;
+				}
 			}
+
+			this.filters = this.columnFilters.json;
+
+			this.type = {
+				name: this.form.type.value,
+			};
+
+			if(this.form.type.value == 'custom')
+				this.type.format = this.customDateType.value;
+
+			else if(this.form.type.value == 'customNumber')
+				this.type.formatNumber = this.customNumberType.value;
 		}
 
-		this.filters = this.columnFilters.json;
+		catch(e){
 
-		this.type = {
-			name: this.form.type.value,
-		};
+			new SnackBar({
+				message: 'Action Failed',
+				subtitle: e,
+				type: 'error',
+			});
 
-		if(this.form.type.value == 'custom')
-			this.type.format = this.customDateType.value;
+			return;
+		}
 
-		else if(this.form.type.value == 'customNumber')
-			this.type.formatNumber = this.customNumberType.value;
-	}
-	catch(err) {
-		// console.log(err,'error')
-	}
-		// if(!this.customNumberType.value)
 		if(this.interval)
 			clearInterval(this.interval);
 
@@ -2325,28 +2334,43 @@ class DataSourceColumn {
 			response,
 			updated = 0;
 
-		for(const element of this.form.elements) {
+		try {
 
-			if(element.name == 'type')
-				continue;
+			for(const element of this.form.elements) {
 
-			if(element.type == 'checkbox')
-				this[element.name] = element.checked;
+				if(element.name == 'type')
+					continue;
 
-			else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+				if(element.type == 'checkbox')
+					this[element.name] = element.checked;
+
+				else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+			}
+
+			this.filters = this.columnFilters.json;
+
+			this.type = {
+				name: this.form.type.value,
+			};
+
+			if(this.form.type.value == 'custom')
+				this.type.format = this.customDateType.value;
+
+			else if(this.form.type.value == 'customNumber')
+				this.type.formatNumber = this.customNumberType.value;
+
 		}
 
-		this.filters = this.columnFilters.json;
+		catch(e){
 
-		this.type = {
-			name: this.form.type.value,
-		};
+			new SnackBar({
+				message: 'Action Failed',
+				subtitle: e,
+				type: 'error',
+			});
 
-		if(this.form.type.value == 'custom')
-			this.type.format = this.customDateType.value;
-
-		else if(this.form.type.value == 'customNumber')
-			this.type.formatNumber = this.customNumberType.value;
+			return;
+		}
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2837,7 +2861,7 @@ class DataSourceColumnCustomNumberType {
 				<label>
 					<span>Round off</span>
 					<select name="roundOff">
-						<option value="" selected>None</option>
+						<option value="none" selected>None</option>
 						<option value="round">Round</option>
 						<option value="ceil">Ceil</option>
 						<option value="floor">Floor</option>
@@ -2913,10 +2937,10 @@ class DataSourceColumnCustomNumberType {
 		if(!this.containerElement)
 			return this.customNumberValueCache = format;
 
-		for(const input of this.container.querySelectorAll('input, select')) {
+		for(const element of this.container.querySelectorAll('input, select')) {
 
-			if(input.name in format)
-				input.value = format[input.name];
+			if(element.name in format)
+				element.value = format[element.name];
 		}
 
 		this.render();
@@ -2929,14 +2953,16 @@ class DataSourceColumnCustomNumberType {
 
 		const selectedInputs = {};
 
-		for(const select of this.container.querySelectorAll('select, input')) {
+		for(const element of this.container.querySelectorAll('select, input')) {
 
-			if(select.name == 'useGrouping' && select.value)
-				selectedInputs[select.name] = JSON.parse(select.value);
+			if(element.name == 'useGrouping')
+				selectedInputs[element.name] = JSON.parse(element.value);
 
-			if(select.value)
-				selectedInputs[select.name] = select.value;
+			else if(element.value)
+				selectedInputs[element.name] = element.value;
 		}
+
+		new Intl.NumberFormat(undefined, selectedInputs);
 
 		return selectedInputs;
 	}
@@ -2951,12 +2977,6 @@ class DataSourceColumnCustomNumberType {
 				format = this.value,
 				number = 123456.789;
 
-			if(!format || !Object.keys(format).length) {
-
-				example.innerHTML = number;
-				return;
-			}
-
 			if(!this.currencySymbol)
 				this.currencySymbol = this.container.querySelector('.currency-symbol');
 
@@ -2966,18 +2986,9 @@ class DataSourceColumnCustomNumberType {
 			if(!this.roundPrecision)
 				this.roundPrecision = this.container.querySelector('.round-precision');
 
-			this.currencySymbol.classList.add('hidden');
-			this.currencyDisplay.classList.add('hidden');
-			this.roundPrecision.classList.add('hidden');
-
-			if(format.style == 'currency') {
-
-				this.currencySymbol.classList.remove('hidden');
-				this.currencyDisplay.classList.remove('hidden');
-			}
-
-			if(format.roundOff == 'round')
-				this.roundPrecision.classList.remove('hidden');
+			this.currencySymbol.classList.toggle('hidden', format.style != 'currency');
+			this.currencyDisplay.classList.toggle('hidden', format.style != 'currency');
+			this.roundPrecision.classList.toggle('hidden', format.roundOff != 'round');
 
 			new Intl.NumberFormat(undefined, format);
 
