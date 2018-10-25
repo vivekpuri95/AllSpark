@@ -4044,10 +4044,10 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 	}
 });
 
-DataSourcePostProcessors.processors.set('CollapseToAvg', class extends DataSourcePostProcessor {
+DataSourcePostProcessors.processors.set('CollapseToAverage', class extends DataSourcePostProcessor {
 
 	get name() {
-		return 'Collapse To(avg)';
+		return 'Collapse To (Average)';
 	}
 
 	get domain() {
@@ -4071,6 +4071,8 @@ DataSourcePostProcessors.processors.set('CollapseToAvg', class extends DataSourc
 
 		const result = new Map;
 
+		let monthCount;
+
 		for(const row of response) {
 
 			let
@@ -4088,6 +4090,22 @@ DataSourcePostProcessors.processors.set('CollapseToAvg', class extends DataSourc
 			else if(this.value == 'month') {
 				period = (periodDate.getDate() - 1) * 24 * 60 * 60 * 1000;
 				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+
+				if(monthCount && (monthCount != timing)) {
+
+					const count = new Date(new Date(monthCount).getFullYear(), new Date(monthCount).getMonth() + 1, 0).getDate();
+
+					const xx = result.get(monthCount);
+
+					for(const [key, value] of row) {
+
+						if(!isNaN(value)) {
+							xx.set(key, xx.get(key) / count);
+						}
+					}
+				}
+
+				monthCount = timing;
 			}
 
 			else if(this.value == 'day') {
@@ -4134,12 +4152,23 @@ DataSourcePostProcessors.processors.set('CollapseToAvg', class extends DataSourc
 			newRow.set(timingColumn.key, timing);
 		}
 
-		for(const row of [...result.values()]) {
+		const countArray = {
+			'week' : 7,
+			'day' : 1,
+			'hour' : 60,
+			'minute' : 60,
+			'second' : 1000,
+		}
 
-			for(const [key, value] of row) {
+		if(this.value != 'month') {
 
-				if(!isNaN(value))
-					row.set(key, row.get(key) / response.length)
+			for(const row of [...result.values()]) {
+
+				for(const [key, value] of row) {
+
+					if(!isNaN(value))
+						row.set(key, row.get(key) / countArray[this.value])
+				}
 			}
 		}
 
@@ -4162,7 +4191,7 @@ DataSourcePostProcessors.processors.set('CollapseToAvg', class extends DataSourc
 DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePostProcessor {
 
 	get name() {
-		return 'Collapse To(sum)';
+		return 'Collapse To (Sum)';
 	}
 
 	get domain() {
