@@ -4827,6 +4827,86 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 	}
 });
 
+ConfigureVisualization.types.set('sankey', class SankeyOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if (this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Source Column</span>
+							<select name="sourceColumn"></select>
+						</label>
+
+						<label>
+							<span>Target Column</span>
+							<select name="targetColumn"></select>
+						</label>
+
+						<label>
+							<span>Value Column</span>
+							<select name="valueColumn"></select>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend"> Hide Legend
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideTooltip"> Hide Tooltip
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideHeader"> Hide Header
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		const
+			sourceColumn = container.querySelector('select[name=sourceColumn]'),
+			targetColumn = container.querySelector('select[name=targetColumn]'),
+			valueColumn = container.querySelector('select[name=valueColumn]');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			sourceColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			targetColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			valueColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of this.formContainer.querySelectorAll('select, input')) {
+
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+		}
+
+		return container;
+	}
+});
+
 ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisualizationOptions {
 
 	get form() {
