@@ -3587,6 +3587,38 @@ class DataSourceTransformation {
 
 DataSourceTransformation.types = new Map;
 
+DataSourceTransformation.types.set('restrict-columns', class DataSourceTransformationRestrict extends DataSourceTransformation {
+
+	async run(response = []) {
+
+		if(!response || !response.length || !this.columns.length)
+			return response;
+
+		const newResponse = [];
+
+		for(const data of response) {
+
+			const temp = {};
+
+			for(const key in data) {
+
+				if(this.exclude){
+
+					if(!this.columns.includes(key))
+						temp[key] = data[key];
+				}
+				else if(this.columns.includes(key)) {
+					temp[key] = data[key];
+				}
+			}
+
+			newResponse.push(temp);
+		}
+
+		return newResponse;
+	}
+});
+
 DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot extends DataSourceTransformation {
 
 	async run(response = []) {
@@ -4983,7 +5015,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		const
 			container = this.container.querySelector('.container'),
-			rows = await this.source.response();
+			rows = await this.source.response() || [];
 
 		container.textContent = null;
 

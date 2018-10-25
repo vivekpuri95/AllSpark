@@ -276,7 +276,7 @@ main .dataset {
 			color: var(--color-hover-text);
 		}
 
-	.data-source .filters {
+	.data-source .overlay.filters {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		align-items: flex-start;
 		flex-wrap: wrap;

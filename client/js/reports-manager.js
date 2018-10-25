@@ -5073,6 +5073,64 @@ class ReportTransformation {
 
 ReportTransformation.types = new Map;
 
+ReportTransformation.types.set('restrict-columns', class ReportTransformationRestrict extends ReportTransformation {
+
+	get name() {
+		return 'Restrict Columns';
+	}
+
+	get key() {
+		return 'restrict-columns'
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const
+			container = super.container.querySelector('.transformation'),
+			columns = document.createElement('div'),
+			label = document.createElement('label');
+
+		const datalist = Object.keys(this.page.preview.report.originalResponse.data[0]).map(key => { return {name: key, value: key}});
+
+		this.multiSelect = new MultiSelect({datalist: datalist, multiple: true, expand: true});
+
+		columns.classList.add('columns');
+		label.classList.add('restrict-column');
+
+		columns.appendChild(this.multiSelect.container);
+
+		label.innerHTML = `
+			<input type="checkbox" name="exclude" disabled>
+			<span>Exclude</span>
+		`;
+
+		this.multiSelect.on('change', () => {
+
+			label.querySelector('input').disabled = this.multiSelect.value.length ? false : true;
+		});
+
+		this.multiSelect.value = this.columns || [];
+		label.querySelector('input').checked = this.exclude || '';
+
+		container.appendChild(columns);
+		container.appendChild(label);
+
+		return super.container;
+	}
+
+	get json() {
+
+		return {
+			type: this.key,
+			columns: this.multiSelect.value,
+			exclude: this.container.querySelector('label input[name="exclude"]').checked,
+		};
+	};
+});
+
 ReportTransformation.types.set('pivot', class ReportTransformationPivot extends ReportTransformation {
 
 	get name() {
