@@ -90,7 +90,7 @@ exports.delete = class extends API {
 				status = 0
 			WHERE
 				account_id = ? AND privilege_id = ?`,
-			[this.account.account_id, this.request.body,privilege_id],
+			[this.account.account_id, this.request.body.privilege_id],
 			'write'
 		);
 

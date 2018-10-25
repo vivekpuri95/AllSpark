@@ -192,7 +192,7 @@ class report extends API {
 
 			const objRole = new getRole();
 
-			const possiblePrivileges = ["report.edit", "admin", "superadmin"];
+			const possiblePrivileges = ["report.edit", constants.privilege.administrator, "superadmin"];
 
 			const categories = (await objRole.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
 
@@ -207,6 +207,7 @@ class report extends API {
 				flag = flag || category.every(x => userCategories.includes(x.toString()));
 			}
 
+			flag = flag || (userCategories.some(x => constants.adminPrivilege.includes(x)) && userCategories.length);
 			flag = flag || this.user.privilege.has('superadmin') || this.reportObj.added_by == this.user.user_id;
 
 			this.assert(flag, "Query not editable by user");
