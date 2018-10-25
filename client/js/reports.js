@@ -3805,10 +3805,17 @@ class DataSourceTransformations extends Set {
 			visualization = this.source.visualizations.selected,
 			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
 
-		for(const transformation of transformations) {
+		for(const [i, transformation] of transformations.entries()) {
 
-			if(DataSourceTransformation.types.has(transformation.type))
-				this.add(new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source));
+			if(!DataSourceTransformation.types.has(transformation.type))
+				continue;
+
+			const transformationType = new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source);
+
+			this.add(transformationType);
+
+			if(i > visualization.options.transformationsStopAt)
+				transformationType.disabled = true;
 		}
 	}
 
@@ -3836,7 +3843,7 @@ class DataSourceTransformations extends Set {
 
 		const type = DataSourceTransformation.types.get('filters');
 
-		this.add(new type({type: 'filters', filters}, this));
+		this.add(new type({type: 'filters', filters}, this.source));
 	}
 }
 
@@ -3866,14 +3873,18 @@ class DataSourceTransformation {
 
 		const time = performance.now();
 
+		this.incoming.rows = response.length || 0;
 		this.incoming.columns.update(response);
 
-		response = await this.execute(response);
+		if(!this.disabled)
+			response = await this.execute(response);
 
+		this.outgoing.rows = response.length || 0;
 		this.outgoing.columns.update(response);
 
 		this.source.pipeline.add(new DataSourcePipelineEvent({
 			title: this.name,
+			disabled: this.disabled,
 			subtitle: [
 				{
 					key: 'Duration',
@@ -3881,7 +3892,7 @@ class DataSourceTransformation {
 				},
 				{
 					key: 'Rows',
-					value: Format.number(response.length || 0)
+					value: Format.number(this.outgoing.rows)
 				},
 				{
 					key: 'Columns',
@@ -3895,38 +3906,6 @@ class DataSourceTransformation {
 }
 
 DataSourceTransformation.types = new Map;
-
-DataSourceTransformation.types.set('restrict-columns', class DataSourceTransformationRestrict extends DataSourceTransformation {
-
-	async run(response = []) {
-
-		if(!response || !response.length || !this.columns.length)
-			return response;
-
-		const newResponse = [];
-
-		for(const data of response) {
-
-			const temp = {};
-
-			for(const key in data) {
-
-				if(this.exclude){
-
-					if(!this.columns.includes(key))
-						temp[key] = data[key];
-				}
-				else if(this.columns.includes(key)) {
-					temp[key] = data[key];
-				}
-			}
-
-			newResponse.push(temp);
-		}
-
-		return newResponse;
-	}
-});
 
 DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot extends DataSourceTransformation {
 
@@ -4352,6 +4331,42 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 		}
 
 		return response;
+	}
+});
+
+DataSourceTransformation.types.set('restrict-columns', class DataSourceTransformationRestrictColumns extends DataSourceTransformation {
+
+	get name() {
+		return 'Restrict Columns';
+	}
+
+	async execute(response = []) {
+
+		if(!response || !response.length || !this.columns)
+			return response;
+
+		const newResponse = [];
+
+		for(const data of response) {
+
+			const temp = {};
+
+			for(const key in data) {
+
+				if(this.exclude) {
+
+					if(!this.columns.includes(key))
+						temp[key] = data[key];
+				}
+
+				else if(this.columns.includes(key))
+					temp[key] = data[key];
+			}
+
+			newResponse.push(temp);
+		}
+
+		return newResponse;
 	}
 });
 
@@ -4853,6 +4868,11 @@ class DataSourcePipelineEvent {
 			<div class="order">${Format.number(this.order)}</div>
 			<h2>${this.title}</h2>
 		`;
+
+		if(this.disabled) {
+			container.classList.add('disabled');
+			container.insertAdjacentHTML('beforeend', `<span class="NA">Disabled</span>`);
+		}
 
 		if(this.subtitle && this.subtitle.length) {
 

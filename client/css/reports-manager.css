@@ -558,9 +558,9 @@ main.preview-left #stages {
 		display: flex;
 		flex-direction: column;
 	}
-	.visualization-form .transformations .list {
+	.visualization-form .transformations > .body > .list {
 		display: grid;
-		grid-gap: calc(var(--gap) * 2);
+		grid-gap: 20px;
 	}
 		.visualization-form .transformations fieldset {
 			position: relative;
@@ -619,6 +619,7 @@ main.preview-left #stages {
 				grid-template-columns: max-content;
 				grid-gap: calc(var(--gap) * 2);
 				align-items: flex-start;
+				margin-top: var(--gap);
 			}
 				.visualization-form .transformations fieldset .transformation > div {
 					display: grid;
@@ -673,9 +674,11 @@ main.preview-left #stages {
 			#stage-configure-visualization .dashboards .dashboard_id {
 				width: 200px;
 			}
+			#stage-configure-visualization .dashboards button[disabled],
 			#stage-configure-visualization .dashboards button[disabled]:hover {
-				background: unset;
-				border: 1px solid #ccc;
+				background: var(--color-hover);
+				color: var(--color-hover-text);
+				opacity: 0.5;
 			}
 
 	.visualization-form .filters {
@@ -711,7 +714,7 @@ main.preview-left #stages {
 		}
 		.visualization-form .configuration-section .body {
 			display: grid;
-			grid-gap: 20px;
+			grid-gap: 15px;
 			padding: 0 var(--gap) calc(var(--gap) * 2) 0;
 		}
 			.visualization-form .configuration-section .body .list .NA {

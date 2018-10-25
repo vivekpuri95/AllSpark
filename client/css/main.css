@@ -43,6 +43,13 @@ a {
 	color: #333;
 }
 
+::-webkit-scrollbar {
+	width: 10px;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--color-hover);
+}
+
 input:not([type=checkbox]):not([type=radio]),
 select,
 button {
@@ -96,10 +103,9 @@ button:active {
 button[disabled],
 button[disabled]:active,
 button[disabled]:hover {
-	background: #fff;
+	background: var(--color-hover);
+	color: var(--color-hover-text);
 	box-shadow: none;
-	border-color: #ccc;
-	color: #999;
 }
 
 button > i {
@@ -713,7 +719,7 @@ body {
 	}
 	.multi-select.expanded .options {
 		position: initial;
-		height: 200px;
+		height: 220px;
 		box-shadow: none;
 	}
 		.multi-select .options header {
