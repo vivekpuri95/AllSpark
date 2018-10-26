@@ -2249,10 +2249,12 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-
 		const [sourceColumn] = this.source.format && this.source.format.columns ? this.source.format.columns.filter(c => c.key == this.key) : [];
 
 		try {
+
+			if(this.form.type.value == 'customNumber')
+				this.customNumberType.value;
 
 			for(const element of this.form.elements) {
 
@@ -2329,12 +2331,14 @@ class DataSourceColumn {
 		if(!this.source.format.columns)
 			this.source.format.columns = [];
 
-
 		let
 			response,
 			updated = 0;
 
 		try {
+
+			if(this.form.type.value == 'customNumber')
+				this.customNumberType.value;
 
 			for(const element of this.form.elements) {
 
@@ -2358,7 +2362,6 @@ class DataSourceColumn {
 
 			else if(this.form.type.value == 'customNumber')
 				this.type.formatNumber = this.customNumberType.value;
-
 		}
 
 		catch(e){
@@ -2943,7 +2946,12 @@ class DataSourceColumnCustomNumberType {
 		if(!this.containerElement)
 			return this.customNumberValueCache = format;
 
-		for(const element of this.container.querySelectorAll('input, select')) {
+		const selector = this.container.querySelectorAll('input, select');
+
+		for(const element of selector)
+			element.value = null;
+
+		for(const element of selector) {
 
 			if(element.name in format)
 				element.value = format[element.name];
