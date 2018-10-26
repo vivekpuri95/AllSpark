@@ -2873,13 +2873,20 @@ class DataSourceColumnCustomNumberType {
 			<div class="form">
 
 				<label class="currency-symbol hidden">
-					<span>Currency Symbol</span>
+					<span class="currency-code">
+						Currency Code
+						<span class="NA">
+							<a href="https://www.currency-iso.org/en/home/tables/table-a1.html" data-tooltip="Help" class="currency-list" target="_blank">
+									<i class="fa fa-question" aria-hidden="true"></i>
+							</a>
+						</span>
+					</span>
 					<input type="text" name="currency">
 				</label>
 
 				<label class="round-precision hidden">
 					<span>Round Precision</span>
-					<input type="number" name="roundPrecision" min="0" step="1" max="21">
+					<input type="number" name="roundPrecision" min="0" step="1" max="100">
 				</label>
 
 				<label>
@@ -2889,12 +2896,12 @@ class DataSourceColumnCustomNumberType {
 
 				<label>
 					<span>Minimum Fraction Digits</span>
-					<input type="number" name="minimumFractionDigits" min="0" step="1" max="21">
+					<input type="number" name="minimumFractionDigits" min="0" step="0" max="20">
 				</label>
 
 				<label>
 					<span>Maximum Fraction Digits</span>
-					<input type="number" name="maximumFractionDigits" min="0" step="1" max="21">
+					<input type="number" name="maximumFractionDigits" min="0" step="0" max="20">
 				</label>
 
 				<label>
@@ -2921,7 +2928,6 @@ class DataSourceColumnCustomNumberType {
 
 				container.querySelector('.currency-symbol').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
 				container.querySelector('.currency-display').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
-				container.querySelector('.round-precision').classList.toggle('hidden', select.value == 'ceil' || select.value == 'floor');
 
 				this.render();
 			});
@@ -2961,6 +2967,8 @@ class DataSourceColumnCustomNumberType {
 			else if(element.value)
 				selectedInputs[element.name] = element.value;
 		}
+
+		selectedInputs['locale'] = 'en';
 
 		new Intl.NumberFormat(undefined, selectedInputs);
 

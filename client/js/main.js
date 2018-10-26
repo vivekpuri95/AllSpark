@@ -1813,7 +1813,7 @@ class Format {
 		if(!Format.cachedNumberFormat.has(cacheKey)) {
 
 			try {
-				Format.cachedNumberFormat.set(cacheKey, new Intl.NumberFormat(undefined, format));
+				Format.cachedNumberFormat.set(cacheKey, new Intl.NumberFormat(format.locale, format));
 			}
 			catch(e) {
 				Format.cachedNumberFormat.set(cacheKey, new Intl.NumberFormat());
