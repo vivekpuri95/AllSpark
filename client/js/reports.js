@@ -2187,7 +2187,10 @@ class DataSourceColumn {
 		});
 
 		if(this.source.editable)
-			form.querySelector('.save').on('click', () =>  this.save())
+			form.querySelector('.save').on('click', () => {
+				if(form.checkValidity())
+					this.save();
+			});
 
 		return form;
 	}
