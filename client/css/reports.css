@@ -1442,22 +1442,19 @@ main .dataset {
 					font-size: 90%;
 				}
 
-				.column-form .timing-format fieldset label,
-				.column-form .number-format fieldset label {
+				.column-form .timing-format fieldset label {
 					display: inline-block;
 					padding: 2px 5px;
 					text-align: center;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
 				}
-				.column-form .timing-format fieldset label:hover,
-				.column-form .number-format fieldset label:hover {
+				.column-form .timing-format fieldset label:hover {
 					cursor: pointer;
 					background: var(--color-hover);
 					color: var(--color-hover-text);
 				}
-				.column-form .timing-format fieldset label:active,
-				.column-form .number-format fieldset label:active {
+				.column-form .timing-format fieldset label:active {
 					box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.25);
 				}
 				.column-form .timing-format fieldset input[type=radio] {
