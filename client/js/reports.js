@@ -2190,9 +2190,7 @@ class DataSourceColumn {
 
 			form.querySelector('.save').on('click', () => {
 
-				// if(!form.checkValidity())
-				// 	form.submit();
-				// else
+				if(form.checkValidity())
 					this.save();
 			});
 		}
