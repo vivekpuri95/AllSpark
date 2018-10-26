@@ -2253,8 +2253,10 @@ class DataSourceColumn {
 
 		try {
 
+			let customNumber;
+
 			if(this.form.type.value == 'customNumber')
-				this.customNumberType.value;
+				customNumber = this.customNumberType.value;
 
 			for(const element of this.form.elements) {
 
@@ -2283,7 +2285,7 @@ class DataSourceColumn {
 				this.type.format = this.customDateType.value;
 
 			else if(this.form.type.value == 'customNumber')
-				this.type.formatNumber = this.customNumberType.value;
+				this.type.formatNumber = customNumber;
 		}
 
 		catch(e){
@@ -2337,8 +2339,10 @@ class DataSourceColumn {
 
 		try {
 
+			let customNumber;
+
 			if(this.form.type.value == 'customNumber')
-				this.customNumberType.value;
+				customNumber = this.customNumberType.value;
 
 			for(const element of this.form.elements) {
 
@@ -2361,7 +2365,7 @@ class DataSourceColumn {
 				this.type.format = this.customDateType.value;
 
 			else if(this.form.type.value == 'customNumber')
-				this.type.formatNumber = this.customNumberType.value;
+				this.type.formatNumber = customNumber;
 		}
 
 		catch(e){
