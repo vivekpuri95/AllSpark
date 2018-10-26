@@ -5358,7 +5358,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		container.classList.add('form-row', 'value');
 
-		container.innerHTML = `<select name="column" data-value"${value.column}"></select>`;
+		container.innerHTML = `<select name="column" data-value="${value.column}"></select>`;
 
 		container.insertAdjacentHTML('beforeend',`
 			<select name="function">
