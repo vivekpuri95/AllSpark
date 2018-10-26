@@ -2186,11 +2186,16 @@ class DataSourceColumn {
 				form.parentElement.classList.add('hidden');
 		});
 
-		if(this.source.editable)
+		if(this.source.editable) {
+
 			form.querySelector('.save').on('click', () => {
-				if(form.checkValidity())
+
+				// if(!form.checkValidity())
+				// 	form.submit();
+				// else
 					this.save();
 			});
+		}
 
 		return form;
 	}
@@ -2248,7 +2253,7 @@ class DataSourceColumn {
 	}
 
 	async apply(e) {
-
+		debugger
 		if(e)
 			e.preventDefault();
 
