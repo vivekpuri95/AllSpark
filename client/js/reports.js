@@ -3482,7 +3482,7 @@ class DataSourcePostProcessor {
 
 				for(const column of this.source.columns.values()) {
 
-					if(!column.type.originalName)
+					if(!column.type || !column.type.originalName)
 						continue;
 
 					column.type.name = column.type.originalName;
@@ -3516,6 +3516,14 @@ class DataSourcePostProcessor {
 
 				this.source.postProcessors.selected = this;
 				this.source.postProcessors.selected.value = value;
+
+				for(const column of this.source.columns.values()) {
+
+					if(!column.type || !column.type.originalName)
+						continue;
+
+					column.type.name = column.type.originalName;
+				}
 
 				this.source.visualizations.selected.render();
 				this.source.postProcessors.render();
