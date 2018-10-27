@@ -170,14 +170,30 @@ class report extends API {
 
 			preReportApiDetails = JSON.parse(preReportApiDetails.body).data[0];
 
+			const filterMapping = {};
+
+			for(const filter of this.filters) {
+
+				filterMapping[filter.placeholder] = filter;
+			}
+
 			for (const key in preReportApiDetails) {
 
-				this.filters.push({
+				if(key in filterMapping) {
+
+					filterMapping[key].value = preReportApiDetails.hasOwnProperty(key) ? preReportApiDetails[key].toString() : '';
+					filterMapping[key].default_value = preReportApiDetails.hasOwnProperty(key) ? preReportApiDetails[key].toString() : '';
+					continue;
+				}
+
+				filterMapping[key] = {
 					placeholder: key,
 					value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
 					default_value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
-				})
+				}
 			}
+
+			this.filters = Object.values(filterMapping);
 		}
 
 		this.reportObj.query = this.request.body.query || this.reportObj.query;
