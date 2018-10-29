@@ -170,14 +170,32 @@ class report extends API {
 
 			preReportApiDetails = JSON.parse(preReportApiDetails.body).data[0];
 
+			const filterMapping = {};
+
+			for(const filter of this.filters) {
+
+				filterMapping[filter.placeholder] = filter;
+			}
+
 			for (const key in preReportApiDetails) {
 
-				this.filters.push({
+				const value = preReportApiDetails.hasOwnProperty(key) ? (new String(preReportApiDetails[key])).toString() : "";
+
+				if(key in filterMapping) {
+
+					filterMapping[key].value = value;
+					filterMapping[key].default_value = value;
+					continue;
+				}
+
+				filterMapping[key] = {
 					placeholder: key,
-					value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
-					default_value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
-				})
+					value: value,
+					default_value: value
+				}
 			}
+
+			this.filters = Object.values(filterMapping);
 		}
 
 		this.reportObj.query = this.request.body.query || this.reportObj.query;
@@ -204,7 +222,7 @@ class report extends API {
 
 				category = category.map(x => x.toString());
 
-				flag = flag || category.every(x => userCategories.includes(x.toString()));
+				flag = flag || userCategories.every(x => category.includes(x.toString()));
 			}
 
 			flag = flag || (userCategories.some(x => constants.adminPrivilege.includes(x)) && userCategories.length);
@@ -1064,7 +1082,7 @@ class ReportEngine extends API {
 
 			this.parameters.request[1].params = this.parameters.request[1].body.toString();
 		}
-		return crypto.createHash('md5').update(JSON.stringify(this.parameters) || "").digest('hex');
+		return crypto.createHash('sha256').update(JSON.stringify(this.parameters) || "").digest('hex');
 	}
 
 	async execute() {
