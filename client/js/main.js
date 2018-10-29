@@ -1789,12 +1789,67 @@ class Format {
 		return Format.dateTime.formatter.format(dateTime);
 	}
 
-	static number(number) {
+	/**
+	 * Static number is used for formatting numbers according to javascript Intl.NumberFormat
+	 * It accepts two parameters i.e number and format, number is mandatory and formal is optional.
+	 * If no format is passed then by default it is set as format = {maximumFractionDigits: 2}
+	 *
+	 * This will do things like
+	 * - Rounding off digits using toFixed, ceil and floor.
+	 * - Setting up currency for the number
+	 * - Limiting number of integer, fractional, significant digits.
+	 *
+	 * @param  number	number	A mandatory value, The number on which selected format will be applied
+	 * @param  object	format	An optional value, format passed into the function as an object that contains
+	 * 							paramters required for formatting the number.
+	 */
+	static number(number, format = {maximumFractionDigits: 2}) {
 
-		if(!Format.number.formatter)
-			Format.number.formatter = new Intl.NumberFormat(undefined, {maximumFractionDigits: 2});
+		if(!Format.cachedNumberFormat)
+			Format.cachedNumberFormat = new Map();
 
-		return Format.number.formatter.format(number);
+		const cacheKey = JSON.stringify(format);
+
+		if(!Format.cachedNumberFormat.has(cacheKey)) {
+
+			try {
+				Format.cachedNumberFormat.set(cacheKey, new Intl.NumberFormat(format.locale, format));
+			}
+			catch(e) {
+				Format.cachedNumberFormat.set(cacheKey, new Intl.NumberFormat());
+			}
+		}
+
+		if(!format.roundOff)
+			return Format.cachedNumberFormat.get(cacheKey).format(number);
+
+		let result;
+
+		{
+			const formatWhiteList = JSON.parse(JSON.stringify(format));
+
+			for(const format in formatWhiteList) {
+
+				if(!format.endsWith('Digits'))
+					delete formatWhiteList[format];
+			}
+
+			result = parseFloat(Format.number(number, {...formatWhiteList, useGrouping: false}));
+		}
+
+		{
+			if(format.roundOff == 'round')
+				result = result.toFixed(format.roundPrecision || 0);
+
+			else if(['ceil', 'floor'].includes(format.roundOff))
+				result = Math[format.roundOff](result);
+		}
+
+		{
+			const {roundOff: _, ...formatBlacklist} = JSON.parse(JSON.stringify(format));
+
+			return Format.number(result, formatBlacklist);
+		}
 	}
 }
 

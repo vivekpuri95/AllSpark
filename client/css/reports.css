@@ -1406,18 +1406,35 @@ main .dataset {
 	.column-form > label {
 		margin: 0 calc(var(--gap) * 2);
 	}
-	.column-form .timing-type-custom {
+	.column-form .timing-type-custom,
+	.column-form .number-type-custom {
 		max-width: 100%;
 		margin: 0 calc(var(--gap) * 2);
 		display: grid;
 		grid-gap: 10px;
+		background: rgba(0, 0, 0, 0.05);
+		padding: calc(var(--gap) * 2);
 	}
-		.column-form .timing-format {
+		.column-form .number-type-custom .form {
+			margin: 0 -10px;
+		}
+			.column-form .number-type-custom .form .currency-code {
+				display: flex;
+				justify-content: space-between;
+			}
+		.column-form .number-type-custom .NA .example-error {
+			color: var(--color-red);
+		}
+		.column-form .timing-format,
+		.column-form .number-format {
 			display: grid;
 			overflow: auto;
 			grid-gap: calc(var(--gap) * 2);
 			grid-auto-flow: column;
 		}
+			.column-form .number-format .currency-list {
+				text-align: right;
+			}
 			.column-form .timing-format fieldset {
 				border: 1px solid var(--color-border);
 				font-size: 90%;
@@ -1426,9 +1443,10 @@ main .dataset {
 				.column-form .timing-format fieldset legend {
 					font-size: 90%;
 				}
+
 				.column-form .timing-format fieldset label {
 					display: inline-block;
-					padding: 0 3px;
+					padding: 2px 5px;
 					text-align: center;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
@@ -1448,7 +1466,7 @@ main .dataset {
 					color: var(--color-selected);
 				}
 				.column-form .timing-format fieldset label span {
-					color: #ccc;
+					color: var(--color-grey);
 					transition: color var(--transition-duration);
 					font-weight: normal;
 				}

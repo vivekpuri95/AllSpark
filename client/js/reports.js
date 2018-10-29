@@ -1728,6 +1728,9 @@ class DataSourceRow extends Map {
 			if(column.type.name == 'custom')
 				value = Format.customTime(value, column.type.format);
 
+			else if(column.type.name == 'customNumber')
+				value = Format.number(value, column.type.formatNumber);
+
 			else if(column.type.name == 'timeelapsed')
 				value = Format.ago(value);
 
@@ -1861,6 +1864,7 @@ class DataSourceColumn {
 			this.container.classList.add('disabled');
 
 		this.customDateType = new DataSourceColumnCustomDateType();
+		this.customNumberType = new DataSourceColumnCustomNumberType();
 	}
 
 	get container() {
@@ -2001,8 +2005,9 @@ class DataSourceColumn {
 		if(this.form.querySelector('.timing-type-custom'))
 			this.form.querySelector('.timing-type-custom').remove();
 
-		if(Object.keys(format).length)
-			this.customDateType.value = format;
+		this.customNumberType.container.remove();
+
+		this.customDateType.value = format;
 
 		if(this.type.name == 'custom') {
 
@@ -2011,6 +2016,12 @@ class DataSourceColumn {
 			this.customDateType.value = this.type.format;
 		}
 
+		else if(this.type.name == 'customNumber') {
+
+			this.form.insertBefore(this.customNumberType.container, this.form.querySelector('label.color'));
+
+			this.customNumberType.value = this.type.formatNumber;
+		}
 		this.dialogueBox.show();
 	}
 
@@ -2038,7 +2049,10 @@ class DataSourceColumn {
 				<span>Type</span>
 				<select name="type">
 					<option value="string">String</option>
-					<option value="number">Number</option>
+					<optgroup label="Numerical">
+						<option value="number">Number</option>
+						<option value="customNumber">Custom</option>
+					</optgroup>
 					<optgroup label="Timing">
 						<option value="date">Date</option>
 						<option value="month">Month</option>
@@ -2131,6 +2145,8 @@ class DataSourceColumn {
 			if(form.querySelector('.timing-type-custom'))
 				form.querySelector('.timing-type-custom').remove();
 
+			this.customNumberType.container.remove();
+
 			if(DataSourceColumn.formatType.has(form.type.value)) {
 
 				typeFormat = DataSourceColumn.formatType.get(form.type.value);
@@ -2147,7 +2163,12 @@ class DataSourceColumn {
 				this.customDateType.render(selectedFormat);
 			}
 
-			if(selectedFormat)
+			else if(form.type.value == 'customNumber') {
+
+				form.insertBefore(this.customNumberType.container, form.querySelector('label.color'));
+			}
+
+			if(selectedFormat && form.type.value == 'custom')
 				this.customDateType.value = selectedFormat;
 		});
 
@@ -2165,8 +2186,14 @@ class DataSourceColumn {
 				form.parentElement.classList.add('hidden');
 		});
 
-		if(this.source.editable)
-			form.querySelector('.save').on('click', () =>  this.save())
+		if(this.source.editable) {
+
+			form.querySelector('.save').on('click', () => {
+
+				if(form.checkValidity())
+					this.save();
+			});
+		}
 
 		return form;
 	}
@@ -2230,31 +2257,53 @@ class DataSourceColumn {
 
 		const [sourceColumn] = this.source.format && this.source.format.columns ? this.source.format.columns.filter(c => c.key == this.key) : [];
 
-		for(const element of this.form.elements) {
+		try {
 
-			if(element.name == 'type')
-				continue;
+			let customNumber;
 
-			if(element.type == 'checkbox')
-				this[element.name] = element.checked;
+			if(this.form.type.value == 'customNumber')
+				customNumber = this.customNumberType.value;
 
-			else {
+			for(const element of this.form.elements) {
 
-				this[element.name] = element.value == '' ? null : element.value || null;
+				if(element.name == 'type')
+					continue;
 
-				if(sourceColumn)
-					sourceColumn[element.name] = element.value == '' ? null : element.value || null;
+				if(element.type == 'checkbox')
+					this[element.name] = element.checked;
+
+				else {
+
+					this[element.name] = element.value == '' ? null : element.value || null;
+
+					if(sourceColumn)
+						sourceColumn[element.name] = element.value == '' ? null : element.value || null;
+				}
 			}
+
+			this.filters = this.columnFilters.json;
+
+			this.type = {
+				name: this.form.type.value,
+			};
+
+			if(this.form.type.value == 'custom')
+				this.type.format = this.customDateType.value;
+
+			else if(this.form.type.value == 'customNumber')
+				this.type.formatNumber = customNumber;
 		}
 
-		this.filters = this.columnFilters.json;
+		catch(e) {
 
-		this.type = {
-			name: this.form.type.value,
-		};
+			new SnackBar({
+				message: 'Apply Failed',
+				subtitle: e,
+				type: 'error',
+			});
 
-		if(this.form.type.value == 'custom')
-			this.type.format = this.customDateType.value;
+			throw e;
+		}
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2290,30 +2339,51 @@ class DataSourceColumn {
 		if(!this.source.format.columns)
 			this.source.format.columns = [];
 
-
 		let
 			response,
 			updated = 0;
 
-		for(const element of this.form.elements) {
+		try {
 
-			if(element.name == 'type')
-				continue;
+			let customNumber;
 
-			if(element.type == 'checkbox')
-				this[element.name] = element.checked;
+			if(this.form.type.value == 'customNumber')
+				customNumber = this.customNumberType.value;
 
-			else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+			for(const element of this.form.elements) {
+
+				if(element.name == 'type')
+					continue;
+
+				if(element.type == 'checkbox')
+					this[element.name] = element.checked;
+
+				else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+			}
+
+			this.filters = this.columnFilters.json;
+
+			this.type = {
+				name: this.form.type.value,
+			};
+
+			if(this.form.type.value == 'custom')
+				this.type.format = this.customDateType.value;
+
+			else if(this.form.type.value == 'customNumber')
+				this.type.formatNumber = customNumber;
 		}
 
-		this.filters = this.columnFilters.json;
+		catch(e){
 
-		this.type = {
-			name: this.form.type.value,
-		};
+			new SnackBar({
+				message: 'Save Failed',
+				subtitle: e,
+				type: 'error',
+			});
 
-		if(this.form.type.value == 'custom')
-			this.type.format = this.customDateType.value;
+			throw e;
+		}
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2758,6 +2828,209 @@ class DataSourceColumnCustomDateType {
 		}, 1000);
 	}
 }
+
+class DataSourceColumnCustomNumberType {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('number-type-custom');
+
+		container.innerHTML = `
+
+			<span class="NA">Example: <span class="example"></span></span>
+
+			<div class="number-format">
+
+				<label>
+					<span>Style</span>
+					<select name="style">
+						<option value="currency">Currency</option>
+						<option value="percent">Percent</option>
+						<option value="decimal" selected>Decimal</option>
+					</select>
+				</label>
+
+				<label class="currency-display">
+					<span>Currency Display</span>
+					<select name="currencyDisplay">
+						<option value="symbol" selected>Symbol</option>
+						<option value="code">Code</option>
+						<option value="name">Name</option>
+					</select>
+				</label>
+
+				<label>
+					<span>Use Grouping</span>
+					<select name="useGrouping">
+						<option value="true" selected>Yes</option>
+						<option value="false">No</option>
+					</select>
+				</label>
+
+				<label>
+					<span>Round off</span>
+					<select name="roundOff">
+						<option value="none" selected>None</option>
+						<option value="round">Round</option>
+						<option value="ceil">Ceil</option>
+						<option value="floor">Floor</option>
+					</select>
+				</label>
+
+			</div>
+
+			<div class="form">
+
+				<label class="currency-symbol hidden">
+					<span class="currency-code">
+						Currency Code
+						<a href="https://www.currency-iso.org/en/home/tables/table-a1.html" data-tooltip="Help" class="currency-list NA" target="_blank">
+								<i class="fa fa-question" aria-hidden="true"></i>
+						</a>
+					</span>
+					<input type="text" name="currency">
+				</label>
+
+				<label class="round-precision hidden">
+					<span>Round Precision</span>
+					<input type="number" name="roundPrecision" min="0" step="1" max="100">
+				</label>
+
+				<label>
+					<span>Minimum Integer Digits</span>
+					<input type="number" name="minimumIntegerDigits" min="1" step="1" max="21">
+				</label>
+
+				<label>
+					<span>Minimum Fraction Digits</span>
+					<input type="number" name="minimumFractionDigits" min="0" step="1" max="20">
+				</label>
+
+				<label>
+					<span>Maximum Fraction Digits</span>
+					<input type="number" name="maximumFractionDigits" min="0" step="1" max="20">
+				</label>
+
+				<label>
+					<span>Minimum Significant Digits</span>
+					<input type="number" name="minimumSignificantDigits" min="1" step="1" max="21">
+				</label>
+
+				<label>
+					<span>Maximum Significant Digits</span>
+					<input type="number" name="maximumSignificantDigits" min="1" step="1" max="21">
+				</label>
+			</div>
+		`;
+
+		for(const value of container.querySelectorAll('input')) {
+
+			value.on('keyup', () => this.render());
+			value.on('change', () => this.render());
+		}
+
+		for(const select of container.querySelectorAll('select')) {
+
+			select.on('change', () => {
+
+				container.querySelector('.currency-symbol').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
+				container.querySelector('.currency-display').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
+
+				this.render();
+			});
+		}
+
+		this.render();
+
+		return container;
+	}
+
+	set value(format) {
+
+		if(!this.containerElement)
+			return this.customNumberValueCache = format;
+
+		const selector = this.container.querySelectorAll('input, select');
+
+		for(const element of selector)
+			element.value = null;
+
+		for(const element of selector) {
+
+			if(element.name in format)
+				element.value = format[element.name];
+		}
+
+		this.render();
+	}
+
+	get value() {
+
+		if(!this.containerElement)
+			return this.customNumberValueCache;
+
+		const selectedInputs = {};
+
+		for(const element of this.container.querySelectorAll('select, input')) {
+
+			if(element.name == 'useGrouping')
+				selectedInputs[element.name] = JSON.parse(element.value);
+
+			else if(element.value)
+				selectedInputs[element.name] = element.value;
+		}
+
+		selectedInputs.locale = 'en';
+
+		new Intl.NumberFormat(undefined, selectedInputs);
+
+		return selectedInputs;
+	}
+
+	render() {
+
+		const example = this.container.querySelector('.example');
+
+		try {
+
+			const
+				format = this.value,
+				number = 123456.789;
+
+			if(!this.currencySymbol)
+				this.currencySymbol = this.container.querySelector('.currency-symbol');
+
+			if(!this.currencyDisplay)
+				this.currencyDisplay = this.container.querySelector('.currency-display');
+
+			if(!this.roundPrecision)
+				this.roundPrecision = this.container.querySelector('.round-precision');
+
+			this.currencySymbol.classList.toggle('hidden', format.style != 'currency');
+			this.currencyDisplay.classList.toggle('hidden', format.style != 'currency');
+			this.roundPrecision.classList.toggle('hidden', format.roundOff != 'round');
+
+			new Intl.NumberFormat(undefined, format);
+
+			example.classList.remove('example-error');
+
+			return example.innerHTML = Format.number(number, format);
+		}
+
+		catch(e) {
+
+			example.classList.add('example-error');
+			example.innerHTML = e;
+
+			return;
+		}
+	}
+}
+
 
 DataSourceColumn.formatType = new Map;
 
