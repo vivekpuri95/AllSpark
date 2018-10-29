@@ -2333,9 +2333,9 @@ class MultiSelect {
 
 			row.input.checked = this.selectedValues.has(row.input.value);
 
-			let
-				hide = false,
-				name = row.name;
+			row.hide = false;
+
+			let name = row.name;
 
 			if(!name)
 				name = '';
@@ -2345,9 +2345,9 @@ class MultiSelect {
 			const rowValue = name.concat(' ', row.value, ' ', row.subtitle || '');
 
 			if(search.value && !rowValue.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
-				hide = true;
+				row.hide = true;
 
-			row.input.parentElement.classList.toggle('hidden', hide);
+			row.input.parentElement.classList.toggle('hidden', row.hide);
 			row.input.parentElement.classList.toggle('selected', row.input.checked);
 		}
 
@@ -2402,10 +2402,11 @@ class MultiSelect {
 		if(!this.multiple || this.disabled || !this.datalist)
 			return;
 
-		this.datalist.map(obj => this.selectedValues.add(obj.value ? obj.value.toString() : ''));
+		for(const data of this.datalist) {
 
-		if(this.changeCallback)
-			this.changeCallback();
+			if(data.value && !data.hide)
+				this.selectedValues.add(data.value.toString())
+		}
 
 		this.recalculate();
 	}
@@ -2419,9 +2420,6 @@ class MultiSelect {
 			return;
 
 		this.selectedValues.clear();
-
-		if(this.changeCallback)
-			this.changeCallback();
 
 		this.recalculate();
 	}
