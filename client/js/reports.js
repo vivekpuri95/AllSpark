@@ -350,6 +350,11 @@ class DataSource {
 			if(!container.contains(this.menu))
 				container.appendChild(this.menu);
 
+			const alreadyVisibleMenu = page.container.querySelector('.data-source > .menu:not(.hidden)');
+
+			if(alreadyVisibleMenu && alreadyVisibleMenu != this.menu)
+				alreadyVisibleMenu.classList.add('hidden');
+
 			this.menu.classList.toggle('hidden');
 			this.menu.style.left = menuToggle.offsetLeft + 'px';
 			menuToggle.classList.toggle('selected');
@@ -358,8 +363,13 @@ class DataSource {
 			document.body.removeEventListener('click', this.menuToggleListener);
 
 			if(!this.menu.classList.contains('hidden')) {
+
 				document.body.on('click', this.menuToggleListener = e => {
-					menuToggle.click();
+
+					const alreadyVisibleMenu = page.container.querySelectorAll('.data-source > .menu:not(.hidden)');
+
+					for(const item of page.container.querySelectorAll('.data-source > .menu:not(.hidden)'))
+						item.parentElement.querySelector('.menu-toggle').click();
 				});
 			}
 		});

@@ -848,12 +848,17 @@ class SettingsAccount {
 
 	get row() {
 
-		const tr = document.createElement('tr');
+		const 
+			tr = document.createElement('tr'),
+			urls = [];
+
+		for(const url of this.url.split(',')) 
+			urls.push(`<a href="//${url}" target="_blank">${url}</a>`);
 
 		tr.innerHTML = `
 			<td>${this.account_id}</td>
 			<td>${this.name}</td>
-			<td><a href="http://${this.url}" target="_blank">${this.url}</td>
+			<td>${urls.join(' &nbsp;&middot;&nbsp; ')}</td>
 			<td><img src="${this.icon}" height="30"></td>
 			<td><img src="${this.logo}" height="30"></td>
 			<td class="action green" title="Edit"><i class="far fa-edit"></i></td>
@@ -883,7 +888,10 @@ class AccountsFeatures {
 
 	get container() {
 
-		const container = document.createElement('div');
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('feature-form');
 
@@ -930,53 +938,37 @@ class AccountsFeatures {
 
 		container.querySelector('.feature-type').appendChild(this.featureType.container);
 
-		const tbody = container.querySelector('tbody');
+		container.querySelector('#feature-search').on('keyup', () => this.render());
+
+		container.querySelector('.feature-type').on('change', () => this.render());
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		const 
+			tbody = this.container.querySelector('tbody'),
+			selectedTypes = this.featureType.value,
+			searchQuery = this.container.querySelector('#feature-search').value.toLowerCase();
 
 		tbody.textContent = null;
 
-		for(const feature of this.totalFeatures.values())
+		for(const feature of this.totalFeatures.values()) {
+
+			if(selectedTypes.length && !selectedTypes.includes(feature.type))
+				continue;
+
+			if(searchQuery && !feature.name.toLowerCase().includes(searchQuery) && !(feature.status ? 'enabled' : 'disabled').includes(searchQuery))
+				continue;
+
 			tbody.appendChild(feature.row);
+		}
 
-		container.querySelector('#feature-search').on('keyup', (e) => {
-
-			e.preventDefault();
-
-			const key = e.currentTarget.value.toLowerCase();
-
-			tbody.textContent = null;
-
-			for(const feature of this.totalFeatures.values()) {
-
-				if(feature.name.includes(key) && this.featureType.value.indexOf(feature.type) >= 0)
-					tbody.appendChild(feature.row);
-			}
-
-			if(!tbody.childElementCount)
-				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found</td></tr>`;
-		});
-
-		container.querySelector('.feature-type').on('change', (e) => {
-
-			const selected = this.featureType.value;
-
-			tbody.textContent = null;
-
-			if(!selected.length) {
-				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found</td></tr>`;
-				return;
-			};
-
-			for(const feature of this.totalFeatures.values()) {
-
-				if(selected.indexOf(feature.type) >= 0)
-					tbody.appendChild(feature.row);
-			};
-
-			if(!tbody.childElementCount)
-				tbody.innerHTML = `<tr><td colspan=4 class="NA">No Feature found</td></tr>`;
-		});
-
-		return container;
+		if(!tbody.children.length)
+			tbody.innerHTML = '<tr><td colspan=4 class="NA">No Feature found</td></tr>';
 	}
 }
 

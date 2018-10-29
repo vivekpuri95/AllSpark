@@ -194,7 +194,7 @@ main .dataset {
 			}
 			.singleton .data-source > .menu > .item > .submenu {
 				top: 100%;
-				right: 0;
+				left: 0;
 			}
 			.data-source > .menu .label {
 				display: grid;
