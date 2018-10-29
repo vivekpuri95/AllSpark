@@ -2408,9 +2408,6 @@ class MultiSelect {
 				this.selectedValues.add(data.value.toString())
 		}
 
-		if(this.changeCallback)
-			this.changeCallback();
-
 		this.recalculate();
 	}
 
@@ -2423,9 +2420,6 @@ class MultiSelect {
 			return;
 
 		this.selectedValues.clear();
-
-		if(this.changeCallback)
-			this.changeCallback();
 
 		this.recalculate();
 	}
