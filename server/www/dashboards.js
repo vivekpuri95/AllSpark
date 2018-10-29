@@ -32,7 +32,7 @@ class Dashboard extends API {
 
 		let dashboardQueryList = this.mysql.query(`
 			SELECT
-				dashboard_id,
+				vd.owner_id as dashboard_id,
 				query_id
 			from
 				tb_query q
@@ -53,7 +53,7 @@ class Dashboard extends API {
 				and q.account_id = ?
 				AND vd.owner = 'dashboard'
 			group by 
-				dashboard_id,
+				vd.owner_id,
 				query_id
 		`,
 			[this.account.account_id]);

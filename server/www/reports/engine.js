@@ -179,17 +179,19 @@ class report extends API {
 
 			for (const key in preReportApiDetails) {
 
+				const value = preReportApiDetails.hasOwnProperty(key) ? (new String(preReportApiDetails[key])).toString() : "";
+
 				if(key in filterMapping) {
 
-					filterMapping[key].value = preReportApiDetails.hasOwnProperty(key) ? preReportApiDetails[key].toString() : '';
-					filterMapping[key].default_value = preReportApiDetails.hasOwnProperty(key) ? preReportApiDetails[key].toString() : '';
+					filterMapping[key].value = value;
+					filterMapping[key].default_value = value;
 					continue;
 				}
 
 				filterMapping[key] = {
 					placeholder: key,
-					value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
-					default_value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
+					value: value,
+					default_value: value
 				}
 			}
 
@@ -220,7 +222,7 @@ class report extends API {
 
 				category = category.map(x => x.toString());
 
-				flag = flag || category.every(x => userCategories.includes(x.toString()));
+				flag = flag || userCategories.every(x => category.includes(x.toString()));
 			}
 
 			flag = flag || (userCategories.some(x => constants.adminPrivilege.includes(x)) && userCategories.length);
@@ -1080,7 +1082,7 @@ class ReportEngine extends API {
 
 			this.parameters.request[1].params = this.parameters.request[1].body.toString();
 		}
-		return crypto.createHash('md5').update(JSON.stringify(this.parameters) || "").digest('hex');
+		return crypto.createHash('sha256').update(JSON.stringify(this.parameters) || "").digest('hex');
 	}
 
 	async execute() {
