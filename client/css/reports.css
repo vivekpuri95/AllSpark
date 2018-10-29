@@ -1430,7 +1430,7 @@ main .dataset {
 			grid-gap: calc(var(--gap) * 2);
 			grid-auto-flow: column;
 		}
-			.column-form .number-format .currency-list{
+			.column-form .number-format .currency-list {
 				text-align: right;
 			}
 			.column-form .timing-format fieldset {

@@ -2251,7 +2251,7 @@ class DataSourceColumn {
 	}
 
 	async apply(e) {
-		debugger
+
 		if(e)
 			e.preventDefault();
 
@@ -2294,15 +2294,15 @@ class DataSourceColumn {
 				this.type.formatNumber = customNumber;
 		}
 
-		catch(e){
+		catch(e) {
 
 			new SnackBar({
-				message: 'Action Failed',
+				message: 'Apply Failed',
 				subtitle: e,
 				type: 'error',
 			});
 
-			return;
+			throw e;
 		}
 
 		if(this.interval)
@@ -2377,12 +2377,12 @@ class DataSourceColumn {
 		catch(e){
 
 			new SnackBar({
-				message: 'Action Failed',
+				message: 'Save Failed',
 				subtitle: e,
 				type: 'error',
 			});
 
-			return;
+			throw e;
 		}
 
 		if(this.interval)
@@ -2888,11 +2888,9 @@ class DataSourceColumnCustomNumberType {
 				<label class="currency-symbol hidden">
 					<span class="currency-code">
 						Currency Code
-						<span class="NA">
-							<a href="https://www.currency-iso.org/en/home/tables/table-a1.html" data-tooltip="Help" class="currency-list" target="_blank">
-									<i class="fa fa-question" aria-hidden="true"></i>
-							</a>
-						</span>
+						<a href="https://www.currency-iso.org/en/home/tables/table-a1.html" data-tooltip="Help" class="currency-list NA" target="_blank">
+								<i class="fa fa-question" aria-hidden="true"></i>
+						</a>
 					</span>
 					<input type="text" name="currency">
 				</label>
@@ -2909,12 +2907,12 @@ class DataSourceColumnCustomNumberType {
 
 				<label>
 					<span>Minimum Fraction Digits</span>
-					<input type="number" name="minimumFractionDigits" min="0" step="0" max="20">
+					<input type="number" name="minimumFractionDigits" min="0" step="1" max="20">
 				</label>
 
 				<label>
 					<span>Maximum Fraction Digits</span>
-					<input type="number" name="maximumFractionDigits" min="0" step="0" max="20">
+					<input type="number" name="maximumFractionDigits" min="0" step="1" max="20">
 				</label>
 
 				<label>
@@ -2986,7 +2984,7 @@ class DataSourceColumnCustomNumberType {
 				selectedInputs[element.name] = element.value;
 		}
 
-		selectedInputs['locale'] = 'en';
+		selectedInputs.locale = 'en';
 
 		new Intl.NumberFormat(undefined, selectedInputs);
 
