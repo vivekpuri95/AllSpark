@@ -271,11 +271,11 @@ exports.update = class extends API {
 			await bigquery.setup();
 		}
 
-		const invalidConnections = new Set((await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, this.request.body.type.toLowerCase()) || "").split(", "));
+		const invalidConnections = new Set((await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, credential.type.toLowerCase()) || "").split(", "));
 
-		invalidConnections.add(this.request.body.id.toString());
+		invalidConnections.add(credential.id.toString());
 
-		await Redis.hset(`${process.env.NODE_ENV}#invalidCredentials`, this.request.body.type.toLowerCase(), [...invalidConnections].join(", "));
+		await Redis.hset(`${process.env.NODE_ENV}#invalidCredentials`, credential.type.toLowerCase(), [...invalidConnections].join(", "));
 
 		return response;
 	}
