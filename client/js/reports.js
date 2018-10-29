@@ -149,8 +149,11 @@ class DataSource {
 
 		this.pipeline.add(new DataSourcePipelineEvent({
 			title: 'Report Executed',
-			duration: response.runtime,
-			rows: response.data.length,
+			subtitle: [
+				{key: 'Duration', value: `${Format.number(response.runtime)}ms`},
+				{key: 'Rows', value: Format.number(response.data.length)},
+				{key: 'Columns', value: Format.number(Object.keys(response.data[0]).length)},
+			],
 		}));
 
 		this.columns.update();
@@ -347,6 +350,11 @@ class DataSource {
 			if(!container.contains(this.menu))
 				container.appendChild(this.menu);
 
+			const alreadyVisibleMenu = page.container.querySelector('.data-source > .menu:not(.hidden)');
+
+			if(alreadyVisibleMenu && alreadyVisibleMenu != this.menu)
+				alreadyVisibleMenu.classList.add('hidden');
+
 			this.menu.classList.toggle('hidden');
 			this.menu.style.left = menuToggle.offsetLeft + 'px';
 			menuToggle.classList.toggle('selected');
@@ -355,8 +363,13 @@ class DataSource {
 			document.body.removeEventListener('click', this.menuToggleListener);
 
 			if(!this.menu.classList.contains('hidden')) {
+
 				document.body.on('click', this.menuToggleListener = e => {
-					menuToggle.click();
+
+					const alreadyVisibleMenu = page.container.querySelectorAll('.data-source > .menu:not(.hidden)');
+
+					for(const item of page.container.querySelectorAll('.data-source > .menu:not(.hidden)'))
+						item.parentElement.querySelector('.menu-toggle').click();
 				});
 			}
 		});
@@ -552,8 +565,6 @@ class DataSource {
 			</div>
 		`;
 
-		// menu.on('click', e => e.stopPropagation());
-
 		const
 			filtersToggle = menu.querySelector('.filters-toggle'),
 			descriptionToggle = menu.querySelector('.description-toggle'),
@@ -697,17 +708,17 @@ class DataSource {
 
 				item.on('click', () => {
 
-				if(descriptionToggle.parentElement.classList.contains('selected'))
-					descriptionToggle.click();
+					if(descriptionToggle.parentElement.classList.contains('selected'))
+						descriptionToggle.click();
 
-				if(queryToggle.parentElement.classList.contains('selected'))
-					queryToggle.click();
+					if(queryToggle.parentElement.classList.contains('selected'))
+						queryToggle.click();
 
-				if(filtersToggle.parentElement.classList.contains('selected'))
-					filtersToggle.click();
+					if(filtersToggle.parentElement.classList.contains('selected'))
+						filtersToggle.click();
 
-				if(pipelineToggle.parentElement.classList.contains('selected'))
-					pipelineToggle.click();
+					if(pipelineToggle.parentElement.classList.contains('selected'))
+						pipelineToggle.click();
 
 					visualization.load();
 				});
@@ -738,6 +749,8 @@ class DataSource {
 
 		if(this.visualizations.selected.visualization_id)
 			menu.querySelector('.configure-visualization').href = `/reports/configure-visualization/${this.visualizations.selected.visualization_id}`;
+
+		return menu;
 	}
 
 	async userList() {
@@ -750,7 +763,9 @@ class DataSource {
 
 	async response() {
 
+		// Empty out the pipeline
 		for(const event of this.pipeline) {
+
 			if(event.title != 'Report Executed')
 				this.pipeline.delete(event);
 		}
@@ -772,32 +787,8 @@ class DataSource {
 
 		const time = performance.now();
 
-		for(const _row of data) {
-
-			const row = new DataSourceRow(_row, this);
-
-			if(!row.skip)
-				response.push(row);
-		}
-
-		let filters = [];
-
-		for(const column of this.columns.list.values()) {
-
-			if(column.filters && column.filters.length)
-				filters.push(column.filters.length);
-		}
-
-		if(filters.length) {
-
-			const sum = filters.reduce((a, v) => a + v, 0);
-
-			this.pipeline.add(new DataSourcePipelineEvent({
-				title: `Apply ${sum} filter${sum > 1 ? 's' : ''} on ${filters.length} column${filters.length > 1 ? 's' : ''}`,
-				duration: performance.now() - time,
-				rows: response.length,
-			}));
-		}
+		for(const row of data)
+			response.push(new DataSourceRow(row, this));
 
 		if(this.postProcessors.selected) {
 
@@ -807,8 +798,10 @@ class DataSource {
 
 			this.pipeline.add(new DataSourcePipelineEvent({
 				title: `${this.postProcessors.selected.name} (${this.postProcessors.selected.value})`,
-				duration: performance.now() - time,
-				rows: response.length,
+				subtitle: [
+					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
+					{key: 'Rows', value: Format.number(response.length)},
+				],
 			}));
 		}
 
@@ -843,8 +836,10 @@ class DataSource {
 
 			this.pipeline.add(new DataSourcePipelineEvent({
 				title: `Sort by ${this.columns.sortBy.name} ${parseInt(this.columns.sortBy.sort) === 0 ? 'Descending' : 'Ascending'}`,
-				duration: performance.now() - time,
-				rows: response.length,
+				subtitle: [
+					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
+					{key: 'Rows', value: Format.number(response.length)},
+				],
 			}));
 		}
 
@@ -1131,7 +1126,7 @@ class DataSource {
 				description.insertAdjacentHTML('beforeend', '<h3>Visualization Description</h3>' + this.visualizations.selected.description);
 		}
 
-		for(const item of this.container.querySelectorAll('.change-visualization + .submenu .item'))
+		for(const item of this.menu.querySelectorAll('.change-visualization + .submenu .item'))
 			item.classList.toggle('selected', item.dataset.id == this.visualizations.selected.visualization_id);
 
 		this.container.querySelector('.query code').innerHTML = new FormatSQL(this.originalResponse.query).query;
@@ -1655,31 +1650,6 @@ class DataSourceRow extends Map {
 				}
 			}
 
-			if(column.filters && column.filters.length) {
-
-				for(const search of column.filters) {
-
-					if(search.value === '')
-						continue;
-
-					if(!row[key])
-						this.skip = true;
-
-					if(!search.slug)
-						continue;
-
-					// Look for a filter with the selected filter's slug
-					const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == search.slug);
-
-					if(!filter)
-						continue;
-
-					// Apply the filter. It checks if a row passes a filter or not.
-					if(!filter.apply(search.value, row[key] === null ? '' : row[key]))
-						this.skip = true;
-				}
-			}
-
 			this.set(key, row[key]);
 		}
 
@@ -1759,7 +1729,7 @@ class DataSourceColumns extends Map {
 
 	update(response) {
 
-		if(!this.source.originalResponse.data || !this.source.originalResponse.data.length)
+		if(!this.source.originalResponse || !this.source.originalResponse.data || !this.source.originalResponse.data.length)
 			return;
 
 		this.clear();
@@ -3822,30 +3792,14 @@ class DataSourceTransformations extends Set {
 
 		this.clear();
 
-		const
-			visualization = this.source.visualizations.selected,
-			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
+		this.reset();
 
-		for(const transformation of transformations) {
-
-			if(DataSourceTransformation.types.has(transformation.type))
-				this.add(new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source));
-		}
+		this.loadFilters();
 
 		response = JSON.parse(JSON.stringify(response));
 
-		for(const transformation of this) {
-
-			const time = performance.now();
-
+		for(const transformation of this)
 			response = await transformation.run(response);
-
-			this.source.pipeline.add(new DataSourcePipelineEvent({
-				title: transformation.type,
-				duration: performance.now() - time,
-				rows: response.length,
-			}));
-		}
 
 		if(this.size) {
 			this.source.columns.update(response);
@@ -3853,6 +3807,53 @@ class DataSourceTransformations extends Set {
 		}
 
 		return response;
+	}
+
+	reset() {
+
+		const
+			visualization = this.source.visualizations.selected,
+			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
+
+		for(const [i, transformation] of transformations.entries()) {
+
+			if(!DataSourceTransformation.types.has(transformation.type))
+				continue;
+
+			const transformationType = new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source);
+
+			this.add(transformationType);
+
+			if(i > visualization.options.transformationsStopAt)
+				transformationType.disabled = true;
+		}
+	}
+
+	loadFilters() {
+
+		const filters = [];
+
+		for(const column of this.source.columns.list.values()) {
+
+			if(!column.filters || !column.filters.length)
+				continue;
+
+			for(const filter of column.filters) {
+
+				filters.push({
+					column: column.key,
+					function: filter.slug,
+					value: filter.value,
+				});
+			}
+		}
+
+		if(!filters.length)
+			return;
+
+		const type = DataSourceTransformation.types.get('filters');
+
+		this.add(new type({type: 'filters', filters}, this.source));
 	}
 }
 
@@ -3863,46 +3864,66 @@ class DataSourceTransformation {
 		this.source = source;
 
 		Object.assign(this, transformation);
+
+		this.incoming = {
+			rows: null,
+			columns: new DataSourceColumns(this.source),
+		};
+
+		this.outgoing = {
+			rows: null,
+			columns: new DataSourceColumns(this.source),
+		};
+	}
+
+	async run(response) {
+
+		if(!response || !response.length)
+			return response;
+
+		const time = performance.now();
+
+		this.incoming.rows = response.length || 0;
+		this.incoming.columns.update(response);
+
+		if(!this.disabled)
+			response = await this.execute(response);
+
+		this.outgoing.rows = response.length || 0;
+		this.outgoing.columns.update(response);
+
+		this.source.pipeline.add(new DataSourcePipelineEvent({
+			title: this.name,
+			disabled: this.disabled,
+			subtitle: [
+				{
+					key: 'Duration',
+					value: `${Format.number(performance.now() - time)}ms`
+				},
+				{
+					key: 'Rows',
+					value: Format.number(this.outgoing.rows)
+				},
+				{
+					key: 'Columns',
+					value: Format.number(this.outgoing.columns.size)
+				},
+			],
+		}));
+
+		return response;
 	}
 }
 
 DataSourceTransformation.types = new Map;
 
-DataSourceTransformation.types.set('restrict-columns', class DataSourceTransformationRestrict extends DataSourceTransformation {
-
-	async run(response = []) {
-
-		if(!response || !response.length || !this.columns.length)
-			return response;
-
-		const newResponse = [];
-
-		for(const data of response) {
-
-			const temp = {};
-
-			for(const key in data) {
-
-				if(this.exclude){
-
-					if(!this.columns.includes(key))
-						temp[key] = data[key];
-				}
-				else if(this.columns.includes(key)) {
-					temp[key] = data[key];
-				}
-			}
-
-			newResponse.push(temp);
-		}
-
-		return newResponse;
-	}
-});
-
 DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot extends DataSourceTransformation {
 
-	async run(response = []) {
+	get name() {
+		return 'Pivot Table';
+	}
+
+	async execute(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -4039,7 +4060,11 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 
 DataSourceTransformation.types.set('filters', class DataSourceTransformationFilters extends DataSourceTransformation {
 
-	async run(response = []) {
+	get name() {
+		return 'Filters';
+	}
+
+	async execute(response = []) {
 
 		if(!response || !response.length || !this.filters || !this.filters.length)
 			return response;
@@ -4074,7 +4099,11 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 
 DataSourceTransformation.types.set('autofill', class DataSourceTransformationAutofill extends DataSourceTransformation {
 
-	async run(response = []) {
+	get name() {
+		return 'Auto Fill';
+	}
+
+	async execute(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -4178,7 +4207,11 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 
 DataSourceTransformation.types.set('stream', class DataSourceTransformationStream extends DataSourceTransformation {
 
-	async run(response = []) {
+	get name() {
+		return 'Stream';
+	}
+
+	async execute(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -4308,6 +4341,42 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 		}
 
 		return response;
+	}
+});
+
+DataSourceTransformation.types.set('restrict-columns', class DataSourceTransformationRestrictColumns extends DataSourceTransformation {
+
+	get name() {
+		return 'Restrict Columns';
+	}
+
+	async execute(response = []) {
+
+		if(!response || !response.length || !this.columns)
+			return response;
+
+		const newResponse = [];
+
+		for(const data of response) {
+
+			const temp = {};
+
+			for(const key in data) {
+
+				if(this.exclude) {
+
+					if(!this.columns.includes(key))
+						temp[key] = data[key];
+				}
+
+				else if(this.columns.includes(key))
+					temp[key] = data[key];
+			}
+
+			newResponse.push(temp);
+		}
+
+		return newResponse;
 	}
 });
 
@@ -4808,11 +4877,28 @@ class DataSourcePipelineEvent {
 		container.innerHTML = `
 			<div class="order">${Format.number(this.order)}</div>
 			<h2>${this.title}</h2>
-			<div class="subtitle">
-				<span>Duration: <strong>${Format.number(this.duration)}ms</strong></span>
-				<span>Rows: <strong>${Format.number(this.rows)}</strong></span>
-			</div>
 		`;
+
+		if(this.disabled) {
+			container.classList.add('disabled');
+			container.insertAdjacentHTML('beforeend', `<span class="NA">Disabled</span>`);
+		}
+
+		if(this.subtitle && this.subtitle.length) {
+
+			const subtitleContainer = document.createElement('div');
+
+			subtitleContainer.classList.add('subtitle');
+
+			for(const subtitle of this.subtitle) {
+
+				subtitleContainer.insertAdjacentHTML('beforeend', `
+					<span>${subtitle.key}: <strong>${subtitle.value}</strong></span>
+				`);
+			}
+
+			container.appendChild(subtitleContainer);
+		}
 
 		return container;
 	}

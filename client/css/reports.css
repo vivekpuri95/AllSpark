@@ -182,7 +182,7 @@ main .dataset {
 				width: max-content;
 				min-width: 150px;
 				position: absolute;
-				right: 100%;
+				left: 100%;
 				top: 0;
 				z-index: 7;
 				background: var(--color-surface);
@@ -194,7 +194,7 @@ main .dataset {
 			}
 			.singleton .data-source > .menu > .item > .submenu {
 				top: 100%;
-				right: 0;
+				left: 0;
 			}
 			.data-source > .menu .label {
 				display: grid;
@@ -404,12 +404,15 @@ main .dataset {
 							color var(--transition-duration),
 							box-shadow var(--transition-duration);
 			}
-			.data-source > .pipeline .event:hover {
-				background: var(--color-hover);
-				color: var(--color-hover-text);
+			.data-source > .pipeline .event.disabled {
+				background: rgba(0, 0, 0, 0.15);
+				opacity: 0.8;
+			}
+			.data-source > .pipeline .event:not(.disabled):hover {
+				background: rgba(255, 255, 255, 0.15);
 				cursor: pointer;
 			}
-			.data-source > .pipeline .event:active {
+			.data-source > .pipeline .event:not(.disabled):active {
 				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
 			}
 				.data-source > .pipeline .event .order {
@@ -680,9 +683,6 @@ main .dataset {
 			padding: 0;
 			height: 100%;
 		}
-		.data-source .visualization.table .container {
-			overflow: initial;
-		}
 			.data-source .visualization.table .container td.json {
 				color: #666;
 				padding: 4px;
@@ -797,7 +797,6 @@ main .dataset {
 				caption-side: bottom;
 				background: var(--color-surface);
 				color: var(--color-surface-text);
-				margin-bottom: 25px;
 			}
 			.visualization.table thead tr th.heading {
 				padding-right: 0;
