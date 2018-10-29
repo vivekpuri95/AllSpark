@@ -940,7 +940,7 @@ class AccountsFeatures {
 
 		container.querySelector('#feature-search').on('keyup', () => this.render());
 
-		container.querySelector('.feature-type').on('change', () => this.render());
+		this.featureType.on('change', () => this.render());
 
 		this.render();
 
