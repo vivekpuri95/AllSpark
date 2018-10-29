@@ -683,9 +683,6 @@ main .dataset {
 			padding: 0;
 			height: 100%;
 		}
-		.data-source .visualization.table .container {
-			overflow: initial;
-		}
 			.data-source .visualization.table .container td.json {
 				color: #666;
 				padding: 4px;
@@ -800,7 +797,6 @@ main .dataset {
 				caption-side: bottom;
 				background: var(--color-surface);
 				color: var(--color-surface-text);
-				margin-bottom: 25px;
 			}
 			.visualization.table thead tr th.heading {
 				padding-right: 0;
