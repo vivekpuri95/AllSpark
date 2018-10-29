@@ -3001,7 +3001,6 @@ class DataSourceColumnCustomNumberType {
 	}
 }
 
-
 DataSourceColumn.formatType = new Map;
 
 DataSourceColumn.formatType.set('date',
@@ -3892,13 +3891,15 @@ class DataSourceTransformation {
 		this.outgoing.rows = response.length || 0;
 		this.outgoing.columns.update(response);
 
+		this.executionDuration = performance.now() - time;
+
 		this.source.pipeline.add(new DataSourcePipelineEvent({
 			title: this.name,
 			disabled: this.disabled,
 			subtitle: [
 				{
 					key: 'Duration',
-					value: `${Format.number(performance.now() - time)}ms`
+					value: `${Format.number(this.executionDuration)}ms`
 				},
 				{
 					key: 'Rows',
@@ -4082,7 +4083,7 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 				if(!filter)
 					continue;
 
-				if((!_filter.column in row))
+				if(!(_filter.column in row))
 					continue;
 
 				if(!filter.apply(_filter.value, row[_filter.column]))
@@ -4339,6 +4340,52 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 				row[key] = value;
 			}
 		}
+
+		return response;
+	}
+});
+
+DataSourceTransformation.types.set('sort', class DataSourceTransformationRestrictColumns extends DataSourceTransformation {
+
+	get name() {
+		return 'Sort';
+	}
+
+	async execute(response = []) {
+
+		if(!response || !response.length || !this.columns)
+			return response;
+
+
+		for(const column of this.columns) {
+
+			column.options = {
+				numeric: column.numeric != 'alphabetical',
+				caseFirst: column.caseFirst || false,
+			};
+		}
+
+		response = response.sort((a, b) => {
+
+			for(const column of this.columns) {
+
+				if(!(column.column in a) || !(column.column in b))
+					continue;
+
+				if(a[column.column] === null || b[column.column] === null)
+					continue;
+
+				let result = a[column.column].toString().localeCompare(b[column.column].toString(), undefined, column.options);
+
+				if(!result)
+					continue;
+
+				if(column.order == 'descending')
+					result *= -1;
+
+				return result;
+			}
+		});
 
 		return response;
 	}
@@ -4840,8 +4887,12 @@ class DataSourcePipeline extends Set {
 
 			container.appendChild(event.container);
 
-			if(event.order != this.size)
-				container.insertAdjacentHTML('beforeend', '<div class="next-connector"><i class="fas fa-long-arrow-alt-down"></i></div>')
+			if(event.order != this.size) {
+
+				container.insertAdjacentHTML('beforeend', `
+					<div class="next-connector"><i class="fas fa-long-arrow-alt-down"></i></div>
+				`);
+			}
 		}
 
 		if(!this.size)
