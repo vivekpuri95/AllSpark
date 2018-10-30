@@ -47,8 +47,9 @@ Page.class = class Dashboards extends Page {
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
-			this.renderList();
+			await this.renderList();
 			await Sections.show('list');
+			this.process();
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
@@ -63,11 +64,123 @@ Page.class = class Dashboards extends Page {
 		this.navbar = new Navbar(new Map, this);
 
 		this.load();
+
 	}
 
 	get currentDashboard() {
 
 		return parseInt(window.location.pathname.split('/').includes('dashboard') ? window.location.pathname.split('/').pop() : 0);
+	}
+
+	process() {
+
+		// const connections = new Map;
+
+		// for(const connection of this.connections) {
+
+		// 	for(const feature of MetaData.features.values()) {
+
+		// 		if(feature.slug == connection.type && feature.type == 'source')
+		// 			connection.feature = feature;
+		// 	}
+
+		// 	if(!connection.feature)
+		// 		continue;
+
+		// 	connections.set(connections.id, connection);
+		// }
+		// this.connections = new Map(this.connections.map(c => [c.id, c]));
+
+		const filters = [
+			{
+				key: 'Query ID',
+				rowValue: row => [row.query_id],
+			},
+			{
+				key: 'Name',
+				rowValue: row => row.name ? [row.name] : [],
+			},
+			{
+				key: 'Description',
+				rowValue: row => row.description ? [row.description] : [],
+			},
+			{
+				key: 'Tags',
+				rowValue: row => row.tags ? row.tags.split(',') : [],
+			},
+			{
+				key: 'Filters Length',
+				rowValue: row => [row.filters.length]
+			},
+			{
+				key: 'Filters Name',
+				rowValue: row => row.filters.map(f => f.name),
+			},
+			{
+				key: 'Filters Placeholder',
+				rowValue: row => row.filters.map(f => f.placeholder),
+			},
+			{
+				key: 'Visualizations Name',
+				rowValue: row => row.visualizations.map(f => f.name),
+			},
+			{
+				key: 'Visualizations Type Name',
+				rowValue: row => {
+					return row.visualizations.map(f => f.type)
+											 .map(m => MetaData.visualizations.has(m) ?
+											 (MetaData.visualizations.get(m)).name : []);
+				},
+			},
+			{
+				key: 'Visualizations Length',
+				rowValue: row => [row.visualizations.length],
+			},
+			{
+				key: 'Report Enabled',
+				rowValue: row => row.is_enabled ? ['yes'] : ['no'],
+			},
+			{
+				key: 'Report Creation',
+				rowValue: row => row.created_at ? [row.created_at] : [],
+			},
+			{
+				key: 'Definition',
+				rowValue: row => row.query ? [row.query] : [],
+			},
+			{
+				key: 'Report Refresh Rate',
+				rowValue: row => row.refresh_rate ? [row.refresh_rate] : [],
+			},
+			{
+				key: 'Subtitle',
+				rowValue: row => {
+					if(MetaData.categories.has(parseInt(row.subtitle)))
+						return [MetaData.categories.get(parseInt(row.subtitle)).name];
+					else
+						return [];
+				},
+			},
+			{
+				key: 'Report Last Updated At',
+				rowValue: row => row.updated_at ? [row.updated_at] : [],
+			}
+		];
+
+		this.searchBar = new SearchColumnFilters({
+			data: Array.from(DataSource.list.values()),
+			filters: filters,
+			advanceSearch: true,
+			page,
+		});
+
+		this.container.querySelector('.section .toolbar').insertBefore(this.searchBar.container, this.container.querySelector('#stages .section #list-container'));
+
+		this.container.querySelector('.section .toolbar').appendChild(this.searchBar.globalSearch.container);
+
+		// this.container.querySelector('#stages .section .toolbar').on('submit', e => e.preventDefault());
+
+		this.searchBar.on('change', () => this.stages.get('pick-report').load() );
 	}
 
 	parents(id) {
