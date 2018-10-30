@@ -5890,16 +5890,17 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 
 	render() {
 
-		const
-			select = this.container.querySelector('.join select[name=sourceColumn]'),
-			value = select.value;
+		for(const select of this.container.querySelectorAll('select[name=sourceColumn]')) {
 
-		select.textContent = null;
+			const value = select.value;
 
-		for(const _column of this.incoming.columns.values())
-			select.insertAdjacentHTML('beforeend', `<option value="${_column.key}">${_column.name}</option>`);
+			select.textContent = null;
 
-		select.value = value || select.dataset.value;
+			for(const column of this.incoming.columns.values())
+				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+
+			select.value = value || select.dataset.value;
+		}
 	}
 });
 
