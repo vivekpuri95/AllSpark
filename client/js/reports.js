@@ -152,7 +152,7 @@ class DataSource {
 			subtitle: [
 				{key: 'Duration', value: `${Format.number(response.runtime)}ms`},
 				{key: 'Rows', value: Format.number(response.data.length)},
-				{key: 'Columns', value: Format.number(Object.keys(response.data[0]).length)},
+				{key: 'Columns', value: Format.number(Object.keys(response.data[0] || {}).length)},
 			],
 		}));
 
