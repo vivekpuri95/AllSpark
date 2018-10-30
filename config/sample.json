@@ -28,6 +28,5 @@
     "port": 6379,
     "db": 0
   },
-  "superAdmin_users": ["email1", "email2"],
-  "footer_powered_by": ""
+  "superAdmin_users": ["foo@bar.com"]
 }

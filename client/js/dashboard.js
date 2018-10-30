@@ -45,9 +45,6 @@ Page.class = class Dashboards extends Page {
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
-		if (this.account.settings.get('disable_powered_by'))
-			this.nav.querySelector('footer .powered-by').classList.add('hidden');
-
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
 			this.renderList();

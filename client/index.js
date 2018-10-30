@@ -577,11 +577,6 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 					<div class="collapse-panel">
 						<span class="left"><i class="fa fa-angle-double-left"></i></span>
 					</div>
-
-					<span class="powered-by ${this.account.settings.get('disable_powered_by') ? 'hidden' : ''}">
-						Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
-						<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
-					</span>
 				</footer>
 			</nav>
 			<div class="nav-blanket hidden"></div>
