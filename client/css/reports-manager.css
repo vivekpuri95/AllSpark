@@ -662,10 +662,15 @@ main.preview-left #stages {
 				}
 				.visualization-form .transformations .next-connector {
 					display: grid;
-					grid-gap: 10px;
+					grid-gap: 15px;
+					grid-auto-flow: column;
 					text-align: center;
 					justify-content: center;
+					align-items: center;
 				}
+					.visualization-form .transformations .next-connector > i {
+						color: var(--color-grey);
+					}
 					.visualization-form .transformations .next-connector .NA {
 						max-width: max-content;
 						display: grid;

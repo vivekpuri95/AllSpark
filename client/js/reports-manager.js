@@ -5033,11 +5033,13 @@ class ReportTransformations extends Set {
 			</fieldset>
 
 			<div class="next-connector">
+				<i class="fas fa-long-arrow-alt-down"></i>
 				<span class="NA">
 					<span>Rows: <strong>${Format.number(this.page.preview.report.originalResponse.data.length || 0)}</strong></span>
 					<span>Columns: <strong>${Format.number(Object.keys(this.page.preview.report.originalResponse.data[0] || {}).length)}</strong></span>
 					<span>Duration: <strong>${Format.number(this.page.preview.report.originalResponse.runtime || 0)}ms</strong></span>
 				</span>
+				<i class="fas fa-long-arrow-alt-down"></i>
 			</div>
 		`);
 
@@ -5050,11 +5052,13 @@ class ReportTransformations extends Set {
 
 			transformationsList.insertAdjacentHTML('beforeend', `
 				<div class="next-connector">
+					<i class="fas fa-long-arrow-alt-down"></i>
 					<span class="NA">
 						<span>Rows: <strong>${Format.number(transformation.outgoing.rows || 0)}</strong></span>
 						<span>Columns: <strong>${Format.number(transformation.outgoing.columns.size)}</strong></span>
 						<span>Duration: <strong>${Format.number(transformation.executionDuration)}ms</strong></span>
 					</span>
+					<i class="fas fa-long-arrow-alt-down"></i>
 				</div>
 			`);
 		}
