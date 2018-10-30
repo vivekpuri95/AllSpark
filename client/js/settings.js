@@ -716,11 +716,6 @@ class SettingsAccount {
 				name: 'Disable Footer',
 			},
 			{
-				key: 'disable_powered_by',
-				type: 'toggle',
-				name: 'Disable "Powered By"',
-			},
-			{
 				key: 'user_onboarding',
 				type: 'toggle',
 				name: 'Enable user onboarding'

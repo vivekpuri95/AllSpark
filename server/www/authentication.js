@@ -69,11 +69,6 @@ exports.resetlink = class extends API {
 					</a>
 
 					<div style="font-size:14px;color:#666">Thank You.</div>
-
-					<div style="margin-top: 50px; font-size: 90%; text-align: center;">
-						Powered By
-						<a style="color:#666; text-decoration: none;" href="https://github.com/Jungle-Works/allspark" target="_blank" >AllSpark</a>
-					</div>
 				</div>
 
 			</div>
