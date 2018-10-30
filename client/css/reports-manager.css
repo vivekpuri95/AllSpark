@@ -495,15 +495,23 @@ main.preview-left #stages {
 			color: var(--color-secondary-text);
 			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.15);
 			transition: background var(--transition-duration),
-						color var(--transition-duration);
+						color var(--transition-duration),
+						box-shadow var(--transition-duration);
 		}
 		#stage-configure-visualization fieldset legend.interactive:hover {
-			background: var(--color-hover);
-			color: var(--color-hover-text);
 			cursor: pointer;
 		}
 		#stage-configure-visualization fieldset legend.interactive:active {
-			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
+			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.25);
+		}
+		.visualization-form fieldset > .ellipsis {
+			color: #ccc;
+			text-align: center;
+			transition: color var(--transition-duration);
+		}
+		.visualization-form fieldset > .ellipsis:not(.disabled):hover {
+			color: #666;
+			cursor: pointer;
 		}
 	.visualization-form .subform {
 		display: grid;
@@ -521,15 +529,6 @@ main.preview-left #stages {
 			background: transparent;
 			padding: 0;
 		}
-			.visualization-form .axes .ellipsis {
-				color: #ccc;
-				text-align: center;
-				cursor: pointer;
-				transition: color var(--transition-duration);
-			}
-			.visualization-form .axes .ellipsis:hover {
-				color: #666;
-			}
 			.visualization-form .axes .form .advanced-toggle {
 				font-size: 90%;
 				text-align: center;
@@ -614,20 +613,20 @@ main.preview-left #stages {
 				.visualization-form .transformations fieldset > .actions > div:active {
 					box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
 				}
-			.visualization-form .transformations fieldset .transformation {
+			.visualization-form .transformations .transformation {
 				display: grid;
 				grid-template-columns: max-content;
 				grid-gap: calc(var(--gap) * 2);
 				align-items: flex-start;
 				margin-top: var(--gap);
 			}
-				.visualization-form .transformations fieldset .transformation > div {
+				.visualization-form .transformations .transformation > div {
 					display: grid;
 					grid-template-columns: 1fr;
 					grid-gap: calc(var(--gap) * 2);
 					width: max-content;
 				}
-					.visualization-form .transformations fieldset .transformation h4 {
+					.visualization-form .transformations .transformation h4 {
 						margin: 0;
 						border-bottom: 1px dashed var(--color-border);
 						padding-bottom: var(--gap);
@@ -641,17 +640,49 @@ main.preview-left #stages {
 					color: #999;
 				}
 
-				.visualization-form .transformations fieldset .transformation .form-row {
+				.visualization-form .transformations .transformation .form-row {
 					display: grid;
 					grid-auto-flow: column;
 					grid-gap: calc(var(--gap) * 2);
 				}
-				.visualization-form .transformations fieldset .transformation .form-row button svg {
-					margin: 0;
-				}
-				.visualization-form .transformations fieldset .transformation button {
+					.visualization-form .transformations .transformation .form-row button i {
+						margin: 0;
+					}
+				.visualization-form .transformations .transformation button {
 					white-space: nowrap;
 				}
+				.visualization-form .transformations .transformation.sort .column:first-of-type .move-up,
+				.visualization-form .transformations .transformation.sort .column:last-of-type .move-down {
+					background: rgba(0, 0, 0, 0.15);
+					opacity: 0.5;
+				}
+				.visualization-form .transformations .transformation.sort .column:first-of-type .move-up:active,
+				.visualization-form .transformations .transformation.sort .column:last-of-type .move-down:active {
+					box-shadow: none;
+				}
+				.visualization-form .transformations .next-connector {
+					display: grid;
+					grid-gap: 15px;
+					grid-auto-flow: column;
+					text-align: center;
+					justify-content: center;
+					align-items: center;
+				}
+					.visualization-form .transformations .next-connector > i {
+						color: var(--color-grey);
+					}
+					.visualization-form .transformations .next-connector .NA {
+						max-width: max-content;
+						display: grid;
+						grid-auto-flow: column;
+						grid-gap: 10px;
+					}
+		.visualization-form .transformations .add-transformation {
+			border-top: 1px solid var(--color-border);
+			padding-top: 15px;
+		}
+
+
 	#stage-configure-visualization .dashboards {
 	}
 		#stage-configure-visualization .dashboards .form {

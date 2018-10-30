@@ -5022,13 +5022,54 @@ class ReportTransformations extends Set {
 
 		transformationsList.textContent = null;
 
+		transformationsList.insertAdjacentHTML('beforeend', `
+
+			<fieldset class="subform">
+				<div class="actions">
+					<div class="preview" title="Preview Data"><i class="fas fa-eye"></i></div>
+				</div>
+				<legend>Report Executed</legend>
+				<div class="ellipsis disabled"><i class="fas fa-ellipsis-h"></i></div>
+			</fieldset>
+
+			<div class="next-connector">
+				<i class="fas fa-long-arrow-alt-down"></i>
+				<span class="NA">
+					<span>Rows: <strong>${Format.number(this.page.preview.report.originalResponse.data.length || 0)}</strong></span>
+					<span>Columns: <strong>${Format.number(Object.keys(this.page.preview.report.originalResponse.data[0] || {}).length)}</strong></span>
+					<span>Duration: <strong>${Format.number(this.page.preview.report.originalResponse.runtime || 0)}ms</strong></span>
+				</span>
+				<i class="fas fa-long-arrow-alt-down"></i>
+			</div>
+		`);
+
+		transformationsList.querySelector('fieldset .actions .preview').on('click', () => this.preview(-1));
+
 		for(const transformation of this) {
+
 			transformationsList.appendChild(transformation.container);
 			transformation.render && transformation.render();
+
+			transformationsList.insertAdjacentHTML('beforeend', `
+				<div class="next-connector">
+					<i class="fas fa-long-arrow-alt-down"></i>
+					<span class="NA">
+						<span>Rows: <strong>${Format.number(transformation.outgoing.rows || 0)}</strong></span>
+						<span>Columns: <strong>${Format.number(transformation.outgoing.columns.size)}</strong></span>
+						<span>Duration: <strong>${Format.number(transformation.executionDuration)}ms</strong></span>
+					</span>
+					<i class="fas fa-long-arrow-alt-down"></i>
+				</div>
+			`);
 		}
 
-		if(!this.size)
-			transformationsList.innerHTML = '<div class="NA">No transformation added yet!</div>';
+		transformationsList.insertAdjacentHTML('beforeend', `
+
+			<fieldset class="subform">
+				<legend>Visualization Loaded</legend>
+				<div class="ellipsis disabled"><i class="fas fa-ellipsis-h"></i></div>
+			</fieldset>
+		`);
 
 		this.container.querySelector('h3 .count').innerHTML = `
 			${this.size ? this.size + ' transformation' + (this.size == 1 ? ' applied' : 's applied') : ''}
@@ -5129,9 +5170,20 @@ class ReportTransformation {
 				<div class="preview" title="Preview Data"><i class="fas fa-eye"></i></div>
 				<div class="remove" title="Remove Transformation"><i class="fa fa-times"></i></div>
 			</div>
-			<legend>${this.name}</legend>
-			<div class="transformation ${this.key}"></div>
+			<legend class="interactive">${this.name}</legend>
+			<div class="ellipsis"><i class="fas fa-ellipsis-h"></i></div>
+			<div class="transformation ${this.key} hidden"></div>
 		`;
+
+		container.querySelector('legend').on('click', () => {
+			container.querySelector('.transformation').classList.toggle('hidden');
+			container.querySelector('.ellipsis').classList.toggle('hidden');
+		});
+
+		container.querySelector('.ellipsis').on('click', () => {
+			container.querySelector('.transformation').classList.toggle('hidden');
+			container.querySelector('.ellipsis').classList.toggle('hidden');
+		});
 
 		container.querySelector('.actions .move-up').on('click', () => {
 
@@ -5190,13 +5242,31 @@ class ReportTransformation {
 		return container;
 	}
 
-	get incomingColumns() {
+	get incoming() {
 
 		const
 			position = Array.from(this.transformations).indexOf(this),
 			transformation = Array.from(this.page.preview.report.transformations)[position];
 
-		return transformation ? transformation.incoming.columns : this.page.preview.report.columns;
+		return transformation ? transformation.incoming : {columns: this.page.preview.report.columns};
+	}
+
+	get outgoing() {
+
+		const
+			position = Array.from(this.transformations).indexOf(this),
+			transformation = Array.from(this.page.preview.report.transformations)[position];
+
+		return transformation ? transformation.outgoing : {columns: this.page.preview.report.columns};
+	}
+
+	get executionDuration() {
+
+		const
+			position = Array.from(this.transformations).indexOf(this),
+			transformation = Array.from(this.page.preview.report.transformations)[position];
+
+		return transformation ? transformation.executionDuration : 0;
 	}
 }
 
@@ -5391,7 +5461,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 			select.textContent = null;
 
-			for(const column of this.incomingColumns.values())
+			for(const column of this.incoming.columns.values())
 				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
 
 			select.value = value || select.dataset.value;
@@ -5467,7 +5537,7 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 
 			select.textContent = null;
 
-			for(const column of this.incomingColumns.values())
+			for(const column of this.incoming.columns.values())
 				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
 
 			select.value = value || select.dataset.value;
@@ -5484,6 +5554,7 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 			<select name="column"></select>
 			<select name="function"></select>
 			<input type="text" name="value">
+			<button type="button" class="remove"><i class="far fa-trash-alt"></i></button>
 		`;
 
 		const
@@ -5496,13 +5567,13 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 		for(const filter of DataSourceColumnFilter.types)
 			functionSelect.insertAdjacentHTML('beforeend', `<option value="${filter.slug}">${filter.name}</option>`);
 
-		functionSelect.value = filter.function;
+		if(filter.function)
+			functionSelect.value = filter.function;
 
-		valueInput.value = filter.value || '';
+		if(filter.value)
+			valueInput.value = filter.value;
 
-		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
-
-		container.querySelector('button').on('click', e => {
+		container.querySelector('.remove').on('click', e => {
 			e.stopPropagation();
 			container.remove();
 		});
@@ -5586,10 +5657,17 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 			endFilter.parentElement.classList.add('hidden');
 		}
 
-		column.dataset.value = this.column;
-		granularity.value = this.granularity;
-		startFilter.value = this.start_filter || '';
-		endFilter.value = this.end_filter || '';
+		if(this.column)
+			column.dataset.value = this.column;
+
+		if(this.granularity)
+			granularity.value = this.granularity;
+
+		if(this.start_filter)
+			startFilter.value = this.start_filter;
+
+		if(this.end_filter)
+			endFilter.value = this.end_filter;
 
 		this.render();
 
@@ -5604,7 +5682,7 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 
 		select.textContent = null;
 
-		for(const _column of this.incomingColumns.values())
+		for(const _column of this.incoming.columns.values())
 			select.insertAdjacentHTML('beforeend', `<option value="${_column.key}">${_column.name}</option>`);
 
 		select.value = value || select.dataset.value;
@@ -5816,16 +5894,17 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 
 	render() {
 
-		const
-			select = this.container.querySelector('.join select[name=sourceColumn]'),
-			value = select.value;
+		for(const select of this.container.querySelectorAll('select[name=sourceColumn]')) {
 
-		select.textContent = null;
+			const value = select.value;
 
-		for(const _column of this.incomingColumns.values())
-			select.insertAdjacentHTML('beforeend', `<option value="${_column.key}">${_column.name}</option>`);
+			select.textContent = null;
 
-		select.value = value || select.dataset.value;
+			for(const column of this.incoming.columns.values())
+				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+
+			select.value = value || select.dataset.value;
+		}
 	}
 });
 
@@ -5882,7 +5961,7 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 			datalist = [],
 			value = this.multiSelect.value;
 
-		for(const column of this.incomingColumns.values()) {
+		for(const column of this.incoming.columns.values()) {
 
 			datalist.push({
 				name: column.name,
@@ -5904,6 +5983,179 @@ ReportTransformation.types.set('restrict-columns', class ReportTransformationRes
 			exclude: this.container.querySelector('label input[name="exclude"]').checked,
 		};
 	};
+});
+
+ReportTransformation.types.set('sort', class ReportTransformationSort extends ReportTransformation {
+
+	get key() {
+		return 'sort';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		if(!this.page.preview.report.originalResponse)
+			return;
+
+		const container = super.container.querySelector('.transformation');
+
+		container.classList.add('sort');
+		container.textContent = null;
+
+		for(const column of this.columns || [])
+			container.appendChild(this.column(column));
+
+		const addColumn = document.createElement('button');
+
+		addColumn.type = 'button';
+		addColumn.innerHTML = `<i class="fa fa-plus"></i> Add New Column`;
+
+		addColumn.on('click', () => {
+			container.insertBefore(this.column(), addColumn);
+			this.render();
+		});
+
+		container.appendChild(addColumn);
+
+		this.render();
+
+		return super.container;
+	}
+
+	get json() {
+
+		const response = {
+			type: this.key,
+			columns: [],
+		};
+
+		for(const column of this.container.querySelectorAll('.column')) {
+
+			response.columns.push({
+				column: column.querySelector('select[name=column]').value,
+				order: column.querySelector('select[name=order]').value,
+				numeric: column.querySelector('select[name=numeric]').value,
+				caseFirst: column.querySelector('select[name=caseFirst]').value,
+			});
+		}
+
+		if(!response.columns.length)
+			return null;
+
+		return response;
+	}
+
+	render() {
+
+		for(const select of this.container.querySelectorAll('select[name=column]')) {
+
+			const value = select.value;
+
+			select.textContent = null;
+
+			for(const column of this.incoming.columns.values())
+				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+
+			select.value = value || select.dataset.value;
+		}
+	}
+
+	column(column = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('form-row', 'column');
+
+		container.innerHTML = `
+			<label>
+				<span>Column</span>
+				<select name="column"></select>
+			</label>
+
+			<label>
+				<span>Order</span>
+				<select name="order">
+					<option value="ascending">Ascending</option>
+					<option value="descending">Descending</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Numeric</span>
+				<select name="numeric">
+					<option value="">Default</option>
+					<option value="numeric">Numeric</option>
+					<option value="alphabetical">Alphabetical</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Case First</span>
+				<select name="caseFirst">
+					<option value="">Default</option>
+					<option value="upper">Upper Case</option>
+					<option value="lower">Lower Case</option>
+				</select>
+			</label>
+
+
+			<label>
+				<span>&nbsp;</span>
+				<button class="move-up"><i class="fas fa-angle-up"></i></button>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button class="move-down"><i class="fas fa-angle-down"></i></button>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button class="remove"><i class="far fa-trash-alt"></i></button>
+			</label>
+		`;
+
+		const
+			columnSelect = container.querySelector('select[name=column]'),
+			order = container.querySelector('select[name=order]'),
+			numeric = container.querySelector('select[name=numeric]'),
+			caseFirst = container.querySelector('select[name=caseFirst]'),
+			moveUp = container.querySelector('.move-up'),
+			moveDown = container.querySelector('.move-down');
+
+		moveUp.on('click', () => {
+
+			if(container.previousSibling)
+				container.parentElement.insertBefore(container, container.previousSibling);
+		});
+
+		moveDown.on('click', () => {
+
+			if(container.nextSibling && container.nextSibling.classList.contains('column'))
+				container.parentElement.insertBefore(container.nextSibling, container);
+		});
+
+		if(column.column)
+			columnSelect.dataset.value = column.column;
+
+		if(column.order)
+			order.value = column.order;
+
+		if(column.numeric)
+			numeric.value = column.numeric;
+
+		if(column.caseFirst)
+			caseFirst.value = column.caseFirst;
+
+		container.querySelector('.remove').on('click', e => {
+			e.stopPropagation();
+			container.remove();
+		});
+
+		return container;
+	}
 });
 
 class ReportVisualizationDashboards extends Set {
