@@ -2225,6 +2225,12 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
+		if(!this.source.format)
+			this.source.format = {};
+
+		if(!this.source.format.columns)
+			this.source.format.columns = [];
+
 		const [sourceColumn] = this.source.format && this.source.format.columns ? this.source.format.columns.filter(c => c.key == this.key) : [];
 
 		try {
@@ -2278,8 +2284,37 @@ class DataSourceColumn {
 		if(this.interval)
 			clearInterval(this.interval);
 
-		this.container.querySelector('.label .name').textContent = this.name;
-		this.container.querySelector('.label .color').style.background = this.color;
+		const response = {
+			key : this.key,
+			name : this.name,
+			type : this.type,
+			disabled : this.disabled,
+			color : this.color,
+			searchType : this.searchType,
+			filters : this.filters,
+			sort : this.sort,
+			prefix : this.prefix,
+			postfix : this.postfix,
+			collapseTo : this.collapseTo,
+			drilldown : {
+				query_id : parseInt(this.drilldownQuery.value[0]) || 0,
+				parameters : this.drilldownParameters.json
+			}
+		};
+
+		let updated = false;
+
+		for(const [i, column] of this.source.format.columns.entries()) {
+
+			if(column.key == this.key) {
+				this.source.format.columns[i] = response;
+				updated = true;
+				break;
+			}
+		}
+
+		if(!updated) 
+			this.source.format.columns.push(response);
 
 		if(!this.form.parentElement.classList.contains('body'))
 			this.form.parentElement.classList.add('hidden');
@@ -5435,6 +5470,8 @@ Visualization.list.set('table', class Table extends Visualization {
 			container = this.container.querySelector('.container'),
 			rows = await this.source.response() || [];
 
+		this.source.resetError();
+
 		container.textContent = null;
 
 		const
@@ -5446,7 +5483,12 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		search.classList.add('search');
 
-		for(const column of this.source.columns.list.values()) {
+		let columns = this.source.columns.list;
+
+		if(!columns.size && this.source.transformations.size)
+			columns = Array.from(this.source.transformations).pop().incoming.columns;
+
+		for(const column of columns.values()) {
 
 			const container = document.createElement('th');
 
@@ -5649,7 +5691,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		}
 
 		if(!rows.length) {
-			table.insertAdjacentHTML('beforeend', `
+			tbody.insertAdjacentHTML('beforeend', `
 				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found!'}</td></tr>
 			`);
 		}
