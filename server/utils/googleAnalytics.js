@@ -82,21 +82,21 @@ class FetchGA extends Task {
 
     async fetchInfo() {
 
-        const test = async () => {
+        this.taskRequest = () => (async () => {
 
             const [oAuthProvider] = await mysql.query(
-                    `SELECT
-				c.id connection_id,
-				c.access_token,
-				c.refresh_token,
-				p.*
-			FROM
-				tb_oauth_connections c
-			JOIN
-				tb_oauth_providers p USING (provider_id)
-			WHERE
-				c.id = ? 
-				AND c.status = 1`,
+                `SELECT
+                    c.id connection_id,
+                    c.access_token,
+                    c.refresh_token,
+                    p.*
+                FROM
+                    tb_oauth_connections c
+                JOIN
+                    tb_oauth_providers p USING (provider_id)
+                WHERE
+                    c.id = ? 
+                    AND c.status = 1`,
                 [this.task.config.id]
             );
 
@@ -164,9 +164,7 @@ class FetchGA extends Task {
                 status: true,
                 data: response.reports[0]
             };
-        }
-
-        this.taskRequest = () => test();
+        })();
 
     }
 }
@@ -190,7 +188,7 @@ class ProcessGA extends Task {
 
     async fetchInfo() {
 
-        const test = async () => {
+        this.taskRequest = () => (async () => {
 
             const processedData = [];
 
@@ -216,7 +214,7 @@ class ProcessGA extends Task {
 
             for(const metric of response.columnHeader.metricHeader.metricHeaderEntries) {
 
-                query_columns[`\`${metric.name}\``] = metric.type == 'INTEGER' ? 'int(11) DEFAULT NULL' : 'varchar(500) DEFAULT \'\'';
+                query_columns[`\`${metric.name}\``] = 'varchar(500) DEFAULT \'\'';
             }
 
             for (const row of response.data.rows) {
@@ -244,10 +242,7 @@ class ProcessGA extends Task {
                 }
             }
 
-        }
-
-        this.taskRequest = () => test();
-
+        })();
     }
 
 }
@@ -271,7 +266,7 @@ class SaveGA extends Task {
 
     async fetchInfo() {
 
-        const test = async () => {
+        this.taskRequest = () => (async () => {
 
             if (!this.account.settings.has("load_saved_connection")) {
 
@@ -352,11 +347,7 @@ class SaveGA extends Task {
                     response: insertResponse
                 }
             }
-
-
-        }
-
-        this.taskRequest = () => test();
+        })();
     }
 
 }

@@ -1,9 +1,6 @@
-import sys,os
-
+import sys,os,csv
 from flask import Blueprint
 from googleads import adwords
-import csv
-
 from ...utils.API import API
 
 class GoogleAdwords(API, object):
@@ -34,7 +31,7 @@ class GoogleAdwords(API, object):
 
         jsonFormat = []
 
-        with open('server/www/oauth/report.csv') as csvfile:
+        with open('server/www/oauth/provider_'+provider_id+'_report.csv') as csvfile:
             reader = csv.DictReader(csvfile)
             title = reader.fieldnames
             for row in reader:
