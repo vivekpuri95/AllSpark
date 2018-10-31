@@ -10,7 +10,7 @@ class GoogleAdwords(API, object):
     def __init__(self):
         super().__init__()
 
-    def getData(self, report, startDate, endDate, columns, credentials):
+    def getData(self, report, startDate, endDate, columns, credentials, provider_id):
 
         adwords_client = adwords.AdWordsClient.LoadFromString(credentials)
         report_downloader = adwords_client.GetReportDownloader(version='v201806')
@@ -21,7 +21,7 @@ class GoogleAdwords(API, object):
                         .During(startDate + ',' + endDate)
                         .Build())
 
-        f = open('server/www/oauth/report.csv','w')
+        f = open('server/www/oauth/provider_'+provider_id+'_report.csv','w')
 
         report_downloader.DownloadReportWithAwql(
             report_query, 'CSV', f, skip_report_header=True,

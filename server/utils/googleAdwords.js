@@ -54,34 +54,11 @@ class GoogleAdwords extends Job {
 
 		const [account] = global.accounts.filter(x => x.account_id == this.job.account_id);
 
-		this.tasks = [
-			new FetchAdwords({
-				job_id: this.job.job_id,
-				name: 'Fetch Adwords',
-				timeout: 30,
-				sequence: 1,
-				config: this.job.config,
-			}),
-			new ProcessAdwords({
-				job_id: this.job.job_id,
-				name: 'Process Adwords',
-				timeout: 30,
-				sequence: 2,
-				config: this.job.config,
-				inherit_data: 1
+		const taskClasses = [FetchAdwords, ProcessAdwords, SaveAdwords];
 
-			}),
-			new SaveAdwords({
-				job_id: this.job.job_id,
-				name: 'Save Adwords',
-				timeout: 30,
-				sequence: 3,
-				config: this.job.config,
-				inherit_data: 1
-			})
-		];
-
-		this.tasks.forEach(x => x.account = account);
+		this.tasks = this.tasks.map((x, i) => {
+			return new taskClasses[i]({...x, account, config: this.job.config});
+        });
 
 		this.error = 0;
 	}
@@ -107,32 +84,32 @@ class FetchAdwords extends Task {
 
 	async fetchInfo() {
 
-		const test = async () => {
+		this.taskRequest = () => (async () => {
 
-			const [oAuthProvider] = await mysql.query(
-				`SELECT
-				c.id connection_id,
-				c.refresh_token,
-				p.*
-			FROM
-				tb_oauth_connections c
-			JOIN
-				tb_oauth_providers p USING (provider_id)
-			WHERE
-				c.id = ?
-				AND c.status = 1`,
-				[this.task.config.connection_id]
-			);
+            const [oAuthProvider] = await mysql.query(
+                `SELECT
+					c.id connection_id,
+					c.refresh_token,
+					p.*
+				FROM
+					tb_oauth_connections c
+				JOIN
+					tb_oauth_providers p USING (provider_id)
+				WHERE
+					c.id = ?
+					AND c.status = 1`,
+                [this.task.config.connection_id]
+            );
 
-			if(!oAuthProvider) {
+            if(!oAuthProvider) {
 
-				return {
-					status: false,
-					data: 'Invalid connection id'
-				}
-			}
+                return {
+                    status: false,
+                    data: 'Invalid connection id'
+                }
+            }
 
-			let credentails = fs.readFileSync('server/www/oauth/cred.yaml', 'utf8');
+            let credentails = fs.readFileSync('server/www/oauth/cred.yaml', 'utf8');
 
             const extParameters = {};
 
@@ -141,46 +118,45 @@ class FetchAdwords extends Task {
                 extParameters[param.placeholder] = param.value;
             }
 
-			const
-				parameters = new URLSearchParams(),
-				options = {
-					method: 'POST',
-					body: parameters,
-					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-				},
-				startDate = extParameters.start_date ? extParameters.start_date : new Date().toISOString().substr(0, 10),
-				endDate = extParameters.end_date ? extParameters.end_date : new Date().toISOString().substr(0, 10);
+            const
+                parameters = new URLSearchParams(),
+                options = {
+                    method: 'POST',
+                    body: parameters,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                },
+                startDate = extParameters.start_date ? extParameters.start_date : new Date().toISOString().substr(0, 10),
+                endDate = extParameters.end_date ? extParameters.end_date : new Date().toISOString().substr(0, 10);
 
-			credentails = credentails
-				.replace('DEVELOPER_TOKEN', this.task.config.developer_token)
-				.replace('CLIENT_CUSTOMER_ID', this.task.config.client_id)
-				.replace('CLIENT_ID', oAuthProvider.client_id)
-				.replace('CLIENT_SECRET', oAuthProvider.client_secret)
-				.replace('REFRESH_TOKEN', oAuthProvider.refresh_token);
+            credentails = credentails
+                .replace('DEVELOPER_TOKEN', this.task.config.developer_token)
+                .replace('CLIENT_CUSTOMER_ID', this.task.config.client_id)
+                .replace('CLIENT_ID', oAuthProvider.client_id)
+                .replace('CLIENT_SECRET', oAuthProvider.client_secret)
+                .replace('REFRESH_TOKEN', oAuthProvider.refresh_token);
 
-			parameters.set('report', this.task.config.report);
-			parameters.set('startDate', startDate.replace(/-/g, ''));
-			parameters.set('endDate', endDate.replace(/-/g, ''));
-			parameters.set('credentials', credentails);
+            parameters.set('report', this.task.config.report);
+            parameters.set('startDate', startDate.replace(/-/g, ''));
+            parameters.set('endDate', endDate.replace(/-/g, ''));
+            parameters.set('credentials', credentails);
+            parameters.set('provider_id', oAuthProvider.provider_id);
 
-			for(const column of this.task.config.columns) {
+            for(const column of this.task.config.columns) {
 
-				parameters.append('columns', column)
-			}
+                parameters.append('columns', column)
+            }
 
-			let adwordsData = await fetch(config.get("allspark_python_base_api") + "adwords/data", options);
+            let adwordsData = await fetch(config.get("allspark_python_base_api") + "adwords/data", options);
 
-			adwordsData = await adwordsData.json();
+            adwordsData = await adwordsData.json();
 
-			adwordsData = adwordsData.response;
+            adwordsData = adwordsData.response;
 
-			return {
-				status: true,
-				data: adwordsData
-			};
-		};
-
-		this.taskRequest = () => test();
+            return {
+                status: true,
+                data: adwordsData
+            };
+        })();
 	}
 }
 
@@ -203,87 +179,86 @@ class ProcessAdwords extends Task {
 
 	async fetchInfo() {
 
-		const test = async () => {
+		this.taskRequest = () => (async () => {
 
-			const
-				campaigns = [],
-				labels = [],
-				clicks = [],
-				camp_labels = []
-			;
+            const
+                campaigns = [],
+                labels = [],
+                clicks = [],
+                camp_labels = []
+            ;
 
-			let data;
+            let data;
 
-			try {
+            try {
 
                 [data] = this.externalParams.filter(x => x.placeholder == 'data');
 
                 data = JSON.parse(data.value).message.data;
-			}
-			catch(e) {
+            }
+            catch(e) {
 
-				data = []
-			}
+                data = []
+            }
 
-			for(const row of data) {
+            for(const row of data) {
 
-				campaigns.push([
-					row['Campaign ID'],
-					row['Campaign'],
-					row['Campaign state'],
-					row['Day'],
-					this.task.config.client_id,
-					0
-				]);
+                campaigns.push([
+                    row['Campaign ID'],
+                    row['Campaign'],
+                    row['Campaign state'],
+                    row['Day'],
+                    this.task.config.client_id,
+                    0
+                ]);
 
-				clicks.push([
-					this.task.config.client_id,
-					row['Campaign ID'],
-					row['Day'],
-					row['Clicks'],
-					row['Impressions'],
-					row['Cost'],
-					row['All conv.']
-				]);
+                clicks.push([
+                    this.task.config.client_id,
+                    row['Campaign ID'],
+                    row['Day'],
+                    row['Clicks'],
+                    row['Impressions'],
+                    row['Cost'],
+                    row['All conv.']
+                ]);
 
-				try {
+                try {
 
-					row['Labels'] = JSON.parse(row['Labels']);
-				}
-				catch (e) {
+                    row['Labels'] = JSON.parse(row['Labels']);
+                }
+                catch (e) {
 
-					row['Labels'] = []
-				}
+                    row['Labels'] = []
+                }
 
-				try {
+                try {
 
-					row['Label IDs'] = JSON.parse(row['Label IDs']);
-				}
-				catch (e) {
+                    row['Label IDs'] = JSON.parse(row['Label IDs']);
+                }
+                catch (e) {
 
-					row['Label IDs'] = []
-				}
+                    row['Label IDs'] = []
+                }
 
-				if(row['Label IDs']) {
+                if(row['Label IDs']) {
 
-					for(const [i, v] of row['Label IDs'].entries()) {
+                    for(const [i, v] of row['Label IDs'].entries()) {
 
-						labels.push([v, row['Labels'] ? row['Labels'][i] : null]);
+                        labels.push([v, row['Labels'] ? row['Labels'][i] : null]);
 
-						camp_labels.push([row['Campaign ID'], v]);
-					}
-				}
-			}
+                        camp_labels.push([row['Campaign ID'], v]);
+                    }
+                }
+            }
 
-			return {
-				status:true,
-				data: {
-					campaigns,labels, clicks, camp_labels
-				}
-			};
-		}
+            return {
+                status: true,
+                data: {
+                    campaigns,labels, clicks, camp_labels
+                }
+            };
 
-		this.taskRequest = () => test();
+		})();
 	}
 }
 
@@ -306,49 +281,49 @@ class SaveAdwords extends Task {
 
 	async fetchInfo() {
 
-		const test = async () => {
+		this.taskRequest = () => (async () => {
 
-			let data;
+            let data;
 
-			try {
+            try {
 
                 [data] = this.externalParams.filter(x => x.placeholder == 'data');
 
                 data = JSON.parse(data.value).message.data;
-			}
-			catch (e) {
+            }
+            catch (e) {
 
-				data = {};
-			}
+                data = {};
+            }
 
-			if(!this.account.settings.has("load_saved_connection")) {
+            if(!this.account.settings.has("load_saved_connection")) {
 
-				return {
-					status: false,
-					data: "save connection missing"
-				};
-			}
+                return {
+                    status: false,
+                    data: "save connection missing"
+                };
+            }
 
-			let
-				conn = this.account.settings.get("load_saved_connection"),
-				savedDatabase = this.account.settings.get("load_saved_database"),
-				db = await mysql.query("show databases", [], conn);
+            let
+                conn = this.account.settings.get("load_saved_connection"),
+                savedDatabase = this.account.settings.get("load_saved_database"),
+                db = await mysql.query("show databases", [], conn);
 
-			savedDatabase = savedDatabase || constants.saveQueryResultDb;
+            savedDatabase = savedDatabase || constants.saveQueryResultDb;
 
-			[db] = db.filter(x => x === (savedDatabase));
+            [db] = db.filter(x => x === (savedDatabase));
 
-			if (!db) {
+            if (!db) {
 
-				await mysql.query(
-					`CREATE DATABASE IF NOT EXISTS ${savedDatabase}`,
-					[],
-					conn
-				);
-			}
+                await mysql.query(
+                    `CREATE DATABASE IF NOT EXISTS ${savedDatabase}`,
+                    [],
+                    conn
+                );
+            }
 
-			const tables = await Promise.all([
-				mysql.query(`
+            const tables = await Promise.all([
+                mysql.query(`
 					CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns (
 						campaign_id int(11) NOT NULL,
 						campaign_name varchar(1000) NOT NULL,
@@ -361,22 +336,22 @@ class SaveAdwords extends Task {
 					PRIMARY KEY (campaign_id),
 					KEY campaign_name (campaign_name)
 					) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
-					[savedDatabase],
-					conn,
-				),
-				mysql.query(
-					`CREATE TABLE IF NOT EXISTS ??.tb_adwords_labels (
+                    [savedDatabase],
+                    conn,
+                ),
+                mysql.query(
+                    `CREATE TABLE IF NOT EXISTS ??.tb_adwords_labels (
 						label_id int(11) NOT NULL,
 						label_name varchar(100) DEFAULT '',
 						created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 						updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 						PRIMARY KEY (label_id)
 					) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
-					[savedDatabase],
-					conn,
-				),
-				mysql.query(
-					`CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns_performance (
+                    [savedDatabase],
+                    conn,
+                ),
+                mysql.query(
+                    `CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns_performance (
 						id int(11) unsigned NOT NULL AUTO_INCREMENT,
 						client_id varchar(50) DEFAULT NULL,
 						campaign_id int(11) NOT NULL,
@@ -393,11 +368,11 @@ class SaveAdwords extends Task {
 					KEY created_at (created_at),
 					KEY campaign_date (campaign_date)
 					) ENGINE=InnoDB AUTO_INCREMENT=332527 DEFAULT CHARSET=latin1;`,
-					[savedDatabase],
-					conn
-				),
-				mysql.query(
-					`CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns_labels (
+                    [savedDatabase],
+                    conn
+                ),
+                mysql.query(
+                    `CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns_labels (
 						campaign_id int(11) NOT NULL,
 						label_id int(11) NOT NULL,
 						created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -406,14 +381,14 @@ class SaveAdwords extends Task {
 						KEY label_id (label_id),
 						KEY campaign_id (campaign_id)
 					) ENGINE=InnoDB DEFAULT CHARSET=latin1;`,
-					[savedDatabase],
-					conn
-				)
-			]);
+                    [savedDatabase],
+                    conn
+                )
+            ]);
 
-			const
-				queries = [
-					`insert into ??.tb_adwords_campaigns
+            const
+                queries = [
+                    `insert into ??.tb_adwords_campaigns
 						(campaign_id, campaign_name, campaign_status, campaign_date, client_id, category_id) values ? 
 					ON DUPLICATE KEY UPDATE 
 						campaign_name = VALUES(campaign_name), 
@@ -422,32 +397,31 @@ class SaveAdwords extends Task {
 						client_id = VALUES(client_id), 
 						category_id = VALUES(category_id)
 					`,
-					`insert into ??.tb_adwords_labels
+                    `insert into ??.tb_adwords_labels
 						(label_id, label_name) values ?
 					ON DUPLICATE KEY UPDATE
 						label_name = VALUES(label_name)
 					`,
-					`insert into ??.tb_adwords_campaigns_performance
+                    `insert into ??.tb_adwords_campaigns_performance
 						(client_id, campaign_id, campaign_date, clicks, impressions, cost, conversions) values ?
 					`,
-					`insert into ??.tb_adwords_campaigns_labels(campaign_id,label_id) values ?`
-				],
-				query_data = [
-					data.campaigns,
-					data.labels,
-					data.clicks,
-					data.camp_labels
-				];
+                    `insert into ??.tb_adwords_campaigns_labels(campaign_id,label_id) values ?`
+                ],
+                query_data = [
+                    data.campaigns,
+                    data.labels,
+                    data.clicks,
+                    data.camp_labels
+                ];
 
-			const insertResponse = await Promise.all(queries.map((q, i) => mysql.query(q, [savedDatabase, query_data[i]])));
+            const insertResponse = await Promise.all(queries.map((q, i) => mysql.query(q, [savedDatabase, query_data[i]])));
 
-			return {
-				status:true,
-				data: insertResponse
-			};
-		}
+            return {
+                status:true,
+                data: insertResponse
+            };
 
-		this.taskRequest = () => test();
+		})();
 
 	}
 }

@@ -53,33 +53,11 @@ class GoogleAnalytics extends Job {
 
         const [account] = global.accounts.filter(x => x.account_id == this.job.account_id);
 
-        this.tasks = [
-            new FetchGA({
-                job_id: this.job.job_id,
-                name: 'Fetch GA',
-                timeout: 30,
-                sequence: 1,
-                config: this.job.config,
-            }),
-            new ProcessGA({
-                job_id: this.job.job_id,
-                name: 'Process GA',
-                timeout: 30,
-                sequence: 2,
-                config: this.job.config,
-                inherit_data: 1,
-            }),
-            new SaveGA({
-                job_id: this.job.job_id,
-                name: 'Save GA',
-                timeout: 30,
-                sequence: 3,
-                config: this.job.config,
-                inherit_data: 1,
-            })
-        ];
+        const taskClasses = [FetchGA, ProcessGA, SaveGA];
 
-        this.tasks.forEach(x => x.account = account);
+        this.tasks = this.tasks.map((x, i) => {
+            return new taskClasses[i]({...x, account, config: this.job.config});
+        });
 
         this.error = 0;
     }
@@ -245,12 +223,12 @@ class ProcessGA extends Task {
 
                 const rowObj = [];
 
-                for (const [i, dimension] of row.dimensions.entries()) {
+                for (const dimension of row.dimensions) {
 
                     rowObj.push(dimension);
                 }
 
-                for (const [i, metric] of row.metrics[0].values.entries()) {
+                for (const metric of row.metrics[0].values) {
 
                     rowObj.push(metric);
                 }
