@@ -8,7 +8,7 @@ CREATE TABLE `tb_account_features` (
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `account_id` (`account_id`,`feature_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3437 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_accounts'
 CREATE TABLE `tb_accounts` (
@@ -22,7 +22,7 @@ CREATE TABLE `tb_accounts` (
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=130 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_categories'
 CREATE TABLE `tb_categories` (
@@ -36,21 +36,6 @@ CREATE TABLE `tb_categories` (
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`category_id`),
 	UNIQUE KEY `account_slug` (`account_id`,`slug`),
-	KEY `parent` (`parent`),
-	KEY `slug` (`slug`,`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=48658 DEFAULT CHARSET=latin1;
-
--- Create syntax for TABLE 'tb_categories_copy'
-CREATE TABLE `tb_categories_copy` (
-	`category_id` int(11) NOT NULL AUTO_INCREMENT,
-	`account_id` int(11) DEFAULT NULL,
-	`name` varchar(32) NOT NULL,
-	`slug` varchar(32) NOT NULL,
-	`parent` int(11) DEFAULT NULL,
-	`is_admin` tinyint(1) NOT NULL DEFAULT '0',
-	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	PRIMARY KEY (`category_id`),
 	KEY `parent` (`parent`),
 	KEY `slug` (`slug`,`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -75,7 +60,7 @@ CREATE TABLE `tb_credentials` (
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `account_id` (`account_id`,`connection_name`,`type`)
-) ENGINE=InnoDB AUTO_INCREMENT=133 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_dashboards'
 CREATE TABLE `tb_dashboards` (
@@ -92,7 +77,7 @@ CREATE TABLE `tb_dashboards` (
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=242 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_datasources'
 CREATE TABLE `tb_datasources` (
@@ -104,7 +89,7 @@ CREATE TABLE `tb_datasources` (
 	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_features'
 CREATE TABLE `tb_features` (
@@ -117,7 +102,7 @@ CREATE TABLE `tb_features` (
 	PRIMARY KEY (`feature_id`),
 	UNIQUE KEY `slug` (`slug`),
 	UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_global_filters'
 CREATE TABLE `tb_global_filters` (
@@ -137,7 +122,7 @@ CREATE TABLE `tb_global_filters` (
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `unique_index` (`account_id`,`placeholder`)
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_job_contacts'
 CREATE TABLE `tb_job_contacts` (
@@ -149,7 +134,7 @@ CREATE TABLE `tb_job_contacts` (
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_jobs'
 CREATE TABLE `tb_jobs` (
@@ -166,7 +151,7 @@ CREATE TABLE `tb_jobs` (
 	`type` enum('none','adword') DEFAULT 'none',
 	`config` text,
 	PRIMARY KEY (`job_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_oauth_connections'
 CREATE TABLE `tb_oauth_connections` (
@@ -180,7 +165,7 @@ CREATE TABLE `tb_oauth_connections` (
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_oauth_providers'
 CREATE TABLE `tb_oauth_providers` (
@@ -192,7 +177,7 @@ CREATE TABLE `tb_oauth_providers` (
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`provider_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_object_roles'
 CREATE TABLE `tb_object_roles` (
@@ -214,51 +199,7 @@ CREATE TABLE `tb_object_roles` (
 	KEY `owner` (`owner`),
 	KEY `target` (`target`),
 	KEY `target_id` (`target_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13493 DEFAULT CHARSET=latin1;
-
--- Create syntax for TABLE 'tb_object_roles_copy'
-CREATE TABLE `tb_object_roles_copy` (
-	`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-	`account_id` int(11) DEFAULT NULL,
-	`added_by` int(11) DEFAULT NULL COMMENT 'User Id',
-	`owner_id` int(11) NOT NULL COMMENT 'from',
-	`owner` enum('user','dashboard','role','query','connection','visualization') DEFAULT NULL,
-	`target_id` int(11) NOT NULL,
-	`target` enum('user','dashboard','role','connection') NOT NULL DEFAULT 'role' COMMENT 'to',
-	`category_id` int(11) DEFAULT NULL,
-	`group_id` int(11) NOT NULL,
-	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	PRIMARY KEY (`id`),
-	UNIQUE KEY `account_owner_target_cat_group` (`account_id`,`owner_id`,`owner`,`target_id`,`target`,`category_id`,`group_id`),
-	KEY `account_id` (`account_id`),
-	KEY `owner_id` (`owner_id`),
-	KEY `owner` (`owner`),
-	KEY `target` (`target`),
-	KEY `target_id` (`target_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- Create syntax for TABLE 'tb_object_roles_old'
-CREATE TABLE `tb_object_roles_old` (
-	`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-	`account_id` int(11) DEFAULT NULL,
-	`added_by` int(11) DEFAULT NULL COMMENT 'User Id',
-	`owner_id` int(11) NOT NULL COMMENT 'from',
-	`owner` enum('user','dashboard','role','query','connection','visualization') DEFAULT NULL,
-	`target_id` int(11) NOT NULL,
-	`target` enum('user','dashboard','role','connection') NOT NULL DEFAULT 'role' COMMENT 'to',
-	`category_id` int(11) DEFAULT NULL,
-	`group_id` int(11) NOT NULL,
-	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	PRIMARY KEY (`id`),
-	UNIQUE KEY `account_owner_target_cat_group` (`account_id`,`owner_id`,`owner`,`target_id`,`target`,`category_id`,`group_id`),
-	KEY `account_id` (`account_id`),
-	KEY `owner_id` (`owner_id`),
-	KEY `owner` (`owner`),
-	KEY `target` (`target`),
-	KEY `target_id` (`target_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6829092 DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_password_reset'
 CREATE TABLE `tb_password_reset` (
@@ -269,7 +210,7 @@ CREATE TABLE `tb_password_reset` (
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=174 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_privileges'
 CREATE TABLE `tb_privileges` (
@@ -283,7 +224,7 @@ CREATE TABLE `tb_privileges` (
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`privilege_id`),
 	UNIQUE KEY `name` (`name`,`account_id`,`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_privileges_tree'
 CREATE TABLE `tb_privileges_tree` (
@@ -294,7 +235,7 @@ CREATE TABLE `tb_privileges_tree` (
 	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `AccId_name_priviIedge_Parent` (`privilege_id`,`parent`)
-) ENGINE=InnoDB AUTO_INCREMENT=193 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_query'
 CREATE TABLE `tb_query` (
@@ -322,7 +263,7 @@ CREATE TABLE `tb_query` (
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`query_id`),
 	KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=1205 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_query_filters'
 CREATE TABLE `tb_query_filters` (
@@ -343,7 +284,7 @@ CREATE TABLE `tb_query_filters` (
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`filter_id`),
 	UNIQUE KEY `unique_index` (`query_id`,`placeholder`)
-) ENGINE=InnoDB AUTO_INCREMENT=2973 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_query_visualizations'
 CREATE TABLE `tb_query_visualizations` (
@@ -359,7 +300,7 @@ CREATE TABLE `tb_query_visualizations` (
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`visualization_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1516 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_roles'
 CREATE TABLE `tb_roles` (
@@ -370,7 +311,7 @@ CREATE TABLE `tb_roles` (
 	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`role_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_settings'
 CREATE TABLE `tb_settings` (
@@ -385,7 +326,7 @@ CREATE TABLE `tb_settings` (
 	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `account_id` (`account_id`,`owner`,`profile`)
-) ENGINE=InnoDB AUTO_INCREMENT=292 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_spatial_map_themes'
 CREATE TABLE `tb_spatial_map_themes` (
@@ -395,7 +336,7 @@ CREATE TABLE `tb_spatial_map_themes` (
 	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create syntax for TABLE 'tb_tasks'
 CREATE TABLE `tb_tasks` (
@@ -415,7 +356,7 @@ CREATE TABLE `tb_tasks` (
 	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`task_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_user_privilege'
 CREATE TABLE `tb_user_privilege` (
@@ -426,7 +367,7 @@ CREATE TABLE `tb_user_privilege` (
 	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=440 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_user_query'
 CREATE TABLE `tb_user_query` (
@@ -449,7 +390,7 @@ CREATE TABLE `tb_user_roles_deleted` (
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `category_user_role` (`category_id`,`user_id`,`role_id`),
 	KEY `user_id` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=183547 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_users'
 CREATE TABLE `tb_users` (
@@ -478,7 +419,7 @@ CREATE TABLE `tb_users` (
 	KEY `middle_name` (`middle_name`),
 	KEY `last_name` (`last_name`),
 	KEY `first_name_3` (`first_name`,`last_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=65900 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_visualization_canvas'
 CREATE TABLE `tb_visualization_canvas` (
@@ -491,18 +432,7 @@ CREATE TABLE `tb_visualization_canvas` (
 	`format` json DEFAULT NULL,
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `owner_visualization` (`owner`,`owner_id`,`visualization_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1069 DEFAULT CHARSET=latin1;
-
--- Create syntax for TABLE 'tb_visualization_dashboard'
-CREATE TABLE `tb_visualization_dashboard` (
-	`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-	`dashboard_id` int(11) DEFAULT NULL,
-	`visualization_id` int(11) DEFAULT NULL,
-	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-	`format` json DEFAULT NULL,
-	PRIMARY KEY (`id`),
-	UNIQUE KEY `dashboard_id` (`dashboard_id`,`visualization_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=929 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'tb_visualizations'
 CREATE TABLE `tb_visualizations` (
@@ -515,4 +445,4 @@ CREATE TABLE `tb_visualizations` (
 	`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
