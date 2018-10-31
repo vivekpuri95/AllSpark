@@ -1734,7 +1734,7 @@ class DataSourceColumns extends Map {
 
 		this.clear();
 
-		for(const column in response ? response[0] : this.source.originalResponse.data[0])
+		for(const column in response && response.length ? response[0] : this.source.originalResponse.data[0])
 			this.set(column, new DataSourceColumn(column, this.source));
 	}
 
@@ -2313,7 +2313,7 @@ class DataSourceColumn {
 			}
 		}
 
-		if(!updated) 
+		if(!updated)
 			this.source.format.columns.push(response);
 
 		if(!this.form.parentElement.classList.contains('body'))
@@ -4121,7 +4121,9 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 				if(!(_filter.column in row))
 					continue;
 
-				if(!filter.apply(_filter.value, row[_filter.column]))
+				const searchString = row[_filter.column] == null ? '' : row[_filter.column];
+
+				if(!filter.apply(_filter.value, searchString))
 					status = false;
 			}
 
