@@ -4121,7 +4121,9 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 				if(!(_filter.column in row))
 					continue;
 
-				if(!filter.apply(_filter.value, row[_filter.column]))
+				const searchString = row[_filter.column] || '';
+
+				if(!filter.apply(_filter.value, searchString))
 					status = false;
 			}
 
