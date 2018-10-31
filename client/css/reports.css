@@ -824,7 +824,7 @@ main .dataset {
 					opacity: 1;
 				}
 				.visualization.table thead .heading.has-filter {
-					box-shadow: inset 0px -4px 0px 0px var(--color-green);
+					box-shadow: inset 0px -4px 0px 0px var(--color-secondary);
 				}
 				.visualization.table thead .heading .popup-dropdown {
 					position: absolute;
