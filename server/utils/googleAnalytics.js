@@ -14,22 +14,28 @@ class GoogleAnalytics extends Job {
 
         super(job, [
             {
+              name: 'Authenticate Saved Connection',
+              timeout: 30,
+              sequence: 1,
+              fatal: 1
+            },
+            {
                 name: 'Fetch GA',
                 timeout: 30,
-                sequence: 1,
+                sequence: 2,
                 fatal: 1
             },
             {
                 name: 'Process GA',
                 timeout: 30,
-                sequence: 2,
+                sequence: 3,
                 inherit_data: 1,
                 fatal: 1
             },
             {
                 name: 'Save GA',
                 timeout: 30,
-                sequence: 3,
+                sequence: 4,
                 inherit_data: 1,
                 fatal: 1
             },
@@ -57,23 +63,35 @@ class GoogleAnalytics extends Job {
 
         const [account] = global.accounts.filter(x => x.account_id == this.job.account_id);
 
-        const taskClasses = [FetchGA, ProcessGA, SaveGA];
+        const taskClasses = [Authenticate, FetchGA, ProcessGA, SaveGA];
 
         this.tasks = this.tasks.map((x, i) => {
             return new taskClasses[i]({...x, account, config: this.job.config, job_id: this.job.job_id});
         });
 
-        if (!account.settings.has("load_saved_connection")) {
+        this.error = 0;
+    }
+}
+
+class Authenticate extends Task {
+
+    async fetchInfo() {
+
+        this.taskRequest = () => (async () => {
+
+            if (!this.task.account.settings.get("load_saved_connection")) {
+
+                return {
+                    status: false,
+                    message: "save connection missing"
+                };
+            }
 
             return {
-                status: false,
-                data: "save connection missing"
-            }
-        }
+                status: true
+            };
 
-
-
-        this.error = 0;
+        })();
     }
 }
 
@@ -181,21 +199,6 @@ class FetchGA extends Task {
 
 class ProcessGA extends Task {
 
-    constructor(task) {
-
-        super(task);
-
-        try {
-
-            this.task.config = JSON.parse(this.task.config);
-        }
-        catch (e) {
-
-            this.task.config = {};
-        }
-
-    }
-
     async fetchInfo() {
 
         this.taskRequest = () => (async () => {
@@ -259,21 +262,6 @@ class ProcessGA extends Task {
 
 class SaveGA extends Task {
 
-    constructor(task) {
-
-        super(task);
-
-        try {
-
-            this.task.config = JSON.parse(this.task.config);
-        }
-        catch (e) {
-
-            this.task.config = {};
-        }
-
-    }
-
     async fetchInfo() {
 
         this.taskRequest = () => (async () => {
@@ -327,18 +315,18 @@ class SaveGA extends Task {
 				) ENGINE=InnoDB DEFAULT CHARSET=latin1
             `;
 
-            constants.saveQueryResultTable = constants.saveQueryResultTable.concat(`_job_${this.task.job_id}`);
+            const tableName = constants.saveQueryResultTable.concat(`_job_${this.task.job_id}`);
 
             await mysql.query(
                 query,
 
-                [savedDatabase, constants.saveQueryResultTable],
+                [savedDatabase, tableName],
                 conn,
             );
 
             const insertResponse = await mysql.query(
                 `INSERT INTO ??.?? (${Object.keys(response.query_columns)}) VALUES ?`,
-                [savedDatabase, constants.saveQueryResultTable, response.processedData],
+                [savedDatabase, tableName, response.processedData],
                 conn
             );
 

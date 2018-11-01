@@ -137,7 +137,9 @@ class Job {
 			const tasksExecuteResponse = await commonFun.promiseParallelLimit(10, promiseArr);
 
 			erred = tasksExecuteResponse.some(x => x.error);
-			const fatal = taskOrderMapping[order].some(task => task.fatal);
+			const fatal = taskOrderMapping[order].some(task => task.task.fatal);
+
+            lastOrder = order;
 
 			if (erred && fatal) {
 
@@ -150,8 +152,6 @@ class Job {
 			}
 
 			previousOutput = erred ? [] : tasksExecuteResponse;
-
-			lastOrder = order;
 		}
 
 		let nextInterval = null;

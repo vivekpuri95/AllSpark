@@ -14,21 +14,27 @@ class GoogleAdwords extends Job {
 	constructor(job) {
 
 		super(job, [
+            {
+                name: 'Authenticate Saved Connection',
+                timeout: 30,
+                sequence: 1,
+                fatal: 1
+            },
 			{
 				name: 'Fetch Adwords',
 				timeout: 30,
-				sequence: 1,
+				sequence: 2,
 			},
 			{
 				name: 'Process Adwords',
 				timeout: 30,
-				sequence: 2,
+				sequence: 3,
 				inherit_data: 1
 			},
 			{
 				name: 'Save Adwords',
 				timeout: 30,
-				sequence: 3,
+				sequence: 4,
 				inherit_data: 1
 			},
 		]);
@@ -55,23 +61,37 @@ class GoogleAdwords extends Job {
 
 		const [account] = global.accounts.filter(x => x.account_id == this.job.account_id);
 
-		const taskClasses = [FetchAdwords, ProcessAdwords, SaveAdwords];
+		const taskClasses = [Authenticate, FetchAdwords, ProcessAdwords, SaveAdwords];
 
 		this.tasks = this.tasks.map((x, i) => {
 			return new taskClasses[i]({...x, account, config: this.job.config, job_id: this.job.job_id});
 		});
 
-        if(!account.settings.has("load_saved_connection")) {
-
-            return {
-                status: false,
-                data: "save connection missing"
-            };
-        }
-
 		this.error = 0;
 	}
 
+}
+
+class Authenticate extends Task {
+
+    async fetchInfo() {
+
+        this.taskRequest = () => (async () => {
+
+            if (!this.task.account.settings.get("load_saved_connection")) {
+
+                return {
+                    status: false,
+                    message: "save connection missing"
+                };
+            }
+
+            return {
+                status: true
+            };
+
+        })();
+    }
 }
 
 class FetchAdwords extends Task {
@@ -261,21 +281,6 @@ class ProcessAdwords extends Task {
 }
 
 class SaveAdwords extends Task {
-
-	constructor(task) {
-
-		super(task);
-
-		try {
-
-			this.task.config = JSON.parse(this.task.config);
-		}
-		catch(e) {
-
-			this.task.config = {};
-		}
-
-	}
 
 	async fetchInfo() {
 
