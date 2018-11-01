@@ -590,10 +590,6 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 							<option value="">Everything</option>
 						</select>
 					</label>
-
-					<label>
-						<input type="search" name="search" placeholder="Search...">
-					</label>
 				</form>
 
 				<table class="block">

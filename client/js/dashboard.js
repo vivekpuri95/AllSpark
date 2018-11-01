@@ -47,9 +47,9 @@ Page.class = class Dashboards extends Page {
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
+			this.process();
 			await this.renderList();
 			await Sections.show('list');
-			this.process();
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
 
@@ -57,14 +57,12 @@ Page.class = class Dashboards extends Page {
 			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
 
 		this.listContainer.form.subtitle.on('change', () => this.renderList());
-		this.listContainer.form.search.on('keyup', () => this.renderList());
 
 		window.on('popstate', e => this.load(e.state));
 
 		this.navbar = new Navbar(new Map, this);
 
 		this.load();
-
 	}
 
 	get currentDashboard() {
@@ -74,22 +72,8 @@ Page.class = class Dashboards extends Page {
 
 	process() {
 
-		// const connections = new Map;
-
-		// for(const connection of this.connections) {
-
-		// 	for(const feature of MetaData.features.values()) {
-
-		// 		if(feature.slug == connection.type && feature.type == 'source')
-		// 			connection.feature = feature;
-		// 	}
-
-		// 	if(!connection.feature)
-		// 		continue;
-
-		// 	connections.set(connections.id, connection);
-		// }
-		// this.connections = new Map(this.connections.map(c => [c.id, c]));
+		if(this.searchBar)
+			return this.searchBar;
 
 		const filters = [
 			{
@@ -174,13 +158,13 @@ Page.class = class Dashboards extends Page {
 			page,
 		});
 
-		this.container.querySelector('.section .toolbar').insertBefore(this.searchBar.container, this.container.querySelector('#stages .section #list-container'));
+		this.container.querySelector('.section').insertBefore(this.searchBar.container, this.container.querySelector('.section .block'));
 
 		this.container.querySelector('.section .toolbar').appendChild(this.searchBar.globalSearch.container);
 
-		// this.container.querySelector('#stages .section .toolbar').on('submit', e => e.preventDefault());
+		this.searchBar.on('change', () => this.renderList());
 
-		this.searchBar.on('change', () => this.stages.get('pick-report').load() );
+		this.renderList();
 	}
 
 	parents(id) {
@@ -295,7 +279,12 @@ Page.class = class Dashboards extends Page {
 			</tr>
 		`;
 
-		for (const report of DataSource.list.values()) {
+		let reports = [];
+
+		if(this.searchBar)
+			reports = this.searchBar.filterData;
+
+		for (const report of reports) {
 
 			if (!report.is_enabled || report.is_deleted) {
 
@@ -307,30 +296,30 @@ Page.class = class Dashboards extends Page {
 				continue;
 			}
 
-			if (this.listContainer.form.search.value) {
+			// if (this.listContainer.form.search.value) {
 
-				let found = false;
+			// 	let found = false;
 
-				const searchItems = this.listContainer.form.search.value.split(' ').filter(x => x).slice(0, 5);
+			// 	const searchItems = this.listContainer.form.search.value.split(' ').filter(x => x).slice(0, 5);
 
 
-				for (const searchItem of searchItems) {
+			// 	for (const searchItem of searchItems) {
 
-					const searchableText = report.query_id + ' ' + report.name + ' ' + report.description + ' ' + report.tags;
+			// 		const searchableText = report.query_id + ' ' + report.name + ' ' + report.description + ' ' + report.tags;
 
-					found = searchableText.toLowerCase().includes(searchItem.toLowerCase());
+			// 		found = searchableText.toLowerCase().includes(searchItem.toLowerCase());
 
-					if (found) {
+			// 		if (found) {
 
-						break;
-					}
-				}
+			// 			break;
+			// 		}
+			// 	}
 
-				if (!found) {
+			// 	if (!found) {
 
-					continue;
-				}
-			}
+			// 		continue;
+			// 	}
+			// }
 
 			const tr = document.createElement('tr');
 
@@ -496,6 +485,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		this.cycle();
+		this.process();
 
 		for (const dashboard of this.list.values()) {
 
