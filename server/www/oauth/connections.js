@@ -154,20 +154,20 @@ exports.get =  class extends API {
 	async get({connection_id} = {}) {
 
 		return await this.mysql.query(
-            `SELECT
-                    c.id connection_id,
-                    c.access_token,
-                    c.refresh_token,
-                    p.*
-                FROM
-                    tb_oauth_connections c
-                JOIN
-                    tb_oauth_providers p USING (provider_id)
-                WHERE
-                    c.id = ? 
-                    AND c.status = 1`,
-            [connection_id]
-        );
+			`SELECT
+					c.id connection_id,
+					c.access_token,
+					c.refresh_token,
+					p.*
+				FROM
+					tb_oauth_connections c
+				JOIN
+					tb_oauth_providers p USING (provider_id)
+				WHERE
+					c.id = ? 
+					AND c.status = 1`,
+			[connection_id]
+		);
 
 	}
 

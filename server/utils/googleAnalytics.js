@@ -143,14 +143,14 @@ class FetchGA extends Task {
                 startDate = parameters.start_date || new Date().toISOString().substr(0, 10),
                 endDate = parameters.end_date || new Date().toISOString().substr(0, 10);
 
-            for (const metric of typeof this.task.config.metrics == 'string' ? [this.task.config.metrics] : this.task.config.metrics) {
+            for (const metric of (typeof this.task.config.metrics == 'string' ? [this.task.config.metrics] : this.task.config.metrics)) {
 
                 gaMetrics.push({
                     "expression": metric
                 });
             }
 
-            for (const dimension of typeof this.task.config.dimensions == 'string' ? [this.task.config.dimensions] : this.task.config.dimensions) {
+            for (const dimension of (typeof this.task.config.dimensions == 'string' ? [this.task.config.dimensions] : this.task.config.dimensions)) {
 
                 gaDimensions.push({
                     "name": dimension
@@ -180,13 +180,7 @@ class FetchGA extends Task {
 
             response = await response.json();
 
-            if(!response.reports[0].data.rows) {
-
-                return {
-                    status: false,
-                    message: 'No data found'
-                }
-            }
+            this.assert(response.reports[0].data.rows, 'No data found');
 
             return {
                 status: true,
