@@ -8475,7 +8475,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		var chart = {};
 
 		// Setting margin and width and height
-		var margin = {top: 20, right: 0, bottom: 40, left: 0},
+		var margin = {top: 20, right: 0, bottom: 60, left: 0},
 			width = this.container.clientWidth - margin.left - margin.right,
 			height = this.container.clientHeight - margin.top - margin.bottom;
 
