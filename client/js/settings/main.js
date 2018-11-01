@@ -47,6 +47,8 @@ class Settings extends Page {
 				nav.appendChild(a);
 			}
 
+			nav.insertAdjacentHTML('beforeend', `<a href="/settings-new">Settings (New)</a>`)
+
 			await this.loadDefault();
 		})();
 	}
@@ -1826,36 +1828,6 @@ class SettingsRole {
 		if(!confirm('Are you sure?'))
 			return;
 
-		const
-			parameter = {
-				role_id: this.role_id,
-			},
-			options = {
-				method: 'POST',
-			};
-
-		try {
-
-			await API.call('roles/delete', parameter, options);
-
-			await this.roles.load();
-
-			new SnackBar({
-				message: 'Role Deleted',
-				subtitle: `${this.name} #${this.role_id}`,
-				icon: 'far fa-trash-alt',
-			});
-
-		} catch(e) {
-
-			new SnackBar({
-				message: 'Request Failed',
-				subtitle: e.message,
-				type: 'error',
-			});
-
-			throw e;
-		}
 	}
 
 	get row() {

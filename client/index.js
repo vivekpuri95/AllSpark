@@ -28,6 +28,8 @@ class HTMLAPI extends API {
 			'/js/main.js',
 			'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js',
 		];
+
+		this.modules = [];
 	}
 
 	async body() {
@@ -92,7 +94,8 @@ class HTMLAPI extends API {
 					<link id="favicon" rel="shortcut icon" type="image/png" href="" />
 
 					${this.stylesheets.map(s => '<link rel="stylesheet" type="text/css" href="' + s + '?' + this.checksum + '">\n\t\t\t\t\t').join('')}
-					${this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>\n\t\t\t\t\t').join('')}
+					${!this.modules.length ? this.scripts.map(s => '<script src="' + s + '?' + this.checksum + '"></script>\n\t\t\t\t\t').join('') : ''}
+					${this.modules.length ? this.modules.map(s => '<script src="' + s + '?' + this.checksum + '" type="module"></script>\n\t\t\t\t\t').join('') : ''}
 
 					<link rel="manifest" href="/manifest.webmanifest">
 					${ga}
@@ -144,6 +147,22 @@ router.get('/js/custom.js', API.serve(class extends HTMLAPI {
 		this.response.setHeader('Content-Type', 'text/javascript');
 
 		return this.account.settings.get('custom_js') || '';
+	}
+}));
+
+router.get('/js/main-modules.js', API.serve(class extends HTMLAPI {
+
+	async body() {
+
+		this.response.setHeader('Content-Type', 'text/javascript');
+
+		let mainjs = fs.readFileSync('./client/js/main.js');
+
+		mainjs += `
+			export { Page, API, SnackBar }
+		`;
+
+		return mainjs;
 	}
 }));
 
@@ -1310,10 +1329,10 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 
 		super();
 
-		this.stylesheets.push('/css/settings.css');
+		this.stylesheets.push('/css/settings/main.css');
 		this.stylesheets.push('/css/settings-manager.css');
 		this.scripts.push('/js/reports.js');
-		this.scripts.push('/js/settings.js');
+		this.scripts.push('/js/settings/main.js');
 		this.scripts.push('/js/settings-manager.js');
 	}
 
@@ -1634,6 +1653,17 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section about-list" id="about"></section>
 			</div>
 		`;
+	}
+}));
+
+router.get('/settings-new/:tab?/:id?', API.serve(class extends HTMLAPI {
+
+	constructor() {
+
+		super();
+
+		this.stylesheets.push('/css/settings/main.css');
+		this.modules.push('/js/settings/main-new.js');
 	}
 }));
 

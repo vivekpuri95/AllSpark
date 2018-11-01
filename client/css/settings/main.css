@@ -30,6 +30,23 @@ main {
 		padding: var(--gap);
 	}
 
+main > .settings-module {
+	padding: calc(var(--gap) * 2);
+	display: grid;
+	grid-gap: calc(var(--gap) * 2);
+	height: max-content;
+}
+	main > .settings-module > h1 {
+		font-size: 150%;
+		margin: 0;
+	}
+	main > .settings-module > header.toolbar {
+		display: grid;
+		grid-auto-flow: column;
+		width: max-content;
+		grid-gap: calc(var(--gap) * 2);
+	}
+
 main .feature-form h3 {
 	border-bottom: 1px dashed #999;
 	margin-bottom: 0;
