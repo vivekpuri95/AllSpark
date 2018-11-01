@@ -58,8 +58,16 @@ class GoogleAdwords extends Job {
 		const taskClasses = [FetchAdwords, ProcessAdwords, SaveAdwords];
 
 		this.tasks = this.tasks.map((x, i) => {
-			return new taskClasses[i]({...x, account, config: this.job.config});
+			return new taskClasses[i]({...x, account, config: this.job.config, job_id: this.job.job_id});
 		});
+
+        if(!account.settings.has("load_saved_connection")) {
+
+            return {
+                status: false,
+                data: "save connection missing"
+            };
+        }
 
 		this.error = 0;
 	}
@@ -273,7 +281,10 @@ class SaveAdwords extends Task {
 
 		this.taskRequest = () => (async () => {
 
-			let data;
+			let
+                data,
+                conn = this.task.account.settings.get("load_saved_connection"),
+                savedDatabase = this.task.account.settings.get("load_saved_database");
 
 			try {
 
@@ -285,18 +296,6 @@ class SaveAdwords extends Task {
 
 				data = {};
 			}
-
-			if(!this.task.account.settings.has("load_saved_connection")) {
-
-				return {
-					status: false,
-					data: "save connection missing"
-				};
-			}
-
-			let
-				conn = this.task.account.settings.get("load_saved_connection"),
-				savedDatabase = this.task.account.settings.get("load_saved_database");
 
 			savedDatabase = savedDatabase || constants.saveQueryResultDb;
 
@@ -399,13 +398,13 @@ class SaveAdwords extends Task {
 
 				if(!databaseTables.includes(table.name)) {
 
-					requiredTables.push(table.query);
+					requiredTables.push(table);
 				}
 			}
 
 			const
 				tables = await Promise.all(
-					requiredTables.map(x => mysql.query(x, [savedDatabase], conn))
+					requiredTables.map(x => mysql.query(x.query, [savedDatabase], conn))
 				),
 				queries = [
 					`insert into ??.tb_adwords_campaigns

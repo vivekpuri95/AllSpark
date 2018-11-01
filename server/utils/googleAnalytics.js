@@ -6,6 +6,7 @@ const Contact = require('./jobs/contact');
 const mysql = require('./mysql').MySQL;
 const GoogleAPIs = require('./oauthConnections').GoogleAPIs;
 const constants = require('./constants');
+const OauthProvider = require('../www/oauth/connections').get;
 
 class GoogleAnalytics extends Job {
 
@@ -16,18 +17,21 @@ class GoogleAnalytics extends Job {
                 name: 'Fetch GA',
                 timeout: 30,
                 sequence: 1,
+                fatal: 1
             },
             {
                 name: 'Process GA',
                 timeout: 30,
                 sequence: 2,
-                inherit_data: 1
+                inherit_data: 1,
+                fatal: 1
             },
             {
                 name: 'Save GA',
                 timeout: 30,
                 sequence: 3,
-                inherit_data: 1
+                inherit_data: 1,
+                fatal: 1
             },
         ]);
     }
@@ -56,8 +60,18 @@ class GoogleAnalytics extends Job {
         const taskClasses = [FetchGA, ProcessGA, SaveGA];
 
         this.tasks = this.tasks.map((x, i) => {
-            return new taskClasses[i]({...x, account, config: this.job.config});
+            return new taskClasses[i]({...x, account, config: this.job.config, job_id: this.job.job_id});
         });
+
+        if (!account.settings.has("load_saved_connection")) {
+
+            return {
+                status: false,
+                data: "save connection missing"
+            }
+        }
+
+
 
         this.error = 0;
     }
@@ -84,23 +98,11 @@ class FetchGA extends Task {
 
         this.taskRequest = () => (async () => {
 
-            const [oAuthProvider] = await mysql.query(
-                `SELECT
-                    c.id connection_id,
-                    c.access_token,
-                    c.refresh_token,
-                    p.*
-                FROM
-                    tb_oauth_connections c
-                JOIN
-                    tb_oauth_providers p USING (provider_id)
-                WHERE
-                    c.id = ? 
-                    AND c.status = 1`,
-                [this.task.config.id]
-            );
+            let provider = new OauthProvider();
 
-            if (!oAuthProvider || oAuthProvider.type != 'Google') {
+            [provider] = await provider.get({connection_id: this.task.config.connection_id});
+
+            if (!provider || provider.type != 'Google') {
 
                 return {
                     status: false,
@@ -116,7 +118,7 @@ class FetchGA extends Task {
             }
 
             const
-                connection = new GoogleAPIs(this, oAuthProvider),
+                connection = new GoogleAPIs(this, provider),
                 access_token = await connection.test(),
                 gaMetrics = [],
                 gaDimensions = [],
@@ -159,6 +161,14 @@ class FetchGA extends Task {
             let response = await fetch('https://analyticsreporting.googleapis.com/v4/reports:batchGet', options);
 
             response = await response.json();
+
+            if(!response.reports[0].data.rows) {
+
+                return {
+                    status: false,
+                    message: 'No data found'
+                }
+            }
 
             return {
                 status: true,
@@ -268,14 +278,6 @@ class SaveGA extends Task {
 
         this.taskRequest = () => (async () => {
 
-            if (!this.account.settings.has("load_saved_connection")) {
-
-                return {
-                    status: false,
-                    data: "save connection missing"
-                }
-            }
-
             let response;
 
             try {
@@ -290,8 +292,8 @@ class SaveGA extends Task {
             }
 
             let
-                conn = this.account.settings.get("load_saved_connection"),
-                savedDatabase = this.account.settings.get("load_saved_database"),
+                conn = this.task.account.settings.get("load_saved_connection"),
+                savedDatabase = this.task.account.settings.get("load_saved_database"),
                 db = await mysql.query("show databases", [], conn);
 
             savedDatabase = savedDatabase || constants.saveQueryResultDb;
@@ -337,7 +339,7 @@ class SaveGA extends Task {
             const insertResponse = await mysql.query(
                 `INSERT INTO ??.?? (${Object.keys(response.query_columns)}) VALUES ?`,
                 [savedDatabase, constants.saveQueryResultTable, response.processedData],
-                this.account.settings.get("load_saved_connection")
+                conn
             );
 
             return {

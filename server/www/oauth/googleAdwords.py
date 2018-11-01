@@ -27,8 +27,6 @@ class GoogleAdwords(API, object):
 
         f.close()
 
-        print ("File saved in the current directory")
-
         jsonFormat = []
 
         with open('server/www/oauth/provider_'+provider_id+'_report.csv') as csvfile:
