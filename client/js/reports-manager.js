@@ -3856,10 +3856,8 @@ class ReportVisualizationOptions {
 
 		const result = {};
 
-		const elements = ['column', 'relative', 'maximumColor', 'minimumColor', 'content'];
-
 		for(const element of this.form.querySelectorAll('input, select')) {
-			if(element.type != 'radio' && !elements.includes(element.name))
+			if(element.type != 'radio')
 				result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
 		}
 
@@ -4452,6 +4450,14 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 		const result = {
 			gradientRules: [],
 		};
+
+		const elements = ['maximumColor', 'minimumColor'];
+
+		for(const element of this.form.querySelectorAll('input')) {
+
+			if(element.type != 'radio' && !elements.includes(element.name))
+				result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
+		}
 
 		for(const rule of this.form.querySelectorAll('.rule')) {
 

@@ -5493,8 +5493,6 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	async render(options = {}) {
 
-		debugger
-
 		const
 			container = this.container.querySelector('.container'),
 			rows = await this.source.response() || [];
