@@ -300,15 +300,15 @@ Page.class = class Dashboards extends Page {
 
 		e.stopPropagation();
 
-		this.page.searchBar.container.classList.remove('hidden');
+		this.searchBar.container.classList.remove('hidden');
 
 		const
 			value = e.currentTarget.textContent,
-			tagFilter = new SearchColumnFilter(this.page.searchBar);
+			tagFilter = new SearchColumnFilter(this.searchBar);
 
-		this.page.searchBar.add(tagFilter);
+		this.searchBar.add(tagFilter);
 
-		this.page.searchBar.render();
+		this.searchBar.render();
 		const searchContainer = tagFilter.container;
 
 		searchContainer.querySelector('.searchQuery').value = value;
