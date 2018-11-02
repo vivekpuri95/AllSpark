@@ -2201,10 +2201,8 @@ class VisualizationManager {
 
 	async update(e) {
 
-		if(e) {
-
+		if(e)
 			e.preventDefault();
-		}
 
 		const
 			parameters = {
@@ -3858,8 +3856,10 @@ class ReportVisualizationOptions {
 
 		const result = {};
 
+		const elements = ['column', 'relative', 'maximumColor', 'minimumColor', 'content', 'tooltip'];
+
 		for(const element of this.form.querySelectorAll('input, select')) {
-			if(element.type != 'radio')
+			if(element.type != 'radio' && !elements.includes(element.name))
 				result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
 		}
 
@@ -3915,8 +3915,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 		this.axes = new Axes(this.visualization.options.axes, this);
 
 		container.querySelector('.configuration-section').appendChild(this.axes.container);
-
-
 
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
@@ -4293,6 +4291,15 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+
+						<div class="gradient-rules"></div>
+
+						<label>
+							<button type="button" class="add-gradient">
+								<i class="fa fa-plus"></i> Add New Gradient
+							</button>
+						</label>
+
 						<label>
 							<span>
 								<input type="checkbox" name="hideHeadingsBar">Hide Headings Bar
@@ -4315,9 +4322,121 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 			</div>
 		`;
 
+		container.querySelector('.add-gradient').on('click', () => {
+			container.querySelector('.gradient-rules').insertAdjacentElement('afterbegin', this.rule());
+			this.render();
+		});
+
 		this.form = this.visualization.options;
 
+		this.render();
 
+		return container;
+	}
+
+	render() {
+
+		const
+			gradientFilter = this.form.querySelector('.gradient-rules'),
+			gradientNotFound = this.form.querySelector('.gradient-rules .NA');
+
+		if(!gradientFilter.children.length)
+			gradientFilter.innerHTML = '<div class="NA">No Gradient Found</div>';
+
+		else if(gradientNotFound)
+			gradientNotFound.remove();
+	}
+
+	rule(selected = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('rule');
+
+		container.innerHTML = `
+
+			<label>
+				<span>Column</span>
+				<select name="column"></select>
+			</label>
+
+			<label>
+				<span>Relative To</span>
+				<select name="relative"></select>
+			</label>
+
+			<label>
+				<span>Dual Color</span>
+				<select name="dualColor">
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Maximum Value</span>
+				<input type="color" name="maximumColor" class="color" value="${selected.maximumColor}">
+			</label>
+
+			<label class="minimum-color">
+				<span>Minimum Value</span>
+				<input type="color" name="minimumColor" class="color" value="${selected.minimumColor}">
+			</label>
+
+			<label>
+				<span>Content</span>
+				<select name="content">
+					<option value="empty">Empty</option>
+					<option value="value">Value</option>
+					<option value="percentage">Percentage</option>
+					<option value="both">Both</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Tooltip</span>
+				<select name="tooltip">
+					<option value="empty">Empty</option>
+					<option value="value">Value</option>
+					<option value="percentage">Percentage</option>
+					<option value="both">Both</option>
+				</select>
+			</label>
+
+			<button type="button"><i class="far fa-trash-alt"></i></button>
+		`;
+
+		const
+			columnSelect = container.querySelector('select[name=column]'),
+			relativeSelect = container.querySelector('select[name=relative]');
+
+		for(const [key] of this.page.preview.report.columns) {
+
+			columnSelect.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
+			relativeSelect.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
+		}
+
+		for(const element of container.querySelectorAll('select')) {
+
+			for(const key in selected)
+				element.value = selected[element.name];
+		}
+
+		const
+			dualColor = container.querySelector('select[name="dualColor"]'),
+			minimumColor = container.querySelector('.minimum-color');
+
+		minimumColor.classList.toggle('hidden', !parseInt(dualColor.value));
+
+		dualColor.on('change', () => minimumColor.classList.toggle('hidden', !parseInt(dualColor.value)));
+
+		container.querySelector('button').on('click', e => {
+
+			e.stopPropagation();
+			container.remove();
+
+			this.render();
+		});
 
 		return container;
 	}
@@ -4328,11 +4447,56 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = json && json[element.name];
 
-			if(this.readOnly) {
-
+			if(this.readOnly)
 				element.disabled = true;
+		}
+
+		const gradientRules = this.form.querySelector('.gradient-rules');
+
+		for(const value of json.gradientRules || [])
+			gradientRules.appendChild(this.rule(value));
+	}
+
+	get json() {
+
+		const result = {
+			gradientRules: [],
+		};
+
+		for(const rule of this.form.querySelectorAll('.rule')) {
+
+			result.gradientRules.push({
+				column: rule.querySelector('select[name=column]').value,
+				relative: rule.querySelector('select[name=relative]').value,
+				dualColor: parseInt(rule.querySelector('select[name=dualColor]').value),
+				maximumColor: rule.querySelector('input[name=maximumColor]').value,
+				minimumColor: rule.querySelector('input[name=minimumColor]').value,
+				content: rule.querySelector('select[name=content').value,
+				tooltip: rule.querySelector('select[name=tooltip').value,
+			});
+		}
+
+		const gradientRules = {};
+
+		for(const gradient of result.gradientRules) {
+
+			if(gradient.column in gradientRules) {
+
+				new SnackBar({
+					message: 'Column Already Exist',
+					subtitle: 'Gradient Failed',
+					type: 'error',
+				});
+
+				throw 'failed';
+			}
+			else {
+
+				gradientRules[gradient.column] = gradient;
 			}
 		}
+
+		return result;
 	}
 });
 

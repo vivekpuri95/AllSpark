@@ -5466,6 +5466,28 @@ Visualization.list.set('table', class Table extends Visualization {
 		return container;
 	}
 
+	process(rows) {
+
+		for(const gradient of this.options.gradientRules || []) {
+
+			let values = [];
+
+			for(const row of rows) {
+
+				for(const [key,value] of row) {
+
+					if(key == gradient.relative && typeof value == 'number')
+						values.push(parseFloat(value));
+				}
+			}
+
+			if(values.length) {
+				gradient.maxValue = Math.max.apply(Math, values);
+				gradient.minValue = Math.min.apply(Math, values);
+			}
+		}
+	}
+
 	async render(options = {}) {
 
 		const
@@ -5473,6 +5495,8 @@ Visualization.list.set('table', class Table extends Visualization {
 			rows = await this.source.response() || [];
 
 		this.source.resetError();
+
+		this.process(rows);
 
 		container.textContent = null;
 
@@ -5570,6 +5594,12 @@ Visualization.list.set('table', class Table extends Visualization {
 		if(thead.children.length)
 			table.appendChild(thead);
 
+		const gradientRules = {};
+
+		for(const rule of this.options.gradientRules) {
+			gradientRules[rule.column] = rule;
+		}
+
 		const tbody = document.createElement('tbody');
 
 		for(const [position, row] of rows.entries()) {
@@ -5585,9 +5615,56 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				let rowJson = row.get(key);
 
+				let typedValue = row.getTypedValue(key);
+
+				const rule = gradientRules[key];
+
+				if(rule) {
+
+					rule.currentValue = row.getTypedValue(rule.relative);
+
+					if(rule.currentValue <= parseFloat((rule.maxValue - rule.minValue)/2))
+						rule.position = 0;
+					else
+						rule.position = 1;
+
+					let colorValue = this.colorValue(rule);
+
+					const
+						colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
+
+					if(rule.content == 'empty')
+						typedValue = null;
+
+					else if(rule.content == 'percentage')
+						typedValue = colorPercent;
+
+					else if(rule.content == 'both')
+						typedValue =  typedValue + ' / ' + colorPercent;
+
+					if(rule.tooltip == 'value')
+						td.setAttribute('data-tooltip', typedValue);
+
+					else if(rule.tooltip == 'percentage')
+						td.setAttribute('data-tooltip', colorPercent);
+
+					else if(rule.tooltip == 'both')
+						td.setAttribute('data-tooltip', typedValue + ' / ' + colorPercent);
+
+					if(rule.tooltip)
+						td.setAttribute('data-tooltip-position', 'left');
+
+					td.classList.add('tooltip-display');
+
+					if(rule.dualColor)
+						td.style.backgroundColor = (rule.position ? rule.maximumColor : rule.minimumColor) + colorValue.toString(16);
+					else
+						td.style.backgroundColor = rule.maximumColor + colorValue.toString(16);
+				}
+
 				if(column.type && column.type.name == 'html') {
 
-					td.innerHTML = row.getTypedValue(key);
+					td.innerHTML = typedValue;
 				}
 				else if(rowJson && typeof rowJson == 'object') {
 
@@ -5636,7 +5713,7 @@ Visualization.list.set('table', class Table extends Visualization {
 				}
 				else {
 
-					td.textContent = row.getTypedValue(key);
+					td.innerHTML = typedValue;
 				}
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
@@ -5741,6 +5818,22 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		container.classList.toggle('hidden', !this.selectedRows.size);
 		container.querySelector('strong').textContent = Format.number(this.selectedRows.size);
+	}
+
+	colorValue(rule) {
+
+		const range = rule.maxValue - rule.minValue;
+
+		if(rule.dualColor) {
+
+			if(rule.position)
+				return Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
+			else
+				return Math.floor(17 + (238/range) * (rule.maxValue - rule.currentValue));
+		}
+
+		else
+			return Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
 	}
 });
 
