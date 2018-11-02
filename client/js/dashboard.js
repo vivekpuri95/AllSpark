@@ -21,6 +21,8 @@ Page.class = class Dashboards extends Page {
 
 		const navBlanket = this.container.querySelector('.nav-blanket');
 
+		this.fetch();
+
 		menuToggle.on('click', () => {
 			this.nav.classList.toggle('show');
 			navBlanket.classList.toggle('hidden');
@@ -70,10 +72,35 @@ Page.class = class Dashboards extends Page {
 		return parseInt(window.location.pathname.split('/').includes('dashboard') ? window.location.pathname.split('/').pop() : 0);
 	}
 
+	async fetch() {
+
+		[this.connections] = await Promise.all([
+			API.call('credentials/list'),
+			DataSource.load(true),
+		]);
+	}
+
 	process() {
 
 		if(this.searchBar)
 			return this.searchBar;
+
+		const connections = new Map;
+
+		for(const connection of this.connections) {
+
+			for(const feature of MetaData.features.values()) {
+
+				if(feature.slug == connection.type && feature.type == 'source')
+					connection.feature = feature;
+			}
+
+			if(!connection.feature)
+				continue;
+
+			connections.set(connections.id, connection);
+		}
+		this.connections = new Map(this.connections.map(c => [c.id, c]));
 
 		const filters = [
 			{
@@ -87,6 +114,24 @@ Page.class = class Dashboards extends Page {
 			{
 				key: 'Description',
 				rowValue: row => row.description ? [row.description] : [],
+			},
+			{
+				key: 'Connection name',
+				rowValue: row => {
+					if(page.connections.has(parseInt(row.connection_name)))
+						return [page.connections.get(parseInt(row.connection_name)).connection_name];
+					else
+						return [];
+				},
+			},
+			{
+				key: 'Connection Type',
+				rowValue: row => {
+					if(page.connections.has(parseInt(row.connection_name)))
+						return [page.connections.get(parseInt(row.connection_name)).feature.name];
+					else
+						return [];
+				},
 			},
 			{
 				key: 'Tags',
@@ -255,9 +300,23 @@ Page.class = class Dashboards extends Page {
 
 		e.stopPropagation();
 
-		this.listContainer.form.search.value = e.currentTarget.textContent;
+		this.page.searchBar.container.classList.remove('hidden');
+
+		const
+			value = e.currentTarget.textContent,
+			tagFilter = new SearchColumnFilter(this.page.searchBar);
+
+		this.page.searchBar.add(tagFilter);
+
+		this.page.searchBar.render();
+		const searchContainer = tagFilter.container;
+
+		searchContainer.querySelector('.searchQuery').value = value;
+		searchContainer.querySelector('.searchValue').value = 'Tags';
+		searchContainer.querySelector('.searchType').value = 'equalto';
 
 		this.renderList();
+
 	}
 
 	renderList() {
