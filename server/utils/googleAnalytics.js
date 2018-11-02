@@ -7,332 +7,322 @@ const mysql = require('./mysql').MySQL;
 const GoogleAPIs = require('./oauthConnections').GoogleAPIs;
 const constants = require('./constants');
 const OauthProvider = require('../www/oauth/connections').get;
+const commonFunc = require('./commonFunctions');
 
 class GoogleAnalytics extends Job {
 
-    constructor(job) {
+	constructor(job) {
 
-        super(job, [
-            {
-              name: 'Authenticate Saved Connection',
-              timeout: 30,
-              sequence: 1,
-              fatal: 1
-            },
-            {
-                name: 'Fetch GA',
-                timeout: 30,
-                sequence: 2,
-                fatal: 1
-            },
-            {
-                name: 'Process GA',
-                timeout: 30,
-                sequence: 3,
-                inherit_data: 1,
-                fatal: 1
-            },
-            {
-                name: 'Save GA',
-                timeout: 30,
-                sequence: 4,
-                inherit_data: 1,
-                fatal: 1
-            },
-        ]);
-    }
+		super(job, [
+			{
+			  name: 'Authenticate Saved Connection',
+			  timeout: 30,
+			  sequence: 1,
+			  fatal: 1
+			},
+			{
+				name: 'Fetch GA',
+				timeout: 30,
+				sequence: 2,
+				fatal: 1
+			},
+			{
+				name: 'Process GA',
+				timeout: 30,
+				sequence: 3,
+				inherit_data: 1,
+				fatal: 1
+			},
+			{
+				name: 'Save GA',
+				timeout: 30,
+				sequence: 4,
+				inherit_data: 1,
+				fatal: 1
+			},
+		]);
+	}
 
-    async fetchInfo() {
+	async fetchInfo() {
 
-        if (this.job == parseInt(this.job)) {
+		if (this.job == parseInt(this.job)) {
 
-            const [job] = await mysql.query(
-                "select * from tb_jobs where job_id = ? and is_enabled = 1 and is_deleted = 0",
-                [this.job]
-            );
+			const [job] = await mysql.query(
+				"select * from tb_jobs where job_id = ? and is_enabled = 1 and is_deleted = 0",
+				[this.job]
+			);
 
-            this.job = job;
-        }
+			this.job = job;
+		}
 
-        if (!this.job || this.tasks) {
+		if (!this.job || this.tasks) {
 
-            this.error = "job or job tasks not found";
-        }
+			this.error = "job or job tasks not found";
+		}
 
-        this.contact = new Contact(this.job.job_id);
+		this.contact = new Contact(this.job.job_id);
 
-        const [account] = global.accounts.filter(x => x.account_id == this.job.account_id);
+		const [account] = global.accounts.filter(x => x.account_id == this.job.account_id);
 
-        const taskClasses = [Authenticate, FetchGA, ProcessGA, SaveGA];
+		const taskClasses = [Authenticate, FetchGA, ProcessGA, SaveGA];
 
-        this.tasks = this.tasks.map((x, i) => {
-            return new taskClasses[i]({...x, account, config: this.job.config, job_id: this.job.job_id});
-        });
+		this.tasks = this.tasks.map((x, i) => {
+			return new taskClasses[i]({...x, account, config: this.job.config, job_id: this.job.job_id});
+		});
 
-        this.error = 0;
-    }
+		this.error = 0;
+	}
 }
 
 class Authenticate extends Task {
 
-    async fetchInfo() {
+	async fetchInfo() {
 
-        this.taskRequest = () => (async () => {
+		this.taskRequest = () => (async () => {
 
-            if (!this.task.account.settings.get("load_saved_connection")) {
+			if (!this.task.account.settings.get("load_saved_connection")) {
 
-                return {
-                    status: false,
-                    message: "save connection missing"
-                };
-            }
+				return {
+					status: false,
+					message: "save connection missing"
+				};
+			}
 
-            return {
-                status: true
-            };
+			return {
+				status: true
+			};
 
-        })();
-    }
+		})();
+	}
 }
 
 class FetchGA extends Task {
 
-    constructor(task) {
+	constructor(task) {
 
-        super(task);
+		super(task);
 
-        try {
+		this.task.config = commonFunc.isJson(this.task.config) ? JSON.parse(this.task.config) : {};
 
-            this.task.config = JSON.parse(this.task.config);
-        }
-        catch (e) {
+	}
 
-            this.task.config = {};
-        }
+	async fetchInfo() {
 
-    }
+		this.taskRequest = () => (async () => {
 
-    async fetchInfo() {
+			let provider = new OauthProvider();
 
-        this.taskRequest = () => (async () => {
+			[provider] = await provider.get({connection_id: this.task.config.connection_id});
 
-            let provider = new OauthProvider();
+			if (!provider || provider.type != 'Google') {
 
-            [provider] = await provider.get({connection_id: this.task.config.connection_id});
+				return {
+					status: false,
+					data: 'Invalid provider Id or provider type'
+				};
+			}
 
-            if (!provider || provider.type != 'Google') {
+			const parameters = {};
 
-                return {
-                    status: false,
-                    data: 'Invalid provider Id or provider type'
-                };
-            }
+			for(const param of this.externalParams) {
 
-            const parameters = {};
+				parameters[param.placeholder] = param.value;
+			}
 
-            for(const param of this.externalParams) {
+			const
+				connection = new GoogleAPIs(this, provider),
+				access_token = await connection.test(),
+				gaMetrics = [],
+				gaDimensions = [],
+				startDate = parameters.start_date || new Date().toISOString().substr(0, 10),
+				endDate = parameters.end_date || new Date().toISOString().substr(0, 10);
 
-                parameters[param.placeholder] = param.value;
-            }
+			for (const metric of (typeof this.task.config.metrics == 'string' ? [this.task.config.metrics] : this.task.config.metrics)) {
 
-            const
-                connection = new GoogleAPIs(this, provider),
-                access_token = await connection.test(),
-                gaMetrics = [],
-                gaDimensions = [],
-                startDate = parameters.start_date || new Date().toISOString().substr(0, 10),
-                endDate = parameters.end_date || new Date().toISOString().substr(0, 10);
+				gaMetrics.push({
+					"expression": metric
+				});
+			}
 
-            for (const metric of (typeof this.task.config.metrics == 'string' ? [this.task.config.metrics] : this.task.config.metrics)) {
+			for (const dimension of (typeof this.task.config.dimensions == 'string' ? [this.task.config.dimensions] : this.task.config.dimensions)) {
 
-                gaMetrics.push({
-                    "expression": metric
-                });
-            }
+				gaDimensions.push({
+					"name": dimension
+				});
+			}
 
-            for (const dimension of (typeof this.task.config.dimensions == 'string' ? [this.task.config.dimensions] : this.task.config.dimensions)) {
+			const
+				options = {
+					method: 'POST',
+					body: JSON.stringify({
+						'reportRequests': [
+							{
+								'viewId': this.task.config.viewId,
+								'dateRanges': [{'startDate': startDate, 'endDate': endDate}],
+								'metrics': gaMetrics,
+								"dimensions": gaDimensions
+							}
+						]
+					}),
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${access_token}`
+					},
+				};
 
-                gaDimensions.push({
-                    "name": dimension
-                });
-            }
+			let response = await fetch('https://analyticsreporting.googleapis.com/v4/reports:batchGet', options);
 
-            const
-                options = {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        'reportRequests': [
-                            {
-                                'viewId': this.task.config.viewId,
-                                'dateRanges': [{'startDate': startDate, 'endDate': endDate}],
-                                'metrics': gaMetrics,
-                                "dimensions": gaDimensions
-                            }
-                        ]
-                    }),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${access_token}`
-                    },
-                };
+			response = await response.json();
 
-            let response = await fetch('https://analyticsreporting.googleapis.com/v4/reports:batchGet', options);
+			this.assert(response.reports[0].data.rows, 'No data found');
 
-            response = await response.json();
+			return {
+				status: true,
+				data: response.reports[0]
+			};
+		})();
 
-            this.assert(response.reports[0].data.rows, 'No data found');
-
-            return {
-                status: true,
-                data: response.reports[0]
-            };
-        })();
-
-    }
+	}
 }
 
 class ProcessGA extends Task {
 
-    async fetchInfo() {
+	async fetchInfo() {
 
-        this.taskRequest = () => (async () => {
+		this.taskRequest = () => (async () => {
 
-            const processedData = [];
+			const processedData = [];
 
-            let response;
+			let [response] = this.externalParams.filter(x => x.placeholder == 'data');
 
-            try {
+			try {
 
-                [response] = this.externalParams.filter(x => x.placeholder == 'data');
+				response = JSON.parse(response.value).message.data;
+			}
+			catch (e) {
 
-                response = JSON.parse(response.value).message.data;
-            }
-            catch (e) {
+				response = []
+			}
 
-                response = []
-            }
+			let query_columns = {};
 
-            let query_columns = {};
+			for(const dimension of response.columnHeader.dimensions) {
 
-            for(const dimension of response.columnHeader.dimensions) {
+				query_columns[`\`${dimension}\``] = 'varchar(500) DEFAULT \'\'';
+			}
 
-                query_columns[`\`${dimension}\``] = 'varchar(500) DEFAULT \'\'';
-            }
+			for(const metric of response.columnHeader.metricHeader.metricHeaderEntries) {
 
-            for(const metric of response.columnHeader.metricHeader.metricHeaderEntries) {
+				query_columns[`\`${metric.name}\``] = 'varchar(500) DEFAULT \'\'';
+			}
 
-                query_columns[`\`${metric.name}\``] = 'varchar(500) DEFAULT \'\'';
-            }
+			for (const row of response.data.rows) {
 
-            for (const row of response.data.rows) {
+				const rowObj = [];
 
-                const rowObj = [];
+				for (const dimension of row.dimensions) {
 
-                for (const dimension of row.dimensions) {
+					rowObj.push(dimension);
+				}
 
-                    rowObj.push(dimension);
-                }
+				for (const metric of row.metrics[0].values) {
 
-                for (const metric of row.metrics[0].values) {
+					rowObj.push(metric);
+				}
 
-                    rowObj.push(metric);
-                }
+				processedData.push(rowObj);
+			}
 
-                processedData.push(rowObj);
-            }
+			return {
+				status: true,
+				data: {
+					processedData,
+					query_columns
+				}
+			}
 
-            return {
-                status: true,
-                data: {
-                    processedData,
-                    query_columns
-                }
-            }
-
-        })();
-    }
+		})();
+	}
 
 }
 
 class SaveGA extends Task {
 
-    async fetchInfo() {
+	async fetchInfo() {
 
-        this.taskRequest = () => (async () => {
+		this.taskRequest = () => (async () => {
 
-            let response;
+			let [response] = this.externalParams.filter(x => x.placeholder == 'data');
 
-            try {
+			try {
 
-                [response] = this.externalParams.filter(x => x.placeholder == 'data');
+				response = JSON.parse(response.value).message.data;
+			}
+			catch (e) {
 
-                response = JSON.parse(response.value).message.data;
-            }
-            catch (e) {
+				response = []
+			}
 
-                response = []
-            }
+			let
+				conn = this.task.account.settings.get("load_saved_connection"),
+				savedDatabase = this.task.account.settings.get("load_saved_database"),
+				db = await mysql.query("show databases", [], conn);
 
-            let
-                conn = this.task.account.settings.get("load_saved_connection"),
-                savedDatabase = this.task.account.settings.get("load_saved_database"),
-                db = await mysql.query("show databases", [], conn);
+			savedDatabase = savedDatabase || constants.saveQueryResultDb;
 
-            savedDatabase = savedDatabase || constants.saveQueryResultDb;
+			[db] = db.filter(x => x === savedDatabase);
 
-            [db] = db.filter(x => x === savedDatabase);
+			if (!db) {
 
-            if (!db) {
+				await mysql.query(
+					`CREATE DATABASE IF NOT EXISTS ${savedDatabase}`,
+					[],
+					conn
+				);
+			}
 
-                await mysql.query(
-                    `CREATE DATABASE IF NOT EXISTS ${savedDatabase}`,
-                    [],
-                    conn
-                );
-            }
+			let table_query = '';
 
-            let table_query = '';
+			for(const key in response.query_columns) {
 
-            for(const key in response.query_columns) {
+				table_query = table_query.concat(`${key} ${response.query_columns[key]},`);
+			}
 
-                table_query = table_query.concat(`${key} ${response.query_columns[key]},`);
-            }
-
-            const query = `
-                CREATE TABLE IF NOT EXISTS ??.?? (
-                    id int(11) unsigned NOT NULL AUTO_INCREMENT,
-                    ${table_query}
-                    \`created_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-                    \`updated_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    PRIMARY KEY (\`id\`),
-                    KEY \`created_at\` (\`created_at\`)
+			const query = `
+				CREATE TABLE IF NOT EXISTS ??.?? (
+					id int(11) unsigned NOT NULL AUTO_INCREMENT,
+					${table_query}
+					\`created_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+					\`updated_at\` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+					PRIMARY KEY (\`id\`),
+					KEY \`created_at\` (\`created_at\`)
 				) ENGINE=InnoDB DEFAULT CHARSET=latin1
-            `;
+			`;
 
-            const tableName = constants.saveQueryResultTable.concat(`_job_${this.task.job_id}`);
+			const tableName = constants.saveQueryResultTable.concat(`_job_${this.task.job_id}`);
 
-            await mysql.query(
-                query,
+			await mysql.query(
+				query,
 
-                [savedDatabase, tableName],
-                conn,
-            );
+				[savedDatabase, tableName],
+				conn,
+			);
 
-            const insertResponse = await mysql.query(
-                `INSERT INTO ??.?? (${Object.keys(response.query_columns)}) VALUES ?`,
-                [savedDatabase, tableName, response.processedData],
-                conn
-            );
+			const insertResponse = await mysql.query(
+				`INSERT INTO ??.?? (${Object.keys(response.query_columns)}) VALUES ?`,
+				[savedDatabase, tableName, response.processedData],
+				conn
+			);
 
-            return {
-                status: true,
-                data: {
-                    message: `Data saved in the table ${constants.saveQueryResultTable}`,
-                    response: insertResponse
-                }
-            }
-        })();
-    }
+			return {
+				status: true,
+				data: {
+					message: `Data saved in the table ${constants.saveQueryResultTable}`,
+					response: insertResponse
+				}
+			}
+		})();
+	}
 
 }
 

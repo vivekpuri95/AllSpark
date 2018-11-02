@@ -8,34 +8,38 @@ const Contact = require('./jobs/contact');
 const mysql = require('./mysql').MySQL;
 const URLSearchParams = require('url').URLSearchParams;
 const OauthProvider = require('../www/oauth/connections').get;
+const commonFunc = require('./commonFunctions');
 
 class GoogleAdwords extends Job {
 
 	constructor(job) {
 
 		super(job, [
-            {
-                name: 'Authenticate Saved Connection',
-                timeout: 30,
-                sequence: 1,
-                fatal: 1
-            },
+			{
+				name: 'Authenticate Saved Connection',
+				timeout: 30,
+				sequence: 1,
+				fatal: 1
+			},
 			{
 				name: 'Fetch Adwords',
 				timeout: 30,
 				sequence: 2,
+				fatal: 1
 			},
 			{
 				name: 'Process Adwords',
 				timeout: 30,
 				sequence: 3,
-				inherit_data: 1
+				inherit_data: 1,
+				fatal: 1
 			},
 			{
 				name: 'Save Adwords',
 				timeout: 30,
 				sequence: 4,
-				inherit_data: 1
+				inherit_data: 1,
+				fatal: 1
 			},
 		]);
 	}
@@ -74,24 +78,24 @@ class GoogleAdwords extends Job {
 
 class Authenticate extends Task {
 
-    async fetchInfo() {
+	async fetchInfo() {
 
-        this.taskRequest = () => (async () => {
+		this.taskRequest = () => (async () => {
 
-            if (!this.task.account.settings.get("load_saved_connection")) {
+			if (!this.task.account.settings.get("load_saved_connection")) {
 
-                return {
-                    status: false,
-                    message: "save connection missing"
-                };
-            }
+				return {
+					status: false,
+					message: "save connection missing"
+				};
+			}
 
-            return {
-                status: true
-            };
+			return {
+				status: true
+			};
 
-        })();
-    }
+		})();
+	}
 }
 
 class FetchAdwords extends Task {
@@ -100,15 +104,7 @@ class FetchAdwords extends Task {
 
 		super(task);
 
-		try {
-
-			this.task.config = JSON.parse(this.task.config);
-		}
-		catch(e) {
-
-			this.task.config = {};
-		}
-
+		this.task.config = commonFunc.isJson(this.task.config) ? JSON.parse(this.task.config) : {};
 	}
 
 	async fetchInfo() {
@@ -184,15 +180,7 @@ class ProcessAdwords extends Task {
 
 		super(task);
 
-		try {
-
-			this.task.config = JSON.parse(this.task.config);
-		}
-		catch(e) {
-
-			this.task.config = {};
-		}
-
+		this.task.config = commonFunc.isJson(this.task.config) ? JSON.parse(this.task.config) : {};
 	}
 
 	async fetchInfo() {
@@ -206,11 +194,9 @@ class ProcessAdwords extends Task {
 				camp_labels = []
 			;
 
-			let data;
+			let [data] = this.externalParams.filter(x => x.placeholder == 'data');
 
 			try {
-
-				[data] = this.externalParams.filter(x => x.placeholder == 'data');
 
 				data = JSON.parse(data.value).message.data;
 			}
@@ -240,23 +226,8 @@ class ProcessAdwords extends Task {
 					row['All conv.']
 				]);
 
-				try {
-
-					row['Labels'] = JSON.parse(row['Labels']);
-				}
-				catch (e) {
-
-					row['Labels'] = []
-				}
-
-				try {
-
-					row['Label IDs'] = JSON.parse(row['Label IDs']);
-				}
-				catch (e) {
-
-					row['Label IDs'] = []
-				}
+				row['Labels'] = commonFunc.isJson(row['Labels']) ? JSON.parse(row['Labels']) : [];
+				row['Label IDs'] = commonFunc.isJson(row['Label IDs']) ? JSON.parse(row['Label IDs']) : [];
 
 				if(row['Label IDs']) {
 
@@ -287,13 +258,11 @@ class SaveAdwords extends Task {
 		this.taskRequest = () => (async () => {
 
 			let
-                data,
-                conn = this.task.account.settings.get("load_saved_connection"),
-                savedDatabase = this.task.account.settings.get("load_saved_database");
+				[data] = this.externalParams.filter(x => x.placeholder == 'data'),
+				conn = this.task.account.settings.get("load_saved_connection"),
+				savedDatabase = this.task.account.settings.get("load_saved_database");
 
 			try {
-
-				[data] = this.externalParams.filter(x => x.placeholder == 'data');
 
 				data = JSON.parse(data.value).message.data;
 			}
