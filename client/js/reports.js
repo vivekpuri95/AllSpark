@@ -5493,6 +5493,8 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	async render(options = {}) {
 
+		debugger
+
 		const
 			container = this.container.querySelector('.container'),
 			rows = await this.source.response() || [];
@@ -5625,7 +5627,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				const rule = gradientRules[key];
 
-				if(rule) {
+				if(rule && rule.maxValue) {
 
 					rule.currentValue = row.getTypedValue(rule.relative);
 
