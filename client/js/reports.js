@@ -850,7 +850,8 @@ class DataSource {
 
 		this.containerElement.querySelector('.menu .download').classList.remove('selected');
 
-		let str = [],
+		let
+			str = [],
 			response;
 
 		if(!(['filtered-json', 'filtered-csv'].includes(what.mode)))
@@ -948,8 +949,14 @@ class DataSource {
 
 				const line = [];
 
-				for(const index in data)
+				for(const index in data) {
+
+					if(data[index] === null) {
+						data[index] = '';
+					}
+
 					line.push(JSON.stringify(String(data[index])));
+				}
 
 				str.push(line.join());
 			}
