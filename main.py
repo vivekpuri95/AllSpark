@@ -1,9 +1,11 @@
 import config
 from server.utils.Application import *
 from server.www.xlsx import xlsx
+from server.www.oauth.googleAdwords import ga
 
 BLUEPRINTS = {
     xlsx: "/xlsx",
+    ga: "/adwords",
 }
 
 app = Application(BLUEPRINTS)

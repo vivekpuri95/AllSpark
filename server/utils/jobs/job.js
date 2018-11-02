@@ -119,8 +119,9 @@ class Job {
 
 		for (const order of Object.keys(taskOrderMapping).sort()) {
 
-			let externalParameters = this.externalParameters;
 			const promiseArr = taskOrderMapping[order].map(task => {
+
+                let externalParameters = JSON.parse(JSON.stringify(this.externalParameters));
 
 				if (task.task.inherit_data && !erred) {
 
@@ -136,7 +137,9 @@ class Job {
 			const tasksExecuteResponse = await commonFun.promiseParallelLimit(10, promiseArr);
 
 			erred = tasksExecuteResponse.some(x => x.error);
-			const fatal = taskOrderMapping[order].some(task => task.fatal);
+			const fatal = taskOrderMapping[order].some(task => task.task.fatal);
+
+            lastOrder = order;
 
 			if (erred && fatal) {
 
@@ -149,8 +152,6 @@ class Job {
 			}
 
 			previousOutput = erred ? [] : tasksExecuteResponse;
-
-			lastOrder = order;
 		}
 
 		let nextInterval = null;

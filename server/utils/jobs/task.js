@@ -3,6 +3,7 @@ const commonFun = require("../commonFunctions");
 const mysql = require("../mysql").MySQL;
 const fetch = require('node-fetch');
 const dbConfig = require('config').get("sql_db");
+const assert = require("assert");
 const {performance} = require("perf_hooks");
 
 
@@ -30,7 +31,12 @@ class Task {
 
 			const status = response.status;
 
-			response = await response.json();
+			try {
+
+				response = await response.json();
+            }
+            catch (e) {}
+
 			this.taskRunTime = performance.now() - taskStartTime;
 
 			if (!(status == 200 || response.status)) {
@@ -146,6 +152,15 @@ class Task {
 
 		return commonFun.promiseTimeout(promise, this.task.timeout);
 	}
+
+    assert(expression, message, statusCode) {
+
+        return assert(expression,
+            JSON.stringify({
+                message: message,
+                status: statusCode,
+            }));
+    }
 }
 
 

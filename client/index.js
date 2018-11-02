@@ -1234,6 +1234,48 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 		return `
 
 			<section class="section" id="list">
+
+				<h1>OAuth Connections</h1>
+
+				<div class="oauth-connections">
+
+					<div class="test-result hidden"></div>
+
+					<table class="block">
+						<thead>
+							<tr>
+								<th class="thin">ID</th>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="action">Authenticate</th>
+								<th class="action">Delete</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+
+					<form id="add-oauth-connection" class="form">
+						<select name="provider"></select>
+						<button type="submit">
+							<i class="fas fa-plus"></i> Add New Connection
+						</button>
+					</form>
+				</div>
+
+			</section>
+
+			<section class="section" id="add-connection">
+
+				<h1>Add New Connection</h1>
+
+				<div id="add-connection-picker">
+
+					<div class="toolbar">
+						<button id="connection-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
+					</div>
+
+					<form id="add-connection-form"></form>
+				</div>
 			</section>
 
 			<section class="section" id="form">
