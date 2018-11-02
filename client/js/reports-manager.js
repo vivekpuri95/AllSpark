@@ -3856,7 +3856,7 @@ class ReportVisualizationOptions {
 
 		const result = {};
 
-		const elements = ['column', 'relative', 'maximumColor', 'minimumColor', 'content', 'tooltip'];
+		const elements = ['column', 'relative', 'maximumColor', 'minimumColor', 'content'];
 
 		for(const element of this.form.querySelectorAll('input, select')) {
 			if(element.type != 'radio' && !elements.includes(element.name))
@@ -4393,16 +4393,6 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 				</select>
 			</label>
 
-			<label>
-				<span>Tooltip</span>
-				<select name="tooltip">
-					<option value="empty">Empty</option>
-					<option value="value">Value</option>
-					<option value="percentage">Percentage</option>
-					<option value="both">Both</option>
-				</select>
-			</label>
-
 			<button type="button"><i class="far fa-trash-alt"></i></button>
 		`;
 
@@ -4410,10 +4400,10 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 			columnSelect = container.querySelector('select[name=column]'),
 			relativeSelect = container.querySelector('select[name=relative]');
 
-		for(const [key] of this.page.preview.report.columns) {
+		for(const [key, column] of this.page.preview.report.columns) {
 
-			columnSelect.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
-			relativeSelect.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
+			columnSelect.insertAdjacentHTML('beforeend', `<option value="${key}">${column.name}</option>`);
+			relativeSelect.insertAdjacentHTML('beforeend', `<option value="${key}">${column.name}</option>`);
 		}
 
 		for(const element of container.querySelectorAll('select')) {
@@ -4472,7 +4462,6 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 				maximumColor: rule.querySelector('input[name=maximumColor]').value,
 				minimumColor: rule.querySelector('input[name=minimumColor]').value,
 				content: rule.querySelector('select[name=content').value,
-				tooltip: rule.querySelector('select[name=tooltip').value,
 			});
 		}
 
@@ -4483,8 +4472,7 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 			if(gradient.column in gradientRules) {
 
 				new SnackBar({
-					message: 'Column Already Exist',
-					subtitle: 'Gradient Failed',
+					message: `Gradient already exists for ${this.page.preview.report.columns.get(gradient.column).name}.`,
 					type: 'error',
 				});
 

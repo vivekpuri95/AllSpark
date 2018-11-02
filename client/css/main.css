@@ -1076,7 +1076,7 @@ body {
 	border-width: 8px 6px 0 6px;
 	border-style: solid;
 	border-color: rgba(0, 0, 0, 0.7) transparent transparent transparent;
-	z-index: 99;
+	z-index: 8;
 	display: none;
 }
 
@@ -1120,7 +1120,7 @@ body {
 	letter-spacing: 0.4px;
 	pointer-events: none;
 	padding: 8px;
-	z-index: 99;
+	z-index: 8;
 	display: none;
 }
 

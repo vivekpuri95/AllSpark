@@ -5468,7 +5468,10 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	process(rows) {
 
-		for(const gradient of this.options.gradientRules || []) {
+		if(!this.options || !this.options.gradientRules)
+			return;
+
+		for(const gradient of this.options.gradientRules) {
 
 			let values = [];
 
@@ -5596,8 +5599,11 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		const gradientRules = {};
 
-		for(const rule of this.options.gradientRules) {
-			gradientRules[rule.column] = rule;
+		if(this.options && this.options.gradientRules) {
+
+			for(const rule of this.options.gradientRules) {
+				gradientRules[rule.column] = rule;
+			}
 		}
 
 		const tbody = document.createElement('tbody');
@@ -5641,20 +5647,6 @@ Visualization.list.set('table', class Table extends Visualization {
 
 					else if(rule.content == 'both')
 						typedValue =  typedValue + ' / ' + colorPercent;
-
-					if(rule.tooltip == 'value')
-						td.setAttribute('data-tooltip', typedValue);
-
-					else if(rule.tooltip == 'percentage')
-						td.setAttribute('data-tooltip', colorPercent);
-
-					else if(rule.tooltip == 'both')
-						td.setAttribute('data-tooltip', typedValue + ' / ' + colorPercent);
-
-					if(rule.tooltip)
-						td.setAttribute('data-tooltip-position', 'left');
-
-					td.classList.add('tooltip-display');
 
 					if(rule.dualColor)
 						td.style.backgroundColor = (rule.position ? rule.maximumColor : rule.minimumColor) + colorValue.toString(16);
