@@ -861,9 +861,18 @@ class DataSource {
 
 			for(const data of response.data) {
 
-				const line = [];
+				const
+					line = [],
+					_data = {};
 
-				line.push(JSON.stringify(data));
+				for(const key in data) {
+
+					if(data[key] === null) {
+						_data[key] = '';
+					}
+				}
+
+				line.push(JSON.stringify(_data));
 
 				str.push(line);
 			}
@@ -912,7 +921,7 @@ class DataSource {
 				const line = [];
 
 				for(const value of row.values())
-					line.push(JSON.stringify(String(value)));
+					line.push(JSON.stringify(String(value === null ? '' : value)));
 
 				str.push(line.join());
 			}
