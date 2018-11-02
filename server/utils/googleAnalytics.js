@@ -195,14 +195,7 @@ class ProcessGA extends Task {
 
 			let [response] = this.externalParams.filter(x => x.placeholder == 'data');
 
-			try {
-
-				response = JSON.parse(response.value).message.data;
-			}
-			catch (e) {
-
-				response = []
-			}
+            response = response.value && commonFunc.isJson(response.value) ? JSON.parse(response.value).message.data : {data: {}};
 
 			let query_columns = {};
 
@@ -216,7 +209,7 @@ class ProcessGA extends Task {
 				query_columns[`\`${metric.name}\``] = 'varchar(500) DEFAULT \'\'';
 			}
 
-			for (const row of response.data.rows) {
+			for (const row of response.data.rows || []) {
 
 				const rowObj = [];
 
@@ -254,14 +247,7 @@ class SaveGA extends Task {
 
 			let [response] = this.externalParams.filter(x => x.placeholder == 'data');
 
-			try {
-
-				response = JSON.parse(response.value).message.data;
-			}
-			catch (e) {
-
-				response = []
-			}
+            response = response.value && commonFunc.isJson(response.value) ? JSON.parse(response.value).message.data : {};
 
 			let
 				conn = this.task.account.settings.get("load_saved_connection"),

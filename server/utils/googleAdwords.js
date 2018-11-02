@@ -196,14 +196,7 @@ class ProcessAdwords extends Task {
 
 			let [data] = this.externalParams.filter(x => x.placeholder == 'data');
 
-			try {
-
-				data = JSON.parse(data.value).message.data;
-			}
-			catch(e) {
-
-				data = []
-			}
+			data = data.value && commonFunc.isJson(data.value) ? JSON.parse(data.value).message.data : [];
 
 			for(const row of data) {
 
@@ -262,14 +255,7 @@ class SaveAdwords extends Task {
 				conn = this.task.account.settings.get("load_saved_connection"),
 				savedDatabase = this.task.account.settings.get("load_saved_database");
 
-			try {
-
-				data = JSON.parse(data.value).message.data;
-			}
-			catch (e) {
-
-				data = {};
-			}
+            data = data.value && commonFunc.isJson(data.value) ? JSON.parse(data.value).message.data : {};
 
 			savedDatabase = savedDatabase || constants.saveQueryResultDb;
 
