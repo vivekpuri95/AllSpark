@@ -8,11 +8,15 @@ exports.insert = class extends API {
 
 	async insert({profile, owner, value, owner_id} = {}) {
 
+		let account_id;
+
 		if(owner == 'account') {
 			this.user.privilege.needs("superadmin");
+			account_id = null;
 		}
 		else if(owner == 'user') {
-			this.assert(owner_id == this.user.user_id || this.user.privilege.has("superadmin"), 'You cannot insert settings for user other than you.')
+			this.assert(owner_id == this.user.user_id, 'You cannot insert settings for user other than you.');
+			account_id = owner_id;
 		}
 
 		this.assert(profile, "profile not found");
@@ -33,7 +37,7 @@ exports.insert = class extends API {
 				VALUES
 					(?, ?, ?, ?, ?)
 				`,
-			[this.account.account_id, profile, owner, owner_id, value],
+			[account_id, profile, owner, owner_id, value],
 			"write");
 	}
 };
@@ -116,7 +120,7 @@ exports.list = class extends API {
 
 		this.assert(owner && owner_id, 'Owner or Owner_id not found');
 
-		const settingsList = await this.mysql.query("select * from tb_settings where status = 1 and account_id = ? and owner = ? and owner_id = ?", [this.account.account_id, owner, owner_id]);
+		const settingsList = await this.mysql.query("select * from tb_settings where status = 1 and owner = ? and owner_id = ?", [owner, owner_id]);
 
 		for(const row of settingsList) {
 			try {

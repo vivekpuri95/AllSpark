@@ -3,7 +3,6 @@ main {
 	grid-template-rows: 1fr max-content;
 	grid-template-columns: 220px calc(100% - 220px);
 }
-
 body > header > .menu-toggle {
 	display: none;
 	padding: 15px 20px;
@@ -150,12 +149,10 @@ main > nav::-webkit-scrollbar-track {
 			cursor: pointer;
 			background: rgba(0, 0, 0, 0.15);
 		}
-		main > nav footer .powered-by {
-			padding: 10px 5px;
-			font-size: 80%;
-			text-align: center;
-			flex: 1;
-		}
+main #reports {
+	background: var(--color-background);
+	color: var(--color-background-text);
+}
 main #reports.show {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
@@ -199,6 +196,13 @@ main #reports > h1.dashboard-name::-webkit-scrollbar {
 			main #reports > h1.dashboard-name > div span:hover {
 				background: var(--color-accent);
 				color: var(--color-accent-text);
+				cursor: pointer;
+			}
+
+			main #reports > h1.dashboard-name .full-screen {
+				font-size: 80%;
+				display: flex;
+				align-items: center;
 				cursor: pointer;
 			}
 

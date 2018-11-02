@@ -11,6 +11,7 @@ const commonFun = require('../utils/commonFunctions');
 const oracle = require('../utils/oracle').Oracle;
 const constants = require("../utils/constants");
 const getRole = require("../www/object_roles").get;
+const Redis = require("../utils/redis").Redis;
 
 
 exports.insert = class extends API {
@@ -158,6 +159,8 @@ exports.delete = class extends API {
 
 	async delete() {
 
+		this.assert(this.request.body.id == parseInt(this.request.body.id), "invalid connection id for deletion");
+
 		const [connectionObj] = await this.mysql.query(`
 				SELECT
 					*
@@ -194,18 +197,16 @@ exports.delete = class extends API {
 			'write'
 		);
 
-		if (this.request.body.type.toLowerCase() === "mysql") {
+		if (bigquery && connectionObj.type == "bigquery") {
 
-			await mysql.crateExternalPool(this.request.body.id);
-		}
-
-		else if (this.request.body.type.toLowerCase() === "mssql") {
-
-			await mssql.crateExternalPool(this.request.body.id);
-		}
-
-		if (bigquery)
 			await bigquery.setup();
+		}
+
+		const invalidConnections = new Set((await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, this.request.body.type.toLowerCase()) || "").split(", "));
+
+		invalidConnections.add(this.request.body.id.toString());
+
+		await Redis.hset(`${process.env.NODE_ENV}#invalidCredentials`, this.request.body.type.toLowerCase(), [...invalidConnections].join(", "));
 
 		return response;
 	}
@@ -265,18 +266,16 @@ exports.update = class extends API {
 			'write'
 		);
 
-		if (credential.type.toLowerCase() == "mysql") {
+		if (bigquery && credential.type == 'bigquery') {
 
-			await mysql.crateExternalPool(this.request.body.id);
-		}
-
-		else if (credential.type.toLowerCase() == "mssql") {
-
-			await mssql.crateExternalPool(this.request.body.id);
-		}
-
-		if (bigquery)
 			await bigquery.setup();
+		}
+
+		const invalidConnections = new Set((await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, credential.type.toLowerCase()) || "").split(", "));
+
+		invalidConnections.add(credential.id.toString());
+
+		await Redis.hset(`${process.env.NODE_ENV}#invalidCredentials`, credential.type.toLowerCase(), [...invalidConnections].join(", "));
 
 		return response;
 	}

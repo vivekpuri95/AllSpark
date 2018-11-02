@@ -25,6 +25,7 @@ exports.privilege = {
 	"dashboard.delete": "dashboard.delete",
 	"report.insert": "report.insert",
 	"report.update": "report.update",
+	"report.delete": "report.delete",
 	superadmin: "superadmin",
 	ignore_category: ["connection.list","category.list", "visualization.list"],
 	ignore_privilege: ["dashboard.list", "visualization.list", "connection.list", "category.list"],

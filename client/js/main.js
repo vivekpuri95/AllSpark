@@ -395,10 +395,8 @@ Page.serviceWorker = class PageServiceWorker {
 	 */
 	async setup() {
 
-		if(!('serviceWorker' in navigator)) {
-			this.status = false;
+		if(!('serviceWorker' in navigator))
 			return;
-		}
 
 		this.worker = await navigator.serviceWorker.register('/service-worker.js');
 
@@ -516,7 +514,7 @@ Page.serviceWorker = class PageServiceWorker {
 	 * @return boolean
 	 */
 	get status() {
-		return navigator.serviceWorker.controller ? true : false;
+		return ('serviceWorker' in navigator) && navigator.serviceWorker.controller ? true : false;
 	}
 
 	async clear() {
@@ -1087,8 +1085,6 @@ class User {
 			if(callback)
 				await callback();
 
-			await page.serviceWorker.clear();
-
 			if(account && account.settings.get('logout_redirect_url') && redirect)
 				window.open(account.settings.get('logout_redirect_url')+'?'+parameters.toString(), '_self');
 
@@ -1210,13 +1206,13 @@ class MetaData {
 			MetaData.categories.set(category.category_id, category);
 		}
 
-		MetaData.spatialMapThemes =  new Map(metadata.spatialMapThemes.map(x => [x.name, JSON.parse(x.theme)]));
-		MetaData.filterTypes = new Map(metadata.filterTypes.map(x => [x.name.toLowerCase(), x]));
-		MetaData.datasources = new Map(metadata.datasources.map(v => [v.slug, v]));
-		MetaData.visualizations = new Map(metadata.visualizations.map(v => [v.slug, v]));
-		MetaData.features = new Map(metadata.features.map(f => [f.feature_id, f]));
-		MetaData.globalFilters = new Map(metadata.globalFilters.map(d => [d.id, d]));
-		user.settings = new Map(metadata.userSettings.map(us => [us.key, us.value]));
+		MetaData.spatialMapThemes =  new Map(metadata.spatialMapThemes ? metadata.spatialMapThemes.map(x => [x.name, JSON.parse(x.theme)]) : []);
+		MetaData.filterTypes = new Map(metadata.filterTypes ? metadata.filterTypes.map(x => [x.name.toLowerCase(), x]) : []);
+		MetaData.datasources = new Map(metadata.datasources ? metadata.datasources.map(v => [v.slug, v]) : []);
+		MetaData.visualizations = new Map(metadata.visualizations ? metadata.visualizations.map(v => [v.slug, v]) : []);
+		MetaData.features = new Map(metadata.features ? metadata.features.map(f => [f.feature_id, f]) : []);
+		MetaData.globalFilters = new Map(metadata.globalFilters ? metadata.globalFilters.map(d => [d.id, d]) : []);
+		user.settings = new Map(metadata.userSettings ? metadata.userSettings.map(us => [us.key, us.value]) : []);
 	}
 }
 
@@ -1793,12 +1789,67 @@ class Format {
 		return Format.dateTime.formatter.format(dateTime);
 	}
 
-	static number(number) {
+	/**
+	 * Static number is used for formatting numbers according to javascript Intl.NumberFormat
+	 * It accepts two parameters i.e number and format, number is mandatory and formal is optional.
+	 * If no format is passed then by default it is set as format = {maximumFractionDigits: 2}
+	 *
+	 * This will do things like
+	 * - Rounding off digits using toFixed, ceil and floor.
+	 * - Setting up currency for the number
+	 * - Limiting number of integer, fractional, significant digits.
+	 *
+	 * @param  number	number	A mandatory value, The number on which selected format will be applied
+	 * @param  object	format	An optional value, format passed into the function as an object that contains
+	 * 							paramters required for formatting the number.
+	 */
+	static number(number, format = {maximumFractionDigits: 2}) {
 
-		if(!Format.number.formatter)
-			Format.number.formatter = new Intl.NumberFormat(undefined, {maximumFractionDigits: 2});
+		if(!Format.cachedNumberFormat)
+			Format.cachedNumberFormat = new Map();
 
-		return Format.number.formatter.format(number);
+		const cacheKey = JSON.stringify(format);
+
+		if(!Format.cachedNumberFormat.has(cacheKey)) {
+
+			try {
+				Format.cachedNumberFormat.set(cacheKey, new Intl.NumberFormat(format.locale, format));
+			}
+			catch(e) {
+				Format.cachedNumberFormat.set(cacheKey, new Intl.NumberFormat());
+			}
+		}
+
+		if(!format.roundOff)
+			return Format.cachedNumberFormat.get(cacheKey).format(number);
+
+		let result;
+
+		{
+			const formatWhiteList = JSON.parse(JSON.stringify(format));
+
+			for(const format in formatWhiteList) {
+
+				if(!format.endsWith('Digits'))
+					delete formatWhiteList[format];
+			}
+
+			result = parseFloat(Format.number(number, {...formatWhiteList, useGrouping: false}));
+		}
+
+		{
+			if(format.roundOff == 'round')
+				result = result.toFixed(format.roundPrecision || 0);
+
+			else if(['ceil', 'floor'].includes(format.roundOff))
+				result = Math[format.roundOff](result);
+		}
+
+		{
+			const {roundOff: _, ...formatBlacklist} = JSON.parse(JSON.stringify(format));
+
+			return Format.number(result, formatBlacklist);
+		}
 	}
 }
 
@@ -2282,9 +2333,9 @@ class MultiSelect {
 
 			row.input.checked = this.selectedValues.has(row.input.value);
 
-			let
-				hide = false,
-				name = row.name;
+			row.hide = false;
+
+			let name = row.name;
 
 			if(!name)
 				name = '';
@@ -2294,9 +2345,9 @@ class MultiSelect {
 			const rowValue = name.concat(' ', row.value, ' ', row.subtitle || '');
 
 			if(search.value && !rowValue.toLowerCase().trim().includes(search.value.toLowerCase().trim()))
-				hide = true;
+				row.hide = true;
 
-			row.input.parentElement.classList.toggle('hidden', hide);
+			row.input.parentElement.classList.toggle('hidden', row.hide);
 			row.input.parentElement.classList.toggle('selected', row.input.checked);
 		}
 
@@ -2351,10 +2402,11 @@ class MultiSelect {
 		if(!this.multiple || this.disabled || !this.datalist)
 			return;
 
-		this.datalist.map(obj => this.selectedValues.add(obj.value ? obj.value.toString() : ''));
+		for(const data of this.datalist) {
 
-		if(this.changeCallback)
-			this.changeCallback();
+			if(data.value && !data.hide)
+				this.selectedValues.add(data.value.toString())
+		}
 
 		this.recalculate();
 	}
@@ -2368,9 +2420,6 @@ class MultiSelect {
 			return;
 
 		this.selectedValues.clear();
-
-		if(this.changeCallback)
-			this.changeCallback();
 
 		this.recalculate();
 	}

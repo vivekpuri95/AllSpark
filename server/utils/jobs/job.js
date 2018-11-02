@@ -14,7 +14,9 @@ class Job {
 		this.tasks = tasks;
 	}
 
-	async load() {
+	async load(externalParameters = []) {
+
+		this.externalParameters = externalParameters;
 
 		await this.fetchInfo();
 		await this.contact.getUsers();
@@ -93,8 +95,8 @@ class Job {
 		const db = dbConfig.write.database.concat('_logs');
 
 		await mysql.query(
-			"insert into ??.tb_jobs_history (owner, successful, timing, owner_id, response, runtime) values(?, ?, ?, ?, ?, ?)",
-			[db, "job", !(error || this.error) ? 1 : 0, this.job.next_interval, this.job.job_id, this.error || response, (this.jobRunTime|| 0).toFixed(4) ],
+			"insert into ??.tb_jobs_history (owner, successful, timing, owner_id, response, runtime, creation_date) values(?, ?, ?, ?, ?, ?, DATE(NOW()))",
+			[db, "job", !(error || this.error) ? 1 : 0, this.job.next_interval, this.job.job_id, this.error || response, (this.jobRunTime || 0).toFixed(4)],
 			"write"
 		)
 	}
@@ -117,18 +119,18 @@ class Job {
 
 		for (const order of Object.keys(taskOrderMapping).sort()) {
 
-
+			let externalParameters = this.externalParameters;
 			const promiseArr = taskOrderMapping[order].map(task => {
 
-				if(task.task.inherit_data && !erred) {
+				if (task.task.inherit_data && !erred) {
 
-					return task.load({
+					externalParameters.push({
 						placeholder: "data",
 						value: JSON.stringify(previousOutput.length > 1 ? previousOutput : previousOutput[0])
-					})
+					});
 				}
 
-				return task.load();
+				return task.load(externalParameters);
 			});
 
 			const tasksExecuteResponse = await commonFun.promiseParallelLimit(10, promiseArr);

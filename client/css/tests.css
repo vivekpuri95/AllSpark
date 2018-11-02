@@ -1,9 +1,10 @@
 #list .toolbar {
 	position: sticky;
 	top: 50px;
-	background: #eee;
+	background: var(--color-background);
 	z-index: 1;
 	justify-content: space-between;
+	color: var(--color-background-text);
 }
 	#list .toolbar #progress {
 		display: grid;
@@ -30,10 +31,9 @@
 			flex: 1 0 100%;
 			margin: calc(var(--gap) * 2) 0;
 			font-size: 125%;
-			border-bottom: 1px dashed #ccc;
+			border-bottom: 1px dashed var(--color-border);
 		}
 		#tests section > table {
-			background: #fff;
 			box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		}
 		#tests section > table {
@@ -56,7 +56,7 @@
 							box-shadow var(--transition-duration);
 			}
 			#tests section > table tbody td.test:hover {
-				background: #ddd;
+				background: var(--color-hover);
 			}
 			#tests section > table tbody td.test:active {
 				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.25);

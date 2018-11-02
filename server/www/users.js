@@ -341,7 +341,7 @@ exports.list = class extends API {
 		const userUpdateCategories = this.user.privileges.filter(x => [constants.privilege["user.update"], "user"].includes(x.privilege_name)).map(x => x.category_id);
 		const deleteUserCategories = this.user.privileges.filter(x => [constants.privilege["user.delete"], "user"].includes(x.privilege_name)).map(x => x.category_id);
 
-		if (!constants.adminCategory.some(x => userCategories.includes(x))) {
+		if (!constants.adminCategory.some(x => userCategories.includes(x)) && !this.user.privilege.has('superadmin')) {
 
 			userList = userList.filter(x => {
 

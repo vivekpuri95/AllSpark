@@ -1,7 +1,7 @@
 const mysql = require('./utils/mysql').MySQL;
 const bigquery = require('./utils/bigquery').setup;
 const settings = require('./utils/settings');
-
+const redis = require("./utils/redis").Redis;
 
 async function loadAccounts() {
 
@@ -24,7 +24,7 @@ async function loadAccounts() {
 		LEFT JOIN
 			tb_settings s
 		ON
-			a.account_id = s.account_id
+			a.account_id = s.owner_id
 			AND s.status = 1
 			AND s.owner = 'account'
 			AND s.profile = 'main'

@@ -24,6 +24,7 @@ class User {
 			roles: this.roles,
 			privileges: this.privileges,
 			session_id: this.session_id,
+			settings: Array.from(this.settings),
 			exp: this.exp,
 			iat: this.iat,
 		};
@@ -101,10 +102,17 @@ function privilege(userObj) {
 				return true;
 			}
 
+			const isSuperAdmin = userObj.privileges.filter(x => x.privilege_name == "superadmin").length;
+
 
 			if (privilegeName === "superadmin") {
 
-				return userObj.privileges.filter(x => x.privilege_name == privilegeName).length;
+				return isSuperAdmin;
+			}
+
+			if(isSuperAdmin) {
+
+				return true;
 			}
 
 			if (userObj.error) {

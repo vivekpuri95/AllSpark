@@ -34,6 +34,7 @@ class HTMLAPI extends API {
 		let theme = 'light';
 
 		if(!this.user && this.request.cookies.token) {
+
 			const token_details = await commonFunctions.getUserDetailsJWT(this.request.cookies.token);
 
 			if(!token_details.error)
@@ -576,11 +577,6 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 					<div class="collapse-panel">
 						<span class="left"><i class="fa fa-angle-double-left"></i></span>
 					</div>
-
-					<span class="powered-by ${this.account.settings.get('disable_powered_by') ? 'hidden' : ''}">
-						Powered by&nbsp;${config.has('footer_powered_by') ? config.get('footer_powered_by') : ''}
-						<a class="strong" href="https://github.com/Jungle-Works/AllSpark" target="_blank">AllSpark</a>
-					</span>
 				</footer>
 			</nav>
 			<div class="nav-blanket hidden"></div>
@@ -630,6 +626,11 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 					<button id="configure" class="hidden">
 						<i class="fas fa-cog"></i>
 						Configure
+					</button>
+
+					<button id="full-screen">
+						<i class="fas fa-expand"></i>
+						Full Screen
 					</button>
 				</div>
 
@@ -1684,12 +1685,18 @@ router.get('/tests', API.serve(class extends HTMLAPI {
 			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
 
 			'/js/reports.js',
-			'/js/profile.js',
+			'/js/user/profile.js',
+			'/js/settings-manager.js',
 			'/js/tests.js',
 		]);
 	}
 
 	main() {
+
+		if(!this.user || this.environment.name.includes('production') || this.environment.name.includes('staging'))
+			throw new API.Exception(401, 'Tests cannot run on production database');
+
+		this.user.privilege.needs('superadmin');
 
 		return `
 

@@ -2,13 +2,13 @@
 	--color-primary: #212121;
 	--color-primary-text: #eee;
 
-	--color-secondary: #FFC107;
-	--color-secondary-text: #333;
+	--color-secondary: #a45491;
+	--color-secondary-text: #fff;
 
-	--color-selected: #a55a59;
+	--color-selected: #2c9d58;
 	--color-selected-text: #fff;
 
-	--color-hover: #666666;
+	--color-hover: rgba(255, 255, 255, 0.15);
 	--color-hover-text: #eee;
 
 	--color-background: #303030;
@@ -29,7 +29,7 @@ input:not([type=checkbox]):not([type=radio]),
 select,
 button,
 textarea {
-	background: var(--color-hover);
+	background: #666666;
 	color: var(--color-hover-text);
 	border: 0;
 }

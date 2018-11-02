@@ -36,15 +36,14 @@ Page.class = class Dashboards extends Page {
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
-		this.nav.querySelector('.collapse-panel').on('click', () => {
+		this.nav.querySelector('.collapse-panel').on('click', async () => {
 
 			document.querySelector('body').classList.toggle('floating');
+
+			await Storage.set('menu-collapsed', document.querySelector('body').classList.contains('floating'));
 			this.nav.classList.remove('show');
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
-
-		if (this.account.settings.get('disable_powered_by'))
-			this.nav.querySelector('footer').classList.add('hidden');
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
@@ -413,11 +412,16 @@ Page.class = class Dashboards extends Page {
 
 		this.navbar.render();
 
-		if (await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size)) {
+		if (this.account.settings.get('user_onboarding') && (await Storage.get('newUser') || (this.user.privileges.has('admin') && !DataSource.list.size))) {
 
 			await Storage.set('newUser', (await Storage.get('newUser')) || {});
 
 			Page.loadOnboardScripts();
+		}
+
+		if((await Storage.has('menu-collapsed')) && (await Storage.get('menu-collapsed'))) {
+
+			document.querySelector('body').classList.toggle('floating', !document.querySelector('body').classList.contains('floating'));
 		}
 
 		if (window.location.pathname.split('/').pop() === 'first') {
@@ -627,6 +631,46 @@ class Dashboard {
 				globalFilters.classList.toggle('top');
 				globalFilters.classList.toggle('right');
 			}
+		});
+
+		const fullScreenButton = page.container.querySelector('#reports .toolbar #full-screen');
+
+		fullScreenButton.on('click', () => {
+
+			const dashboardList = page.container.querySelector('#reports');
+
+			if(document.isFullScreen || document.webkitIsFullScreen || document.mozIsFullScreen) {
+
+				if(document.exitFullscreen)
+					document.exitFullscreen();
+
+				else if(document.webkitExitFullscreen)
+					document.webkitExitFullscreen();
+
+				else if(document.mozExitFullscreen)
+					document.mozExitFullscreen();
+			}
+
+			else {
+
+				if(dashboardList.requestFullscreen)
+					dashboardList.requestFullscreen();
+
+				else if(dashboardList.webkitRequestFullscreen)
+					dashboardList.webkitRequestFullscreen();
+
+				else if(dashboardList.mozRequestFullscreen)
+					dashboardList.mozRequestFullscreen();
+			}
+		});
+
+		document.on('webkitfullscreenchange', () => {
+
+			if(document.isFullScreen || document.webkitIsFullScreen || document.mozIsFullScreen)
+				fullScreenButton.innerHTML = `<i class="fas fa-compress"></i> Exit Full Screen`;
+
+			else
+				fullScreenButton.innerHTML = `<i class="fas fa-expand"></i> Full Screen`;
 		});
 	}
 
@@ -980,20 +1024,13 @@ class Dashboard {
 		dashboardName.innerHTML = `
 			<span>${this.page.parents(this.id).filter(x => this.page.list.has(x)).map(x => this.page.list.get(x).name).reverse().join(`<span class="NA">&rsaquo;</span>`)}</span>
 			<div>
-				<span class="toggle-dashboard-toolbar hidden"><i class="fas fa-ellipsis-v"></i></span>
+				<span class="toggle-dashboard-toolbar"><i class="fas fa-ellipsis-v"></i></span>
 			</div>
 		`;
 
 		dashboardName.classList.remove('hidden');
 
-		if(this.editable) {
-
-			const toggleDashboardToolbar =  dashboardName.querySelector('.toggle-dashboard-toolbar');
-
-			toggleDashboardToolbar.classList.remove('hidden');
-
-			toggleDashboardToolbar.on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
-		}
+        dashboardName.querySelector('.toggle-dashboard-toolbar').on('click', () => Dashboard.toolbar.classList.toggle('hidden'));
 
 		this.page.render({dashboardId: this.id, renderNav: false, updateNav: true, reloadDashboard: false});
 

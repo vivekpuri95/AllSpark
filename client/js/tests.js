@@ -6,7 +6,8 @@ Page.class = class Tests extends Page {
 
 		this.sections = new Map;
 
-		this.container.querySelector('#list .toolbar #run').on('click', () => this.run());
+		this.container.run = this.container.querySelector('#list .toolbar #run');
+		this.container.run.on('click', () => this.run());
 
 		this.load();
 
@@ -58,6 +59,9 @@ Page.class = class Tests extends Page {
 	}
 
 	async run() {
+
+		this.group_id = Math.floor(Math.random() * 10000000);
+		this.scope = 'complete';
 
 		for(const section of this.sections.values())
 			section.reset();
@@ -124,7 +128,13 @@ class TestSection extends Map {
 			thead = container.querySelector('thead tr'),
 			tbody = container.querySelector('tbody');
 
-		h2.on('dblclick', () => this.run());
+		h2.on('dblclick', () => {
+
+			this.tests.group_id = Math.floor(Math.random() * 10000000);
+			this.tests.scope = 'section';
+
+			this.run();
+		});
 
 		for(const user of this.tests.users)
 			thead.insertAdjacentHTML('beforeend', `<th>${user.name}</th>`);
@@ -257,7 +267,13 @@ class TestUser {
 
 		container.classList.add('test');
 
-		container.on('dblclick', () => this.run());
+		container.on('dblclick', () => {
+
+			this.test.section.tests.group_id = Math.floor(Math.random() * 10000000);
+			this.test.section.tests.scope = 'test';
+
+			this.run();
+		});
 		container.on('click', () => setTimeout(this.show(), 300));
 
 		return container;
@@ -265,9 +281,10 @@ class TestUser {
 
 	async run() {
 
-		DialogBox.container = document.createElement('div');
-		SnackBar.container['bottom-left'] = document.createElement('div');
-		NotificationBar.container =  document.createElement('div');
+		if(this.test.section.tests.container.run.disabled)
+			return;
+
+		this.test.section.tests.container.run.disabled = true;
 
 		const start = Date.now();
 
@@ -275,6 +292,23 @@ class TestUser {
 		this.cell.classList.add('running');
 
 		this.failed = false;
+
+		const
+			dialogBox = DialogBox.container,
+			snackBar = SnackBar.container['bottom-left'],
+			notificationBar = NotificationBar.container;
+
+		for(const test of this.test.disabledModules || []) {
+
+			if(test == 'DialogBox')
+				DialogBox.container = document.createElement('div');
+
+			else if(test == 'SnackBar')
+				SnackBar.container['bottom-left'] = document.createElement('div');
+
+			else if(test == 'NotificationBar')
+				NotificationBar.container =  document.createElement('div');
+		}
 
 		try {
 
@@ -299,9 +333,36 @@ class TestUser {
 
 		this.test.section.tests.progress();
 
-		NotificationBar.container = document.querySelector('.notification-bar-container');
-		SnackBar.container['bottom-left'] = document.querySelector('.snack-bar-container.bottom-left');
-		DialogBox.container = document.body;
+		const
+			parameter = {
+				section: this.test.section.name,
+				test: this.test.name,
+				executed_as: page.user.user_id,
+				time: this.duration,
+				result: this.failed ? 'Failed' : 'Passed',
+				response: JSON.stringify(this.response),
+				group_id: this.test.section.tests.group_id,
+				scope: this.test.section.tests.scope,
+			},
+			options = {
+				method: 'POST',
+			};
+
+		await API.call('tests/logs/save', parameter, options);
+
+		for(const test of this.test.disabledModules || []) {
+
+			if(test == 'DialogBox')
+				DialogBox.container = dialogBox;
+
+			else if(test == 'SnackBar')
+				SnackBar.container['bottom-left'] = snackBar;
+
+			else if(test == 'NotificationBar')
+				NotificationBar.container =  notificationBar;
+		}
+
+		this.test.section.tests.container.run.disabled = false;
 	}
 
 	show() {
@@ -523,6 +584,12 @@ const tests = {
 
 		ShowHide: class DialogBoxShowHide extends Test {
 
+			get disabledModules() {
+				return [
+					'DialogBox',
+				];
+			}
+
 			async execute() {
 
 				const dialogBox = new DialogBox();
@@ -533,6 +600,12 @@ const tests = {
 		},
 
 		SetHeadingBody: class DialogBoxSetHeadingBody extends Test {
+
+			get disabledModules() {
+				return [
+					'DialogBox',
+				];
+			}
 
 			async execute() {
 
@@ -551,6 +624,12 @@ const tests = {
 
 		ShowHide: class SnackBarShowHide extends Test {
 
+			get disabledModules() {
+				return [
+					'SnackBar',
+				];
+			}
+
 			async execute() {
 
 				const snackbar = new SnackBar({message: 'a'});
@@ -564,6 +643,12 @@ const tests = {
 	NotificationBar: {
 
 		ShowHide: class NotificationBarShowHide extends Test {
+
+			get disabledModules() {
+				return [
+					'NotificationBar',
+				];
+			}
 
 			async execute() {
 
@@ -708,9 +793,105 @@ const tests = {
 		},
 	},
 
+	SettingsManager: {
+
+		Load: class SettingsManagerLoad extends Test {
+
+			async execute() {
+
+				const settings_json = [
+					{
+						key: 'test',
+						type: 'url',
+						name: 'test',
+					},
+				];
+
+				const settingsManger = new SettingsManager({
+					owner: 'user',
+					owner_id: user.user_id,
+					format: settings_json,
+					disable_aside: false,
+				});
+
+				await settingsManger.load();
+			}
+		},
+
+		Add: class SettingsManagerProfileAdd extends Test {
+
+			async execute() {
+
+				const settings_json = [
+					{
+						key: 'test',
+						type: 'url',
+						name: 'test',
+					},
+				];
+
+				const settingsManger = new SettingsManager({
+					owner: 'user',
+					owner_id: user.user_id,
+					format: settings_json,
+					disable_aside: false,
+				});
+
+				await settingsManger.load();
+
+				const string = 'test' + Math.random();
+
+				settingsManger.container.querySelector('aside form').profile.value = string;
+
+				await settingsManger.add();
+
+				this.assert(Array.from(settingsManger.profiles.values()).some(s => s.profile.includes(string)));
+			}
+		},
+
+		Delete: class SettingsManagerProfileDelete extends Test {
+
+			async execute() {
+
+				const settings_json = [
+					{
+						key: 'test',
+						type: 'url',
+						name: 'test',
+					},
+				];
+
+				const settingsManger = new SettingsManager({
+					owner: 'user',
+					owner_id: user.user_id,
+					format: settings_json,
+					disable_aside: false,
+				});
+
+				await settingsManger.load();
+
+				const string = 'test' + Math.random();
+
+				settingsManger.container.querySelector('aside form').profile.value = string;
+
+				await settingsManger.add();
+
+				await Array.from(settingsManger.profiles.values()).filter(s => s.profile.includes(string))[0].delete();
+
+				this.assert(!Array.from(settingsManger.profiles.values()).filter(s => s.profile.includes(string)).length);
+			}
+		},
+	},
+
 	ObjectRoles: {
 
 		Load: class ObjectRolesLoad extends Test {
+
+			get disabledModules() {
+				return [
+					'SnackBar',
+				];
+			}
 
 			async execute() {
 
@@ -721,6 +902,12 @@ const tests = {
 		},
 
 		Render: class ObjectRolesRender extends Test {
+
+			get disabledModules() {
+				return [
+					'SnackBar',
+				];
+			}
 
 			async execute() {
 
@@ -734,6 +921,12 @@ const tests = {
 
 		AddUser: class ObjectRolesAddUser extends Test {
 
+			get disabledModules() {
+				return [
+					'SnackBar',
+				];
+			}
+
 			async execute() {
 
 				const objectRoles = new ObjectRoles('user', 100);
@@ -743,11 +936,18 @@ const tests = {
 				objectRoles.container;
 
 				objectRoles.multiSelect.value = objectRoles.multiSelect.datalist[0].value;
+
 				await objectRoles.insert();
 			}
 		},
 
 		Delete: class ObjectRolesDelete extends Test {
+
+			get disabledModules() {
+				return [
+					'SnackBar',
+				];
+			}
 
 			async execute() {
 
@@ -755,7 +955,10 @@ const tests = {
 
 				await objectRoles.load();
 
+				objectRoles.container;
+
 				objectRoles.multiSelect.value = objectRoles.multiSelect.datalist[0].value;
+
 				await objectRoles.insert();
 
 				objectRoles.container.querySelector('table td.action.red').click();

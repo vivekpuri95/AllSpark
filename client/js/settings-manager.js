@@ -6,7 +6,9 @@ class SettingsManager {
 		this.owner_id = owner_id;
 		this.format = format;
 		this.disable_aside = disable_aside;
+
 		this.profiles = new Map;
+		this.callbacks = new Map;
 	}
 
 	async load() {
@@ -108,14 +110,16 @@ class SettingsManager {
 			container.classList.add('aside-hidden');
 		}
 
-		container.querySelector('form').on('submit', e => this.add(e));
+		container.querySelector('form').on('submit', e => {
+
+			e.preventDefault();
+			this.add();
+		});
 
 		return container;
 	}
 
-	async add(e) {
-
-		e.preventDefault();
+	async add() {
 
 		const form = this.container.querySelector('form');
 
@@ -157,16 +161,24 @@ class SettingsManager {
 			throw e;
 		}
 	}
+
+	on(event, callback) {
+
+		if(!this.callbacks.has(event))
+			this.callbacks.set(event, new Set);
+
+		this.callbacks.get(event).add(callback);
+	}
 }
 
 class SettingsManagerProfile {
 
-	constructor(setting, parent) {
+	constructor(setting, settingsManager) {
 
 		for(const key in setting)
 			this[key] = setting[key];
 
-		this.parent = parent;
+		this.settingsManager = settingsManager;
 	}
 
 	get row() {
@@ -182,16 +194,19 @@ class SettingsManagerProfile {
 		`;
 
 		tr.on('click', () => this.edit());
-		tr.querySelector('.action').on('click', (e) => this.delete(e));
+		tr.querySelector('.action').on('click', (e) => {
+			e.stopPropagation();
+			this.delete()
+		});
 
 		return tr;
 	}
 
 	edit() {
 
-		this.parent.profiles.selected = this;
+		this.settingsManager.profiles.selected = this;
 
-		this.parent.render();
+		this.settingsManager.render();
 	}
 
 	get section() {
@@ -222,7 +237,7 @@ class SettingsManagerProfile {
 
 		this.settings = [];
 
-		for(const format of this.parent.format) {
+		for(const format of this.settingsManager.format) {
 
 			let setting = SettingsManager.types.get(format.type.toLowerCase());
 
@@ -278,9 +293,9 @@ class SettingsManagerProfile {
 
 			await page.serviceWorker.clear();
 
-			await this.parent.load();
+			await this.settingsManager.load();
 
-			this.parent.profiles.get(this.id).edit();
+			this.settingsManager.profiles.get(this.id).edit();
 
 			new SnackBar({
 				message: this.owner + ' Settings Profile Saved',
@@ -298,14 +313,13 @@ class SettingsManagerProfile {
 
 			throw e;
 		}
+
+		// Call any assigned callbacks when the settings are saved
+		for(const callback of this.settingsManager.callbacks.get('submit') || [])
+			callback();
 	}
 
 	async delete(e) {
-
-		e.stopPropagation();
-
-		if(!confirm('Are you sure?'))
-			return;
 
 		const
 			options = {
@@ -323,9 +337,9 @@ class SettingsManagerProfile {
 
 			await page.serviceWorker.clear();
 
-			this.parent.profiles.selected = null;
+			this.settingsManager.profiles.selected = null;
 
-			await this.parent.load();
+			await this.settingsManager.load();
 
 			new SnackBar({
 				message: this.owner + ' Settings Profile Deleted',

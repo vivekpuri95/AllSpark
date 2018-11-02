@@ -3164,7 +3164,8 @@ class ReportVisualizationDashboards extends Set {
 				method: 'POST',
 			},
 			parameters = {
-				dashboard_id,
+				owner: 'dashboard',
+				owner_id: dashboard_id,
 				visualization_id: stage.visualization.visualization_id,
 				format: JSON.stringify({position: parseInt(form.position.value)})
 			};
@@ -3176,7 +3177,7 @@ class ReportVisualizationDashboards extends Set {
 			await stage.dashboards.load({force: true});
 
 			new SnackBar({
-				message: 'Visualization Added to Dahsboard',
+				message: 'Visualization Added to Dashboard',
 				subtitle: `${stage.dashboards.response.get(dashboard_id).name} #${dashboard_id}`,
 				icon: 'fas fa-plus',
 			});
@@ -3279,7 +3280,7 @@ class ReportVisualizationDashboard {
 
 		this.dashboardMultiSelect = new MultiSelect({datalist, multiple: false, dropDownPosition: 'top'});
 
-		this.dashboardMultiSelect.value = this.visualization.dashboard_id;
+		this.dashboardMultiSelect.value = this.visualization.owner_id;
 
 		form.querySelector('.dashboard_id').appendChild(this.dashboardMultiSelect.container);
 
@@ -3319,7 +3320,7 @@ class ReportVisualizationDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Deleted',
-				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} #${this.visualization.dashboard_id}`,
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.owner_id).name} #${this.visualization.owner_id}`,
 				icon: 'far fa-trash-alt',
 			});
 
@@ -3352,7 +3353,8 @@ class ReportVisualizationDashboard {
 			},
 			parameters = {
 				id: this.visualization.id,
-				dashboard_id: this.dashboardMultiSelect.value[0],
+				owner: 'dashboard',
+				owner_id: this.dashboardMultiSelect.value[0],
 				visualization_id: this.visualization.visualization_id,
 				format: JSON.stringify(this.visualization.format)
 			};
@@ -3365,7 +3367,7 @@ class ReportVisualizationDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Saved',
-				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} #${this.visualization.dashboard_id}`,
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.owner_id).name} #${this.visualization.owner_id}`,
 				icon: 'far fa-save',
 			});
 

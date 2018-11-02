@@ -22,7 +22,7 @@ exports.list = class extends API {
 			LEFT JOIN
 				tb_settings s
 			ON
-				s.account_id = a.account_id
+				s.owner_id = a.account_id
 				AND s.owner = 'account'
 			LEFT JOIN
 				tb_account_features f
@@ -81,7 +81,7 @@ exports.get = class extends API {
 			LEFT JOIN
 				tb_settings s
 			ON
-				s.account_id = a.account_id
+				s.owner_id = a.account_id
 				AND s.owner = 'account'
 				AND s.status = 1
 				AND s.profile = 'main'
@@ -184,7 +184,7 @@ exports.delete = class extends API {
 		);
 
 		await this.mysql.query(
-			"update tb_settings set status = 0 where account_id = ?",
+			"update tb_settings set status = 0 where owner_id = ? and owner = 'account'",
 			[account_id],
 			"write"
 		);

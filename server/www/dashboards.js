@@ -32,7 +32,7 @@ class Dashboard extends API {
 
 		let dashboardQueryList = this.mysql.query(`
 			SELECT
-				dashboard_id,
+				vd.owner_id as dashboard_id,
 				query_id
 			from
 				tb_query q
@@ -40,19 +40,20 @@ class Dashboard extends API {
 				tb_query_visualizations qv
 				using(query_id)
 			join
-				tb_visualization_dashboard vd
+				tb_visualization_canvas vd
 				using(visualization_id)
 			join
 				tb_dashboards d
 			on
-				d.id = vd.dashboard_id
+				d.id = vd.owner_id				
 			where
 				d.status = 1
 				and q.is_enabled = 1 
 				and q.is_deleted = 0
 				and q.account_id = ?
+				AND vd.owner = 'dashboard'
 			group by 
-				dashboard_id,
+				vd.owner_id,
 				query_id
 		`,
 			[this.account.account_id]);
@@ -62,18 +63,21 @@ class Dashboard extends API {
 				vd.*,
 				query_id
 			FROM
-				tb_visualization_dashboard vd
+				tb_visualization_canvas vd
 			JOIN
 				tb_query_visualizations qv USING(visualization_id)
 			JOIN
-				tb_dashboards d ON d.id = vd.dashboard_id
+				tb_dashboards d 
+			ON 
+				d.id = vd.owner_id				
 			JOIN
 				tb_query q USING(query_id)
 			WHERE
-				d.status = 1 AND
-				d.account_id = ? AND
-				q.is_enabled = 1 AND
-				q.is_deleted = 0
+				d.status = 1 
+				AND d.account_id = ? 
+				AND q.is_enabled = 1 
+				AND q.is_deleted = 0
+				AND vd.owner = 'dashboard' 
 			`,
 			[this.account.account_id]
 		);
@@ -146,7 +150,7 @@ class Dashboard extends API {
 
 		for (const queryDashboard of visualizationDashboards) {
 
-			if (!dashboardObject[queryDashboard.dashboard_id]) {
+			if (!dashboardObject[queryDashboard.owner_id]) {
 
 				continue;
 			}
@@ -159,7 +163,7 @@ class Dashboard extends API {
 				queryDashboard.format = [];
 			}
 
-			dashboardObject[queryDashboard.dashboard_id].visualizations.push(queryDashboard);
+			dashboardObject[queryDashboard.owner_id].visualizations.push(queryDashboard);
 		}
 
 		for (const d in dashboardObject) {

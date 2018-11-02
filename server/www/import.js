@@ -93,9 +93,11 @@ exports.query = class extends API {
 }
 
 exports.dashboard = class extends API {
+
 	async dashboard() {
 
 		let visualizations, data;
+
 		try {
 			data = JSON.parse(this.request.body.json);
 		}
@@ -125,17 +127,21 @@ exports.dashboard = class extends API {
 		const dashboardVisualization = [];
 
 		for (const visualization of visualizations) {
+
 			for (const idMap of visualizationsIds) {
+
 				for (const idObj of idMap) {
+
 					if (idObj.old_id == visualization.visualization_id) {
-						dashboardVisualization.push([dashboardId, idObj.new_id, JSON.stringify(visualization.format)]);
+
+						dashboardVisualization.push(['dashboard', dashboardId, idObj.new_id, JSON.stringify(visualization.format)]);
 					}
 				}
 			}
 		}
 
 		await this.mysql.query(
-			'INSERT INTO tb_visualization_dashboard(dashboard_id, visualization_id, format) VALUES ?',
+			'INSERT INTO tb_visualization_canvas(owner, owner_id, visualization_id, format) VALUES ?',
 			[dashboardVisualization],
 			'write'
 		);

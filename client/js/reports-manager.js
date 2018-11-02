@@ -202,7 +202,7 @@ class ReportsMangerPreview {
 		this.page = page;
 		this.container = this.page.container.querySelector('#preview');
 
-		this.position = 'right';
+		this.position('right');
 	}
 
 	async load(options = {}) {
@@ -239,7 +239,7 @@ class ReportsMangerPreview {
 		this.container.appendChild(this.report.container);
 		this.container.classList.remove('hidden');
 
-		this.page.container.classList.add('preview-' + this.position);
+		this.page.container.classList.add('preview-' + this._position);
 
 		await this.report.visualizations.selected.load();
 
@@ -256,14 +256,10 @@ class ReportsMangerPreview {
 		return this.container.classList.contains('hidden');
 	}
 
-	set position(position) {
+	async position(position) {
 
 		this._position = position;
-		this.move();
-	}
-
-	get position() {
-		return this._position;
+		await this.move();
 	}
 
 	async move({render = true} = {}) {
@@ -273,10 +269,10 @@ class ReportsMangerPreview {
 		if(this.hidden || !this.report)
 			return;
 
-		this.page.container.classList.add('preview-' + this.position);
+		this.page.container.classList.add('preview-' + this._position);
 
 		if(render)
-			this.report.visualizations.selected.render({resize: true});
+			await this.report.visualizations.selected.render({resize: true});
 	}
 }
 
@@ -472,6 +468,8 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 	async load() {
 
+		this.page.searchBar.data = Array.from(DataSource.list.values());
+
 		this.page.stages.get('configure-visualization').lastSelectedVisualizationId = null;
 
 		const tbody = this.container.querySelector('tbody');
@@ -519,7 +517,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td>${report.is_enabled ? 'Yes' : 'No'}</td>
 				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action configure ${!report.editable ? 'grey' : 'green'}">Configure</td>
 				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action define ${!report.editable ? 'grey' : 'green'}">Define</td>
-				<td title="${!report.editable ? 'Not enough privileges' : ''}" class="action delete ${!report.editable ? 'grey' : 'red'}">Delete</td>
+				<td title="${!report.deletable ? 'Not enough privileges' : ''}" class="action delete ${!report.deletable ? 'grey' : 'red'}">Delete</td>
 			`;
 
 			for(const tag of tags)
@@ -654,7 +652,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 		const
 			parameters = {
 				query_id: report.query_id,
-				is_deleted: 1,
 			},
 			options = {
 				method: 'POST',
@@ -662,7 +659,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		try {
 
-			await API.call('reports/report/update', parameters, options);
+			await API.call('reports/report/delete', parameters, options);
 
 			await DataSource.load(true);
 
@@ -735,6 +732,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 				)
 			}
 		}
+
+		this.form.subtitle.textContent = null;
 
 		for(const category of MetaData.categories.values()) {
 
@@ -1049,7 +1048,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.container.querySelector('#define-report-parts').appendChild(this.queryLogs.container);
 
-		this.page.preview.position = 'bottom';
+		this.page.preview.position('bottom');
 		this.container.querySelector('#preview-toggle').classList.toggle('selected', !this.page.preview.hidden);
 
 		this.container.querySelector('#filter-form').classList.add('hidden');
@@ -1887,7 +1886,7 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 		if(!this.report.visualizations.length)
 			tbody.innerHTML = '<tr class="NA"><td colspan="6">No Visualization Found!</td></tr>';
 
-		this.page.preview.position = 'right';
+		await this.page.preview.position('right');
 	}
 });
 
@@ -2043,7 +2042,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 		this.container.querySelector('.visualization-form.stage-form').insertBefore(this.dashboards.container, this.container.querySelector('.visualization-form.stage-form .filters'));
 
 		this.dashboards.clear();
-		this.page.preview.position = 'right';
+		await this.page.preview.position('right');
 
 		this.dashboards.load();
 
@@ -4486,9 +4485,11 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+
 						<label>
 							<span>Show</span>
 							<select name="showValue">
+								<option value="">None</option>
 								<option value="value">Value</option>
 								<option value="percentage">Percentage</option>
 							</select>
@@ -4822,6 +4823,86 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 	}
 });
 
+ConfigureVisualization.types.set('sankey', class SankeyOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if (this.formContainer)
+			return this.formContainer;
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+						<label>
+							<span>Source Column</span>
+							<select name="sourceColumn"></select>
+						</label>
+
+						<label>
+							<span>Target Column</span>
+							<select name="targetColumn"></select>
+						</label>
+
+						<label>
+							<span>Value Column</span>
+							<select name="valueColumn"></select>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend"> Hide Legend
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideTooltip"> Hide Tooltip
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideHeader"> Hide Header
+							</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		const
+			sourceColumn = container.querySelector('select[name=sourceColumn]'),
+			targetColumn = container.querySelector('select[name=targetColumn]'),
+			valueColumn = container.querySelector('select[name=valueColumn]');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			sourceColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			targetColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			valueColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of this.formContainer.querySelectorAll('select, input')) {
+
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+		}
+
+		return container;
+	}
+});
+
 ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisualizationOptions {
 
 	get form() {
@@ -4906,8 +4987,8 @@ class ReportTransformations extends Set {
 
 		const select = this.container.querySelector('.add-transformation select');
 
-		for(const [key, type] of ReportTransformation.types)
-			select.insertAdjacentHTML('beforeend', `<option value="${key}">${new type({}, this).name}</option>`);
+		for(const [key, type] of DataSourceTransformation.types)
+			select.insertAdjacentHTML('beforeend', `<option value="${key}">${new type().name}</option>`);
 
 		this.container.querySelector('.add-transformation').on('submit', e => this.insert(e));
 
@@ -4941,11 +5022,54 @@ class ReportTransformations extends Set {
 
 		transformationsList.textContent = null;
 
-		for(const transformation of this)
-			transformationsList.appendChild(transformation.container);
+		transformationsList.insertAdjacentHTML('beforeend', `
 
-		if(!this.size)
-			transformationsList.innerHTML = '<div class="NA">No transformation added yet!</div>';
+			<fieldset class="subform">
+				<div class="actions">
+					<div class="preview" title="Preview Data"><i class="fas fa-eye"></i></div>
+				</div>
+				<legend>Report Executed</legend>
+				<div class="ellipsis disabled"><i class="fas fa-ellipsis-h"></i></div>
+			</fieldset>
+
+			<div class="next-connector">
+				<i class="fas fa-long-arrow-alt-down"></i>
+				<span class="NA">
+					<span>Rows: <strong>${Format.number(this.page.preview.report.originalResponse.data.length || 0)}</strong></span>
+					<span>Columns: <strong>${Format.number(Object.keys(this.page.preview.report.originalResponse.data[0] || {}).length)}</strong></span>
+					<span>Duration: <strong>${Format.number(this.page.preview.report.originalResponse.runtime || 0)}ms</strong></span>
+				</span>
+				<i class="fas fa-long-arrow-alt-down"></i>
+			</div>
+		`);
+
+		transformationsList.querySelector('fieldset .actions .preview').on('click', () => this.preview(-1));
+
+		for(const transformation of this) {
+
+			transformationsList.appendChild(transformation.container);
+			transformation.render && transformation.render();
+
+			transformationsList.insertAdjacentHTML('beforeend', `
+				<div class="next-connector">
+					<i class="fas fa-long-arrow-alt-down"></i>
+					<span class="NA">
+						<span>Rows: <strong>${Format.number(transformation.outgoing.rows || 0)}</strong></span>
+						<span>Columns: <strong>${Format.number(transformation.outgoing.columns.size)}</strong></span>
+						<span>Duration: <strong>${Format.number(transformation.executionDuration)}ms</strong></span>
+					</span>
+					<i class="fas fa-long-arrow-alt-down"></i>
+				</div>
+			`);
+		}
+
+		transformationsList.insertAdjacentHTML('beforeend', `
+
+			<fieldset class="subform">
+				<legend>Visualization Loaded</legend>
+				<div class="ellipsis disabled"><i class="fas fa-ellipsis-h"></i></div>
+			</fieldset>
+		`);
 
 		this.container.querySelector('h3 .count').innerHTML = `
 			${this.size ? this.size + ' transformation' + (this.size == 1 ? ' applied' : 's applied') : ''}
@@ -4962,7 +5086,7 @@ class ReportTransformations extends Set {
 		return response.filter(a => a);
 	}
 
-	preview() {
+	async preview(stopAt) {
 
 		const report = DataSource.list.get(this.stage.report.query_id);
 
@@ -4985,13 +5109,16 @@ class ReportTransformations extends Set {
 		}
 
 		report.transformationVisualization.options.transformations = this.json;
+		report.transformationVisualization.options.transformationsStopAt = stopAt;
 
-		this.page.preview.load({
+		await this.page.preview.load({
 			query_id: this.stage.report.query_id,
 			visualization: {
 				id: report.transformationVisualization.visualization_id
 			},
 		});
+
+		this.render();
 	}
 
 	clear() {
@@ -5008,7 +5135,6 @@ class ReportTransformations extends Set {
 
 		this.add(new (ReportTransformation.types.get(type))({type}, this));
 
-		this.render();
 		this.preview();
 	}
 }
@@ -5022,6 +5148,10 @@ class ReportTransformation {
 		this.page = this.stage.page;
 
 		Object.assign(this, transformation);
+
+		const type = DataSourceTransformation.types.get(this.key);
+
+		this.name = new type().name;
 	}
 
 	get container() {
@@ -5035,44 +5165,114 @@ class ReportTransformation {
 
 		container.innerHTML = `
 			<div class="actions">
-				<!--<div class="disabled" title="Disable Transformation"><i class="fas fa-ban"></i></div>-->
+				<div class="move-up" title="Move Up"><i class="fas fa-angle-up"></i></div>
+				<div class="move-down" title="Move Down"><i class="fas fa-angle-down"></i></div>
 				<div class="preview" title="Preview Data"><i class="fas fa-eye"></i></div>
 				<div class="remove" title="Remove Transformation"><i class="fa fa-times"></i></div>
 			</div>
-			<legend>${this.name}</legend>
-			<div class="transformation ${this.key}"></div>
+			<legend class="interactive">${this.name}</legend>
+			<div class="ellipsis"><i class="fas fa-ellipsis-h"></i></div>
+			<div class="transformation ${this.key} hidden"></div>
 		`;
 
-		// container.classList.toggle('disabled', this.disabled);
+		container.querySelector('legend').on('click', () => {
+			container.querySelector('.transformation').classList.toggle('hidden');
+			container.querySelector('.ellipsis').classList.toggle('hidden');
+		});
 
-		// container.querySelector('.actions .disabled').on('click', () => {
-		// 	this.disabled = !this.disabled;
-		// 	this.transformations.render();
-		// 	this.transformations.preview();
-		// });
+		container.querySelector('.ellipsis').on('click', () => {
+			container.querySelector('.transformation').classList.toggle('hidden');
+			container.querySelector('.ellipsis').classList.toggle('hidden');
+		});
+
+		container.querySelector('.actions .move-up').on('click', () => {
+
+			const
+				list = Array.from(this.transformations),
+				position = list.indexOf(this);
+
+			if(position == 0)
+				return;
+
+			list.splice(position, 1);
+			list.splice(position - 1, 0, this);
+
+			this.transformations.clear();
+
+			for(const transformation of list)
+				this.transformations.add(transformation);
+
+			this.transformations.preview();
+		});
+
+		container.querySelector('.actions .move-down').on('click', () => {
+
+			const
+				list = Array.from(this.transformations),
+				position = list.indexOf(this);
+
+			if(position == list.length - 1)
+				return;
+
+			list.splice(position, 1);
+			list.splice(position + 1, 0, this);
+
+			this.transformations.clear();
+
+			for(const transformation of list)
+				this.transformations.add(transformation);
+
+			this.transformations.preview();
+		});
 
 		container.querySelector('.actions .preview').on('click', () => {
-			this.transformations.render();
-			this.transformations.preview();
+
+			const
+				list = Array.from(this.transformations),
+				position = list.indexOf(this);
+
+			this.transformations.preview(position);
 		});
 
 		container.querySelector('.actions .remove').on('click', () => {
 			this.transformations.delete(this);
-			this.transformations.render();
 			this.transformations.preview();
 		});
 
 		return container;
+	}
+
+	get incoming() {
+
+		const
+			position = Array.from(this.transformations).indexOf(this),
+			transformation = Array.from(this.page.preview.report.transformations)[position];
+
+		return transformation ? transformation.incoming : {columns: this.page.preview.report.columns};
+	}
+
+	get outgoing() {
+
+		const
+			position = Array.from(this.transformations).indexOf(this),
+			transformation = Array.from(this.page.preview.report.transformations)[position];
+
+		return transformation ? transformation.outgoing : {columns: this.page.preview.report.columns};
+	}
+
+	get executionDuration() {
+
+		const
+			position = Array.from(this.transformations).indexOf(this),
+			transformation = Array.from(this.page.preview.report.transformations)[position];
+
+		return transformation ? transformation.executionDuration : 0;
 	}
 }
 
 ReportTransformation.types = new Map;
 
 ReportTransformation.types.set('pivot', class ReportTransformationPivot extends ReportTransformation {
-
-	get name() {
-		return 'Pivot Table';
-	}
 
 	get key() {
 		return 'pivot';
@@ -5107,7 +5307,11 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		addRow.type = 'button';
 		addRow.innerHTML = `<i class="fa fa-plus"></i> Add New Row`;
-		addRow.on('click', () => rows.insertBefore(this.row(), addRow));
+
+		addRow.on('click', () => {
+			rows.insertBefore(this.row(), addRow);
+			this.render();
+		});
 
 		rows.appendChild(addRow);
 
@@ -5118,7 +5322,11 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		addColumn.type = 'button';
 		addColumn.innerHTML = `<i class="fa fa-plus"></i> Add New Column`;
-		addColumn.on('click', () => columns.insertBefore(this.column(), addColumn));
+
+		addColumn.on('click', () => {
+			columns.insertBefore(this.column(), addColumn);
+			this.render();
+		});
 
 		columns.appendChild(addColumn);
 
@@ -5129,13 +5337,19 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		addValue.type = 'button';
 		addValue.innerHTML = `<i class="fa fa-plus"></i> Add New Value`;
-		addValue.on('click', () => values.insertBefore(this.value(), addValue));
+
+		addValue.on('click', () => {
+			values.insertBefore(this.value(), addValue);
+			this.render();
+		});
 
 		values.appendChild(addValue);
 
 		container.appendChild(rows);
 		container.appendChild(columns);
 		container.appendChild(values);
+
+		this.render();
 
 		return super.container;
 	}
@@ -5181,14 +5395,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		container.classList.add('form-row', 'row');
 
-		container.innerHTML = `<select name="column"></select>`;
-
-		const select = container.querySelector('select');
-
-		for(const column in this.page.preview.report.originalResponse.data[0])
-			select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-		select.value = row.column;
+		container.innerHTML = `<select name="column" data-value="${row.column}"></select>`;
 
 		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
 
@@ -5206,14 +5413,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		container.classList.add('form-row', 'column');
 
-		container.innerHTML = `<select name="column"></select>`;
-
-		const select = container.querySelector('select');
-
-		for(const column in this.page.preview.report.originalResponse.data[0])
-			select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-		select.value = column.column;
+		container.innerHTML = `<select name="column" data-value="${column.column}"></select>`;
 
 		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
 
@@ -5228,14 +5428,7 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		container.classList.add('form-row', 'value');
 
-		container.innerHTML = `<select name="column"></select>`;
-
-		const select = container.querySelector('select');
-
-		for(const column in this.page.preview.report.originalResponse.data[0])
-			select.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-		select.value = value.column;
+		container.innerHTML = `<select name="column" data-value="${value.column}"></select>`;
 
 		container.insertAdjacentHTML('beforeend',`
 			<select name="function">
@@ -5259,13 +5452,24 @@ ReportTransformation.types.set('pivot', class ReportTransformationPivot extends 
 
 		return container;
 	}
+
+	render() {
+
+		for(const select of this.container.querySelectorAll('select[name=column]')) {
+
+			const value = select.value;
+
+			select.textContent = null;
+
+			for(const column of this.incoming.columns.values())
+				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+
+			select.value = value || select.dataset.value;
+		}
+	}
 });
 
 ReportTransformation.types.set('filters', class ReportTransformationFilters extends ReportTransformation {
-
-	get name() {
-		return 'Filters';
-	}
 
 	get key() {
 		return 'filters';
@@ -5279,24 +5483,26 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 		if(!this.page.preview.report.originalResponse)
 			return;
 
-		const
-			container = super.container.querySelector('.transformation'),
-			filters = document.createElement('div');
+		const container = super.container.querySelector('.transformation');
 
-		filters.classList.add('filters');
+		container.textContent = null;
 
 		for(const filter of this.filters || [])
-			filters.appendChild(this.filter(filter));
+			container.appendChild(this.filter(filter));
 
 		const addFilter = document.createElement('button');
 
 		addFilter.type = 'button';
 		addFilter.innerHTML = `<i class="fa fa-plus"></i> Add New Filter`;
-		addFilter.on('click', () => filters.insertBefore(this.filter(), addFilter));
 
-		filters.appendChild(addFilter);
+		addFilter.on('click', () => {
+			container.insertBefore(this.filter(), addFilter);
+			this.render();
+		});
 
-		container.appendChild(filters);
+		container.appendChild(addFilter);
+
+		this.render();
 
 		return super.container;
 	}
@@ -5309,6 +5515,7 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 		};
 
 		for(const filter of this.container.querySelectorAll('.filter')) {
+
 			response.filters.push({
 				column: filter.querySelector('select[name=column]').value,
 				function: filter.querySelector('select[name=function]').value,
@@ -5322,6 +5529,21 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 		return response;
 	}
 
+	render() {
+
+		for(const select of this.container.querySelectorAll('select[name=column]')) {
+
+			const value = select.value;
+
+			select.textContent = null;
+
+			for(const column of this.incoming.columns.values())
+				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+
+			select.value = value || select.dataset.value;
+		}
+	}
+
 	filter(filter = {}) {
 
 		const container = document.createElement('div');
@@ -5332,6 +5554,7 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 			<select name="column"></select>
 			<select name="function"></select>
 			<input type="text" name="value">
+			<button type="button" class="remove"><i class="far fa-trash-alt"></i></button>
 		`;
 
 		const
@@ -5339,21 +5562,18 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 			functionSelect = container.querySelector('select[name=function]'),
 			valueInput = container.querySelector('input[name=value]');
 
-		for(const column in this.page.preview.report.originalResponse.data[0])
-			columnSelect.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-		columnSelect.value = filter.column;
+		columnSelect.dataset.value = filter.column;
 
 		for(const filter of DataSourceColumnFilter.types)
 			functionSelect.insertAdjacentHTML('beforeend', `<option value="${filter.slug}">${filter.name}</option>`);
 
-		functionSelect.value = filter.function;
+		if(filter.function)
+			functionSelect.value = filter.function;
 
-		valueInput.value = filter.value || '';
+		if(filter.value)
+			valueInput.value = filter.value;
 
-		container.insertAdjacentHTML('beforeend',`<button type="button"><i class="far fa-trash-alt"></i></button>`);
-
-		container.querySelector('button').on('click', e => {
+		container.querySelector('.remove').on('click', e => {
 			e.stopPropagation();
 			container.remove();
 		});
@@ -5363,10 +5583,6 @@ ReportTransformation.types.set('filters', class ReportTransformationFilters exte
 });
 
 ReportTransformation.types.set('autofill', class ReportTransformationAutofill extends ReportTransformation {
-
-	get name() {
-		return 'Auto Fill';
-	}
 
 	get key() {
 		return 'autofill';
@@ -5394,6 +5610,7 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 			<label>
 				<span>Granularity</span>
 				<select name="granularity">
+					<option value=""></option>
 					<option value="number">Number</option>
 					<option value="second">Second</option>
 					<option value="minute">Minute</option>
@@ -5430,20 +5647,45 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 			startFilter = container.querySelector('select[name=start_filter]'),
 			endFilter = container.querySelector('select[name=end_filter]');
 
-		for(const _column of this.page.preview.report.columns.values())
-			column.insertAdjacentHTML('beforeend', `<option value="${_column.key}">${_column.name}</option>`);
-
 		for(const filter of this.page.preview.report.filters.values()) {
 			startFilter.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
 			endFilter.insertAdjacentHTML('beforeend', `<option value="${filter.placeholder}">${filter.name}</option>`);
 		}
 
-		column.value = this.column;
-		granularity.value = this.granularity;
-		startFilter.value = this.start_filter || '';
-		endFilter.value = this.end_filter || '';
+		if(!this.page.preview.report.filters.size) {
+			startFilter.parentElement.classList.add('hidden');
+			endFilter.parentElement.classList.add('hidden');
+		}
+
+		if(this.column)
+			column.dataset.value = this.column;
+
+		if(this.granularity)
+			granularity.value = this.granularity;
+
+		if(this.start_filter)
+			startFilter.value = this.start_filter;
+
+		if(this.end_filter)
+			endFilter.value = this.end_filter;
+
+		this.render();
 
 		return super.container;
+	}
+
+	render() {
+
+		const
+			select = this.container.querySelector('select[name=column]'),
+			value = select.value;
+
+		select.textContent = null;
+
+		for(const _column of this.incoming.columns.values())
+			select.insertAdjacentHTML('beforeend', `<option value="${_column.key}">${_column.name}</option>`);
+
+		select.value = value || select.dataset.value;
 	}
 
 	get json() {
@@ -5461,8 +5703,11 @@ ReportTransformation.types.set('autofill', class ReportTransformationAutofill ex
 
 ReportTransformation.types.set('stream', class ReportTransformationStream extends ReportTransformation {
 
-	get name() {
-		return 'Stream';
+	constructor(...parameters) {
+
+		super(...parameters);
+
+		this.visualizations = new MultiSelect({multiple: false});
 	}
 
 	get key() {
@@ -5496,7 +5741,11 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 
 		addJoin.type = 'button';
 		addJoin.innerHTML = `<i class="fa fa-plus"></i> Add New Join`;
-		addJoin.on('click', () => joins.insertBefore(this.join(), addJoin));
+
+		addJoin.on('click', () => {
+			joins.insertBefore(this.join(), addJoin);
+			this.render();
+		});
 
 		joins.appendChild(addJoin);
 
@@ -5534,7 +5783,8 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 			}
 		}
 
-		this.visualizations = new MultiSelect({datalist: datalist, multiple: false});
+		this.visualizations.datalist = datalist;
+		this.visualizations.render();
 
 		this.visualizations.value = this.visualization_id;
 
@@ -5593,10 +5843,7 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 			functionSelect = container.querySelector('select[name=function]'),
 			streamColumnInput = container.querySelector('input[name=streamColumn]');
 
-		for(const column in this.page.preview.report.originalResponse.data[0])
-			sourceColumnSelect.insertAdjacentHTML('beforeend', `<option value="${column}">${column}</option>`);
-
-		sourceColumnSelect.value = join.sourceColumn;
+		sourceColumnSelect.dataset.value = join.sourceColumn;
 
 		for(const filter of DataSourceColumnFilter.types)
 			functionSelect.insertAdjacentHTML('beforeend', `<option value="${filter.slug}">${filter.name}</option>`);
@@ -5641,6 +5888,271 @@ ReportTransformation.types.set('stream', class ReportTransformationStream extend
 			container.querySelector('select[name=function]').value = column.function;
 
 		container.querySelector('button').on('click', () => container.remove());
+
+		return container;
+	}
+
+	render() {
+
+		for(const select of this.container.querySelectorAll('select[name=sourceColumn]')) {
+
+			const value = select.value;
+
+			select.textContent = null;
+
+			for(const column of this.incoming.columns.values())
+				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+
+			select.value = value || select.dataset.value;
+		}
+	}
+});
+
+ReportTransformation.types.set('restrict-columns', class ReportTransformationRestrictColumns extends ReportTransformation {
+
+	constructor(...parameters) {
+
+		super(...parameters);
+
+		this.multiSelect = new MultiSelect({multiple: true, expand: true});
+	}
+
+	get key() {
+		return 'restrict-columns'
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const
+			container = super.container.querySelector('.transformation'),
+			columns = document.createElement('div'),
+			label = document.createElement('label');
+
+		columns.classList.add('columns');
+		label.classList.add('restrict-column');
+
+		columns.appendChild(this.multiSelect.container);
+
+		label.innerHTML = `
+			<input type="checkbox" name="exclude" disabled>
+			<span>Exclude</span>
+		`;
+
+		this.multiSelect.on('change', () => {
+			label.querySelector('input').disabled = this.multiSelect.value.length ? false : true;
+		});
+
+		label.querySelector('input').checked = this.exclude || '';
+
+		container.appendChild(columns);
+		container.appendChild(label);
+
+		this.render();
+
+		return super.container;
+	}
+
+	render() {
+
+		const
+			datalist = [],
+			value = this.multiSelect.value;
+
+		for(const column of this.incoming.columns.values()) {
+
+			datalist.push({
+				name: column.name,
+				value: column.key,
+			});
+		}
+
+		this.multiSelect.datalist = datalist;
+		this.multiSelect.render();
+
+		this.multiSelect.value = value.length ? value : this.columns || [];
+	}
+
+	get json() {
+
+		return {
+			type: this.key,
+			columns: this.multiSelect.value,
+			exclude: this.container.querySelector('label input[name="exclude"]').checked,
+		};
+	};
+});
+
+ReportTransformation.types.set('sort', class ReportTransformationSort extends ReportTransformation {
+
+	get key() {
+		return 'sort';
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		if(!this.page.preview.report.originalResponse)
+			return;
+
+		const container = super.container.querySelector('.transformation');
+
+		container.classList.add('sort');
+		container.textContent = null;
+
+		for(const column of this.columns || [])
+			container.appendChild(this.column(column));
+
+		const addColumn = document.createElement('button');
+
+		addColumn.type = 'button';
+		addColumn.innerHTML = `<i class="fa fa-plus"></i> Add New Column`;
+
+		addColumn.on('click', () => {
+			container.insertBefore(this.column(), addColumn);
+			this.render();
+		});
+
+		container.appendChild(addColumn);
+
+		this.render();
+
+		return super.container;
+	}
+
+	get json() {
+
+		const response = {
+			type: this.key,
+			columns: [],
+		};
+
+		for(const column of this.container.querySelectorAll('.column')) {
+
+			response.columns.push({
+				column: column.querySelector('select[name=column]').value,
+				order: column.querySelector('select[name=order]').value,
+				numeric: column.querySelector('select[name=numeric]').value,
+				caseFirst: column.querySelector('select[name=caseFirst]').value,
+			});
+		}
+
+		if(!response.columns.length)
+			return null;
+
+		return response;
+	}
+
+	render() {
+
+		for(const select of this.container.querySelectorAll('select[name=column]')) {
+
+			const value = select.value;
+
+			select.textContent = null;
+
+			for(const column of this.incoming.columns.values())
+				select.insertAdjacentHTML('beforeend', `<option value="${column.key}">${column.name}</option>`);
+
+			select.value = value || select.dataset.value;
+		}
+	}
+
+	column(column = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('form-row', 'column');
+
+		container.innerHTML = `
+			<label>
+				<span>Column</span>
+				<select name="column"></select>
+			</label>
+
+			<label>
+				<span>Order</span>
+				<select name="order">
+					<option value="ascending">Ascending</option>
+					<option value="descending">Descending</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Numeric</span>
+				<select name="numeric">
+					<option value="">Default</option>
+					<option value="numeric">Numeric</option>
+					<option value="alphabetical">Alphabetical</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Case First</span>
+				<select name="caseFirst">
+					<option value="">Default</option>
+					<option value="upper">Upper Case</option>
+					<option value="lower">Lower Case</option>
+				</select>
+			</label>
+
+
+			<label>
+				<span>&nbsp;</span>
+				<button class="move-up"><i class="fas fa-angle-up"></i></button>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button class="move-down"><i class="fas fa-angle-down"></i></button>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button class="remove"><i class="far fa-trash-alt"></i></button>
+			</label>
+		`;
+
+		const
+			columnSelect = container.querySelector('select[name=column]'),
+			order = container.querySelector('select[name=order]'),
+			numeric = container.querySelector('select[name=numeric]'),
+			caseFirst = container.querySelector('select[name=caseFirst]'),
+			moveUp = container.querySelector('.move-up'),
+			moveDown = container.querySelector('.move-down');
+
+		moveUp.on('click', () => {
+
+			if(container.previousSibling)
+				container.parentElement.insertBefore(container, container.previousSibling);
+		});
+
+		moveDown.on('click', () => {
+
+			if(container.nextSibling && container.nextSibling.classList.contains('column'))
+				container.parentElement.insertBefore(container.nextSibling, container);
+		});
+
+		if(column.column)
+			columnSelect.dataset.value = column.column;
+
+		if(column.order)
+			order.value = column.order;
+
+		if(column.numeric)
+			numeric.value = column.numeric;
+
+		if(column.caseFirst)
+			caseFirst.value = column.caseFirst;
+
+		container.querySelector('.remove').on('click', e => {
+			e.stopPropagation();
+			container.remove();
+		});
 
 		return container;
 	}
@@ -5837,7 +6349,8 @@ class ReportVisualizationDashboards extends Set {
 				method: 'POST',
 			},
 			parameters = {
-				dashboard_id,
+				owner: 'dashboard',
+				owner_id: dashboard_id,
 				visualization_id: stage.visualization.visualization_id,
 				format: JSON.stringify({position: parseInt(form.position.value)})
 			};
@@ -5849,7 +6362,7 @@ class ReportVisualizationDashboards extends Set {
 			await stage.dashboards.load({force: true});
 
 			new SnackBar({
-				message: 'Visualization Added to Dahsboard',
+				message: 'Visualization Added to Dashboard',
 				subtitle: `${stage.dashboards.response.get(dashboard_id).name} #${dashboard_id}`,
 				icon: 'fas fa-plus',
 			});
@@ -5921,7 +6434,7 @@ class ReportVisualizationDashboard {
 
 			for(const dashboard of this.stage.dashboards.response.values()) {
 
-				if(dashboard.id == this.visualization.dashboard_id) {
+				if(dashboard.id == this.visualization.owner_id) {
 					selectedDashboard = dashboard.name;
 				}
 
@@ -5957,7 +6470,7 @@ class ReportVisualizationDashboard {
 
 		this.dashboardMultiSelect = new MultiSelect({datalist, multiple: false, dropDownPosition: 'top'});
 
-		this.dashboardMultiSelect.value = this.visualization.dashboard_id;
+		this.dashboardMultiSelect.value = this.visualization.owner_id;
 
 		if(this.dashboardMultiSelect.value.length) {
 
@@ -6008,7 +6521,7 @@ class ReportVisualizationDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Deleted',
-				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} #${this.visualization.dashboard_id}`,
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.owner_id).name} #${this.visualization.owner_id}`,
 				icon: 'far fa-trash-alt',
 			});
 
@@ -6041,7 +6554,8 @@ class ReportVisualizationDashboard {
 			},
 			parameters = {
 				id: this.visualization.id,
-				dashboard_id: this.dashboardMultiSelect.value[0],
+                owner: 'dashboard',
+                owner_id: this.dashboardMultiSelect.value[0],
 				visualization_id: this.visualization.visualization_id,
 				format: JSON.stringify(this.visualization.format)
 			};
@@ -6054,7 +6568,7 @@ class ReportVisualizationDashboard {
 
 			new SnackBar({
 				message: 'Dashboard Saved',
-				subtitle: `${this.stage.dashboards.response.get(this.visualization.dashboard_id).name} #${this.visualization.dashboard_id}`,
+				subtitle: `${this.stage.dashboards.response.get(this.visualization.owner_id).name} #${this.visualization.owner_id}`,
 				icon: 'far fa-save',
 			});
 

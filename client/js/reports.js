@@ -25,6 +25,7 @@ class DataSource {
 		this.filters = new DataSourceFilters(this.filters, this);
 		this.columns = new DataSourceColumns(this);
 		this.transformations = new DataSourceTransformations(this);
+		this.pipeline = new DataSourcePipeline(this);
 		this.visualizations = [];
 
 		if(!source.visualizations)
@@ -40,6 +41,8 @@ class DataSource {
 	}
 
 	async fetch(_parameters = {}) {
+
+		this.pipeline.clear();
 
 		const parameters = new URLSearchParams(_parameters);
 
@@ -143,6 +146,15 @@ class DataSource {
 			return response;
 
 		this.originalResponse = response;
+
+		this.pipeline.add(new DataSourcePipelineEvent({
+			title: 'Report Executed',
+			subtitle: [
+				{key: 'Duration', value: `${Format.number(response.runtime)}ms`},
+				{key: 'Rows', value: Format.number(response.data.length)},
+				{key: 'Columns', value: Format.number(Object.keys(response.data[0] || {}).length)},
+			],
+		}));
 
 		this.columns.update();
 		this.postProcessors.update();
@@ -338,6 +350,11 @@ class DataSource {
 			if(!container.contains(this.menu))
 				container.appendChild(this.menu);
 
+			const alreadyVisibleMenu = page.container.querySelector('.data-source > .menu:not(.hidden)');
+
+			if(alreadyVisibleMenu && alreadyVisibleMenu != this.menu)
+				alreadyVisibleMenu.classList.add('hidden');
+
 			this.menu.classList.toggle('hidden');
 			this.menu.style.left = menuToggle.offsetLeft + 'px';
 			menuToggle.classList.toggle('selected');
@@ -346,8 +363,13 @@ class DataSource {
 			document.body.removeEventListener('click', this.menuToggleListener);
 
 			if(!this.menu.classList.contains('hidden')) {
+
 				document.body.on('click', this.menuToggleListener = e => {
-					menuToggle.click();
+
+					const alreadyVisibleMenu = page.container.querySelectorAll('.data-source > .menu:not(.hidden)');
+
+					for(const item of page.container.querySelectorAll('.data-source > .menu:not(.hidden)'))
+						item.parentElement.querySelector('.menu-toggle').click();
 				});
 			}
 		});
@@ -476,6 +498,10 @@ class DataSource {
 			</div>
 
 			<div class="item">
+				<span class="label pipeline-toggle"><i class="fas fa-sitemap"></i> Pipeline</span>
+			</div>
+
+			<div class="item">
 				<span class="label change-visualization"><i class="fas fa-chart-line"></i> Visualizations</span>
 				<div class="submenu"></div>
 			</div>
@@ -539,11 +565,10 @@ class DataSource {
 			</div>
 		`;
 
-		// menu.on('click', e => e.stopPropagation());
-
 		const
 			filtersToggle = menu.querySelector('.filters-toggle'),
 			descriptionToggle = menu.querySelector('.description-toggle'),
+			pipelineToggle = menu.querySelector('.pipeline-toggle'),
 			queryToggle = menu.querySelector('.query-toggle');
 
 		if(this.editable) {
@@ -566,13 +591,16 @@ class DataSource {
 
 		filtersToggle.on('click', () => {
 
-			filtersToggle.parentElement.classList.toggle('selected');
-
 			if(queryToggle.parentElement.classList.contains('selected'))
 				queryToggle.click();
 
 			if(descriptionToggle.parentElement.classList.contains('selected'))
 				descriptionToggle.click();
+
+			if(pipelineToggle.parentElement.classList.contains('selected'))
+				pipelineToggle.click();
+
+			filtersToggle.parentElement.classList.toggle('selected');
 
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
@@ -581,8 +609,6 @@ class DataSource {
 				this.container.removeChild(this.filters.container);
 
 			else this.container.insertBefore(this.filters.container, this.container.querySelector('.columns'));
-
-			this.visualizations.selected.render({resize: true});
 		});
 
 		// If there are filters and every filter is not of hidden type then show the filters toggle
@@ -597,19 +623,44 @@ class DataSource {
 			if(filtersToggle.parentElement.classList.contains('selected'))
 				filtersToggle.click();
 
+			if(pipelineToggle.parentElement.classList.contains('selected'))
+				pipelineToggle.click();
+
 			this.container.querySelector('.description').classList.toggle('hidden');
+
 			descriptionToggle.parentElement.classList.toggle('selected');
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
 
-			this.visualizations.selected.render({resize: true});
-
-			if(user.privileges.has('report') && user.privileges.has('user')) {
+			if(user.privileges.has('report') && user.privileges.has('user') && this.visibleTo) {
 
 				//await this.userList();
 				this.container.querySelector('.visible-to').classList.remove('hidden');
-				this.container.querySelector('.description .count').textContent = `${this.visibleTo.length} people`;
+				this.container.querySelector('.description .count').textContent = `${Format.number(this.visibleTo.length)} people`;
 			}
+		});
+
+		pipelineToggle.on('click', async () => {
+
+			if(descriptionToggle.parentElement.classList.contains('selected'))
+				descriptionToggle.click();
+
+			if(queryToggle.parentElement.classList.contains('selected'))
+				queryToggle.click();
+
+			if(filtersToggle.parentElement.classList.contains('selected'))
+				filtersToggle.click();
+
+			if(!this.container.contains(this.pipeline.container))
+				this.container.appendChild(this.pipeline.container);
+
+			this.container.querySelector('.pipeline').classList.toggle('hidden');
+
+			pipelineToggle.parentElement.classList.toggle('selected');
+			this.visualizations.selected.container.classList.toggle('blur');
+			this.container.querySelector('.columns').classList.toggle('blur');
+
+			this.pipeline.render();
 		});
 
 		queryToggle.on('click', () => {
@@ -620,12 +671,14 @@ class DataSource {
 			if(descriptionToggle.parentElement.classList.contains('selected'))
 				descriptionToggle.click();
 
+			if(pipelineToggle.parentElement.classList.contains('selected'))
+				pipelineToggle.click();
+
 			this.container.querySelector('.query').classList.toggle('hidden');
+
 			queryToggle.parentElement.classList.toggle('selected');
 			this.visualizations.selected.container.classList.toggle('blur');
 			this.container.querySelector('.columns').classList.toggle('blur');
-
-			this.visualizations.selected.render({resize: true});
 		});
 
 		menu.insertBefore(this.postProcessors.container, menu.querySelector('.change-visualization').parentElement);
@@ -653,7 +706,22 @@ class DataSource {
 
 				item.classList.add('item');
 
-				item.on('click', () => visualization.load());
+				item.on('click', () => {
+
+					if(descriptionToggle.parentElement.classList.contains('selected'))
+						descriptionToggle.click();
+
+					if(queryToggle.parentElement.classList.contains('selected'))
+						queryToggle.click();
+
+					if(filtersToggle.parentElement.classList.contains('selected'))
+						filtersToggle.click();
+
+					if(pipelineToggle.parentElement.classList.contains('selected'))
+						pipelineToggle.click();
+
+					visualization.load();
+				});
 
 				item.dataset.id =  visualization.visualization_id;
 
@@ -681,6 +749,8 @@ class DataSource {
 
 		if(this.visualizations.selected.visualization_id)
 			menu.querySelector('.configure-visualization').href = `/reports/configure-visualization/${this.visualizations.selected.visualization_id}`;
+
+		return menu;
 	}
 
 	async userList() {
@@ -693,14 +763,19 @@ class DataSource {
 
 	async response() {
 
+		// Empty out the pipeline
+		for(const event of this.pipeline) {
+
+			if(event.title != 'Report Executed')
+				this.pipeline.delete(event);
+		}
+
 		this.resetError();
 
 		if(!this.originalResponse || !this.originalResponse.data)
 			return [];
 
 		let response = [];
-
-		this.originalResponse.groupedAnnotations = new Map;
 
 		if(!Array.isArray(this.originalResponse.data))
 			return [];
@@ -710,18 +785,30 @@ class DataSource {
 		if(!this.columns.list.size)
 			return this.error();
 
-		for(const _row of data) {
+		const time = performance.now();
 
-			const row = new DataSourceRow(_row, this);
+		for(const row of data)
+			response.push(new DataSourceRow(row, this));
 
-			if(!row.skip)
-				response.push(row);
-		}
+		if(this.postProcessors.selected) {
 
-		if(this.postProcessors.selected)
+			const time = performance.now();
+
 			response = this.postProcessors.selected.processor(response);
 
-		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key)) {
+			this.pipeline.add(new DataSourcePipelineEvent({
+				title: `${this.postProcessors.selected.name} (${this.postProcessors.selected.value})`,
+				subtitle: [
+					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
+					{key: 'Rows', value: Format.number(response.length)},
+				],
+			}));
+		}
+
+		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key) && this.columns.sortBy.sort >= 0) {
+
+			const time = performance.now();
+
 			response.sort((a, b) => {
 
 				const
@@ -746,6 +833,14 @@ class DataSource {
 
 				return result;
 			});
+
+			this.pipeline.add(new DataSourcePipelineEvent({
+				title: `Sort by ${this.columns.sortBy.name} ${parseInt(this.columns.sortBy.sort) === 0 ? 'Descending' : 'Ascending'}`,
+				subtitle: [
+					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
+					{key: 'Rows', value: Format.number(response.length)},
+				],
+			}));
 		}
 
 		return response;
@@ -755,7 +850,8 @@ class DataSource {
 
 		this.containerElement.querySelector('.menu .download').classList.remove('selected');
 
-		let str = [],
+		let
+			str = [],
 			response;
 
 		if(!(['filtered-json', 'filtered-csv'].includes(what.mode)))
@@ -853,8 +949,14 @@ class DataSource {
 
 				const line = [];
 
-				for(const index in data)
+				for(const index in data) {
+
+					if(data[index] === null) {
+						data[index] = '';
+					}
+
 					line.push(JSON.stringify(String(data[index])));
+				}
 
 				str.push(line.join());
 			}
@@ -1031,7 +1133,7 @@ class DataSource {
 				description.insertAdjacentHTML('beforeend', '<h3>Visualization Description</h3>' + this.visualizations.selected.description);
 		}
 
-		for(const item of this.container.querySelectorAll('.change-visualization + .submenu .item'))
+		for(const item of this.menu.querySelectorAll('.change-visualization + .submenu .item'))
 			item.classList.toggle('selected', item.dataset.id == this.visualizations.selected.visualization_id);
 
 		this.container.querySelector('.query code').innerHTML = new FormatSQL(this.originalResponse.query).query;
@@ -1497,7 +1599,7 @@ class DataSourceFilter {
 			if(date === undefined)
 				continue;
 
-			companion.value = new Date(Date.now() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+			companion.value = new Date(Date.nowUTC() + date * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
 		}
 	}
 }
@@ -1555,31 +1657,6 @@ class DataSourceRow extends Map {
 				}
 			}
 
-			if(column.filters && column.filters.length) {
-
-				for(const search of column.filters) {
-
-					if(search.value === '')
-						continue;
-
-					if(!row[key])
-						this.skip = true;
-
-					if(!search.slug)
-						continue;
-
-					// Look for a filter with the selected filter's slug
-					const [filter] = DataSourceColumnFilter.types.filter(f => f.slug == search.slug);
-
-					if(!filter)
-						continue;
-
-					// Apply the filter. It checks if a row passes a filter or not.
-					if(!filter.apply(search.value, row[key] === null ? '' : row[key]))
-						this.skip = true;
-				}
-			}
-
 			this.set(key, row[key]);
 		}
 
@@ -1628,6 +1705,9 @@ class DataSourceRow extends Map {
 			if(column.type.name == 'custom')
 				value = Format.customTime(value, column.type.format);
 
+			else if(column.type.name == 'customNumber')
+				value = Format.number(value, column.type.formatNumber);
+
 			else if(column.type.name == 'timeelapsed')
 				value = Format.ago(value);
 
@@ -1656,12 +1736,12 @@ class DataSourceColumns extends Map {
 
 	update(response) {
 
-		if(!this.source.originalResponse.data || !this.source.originalResponse.data.length)
+		if(!this.source.originalResponse || !this.source.originalResponse.data || !this.source.originalResponse.data.length)
 			return;
 
 		this.clear();
 
-		for(const column in response ? response[0] : this.source.originalResponse.data[0])
+		for(const column in response && response.length ? response[0] : this.source.originalResponse.data[0])
 			this.set(column, new DataSourceColumn(column, this.source));
 	}
 
@@ -1761,6 +1841,7 @@ class DataSourceColumn {
 			this.container.classList.add('disabled');
 
 		this.customDateType = new DataSourceColumnCustomDateType();
+		this.customNumberType = new DataSourceColumnCustomNumberType();
 	}
 
 	get container() {
@@ -1892,7 +1973,7 @@ class DataSourceColumn {
 		this.form.disabled.checked = this.disabled;
 
 		if(!this.type)
-			return this.dialogueBox.show();;
+			return this.dialogueBox.show();
 
 		this.form.type.value = this.type.name;
 
@@ -1901,8 +1982,9 @@ class DataSourceColumn {
 		if(this.form.querySelector('.timing-type-custom'))
 			this.form.querySelector('.timing-type-custom').remove();
 
-		if(Object.keys(format).length)
-			this.customDateType.value = format;
+		this.customNumberType.container.remove();
+
+		this.customDateType.value = format;
 
 		if(this.type.name == 'custom') {
 
@@ -1911,6 +1993,12 @@ class DataSourceColumn {
 			this.customDateType.value = this.type.format;
 		}
 
+		else if(this.type.name == 'customNumber') {
+
+			this.form.insertBefore(this.customNumberType.container, this.form.querySelector('label.color'));
+
+			this.customNumberType.value = this.type.formatNumber;
+		}
 		this.dialogueBox.show();
 	}
 
@@ -1938,7 +2026,10 @@ class DataSourceColumn {
 				<span>Type</span>
 				<select name="type">
 					<option value="string">String</option>
-					<option value="number">Number</option>
+					<optgroup label="Numerical">
+						<option value="number">Number</option>
+						<option value="customNumber">Custom</option>
+					</optgroup>
 					<optgroup label="Timing">
 						<option value="date">Date</option>
 						<option value="month">Month</option>
@@ -2031,6 +2122,8 @@ class DataSourceColumn {
 			if(form.querySelector('.timing-type-custom'))
 				form.querySelector('.timing-type-custom').remove();
 
+			this.customNumberType.container.remove();
+
 			if(DataSourceColumn.formatType.has(form.type.value)) {
 
 				typeFormat = DataSourceColumn.formatType.get(form.type.value);
@@ -2047,7 +2140,12 @@ class DataSourceColumn {
 				this.customDateType.render(selectedFormat);
 			}
 
-			if(selectedFormat)
+			else if(form.type.value == 'customNumber') {
+
+				form.insertBefore(this.customNumberType.container, form.querySelector('label.color'));
+			}
+
+			if(selectedFormat && form.type.value == 'custom')
 				this.customDateType.value = selectedFormat;
 		});
 
@@ -2065,8 +2163,14 @@ class DataSourceColumn {
 				form.parentElement.classList.add('hidden');
 		});
 
-		if(this.source.editable)
-			form.querySelector('.save').on('click', () =>  this.save())
+		if(this.source.editable) {
+
+			form.querySelector('.save').on('click', () => {
+
+				if(form.checkValidity())
+					this.save();
+			});
+		}
 
 		return form;
 	}
@@ -2128,31 +2232,96 @@ class DataSourceColumn {
 		if(e)
 			e.preventDefault();
 
-		for(const element of this.form.elements) {
+		if(!this.source.format)
+			this.source.format = {};
 
-			if(element.name == 'type')
-				continue;
+		if(!this.source.format.columns)
+			this.source.format.columns = [];
 
-			if(element.type == 'checkbox')
-				this[element.name] = element.checked;
+		const [sourceColumn] = this.source.format && this.source.format.columns ? this.source.format.columns.filter(c => c.key == this.key) : [];
 
-			else this[element.name] = element.value == '' ? null : element.value || null;
+		try {
+
+			let customNumber;
+
+			if(this.form.type.value == 'customNumber')
+				customNumber = this.customNumberType.value;
+
+			for(const element of this.form.elements) {
+
+				if(element.name == 'type')
+					continue;
+
+				if(element.type == 'checkbox')
+					this[element.name] = element.checked;
+
+				else {
+
+					this[element.name] = element.value == '' ? null : element.value || null;
+
+					if(sourceColumn)
+						sourceColumn[element.name] = element.value == '' ? null : element.value || null;
+				}
+			}
+
+			this.filters = this.columnFilters.json;
+
+			this.type = {
+				name: this.form.type.value,
+			};
+
+			if(this.form.type.value == 'custom')
+				this.type.format = this.customDateType.value;
+
+			else if(this.form.type.value == 'customNumber')
+				this.type.formatNumber = customNumber;
 		}
 
-		this.filters = this.columnFilters.json;
+		catch(e) {
 
-		this.type = {
-			name: this.form.type.value,
-		};
+			new SnackBar({
+				message: 'Apply Failed',
+				subtitle: e,
+				type: 'error',
+			});
 
-		if(this.form.type.value == 'custom')
-			this.type.format = this.customDateType.value;
+			throw e;
+		}
 
 		if(this.interval)
 			clearInterval(this.interval);
 
-		this.container.querySelector('.label .name').textContent = this.name;
-		this.container.querySelector('.label .color').style.background = this.color;
+		const response = {
+			key : this.key,
+			name : this.name,
+			type : this.type,
+			disabled : this.disabled,
+			color : this.color,
+			searchType : this.searchType,
+			filters : this.filters,
+			sort : this.sort,
+			prefix : this.prefix,
+			postfix : this.postfix,
+			collapseTo : this.collapseTo,
+			drilldown : {
+				query_id : parseInt(this.drilldownQuery.value[0]) || 0,
+				parameters : this.drilldownParameters.json
+			}
+		};
+
+		let updated = false;
+
+		for(const [i, column] of this.source.format.columns.entries()) {
+
+			if(column.key == this.key) {
+				this.source.format.columns[i] = response;
+				updated = true;
+				break;
+			}
+		}
+
+		if(!updated)
+			this.source.format.columns.push(response);
 
 		if(!this.form.parentElement.classList.contains('body'))
 			this.form.parentElement.classList.add('hidden');
@@ -2160,6 +2329,7 @@ class DataSourceColumn {
 		if(this.sort != -1)
 			this.source.columns.sortBy = this;
 
+		this.source.postProcessors.update();
 		await this.source.visualizations.selected.render();
 
 		this.dialogueBox.hide();
@@ -2181,30 +2351,51 @@ class DataSourceColumn {
 		if(!this.source.format.columns)
 			this.source.format.columns = [];
 
-
 		let
 			response,
 			updated = 0;
 
-		for(const element of this.form.elements) {
+		try {
 
-			if(element.name == 'type')
-				continue;
+			let customNumber;
 
-			if(element.type == 'checkbox')
-				this[element.name] = element.checked;
+			if(this.form.type.value == 'customNumber')
+				customNumber = this.customNumberType.value;
 
-			else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+			for(const element of this.form.elements) {
+
+				if(element.name == 'type')
+					continue;
+
+				if(element.type == 'checkbox')
+					this[element.name] = element.checked;
+
+				else this[element.name] = isNaN(element.value) ? element.value || null : element.value == '' ? null : parseFloat(element.value);
+			}
+
+			this.filters = this.columnFilters.json;
+
+			this.type = {
+				name: this.form.type.value,
+			};
+
+			if(this.form.type.value == 'custom')
+				this.type.format = this.customDateType.value;
+
+			else if(this.form.type.value == 'customNumber')
+				this.type.formatNumber = customNumber;
 		}
 
-		this.filters = this.columnFilters.json;
+		catch(e){
 
-		this.type = {
-			name: this.form.type.value,
-		};
+			new SnackBar({
+				message: 'Save Failed',
+				subtitle: e,
+				type: 'error',
+			});
 
-		if(this.form.type.value == 'custom')
-			this.type.format = this.customDateType.value;
+			throw e;
+		}
 
 		if(this.interval)
 			clearInterval(this.interval);
@@ -2647,6 +2838,208 @@ class DataSourceColumnCustomDateType {
 		this.interval = setInterval(() => {
 			example.innerHTML = '<span class="NA">Example:</span> ' + Format.customTime(Date.now(), format);
 		}, 1000);
+	}
+}
+
+class DataSourceColumnCustomNumberType {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('number-type-custom');
+
+		container.innerHTML = `
+
+			<span class="NA">Example: <span class="example"></span></span>
+
+			<div class="number-format">
+
+				<label>
+					<span>Style</span>
+					<select name="style">
+						<option value="currency">Currency</option>
+						<option value="percent">Percent</option>
+						<option value="decimal" selected>Decimal</option>
+					</select>
+				</label>
+
+				<label class="currency-display">
+					<span>Currency Display</span>
+					<select name="currencyDisplay">
+						<option value="symbol" selected>Symbol</option>
+						<option value="code">Code</option>
+						<option value="name">Name</option>
+					</select>
+				</label>
+
+				<label>
+					<span>Use Grouping</span>
+					<select name="useGrouping">
+						<option value="true" selected>Yes</option>
+						<option value="false">No</option>
+					</select>
+				</label>
+
+				<label>
+					<span>Round off</span>
+					<select name="roundOff">
+						<option value="none" selected>None</option>
+						<option value="round">Round</option>
+						<option value="ceil">Ceil</option>
+						<option value="floor">Floor</option>
+					</select>
+				</label>
+
+			</div>
+
+			<div class="form">
+
+				<label class="currency-symbol hidden">
+					<span class="currency-code">
+						Currency Code
+						<a href="https://www.currency-iso.org/en/home/tables/table-a1.html" data-tooltip="Help" class="currency-list NA" target="_blank">
+								<i class="fa fa-question" aria-hidden="true"></i>
+						</a>
+					</span>
+					<input type="text" name="currency">
+				</label>
+
+				<label class="round-precision hidden">
+					<span>Round Precision</span>
+					<input type="number" name="roundPrecision" min="0" step="1" max="100">
+				</label>
+
+				<label>
+					<span>Minimum Integer Digits</span>
+					<input type="number" name="minimumIntegerDigits" min="1" step="1" max="21">
+				</label>
+
+				<label>
+					<span>Minimum Fraction Digits</span>
+					<input type="number" name="minimumFractionDigits" min="0" step="1" max="20">
+				</label>
+
+				<label>
+					<span>Maximum Fraction Digits</span>
+					<input type="number" name="maximumFractionDigits" min="0" step="1" max="20">
+				</label>
+
+				<label>
+					<span>Minimum Significant Digits</span>
+					<input type="number" name="minimumSignificantDigits" min="1" step="1" max="21">
+				</label>
+
+				<label>
+					<span>Maximum Significant Digits</span>
+					<input type="number" name="maximumSignificantDigits" min="1" step="1" max="21">
+				</label>
+			</div>
+		`;
+
+		for(const value of container.querySelectorAll('input')) {
+
+			value.on('keyup', () => this.render());
+			value.on('change', () => this.render());
+		}
+
+		for(const select of container.querySelectorAll('select')) {
+
+			select.on('change', () => {
+
+				container.querySelector('.currency-symbol').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
+				container.querySelector('.currency-display').classList.toggle('hidden', select.value == 'percent' || select.value == 'decimal');
+
+				this.render();
+			});
+		}
+
+		this.render();
+
+		return container;
+	}
+
+	set value(format) {
+
+		if(!this.containerElement)
+			return this.customNumberValueCache = format;
+
+		const selector = this.container.querySelectorAll('input, select');
+
+		for(const element of selector)
+			element.value = null;
+
+		for(const element of selector) {
+
+			if(element.name in format)
+				element.value = format[element.name];
+		}
+
+		this.render();
+	}
+
+	get value() {
+
+		if(!this.containerElement)
+			return this.customNumberValueCache;
+
+		const selectedInputs = {};
+
+		for(const element of this.container.querySelectorAll('select, input')) {
+
+			if(element.name == 'useGrouping')
+				selectedInputs[element.name] = JSON.parse(element.value);
+
+			else if(element.value)
+				selectedInputs[element.name] = element.value;
+		}
+
+		selectedInputs.locale = 'en';
+
+		new Intl.NumberFormat(undefined, selectedInputs);
+
+		return selectedInputs;
+	}
+
+	render() {
+
+		const example = this.container.querySelector('.example');
+
+		try {
+
+			const
+				format = this.value,
+				number = 123456.789;
+
+			if(!this.currencySymbol)
+				this.currencySymbol = this.container.querySelector('.currency-symbol');
+
+			if(!this.currencyDisplay)
+				this.currencyDisplay = this.container.querySelector('.currency-display');
+
+			if(!this.roundPrecision)
+				this.roundPrecision = this.container.querySelector('.round-precision');
+
+			this.currencySymbol.classList.toggle('hidden', format.style != 'currency');
+			this.currencyDisplay.classList.toggle('hidden', format.style != 'currency');
+			this.roundPrecision.classList.toggle('hidden', format.roundOff != 'round');
+
+			new Intl.NumberFormat(undefined, format);
+
+			example.classList.remove('example-error');
+
+			return example.innerHTML = Format.number(number, format);
+		}
+
+		catch(e) {
+
+			example.classList.add('example-error');
+			example.innerHTML = e;
+
+			return;
+		}
 	}
 }
 
@@ -3306,7 +3699,7 @@ class DataSourcePostProcessors {
 		this.timingColumn = this.source.columns.get('timing');
 
 		for(const column of this.source.columns.values()) {
-			if(column.type && ['datetime', 'date'].includes(column.type.name))
+			if(column.type && ['datetime', 'date', 'week', 'year', 'custom'].includes(column.type.name))
 				this.timingColumn = column;
 		}
 
@@ -3371,6 +3764,15 @@ class DataSourcePostProcessor {
 
 			container.querySelector('.label').on('click', () => {
 
+				for(const column of this.source.columns.values()) {
+
+					if(!column.type || !column.type.originalName)
+						continue;
+
+					column.type.name = column.type.originalName;
+					delete column.type.originalName;
+				}
+
 				delete this.source.postProcessors.selected;
 
 				this.source.visualizations.selected.render();
@@ -3399,6 +3801,14 @@ class DataSourcePostProcessor {
 				this.source.postProcessors.selected = this;
 				this.source.postProcessors.selected.value = value;
 
+				for(const column of this.source.columns.values()) {
+
+					if(!column.type || !column.type.originalName)
+						continue;
+
+					column.type.name = column.type.originalName;
+				}
+
 				this.source.visualizations.selected.render();
 				this.source.postProcessors.render();
 			});
@@ -3423,15 +3833,9 @@ class DataSourceTransformations extends Set {
 
 		this.clear();
 
-		const
-			visualization = this.source.visualizations.selected,
-			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
+		this.reset();
 
-		for(const transformation of transformations) {
-
-			if(DataSourceTransformation.types.has(transformation.type))
-				this.add(new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source));
-		}
+		this.loadFilters();
 
 		response = JSON.parse(JSON.stringify(response));
 
@@ -3445,6 +3849,53 @@ class DataSourceTransformations extends Set {
 
 		return response;
 	}
+
+	reset() {
+
+		const
+			visualization = this.source.visualizations.selected,
+			transformations = visualization.options && visualization.options.transformations ? visualization.options.transformations : [];
+
+		for(const [i, transformation] of transformations.entries()) {
+
+			if(!DataSourceTransformation.types.has(transformation.type))
+				continue;
+
+			const transformationType = new (DataSourceTransformation.types.get(transformation.type))(transformation, this.source);
+
+			this.add(transformationType);
+
+			if(i > visualization.options.transformationsStopAt)
+				transformationType.disabled = true;
+		}
+	}
+
+	loadFilters() {
+
+		const filters = [];
+
+		for(const column of this.source.columns.list.values()) {
+
+			if(!column.filters || !column.filters.length)
+				continue;
+
+			for(const filter of column.filters) {
+
+				filters.push({
+					column: column.key,
+					function: filter.slug,
+					value: filter.value,
+				});
+			}
+		}
+
+		if(!filters.length)
+			return;
+
+		const type = DataSourceTransformation.types.get('filters');
+
+		this.add(new type({type: 'filters', filters}, this.source));
+	}
 }
 
 class DataSourceTransformation {
@@ -3454,6 +3905,56 @@ class DataSourceTransformation {
 		this.source = source;
 
 		Object.assign(this, transformation);
+
+		this.incoming = {
+			rows: null,
+			columns: new DataSourceColumns(this.source),
+		};
+
+		this.outgoing = {
+			rows: null,
+			columns: new DataSourceColumns(this.source),
+		};
+	}
+
+	async run(response) {
+
+		if(!response || !response.length)
+			return response;
+
+		const time = performance.now();
+
+		this.incoming.rows = response.length || 0;
+		this.incoming.columns.update(response);
+
+		if(!this.disabled)
+			response = await this.execute(response);
+
+		this.outgoing.rows = response.length || 0;
+		this.outgoing.columns.update(response);
+
+		this.executionDuration = performance.now() - time;
+
+		this.source.pipeline.add(new DataSourcePipelineEvent({
+			title: this.name,
+			disabled: this.disabled,
+			subtitle: [
+				{
+					key: 'Duration',
+					value: `${Format.number(this.executionDuration)}ms`
+				},
+				{
+					key: 'Rows',
+					value: Format.number(this.outgoing.rows)
+				},
+				{
+					key: 'Columns',
+					value: Format.number(this.outgoing.columns.size)
+				},
+			],
+		}));
+
+		return response;
 	}
 }
 
@@ -3461,7 +3962,11 @@ DataSourceTransformation.types = new Map;
 
 DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot extends DataSourceTransformation {
 
-	async run(response = []) {
+	get name() {
+		return 'Pivot Table';
+	}
+
+	async execute(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -3598,7 +4103,11 @@ DataSourceTransformation.types.set('pivot', class DataSourceTransformationPivot 
 
 DataSourceTransformation.types.set('filters', class DataSourceTransformationFilters extends DataSourceTransformation {
 
-	async run(response = []) {
+	get name() {
+		return 'Filters';
+	}
+
+	async execute(response = []) {
 
 		if(!response || !response.length || !this.filters || !this.filters.length)
 			return response;
@@ -3616,10 +4125,12 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 				if(!filter)
 					continue;
 
-				if((!_filter.column in row))
+				if(!(_filter.column in row))
 					continue;
 
-				if(!filter.apply(_filter.value, row[_filter.column]))
+				const searchString = row[_filter.column] == null ? '' : row[_filter.column];
+
+				if(!filter.apply(_filter.value, searchString))
 					status = false;
 			}
 
@@ -3633,7 +4144,11 @@ DataSourceTransformation.types.set('filters', class DataSourceTransformationFilt
 
 DataSourceTransformation.types.set('autofill', class DataSourceTransformationAutofill extends DataSourceTransformation {
 
-	async run(response = []) {
+	get name() {
+		return 'Auto Fill';
+	}
+
+	async execute(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -3737,7 +4252,11 @@ DataSourceTransformation.types.set('autofill', class DataSourceTransformationAut
 
 DataSourceTransformation.types.set('stream', class DataSourceTransformationStream extends DataSourceTransformation {
 
-	async run(response = []) {
+	get name() {
+		return 'Stream';
+	}
+
+	async execute(response = []) {
 
 		if(!response || !response.length)
 			return response;
@@ -3870,6 +4389,88 @@ DataSourceTransformation.types.set('stream', class DataSourceTransformationStrea
 	}
 });
 
+DataSourceTransformation.types.set('sort', class DataSourceTransformationRestrictColumns extends DataSourceTransformation {
+
+	get name() {
+		return 'Sort';
+	}
+
+	async execute(response = []) {
+
+		if(!response || !response.length || !this.columns)
+			return response;
+
+
+		for(const column of this.columns) {
+
+			column.options = {
+				numeric: column.numeric != 'alphabetical',
+				caseFirst: column.caseFirst || false,
+			};
+		}
+
+		response = response.sort((a, b) => {
+
+			for(const column of this.columns) {
+
+				if(!(column.column in a) || !(column.column in b))
+					continue;
+
+				if(a[column.column] === null || b[column.column] === null)
+					continue;
+
+				let result = a[column.column].toString().localeCompare(b[column.column].toString(), undefined, column.options);
+
+				if(!result)
+					continue;
+
+				if(column.order == 'descending')
+					result *= -1;
+
+				return result;
+			}
+		});
+
+		return response;
+	}
+});
+
+DataSourceTransformation.types.set('restrict-columns', class DataSourceTransformationRestrictColumns extends DataSourceTransformation {
+
+	get name() {
+		return 'Restrict Columns';
+	}
+
+	async execute(response = []) {
+
+		if(!response || !response.length || !this.columns)
+			return response;
+
+		const newResponse = [];
+
+		for(const data of response) {
+
+			const temp = {};
+
+			for(const key in data) {
+
+				if(this.exclude) {
+
+					if(!this.columns.includes(key))
+						temp[key] = data[key];
+				}
+
+				else if(this.columns.includes(key))
+					temp[key] = data[key];
+			}
+
+			newResponse.push(temp);
+		}
+
+		return newResponse;
+	}
+});
+
 DataSourcePostProcessors.processors = new Map;
 
 DataSourcePostProcessors.processors.set('Orignal', class extends DataSourcePostProcessor {
@@ -3916,10 +4517,154 @@ DataSourcePostProcessors.processors.set('Weekday', class extends DataSourcePostP
 	}
 });
 
+DataSourcePostProcessors.processors.set('CollapseToAverage', class extends DataSourcePostProcessor {
+
+	get name() {
+		return 'Collapse To (Average)';
+	}
+
+	get domain() {
+
+		return new Map([
+			['second', 'Second'],
+			['minute', 'Minute'],
+			['hour', 'Hour'],
+			['day', 'Day'],
+			['week', 'Week'],
+			['month', 'Month'],
+		]);
+	}
+
+	processor(response) {
+
+		const timingColumn = this.source.postProcessors.timingColumn;
+
+		if(!timingColumn || !this.source.columns.has(timingColumn.key))
+			return response;
+
+		const result = new Map;
+
+		let monthCount;
+
+		for(const row of response) {
+
+			let
+				period,
+				timing;
+
+			const periodDate = new Date(row.get(timingColumn.key));
+
+			// Week starts from monday, not sunday
+			if(this.value == 'week') {
+				period = (periodDate.getDay() ? periodDate.getDay() - 1 : 6) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
+
+			else if(this.value == 'month') {
+				period = (periodDate.getDate() - 1) * 24 * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+
+				if(monthCount && (monthCount != timing)) {
+
+					const count = new Date(new Date(monthCount).getFullYear(), new Date(monthCount).getMonth() + 1, 0).getDate();
+
+					const xx = result.get(monthCount);
+
+					for(const [key, value] of row) {
+
+						if(!isNaN(value)) {
+							xx.set(key, xx.get(key) / count);
+						}
+					}
+				}
+
+				monthCount = timing;
+			}
+
+			else if(this.value == 'day') {
+				period = periodDate.getHours() * 60 * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 10);
+			}
+
+			else if(this.value == 'hour') {
+				period = periodDate.getMinutes() * 60 * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13) + ':00:00';
+			}
+
+			else if(this.value == 'minute') {
+				period = periodDate.getSeconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16) + ':00';
+			}
+
+			else if(this.value == 'second') {
+				period = periodDate.getMilliseconds() * 1000;
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 19);
+			}
+
+			if(!result.has(timing)) {
+
+				result.set(timing, new DataSourceRow(null, this.source));
+
+				let newRow = result.get(timing);
+
+				for(const key of row.keys())
+					newRow.set(key, 0);
+			}
+
+			const newRow = result.get(timing);
+
+			for(const [key, value] of row) {
+
+				if(!isNaN(value)) {
+					newRow.set(key, newRow.get(key) + parseFloat(value));
+				}
+
+				else newRow.set(key, value);
+			}
+
+			newRow.set(timingColumn.key, timing);
+		}
+
+		const countArray = {
+			'week' : 7,
+			'day' : 1,
+			'hour' : 60,
+			'minute' : 60,
+			'second' : 1000,
+		}
+
+		if(this.value != 'month') {
+
+			for(const row of [...result.values()]) {
+
+				for(const [key, value] of row) {
+
+					if(!isNaN(value))
+						row.set(key, row.get(key) / countArray[this.value])
+				}
+			}
+		}
+
+		if(!timingColumn.type.originalName)
+			timingColumn.type.originalName = timingColumn.type.name;
+
+		if(['week', 'day'].includes(this.value))
+			timingColumn.type.name = 'date';
+
+		else if(['month'].includes(this.value))
+			timingColumn.type.name = 'month';
+
+		else if(['hour', 'minute', 'second'].includes(this.value))
+			timingColumn.type.name = 'datetime';
+
+		return Array.from(result.values());
+	}
+});
+
 DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePostProcessor {
 
 	get name() {
-		return 'Collapse To';
+		return 'Collapse To (Sum)';
 	}
 
 	get domain() {
@@ -3969,19 +4714,18 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 
 			else if(this.value == 'hour') {
 				period = periodDate.getMinutes() * 60 * 1000;
-				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13);
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 13) + ':00:00';
 			}
 
 			else if(this.value == 'minute') {
 				period = periodDate.getSeconds() * 1000;
-				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16);
+				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 16) + ':00';
 			}
 
 			else if(this.value == 'second') {
 				period = periodDate.getMilliseconds() * 1000;
 				timing = new Date(Date.parse(row.get(timingColumn.key)) - period).toISOString().substring(0, 19);
 			}
-
 
 			if(!result.has(timing)) {
 
@@ -4003,8 +4747,20 @@ DataSourcePostProcessors.processors.set('CollapseTo', class extends DataSourcePo
 				else newRow.set(key, value);
 			}
 
-			newRow.set(timingColumn.key, row.get(timingColumn.key));
+			newRow.set(timingColumn.key, timing);
 		}
+
+		if(!timingColumn.type.originalName)
+			timingColumn.type.originalName = timingColumn.type.name;
+
+		if(['week', 'day'].includes(this.value))
+			timingColumn.type.name = 'date';
+
+		else if(['month'].includes(this.value))
+			timingColumn.type.name = 'month';
+
+		else if(['hour', 'minute', 'second'].includes(this.value))
+			timingColumn.type.name = 'datetime';
 
 		return Array.from(result.values());
 	}
@@ -4131,6 +4887,117 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 		return Array.from(result.values());
 	}
 });
+
+class DataSourcePipeline extends Set {
+
+	constructor(source) {
+
+		super();
+		this.source = source;
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('overlay', 'pipeline', 'hidden');
+
+		container.innerHTML = `
+			<span class="close" title="close">&times;</span>
+			<div class="snapshot"><div class="NA">Snapshot Not Available</div></div>
+			<div class="list"></div>
+		`;
+
+		container.querySelector('.close').on('click', () => this.source.menu.querySelector('.pipeline-toggle').click());
+
+		this.render();
+
+		return container;
+	}
+
+	render() {
+
+		if(!this.containerElement)
+			return;
+
+		const container = this.container.querySelector('.list');
+
+		container.textContent = null;
+
+		for(const event of this) {
+
+			container.appendChild(event.container);
+
+			if(event.order != this.size) {
+
+				container.insertAdjacentHTML('beforeend', `
+					<div class="next-connector"><i class="fas fa-long-arrow-alt-down"></i></div>
+				`);
+			}
+		}
+
+		if(!this.size)
+			container.innerHTML = '<div class="NA">Data Pipeline Not available.</div>';
+	}
+
+	add(event) {
+
+		event.order = this.size + 1;
+
+		super.add(event);
+		this.render();
+	}
+}
+
+class DataSourcePipelineEvent {
+
+	constructor(properties) {
+
+		for(const key in properties)
+			this[key] = properties[key];
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('event');
+
+		container.innerHTML = `
+			<div class="order">${Format.number(this.order)}</div>
+			<h2>${this.title}</h2>
+		`;
+
+		if(this.disabled) {
+			container.classList.add('disabled');
+			container.insertAdjacentHTML('beforeend', `<span class="NA">Disabled</span>`);
+		}
+
+		if(this.subtitle && this.subtitle.length) {
+
+			const subtitleContainer = document.createElement('div');
+
+			subtitleContainer.classList.add('subtitle');
+
+			for(const subtitle of this.subtitle) {
+
+				subtitleContainer.insertAdjacentHTML('beforeend', `
+					<span>${subtitle.key}: <strong>${subtitle.value}</strong></span>
+				`);
+			}
+
+			container.appendChild(subtitleContainer);
+		}
+
+		return container;
+	}
+}
 
 class Visualization {
 
@@ -4610,7 +5477,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		const
 			container = this.container.querySelector('.container'),
-			rows = await this.source.response();
+			rows = await this.source.response() || [];
+
+		this.source.resetError();
 
 		container.textContent = null;
 
@@ -4623,7 +5492,12 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		search.classList.add('search');
 
-		for(const column of this.source.columns.list.values()) {
+		let columns = this.source.columns.list;
+
+		if(!columns.size && this.source.transformations.size)
+			columns = Array.from(this.source.transformations).pop().incoming.columns;
+
+		for(const column of columns.values()) {
 
 			const container = document.createElement('th');
 
@@ -4826,7 +5700,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		}
 
 		if(!rows.length) {
-			table.insertAdjacentHTML('beforeend', `
+			tbody.insertAdjacentHTML('beforeend', `
 				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found!'}</td></tr>
 			`);
 		}
@@ -6207,17 +7081,16 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			// For each line appending the circle at each point
 			if(this.options.showPoints || axis.showPoints) {
 
-				for(const column of columns) {
+				for(const [i, column] of columns.entries()) {
 
 					let dots = this.svg.selectAll('dot')
-						.data(this.rows)
+						.data(columnsData[i])
 						.enter()
 						.append('circle')
 						.attr('class', 'clips')
 						.style('fill', this.source.columns.get(column.key).color)
-						.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
-						.attr('cx', row => this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
-						.attr('cy', row => scale(row.getTypedValue(column.key)))
+						.attr('cx', (_, i) => this.x(this.rows[i].getTypedValue(this.x.column)) + this.axes.left.size + (this.x.rangeBand() / 2))
+						.attr('cy', row => scale(row.y + (row.y0 || 0)))
 						.on('mouseover', function(_, __, column) {
 							that.hoverColumn = column[1];
 							d3.select(this).classed('hover', true);
@@ -6250,7 +7123,6 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 					.data(columns)
 					.enter()
 					.append('g')
-					.attr('transform', column => `translate(${columns.scale(column.key)}, 0)`)
 					.selectAll('text')
 					.data(column => this.rows.map(row => [row, column]))
 					.enter()
@@ -6274,7 +7146,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 						return this.x(row.getTypedValue(this.x.column)) + this.axes.left.size + (columns.scale.rangeBand() / 2) - (value.toString().length * 4)
 					})
-					.attr('y', ([row, column]) => scale(row.getTypedValue(column.key) > 0 ? row.getTypedValue(column.key) : 0) - (5 * (this.x.position == 'top' ? -5 : 1)))
+					.attr('y', ([row, column], i, j) => scale((columnsData[j][i].y > 0 ? columnsData[j][i].y : 0) + (columnsData[j][i].y0 || 0)) - (5 * (this.x.position == 'top' ? -5 : 1)))
 					.attr('height', ([row, column]) => Math.abs(scale(row.getTypedValue(column.key)) - scale(0)));
 
 				if(axis.animate) {
@@ -7610,7 +8482,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 		var chart = {};
 
 		// Setting margin and width and height
-		var margin = {top: 20, right: 0, bottom: 40, left: 0},
+		var margin = {top: 20, right: 0, bottom: 60, left: 0},
 			width = this.container.clientWidth - margin.left - margin.right,
 			height = this.container.clientHeight - margin.top - margin.bottom;
 
@@ -7720,7 +8592,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 				.data([poly2, poly1])
 				.enter().append("polygon")
 				.attr('points', d =>  d.map(d => [d.x, d.y].join()).join(' '))
-				.attr('fill', '#fff');
+				.attr('class', 'background');
 
 			//selecting all the paths
 			var path = svg.selectAll('rect'),
@@ -7785,12 +8657,14 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1em')
+						.attr('class', 'text')
 						.text(series[i].data[0].label);
 
 					text.append('tspan')
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1.2em')
+						.attr('class', 'sub-text')
 						.style('font-size', '13px')
 						.text(`${series[i].data[0].y}  (${(series[i].data[0].y / series[series.length - 1].data[0].y * 100).toFixed(2)}%)`);
 
@@ -7828,12 +8702,14 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1em')
+						.attr('class', 'text')
 						.text(series[i].data[0].label);
 
 					text.append('tspan')
 						.attr('x', x1 + (window.innerWidth < 768 ? 35 : 60))
 						.attr('dx', '0')
 						.attr('dy', '1.2em')
+						.attr('class', 'sub-text')
 						.style('font-size', '13px')
 						.text(`${series[i].data[0].y} (${(series[i].data[0].y / series[series.length - 1].data[0].y * 100).toFixed(2)}%)`);
 				}
@@ -7844,7 +8720,7 @@ Visualization.list.set('funnel', class Funnel extends Visualization {
 					.append('path')
 					.attr('class', 'link')
 					.attr('d', diagonal)
-					.attr('stroke', '#2a3f54')
+					.attr('class', 'line-stroke')
 					.attr('stroke-width', 1)
 					.attr('fill', 'none');
 			}
@@ -8057,8 +8933,11 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			slice.attr('d', row => arc(row));
 		}
 
+		if(!this.options)
+			return;
+
 		// Add the text
-		if(this.options && this.options.showValue == 'value') {
+		if(this.options.showValue == 'value') {
 
 			arcs.append('text')
 				.attr('transform', row => {
@@ -8070,7 +8949,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				.text(row => Format.number(row.data.value));
 		}
 
-		else {
+		else if(this.options.showValue == 'percentage') {
 
 			arcs.append('text')
 				.attr('transform', row => {
@@ -8766,6 +9645,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('visualization', 'html');
+
 		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
 
 		if(this.options && this.options.hideHeader)
@@ -8793,6 +9673,661 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
 	}
 });
+
+Visualization.list.set('sankey', class Sankey extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('visualization', 'sankey');
+
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(options = {}) {
+
+		super.render(options);
+
+		this.container.querySelector('.container').innerHTML = `<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>`;
+
+		await this.source.fetch();
+
+		this.response = await this.source.response();
+
+		await this.render(options);
+	}
+
+	async render(options = {}) {
+
+		await this.draw();
+
+		if(!this.options)
+			return;
+
+		if(!this.options.sourceColumn || !this.options.targetColumn || !this.options.valueColumn)
+			return;
+
+		await this.plot(options);
+	}
+
+	async draw() {
+
+		if(!this.options)
+			return this.source.error('Visualization configuration not set.');
+
+		if(!this.options.sourceColumn)
+			return this.source.error('Source column not selected.');
+
+		if(!this.options.targetColumn)
+			return this.source.error('Target column not selected.');
+
+		if(!this.options.valueColumn)
+			return this.source.error('Value column not selected.');
+
+		if(this.options.sourceColumn == this.options.targetColumn)
+			return this.source.error('Source and Target columns are same');
+
+		const response = await this.response;
+
+		if(response && response.length) {
+
+			if(!response[0].has(this.options.sourceColumn))
+				return this.source.error(`Timing column '${this.options.sourceColumn}' not found.`);
+
+			if(!response[0].has(this.options.targetColumn))
+				return this.source.error(`Timing column '${this.options.targetColumn}' not found.`);
+
+			if(!response[0].has(this.options.valueColumn))
+				return this.source.error(`Value column '${this.options.valueColumn}' not found.`);
+		}
+
+		window.addEventListener('resize', () => {
+
+			const
+				height = this.container.clientHeight - 20,
+				width = this.container.clientWidth - 20;
+
+			if(this.width != width || this.height != height)
+				this.render({resize: true});
+		});
+	}
+
+	cycleDetection() {
+
+		const
+			response = this.response,
+			sourceTargetMap = new Map;
+
+		for(const data of response) {
+
+			if(!sourceTargetMap.has(data.get(this.options.sourceColumn)))
+				sourceTargetMap.set(data.get(this.options.sourceColumn), new Set);
+
+			sourceTargetMap.get(data.get(this.options.sourceColumn)).add(data.get(this.options.targetColumn))
+		}
+
+		const that = this;
+
+		let cyclePresent = false;
+
+		for(const [key, value] of sourceTargetMap) {
+
+			cyclePresent = cycle(key, value, key)
+
+			if(cyclePresent)
+				break;
+		}
+
+		function cycle(key, value, source) {
+
+			if(!value)
+				return false;
+
+			const valueArray = Array.from(value);
+
+			if(valueArray.includes(source)) {
+
+				throw that.source.error('Circular data present.');
+			}
+
+			let x = false;
+
+			for(const data of valueArray) {
+				x = cycle(data, sourceTargetMap.get(data), source)
+			}
+
+			return x;
+		}
+
+		return cyclePresent;
+	}
+
+	async plot(options = {}) {
+
+		this.cycleDetection();
+
+		this.sankey();
+
+		if(isNaN(this.response[0].get(this.options.valueColumn)))
+			return this.source.error('Value is not a number');
+
+		const nodeMap = {};
+
+		for(const data of this.response) {
+
+			if(!(data.get(this.options.sourceColumn) in nodeMap))
+				nodeMap[data.get(this.options.sourceColumn)] = {name: data.get(this.options.sourceColumn)};
+
+			if(!(data.get(this.options.targetColumn) in nodeMap))
+				nodeMap[data.get(this.options.targetColumn)] = {name: data.get(this.options.targetColumn)};
+		}
+
+		let links = [];
+
+		links = this.response.map(x => {
+			return {
+				source: nodeMap[x.get(this.options.sourceColumn)],
+				target: nodeMap[x.get(this.options.targetColumn)],
+				value: x.get(this.options.valueColumn),
+			};
+		});
+
+		const margin = {top: 30, right: 30, bottom: 30, left: 30};
+
+		const container = d3.selectAll(`#visualization-${this.id}`);
+
+		const format = d => `${d3.format(',.0f')(d)} Units`;
+
+		container.selectAll('*').remove();
+
+		if(!this.width || options.resize) {
+			this.width = this.container.clientWidth - margin.left - margin.right;
+			this.height = this.container.clientHeight - margin.top - margin.bottom - 10;
+		}
+
+		const svg = container.append('svg')
+			.attr('width', this.width + margin.left + margin.right)
+			.attr('height', this.height + margin.top + margin.bottom)
+			.append('g')
+			.attr('transform', `translate(${margin.left} , ${margin.top})`);
+
+		const nodeWidth = this.width % 30 < 20 ? 20 : this.width % 30;
+
+		const sankey = d3.sankey()
+			.nodeWidth(nodeWidth)
+			.nodePadding(10)
+			.size([this.width, this.height]);
+
+		const path = sankey.link();
+
+		sankey
+			.nodes(Object.values(nodeMap))
+			.links(links)
+			.layout(32);
+
+		const link = svg.append('g')
+			.selectAll('.link')
+			.data(links)
+			.enter()
+			.append('path')
+			.attr('class', 'link')
+			.attr('d', path)
+			.style('stroke-width', d => Math.max(1, d.dy))
+			.sort((a, b) => b.dy - a.dy);
+
+		const that = this;
+
+		let
+			mouse,
+			content;
+
+		container
+			.on('mousemove', function(d) {
+
+				if(that.options.hideTooltip || !content)
+					return;
+
+				mouse = d3.mouse(this);
+
+				const contentContainer = `<div class="sankey-tooltip">${content}</div>`
+
+				Tooltip.show(that.container, mouse, contentContainer);
+			})
+			.on('mouseleave', () => Tooltip.hide(that.container));
+
+		link
+			.on('mouseenter', function(d) {
+
+				content = `${d.source.name} to ${d.target.name} : ${format(d.value)}`;
+			})
+			.on('mouseleave' , function(d) {
+
+				content = null;
+				Tooltip.hide(that.container);
+			});
+
+		const node = svg.append('g')
+				.selectAll('.node')
+				.data(Object.values(nodeMap))
+				.enter()
+				.append('g')
+				.attr('class', 'node')
+				.attr('transform', d => `translate(${d.x} , ${ d.y})`);
+
+		node.append('rect')
+			.attr('height', d => d.dy)
+			.attr('width', sankey.nodeWidth())
+			.style('fill', d => DataSourceColumn.colors[Object.keys(nodeMap).indexOf(d.name) % DataSourceColumn.colors.length])
+			.on('mouseenter', function(d) {
+
+				content = `${d.name} ${format(d.value)}`;
+			})
+			.on('mouseleave' , function(d) {
+
+				content = null;
+				Tooltip.hide(that.container);
+			});
+
+		const width = this.width;
+
+		node.append('text')
+			.attr('x', -6)
+			.attr('y', d => d.dy / 2)
+			.attr('dy', '.35em')
+			.attr('text-anchor', 'end')
+			.attr('transform', null)
+			.text(d => d.name)
+		.filter(d => d.x <= width / 2)
+			.attr('x', 6 + sankey.nodeWidth())
+			.attr('text-anchor', 'start');
+	}
+
+	sankey() {
+
+		if(d3.sankey)
+			return;
+
+		d3.sankey = function() {
+			let
+				sankey = {},
+				nodeWidth = 24,
+				nodePadding = 8,
+				size = [1, 1],
+				nodes = [],
+				links = [];
+
+			sankey.nodeWidth = function(_) {
+
+				if(!arguments.length)
+					return nodeWidth;
+
+				nodeWidth = +_;
+
+				return sankey;
+			};
+
+			sankey.nodePadding = function(_) {
+
+				if(!arguments.length)
+					return nodePadding;
+
+				nodePadding = +_;
+				return sankey;
+			};
+
+			sankey.nodes = function(_) {
+
+				if(!arguments.length)
+					return nodes;
+
+				nodes = _;
+
+				return sankey;
+			};
+
+			sankey.links = function(_) {
+
+				if(!arguments.length)
+					return links;
+
+				links = _;
+
+				return sankey;
+			};
+
+			sankey.size = function(_) {
+
+				if(!arguments.length)
+					return size;
+
+				size = _;
+				return sankey;
+			};
+
+			sankey.layout = function(iterations) {
+
+				computeNodeLinks();
+				computeNodeValues();
+				computeNodeBreadths();
+				computeNodeDepths(iterations);
+				computeLinkDepths();
+				return sankey;
+			};
+
+			sankey.relayout = function() {
+
+				computeLinkDepths();
+				return sankey;
+			};
+
+			sankey.link = function() {
+
+				let curvature = .5;
+
+				function link(d) {
+
+					let
+						x0 = d.source.x + d.source.dx,
+						x1 = d.target.x,
+						xi = d3.interpolateNumber(x0, x1),
+						x2 = xi(curvature),
+						x3 = xi(1 - curvature),
+						y0 = d.source.y + d.sy + d.dy / 2,
+						y1 = d.target.y + d.ty + d.dy / 2;
+
+					return `M ${x0} , ${y0}
+							  C ${x2} , ${y0}
+							  ${x3} , ${y1}
+							  ${x1} , ${y1}`;
+				}
+
+				link.curvature = function(_) {
+
+					if(!arguments.length)
+						return curvature;
+
+					curvature = +_;
+					return link;
+				};
+
+				return link;
+			};
+
+			// Populate the sourceLinks and targetLinks for each node.
+			// Also, if the source and target are not objects, assume they are indices.
+			function computeNodeLinks() {
+
+				for(const node of nodes) {
+
+					node.sourceLinks = [];
+					node.targetLinks = [];
+				}
+
+				for(const link of links) {
+
+					let
+						source = link.source,
+						target = link.target;
+
+					if(typeof source === 'number')
+						source = link.source = nodes[link.source];
+
+					if(typeof target === 'number')
+						target = link.target = nodes[link.target];
+
+					source.sourceLinks.push(link);
+					target.targetLinks.push(link);
+				};
+			}
+
+			// Compute the value (size) of each node by summing the associated links.
+			function computeNodeValues() {
+
+				for(const node of nodes) {
+
+					node.value = Math.max(
+						d3.sum(node.sourceLinks, value),
+						d3.sum(node.targetLinks, value)
+					);
+				}
+			}
+
+			// Iteratively assign the breadth (x-position) for each node.
+			// Nodes are assigned the maximum breadth of incoming neighbors plus one;
+			// nodes with no incoming links are assigned breadth zero, while
+			// nodes with no outgoing links are assigned the maximum breadth.
+
+			function computeNodeBreadths() {
+
+				let
+					remainingNodes = nodes,
+					nextNodes,
+					x = 0;
+
+				while(remainingNodes.length) {
+
+					nextNodes = [];
+
+					for(const node of remainingNodes) {
+
+						node.x = x;
+						node.dx = nodeWidth;
+
+						for(const link of node.sourceLinks) {
+							nextNodes.push(link.target);
+						};
+					}
+
+					remainingNodes = nextNodes;
+					++x;
+				}
+
+				moveSinksRight(x);
+				scaleNodeBreadths((size[0] - nodeWidth) / (x - 1));
+			}
+
+			function moveSourcesRight() {
+
+				for(const node of nodes) {
+
+					if(!node.targetLinks.length) {
+
+						node.x = d3.min(node.sourceLinks, d => d.target.x) - 1;
+					}
+				};
+			}
+
+			function moveSinksRight(x) {
+
+				for(const node of nodes) {
+
+					if(!node.sourceLinks.length) {
+						node.x = x - 1;
+					}
+				};
+			}
+
+			function scaleNodeBreadths(kx) {
+
+				for(const node of nodes) {
+					node.x *= kx;
+				}
+			}
+
+			function computeNodeDepths(iterations) {
+
+				let nodesByBreadth = d3.nest()
+						.key(d => d.x)
+						.sortKeys(d3.ascending)
+						.entries(nodes)
+						.map(d => d.values);
+
+				initializeNodeDepth();
+				resolveCollisions();
+
+				for (let alpha = 1; iterations > 0; --iterations) {
+
+					relaxRightToLeft(alpha *= .99);
+					resolveCollisions();
+					relaxLeftToRight(alpha);
+					resolveCollisions();
+				}
+
+				function initializeNodeDepth() {
+
+					let ky = d3.min(nodesByBreadth, function(nodes) {
+						return (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value);
+					});
+
+					for(const nodes of nodesByBreadth) {
+
+						for(const [i, node] of nodes.entries()) {
+
+							node.y = i;
+							node.dy = node.value * ky;
+						}
+					}
+
+					for(const link of links) {
+
+						link.dy = link.value * ky;
+					}
+				}
+
+				function relaxLeftToRight(alpha) {
+
+					for(const [breadth, nodes] of nodesByBreadth.entries()) {
+
+						for(const node of nodes) {
+
+							if(node.targetLinks.length) {
+								let y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
+								node.y += (y - center(node)) * alpha;
+							}
+						}
+					}
+
+					function weightedSource(link) {
+						return center(link.source) * link.value;
+					}
+				}
+
+				function relaxRightToLeft(alpha) {
+
+					for(const nodes of nodesByBreadth.slice().reverse()) {
+
+						for(const node of nodes) {
+
+							if(node.sourceLinks.length) {
+								let y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
+								node.y += (y - center(node)) * alpha;
+							}
+						}
+					}
+
+					function weightedTarget(link) {
+						return center(link.target) * link.value;
+					}
+				}
+
+				function resolveCollisions() {
+
+					for(const nodes of nodesByBreadth) {
+
+						let
+							node,
+							dy,
+							y0 = 0,
+							n = nodes.length,
+							i;
+
+						// Push any overlapping nodes down.
+						nodes.sort(ascendingDepth);
+
+						for (i = 0; i < n; ++i) {
+							node = nodes[i];
+							dy = y0 - node.y;
+							if (dy > 0) node.y += dy;
+							y0 = node.y + node.dy + nodePadding;
+						}
+
+						// If the bottommost node goes outside the bounds, push it back up.
+						dy = y0 - nodePadding - size[1];
+
+						if (dy > 0) {
+							y0 = node.y -= dy;
+
+							// Push any overlapping nodes back up.
+							for (i = n - 2; i >= 0; --i) {
+								node = nodes[i];
+								dy = node.y + node.dy + nodePadding - y0;
+								if (dy > 0) node.y -= dy;
+								y0 = node.y;
+							}
+						}
+					};
+				}
+
+				function ascendingDepth(a, b) {
+					return a.y - b.y;
+				}
+			}
+
+			function computeLinkDepths() {
+
+				for(const node of nodes) {
+
+					node.sourceLinks.sort(ascendingTargetDepth);
+					node.targetLinks.sort(ascendingSourceDepth);
+				}
+
+				for(const node of nodes) {
+
+					let sy = 0, ty = 0;
+
+					for(const link of node.sourceLinks) {
+
+						link.sy = sy;
+						sy += link.dy;
+					};
+
+					for(const link of node.targetLinks) {
+
+						link.ty = ty;
+						ty += link.dy;
+					};
+				};
+
+				function ascendingSourceDepth(a, b) {
+					return a.source.y - b.source.y;
+				}
+
+				function ascendingTargetDepth(a, b) {
+					return a.target.y - b.target.y;
+				}
+			}
+
+			function center(node) {
+				return node.y + node.dy / 2;
+			}
+
+			function value(link) {
+				return link.value;
+			}
+
+			return sankey;
+		}
+	}
+})
 
 class SpatialMapLayers extends Set {
 
@@ -9463,6 +10998,143 @@ class Tooltip {
 
 		container.classList.add('hidden');
 	}
+}
+
+class VisualizationsCanvas {
+
+    constructor(visualizations, page) {
+
+        this.page = page;
+
+        VisualizationsCanvas.grid = {
+            columns: 32,
+            rows: 10,
+            rowHeight: 50,
+        };
+
+        VisualizationsCanvas.screenHeightOffset = 1.5 * screen.availHeight;
+
+        this.visualizations = new Set();
+
+        for(const visualization of visualizations) {
+
+            if (!visualization.format) {
+
+                visualization.format = {};
+            }
+
+            if (!DataSource.list.has(visualization.query_id)) {
+
+                continue;
+            }
+
+            const dataSource = new DataSource(JSON.parse(JSON.stringify(DataSource.list.get(visualization.query_id))), this.page);
+
+            dataSource.container.setAttribute('style', `
+				order: ${visualization.format.position || 0};
+				grid-column: auto / span ${visualization.format.width || VisualizationsCanvas.grid.columns};
+				grid-row: auto / span ${visualization.format.height || VisualizationsCanvas.grid.rows};
+			`);
+
+            [dataSource.selectedVisualization] = dataSource.visualizations.filter(v => v.visualization_id === visualization.visualization_id);
+
+            if (!dataSource.selectedVisualization) {
+
+                continue;
+            }
+
+            this.visualizations.add(dataSource);
+            dataSource.container.appendChild(dataSource.selectedVisualization.container);
+        }
+    }
+
+    get container() {
+
+        if(this.containerElement) {
+
+            return this.containerElement;
+        }
+
+        const container = this.containerElement = document.createElement('div');
+
+        container.classList.add('canvas');
+
+        return container;
+    }
+
+    lazyLoad(resize, offset = VisualizationsCanvas.screenHeightOffset) {
+
+        const visitedVisualizations = new Set;
+
+        for (const [visualization_id, visualization] of this.visualizationTrack) {
+
+            if ((parseInt(visualization.position) < this.maxScrollHeightAchieved + offset) && !visualization.loaded) {
+
+                visualization.query.selectedVisualization.load();
+                visualization.loaded = true;
+
+                this.page.loadedVisualizations.add(visualization);
+
+                visitedVisualizations.add(visualization_id);
+            }
+
+            if (visualization.loaded) {
+
+                visitedVisualizations.add(visualization_id);
+            }
+        }
+        for (const visualizationId of visitedVisualizations.values()) {
+
+            this.visualizationTrack.delete(visualizationId);
+        }
+    }
+
+    async render(resize) {
+
+        this.visualizationTrack = new Map();
+
+        for (const queryDataSource of this.visualizations) {
+
+            queryDataSource.container.appendChild(queryDataSource.selectedVisualization.container);
+
+            this.container.appendChild(queryDataSource.container);
+
+            this.visualizationTrack.set(queryDataSource.selectedVisualization.visualization_id, ({
+                position: queryDataSource.container.getBoundingClientRect().y,
+                query: queryDataSource,
+                loaded: false,
+            }));
+        }
+
+        const main = document.querySelector('main');
+
+        this.maxScrollHeightAchieved = Math.max(VisualizationsCanvas.screenHeightOffset, main.scrollTop);
+
+        this.lazyLoad(this.maxScrollHeightAchieved, resize);
+
+        document.addEventListener(
+            'scroll',
+            () => {
+                for (const queryDataSource of this.visualizations) {
+
+                    if (this.visualizationTrack.get(queryDataSource.selectedVisualization.visualization_id)) {
+
+                        this.visualizationTrack.get(queryDataSource.selectedVisualization.visualization_id).position = queryDataSource.container.getBoundingClientRect().y;
+                    }
+                }
+
+                this.maxScrollHeightAchieved = Math.max(main.scrollTop, this.maxScrollHeightAchieved);
+                this.lazyLoad(resize,);
+            }, {
+                passive: true
+            }
+        );
+
+        if (!this.page.loadedVisualizations.size) {
+
+            this.container.innerHTML = '<div class="NA no-reports">No reports found!</div>';
+        }
+    }
 }
 
 DataSourceFilter.setup();

@@ -104,7 +104,7 @@ main .dataset {
 		.data-source > header h2::-webkit-scrollbar {
 			display: none;
 		}
-			.data-source > header i {
+			.data-source > header h2 i {
 				margin-left: 5px;
 				color: var(--color-secondary-text);
 			}
@@ -117,7 +117,7 @@ main .dataset {
 				width: 24px;
 				display: inline-block;
 				text-align: center;
-				color: #999;
+				color: var(--color-grey);
 			}
 			.data-source > header .actions .card-info {
 				cursor: pointer;
@@ -125,7 +125,7 @@ main .dataset {
 				width: 12px;
 			}
 			.data-source > header .grey {
-				color: #999;
+				color: var(--color-grey);
 			}
 	.data-source .toolbar {
 		background: transparent;
@@ -182,7 +182,7 @@ main .dataset {
 				width: max-content;
 				min-width: 150px;
 				position: absolute;
-				right: 100%;
+				left: 100%;
 				top: 0;
 				z-index: 7;
 				background: var(--color-surface);
@@ -194,7 +194,7 @@ main .dataset {
 			}
 			.singleton .data-source > .menu > .item > .submenu {
 				top: 100%;
-				right: 0;
+				left: 0;
 			}
 			.data-source > .menu .label {
 				display: grid;
@@ -276,10 +276,11 @@ main .dataset {
 			color: var(--color-hover-text);
 		}
 
-	.data-source .toolbar.filters {
+	.data-source .overlay.filters {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		align-items: flex-start;
 		flex-wrap: wrap;
+		margin: 0;
 	}
 
 	.data-source > .description {
@@ -366,6 +367,7 @@ main .dataset {
 						overflow: auto;
 						margin: 0;
 					}
+
 	.data-source > .query {
 		padding: 25px calc(var(--gap) * 2) calc(var(--gap) * 2);
 		user-select: text;
@@ -373,6 +375,78 @@ main .dataset {
 		display: flex;
 		flex-direction: column;
 	}
+
+	.data-source > .pipeline {
+		padding: 25px 0 0;
+		display: grid;
+		grid-template-columns: 1fr 350px;
+		grid-gap: calc(var(--gap) * 2);
+	}
+		.data-source > .pipeline .snapshot {
+		}
+			.data-source > .pipeline .snapshot > .NA {
+				text-align: center;
+			}
+		.data-source > .pipeline .list {
+			overflow: auto;
+			padding: 15px !important;
+		}
+			.data-source > .pipeline .event {
+				display: grid;
+				grid-gap: calc(var(--gap) * 2);
+				border: 1px solid var(--color-border);
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+				border-radius: 15px;
+				padding: 15px;
+				position: relative;
+				background: rgba(255, 255, 0, 0.05);
+				transition: background var(--transition-duration),
+							color var(--transition-duration),
+							box-shadow var(--transition-duration);
+			}
+			.data-source > .pipeline .event.disabled {
+				background: rgba(0, 0, 0, 0.15);
+				opacity: 0.8;
+			}
+			.data-source > .pipeline .event:not(.disabled):hover {
+				background: rgba(255, 255, 255, 0.15);
+				cursor: pointer;
+			}
+			.data-source > .pipeline .event:not(.disabled):active {
+				box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.15);
+			}
+				.data-source > .pipeline .event .order {
+					position: absolute;
+					left: -10px;
+					top: -10px;
+					background: var(--color-secondary);
+					color: var(--color-secondary-text);
+					width: 25px;
+					height: 25px;
+					border-radius: 15px;
+					display: flex;
+					align-items: center;
+					font-size: 90%;
+					justify-content: center;
+					box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+				}
+				.data-source > .pipeline .event h2 {
+					margin: 0;
+					font-size: 120%;
+				}
+				.data-source > .pipeline .event .subtitle {
+					color: var(--grey);
+					font-size: 90%;
+				}
+					.data-source > .pipeline .event .subtitle > span {
+						margin-right: calc(var(--gap) * 2);
+					}
+			.data-source > .pipeline .next-connector {
+				justify-content: center;
+				display: flex;
+				padding: 15px;
+				font-size: 175%;
+			}
 
 	.data-source > .share-link {
 		background: #fff;
@@ -391,8 +465,8 @@ main .dataset {
 		align-items: center;
 		padding: calc(var(--gap) * 2);
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-		border-top: 15px solid #fff;
-		background: #fff;
+		border-top: 15px solid var(--color-surface);
+		background: var(--color-surface);
 	}
 		.data-source > .drilldown a {
 			padding: var(--gap) calc(var(--gap) * 2);
@@ -402,7 +476,7 @@ main .dataset {
 		}
 		.data-source > .drilldown a:hover {
 			text-decoration: none;
-			border-color: #ccc;
+			border-color: var(--color-border);
 		}
 		.data-source > .drilldown a:active {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
@@ -609,9 +683,6 @@ main .dataset {
 			padding: 0;
 			height: 100%;
 		}
-		.data-source .visualization.table .container {
-			overflow: initial;
-		}
 			.data-source .visualization.table .container td.json {
 				color: #666;
 				padding: 4px;
@@ -726,7 +797,6 @@ main .dataset {
 				caption-side: bottom;
 				background: var(--color-surface);
 				color: var(--color-surface-text);
-				margin-bottom: 25px;
 			}
 			.visualization.table thead tr th.heading {
 				padding-right: 0;
@@ -754,7 +824,7 @@ main .dataset {
 					opacity: 1;
 				}
 				.visualization.table thead .heading.has-filter {
-					box-shadow: inset 0px -4px 0px 0px var(--color-accent);
+					box-shadow: inset 0px -4px 0px 0px var(--color-secondary);
 				}
 				.visualization.table thead .heading .popup-dropdown {
 					position: absolute;
@@ -843,7 +913,7 @@ main .dataset {
 				transition: background var(--transition-duration);
 			}
 			.visualization.table table tbody tr td.drilldown:hover {
-				background: #fcc;
+				background: var(--color-hover);
 			}
 		.visualization.table table tbody tr.show-rows {
 			font-size: 90%;
@@ -970,10 +1040,12 @@ main .dataset {
 				background: var(--color-primary);
 			}
 			.visualization.cohort table td.sticky {
-				background: #fff;
+				background: var(--color-surface);
+				color: var(--color-surface-text);
 			}
 			.visualization.cohort table td.sticky:nth-child(2n) {
 				background: #f1f1f9;
+				color: var(--color-grey);
 			}
 			.visualization.cohort table .sticky:nth-child(2) {
 				left: 100px;
@@ -1230,6 +1302,18 @@ main .dataset {
 		.visualization.livenumber .graph svg .y .domain {
 			display: none;
 		}
+	.visualization.funnel .background {
+		fill: var(--color-surface);
+	}
+	.visualization.funnel .text {
+		fill: var(--color-surface-text);
+	}
+	.visualization.funnel .sub-text {
+		fill: var(--color-grey);
+	}
+	.visualization.funnel .line-stroke {
+		stroke: var(--color-grey);
+	}
 
 .data-source-column form .parameter-list {
 	display: grid;
@@ -1321,18 +1405,35 @@ main .dataset {
 	.column-form > label {
 		margin: 0 calc(var(--gap) * 2);
 	}
-	.column-form .timing-type-custom {
+	.column-form .timing-type-custom,
+	.column-form .number-type-custom {
 		max-width: 100%;
 		margin: 0 calc(var(--gap) * 2);
 		display: grid;
 		grid-gap: 10px;
+		background: rgba(0, 0, 0, 0.05);
+		padding: calc(var(--gap) * 2);
 	}
-		.column-form .timing-format {
+		.column-form .number-type-custom .form {
+			margin: 0 -10px;
+		}
+			.column-form .number-type-custom .form .currency-code {
+				display: flex;
+				justify-content: space-between;
+			}
+		.column-form .number-type-custom .NA .example-error {
+			color: var(--color-red);
+		}
+		.column-form .timing-format,
+		.column-form .number-format {
 			display: grid;
 			overflow: auto;
 			grid-gap: calc(var(--gap) * 2);
 			grid-auto-flow: column;
 		}
+			.column-form .number-format .currency-list {
+				text-align: right;
+			}
 			.column-form .timing-format fieldset {
 				border: 1px solid var(--color-border);
 				font-size: 90%;
@@ -1341,9 +1442,10 @@ main .dataset {
 				.column-form .timing-format fieldset legend {
 					font-size: 90%;
 				}
+
 				.column-form .timing-format fieldset label {
 					display: inline-block;
-					padding: 0 3px;
+					padding: 2px 5px;
 					text-align: center;
 					transition: background var(--transition-duration),
 								box-shadow var(--transition-duration);
@@ -1363,7 +1465,7 @@ main .dataset {
 					color: var(--color-selected);
 				}
 				.column-form .timing-format fieldset label span {
-					color: #ccc;
+					color: var(--color-grey);
 					transition: color var(--transition-duration);
 					font-weight: normal;
 				}
@@ -1387,6 +1489,7 @@ main .dataset {
 		bottom: 0;
 		font-size: 110%;
 		z-index: 6;
+		background: var(--color-background);
 	}
 		.column-form > footer button {
 			padding: calc(var(--gap) * 2);
@@ -1419,8 +1522,7 @@ main .dataset {
 		}
 
 .sub-reports-dialog .dialog-box {
-	width: 50%;
-	background: #eee;
+	width: 70%;
 }
 	.sub-reports-dialog .body {
 		padding: calc(var(--gap) * 2) 0;
@@ -1435,3 +1537,25 @@ main .dataset {
 			height: 200px;
 			margin: calc(var(--gap) * 3) 0;
 		}
+
+.visualization.sankey .node rect {
+	cursor: pointer;
+	fill-opacity: .9;
+	shape-rendering: crispEdges;
+}
+.visualization.sankey .node text {
+	pointer-events: none;
+	fill: var(--color-surface-text);
+}
+.visualization.sankey .sankey-tooltip {
+	padding: calc(var(--gap) * 2);
+}
+.visualization.sankey .link {
+	fill: none;
+	stroke: var(--color-grey);
+	stroke-opacity: .3;
+}
+.visualization.sankey .link:hover {
+	cursor: pointer;
+	stroke-opacity: .5;
+}

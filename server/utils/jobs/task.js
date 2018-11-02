@@ -114,7 +114,7 @@ class Task {
 
 		if (this.externalParams) {
 
-			this.task.parameters.push(this.externalParams)
+			this.task.parameters = this.task.parameters.concat(this.externalParams)
 		}
 
 		this.fetchParameters = new apiRequest({definition: JSON.stringify(this.task.definition)}, this.task.parameters);
@@ -131,7 +131,7 @@ class Task {
 		const db = dbConfig.write.database.concat('_logs');
 
 		await mysql.query(
-			"insert into ??.tb_jobs_history (owner, successful, timing, owner_id, response, runtime) values(?, ?, ?, ?, ?, ?)",
+			"insert into ??.tb_jobs_history (owner, successful, timing, owner_id, response, runtime, creation_date) values(?, ?, ?, ?, ?, ?, DATE(NOW()))",
 			[db, "task", !(error || this.error) ? 1 : 0, this.task.next_interval, this.task.task_id, this.error || response, (this.taskRunTime || 0).toFixed(4)],
 			"write"
 		)

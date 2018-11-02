@@ -49,20 +49,21 @@ class report extends API {
                 		SELECT
                 			query_id
                 		FROM
-                			tb_visualization_dashboard vd
+                			tb_visualization_canvas vd
                 		JOIN
                 			tb_object_roles r
-                			ON vd.dashboard_id = r.owner_id
+                			ON vd.owner_id = r.owner_id
                 		JOIN
                 			tb_query_visualizations qv
                 			USING(visualization_id)
                 		WHERE
                 			target_id = ? -- user_id
                 			AND query_id = ?
-                			AND OWNER = 'dashboard'
+                			AND r.owner = 'dashboard'
                 			AND target = 'user'
                 			AND qv.is_enabled = 1
-                			and qv.is_deleted = 0
+                			AND qv.is_deleted = 0
+                			AND vd.owner = 'dashboard'
                 		UNION ALL
                 		SELECT
                 			NULL AS query_id
@@ -77,22 +78,22 @@ class report extends API {
 				    WHERE
 				        owner_id = ? -- query
 				        AND target_id = ? -- user
-				        AND OWNER = 'query'
+				        AND o.owner = 'query'
 				        AND target = 'user'
-				        
+
 				    UNION ALL
-				    
+
 				    SELECT
 				        NULL AS user_id
-				        
+
 					LIMIT 1
 				) AS queryUser
-				
+
 				JOIN
 					tb_credentials c
 				ON
 					q.connection_name = c.id
-					
+
                 WHERE
 					q.query_id = ?
 					AND is_enabled = 1
@@ -119,7 +120,7 @@ class report extends API {
 		this.reportObj.category_id = [...new Set(reportDetails[2].map(x => x.category_id))];
 
 		let [preReportApi] = await this.mysql.query(
-			`select value from tb_settings where owner = 'account' and profile = 'pre_report_api' and account_id = ?`,
+			`select value from tb_settings where owner = 'account' and profile = 'pre_report_api' and owner_id = ?`,
 			[this.account.account_id],
 		);
 
@@ -169,14 +170,32 @@ class report extends API {
 
 			preReportApiDetails = JSON.parse(preReportApiDetails.body).data[0];
 
+			const filterMapping = {};
+
+			for(const filter of this.filters) {
+
+				filterMapping[filter.placeholder] = filter;
+			}
+
 			for (const key in preReportApiDetails) {
 
-				this.filters.push({
+				const value = preReportApiDetails.hasOwnProperty(key) ? (new String(preReportApiDetails[key])).toString() : "";
+
+				if(key in filterMapping) {
+
+					filterMapping[key].value = value;
+					filterMapping[key].default_value = value;
+					continue;
+				}
+
+				filterMapping[key] = {
 					placeholder: key,
-					value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
-					default_value: preReportApiDetails[key] ? preReportApiDetails[key].toString() : '',
-				})
+					value: value,
+					default_value: value
+				}
 			}
+
+			this.filters = Object.values(filterMapping);
 		}
 
 		this.reportObj.query = this.request.body.query || this.reportObj.query;
@@ -186,6 +205,33 @@ class report extends API {
 		this.account.features.needs(this.reportObj.type + '-source');
 
 		const authResponse = await auth.report(this.reportObj, this.user);
+
+		if(this.request.body.query) {
+
+			const objRole = new getRole();
+
+			const possiblePrivileges = ["report.edit", constants.privilege.administrator, "superadmin"];
+
+			const categories = (await objRole.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
+
+			let userCategories = this.user.privileges.filter(x => possiblePrivileges.includes(x.privilege_name)).map(x => x.category_id);
+
+			let flag = false;
+
+			for(let category of categories) {
+
+				category = category.map(x => x.toString());
+
+				flag = flag || userCategories.every(x => category.includes(x.toString()));
+			}
+
+			flag = flag || (userCategories.some(x => constants.adminPrivilege.includes(x)) && userCategories.length);
+			flag = flag || this.user.privilege.has('superadmin') || this.reportObj.added_by == this.user.user_id;
+
+			this.assert(flag, "Query not editable by user");
+		}
+
+
 		this.assert(!authResponse.error, "user not authorised to get the report");
 	}
 
@@ -479,7 +525,7 @@ class report extends API {
 
 			console.error(e.stack);
 
-			if(e.message.includes("<!DOCTYPE")) {
+			if (e.message.includes("<!DOCTYPE")) {
 
 				e.message = e.message.slice(0, e.message.indexOf("<!DOCTYPE")).trim();
 			}
@@ -778,7 +824,7 @@ class Bigquery {
 			"number": "integer",
 			"text": "string",
 			"date": "date",
-			"month": "integer",
+			"month": "string",
 			"hidden": "string",
 			"datetime": "string"
 		};
@@ -815,6 +861,11 @@ class Bigquery {
 			filterObj.parameterValue = {
 				arrayValues: [],
 			};
+
+			if (!Array.isArray(data)) {
+
+				data = [data]
+			}
 
 			for (const item of data) {
 
@@ -1031,7 +1082,7 @@ class ReportEngine extends API {
 
 			this.parameters.request[1].params = this.parameters.request[1].body.toString();
 		}
-		return crypto.createHash('md5').update(JSON.stringify(this.parameters) || "").digest('hex');
+		return crypto.createHash('sha256').update(JSON.stringify(this.parameters) || "").digest('hex');
 	}
 
 	async execute() {
@@ -1101,10 +1152,11 @@ class ReportEngine extends API {
 						user_id,
 						session_id,
 						cache,
-						\`rows\`
+						\`rows\`,
+						creation_date
 					)
 				VALUES
-					(?,?,?,?,?,?,?,?)`,
+					(?,?,?,?,?,?,?,?, DATE(NOW()))`,
 				[query_id, result_query, executionTime, type, userId, session_id, is_redis, rows],
 				"write"
 			);
@@ -1122,8 +1174,35 @@ class query extends API {
 	async query() {
 
 		const [type] = await this.mysql.query("select type from tb_credentials where id = ?", [this.request.body.connection_id]);
+		const [queryRow] = await this.mysql.query(
+			"select * from tb_query where query_id = ? and account_id = ? and is_enabled = 1 and is_deleted = 0",
+			[this.account.account_id, this.request.body.query_id]
+		);
+
+		this.assert(queryRow, "Query not found");
 
 		this.assert(type, "credential id " + this.request.body.connection_id + " not found");
+
+		const objRole = new getRole();
+
+		const possiblePrivileges = ["report.edit", "admin", "superadmin"];
+
+		const categories = (await objRole.get(this.account.account_id, 'query', 'role', this.request.body.query_id)).map(x => x.category_id);
+
+		let userCategories = this.user.privileges.filter(x => possiblePrivileges.includes(x.privilege_name)).map(x => x.category_id);
+
+		let flag = false;
+
+		for(let category of categories) {
+
+			category = category.map(x => x.toString());
+
+			flag = flag || category.every(x => userCategories.includes(x.toString()));
+		}
+
+		flag = flag || this.user.privilege.has('superadmin') || queryRow.added_by == this.user.user_id;
+
+		this.assert(flag, "Query not editable by user");
 
 		this.parameters = {
 			request: [this.request.body.query, [], this.request.body.connection_id],
@@ -1201,12 +1280,12 @@ class download extends API {
 			]
 		};
 
-		if(config.has("allspark_python_base_api")) {
+		if (config.has("allspark_python_base_api")) {
 
-            const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
+			const data = await download.jsonRequest(requestObj, config.get("allspark_python_base_api") + "xlsx/get");
 
-            this.response.sendFile(data.body.response);
-            throw({"pass": true})
+			this.response.sendFile(data.body.response);
+			throw({"pass": true})
 		}
 	}
 }
