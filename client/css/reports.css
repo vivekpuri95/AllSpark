@@ -901,9 +901,6 @@ main .dataset {
 						background var(--transition-duration),
 						color var(--transition-duration);
 		}
-			.visualization.table table tbody tr td.tooltip-display {
-				display: block;
-			}
 		.visualization.table table tr.NA {
 			text-align: center;
 		}
