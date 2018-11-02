@@ -21,8 +21,6 @@ Page.class = class Dashboards extends Page {
 
 		const navBlanket = this.container.querySelector('.nav-blanket');
 
-		this.fetch();
-
 		menuToggle.on('click', () => {
 			this.nav.classList.toggle('show');
 			navBlanket.classList.toggle('hidden');
@@ -72,39 +70,14 @@ Page.class = class Dashboards extends Page {
 		return parseInt(window.location.pathname.split('/').includes('dashboard') ? window.location.pathname.split('/').pop() : 0);
 	}
 
-	async fetch() {
-
-		[this.connections] = await Promise.all([
-			API.call('credentials/list'),
-			DataSource.load(true),
-		]);
-	}
-
 	process() {
 
 		if(this.searchBar)
 			return this.searchBar;
 
-		const connections = new Map;
-
-		for(const connection of this.connections) {
-
-			for(const feature of MetaData.features.values()) {
-
-				if(feature.slug == connection.type && feature.type == 'source')
-					connection.feature = feature;
-			}
-
-			if(!connection.feature)
-				continue;
-
-			connections.set(connections.id, connection);
-		}
-		this.connections = new Map(this.connections.map(c => [c.id, c]));
-
 		const filters = [
 			{
-				key: 'Query ID',
+				key: 'Report ID',
 				rowValue: row => [row.query_id],
 			},
 			{
@@ -114,24 +87,6 @@ Page.class = class Dashboards extends Page {
 			{
 				key: 'Description',
 				rowValue: row => row.description ? [row.description] : [],
-			},
-			{
-				key: 'Connection name',
-				rowValue: row => {
-					if(page.connections.has(parseInt(row.connection_name)))
-						return [page.connections.get(parseInt(row.connection_name)).connection_name];
-					else
-						return [];
-				},
-			},
-			{
-				key: 'Connection Type',
-				rowValue: row => {
-					if(page.connections.has(parseInt(row.connection_name)))
-						return [page.connections.get(parseInt(row.connection_name)).feature.name];
-					else
-						return [];
-				},
 			},
 			{
 				key: 'Tags',
@@ -146,15 +101,11 @@ Page.class = class Dashboards extends Page {
 				rowValue: row => row.filters.map(f => f.name),
 			},
 			{
-				key: 'Filters Placeholder',
-				rowValue: row => row.filters.map(f => f.placeholder),
-			},
-			{
 				key: 'Visualizations Name',
 				rowValue: row => row.visualizations.map(f => f.name),
 			},
 			{
-				key: 'Visualizations Type Name',
+				key: 'Visualizations Type',
 				rowValue: row => {
 					return row.visualizations.map(f => f.type)
 											 .map(m => MetaData.visualizations.has(m) ?
@@ -166,29 +117,8 @@ Page.class = class Dashboards extends Page {
 				rowValue: row => [row.visualizations.length],
 			},
 			{
-				key: 'Report Enabled',
-				rowValue: row => row.is_enabled ? ['yes'] : ['no'],
-			},
-			{
 				key: 'Report Creation',
 				rowValue: row => row.created_at ? [row.created_at] : [],
-			},
-			{
-				key: 'Definition',
-				rowValue: row => row.query ? [row.query] : [],
-			},
-			{
-				key: 'Report Refresh Rate',
-				rowValue: row => row.refresh_rate ? [row.refresh_rate] : [],
-			},
-			{
-				key: 'Subtitle',
-				rowValue: row => {
-					if(MetaData.categories.has(parseInt(row.subtitle)))
-						return [MetaData.categories.get(parseInt(row.subtitle)).name];
-					else
-						return [];
-				},
 			},
 			{
 				key: 'Report Last Updated At',
@@ -354,31 +284,6 @@ Page.class = class Dashboards extends Page {
 
 				continue;
 			}
-
-			// if (this.listContainer.form.search.value) {
-
-			// 	let found = false;
-
-			// 	const searchItems = this.listContainer.form.search.value.split(' ').filter(x => x).slice(0, 5);
-
-
-			// 	for (const searchItem of searchItems) {
-
-			// 		const searchableText = report.query_id + ' ' + report.name + ' ' + report.description + ' ' + report.tags;
-
-			// 		found = searchableText.toLowerCase().includes(searchItem.toLowerCase());
-
-			// 		if (found) {
-
-			// 			break;
-			// 		}
-			// 	}
-
-			// 	if (!found) {
-
-			// 		continue;
-			// 	}
-			// }
 
 			const tr = document.createElement('tr');
 
