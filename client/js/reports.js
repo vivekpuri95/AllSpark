@@ -9683,6 +9683,147 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 	}
 });
 
+Visualization.list.set('sunburst', class Sankey extends Visualization {
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('visualization', 'sunburst');
+
+		container.innerHTML = `
+			<div id="visualization-${this.id}" class="container">
+				<div class="loading"><i class="fa fa-spinner fa-spin"></i></div>
+			</div>
+		`;
+
+		return container;
+	}
+
+	async load(options = {}) {
+
+		super.render(options);
+
+		await this.render(options);
+	}
+
+	async render(options = {}) {
+
+		const response = {
+			"name": "A",
+			"children": [
+				{
+				"name": "B",
+					"children": [
+						{
+							"name": "C1",
+							"children": []
+						}
+					]
+				},
+				{
+					"name": "BB",
+					"children": [
+						{
+							"name": "C2",
+							"children": []
+						}
+					]
+				},
+				{
+					"name": "AB",
+					"children": [
+						{
+							"name": "C3",
+							"children": []
+						}
+					]
+				}
+			]
+		};
+
+		const margin = {top: 30, right: 30, bottom: 30, left: 30};
+
+		const container = d3.selectAll(`#visualization-${this.id}`);
+
+		if(!this.width || options.resize) {
+			this.width = this.container.clientWidth - margin.left - margin.right;
+			this.width = this.container.clientHeight - margin.top - margin.bottom - 10;
+		}
+
+		const radius = Math.min(this.width, this.width) / 2;
+
+		const svg = container.append('svg')
+			.attr('width', this.width + margin.left + margin.right)
+			.attr('height', this.height + margin.top + margin.bottom)
+			.append('g')
+			.attr('transform', `translate(${margin.left} , ${margin.top})`);
+
+
+		var partition = d3.layout.partition()
+		    .size([2 * Math.PI, radius * radius])
+		    .value(function(d) { return d.size; });
+
+
+		var arc = d3.svg.arc()
+			    .startAngle(function(d) { return d.x; })
+			    .endAngle(function(d) { return d.x + d.dx; })
+			    .innerRadius(function(d) { return Math.sqrt(d.y); })
+			    .outerRadius(function(d) { return Math.sqrt(d.y + d.dy); });
+
+		  // Dimensions of legend item: width, height, spacing, radius of rounded rect.
+	  var li = {
+	    w: 75, h: 30, s: 3, r: 3
+	  };
+
+	  var legend = d3.select("#legend").append("svg:svg")
+	      .attr("width", li.w)
+	      .attr("height", d3.keys(colors).length * (li.h + li.s));
+
+	  var g = legend.selectAll("g")
+	      .data(d3.entries(colors))
+	      .enter().append("svg:g")
+	      .attr("transform", function(d, i) {
+	              return "translate(0," + i * (li.h + li.s) + ")";
+	           });
+
+	  g.append("svg:rect")
+	      .attr("rx", li.r)
+	      .attr("ry", li.r)
+	      .attr("width", li.w)
+	      .attr("height", li.h)
+	      .style("fill", function(d) { return d.value; });
+
+	  g.append("svg:text")
+	      .attr("x", li.w / 2)
+	      .attr("y", li.h / 2)
+	      .attr("dy", "0.35em")
+	      .attr("text-anchor", "middle")
+	      .text(function(d) { return d.key; });
+
+	  svg.append("svg:circle")
+      .attr("r", radius)
+      .style("opacity", 0);
+
+      	var nodes = partition.nodes(response)
+	      .filter(function(d) {
+	      return (d.dx > 0.005); // 0.005 radians = 0.29 degrees
+	      });
+
+	      var path = svg.data([response]).selectAll("path")
+	      .data(nodes)
+	      .enter().append("svg:path")
+	      .attr("display", function(d) { return d.depth ? null : "none"; })
+	      .attr("d", arc)
+	      .attr("fill-rule", "evenodd")
+	      .style("fill", function(d) { return colors[d.name]; })
+	      .style("opacity", 1)
+	      .on("mouseover", mouseover);
+	};
+});
+
 Visualization.list.set('sankey', class Sankey extends Visualization {
 
 	get container() {

@@ -4627,8 +4627,10 @@ ConfigureVisualization.types.set('cohort', class CohortOptions extends ReportVis
 ConfigureVisualization.types.set('json', class JSONOptions extends ReportVisualizationOptions {
 });
 
-ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportVisualizationOptions {
+ConfigureVisualization.types.set('sunburst', class JSONOptions extends ReportVisualizationOptions {
+});
 
+ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportVisualizationOptions {
 	get form() {
 
 		if(this.formContainer)
