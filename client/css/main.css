@@ -1188,13 +1188,13 @@ body {
 			grid-gap: calc(var(--gap) * 2);
 			grid-auto-flow: column;
 		}
-		.search-column-filters .search-column-filter .delete i{
-			margin: 0;
-		}
 		.search-column-filters .search-column-filter .delete:hover{
-			background: #e77;
-			border-color: #e77;
+			background: var(--color-red);
+			border-color: var(--color-red);
 		}
+			.search-column-filters .search-column-filter .delete .delete-icon{
+				margin: 0;
+			}
 		.search-column-filter.global-filter {
 			display: flex;
 		}

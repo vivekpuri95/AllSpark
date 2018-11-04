@@ -4321,7 +4321,7 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 		`;
 
 		container.querySelector('.add-gradient').on('click', () => {
-			container.querySelector('.gradient-rules').insertAdjacentElement('afterbegin', this.rule());
+			container.querySelector('.gradient-rules').appendChild(this.rule());
 			this.render();
 		});
 
@@ -4391,7 +4391,7 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 				</select>
 			</label>
 
-			<button type="button"><i class="far fa-trash-alt"></i></button>
+			<button type="button" class="delete"><i class="far fa-trash-alt delete-icon"></i></button>
 		`;
 
 		const

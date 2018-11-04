@@ -527,7 +527,7 @@ main.preview-left #stages {
 			max-height: 200px;
 		}
 		.visualization-form .subform .gradient-rules::-webkit-scrollbar {
-			display: none;
+			height: 5px;
 		}
 			.visualization-form .subform .gradient-rules .rule {
 				display: grid;
@@ -539,9 +539,13 @@ main.preview-left #stages {
 					width: 100%;
 					padding: 0;
 				}
-				.visualization-form .subform .gradient-rules .rule .fa-trash-alt {
-					margin-right: 0;
+				.visualization-form .subform .gradient-rules .rule .delete:hover {
+					background: var(--color-red);
+					border-color: var(--color-red);
 				}
+					.visualization-form .subform .gradient-rules .rule .delete .delete-icon {
+						margin-right: 0;
+					}
 
 
 	.visualization-form .axes,
