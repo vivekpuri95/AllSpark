@@ -47,7 +47,7 @@ Page.class = class Dashboards extends Page {
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
-			await this.renderList();
+			this.renderList();
 			await Sections.show('list');
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
 		});
