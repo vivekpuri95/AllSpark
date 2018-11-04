@@ -3122,7 +3122,7 @@ class SearchColumnFilter {
 
 		container.innerHTML = `
 			<select class="searchValue"></select>
-			<select class="searchType" name="searchType"></select>
+			<select class="searchType"></select>
 			<input type="search" class="searchQuery" placeholder="Search">
 			<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
 		`;
@@ -3133,6 +3133,9 @@ class SearchColumnFilter {
 
 		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
 		searchQuery.on('search', () => this.searchColumns.changeCallback());
+
+		for(const select of container.querySelectorAll('select'))
+			select.on('change', () => this.searchColumns.changeCallback());
 
 		for(const filter of DataSourceColumnFilter.types) {
 
@@ -3174,7 +3177,7 @@ class SearchColumnFilter {
 		if(!values.query)
 			return true;
 
-		const [columnValue] = this.searchColumns.filters.filter(fil => fil.key == values.columnName).map(m => m.rowValue(row));
+		const [columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
 
 		if(!columnValue || !columnValue.length)
 			return false;
@@ -3202,7 +3205,7 @@ class SearchColumnFilter {
 		};
 	}
 
-	set json(values) {
+	set json(values = {}) {
 
 		this.container.querySelector('select.searchValue').value = values.searchValue;
 		this.container.querySelector('select.searchType').value = values.searchType;

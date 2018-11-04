@@ -585,7 +585,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			const values = filter.json;
 
-			if(values.functionName == 'equalto' && values.query == value)
+			if(values.functionName == 'equalto' && values.query == value && values.searchValue == 'Tags')
 				return;
 		}
 
@@ -597,13 +597,11 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		this.page.searchBar.render();
 
-		const selected = {
+		tagFilter.json = {
 			searchQuery: value,
 			searchValue: 'Tags',
 			searchType: 'equalto',
-		}
-
-		tagFilter.json = selected;
+		};
 
 		this.load();
 	}
