@@ -132,7 +132,7 @@ Page.class = class Dashboards extends Page {
 			page,
 		});
 
-		this.container.querySelector('.section#list').insertBefore(this.searchBarFilter.container, this.container.querySelector('.section .block'));
+		this.container.querySelector('.section#list').insertBefore(this.searchBarFilter.container, this.container.querySelector('.section#list .block'));
 
 		this.container.querySelector('.section#list .toolbar').appendChild(this.searchBarFilter.globalSearch.container);
 
@@ -229,42 +229,31 @@ Page.class = class Dashboards extends Page {
 
 		e.stopPropagation();
 
-		const
-			searchBarContainer = this.searchBarFilter.container,
-			value = e.currentTarget.textContent;
+		const value = e.currentTarget.textContent;
 
-		let existingData = {};
+		for(const filter of this.searchBarFilter.values()) {
 
-		for(const filter of searchBarContainer.querySelectorAll('select[name="searchType"], input')) {
+			const values = filter.json;
 
-			if(filter.name == "searchType")
-				existingData[filter.name] = filter.value;
-			else
-				existingData['searchQuery'] = filter.value;
-
-			if(existingData.searchType == 'equalto' && existingData.searchQuery == e.currentTarget.textContent) {
-
-				new SnackBar({
-					message: `${existingData.searchQuery} tag already exist.`,
-					type: 'error',
-				});
-
+			if(values.functionName == 'equalto' && values.query == value)
 				return;
-			}
 		}
 
-		searchBarContainer.classList.remove('hidden');
+		this.searchBarFilter.container.classList.remove('hidden');
 
 		const tagFilter = new SearchColumnFilter(this.searchBarFilter);
 
 		this.searchBarFilter.add(tagFilter);
 
 		this.searchBarFilter.render();
-		const searchContainer = tagFilter.container;
 
-		searchContainer.querySelector('.searchQuery').value = value;
-		searchContainer.querySelector('.searchValue').value = 'Tags';
-		searchContainer.querySelector('.searchType').value = 'equalto';
+		const selected = {
+			searchQuery: value,
+			searchValue: 'Tags',
+			searchType: 'equalto',
+		}
+
+		tagFilter.json = selected;
 
 		this.renderList();
 	}
