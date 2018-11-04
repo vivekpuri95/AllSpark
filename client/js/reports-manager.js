@@ -579,11 +579,33 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		e.stopPropagation();
 
-		this.page.searchBar.container.classList.remove('hidden');
-
 		const
-			value = e.currentTarget.textContent,
-			tagFilter = new SearchColumnFilter(this.page.searchBar);
+			searchBarContainer = this.page.searchBar.container,
+			value = e.currentTarget.textContent;
+
+		let existingData = {};
+
+		for(const filter of searchBarContainer.querySelectorAll('select[name="searchType"], input')) {
+
+			if(filter.name == "searchType")
+				existingData[filter.name] = filter.value;
+			else
+				existingData['searchQuery'] = filter.value;
+
+			if(existingData.searchType == 'equalto' && existingData.searchQuery == e.currentTarget.textContent) {
+
+				new SnackBar({
+					message: `${existingData.searchQuery} tag already exist.`,
+					type: 'error',
+				});
+
+				return;
+			}
+		}
+
+		searchBarContainer.classList.remove('hidden');
+
+		const tagFilter = new SearchColumnFilter(this.page.searchBar);
 
 		this.page.searchBar.add(tagFilter);
 

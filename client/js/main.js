@@ -3122,7 +3122,7 @@ class SearchColumnFilter {
 
 		container.innerHTML = `
 			<select class="searchValue"></select>
-			<select class="searchType"></select>
+			<select class="searchType" name="searchType"></select>
 			<input type="search" class="searchQuery" placeholder="Search">
 			<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
 		`;

@@ -47,7 +47,6 @@ Page.class = class Dashboards extends Page {
 
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
-			this.process();
 			await this.renderList();
 			await Sections.show('list');
 			history.pushState(null, '', window.location.pathname.slice(0, window.location.pathname.lastIndexOf('/')));
@@ -70,10 +69,10 @@ Page.class = class Dashboards extends Page {
 		return parseInt(window.location.pathname.split('/').includes('dashboard') ? window.location.pathname.split('/').pop() : 0);
 	}
 
-	process() {
+	get searchBar() {
 
-		if(this.searchBar)
-			return this.searchBar;
+		if(this.searchBarFilter)
+			return this.searchBarFilter;
 
 		const filters = [
 			{
@@ -126,18 +125,18 @@ Page.class = class Dashboards extends Page {
 			}
 		];
 
-		this.searchBar = new SearchColumnFilters({
+		this.searchBarFilter = new SearchColumnFilters({
 			data: Array.from(DataSource.list.values()),
 			filters: filters,
 			advanceSearch: true,
 			page,
 		});
 
-		this.container.querySelector('.section').insertBefore(this.searchBar.container, this.container.querySelector('.section .block'));
+		this.container.querySelector('.section#list').insertBefore(this.searchBarFilter.container, this.container.querySelector('.section .block'));
 
-		this.container.querySelector('.section .toolbar').appendChild(this.searchBar.globalSearch.container);
+		this.container.querySelector('.section#list .toolbar').appendChild(this.searchBarFilter.globalSearch.container);
 
-		this.searchBar.on('change', () => this.renderList());
+		this.searchBarFilter.on('change', () => this.renderList());
 
 		this.renderList();
 	}
@@ -230,15 +229,37 @@ Page.class = class Dashboards extends Page {
 
 		e.stopPropagation();
 
-		this.searchBar.container.classList.remove('hidden');
-
 		const
-			value = e.currentTarget.textContent,
-			tagFilter = new SearchColumnFilter(this.searchBar);
+			searchBarContainer = this.searchBarFilter.container,
+			value = e.currentTarget.textContent;
 
-		this.searchBar.add(tagFilter);
+		let existingData = {};
 
-		this.searchBar.render();
+		for(const filter of searchBarContainer.querySelectorAll('select[name="searchType"], input')) {
+
+			if(filter.name == "searchType")
+				existingData[filter.name] = filter.value;
+			else
+				existingData['searchQuery'] = filter.value;
+
+			if(existingData.searchType == 'equalto' && existingData.searchQuery == e.currentTarget.textContent) {
+
+				new SnackBar({
+					message: `${existingData.searchQuery} tag already exist.`,
+					type: 'error',
+				});
+
+				return;
+			}
+		}
+
+		searchBarContainer.classList.remove('hidden');
+
+		const tagFilter = new SearchColumnFilter(this.searchBarFilter);
+
+		this.searchBarFilter.add(tagFilter);
+
+		this.searchBarFilter.render();
 		const searchContainer = tagFilter.container;
 
 		searchContainer.querySelector('.searchQuery').value = value;
@@ -246,7 +267,6 @@ Page.class = class Dashboards extends Page {
 		searchContainer.querySelector('.searchType').value = 'equalto';
 
 		this.renderList();
-
 	}
 
 	renderList() {
@@ -449,7 +469,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		this.cycle();
-		this.process();
+		this.renderList();
 
 		for (const dashboard of this.list.values()) {
 

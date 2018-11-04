@@ -616,3 +616,7 @@ main table tbody tr .tag {
 	border-radius: 2px;
 	font-size: 80%;
 }
+
+main section#list .toolbar {
+	justify-content: space-between;
+}
