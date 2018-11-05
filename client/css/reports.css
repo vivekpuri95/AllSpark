@@ -826,6 +826,10 @@ main .dataset {
 				.visualization.table thead .heading.has-filter {
 					box-shadow: inset 0px -4px 0px 0px var(--color-secondary);
 				}
+				.visualization.table thead .heading.has-filter .cell-dark {
+					color: #eee;
+					text-shadow: none;
+				}
 				.visualization.table thead .heading .popup-dropdown {
 					position: absolute;
 					top: 100%;

@@ -5478,22 +5478,21 @@ Visualization.list.set('table', class Table extends Visualization {
 
 			for(const row of this.rows) {
 
-				for(const [key, value] of row) {
+				const _row = row.get(gradient.relative);
 
-					if(key == gradient.relative && parseFloat(value)) {
+				if(!isNaN(_row)) {
 
-						if((!gradient.maxValue && gradient.maxValue != 0))
-							gradient.maxValue = value;
+					if((!gradient.maxValue && gradient.maxValue != 0))
+						gradient.maxValue = _row;
 
-						if((!gradient.minValue && gradient.minValue != 0))
-							gradient.minValue = value;
+					if((!gradient.minValue && gradient.minValue != 0))
+						gradient.minValue = _row;
 
-						if(gradient.maxValue < value)
-							gradient.maxValue = value;
+					if(gradient.maxValue < _row)
+						gradient.maxValue = _row;
 
-						else if(gradient.minValue > value)
-							gradient.minValue = value;
-					}
+					else if(gradient.minValue > _row)
+						gradient.minValue = _row;
 				}
 			}
 		}
@@ -5652,6 +5651,12 @@ Visualization.list.set('table', class Table extends Visualization {
 
 					else if(rule.content == 'both')
 						typedValue =  typedValue + ' / ' + colorPercent;
+
+					if (this.cellLuma(colorValue.toString(16)) < 40) {
+						// div.classList.add('cell-dark');
+					}
+
+					// less then 40 and alpha value greater then 170 add dark
 
 					if(rule.dualColor)
 						td.style.backgroundColor = (rule.position ? rule.maximumColor : rule.minimumColor) + colorValue.toString(16);
@@ -5835,7 +5840,7 @@ Visualization.list.set('table', class Table extends Visualization {
 	}
 
 	cellLuma(c) {
-
+		debugger
 		c = c.substring(1, 7);
 
 	   const
