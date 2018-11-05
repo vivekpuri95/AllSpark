@@ -3134,6 +3134,9 @@ class SearchColumnFilter {
 		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
 		searchQuery.on('search', () => this.searchColumns.changeCallback());
 
+		for(const select of container.querySelectorAll('select'))
+			select.on('change', () => this.searchColumns.changeCallback());
+
 		for(const filter of DataSourceColumnFilter.types) {
 
 			searchType.insertAdjacentHTML('beforeend', `
@@ -3169,31 +3172,45 @@ class SearchColumnFilter {
 
 	checkRow(row) {
 
-		const
-			columnName = this.container.querySelector('select.searchValue').value,
-			functionName = this.container.querySelector('select.searchType').value,
-			query = this.container.querySelector('.searchQuery').value;
+		const values = this.json;
 
-		if(!query)
+		if(!values.query)
 			return true;
 
-		const [columnValue] = this.searchColumns.filters.filter(fil => fil.key == columnName).map(m => m.rowValue(row));
+		const [columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
 
 		if(!columnValue || !columnValue.length)
 			return false;
 
 		for(const column of DataSourceColumnFilter.types) {
 
-			if(functionName != column.slug)
+			if(values.functionName != column.slug)
 				continue;
 
 			for(const value of columnValue) {
-				if(column.apply(query, value))
+
+				if(value != null && column.apply(values.query, value))
 					return true;
 			}
 
 			return false;
 		}
+	}
+
+	get json() {
+
+		return {
+			columnName: this.container.querySelector('select.searchValue').value,
+			functionName: this.container.querySelector('select.searchType').value,
+			query: this.container.querySelector('.searchQuery').value,
+		};
+	}
+
+	set json(values = {}) {
+
+		this.container.querySelector('select.searchValue').value = values.searchValue;
+		this.container.querySelector('select.searchType').value = values.searchType;
+		this.container.querySelector('.searchQuery').value = values.searchQuery;
 	}
 }
 
@@ -3209,7 +3226,10 @@ class GlobalColumnSearchFilter extends SearchColumnFilter {
 
 	get container() {
 
-		const container = super.container;
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = super.container;
 
 		container.classList.add('global-filter');
 		container.querySelector('select.searchValue').classList.add('hidden');

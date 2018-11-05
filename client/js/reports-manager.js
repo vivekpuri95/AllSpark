@@ -114,7 +114,7 @@ class ReportsManger extends Page {
 				rowValue: row => row.visualizations.map(f => f.name),
 			},
 			{
-				key: 'Visualizations Type Name',
+				key: 'Visualizations Type',
 				rowValue: row => {
 					return row.visualizations.map(f => f.type)
 											 .map(m => MetaData.visualizations.has(m) ?
@@ -579,20 +579,29 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		e.stopPropagation();
 
+		const value = e.currentTarget.textContent;
+
+		for(const filter of this.page.searchBar.values()) {
+
+			const values = filter.json;
+
+			if(values.functionName == 'equalto' && values.query == value && values.searchValue == 'Tags')
+				return;
+		}
+
 		this.page.searchBar.container.classList.remove('hidden');
 
-		const
-			value = e.currentTarget.textContent,
-			tagFilter = new SearchColumnFilter(this.page.searchBar);
+		const tagFilter = new SearchColumnFilter(this.page.searchBar);
 
 		this.page.searchBar.add(tagFilter);
 
 		this.page.searchBar.render();
-		const searchContainer = tagFilter.container;
 
-		searchContainer.querySelector('.searchQuery').value = value;
-		searchContainer.querySelector('.searchValue').value = 'Tags';
-		searchContainer.querySelector('.searchType').value = 'equalto';
+		tagFilter.json = {
+			searchQuery: value,
+			searchValue: 'Tags',
+			searchType: 'equalto',
+		};
 
 		this.load();
 	}
