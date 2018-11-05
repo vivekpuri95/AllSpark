@@ -21,20 +21,23 @@ export class Roles extends Map {
 
 		container.innerHTML = `
 
-			<h1>${this.name}</h1>
+			<section class="section" id="roles-list">
 
-			<table class="block">
-				<thead>
-					<tr>
-						<th>ID</th>
-						<th>Name</th>
-						<th>Admin</th>
-						<th>Edit</th>
-						<th>Delete</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
+				<h1>${this.name}</h1>
+
+				<table class="block">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Admin</th>
+							<th>Edit</th>
+							<th>Delete</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</section>
 		`;
 
 		this.load();
@@ -46,7 +49,7 @@ export class Roles extends Map {
 
 		this.clear();
 
-		// window.history.pushState({module: this.name, id: this.role_id}, '', '/settings-new/roles')
+		window.history.pushState({module: this.name, id: this.role_id}, '', '/settings-new/roles')
 
 		for(const role of await AllSpark.API.call('roles/list'))
 			this.set(role.role_id, new Role(role, this));
@@ -100,26 +103,24 @@ class Role {
 
 	edit() {
 
-		const parent = this.roles.container.parentElement;
+		this.roles.container.appendChild(this.container);
 
-		if(!parent)
-			return;
+		AllSpark.Sections.show('role-' + this.role_id);
 
-		parent.insertBefore(this.form, this.roles.container);
-
-		this.roles.container.remove();
+		window.history.pushState({id: this.role_id}, '', `/settings-new/roles/${this.role_id}`);
 	}
 
-	get form() {
+	get container() {
 
-		if(this.formElement)
-			return this.formElement;
+		if(this.containerElement)
+			return this.containerElement;
 
-		const form = this.formElement = document.createElement('form');
+		const container = this.containerElement = document.createElement('section');
 
-		form.classList.add('settings-module');
+		container.classList.add('section');
+		container.id = 'role-' + this.role_id;
 
-		form.innerHTML = `
+		container.innerHTML = `
 
 			<h1>Editing Role: ${this.name} <span class="NA">#${this.role_id}</span></h1>
 
@@ -128,7 +129,7 @@ class Role {
 				<button type="submit"><i class="far fa-save"></i> Save</button>
 			</header>
 
-			<div class="form block">
+			<form class="form block" id="role-form-${this.role_id}">
 
 				<label>
 					<span>Name</span>
@@ -142,10 +143,12 @@ class Role {
 						<option value="0">No</option>
 					</select>
 				</label>
-			</div>
+			</form>
 		`;
 
-		form.querySelector('header #back').on('click', () => this.back());
+		const form = container.querySelector('form');
+
+		container.querySelector('header #back').on('click', () => this.back());
 
 		form.is_admin.value = parseInt(this.is_admin) ? 1 : 0;
 
@@ -154,15 +157,16 @@ class Role {
 			this.update();
 		});
 
-		return form;
+		return container;
 	}
 
 	back() {
 
-		if(history.state)
-			return history.back();
+		if(window.history.state)
+			return window.history.back();
 
-		history.pushState(null, '', `/settings-new/roles`);
+		window.history.pushState(null, '', `/settings-new/roles`);
+		AllSpark.Sections.show('roles-list');
 	}
 
 	async update() {
@@ -173,7 +177,7 @@ class Role {
 			},
 			options = {
 				method: 'POST',
-				form: new FormData(this.form),
+				container: new FormData(this.form),
 			};
 
 		try {

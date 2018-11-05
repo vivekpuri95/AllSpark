@@ -159,7 +159,7 @@ router.get('/js/main-modules.js', API.serve(class extends HTMLAPI {
 		let mainjs = fs.readFileSync('./client/js/main.js');
 
 		mainjs += `
-			export { Page, API, SnackBar }
+			export { Page, API, SnackBar, Storage, Sections }
 		`;
 
 		return mainjs;

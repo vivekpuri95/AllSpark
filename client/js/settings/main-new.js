@@ -1,7 +1,7 @@
-import { Page, API, Sections, Storage } from '/js/main-modules.js';
+import * as AllSpark from '/js/main-modules.js';
 import { Roles } from '/js/settings/roles.js';
 
-Page.class = class Settings extends Page {
+AllSpark.Page.class = class Settings extends AllSpark.Page {
 
 	constructor() {
 
@@ -9,16 +9,32 @@ Page.class = class Settings extends Page {
 
 		this.navigationBar = new NavigationBar(this);
 
-		this.modules = new Set([
-			new Roles(this),
+		this.modules = new Map([
+			['roles', new Roles(this)],
 		]);
 
 		this.render();
+
+		window.on('popstate', e => this.popstate());
 	}
 
 	render() {
 
 		this.container.appendChild(this.navigationBar.container);
+
+		this.popstate();
+	}
+
+	popstate() {
+
+		let what = window.location.pathname.split('/')[2];
+
+		if(!this.modules.has(what)) 
+			what = Array.from(this.modules.keys())[0];
+
+		this.page.container.appendChild(this.modules.get(what).container);
+
+		AllSpark.Sections.show(module_.container.querySelector('section.section').id);
 	}
 }
 
@@ -36,7 +52,7 @@ class NavigationBar {
 
 		const container = document.createElement('nav');
 
-		for(const module_ of this.page.modules) {
+		for(const [name, module_] of this.page.modules) {
 
 			const item = document.createElement('a');
 
@@ -44,8 +60,10 @@ class NavigationBar {
 
 			item.on('click', () => {
 
-				if(container.querySelector('a.selected'))
-					container.querySelector('a.selected').classList.remove('selected');
+				const selected = container.querySelector('a.selected');
+
+				if(selected)
+					selected.classList.remove('selected');
 
 				item.classList.add('selected');
 
@@ -53,6 +71,14 @@ class NavigationBar {
 					this.page.container.querySelector('.settings-module').remove();
 
 				this.page.container.appendChild(module_.container);
+
+				AllSpark.Sections.show(module_.container.querySelector('section.section').id);
+
+				if(selected && selected != item)
+					window.history.pushState(null, '', '/settings-new/' + name);
+
+				else 
+					window.history.replaceState(null, '', '/settings-new/' + name);
 			});
 
 			container.appendChild(item);

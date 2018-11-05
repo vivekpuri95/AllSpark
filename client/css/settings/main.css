@@ -30,21 +30,22 @@ main {
 		padding: var(--gap);
 	}
 
-main > .settings-module {
+main > .settings-module > .section.show {
 	padding: calc(var(--gap) * 2);
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
 	height: max-content;
 }
-	main > .settings-module > h1 {
+	main > .settings-module > .section > h1 {
 		font-size: 150%;
 		margin: 0;
 	}
-	main > .settings-module > header.toolbar {
+	main > .settings-module > .section > header.toolbar {
 		display: grid;
 		grid-auto-flow: column;
 		width: max-content;
 		grid-gap: calc(var(--gap) * 2);
+		padding: 0;
 	}
 
 main .feature-form h3 {
