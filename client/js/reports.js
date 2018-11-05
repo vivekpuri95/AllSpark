@@ -5482,11 +5482,11 @@ Visualization.list.set('table', class Table extends Visualization {
 
 					if(key == gradient.relative && parseFloat(value)) {
 
-						if(!gradient.maxValue || !gradient.minValue) {
-
+						if((!gradient.maxValue && gradient.maxValue != 0))
 							gradient.maxValue = value;
+
+						if((!gradient.minValue && gradient.minValue != 0))
 							gradient.minValue = value;
-						}
 
 						if(gradient.maxValue < value)
 							gradient.maxValue = value;
@@ -5504,6 +5504,9 @@ Visualization.list.set('table', class Table extends Visualization {
 		const container = this.container.querySelector('.container');
 
 		this.rows = await this.source.response() || [];
+
+		this.cellDarkLuma = 40;
+		this.cellDarkColorValue = 170;
 
 		this.source.resetError();
 
@@ -5830,6 +5833,19 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		return value;
 	}
+
+	cellLuma(c) {
+
+		c = c.substring(1, 7);
+
+	   const
+		   rgb = parseInt(c, 16),
+		   r = (rgb >> 16) & 0xff,
+		   g = (rgb >> 8) & 0xff,
+		   b = (rgb >> 0) & 0xff
+	   ;
+		return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+   }
 });
 
 Visualization.list.set('line', class Line extends LinearVisualization {

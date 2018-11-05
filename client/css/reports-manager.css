@@ -543,9 +543,6 @@ main.preview-left #stages {
 					padding: 0;
 				}
 				.visualization-form .subform .gradient-rules .rule .delete:hover {
-					background: transparent;
-					border: 1px solid #ccc;
-					box-shadow: none;
 					color: var(--color-red);
 				}
 					.visualization-form .subform .gradient-rules .rule .delete .delete-icon {
