@@ -320,7 +320,7 @@ Page.class = class Dashboards extends Page {
 				<td>${description.join(' ') || ''}</td>
 				<td class="tags"></td>
 				<td>${MetaData.categories.has(report.subtitle) && MetaData.categories.get(report.subtitle).name || ''}</td>
-				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
+				<td><div class="visualisation-display">${report.visualizations.map(v => `<div class="visualization-name">${v.name} `+` <br> <span class="NA"> ${v.type}` + `</span></div>`).join('')}</div></td>
 			`;
 
 			for (const tag of tags)

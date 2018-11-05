@@ -620,3 +620,10 @@ main table tbody tr .tag {
 main section#list .toolbar {
 	justify-content: space-between;
 }
+	main section#list .block .visualisation-display {
+		display: flex;
+		flex-wrap: wrap;
+	}
+		main section#list .block .visualisation-display .visualization-name {
+			margin: calc(var(--gap) * 2);
+		}
