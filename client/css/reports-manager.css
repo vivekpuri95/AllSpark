@@ -528,10 +528,13 @@ main.preview-left #stages {
 		}
 		.visualization-form .subform .gradient-rules::-webkit-scrollbar {
 			height: 5px;
+			width: 5px;
 		}
 			.visualization-form .subform .gradient-rules .rule {
 				display: grid;
 				grid-gap: calc(var(--gap) * 2);
+				padding-bottom: calc(var(--gap) * 2);
+				padding-right: calc(var(--gap) * 2);
 				grid-auto-flow: column;
 				align-items: end;
 			}
@@ -540,13 +543,14 @@ main.preview-left #stages {
 					padding: 0;
 				}
 				.visualization-form .subform .gradient-rules .rule .delete:hover {
-					background: var(--color-red);
-					border-color: var(--color-red);
+					background: transparent;
+					border: 1px solid #ccc;
+					box-shadow: none;
+					color: var(--color-red);
 				}
 					.visualization-form .subform .gradient-rules .rule .delete .delete-icon {
 						margin-right: 0;
 					}
-
 
 	.visualization-form .axes,
 	.visualization-form .layers {

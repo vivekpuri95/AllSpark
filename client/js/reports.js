@@ -5598,7 +5598,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			table.appendChild(thead);
 
 		const gradientRules = {};
-
+		debugger
 		if(this.options && this.options.gradientRules) {
 
 			for(const rule of this.options.gradientRules) {
@@ -5625,18 +5625,18 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				const rule = gradientRules[key];
 
-				if(rule && rule.maxValue) {
-
+				if(rule)
 					rule.currentValue = row.getTypedValue(rule.relative);
+
+				if(rule && rule.maxValue && rule.currentValue) {
 
 					if(rule.currentValue <= parseFloat((rule.maxValue - rule.minValue)/2))
 						rule.position = 0;
 					else
 						rule.position = 1;
 
-					let colorValue = this.colorValue(rule);
-
 					const
+						colorValue = this.colorValue(rule),
 						colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
 
 					if(rule.content == 'empty')

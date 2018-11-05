@@ -4320,9 +4320,13 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 			</div>
 		`;
 
+		const gradientRules = container.querySelector('.gradient-rules');
+
 		container.querySelector('.add-gradient').on('click', () => {
-			container.querySelector('.gradient-rules').appendChild(this.rule());
+
+			gradientRules.appendChild(this.rule());
 			this.render();
+			gradientRules.scrollTop = gradientRules.scrollHeight;
 		});
 
 		this.form = this.visualization.options;
