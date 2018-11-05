@@ -6647,7 +6647,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 		if(!this.axes)
 			this.axes = [];
 
-		this.axes = this.axes.sort((a, b) => a.depth - b.depth);
+		this.axes = this.axes.sort((a, b) => b.depth - a.depth);
 		this.axes = this.axes.sort((a, b) => ['top', 'bottom'].includes(a.position) ? -1 : 1);
 
 		this.axes.top = {
