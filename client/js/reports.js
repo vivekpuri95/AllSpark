@@ -5466,40 +5466,48 @@ Visualization.list.set('table', class Table extends Visualization {
 		return container;
 	}
 
-	process(rows) {
+	process() {
 
 		if(!this.options || !this.options.gradientRules)
 			return;
 
 		for(const gradient of this.options.gradientRules) {
 
-			let values = [];
+			if(!this.rows.filter(f => f.get(gradient.column)).length || !this.rows.filter(f => f.get(gradient.relative)).length)
+				continue;
 
-			for(const row of rows) {
+			for(const row of this.rows) {
 
-				for(const [key,value] of row) {
+				for(const [key, value] of row) {
 
-					if(key == gradient.relative && typeof value == 'number')
-						values.push(parseFloat(value));
+					if(key == gradient.relative && parseFloat(value)) {
+
+						if(!gradient.maxValue || !gradient.minValue) {
+
+							gradient.maxValue = value;
+							gradient.minValue = value;
+						}
+
+						if(gradient.maxValue < value)
+							gradient.maxValue = value;
+
+						else if(gradient.minValue > value)
+							gradient.minValue = value;
+					}
 				}
-			}
-
-			if(values.length) {
-				gradient.maxValue = Math.max.apply(Math, values);
-				gradient.minValue = Math.min.apply(Math, values);
 			}
 		}
 	}
 
 	async render(options = {}) {
 
-		const
-			container = this.container.querySelector('.container'),
-			rows = await this.source.response() || [];
+		const container = this.container.querySelector('.container');
+
+		this.rows = await this.source.response() || [];
 
 		this.source.resetError();
 
-		this.process(rows);
+		this.process();
 
 		container.textContent = null;
 
@@ -5598,7 +5606,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			table.appendChild(thead);
 
 		const gradientRules = {};
-		debugger
+
 		if(this.options && this.options.gradientRules) {
 
 			for(const rule of this.options.gradientRules) {
@@ -5608,7 +5616,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		const tbody = document.createElement('tbody');
 
-		for(const [position, row] of rows.entries()) {
+		for(const [position, row] of this.rows.entries()) {
 
 			if(position >= this.rowLimit)
 				break;
@@ -5625,18 +5633,12 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				const rule = gradientRules[key];
 
-				if(rule)
-					rule.currentValue = row.getTypedValue(rule.relative);
+				if(rule && rule.maxValue && (rule.currentValue = row.get(rule.relative))) {
 
-				if(rule && rule.maxValue && rule.currentValue) {
-
-					if(rule.currentValue <= parseFloat((rule.maxValue - rule.minValue)/2))
-						rule.position = 0;
-					else
-						rule.position = 1;
+					rule.position = rule.currentValue >= parseFloat((rule.maxValue - rule.minValue) / 2);
 
 					const
-						colorValue = this.colorValue(rule),
+						colorValue = this.cellColorValue(rule),
 						colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
 
 					if(rule.content == 'empty')
@@ -5705,7 +5707,7 @@ Visualization.list.set('table', class Table extends Visualization {
 				}
 				else {
 
-					td.innerHTML = typedValue;
+					td.textContent = typedValue;
 				}
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
@@ -5739,7 +5741,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(rows.length > this.rowLimit) {
+		if(this.rows.length > this.rowLimit) {
 
 			const tr = document.createElement('tr');
 
@@ -5761,7 +5763,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(!rows.length) {
+		if(!this.rows.length) {
 			tbody.insertAdjacentHTML('beforeend', `
 				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found!'}</td></tr>
 			`);
@@ -5777,13 +5779,13 @@ Visualization.list.set('table', class Table extends Visualization {
 			<span>
 				<span class="label">Showing:</span>
 				<strong title="Number of rows currently shown on screen">
-					${Format.number(Math.min(this.rowLimit, rows.length))}
+					${Format.number(Math.min(this.rowLimit, this.rows.length))}
 				</strong>
 			</span>
 			<span>
 				<span class="label">Filtered:</span>
 				<strong title="Number of rows that match any search or grouping criterion">
-					${Format.number(rows.length)}
+					${Format.number(this.rows.length)}
 				</strong>
 			</span>
 			<span>
@@ -5797,7 +5799,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		table.appendChild(tbody);
 		container.appendChild(table);
 
-		if(!this.hideRowSummary && rows.length)
+		if(!this.hideRowSummary && this.rows.length)
 			container.appendChild(rowCount);
 	}
 
@@ -5812,20 +5814,21 @@ Visualization.list.set('table', class Table extends Visualization {
 		container.querySelector('strong').textContent = Format.number(this.selectedRows.size);
 	}
 
-	colorValue(rule) {
+	cellColorValue(rule) {
 
-		const range = rule.maxValue - rule.minValue;
+		const
+			range = rule.maxValue - rule.minValue,
+			value = Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
 
 		if(rule.dualColor) {
 
 			if(rule.position)
-				return Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
+				return value;
 			else
 				return Math.floor(17 + (238/range) * (rule.maxValue - rule.currentValue));
 		}
 
-		else
-			return Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
+		return value;
 	}
 });
 

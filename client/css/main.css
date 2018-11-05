@@ -1189,8 +1189,10 @@ body {
 			grid-auto-flow: column;
 		}
 		.search-column-filters .search-column-filter .delete:hover{
-			background: var(--color-red);
-			border-color: var(--color-red);
+			background: transparent;
+			border: 1px solid #ccc;
+			box-shadow: none;
+			color: var(--color-red);
 		}
 			.search-column-filters .search-column-filter .delete .delete-icon{
 				margin: 0;

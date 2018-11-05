@@ -4435,13 +4435,8 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 	set form(json) {
 
-		for(const element of this.form.querySelectorAll('select, input')) {
-
+		for(const element of this.form.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = json && json[element.name];
-
-			if(this.readOnly)
-				element.disabled = true;
-		}
 
 		const gradientRules = this.form.querySelector('.gradient-rules');
 
@@ -4453,15 +4448,10 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 		const result = {
 			gradientRules: [],
+			hideHeadingsBar: this.form.querySelector('input[name="hideHeadingsBar"]').checked,
+			hideRowSummary: this.form.querySelector('input[name="hideRowSummary"]').checked,
+			hideLegend: this.form.querySelector('input[name="hideLegend"]').checked,
 		};
-
-		const elements = ['maximumColor', 'minimumColor'];
-
-		for(const element of this.form.querySelectorAll('input')) {
-
-			if(element.type != 'radio' && !elements.includes(element.name))
-				result[element.name] = element[element.type == 'checkbox' ? 'checked' : 'value'];
-		}
 
 		for(const rule of this.form.querySelectorAll('.rule')) {
 
@@ -4486,12 +4476,10 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 					type: 'error',
 				});
 
-				throw 'failed';
+				throw `Gradient already exists for ${this.page.preview.report.columns.get(gradient.column).name}.`;
 			}
-			else {
 
-				gradientRules[gradient.column] = gradient;
-			}
+			gradientRules[gradient.column] = gradient;
 		}
 
 		return result;
