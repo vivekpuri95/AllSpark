@@ -3189,7 +3189,7 @@ class SearchColumnFilter {
 
 			for(const value of columnValue) {
 
-				if(value && column.apply(values.query, value))
+				if(value != null && column.apply(values.query, value))
 					return true;
 			}
 
