@@ -1242,7 +1242,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		search.type = 'search';
 		search.placeholder = 'Search...';
 
-		search.on('keyup', () => renderList());
+		search.on('keyup', () => {
+
+			if(window.schemaSearchTimeout)
+				clearTimeout(window.schemaSearchTimeout);
+
+			window.schemaSearchTimeout = setTimeout(() => renderList(), 300);
+		});
 
 		container.appendChild(search);
 
