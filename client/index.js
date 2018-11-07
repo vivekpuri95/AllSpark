@@ -817,7 +817,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</label>
 
 							<label>
-								<span>Tags (Comma Separated)</span>
+								<span>Tags <span class="right NA">Comma Separated</span></span>
 								<input type="text" name="tags">
 							</label>
 

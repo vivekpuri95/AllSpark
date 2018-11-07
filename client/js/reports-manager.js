@@ -485,19 +485,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			const row = document.createElement('tr');
 
-			let tags = report.tags ? report.tags.split(',') : [];
-
-			tags = tags.map(t => {
-
-				const a = document.createElement('a');
-				a.classList.add('tag');
-				a.textContent = t.trim();
-
-				a.on('click', e => this.tagSearch(e));
-				return a;
-			});
-
-
 			row.innerHTML = `
 				<td>${report.query_id}</td>
 				<td>
@@ -520,8 +507,20 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td title="${!report.deletable ? 'Not enough privileges' : ''}" class="action delete ${!report.deletable ? 'grey' : 'red'}">Delete</td>
 			`;
 
-			for(const tag of tags)
-				row.querySelector('.tags').appendChild(tag);
+			const 
+				tagsContainer = row.querySelector('.tags'),
+				tags = report.tags ? report.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+
+			for(const tag of tags) {
+
+				const a = document.createElement('a');
+
+				a.textContent = tag;
+				a.classList.add('tag');
+				a.on('click', e => this.tagSearch(e));
+
+				tagsContainer.appendChild(a);
+			}
 
 			if(row.querySelector('.configure.green')) {
 				row.querySelector('.configure').on('click', () => {
@@ -774,7 +773,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		e.preventDefault();
 
-		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(q => q.trim()).join();
+		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(t => t.trim()).filter(t => t).join(', ');
 
 		const options = {
 			method: 'POST',
@@ -859,7 +858,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		e.preventDefault();
 
-		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(q => q.trim()).join();
+		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(t => t.trim()).filter(t => t).join(', ');
 
 		const
 			parameters = {
