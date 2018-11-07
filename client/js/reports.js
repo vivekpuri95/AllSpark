@@ -6697,6 +6697,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 
 		this.rows = rows;
 
+		this.zoomedIn = false;
+
 		for(const axis of this.axes) {
 
 			if(!axis.restcolumns)
