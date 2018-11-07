@@ -378,7 +378,8 @@ main.preview-left #stages {
 			#stage-define-report #filters .toolbar {
 				position: sticky;
 				top: 0;
-				z-index: 1;
+				background: var(--color-background);
+				color: var(--color-background-text);
 			}
 			#stage-define-report #filters table,
 			#stage-define-report #filters .form {

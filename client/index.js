@@ -920,17 +920,17 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 								<form id="filter-form-f" class="form">
 
 									<label>
-										<span>Name</span>
+										<span>Name <span class="red">*</span></span>
 										<input type="text" name="name" required>
 									</label>
 
 									<label>
-										<span>Placeholder</span>
+										<span>Placeholder <span class="red">*</span></span>
 										<input type="text" name="placeholder" required>
 									</label>
 
 									<label>
-										<span>Type</span>
+										<span>Type <span class="red">*</span></span>
 										<select name="type" required></select>
 									</label>
 
