@@ -753,12 +753,6 @@ class DataSource {
 				changeVisualization.classList.remove('hidden');
 		}
 
-		this.xlsxDownloadable = [...MetaData.visualizations.values()].filter(x => x.excel_format).map(x => x.slug).includes(this.visualizations.selected.type);
-
-		const xlsxDownloadDropdown = menu.querySelector('.xlsx-download');
-
-		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
-
 		if(this.visualizations.selected.visualization_id)
 			menu.querySelector('.configure-visualization').href = `/reports/configure-visualization/${this.visualizations.selected.visualization_id}`;
 
@@ -1047,6 +1041,14 @@ class DataSource {
 		a.click();
 	}
 
+	get xlsxDownloadable() {
+
+		if(!this.visualizations.selected || !MetaData.visualizations.has(this.visualizations.selected.type))
+			return false;
+
+		return MetaData.visualizations.get(this.visualizations.selected.type).excel_format;
+	}
+
 	async excelSheetDownloader(data, obj) {
 
 		obj.data = data;
@@ -1183,6 +1185,8 @@ class DataSource {
 
 		this.container.querySelector('.description .cached').textContent = this.originalResponse.cached && this.originalResponse.cached.status ? age : 'No';
 		this.container.querySelector('.description .runtime').textContent = runtime;
+
+		this.menu.querySelector('.xlsx-download').classList.toggle('hidden', !this.xlsxDownloadable);
 
 		this.columns.render();
 	}
