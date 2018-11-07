@@ -14,6 +14,7 @@ main > * {
 		width: 100%;
 		padding: 20px 50px;
 		border-radius: 2px;
+		background: rgba(0, 0, 0, 0.1);
 	}
 		main .logo img {
 			width: 100%;

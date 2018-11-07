@@ -148,7 +148,7 @@ a:active {
 .notice, .warning {
 	padding: 16px;
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-	color: #666;
+	color: #fff;
 	border-radius: 0;
 }
 .notice {
@@ -156,7 +156,6 @@ a:active {
 }
 .warning {
 	background: var(--color-red);
-	color: #fff;
 }
 .NA {
 	color: var(--color-grey);
