@@ -1380,7 +1380,10 @@ class Nav {
 			container.classList.add('hidden');
 		}
 
-		container.querySelector('.label').on('click', () => {
+		container.querySelector('.label').on('click', e => {
+
+			if(e.ctrlKey || e.metaKey) 
+				return window.open('/dashboard/' + this.dashboard.id);
 
 			this.page.render({
 				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0,
