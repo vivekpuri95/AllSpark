@@ -307,7 +307,6 @@ main .dataset {
 			margin-top:  auto;
 			background: rgba(255, 255, 255, 0.1);
 			grid-auto-flow: column;
-			grid-gap: 20px;
 			overflow: auto;
 			justify-content: flex-start;
 		}
@@ -315,9 +314,10 @@ main .dataset {
 				display: flex;
 				flex-direction: column;
 				white-space: nowrap;
+				padding: 0 10px
 			}
 			.data-source > .description .footer > *:last-child {
-				margin-right: 0;
+				padding-right: 20px;
 			}
 			.data-source > .description .footer .right {
 				margin-left: auto;
