@@ -560,7 +560,7 @@ class DataSource {
 				<span class="label query-toggle"><i class="fas fa-file-alt"></i> Query</span>
 			</div>
 
-			<div class="item">
+			<div class="item" title="Hold alt for disabling cache">
 				<span class="label reload"><i class="fas fa-sync"></i> Reload</span>
 			</div>
 		`;
@@ -587,7 +587,19 @@ class DataSource {
 			menu.querySelector('.menu .configure-visualization').parentElement.classList.remove('hidden');
 		}
 
-		menu.querySelector('.reload').on('click', () => this.visualizations.selected.load());
+		menu.querySelector('.reload').on('click', e => {
+
+			const options = {};
+
+			if(e.altKey) 
+				options.cached = 0;
+
+			this.visualizations.selected.load(options);
+
+			if(e.altKey) 
+				new SnackBar({message: 'Report Reloaded Without Cache.'});
+
+		});
 
 		filtersToggle.on('click', () => {
 
