@@ -3239,7 +3239,12 @@ class GlobalColumnSearchFilter extends SearchColumnFilter {
 		if(this.advancedSearch) {
 
 			container.insertAdjacentHTML('beforeend','<button type="button" class="advanced"><i class="fa fa-angle-down"></i></button>');
-			container.querySelector('.advanced').on('click', () => this.searchColumns.container.classList.toggle('hidden'));
+
+			container.querySelector('.advanced').on('click', () => {
+				this.searchColumns.container.classList.toggle('hidden');
+				container.querySelector('.advanced').classList.toggle('selected');
+
+			});
 		}
 		return container;
 	}

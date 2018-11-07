@@ -415,12 +415,12 @@ router.get('/user/settings/:id?', API.serve(class extends HTMLAPI {
 				<form class="block form">
 
 					<label>
-						<span>Old Password</span>
+						<span>Old Password <span class="red">*</span></span>
 						<input type="password" name="old_password" required>
 					</label>
 
 					<label>
-						<span>New Password</span>
+						<span>New Password <span class="red">*</span></span>
 						<input type="password" name="new_password" required>
 					</label>
 
@@ -699,7 +699,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 				<form class="block form" id="dashboard-form">
 
 					<label>
-						<span>Name</span>
+						<span>Name <span class="red">*</span></span>
 						<input type="text" name="name" required>
 					</label>
 
@@ -802,42 +802,14 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 						<div class="form">
 							<label>
-								<span>Name</span>
+								<span>Name <span class="red">*</span></span>
 								<input type="text" name="name">
 							</label>
 
 							<label>
-								<span>Connection</span>
+								<span>Connection <span class="red">*</span></span>
 								<select name="connection_name" required></select>
 							</label>
-
-							<div id="query" class="hidden">
-								<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
-								<div id="schema"></div>
-								<div id="editor"></div>
-
-								<div id="test-container">
-									<div id="test-executing" class="hidden notice"></div>
-								</div>
-
-								<div id="missing-filters" class="hidden"></div>
-							</div>
-
-							<div id="api" class="hidden form">
-
-								<label>
-									<span>URL</span>
-									<input type="url" name="url">
-								</label>
-
-								<label>
-									<span>Method</span>
-									<select name="method">
-										<option>GET</option>
-										<option>POST</option>
-									</select>
-								</label>
-							</div>
 
 							<label>
 								<span>Description</span>
@@ -858,7 +830,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<div class="form">
 
 							<label>
-								<span>Refresh Rate (Seconds)</span>
+								<span>Refresh Rate <span class="right NA">Seconds</span></span>
 								<input type="number" name="refresh_rate" min="0" step="1">
 							</label>
 
@@ -871,7 +843,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</label>
 
 							<label>
-								<span>Redis</span>
+								<span>Redis <span class="right NA">Seconds</span></span>
 
 								<select id="redis">
 									<option value="0">Disabled</option>
@@ -1154,7 +1126,7 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 				<form class="block form" id="user-form">
 
 					<label>
-						<span>Fist Name</span>
+						<span>Fist Name <span class="red">*</span></span>
 						<input type="text" name="first_name" required>
 					</label>
 
@@ -1169,7 +1141,7 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 					</label>
 
 					<label>
-						<span>Email</span>
+						<span>Email <span class="red">*</span></span>
 						<input type="email" name="email" required>
 					</label>
 
@@ -1289,7 +1261,7 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 				<form class="block form" id="connections-form">
 
 					<label>
-						<span>Name</span>
+						<span>Name <span class="red">*</span></span>
 						<input type="text" name="connection_name" required>
 					</label>
 
@@ -1356,12 +1328,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="account-form">
 
 						<label>
-							<span>Name</span>
+							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>URL</span>
+							<span>URL <span class="red">*</span></span>
 							<input type="text" name="url" required>
 						</label>
 
@@ -1425,12 +1397,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="user-form">
 
 						<label>
-							<span>Name</span>
+							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>Placeholder</span>
+							<span>Placeholder <span class="red">*</span></span>
 							<input type="text" name="placeholder" required>
 						</label>
 
@@ -1440,8 +1412,8 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label>
-							<span>Type</span>
-							<select name="type"></select>
+							<span>Type <span class="red">*</span></span>
+							<select name="type" required></select>
 						</label>
 
 						<label>
@@ -1500,13 +1472,13 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="user-form2">
 
 						<label>
-							<span>Name</span>
+							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>Is Admin</span>
-							<select name="is_admin">
+							<span>Is Admin <span class="red">*</span></span>
+							<select name="is_admin" required>
 								<option value="1">Yes</option>
 								<option value="0">No</option>
 							</select>
@@ -1551,13 +1523,13 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="role-form">
 
 						<label>
-							<span>Name</span>
-							<input type="text" name="name">
+							<span>Name <span class="red">*</span></span>
+							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>Admin</span>
-							<select  name="is_admin">
+							<span>Admin <span class="red">*</span></span>
+							<select  name="is_admin" required>
 								<option value="1">Yes</option>
 								<option value="0">No</option>
 							</select>
@@ -1604,12 +1576,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="category-form">
 
 						<label>
-							<span>Name</span>
+							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>Slug</span>
+							<span>Slug <span class="red">*</span></span>
 							<input type="text" name="slug" required>
 						</label>
 
@@ -1619,8 +1591,8 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label>
-							<span>Admin</span>
-							<select name="is_admin">
+							<span>Admin <span class="red">*</span></span>
+							<select name="is_admin" required>
 								<option value="1">Yes</option>
 								<option value="0">No</option>
 							</select>

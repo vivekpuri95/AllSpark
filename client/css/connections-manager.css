@@ -149,13 +149,6 @@ section#list h1:last-of-type {
 .test-result {
 	margin-bottom: calc(var(--gap) * 2);
 }
-#form .password {
-	display: flex;
-}
-	#form .password .show-password {
-		margin-left: auto;
-		font-weight: normal;
-	}
 main h2.share-heading {
 	padding-top: 15px;
 	margin-bottom: calc(var(--gap) * 2);

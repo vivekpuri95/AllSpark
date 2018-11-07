@@ -2147,12 +2147,12 @@ class VisualizationManager {
 					<div class="body">
 						<div class="form subform">
 							<label>
-								<span>Name</span>
+								<span>Name <span class="red">*</span></span>
 								<input type="text" name="name" required>
 							</label>
 
 							<label>
-								<span>Visualization Type</span>
+								<span>Visualization Type <span class="red">*</span></span>
 								<select name="type" required></select>
 							</label>
 

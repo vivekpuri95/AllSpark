@@ -554,7 +554,19 @@ body {
 				font-size: 90%;
 				font-weight: bold;
 				letter-spacing: 0.5px;
+				display: flex;
+				align-items: center;
 			}
+				.form label > span span {
+					font-weight: normal;
+					margin-left: var(--gap);
+				}
+				.form label > span .right {
+					margin-left: auto;
+				}
+				.form label > span .red {
+					color: var(--color-red);
+				}
 
 .dialog-box-blanket {
 	background: rgba(0, 0, 0, 0.6);
@@ -706,7 +718,7 @@ body {
 		max-height: 250px;
 		width: 100%;
 		position: absolute;
-		z-index: 3;
+		z-index: 5;
 		overflow: auto;
 	}
 	.multi-select.top .options {
