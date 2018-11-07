@@ -5756,7 +5756,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		table.appendChild(tbody);
 		container.appendChild(table);
 
-		if(!this.hideRowSummary && rows.length)
+		if(!this.hideRowSummary)
 			container.appendChild(rowCount);
 	}
 
