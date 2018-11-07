@@ -879,7 +879,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									<option value="custom">Custom<custom>
 								</select>
 
-								<input name="is_redis" class="hidden">
+								<input type="number" min="1" step="1" name="redis_custom" class="hidden" placeholder="Seconds">
 							</label>
 
 							<label>

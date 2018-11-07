@@ -713,17 +713,12 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		for(const element of this.form.elements)
 			element.on('change', () => this.form.save.classList.add('unsaved'));
 
-		this.form.redis.removeEventListener('change', this.handleRedisSelect);
+		this.form.redis.on('change', () => {
 
-		this.form.redis.on('change', this.handleRedisSelect = () => {
+			this.form.redis_custom.classList.toggle('hidden', this.form.redis.value != 'custom');
 
-			this.form.is_redis.type = this.form.redis.value === 'EOD' ? 'text' : 'number';
-
-			this.form.is_redis.value = this.form.redis.value;
-			this.form.is_redis.classList.toggle('hidden', this.form.redis.value !== 'custom');
-
-			if(!this.form.is_redis.classList.contains('hidden'))
-				this.form.is_redis.focus();
+			if(!this.form.redis_custom.classList.contains('hidden'))
+				this.form.redis_custom.focus();
 		});
 	}
 
@@ -842,12 +837,14 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		if(this.report.is_redis > 0) {
 			this.form.redis.value = 'custom';
-			this.form.is_redis.classList.remove('hidden');
+			this.form.redis_custom.value = this.report.is_redis;
+			this.form.redis_custom.classList.remove('hidden');
 		}
 
 		else {
 			this.form.redis.value = this.report.is_redis || 0;
-			this.form.is_redis.classList.add('hidden');
+			this.form.redis_custom.value = null;
+			this.form.redis_custom.classList.add('hidden');
 		}
 
 		const share = new ObjectRoles('query', this.report.query_id);
@@ -867,6 +864,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		const
 			parameters = {
 				query_id: this.report.query_id,
+				is_redis: this.form.redis.value == 'custom' ? this.form.redis_custom.value : this.form.redis.value,
 			},
 			options = {
 				method: 'POST',
