@@ -369,7 +369,7 @@ main.preview-left #stages {
 			overflow: auto;
 		}
 			#stage-define-report #filters #missing-filters {
-				background: #fcc;
+				background: var(--color-red);
 				padding: 16px;
 				flex: 1;
 				font-weight: normal;
