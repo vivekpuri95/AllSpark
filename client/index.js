@@ -231,11 +231,16 @@ router.get('/login', API.serve(class extends HTMLAPI {
 
 	async main() {
 
-		if(Array.isArray(this.account.settings.get('external_parameters')) && this.request.query.external_parameters) {
+		if(this.request.query.email && this.request.query.password) {
+			this.request.body.email = this.request.query.email;
+			this.request.body.password = this.request.query.password;
+		}
+
+		if((Array.isArray(this.account.settings.get('external_parameters')) && this.request.query.external_parameters) || (this.request.query.email && this.request.query.password)) {
 
 			const external_parameters = {};
 
-			for(const key of this.account.settings.get('external_parameters')) {
+			for(const key of this.account.settings.get('external_parameters') || []) {
 
 				if(key in this.request.query)
 					this.request.body['ext_' + key] = this.request.query[key];
@@ -252,11 +257,15 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			const response = await loginObj.login();
 
 			if(!response.jwt && response.length)
-				throw new Error("User not found!!!");
+				throw new Error("User not found!");
 
-			this.response.setHeader('Set-Cookie', [`refresh_token=${response.jwt}`, `external_parameters=${JSON.stringify(external_parameters)}`]);
+			this.response.setHeader('Set-Cookie', [
+				`refresh_token=${response.jwt}`,
+				`external_parameters=${JSON.stringify(external_parameters)}`,
+			]);
 
 			this.response.redirect('/dashboard/first');
+
 			throw({"pass": true});
 		}
 
