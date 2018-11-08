@@ -3747,7 +3747,6 @@ class DataSourcePostProcessors {
 
 		for(const selected of label.parentElement.querySelectorAll('.item.selected'))
 			selected.classList.remove('selected');
-
 		if(!this.selected)
 			return this.list.get('Orignal').container.classList.add('selected');
 

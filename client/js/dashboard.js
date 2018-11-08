@@ -589,7 +589,9 @@ Page.class = class Dashboards extends Page {
 
 		container.appendChild(report.container);
 
-		report.visualizations.selected.load();
+		// .then because we don't want to await on visualization load
+		report.visualizations.selected.load()
+			.then(() => report.postProcessors.render());
 
 		await Sections.show('reports');
 	}
