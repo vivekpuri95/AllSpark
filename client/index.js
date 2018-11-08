@@ -9,6 +9,7 @@ const API = require('../server/utils/api');
 const User = require('../server/utils/User');
 const commonFunctions = require('../server/utils/commonFunctions');
 const authLogin = require('../server/www/authentication').login;
+const {URLSearchParams} = require('url');
 
 router.use(express.static('./client'));
 
@@ -259,12 +260,12 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			if(!response.jwt && response.length)
 				throw new Error("User not found!");
 
-			this.response.setHeader('Set-Cookie', [
-				`refresh_token=${response.jwt}`,
-				`external_parameters=${JSON.stringify(external_parameters)}`,
-			]);
+			const urlSearchParams = new URLSearchParams();
 
-			this.response.redirect('/dashboard/first');
+			urlSearchParams.set('refresh_token', response.jwt);
+			urlSearchParams.set('external_parameters', JSON.stringify(external_parameters));
+
+			this.response.redirect('/dashboard/first/?' + urlSearchParams);
 
 			throw({"pass": true});
 		}

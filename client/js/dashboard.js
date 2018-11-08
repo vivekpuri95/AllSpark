@@ -498,7 +498,7 @@ Page.class = class Dashboards extends Page {
 			document.querySelector('body').classList.toggle('floating', !document.querySelector('body').classList.contains('floating'));
 		}
 
-		if (window.location.pathname.split('/').pop() === 'first') {
+		if (window.location.pathname.split('/').filter(p => p).pop() === 'first') {
 
 			this.navbar.render();
 
@@ -676,7 +676,7 @@ class Dashboard {
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
 
-		const 
+		const
 			sideButton = page.container.querySelector('#reports .side'),
 			container = page.container.querySelector('#reports #blanket');
 
@@ -1087,7 +1087,7 @@ class Dashboard {
 			return;
 		}
 
-		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top') 
+		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top')
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 
 		Sections.show('reports');
@@ -1383,7 +1383,7 @@ class Nav {
 
 		container.querySelector('.label').on('click', e => {
 
-			if(e.ctrlKey || e.metaKey) 
+			if(e.ctrlKey || e.metaKey)
 				return window.open('/dashboard/' + this.dashboard.id);
 
 			this.page.render({

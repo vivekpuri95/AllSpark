@@ -45,7 +45,7 @@ class Page {
 		DialogBox.container = document.querySelector('body');
 
 		await Storage.load();
-		await Page.loadCredentialsFromCookie();
+		await Page.loadCredentialsFromURL();
 		await Account.load();
 
 		if(window.account && account.auth_api) {
@@ -169,17 +169,19 @@ class Page {
 	 * Load credentials from cookies if the server's request provided them.
 	 * This is done when automatic login happens in third party integration scenerio.
 	 */
-	static async loadCredentialsFromCookie() {
+	static async loadCredentialsFromURL() {
 
-		if(!Cookies.get('external_parameters'))
+		const parameters = new URLSearchParams(window.location.search);
+
+		if(!parameters.get('external_parameters'))
 			return;
 
 		await Storage.clear();
 
-		await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
-		Cookies.set('external_parameters', '');
+		await Storage.set('external_parameters', JSON.parse(parameters.get('external_parameters')));
+		await Storage.set('refresh_token', parameters.get('refresh_token'));
 
-		await Storage.set('refresh_token', Cookies.get('refresh_token'));
+		window.history.replaceState({}, '', window.location.pathname);
 	}
 
 	static async loadOnboardScripts() {
