@@ -637,9 +637,9 @@ main.preview-left #stages {
 					display: grid;
 					grid-template-columns: repeat(2, max-content);
 				}
-				.visualization-form .transformations .transformation > .restrict-column input:not(:checked) + span {
-					color: #999;
-				}
+					.visualization-form .transformations .transformation > .restrict-column input[disabled]:not(:checked) + span {
+						color: var(--color-grey);
+					}
 
 				.visualization-form .transformations .transformation .form-row {
 					display: grid;
@@ -731,7 +731,7 @@ main.preview-left #stages {
 			}
 
 	.visualization-form .configuration-section h3 .count {
-		color: #bbb;
+		color: var(--color-grey);
 		font-size: 90%;
 		margin-left: auto;
 		font-weight: normal;
