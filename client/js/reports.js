@@ -506,35 +506,31 @@ class DataSource {
 				<div class="submenu"></div>
 			</div>
 
-			<div class="item" title="Download CSV">
+			<div class="item">
 
 				<span class="label download" title="Download Report"><i class="fa fa-download"></i> Download</span>
 
 				<div class="submenu">
 
-					<div class="item">
+					<div class="item" title="Get the raw data as it was recieved immediately after execution in a CSV format">
 						<span class="label csv-download"><i class="far fa-file-excel"></i> CSV</label>
 					</div>
 
-					<div class="item">
+					<div class="item" title="Get the data that includes any filters or transformations that were applied locally after execution in a CSV format">
 						<span class="label filtered-csv-download"><i class="far fa-file-excel"></i> Filtered CSV</label>
 					</div>
 
-					<div class="item">
+					<div class="item" title="Get the raw data as it was recieved immediately after execution as a MS Excel file">
 						<span class="label xlsx-download"><i class="fas fa-file-excel"></i> XLSX</label>
 					</div>
 
-					<div class="item">
+					<div class="item" title="Get the raw data as it was recieved immediately after execution in a JSON format">
 						<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
 					</div>
 
-					<div class="item">
+					<div class="item" title="Get the data that includes any filters or transformations that were applied locally after execution in a JSON format">
 						<span class="label filtered-json-download"><i class="fas fa-code"></i> Filtered JSON</label>
 					</div>
-
-					<!--<div class="item">
-						<span class="label export-toggle"><i class="fa fa-download"></i> Export</label>
-					</div>>-->
 				</div>
 			</div>
 
