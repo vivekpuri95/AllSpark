@@ -676,8 +676,9 @@ class Dashboard {
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
 
-		const sideButton = page.container.querySelector('#reports .side');
-		const container = page.container.querySelector('#reports #blanket');
+		const 
+			sideButton = page.container.querySelector('#reports .side'),
+			container = page.container.querySelector('#reports #blanket');
 
 		sideButton.on('click', () => {
 
@@ -1075,7 +1076,7 @@ class Dashboard {
 			console.log(e);
 		}
 
-		if (!this.globalFilters.size)
+		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top')
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
@@ -1086,10 +1087,8 @@ class Dashboard {
 			return;
 		}
 
-		if (!this.globalFilters.size) {
-
+		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top') 
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
-		}
 
 		Sections.show('reports');
 
