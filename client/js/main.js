@@ -2974,10 +2974,15 @@ class SnackBar {
 		else if(this.type == 'error')
 			icon = 'fas fa-exclamation-triangle';
 
+		let subtitle = '';
+
+		if(this.subtitle)
+			subtitle = `<div class="subtitle">${this.subtitle}</div>`;
+
 		this.container.innerHTML = `
 			<div class="icon"><i class="${icon}"></i></div>
-			<div class="title">${this.message}</div>
-			<div class="subtitle">${this.subtitle || ''}</div>
+			<div class="title ${subtitle ? '' : 'no-subtitle'}">${this.message}</div>
+			${subtitle}
 			<div class="close">&times;</div>
 		`;
 

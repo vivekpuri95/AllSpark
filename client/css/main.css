@@ -1051,6 +1051,9 @@ body {
 			margin: 0;
 			font-size: 110%;
 		}
+		.snack-bar .title.no-subtitle {
+			grid-row: 1 / 3;
+		}
 		.snack-bar .subtitle {
 			font-size: 90%;
 			color: #eee;
