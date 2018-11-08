@@ -4,7 +4,7 @@ html, body {
 main {
 	display: grid;
 	grid-template-rows: max-content 1fr;
-	grid-template-columns: 1fr 1fr 1fr;
+	grid-template-columns: 1.5fr 1fr 1fr;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2);
 	height: 100%;
@@ -482,7 +482,6 @@ main.preview-left #stages {
 	.visualization-form fieldset {
 		background: var(--color-surface);
 		color: var(--color-surface-text);
-		padding: 15px;
 		margin: 0;
 		border-radius: 3px;
 		border: 0;
@@ -687,11 +686,11 @@ main.preview-left #stages {
 	#stage-configure-visualization .dashboards {
 	}
 		#stage-configure-visualization .dashboards .form {
-			grid-template-columns: repeat(5, max-content);
+			grid-template-columns: repeat(7, max-content);
 			grid-gap: calc(var(--gap) * 2);
 		}
 		#stage-configure-visualization .dashboards .add-dashboard .form {
-			grid-template-columns: repeat(4, max-content);
+			grid-template-columns: repeat(6, max-content);
 			background: transparent;
 			padding: 0;
 		}
@@ -699,12 +698,16 @@ main.preview-left #stages {
 				background: #c33;
 				border-color: transparent;
 			}
+				#stage-configure-visualization .dashboards .save button > i,
 				#stage-configure-visualization .dashboards .delete > i,
 				#stage-configure-visualization .dashboards .view-dashboard > i {
 					margin: 0;
 				}
 			#stage-configure-visualization .dashboards .dashboard_id {
 				width: 200px;
+			}
+			#stage-configure-visualization .dashboards input[type=number] {
+				width: 50px;
 			}
 			#stage-configure-visualization .dashboards button[disabled],
 			#stage-configure-visualization .dashboards button[disabled]:hover {

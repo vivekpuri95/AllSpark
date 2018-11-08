@@ -6189,15 +6189,20 @@ class ReportVisualizationDashboards extends Set {
 
 		container.innerHTML = `
 			<h3><i class="fas fa-angle-right"></i> Dashboards <span class="count"></span></h3>
+
 			<div class="body">
+
 				<div class="list"></div>
+
 				<form class="add-dashboard">
+
 					<fieldset>
 						<legend>Add To Dashboard</legend>
+
 						<div class="form">
 
 							<label class="dashboard_id">
-								<span>Dashboard</span>
+								<span>Dashboard <span class="red">*</span></span>
 							</label>
 
 							<label>
@@ -6206,13 +6211,23 @@ class ReportVisualizationDashboards extends Set {
 							</label>
 
 							<label>
+								<span>Width</span>
+								<input type="number" name="width" min="1" step="1">
+							</label>
+
+							<label>
+								<span>Height</span>
+								<input type="number" name="height" min="1" step="1">
+							</label>
+
+							<label class="save">
 								<span>&nbsp;</span>
-								<button type="submit"><i class="fa fa-plus"></i> Add</button>
+								<button type="submit" title="Submit"><i class="fa fa-paper-plane"></i></button>
 							</label>
 
 							<label class="create-new">
 								<span>&nbsp;</span>
-								<button type="button" disabled><i class="fa fa-plus"></i> Create New</button>
+								<button type="button" disabled title="Create New Dashboard"><i class="fas fa-external-link-alt"></i> Create New</button>
 							</label>
 						</div>
 					</fieldset>
@@ -6345,15 +6360,21 @@ class ReportVisualizationDashboards extends Set {
 			form = stage.dashboards.container.querySelector('.add-dashboard'),
 			dashboard_id = parseInt(stage.dashboards.dashboardMultiSelect.value[0]);
 
+		if(!dashboard_id) {
+
+			return new SnackBar({
+				message: 'Selecting a dashboard is required.',
+				type: 'warning',
+			});
+		}
+
 		if(Array.from(stage.dashboards).some(d => d.id == dashboard_id)) {
 
-			new SnackBar({
+			return new SnackBar({
 				message: 'Visualization Already Added',
 				subtitle: `${stage.dashboards.response.get(dashboard_id).name} #${dashboard_id}`,
 				type: 'warning',
 			});
-
-			return;
 		}
 
 		const
@@ -6364,7 +6385,11 @@ class ReportVisualizationDashboards extends Set {
 				owner: 'dashboard',
 				owner_id: dashboard_id,
 				visualization_id: stage.visualization.visualization_id,
-				format: JSON.stringify({position: parseInt(form.position.value)})
+				format: JSON.stringify({
+					position: parseInt(form.position.value),
+					width: Math.max(parseInt(form.width.value), 1),
+					height: Math.max(parseInt(form.height.value), 1),
+				}),
 			};
 
 		try {
@@ -6423,19 +6448,29 @@ class ReportVisualizationDashboard {
 				<input type="number" name="position" value="${this.visualization.format.position || ''}">
 			</label>
 
+			<label>
+				<span>Width</span>
+				<input type="number" name="width" min="1" step="1" value="${this.visualization.format.width || ''}">
+			</label>
+
+			<label>
+				<span>Height</span>
+				<input type="number" name="height" min="1" step="1" value="${this.visualization.format.height || ''}">
+			</label>
+
 			<label class="save">
 				<span>&nbsp;</span>
-				<button type="submit"><i class="far fa-save"></i> Save</button>
+				<button type="submit" title="Save"><i class="far fa-save"></i></button>
 			</label>
 
 			<label>
 				<span>&nbsp;</span>
-				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+				<button type="button" class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 			</label>
 
 			<label>
 				<span>&nbsp;</span>
-				<button type="button" class="view-dashboard"><i class="fas fa-external-link-alt"></i></button>
+				<button type="button" class="view-dashboard" title="View Dashboard"><i class="fas fa-external-link-alt"></i></button>
 			</label>
 		`;
 
@@ -6507,7 +6542,10 @@ class ReportVisualizationDashboard {
 
 		form.querySelector('.delete').on('click', () => this.delete());
 
-		form.on('submit', async e => this.update(e))
+		form.on('submit', async e => {
+			e.preventDefault();
+			this.update();
+		});
 
 		return form;
 	}
@@ -6549,16 +6587,19 @@ class ReportVisualizationDashboard {
 		}
 	}
 
-	async update(e) {
-
-		e.preventDefault();
+	async update() {
 
 		if(!this.dashboardMultiSelect.value[0]) {
 
-			throw new Page.exception('Dashboard cannot be null');
+			return new SnackBar({
+				message: 'Selecting a dashboard is required.',
+				type: 'warning',
+			});
 		}
 
 		this.visualization.format.position = parseInt(this.form.position.value);
+		this.visualization.format.width = Math.max(parseInt(this.form.width.value), 1);
+		this.visualization.format.height = Math.max(parseInt(this.form.height.value), 1);
 
 		const
 			option = {
