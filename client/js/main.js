@@ -109,6 +109,7 @@ class Page {
 		this.metadata = window.MetaData;
 		this.indexedDb = IndexedDb.instance;
 		this.cookies = Cookies;
+		this.keyboardShortcuts = new Map;
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
@@ -118,7 +119,7 @@ class Page {
 			return;
 
 		this.renderPage();
-		this.shortcuts();
+		this.setupShortcuts();
 	}
 
 	renderPage() {
@@ -137,7 +138,7 @@ class Page {
 		}
 	}
 
-	shortcuts() {
+	setupShortcuts() {
 
 		document.on('keyup', async (e) => {
 
@@ -146,6 +147,7 @@ class Page {
 
 			// Alt + K
 			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]')) {
+
 				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
 				await Storage.set('disable-custom-theme', true);
 
@@ -162,6 +164,73 @@ class Page {
 			// Alt + O
 			if(e.keyCode == 79)
 				await Page.clearCache();
+
+		});
+
+		this.keyboardShortcuts.set('Hold Alt', {
+			title: 'See Available Keyboard Shortcuts',
+		});
+
+		// Alt + K
+		if(document.querySelector('html > head link[href^="/css/custom.css"]')) {
+
+			this.keyboardShortcuts.set('Alt + K', {
+				title: 'Remove Custom Theme',
+				description: 'Remove the custom theme set for this account.',
+			});
+		}
+
+		this.keyboardShortcuts.set('Alt + L', {
+			title: 'Logout',
+			description: 'Clear all local caches and logout as the current user',
+		});
+
+		this.keyboardShortcuts.set('Alt + O', {
+			title: 'Clear Cache',
+			description: 'Clear all local caches like metadata, filter datasets, offline data, etc',
+		});
+
+		document.on('keydown', e => {
+
+			if(!e.altKey || !e.keyCode == 18)
+				return;
+
+			if(this.keyboardShortcutsDialogBox && this.keyboardShortcutsDialogBox.status)
+				return;
+
+			if(!this.keyboardShortcutsDialogBox) {
+
+				this.keyboardShortcutsDialogBox = new DialogBox();
+
+				this.keyboardShortcutsDialogBox.container.classList.add('keyboard-shortcuts');
+				this.keyboardShortcutsDialogBox.heading = 'Keyboard Shortcuts';
+
+				this.keyboardShortcutsDialogBox.body.textContent = null;
+
+				for(const [keys, shortcut] of this.keyboardShortcuts) {
+
+					this.keyboardShortcutsDialogBox.body.insertAdjacentHTML('beforeend', `
+						<div class="shortcut">
+							<div class="keys">${keys}</div>
+							<div class="title">${shortcut.title}</div>
+							${shortcut.description ? '<div class="description">' + shortcut.description + '</div>' : ''}
+						</div>
+					`);
+				}
+			}
+
+			this.keyboardShortcutsTimeout = setTimeout(() => this.keyboardShortcutsDialogBox.show(), 500);
+		});
+
+		document.on('keyup', e => {
+
+			if(!e.keyCode == 18)
+				return;
+
+			clearTimeout(this.keyboardShortcutsTimeout);
+
+			if(this.keyboardShortcutsDialogBox && this.keyboardShortcutsDialogBox.status)
+				this.keyboardShortcutsDialogBox.hide();
 		});
 	}
 
@@ -2047,10 +2116,8 @@ class DialogBox {
 
 			document.body.on('keyup', this.keyUpListener = e => {
 
-				if(e.keyCode == 27) {
-
+				if(e.keyCode == 27)
 					this.hide();
-				}
 			});
 		}
 
@@ -2059,6 +2126,13 @@ class DialogBox {
 		NotificationBar.container.classList.add('blur');
 
 		this.container.classList.remove('hidden');
+	}
+
+	/**
+	 * Returns the current state of the dialog box (open / closed)
+	 */
+	get status() {
+		return !this.container.classList.contains('hidden');
 	}
 
 	on(event, callback) {

@@ -2560,6 +2560,58 @@ class ReportConnection {
 	get json() {
 		return {};
 	}
+
+	setEditorKeyboardShortcuts() {
+
+		if(!this.editor)
+			return;
+
+		// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+		this.editor.editor.commands.addCommand({
+			name: 'save',
+			bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+			exec: async () => {
+
+				const cursor = this.editor.editor.getCursorPosition();
+
+				await this.stage.update();
+
+				this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+			},
+		});
+
+		this.stage.page.keyboardShortcuts.set('Ctrl + S', {
+			title: 'Save Report',
+			description: 'Save the current report query. Only works when focus is set on query editor.',
+		});
+
+		// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+		this.editor.editor.commands.addCommand({
+			name: 'execute',
+			bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+			exec: () => this.stage.preview(),
+		});
+
+		this.stage.page.keyboardShortcuts.set('Ctrl + E', {
+			title: 'Execute Report',
+			description: 'Execute the current report query without saving it. Only works when focus is set on query editor.',
+		});
+
+		if(this.editor.mode == 'sql') {
+
+			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'format',
+				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
+				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
+			});
+
+			this.stage.page.keyboardShortcuts.set('Ctrl + Y', {
+				title: 'Format Query',
+				description: 'Use the (experimental) query formatter. Only works when focus is set on query editor.',
+			});
+		}
+	}
 }
 
 ReportConnection.types = new Map();
@@ -2574,36 +2626,7 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -2634,43 +2657,12 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.logsEditor) {
-
+		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
-		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -2701,43 +2693,12 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.logsEditor) {
-
+		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
-		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -2768,43 +2729,12 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.logsEditor) {
-
+		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
-		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -3102,36 +3032,12 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 
 		this.editor = new CodeEditor({mode: 'javascript'});
 
-		if(this.logsEditor) {
-
+		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
-		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -3185,36 +3091,7 @@ ReportConnection.types.set('oracle', class ReportConnectionMysql extends ReportC
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
