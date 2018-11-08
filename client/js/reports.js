@@ -587,12 +587,12 @@ class DataSource {
 
 			const options = {};
 
-			if(e.altKey) 
+			if(e.altKey)
 				options.cached = 0;
 
 			this.visualizations.selected.load(options);
 
-			if(e.altKey) 
+			if(e.altKey)
 				new SnackBar({message: 'Report Reloaded Without Cache.'});
 
 		});
@@ -1254,7 +1254,14 @@ class DataSourceFilters extends Map {
 
 			// Make sure the Date Range filter comes first, followed by start date and then finally the end date.
 			filterGroup = filterGroup.sort((a, b) => {
-				return a.name.toLowerCase().includes('start') || a.type == 'daterange' ? -1 : 1;
+
+				if(a.type == 'daterange')
+					return -1;
+
+				if(a.name.toLowerCase().includes('start') && b.type != 'daterange')
+					return -1;
+
+				return 1;
 			});
 
 			for(const filter of filterGroup) {
