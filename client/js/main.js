@@ -149,6 +149,7 @@ class Page {
 			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]')) {
 
 				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
+
 				await Storage.set('disable-custom-theme', true);
 
 				new SnackBar({
@@ -176,7 +177,7 @@ class Page {
 
 			this.keyboardShortcuts.set('Alt + K', {
 				title: 'Remove Custom Theme',
-				description: 'Remove the custom theme set for this account.',
+				description: 'Remove the custom theme set for this account',
 			});
 		}
 
@@ -219,7 +220,13 @@ class Page {
 				}
 			}
 
-			this.keyboardShortcutsTimeout = setTimeout(() => this.keyboardShortcutsDialogBox.show(), 500);
+			if(this.keyboardShortcutsTimeout)
+				return;
+
+			this.keyboardShortcutsTimeout = setTimeout(() => {
+				this.keyboardShortcutsDialogBox.show();
+				this.keyboardShortcutsTimeout = null;
+			}, 1000);
 		});
 
 		document.on('keyup', e => {
@@ -228,6 +235,7 @@ class Page {
 				return;
 
 			clearTimeout(this.keyboardShortcutsTimeout);
+			this.keyboardShortcutsTimeout = null;
 
 			if(this.keyboardShortcutsDialogBox && this.keyboardShortcutsDialogBox.status)
 				this.keyboardShortcutsDialogBox.hide();
