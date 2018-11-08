@@ -843,11 +843,11 @@ class SettingsAccount {
 
 	get row() {
 
-		const 
+		const
 			tr = document.createElement('tr'),
 			urls = [];
 
-		for(const url of this.url.split(',')) 
+		for(const url of this.url.split(','))
 			urls.push(`<a href="//${url}" target="_blank">${url}</a>`);
 
 		tr.innerHTML = `
@@ -944,7 +944,7 @@ class AccountsFeatures {
 
 	render() {
 
-		const 
+		const
 			tbody = this.container.querySelector('tbody'),
 			selectedTypes = this.featureType.value,
 			searchQuery = this.container.querySelector('#feature-search').value.toLowerCase();
@@ -979,7 +979,10 @@ class AccountsFeature {
 
 	get row() {
 
-		const tr = document.createElement('tr');
+		if(this.rowElement)
+			return this.rowElement;
+
+		const tr = this.rowElement = document.createElement('tr');
 
 		tr.innerHTML = `
 			<td>${this.feature_id}</td>

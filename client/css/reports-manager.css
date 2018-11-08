@@ -371,6 +371,9 @@ main.preview-left #stages {
 			#stage-define-report #filters h3:first-child {
 				margin-top: 0;
 			}
+			#stage-define-report #filters h3 + p {
+				color: var(--color-grey);
+			}
 			#stage-define-report #filters #missing-filters {
 				background: var(--color-red);
 				padding: 16px;
