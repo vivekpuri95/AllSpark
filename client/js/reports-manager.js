@@ -507,7 +507,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td title="${!report.deletable ? 'Not enough privileges' : ''}" class="action delete ${!report.deletable ? 'grey' : 'red'}">Delete</td>
 			`;
 
-			const 
+			const
 				tagsContainer = row.querySelector('.tags'),
 				tags = report.tags ? report.tags.split(',').map(t => t.trim()).filter(t => t) : [];
 
@@ -1404,24 +1404,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		return container;
 	}
 
-	filters() {
+	async filters() {
 
-		const tbody = this.container.querySelector('#filters table tbody');
+		const tbody = this.container.querySelector('#filter-list table tbody');
 
 		tbody.textContent = null;
 
-		this.report.filters.sort((a, b) => {
-			a = a.order;
-			b = b.order;
-
-			if (a < b)
-				return -1;
-
-			if (a > b)
-				return 1;
-
-			return a - b;
-		});
+		this.report.filters.sort((a, b) => a.order - b.order);
 
 		for(const filter of this.report.filters) {
 
@@ -1458,8 +1447,65 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(!this.report.filters.length)
 			tbody.innerHTML = `<tr class="NA"><td colspan="6">No filters added yet!</td></tr>`;
 
-		this.filterForm.datasetMultiSelect.datalist = Array.from(DataSource.list.values()).filter(r => r.query_id != this.report.query_id).map(r => {return {name: r.name, value: r.query_id, subtitle: r.subtitle}});
+		const datalist = [];
+
+		for(const source of DataSource.list.values()) {
+
+			if(source.query_id == this.report.query_id)
+				continue;
+
+			datalist.push({
+				name: source.name,
+				value: source.query_id,
+				subtitle: '#' + source.query_id,
+			});
+		}
+
+		this.filterForm.datasetMultiSelect.datalist = datalist;
 		this.filterForm.datasetMultiSelect.render();
+
+		if(this.container.querySelector('#filter-list .external-parameters'))
+			this.container.querySelector('#filter-list .external-parameters').remove();
+
+		const
+			externalParameters = this.page.account.settings.get('external_parameters'),
+			externalParametersValues = await Storage.get('external_parameters');
+
+		if(externalParameters && externalParameters.length) {
+
+			const container = document.createElement('div');
+
+			container.classList.add('external-parameters');
+
+			container.innerHTML = `
+				<h3>External Parameters</h3>
+				<p>These parameters are available as additional information when user logs in through external authentication of your app.</p>
+
+				<table>
+					<thead>
+						<tr>
+							<th>Placeholer</th>
+							<th>Value</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			`;
+
+			const tbody = container.querySelector('tbody');
+
+			for(const parameter of externalParameters) {
+
+				tbody.insertAdjacentHTML('beforeend', `
+					<tr>
+						<td>${parameter}</td>
+						<td>${parameter in externalParametersValues ? externalParametersValues[parameter] : ''}</td>
+					</tr>
+				`);
+			}
+
+			this.container.querySelector('#filter-list').appendChild(container);
+		}
 	}
 
 	addFilter() {

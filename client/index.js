@@ -899,6 +899,9 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 							<div id="filter-list">
 
+								<h3>Report Filters</h3>
+								<p>These filters will be passed into the report before execution by the end user.</p>
+
 								<div class="toolbar">
 									<button id="add-filter"><i class="fas fa-plus"></i> Add New Filter</button>
 								</div>
@@ -965,7 +968,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									</label>
 
 									<label class="dataset">
-										<span>Dataset</span>
+										<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter">?</span></span>
 									</label>
 
 									<label>

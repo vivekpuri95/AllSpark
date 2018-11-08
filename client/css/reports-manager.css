@@ -368,6 +368,9 @@ main.preview-left #stages {
 			margin-left: calc(var(--gap) * 2);
 			overflow: auto;
 		}
+			#stage-define-report #filters h3:first-child {
+				margin-top: 0;
+			}
 			#stage-define-report #filters #missing-filters {
 				background: var(--color-red);
 				padding: 16px;
@@ -386,6 +389,9 @@ main.preview-left #stages {
 				background: var(--color-surface);
 				color: var(--color-surface-text);
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+			}
+			#stage-define-report #filters .external-parameters {
+				margin-top: 40px;
 			}
 		#stage-define-report .query-history {
 			order: 3;
