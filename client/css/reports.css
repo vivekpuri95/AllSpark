@@ -375,6 +375,9 @@ main .dataset {
 		display: flex;
 		flex-direction: column;
 	}
+		.data-source > .query > code {
+			overflow: auto;
+		}
 
 	.data-source > .pipeline {
 		padding: 25px 0 0;
