@@ -2206,7 +2206,7 @@ class MultiSelect {
 					<a class="clear">Clear</a>
 				</header>
 				<div class="list"></div>
-				<div class="no-matches NA hidden">No matches found!</div>
+				<div class="no-matches NA hidden">No data found</div>
 				<footer class="hidden"></footer>
 			</div>
 		`;
@@ -2216,7 +2216,6 @@ class MultiSelect {
 			search = container.querySelector('input[type=search]');
 
 		if(this.expand) {
-
 			options.classList.remove('hidden');
 			container.classList.add('expanded');
 		}
@@ -2325,13 +2324,14 @@ class MultiSelect {
 
 		this.container.querySelector('input[type=search]').disabled = this.disabled || false;
 
+		this.container.querySelector('header .all').classList.toggle('hidden', !this.multiple);
+
 		const optionList = this.container.querySelector('.options .list');
+
 		optionList.textContent = null;
 
-		if(!this.datalist || !this.datalist.length) {
-			optionList.innerHTML = '<div class="NA">No data found...</div>';
-			return;
-		}
+		if(!this.datalist || !this.datalist.length)
+			return this.recalculate();
 
 		if(this.datalist.length != (new Set(this.datalist.map(x => x.value))).size)
 			throw new Error('Invalid datalist format. Datalist values must be unique.');
@@ -2443,10 +2443,8 @@ class MultiSelect {
 
 		search.placeholder = 'Search...';
 
-		if(firstSelected) {
-
+		if(firstSelected)
 			search.placeholder = selected > 1 ? `${firstSelected.textContent} and ${selected - 1} more` : firstSelected.textContent;
-		}
 
 		const footer = options.querySelector('footer');
 

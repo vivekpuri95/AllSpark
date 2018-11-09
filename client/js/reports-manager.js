@@ -4964,7 +4964,6 @@ class ReportTransformations extends Set {
 					<div class="preview" title="Preview Data"><i class="fas fa-eye"></i></div>
 				</div>
 				<legend>Report Executed</legend>
-				<div class="ellipsis disabled"><i class="fas fa-ellipsis-h"></i></div>
 			</fieldset>
 
 			<div class="next-connector">
@@ -5002,7 +5001,6 @@ class ReportTransformations extends Set {
 
 			<fieldset class="subform">
 				<legend>Visualization Loaded</legend>
-				<div class="ellipsis disabled"><i class="fas fa-ellipsis-h"></i></div>
 			</fieldset>
 		`);
 
