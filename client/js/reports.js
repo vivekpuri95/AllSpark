@@ -561,6 +561,23 @@ class DataSource {
 			</div>
 		`;
 
+		const toggleOverlay = overlay => {
+
+			for(const toggle of [filtersToggle, queryToggle, descriptionToggle, pipelineToggle]) {
+
+				if(overlay != toggle && toggle.parentElement.classList.contains('selected'))
+					toggle.click();
+			}
+
+			overlay.parentElement.classList.toggle('selected');
+
+			this.visualizations.selected.container.classList.toggle('blur');
+			this.container.querySelector('.columns').classList.toggle('blur');
+
+			if(this.container.querySelector('.postprocessors-state'))
+				this.container.querySelector('.postprocessors-state').classList.toggle('blur');
+		};
+
 		const
 			filtersToggle = menu.querySelector('.filters-toggle'),
 			descriptionToggle = menu.querySelector('.description-toggle'),
@@ -579,9 +596,8 @@ class DataSource {
 				menu.querySelector(element).parentElement.classList.remove('hidden');
 		}
 
-		if(this.visualizations.selected.editable) {
+		if(this.visualizations.selected.editable)
 			menu.querySelector('.menu .configure-visualization').parentElement.classList.remove('hidden');
-		}
 
 		menu.querySelector('.reload').on('click', e => {
 
@@ -594,29 +610,14 @@ class DataSource {
 
 			if(e.altKey)
 				new SnackBar({message: 'Report Reloaded Without Cache.'});
-
 		});
 
 		filtersToggle.on('click', () => {
 
-			if(queryToggle.parentElement.classList.contains('selected'))
-				queryToggle.click();
+			this.container.appendChild(this.filters.container);
+			this.filters.container.classList.toggle('hidden', filtersToggle.parentElement.classList.contains('selected'));
 
-			if(descriptionToggle.parentElement.classList.contains('selected'))
-				descriptionToggle.click();
-
-			if(pipelineToggle.parentElement.classList.contains('selected'))
-				pipelineToggle.click();
-
-			filtersToggle.parentElement.classList.toggle('selected');
-
-			this.visualizations.selected.container.classList.toggle('blur');
-			this.container.querySelector('.columns').classList.toggle('blur');
-
-			if(this.container.contains(this.filters.container))
-				this.container.removeChild(this.filters.container);
-
-			else this.container.insertBefore(this.filters.container, this.container.querySelector('.columns'));
+			toggleOverlay(filtersToggle);
 		});
 
 		// If there are filters and every filter is not of hidden type then show the filters toggle
@@ -625,68 +626,26 @@ class DataSource {
 
 		descriptionToggle.on('click', async () => {
 
-			if(queryToggle.parentElement.classList.contains('selected'))
-				queryToggle.click();
-
-			if(filtersToggle.parentElement.classList.contains('selected'))
-				filtersToggle.click();
-
-			if(pipelineToggle.parentElement.classList.contains('selected'))
-				pipelineToggle.click();
-
 			this.container.querySelector('.description').classList.toggle('hidden');
 
-			descriptionToggle.parentElement.classList.toggle('selected');
-			this.visualizations.selected.container.classList.toggle('blur');
-			this.container.querySelector('.columns').classList.toggle('blur');
-
-			if(user.privileges.has('report') && user.privileges.has('user') && this.visibleTo) {
-
-				//await this.userList();
-				this.container.querySelector('.visible-to').classList.remove('hidden');
-				this.container.querySelector('.description .count').textContent = `${Format.number(this.visibleTo.length)} people`;
-			}
+			toggleOverlay(descriptionToggle);
 		});
 
 		pipelineToggle.on('click', async () => {
 
-			if(descriptionToggle.parentElement.classList.contains('selected'))
-				descriptionToggle.click();
-
-			if(queryToggle.parentElement.classList.contains('selected'))
-				queryToggle.click();
-
-			if(filtersToggle.parentElement.classList.contains('selected'))
-				filtersToggle.click();
-
 			if(!this.container.contains(this.pipeline.container))
 				this.container.appendChild(this.pipeline.container);
 
-			this.container.querySelector('.pipeline').classList.toggle('hidden');
-
-			pipelineToggle.parentElement.classList.toggle('selected');
-			this.visualizations.selected.container.classList.toggle('blur');
-			this.container.querySelector('.columns').classList.toggle('blur');
-
+			this.pipeline.container.classList.toggle('hidden');
 			this.pipeline.render();
+
+			toggleOverlay(pipelineToggle);
 		});
 
 		queryToggle.on('click', () => {
 
-			if(filtersToggle.parentElement.classList.contains('selected'))
-				filtersToggle.click();
-
-			if(descriptionToggle.parentElement.classList.contains('selected'))
-				descriptionToggle.click();
-
-			if(pipelineToggle.parentElement.classList.contains('selected'))
-				pipelineToggle.click();
-
 			this.container.querySelector('.query').classList.toggle('hidden');
-
-			queryToggle.parentElement.classList.toggle('selected');
-			this.visualizations.selected.container.classList.toggle('blur');
-			this.container.querySelector('.columns').classList.toggle('blur');
+			toggleOverlay(queryToggle);
 		});
 
 		menu.insertBefore(this.postProcessors.container, menu.querySelector('.change-visualization').parentElement);
@@ -799,7 +758,7 @@ class DataSource {
 			response = this.postProcessors.selected.processor(response);
 
 			this.pipeline.add(new DataSourcePipelineEvent({
-				title: `${this.postProcessors.selected.name} (${this.postProcessors.selected.value})`,
+				title: `${this.postProcessors.selected.name} (${this.postProcessors.selected.domain.get(this.postProcessors.selected.value) || this.postProcessors.selected.value})`,
 				subtitle: [
 					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
 					{key: 'Rows', value: Format.number(response.length)},
@@ -1302,7 +1261,8 @@ class DataSourceFilters extends Map {
 
 			this.apply();
 
-			this.source.container.querySelector('.filters-toggle').click()
+			if(this.source)
+				this.source.container.querySelector('.filters-toggle').click()
 		});
 
 		container.insertAdjacentHTML('beforeend', `
@@ -3747,6 +3707,24 @@ class DataSourcePostProcessors {
 
 	render() {
 
+		let container = this.source.container.querySelector('.postprocessors-state');
+
+		if(!container) {
+
+			container = document.createElement('div');
+
+			container.classList.add('postprocessors-state');
+			container.title = 'Click to Remove';
+
+			container.on('click', () => {
+				this.selected = null;
+				this.source.visualizations.selected.render();
+				this.render();
+			});
+
+			this.source.container.appendChild(container);
+		}
+
 		const label = this.source.container.querySelector('.postprocessors');
 
 		if(!label)
@@ -3754,8 +3732,18 @@ class DataSourcePostProcessors {
 
 		for(const selected of label.parentElement.querySelectorAll('.item.selected'))
 			selected.classList.remove('selected');
+
+		container.classList.toggle('hidden', !this.selected);
+
 		if(!this.selected)
 			return this.list.get('Orignal').container.classList.add('selected');
+
+		container.innerHTML = `
+			${this.selected.name}
+			<i class="fas fa-angle-right"></i>
+			${this.selected.domain.get(this.selected.value) || this.selected.value}
+			<i class="fas fa-times-circle"></i>
+		`;
 
 		for(const item of this.selected.container.querySelectorAll('.submenu .item'))
 			item.classList.toggle('selected', this.selected.value == item.dataset.value);

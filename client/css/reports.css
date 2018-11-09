@@ -342,7 +342,7 @@ main .dataset {
 					grid-gap: 10px;
 				}
 					.dialog-box.api-documentation .body h4 {
-						margin-bottom: 0;
+						margin: 30px 0 0;
 					}
 					.dialog-box.api-documentation .body h4:first-child {
 						margin: 0;
@@ -483,6 +483,27 @@ main .dataset {
 		}
 		.data-source > .drilldown a:active {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
+		}
+	.data-source > .postprocessors-state {
+		background: var(--color-secondary);
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+		padding: 10px;
+		position: absolute;
+		bottom: 45px;
+		margin: 0 auto;
+		opacity: 1;
+		right: 10px;
+		cursor: pointer;
+		z-index: 1;
+		border-radius: 3px;
+		transition: opacity var(--transition-duration);
+	}
+	.data-source > .postprocessors-state:hover {
+		opacity: 0.15;
+	}
+		.data-source > .postprocessors-state i {
+			font-size: 90%;
+			margin: 0 var(--gap);
 		}
 	.data-source > .columns {
 		display: flex;
