@@ -746,8 +746,6 @@ class DataSource {
 		if(!this.columns.list.size)
 			return this.error();
 
-		const time = performance.now();
-
 		for(const row of data)
 			response.push(new DataSourceRow(row, this));
 
@@ -759,44 +757,6 @@ class DataSource {
 
 			this.pipeline.add(new DataSourcePipelineEvent({
 				title: `${this.postProcessors.selected.name} (${this.postProcessors.selected.domain.get(this.postProcessors.selected.value) || this.postProcessors.selected.value})`,
-				subtitle: [
-					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
-					{key: 'Rows', value: Format.number(response.length)},
-				],
-			}));
-		}
-
-		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key) && this.columns.sortBy.sort >= 0) {
-
-			const time = performance.now();
-
-			response.sort((a, b) => {
-
-				const
-					firstValue = a.get(this.columns.sortBy.key),
-					secondValue = b.get(this.columns.sortBy.key),
-					first = (firstValue === null ? '' : firstValue).toString().toLowerCase(),
-					second = (secondValue === null ? '' : secondValue).toString().toLowerCase();
-
-				let result = 0;
-
-				if(!isNaN(first) && !isNaN(second))
-					result = first - second;
-
-				else if(first < second)
-					result = -1;
-
-				else if(first > second)
-					result = 1;
-
-				if(parseInt(this.columns.sortBy.sort) === 0)
-					result *= -1;
-
-				return result;
-			});
-
-			this.pipeline.add(new DataSourcePipelineEvent({
-				title: `Sort by ${this.columns.sortBy.name} ${parseInt(this.columns.sortBy.sort) === 0 ? 'Descending' : 'Ascending'}`,
 				subtitle: [
 					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
 					{key: 'Rows', value: Format.number(response.length)},
@@ -3851,6 +3811,7 @@ class DataSourceTransformations extends Set {
 		this.reset();
 
 		this.loadFilters();
+		this.loadSorting();
 
 		response = JSON.parse(JSON.stringify(response));
 
@@ -3909,7 +3870,24 @@ class DataSourceTransformations extends Set {
 
 		const type = DataSourceTransformation.types.get('filters');
 
-		this.add(new type({type: 'filters', filters}, this.source));
+		this.add(new type({type: 'filters', filters, implied: true}, this.source));
+	}
+
+	loadSorting() {
+
+		if(!this.source.columns.sortBy)
+			return;
+
+		const
+			type = DataSourceTransformation.types.get('sort'),
+			columns = [
+				{
+					column: this.source.columns.sortBy.key,
+					order: parseInt(this.source.columns.sortBy.sort) ? 'descending' : 'ascending',
+				}
+			];
+
+		this.add(new type({type: 'sort', columns, implied: true}, this.source));
 	}
 }
 
@@ -5536,13 +5514,18 @@ Visualization.list.set('table', class Table extends Visualization {
 
 			container.on('click', () => {
 
-				if(parseInt(column.sort) == 1)
-					column.sort = 0;
+				let [format] = this.source.format.columns.filter(_column => _column.key == column.key);
 
-				else column.sort = 1;
+				if(!format)
+					this.source.format.columns.push(format = {key: column.key});
 
-				column.source.columns.sortBy = column;
-				column.source.visualizations.selected.render();
+				if(parseInt(format.sort) == 1)
+					format.sort = 0;
+
+				else format.sort = 1;
+
+				this.source.columns.sortBy = column;
+				this.source.visualizations.selected.render();
 			});
 
 			container.querySelector('.filter-popup').on('click', e => {
