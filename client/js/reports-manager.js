@@ -4511,6 +4511,14 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 						</label>
 
 						<label>
+							<span>Label Position</span>
+							<select name="labelPosition">
+								<option value="inside">Inside</option>
+								<option value="outside">Outside</option>
+							</select>
+						</label>
+
+						<label>
 							<span>
 								<input type="checkbox" name="hideLegend">Hide Legend
 							</span>

@@ -1559,3 +1559,21 @@ main .dataset {
 	cursor: pointer;
 	stroke-opacity: .5;
 }
+
+.visualization.pie .polyline {
+	opacity: .3;
+	stroke: #000;
+	stroke-width: 2px;
+	fill: none;
+	opacity: 0.5;
+}
+.visualization.pie ._polyline {
+	opacity: .3;
+	stroke: #fff;
+	stroke-width: 2px;
+	fill: none;
+	opacity: 0.5;
+}
+.visualization.pie .text {
+	stroke: var(--color-surface-text);
+}
