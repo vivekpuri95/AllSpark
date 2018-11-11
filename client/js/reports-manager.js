@@ -95,7 +95,7 @@ class ReportsManger extends Page {
 			},
 			{
 				key: 'Tags',
-				rowValue: row => row.tags ? row.tags.split(',') : [],
+				rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
 			},
 			{
 				key: 'Filters Length',
