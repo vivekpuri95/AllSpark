@@ -1314,6 +1314,42 @@ main .dataset {
 	.visualization.funnel .line-stroke {
 		stroke: var(--color-grey);
 	}
+	.visualization.sankey .node rect {
+		cursor: pointer;
+		fill-opacity: .9;
+		shape-rendering: crispEdges;
+	}
+	.visualization.sankey .node text {
+		pointer-events: none;
+		fill: var(--color-surface-text);
+	}
+	.visualization.sankey .sankey-tooltip {
+		padding: calc(var(--gap) * 2);
+	}
+	.visualization.sankey .link {
+		fill: none;
+		stroke: var(--color-grey);
+		stroke-opacity: .3;
+	}
+	.visualization.sankey .link:hover {
+		cursor: pointer;
+		stroke-opacity: .5;
+	}
+	.visualization.pie .polyline {
+		stroke-width: 2px;
+		fill: none;
+	}
+	.visualization.pie .polyline.dark {
+		stroke: #000;
+		opacity: .5;
+	}
+	.visualization.pie .polyline.light {
+		stroke: #fff;
+		opacity: 1;
+	}
+	.visualization.pie .text {
+		stroke: var(--color-surface-text);
+	}
 
 .data-source-column form .parameter-list {
 	display: grid;
@@ -1537,43 +1573,3 @@ main .dataset {
 			height: 200px;
 			margin: calc(var(--gap) * 3) 0;
 		}
-
-.visualization.sankey .node rect {
-	cursor: pointer;
-	fill-opacity: .9;
-	shape-rendering: crispEdges;
-}
-.visualization.sankey .node text {
-	pointer-events: none;
-	fill: var(--color-surface-text);
-}
-.visualization.sankey .sankey-tooltip {
-	padding: calc(var(--gap) * 2);
-}
-.visualization.sankey .link {
-	fill: none;
-	stroke: var(--color-grey);
-	stroke-opacity: .3;
-}
-.visualization.sankey .link:hover {
-	cursor: pointer;
-	stroke-opacity: .5;
-}
-
-.visualization.pie .polyline {
-	opacity: .3;
-	stroke: #000;
-	stroke-width: 2px;
-	fill: none;
-	opacity: 0.5;
-}
-.visualization.pie ._polyline {
-	opacity: .3;
-	stroke: #fff;
-	stroke-width: 2px;
-	fill: none;
-	opacity: 0.5;
-}
-.visualization.pie .text {
-	stroke: var(--color-surface-text);
-}

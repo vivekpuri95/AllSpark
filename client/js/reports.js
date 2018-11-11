@@ -8867,7 +8867,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				.append('svg')
 				.data([data.sort((a, b) => a.percentage - b.percentage)])
 				.append('g')
-				.attr('transform', 'translate(' + (this.width / 2) + ',' + (this.height / 2) + ')'),
+				.attr('transform', `translate(${this.width / 2}, ${this.height / 2})`),
 
 			arcs = svg
 				.selectAll('g')
@@ -8876,11 +8876,11 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				.append('g')
 				.attr('class', 'pie'),
 
-			labels = svg.append("g")
-				.attr("class", "labels"),
+			labels = svg.append('g')
+				.attr('class', 'labels'),
 
-			lines = svg.append("g")
-				.attr("class", "lines"),
+			lines = svg.append('g')
+				.attr('class', 'lines'),
 
 			slice = arcs.append('path')
 				.attr('fill', row => this.source.columns.get(row.data.name).color)
@@ -8960,13 +8960,13 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		if(this.options.labelPosition == 'outside') {
 
-			const text = svg.select(".labels").selectAll("text")
+			const text = svg.select('.labels').selectAll('text')
 				.data(pie(data));
 
 				text.enter()
-				.append("text")
-				.attr("dy", ".35em")
-				.text(function(d) {
+				.append('text')
+				.attr('dy', '.35em')
+				.text(d => {
 					if(that.options.showValue == 'value')
 						return d.data.value;
 
@@ -8975,7 +8975,7 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				});
 
 			function midAngle(d){
-				return d.startAngle + (d.endAngle - d.startAngle)/2;
+				return d.startAngle + (d.endAngle - d.startAngle) / 2;
 			}
 
 			const outerArc = d3.svg.arc()
@@ -8984,15 +8984,15 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 			text.transition()
 				.duration(1000)
-				.attrTween("transform", function(d) {
+				.attrTween('transform', function(d) {
 
-					this._current = this._current || d;
+					this.current = this.current || d;
 
-					const interpolate = d3.interpolate(this._current, d);
+					const interpolate = d3.interpolate(this.current, d);
 
-					this._current = interpolate(0);
+					this.current = interpolate(0);
 
-					return function(t) {
+					return t => {
 
 						const
 							d2 = interpolate(t),
@@ -9001,44 +9001,42 @@ Visualization.list.set('pie', class Pie extends Visualization {
 						pos[0] = radius * (midAngle(d2) < Math.PI ? 1 : -1);
 						pos[0] = pos[0] < 0 ? pos[0] + (-20) : pos[0] + 20;
 
-						return "translate("+ pos +")";
+						return `translate(${pos})`;
 					};
 				})
-				.styleTween("text-anchor", function(d){
+				.styleTween('text-anchor', function(d) {
 
-					this._current = this._current || d;
+					this.current = this.current || d;
 
-					const interpolate = d3.interpolate(this._current, d);
+					const interpolate = d3.interpolate(this.current, d);
 
-					this._current = interpolate(0);
+					this.current = interpolate(0);
 
-					return function(t) {
-						const d2 = interpolate(t);
-
-						return midAngle(d2) < Math.PI ? "start":"end";
+					return t => {
+						return midAngle(interpolate(t)) < Math.PI ? 'start' : 'end';
 					};
 				})
 				.attr('class', 'text');
 
-			const _polyline = svg.select(".lines")
-				.selectAll("._polyline")
+			const polylineLight = svg.select('.lines')
+				.selectAll('.light')
 				.data(pie(data));
 
-			_polyline.enter()
-				.append("polyline")
-				.attr('class', '_polyline');
+			polylineLight.enter()
+				.append('polyline')
+				.classed('polyline light', true);
 
-			_polyline.transition()
+			polylineLight.transition()
 				.duration(1000)
-				.attrTween("points", function(d){
+				.attrTween('points', function(d) {
 
-					this._current = this._current || d;
+					this.current = this.current || d;
 
-					const interpolate = d3.interpolate(this._current, d);
+					const interpolate = d3.interpolate(this.current, d);
 
-					this._current = interpolate(0);
+					this.current = interpolate(0);
 
-					return function(t) {
+					return t => {
 
 						const
 							d2 = interpolate(t),
@@ -9051,25 +9049,25 @@ Visualization.list.set('pie', class Pie extends Visualization {
 					};
 				});
 
-			const polyline = svg.select(".lines")
-				.selectAll(".polyline")
+			const polylineDark = svg.select('.lines')
+				.selectAll('.dark')
 				.data(pie(data));
 
-			polyline.enter()
-				.append("polyline")
-				.attr('class', 'polyline');
+			polylineDark.enter()
+				.append('polyline')
+				.classed('polyline dark', true);
 
-			polyline.transition()
+			polylineDark.transition()
 				.duration(1000)
-				.attrTween("points", function(d){
+				.attrTween('points', function(d) {
 
-					this._current = this._current || d;
+					this.current = this.current || d;
 
-					const interpolate = d3.interpolate(this._current, d);
+					const interpolate = d3.interpolate(this.current, d);
 
-					this._current = interpolate(0);
+					this.current = interpolate(0);
 
-					return function(t) {
+					return t => {
 
 						const
 							d2 = interpolate(t),
