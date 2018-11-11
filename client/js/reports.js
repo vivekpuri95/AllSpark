@@ -1914,13 +1914,11 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		if(this.drilldown && this.drilldown.query_id) {
-
+		if(this.drilldown && this.drilldown.query_id) 
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
-		}
-		else {
+		
+		else 
 			this.drilldownQuery.clear();
-		}
 
 		this.form.disabled.checked = this.disabled;
 
@@ -3881,7 +3879,7 @@ class DataSourceTransformations extends Set {
 
 	loadSorting() {
 
-		if(!this.source.columns.sortBy)
+		if(!this.source.columns.sortBy || this.source.columns.sortBy.sort == -1)
 			return;
 
 		const
@@ -5525,10 +5523,15 @@ Visualization.list.set('table', class Table extends Visualization {
 				if(!format)
 					this.source.format.columns.push(format = {key: column.key});
 
-				if(parseInt(format.sort) == 1)
+				if(parseInt(format.sort) == 1) {
 					format.sort = 0;
+					column.sort = 0;
+				}
 
-				else format.sort = 1;
+				else { 
+					format.sort = 1;
+					column.sort = 1;
+				}
 
 				this.source.columns.sortBy = column;
 				this.source.visualizations.selected.render();
