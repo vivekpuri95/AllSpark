@@ -2869,6 +2869,9 @@ class ObjectRoles {
 
 			throw e;
 		}
+
+		this.form.reset();
+		this.multiSelect.clear();
 	}
 
 	async delete(group_id) {

@@ -6335,6 +6335,9 @@ class ReportVisualizationDashboards extends Set {
 
 			throw e;
 		}
+
+		form.reset();
+		stage.dashboards.dashboardMultiSelect.clear();
 	}
 }
 

@@ -461,6 +461,8 @@ class Privileges {
 
 			throw e;
 		}
+
+		Privileges.add_filter.reset();
 	}
 
 	render() {
