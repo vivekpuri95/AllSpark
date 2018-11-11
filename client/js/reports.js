@@ -5658,8 +5658,8 @@ Visualization.list.set('table', class Table extends Visualization {
 
 						td.style.backgroundColor = backgroundColor;
 
-					if (this.cellLuma(backgroundColor) <= 40)
-						td.classList.add('column-cell-dark');
+					if (this.cellLuma(backgroundColor) <= 40 && colorValue > 170)
+						td.classList.add('column-cell-white');
 				}
 
 				if(column.type && column.type.name == 'html') {
