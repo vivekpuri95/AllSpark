@@ -1450,7 +1450,7 @@ class API extends AJAX {
 			let value = formData.get(key).trim();
 
 			if(value && !isNaN(value))
-				value = parseInt(value);
+				value = parseFloat(value);
 
 			parameters[key] = value;
 		}

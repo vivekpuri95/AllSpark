@@ -813,7 +813,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<div class="form">
 							<label>
 								<span>Name <span class="red">*</span></span>
-								<input type="text" name="name">
+								<input type="text" name="name" required>
 							</label>
 
 							<label>
