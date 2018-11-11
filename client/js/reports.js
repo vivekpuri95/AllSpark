@@ -5504,9 +5504,6 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		this.rows = await this.source.response() || [];
 
-		this.cellDarkLuma = 40;
-		this.cellDarkColorValue = 170;
-
 		this.source.resetError();
 
 		this.process();
@@ -5652,16 +5649,17 @@ Visualization.list.set('table', class Table extends Visualization {
 					else if(rule.content == 'both')
 						typedValue =  typedValue + ' / ' + colorPercent;
 
-					if (this.cellLuma(colorValue.toString(16)) < 40) {
-						// div.classList.add('cell-dark');
-					}
-
-					// less then 40 and alpha value greater then 170 add dark
+					let backgroundColor;
 
 					if(rule.dualColor)
-						td.style.backgroundColor = (rule.position ? rule.maximumColor : rule.minimumColor) + colorValue.toString(16);
+						backgroundColor = (rule.position ? rule.maximumColor : rule.minimumColor) + colorValue.toString(16);
 					else
-						td.style.backgroundColor = rule.maximumColor + colorValue.toString(16);
+						backgroundColor = rule.maximumColor + colorValue.toString(16);
+
+						td.style.backgroundColor = backgroundColor;
+
+					if (this.cellLuma(backgroundColor) <= 40)
+						td.classList.add('column-cell-dark');
 				}
 
 				if(column.type && column.type.name == 'html') {
@@ -5839,16 +5837,16 @@ Visualization.list.set('table', class Table extends Visualization {
 		return value;
 	}
 
-	cellLuma(c) {
-		debugger
-		c = c.substring(1, 7);
+	cellLuma(hex) {
 
-	   const
-		   rgb = parseInt(c, 16),
-		   r = (rgb >> 16) & 0xff,
-		   g = (rgb >> 8) & 0xff,
-		   b = (rgb >> 0) & 0xff
-	   ;
+		hex = hex.substring(1, 7);
+
+		const
+			rgb = parseInt(hex, 16),
+			r = (rgb >> 16) & 0xff,
+			g = (rgb >> 8) & 0xff,
+			b = (rgb >> 0) & 0xff
+		;
 		return 0.2126 * r + 0.7152 * g + 0.0722 * b;
    }
 });
