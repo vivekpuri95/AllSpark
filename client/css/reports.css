@@ -189,7 +189,7 @@ main .dataset {
 				color: var(--color-surface-text);
 				box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 			}
-			.data-source > .menu .item:hover > .submenu {
+			.data-source > .menu .item > .submenu.show {
 				display: flex;
 			}
 			.singleton .data-source > .menu > .item > .submenu {

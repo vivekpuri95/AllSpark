@@ -711,6 +711,19 @@ class DataSource {
 		if(this.visualizations.selected.visualization_id)
 			menu.querySelector('.configure-visualization').href = `/reports/configure-visualization/${this.visualizations.selected.visualization_id}`;
 
+		for(const submenu of menu.querySelectorAll('.item > .submenu')) {
+
+			submenu.parentElement.on('mouseenter', () => {
+				clearTimeout(submenu.leaveTimeout);
+				submenu.enterTimeout = setTimeout(() => submenu.classList.add('show'), 400);
+			});
+
+			submenu.parentElement.on('mouseleave', () => {
+				clearTimeout(submenu.enterTimeout);
+				submenu.leaveTimeout = setTimeout(() => submenu.classList.remove('show'), 400);
+			});
+		}
+
 		return menu;
 	}
 
