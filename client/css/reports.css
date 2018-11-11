@@ -830,6 +830,10 @@ main .dataset {
 					color: #eee;
 					text-shadow: none;
 				}
+				.visualization.table tbody .column-cell-dark {
+					color: #222;
+					text-shadow: none;
+				}
 				.visualization.table thead .heading .popup-dropdown {
 					position: absolute;
 					top: 100%;

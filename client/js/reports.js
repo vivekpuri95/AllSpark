@@ -5656,10 +5656,16 @@ Visualization.list.set('table', class Table extends Visualization {
 					else
 						backgroundColor = rule.maximumColor + colorValue.toString(16);
 
-						td.style.backgroundColor = backgroundColor;
+					td.style.backgroundColor = backgroundColor;
 
-					if (this.cellLuma(backgroundColor) <= 40 && colorValue > 170)
-						td.classList.add('column-cell-white');
+					if(colorValue > 155) {
+
+						if (this.cellLuma(backgroundColor) <= 60)
+							td.classList.add('column-cell-white');
+
+						else
+							td.classList.add('column-cell-dark');
+					}
 				}
 
 				if(column.type && column.type.name == 'html') {
