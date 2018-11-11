@@ -1788,6 +1788,9 @@ class DataSourceColumn {
 		if(this.disabled)
 			this.container.classList.add('disabled');
 
+		if(this.sort != -1)
+			this.source.columns.sortBy = this;
+
 		this.customDateType = new DataSourceColumnCustomDateType();
 		this.customNumberType = new DataSourceColumnCustomNumberType();
 	}
@@ -1858,7 +1861,6 @@ class DataSourceColumn {
 				}
 
 				this.disabled = !this.disabled;
-
 				this.source.columns.render();
 				await this.update();
 			}, 300);
@@ -1871,7 +1873,9 @@ class DataSourceColumn {
 			if(this.clicked == null)
 				this.clicked = true;
 
-			for(const column of this.source.columns.values()) {
+			const columns = Array.from(this.source.columns.values());
+
+			for(const column of columns) {
 
 				if(column.key == this.key || (this.source.visualizations.selected.axes && column.key == this.source.visualizations.selected.axes.bottom.column))
 					continue;
@@ -2274,8 +2278,8 @@ class DataSourceColumn {
 		if(!this.form.parentElement.classList.contains('body'))
 			this.form.parentElement.classList.add('hidden');
 
-		if(this.sort != -1)
-			this.source.columns.sortBy = this;
+		if((this.source.columns.sortBy == this && this.sort == -1) || (this.sort != -1))
+			this.source.columns.sortBy = this.sort == -1 ? null : this;
 
 		this.source.postProcessors.update();
 		await this.source.visualizations.selected.render();
@@ -2301,7 +2305,7 @@ class DataSourceColumn {
 
 		let
 			response,
-			updated = 0;
+			updated = false;
 
 		try {
 
@@ -2370,14 +2374,16 @@ class DataSourceColumn {
 
 			if(column.key == this.key) {
 				this.source.format.columns[i] = response;
-				updated = 1;
+				updated = true;
 				break;
 			}
 		}
 
-		if(updated == 0) {
+		if((this.source.columns.sortBy == this && this.sort == -1) || (this.sort != -1))
+			this.source.columns.sortBy = this.sort == -1 ? null : this;
+
+		if(!updated) 
 			this.source.format.columns.push(response);
-		}
 
 		const
 			parameters = {
@@ -3883,7 +3889,7 @@ class DataSourceTransformations extends Set {
 			columns = [
 				{
 					column: this.source.columns.sortBy.key,
-					order: parseInt(this.source.columns.sortBy.sort) ? 'descending' : 'ascending',
+					order: parseInt(this.source.columns.sortBy.sort) == 1 ? 'ascending' : 'descending',
 				}
 			];
 
