@@ -120,3 +120,9 @@ main .settings-manager.aside-hidden {
 				align-items: center;
 				padding: calc(var(--gap) * 2);
 			}
+@media (max-width: 750px) {
+	main .settings-manager {
+		display: flex;
+		flex-direction: column;
+	}
+}
