@@ -1927,10 +1927,10 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		if(this.drilldown && this.drilldown.query_id) 
+		if(this.drilldown && this.drilldown.query_id)
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
-		
-		else 
+
+		else
 			this.drilldownQuery.clear();
 
 		this.form.disabled.checked = this.disabled;
@@ -2393,7 +2393,7 @@ class DataSourceColumn {
 		if((this.source.columns.sortBy == this && this.sort == -1) || (this.sort != -1))
 			this.source.columns.sortBy = this.sort == -1 ? null : this;
 
-		if(!updated) 
+		if(!updated)
 			this.source.format.columns.push(response);
 
 		const
@@ -5575,7 +5575,7 @@ Visualization.list.set('table', class Table extends Visualization {
 					column.sort = 0;
 				}
 
-				else { 
+				else {
 					format.sort = 1;
 					column.sort = 1;
 				}
@@ -5858,6 +5858,9 @@ Visualization.list.set('table', class Table extends Visualization {
 		const
 			range = rule.maxValue - rule.minValue,
 			value = Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
+
+		if(!range)
+			return 255;
 
 		if(rule.dualColor) {
 
