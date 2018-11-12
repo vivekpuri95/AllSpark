@@ -4747,6 +4747,11 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 								<input type="checkbox" name="hideLegend">Hide Legend
 							</span>
 						</label>
+
+						<label>
+							<span>Font Size <span class="NA right">percentage</span></span>
+							<input type="number" name="fontSize" min="0.1" max="3000" step="0.01" placeholder="815">
+						</label>
 					</div>
 				</div>
 			</div>
@@ -4768,6 +4773,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 		const parentJSON = super.json;
 
+		parentJSON.fontSize = parseFloat(parentJSON.fontSize);
 		parentJSON.column = this.bigReportsColumns.value[0];
 
 		return parentJSON;
