@@ -5769,7 +5769,13 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				tr.classList.toggle('selected');
 
+				for(const cell of tr.querySelectorAll('td')) {
+					cell.classList.add('selected');
+				}
+
 				this.renderRowSummary();
+
+
 			});
 
 			if(!options.resize) {
