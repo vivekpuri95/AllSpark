@@ -716,7 +716,7 @@ main.preview-left #stages {
 				width: 200px;
 			}
 			#stage-configure-visualization .dashboards input[type=number] {
-				width: 50px;
+				width: 75px;
 			}
 			#stage-configure-visualization .dashboards button[disabled],
 			#stage-configure-visualization .dashboards button[disabled]:hover {

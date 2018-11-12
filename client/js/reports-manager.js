@@ -6133,12 +6133,12 @@ class ReportVisualizationDashboards extends Set {
 
 							<label>
 								<span>Width</span>
-								<input type="number" name="width" min="1" step="1">
+								<input type="number" name="width" min="1" step="1" placeholder="32">
 							</label>
 
 							<label>
 								<span>Height</span>
-								<input type="number" name="height" min="1" step="1">
+								<input type="number" name="height" min="1" step="1" placeholder="10">
 							</label>
 
 							<label class="save">
@@ -6374,12 +6374,12 @@ class ReportVisualizationDashboard {
 
 			<label>
 				<span>Width</span>
-				<input type="number" name="width" min="1" step="1" value="${this.visualization.format.width || ''}">
+				<input type="number" name="width" min="1" step="1" value="${this.visualization.format.width || ''}" placeholder="32">
 			</label>
 
 			<label>
 				<span>Height</span>
-				<input type="number" name="height" min="1" step="1" value="${this.visualization.format.height || ''}">
+				<input type="number" name="height" min="1" step="1" value="${this.visualization.format.height || ''}" placeholder="10">
 			</label>
 
 			<label class="save">
