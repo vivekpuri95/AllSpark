@@ -45,9 +45,13 @@ a {
 
 ::-webkit-scrollbar {
 	width: 10px;
+	height: 10px;
 }
 ::-webkit-scrollbar-thumb {
 	background: var(--color-hover);
+}
+::-webkit-scrollbar-corner {
+	background: rgba(0, 0, 0, 0);
 }
 
 input:not([type=checkbox]):not([type=radio]),
@@ -148,7 +152,7 @@ a:active {
 .notice, .warning {
 	padding: 16px;
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-	color: #666;
+	color: #fff;
 	border-radius: 0;
 }
 .notice {
@@ -156,7 +160,6 @@ a:active {
 }
 .warning {
 	background: var(--color-red);
-	color: #fff;
 }
 .NA {
 	color: var(--color-grey);
@@ -555,7 +558,19 @@ body {
 				font-size: 90%;
 				font-weight: bold;
 				letter-spacing: 0.5px;
+				display: flex;
+				align-items: center;
 			}
+				.form label > span span {
+					font-weight: normal;
+					margin-left: var(--gap);
+				}
+				.form label > span .right {
+					margin-left: auto;
+				}
+				.form label > span .red {
+					color: var(--color-red);
+				}
 
 .dialog-box-blanket {
 	background: rgba(0, 0, 0, 0.6);
@@ -707,7 +722,7 @@ body {
 		max-height: 250px;
 		width: 100%;
 		position: absolute;
-		z-index: 3;
+		z-index: 5;
 		overflow: auto;
 	}
 	.multi-select.top .options {
@@ -1036,6 +1051,9 @@ body {
 			margin: 0;
 			font-size: 110%;
 		}
+		.snack-bar .title.no-subtitle {
+			grid-row: 1 / 3;
+		}
 		.snack-bar .subtitle {
 			font-size: 90%;
 			color: #eee;
@@ -1263,4 +1281,30 @@ body {
 		}
 		.notification-bar .close:active {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
+		}
+
+.dialog-box-blanket.keyboard-shortcuts .body {
+	display: grid;
+	grid-gap: 20px;
+	padding: 20px;
+}
+	.dialog-box-blanket.keyboard-shortcuts .shortcut {
+		display: grid;
+		grid-template-columns: 100px 1fr;
+		align-items: center;
+		grid-row-gap: var(--gap);
+		grid-column-gap: 20px;
+	}
+		.dialog-box-blanket.keyboard-shortcuts .shortcut .keys {
+			grid-row: 1 / 3;
+			font-size: 135%;
+			text-align: right;
+			color: var(--color-secondary);
+			font-family: monospace;
+		}
+		.dialog-box-blanket.keyboard-shortcuts .shortcut .title {
+			font-size: 115%;
+		}
+		.dialog-box-blanket.keyboard-shortcuts .shortcut .description {
+			color: var(--color-grey);
 		}

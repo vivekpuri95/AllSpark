@@ -498,7 +498,7 @@ Page.class = class Dashboards extends Page {
 			document.querySelector('body').classList.toggle('floating', !document.querySelector('body').classList.contains('floating'));
 		}
 
-		if (window.location.pathname.split('/').pop() === 'first') {
+		if (window.location.pathname.split('/').filter(p => p).pop() === 'first') {
 
 			this.navbar.render();
 
@@ -589,7 +589,9 @@ Page.class = class Dashboards extends Page {
 
 		container.appendChild(report.container);
 
-		report.visualizations.selected.load();
+		// .then because we don't want to await on visualization load
+		report.visualizations.selected.load()
+			.then(() => report.postProcessors.render());
 
 		await Sections.show('reports');
 	}
@@ -674,8 +676,9 @@ class Dashboard {
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
 
-		const sideButton = page.container.querySelector('#reports .side');
-		const container = page.container.querySelector('#reports #blanket');
+		const
+			sideButton = page.container.querySelector('#reports .side'),
+			container = page.container.querySelector('#reports #blanket');
 
 		sideButton.on('click', () => {
 
@@ -1073,7 +1076,7 @@ class Dashboard {
 			console.log(e);
 		}
 
-		if (!this.globalFilters.size)
+		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top')
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
@@ -1084,10 +1087,8 @@ class Dashboard {
 			return;
 		}
 
-		if (!this.globalFilters.size) {
-
+		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top')
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
-		}
 
 		Sections.show('reports');
 
@@ -1380,7 +1381,10 @@ class Nav {
 			container.classList.add('hidden');
 		}
 
-		container.querySelector('.label').on('click', () => {
+		container.querySelector('.label').on('click', e => {
+
+			if(e.ctrlKey || e.metaKey)
+				return window.open('/dashboard/' + this.dashboard.id);
 
 			this.page.render({
 				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0,

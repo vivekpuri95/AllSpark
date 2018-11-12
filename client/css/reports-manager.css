@@ -4,7 +4,7 @@ html, body {
 main {
 	display: grid;
 	grid-template-rows: max-content 1fr;
-	grid-template-columns: 1fr 1fr 1fr;
+	grid-template-columns: 1.5fr 1fr 1fr;
 	grid-gap: calc(var(--gap) * 2);
 	padding: 0 calc(var(--gap) * 2) calc(var(--gap) * 2);
 	height: 100%;
@@ -368,8 +368,14 @@ main.preview-left #stages {
 			margin-left: calc(var(--gap) * 2);
 			overflow: auto;
 		}
+			#stage-define-report #filters h3:first-child {
+				margin-top: 0;
+			}
+			#stage-define-report #filters h3 + p {
+				color: var(--color-grey);
+			}
 			#stage-define-report #filters #missing-filters {
-				background: #fcc;
+				background: var(--color-red);
 				padding: 16px;
 				flex: 1;
 				font-weight: normal;
@@ -378,13 +384,17 @@ main.preview-left #stages {
 			#stage-define-report #filters .toolbar {
 				position: sticky;
 				top: 0;
-				z-index: 1;
+				background: var(--color-background);
+				color: var(--color-background-text);
 			}
 			#stage-define-report #filters table,
 			#stage-define-report #filters .form {
 				background: var(--color-surface);
 				color: var(--color-surface-text);
 				box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+			}
+			#stage-define-report #filters .external-parameters {
+				margin-top: 40px;
 			}
 		#stage-define-report .query-history {
 			order: 3;
@@ -481,7 +491,6 @@ main.preview-left #stages {
 	.visualization-form fieldset {
 		background: var(--color-surface);
 		color: var(--color-surface-text);
-		padding: 15px;
 		margin: 0;
 		border-radius: 3px;
 		border: 0;
@@ -665,9 +674,9 @@ main.preview-left #stages {
 					display: grid;
 					grid-template-columns: repeat(2, max-content);
 				}
-				.visualization-form .transformations .transformation > .restrict-column input:not(:checked) + span {
-					color: #999;
-				}
+					.visualization-form .transformations .transformation > .restrict-column input[disabled]:not(:checked) + span {
+						color: var(--color-grey);
+					}
 
 				.visualization-form .transformations .transformation .form-row {
 					display: grid;
@@ -715,11 +724,11 @@ main.preview-left #stages {
 	#stage-configure-visualization .dashboards {
 	}
 		#stage-configure-visualization .dashboards .form {
-			grid-template-columns: repeat(5, max-content);
+			grid-template-columns: repeat(7, max-content);
 			grid-gap: calc(var(--gap) * 2);
 		}
 		#stage-configure-visualization .dashboards .add-dashboard .form {
-			grid-template-columns: repeat(4, max-content);
+			grid-template-columns: repeat(6, max-content);
 			background: transparent;
 			padding: 0;
 		}
@@ -727,12 +736,16 @@ main.preview-left #stages {
 				background: #c33;
 				border-color: transparent;
 			}
+				#stage-configure-visualization .dashboards .save button > i,
 				#stage-configure-visualization .dashboards .delete > i,
 				#stage-configure-visualization .dashboards .view-dashboard > i {
 					margin: 0;
 				}
 			#stage-configure-visualization .dashboards .dashboard_id {
 				width: 200px;
+			}
+			#stage-configure-visualization .dashboards input[type=number] {
+				width: 75px;
 			}
 			#stage-configure-visualization .dashboards button[disabled],
 			#stage-configure-visualization .dashboards button[disabled]:hover {
@@ -759,7 +772,7 @@ main.preview-left #stages {
 			}
 
 	.visualization-form .configuration-section h3 .count {
-		color: #bbb;
+		color: var(--color-grey);
 		font-size: 90%;
 		margin-left: auto;
 		font-weight: normal;

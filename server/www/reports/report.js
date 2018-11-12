@@ -360,8 +360,6 @@ exports.list = class extends API {
 
 		const e = performance.now() - st;
 
-		console.log(e, 'INITIAL QUERIES PERFORMANCE(MS)');
-
 		let
 			reportTime = 0,
 			reportCount = 0,
@@ -405,7 +403,7 @@ exports.list = class extends API {
 			}
 
 			if(row.tags)
-				row.tags = row.tags.split(',').map(q => q.trim()).join();
+				row.tags = row.tags.split(',').map(t => t.trim()).filter(t => t).join(', ');
 
 			row.visibilityReason = authResponse.message;
 
@@ -504,8 +502,6 @@ exports.list = class extends API {
 
 			response.push(row);
 		}
-		console.log(visualizationTime, 'VISUALIZATION TIME', visualizationCount, 'VISUALIZATION COUNT', visualizationTime/visualizationCount, 'AVG');
-		console.log(reportTime, 'REPORT TIME', reportCount, 'REPORT COUNT', reportTime/reportCount, 'AVG');
 
 		for(const row of response) {
 
