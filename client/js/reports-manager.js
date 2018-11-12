@@ -4410,7 +4410,7 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 		for(const element of container.querySelectorAll('select')) {
 
-			for(const key in selected)
+			if(element.name in selected)
 				element.value = selected[element.name];
 		}
 
