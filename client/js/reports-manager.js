@@ -4496,6 +4496,14 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 					<div class="form subform">
 
 						<label>
+							<span>Label Position</span>
+							<select name="labelPosition">
+								<option value="inside">Inside</option>
+								<option value="outside">Outside</option>
+							</select>
+						</label>
+
+						<label>
 							<span>
 								<input type="checkbox" name="showValue">Show Value
 							</span>
@@ -4517,14 +4525,6 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 							<span>
 								<input type="checkbox" name="classicPie">Classic Pie
 							</span>
-						</label>
-
-						<label>
-							<span>Label Position</span>
-							<select name="labelPosition">
-								<option value="inside">Inside</option>
-								<option value="outside">Outside</option>
-							</select>
 						</label>
 
 						<label>

@@ -1348,10 +1348,10 @@ main .dataset {
 		opacity: 1;
 	}
 	.visualization.pie .text {
-		stroke: var(--color-surface-text);
+		fill: var(--color-surface-text);
 	}
 	.visualization.pie .sub-text {
-		stroke: var(--color-grey);
+		fill: var(--color-grey);
 		font-size: 12px !important;
 	}
 

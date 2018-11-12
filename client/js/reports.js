@@ -8958,6 +8958,9 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		// Add the text
 
+		if(!this.options.showName && !this.options.showValue && !this.options.showPercentage)
+			return;
+
 		if(this.options.labelPosition == 'outside') {
 
 			function midAngle(d) {
