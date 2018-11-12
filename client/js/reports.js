@@ -9348,6 +9348,10 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		let value = response.getTypedValue(this.options.column);
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
+
+		if(this.options.fontSize) {
+			this.container.querySelector('.value').style.fontSize = `${this.options.fontSize}%`;
+		}
 	}
 });
 
