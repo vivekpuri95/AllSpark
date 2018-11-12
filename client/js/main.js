@@ -1946,16 +1946,38 @@ class Sections {
 	}
 }
 
+/**
+ * A generic code editor UI.
+ *
+ * Useage:
+ *
+ * 	const editor = new CodeEditor();
+ *
+ * 	container.appendChild(editor.contaier);
+ *
+ * 	editor.value = 'foo';
+ *
+ * 	// foo
+ *	console.log(editor.value);
+ */
 class CodeEditor {
 
+	/**
+	 * @param mode	string	Defines the color and formating scheme for the code. For example sql, js, HTML.
+	 * 
+	 * @return CodeEditor
+	 */
 	constructor({mode = null} = {}) {
 
 		if(!window.ace)
-			throw Page.exception('Ace editor not available!');
+			throw new Page.exception('Ace editor not available!');
 
 		this.mode = mode;
 	}
 
+	/**
+	 * @return HTMLElement	A reference for the editor's contaier. Will be used to append it in UI.
+	 */
 	get container() {
 
 		const container = this.editor.container;
@@ -1965,6 +1987,9 @@ class CodeEditor {
 		return container;
 	}
 
+	/**
+	 * @return Creates a new Ace Editor instance if not already created and returns it.
+	 */
 	get editor() {
 
 		if(this.instance)
@@ -1983,14 +2008,35 @@ class CodeEditor {
 		return editor;
 	}
 
+	/**
+	 * @return	Get	The current value from the editor.
+	 */
 	get value() {
 		return this.editor.getValue();
 	}
 
+	/**
+	 * @param string	value	Set a new value for the editor.
+	 */
 	set value(value) {
 		this.editor.setValue(value || '', 1);
 	}
 
+	/**
+	 * Set a list of autocomplete suggestions for the editor.
+	 * 
+	 * @param Array	list	A list of autocomplete values to pass into the editor.
+	 *
+	 * Format:
+	 * [
+	 * 	{
+	 * 		name: "Foo",
+	 * 		value: "foo",
+	 * 		meta: "bar"
+	 * 	},
+	 * 	[...]
+	 * ]
+	 */
 	setAutoComplete(list) {
 
 		this.langTools = ace.require('ace/ext/language_tools');
@@ -2002,6 +2048,104 @@ class CodeEditor {
 		this.editor.setOptions({
 			enableBasicAutocompletion: true,
 		});
+	}
+
+	/**
+	 * Assign a callback for an event on the editor.
+	 * 
+	 * @param string	event		The event that the client wants to listen to (only 'change' is supported for now)
+	 * @param Function	callback	The callback function to call when the passed event happens.
+	 */
+	on(event, callback) {
+
+		if(event != 'change')
+			return;
+
+		this.editor.getSession().on('change', () => callback());
+	}
+}
+
+/**
+ * A generic WYSIWYG editor for letting the user generate HTML to show in the panel.
+ *
+ * Useage:
+ *
+ * const editor = new HTMLEditor();
+ * 
+ * container.appendChild(editor.container);
+ *
+ * // Need to call setup after adding the container to DOM, doesn't currently work entirely outside of DOM.
+ * editor.setup();
+ * 
+ * editor.value = 'test';
+ *
+ * // asd
+ * console.log(editor.value);
+ */
+class HTMLEditor {
+
+	constructor() {
+
+		if(!window.tinymce)
+			throw new Page.exception('TinyMCE HTML Editor not available!');
+
+		// Used to uniquely identify the editor later
+		this.id = Math.floor(Math.random() * 100000);
+	}
+
+	get container() {
+
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = document.createElement('div');
+
+		container.classList.add('html-editor');
+
+		container.id = 'code-editor-' + this.id;
+
+		return container;
+	}
+
+	/**
+	 * Creates a new editor instance if not already created.
+	 * Doesn't currently work unless the container exists in DOM.
+	 */
+	async setup() {
+
+		if(this.editor)
+			return;
+
+		[this.editor] = await tinymce.init({
+			selector: '#' + this.container.id,
+			height: 400,
+			plugins: [
+				'advlist autolink lists link image charmap print preview anchor',
+				'searchreplace visualblocks code fullscreen emoticons',
+				'insertdatetime media table paste help wordcount'
+			],
+			toolbar: 'undo redo |  formatselect | bold italic backcolor forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent emoticons | removeformat print | help',
+			content_css: [
+				'//www.tinymce.com/css/codepen.min.css',
+				'/css/main.css',
+				`/css/themes/${account.settings.get('theme') == 'dark' ? 'dark' : 'light'}.css`,
+			]
+		});
+	}
+
+
+	/**
+	 * @return string	Fetch the editor's value in HTML form.
+	 */
+	get value() {
+		return this.editor.getContent();
+	}
+
+	/**
+	 * @param string	value	The value for the editor that will be set.
+	 */
+	set value(value = '') {
+		return this.editor.setContent(value);
 	}
 }
 

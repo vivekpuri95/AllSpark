@@ -166,6 +166,9 @@ main.preview-left #stages {
 	grid-gap: calc(var(--gap) * 2);
 	grid-template-columns: 1fr 1fr;
 }
+	#stage-configure-report #configure-report-form .description.form {
+		grid-column: 1 / 3;
+	}
 #stage-configure-report > h2 {
 	margin: calc(var(--gap) * 2) 0;
 }

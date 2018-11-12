@@ -760,6 +760,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU&libraries=visualization" defer f="',
 
 			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+			'https://devpreview.tiny.cloud/demo/tinymce.min.js',
 		]);
 	}
 
@@ -822,11 +823,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</label>
 
 							<label>
-								<span>Description</span>
-								<textarea name="description"></textarea>
-							</label>
-
-							<label>
 								<span>Tags <span class="right NA">Comma Separated</span></span>
 								<input type="text" name="tags">
 							</label>
@@ -871,6 +867,10 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									<option value="0">Disabled</option>
 								</select>
 							</label>
+						</div>
+
+						<div class="form description">
+							<span>Description</span>
 						</div>
 					</form>
 
