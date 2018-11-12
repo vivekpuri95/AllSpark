@@ -4646,8 +4646,8 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 						</label>
 
 						<label>
-							<span>Font Size(%)</span>
-							<input type="number" name="fontSize">
+							<span>Font Size (%)</span>
+							<input type="number" name="fontSize" min="0.1" max="1000" step="0.01" placeholder="815">
 						</label>
 					</div>
 				</div>
