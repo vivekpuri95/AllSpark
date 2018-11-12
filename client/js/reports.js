@@ -556,7 +556,7 @@ class DataSource {
 				<span class="label query-toggle"><i class="fas fa-file-alt"></i> Query</span>
 			</div>
 
-			<div class="item" title="Hold alt for disabling cache">
+			<div class="item" title="Hold alt + click for disabling cache">
 				<span class="label reload"><i class="fas fa-sync"></i> Reload</span>
 			</div>
 		`;
