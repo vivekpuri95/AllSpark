@@ -1350,6 +1350,10 @@ main .dataset {
 	.visualization.pie .text {
 		stroke: var(--color-surface-text);
 	}
+	.visualization.pie .sub-text {
+		stroke: var(--color-grey);
+		font-size: 12px !important;
+	}
 
 .data-source-column form .parameter-list {
 	display: grid;

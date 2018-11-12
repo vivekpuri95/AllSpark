@@ -4496,12 +4496,21 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 					<div class="form subform">
 
 						<label>
-							<span>Show</span>
-							<select name="showValue">
-								<option value="">None</option>
-								<option value="value">Value</option>
-								<option value="percentage">Percentage</option>
-							</select>
+							<span>
+								<input type="checkbox" name="showValue">Show Value
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showPercentage">Show Percentage
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showName">Show Name
+							</span>
 						</label>
 
 						<label>

@@ -8879,6 +8879,9 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			labels = svg.append('g')
 				.attr('class', 'labels'),
 
+			subLabels = svg.append('g')
+				.attr('class', 'sub-labels'),
+
 			lines = svg.append('g')
 				.attr('class', 'lines'),
 
@@ -8955,32 +8958,37 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		// Add the text
 
-		if(!this.options.showValue)
-			return;
-
 		if(this.options.labelPosition == 'outside') {
 
-			const text = svg.select('.labels').selectAll('text')
-				.data(pie(data));
-
-				text.enter()
-				.append('text')
-				.attr('dy', '.35em')
-				.text(d => {
-					if(that.options.showValue == 'value')
-						return d.data.value;
-
-					if(that.options.showValue == 'percentage')
-						return `${d.data.percentage}%`;
-				});
-
-			function midAngle(d){
+			function midAngle(d) {
 				return d.startAngle + (d.endAngle - d.startAngle) / 2;
 			}
 
 			const outerArc = d3.svg.arc()
 				.innerRadius(radius * 0.9)
 				.outerRadius(radius * 0.9);
+
+			const text = svg.select('.labels')
+				.selectAll('text')
+				.data(pie(data));
+
+				text.enter()
+				.append('text')
+				.attr('dy', '.35em')
+				.text(d => {
+
+					if(this.options.showName)
+						return d.data.name;
+
+					else if(this.options.showValue && this.options.showPercentage)
+						return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+
+					else if(this.options.showValue)
+						return Format.number(d.data.value);
+
+					else if(this.options.showPercentage)
+						return `${Format.number(d.data.percentage)}%`;
+				});
 
 			text.transition()
 				.duration(1000)
@@ -9017,6 +9025,66 @@ Visualization.list.set('pie', class Pie extends Visualization {
 					};
 				})
 				.attr('class', 'text');
+
+			if(this.options.showName) {
+
+				const subText = svg.select('.sub-labels')
+					.selectAll('.sub-text')
+					.data(pie(data));
+
+					subText.enter()
+					.append('text')
+					.attr('dy', '.35em')
+					.text(d => {
+
+						if(this.options.showValue && this.options.showPercentage)
+							return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+
+						else if(this.options.showValue)
+							return Format.number(d.data.value);
+
+						else if(this.options.showPercentage)
+							return `${Format.number(d.data.percentage)}%`;
+					});
+
+				subText.transition()
+					.duration(1000)
+					.attrTween('transform', function(d) {
+
+						this.current = this.current || d;
+
+						const interpolate = d3.interpolate(this.current, d);
+
+						this.current = interpolate(0);
+
+						return t => {
+
+							const
+								d2 = interpolate(t),
+								pos = outerArc.centroid(d2);
+
+							pos[0] = radius * (midAngle(d2) < Math.PI ? 1 : -1);
+							pos[0] = pos[0] < 0 ? pos[0] + (-20) : pos[0] + 20;
+
+							pos[1] = pos[1] + 20;
+
+							return `translate(${pos})`;
+						};
+					})
+					.styleTween('text-anchor', function(d) {
+
+						this.current = this.current || d;
+
+						const interpolate = d3.interpolate(this.current, d);
+
+						this.current = interpolate(0);
+
+						return t => {
+							return midAngle(interpolate(t)) < Math.PI ? 'start' : 'end';
+						};
+					})
+					.attr('class', 'sub-text');
+			}
 
 			const polylineLight = svg.select('.lines')
 				.selectAll('.light')
@@ -9083,28 +9151,53 @@ Visualization.list.set('pie', class Pie extends Visualization {
 
 		if(this.options.labelPosition == 'inside') {
 
-			if(this.options.showValue == 'value') {
+			arcs.append('text')
+				.attr('transform', row => {
+					row.innerRadius = radius - 50;
+					row.outerRadius = radius;
+					return `translate(${arc.centroid(row)})`;
+				})
+				.attr('text-anchor', 'middle')
+				.text(d => {
+
+					if(this.options.showName)
+						return d.data.name;
+
+					else if(this.options.showValue && this.options.showPercentage)
+						return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+
+					else if(this.options.showValue)
+						return Format.number(d.data.value);
+
+					else if(this.options.showPercentage)
+						return `${Format.number(d.data.percentage)}%`;
+				});
+
+
+			if(this.options.showName) {
 
 				arcs.append('text')
 					.attr('transform', row => {
 						row.innerRadius = radius - 50;
 						row.outerRadius = radius;
-						return `translate(${arc.centroid(row)})`;
+
+						const pos = arc.centroid(row);
+						pos[1] = pos[1] + 20;
+						return `translate(${pos})`;
 					})
 					.attr('text-anchor', 'middle')
-					.text(row => Format.number(row.data.value));
-			}
+					.text(d => {
 
-			else if(this.options.showValue == 'percentage') {
+						if(this.options.showValue && this.options.showPercentage)
+							return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
 
-				arcs.append('text')
-					.attr('transform', row => {
-						row.innerRadius = radius - 50;
-						row.outerRadius = radius;
-						return `translate(${arc.centroid(row)})`;
+						else if(this.options.showValue)
+							return Format.number(d.data.value);
+
+						else if(this.options.showPercentage)
+							return `${Format.number(d.data.percentage)}%`;
 					})
-					.attr('text-anchor', 'middle')
-					.text(row => Format.number(row.data.percentage) + '%');
+					.attr('class', 'sub-text');
 			}
 		}
 	}
