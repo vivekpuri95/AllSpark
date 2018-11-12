@@ -458,7 +458,7 @@ Settings.list.set('executingReports', class ExecutingReports extends SettingPage
 		for(const report of this.executingReports.values())
 			tbody.appendChild(report.row);
 
-		this.container.classList.remove('hidden');
+		await Sections.show('executing-reports');
 	}
 });
 
