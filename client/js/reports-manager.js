@@ -4644,11 +4644,6 @@ ConfigureVisualization.types.set('spatialmap', class SpatialMapOptions extends R
 								<input type="checkbox" name="hideLegend">Hide Legend
 							</span>
 						</label>
-
-						<label>
-							<span>Font Size (%)</span>
-							<input type="number" name="fontSize" min="0.1" max="1000" step="0.01" placeholder="815">
-						</label>
 					</div>
 				</div>
 			</div>
