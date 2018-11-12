@@ -3124,7 +3124,7 @@ class SearchColumnFilter {
 			<select class="searchValue"></select>
 			<select class="searchType"></select>
 			<input type="search" class="searchQuery" placeholder="Search">
-			<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			<button type="button" class="delete"><i class="far fa-trash-alt delete-icon"></i></button>
 		`;
 
 		const

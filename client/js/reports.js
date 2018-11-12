@@ -5482,13 +5482,47 @@ Visualization.list.set('table', class Table extends Visualization {
 		return container;
 	}
 
+	process() {
+
+		if(!this.options || !this.options.gradientRules)
+			return;
+
+		for(const gradient of this.options.gradientRules) {
+
+			if(!this.rows.filter(f => f.get(gradient.column)).length || !this.rows.filter(f => f.get(gradient.relative)).length)
+				continue;
+
+			for(const row of this.rows) {
+
+				const _row = row.get(gradient.relative);
+
+				if(!isNaN(_row)) {
+
+					if((!gradient.maxValue && gradient.maxValue != 0))
+						gradient.maxValue = _row;
+
+					if((!gradient.minValue && gradient.minValue != 0))
+						gradient.minValue = _row;
+
+					if(gradient.maxValue < _row)
+						gradient.maxValue = _row;
+
+					else if(gradient.minValue > _row)
+						gradient.minValue = _row;
+				}
+			}
+		}
+	}
+
 	async render(options = {}) {
 
-		const
-			container = this.container.querySelector('.container'),
-			rows = await this.source.response() || [];
+		const container = this.container.querySelector('.container');
+
+		this.rows = await this.source.response() || [];
 
 		this.source.resetError();
+
+		this.process();
 
 		container.textContent = null;
 
@@ -5586,9 +5620,18 @@ Visualization.list.set('table', class Table extends Visualization {
 		if(thead.children.length)
 			table.appendChild(thead);
 
+		const gradientRules = {};
+
+		if(this.options && this.options.gradientRules) {
+
+			for(const rule of this.options.gradientRules) {
+				gradientRules[rule.column] = rule;
+			}
+		}
+
 		const tbody = document.createElement('tbody');
 
-		for(const [position, row] of rows.entries()) {
+		for(const [position, row] of this.rows.entries()) {
 
 			if(position >= this.rowLimit)
 				break;
@@ -5601,9 +5644,49 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				let rowJson = row.get(key);
 
+				let typedValue = row.getTypedValue(key);
+
+				const rule = gradientRules[key];
+
+				if(rule && rule.maxValue && (rule.currentValue = row.get(rule.relative))) {
+
+					rule.position = rule.currentValue >= parseFloat((rule.maxValue - rule.minValue) / 2);
+
+					const
+						colorValue = this.cellColorValue(rule),
+						colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
+
+					if(rule.content == 'empty')
+						typedValue = null;
+
+					else if(rule.content == 'percentage')
+						typedValue = colorPercent;
+
+					else if(rule.content == 'both')
+						typedValue =  typedValue + ' / ' + colorPercent;
+
+					let backgroundColor;
+
+					if(rule.dualColor)
+						backgroundColor = (rule.position ? rule.maximumColor : rule.minimumColor) + colorValue.toString(16);
+					else
+						backgroundColor = rule.maximumColor + colorValue.toString(16);
+
+					td.style.backgroundColor = backgroundColor;
+
+					if(colorValue > 155) {
+
+						if (this.cellLuma(backgroundColor) <= 60)
+							td.classList.add('column-cell-white');
+
+						else
+							td.classList.add('column-cell-dark');
+					}
+				}
+
 				if(column.type && column.type.name == 'html') {
 
-					td.innerHTML = row.getTypedValue(key);
+					td.innerHTML = typedValue;
 				}
 				else if(rowJson && typeof rowJson == 'object') {
 
@@ -5652,7 +5735,7 @@ Visualization.list.set('table', class Table extends Visualization {
 				}
 				else {
 
-					td.textContent = row.getTypedValue(key);
+					td.textContent = typedValue;
 				}
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
@@ -5686,7 +5769,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(rows.length > this.rowLimit) {
+		if(this.rows.length > this.rowLimit) {
 
 			const tr = document.createElement('tr');
 
@@ -5708,7 +5791,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(!rows.length) {
+		if(!this.rows.length) {
 			tbody.insertAdjacentHTML('beforeend', `
 				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found!'}</td></tr>
 			`);
@@ -5724,13 +5807,13 @@ Visualization.list.set('table', class Table extends Visualization {
 			<span>
 				<span class="label">Showing:</span>
 				<strong title="Number of rows currently shown on screen">
-					${Format.number(Math.min(this.rowLimit, rows.length))}
+					${Format.number(Math.min(this.rowLimit, this.rows.length))}
 				</strong>
 			</span>
 			<span>
 				<span class="label">Filtered:</span>
 				<strong title="Number of rows that match any search or grouping criterion">
-					${Format.number(rows.length)}
+					${Format.number(this.rows.length)}
 				</strong>
 			</span>
 			<span>
@@ -5744,7 +5827,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		table.appendChild(tbody);
 		container.appendChild(table);
 
-		if(!this.hideRowSummary && rows.length)
+		if(!this.hideRowSummary && this.rows.length)
 			container.appendChild(rowCount);
 	}
 
@@ -5758,6 +5841,36 @@ Visualization.list.set('table', class Table extends Visualization {
 		container.classList.toggle('hidden', !this.selectedRows.size);
 		container.querySelector('strong').textContent = Format.number(this.selectedRows.size);
 	}
+
+	cellColorValue(rule) {
+
+		const
+			range = rule.maxValue - rule.minValue,
+			value = Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
+
+		if(rule.dualColor) {
+
+			if(rule.position)
+				return value;
+			else
+				return Math.floor(17 + (238/range) * (rule.maxValue - rule.currentValue));
+		}
+
+		return value;
+	}
+
+	cellLuma(hex) {
+
+		hex = hex.substring(1, 7);
+
+		const
+			rgb = parseInt(hex, 16),
+			r = (rgb >> 16) & 0xff,
+			g = (rgb >> 8) & 0xff,
+			b = (rgb >> 0) & 0xff
+		;
+		return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+   }
 });
 
 Visualization.list.set('line', class Line extends LinearVisualization {

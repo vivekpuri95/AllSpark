@@ -519,6 +519,35 @@ main.preview-left #stages {
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		border-radius: 3px;
 	}
+		.visualization-form .subform .gradient-rules {
+			display: grid;
+			grid-gap: calc(var(--gap) * 2);
+			align-items: center;
+			overflow: auto;
+			max-height: 200px;
+		}
+		.visualization-form .subform .gradient-rules::-webkit-scrollbar {
+			height: 5px;
+			width: 5px;
+		}
+			.visualization-form .subform .gradient-rules .rule {
+				display: grid;
+				grid-gap: calc(var(--gap) * 2);
+				padding-bottom: calc(var(--gap) * 2);
+				padding-right: calc(var(--gap) * 2);
+				grid-auto-flow: column;
+				align-items: end;
+			}
+				.visualization-form .subform .gradient-rules .rule input[type=color] {
+					width: 100%;
+					padding: 0;
+				}
+				.visualization-form .subform .gradient-rules .rule .delete:hover {
+					color: var(--color-red);
+				}
+					.visualization-form .subform .gradient-rules .rule .delete .delete-icon {
+						margin-right: 0;
+					}
 
 	.visualization-form .axes,
 	.visualization-form .layers {
@@ -906,3 +935,4 @@ main.preview-left #preview {
 	#preview .data-source {
 		max-height: 600px;
 	}
+
