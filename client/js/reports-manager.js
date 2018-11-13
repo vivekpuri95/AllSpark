@@ -4401,7 +4401,7 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 				dualColor: parseInt(rule.querySelector('select[name="dualColor"]').value),
 				maximumColor: rule.querySelector('input[name="maximumColor"]').value,
 				minimumColor: rule.querySelector('input[name="minimumColor"]').value,
-				gradientThreshold: rule.querySelector('input[name="gradientThreshold"]').value,
+				gradientThreshold: parseFloat(rule.querySelector('input[name="gradientThreshold"]').value),
 				content: rule.querySelector('select[name="content"').value,
 			});
 		}
