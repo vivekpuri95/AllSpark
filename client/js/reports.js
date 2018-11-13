@@ -1801,7 +1801,7 @@ class DataSourceColumn {
 		if(this.disabled)
 			this.container.classList.add('disabled');
 
-		if(this.sort != -1)
+		if(!isNaN(this.sort) && this.sort != -1)
 			this.source.columns.sortBy = this;
 
 		this.customDateType = new DataSourceColumnCustomDateType();
