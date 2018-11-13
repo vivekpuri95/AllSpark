@@ -547,6 +547,9 @@ main.preview-left #stages {
 				grid-auto-flow: column;
 				align-items: end;
 			}
+				.visualization-form .subform .gradient-rules .rule select {
+					width: 100%;
+				}
 				.visualization-form .subform .gradient-rules .rule input[type=color] {
 					width: 100%;
 					padding: 0;
