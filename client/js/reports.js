@@ -5855,7 +5855,7 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	cellColorValue(rule) {
 
-		if(!rule.thresholdColor)
+		if(!rule.thresholdColor || rule.thresholdColor > 100)
 			rule.thresholdColor = 100;
 
 		const
