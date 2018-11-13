@@ -507,7 +507,8 @@ body {
 			background: var(--color-hover);
 			color: var(--color-hover-text);
 		}
-		table tbody tr.selected , table tbody tr.selected td {
+		table tbody tr.selected,
+		table tbody tr.selected td {
 			background: var(--color-selected) !important;
 			color: var(--color-selected-text);
 		}
