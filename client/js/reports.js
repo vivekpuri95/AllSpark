@@ -5671,8 +5671,6 @@ Visualization.list.set('table', class Table extends Visualization {
 
 					colorValue = parseInt(rule.thresholdColor / 100 * colorValue);
 
-					console.log(colorValue);
-
 					if(rule.content == 'empty')
 						typedValue = null;
 
