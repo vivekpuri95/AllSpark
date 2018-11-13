@@ -5664,7 +5664,7 @@ Visualization.list.set('table', class Table extends Visualization {
 					rule.position = rule.currentValue >= parseFloat((rule.maxValue - rule.minValue) / 2);
 
 					const
-						colorValue = this.cellColorValue(rule),
+						colorValue = parseInt(this.cellColorValue(rule)),
 						colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
 
 					if(rule.content == 'empty')
@@ -5855,22 +5855,25 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	cellColorValue(rule) {
 
+		if(!rule.thresholdColor)
+			rule.thresholdColor = 100;
+
 		const
 			range = rule.maxValue - rule.minValue,
 			value = Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
 
 		if(!range)
-			return 255;
+			return (rule.thresholdColor/100 *255);
 
 		if(rule.dualColor) {
 
 			if(rule.position)
-				return value;
+				return (rule.thresholdColor/100 * value);
 			else
-				return Math.floor(17 + (238/range) * (rule.maxValue - rule.currentValue));
+				return ((rule.thresholdColor/100) * (Math.floor(17 + (238/range) * (rule.maxValue - rule.currentValue))));
 		}
 
-		return value;
+		return (rule.thresholdColor/100 * value);
 	}
 
 	cellLuma(hex) {
