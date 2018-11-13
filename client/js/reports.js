@@ -5770,8 +5770,6 @@ Visualization.list.set('table', class Table extends Visualization {
 				tr.classList.toggle('selected');
 
 				this.renderRowSummary();
-
-
 			});
 
 			if(!options.resize) {
