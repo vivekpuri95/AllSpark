@@ -4312,17 +4312,17 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 			<label>
 				<span>Maximum Value</span>
-				<input type="color" name="maximumColor" class="color" value="${selected.maximumColor}">
+				<input type="color" name="maximumColor" value="${selected.maximumColor}">
 			</label>
 
 			<label class="minimum-color">
 				<span>Minimum Value</span>
-				<input type="color" name="minimumColor" class="color" value="${selected.minimumColor}">
+				<input type="color" name="minimumColor" value="${selected.minimumColor}">
 			</label>
 
 			<label>
 				<span>Color Threshold %</span>
-				<input type="number" min="0" max="100" name="thresholdColor" class="color" value="${selected.thresholdColor}">
+				<input type="number" min="0" max="100" name="thresholdColor" value="${selected.thresholdColor}">
 			</label>
 
 			<label>
