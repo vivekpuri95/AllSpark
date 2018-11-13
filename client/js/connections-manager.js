@@ -8,6 +8,9 @@ class Connections extends Page {
 
 		this.container.querySelector('section#form .toolbar #back').on('click', () => this.back());
 
+		this.container.querySelector('#add-oauth-connection').on('submit', e => OAuthConnection.insert(e));
+		OAuthConnection.validate();
+
 		(async () => {
 
 			await this.load();
@@ -87,30 +90,44 @@ class Connections extends Page {
 		for(const connection in dataConnectionsList)
 			this.dataConnections.set(connection, new DataConnections(dataConnectionsList[connection], connection, this));
 
-		// for(const provider of response[1] || [])
-		// 	this.oAuthProviders.set(provider.provider_id, provider);
+		for(const provider of response[1] || [])
+			this.oAuthProviders.set(provider.provider_id, provider);
 
-		// for(const connection of response[2] || [])
-		// 	this.oAuthConnections.set(connection.id, new OAuthConnection(connection, this));
+		for(const connection of response[2] || [])
+			this.oAuthConnections.set(connection.id, new OAuthConnection(connection, this));
 	}
 
 	render(list) {
 
 		const container = this.connectionsContainer;
 
-		const connContainer = container.querySelector('#data-connections');
+		const
+			connContainer = container.querySelector('#data-connections'),
+			oauthContainer = this.container.querySelector('.oauth-connections table tbody');
 
 		connContainer.textContent = null;
+		oauthContainer.textContent = null;
 
 		const dataConnections = list || this.dataConnections;
 
 		for(const connection of dataConnections.values())
 			connContainer.appendChild(connection.container);
 
+		for(const oauth of this.oAuthConnections.values()) {
+
+			oauthContainer.appendChild(oauth.row);
+		}
+
 		if(!connContainer.childElementCount)
 			connContainer.innerHTML = '<div class="NA">No Connection Found</div>';
 
-		this.container.querySelector('section#list').appendChild(container);
+        this.container.querySelector('section#list').insertBefore(container, this.container.querySelector('h1'))
+
+		const providerList = this.container.querySelector('#add-oauth-connection').provider;
+		providerList.textContent = null;
+
+		for(const provider of this.oAuthProviders.values())
+			providerList.insertAdjacentHTML('beforeend', `<option value="${provider.provider_id}">${provider.name}</option>`);
 
 		Sections.show('list');
 	}
@@ -333,6 +350,7 @@ class DataConnection {
 		this.container = page.container.querySelector('section#form');
 
 		this.form = this.container.querySelector('form');
+		DataConnection.page = page;
 	}
 
 	get row() {
@@ -540,7 +558,7 @@ DataConnection.types.set('mysql', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
+			<span class="password">Password <a class="right NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -941,7 +959,7 @@ class OAuthConnection {
 
  		const
 			parameters = { id: this.id },
-			container = this.page.listContainer.querySelector('.test-result');
+			container = this.page.container.querySelector('.test-result');
 
  		let response;
 
@@ -977,7 +995,7 @@ class OAuthConnection {
  		if(provider.name == 'Google Analytics') {
  			const parameters = new URLSearchParams();
  			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
+			parameters.set('redirect_uri', `http://${window.location.host}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/analytics.readonly');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');
@@ -988,7 +1006,7 @@ class OAuthConnection {
  		else if(provider.name == 'Google AdWords') {
  			const parameters = new URLSearchParams();
  			parameters.set('client_id', provider.client_id);
-			parameters.set('redirect_uri', `https://${account.url}/connections-manager`);
+			parameters.set('redirect_uri', `http://${window.location.host}/connections-manager`);
 			parameters.set('scope', 'https://www.googleapis.com/auth/adwords');
 			parameters.set('access_type', 'offline');
 			parameters.set('response_type', 'code');

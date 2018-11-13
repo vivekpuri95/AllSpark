@@ -506,35 +506,31 @@ class DataSource {
 				<div class="submenu"></div>
 			</div>
 
-			<div class="item" title="Download CSV">
+			<div class="item">
 
 				<span class="label download" title="Download Report"><i class="fa fa-download"></i> Download</span>
 
 				<div class="submenu">
 
-					<div class="item">
+					<div class="item" title="Get the raw data as it was recieved immediately after execution in a CSV format">
 						<span class="label csv-download"><i class="far fa-file-excel"></i> CSV</label>
 					</div>
 
-					<div class="item">
+					<div class="item" title="Get the data that includes any filters or transformations that were applied locally after execution in a CSV format">
 						<span class="label filtered-csv-download"><i class="far fa-file-excel"></i> Filtered CSV</label>
 					</div>
 
-					<div class="item">
+					<div class="item" title="Get the raw data as it was recieved immediately after execution as a MS Excel file">
 						<span class="label xlsx-download"><i class="fas fa-file-excel"></i> XLSX</label>
 					</div>
 
-					<div class="item">
+					<div class="item" title="Get the raw data as it was recieved immediately after execution in a JSON format">
 						<span class="label json-download"><i class="fas fa-code"></i> JSON</label>
 					</div>
 
-					<div class="item">
+					<div class="item" title="Get the data that includes any filters or transformations that were applied locally after execution in a JSON format">
 						<span class="label filtered-json-download"><i class="fas fa-code"></i> Filtered JSON</label>
 					</div>
-
-					<!--<div class="item">
-						<span class="label export-toggle"><i class="fa fa-download"></i> Export</label>
-					</div>>-->
 				</div>
 			</div>
 
@@ -560,10 +556,27 @@ class DataSource {
 				<span class="label query-toggle"><i class="fas fa-file-alt"></i> Query</span>
 			</div>
 
-			<div class="item">
+			<div class="item" title="Hold alt + click for disabling cache">
 				<span class="label reload"><i class="fas fa-sync"></i> Reload</span>
 			</div>
 		`;
+
+		const toggleOverlay = overlay => {
+
+			for(const toggle of [filtersToggle, queryToggle, descriptionToggle, pipelineToggle]) {
+
+				if(overlay != toggle && toggle.parentElement.classList.contains('selected'))
+					toggle.click();
+			}
+
+			overlay.parentElement.classList.toggle('selected');
+
+			this.visualizations.selected.container.classList.toggle('blur');
+			this.container.querySelector('.columns').classList.toggle('blur');
+
+			if(this.container.querySelector('.postprocessors-state'))
+				this.container.querySelector('.postprocessors-state').classList.toggle('blur');
+		};
 
 		const
 			filtersToggle = menu.querySelector('.filters-toggle'),
@@ -583,32 +596,28 @@ class DataSource {
 				menu.querySelector(element).parentElement.classList.remove('hidden');
 		}
 
-		if(this.visualizations.selected.editable) {
+		if(this.visualizations.selected.editable)
 			menu.querySelector('.menu .configure-visualization').parentElement.classList.remove('hidden');
-		}
 
-		menu.querySelector('.reload').on('click', () => this.visualizations.selected.load());
+		menu.querySelector('.reload').on('click', e => {
+
+			const options = {};
+
+			if(e.altKey)
+				options.cached = 0;
+
+			this.visualizations.selected.load(options);
+
+			if(e.altKey)
+				new SnackBar({message: 'Report Reloaded Without Cache.'});
+		});
 
 		filtersToggle.on('click', () => {
 
-			if(queryToggle.parentElement.classList.contains('selected'))
-				queryToggle.click();
+			this.container.appendChild(this.filters.container);
+			this.filters.container.classList.toggle('hidden', filtersToggle.parentElement.classList.contains('selected'));
 
-			if(descriptionToggle.parentElement.classList.contains('selected'))
-				descriptionToggle.click();
-
-			if(pipelineToggle.parentElement.classList.contains('selected'))
-				pipelineToggle.click();
-
-			filtersToggle.parentElement.classList.toggle('selected');
-
-			this.visualizations.selected.container.classList.toggle('blur');
-			this.container.querySelector('.columns').classList.toggle('blur');
-
-			if(this.container.contains(this.filters.container))
-				this.container.removeChild(this.filters.container);
-
-			else this.container.insertBefore(this.filters.container, this.container.querySelector('.columns'));
+			toggleOverlay(filtersToggle);
 		});
 
 		// If there are filters and every filter is not of hidden type then show the filters toggle
@@ -617,68 +626,26 @@ class DataSource {
 
 		descriptionToggle.on('click', async () => {
 
-			if(queryToggle.parentElement.classList.contains('selected'))
-				queryToggle.click();
-
-			if(filtersToggle.parentElement.classList.contains('selected'))
-				filtersToggle.click();
-
-			if(pipelineToggle.parentElement.classList.contains('selected'))
-				pipelineToggle.click();
-
 			this.container.querySelector('.description').classList.toggle('hidden');
 
-			descriptionToggle.parentElement.classList.toggle('selected');
-			this.visualizations.selected.container.classList.toggle('blur');
-			this.container.querySelector('.columns').classList.toggle('blur');
-
-			if(user.privileges.has('report') && user.privileges.has('user') && this.visibleTo) {
-
-				//await this.userList();
-				this.container.querySelector('.visible-to').classList.remove('hidden');
-				this.container.querySelector('.description .count').textContent = `${Format.number(this.visibleTo.length)} people`;
-			}
+			toggleOverlay(descriptionToggle);
 		});
 
 		pipelineToggle.on('click', async () => {
 
-			if(descriptionToggle.parentElement.classList.contains('selected'))
-				descriptionToggle.click();
-
-			if(queryToggle.parentElement.classList.contains('selected'))
-				queryToggle.click();
-
-			if(filtersToggle.parentElement.classList.contains('selected'))
-				filtersToggle.click();
-
 			if(!this.container.contains(this.pipeline.container))
 				this.container.appendChild(this.pipeline.container);
 
-			this.container.querySelector('.pipeline').classList.toggle('hidden');
-
-			pipelineToggle.parentElement.classList.toggle('selected');
-			this.visualizations.selected.container.classList.toggle('blur');
-			this.container.querySelector('.columns').classList.toggle('blur');
-
+			this.pipeline.container.classList.toggle('hidden');
 			this.pipeline.render();
+
+			toggleOverlay(pipelineToggle);
 		});
 
 		queryToggle.on('click', () => {
 
-			if(filtersToggle.parentElement.classList.contains('selected'))
-				filtersToggle.click();
-
-			if(descriptionToggle.parentElement.classList.contains('selected'))
-				descriptionToggle.click();
-
-			if(pipelineToggle.parentElement.classList.contains('selected'))
-				pipelineToggle.click();
-
 			this.container.querySelector('.query').classList.toggle('hidden');
-
-			queryToggle.parentElement.classList.toggle('selected');
-			this.visualizations.selected.container.classList.toggle('blur');
-			this.container.querySelector('.columns').classList.toggle('blur');
+			toggleOverlay(queryToggle);
 		});
 
 		menu.insertBefore(this.postProcessors.container, menu.querySelector('.change-visualization').parentElement);
@@ -741,14 +708,21 @@ class DataSource {
 				changeVisualization.classList.remove('hidden');
 		}
 
-		this.xlsxDownloadable = [...MetaData.visualizations.values()].filter(x => x.excel_format).map(x => x.slug).includes(this.visualizations.selected.type);
-
-		const xlsxDownloadDropdown = menu.querySelector('.xlsx-download');
-
-		xlsxDownloadDropdown.classList.toggle('hidden', !this.xlsxDownloadable);
-
 		if(this.visualizations.selected.visualization_id)
 			menu.querySelector('.configure-visualization').href = `/reports/configure-visualization/${this.visualizations.selected.visualization_id}`;
+
+		for(const submenu of menu.querySelectorAll('.item > .submenu')) {
+
+			submenu.parentElement.on('mouseenter', () => {
+				clearTimeout(submenu.leaveTimeout);
+				submenu.enterTimeout = setTimeout(() => submenu.classList.add('show'), 400);
+			});
+
+			submenu.parentElement.on('mouseleave', () => {
+				clearTimeout(submenu.enterTimeout);
+				submenu.leaveTimeout = setTimeout(() => submenu.classList.remove('show'), 400);
+			});
+		}
 
 		return menu;
 	}
@@ -785,8 +759,6 @@ class DataSource {
 		if(!this.columns.list.size)
 			return this.error();
 
-		const time = performance.now();
-
 		for(const row of data)
 			response.push(new DataSourceRow(row, this));
 
@@ -797,45 +769,7 @@ class DataSource {
 			response = this.postProcessors.selected.processor(response);
 
 			this.pipeline.add(new DataSourcePipelineEvent({
-				title: `${this.postProcessors.selected.name} (${this.postProcessors.selected.value})`,
-				subtitle: [
-					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
-					{key: 'Rows', value: Format.number(response.length)},
-				],
-			}));
-		}
-
-		if(response.length && this.columns.sortBy && response[0].has(this.columns.sortBy.key) && this.columns.sortBy.sort >= 0) {
-
-			const time = performance.now();
-
-			response.sort((a, b) => {
-
-				const
-					firstValue = a.get(this.columns.sortBy.key),
-					secondValue = b.get(this.columns.sortBy.key),
-					first = (firstValue === null ? '' : firstValue).toString().toLowerCase(),
-					second = (secondValue === null ? '' : secondValue).toString().toLowerCase();
-
-				let result = 0;
-
-				if(!isNaN(first) && !isNaN(second))
-					result = first - second;
-
-				else if(first < second)
-					result = -1;
-
-				else if(first > second)
-					result = 1;
-
-				if(parseInt(this.columns.sortBy.sort) === 0)
-					result *= -1;
-
-				return result;
-			});
-
-			this.pipeline.add(new DataSourcePipelineEvent({
-				title: `Sort by ${this.columns.sortBy.name} ${parseInt(this.columns.sortBy.sort) === 0 ? 'Descending' : 'Ascending'}`,
+				title: `${this.postProcessors.selected.name} (${this.postProcessors.selected.domain.get(this.postProcessors.selected.value) || this.postProcessors.selected.value})`,
 				subtitle: [
 					{key: 'Duration', value: `${Format.number(performance.now() - time)}ms`},
 					{key: 'Rows', value: Format.number(response.length)},
@@ -861,9 +795,18 @@ class DataSource {
 
 			for(const data of response.data) {
 
-				const line = [];
+				const
+					line = [],
+					_data = {};
 
-				line.push(JSON.stringify(data));
+				for(const key in data) {
+
+					if(data[key] === null) {
+						_data[key] = '';
+					}
+				}
+
+				line.push(JSON.stringify(_data));
 
 				str.push(line);
 			}
@@ -912,7 +855,7 @@ class DataSource {
 				const line = [];
 
 				for(const value of row.values())
-					line.push(JSON.stringify(String(value)));
+					line.push(JSON.stringify(String(value === null ? '' : value)));
 
 				str.push(line.join());
 			}
@@ -1024,6 +967,14 @@ class DataSource {
 		a.download = fileName.join(' - ') + '.' + what.mode;
 
 		a.click();
+	}
+
+	get xlsxDownloadable() {
+
+		if(!this.visualizations.selected || !MetaData.visualizations.has(this.visualizations.selected.type))
+			return false;
+
+		return MetaData.visualizations.get(this.visualizations.selected.type).excel_format;
 	}
 
 	async excelSheetDownloader(data, obj) {
@@ -1163,6 +1114,8 @@ class DataSource {
 		this.container.querySelector('.description .cached').textContent = this.originalResponse.cached && this.originalResponse.cached.status ? age : 'No';
 		this.container.querySelector('.description .runtime').textContent = runtime;
 
+		this.menu.querySelector('.xlsx-download').classList.toggle('hidden', !this.xlsxDownloadable);
+
 		this.columns.render();
 	}
 }
@@ -1233,7 +1186,14 @@ class DataSourceFilters extends Map {
 
 			// Make sure the Date Range filter comes first, followed by start date and then finally the end date.
 			filterGroup = filterGroup.sort((a, b) => {
-				return a.name.toLowerCase().includes('start') || a.type == 'daterange' ? -1 : 1;
+
+				if(a.type == 'daterange')
+					return -1;
+
+				if(a.name.toLowerCase().includes('start') && b.type != 'daterange')
+					return -1;
+
+				return 1;
 			});
 
 			for(const filter of filterGroup) {
@@ -1274,7 +1234,8 @@ class DataSourceFilters extends Map {
 
 			this.apply();
 
-			this.source.container.querySelector('.filters-toggle').click()
+			if(this.source)
+				this.source.container.querySelector('.filters-toggle').click()
 		});
 
 		container.insertAdjacentHTML('beforeend', `
@@ -1840,6 +1801,9 @@ class DataSourceColumn {
 		if(this.disabled)
 			this.container.classList.add('disabled');
 
+		if(!isNaN(this.sort) && this.sort != -1)
+			this.source.columns.sortBy = this;
+
 		this.customDateType = new DataSourceColumnCustomDateType();
 		this.customNumberType = new DataSourceColumnCustomNumberType();
 	}
@@ -1910,7 +1874,6 @@ class DataSourceColumn {
 				}
 
 				this.disabled = !this.disabled;
-
 				this.source.columns.render();
 				await this.update();
 			}, 300);
@@ -1923,7 +1886,9 @@ class DataSourceColumn {
 			if(this.clicked == null)
 				this.clicked = true;
 
-			for(const column of this.source.columns.values()) {
+			const columns = Array.from(this.source.columns.values());
+
+			for(const column of columns) {
 
 				if(column.key == this.key || (this.source.visualizations.selected.axes && column.key == this.source.visualizations.selected.axes.bottom.column))
 					continue;
@@ -1962,13 +1927,11 @@ class DataSourceColumn {
 				this.form[key].value = this[key];
 		}
 
-		if(this.drilldown && this.drilldown.query_id) {
-
+		if(this.drilldown && this.drilldown.query_id)
 			this.drilldownQuery.value = this.drilldown && this.drilldown.query_id ? [this.drilldown.query_id] : [];
-		}
-		else {
+
+		else
 			this.drilldownQuery.clear();
-		}
 
 		this.form.disabled.checked = this.disabled;
 
@@ -2326,8 +2289,8 @@ class DataSourceColumn {
 		if(!this.form.parentElement.classList.contains('body'))
 			this.form.parentElement.classList.add('hidden');
 
-		if(this.sort != -1)
-			this.source.columns.sortBy = this;
+		if((this.source.columns.sortBy == this && this.sort == -1) || (this.sort != -1))
+			this.source.columns.sortBy = this.sort == -1 ? null : this;
 
 		this.source.postProcessors.update();
 		await this.source.visualizations.selected.render();
@@ -2353,7 +2316,7 @@ class DataSourceColumn {
 
 		let
 			response,
-			updated = 0;
+			updated = false;
 
 		try {
 
@@ -2422,14 +2385,16 @@ class DataSourceColumn {
 
 			if(column.key == this.key) {
 				this.source.format.columns[i] = response;
-				updated = 1;
+				updated = true;
 				break;
 			}
 		}
 
-		if(updated == 0) {
+		if((this.source.columns.sortBy == this && this.sort == -1) || (this.sort != -1))
+			this.source.columns.sortBy = this.sort == -1 ? null : this;
+
+		if(!updated)
 			this.source.format.columns.push(response);
-		}
 
 		const
 			parameters = {
@@ -3719,6 +3684,24 @@ class DataSourcePostProcessors {
 
 	render() {
 
+		let container = this.source.container.querySelector('.postprocessors-state');
+
+		if(!container) {
+
+			container = document.createElement('div');
+
+			container.classList.add('postprocessors-state');
+			container.title = 'Click to Remove';
+
+			container.on('click', () => {
+				this.selected = null;
+				this.source.visualizations.selected.render();
+				this.render();
+			});
+
+			this.source.container.appendChild(container);
+		}
+
 		const label = this.source.container.querySelector('.postprocessors');
 
 		if(!label)
@@ -3727,8 +3710,17 @@ class DataSourcePostProcessors {
 		for(const selected of label.parentElement.querySelectorAll('.item.selected'))
 			selected.classList.remove('selected');
 
+		container.classList.toggle('hidden', !this.selected);
+
 		if(!this.selected)
 			return this.list.get('Orignal').container.classList.add('selected');
+
+		container.innerHTML = `
+			${this.selected.name}
+			<i class="fas fa-angle-right"></i>
+			${this.selected.domain.get(this.selected.value) || this.selected.value}
+			<i class="fas fa-times-circle"></i>
+		`;
 
 		for(const item of this.selected.container.querySelectorAll('.submenu .item'))
 			item.classList.toggle('selected', this.selected.value == item.dataset.value);
@@ -3836,6 +3828,7 @@ class DataSourceTransformations extends Set {
 		this.reset();
 
 		this.loadFilters();
+		this.loadSorting();
 
 		response = JSON.parse(JSON.stringify(response));
 
@@ -3894,7 +3887,24 @@ class DataSourceTransformations extends Set {
 
 		const type = DataSourceTransformation.types.get('filters');
 
-		this.add(new type({type: 'filters', filters}, this.source));
+		this.add(new type({type: 'filters', filters, implied: true}, this.source));
+	}
+
+	loadSorting() {
+
+		if(!this.source.columns.sortBy || this.source.columns.sortBy.sort == -1)
+			return;
+
+		const
+			type = DataSourceTransformation.types.get('sort'),
+			columns = [
+				{
+					column: this.source.columns.sortBy.key,
+					order: parseInt(this.source.columns.sortBy.sort) == 1 ? 'ascending' : 'descending',
+				}
+			];
+
+		this.add(new type({type: 'sort', columns, implied: true}, this.source));
 	}
 }
 
@@ -5473,13 +5483,47 @@ Visualization.list.set('table', class Table extends Visualization {
 		return container;
 	}
 
+	process() {
+
+		if(!this.options || !this.options.gradientRules)
+			return;
+
+		for(const gradient of this.options.gradientRules) {
+
+			if(!this.rows.filter(f => f.get(gradient.column)).length || !this.rows.filter(f => f.get(gradient.relative)).length)
+				continue;
+
+			for(const row of this.rows) {
+
+				const _row = row.get(gradient.relative);
+
+				if(!isNaN(_row)) {
+
+					if((!gradient.maxValue && gradient.maxValue != 0))
+						gradient.maxValue = _row;
+
+					if((!gradient.minValue && gradient.minValue != 0))
+						gradient.minValue = _row;
+
+					if(gradient.maxValue < _row)
+						gradient.maxValue = _row;
+
+					else if(gradient.minValue > _row)
+						gradient.minValue = _row;
+				}
+			}
+		}
+	}
+
 	async render(options = {}) {
 
-		const
-			container = this.container.querySelector('.container'),
-			rows = await this.source.response() || [];
+		const container = this.container.querySelector('.container');
+
+		this.rows = await this.source.response() || [];
 
 		this.source.resetError();
+
+		this.process();
 
 		container.textContent = null;
 
@@ -5521,13 +5565,23 @@ Visualization.list.set('table', class Table extends Visualization {
 
 			container.on('click', () => {
 
-				if(parseInt(column.sort) == 1)
+				let [format] = this.source.format.columns.filter(_column => _column.key == column.key);
+
+				if(!format)
+					this.source.format.columns.push(format = {key: column.key});
+
+				if(parseInt(format.sort) == 1) {
+					format.sort = 0;
 					column.sort = 0;
+				}
 
-				else column.sort = 1;
+				else {
+					format.sort = 1;
+					column.sort = 1;
+				}
 
-				column.source.columns.sortBy = column;
-				column.source.visualizations.selected.render();
+				this.source.columns.sortBy = column;
+				this.source.visualizations.selected.render();
 			});
 
 			container.querySelector('.filter-popup').on('click', e => {
@@ -5577,9 +5631,18 @@ Visualization.list.set('table', class Table extends Visualization {
 		if(thead.children.length)
 			table.appendChild(thead);
 
+		const gradientRules = {};
+
+		if(this.options && this.options.gradientRules) {
+
+			for(const rule of this.options.gradientRules) {
+				gradientRules[rule.column] = rule;
+			}
+		}
+
 		const tbody = document.createElement('tbody');
 
-		for(const [position, row] of rows.entries()) {
+		for(const [position, row] of this.rows.entries()) {
 
 			if(position >= this.rowLimit)
 				break;
@@ -5592,9 +5655,49 @@ Visualization.list.set('table', class Table extends Visualization {
 
 				let rowJson = row.get(key);
 
+				let typedValue = row.getTypedValue(key);
+
+				const rule = gradientRules[key];
+
+				if(rule && rule.maxValue && (rule.currentValue = row.get(rule.relative))) {
+
+					rule.position = rule.currentValue >= parseFloat((rule.maxValue - rule.minValue) / 2);
+
+					const
+						colorValue = this.cellColorValue(rule),
+						colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
+
+					if(rule.content == 'empty')
+						typedValue = null;
+
+					else if(rule.content == 'percentage')
+						typedValue = colorPercent;
+
+					else if(rule.content == 'both')
+						typedValue =  typedValue + ' / ' + colorPercent;
+
+					let backgroundColor;
+
+					if(rule.dualColor)
+						backgroundColor = (rule.position ? rule.maximumColor : rule.minimumColor) + colorValue.toString(16);
+					else
+						backgroundColor = rule.maximumColor + colorValue.toString(16);
+
+					td.style.backgroundColor = backgroundColor;
+
+					if(colorValue > 155) {
+
+						if (this.cellLuma(backgroundColor) <= 60)
+							td.classList.add('column-cell-white');
+
+						else
+							td.classList.add('column-cell-dark');
+					}
+				}
+
 				if(column.type && column.type.name == 'html') {
 
-					td.innerHTML = row.getTypedValue(key);
+					td.innerHTML = typedValue;
 				}
 				else if(rowJson && typeof rowJson == 'object') {
 
@@ -5643,7 +5746,7 @@ Visualization.list.set('table', class Table extends Visualization {
 				}
 				else {
 
-					td.textContent = row.getTypedValue(key);
+					td.textContent = typedValue;
 				}
 
 				if(column.drilldown && column.drilldown.query_id && DataSource.list.has(column.drilldown.query_id)) {
@@ -5677,7 +5780,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(rows.length > this.rowLimit) {
+		if(this.rows.length > this.rowLimit) {
 
 			const tr = document.createElement('tr');
 
@@ -5699,7 +5802,7 @@ Visualization.list.set('table', class Table extends Visualization {
 			tbody.appendChild(tr);
 		}
 
-		if(!rows.length) {
+		if(!this.rows.length) {
 			tbody.insertAdjacentHTML('beforeend', `
 				<tr class="NA"><td colspan="${this.source.columns.size}">${this.source.originalResponse.message || 'No data found!'}</td></tr>
 			`);
@@ -5715,13 +5818,13 @@ Visualization.list.set('table', class Table extends Visualization {
 			<span>
 				<span class="label">Showing:</span>
 				<strong title="Number of rows currently shown on screen">
-					${Format.number(Math.min(this.rowLimit, rows.length))}
+					${Format.number(Math.min(this.rowLimit, this.rows.length))}
 				</strong>
 			</span>
 			<span>
 				<span class="label">Filtered:</span>
 				<strong title="Number of rows that match any search or grouping criterion">
-					${Format.number(rows.length)}
+					${Format.number(this.rows.length)}
 				</strong>
 			</span>
 			<span>
@@ -5735,7 +5838,7 @@ Visualization.list.set('table', class Table extends Visualization {
 		table.appendChild(tbody);
 		container.appendChild(table);
 
-		if(!this.hideRowSummary && rows.length)
+		if(!this.hideRowSummary)
 			container.appendChild(rowCount);
 	}
 
@@ -5749,6 +5852,39 @@ Visualization.list.set('table', class Table extends Visualization {
 		container.classList.toggle('hidden', !this.selectedRows.size);
 		container.querySelector('strong').textContent = Format.number(this.selectedRows.size);
 	}
+
+	cellColorValue(rule) {
+
+		const
+			range = rule.maxValue - rule.minValue,
+			value = Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
+
+		if(!range)
+			return 255;
+
+		if(rule.dualColor) {
+
+			if(rule.position)
+				return value;
+			else
+				return Math.floor(17 + (238/range) * (rule.maxValue - rule.currentValue));
+		}
+
+		return value;
+	}
+
+	cellLuma(hex) {
+
+		hex = hex.substring(1, 7);
+
+		const
+			rgb = parseInt(hex, 16),
+			r = (rgb >> 16) & 0xff,
+			g = (rgb >> 8) & 0xff,
+			b = (rgb >> 0) & 0xff
+		;
+		return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+   }
 });
 
 Visualization.list.set('line', class Line extends LinearVisualization {
@@ -6638,7 +6774,7 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 		if(!this.axes)
 			this.axes = [];
 
-		this.axes = this.axes.sort((a, b) => a.depth - b.depth);
+		this.axes = this.axes.sort((a, b) => b.depth - a.depth);
 		this.axes = this.axes.sort((a, b) => ['top', 'bottom'].includes(a.position) ? -1 : 1);
 
 		this.axes.top = {
@@ -6675,6 +6811,8 @@ Visualization.list.set('linear', class Linear extends LinearVisualization {
 			return this.source.error();
 
 		this.rows = rows;
+
+		this.zoomedIn = false;
 
 		for(const axis of this.axes) {
 
@@ -8854,16 +8992,27 @@ Visualization.list.set('pie', class Pie extends Visualization {
 				.outerRadius(radius + 10)
 				.innerRadius(this.options && this.options.classicPie ? 0 : radius - 75),
 
-			arcs = container
+			svg = container
 				.append('svg')
 				.data([data.sort((a, b) => a.percentage - b.percentage)])
 				.append('g')
-				.attr('transform', 'translate(' + (this.width / 2) + ',' + (this.height / 2) + ')')
+				.attr('transform', `translate(${this.width / 2}, ${this.height / 2})`),
+
+			arcs = svg
 				.selectAll('g')
 				.data(pie)
 				.enter()
 				.append('g')
 				.attr('class', 'pie'),
+
+			labels = svg.append('g')
+				.attr('class', 'labels'),
+
+			subLabels = svg.append('g')
+				.attr('class', 'sub-labels'),
+
+			lines = svg.append('g')
+				.attr('class', 'lines'),
 
 			slice = arcs.append('path')
 				.attr('fill', row => this.source.columns.get(row.data.name).color)
@@ -8937,19 +9086,202 @@ Visualization.list.set('pie', class Pie extends Visualization {
 			return;
 
 		// Add the text
-		if(this.options.showValue == 'value') {
 
-			arcs.append('text')
-				.attr('transform', row => {
-					row.innerRadius = radius - 50;
-					row.outerRadius = radius;
-					return `translate(${arc.centroid(row)})`;
+		if(!this.options.showName && !this.options.showValue && !this.options.showPercentage)
+			return;
+
+		if(this.options.labelPosition == 'outside') {
+
+			function midAngle(d) {
+				return d.startAngle + (d.endAngle - d.startAngle) / 2;
+			}
+
+			const outerArc = d3.svg.arc()
+				.innerRadius(radius * 0.9)
+				.outerRadius(radius * 0.9);
+
+			const text = svg.select('.labels')
+				.selectAll('text')
+				.data(pie(data));
+
+				text.enter()
+				.append('text')
+				.attr('dy', '.35em')
+				.text(d => {
+
+					if(this.options.showName)
+						return d.data.name;
+
+					else if(this.options.showValue && this.options.showPercentage)
+						return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+
+					else if(this.options.showValue)
+						return Format.number(d.data.value);
+
+					else if(this.options.showPercentage)
+						return `${Format.number(d.data.percentage)}%`;
+				});
+
+			text.transition()
+				.duration(1000)
+				.attrTween('transform', function(d) {
+
+					this.current = this.current || d;
+
+					const interpolate = d3.interpolate(this.current, d);
+
+					this.current = interpolate(0);
+
+					return t => {
+
+						const
+							d2 = interpolate(t),
+							pos = outerArc.centroid(d2);
+
+						pos[0] = radius * (midAngle(d2) < Math.PI ? 1 : -1);
+						pos[0] = pos[0] < 0 ? pos[0] + (-20) : pos[0] + 20;
+
+						return `translate(${pos})`;
+					};
 				})
-				.attr('text-anchor', 'middle')
-				.text(row => Format.number(row.data.value));
+				.styleTween('text-anchor', function(d) {
+
+					this.current = this.current || d;
+
+					const interpolate = d3.interpolate(this.current, d);
+
+					this.current = interpolate(0);
+
+					return t => {
+						return midAngle(interpolate(t)) < Math.PI ? 'start' : 'end';
+					};
+				})
+				.attr('class', 'text');
+
+			if(this.options.showName) {
+
+				const subText = svg.select('.sub-labels')
+					.selectAll('.sub-text')
+					.data(pie(data));
+
+					subText.enter()
+					.append('text')
+					.attr('dy', '.35em')
+					.text(d => {
+
+						if(this.options.showValue && this.options.showPercentage)
+							return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+
+						else if(this.options.showValue)
+							return Format.number(d.data.value);
+
+						else if(this.options.showPercentage)
+							return `${Format.number(d.data.percentage)}%`;
+					});
+
+				subText.transition()
+					.duration(1000)
+					.attrTween('transform', function(d) {
+
+						this.current = this.current || d;
+
+						const interpolate = d3.interpolate(this.current, d);
+
+						this.current = interpolate(0);
+
+						return t => {
+
+							const
+								d2 = interpolate(t),
+								pos = outerArc.centroid(d2);
+
+							pos[0] = radius * (midAngle(d2) < Math.PI ? 1 : -1);
+							pos[0] = pos[0] < 0 ? pos[0] + (-20) : pos[0] + 20;
+
+							pos[1] = pos[1] + 20;
+
+							return `translate(${pos})`;
+						};
+					})
+					.styleTween('text-anchor', function(d) {
+
+						this.current = this.current || d;
+
+						const interpolate = d3.interpolate(this.current, d);
+
+						this.current = interpolate(0);
+
+						return t => {
+							return midAngle(interpolate(t)) < Math.PI ? 'start' : 'end';
+						};
+					})
+					.attr('class', 'sub-text');
+			}
+
+			const polylineLight = svg.select('.lines')
+				.selectAll('.light')
+				.data(pie(data));
+
+			polylineLight.enter()
+				.append('polyline')
+				.classed('polyline light', true);
+
+			polylineLight.transition()
+				.duration(1000)
+				.attrTween('points', function(d) {
+
+					this.current = this.current || d;
+
+					const interpolate = d3.interpolate(this.current, d);
+
+					this.current = interpolate(0);
+
+					return t => {
+
+						const
+							d2 = interpolate(t),
+							pos = outerArc.centroid(d2);
+
+						pos[0] = radius * 0.95 * (midAngle(d2) < Math.PI ? 1 : -1);
+						pos[0] = pos[0] < 0 ? pos[0] + (-20) : pos[0] + 20;
+
+						return [arc.centroid(d2), outerArc.centroid(d2), pos];
+					};
+				});
+
+			const polylineDark = svg.select('.lines')
+				.selectAll('.dark')
+				.data(pie(data));
+
+			polylineDark.enter()
+				.append('polyline')
+				.classed('polyline dark', true);
+
+			polylineDark.transition()
+				.duration(1000)
+				.attrTween('points', function(d) {
+
+					this.current = this.current || d;
+
+					const interpolate = d3.interpolate(this.current, d);
+
+					this.current = interpolate(0);
+
+					return t => {
+
+						const
+							d2 = interpolate(t),
+							pos = outerArc.centroid(d2);
+
+						pos[0] = radius * 0.95 * (midAngle(d2) < Math.PI ? 1 : -1);
+						pos[0] = pos[0] < 0 ? pos[0] + (-20) : pos[0] + 20;
+
+						return [arc.centroid(d2), outerArc.centroid(d2), pos];
+					};
+			});
 		}
 
-		else if(this.options.showValue == 'percentage') {
+		if(this.options.labelPosition == 'inside') {
 
 			arcs.append('text')
 				.attr('transform', row => {
@@ -8958,7 +9290,47 @@ Visualization.list.set('pie', class Pie extends Visualization {
 					return `translate(${arc.centroid(row)})`;
 				})
 				.attr('text-anchor', 'middle')
-				.text(row => Format.number(row.data.percentage) + '%');
+				.text(d => {
+
+					if(this.options.showName)
+						return d.data.name;
+
+					else if(this.options.showValue && this.options.showPercentage)
+						return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+
+					else if(this.options.showValue)
+						return Format.number(d.data.value);
+
+					else if(this.options.showPercentage)
+						return `${Format.number(d.data.percentage)}%`;
+				});
+
+
+			if(this.options.showName) {
+
+				arcs.append('text')
+					.attr('transform', row => {
+						row.innerRadius = radius - 50;
+						row.outerRadius = radius;
+
+						const pos = arc.centroid(row);
+						pos[1] = pos[1] + 20;
+						return `translate(${pos})`;
+					})
+					.attr('text-anchor', 'middle')
+					.text(d => {
+
+						if(this.options.showValue && this.options.showPercentage)
+							return `${Format.number(d.data.value)} (${Format.number(d.data.percentage)}%)`;
+
+						else if(this.options.showValue)
+							return Format.number(d.data.value);
+
+						else if(this.options.showPercentage)
+							return `${Format.number(d.data.percentage)}%`;
+					})
+					.attr('class', 'sub-text');
+			}
 		}
 	}
 });
@@ -9213,6 +9585,10 @@ Visualization.list.set('bigtext', class NumberVisualizaion extends Visualization
 		let value = response.getTypedValue(this.options.column);
 
 		this.container.querySelector('.container').innerHTML = `<div class="value">${value}</div>`;
+
+		if(this.options.fontSize) {
+			this.container.querySelector('.value').style.fontSize = `${this.options.fontSize}%`;
+		}
 	}
 });
 

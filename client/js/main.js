@@ -45,7 +45,7 @@ class Page {
 		DialogBox.container = document.querySelector('body');
 
 		await Storage.load();
-		await Page.loadCredentialsFromCookie();
+		await Page.loadCredentialsFromURL();
 		await Account.load();
 
 		if(window.account && account.auth_api) {
@@ -109,6 +109,7 @@ class Page {
 		this.metadata = window.MetaData;
 		this.indexedDb = IndexedDb.instance;
 		this.cookies = Cookies;
+		this.keyboardShortcuts = new Map;
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);
@@ -118,7 +119,7 @@ class Page {
 			return;
 
 		this.renderPage();
-		this.shortcuts();
+		this.setupShortcuts();
 	}
 
 	renderPage() {
@@ -137,7 +138,7 @@ class Page {
 		}
 	}
 
-	shortcuts() {
+	setupShortcuts() {
 
 		document.on('keyup', async (e) => {
 
@@ -146,7 +147,9 @@ class Page {
 
 			// Alt + K
 			if(e.keyCode == 75 && document.querySelector('html > head link[href^="/css/custom.css"]')) {
+
 				document.querySelector('html > head link[href^="/css/custom.css"]').remove();
+
 				await Storage.set('disable-custom-theme', true);
 
 				new SnackBar({
@@ -162,6 +165,80 @@ class Page {
 			// Alt + O
 			if(e.keyCode == 79)
 				await Page.clearCache();
+
+		});
+
+		this.keyboardShortcuts.set('Hold Alt', {
+			title: 'See Available Keyboard Shortcuts',
+		});
+
+		// Alt + K
+		if(document.querySelector('html > head link[href^="/css/custom.css"]')) {
+
+			this.keyboardShortcuts.set('Alt + K', {
+				title: 'Remove Custom Theme',
+				description: 'Remove the custom theme set for this account',
+			});
+		}
+
+		this.keyboardShortcuts.set('Alt + L', {
+			title: 'Logout',
+			description: 'Clear all local caches and logout as the current user',
+		});
+
+		this.keyboardShortcuts.set('Alt + O', {
+			title: 'Clear Cache',
+			description: 'Clear all local caches like metadata, filter datasets, offline data, etc',
+		});
+
+		document.on('keydown', e => {
+
+			if(!e.altKey || !e.keyCode == 18)
+				return;
+
+			if(this.keyboardShortcutsDialogBox && this.keyboardShortcutsDialogBox.status)
+				return;
+
+			if(!this.keyboardShortcutsDialogBox) {
+
+				this.keyboardShortcutsDialogBox = new DialogBox();
+
+				this.keyboardShortcutsDialogBox.container.classList.add('keyboard-shortcuts');
+				this.keyboardShortcutsDialogBox.heading = 'Keyboard Shortcuts';
+
+				this.keyboardShortcutsDialogBox.body.textContent = null;
+
+				for(const [keys, shortcut] of this.keyboardShortcuts) {
+
+					this.keyboardShortcutsDialogBox.body.insertAdjacentHTML('beforeend', `
+						<div class="shortcut">
+							<div class="keys">${keys}</div>
+							<div class="title">${shortcut.title}</div>
+							${shortcut.description ? '<div class="description">' + shortcut.description + '</div>' : ''}
+						</div>
+					`);
+				}
+			}
+
+			if(this.keyboardShortcutsTimeout)
+				return;
+
+			this.keyboardShortcutsTimeout = setTimeout(() => {
+				this.keyboardShortcutsDialogBox.show();
+				this.keyboardShortcutsTimeout = null;
+			}, 1000);
+		});
+
+		document.on('keyup', e => {
+
+			if(!e.keyCode == 18)
+				return;
+
+			clearTimeout(this.keyboardShortcutsTimeout);
+			this.keyboardShortcutsTimeout = null;
+
+			if(this.keyboardShortcutsDialogBox && this.keyboardShortcutsDialogBox.status)
+				this.keyboardShortcutsDialogBox.hide();
 		});
 	}
 
@@ -169,17 +246,19 @@ class Page {
 	 * Load credentials from cookies if the server's request provided them.
 	 * This is done when automatic login happens in third party integration scenerio.
 	 */
-	static async loadCredentialsFromCookie() {
+	static async loadCredentialsFromURL() {
 
-		if(!Cookies.get('external_parameters'))
+		const parameters = new URLSearchParams(window.location.search);
+
+		if(!parameters.get('external_parameters'))
 			return;
 
 		await Storage.clear();
 
-		await Storage.set('external_parameters', JSON.parse(Cookies.get('external_parameters')));
-		Cookies.set('external_parameters', '');
+		await Storage.set('external_parameters', JSON.parse(parameters.get('external_parameters')));
+		await Storage.set('refresh_token', parameters.get('refresh_token'));
 
-		await Storage.set('refresh_token', Cookies.get('refresh_token'));
+		window.history.replaceState({}, '', window.location.pathname);
 	}
 
 	static async loadOnboardScripts() {
@@ -1371,7 +1450,7 @@ class API extends AJAX {
 			let value = formData.get(key).trim();
 
 			if(value && !isNaN(value))
-				value = parseInt(value);
+				value = parseFloat(value);
 
 			parameters[key] = value;
 		}
@@ -2045,10 +2124,8 @@ class DialogBox {
 
 			document.body.on('keyup', this.keyUpListener = e => {
 
-				if(e.keyCode == 27) {
-
+				if(e.keyCode == 27)
 					this.hide();
-				}
 			});
 		}
 
@@ -2057,6 +2134,13 @@ class DialogBox {
 		NotificationBar.container.classList.add('blur');
 
 		this.container.classList.remove('hidden');
+	}
+
+	/**
+	 * Returns the current state of the dialog box (open / closed)
+	 */
+	get status() {
+		return !this.container.classList.contains('hidden');
 	}
 
 	on(event, callback) {
@@ -2122,7 +2206,7 @@ class MultiSelect {
 					<a class="clear">Clear</a>
 				</header>
 				<div class="list"></div>
-				<div class="no-matches NA hidden">No matches found!</div>
+				<div class="no-matches NA hidden">No data found</div>
 				<footer class="hidden"></footer>
 			</div>
 		`;
@@ -2132,7 +2216,6 @@ class MultiSelect {
 			search = container.querySelector('input[type=search]');
 
 		if(this.expand) {
-
 			options.classList.remove('hidden');
 			container.classList.add('expanded');
 		}
@@ -2241,13 +2324,14 @@ class MultiSelect {
 
 		this.container.querySelector('input[type=search]').disabled = this.disabled || false;
 
+		this.container.querySelector('header .all').classList.toggle('hidden', !this.multiple);
+
 		const optionList = this.container.querySelector('.options .list');
+
 		optionList.textContent = null;
 
-		if(!this.datalist || !this.datalist.length) {
-			optionList.innerHTML = '<div class="NA">No data found...</div>';
-			return;
-		}
+		if(!this.datalist || !this.datalist.length)
+			return this.recalculate();
 
 		if(this.datalist.length != (new Set(this.datalist.map(x => x.value))).size)
 			throw new Error('Invalid datalist format. Datalist values must be unique.');
@@ -2359,10 +2443,8 @@ class MultiSelect {
 
 		search.placeholder = 'Search...';
 
-		if(firstSelected) {
-
+		if(firstSelected)
 			search.placeholder = selected > 1 ? `${firstSelected.textContent} and ${selected - 1} more` : firstSelected.textContent;
-		}
 
 		const footer = options.querySelector('footer');
 
@@ -2787,6 +2869,9 @@ class ObjectRoles {
 
 			throw e;
 		}
+
+		this.form.reset();
+		this.multiSelect.clear();
 	}
 
 	async delete(group_id) {
@@ -2974,10 +3059,15 @@ class SnackBar {
 		else if(this.type == 'error')
 			icon = 'fas fa-exclamation-triangle';
 
+		let subtitle = '';
+
+		if(this.subtitle)
+			subtitle = `<div class="subtitle">${this.subtitle}</div>`;
+
 		this.container.innerHTML = `
 			<div class="icon"><i class="${icon}"></i></div>
-			<div class="title">${this.message}</div>
-			<div class="subtitle">${this.subtitle || ''}</div>
+			<div class="title ${subtitle ? '' : 'no-subtitle'}">${this.message}</div>
+			${subtitle}
 			<div class="close">&times;</div>
 		`;
 
@@ -3124,7 +3214,7 @@ class SearchColumnFilter {
 			<select class="searchValue"></select>
 			<select class="searchType"></select>
 			<input type="search" class="searchQuery" placeholder="Search">
-			<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+			<button type="button" class="delete"><i class="far fa-trash-alt delete-icon"></i></button>
 		`;
 
 		const
@@ -3133,6 +3223,9 @@ class SearchColumnFilter {
 
 		searchQuery.on('keyup', () => this.searchColumns.changeCallback());
 		searchQuery.on('search', () => this.searchColumns.changeCallback());
+
+		for(const select of container.querySelectorAll('select'))
+			select.on('change', () => this.searchColumns.changeCallback());
 
 		for(const filter of DataSourceColumnFilter.types) {
 
@@ -3169,31 +3262,45 @@ class SearchColumnFilter {
 
 	checkRow(row) {
 
-		const
-			columnName = this.container.querySelector('select.searchValue').value,
-			functionName = this.container.querySelector('select.searchType').value,
-			query = this.container.querySelector('.searchQuery').value;
+		const values = this.json;
 
-		if(!query)
+		if(!values.query)
 			return true;
 
-		const [columnValue] = this.searchColumns.filters.filter(fil => fil.key == columnName).map(m => m.rowValue(row));
+		const [columnValue] = this.searchColumns.filters.filter(f => f.key == values.columnName).map(m => m.rowValue(row));
 
 		if(!columnValue || !columnValue.length)
 			return false;
 
 		for(const column of DataSourceColumnFilter.types) {
 
-			if(functionName != column.slug)
+			if(values.functionName != column.slug)
 				continue;
 
 			for(const value of columnValue) {
-				if(column.apply(query, value))
+
+				if(value != null && column.apply(values.query, value))
 					return true;
 			}
 
 			return false;
 		}
+	}
+
+	get json() {
+
+		return {
+			columnName: this.container.querySelector('select.searchValue').value,
+			functionName: this.container.querySelector('select.searchType').value,
+			query: this.container.querySelector('.searchQuery').value,
+		};
+	}
+
+	set json(values = {}) {
+
+		this.container.querySelector('select.searchValue').value = values.searchValue;
+		this.container.querySelector('select.searchType').value = values.searchType;
+		this.container.querySelector('.searchQuery').value = values.searchQuery;
 	}
 }
 
@@ -3209,7 +3316,10 @@ class GlobalColumnSearchFilter extends SearchColumnFilter {
 
 	get container() {
 
-		const container = super.container;
+		if(this.containerElement)
+			return this.containerElement;
+
+		const container = this.containerElement = super.container;
 
 		container.classList.add('global-filter');
 		container.querySelector('select.searchValue').classList.add('hidden');
@@ -3219,7 +3329,12 @@ class GlobalColumnSearchFilter extends SearchColumnFilter {
 		if(this.advancedSearch) {
 
 			container.insertAdjacentHTML('beforeend','<button type="button" class="advanced"><i class="fa fa-angle-down"></i></button>');
-			container.querySelector('.advanced').on('click', () => this.searchColumns.container.classList.toggle('hidden'));
+
+			container.querySelector('.advanced').on('click', () => {
+				this.searchColumns.container.classList.toggle('hidden');
+				container.querySelector('.advanced').classList.toggle('selected');
+
+			});
 		}
 		return container;
 	}

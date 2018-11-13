@@ -17,9 +17,6 @@ main {
 				min-width: 60px !important;
 				max-width: 60px;
 			}
-			main #dashboard-form .red {
-				box-shadow: inset -15px 0 #f66;
-			}
 			main #form #format {
 				max-width: inherit;
 			}
@@ -109,10 +106,10 @@ main {
 					transition: color var(--transition-duration);
 				}
 				main .dashboards .dashboard .label .action.green:hover {
-					color: #2c9d58;
+					color: var(--color-green);
 				}
 				main .dashboards .dashboard .label .action.red:hover {
-					color: #db4437;
+					color: var(--color-red);
 				}
 				main .dashboards .dashboard .name {
 					letter-spacing: 0.5px;

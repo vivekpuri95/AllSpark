@@ -9,6 +9,7 @@ const API = require('../server/utils/api');
 const User = require('../server/utils/User');
 const commonFunctions = require('../server/utils/commonFunctions');
 const authLogin = require('../server/www/authentication').login;
+const {URLSearchParams} = require('url');
 
 router.use(express.static('./client'));
 
@@ -231,11 +232,16 @@ router.get('/login', API.serve(class extends HTMLAPI {
 
 	async main() {
 
-		if(Array.isArray(this.account.settings.get('external_parameters')) && this.request.query.external_parameters) {
+		if(this.request.query.email && this.request.query.password) {
+			this.request.body.email = this.request.query.email;
+			this.request.body.password = this.request.query.password;
+		}
+
+		if((Array.isArray(this.account.settings.get('external_parameters')) && this.request.query.external_parameters) || (this.request.query.email && this.request.query.password)) {
 
 			const external_parameters = {};
 
-			for(const key of this.account.settings.get('external_parameters')) {
+			for(const key of this.account.settings.get('external_parameters') || []) {
 
 				if(key in this.request.query)
 					this.request.body['ext_' + key] = this.request.query[key];
@@ -252,11 +258,15 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			const response = await loginObj.login();
 
 			if(!response.jwt && response.length)
-				throw new Error("User not found!!!");
+				throw new Error("User not found!");
 
-			this.response.setHeader('Set-Cookie', [`refresh_token=${response.jwt}`, `external_parameters=${JSON.stringify(external_parameters)}`]);
+			const urlSearchParams = new URLSearchParams();
 
-			this.response.redirect('/dashboard/first');
+			urlSearchParams.set('refresh_token', response.jwt);
+			urlSearchParams.set('external_parameters', JSON.stringify(external_parameters));
+
+			this.response.redirect('/dashboard/first/?' + urlSearchParams);
+
 			throw({"pass": true});
 		}
 
@@ -415,12 +425,12 @@ router.get('/user/settings/:id?', API.serve(class extends HTMLAPI {
 				<form class="block form">
 
 					<label>
-						<span>Old Password</span>
+						<span>Old Password <span class="red">*</span></span>
 						<input type="password" name="old_password" required>
 					</label>
 
 					<label>
-						<span>New Password</span>
+						<span>New Password <span class="red">*</span></span>
 						<input type="password" name="new_password" required>
 					</label>
 
@@ -590,10 +600,6 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 							<option value="">Everything</option>
 						</select>
 					</label>
-
-					<label>
-						<input type="search" name="search" placeholder="Search...">
-					</label>
 				</form>
 
 				<table class="block">
@@ -703,7 +709,7 @@ router.get('/dashboards-manager/:id?', API.serve(class extends HTMLAPI {
 				<form class="block form" id="dashboard-form">
 
 					<label>
-						<span>Name</span>
+						<span>Name <span class="red">*</span></span>
 						<input type="text" name="name" required>
 					</label>
 
@@ -806,42 +812,14 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 						<div class="form">
 							<label>
-								<span>Name</span>
-								<input type="text" name="name">
+								<span>Name <span class="red">*</span></span>
+								<input type="text" name="name" required>
 							</label>
 
 							<label>
-								<span>Connection</span>
+								<span>Connection <span class="red">*</span></span>
 								<select name="connection_name" required></select>
 							</label>
-
-							<div id="query" class="hidden">
-								<span>Query <span id="full-screen-editor" title="Full Screen Editor"><i class="fas fa-expand"></i></span></span>
-								<div id="schema"></div>
-								<div id="editor"></div>
-
-								<div id="test-container">
-									<div id="test-executing" class="hidden notice"></div>
-								</div>
-
-								<div id="missing-filters" class="hidden"></div>
-							</div>
-
-							<div id="api" class="hidden form">
-
-								<label>
-									<span>URL</span>
-									<input type="url" name="url">
-								</label>
-
-								<label>
-									<span>Method</span>
-									<select name="method">
-										<option>GET</option>
-										<option>POST</option>
-									</select>
-								</label>
-							</div>
 
 							<label>
 								<span>Description</span>
@@ -849,7 +827,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</label>
 
 							<label>
-								<span>Tags (Comma Separated)</span>
+								<span>Tags <span class="right NA">Comma Separated</span></span>
 								<input type="text" name="tags">
 							</label>
 
@@ -862,7 +840,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 						<div class="form">
 
 							<label>
-								<span>Refresh Rate (Seconds)</span>
+								<span>Refresh Rate <span class="right NA">Seconds</span></span>
 								<input type="number" name="refresh_rate" min="0" step="1">
 							</label>
 
@@ -875,7 +853,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							</label>
 
 							<label>
-								<span>Redis</span>
+								<span>Redis <span class="right NA">Seconds</span></span>
 
 								<select id="redis">
 									<option value="0">Disabled</option>
@@ -883,7 +861,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									<option value="custom">Custom<custom>
 								</select>
 
-								<input name="is_redis" class="hidden">
+								<input type="number" min="1" step="1" name="redis_custom" class="hidden" placeholder="Seconds">
 							</label>
 
 							<label>
@@ -921,6 +899,9 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 							<div id="filter-list">
 
+								<h3>Report Filters</h3>
+								<p>These filters will be passed into the report before execution by the end user.</p>
+
 								<div class="toolbar">
 									<button id="add-filter"><i class="fas fa-plus"></i> Add New Filter</button>
 								</div>
@@ -952,17 +933,17 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 								<form id="filter-form-f" class="form">
 
 									<label>
-										<span>Name</span>
+										<span>Name <span class="red">*</span></span>
 										<input type="text" name="name" required>
 									</label>
 
 									<label>
-										<span>Placeholder</span>
+										<span>Placeholder <span class="red">*</span></span>
 										<input type="text" name="placeholder" required>
 									</label>
 
 									<label>
-										<span>Type</span>
+										<span>Type <span class="red">*</span></span>
 										<select name="type" required></select>
 									</label>
 
@@ -987,7 +968,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									</label>
 
 									<label class="dataset">
-										<span>Dataset</span>
+										<span>Dataset <span class="right" data-tooltip="A set of possible values for this filter">?</span></span>
 									</label>
 
 									<label>
@@ -1158,7 +1139,7 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 				<form class="block form" id="user-form">
 
 					<label>
-						<span>Fist Name</span>
+						<span>Fist Name <span class="red">*</span></span>
 						<input type="text" name="first_name" required>
 					</label>
 
@@ -1173,7 +1154,7 @@ router.get('/users-manager/:id?', API.serve(class extends HTMLAPI {
 					</label>
 
 					<label>
-						<span>Email</span>
+						<span>Email <span class="red">*</span></span>
 						<input type="email" name="email" required>
 					</label>
 
@@ -1234,6 +1215,48 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 		return `
 
 			<section class="section" id="list">
+
+				<h1>OAuth Connections</h1>
+
+				<div class="oauth-connections">
+
+					<div class="test-result hidden"></div>
+
+					<table class="block">
+						<thead>
+							<tr>
+								<th class="thin">ID</th>
+								<th>Name</th>
+								<th>Type</th>
+								<th class="action">Authenticate</th>
+								<th class="action">Delete</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+
+					<form id="add-oauth-connection" class="form">
+						<select name="provider"></select>
+						<button type="submit">
+							<i class="fas fa-plus"></i> Add New Connection
+						</button>
+					</form>
+				</div>
+
+			</section>
+
+			<section class="section" id="add-connection">
+
+				<h1>Add New Connection</h1>
+
+				<div id="add-connection-picker">
+
+					<div class="toolbar">
+						<button id="connection-picker-back"><i class="fas fa-arrow-left"></i> Back</button>
+					</div>
+
+					<form id="add-connection-form"></form>
+				</div>
 			</section>
 
 			<section class="section" id="form">
@@ -1251,7 +1274,7 @@ router.get('/connections-manager/:id?/:type?', API.serve(class extends HTMLAPI {
 				<form class="block form" id="connections-form">
 
 					<label>
-						<span>Name</span>
+						<span>Name <span class="red">*</span></span>
 						<input type="text" name="connection_name" required>
 					</label>
 
@@ -1318,12 +1341,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="account-form">
 
 						<label>
-							<span>Name</span>
+							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>URL</span>
+							<span>URL <span class="red">*</span></span>
 							<input type="text" name="url" required>
 						</label>
 
@@ -1387,12 +1410,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="user-form">
 
 						<label>
-							<span>Name</span>
+							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>Placeholder</span>
+							<span>Placeholder <span class="red">*</span></span>
 							<input type="text" name="placeholder" required>
 						</label>
 
@@ -1402,8 +1425,8 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label>
-							<span>Type</span>
-							<select name="type"></select>
+							<span>Type <span class="red">*</span></span>
+							<select name="type" required></select>
 						</label>
 
 						<label>
@@ -1462,13 +1485,13 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="user-form2">
 
 						<label>
-							<span>Name</span>
+							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>Is Admin</span>
-							<select name="is_admin">
+							<span>Is Admin <span class="red">*</span></span>
+							<select name="is_admin" required>
 								<option value="1">Yes</option>
 								<option value="0">No</option>
 							</select>
@@ -1513,13 +1536,13 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="role-form">
 
 						<label>
-							<span>Name</span>
-							<input type="text" name="name">
+							<span>Name <span class="red">*</span></span>
+							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>Admin</span>
-							<select  name="is_admin">
+							<span>Admin <span class="red">*</span></span>
+							<select  name="is_admin" required>
 								<option value="1">Yes</option>
 								<option value="0">No</option>
 							</select>
@@ -1566,12 +1589,12 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 					<form class="block form" id="category-form">
 
 						<label>
-							<span>Name</span>
+							<span>Name <span class="red">*</span></span>
 							<input type="text" name="name" required>
 						</label>
 
 						<label>
-							<span>Slug</span>
+							<span>Slug <span class="red">*</span></span>
 							<input type="text" name="slug" required>
 						</label>
 
@@ -1581,8 +1604,8 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 						</label>
 
 						<label>
-							<span>Admin</span>
-							<select name="is_admin">
+							<span>Admin <span class="red">*</span></span>
+							<select name="is_admin" required>
 								<option value="1">Yes</option>
 								<option value="0">No</option>
 							</select>

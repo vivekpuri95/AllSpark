@@ -95,7 +95,7 @@ class ReportsManger extends Page {
 			},
 			{
 				key: 'Tags',
-				rowValue: row => row.tags ? row.tags.split(',') : [],
+				rowValue: row => row.tags ? row.tags.split(',').map(t => t.trim()) : [],
 			},
 			{
 				key: 'Filters Length',
@@ -114,7 +114,7 @@ class ReportsManger extends Page {
 				rowValue: row => row.visualizations.map(f => f.name),
 			},
 			{
-				key: 'Visualizations Type Name',
+				key: 'Visualizations Type',
 				rowValue: row => {
 					return row.visualizations.map(f => f.type)
 											 .map(m => MetaData.visualizations.has(m) ?
@@ -485,19 +485,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 			const row = document.createElement('tr');
 
-			let tags = report.tags ? report.tags.split(',') : [];
-
-			tags = tags.map(t => {
-
-				const a = document.createElement('a');
-				a.classList.add('tag');
-				a.textContent = t.trim();
-
-				a.on('click', e => this.tagSearch(e));
-				return a;
-			});
-
-
 			row.innerHTML = `
 				<td>${report.query_id}</td>
 				<td>
@@ -520,8 +507,20 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 				<td title="${!report.deletable ? 'Not enough privileges' : ''}" class="action delete ${!report.deletable ? 'grey' : 'red'}">Delete</td>
 			`;
 
-			for(const tag of tags)
-				row.querySelector('.tags').appendChild(tag);
+			const
+				tagsContainer = row.querySelector('.tags'),
+				tags = report.tags ? report.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+
+			for(const tag of tags) {
+
+				const a = document.createElement('a');
+
+				a.textContent = tag;
+				a.classList.add('tag');
+				a.on('click', e => this.tagSearch(e));
+
+				tagsContainer.appendChild(a);
+			}
 
 			if(row.querySelector('.configure.green')) {
 				row.querySelector('.configure').on('click', () => {
@@ -579,20 +578,29 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		e.stopPropagation();
 
+		const value = e.currentTarget.textContent;
+
+		for(const filter of this.page.searchBar.values()) {
+
+			const values = filter.json;
+
+			if(values.functionName == 'equalto' && values.query == value && values.searchValue == 'Tags')
+				return;
+		}
+
 		this.page.searchBar.container.classList.remove('hidden');
 
-		const
-			value = e.currentTarget.textContent,
-			tagFilter = new SearchColumnFilter(this.page.searchBar);
+		const tagFilter = new SearchColumnFilter(this.page.searchBar);
 
 		this.page.searchBar.add(tagFilter);
 
 		this.page.searchBar.render();
-		const searchContainer = tagFilter.container;
 
-		searchContainer.querySelector('.searchQuery').value = value;
-		searchContainer.querySelector('.searchValue').value = 'Tags';
-		searchContainer.querySelector('.searchType').value = 'equalto';
+		tagFilter.json = {
+			searchQuery: value,
+			searchValue: 'Tags',
+			searchType: 'equalto',
+		};
 
 		this.load();
 	}
@@ -704,17 +712,12 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		for(const element of this.form.elements)
 			element.on('change', () => this.form.save.classList.add('unsaved'));
 
-		this.form.redis.removeEventListener('change', this.handleRedisSelect);
+		this.form.redis.on('change', () => {
 
-		this.form.redis.on('change', this.handleRedisSelect = () => {
+			this.form.redis_custom.classList.toggle('hidden', this.form.redis.value != 'custom');
 
-			this.form.is_redis.type = this.form.redis.value === 'EOD' ? 'text' : 'number';
-
-			this.form.is_redis.value = this.form.redis.value;
-			this.form.is_redis.classList.toggle('hidden', this.form.redis.value !== 'custom');
-
-			if(!this.form.is_redis.classList.contains('hidden'))
-				this.form.is_redis.focus();
+			if(!this.form.redis_custom.classList.contains('hidden'))
+				this.form.redis_custom.focus();
 		});
 	}
 
@@ -770,7 +773,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		e.preventDefault();
 
-		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(q => q.trim()).join();
+		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(t => t.trim()).filter(t => t).join(', ');
 
 		const options = {
 			method: 'POST',
@@ -833,12 +836,14 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		if(this.report.is_redis > 0) {
 			this.form.redis.value = 'custom';
-			this.form.is_redis.classList.remove('hidden');
+			this.form.redis_custom.value = this.report.is_redis;
+			this.form.redis_custom.classList.remove('hidden');
 		}
 
 		else {
 			this.form.redis.value = this.report.is_redis || 0;
-			this.form.is_redis.classList.add('hidden');
+			this.form.redis_custom.value = null;
+			this.form.redis_custom.classList.add('hidden');
 		}
 
 		const share = new ObjectRoles('query', this.report.query_id);
@@ -853,11 +858,12 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		e.preventDefault();
 
-		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(q => q.trim()).join();
+		this.form.elements.tags.value = this.form.elements.tags.value.split(',').map(t => t.trim()).filter(t => t).join(', ');
 
 		const
 			parameters = {
 				query_id: this.report.query_id,
+				is_redis: this.form.redis.value == 'custom' ? this.form.redis_custom.value : this.form.redis.value,
 			},
 			options = {
 				method: 'POST',
@@ -1235,7 +1241,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		search.type = 'search';
 		search.placeholder = 'Search...';
 
-		search.on('keyup', () => renderList());
+		search.on('keyup', () => {
+
+			if(window.schemaSearchTimeout)
+				clearTimeout(window.schemaSearchTimeout);
+
+			window.schemaSearchTimeout = setTimeout(() => renderList(), 300);
+		});
 
 		container.appendChild(search);
 
@@ -1392,24 +1404,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		return container;
 	}
 
-	filters() {
+	async filters() {
 
-		const tbody = this.container.querySelector('#filters table tbody');
+		const tbody = this.container.querySelector('#filter-list table tbody');
 
 		tbody.textContent = null;
 
-		this.report.filters.sort((a, b) => {
-			a = a.order;
-			b = b.order;
-
-			if (a < b)
-				return -1;
-
-			if (a > b)
-				return 1;
-
-			return a - b;
-		});
+		this.report.filters.sort((a, b) => a.order - b.order);
 
 		for(const filter of this.report.filters) {
 
@@ -1446,8 +1447,65 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(!this.report.filters.length)
 			tbody.innerHTML = `<tr class="NA"><td colspan="6">No filters added yet!</td></tr>`;
 
-		this.filterForm.datasetMultiSelect.datalist = Array.from(DataSource.list.values()).filter(r => r.query_id != this.report.query_id).map(r => {return {name: r.name, value: r.query_id, subtitle: r.subtitle}});
+		const datalist = [];
+
+		for(const source of DataSource.list.values()) {
+
+			if(source.query_id == this.report.query_id)
+				continue;
+
+			datalist.push({
+				name: source.name,
+				value: source.query_id,
+				subtitle: '#' + source.query_id,
+			});
+		}
+
+		this.filterForm.datasetMultiSelect.datalist = datalist;
 		this.filterForm.datasetMultiSelect.render();
+
+		if(this.container.querySelector('#filter-list .external-parameters'))
+			this.container.querySelector('#filter-list .external-parameters').remove();
+
+		const
+			externalParameters = this.page.account.settings.get('external_parameters'),
+			externalParametersValues = await Storage.get('external_parameters');
+
+		if(externalParameters && externalParameters.length) {
+
+			const container = document.createElement('div');
+
+			container.classList.add('external-parameters');
+
+			container.innerHTML = `
+				<h3>External Parameters</h3>
+				<p>These parameters are available as additional information when user logs in through external authentication of your app.</p>
+
+				<table>
+					<thead>
+						<tr>
+							<th>Placeholer</th>
+							<th>Value</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			`;
+
+			const tbody = container.querySelector('tbody');
+
+			for(const parameter of externalParameters) {
+
+				tbody.insertAdjacentHTML('beforeend', `
+					<tr>
+						<td>${parameter}</td>
+						<td>${parameter in externalParametersValues ? externalParametersValues[parameter] : ''}</td>
+					</tr>
+				`);
+			}
+
+			this.container.querySelector('#filter-list').appendChild(container);
+		}
 	}
 
 	addFilter() {
@@ -2134,12 +2192,12 @@ class VisualizationManager {
 					<div class="body">
 						<div class="form subform">
 							<label>
-								<span>Name</span>
+								<span>Name <span class="red">*</span></span>
 								<input type="text" name="name" required>
 							</label>
 
 							<label>
-								<span>Visualization Type</span>
+								<span>Visualization Type <span class="red">*</span></span>
 								<select name="type" required></select>
 							</label>
 
@@ -2201,10 +2259,8 @@ class VisualizationManager {
 
 	async update(e) {
 
-		if(e) {
-
+		if(e)
 			e.preventDefault();
-		}
 
 		const
 			parameters = {
@@ -2502,6 +2558,58 @@ class ReportConnection {
 	get json() {
 		return {};
 	}
+
+	setEditorKeyboardShortcuts() {
+
+		if(!this.editor)
+			return;
+
+		// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
+		this.editor.editor.commands.addCommand({
+			name: 'save',
+			bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+			exec: async () => {
+
+				const cursor = this.editor.editor.getCursorPosition();
+
+				await this.stage.update();
+
+				this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
+			},
+		});
+
+		this.stage.page.keyboardShortcuts.set('Ctrl + S', {
+			title: 'Save Report',
+			description: 'Save the current report query. Only works when focus is set on query editor.',
+		});
+
+		// The keyboard shortcut to test the query on Ctrl + E inside the editor.
+		this.editor.editor.commands.addCommand({
+			name: 'execute',
+			bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
+			exec: () => this.stage.preview(),
+		});
+
+		this.stage.page.keyboardShortcuts.set('Ctrl + E', {
+			title: 'Execute Report',
+			description: 'Execute the current report query without saving it. Only works when focus is set on query editor.',
+		});
+
+		if(this.editor.mode == 'sql') {
+
+			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
+			this.editor.editor.commands.addCommand({
+				name: 'format',
+				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
+				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
+			});
+
+			this.stage.page.keyboardShortcuts.set('Ctrl + Y', {
+				title: 'Format Query',
+				description: 'Use the (experimental) query formatter. Only works when focus is set on query editor.',
+			});
+		}
+	}
 }
 
 ReportConnection.types = new Map();
@@ -2516,36 +2624,7 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -2576,43 +2655,12 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.logsEditor) {
-
+		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
-		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -2643,43 +2691,12 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.logsEditor) {
-
+		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
-		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -2710,43 +2727,12 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		if(this.logsEditor) {
-
+		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
-		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -3044,36 +3030,12 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 
 		this.editor = new CodeEditor({mode: 'javascript'});
 
-		if(this.logsEditor) {
-
+		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
-		}
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -3127,36 +3089,7 @@ ReportConnection.types.set('oracle', class ReportConnectionMysql extends ReportC
 
 		this.editor.editor.getSession().on('change', () => this.stage.filterSuggestions());
 
-		setTimeout(() => {
-
-			// The keyboard shortcut to submit the form on Ctrl + S inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'save',
-				bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
-				exec: async () => {
-
-					const cursor = this.editor.editor.getCursorPosition();
-
-					await this.stage.update();
-
-					this.editor.editor.gotoLine(cursor.row + 1, cursor.column);
-				},
-			});
-
-			// The keyboard shortcut to test the query on Ctrl + E inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'execute',
-				bindKey: { win: 'Ctrl-E', mac: 'Cmd-E' },
-				exec: () => this.stage.preview(),
-			});
-
-			// The keyboard shortcut to format the query on Ctrl + Y inside the editor.
-			this.editor.editor.commands.addCommand({
-				name: 'format',
-				bindKey: { win: 'Ctrl-Y', mac: 'Cmd-Y' },
-				exec: () => this.editor.value = new FormatSQL(this.editor.value).query,
-			});
-		});
+		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
 
 	get form() {
@@ -3916,8 +3849,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 
 		container.querySelector('.configuration-section').appendChild(this.axes.container);
 
-
-
 		if(this.visualization.options && this.visualization.options.hideLegend)
 			container.querySelector('input[name=hideLegend]').checked = this.visualization.options.hideLegend;
 
@@ -4293,6 +4224,15 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+
+						<div class="gradient-rules"></div>
+
+						<label>
+							<button type="button" class="add-gradient">
+								<i class="fa fa-plus"></i> Add New Gradient
+							</button>
+						</label>
+
 						<label>
 							<span>
 								<input type="checkbox" name="hideHeadingsBar">Hide Headings Bar
@@ -4315,24 +4255,169 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 			</div>
 		`;
 
+		const gradientRules = container.querySelector('.gradient-rules');
+
+		container.querySelector('.add-gradient').on('click', () => {
+
+			gradientRules.appendChild(this.rule());
+			this.render();
+			gradientRules.scrollTop = gradientRules.scrollHeight;
+		});
+
 		this.form = this.visualization.options;
 
+		this.render();
 
+		return container;
+	}
+
+	render() {
+
+		const
+			gradientFilter = this.form.querySelector('.gradient-rules'),
+			gradientNotFound = this.form.querySelector('.gradient-rules .NA');
+
+		if(!gradientFilter.children.length)
+			gradientFilter.innerHTML = '<div class="NA">No Gradient Found</div>';
+
+		else if(gradientNotFound)
+			gradientNotFound.remove();
+	}
+
+	rule(selected = {}) {
+
+		const container = document.createElement('div');
+
+		container.classList.add('rule');
+
+		container.innerHTML = `
+
+			<label>
+				<span>Column</span>
+				<select name="column"></select>
+			</label>
+
+			<label>
+				<span>Relative To</span>
+				<select name="relative"></select>
+			</label>
+
+			<label>
+				<span>Dual Color</span>
+				<select name="dualColor">
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</label>
+
+			<label>
+				<span>Maximum Value</span>
+				<input type="color" name="maximumColor" class="color" value="${selected.maximumColor}">
+			</label>
+
+			<label class="minimum-color">
+				<span>Minimum Value</span>
+				<input type="color" name="minimumColor" class="color" value="${selected.minimumColor}">
+			</label>
+
+			<label>
+				<span>Content</span>
+				<select name="content">
+					<option value="empty">Empty</option>
+					<option value="value">Value</option>
+					<option value="percentage">Percentage</option>
+					<option value="both">Both</option>
+				</select>
+			</label>
+
+			<button type="button" class="delete"><i class="far fa-trash-alt delete-icon"></i></button>
+		`;
+
+		const
+			columnSelect = container.querySelector('select[name=column]'),
+			relativeSelect = container.querySelector('select[name=relative]');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			columnSelect.insertAdjacentHTML('beforeend', `<option value="${key}">${column.name}</option>`);
+			relativeSelect.insertAdjacentHTML('beforeend', `<option value="${key}">${column.name}</option>`);
+		}
+
+		for(const element of container.querySelectorAll('select')) {
+
+			if(element.name in selected)
+				element.value = selected[element.name];
+		}
+
+		const
+			dualColor = container.querySelector('select[name="dualColor"]'),
+			minimumColor = container.querySelector('.minimum-color');
+
+		minimumColor.classList.toggle('hidden', !parseInt(dualColor.value));
+
+		dualColor.on('change', () => minimumColor.classList.toggle('hidden', !parseInt(dualColor.value)));
+
+		container.querySelector('button').on('click', e => {
+
+			e.stopPropagation();
+			container.remove();
+
+			this.render();
+		});
 
 		return container;
 	}
 
 	set form(json) {
 
-		for(const element of this.form.querySelectorAll('select, input')) {
-
+		for(const element of this.form.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = json && json[element.name];
 
-			if(this.readOnly) {
+		const gradientRules = this.form.querySelector('.gradient-rules');
 
-				element.disabled = true;
-			}
+		for(const value of json.gradientRules || [])
+			gradientRules.appendChild(this.rule(value));
+	}
+
+	get json() {
+
+		const result = {
+			gradientRules: [],
+			hideHeadingsBar: this.form.querySelector('input[name="hideHeadingsBar"]').checked,
+			hideRowSummary: this.form.querySelector('input[name="hideRowSummary"]').checked,
+			hideLegend: this.form.querySelector('input[name="hideLegend"]').checked,
+		};
+
+		for(const rule of this.form.querySelectorAll('.rule')) {
+
+			result.gradientRules.push({
+				column: rule.querySelector('select[name=column]').value,
+				relative: rule.querySelector('select[name=relative]').value,
+				dualColor: parseInt(rule.querySelector('select[name=dualColor]').value),
+				maximumColor: rule.querySelector('input[name=maximumColor]').value,
+				minimumColor: rule.querySelector('input[name=minimumColor]').value,
+				content: rule.querySelector('select[name=content').value,
+			});
 		}
+
+		const gradientRules = {};
+
+		for(const gradient of result.gradientRules) {
+
+			if(gradient.column in gradientRules) {
+
+				new SnackBar({
+					message: `Gradient already exists for ${this.page.preview.report.columns.get(gradient.column).name}.`,
+					type: 'error',
+				});
+
+				throw `Gradient already exists for ${this.page.preview.report.columns.get(gradient.column).name}.`;
+			}
+
+			gradientRules[gradient.column] = gradient;
+		}
+
+		return result;
 	}
 });
 
@@ -4487,12 +4572,29 @@ ConfigureVisualization.types.set('pie', class PieOptions extends ReportVisualiza
 					<div class="form subform">
 
 						<label>
-							<span>Show</span>
-							<select name="showValue">
-								<option value="">None</option>
-								<option value="value">Value</option>
-								<option value="percentage">Percentage</option>
+							<span>Label Position</span>
+							<select name="labelPosition">
+								<option value="inside">Inside</option>
+								<option value="outside">Outside</option>
 							</select>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showValue">Show Value
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showPercentage">Show Percentage
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="showName">Show Name
+							</span>
 						</label>
 
 						<label>
@@ -4657,6 +4759,11 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 								<input type="checkbox" name="hideLegend">Hide Legend
 							</span>
 						</label>
+
+						<label>
+							<span>Font Size <span class="NA right">percentage</span></span>
+							<input type="number" name="fontSize" min="0.1" max="3000" step="0.01" placeholder="815">
+						</label>
 					</div>
 				</div>
 			</div>
@@ -4678,6 +4785,7 @@ ConfigureVisualization.types.set('bigtext', class BigTextOptions extends ReportV
 
 		const parentJSON = super.json;
 
+		parentJSON.fontSize = parseFloat(parentJSON.fontSize);
 		parentJSON.column = this.bigReportsColumns.value[0];
 
 		return parentJSON;
@@ -5029,7 +5137,6 @@ class ReportTransformations extends Set {
 					<div class="preview" title="Preview Data"><i class="fas fa-eye"></i></div>
 				</div>
 				<legend>Report Executed</legend>
-				<div class="ellipsis disabled"><i class="fas fa-ellipsis-h"></i></div>
 			</fieldset>
 
 			<div class="next-connector">
@@ -5067,7 +5174,6 @@ class ReportTransformations extends Set {
 
 			<fieldset class="subform">
 				<legend>Visualization Loaded</legend>
-				<div class="ellipsis disabled"><i class="fas fa-ellipsis-h"></i></div>
 			</fieldset>
 		`);
 
@@ -6177,15 +6283,20 @@ class ReportVisualizationDashboards extends Set {
 
 		container.innerHTML = `
 			<h3><i class="fas fa-angle-right"></i> Dashboards <span class="count"></span></h3>
+
 			<div class="body">
+
 				<div class="list"></div>
+
 				<form class="add-dashboard">
+
 					<fieldset>
 						<legend>Add To Dashboard</legend>
+
 						<div class="form">
 
 							<label class="dashboard_id">
-								<span>Dashboard</span>
+								<span>Dashboard <span class="red">*</span></span>
 							</label>
 
 							<label>
@@ -6194,13 +6305,23 @@ class ReportVisualizationDashboards extends Set {
 							</label>
 
 							<label>
+								<span>Width</span>
+								<input type="number" name="width" min="1" step="1" placeholder="32">
+							</label>
+
+							<label>
+								<span>Height</span>
+								<input type="number" name="height" min="1" step="1" placeholder="10">
+							</label>
+
+							<label class="save">
 								<span>&nbsp;</span>
-								<button type="submit"><i class="fa fa-plus"></i> Add</button>
+								<button type="submit" title="Submit"><i class="fa fa-paper-plane"></i></button>
 							</label>
 
 							<label class="create-new">
 								<span>&nbsp;</span>
-								<button type="button" disabled><i class="fa fa-plus"></i> Create New</button>
+								<button type="button" disabled title="Create New Dashboard"><i class="fas fa-external-link-alt"></i> Create New</button>
 							</label>
 						</div>
 					</fieldset>
@@ -6333,15 +6454,21 @@ class ReportVisualizationDashboards extends Set {
 			form = stage.dashboards.container.querySelector('.add-dashboard'),
 			dashboard_id = parseInt(stage.dashboards.dashboardMultiSelect.value[0]);
 
+		if(!dashboard_id) {
+
+			return new SnackBar({
+				message: 'Selecting a dashboard is required.',
+				type: 'warning',
+			});
+		}
+
 		if(Array.from(stage.dashboards).some(d => d.id == dashboard_id)) {
 
-			new SnackBar({
+			return new SnackBar({
 				message: 'Visualization Already Added',
 				subtitle: `${stage.dashboards.response.get(dashboard_id).name} #${dashboard_id}`,
 				type: 'warning',
 			});
-
-			return;
 		}
 
 		const
@@ -6352,7 +6479,11 @@ class ReportVisualizationDashboards extends Set {
 				owner: 'dashboard',
 				owner_id: dashboard_id,
 				visualization_id: stage.visualization.visualization_id,
-				format: JSON.stringify({position: parseInt(form.position.value)})
+				format: JSON.stringify({
+					position: parseInt(form.position.value),
+					width: Math.max(parseInt(form.width.value), 1),
+					height: Math.max(parseInt(form.height.value), 1),
+				}),
 			};
 
 		try {
@@ -6377,6 +6508,9 @@ class ReportVisualizationDashboards extends Set {
 
 			throw e;
 		}
+
+		form.reset();
+		stage.dashboards.dashboardMultiSelect.clear();
 	}
 }
 
@@ -6411,19 +6545,29 @@ class ReportVisualizationDashboard {
 				<input type="number" name="position" value="${this.visualization.format.position || ''}">
 			</label>
 
+			<label>
+				<span>Width</span>
+				<input type="number" name="width" min="1" step="1" value="${this.visualization.format.width || ''}" placeholder="32">
+			</label>
+
+			<label>
+				<span>Height</span>
+				<input type="number" name="height" min="1" step="1" value="${this.visualization.format.height || ''}" placeholder="10">
+			</label>
+
 			<label class="save">
 				<span>&nbsp;</span>
-				<button type="submit"><i class="far fa-save"></i> Save</button>
+				<button type="submit" title="Save"><i class="far fa-save"></i></button>
 			</label>
 
 			<label>
 				<span>&nbsp;</span>
-				<button type="button" class="delete"><i class="far fa-trash-alt"></i></button>
+				<button type="button" class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 			</label>
 
 			<label>
 				<span>&nbsp;</span>
-				<button type="button" class="view-dashboard"><i class="fas fa-external-link-alt"></i></button>
+				<button type="button" class="view-dashboard" title="View Dashboard"><i class="fas fa-external-link-alt"></i></button>
 			</label>
 		`;
 
@@ -6495,7 +6639,10 @@ class ReportVisualizationDashboard {
 
 		form.querySelector('.delete').on('click', () => this.delete());
 
-		form.on('submit', async e => this.update(e))
+		form.on('submit', async e => {
+			e.preventDefault();
+			this.update();
+		});
 
 		return form;
 	}
@@ -6537,16 +6684,19 @@ class ReportVisualizationDashboard {
 		}
 	}
 
-	async update(e) {
-
-		e.preventDefault();
+	async update() {
 
 		if(!this.dashboardMultiSelect.value[0]) {
 
-			throw new Page.exception('Dashboard cannot be null');
+			return new SnackBar({
+				message: 'Selecting a dashboard is required.',
+				type: 'warning',
+			});
 		}
 
 		this.visualization.format.position = parseInt(this.form.position.value);
+		this.visualization.format.width = Math.max(parseInt(this.form.width.value), 1);
+		this.visualization.format.height = Math.max(parseInt(this.form.height.value), 1);
 
 		const
 			option = {

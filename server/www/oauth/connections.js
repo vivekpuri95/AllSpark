@@ -1,5 +1,7 @@
 const API = require('../../utils/api');
 const Providers = require('./providers');
+const GoogleAPIs = require('../../utils/oauthConnections').GoogleAPIs;
+const FacebookMarketing = require('../../utils/oauthConnections').FacebookMarketing;
 const fetch = require('node-fetch');
 
 exports.list = class extends API {
@@ -147,173 +149,26 @@ exports.test = class extends API {
 	}
 }
 
-class OAuthConnection {
+exports.get =  class extends API {
 
-	constructor(endpoint, provider) {
+	async get({connection_id} = {}) {
 
-		this.endpoint = endpoint;
-		this.provider = provider;
-
-		this.endpoint.assert(this.provider.connection_id, 'Connection ID not found!');
-		this.endpoint.assert(this.provider.client_id, 'Client ID not found!');
-		this.endpoint.assert(this.provider.client_secret, 'Client secret not found!');
-	}
-
-	async validate() {
-
-		const
-			connection = {},
-			refresh_token = await this.refreshToken(connection),
-			access_token = await this.accessToken(connection);
-
-		this.endpoint.mysql.query(
-			'UPDATE tb_oauth_connections SET ? WHERE id = ?',
-			[connection, this.provider.connection_id]
+		return await this.mysql.query(
+			`SELECT
+					c.id connection_id,
+					c.access_token,
+					c.refresh_token,
+					p.*
+				FROM
+					tb_oauth_connections c
+				JOIN
+					tb_oauth_providers p USING (provider_id)
+				WHERE
+					c.id = ? 
+					AND c.status = 1`,
+			[connection_id]
 		);
-	}
-}
 
-class GoogleAPIs extends OAuthConnection {
-
-	async refreshToken(connection) {
-
-		const
-			parameters = new URLSearchParams(),
-			options = {
-				method: 'POST',
-				body: parameters,
-				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			};
-
-		parameters.set('code', this.endpoint.request.body.code);
-		parameters.set('client_id', this.provider.client_id);
-		parameters.set('client_secret', this.provider.client_secret);
-		parameters.set('redirect_uri', `https://${this.endpoint.account.url}/connections-manager`);
-		parameters.set('grant_type', 'authorization_code');
-
-		let response = await fetch('https://www.googleapis.com/oauth2/v4/token', options);
-
-		response = await response.json();
-
-		this.endpoint.assert(response.refresh_token, `Refresh token not recieved from google, ${JSON.stringify(response)}!`);
-
-		connection.refresh_token = response.refresh_token;
 	}
 
-	async accessToken(connection) {
-
-		const
-			parameters = new URLSearchParams(),
-			options = {
-				method: 'POST',
-				body: parameters,
-				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			};
-
-		parameters.set('refresh_token', connection.refresh_token);
-		parameters.set('client_id', this.provider.client_id);
-		parameters.set('client_secret', this.provider.client_secret);
-		parameters.set('grant_type', 'refresh_token');
-
-		let response = await fetch('https://www.googleapis.com/oauth2/v4/token', options);
-
-		response = await response.json();
-
-		this.endpoint.assert(response.access_token, 'Access Token not recieved form Google!');
-
-		connection.access_token = response.access_token;
-		connection.expires_at = new Date(Date.now() + (response.expires_in * 1000)).toISOString().replace('T', ' ').replace('Z', '');
-	}
-
-	async test() {
-
-		this.endpoint.assert(this.provider.access_token, 'Access Token not found!');
-		this.endpoint.assert(this.provider.refresh_token, 'Refresh Token not found!');
-
-		await this.accessToken(this.provider);
-
-		return this.provider.access_token;
-	}
-}
-
-class FacebookMarketing extends OAuthConnection {
-
-	async refreshToken() {
-
-		return null;
-	}
-
-	async accessToken(connection) {
-
-		const
-			parameters = new URLSearchParams(),
-			options = {
-				method: 'POST',
-				body: parameters,
-				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			};
-
-		parameters.set('client_id', this.provider.client_id);
-		parameters.set('redirect_uri', `https://${this.endpoint.account.url}/connections-manager`);
-		parameters.set('client_secret', this.provider.client_secret);
-		parameters.set('code', this.endpoint.request.body.code);
-
-		let response = await fetch('https://graph.facebook.com/v3.0/oauth/access_token', options);
-
-		response = await response.json();
-
-		this.endpoint.assert(response.access_token, `Access Token not recieved form Facebook, ${JSON.stringify(response)}!`);
-
-		connection.access_token = response.access_token;
-		connection.expires_at = new Date(Date.now() + (response.expires_in * 1000)).toISOString();
-	}
-
-	async test() {
-
-		this.endpoint.assert(this.provider.access_token, 'Access Token not found!');
-
-		let  appAccessToken;
-
-		{
-			const
-				parameters = new URLSearchParams(),
-				options = {
-					method: 'POST',
-					body: parameters,
-					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-				};
-
-			parameters.set('client_id', this.provider.client_id);
-			parameters.set('client_secret', this.provider.client_secret);
-			parameters.set('grant_type', 'client_credentials');
-
-			let response = await fetch('https://graph.facebook.com/v3.0/oauth/access_token', options);
-
-			response = await response.json();
-
-			this.endpoint.assert(response.access_token, 'App Access Token not recieved form Facebook!');
-
-			appAccessToken = response.access_token;
-		}
-
-		{
-			const
-				parameters = new URLSearchParams(),
-				options = {
-					method: 'GET',
-					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-				};
-
-			parameters.set('input_token', this.provider.access_token);
-			parameters.set('access_token', appAccessToken);
-
-			let response = await fetch('https://graph.facebook.com/v3.0/debug_token?' + parameters , options);
-
-			response = await response.json();
-
-			this.endpoint.assert(response.data && response.data.is_valid, 'Access token in not valid!');
-		}
-
-		return this.provider.access_token;
-	}
 }

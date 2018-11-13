@@ -56,7 +56,6 @@ Page.class = class Dashboards extends Page {
 			this.listContainer.form.subtitle.insertAdjacentHTML('beforeend', `<option value="${category.category_id}">${category.name}</option>`);
 
 		this.listContainer.form.subtitle.on('change', () => this.renderList());
-		this.listContainer.form.search.on('keyup', () => this.renderList());
 
 		window.on('popstate', e => this.load(e.state));
 
@@ -68,6 +67,78 @@ Page.class = class Dashboards extends Page {
 	get currentDashboard() {
 
 		return parseInt(window.location.pathname.split('/').includes('dashboard') ? window.location.pathname.split('/').pop() : 0);
+	}
+
+	get searchBar() {
+
+		if(this.searchBarFilter)
+			return this.searchBarFilter;
+
+		const filters = [
+			{
+				key: 'Report ID',
+				rowValue: row => [row.query_id],
+			},
+			{
+				key: 'Name',
+				rowValue: row => row.name ? [row.name] : [],
+			},
+			{
+				key: 'Description',
+				rowValue: row => row.description ? [row.description] : [],
+			},
+			{
+				key: 'Tags',
+				rowValue: row => row.tags ? row.tags.split(',') : [],
+			},
+			{
+				key: 'Filters Length',
+				rowValue: row => [row.filters.length]
+			},
+			{
+				key: 'Filters Name',
+				rowValue: row => row.filters.map(f => f.name),
+			},
+			{
+				key: 'Visualizations Name',
+				rowValue: row => row.visualizations.map(f => f.name),
+			},
+			{
+				key: 'Visualizations Type',
+				rowValue: row => {
+					return row.visualizations.map(f => f.type)
+											 .map(m => MetaData.visualizations.has(m) ?
+											 (MetaData.visualizations.get(m)).name : []);
+				},
+			},
+			{
+				key: 'Visualizations Length',
+				rowValue: row => [row.visualizations.length],
+			},
+			{
+				key: 'Report Creation',
+				rowValue: row => row.created_at ? [row.created_at] : [],
+			},
+			{
+				key: 'Report Last Updated At',
+				rowValue: row => row.updated_at ? [row.updated_at] : [],
+			}
+		];
+
+		this.searchBarFilter = new SearchColumnFilters({
+			data: Array.from(DataSource.list.values()),
+			filters: filters,
+			advanceSearch: true,
+			page,
+		});
+
+		this.container.querySelector('.section#list').insertBefore(this.searchBarFilter.container, this.container.querySelector('.section#list .block'));
+
+		this.container.querySelector('.section#list .toolbar').appendChild(this.searchBarFilter.globalSearch.container);
+
+		this.searchBarFilter.on('change', () => this.renderList());
+
+		this.renderList();
 	}
 
 	parents(id) {
@@ -158,7 +229,29 @@ Page.class = class Dashboards extends Page {
 
 		e.stopPropagation();
 
-		this.listContainer.form.search.value = e.currentTarget.textContent;
+		const value = e.currentTarget.textContent;
+
+		for(const filter of this.searchBarFilter.values()) {
+
+			const values = filter.json;
+
+			if(values.functionName == 'equalto' && values.query == value && values.searchValue == 'Tags')
+				return;
+		}
+
+		this.searchBarFilter.container.classList.remove('hidden');
+
+		const tagFilter = new SearchColumnFilter(this.searchBarFilter);
+
+		this.searchBarFilter.add(tagFilter);
+
+		this.searchBarFilter.render();
+
+		tagFilter.json = {
+			searchQuery: value,
+			searchValue: 'Tags',
+			searchType: 'equalto',
+		};
 
 		this.renderList();
 	}
@@ -182,7 +275,12 @@ Page.class = class Dashboards extends Page {
 			</tr>
 		`;
 
-		for (const report of DataSource.list.values()) {
+		let reports = [];
+
+		if(this.searchBar)
+			reports = this.searchBar.filterData;
+
+		for (const report of reports) {
 
 			if (!report.is_enabled || report.is_deleted) {
 
@@ -192,31 +290,6 @@ Page.class = class Dashboards extends Page {
 			if (this.listContainer.form.subtitle.value && report.subtitle != this.listContainer.form.subtitle.value) {
 
 				continue;
-			}
-
-			if (this.listContainer.form.search.value) {
-
-				let found = false;
-
-				const searchItems = this.listContainer.form.search.value.split(' ').filter(x => x).slice(0, 5);
-
-
-				for (const searchItem of searchItems) {
-
-					const searchableText = report.query_id + ' ' + report.name + ' ' + report.description + ' ' + report.tags;
-
-					found = searchableText.toLowerCase().includes(searchItem.toLowerCase());
-
-					if (found) {
-
-						break;
-					}
-				}
-
-				if (!found) {
-
-					continue;
-				}
 			}
 
 			const tr = document.createElement('tr');
@@ -247,7 +320,7 @@ Page.class = class Dashboards extends Page {
 				<td>${description.join(' ') || ''}</td>
 				<td class="tags"></td>
 				<td>${MetaData.categories.has(report.subtitle) && MetaData.categories.get(report.subtitle).name || ''}</td>
-				<td>${report.visualizations.map(v => v.type).filter(t => t != 'table').join(', ')}</td>
+				<td><div class="visualisation-display">${report.visualizations.map(v => `<div class="visualization-name">${v.name} `+` <br> <span class="NA"> ${v.type}` + `</span></div>`).join('')}</div></td>
 			`;
 
 			for (const tag of tags)
@@ -383,6 +456,7 @@ Page.class = class Dashboards extends Page {
 		}
 
 		this.cycle();
+		this.renderList();
 
 		for (const dashboard of this.list.values()) {
 
@@ -424,7 +498,7 @@ Page.class = class Dashboards extends Page {
 			document.querySelector('body').classList.toggle('floating', !document.querySelector('body').classList.contains('floating'));
 		}
 
-		if (window.location.pathname.split('/').pop() === 'first') {
+		if (window.location.pathname.split('/').filter(p => p).pop() === 'first') {
 
 			this.navbar.render();
 
@@ -515,7 +589,9 @@ Page.class = class Dashboards extends Page {
 
 		container.appendChild(report.container);
 
-		report.visualizations.selected.load();
+		// .then because we don't want to await on visualization load
+		report.visualizations.selected.load()
+			.then(() => report.postProcessors.render());
 
 		await Sections.show('reports');
 	}
@@ -600,8 +676,9 @@ class Dashboard {
 		Dashboard.toolbar = page.container.querySelector('section#reports .toolbar');
 		Dashboard.container = page.container.querySelector('section#reports .list');
 
-		const sideButton = page.container.querySelector('#reports .side');
-		const container = page.container.querySelector('#reports #blanket');
+		const
+			sideButton = page.container.querySelector('#reports .side'),
+			container = page.container.querySelector('#reports #blanket');
 
 		sideButton.on('click', () => {
 
@@ -999,7 +1076,7 @@ class Dashboard {
 			console.log(e);
 		}
 
-		if (!this.globalFilters.size)
+		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top')
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
 	}
 
@@ -1010,10 +1087,8 @@ class Dashboard {
 			return;
 		}
 
-		if (!this.globalFilters.size) {
-
+		if(!this.globalFilters.size || this.page.account.settings.get('global_filters_position') == 'top')
 			this.page.container.querySelector('#reports .side').classList.add('hidden');
-		}
 
 		Sections.show('reports');
 
@@ -1306,7 +1381,10 @@ class Nav {
 			container.classList.add('hidden');
 		}
 
-		container.querySelector('.label').on('click', () => {
+		container.querySelector('.label').on('click', e => {
+
+			if(e.ctrlKey || e.metaKey)
+				return window.open('/dashboard/' + this.dashboard.id);
 
 			this.page.render({
 				dashboardId: this.dashboard.visualizations.length || (this.dashboard.format && this.dashboard.format.category_id) ? this.dashboard.id : 0,

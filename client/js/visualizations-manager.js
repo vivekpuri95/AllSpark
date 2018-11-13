@@ -113,7 +113,7 @@ class VisualizationsManagerList extends Map {
 				rowValue: row => row.visualizations.map(f => f.name ? f.name : []),
 			},
 			{
-				key: 'Visualizations Type Name',
+				key: 'Visualizations Type',
 				rowValue: row => {
 					return row.visualizations.map(f => f.type)
 											   .map(m => MetaData.visualizations.has(m) ?
