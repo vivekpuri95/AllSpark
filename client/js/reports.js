@@ -5860,20 +5860,20 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		const
 			range = rule.maxValue - rule.minValue,
-			value = Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
+			value = Math.floor(17 + (238 / range) * (rule.currentValue - rule.minValue));
 
 		if(!range)
-			return (rule.thresholdColor/100 *255);
+			return (rule.thresholdColor / 100 * 255);
 
 		if(rule.dualColor) {
 
 			if(rule.position)
-				return (rule.thresholdColor/100 * value);
+				return (rule.thresholdColor / 100 * value);
 			else
-				return ((rule.thresholdColor/100) * (Math.floor(17 + (238/range) * (rule.maxValue - rule.currentValue))));
+				return ((rule.thresholdColor / 100) * (Math.floor(17 + (238 / range) * (rule.maxValue - rule.currentValue))));
 		}
 
-		return (rule.thresholdColor/100 * value);
+		return (rule.thresholdColor / 100 * value);
 	}
 
 	cellLuma(hex) {

@@ -4388,21 +4388,21 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 		const result = {
 			gradientRules: [],
-			hideHeadingsBar: this.form.querySelector('input[name = "hideHeadingsBar"]').checked,
-			hideRowSummary: this.form.querySelector('input[name = "hideRowSummary"]').checked,
-			hideLegend: this.form.querySelector('input[name = "hideLegend"]').checked,
+			hideHeadingsBar: this.form.querySelector('input[name="hideHeadingsBar"]').checked,
+			hideRowSummary: this.form.querySelector('input[name="hideRowSummary"]').checked,
+			hideLegend: this.form.querySelector('input[name="hideLegend"]').checked,
 		};
 
 		for(const rule of this.form.querySelectorAll('.rule')) {
 
 			result.gradientRules.push({
-				column: rule.querySelector('select[name = "column"]').value,
-				relative: rule.querySelector('select[name = "relative"]').value,
-				dualColor: parseInt(rule.querySelector('select[name = "dualColor"]').value),
-				maximumColor: rule.querySelector('input[name = "maximumColor"]').value,
-				minimumColor: rule.querySelector('input[name = "minimumColor"]').value,
-				thresholdColor: rule.querySelector('input[name = "thresholdColor"]').value,
-				content: rule.querySelector('select[name = "content"').value,
+				column: rule.querySelector('select[name="column"]').value,
+				relative: rule.querySelector('select[name="relative"]').value,
+				dualColor: parseInt(rule.querySelector('select[name="dualColor"]').value),
+				maximumColor: rule.querySelector('input[name="maximumColor"]').value,
+				minimumColor: rule.querySelector('input[name="minimumColor"]').value,
+				thresholdColor: rule.querySelector('input[name="thresholdColor"]').value,
+				content: rule.querySelector('select[name="content"').value,
 			});
 		}
 
