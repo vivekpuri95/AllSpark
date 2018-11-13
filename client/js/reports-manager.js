@@ -4321,8 +4321,8 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 			</label>
 
 			<label>
-				<span>Color Threshold(1%-100%)</span>
-				<input type="number" min="1" max="100" name="thresholdColor" class="color" value="${selected.thresholdColor}">
+				<span>Color Threshold %</span>
+				<input type="number" min="0" max="100" name="thresholdColor" class="color" value="${selected.thresholdColor}">
 			</label>
 
 			<label>

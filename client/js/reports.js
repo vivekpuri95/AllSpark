@@ -5663,9 +5663,15 @@ Visualization.list.set('table', class Table extends Visualization {
 
 					rule.position = rule.currentValue >= parseFloat((rule.maxValue - rule.minValue) / 2);
 
-					const
-						colorValue = parseInt(this.cellColorValue(rule)),
-						colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
+					let colorValue = this.cellColorValue(rule);
+					const colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
+
+					if(!rule.thresholdColor || rule.thresholdColor > 100)
+						rule.thresholdColor = 100;
+
+					colorValue = parseInt(rule.thresholdColor / 100 * colorValue);
+
+					console.log(colorValue);
 
 					if(rule.content == 'empty')
 						typedValue = null;
@@ -5855,25 +5861,22 @@ Visualization.list.set('table', class Table extends Visualization {
 
 	cellColorValue(rule) {
 
-		if(!rule.thresholdColor || rule.thresholdColor > 100)
-			rule.thresholdColor = 100;
-
 		const
 			range = rule.maxValue - rule.minValue,
-			value = Math.floor(17 + (238 / range) * (rule.currentValue - rule.minValue));
+			value = Math.floor(17 + (238/range) * (rule.currentValue - rule.minValue));
 
 		if(!range)
-			return (rule.thresholdColor / 100 * 255);
+			return 255;
 
 		if(rule.dualColor) {
 
 			if(rule.position)
-				return (rule.thresholdColor / 100 * value);
+				return value;
 			else
-				return ((rule.thresholdColor / 100) * (Math.floor(17 + (238 / range) * (rule.maxValue - rule.currentValue))));
+				return Math.floor(17 + (238/range) * (rule.maxValue - rule.currentValue));
 		}
 
-		return (rule.thresholdColor / 100 * value);
+		return value;
 	}
 
 	cellLuma(hex) {
