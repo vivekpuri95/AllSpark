@@ -4321,8 +4321,8 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 			</label>
 
 			<label>
-				<span>Color Threshold %</span>
-				<input type="number" min="0" max="100" name="thresholdColor" value="${selected.thresholdColor}">
+				<span>Gradient Threshold %</span>
+				<input type="number" min="0" max="100" name="gradientThreshold" value="${selected.gradientThreshold}">
 			</label>
 
 			<label>
@@ -4401,7 +4401,7 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 				dualColor: parseInt(rule.querySelector('select[name="dualColor"]').value),
 				maximumColor: rule.querySelector('input[name="maximumColor"]').value,
 				minimumColor: rule.querySelector('input[name="minimumColor"]').value,
-				thresholdColor: rule.querySelector('input[name="thresholdColor"]').value,
+				gradientThreshold: rule.querySelector('input[name="gradientThreshold"]').value,
 				content: rule.querySelector('select[name="content"').value,
 			});
 		}
