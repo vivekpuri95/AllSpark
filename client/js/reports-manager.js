@@ -2650,7 +2650,9 @@ class VisualizationManager {
 
 		this.transformations = new ReportTransformations(this, this.stage);
 		this.reportVisualizationFilters =  new ReportVisualizationFilters(this, this.stage);
+		this.relatedVisualizations  = new RelatedVisualizations(this.stage);
 
+		container.appendChild(this.relatedVisualizations.container);
 		container.appendChild(this.transformations.container);
 		container.appendChild(this.reportVisualizationFilters.container);
 
@@ -2672,6 +2674,7 @@ class VisualizationManager {
 
 		this.form.reset();
 
+		this.relatedVisualizations.load();
 		this.reportVisualizationFilters.load();
 
 		this.transformations.load();
@@ -5308,10 +5311,6 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 							<input type="text" name="changePostfix">
 						</label>
 
-						<label class="sub-reports">
-							<span>Sub-reports</span>
-						</label>
-
 						<label>
 							<span>
 								<input type="checkbox" name="invertValues"> Invert Values
@@ -5357,10 +5356,6 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			}
 		}
 
-		this.subReports = new MultiSelect({datalist: datalist, expand: true});
-
-		container.querySelector('.form .sub-reports').appendChild(this.subReports.container);
-
 		const
 			timingColumn = container.querySelector('select[name=timingColumn]'),
 			valueColumn = container.querySelector('select[name=valueColumn]');
@@ -5381,18 +5376,12 @@ ConfigureVisualization.types.set('livenumber', class LiveNumberOptions extends R
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
 		}
 
-		this.subReports.value = (this.visualization.options && this.visualization.options.subReports) || [];
-
 		return container;
 	}
 
 	get json() {
 
 		const result = super.json;
-
-		if(this.subReports) {
-			result.subReports = this.subReports.value;
-		}
 
 		return result;
 	}
@@ -7732,6 +7721,391 @@ class ReportVisualizationFilter {
 			filter_id: this.filter_id,
 			offset: offset_value,
 		};
+	}
+}
+
+class RelatedVisualizations extends Set {
+
+	constructor(stage) {
+
+		super();
+
+		this.stage = stage;
+	}
+
+	get container() {
+
+		if(this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		const container = this.containerElement = document.createElement('div');
+		container.classList.add('configuration-section', 'sub-visualizations');
+
+		container.innerHTML = `
+			<h3><i class="fas fa-angle-right"></i> Related Visualizations <span class="count"></span></h3>
+			
+			<div class="body">
+			
+				<div class="list"></div>
+				
+				<form class="add-sub-visualizations">
+				
+					<fieldset>
+					
+						<legend>Add Related Visualizations</legend>
+						
+						<div class="form">
+
+							<label class="visualization">
+								<span>Visualizations</span>
+							</label>
+
+							<label>
+								<span>Position</span>
+								<input name="position" min="1" type="number" class="item">
+							</label>
+							
+							<label>
+								<span>Width</span>
+								<input name="width" min="1" type="number" class="item">
+							</label>
+							
+							<label>
+								<span>Height</span>
+								<input name="height" min="1" type="number" class="item">
+							</label>
+
+							<label>
+								<span>&nbsp;</span>
+								<button type="submit"><i class="fa fa-plus"></i> Add</button>
+							</label>
+							
+						</div>						
+					</fieldset>
+				</form>
+			</div>
+		`;
+
+		this.container.querySelector('form').on('submit', e => {
+
+			e.preventDefault();
+			this.insert()
+		});
+
+		this.relatedVisualizationsMultiSelect = new MultiSelect({multiple: false, dropDownPosition: 'top'});
+		this.container.querySelector('.add-sub-visualizations .visualization').appendChild(this.relatedVisualizationsMultiSelect.container);
+
+		return container;
+	}
+
+	async load(force = false) {
+
+		await this.fetch(force);
+
+		this.process();
+
+		this.render();
+
+        if(force) {
+
+            await this.stage.page.preview.load({
+                query_id: this.stage.report.query_id,
+                visualization: {
+                    id: this.stage.visualization.visualization_id
+                },
+            });
+		}
+	}
+
+	async fetch(force = false) {
+
+		await DataSource.load(force);
+	}
+
+	process() {
+
+		this.clear();
+
+		this.possibleVisualizations = [];
+
+		[...DataSource.list.values()].map(x =>
+			this.possibleVisualizations.push(...x.visualizations.filter(
+				v => v.visualization_id && v.visualization_id != this.stage.visualization.visualization_id
+			))
+		);
+
+		const visualizationMap = new Map(DataSource.list.get(this.stage.visualization.query_id).visualizations.map(x => [x.visualization_id, x]));
+
+		for(const visualization of visualizationMap.get(this.stage.visualization.visualization_id).related_visualizations) {
+
+			this.add(new RelatedVisualization(visualization, this));
+		}
+	}
+
+	render() {
+
+		const relatedVisualizationsList = this.container.querySelector('.list');
+
+		relatedVisualizationsList.textContent = null;
+
+		for(const visualization of this) {
+
+			relatedVisualizationsList.appendChild(visualization.form);
+		}
+
+		if(!this.size)
+			relatedVisualizationsList.innerHTML = '<div class="NA">No sub visualizations added yet!</div>';
+
+		this.container.querySelector('h3 .count').innerHTML = `${this.size ? this.size + ' related visualization' + (this.size == 1 ? '' : 's') + ' added' : ''}` ;
+
+		const datalist = this.possibleVisualizations.map(v => ({
+			value: v.visualization_id,
+			name: v.name,
+			subtitle: `${v.type} &nbsp;&middot;&nbsp; ${DataSource.list.get(v.query_id).name} #${v.query_id}`,
+		}));
+
+		if(!datalist.length) {
+
+			this.container.querySelector('fieldset .form').innerHTML = '<div class="NA">No Related Visualizations Found</div>';
+		}
+		else {
+
+			this.relatedVisualizationsMultiSelect.datalist = datalist;
+			this.relatedVisualizationsMultiSelect.render();
+		}
+
+	}
+
+	async insert() {
+
+		const
+			form = this.container.querySelector('.add-sub-visualizations'),
+			visualization_id = parseInt(this.relatedVisualizationsMultiSelect.value[0]);
+
+		if(Array.from(this).some(d => d.visualization_id == visualization_id)) {
+
+			new SnackBar({
+				message: 'Visualization Already Added',
+				subtitle: `#${visualization_id}`,
+				type: 'warning',
+			});
+
+			return;
+		}
+
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				owner: 'visualization',
+				owner_id: this.stage.visualization.visualization_id,
+				visualization_id: visualization_id,
+				format: JSON.stringify({
+					position: parseInt(form.position.value),
+					width: parseInt(form.width.value),
+					height: parseInt(form.height.value)
+				})
+			};
+
+		try {
+
+			await API.call('reports/dashboard/insert', parameters, option);
+
+			await this.load(true);
+
+			new SnackBar({
+				message: 'Related Visualization Added',
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+
+	}
+}
+
+class RelatedVisualization {
+
+	constructor(visualization, relatedVisualizations) {
+
+		Object.assign(this, visualization);
+
+		try {
+
+			this.format = typeof this.format == 'object' ? this.format : JSON.parse(this.format);
+		}
+		catch(e) {
+
+			this.format = {};
+		}
+
+		this.relatedVisualizations = relatedVisualizations;
+	}
+
+	get form() {
+
+		if(this.formContainer){
+
+			return this.formContainer;
+		}
+
+		const form = this.formContainer = document.createElement('form');
+
+		form.classList.add('subform', 'form');
+
+		form.innerHTML = `
+			<label class="visualization">
+				<span>Visualization</span>
+			</label>
+
+			<label>
+				<span>Position</span>
+				<input type="number" name="position" min="1" value="${this.format.position || ''}" class="item">
+			</label>
+			
+			<label>
+				<span>Width</span>
+				<input name="width" type="number" min="1" value="${this.format.width || ''}" class="item">
+			</label>
+			
+			<label>
+				<span>Height</span>
+				<input name="height" type="number" min="1" value="${this.format.height || ''}" class="item">
+			</label>
+
+			<label class="save">
+				<span>&nbsp;</span>
+				<button type="submit" title="Save"><i class="far fa-save"></i></button>
+			</label>
+
+			<label>
+				<span>&nbsp;</span>
+				<button type="button" class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
+			</label>
+		`;
+
+		const datalist = this.relatedVisualizations.possibleVisualizations.map(v => ({
+			value: v.visualization_id,
+			name: v.name,
+			subtitle: `${v.type} &nbsp;&middot;&nbsp; ${DataSource.list.get(v.query_id).name} #${v.query_id}`,
+		}));
+
+		this.relatedMultiSelect = new MultiSelect({datalist, multiple: false, dropDownPosition: 'top'});
+		form.querySelector('.visualization').appendChild(this.relatedMultiSelect.container);
+
+		this.relatedMultiSelect.value = this.visualization_id;
+
+		form.querySelector('.delete').on('click', async () => {
+
+			await this.delete();
+		});
+
+		form.on('submit', async e => {
+
+			e.preventDefault();
+			await this.update();
+		})
+
+		return form;
+	}
+
+	async delete() {
+
+		if(!confirm('Are you sure?'))
+			return;
+
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				id: this.id,
+			};
+
+		try {
+
+			await API.call('reports/dashboard/delete', parameters, option);
+
+			await this.relatedVisualizations.load(true);
+
+			new SnackBar({
+				message: 'Related Visualization Deleted',
+				subtitle: `#${this.id}`,
+				icon: 'far fa-trash-alt',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
+	}
+
+	async update() {
+
+		const visualization_id = this.relatedMultiSelect.value[0];
+
+		if(!visualization_id) {
+
+			throw new Page.exception('Related visualization cannot be null');
+		}
+
+		this.format = {
+			position: this.form.position.value,
+			width: this.form.width.value,
+			height: this.form.height.value
+		};
+
+		const
+			option = {
+				method: 'POST',
+			},
+			parameters = {
+				id: this.id,
+				owner: 'visualization',
+				owner_id: this.owner_id,
+				visualization_id: visualization_id,
+				format: JSON.stringify(this.format)
+			};
+
+		try {
+
+			await API.call('reports/dashboard/update', parameters, option);
+
+			await this.relatedVisualizations.load(true);
+
+			new SnackBar({
+				message: 'Related Visualization Saved',
+				subtitle: `#${visualization_id}`,
+				icon: 'far fa-save',
+			});
+
+		} catch(e) {
+
+			new SnackBar({
+				message: 'Request Failed',
+				subtitle: e.message,
+				type: 'error',
+			});
+
+			throw e;
+		}
 	}
 }
 

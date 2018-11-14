@@ -857,6 +857,26 @@ main.preview-left #stages {
 				margin: 0;
 			}
 
+	.visualization-form .sub-visualizations .add-sub-visualizations .form {
+		grid-template-columns: repeat(6, max-content);
+		background: transparent;
+		padding: 0;
+	}
+		.visualization-form .sub-visualizations .list button > i {
+			margin: 0;
+		}
+		.visualization-form .sub-visualizations .list .form {
+			grid-template-columns: repeat(6, max-content);
+			grid-gap: calc(var(--gap) * 4);
+		}
+			.visualization-form .sub-visualizations .form label input.item {
+				width: 70px;
+			}
+
+			.visualization-form .sub-visualizations .form .visualization {
+				width: 200px;
+			}
+
 	.visualization-form .configuration-section h3 .count {
 		color: var(--color-grey);
 		font-size: 90%;

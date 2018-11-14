@@ -147,12 +147,22 @@ exports.list = class extends API {
 			),
 			this.mysql.query(`
 				SELECT
-					qv.*
+					qv.*,
+					id, 
+					owner,
+					owner_id,
+					vc.visualization_id AS sub_visualization_id,
+					vc.format as sub_visualization_format
 				FROM
 					tb_query_visualizations qv
 				JOIN
 					tb_query q
-					USING(query_id)
+				ON 	
+					qv.query_id = q.query_id
+				LEFT JOIN
+					tb_visualization_canvas vc
+				ON
+					vc.owner_id = qv.visualization_id AND vc.owner = 'visualization'
 				WHERE
 					qv.is_enabled = 1
 					AND qv.is_deleted = 0
@@ -214,17 +224,40 @@ exports.list = class extends API {
 
 		const reportRoleMapping = {};
 
-		const visualizationQueryMapping = {}, visualizationMapping = {};
+		const visualizationQueryMapping = {}, visualizationMapping = {}, formattedVisualization = {};
+
+		for (const visualization of results[2]) {
+
+			visualizationMapping[visualization.visualization_id] = visualization;
+		}
+
 
 		for (const visualization of results[2]) {
 
 			if (!visualizationQueryMapping.hasOwnProperty(visualization.query_id)) {
 
-				visualizationQueryMapping[visualization.query_id] = [];
+				visualizationQueryMapping[visualization.query_id] = new Map();
 			}
 
-			visualizationQueryMapping[visualization.query_id].push(visualization);
-			visualizationMapping[visualization.visualization_id] = visualization;
+			if(!visualizationQueryMapping[visualization.query_id].has(visualization.visualization_id)) {
+
+				visualizationQueryMapping[visualization.query_id].set(visualization.visualization_id, visualization);
+			}
+
+			if(visualization.sub_visualization_id) {
+
+				visualizationQueryMapping[visualization.query_id].set(
+					''.concat(visualization.sub_visualization_id, ' : ', visualization.owner_id),
+					{
+						...visualizationMapping[visualization.sub_visualization_id],
+						owner_id: visualization.visualization_id,
+						format: visualization.sub_visualization_format,
+						owner: visualization.owner,
+						id: visualization.id,
+						related: 1,
+					}
+				);
+			}
 		}
 
 		if(visualizationRolesFromQuery) {
@@ -234,7 +267,7 @@ exports.list = class extends API {
 
 			for(const row of reportRoles || []) {
 
-				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
+				for(const vis of (visualizationQueryMapping[row.owner_id] ? visualizationQueryMapping[row.owner_id].values() : [])) {
 
 					const obj = JSON.parse(JSON.stringify(row));
 
@@ -247,7 +280,7 @@ exports.list = class extends API {
 
 			for(const row of userSharedQueries || []) {
 
-				for(const vis of visualizationQueryMapping[row.owner_id] || []) {
+				for(const vis of (visualizationQueryMapping[row.owner_id] ? visualizationQueryMapping[row.owner_id].values() : [])) {
 
 					const obj = JSON.parse(JSON.stringify(row));
 					obj.owner_id = vis.visualization_id;
@@ -431,7 +464,9 @@ exports.list = class extends API {
 			row.filters = queryFilterMapping[row.query_id] || [];
 			row.visualizations = [];
 
-			for (const visualization of visualizationQueryMapping[row.query_id] || []) {
+			const allVisualizations = [], relatedVisualizationMapping = {};
+
+			for (const visualization of (visualizationQueryMapping[row.query_id] ? visualizationQueryMapping[row.query_id].values() : [])) {
 
 				if(!visualization.roles) {
 
@@ -474,7 +509,29 @@ exports.list = class extends API {
 
 				visualization.visibilityReason = visualizationAuthResponse.message;
 
+				if(visualization.related) {
+
+					if(!relatedVisualizationMapping[visualization.owner_id]) {
+
+                        relatedVisualizationMapping[visualization.owner_id] = [];
+					}
+
+                    relatedVisualizationMapping[visualization.owner_id].push(visualization);
+				}
+
+				allVisualizations.push(visualization);
+			}
+
+			for(const visualization of allVisualizations) {
+
+				if(visualization.related) {
+
+					continue;
+				}
+
+				visualization.related_visualizations = relatedVisualizationMapping[visualization.visualization_id] ? relatedVisualizationMapping[visualization.visualization_id] : [];
 				row.visualizations.push(visualization);
+
 			}
 
 			row.href = `/report/${row.query_id}`;
@@ -911,3 +968,37 @@ exports.userPrvList = class extends API {
 
 	}
 };
+
+exports.insertCanvasRows = class extends API {
+
+	async insertCanvasRows() {
+
+		const
+			visualizations = await this.mysql.query('SELECT * FROM tb_query_visualizations'),
+			query = 'INSERT INTO tb_visualization_canvas(owner, owner_id, visualization_id) VALUES ? ',
+			canvasRows = new Set();
+		;
+
+		for(const row of visualizations) {
+
+			try {
+				row.options = JSON.parse(row.options) || {};
+			}
+			catch(e) {
+				row.options = {}
+			}
+
+			if(!row.options.subReports) {
+
+				continue;
+			}
+
+			for(const report of row.options.subReports) {
+
+				canvasRows.add(['visualization', row.visualization_id, report]);
+			}
+		}
+
+		return await this.mysql.query(query, [[...canvasRows.values()]], 'write');
+	}
+}
