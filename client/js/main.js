@@ -948,7 +948,8 @@ class GlobalSearch {
 					Reports : '/reports/configure-report/query_id',
 					Dashboards : '/dashboards-manager/id',
 					Users : '/users/user_id',
-					Datasets : '/settings/datasets/id'
+					Datasets : '/settings/datasets/id',
+					Tasks: '/tasks/task_id'
 				};
 
 				href[row.superset] = href[row.superset].split('/');

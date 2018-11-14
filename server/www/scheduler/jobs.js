@@ -11,10 +11,24 @@ class Jobs extends API {
 
 	async list() {
 
-		await this.mysql.query(
-			"select * from tb_jobs where is_enabled = 1 and is_deleted = 0 and account_id = ?",
+		return await this.mysql.query(`
+			SELECT
+				job_id,
+				name,
+				cron_interval_string,
+				concat(next_interval) AS next_interval,
+				added_by,
+				type,
+				config,
+				is_enabled,
+				created_at
+			FROM
+				tb_jobs
+			WHERE
+			is_deleted = 0
+			AND account_id = ?
+		`,
 			[this.account.account_id],
-			"write"
 		)
 	}
 

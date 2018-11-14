@@ -621,11 +621,11 @@ class Dashboard {
 
 		this.visibleVisuliaztions = new Set;
 
-		this.visualizations = Dashboard.sortVisualizations(this.visualizations);
+		// this.visualizations = Dashboard.sortVisualizations(this.visualizations || []);
 
 		this.resetSideButton();
 
-		for (const visualization of this.visualizations) {
+		for (const visualization of this.visualizations || []) {
 
 			if (!visualization.format) {
 
@@ -748,9 +748,12 @@ class Dashboard {
 		});
 	}
 
-	static sortVisualizations(visibleVisuliaztions) {
+	static sortVisualizations(visibleVisuliaztions = []) {
 
-		return visibleVisuliaztions.sort((v1, v2) => v1.format.position - v2.format.position);
+		if(visibleVisuliaztions.length) {
+
+			return visibleVisuliaztions.sort((v1, v2) => v1.format.position - v2.format.position);
+		}
 	}
 
 	lazyLoad(resize, offset = Dashboard.screenHeightOffset) {

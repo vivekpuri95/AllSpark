@@ -1636,24 +1636,24 @@ router.get('/settings/:tab?/:id?', API.serve(class extends HTMLAPI {
 	}
 }));
 
-router.get('/tasks/:id?/:define?', API.serve(class extends HTMLAPI {
+router.get('/jobs/:id?/:define?', API.serve(class extends HTMLAPI {
 
 	constructor() {
 
 		super();
 
 		this.stylesheets.push('/css/tasks.css');
-		this.scripts.push('/js/tasks.js');
+		this.scripts.push('/js/jobs.js');
 	}
 
 	main() {
 
 		return `
 			<section class="section" id="list">
-				<h1>Tasks</h1>
+				<h1>Jobs</h1>
 
 				<header class="toolbar">
-					<button id="add-task"><i class="fas fa-plus"></i> Add New Task</button>
+					<button id="add-job"><i class="fas fa-plus"></i> Add New Job</button>
 				</header>
 
 				<table class="block">
@@ -1662,7 +1662,8 @@ router.get('/tasks/:id?/:define?', API.serve(class extends HTMLAPI {
 							<th>ID</th>
 							<th>Name</th>
 							<th>Type</th>
-							<th class="action">Define</th>
+							<th>Next Interval</th>
+							<th class="action">Enabled</th>
 							<th class="action">Edit</th>
 							<th class="action">Delete</th>
 						</tr>
@@ -1670,38 +1671,53 @@ router.get('/tasks/:id?/:define?', API.serve(class extends HTMLAPI {
 					<tbody></tbody>
 				</table>
 			</section>
+			
+			<div class="hidden" id="add-new-job">
 
-			<section class="section" id="form">
-
-				<h1></h1>
-
-				<header class="toolbar">
-					<button id="form-back"><i class="fas fa-arrow-left"></i> Back</button>
-					<button type="submit" form="task-form"><i class="far fa-save"></i> Save</button>
-				</header>
-
-				<form class="form block" id="task-form">
-
+				<div class="toolbar">
+					<button id="add-job-back"><i class="fas fa-arrow-left"></i> Back</button>
+					<button id="add-job" type="submit" form="add-job-form"><i class="far fa-save"></i> Save</button>
+				</div>
+				
+				<form id="add-job-form" class="block form">
 					<label>
-						<span>Task Name</span>
+						<span>Name</span>
 						<input type="text" name="name" required>
 					</label>
-
 					<label>
-						<span>Task Type</span>
-						<select name="type" required>
-							<option value="google-analytics">Google Analytics</option>
-						</select>
+						<span>Cron Interval String</span>
+						<input type="text" name="name" required>
+					</label>
+					<label>
+						<span>Type</span>
+							<select name="type">
+								<option value="none" selected="selected">None</option>
+							</select>
 					</label>
 				</form>
-			</section>
-
-			<section class="section" id="define">
-
-				<header class="toolbar">
-					<button id="define-back"><i class="fas fa-arrow-left"></i> Back</button>
-					<button type="submit" form="task-define"><i class="far fa-save"></i> Save</button>
-				</header>
+			</div>
+			<section class="section" id="edit-job">
+				<h1></h1>
+				<form id="edit-job-form" class="block form">
+					<label>
+						<span>Name</span>
+						<input type="text" name="name" required>
+					</label>
+					<label>
+						<span>Cron Interval String</span>
+						<input type="text" name="cron_interval_string" required>
+					</label>
+					<label>
+						<span>Next Interval</span>
+						<input type="text" name="next_interval" readonly>
+					</label>
+					<label>
+						<span>Type</span>
+							<select name="type">
+								<option value="none" selected="selected">None</option>
+							</select>
+					</label>
+				</form>
 			</section>
 		`;
 	}
