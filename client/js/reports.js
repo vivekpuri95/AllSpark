@@ -4888,7 +4888,7 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 					continue;
 
 				for(const [key, value] of newRow)
-					newRow.set(key,  value + element.get(key));
+					newRow.set(key,  value + parseFloat(element.get(key)));
 			}
 
 			newRow.set(timingColumn.key, row.get(timingColumn.key));
