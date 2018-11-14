@@ -7808,14 +7808,14 @@ class RelatedVisualizations extends Set {
 
 		this.render();
 
-        if(force) {
+		if(force) {
 
-            await this.stage.page.preview.load({
-                query_id: this.stage.report.query_id,
-                visualization: {
-                    id: this.stage.visualization.visualization_id
-                },
-            });
+			await this.stage.page.preview.load({
+				query_id: this.stage.report.query_id,
+				visualization: {
+					id: this.stage.visualization.visualization_id
+				},
+			});
 		}
 	}
 
