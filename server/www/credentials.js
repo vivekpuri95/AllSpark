@@ -1,8 +1,6 @@
-const mysql = require('../utils/mysql');
 const bigquery = require('../utils/bigquery').BigQuery;
 const API = require('../utils/api');
 const sql = require('mysql');
-const mssql = require('../utils/mssql');
 const {Client} = require('pg');
 const Sequelize = require('sequelize');
 const {MongoClient} = require('mongodb');
@@ -286,7 +284,7 @@ exports.update = class extends API {
 
 		if(JSON.stringify(values) == JSON.stringify(compareJson)) {
 
-			return "0 rows affected"
+			return "0 rows affected";
 		}
 
 		const response = await this.mysql.query(
