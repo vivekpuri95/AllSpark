@@ -492,7 +492,6 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 						${report.name}
 					</a>
 				</td>
-				<td>${report.description || ''}</td>
 				<td>${connection.connection_name} (${connection.feature.name})</td>
 				<td class="tags"></td>
 				<td title="${report.filters.map(f => f.name).join(', ')}" >
@@ -1914,7 +1913,6 @@ ReportsManger.stages.set('pick-visualization', class PickVisualization extends R
 					</a>
 					<span class="NA">#${visualization.visualization_id}</span>
 				</td>
-				<td>${visualization.description || ''}</td>
 				<td>${type ? type.name : ''}</td>
 				<td class="action preview"><i class="fas fa-eye"></i></td>
 				<td title="${!visualization.editable ? 'Not enough privileges' : ''}" class="action edit ${visualization.editable ? 'green': 'grey'}"><i class="fas fa-cog"></i></td>

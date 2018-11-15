@@ -195,7 +195,7 @@ class DataSource {
 				<div class="footer hidden">
 
 					<span>
-						<span class="label">Added On:</span>
+						<span class="label">Added:</span>
 						<span title="${Format.date(this.created_at)}">${Format.ago(this.created_at)}</span>
 					</span>
 
@@ -3948,6 +3948,7 @@ class DataSourceTransformation {
 		this.source.pipeline.add(new DataSourcePipelineEvent({
 			title: this.name,
 			disabled: this.disabled,
+			implied: this.implied,
 			subtitle: [
 				{
 					key: 'Duration',

@@ -786,7 +786,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 								<tr>
 									<th class="sort search" data-key="query_id">ID</th>
 									<th class="sort search" data-key="name" >Name</th>
-									<th class="sort search" data-key="description">Description</th>
 									<th class="sort search" data-key="connection">Connection </th>
 									<th class="sort search" data-key="tags">Tags</th>
 									<th class="sort search" data-key="filters">Filters</th>
@@ -996,7 +995,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							<thead>
 								<tr>
 									<th>Name</th>
-									<th>Description</th>
 									<th>Type</th>
 									<th>Preview</th>
 									<th>Edit</th>
