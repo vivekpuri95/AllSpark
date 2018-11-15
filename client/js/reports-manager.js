@@ -1482,7 +1482,7 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const
 			externalParameters = this.page.account.settings.get('external_parameters'),
-			externalParametersValues = await Storage.get('external_parameters');
+			externalParametersValues = (await Storage.get('external_parameters')) || {};
 
 		if(externalParameters && externalParameters.length) {
 
@@ -2051,13 +2051,13 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 			this.visualization.description = this.page.onboard.visualization.description;
 		}
 
-		if(this.container.querySelector('.query-history')) 
+		if(this.container.querySelector('.query-history'))
 			this.container.querySelector('.query-history').remove();
 
 		if(this.container.querySelector('.visualization-form.stage-form'))
 			this.container.querySelector('.visualization-form.stage-form').remove();
 
-		if(this.container.querySelector('.configuration-section.dashboards')) 
+		if(this.container.querySelector('.configuration-section.dashboards'))
 			this.container.querySelector('.configuration-section.dashboards').remove();
 
 		await this.page.preview.load({
@@ -2075,7 +2075,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 		this.visualizationLogs.toggle(visualizationLogsSelected);
 
-		if(visualizationLogsSelected) 
+		if(visualizationLogsSelected)
 			this.visualizationLogs.load();
 
 		this.container.appendChild(this.visualizationLogs.container);
@@ -2085,16 +2085,16 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 	async loadVisualizationForm(visualization) {
 
-		if(visualization) 
+		if(visualization)
 			this.visualization = visualization;
 
-		if(!ConfigureVisualization.types.has(this.visualization.type)) 
+		if(!ConfigureVisualization.types.has(this.visualization.type))
 			throw new Page.exception(`Unknown visualization type ${this.visualization.type}`);
 
 		if(this.container.querySelector('.visualization-form.stage-form'))
 			this.container.querySelector('.visualization-form.stage-form').remove();
 
-		if(this.container.querySelector('.configuration-section.dashboards')) 
+		if(this.container.querySelector('.configuration-section.dashboards'))
 			this.container.querySelector('.configuration-section.dashboards').remove();
 
 		this.visualizationManager = new VisualizationManager(this.visualization, this);
@@ -2119,7 +2119,7 @@ ReportsManger.stages.set('configure-visualization', class ConfigureVisualization
 
 				const allowedTargets = ['role'];
 
-				if(page.user.privileges.has('user.list') || page.user.privileges.has('report')) 
+				if(page.user.privileges.has('user.list') || page.user.privileges.has('report'))
 					allowedTargets.push('user');
 
 				this.objectRoles = new ObjectRoles('visualization', this.visualization.visualization_id, allowedTargets);
@@ -2183,7 +2183,7 @@ class VisualizationManager {
 
 	get container() {
 
-		if(this.containerElement) 
+		if(this.containerElement)
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');

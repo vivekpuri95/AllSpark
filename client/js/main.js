@@ -1964,7 +1964,7 @@ class CodeEditor {
 
 	/**
 	 * @param mode	string	Defines the color and formating scheme for the code. For example sql, js, HTML.
-	 * 
+	 *
 	 * @return CodeEditor
 	 */
 	constructor({mode = null} = {}) {
@@ -2024,7 +2024,7 @@ class CodeEditor {
 
 	/**
 	 * Set a list of autocomplete suggestions for the editor.
-	 * 
+	 *
 	 * @param Array	list	A list of autocomplete values to pass into the editor.
 	 *
 	 * Format:
@@ -2052,7 +2052,7 @@ class CodeEditor {
 
 	/**
 	 * Assign a callback for an event on the editor.
-	 * 
+	 *
 	 * @param string	event		The event that the client wants to listen to (only 'change' is supported for now)
 	 * @param Function	callback	The callback function to call when the passed event happens.
 	 */
@@ -2071,12 +2071,12 @@ class CodeEditor {
  * Useage:
  *
  * const editor = new HTMLEditor();
- * 
+ *
  * container.appendChild(editor.container);
  *
  * // Need to call setup after adding the container to DOM, doesn't currently work entirely outside of DOM.
  * editor.setup();
- * 
+ *
  * editor.value = 'test';
  *
  * // asd
@@ -2084,13 +2084,17 @@ class CodeEditor {
  */
 class HTMLEditor {
 
-	constructor() {
+	constructor({height = 400} = {}) {
 
 		if(!window.tinymce)
 			throw new Page.exception('TinyMCE HTML Editor not available!');
 
+		this.height = height;
+
 		// Used to uniquely identify the editor later
 		this.id = Math.floor(Math.random() * 100000);
+
+		this.visualEditor = true;
 	}
 
 	get container() {
@@ -2102,9 +2106,39 @@ class HTMLEditor {
 
 		container.classList.add('html-editor');
 
-		container.id = 'code-editor-' + this.id;
+		container.innerHTML = `
+			<span class="editor-toggle">
+				<span class="code-toggle hidden"><i class="fas fa-code"></i> Code Editor</span>
+				<span class="wysiwyg-toggle hidden"><i class="fas fa-paint-brush"></i> Visual Editor</span>
+			</span>
+			<div class="wysiwyg"><div id="code-editor-${this.id}"></div></div>
+		`;
+
+		container.querySelector('.editor-toggle').on('click', () => {
+
+			this.visualEditor = !this.visualEditor;
+
+			this.render();
+		});
 
 		return container;
+	}
+
+	/**
+	 * Update editor UI and sync data between visual and code editor components.
+	 */
+	render() {
+
+		this.container.querySelector('.wysiwyg').classList.toggle('hidden', !this.visualEditor);
+		this.container.querySelector('.wysiwyg-toggle').classList.toggle('hidden', this.visualEditor);
+
+		this.container.querySelector('.code-editor').classList.toggle('hidden', this.visualEditor);
+		this.container.querySelector('.code-toggle').classList.toggle('hidden', !this.visualEditor);
+
+		if(this.visualEditor)
+			this.editor.setContent(this.codeEditor.value);
+		else
+			this.codeEditor.value = this.editor.getContent();
 	}
 
 	/**
@@ -2117,8 +2151,8 @@ class HTMLEditor {
 			return;
 
 		[this.editor] = await tinymce.init({
-			selector: '#' + this.container.id,
-			height: 400,
+			selector: '#code-editor-' + this.id,
+			height: this.height,
 			plugins: [
 				'advlist autolink lists link image charmap print preview anchor',
 				'searchreplace visualblocks code fullscreen emoticons',
@@ -2131,6 +2165,17 @@ class HTMLEditor {
 				`/css/themes/${account.settings.get('theme') == 'dark' ? 'dark' : 'light'}.css`,
 			]
 		});
+
+		this.codeEditor = new CodeEditor({mode: 'html'});
+
+		this.container.appendChild(this.codeEditor.container);
+
+		this.codeEditor.container.classList.add('hidden');
+		this.codeEditor.container.style.height = this.height + 'px';
+
+		this.on('change', () => this.codeEditor.value = this.value);
+
+		this.render();
 	}
 
 
@@ -2138,14 +2183,33 @@ class HTMLEditor {
 	 * @return string	Fetch the editor's value in HTML form.
 	 */
 	get value() {
-		return this.editor.getContent();
+
+		if(this.visualEditor)
+			return this.editor.getContent();
+
+		return this.codeEditor.value;
 	}
 
 	/**
 	 * @param string	value	The value for the editor that will be set.
 	 */
 	set value(value = '') {
-		return this.editor.setContent(value);
+
+		if(!value)
+			value = '';
+
+		this.codeEditor.value = value;
+		this.editor.setContent(value);
+
+		return true;
+	}
+
+	on(event, callback) {
+
+		if(!this.editor)
+			return;
+
+		this.editor.on(event, callback);
 	}
 }
 
@@ -3247,7 +3311,6 @@ class SnackBar {
 		}, Page.transitionDuration);
 	}
 }
-
 
 /**
  *  Global and advance search bar
