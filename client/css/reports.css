@@ -1688,29 +1688,6 @@ main .dataset {
 	}
 		.sub-reports-dialog .data-source {
 		}
-
-.visualization.sankey .node rect {
-	cursor: pointer;
-	fill-opacity: .9;
-	shape-rendering: crispEdges;
-}
-.visualization.sankey .node text {
-	pointer-events: none;
-	fill: var(--color-surface-text);
-}
-.visualization.sankey .sankey-tooltip {
-	padding: calc(var(--gap) * 2);
-}
-.visualization.sankey .link {
-	fill: none;
-	stroke: var(--color-grey);
-	stroke-opacity: .3;
-}
-.visualization.sankey .link:hover {
-	cursor: pointer;
-	stroke-opacity: .5;
-}
-
 .canvas {
 	position: relative;
 }

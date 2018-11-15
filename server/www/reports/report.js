@@ -968,37 +968,3 @@ exports.userPrvList = class extends API {
 
 	}
 };
-
-exports.insertCanvasRows = class extends API {
-
-	async insertCanvasRows() {
-
-		const
-			visualizations = await this.mysql.query('SELECT * FROM tb_query_visualizations'),
-			query = 'INSERT INTO tb_visualization_canvas(owner, owner_id, visualization_id) VALUES ? ',
-			canvasRows = new Set();
-		;
-
-		for(const row of visualizations) {
-
-			try {
-				row.options = JSON.parse(row.options) || {};
-			}
-			catch(e) {
-				row.options = {}
-			}
-
-			if(!row.options.subReports) {
-
-				continue;
-			}
-
-			for(const report of row.options.subReports) {
-
-				canvasRows.add(['visualization', row.visualization_id, report]);
-			}
-		}
-
-		return await this.mysql.query(query, [[...canvasRows.values()]], 'write');
-	}
-}
