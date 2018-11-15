@@ -5023,6 +5023,13 @@ ConfigureVisualization.types.set('sankey', class SankeyOptions extends ReportVis
 
 ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisualizationOptions {
 
+	constructor(...parameters) {
+
+		super(...parameters);
+
+		this.htmlEditor = new HTMLEditor();
+	}
+
 	get form() {
 
 		if (this.formContainer)
@@ -5032,9 +5039,23 @@ ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisuali
 
 		container.innerHTML = `
 			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Body</h3>
+				<div class="body">
+					<div class="form subform html-body"></div>
+				</div>
+			</div>
+
+			<div class="configuration-section">
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+
+						<label>
+							<span>
+								<input type="checkbox" name="flushBackground">Flush Background
+							</span>
+						</label>
+
 						<label>
 							<span>
 								<input type="checkbox" name="hideHeader">Hide Header
@@ -5054,7 +5075,24 @@ ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisuali
 		for(const element of this.formContainer.querySelectorAll('select, input'))
 			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
 
+		const body = container.querySelector('.html-body');
+
+		body.appendChild(this.htmlEditor.container);
+
+		setTimeout(async () => {
+			await this.htmlEditor.setup();
+			this.htmlEditor.value = this.visualization.options.body || '';
+		});
+
 		return container;
+	}
+
+	get json() {
+
+		return {
+			...super.json,
+			body: this.htmlEditor.value,
+		}
 	}
 });
 
