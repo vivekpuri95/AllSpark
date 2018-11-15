@@ -12,45 +12,60 @@ const oracle = require('../utils/oracle').Oracle;
 const constants = require("../utils/constants");
 const getRole = require("../www/object_roles").get;
 const Redis = require("../utils/redis").Redis;
-
+const history = require('../utils/reportLogs');
 
 exports.insert = class extends API {
 
-	async insert() {
+	async insert({connection_name, host = null, port = null, user = null, password, db = null, limit = 10, type, file = null, project_name = null} = {}) {
 
 		this.user.privilege.needs('connection.insert', 'ignore');
 
+		this.assert(connection_name && type, 'Connection name and type required');
+
 		const response = await this.mysql.query(
-			'INSERT INTO tb_credentials(account_id, connection_name, host, port, user, password, db, `limit`, type, file, project_name, added_by) VALUES (?)',
+			`INSERT INTO 
+				tb_credentials (
+					account_id, connection_name, host, port, user, password, 
+					db,	\`limit\`, \`type\`, file, project_name, added_by
+				) 
+				VALUES (?)
+			`,
 			[[
 				this.account.account_id,
-				this.request.body.connection_name,
-				this.request.body.host,
-				this.request.body.port || null,
-				this.request.body.user,
-				this.request.body.password,
-				this.request.body.db,
-				this.request.body.limit || 10,
-				this.request.body.type.toLowerCase(),
-				this.request.body.file,
-				this.request.body.project_name,
+				connection_name,
+				host,
+				port || null,
+				user,
+				password,
+				db,
+				limit,
+				type.toLowerCase(),
+				file,
+				project_name,
 				this.user.user_id
 			]],
 			'write'
 		);
 
-		if (this.request.body.type.toLowerCase() === "mysql") {
+		if (bigquery) {
 
-			await mysql.crateExternalPool(this.request.body.id);
-		}
-
-		else if (this.request.body.type.toLowerCase() === "mssql") {
-
-			await mssql.crateExternalPool(this.request.body.id);
-		}
-
-		if (bigquery)
 			await bigquery.setup();
+		}
+
+		const [insertRow] = await this.mysql.query(
+			'SELECT * FROM tb_credentials WHERE id = ?',
+			[response.insertId]
+		);
+
+		history.insert(
+			this,
+			{
+				owner: 'connection',
+				owner_id: response.insertId,
+				state: JSON.stringify(insertRow),
+				operation:'insert',
+			}
+		);
 
 		return response;
 	}
@@ -157,9 +172,9 @@ exports.list = class extends API {
 
 exports.delete = class extends API {
 
-	async delete() {
+	async delete({id} = {}) {
 
-		this.assert(this.request.body.id == parseInt(this.request.body.id), "invalid connection id for deletion");
+		this.assert(id == parseInt(id), "invalid connection id for deletion");
 
 		const [connectionObj] = await this.mysql.query(`
 				SELECT
@@ -170,7 +185,7 @@ exports.delete = class extends API {
 					c.id = ?
 					AND status = 1
 					AND account_id = ?
-				`, [this.request.body.id, this.account.account_id]
+				`, [id, this.account.account_id]
 		);
 
 		if(connectionObj.added_by !== this.user.user_id) {
@@ -193,7 +208,7 @@ exports.delete = class extends API {
 
 		const response = await this.mysql.query(
 			'UPDATE tb_credentials SET status = 0 WHERE id = ? AND account_id = ?',
-			[this.request.body.id, this.account.account_id],
+			[id, this.account.account_id],
 			'write'
 		);
 
@@ -202,11 +217,23 @@ exports.delete = class extends API {
 			await bigquery.setup();
 		}
 
-		const invalidConnections = new Set((await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, this.request.body.type.toLowerCase()) || "").split(", "));
+		const invalidConnections = new Set((await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, connectionObj.type.toLowerCase()) || "").split(", "));
 
-		invalidConnections.add(this.request.body.id.toString());
+		invalidConnections.add(id.toString());
 
-		await Redis.hset(`${process.env.NODE_ENV}#invalidCredentials`, this.request.body.type.toLowerCase(), [...invalidConnections].join(", "));
+		await Redis.hset(`${process.env.NODE_ENV}#invalidCredentials`, connectionObj.type.toLowerCase(), [...invalidConnections].join(", "));
+
+		connectionObj.status = 0;
+
+		history.insert(
+			this,
+			{
+				owner: 'connection',
+				owner_id: id,
+				state: JSON.stringify(connectionObj),
+				operation:'delete',
+			}
+		);
 
 		return response;
 	}
@@ -214,7 +241,7 @@ exports.delete = class extends API {
 
 exports.update = class extends API {
 
-	async update() {
+	async update({id, connection_name, user = null, password = null, host = null, port = null, db = null} = {}) {
 
 		const [connectionObj] = await this.mysql.query(`
 				SELECT
@@ -225,15 +252,15 @@ exports.update = class extends API {
 					c.id = ?
 					AND status = 1
 					AND account_id = ?
-				`, [this.request.body.id, this.account.account_id]
+				`, [id, this.account.account_id]
 		);
+
+		this.assert(connectionObj, "Connection does not exist");
 
 		if(connectionObj.added_by !== this.user.user_id) {
 
 			this.user.privilege.needs('connection.update', 'ignore');
 		}
-
-		this.assert(connectionObj, "Connection does not exist");
 
 		const objRole = new getRole();
 
@@ -246,36 +273,55 @@ exports.update = class extends API {
 
 		this.assert(!authResponse.error, authResponse.message);
 
-		const [credential] = await this.mysql.query(
-			'SELECT id, type FROM tb_credentials WHERE id = ? AND status = 1',
-			[this.request.body.id]
-		);
+		const
+			values = {connection_name, host, port: parseInt(port) || null, user, password, db},
+			compareJson = {
+				connection_name: connectionObj.connection_name,
+				host: connectionObj.host,
+				port: connectionObj.port,
+				user: connectionObj.user,
+				password: connectionObj.password,
+				db: connectionObj.db
+			};
 
-		this.assert(credential, 'Invalid connection ID', 400);
+		if(JSON.stringify(values) == JSON.stringify(compareJson)) {
 
-		delete this.request.body.id;
-		delete this.request.body.token;
-		delete this.request.body.refresh_token;
-		delete this.request.body.type;
-
-		this.request.body.port = this.request.body.port || null;
+			return "0 rows affected"
+		}
 
 		const response = await this.mysql.query(
 			'UPDATE tb_credentials SET ? WHERE id = ?',
-			[this.request.body, credential.id],
+			[values, id],
 			'write'
 		);
 
-		if (bigquery && credential.type == 'bigquery') {
+		if (bigquery && connectionObj.type == 'bigquery') {
 
 			await bigquery.setup();
 		}
 
-		const invalidConnections = new Set((await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, credential.type.toLowerCase()) || "").split(", "));
+		const invalidConnections = new Set((await Redis.hget(`${process.env.NODE_ENV}#invalidCredentials`, connectionObj.type.toLowerCase()) || "").split(", "));
 
-		invalidConnections.add(credential.id.toString());
+		invalidConnections.add(id.toString());
 
-		await Redis.hset(`${process.env.NODE_ENV}#invalidCredentials`, credential.type.toLowerCase(), [...invalidConnections].join(", "));
+		await Redis.hset(`${process.env.NODE_ENV}#invalidCredentials`, connectionObj.type.toLowerCase(), [...invalidConnections].join(", "));
+
+		connectionObj.status = 0;
+
+		const [updatedRow] =  await this.mysql.query(
+			'SELECT * FROM tb_credentials WHERE id = ? AND status = 1',
+			[id]
+		);
+
+		history.insert(
+			this,
+			{
+				owner: 'connection',
+				owner_id: id,
+				state: JSON.stringify(updatedRow),
+				operation:'update',
+			}
+		);
 
 		return response;
 	}
