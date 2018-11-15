@@ -4312,12 +4312,17 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 
 			<label>
 				<span>Maximum Value</span>
-				<input type="color" name="maximumColor" class="color" value="${selected.maximumColor}">
+				<input type="color" name="maximumColor" value="${selected.maximumColor}">
 			</label>
 
 			<label class="minimum-color">
 				<span>Minimum Value</span>
-				<input type="color" name="minimumColor" class="color" value="${selected.minimumColor}">
+				<input type="color" name="minimumColor" value="${selected.minimumColor}">
+			</label>
+
+			<label>
+				<span>Gradient Threshold %</span>
+				<input type="number" min="0" max="100" name="gradientThreshold" value="${selected.gradientThreshold}">
 			</label>
 
 			<label>
@@ -4391,12 +4396,13 @@ ConfigureVisualization.types.set('table', class TableOptions extends ReportVisua
 		for(const rule of this.form.querySelectorAll('.rule')) {
 
 			result.gradientRules.push({
-				column: rule.querySelector('select[name=column]').value,
-				relative: rule.querySelector('select[name=relative]').value,
-				dualColor: parseInt(rule.querySelector('select[name=dualColor]').value),
-				maximumColor: rule.querySelector('input[name=maximumColor]').value,
-				minimumColor: rule.querySelector('input[name=minimumColor]').value,
-				content: rule.querySelector('select[name=content').value,
+				column: rule.querySelector('select[name="column"]').value,
+				relative: rule.querySelector('select[name="relative"]').value,
+				dualColor: parseInt(rule.querySelector('select[name="dualColor"]').value),
+				maximumColor: rule.querySelector('input[name="maximumColor"]').value,
+				minimumColor: rule.querySelector('input[name="minimumColor"]').value,
+				gradientThreshold: parseFloat(rule.querySelector('input[name="gradientThreshold"]').value),
+				content: rule.querySelector('select[name="content"').value,
 			});
 		}
 

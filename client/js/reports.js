@@ -5490,6 +5490,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		for(const gradient of this.options.gradientRules) {
 
+			if(!gradient.gradientThreshold || gradient.gradientThreshold > 100)
+				gradient.gradientThreshold = 100;
+
 			if(!this.rows.filter(f => f.get(gradient.column)).length || !this.rows.filter(f => f.get(gradient.relative)).length)
 				continue;
 
@@ -5664,8 +5667,8 @@ Visualization.list.set('table', class Table extends Visualization {
 					rule.position = rule.currentValue >= parseFloat((rule.maxValue - rule.minValue) / 2);
 
 					const
-						colorValue = this.cellColorValue(rule),
-						colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
+						colorValue = parseInt(rule.gradientThreshold / 100 * this.cellColorValue(rule)),
+						colorPercent = (rule.currentValue / rule.maxValue * 100).toFixed(2) + '%';
 
 					if(rule.content == 'empty')
 						typedValue = null;
