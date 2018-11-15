@@ -103,6 +103,29 @@ exports.list = class extends API {
 			`);
 		}
 
+		const mergeApproveQuery = `
+			SELECT
+				owner_id AS query_id
+			FROM 
+				tb_object_roles o 
+			JOIN
+				tb_categories c
+				USING(category_id)
+			JOIN
+				tb_merge_requests_approvers m
+				ON m.category_id = o.category_id
+				OR c.is_admin = 1
+			JOIN
+				tb_query q
+				ON q.query_id = o.owner_id
+			WHERE
+				OWNER = 'query'
+				AND c.account_id = ?
+				AND m.user_id = ?
+			GROUP BY
+				query_id
+		`;
+
 		let credentialObjectRoles = role.get(this.account.account_id, 'connection', ['user', 'role']);
 
 		let userUpdateCategories = new Set(this.user.privileges.filter(x => [constants.privilege.administrator, constants.privilege["report.update"]].includes(x.privilege_name)).map(x => x.category_id));
@@ -167,10 +190,14 @@ exports.list = class extends API {
 
 			this.mysql.query(dashboardToReportAccessQuery, [this.user.user_id]),
 
-			credentialObjectRoles
+			credentialObjectRoles,
+
+			this.mysql.query(mergeApproveQuery, [this.account.account_id, this.user.user_id])
 		]);
 
 		const groupIdObject = {};
+
+		const mergeApproverReports = new Set(results[6].map(x => x.query_id));
 
 		for (const row of results[3]) {
 
@@ -372,7 +399,8 @@ exports.list = class extends API {
 			row.roles = (reportRoleMapping[row.query_id] || {}).roles || [];
 			row.category_id = (reportRoleMapping[row.query_id] || {}).category_id || [];
 
-			row.flag = userSharedQueries.has(row.query_id) || dashboardSharedQueries.has(row.query_id);
+			row.flag = userSharedQueries.has(row.query_id) || dashboardSharedQueries.has(row.query_id)
+				|| mergeApproverReports.has(row.query_id);
 
 			if (!connectionMapping[row.connection_name]) {
 
@@ -589,7 +617,7 @@ exports.update = class extends API {
 			compareJson = {},
 			query_cols = [
 				'name',
-				'source',
+				'source_id',
 				'query',
 				'definition',
 				'subtitle',
@@ -663,7 +691,7 @@ exports.insert = class extends API {
 			values = {}, query_cols = [
 				'account_id',
 				'name',
-				'source',
+				'source_id',
 				'query',
 				'definition',
 				'subtitle',

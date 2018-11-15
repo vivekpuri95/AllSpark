@@ -33,7 +33,7 @@ class Authenticate {
 			reportObject = await Promise.all([mysql.query(`
                 SELECT
                   q.*,
-                  IF(user_id IS NULL AND userDashboard.query_id IS NULL, 0, 1) AS flag,
+                  IF(user_id IS NULL and userDashboard.query_id IS NULL and merge_approve.flag = 0, 0, 1) AS flag,
                   c.type,
 				  c.project_name
                 FROM
@@ -81,6 +81,32 @@ class Authenticate {
 
 					LIMIT 1
 				) AS queryUser
+				
+				join (
+					select * from (
+		
+						SELECT
+							1 AS flag
+						FROM
+							tb_categories c 
+						JOIN
+							tb_merge_requests_approvers m
+							USING(category_id)
+						JOIN 
+							tb_object_roles o ON o.category_id = c.category_id OR c.is_admin = 1
+						WHERE 
+							OWNER = 'query'
+							AND owner_id = ?
+							and c.account_id = ?
+							and m.user_id = ?
+						UNION ALL
+						
+						SELECT
+						    0 AS flag
+						) a
+					order by flag desc
+					LIMIT 1
+				) as merge_approve 
 
 				JOIN
 					tb_credentials c
@@ -94,7 +120,9 @@ class Authenticate {
 					AND q.account_id = ?
 					AND c.status = 1
                 `,
-				[userJWTObject.user_id, reportObject, reportObject, userJWTObject.user_id, reportObject, accountId, accountId]),
+				[userJWTObject.user_id, reportObject, reportObject, userJWTObject.user_id,
+					reportObject, accountId, userJWTObject.user_id, reportObject, accountId
+				]),
 
 				objRole.get(userJWTObject.account_id, "query", "role", reportObject,),
 			]);
