@@ -1087,6 +1087,7 @@ body {
 }
 	.html-editor .editor-toggle {
 		background: var(--color-secondary);
+		color: var(--color-secondary-text);
 		font-size: 90%;
 		position: absolute;
 		cursor: pointer;
@@ -1360,6 +1361,9 @@ body {
 .tox .tox-menu,
 .tox .tox-collection__item {
 	background: var(--color-surface) !important;
+	color: var(--color-surface-text) !important;
+}
+.tox .tox-collection__item-label > * {
 	color: var(--color-surface-text) !important;
 }
 .tox .tox-collection__item-accessory {
