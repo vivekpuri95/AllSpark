@@ -1095,17 +1095,18 @@ body {
 		top: var(--gap);
 		letter-spacing: 1px;
 		z-index: 2;
-		opacity: 0.6;
-		transition: opacity var(--transition-duration),
-					box-shadow var(--transition-duration);
+		transition: box-shadow var(--transition-duration);
 	}
-		.html-editor .editor-toggle span {
+		.html-editor .editor-toggle > span {
 			padding: 5px 15px;
 			display: inline-block;
 		}
-	.html-editor .editor-toggle:hover {
-		opacity: 1;
-	}
+			.html-editor .editor-toggle span > span {
+				display: none;
+			}
+			.html-editor .editor-toggle:hover span > span {
+				display: initial;
+			}
 	.html-editor .editor-toggle:active {
 		box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.15);
 	}

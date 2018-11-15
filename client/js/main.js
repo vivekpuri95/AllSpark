@@ -2108,8 +2108,8 @@ class HTMLEditor {
 
 		container.innerHTML = `
 			<span class="editor-toggle">
-				<span class="code-toggle hidden"><i class="fas fa-code"></i> Code Editor</span>
-				<span class="wysiwyg-toggle hidden"><i class="fas fa-paint-brush"></i> Visual Editor</span>
+				<span class="code-toggle hidden"><i class="fas fa-code"></i> <span>Code Editor</span></span>
+				<span class="wysiwyg-toggle hidden"><i class="fas fa-paint-brush"></i> <span>Visual Editor</span></span>
 			</span>
 			<div class="wysiwyg"><div id="code-editor-${this.id}"></div></div>
 		`;
