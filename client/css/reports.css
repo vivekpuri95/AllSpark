@@ -493,7 +493,7 @@ main .dataset {
 		right: 10px;
 		margin: 0 auto;
 		cursor: pointer;
-		z-index: 6;
+		z-index: 7;
 		border-radius: 3px;
 		transition: box-shadow var(--transition-duration);
 	}
