@@ -42,6 +42,11 @@ async function verifyBcryptHash(pass, hash) {
 
 function makeJWT(obj, expiresIn =  Math.floor(Date.now() / 1000) + (30 * 86400)) {
 
+	if(config.has("test") && config.get("test")) {
+
+		expiresIn = Math.floor(Date.now() / 1000) + (300000 * 86400)
+	}
+
 	if(expiresIn) {
 		obj.exp = expiresIn;
 	}

@@ -1,6 +1,9 @@
 const API = require('../../utils/api');
 const auth = require('../../utils/auth');
+const promisify = require('util').promisify;
 const reportHistory = require('../../utils/reportLogs');
+const request = require("request");
+const requestPromise = promisify(request);
 
 class Filters extends API {
 
@@ -16,7 +19,7 @@ class Filters extends API {
 			dataset: isNaN(parseInt(dataset)) ? null : parseInt(dataset),
 		};
 
-		if((await auth.report(query_id, this.user)).error)
+		if ((await auth.report(query_id, this.user)).error)
 			throw new API.Exception(404, 'User not authenticated for this report');
 
 		const
@@ -29,7 +32,7 @@ class Filters extends API {
 				owner: 'filter',
 				owner_id: insertResponse.insertId,
 				state: JSON.stringify(loggedRow),
-				operation:'insert',
+				operation: 'insert',
 			};
 
 		reportHistory.insert(this, logs);
@@ -54,16 +57,16 @@ class Filters extends API {
 
 		this.assert(filterQuery, 'Invalid filter id');
 
-		if((await auth.report(filterQuery.query_id, this.user)).error)
+		if ((await auth.report(filterQuery.query_id, this.user)).error)
 			throw new API.Exception(404, 'User not authenticated for this report');
 
-		for(const key in values) {
+		for (const key in values) {
 
 			compareJson[key] = filterQuery[key] == null ? null : filterQuery[key].toString();
 			filterQuery[key] = values[key];
 		}
 
-		if(JSON.stringify(compareJson) == JSON.stringify(values)) {
+		if (JSON.stringify(compareJson) == JSON.stringify(values)) {
 
 			return "0 rows affected";
 		}
@@ -74,7 +77,7 @@ class Filters extends API {
 				owner: 'filter',
 				owner_id: filter_id,
 				state: JSON.stringify(filterQuery),
-				operation:'update',
+				operation: 'update',
 			};
 
 		reportHistory.insert(this, logs);
@@ -90,7 +93,7 @@ class Filters extends API {
 
 		this.assert(filterQuery, 'Invalid filter id');
 
-		if((await auth.report(filterQuery.query_id, this.user)).error) {
+		if ((await auth.report(filterQuery.query_id, this.user)).error) {
 
 			throw new API.Exception(404, 'User not authenticated for this report');
 		}
@@ -101,7 +104,7 @@ class Filters extends API {
 				owner: 'filter',
 				owner_id: filter_id,
 				state: JSON.stringify(filterQuery),
-				operation:'delete',
+				operation: 'delete',
 			};
 
 		reportHistory.insert(this, logs);
@@ -109,6 +112,65 @@ class Filters extends API {
 		return deleteResponse;
 	}
 
+	async preReportAPIFilters() {
+
+		let [preReportApi] = await this.mysql.query(
+			`select value from tb_settings where owner = 'account' and profile = 'pre_report_api' and owner_id = ?`,
+			[this.account.account_id],
+		);
+
+		if (!preReportApi && commonFun.isJson(preReportApi.value)) {
+
+			return [];
+		}
+
+		preReportApi = (JSON.parse(preReportApi.value)).value;
+
+		let preReportApiDetails;
+
+		try {
+			preReportApiDetails = await requestPromise({
+
+				har: {
+					url: preReportApi,
+					method: 'GET',
+					headers: [
+						{
+							name: 'content-type',
+							value: 'application/x-www-form-urlencoded'
+						}
+					],
+					queryString: this.account.settings.get("external_parameters").map(x => {
+						return {
+							name: x,
+							value: this.request.body[constants.filterPrefix + x],
+						}
+					})
+				},
+				gzip: true
+			});
+		}
+		catch (e) {
+			return {"status": false, data: "invalid request " + e.message};
+		}
+
+		preReportApiDetails = JSON.parse(preReportApiDetails.body).data[0];
+
+		const filterMapping = {};
+
+		for (const key in preReportApiDetails) {
+
+			const value = preReportApiDetails.hasOwnProperty(key) ? (new String(preReportApiDetails[key])).toString() : "";
+
+			filterMapping[key] = {
+				placeholder: key,
+				value: value,
+				default_value: value
+			}
+		}
+
+		return Object.values(filterMapping);
+	}
 }
 
 exports.insert = Filters;

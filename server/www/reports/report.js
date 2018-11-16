@@ -685,7 +685,7 @@ exports.insert = class extends API {
 
 	async insert() {
 
-		this.user.privilege.needs('report.insert', parseInt(this.request.body.subtitle));
+		this.user.privilege.needs('report.insert', 'ignore');
 
 		let
 			values = {}, query_cols = [
