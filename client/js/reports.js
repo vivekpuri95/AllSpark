@@ -17,6 +17,12 @@ class DataSource {
 		for(const key in source)
 			this[key] = source[key];
 
+		if(!this.format)
+			this.format = {};
+
+		if(!this.format.columns)
+			this.format.columns = [];
+
 		this.page = page;
 
 		this.tags = this.tags || '';
@@ -4410,7 +4416,6 @@ DataSourceTransformation.types.set('sort', class DataSourceTransformationRestric
 		if(!response || !response.length || !this.columns)
 			return response;
 
-
 		for(const column of this.columns) {
 
 			column.options = {
@@ -4429,7 +4434,13 @@ DataSourceTransformation.types.set('sort', class DataSourceTransformationRestric
 				if(a[column.column] === null || b[column.column] === null)
 					continue;
 
-				let result = a[column.column].toString().localeCompare(b[column.column].toString(), undefined, column.options);
+				let result = null;
+
+				if(this.implied)
+					result = a[column.column] < b[column.column] ? -1 : a[column.column] > b[column.column] ? 1 : 0;
+
+				else
+					a[column.column].toString().localeCompare(b[column.column].toString(), undefined, column.options);
 
 				if(!result)
 					continue;
