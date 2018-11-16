@@ -212,6 +212,54 @@ main.preview-left #stages {
 	display: flex;
 	flex-direction: column;
 }
+	#stage-define-report #save-container {
+		display: flex;
+		position: relative;
+	}
+		#stage-define-report #save-container #save-more {
+			border-left: 1px solid var(--color-border);
+			padding-right: 8px;
+			padding-left: 8px;
+		}
+			#stage-define-report #save-container #save-more i {
+				margin: 0;
+			}
+		#stage-define-report #save-container #save-menu {
+			position: absolute;
+			top: 100%;
+			right: 0;
+			z-index: 5;
+			background: var(--color-surface);
+			color: var(--color-surface-text);
+		}
+		.dialog-box .fork-report h2 {
+			margin: 0;
+			font-size: 130%;
+		}
+		.dialog-box .fork-report label.checkbox {
+			grid-template-columns: max-content max-content;
+			align-items: center;
+		}
+		.dialog-box .fork-report label.save {
+			max-width: max-content;
+			justify-self: flex-end;
+		}
+			.dialog-box .fork-report label.save button {
+				height: auto;
+				padding: 8px 18px;
+				font-size: 100%;
+			}
+				.dialog-box .fork-report label.save i:last-child {
+					margin: 0 0 0 var(--gap);
+				}
+		.dialog-box .fork-report .progress {
+			display: grid;
+			grid-gap: var(--gap);
+		}
+			.dialog-box .fork-report .progress progress {
+				width: 100%;
+			}
+
 	#stage-define-report #api {
 		grid-column: 1 / 3;
 		display: grid;

@@ -1002,6 +1002,21 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			this.container.querySelector('#filter-list').classList.remove('hidden');
 		});
 
+		this.container.querySelector('#save-container #save-more').on('click', e => {
+
+			e.stopPropagation();
+
+			this.container.querySelector('#save-container #save-more').classList.toggle('selected');
+			this.container.querySelector('#save-container #save-menu').classList.toggle('hidden');
+		});
+
+		document.body.on('click', () => {
+			this.container.querySelector('#save-container #save-more').classList.remove('selected');
+			this.container.querySelector('#save-container #save-menu').classList.add('hidden');
+		});
+
+		this.container.querySelector('#save-container #fork').on('click', () => this.initializeFork());
+
 		this.container.querySelector('#run').on('click', () => this.preview());
 	}
 
@@ -1415,6 +1430,128 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.schemaLists.set(this.report.connection_name, container);
 
 		return container;
+	}
+
+	initializeFork() {
+
+		if(!this.forkDialogBox) {
+			this.forkDialogBox = new DialogBox();
+			this.forkDialogBox.body.classList.add('fork-report');
+		}
+
+		this.forkDialogBox.heading = `<i class="fas fa-code-branch"></i> &nbsp; Fork ${this.report.name}`;
+
+		this.forkDialogBox.body.textContent = null;
+
+		this.forkDialogBox.body.innerHTML = `
+
+			<form class="form">
+
+				<label>
+					<span>Name <span class="red">*</span></span>
+					<input type="text" name="name" value="${this.report.name}" required>
+				</label>
+
+				<h2>Also bring over&hellip;</h2>
+				<label class="checkbox"><input type="checkbox" name="filters" checked> Filters</label>
+				<label class="checkbox"><input type="checkbox" name="visualizations" checked> Visualizations</label>
+
+				<h2></h2>
+				<label class="checkbox"><input type="checkbox" name="switchToNew" checked> Switch to the new report</label>
+
+				<label class="save"><button class="selected"><i class="fas fa-code-branch"></i> Fork Report <i class="fas fa-arrow-right"></i></button></label>
+
+				<div class="progress hidden">
+					<span class="NA"></span>
+					<progress>
+				</div>
+			</form>
+		`;
+
+		const form = this.forkDialogBox.body.querySelector('form');
+
+		form.on('submit', async e => {
+
+			e.preventDefault();
+
+			try {
+				await this.fork();
+			}
+			catch(e) {
+
+				new SnackBar({
+					message: 'Failed to fork!',
+					subtitle: e.message,
+					type: 'error',
+				});
+			}
+		});
+
+		this.forkDialogBox.show();
+	}
+
+	async fork() {
+
+		const
+			progressContainer = this.forkDialogBox.body.querySelector('.progress'),
+			form = this.forkDialogBox.body.querySelector('form'),
+			span = progressContainer.querySelector('.progress span'),
+			progress = progressContainer.querySelector('.progress progress');
+
+		function updateProgress({reset = false, max = 0, value = null} = {}) {
+
+			progressContainer.classList.remove('hidden');
+
+			if(reset) {
+
+				span.textContent = null;
+				progress.max = max;
+				progress.value = 0;
+
+				span.textContent = value;
+
+				return;
+			}
+
+			progress.value += progress.value;
+			span.textContent = value;
+		}
+
+		// Report itself
+		let count = 1;
+
+		if(form.filters.checked)
+			count += this.report.filters.length;
+
+		if(form.visualizations.checked)
+			count += this.report.visualizations.length;
+
+		updateProgress({reset: true, max: count});
+
+		let newReportId = null;
+
+		{
+			const options = {
+				method: 'POST',
+				form: new FormData(),
+			};
+
+			for(const key in this.report) {
+
+				if(typeof this.report[key] != 'object')
+					options.form.set(key, this.report[key]);
+			}
+
+			options.form.set('format', JSON.stringify(this.report.format));
+			options.form.set('definition', JSON.stringify(this.report.definition));
+
+			const {insertId: newReportId} = await API.call('reports/report/insert', {}, options);
+		}
+
+		if(!newReportId)
+			return updateProgress({reset: true, value: 'Could not insert new report!'});
+
+		debugger;
 	}
 
 	async filters() {
