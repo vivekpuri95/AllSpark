@@ -94,4 +94,8 @@ exports.filterTypes = [
 		name: 'DateRange',
 		input_type: '',
 	},
+	{
+		name: 'Literal',
+		input_type: 'text',
+	},
 ];
