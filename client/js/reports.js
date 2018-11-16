@@ -6464,6 +6464,9 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 			container = d3.selectAll(`#visualization-${this.id}`),
 			that = this;
 
+		container.on('mousemove', null);
+		container.on('mouseleave', null);
+
 		this.x = d3.scale.ordinal();
 		this.y = d3.scale.linear().range([this.height, 20]);
 		this.bubble = d3.scale.linear().range([0, 50]);
@@ -6563,7 +6566,41 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				.attr('id', (_, i) => i)
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
-				.attr('cy', d => this.y(d.y));
+				.attr('cy', d => this.y(d.y))
+				.on('mousemove', function() {
+
+					const
+						mouse = d3.mouse(this),
+						row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
+
+					if(!row || !column.length) {
+
+						return;
+					}
+
+					const bubbleColumn = row.source.columns.get(column[0].key);
+
+					const content = `
+						<header>${row.get(that.axes.bottom.column)}</header>
+						<ul class="body">
+								<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == column[0].key ? 'hover' : ''}">
+								<span class="circle" style="background:${bubbleColumn.color}"></span>
+								<span>
+									${bubbleColumn.drilldown && bubbleColumn.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
+									${bubbleColumn.name}
+								</span>
+								<span class="value">${Format.number(row.get(column[0].key))}</span>
+							</li>
+						</ul>
+					`;
+
+					Tooltip.show(that.container, mouse, content);
+				})
+				.on('mouseleave', function() {
+
+					Tooltip.hide(that.container);
+				})
+			;
 
 			if(this.options.showValues) {
 				this.svg
@@ -6573,7 +6610,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					.append('text')
 					.attr('x', d => this.x(d.x) + this.axes.left.width - (d.y1.toString().length * 4))
 					.attr('y', d => this.y(d.y) + 6)
-					.text(d => d.y1);
+					.text(d => d.y);
 			}
 
 			if(!options.resize) {
