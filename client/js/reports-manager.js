@@ -1434,43 +1434,114 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	initializeFork() {
 
-		if(!this.forkDialogBox) {
-			this.forkDialogBox = new DialogBox();
-			this.forkDialogBox.body.classList.add('fork-report');
+		let dialogBox = this.forkDialogBox;
+
+		if(!dialogBox) {
+
+			dialogBox = this.forkDialogBox = new DialogBox();
+			dialogBox.body.classList.add('fork-report');
+
+			dialogBox.multiSelect = {
+				filters: new MultiSelect({multiple: true, expand: true}),
+				visualizations: new MultiSelect({multiple: true, expand: true}),
+			};
 		}
 
-		this.forkDialogBox.heading = `<i class="fas fa-code-branch"></i> &nbsp; Fork ${this.report.name}`;
+		dialogBox.heading = `<i class="fas fa-code-branch"></i> &nbsp; Fork ${this.report.name}`;
 
-		this.forkDialogBox.body.textContent = null;
+		dialogBox.body.textContent = null;
 
-		this.forkDialogBox.body.innerHTML = `
+		dialogBox.body.innerHTML = `
 
 			<form class="form">
 
 				<label>
-					<span>Name <span class="red">*</span></span>
+					<span>New Report's Name <span class="red">*</span></span>
 					<input type="text" name="name" value="${this.report.name}" required>
 				</label>
 
-				<h2>Also bring over&hellip;</h2>
-				<label class="checkbox"><input type="checkbox" name="filters" checked> Filters</label>
-				<label class="checkbox"><input type="checkbox" name="visualizations" checked> Visualizations</label>
+				<label class="filters ${!this.report.filters.length ? 'hidden' : ''}">
+					<span>Filters</span>
+				</label>
 
-				<h2></h2>
-				<label class="checkbox"><input type="checkbox" name="switchToNew" checked> Switch to the new report</label>
+				<label class="visualizations ${!this.report.visualizations.length ? 'hidden' : ''}">
+					<span>Visualizations</span>
+				</label>
 
-				<label class="save"><button class="selected"><i class="fas fa-code-branch"></i> Fork Report <i class="fas fa-arrow-right"></i></button></label>
+				<label class="switch-to-new">
+					<input type="checkbox" name="switchToNew" checked> Switch to the new report
+				</label>
 
-				<div class="progress hidden">
-					<span class="NA"></span>
-					<progress>
+				<div class="footer">
+
+					<div class="progress hidden">
+						<span class="NA"></span>
+						<progress>
+					</div>
+
+					<button type="button" class="export">
+						<i class="fas fa-file-export"></i>
+						Export
+					</button>
+
+					<button type="submit" class="selected">
+						<i class="fas fa-code-branch"></i>
+						Fork Report
+						<i class="fas fa-arrow-right"></i>
+					</button>
 				</div>
 			</form>
 		`;
 
-		const form = this.forkDialogBox.body.querySelector('form');
+		dialogBox.body.querySelector('.filters').appendChild(dialogBox.multiSelect.filters.container);
+		dialogBox.body.querySelector('.visualizations').appendChild(dialogBox.multiSelect.visualizations.container);
 
-		form.on('submit', async e => {
+		dialogBox.multiSelect.filters.datalist = this.report.filters.map(filter => {
+
+			return {
+				name: filter.name,
+				value: filter.filter_id,
+				subtitle: `#${filter.filter_id} &middot; ${filter.type}`,
+			}
+		});
+		dialogBox.multiSelect.filters.render();
+		dialogBox.multiSelect.filters.all();
+
+		dialogBox.multiSelect.visualizations.datalist = this.report.visualizations.map(visualization => {
+
+			return {
+				name: visualization.name,
+				value: visualization.visualization_id,
+				subtitle: `#${visualization.visualization_id} &middot; ${MetaData.visualizations.get(visualization.type).name}`,
+			}
+		});
+		dialogBox.multiSelect.visualizations.render();
+		dialogBox.multiSelect.visualizations.all();
+
+		dialogBox.body.querySelector('.footer .export').on('click', () => {
+
+			const
+				form = this.forkDialogBox.body.querySelector('form'),
+				filters = this.forkDialogBox.multiSelect.filters.value,
+				visualizations = this.forkDialogBox.multiSelect.visualizations.value,
+				json = new DataSource(this.report, this.page).json,
+				a = document.createElement('a');
+
+			json.filters = json.filters.filter(f => filters.includes(f.filter_id.toString()))
+			json.visualizations = json.visualizations.filter(v => visualizations.includes(v.visualization_id.toString()))
+
+			a.download = `${form.name.value} - ${Format.dateTime(new Date())}.json`;
+			a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(json));
+
+			a.click();
+		});
+
+		dialogBox.body.querySelector('form').on('submit', async e => {
+
+			if(this.forkInProgress)
+				return console.log('forkInProgress');
+
+			this.forkInProgress = true;
 
 			e.preventDefault();
 
@@ -1484,74 +1555,138 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 					subtitle: e.message,
 					type: 'error',
 				});
+
+				this.forkInProgress = false;
+				throw e;
 			}
+
+			this.forkInProgress = false;
 		});
 
-		this.forkDialogBox.show();
+		dialogBox.show();
 	}
 
 	async fork() {
 
 		const
-			progressContainer = this.forkDialogBox.body.querySelector('.progress'),
 			form = this.forkDialogBox.body.querySelector('form'),
-			span = progressContainer.querySelector('.progress span'),
-			progress = progressContainer.querySelector('.progress progress');
+			progress = this.forkDialogBox.body.querySelector('.progress progress'),
+			filters = this.forkDialogBox.multiSelect.filters.value,
+			visualizations = this.forkDialogBox.multiSelect.visualizations.value,
+			json = new DataSource(this.report, this.page).json;
+
+		json.filters = json.filters.filter(f => filters.includes(f.filter_id.toString()))
+		json.visualizations = json.visualizations.filter(v => visualizations.includes(v.visualization_id.toString()))
+
+		progress.container = this.forkDialogBox.body.querySelector('.progress'),
+		progress.span = this.forkDialogBox.body.querySelector('.progress span');
 
 		function updateProgress({reset = false, max = 0, value = null} = {}) {
 
-			progressContainer.classList.remove('hidden');
+			progress.container.classList.remove('hidden');
 
 			if(reset) {
 
-				span.textContent = null;
+				progress.span.textContent = null;
 				progress.max = max;
 				progress.value = 0;
 
-				span.textContent = value;
+				progress.span.innerHTML = value;
 
 				return;
 			}
 
-			progress.value += progress.value;
-			span.textContent = value;
+			progress.value++;
+			progress.span.innerHTML = value;
 		}
 
-		// Report itself
-		let count = 1;
-
-		if(form.filters.checked)
-			count += this.report.filters.length;
-
-		if(form.visualizations.checked)
-			count += this.report.visualizations.length;
-
-		updateProgress({reset: true, max: count});
+		updateProgress({
+			reset: true,
+			max: filters.length + visualizations.length + 1,
+		});
 
 		let newReportId = null;
 
 		{
+
+			updateProgress({value: `Adding new report: <em>${form.name.value}</em>`});
+
 			const options = {
 				method: 'POST',
 				form: new FormData(),
 			};
 
-			for(const key in this.report) {
+			for(const key in json)
+				options.form.set(key, json[key]);
 
-				if(typeof this.report[key] != 'object')
-					options.form.set(key, this.report[key]);
-			}
+			options.form.set('name', form.name.value);
+			options.form.set('format', json.format);
+			options.form.set('definition', json.definition);
 
-			options.form.set('format', JSON.stringify(this.report.format));
-			options.form.set('definition', JSON.stringify(this.report.definition));
+			const response = await API.call('reports/report/insert', {}, options);
 
-			const {insertId: newReportId} = await API.call('reports/report/insert', {}, options);
+			newReportId = response.insertId;
 		}
 
 		if(!newReportId)
 			return updateProgress({reset: true, value: 'Could not insert new report!'});
 
-		debugger;
+		for(const filter of json.filters) {
+
+			updateProgress({
+
+				value: `
+					Adding new filter:
+					<em>${filter.name} (${filter.type})</em>
+				`,
+			});
+
+			const options = {
+				method: 'POST',
+				form: new FormData(),
+			};
+
+			for(const key in filter)
+				options.form.set(key, filter[key]);
+
+			options.form.set('query_id', newReportId);
+
+			await API.call('reports/filters/insert', {}, options);
+		}
+
+		for(const visualization of json.visualizations) {
+
+			updateProgress({
+
+				value: `
+					Adding new visualization:
+					<em>${visualization.name} (${MetaData.visualizations.get(visualization.type).name})</em>
+				`,
+			});
+
+			const options = {
+				method: 'POST',
+				form: new FormData(),
+			};
+
+			for(const key in visualization) {
+
+				if(typeof visualization[key] != 'object')
+					options.form.set(key, visualization[key]);
+			}
+
+			options.form.set('options', visualization.options);
+			options.form.set('query_id', newReportId);
+
+			await API.call('reports/visualizations/insert', {}, options);
+		}
+
+		if(!form.switchToNew.checked)
+			return this.forkDialogBox.hide();
+
+		updateProgress({value: 'Report Forking Complete! Taking you to the new report.'});
+
+		window.location = `/reports/define-report/${newReportId}`;
 	}
 
 	async filters() {
