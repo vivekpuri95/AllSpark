@@ -5473,7 +5473,7 @@ class LinearVisualization extends Visualization {
 				this.columns[key].push({
 					x: row.get(this.axes.bottom.column),
 					y: row.get(key),
-					y1: this.axes.right ? row.get(this.axes.right.column) : null,
+					y1: this.options.bubbleRadius ? row.get(this.options.bubbleRadius) : null,
 					key,
 				});
 			}
@@ -6501,7 +6501,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					this.y.min = Math.min(this.y.min, Math.ceil(value) || 0);
 				}
 
-				if(this.axes.right.columns.some(c => c.key == key)) {
+				if(this.options.bubbleRadius == key) {
 					this.bubble.max = Math.max(this.bubble.max, Math.ceil(value) || 0);
 					this.bubble.min = Math.min(this.bubble.min, Math.ceil(value) || 0);
 				}
@@ -6567,7 +6567,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				.style('fill', column.color)
 				.attr('cx', d => this.x(d.x) + this.axes.left.width)
 				.attr('cy', d => this.y(d.y))
-				.on('mousemove', function() {
+				.on('mousemove', function(d) {
 
 					const
 						mouse = d3.mouse(this),
@@ -6578,18 +6578,18 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 						return;
 					}
 
-					const bubbleColumn = row.source.columns.get(column[0].key);
+					const bubbleColumn = row.source.columns.get(d.key);
 
 					const content = `
-						<header>${row.get(that.axes.bottom.column)}</header>
+						<header>${d.x}</header>
 						<ul class="body">
-								<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == column[0].key ? 'hover' : ''}">
+								<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == d.key ? 'hover' : ''}">
 								<span class="circle" style="background:${bubbleColumn.color}"></span>
 								<span>
 									${bubbleColumn.drilldown && bubbleColumn.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
 									${bubbleColumn.name}
 								</span>
-								<span class="value">${Format.number(row.get(column[0].key))}</span>
+								<span class="value">${Format.number(d.y)}</span>
 							</li>
 						</ul>
 					`;
@@ -6623,7 +6623,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 			}
 
 			dots
-				.attr('r', d => this.bubble(d.y1));
+				.attr('r', d => this.bubble(d.y1 - 2));
 		}
 	}
 });

@@ -5401,6 +5401,47 @@ ConfigureVisualization.types.set('scatter', class ScatterOptions extends ReportV
 });
 
 ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVisualizationLinearOptions {
+
+	get form() {
+
+		if(this.bubbleFormContainer) {
+
+			return this.bubbleFormContainer;
+		}
+
+		const container = this.bubbleFormContainer = super.form;
+
+		const label= document.createElement('label');
+
+		label.innerHTML = `
+			<span>Radius Column</span>
+			<select name="radius"></select>
+		`;
+
+		const select = label.querySelector('select');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			select.insertAdjacentHTML('beforeend',`<option value="${key}">${column.name}</option>`);
+		}
+
+		select.value = this.visualization.options.bubbleRadius;
+
+		container.querySelector('.configuration-section .body .form.subform').insertBefore(
+			label,
+			container.querySelector('.configuration-section .body .form.subform label')
+		);
+
+		return container;
+	}
+
+	get json() {
+
+		return {
+			...super.json,
+			bubbleRadius: this.form.querySelector('.configuration-section .body .form.subform select').value
+		}
+	}
 });
 
 ConfigureVisualization.types.set('bar', class BarOptions extends ReportVisualizationLinearOptions {
