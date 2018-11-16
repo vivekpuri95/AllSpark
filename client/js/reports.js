@@ -10044,7 +10044,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 	async load(options = {}) {
 
-		if(this.options.body && this.options.body.includes('{{'))
+		if(this.definition && this.definition.query && this.options.body && this.options.body.includes('{{'))
 			await this.source.fetch();
 
 		super.render(options);
