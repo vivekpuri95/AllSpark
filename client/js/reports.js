@@ -5033,10 +5033,14 @@ class Visualization {
 		this.source = source;
 
 		if(this.options && typeof this.options == 'string') {
+
 			try {
 				this.options = JSON.parse(this.options);
 			} catch(e) {}
 		}
+
+		if(!this.options)
+			this.options = {};
 
 		for(const key in this.options)
 			this[key] = this.options[key];
@@ -10035,7 +10039,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 		const
 			container = this.containerElement = document.createElement('div'),
-			body = this.options && !this.options.body.includes('{{') ? this.options.body : '';
+			body = this.options && this.options.body && !this.options.body.includes('{{') ? this.options.body : '';
 
 		container.classList.add('visualization', 'html');
 
@@ -10054,7 +10058,8 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 	async load(options = {}) {
 
-		await this.source.fetch();
+		if(this.definition && this.definition.query && this.options.body && this.options.body.includes('{{'))
+			await this.source.fetch();
 
 		super.render(options);
 		await this.render(options);

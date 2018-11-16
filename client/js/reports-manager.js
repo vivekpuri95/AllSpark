@@ -766,7 +766,8 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.container.querySelector('#added-by').textContent = null;
 
-		this.form.is_redis.classList.toggle('hidden', this.form.redis.value != 'custom');
+		if(this.form.is_redis)
+			this.form.is_redis.classList.toggle('hidden', this.form.redis.value != 'custom');
 
 		this.descriptionEditor.value = '';
 
@@ -5180,7 +5181,9 @@ class ReportTransformations extends Set {
 
 	render() {
 
-		const transformationsList = this.container.querySelector('.list');
+		const
+			transformationsList = this.container.querySelector('.list'),
+			originalResponse = this.page.preview.report.originalResponse;
 
 		transformationsList.textContent = null;
 
@@ -5196,9 +5199,9 @@ class ReportTransformations extends Set {
 			<div class="next-connector">
 				<i class="fas fa-long-arrow-alt-down"></i>
 				<span class="NA">
-					<span>Rows: <strong>${Format.number(this.page.preview.report.originalResponse.data.length || 0)}</strong></span>
-					<span>Columns: <strong>${Format.number(Object.keys(this.page.preview.report.originalResponse.data[0] || {}).length)}</strong></span>
-					<span>Duration: <strong>${Format.number(this.page.preview.report.originalResponse.runtime || 0)}ms</strong></span>
+					<span>Rows: <strong>${Format.number(originalResponse ? originalResponse.data.length : 0)}</strong></span>
+					<span>Columns: <strong>${Format.number(Object.keys(originalResponse ? originalResponse.data[0] : {} || {}).length)}</strong></span>
+					<span>Duration: <strong>${Format.number(originalResponse ? originalResponse.runtime || 0 : 0)}ms</strong></span>
 				</span>
 				<i class="fas fa-long-arrow-alt-down"></i>
 			</div>
