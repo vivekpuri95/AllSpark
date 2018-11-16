@@ -6464,7 +6464,59 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 			container = d3.selectAll(`#visualization-${this.id}`),
 			that = this;
 
-		container.on('mousemove', null);
+		container.on('mousemove', function() {
+
+			const mouse = d3.mouse(this);
+
+			if(that.zoomRectangle) {
+
+				const
+					filteredRows = [],
+					width = Math.abs(mouse[0] - 10 - that.zoomRectangle.origin[0]);
+
+				for(const row of that.rows) {
+
+					const item = that.x(row.get(that.axes.bottom.column)) + that.axes.left.width + 10;
+
+					if(
+						(mouse[0] < that.zoomRectangle.origin[0] && item >= mouse[0] && item <= that.zoomRectangle.origin[0]) ||
+						(mouse[0] >= that.zoomRectangle.origin[0] && item <= mouse[0] && item >= that.zoomRectangle.origin[0])
+					)
+						filteredRows.push(row);
+				}
+
+				// Assign width and height to the rectangle
+				that.zoomRectangle
+					.select('rect')
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0] - 10))
+					.attr('width', width)
+					.attr('height', that.height);
+
+				that.zoomRectangle
+					.select('g')
+					.selectAll('*')
+					.remove();
+
+				that.zoomRectangle
+					.select('g')
+					.append('text')
+					.text(`${Format.number(filteredRows.length)} Selected`)
+					.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+					.attr('y', (that.height / 2) - 5);
+
+				if(filteredRows.length) {
+
+					that.zoomRectangle
+						.select('g')
+						.append('text')
+						.text(`${filteredRows[0].get(that.axes.bottom.column)} - ${filteredRows[filteredRows.length - 1].get(that.axes.bottom.column)}`)
+						.attr('x', Math.min(that.zoomRectangle.origin[0], mouse[0]) + (width / 2))
+						.attr('y', (that.height / 2) + 20);
+				}
+
+				return;
+			}
+		});
 		container.on('mouseleave', null);
 
 		this.x = d3.scale.ordinal();
