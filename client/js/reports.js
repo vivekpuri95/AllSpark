@@ -195,7 +195,7 @@ class DataSource {
 				<div class="footer hidden">
 
 					<span>
-						<span class="label">Added On:</span>
+						<span class="label">Added:</span>
 						<span title="${Format.date(this.created_at)}">${Format.ago(this.created_at)}</span>
 					</span>
 
@@ -3948,6 +3948,7 @@ class DataSourceTransformation {
 		this.source.pipeline.add(new DataSourcePipelineEvent({
 			title: this.name,
 			disabled: this.disabled,
+			implied: this.implied,
 			subtitle: [
 				{
 					key: 'Duration',
@@ -10021,11 +10022,13 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		const container = this.containerElement = document.createElement('div');
+		const
+			container = this.containerElement = document.createElement('div'),
+			body = this.options && !this.options.body.includes('{{') ? this.options.body : '';
 
 		container.classList.add('visualization', 'html');
 
-		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
+		container.innerHTML = `<div id="visualization-${this.id}" class="container">${body}</div>`;
 
 		if(this.options && this.options.hideHeader)
 			this.source.container.querySelector('header').classList.add('hidden');
@@ -10033,23 +10036,35 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
-		this.source.container.classList.add('flush');
+		this.source.container.classList.toggle('flush', this.options && this.options.flushBackground);
 
 		return container;
 	}
 
 	async load(options = {}) {
 
+		await this.source.fetch();
+
 		super.render(options);
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
 		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
-		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
+		const [response] = await this.source.response();
+
+		let body = this.options ? this.options.body : '';
+
+		if(!body)
+			body = '';
+
+		for(const [key, value] of response || [])
+			body = body.replace(`{{${key}}}`, response.getTypedValue(key));
+
+		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${body}</div>`;
 	}
 });
 
