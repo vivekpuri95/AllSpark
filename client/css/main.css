@@ -1397,7 +1397,8 @@ body {
 .tox .tox-statusbar__branding {
 	display: none;
 }
-body#tinymce {
-	background: transparent;
+body#tinymce,
+body#tinymce table tr {
+	background: transparent !important;
 	color: var(--color-surface-text);
 }

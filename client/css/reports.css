@@ -1110,6 +1110,9 @@ main .dataset {
 				.visualization.cohort td a:active {
 					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.4);
 				}
+		.data-source:not(.flush) .visualization.html {
+			padding: calc(var(--gap) * 2);
+		}
 
 
 .visualization .container > svg {
