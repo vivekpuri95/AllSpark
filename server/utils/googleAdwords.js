@@ -164,6 +164,8 @@ class FetchAdwords extends Task {
 
 			adwordsData = await adwordsData.json();
 
+			this.assert(adwordsData.status, 'Unable to fetch adwords data');
+
 			adwordsData = adwordsData.response;
 
 			return {
@@ -307,7 +309,7 @@ class SaveAdwords extends Task {
 						name: "tb_adwords_labels",
 						query: `
 							CREATE TABLE IF NOT EXISTS ??.tb_adwords_labels (
-								label_id int(11) NOT NULL,
+								label_id bigint(20) NOT NULL,
 								label_name varchar(100) DEFAULT '',
 								created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 								updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -342,7 +344,7 @@ class SaveAdwords extends Task {
 						query: `
 							CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns_labels (
 								campaign_id int(11) NOT NULL,
-								label_id int(11) NOT NULL,
+								label_id bigint(20) NOT NULL,
 								created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 								updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 								is_enabled int(11) NOT NULL DEFAULT '0',
@@ -367,7 +369,7 @@ class SaveAdwords extends Task {
 					requiredTables.map(x => mysql.query(x.query, [savedDatabase], conn))
 				),
 				queries = [
-					`insert into ??.tb_adwords_campaigns
+					`insert ignore into ??.tb_adwords_campaigns
 						(campaign_id, campaign_name, campaign_status, campaign_date, client_id, category_id) values ? 
 					ON DUPLICATE KEY UPDATE 
 						campaign_name = VALUES(campaign_name), 
@@ -376,12 +378,12 @@ class SaveAdwords extends Task {
 						client_id = VALUES(client_id), 
 						category_id = VALUES(category_id)
 					`,
-					`insert into ??.tb_adwords_labels
+					`insert ignore into ??.tb_adwords_labels
 						(label_id, label_name) values ?
 					ON DUPLICATE KEY UPDATE
 						label_name = VALUES(label_name)
 					`,
-					`insert into ??.tb_adwords_campaigns_performance
+					`insert ignore into ??.tb_adwords_campaigns_performance
 						(client_id, campaign_id, campaign_date, clicks, impressions, cost, conversions) values ?
 					`,
 					`insert into ??.tb_adwords_campaigns_labels(campaign_id,label_id) values ?`
