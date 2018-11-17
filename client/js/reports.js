@@ -6654,7 +6654,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				})
 			;
 
-			if(this.options.showValues) {
+			if(this.options.showValues != "empty") {
 				this.svg
 					.selectAll('dot')
 					.data(column)
@@ -6662,7 +6662,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					.append('text')
 					.attr('x', d => this.x(d.x) + this.axes.left.width - (d.y1.toString().length * 4))
 					.attr('y', d => this.y(d.y) + 6)
-					.text(d => d.y);
+					.text(d => this.options.showValues == 'value' ? d.y : d.x);
 			}
 
 			if(!options.resize) {

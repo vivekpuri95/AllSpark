@@ -4787,6 +4787,12 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
+					
+						<label>
+							<span>
+								<input type="checkbox" name="showValues"> Show Values
+							</span>
+						</label>
 
 						<label>
 							<span>
@@ -4797,12 +4803,6 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 						<label>
 							<span>
 								<input type="checkbox" name="hideLegend"> Hide Legend
-							</span>
-						</label>
-
-						<label>
-							<span>
-								<input type="checkbox" name="showValues"> Show Values
 							</span>
 						</label>
 					</div>
@@ -4834,7 +4834,7 @@ class ReportVisualizationLinearOptions extends ReportVisualizationOptions {
 			axes: this.axes.json,
 			hideHeader: this.formContainer.querySelector('input[name=hideHeader]').checked,
 			hideLegend: this.formContainer.querySelector('input[name=hideLegend]').checked,
-			showValues: this.formContainer.querySelector('input[name=showValues]').checked,
+			showValues: this.formContainer.querySelector('input[name=showValues]') ? this.formContainer.querySelector('input[name=showValues]').checked : null,
 		};
 
 		return response;
@@ -5409,7 +5409,9 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 			return this.bubbleFormContainer;
 		}
 
-		const container = this.bubbleFormContainer = super.form;
+		const
+			container = this.bubbleFormContainer = super.form,
+			optionsForm = container.querySelector('.configuration-section .body .form.subform');
 
 		const label= document.createElement('label');
 
@@ -5427,10 +5429,19 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 
 		select.value = this.visualization.options.bubbleRadius;
 
-		container.querySelector('.configuration-section .body .form.subform').insertBefore(
-			label,
-			container.querySelector('.configuration-section .body .form.subform label')
+		optionsForm.querySelector('input[name=showValues]').parentElement.insertAdjacentHTML(
+			'afterend',
+			`<span>Bubble Text</span>
+			<select name="showValues">
+				<option value="empty">Empty</option>
+				<option value="value">Values</option>
+				<option value="bottomAxis">Bottom Axis</option>
+			</select>`
 		);
+
+		optionsForm.querySelector('input[name=showValues]').parentElement.remove();
+		optionsForm.querySelector('select[name=showValues]').value = this.visualization.options.showValues;
+		optionsForm.insertBefore(label, optionsForm.querySelector('label'));
 
 		return container;
 	}
@@ -5439,7 +5450,8 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 
 		return {
 			...super.json,
-			bubbleRadius: this.form.querySelector('.configuration-section .body .form.subform select').value
+			bubbleRadius: this.form.querySelector('.configuration-section .body .form.subform select[name=radius]').value,
+			showValues: this.form.querySelector('.configuration-section .body .form.subform select[name=showValues]').value
 		}
 	}
 });
