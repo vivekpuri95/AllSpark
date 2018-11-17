@@ -547,13 +547,10 @@ class report extends API {
 
 		result.cached = {store_time: Date.now()};
 
-		if (redis) {
+		if (redis && this.reportObj.is_redis) {
 
 			await redis.set(hash, JSON.stringify(result));
-
-			if (this.reportObj.is_redis) {
-				await redis.expire(hash, this.reportObj.is_redis);
-			}
+			await redis.expire(hash, this.reportObj.is_redis);
 		}
 
 		result.cached = {status: false};
