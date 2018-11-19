@@ -2694,7 +2694,7 @@ class MultiSelect {
 
 		for(const data of this.datalist) {
 
-			if(data.value && !data.hide)
+			if(data.value != null && !data.hide)
 				this.selectedValues.add(data.value.toString())
 		}
 
