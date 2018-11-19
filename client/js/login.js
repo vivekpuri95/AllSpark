@@ -256,11 +256,11 @@ Page.class = class Login extends Page {
 					storageList = await Storage.get('external_parameters') || {},
 					settingsList = account.settings.get('external_parameters');
 
-				for(const key in response) {
+				for(const key in response.external_parameters) {
 
 					// Only save the value from login response if it's key was given in account settings
 					if(settingsList.includes(key))
-						storageList[key] = response[key];
+						storageList[key] = response.external_parameters[key];
 				}
 
 				await Storage.set('external_parameters', storageList);
