@@ -17,6 +17,12 @@ class DataSource {
 		for(const key in source)
 			this[key] = source[key];
 
+		if(!this.format)
+			this.format = {};
+
+		if(!this.format.columns)
+			this.format.columns = [];
+
 		this.page = page;
 
 		this.tags = this.tags || '';
@@ -195,7 +201,7 @@ class DataSource {
 				<div class="footer hidden">
 
 					<span>
-						<span class="label">Added On:</span>
+						<span class="label">Added:</span>
 						<span title="${Format.date(this.created_at)}">${Format.ago(this.created_at)}</span>
 					</span>
 
@@ -3948,6 +3954,7 @@ class DataSourceTransformation {
 		this.source.pipeline.add(new DataSourcePipelineEvent({
 			title: this.name,
 			disabled: this.disabled,
+			implied: this.implied,
 			subtitle: [
 				{
 					key: 'Duration',
@@ -4410,7 +4417,6 @@ DataSourceTransformation.types.set('sort', class DataSourceTransformationRestric
 		if(!response || !response.length || !this.columns)
 			return response;
 
-
 		for(const column of this.columns) {
 
 			column.options = {
@@ -4429,7 +4435,13 @@ DataSourceTransformation.types.set('sort', class DataSourceTransformationRestric
 				if(a[column.column] === null || b[column.column] === null)
 					continue;
 
-				let result = a[column.column].toString().localeCompare(b[column.column].toString(), undefined, column.options);
+				let result = null;
+
+				if(this.implied)
+					result = a[column.column] < b[column.column] ? -1 : a[column.column] > b[column.column] ? 1 : 0;
+
+				else
+					a[column.column].toString().localeCompare(b[column.column].toString(), undefined, column.options);
 
 				if(!result)
 					continue;
@@ -4888,7 +4900,7 @@ DataSourcePostProcessors.processors.set('RollingSum', class extends DataSourcePo
 					continue;
 
 				for(const [key, value] of newRow)
-					newRow.set(key,  value + element.get(key));
+					newRow.set(key,  value + parseFloat(element.get(key)));
 			}
 
 			newRow.set(timingColumn.key, row.get(timingColumn.key));
@@ -5021,10 +5033,14 @@ class Visualization {
 		this.source = source;
 
 		if(this.options && typeof this.options == 'string') {
+
 			try {
 				this.options = JSON.parse(this.options);
 			} catch(e) {}
 		}
+
+		if(!this.options)
+			this.options = {};
 
 		for(const key in this.options)
 			this[key] = this.options[key];
@@ -5490,6 +5506,9 @@ Visualization.list.set('table', class Table extends Visualization {
 
 		for(const gradient of this.options.gradientRules) {
 
+			if(!gradient.gradientThreshold || gradient.gradientThreshold > 100)
+				gradient.gradientThreshold = 100;
+
 			if(!this.rows.filter(f => f.get(gradient.column)).length || !this.rows.filter(f => f.get(gradient.relative)).length)
 				continue;
 
@@ -5664,8 +5683,8 @@ Visualization.list.set('table', class Table extends Visualization {
 					rule.position = rule.currentValue >= parseFloat((rule.maxValue - rule.minValue) / 2);
 
 					const
-						colorValue = this.cellColorValue(rule),
-						colorPercent = ((rule.currentValue / rule.maxValue) * 100).toFixed(2) + '%';
+						colorValue = parseInt(rule.gradientThreshold / 100 * this.cellColorValue(rule)),
+						colorPercent = (rule.currentValue / rule.maxValue * 100).toFixed(2) + '%';
 
 					if(rule.content == 'empty')
 						typedValue = null;
@@ -10018,11 +10037,13 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		if(this.containerElement)
 			return this.containerElement;
 
-		const container = this.containerElement = document.createElement('div');
+		const
+			container = this.containerElement = document.createElement('div'),
+			body = this.options && this.options.body && !this.options.body.includes('{{') ? this.options.body : '';
 
 		container.classList.add('visualization', 'html');
 
-		container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
+		container.innerHTML = `<div id="visualization-${this.id}" class="container">${body}</div>`;
 
 		if(this.options && this.options.hideHeader)
 			this.source.container.querySelector('header').classList.add('hidden');
@@ -10030,23 +10051,36 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
-		this.source.container.classList.add('flush');
+		this.source.container.classList.toggle('flush', this.options && this.options.flushBackground);
 
 		return container;
 	}
 
 	async load(options = {}) {
 
+		if(this.definition && this.definition.query && this.options.body && this.options.body.includes('{{'))
+			await this.source.fetch();
+
 		super.render(options);
-		this.render(options);
+		await this.render(options);
 	}
 
-	render(options = {}) {
+	async render(options = {}) {
 
 		if(this.options && this.options.hideLegend)
 			this.source.container.querySelector('.columns').classList.add('hidden');
 
-		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${this.source.definition.query}</div>`;
+		const [response] = await this.source.response();
+
+		let body = this.options ? this.options.body : '';
+
+		if(!body)
+			body = '';
+
+		for(const [key, value] of response || [])
+			body = body.replace(`{{${key}}}`, response.getTypedValue(key));
+
+		this.container.innerHTML = `<div id="visualization-${this.id}" class="container">${body}</div>`;
 	}
 });
 

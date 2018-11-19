@@ -284,12 +284,12 @@ main .dataset {
 	}
 
 	.data-source > .description {
-		display: flex;
-		flex-direction: column;
+		display: grid;
 	}
 		.data-source > .description .body {
 			white-space: pre-wrap;
 			padding: calc(var(--gap) * 2);
+			overflow: auto;
 		}
 			.data-source > .description .body h3 {
 				margin: calc(var(--gap) * 2) 0 var(--gap);
@@ -298,6 +298,10 @@ main .dataset {
 			}
 			.data-source > .description .body h3:first-child {
 				margin-top: 0;
+			}
+			.data-source > .description .body table tr,
+			.data-source > .description .body table tr:hover {
+				background: transparent;
 			}
 		.data-source > .description .footer {
 			border-top: 1px dashed var(--color-border);
@@ -485,25 +489,30 @@ main .dataset {
 			box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
 		}
 	.data-source > .postprocessors-state {
-		background: var(--color-secondary);
+		background: var(--color-selected);
 		box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-		padding: 10px;
+		padding: 6px 10px;
 		position: absolute;
-		bottom: 45px;
-		margin: 0 auto;
-		opacity: 1;
+		top: 8px;
 		right: 10px;
+		margin: 0 auto;
 		cursor: pointer;
-		z-index: 1;
+		z-index: 7;
 		border-radius: 3px;
-		transition: opacity var(--transition-duration);
+		transition: box-shadow var(--transition-duration);
 	}
 	.data-source > .postprocessors-state:hover {
-		opacity: 0.15;
+		box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+	}
+	.data-source > .postprocessors-state:active {
+		box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 	}
 		.data-source > .postprocessors-state i {
 			font-size: 90%;
 			margin: 0 var(--gap);
+		}
+		.data-source > .postprocessors-state i.fa-times-circle {
+			margin-right: 0;
 		}
 	.data-source > .columns {
 		display: flex;
@@ -1106,6 +1115,9 @@ main .dataset {
 				.visualization.cohort td a:active {
 					box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.4);
 				}
+		.data-source:not(.flush) .visualization.html {
+			padding: calc(var(--gap) * 2);
+		}
 
 
 .visualization .container > svg {

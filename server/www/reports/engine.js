@@ -132,8 +132,8 @@ class report extends API {
 
 					this.filters.push({
 						placeholder: key.replace(constants.filterPrefix),
-						value: this.request.body[key.replace(constants.filterPrefix)],
-						default_value: this.request.body[key.replace(constants.filterPrefix)],
+						value: this.request.body[constants.filterPrefix + key],
+						default_value: this.request.body[constants.filterPrefix + key],
 					})
 				}
 			}
@@ -172,16 +172,19 @@ class report extends API {
 
 			const filterMapping = {};
 
-			for(const filter of this.filters) {
+			for (const filter of this.filters) {
 
-				filterMapping[filter.placeholder] = filter;
+				if (!filterMapping[filter.placeholder]) {
+
+					filterMapping[filter.placeholder] = filter;
+				}
 			}
 
 			for (const key in preReportApiDetails) {
 
 				const value = preReportApiDetails.hasOwnProperty(key) ? (new String(preReportApiDetails[key])).toString() : "";
 
-				if(key in filterMapping) {
+				if (key in filterMapping) {
 
 					filterMapping[key].value = value;
 					filterMapping[key].default_value = value;
@@ -206,7 +209,7 @@ class report extends API {
 
 		const authResponse = await auth.report(this.reportObj, this.user);
 
-		if(this.request.body.query) {
+		if (this.request.body.query) {
 
 			const objRole = new getRole();
 
@@ -218,7 +221,7 @@ class report extends API {
 
 			let flag = false;
 
-			for(let category of categories) {
+			for (let category of categories) {
 
 				category = category.map(x => x.toString());
 
@@ -547,13 +550,10 @@ class report extends API {
 
 		result.cached = {store_time: Date.now()};
 
-		if (redis) {
+		if (redis && this.reportObj.is_redis) {
 
 			await redis.set(hash, JSON.stringify(result));
-
-			if (this.reportObj.is_redis) {
-				await redis.expire(hash, this.reportObj.is_redis);
-			}
+			await redis.expire(hash, this.reportObj.is_redis);
 		}
 
 		result.cached = {status: false};
@@ -582,6 +582,11 @@ class SQL {
 
 		for (const filter of this.filters) {
 
+			if(filter.type == "literal") {
+
+				continue;
+			}
+
 			this.filterIndices[filter.placeholder] = {
 
 				indices: (commonFun.getIndicesOf(`{{${filter.placeholder}}}`, this.reportObj.query)),
@@ -591,9 +596,15 @@ class SQL {
 
 		for (const filter of this.filters) {
 
-			if (filter.type == 'column') {
+			if (filter.type == "column") {
 
 				this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), "??");
+				continue;
+			}
+
+			else if (filter.type == 'literal') {
+
+				this.reportObj.query = this.reportObj.query.replace(new RegExp(`{{${filter.placeholder}}}`, 'g'), filter.value);
 				continue;
 			}
 
@@ -1193,7 +1204,7 @@ class query extends API {
 
 		let flag = false;
 
-		for(let category of categories) {
+		for (let category of categories) {
 
 			category = category.map(x => x.toString());
 

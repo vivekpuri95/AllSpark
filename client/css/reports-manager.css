@@ -166,6 +166,13 @@ main.preview-left #stages {
 	grid-gap: calc(var(--gap) * 2);
 	grid-template-columns: 1fr 1fr;
 }
+	#stage-configure-report #configure-report-form .description.form {
+		grid-column: 1 / 3;
+		grid-gap: 5px;
+	}
+		#stage-configure-report #configure-report-form .description.form > span {
+			font-weight: bold;
+		}
 #stage-configure-report > h2 {
 	margin: calc(var(--gap) * 2) 0;
 }
@@ -307,7 +314,7 @@ main.preview-left #stages {
 			flex: 1 60%;
 			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 			height: 100%;
-			grid-template-rows: max-content 1fr;
+			grid-template-rows: max-content max-content;
 		}
 			#stage-define-report #define-report-form .ace_editor {
 				height: 100%;
@@ -548,7 +555,7 @@ main.preview-left #stages {
 				align-items: end;
 			}
 				.visualization-form .subform .gradient-rules .rule select {
-					width: 100%;
+					max-width: 200px;
 				}
 				.visualization-form .subform .gradient-rules .rule input[type=color] {
 					width: 100%;

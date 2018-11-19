@@ -8,7 +8,7 @@ const fs = require('fs');
 const API = require('../server/utils/api');
 const User = require('../server/utils/User');
 const commonFunctions = require('../server/utils/commonFunctions');
-const authLogin = require('../server/www/authentication').login;
+const authentication = require('../server/www/authentication');
 const {URLSearchParams} = require('url');
 
 router.use(express.static('./client'));
@@ -98,6 +98,7 @@ class HTMLAPI extends API {
 					${ga}
 					<script>
 						let onboard = '${config.has('onboard') ? JSON.stringify(config.get('onboard')) : ''}';
+						var environment = ${JSON.stringify(this.environment) || '{}'};
 					</script>
 				</head>
 				<body>
@@ -251,18 +252,24 @@ router.get('/login', API.serve(class extends HTMLAPI {
 
 			this.request.body.account_id = this.account.account_id;
 
-			const loginObj = new authLogin(this);
+			const
+				loginObj = new authentication.login(this),
+				refreshObj = new authentication.refresh(this);
 
 			loginObj.request = this.request;
+			refreshObj.request = this.request;
 
 			const response = await loginObj.login();
 
 			if(!response.jwt && response.length)
 				throw new Error("User not found!");
 
+			refreshObj.request.body.refresh_token = response.jwt;
+
 			const urlSearchParams = new URLSearchParams();
 
 			urlSearchParams.set('refresh_token', response.jwt);
+			urlSearchParams.set('token', await refreshObj.refresh());
 			urlSearchParams.set('external_parameters', JSON.stringify(external_parameters));
 
 			this.response.redirect('/dashboard/first/?' + urlSearchParams);
@@ -760,6 +767,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 			'https://maps.googleapis.com/maps/api/js?key=AIzaSyA_9kKMQ_SDahk1mCM0934lTsItV0quysU&libraries=visualization" defer f="',
 
 			'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
+			'https://devpreview.tiny.cloud/demo/tinymce.min.js',
 		]);
 	}
 
@@ -785,7 +793,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 								<tr>
 									<th class="sort search" data-key="query_id">ID</th>
 									<th class="sort search" data-key="name" >Name</th>
-									<th class="sort search" data-key="description">Description</th>
 									<th class="sort search" data-key="connection">Connection </th>
 									<th class="sort search" data-key="tags">Tags</th>
 									<th class="sort search" data-key="filters">Filters</th>
@@ -819,11 +826,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							<label>
 								<span>Connection <span class="red">*</span></span>
 								<select name="connection_name" required></select>
-							</label>
-
-							<label>
-								<span>Description</span>
-								<textarea name="description"></textarea>
 							</label>
 
 							<label>
@@ -871,6 +873,10 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									<option value="0">Disabled</option>
 								</select>
 							</label>
+						</div>
+
+						<div class="form description">
+							<span>Description</span>
 						</div>
 					</form>
 
@@ -996,7 +1002,6 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 							<thead>
 								<tr>
 									<th>Name</th>
-									<th>Description</th>
 									<th>Type</th>
 									<th>Preview</th>
 									<th>Edit</th>
