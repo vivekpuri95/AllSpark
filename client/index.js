@@ -9,6 +9,7 @@ const API = require('../server/utils/api');
 const User = require('../server/utils/User');
 const commonFunctions = require('../server/utils/commonFunctions');
 const authLogin = require('../server/www/authentication').login;
+const refreshLogin = require('../server/www/authentication').refresh;
 const {URLSearchParams} = require('url');
 
 router.use(express.static('./client'));
@@ -251,19 +252,25 @@ router.get('/login', API.serve(class extends HTMLAPI {
 
 			this.request.body.account_id = this.account.account_id;
 
-			const loginObj = new authLogin(this);
+			const
+				loginObj = new authLogin(this),
+				refreshObj = new refreshLogin(this);
 
 			loginObj.request = this.request;
+			refreshObj.request = this.request;
 
 			const response = await loginObj.login();
 
 			if(!response.jwt && response.length)
 				throw new Error("User not found!");
 
+			refreshObj.request.body.refresh_token = response.jwt;
+
 			const urlSearchParams = new URLSearchParams();
 
 			urlSearchParams.set('refresh_token', response.jwt);
 			urlSearchParams.set('external_parameters', JSON.stringify(external_parameters));
+			urlSearchParams.set('token', await refreshObj.refresh());
 
 			this.response.redirect('/dashboard/first/?' + urlSearchParams);
 
