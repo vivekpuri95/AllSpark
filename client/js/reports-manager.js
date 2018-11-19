@@ -7769,12 +7769,12 @@ class RelatedVisualizations extends Set {
 							
 							<label>
 								<span>Width</span>
-								<input name="width" min="1" type="number" class="item">
+								<input name="width" min="1" type="number" class="item" placeholder="32">
 							</label>
 							
 							<label>
 								<span>Height</span>
-								<input name="height" min="1" type="number" class="item">
+								<input name="height" min="1" type="number" class="item" placeholder="10">
 							</label>
 
 							<label>
@@ -7895,6 +7895,14 @@ class RelatedVisualizations extends Set {
 			return;
 		}
 
+		if(!visualization_id) {
+
+			return new SnackBar({
+				message: 'Visualization Id cannot be empty',
+				type: 'warning'
+			})
+		}
+
 		const
 			option = {
 				method: 'POST',
@@ -7905,8 +7913,8 @@ class RelatedVisualizations extends Set {
 				visualization_id: visualization_id,
 				format: JSON.stringify({
 					position: parseInt(form.position.value),
-					width: parseInt(form.width.value),
-					height: parseInt(form.height.value)
+					width: parseInt(form.width.value) || 32,
+					height: parseInt(form.height.value) || 10
 				})
 			};
 
@@ -7931,6 +7939,9 @@ class RelatedVisualizations extends Set {
 
 			throw e;
 		}
+
+		form.reset();
+		this.relatedVisualizationsMultiSelect.clear();
 
 	}
 }
@@ -8063,7 +8074,10 @@ class RelatedVisualization {
 
 		if(!visualization_id) {
 
-			throw new Page.exception('Related visualization cannot be null');
+			return new SnackBar({
+				message: 'Related visualization cannot be null',
+				type: 'warning'
+			});
 		}
 
 		this.format = {

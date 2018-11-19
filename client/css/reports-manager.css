@@ -859,9 +859,10 @@ main.preview-left #stages {
 
 	.visualization-form .sub-visualizations .form {
 		grid-template-columns: repeat(6, max-content);
-		background: transparent;
 		grid-gap: calc(var(--gap) * 2);
-		padding: 0;
+	}
+	.visualization-form .sub-visualizations button.delete:hover {
+		color: var(--color-red);
 	}
 	.visualization-form .sub-visualizations .list button > i {
 		margin: 0;
@@ -869,7 +870,6 @@ main.preview-left #stages {
 		.visualization-form .sub-visualizations .form label input.item {
 			width: 70px;
 		}
-
 		.visualization-form .sub-visualizations .form .visualization {
 			width: 200px;
 		}

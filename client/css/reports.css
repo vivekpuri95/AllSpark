@@ -1696,11 +1696,12 @@ main .dataset {
 		right: 0;
 		z-index: 6;
 	}
-	.canvas .list {
+	.canvas > .list {
 		display: grid;
 		grid-template-columns: repeat(32, 1.25fr);
 		grid-auto-rows: calc(50px - (var(--gap) * 4));
 		grid-gap: calc(var(--gap) * 4);
+		padding-top: calc(var(--gap) * 2);
 	}
 	.canvas .list.editing {
 		margin-bottom: 200px;
