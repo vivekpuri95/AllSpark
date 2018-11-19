@@ -98,6 +98,7 @@ class HTMLAPI extends API {
 					${ga}
 					<script>
 						let onboard = '${config.has('onboard') ? JSON.stringify(config.get('onboard')) : ''}';
+						var environment = ${JSON.stringify(this.environment) || '{}'};
 					</script>
 				</head>
 				<body>

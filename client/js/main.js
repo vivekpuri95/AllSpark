@@ -120,6 +120,25 @@ class Page {
 
 		this.renderPage();
 		this.setupShortcuts();
+
+		setTimeout(() => this.branchAlert());
+	}
+
+	/**
+	* Checks which branch is deployed and throws alert if branch other than 'master' is deployed.
+	*/
+	branchAlert() {
+
+		if(!window.environment)
+			return;
+
+		if(!user.privileges.has('superadmin') || environment.branch == 'master' || !environment.name.includes('production'))
+			return;
+
+		const message = new NotificationBar({
+			message: `${environment.branch} is deployed on ${environment.name}. Please note.`,
+			type: 'error',
+		});
 	}
 
 	renderPage() {
