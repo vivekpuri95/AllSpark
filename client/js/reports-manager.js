@@ -730,8 +730,6 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 	async load() {
 
-		await this.descriptionEditor.setup();
-
 		if(!this.form.connection_name.children.length) {
 
 			for(const connection of this.page.connections.values()) {
@@ -856,14 +854,17 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 			this.form.redis_custom.classList.add('hidden');
 		}
 
-		this.descriptionEditor.value = this.report.description;
-
 		const share = new ObjectRoles('query', this.report.query_id);
 
-		await share.load();
+		await Promise.all([
+			this.descriptionEditor.setup(),
+			share.load(),
+		]);
 
 		this.shareContainer.textContent = null;
 		this.shareContainer.appendChild(share.container);
+
+		this.descriptionEditor.value = this.report.description;
 	}
 
 	async update(e) {
@@ -1681,8 +1682,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			await API.call('reports/visualizations/insert', {}, options);
 		}
 
-		if(!form.switchToNew.checked)
-			return this.forkDialogBox.hide();
+		if(!form.switchToNew.checked) {
+
+			await DataSource.load(true);
+			this.forkDialogBox.hide();
+
+			return;
+		}
 
 		updateProgress({value: 'Report Forking Complete! Taking you to the new report.'});
 
@@ -2532,11 +2538,13 @@ class VisualizationManager {
 		if(first && first.querySelector('.body.hidden'))
 			first.querySelector('h3').click();
 
-		await this.descriptionEditor.setup();
-
 		this.form.name.value = this.name;
 		this.form.type.value = this.type;
-		this.descriptionEditor.value = this.description || '';
+
+		(async () => {
+			await this.descriptionEditor.setup();
+			this.descriptionEditor.value = this.description || '';
+		})();
 	}
 
 	async update(e) {

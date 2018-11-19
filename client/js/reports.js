@@ -1137,6 +1137,7 @@ class DataSource {
 
 		response.format = JSON.stringify(this.format);
 		response.definition = JSON.stringify(this.definition);
+		response.tags = this.tags.join();
 		response.filters = [];
 		response.visualizations = [];
 
