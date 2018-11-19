@@ -132,8 +132,8 @@ class report extends API {
 
 					this.filters.push({
 						placeholder: key.replace(constants.filterPrefix),
-						value: this.request.body[key.replace(constants.filterPrefix)],
-						default_value: this.request.body[key.replace(constants.filterPrefix)],
+						value: this.request.body[constants.filterPrefix + key],
+						default_value: this.request.body[constants.filterPrefix + key],
 					})
 				}
 			}
