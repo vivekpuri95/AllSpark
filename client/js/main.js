@@ -129,7 +129,7 @@ class Page {
 	*/
 	branchAlert() {
 
-		if(!environment)
+		if(!window.environment)
 			return;
 
 		if(!user.privileges.has('superadmin') || environment.branch == 'master' || !environment.name.includes('production'))
