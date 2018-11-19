@@ -195,6 +195,19 @@ class ReportsManger extends Page {
 	}
 }
 
+window.onbeforeunload = function (e) {
+
+	const defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved');
+
+	const message = 'Are you sure you want to change the state? All the unsaved data will be lost.'
+
+	if(e && defineReportSaveButton) {
+
+		e.returnValue = message;
+		return message;
+	}
+}
+
 class ReportsMangerPreview {
 
 	constructor(page) {
