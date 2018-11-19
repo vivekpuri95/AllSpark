@@ -766,9 +766,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		this.container.querySelector('#added-by').textContent = null;
 
-		if(this.form.is_redis)
-			this.form.is_redis.classList.toggle('hidden', this.form.redis.value != 'custom');
-
+		this.form.redis_custom.classList.toggle('hidden', this.form.redis.value == 'custom');
 		this.descriptionEditor.value = '';
 
 		this.form.name.focus();

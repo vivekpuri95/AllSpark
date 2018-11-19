@@ -406,7 +406,7 @@ class DataConnection {
 
 		const test = this.container.querySelector('.toolbar #test-connection');
 
-		test.classList.remove('hidden');
+		test.classList.toggle('hidden', ['file', 'bigquery', 'api'].includes(this.type));
 
 		test.removeEventListener('click', DataConnection.test_listener);
 
@@ -569,7 +569,7 @@ DataConnection.types.set('mysql', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" placeholder="3306" step="1" max="65536">
 			</label>
 
 			<label>
@@ -617,7 +617,7 @@ DataConnection.types.set('mssql', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
+			<span class="password">Password <a class="right NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -628,7 +628,7 @@ DataConnection.types.set('mssql', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" step="1" max="65536">
 			</label>
 
 			<label>
@@ -676,7 +676,7 @@ DataConnection.types.set('pgsql', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
+			<span class="password">Password <a class="right NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -687,7 +687,7 @@ DataConnection.types.set('pgsql', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" step="1" max="65536">
 			</label>
 
 			<label>
@@ -735,7 +735,7 @@ DataConnection.types.set('oracle', class {
 			</label>
 
 			<label>
-				<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span>
+				<span class="password">Password <a class="right NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span>
 				<input type="password" autocomplete="off" name="password" value="${connections.password || ''}">
 			</label>
 
@@ -746,7 +746,7 @@ DataConnection.types.set('oracle', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" step="1" max="65536">
 			</label>
 		`;
 
@@ -839,7 +839,7 @@ DataConnection.types.set('mongo', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="text" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" step="1" max="65536">
 			</label>
 
 			<label>
