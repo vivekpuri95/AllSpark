@@ -121,14 +121,27 @@ class Page {
 		this.renderPage();
 		this.setupShortcuts();
 
-		setTimeout(() => {branchAlert()});
+		setTimeout(() => this.branchAlert());
+	}
+
+	/**
+	* Checks which branch is deployed and throws alert if branch other than 'master' is deployed.
+	*/
+	branchAlert() {
+
+		if(!user.privileges.has('superadmin') || environment.branch == 'master' || !environment.name.includes('production'))
+			return;
+
+		const message = new NotificationBar({
+			message: `${environment.branch} is deployed on ${environment.name}. Please check`,
+			type: 'error',
+		});
 	}
 
 	renderPage() {
 
 		if(!this.account || !this.user)
 			return;
-
 
 		document.body.insertBefore(this.header.container, this.container);
 
@@ -458,20 +471,6 @@ Page.exception = class PageException extends Error {
 
 		ErrorLogs.send(this.message, null, null, null, this);
 	}
-}
-
-/**
-* Checks which branch is deployed and throws alert if branch other than 'master' is deployed.
-*/
-function branchAlert() {
-
-	if(!user.privileges.has('superadmin') || environment.branch == 'master' || !environment.name.includes('production'))
-		return;
-
-	const message = new NotificationBar({
-		message: `${environment.branch} is deployed on ${environment.name}. Please check`,
-		type: 'error',
-	});
 }
 
 /**
