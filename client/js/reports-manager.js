@@ -197,9 +197,9 @@ class ReportsManger extends Page {
 
 window.onbeforeunload = function (e) {
 
-	const defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved');
-
-	const message = 'Are you sure you want to change the state? All the unsaved data will be lost.'
+	const
+		defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved'),
+		message = 'Are you sure you want to change the state? All the unsaved data will be lost.';
 
 	if(e && defineReportSaveButton) {
 
