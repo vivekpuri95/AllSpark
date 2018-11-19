@@ -268,8 +268,8 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			const urlSearchParams = new URLSearchParams();
 
 			urlSearchParams.set('refresh_token', response.jwt);
-			urlSearchParams.set('external_parameters', JSON.stringify(external_parameters));
 			urlSearchParams.set('token', await refreshObj.refresh());
+			urlSearchParams.set('external_parameters', JSON.stringify(external_parameters));
 
 			this.response.redirect('/dashboard/first/?' + urlSearchParams);
 
