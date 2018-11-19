@@ -98,7 +98,14 @@ async function loadAccounts() {
 
 async function loadBigquery() {
 
-	await bigquery();
+	try {
+
+		await bigquery();
+	}
+	catch(e) {
+
+		console.log(e);
+	}
 }
 
 function executingQueriesMap() {

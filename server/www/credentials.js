@@ -10,7 +10,7 @@ const oracle = require('../utils/oracle').Oracle;
 const constants = require("../utils/constants");
 const getRole = require("../www/object_roles").get;
 const Redis = require("../utils/redis").Redis;
-const history = require('../utils/reportLogs');
+const credentialLogs = require('../utils/reportLogs');
 
 exports.insert = class extends API {
 
@@ -55,7 +55,7 @@ exports.insert = class extends API {
 			[response.insertId]
 		);
 
-		history.insert(
+		credentialLogs.insert(
 			this,
 			{
 				owner: 'connection',
@@ -223,7 +223,7 @@ exports.delete = class extends API {
 
 		connectionObj.status = 0;
 
-		history.insert(
+		credentialLogs.insert(
 			this,
 			{
 				owner: 'connection',
@@ -239,7 +239,7 @@ exports.delete = class extends API {
 
 exports.update = class extends API {
 
-	async update({id, connection_name, user = null, password = null, host = null, port = null, db = null} = {}) {
+	async update({id, connection_name, user = null, password = null, host = null, port = null, db = null, project_name = null, file = null} = {}) {
 
 		const [connectionObj] = await this.mysql.query(`
 				SELECT
@@ -272,14 +272,16 @@ exports.update = class extends API {
 		this.assert(!authResponse.error, authResponse.message);
 
 		const
-			values = {connection_name, host, port: parseInt(port) || null, user, password, db},
+			values = {connection_name, host, port: parseInt(port) || null, user, password, db, project_name, file},
 			compareJson = {
 				connection_name: connectionObj.connection_name,
 				host: connectionObj.host,
 				port: connectionObj.port,
 				user: connectionObj.user,
 				password: connectionObj.password,
-				db: connectionObj.db
+				db: connectionObj.db,
+				project_name: connectionObj.project_name,
+				file: connectionObj.file
 			};
 
 		if(JSON.stringify(values) == JSON.stringify(compareJson)) {
@@ -311,7 +313,7 @@ exports.update = class extends API {
 			[id]
 		);
 
-		history.insert(
+		credentialLogs.insert(
 			this,
 			{
 				owner: 'connection',
