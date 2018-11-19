@@ -121,9 +121,7 @@ class Page {
 		this.renderPage();
 		this.setupShortcuts();
 
-		setTimeout(() => {
-			Page.branchAlert.details();
-		}, 0);
+		setTimeout(() => {branchAlert()});
 	}
 
 	renderPage() {
@@ -463,30 +461,17 @@ Page.exception = class PageException extends Error {
 }
 
 /**
-* checks which branch is deployed and throws alert if branch other than "master" is deployed
+* Checks which branch is deployed and throws alert if branch other than 'master' is deployed.
 */
-Page.branchAlert = class PageBranchAlert {
+function branchAlert() {
 
-	static details() {
+	if(!user.privileges.has('superadmin') || environment.branch == 'master' || !environment.name.includes('production'))
+		return;
 
-		if(!user.privileges.has('superadmin'))
-			return;
-
-		try {
-			environment = JSON.parse(environment);
-		}
-		catch(e) {
-			environment = {};
-		}
-
-		if(environment.branch == 'master' || !environment.name.includes('production'))
-			return;
-
-		const message = new NotificationBar({
-			message: `${environment.branch} is deployed on ${environment.name}. Please check`,
-			type: 'error',
-		});
-	}
+	const message = new NotificationBar({
+		message: `${environment.branch} is deployed on ${environment.name}. Please check`,
+		type: 'error',
+	});
 }
 
 /**
