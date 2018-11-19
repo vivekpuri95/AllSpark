@@ -1939,7 +1939,27 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.container.querySelector('#filter-list').classList.add('hidden');
 
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
-		this.filterForm.on('submit', this.filterForm.listener = e => this.updateFilter(e, filter));
+		this.filterForm.on('submit', this.filterForm.listener = e => {
+
+			const defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved');
+
+            if(defineReportSaveButton) {
+
+                if(confirm('Are you sure you want to change the state? All the unsaved data will be lost.')) {
+
+                    defineReportSaveButton.classList.remove('not-saved');
+                    this.updateFilter(e, filter);
+                }
+
+                else {
+                    e.preventDefault();
+                }
+            }
+
+            else {
+	               this.updateFilter(e, filter);
+            }
+		});
 
 		this.filterForm.reset();
 
