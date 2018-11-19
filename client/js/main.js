@@ -136,7 +136,7 @@ class Page {
 			return;
 
 		const message = new NotificationBar({
-			message: `${environment.branch} is deployed on ${environment.name}. Please check`,
+			message: `${environment.branch} is deployed on ${environment.name}. Please note.`,
 			type: 'error',
 		});
 	}
