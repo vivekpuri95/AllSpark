@@ -120,13 +120,17 @@ class Page {
 
 		this.renderPage();
 		this.setupShortcuts();
-		Page.branchAlert.details();
+
+		setTimeout(() => {
+			Page.branchAlert.details();
+		}, 0);
 	}
 
 	renderPage() {
 
 		if(!this.account || !this.user)
 			return;
+
 
 		document.body.insertBefore(this.header.container, this.container);
 
@@ -463,14 +467,19 @@ Page.exception = class PageException extends Error {
 */
 Page.branchAlert = class PageBranchAlert {
 
-	static async details() {
+	static details() {
 
 		if(!user.privileges.has('superadmin'))
 			return;
 
-		const environment = await API.call('environment/about');
+		try {
+			environment = JSON.parse(environment);
+		}
+		catch(e) {
+			environment = {};
+		}
 
-		if(environment.branch.toLowerCase() == 'master')
+		if(environment.branch == 'master')
 			return;
 
 		const message = new NotificationBar({
