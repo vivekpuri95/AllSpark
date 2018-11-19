@@ -479,7 +479,7 @@ Page.branchAlert = class PageBranchAlert {
 			environment = {};
 		}
 
-		if(environment.branch == 'master')
+		if(environment.branch == 'master' || !environment.name.includes('production'))
 			return;
 
 		const message = new NotificationBar({
