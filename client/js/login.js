@@ -260,7 +260,7 @@ Page.class = class Login extends Page {
 
 					// Only save the value from login response if it's key was given in account settings
 					if(settingsList.includes(key))
-						storageList[key] = response[key];
+						storageList[key] = response.external_parameters[key];
 				}
 
 				await Storage.set('external_parameters', storageList);
