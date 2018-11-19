@@ -406,7 +406,11 @@ class DataConnection {
 
 		const test = this.container.querySelector('.toolbar #test-connection');
 
-		if(!["file", "bigquery", "api"].includes(this.type)) {
+		if(["file", "bigquery", "api"].includes(this.type)) {
+
+			test.classList.add('hidden');
+		}
+		else {
 
 			test.classList.remove('hidden');
 		}
@@ -572,7 +576,7 @@ DataConnection.types.set('mysql', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0" placeholder="3306">
 			</label>
 
 			<label>
@@ -631,7 +635,7 @@ DataConnection.types.set('mssql', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0">
 			</label>
 
 			<label>
@@ -690,7 +694,7 @@ DataConnection.types.set('pgsql', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0">
 			</label>
 
 			<label>
@@ -749,7 +753,7 @@ DataConnection.types.set('oracle', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0">
 			</label>
 		`;
 
@@ -842,7 +846,7 @@ DataConnection.types.set('mongo', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0">
 			</label>
 
 			<label>
