@@ -309,7 +309,7 @@ class SaveAdwords extends Task {
 						name: "tb_adwords_labels",
 						query: `
 							CREATE TABLE IF NOT EXISTS ??.tb_adwords_labels (
-								label_id bigint(20) NOT NULL,
+								label_id varchar(50) NOT NULL,
 								label_name varchar(100) DEFAULT '',
 								created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 								updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -344,10 +344,11 @@ class SaveAdwords extends Task {
 						query: `
 							CREATE TABLE IF NOT EXISTS ??.tb_adwords_campaigns_labels (
 								campaign_id int(11) NOT NULL,
-								label_id bigint(20) NOT NULL,
+								label_id varchar(50) NOT NULL,
 								created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 								updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 								is_enabled int(11) NOT NULL DEFAULT '0',
+								UNIQUE KEY campaign_label (campaign_id,label_id),
 								KEY label_id (label_id),
 								KEY campaign_id (campaign_id)
 							) ENGINE=InnoDB DEFAULT CHARSET=latin1
@@ -386,7 +387,7 @@ class SaveAdwords extends Task {
 					`insert ignore into ??.tb_adwords_campaigns_performance
 						(client_id, campaign_id, campaign_date, clicks, impressions, cost, conversions) values ?
 					`,
-					`insert into ??.tb_adwords_campaigns_labels(campaign_id,label_id) values ?`
+					`insert ignore into ??.tb_adwords_campaigns_labels(campaign_id,label_id) values ?`
 				],
 				query_data = [
 					data.campaigns,
