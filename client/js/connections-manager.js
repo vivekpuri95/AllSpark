@@ -406,14 +406,7 @@ class DataConnection {
 
 		const test = this.container.querySelector('.toolbar #test-connection');
 
-		if(["file", "bigquery", "api"].includes(this.type)) {
-
-			test.classList.add('hidden');
-		}
-		else {
-
-			test.classList.remove('hidden');
-		}
+		test.classList.toggle('hidden', ['file', 'bigquery', 'api'].includes(this.type));
 
 		test.removeEventListener('click', DataConnection.test_listener);
 
@@ -576,7 +569,7 @@ DataConnection.types.set('mysql', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0" placeholder="3306">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" placeholder="3306" step="1" max="65536">
 			</label>
 
 			<label>
@@ -635,7 +628,7 @@ DataConnection.types.set('mssql', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" step="1" max="65536">
 			</label>
 
 			<label>
@@ -694,7 +687,7 @@ DataConnection.types.set('pgsql', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" step="1" max="65536">
 			</label>
 
 			<label>
@@ -753,7 +746,7 @@ DataConnection.types.set('oracle', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" step="1" max="65536">
 			</label>
 		`;
 
@@ -846,7 +839,7 @@ DataConnection.types.set('mongo', class {
 
 			<label>
 				<span>Port</span>
-				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="0">
+				<input autocomplete="off" type="number" name="port" value="${connections.port || ''}" min="1" step="1" max="65536">
 			</label>
 
 			<label>
