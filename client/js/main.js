@@ -120,6 +120,7 @@ class Page {
 
 		this.renderPage();
 		this.setupShortcuts();
+		Page.branchAlert.details();
 	}
 
 	renderPage() {
@@ -454,6 +455,28 @@ Page.exception = class PageException extends Error {
 		this.message = message;
 
 		ErrorLogs.send(this.message, null, null, null, this);
+	}
+}
+
+/**
+* checks which branch is deployed and throws alert if branch other than "master" is deployed
+*/
+Page.branchAlert = class PageBranchAlert {
+
+	static async details() {
+
+		if(!user.privileges.has('superadmin'))
+			return;
+
+		const environment = await API.call('environment/about');
+
+		if(environment.branch.toLowerCase() == 'master')
+			return;
+
+		const message = new NotificationBar({
+			message: `${environment.branch} is deployed on ${environment.name}. Please check`,
+			type: 'error',
+		});
 	}
 }
 
