@@ -406,7 +406,10 @@ class DataConnection {
 
 		const test = this.container.querySelector('.toolbar #test-connection');
 
-		test.classList.remove('hidden');
+		if(!["file", "bigquery", "api"].includes(this.type)) {
+
+			test.classList.remove('hidden');
+		}
 
 		test.removeEventListener('click', DataConnection.test_listener);
 
