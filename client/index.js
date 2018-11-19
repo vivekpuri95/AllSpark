@@ -8,8 +8,7 @@ const fs = require('fs');
 const API = require('../server/utils/api');
 const User = require('../server/utils/User');
 const commonFunctions = require('../server/utils/commonFunctions');
-const authLogin = require('../server/www/authentication').login;
-const refreshLogin = require('../server/www/authentication').refresh;
+const authentication = require('../server/www/authentication');
 const {URLSearchParams} = require('url');
 
 router.use(express.static('./client'));
@@ -253,8 +252,8 @@ router.get('/login', API.serve(class extends HTMLAPI {
 			this.request.body.account_id = this.account.account_id;
 
 			const
-				loginObj = new authLogin(this),
-				refreshObj = new refreshLogin(this);
+				loginObj = new authentication.login(this),
+				refreshObj = new authentication.refresh(this);
 
 			loginObj.request = this.request;
 			refreshObj.request = this.request;
