@@ -197,14 +197,12 @@ class ReportsManger extends Page {
 
 window.onbeforeunload = function (e) {
 
-	const
-		defineReportSaveButton = this.page.stages.get('define-report').unsavedButton,
-		message = 'Are you sure you want to change the state? All the unsaved data will be lost.';
+	const defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved');
 
 	if(e && defineReportSaveButton) {
 
-		e.returnValue = message;
-		return message;
+		e.returnValue = 'Sure';
+		return 'Sure';
 	}
 }
 
@@ -327,7 +325,7 @@ class ReportsMangerStage {
 
 			this.select();
 
-			if(this.page.stages.get('define-report').unsavedButton)
+			if(this.page.stages.get('define-report').container.querySelector('button.not-saved'))
 				return;
 
 			if(this.key != 'configure-visualization')
@@ -458,7 +456,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		super.select();
 
-		if(this.page.stages.get('define-report').unsavedButton)
+		if(this.page.stages.get('define-report').container.querySelector('button.not-saved'))
 			return;
 
 		for(const stage of this.page.stages.values())
@@ -1199,19 +1197,19 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const query = this.report.connection.json.query;
 
 		this.container.querySelector('#stage-define-report button[type=submit]').classList.toggle('not-saved', this.report.query != query);
-
-		this.unsavedButton = this.container.querySelector('#stage-define-report button[type=submit].not-saved');
 	}
 
 	saveReportConfirm() {
 
-		if(!this.unsavedButton)
+		const defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved');
+
+		if(!defineReportSaveButton)
 			return;
 
 		if(!confirm('Are you sure you want to change the state? All the unsaved data will be lost.'))
 			return false;
 
-		this.unsavedButton.classList.remove('not-saved');
+		defineReportSaveButton.classList.remove('not-saved');
 
 		return true;
 	}
