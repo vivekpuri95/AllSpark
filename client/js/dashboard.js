@@ -166,7 +166,7 @@ Page.class = class Dashboards extends Page {
 		return parents;
 	}
 
-	render({dashboardId = 0, renderNav = false, updateNav = true, reloadDashboard = true} = {}) {
+	render({dashboardId = 0, renderNav = false, updateNav = true, reloadDashboard = true, searchParam = ''} = {}) {
 
 		if (dashboardId && reloadDashboard) {
 
@@ -178,7 +178,7 @@ Page.class = class Dashboards extends Page {
 				history.pushState({
 					filter: dashboardId,
 					type: 'dashboard'
-				}, '', `/dashboard/${dashboardId}`);
+				}, '', `/dashboard/${dashboardId}${searchParam}`);
 				await this.list.get(dashboardId).load();
 				await this.list.get(dashboardId).render();
 			})()
@@ -533,7 +533,7 @@ Page.class = class Dashboards extends Page {
 
 		else {
 
-			return this.render({dashboardId: currentId, renderNav: true, updateNav: false});
+			return this.render({dashboardId: currentId, renderNav: true, updateNav: false, searchParam: location.search});
 		}
 	}
 
