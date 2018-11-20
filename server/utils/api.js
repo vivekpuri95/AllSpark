@@ -12,6 +12,9 @@ const pgsql = require("./pgsql").Postgres;
 const errorLogs = require('./errorLogs');
 const msssql = require("./mssql").MsSql;
 const child_process = require('child_process');
+const atob = require('atob');
+const dbConfig = require('config').get("sql_db");
+const url = require('url');
 
 const environment = {
 	name: process.env.NODE_ENV,
@@ -144,7 +147,8 @@ class API {
 				obj.environment = environment;
 
 				if (clientEndpoint) {
-					return response.send(await obj.body());
+					obj.originalResult = await obj.body();
+					return response.send(obj.originalResult);
 				}
 
 				if ((!userDetails || userDetails.error) && !constants.publicEndpoints.filter(u => url.startsWith(u.replace(/\//g, pathSeparator))).length) {
@@ -214,6 +218,47 @@ class API {
 
 				return next(e);
 			}
+
+			finally {
+
+				if(!obj.account || obj.account.account_id != 3)
+					return;
+
+				const db = dbConfig.write.database.concat('_logs');
+
+				let
+					user_id = null,
+					token = obj.request.body.token ||
+							obj.request.body.refresh_token ||
+							obj.request.query.token ||
+							obj.request.query.refresh_token ||
+							this.request.cookies.token;
+
+				try {
+					user_id = JSON.parse(atob(token.split('.')[1])).user_id;
+				} catch(e) {}
+
+				mysql.query(`
+					INSERT INTO ??.tb_api_logs (
+						account_id, user_id, pathname, body, query, headers, response, status, useragent
+					) VALUES (?)`,
+					[
+						db,
+						[
+							obj.account.account_id,
+							user_id,
+							url.parse(obj.request.url).pathname,
+							JSON.stringify(obj.request.body),
+							JSON.stringify(obj.request.query),
+							JSON.stringify(obj.request.headers),
+							JSON.stringify(obj.originalResult) || obj.originalResult,
+							obj.response.statusCode,
+							obj.request.headers['user-agent'],
+						]
+					],
+				);
+
+			}
 		}
 	}
 
@@ -265,6 +310,7 @@ class API {
 					reject(['API response gzip compression failed!', error]);
 
 				else {
+					this.originalResult = this.result;
 					this.result = result;
 					resolve();
 				}
