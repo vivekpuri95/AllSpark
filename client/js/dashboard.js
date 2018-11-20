@@ -468,7 +468,6 @@ Page.class = class Dashboards extends Page {
 
 		const emptyDashboards = [];
 
-
 		for (const dashboard of this.list.values()) {
 
 			if (dashboard.visibleVisuliaztions.size === 0) {
@@ -518,7 +517,6 @@ Page.class = class Dashboards extends Page {
 
 			return dashboardReference.querySelector('.label').click();
 		}
-
 
 		this.render({dashboardId: 0});
 
@@ -612,6 +610,8 @@ class Dashboard {
 		}
 
 		Object.assign(this, dashboardObject);
+
+		this.defaultGLF = new URLSearchParams(location.search);
 
 		Dashboard.grid = {
 			columns: 32,
@@ -748,6 +748,28 @@ class Dashboard {
 
 			else
 				fullScreenButton.innerHTML = `<i class="fas fa-expand"></i> Full Screen`;
+		});
+
+		const share = page.container.querySelector('#share');
+
+		share.on('click', () => {
+
+			const parameters = new URLSearchParams();
+
+			for(const [key, value] of Dashboard.selectedValues)
+				parameters.set(key, value);
+
+			const shareUrl = `${location.href}?${parameters.toString()}`;
+
+			const dialougeBox = new DialogBox();
+
+			dialougeBox.heading = `Share this Url`;
+
+			dialougeBox.body.innerHTML = `
+				<div class="share-url"> ${shareUrl}</div>
+			`;
+
+			dialougeBox.show();
 		});
 	}
 
@@ -1071,6 +1093,13 @@ class Dashboard {
 			this.globalFilters = new DashboardGlobalFilters(this);
 
 			await this.globalFilters.load();
+
+			if([...this.defaultGLF.keys()].length) {
+
+				this.globalFilters.setValue(this.defaultGLF);
+				this.filterFromUrl = true;
+			}
+
 		}
 		catch (e) {
 			console.log(e);
@@ -1083,7 +1112,6 @@ class Dashboard {
 	async render(resize) {
 
 		if (this.format && this.format.category_id) {
-
 			return;
 		}
 
@@ -1199,8 +1227,10 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if (Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size)
+		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || this.filterFromUrl) {
+
 			this.globalFilters.apply();
+		}
 	}
 
 	async save(format, id) {
@@ -1586,6 +1616,15 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		// Save the value of each filter for use on other dashboards
 		for (const [placeholder, filter] of this)
 			Dashboard.selectedValues.set(placeholder, filter.value);
+	}
+
+	setValue(x) {
+
+		for(const [key, filter] of this) {
+
+			if(x.has(key))
+				filter.value = x.get(key)
+		}
 	}
 
 	clear() {
