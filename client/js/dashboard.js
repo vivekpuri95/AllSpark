@@ -611,7 +611,9 @@ class Dashboard {
 
 		Object.assign(this, dashboardObject);
 
-		this.defaultGLF = new URLSearchParams(location.search);
+		this.filtersFromUrl = new URLSearchParams(location.search);
+
+		this.filtersPresentInUrl = [...this.filtersFromUrl.keys()].length;
 
 		Dashboard.grid = {
 			columns: 32,
@@ -766,10 +768,14 @@ class Dashboard {
 			dialougeBox.heading = `Share this Url`;
 
 			dialougeBox.body.innerHTML = `
-				<div class="share-url"> ${shareUrl}</div>
+				<div class="share-url">
+					<input value="${shareUrl}">
+				</div>
 			`;
 
 			dialougeBox.show();
+
+			dialougeBox.body.querySelector('.share-url input').select();
 		});
 	}
 
@@ -1094,10 +1100,10 @@ class Dashboard {
 
 			await this.globalFilters.load();
 
-			if([...this.defaultGLF.keys()].length) {
+			for(const [key, filter] of this.globalFilters) {
 
-				this.globalFilters.setValue(this.defaultGLF);
-				this.filterFromUrl = true;
+				if(this.filtersFromUrl.has(key))
+					filter.value = this.filtersFromUrl.get(key)
 			}
 
 		}
@@ -1227,7 +1233,7 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || this.filterFromUrl) {
+		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || this.filtersPresentInUrl) {
 
 			this.globalFilters.apply();
 		}
@@ -1616,15 +1622,6 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		// Save the value of each filter for use on other dashboards
 		for (const [placeholder, filter] of this)
 			Dashboard.selectedValues.set(placeholder, filter.value);
-	}
-
-	setValue(x) {
-
-		for(const [key, filter] of this) {
-
-			if(x.has(key))
-				filter.value = x.get(key)
-		}
 	}
 
 	clear() {

@@ -631,3 +631,6 @@ main section#list .toolbar {
 	padding: calc(var(--gap) * 2);
 	user-select: text;
 }
+	.dialog-box .share-url input {
+		min-width: 100%;
+	}
