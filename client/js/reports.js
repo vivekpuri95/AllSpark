@@ -9425,7 +9425,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 		this.layers.render();
 
 	}
-})
+});
 
 Visualization.list.set('cohort', class Cohort extends Visualization {
 
@@ -10058,7 +10058,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 	async load(options = {}) {
 
-		if(this.definition && this.definition.query && this.options.body && this.options.body.includes('{{'))
+		if(this.source.definition && this.source.definition.query && this.options.body && this.options.body.includes('{{'))
 			await this.source.fetch();
 
 		super.render(options);
@@ -10737,7 +10737,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 			return sankey;
 		}
 	}
-})
+});
 
 class SpatialMapLayers extends Set {
 
