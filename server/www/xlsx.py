@@ -86,6 +86,9 @@ class XLSX(API, object):
         lim = 2
         start_row = 0
 
+        if type(data_obj) == dict:
+            data_obj = [data_obj]
+
         for d in data_obj:
             excel_file = os.getcwd() + "/excel_exports/" + d["file_name"] + '.xlsx'
             writer = pd.ExcelWriter(excel_file, engine='xlsxwriter', )
