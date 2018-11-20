@@ -256,6 +256,7 @@ class API {
 							obj.request.headers['user-agent'],
 						]
 					],
+					'write'
 				);
 
 			}
