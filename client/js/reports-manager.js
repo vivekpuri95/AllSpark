@@ -1872,10 +1872,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			e.preventDefault();
 
-			if(!this.saveReportConfirm())
-				return;
-
-			this.insertFilter(e);
+			if(this.saveReportConfirm())
+				this.insertFilter(e);
 		});
 
 		this.filterForm.datasetMultiSelect.clear();
@@ -1936,11 +1934,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 			e.preventDefault();
 
-			if(!this.saveReportConfirm())
-				return;
-
-			this.updateFilter(e, filter);
-
+			if(this.saveReportConfirm())
+				this.updateFilter(e, filter);
 		});
 
 		this.filterForm.reset();
