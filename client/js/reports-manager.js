@@ -198,7 +198,7 @@ class ReportsManger extends Page {
 window.onbeforeunload = function (e) {
 
 	const
-		defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved'),
+		defineReportSaveButton = this.page.stages.get('define-report').unsavedButton,
 		message = 'Are you sure you want to change the state? All the unsaved data will be lost.';
 
 	if(e && defineReportSaveButton) {
@@ -327,7 +327,7 @@ class ReportsMangerStage {
 
 			this.select();
 
-			if(this.page.stages.get('define-report').container.querySelector('button.not-saved'))
+			if(this.page.stages.get('define-report').unsavedButton)
 				return;
 
 			if(this.key != 'configure-visualization')
@@ -339,16 +339,8 @@ class ReportsMangerStage {
 
 	async select() {
 
-		const defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved');
-
-		if(defineReportSaveButton) {
-
-			if(confirm('Are you sure you want to change the state? All the unsaved data will be lost.'))
-				defineReportSaveButton.classList.remove('not-saved');
-
-			else
-				return;
-		}
+		if(this.page.stages.get('define-report').saveReportConfirm() == false)
+			return;
 
 		if(this.page.stages.selected)
 			this.page.stages.selected.switcher.classList.remove('selected');
@@ -466,7 +458,7 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 
 		super.select();
 
-		if(this.page.stages.get('define-report').container.querySelector('button.not-saved'))
+		if(this.page.stages.get('define-report').unsavedButton)
 			return;
 
 		for(const stage of this.page.stages.values())
@@ -1207,6 +1199,21 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		const query = this.report.connection.json.query;
 
 		this.container.querySelector('#stage-define-report button[type=submit]').classList.toggle('not-saved', this.report.query != query);
+
+		this.unsavedButton = this.container.querySelector('#stage-define-report button[type=submit].not-saved');
+	}
+
+	saveReportConfirm() {
+
+		if(!this.unsavedButton)
+			return;
+
+		if(!confirm('Are you sure you want to change the state? All the unsaved data will be lost.'))
+			return false;
+
+		this.unsavedButton.classList.remove('not-saved');
+
+		return true;
 	}
 
 	async loadSchema() {
@@ -1863,26 +1870,12 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
 		this.filterForm.on('submit', this.filterForm.listener = e => {
 
-			const defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved');
+			e.preventDefault();
 
-            if(defineReportSaveButton) {
+			if(!this.saveReportConfirm())
+				return;
 
-                if(confirm('Are you sure you want to change the state? All the unsaved data will be lost.')) {
-
-                    defineReportSaveButton.classList.remove('not-saved');
-                    this.insertFilter(e);
-                }
-
-                else {
-
-                    e.preventDefault();
-                }
-            }
-
-            else {
-
-                this.insertFilter(e);
-            }
+			this.insertFilter(e);
 		});
 
 		this.filterForm.datasetMultiSelect.clear();
@@ -1941,24 +1934,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
 		this.filterForm.on('submit', this.filterForm.listener = e => {
 
-			const defineReportSaveButton = this.page.stages.get('define-report').container.querySelector('button.not-saved');
+			e.preventDefault();
 
-            if(defineReportSaveButton) {
+			if(!this.saveReportConfirm())
+				return;
 
-                if(confirm('Are you sure you want to change the state? All the unsaved data will be lost.')) {
+			this.updateFilter(e, filter);
 
-                    defineReportSaveButton.classList.remove('not-saved');
-                    this.updateFilter(e, filter);
-                }
-
-                else {
-                    e.preventDefault();
-                }
-            }
-
-            else {
-	               this.updateFilter(e, filter);
-            }
 		});
 
 		this.filterForm.reset();
@@ -7147,8 +7129,8 @@ class ReportVisualizationDashboard {
 			},
 			parameters = {
 				id: this.visualization.id,
-                owner: 'dashboard',
-                owner_id: this.dashboardMultiSelect.value[0],
+				owner: 'dashboard',
+				owner_id: this.dashboardMultiSelect.value[0],
 				visualization_id: this.visualization.visualization_id,
 				format: JSON.stringify(this.visualization.format)
 			};
