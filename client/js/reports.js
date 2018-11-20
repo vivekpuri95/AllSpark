@@ -1124,6 +1124,53 @@ class DataSource {
 
 		this.columns.render();
 	}
+
+	get json() {
+
+		const response = {};
+
+		for(const key in this) {
+
+			if(typeof this[key] != 'object')
+				response[key] = this[key];
+		}
+
+		response.format = JSON.stringify(this.format);
+		response.definition = JSON.stringify(this.definition);
+		response.tags = this.tags.join();
+		response.filters = [];
+		response.visualizations = [];
+
+		for(const filter of this.filters.values()) {
+
+			const newFilter = {};
+
+			for(const key in filter) {
+
+				if(typeof filter[key] != 'object')
+					newFilter[key] = filter[key];
+			}
+
+			response.filters.push(newFilter);
+		}
+
+		for(const visualization of this.visualizations.values()) {
+
+			const newVisualization = {};
+
+			for(const key in visualization) {
+
+				if(typeof visualization[key] != 'object')
+					newVisualization[key] = visualization[key];
+			}
+
+			newVisualization.options = JSON.stringify(visualization.options);
+
+			response.visualizations.push(newVisualization);
+		}
+
+		return JSON.parse(JSON.stringify(response));
+	}
 }
 
 /**
