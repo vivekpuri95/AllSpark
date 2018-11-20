@@ -1124,6 +1124,53 @@ class DataSource {
 
 		this.columns.render();
 	}
+
+	get json() {
+
+		const response = {};
+
+		for(const key in this) {
+
+			if(typeof this[key] != 'object')
+				response[key] = this[key];
+		}
+
+		response.format = JSON.stringify(this.format);
+		response.definition = JSON.stringify(this.definition);
+		response.tags = this.tags.join();
+		response.filters = [];
+		response.visualizations = [];
+
+		for(const filter of this.filters.values()) {
+
+			const newFilter = {};
+
+			for(const key in filter) {
+
+				if(typeof filter[key] != 'object')
+					newFilter[key] = filter[key];
+			}
+
+			response.filters.push(newFilter);
+		}
+
+		for(const visualization of this.visualizations.values()) {
+
+			const newVisualization = {};
+
+			for(const key in visualization) {
+
+				if(typeof visualization[key] != 'object')
+					newVisualization[key] = visualization[key];
+			}
+
+			newVisualization.options = JSON.stringify(visualization.options);
+
+			response.visualizations.push(newVisualization);
+		}
+
+		return JSON.parse(JSON.stringify(response));
+	}
 }
 
 /**
@@ -9425,7 +9472,7 @@ Visualization.list.set('spatialmap', class SpatialMap extends Visualization {
 		this.layers.render();
 
 	}
-})
+});
 
 Visualization.list.set('cohort', class Cohort extends Visualization {
 
@@ -10058,7 +10105,7 @@ Visualization.list.set('html', class JSONVisualization extends Visualization {
 
 	async load(options = {}) {
 
-		if(this.definition && this.definition.query && this.options.body && this.options.body.includes('{{'))
+		if(this.source.definition && this.source.definition.query && this.options.body && this.options.body.includes('{{'))
 			await this.source.fetch();
 
 		super.render(options);
@@ -10737,7 +10784,7 @@ Visualization.list.set('sankey', class Sankey extends Visualization {
 			return sankey;
 		}
 	}
-})
+});
 
 class SpatialMapLayers extends Set {
 

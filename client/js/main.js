@@ -2197,7 +2197,6 @@ class HTMLEditor {
 		this.render();
 	}
 
-
 	/**
 	 * @return string	Fetch the editor's value in HTML form.
 	 */

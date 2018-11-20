@@ -887,7 +887,13 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 				<section class="section" id="stage-define-report">
 
 					<header class="toolbar">
-						<button type="submit" form="define-report-form"><i class="far fa-save"></i> Save</button>
+						<div id="save-container">
+							<button type="submit" form="define-report-form"><i class="far fa-save"></i> Save</button>
+							<button id="save-more"><i class="fa fa-angle-down"></i></button>
+							<div id="save-menu" class="hidden">
+								<button id="fork"><i class="fas fa-code-branch"></i> Fork</button>
+							</div>
+						</div>
 						<button id="schema-toggle"><i class="fas fa-database"></i> Schema</button>
 						<button id="filters-toggle"><i class="fas fa-filter"></i> Filters</button>
 						<button id="preview-toggle"><i class="fas fa-eye"></i> Preview</button>
