@@ -5473,6 +5473,92 @@ ConfigureVisualization.types.set('html', class HTMLOptions extends ReportVisuali
 	}
 });
 
+ConfigureVisualization.types.set('calendar', class calendarOptions extends ReportVisualizationOptions {
+
+	get form() {
+
+		if (this.formContainer) {
+
+			return this.formContainer;
+		}
+
+		const container = this.formContainer = document.createElement('div');
+
+		container.innerHTML = `
+			<div class="configuration-section">
+				<h3><i class="fas fa-angle-right"></i> Options</h3>
+				<div class="body">
+					<div class="form subform">
+					
+						<label>
+							<span>Timing Column</span>
+							<select name="timingColumn"></select>
+						</label>
+						
+						<label>
+							<span>Value Column</span>
+							<select name="valueColumn"></select>
+						</label>
+						
+						<label>
+							<span>
+								<input type="checkbox" name="invertValues"> Invert Values
+							</span>
+						</label>
+
+						<label>
+							<span>
+								<input type="checkbox" name="hideLegend"> Hide Legend
+							</span>
+						</label>
+						
+						<label>
+							<span> Orientation</span>
+							<select name="orientation">
+								<option value="verticalStretched"> Vertical Stretched</option>
+								<option value="vertical"> Vertical</option>
+								<option value="horizontal"> Horizontal</option>
+							</select>
+						</label>
+						
+						<label>
+							<span> Cell Value</span>
+							<select name="cellValue">
+								<option value="timing" selected="selected"> Timing</option>
+								<option value="value"> Value</option>
+								<option value="both"> Both Timing and Value</option>
+								<option value="blank"> Blank</option>
+							</select>
+						</label>
+					</div>
+				</div>
+			</div>
+		`;
+
+		const
+			timingColumn = container.querySelector('select[name=timingColumn]'),
+			valueColumn = container.querySelector('select[name=valueColumn]');
+
+		for(const [key, column] of this.page.preview.report.columns) {
+
+			timingColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+
+			valueColumn.insertAdjacentHTML('beforeend', `
+				<option value="${key}">${column.name}</option>
+			`);
+		}
+
+		for(const element of this.formContainer.querySelectorAll('select, input')) {
+
+			element[element.type == 'checkbox' ? 'checked' : 'value'] = (this.visualization.options && this.visualization.options[element.name]) || '';
+		}
+
+		return container;
+	}
+});
+
 class ReportTransformations extends Set {
 
 	constructor(visualization, stage) {
