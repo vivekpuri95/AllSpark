@@ -688,23 +688,11 @@ class APIRequest {
 
 		for(const filter in requestBody) {
 
-			if(!filterSet.has(filter)) {
-
-				this.filters.push({
-					placeholder: filter,
-					value: requestBody[filter],
-					default_value: requestBody[filter]
-				})
-			}
-
-			else {
-
-				this.filters.push({
-					placeholder: `allspark_${filter}`,
-					value: requestBody[filter],
-					default_value: requestBody[filter]
-				})
-			}
+			this.filters.push({
+				placeholder: filterSet.has(filter) ? `allspark_${filter}` : filter,
+				value: requestBody[filter],
+				default_value: requestBody[filter]
+			});
 		}
 	}
 
