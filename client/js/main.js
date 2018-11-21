@@ -156,6 +156,22 @@ class Page {
 
 			document.title = account.name;
 		}
+
+		let bar = null;
+
+		setInterval(async () => {
+
+			if(bar)
+				bar.hide();
+
+			const
+				time = Math.floor(user.exp - Date.now() / 1000),
+				text = time > 0 ? `expires in ${time} seconds` : `expired ${Math.abs(time)} seconds ago`;
+
+			bar = new NotificationBar({
+				message: `Token ${text}, was refreshed ${Format.number(Math.floor(Date.now() / 1000 - user.iat))} seconds ago.`,
+			});
+		}, 1000);
 	}
 
 	setupShortcuts() {
@@ -1484,7 +1500,7 @@ class API extends AJAX {
 				// If the token is about to expire in next few seconds then let it refresh.
 				// We're using the difference of expiry and creation here to support casses
 				// where users manually change system time and local UTC time gets out of sync with remote UTC time.
-				if(Date.now() - token.timestamp + 60 * 1000 < (user.exp - user.iat) * 1000)
+				if(Date.now() - token.timestamp + 10 * 1000 < (user.exp - user.iat) * 1000)
 					getToken = false;
 
 			} catch(e) {}
@@ -1516,6 +1532,14 @@ class API extends AJAX {
 		}
 
 		const response = await API.call('authentication/refresh', parameters, options);
+
+		if(window.user) {
+
+			new SnackBar({
+				message: `Token refreshed!`,
+				timeout: 60,
+			});
+		}
 
 		token = {
 
