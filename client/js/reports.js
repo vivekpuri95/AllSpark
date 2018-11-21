@@ -5473,8 +5473,9 @@ class LinearVisualization extends Visualization {
 				this.columns[key].push({
 					x: row.get(this.axes.bottom.column),
 					y: row.get(key),
-					y1: this.options.bubbleRadius ? row.get(this.options.bubbleRadius) : null,
+					y1: this.axes.right ? row.get(this.axes.right.column) : null,
 					key,
+					row,
 				});
 			}
 		}
@@ -6609,6 +6610,11 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 		// For each line appending the circle at each point
 		for(const column of this.columns) {
 
+			if(column.key == that.axes.right.column) {
+
+				continue;
+			}
+
 			let dots = this.svg
 				.selectAll('dot')
 				.data(column)
@@ -6621,36 +6627,56 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 				.attr('cy', d => this.y(d.y))
 				.on('mousemove', function(d) {
 
-					const
-						mouse = d3.mouse(this),
-						row = that.rows[parseInt((mouse[0] - that.axes.left.width - 10) / (that.width / that.rows.length))];
+					const mouse = d3.mouse(this);
 
-					if(!row || !column.length) {
+					const tooltip = [];
 
-						return;
+					for(const [key, _] of d.row) {
+
+						const rowColumn = d.row.source.columns.get(key);
+
+						tooltip.push(`
+							<li class="${d.row.size > 2 && that.hoverColumn && that.hoverColumn.key == key ? 'hover' : ''}">
+								<span class="circle" style="background:${rowColumn.color}"></span>
+								<span>
+									${rowColumn.drilldown && rowColumn.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
+									${rowColumn.name}
+								</span>
+								<span class="value">${d.row.get(key)}</span>
+							</li>
+						`);
 					}
 
-					const bubbleColumn = row.source.columns.get(d.key);
-
 					const content = `
-						<header>${d.x}</header>
+						<header>${d.row.get(that.axes.right.column)}</header>
 						<ul class="body">
-								<li class="${row.size > 2 && that.hoverColumn && that.hoverColumn.key == d.key ? 'hover' : ''}">
-								<span class="circle" style="background:${bubbleColumn.color}"></span>
-								<span>
-									${bubbleColumn.drilldown && bubbleColumn.drilldown.query_id ? '<i class="fas fa-angle-double-down"></i>' : ''}
-									${bubbleColumn.name}
-								</span>
-								<span class="value">${Format.number(d.y)}</span>
-							</li>
+							${tooltip.join('')}
 						</ul>
 					`;
 
+					that.svg.selectAll('circle')
+						.filter(function (v) {
+							return v.y1 != d.y1;
+						})
+						.style("opacity", 0.2);
+
+					that.svg.selectAll('text')
+						.filter(x => x && x.y1 && x.y1 != d.y1)
+						.attr('fill', 'grey')
+						.attr("opacity", 0.2);
+
 					Tooltip.show(that.container, mouse, content);
 				})
-				.on('mouseleave', function() {
+				.on('mouseleave', function(d) {
 
 					Tooltip.hide(that.container);
+
+					that.svg.selectAll('circle')
+						.style("opacity", 0.8);
+
+					that.svg.selectAll('text')
+						.attr('fill', 'black')
+						.attr("opacity", 1);
 				})
 			;
 
@@ -6660,9 +6686,11 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					.data(column)
 					.enter()
 					.append('text')
-					.attr('x', d => this.x(d.x) + this.axes.left.width - (d.y1.toString().length * 4))
+					.attr('x', d => this.x(d.x) + this.axes.left.width)
 					.attr('y', d => this.y(d.y) + 6)
-					.text(d => this.options.showValues == 'value' ? d.y : d.x);
+					.attr("text-anchor", "middle")
+					.attr("font-size", "12px")
+					.text(d => d.row.get(this.options.showValues));
 			}
 
 			if(!options.resize) {
@@ -6675,7 +6703,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 			}
 
 			dots
-				.attr('r', d => this.bubble(d.y1 - 2));
+				.attr('r', d => this.bubble(d.row.get(that.options.bubbleRadius)) - 2);
 		}
 	}
 });
