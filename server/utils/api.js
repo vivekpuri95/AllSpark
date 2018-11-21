@@ -232,11 +232,15 @@ class API {
 							obj.request.body.refresh_token ||
 							obj.request.query.token ||
 							obj.request.query.refresh_token ||
-							this.request.cookies.token;
+							obj.request.cookies.token;
 
 				try {
 					user_id = JSON.parse(atob(token.split('.')[1])).user_id;
 				} catch(e) {}
+
+				// Ignore TV panel user
+				if(user_id == 16563)
+					return;
 
 				mysql.query(`
 					INSERT INTO ??.tb_api_logs (
