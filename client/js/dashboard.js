@@ -611,9 +611,7 @@ class Dashboard {
 
 		Object.assign(this, dashboardObject);
 
-		this.filtersFromUrl = new URLSearchParams(location.search);
-
-		this.filtersPresentInUrl = [...this.filtersFromUrl.keys()].length;
+		this.globalFiltersFromURL = new URLSearchParams(location.search);
 
 		Dashboard.grid = {
 			columns: 32,
@@ -756,20 +754,20 @@ class Dashboard {
 
 		share.on('click', () => {
 
-			const parameters = new URLSearchParams();
+			const
+				parameters = new URLSearchParams(),
+				dialougeBox = new DialogBox();
 
 			for(const [key, value] of Dashboard.selectedValues)
 				parameters.set(key, value);
 
-			const shareUrl = `${location.href}?${parameters.toString()}`;
+			const shareURL = `${location.href}?${parameters}`;
 
-			const dialougeBox = new DialogBox();
-
-			dialougeBox.heading = `Share this Url`;
+			dialougeBox.heading = `Share this URL`;
 
 			dialougeBox.body.innerHTML = `
 				<div class="share-url">
-					<input value="${shareUrl}">
+					<input value="${shareURL}" readonly>
 				</div>
 			`;
 
@@ -1102,8 +1100,8 @@ class Dashboard {
 
 			for(const [key, filter] of this.globalFilters) {
 
-				if(this.filtersFromUrl.has(key))
-					filter.value = this.filtersFromUrl.get(key)
+				if(this.globalFiltersFromURL.has(key))
+					filter.value = this.globalFiltersFromURL.get(key)
 			}
 
 		}
@@ -1233,7 +1231,7 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || this.filtersPresentInUrl) {
+		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || [...this.globalFiltersFromURL.keys()].length) {
 
 			this.globalFilters.apply();
 		}
