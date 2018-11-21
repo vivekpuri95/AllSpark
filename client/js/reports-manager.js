@@ -195,6 +195,14 @@ class ReportsManger extends Page {
 	}
 }
 
+window.addEventListener("beforeunload", function (event) {
+
+	event.preventDefault();
+
+	if(this.page.stages.get('define-report').container.querySelector('button.not-saved'))
+		event.returnValue = 'Sure';
+  });
+
 class ReportsMangerPreview {
 
 	constructor(page) {
@@ -314,6 +322,9 @@ class ReportsMangerStage {
 
 			this.select();
 
+			if(this.page.stages.get('define-report').container.querySelector('button.not-saved'))
+				return;
+
 			if(this.key != 'configure-visualization')
 				window.history.pushState({}, '', `/reports/${this.url}`);
 		});
@@ -322,6 +333,9 @@ class ReportsMangerStage {
 	}
 
 	async select() {
+
+		if(!this.page.stages.get('define-report').saveReportConfirm())
+			return;
 
 		if(this.page.stages.selected)
 			this.page.stages.selected.switcher.classList.remove('selected');
@@ -438,6 +452,9 @@ ReportsManger.stages.set('pick-report', class PickReport extends ReportsMangerSt
 	select() {
 
 		super.select();
+
+		if(this.page.stages.get('define-report').container.querySelector('button.not-saved'))
+			return;
 
 		for(const stage of this.page.stages.values())
 			stage.disabled = stage != this;
@@ -1172,6 +1189,31 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		else missingContainer.classList.add('hidden');
 	}
 
+	unsavedQueryValue() {
+
+		if(!this.report.connection.editor)
+			return;
+
+		const query = this.report.connection.json.query;
+
+		this.container.querySelector('#stage-define-report button[type=submit]').classList.toggle('not-saved', this.report.query != query);
+	}
+
+	saveReportConfirm() {
+
+		const defineReportSaveButton = this.container.querySelector('#stage-define-report button[type=submit].not-saved');
+
+		if(!defineReportSaveButton)
+			return true;
+
+		if(!confirm('Are you sure you want to change the state? All the unsaved data will be lost.'))
+			return false;
+
+		defineReportSaveButton.classList.remove('not-saved');
+
+		return true;
+	}
+
 	async loadSchema() {
 
 		// Load and save the schema if we haven't already
@@ -1375,6 +1417,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 						if(!this.report)
 							return;
 
+						this.container.querySelector('#preview-toggle').classList.add('selected');
+
 						this.page.preview.load({
 							definition: {
 								query: `SELECT * FROM \`${database.name}\`.\`${table.name}\` LIMIT 100`,
@@ -1435,6 +1479,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 	}
 
 	initializeFork() {
+
+		if(!this.saveReportConfirm())
+			return;
+
+		this.load();
 
 		let dialogBox = this.forkDialogBox;
 
@@ -1822,7 +1871,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		}
 
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
-		this.filterForm.on('submit', this.filterForm.listener = e => this.insertFilter(e));
+		this.filterForm.on('submit', this.filterForm.listener = e => {
+
+			e.preventDefault();
+
+			if(this.saveReportConfirm())
+				this.insertFilter(e);
+		});
 
 		this.filterForm.datasetMultiSelect.clear();
 
@@ -1862,6 +1917,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		} catch(e) {
 
+			this.unsavedQueryValue();
+
 			new SnackBar({
 				message: 'Request Failed',
 				subtitle: e.message,
@@ -1878,7 +1935,13 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		this.container.querySelector('#filter-list').classList.add('hidden');
 
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
-		this.filterForm.on('submit', this.filterForm.listener = e => this.updateFilter(e, filter));
+		this.filterForm.on('submit', this.filterForm.listener = e => {
+
+			e.preventDefault();
+
+			if(this.saveReportConfirm())
+				this.updateFilter(e, filter);
+		});
 
 		this.filterForm.reset();
 
@@ -1936,6 +1999,8 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 			});
 
 		} catch(e) {
+
+			this.unsavedQueryValue();
 
 			new SnackBar({
 				message: 'Request Failed',
@@ -2914,7 +2979,11 @@ ReportConnection.types.set('mysql', class ReportConnectionMysql extends ReportCo
 
 		this.editor = new CodeEditor({mode: 'sql'});
 
-		this.editor.on('change', () => this.stage.filterSuggestions());
+		this.editor.on('change', () => {
+
+			this.stage.filterSuggestions();
+			this.stage.unsavedQueryValue();
+		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
@@ -2950,7 +3019,11 @@ ReportConnection.types.set('mssql', class ReportConnectionMysql extends ReportCo
 		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
 
-		this.editor.on('change', () => this.stage.filterSuggestions());
+		this.editor.on('change', () => {
+
+			this.stage.filterSuggestions();
+			this.stage.unsavedQueryValue();
+		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
@@ -2986,7 +3059,11 @@ ReportConnection.types.set('pgsql', class ReportConnectionMysql extends ReportCo
 		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
 
-		this.editor.on('change', () => this.stage.filterSuggestions());
+		this.editor.on('change', () => {
+
+			this.stage.filterSuggestions();
+			this.stage.unsavedQueryValue();
+		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
@@ -3022,7 +3099,11 @@ ReportConnection.types.set('bigquery', class ReportConnectionMysql extends Repor
 		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
 
-		this.editor.on('change', () => this.stage.filterSuggestions());
+		this.editor.on('change', () => {
+
+			this.stage.filterSuggestions();
+			this.stage.unsavedQueryValue();
+		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
@@ -3325,7 +3406,11 @@ ReportConnection.types.set('mongo', class ReportConnectionMysql extends ReportCo
 		if(this.logsEditor)
 			this.editor.editor.setTheme('ace/theme/clouds');
 
-		this.editor.on('change', () => this.stage.filterSuggestions());
+		this.editor.on('change', () => {
+
+			this.stage.filterSuggestions();
+			this.stage.unsavedQueryValue();
+		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
@@ -3379,7 +3464,11 @@ ReportConnection.types.set('oracle', class ReportConnectionMysql extends ReportC
 			this.editor.editor.setTheme('ace/theme/clouds');
 		}
 
-		this.editor.on('change', () => this.stage.filterSuggestions());
+		this.editor.on('change', () => {
+
+			this.stage.filterSuggestions();
+			this.stage.unsavedQueryValue();
+		});
 
 		setTimeout(() => this.setEditorKeyboardShortcuts());
 	}
@@ -7042,8 +7131,8 @@ class ReportVisualizationDashboard {
 			},
 			parameters = {
 				id: this.visualization.id,
-                owner: 'dashboard',
-                owner_id: this.dashboardMultiSelect.value[0],
+				owner: 'dashboard',
+				owner_id: this.dashboardMultiSelect.value[0],
 				visualization_id: this.visualization.visualization_id,
 				format: JSON.stringify(this.visualization.format)
 			};

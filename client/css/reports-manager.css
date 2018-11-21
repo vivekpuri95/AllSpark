@@ -383,6 +383,9 @@ main.preview-left #stages {
 							color: var(--color-grey);
 						}
 
+		#stage-define-report button[type=submit].not-saved {
+			background: var(--color-red);
+		}
 		#stage-define-report #define-report-form {
 			order: 2;
 			flex: 1 60%;
