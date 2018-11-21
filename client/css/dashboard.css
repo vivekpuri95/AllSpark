@@ -198,7 +198,6 @@ main #reports > h1.dashboard-name::-webkit-scrollbar {
 				color: var(--color-accent-text);
 				cursor: pointer;
 			}
-
 			main #reports > h1.dashboard-name .full-screen {
 				font-size: 80%;
 				display: flex;
@@ -627,3 +626,11 @@ main section#list .toolbar {
 		main section#list .block .visualisation-display .visualization-name {
 			margin: calc(var(--gap) * 2);
 		}
+
+.dialog-box .share-url {
+	padding: calc(var(--gap) * 2);
+	user-select: text;
+}
+	.dialog-box .share-url input {
+		min-width: 100%;
+	}
