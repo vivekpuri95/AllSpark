@@ -765,6 +765,9 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 		this.container.querySelector('#added-by').textContent = null;
 
 		this.form.redis_custom.classList.toggle('hidden', this.form.redis.value == 'custom');
+
+		await this.descriptionEditor.setup(),
+
 		this.descriptionEditor.value = '';
 
 		this.form.name.focus();
@@ -788,7 +791,7 @@ ReportsManger.stages.set('configure-report', class ConfigureReport extends Repor
 
 		try {
 
-			const response = await API.call('reports/report/insert', {}, options);
+			const response = await API.call('reports/report/insert', parameters, options);
 
 			await DataSource.load(true);
 
