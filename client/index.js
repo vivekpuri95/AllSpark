@@ -641,6 +641,11 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 						Configure
 					</button>
 
+					<button id="share">
+						<i class="fas fa-share"></i>
+						Share
+					</button>
+
 					<button id="full-screen">
 						<i class="fas fa-expand"></i>
 						Full Screen

@@ -1141,7 +1141,7 @@ body {
 	left: 50%;
 }
 
-[data-tooltip-position='buttom']::before {
+[data-tooltip-position='bottom']::before {
 	top: 100%;
 	margin-top: 8px;
 	transform: translateX(-50%) translateY(-100%) rotate(-180deg)

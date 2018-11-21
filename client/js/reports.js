@@ -11149,6 +11149,767 @@ SpatialMapLayer.types.set('bubblemap', class BubbleMap extends SpatialMapLayer {
 	}
 });
 
+Visualization.list.set('calendar', class CalendarVisualization extends Visualization {
+
+	constructor(visualization, source) {
+
+		super(visualization, source);
+
+		this.constraints = {
+
+			min: Infinity,
+			max: -Infinity,
+			monthMin: Infinity,
+			monthMax: -Infinity,
+			yearMin: Infinity,
+			yearMax: -Infinity,
+			weekMin: Infinity,
+			weekMax: -Infinity,
+		};
+
+		// luminosity less than this.darLuma indicates that container is dark.
+		//alpha value btween 0-255, more this.darkAlphaValue means background is more opaque.
+		this.darkLuma = 60;
+		this.darkAlphaValue = 100;
+	}
+
+	async load(options = {}) {
+
+		super.render(options);
+
+		await this.source.fetch(options);
+
+		if (!this.unset) {
+
+			await this.render(options);
+		}
+	}
+
+	async process(options = {}) {
+
+		if(!this.options) {
+
+			this.options = options;
+		}
+
+		this.constraints = {
+
+			min: Infinity,
+			max: -Infinity,
+			monthMin: Infinity,
+			monthMax: -Infinity,
+			yearMin: Infinity,
+			yearMax: -Infinity,
+			weekMin: Infinity,
+			weekMax: -Infinity,
+		}
+
+		const response = await this.source.response();
+
+		this.response = response;
+		this.timingMappedResponse = new Map;
+		this.hierarchy = new Map;
+
+		if (!this.options) {
+
+			this.unset = true;
+			return this.source.error('Visualization not configured yet.');
+		}
+
+		if (!response || !response.length) {
+
+			this.unset = true;
+			return this.source.error('No Data Found');
+		}
+
+		if (!this.options.timingColumn) {
+
+			this.unset = true;
+			return this.source.error('Timing Column not defined.');
+		}
+
+		if (!this.options.valueColumn) {
+
+			this.unset = true;
+			return this.source.error('Value Column not defined.');
+		}
+
+		if (!this.source.columns.list.has(this.options.timingColumn)) {
+
+			this.unset = true;
+			return this.source.error(`Timing Column ${this.options.timingColumn} not found`);
+		}
+
+		if (!this.source.columns.list.has(this.options.valueColumn)) {
+
+			this.unset = true;
+			return this.source.error(`Value Column ${this.options.valueColumn} not found`);
+		}
+
+		if (this.options.valueColumn == this.options.timingColumn) {
+
+			this.unset = true;
+			return this.source.error(`Value Column should not be equal to timing column`);
+		}
+
+		this.unset = false;
+
+		this.reset();
+
+		switch ((this.source.columns.get(this.options.timingColumn).type || {name: 'string'}).name) {
+
+			case 'string':
+				break;
+
+			case 'date':
+				break;
+
+			case 'month':
+				this.collapsed = 'monthly';
+				break;
+		}
+
+		if (this.source.postProcessors.selected
+			&& ['CollapseTo', 'CollapseToAverage'].includes(this.source.postProcessors.selected.key)
+			&& this.source.postProcessors.selected.value == 'week') {
+
+			this.collapsed = 'weekly';
+		}
+
+		this.timingMappedString();
+	}
+
+	reset() {
+
+		this.collapsed = false;
+	}
+
+	get container() {
+
+		if (this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		this.containerElement = document.createElement('div');
+		this.container.classList.add('calendar', 'visualization');
+		this.container.id = `visualization-${this.id}`;
+
+		if (this.options && this.options.orientation == 'vertical') {
+
+			this.container.classList.add('vertical');
+		}
+
+
+		return this.containerElement;
+	}
+
+	async render() {
+
+		const container = this.container;
+		container.textContent = null;
+
+		await this.process();
+
+		if (this.unset) {
+
+			return false;
+		}
+
+		for (const year of this.hierarchy.values()) {
+
+			const yearObject = new CalendarYear(year, this.source);
+			container.appendChild(yearObject.container);
+
+			if (this.collapsed == 'weekly') {
+
+				break;
+			}
+		}
+
+		return container;
+	}
+
+	alphaValue(min, max, value, empty, invert = false) {
+
+		const
+			range = max - min,
+			baseValue = 50,
+			remainingGradient = 255 - baseValue,
+			distance = invert ? max - value : value - min
+		;
+
+		let alphaValue;
+
+		if (empty) {
+
+			alphaValue = baseValue;
+		}
+
+		else {
+
+			alphaValue = baseValue + (remainingGradient / range) * distance;
+		}
+
+		return Math.floor(alphaValue).toString(16);
+	}
+
+	timingMappedString() {
+
+		let l = this.response.length;
+
+		while (l--) {
+
+			if (!this.response[l].has(this.options.timingColumn) && !this.response[l].has(this.options.valueColumn)) {
+
+				this.response.splice(l, 1);
+				continue;
+			}
+
+			this.response[l].set(this.options.timingColumn,
+				this.response[l]
+					.get(this.options.timingColumn)
+					.slice(0, 10)
+					.split('-')
+					.concat(['-01', '-01'])
+					.slice(0, 3)
+					.join('-')
+			);
+
+			let timing = new Date(this.response[l].get(this.options.timingColumn));
+
+			timing = new Date(+timing - (timing.getTimezoneOffset() * 60000));
+
+			this.response[l].set(this.options.timingColumn, timing); //current timezone
+
+			this.timingMappedResponse.set(this.response[l].get(this.options.timingColumn).toISOString().slice(0, 10),
+				this.collapsed == 'weekly' ? new CalendarWeek(this.response[l], this.source) : new CalendarDay(this.response[l], this.source)
+			);
+		}
+
+		for (const date of this.timingMappedResponse.keys()) {
+
+			const timing = date.split('-');
+
+			if (!this.hierarchy.has(timing[0])) {
+
+				this.hierarchy.set(timing[0], new Map);
+			}
+
+			if (!(this.hierarchy.get(timing[0])).has(timing[1])) {
+
+				this.hierarchy.get(timing[0]).set(timing[1], []);
+			}
+
+			this.hierarchy.get(timing[0]).get(timing[1]).push(this.timingMappedResponse.get(date));
+		}
+	}
+
+	luma(c) {
+
+		c = c.substring(1, 7);
+		const
+			rgb = parseInt(c, 16),
+			r = (rgb >> 16) & 0xff,
+			g = (rgb >> 8) & 0xff,
+			b = (rgb >> 0) & 0xff
+		;
+
+		return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	}
+
+	fillDiv(div, obj) {
+
+		switch (this.options.cellValue) {
+
+			case 'blank':
+				div.innerHTML = '&nbsp';
+				break;
+
+			case 'timing':
+				div.innerHTML = obj.name;
+				break;
+
+			case 'value':
+				div.innerHTML = obj.typedValue;
+				break;
+
+			case 'both':
+
+				div.innerHTML = `
+					<span>
+						${obj.name}
+					</span>
+					
+					<span class="${obj.dark ? 'dark' : 'light'} value-subtitle">
+						${obj.typedValue ? obj.typedValue : ''}
+					</span>`;
+
+				break;
+
+			default:
+				div.innerHTML = obj.name;
+
+		}
+	}
+});
+
+
+class CalendarUnit {
+
+	constructor(row, source) {
+
+		this.source = source;
+		this.visualization = this.source.visualizations.selected;
+		this.row = row;
+
+		if (!(this.row.get(this.visualization.options.timingColumn) instanceof Date)) {
+
+			this.row.set(this.visualization.options.timingColumn,
+				new Date(this.row.get(this.visualization.options.timingColumn)
+					.split('-')
+					.push('-01', '-01')
+					.slice(0, 3)
+				)
+			);
+
+			this.blank = true;
+		}
+
+		if (!this.row.get(this.visualization.options.valueColumn)) {
+
+			this.empty = true;
+		}
+
+		this.timing = this.row.get(this.visualization.options.timingColumn);
+		this.value = this.row.get(this.visualization.options.valueColumn);
+
+		this.name = this.timing.getDate();
+	}
+
+	get container() {
+
+		if (this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		this.setup();
+
+		const columnColor = this.source.columns.get(this.visualization.options.timingColumn).color;
+
+		const div = document.createElement('div');
+
+		div.classList.add('calendar-day');
+
+		if (this.blank || this.empty) {
+
+			div.classList.add('blank');
+		}
+
+		else {
+
+			div.style.backgroundColor = columnColor + this.alphaValue;
+
+			if(!['value', 'both'].includes(this.visualization.options.cellValue)) {
+
+				div.setAttribute('data-tooltip', this.toolTipValue);
+
+				if (this.bottomTooltip) {
+
+					div.setAttribute('data-tooltip-position', 'bottom');
+				}
+			}
+		}
+
+		if (this.visualization.luma(columnColor) <= this.visualization.darkLuma
+			&& parseInt(this.alphaValue, 16) > this.visualization.darkAlphaValue
+		) {
+			div.classList.add('dark');
+			this.dark = true;
+		}
+
+		else {
+
+			div.classList.add('light');
+			this.light = true;
+		}
+
+		this.visualization.fillDiv(div, Object.assign({}, this));
+
+		this.containerElement = div;
+
+		return this.containerElement;
+	}
+}
+
+class CalendarDay extends CalendarUnit {
+
+	constructor(row, visualization) {
+
+		super(row, visualization);
+
+		this.visualization.constraints.max = Math.max(this.value, this.visualization.constraints.max)
+		this.visualization.constraints.min = Math.min(this.value, this.visualization.constraints.min);
+	}
+
+	setup() {
+
+		this.alphaValue = this.visualization.alphaValue(
+			this.visualization.constraints.min,
+			this.visualization.constraints.max,
+			this.value,
+			this.empty,
+			this.visualization.options.invertValues
+		);
+
+		this.toolTipValue = this.row.getTypedValue(this.visualization.options.valueColumn);
+		this.typedValue = this.row.getTypedValue(this.visualization.options.valueColumn) || '&nbsp';
+	}
+}
+
+class CalendarWeek extends CalendarUnit {
+
+	constructor(row, source) {
+
+		super(row, source);
+
+		this.name = Format.date(this.timing.toISOString().slice(0, 10));
+
+		let endDate = new Date(this.timing);
+		endDate = new Date(endDate.setDate(endDate.getDate() + 6));
+
+		this.visualization.constraints.weekMax = Math.max(this.value, this.visualization.constraints.weekMax);
+		this.visualization.constraints.weekMin = Math.min(this.value, this.visualization.constraints.weekMin);
+
+		this.dateRange = `${Format.date(this.timing.toISOString().slice(0, 10))} - ${Format.date(endDate.toISOString().slice(0, 10))}`
+	}
+
+	setup() {
+
+		this.alphaValue = this.visualization.alphaValue(
+			this.visualization.constraints.weekMin,
+			this.visualization.constraints.weekMax,
+			this.value,
+			this.empty,
+			this.visualization.options.invertValues
+		);
+
+		this.toolTipValue = `${this.row.getTypedValue(this.visualization.options.valueColumn)} \n ${this.dateRange}`;
+		this.typedValue = this.row.getTypedValue(this.visualization.options.valueColumn);
+	}
+}
+
+class CalendarMonth {
+
+	constructor(dates, source) {
+
+		this.source = source;
+		this.visualization = this.source.visualizations.selected;
+
+		this.dates = dates;
+
+		this.empty = !dates.length;
+
+		const sdate = dates[0].timing;
+
+		if (this.visualization.collapsed != 'monthly') {
+
+			this.value = dates.reduce((val, x) => {
+
+				if (x.value) {
+
+					return val + parseFloat(x.value)
+				}
+
+				return 0;
+
+			}, 0);
+		}
+
+		else {
+
+			this.value = dates[0] && dates[0].value;
+			this.typedValue = dates[0] ? dates[0].row.getTypedValue(this.visualization.options.valueColumn) : '&nbsp';
+		}
+
+		this.visualization.constraints.monthMax = Math.max(this.value, this.visualization.constraints.monthMax);
+		this.visualization.constraints.monthMin = Math.min(this.value, this.visualization.constraints.monthMin);
+
+		this.name = `${Format.customTime(sdate, {month: "long"})} (${sdate.getFullYear()})`;
+
+		const firstDay = new Date(sdate.getFullYear(), sdate.getMonth(), 1);
+		const lastDay = new Date(sdate.getFullYear(), sdate.getMonth() + 1, 0);
+
+		let timing = new Date(+firstDay - (firstDay.getTimezoneOffset() * 60000));
+
+		timing.setHours(0, 0, 0, 0);
+
+		while (timing <= lastDay) {
+
+			if (!this.visualization.timingMappedResponse.has(new Date(+timing - (timing.getTimezoneOffset() * 60000))
+				.toISOString().slice(0, 10))) {
+
+				const row = {};
+				row[this.visualization.options.timingColumn] = timing;
+				row[this.visualization.options.valueColumn] = '';
+				const dataSourceRow = new DataSourceRow(row, this.source);
+
+				this.dates.push(new CalendarDay(dataSourceRow, this.source));
+
+				this.visualization.timingMappedResponse.set(
+					new Date(+timing - (timing.getTimezoneOffset() * 60000))
+						.toISOString()
+						.slice(0, 10),
+					new CalendarDay(dataSourceRow, this.source)
+				);
+			}
+
+			timing = new Date(+timing + 60 * 60 * 24 * 1000);
+		}
+
+		this.dates = this.dates.sort((x, y) => {
+
+			if (x.timing < y.timing) {
+
+				return -1;
+			}
+
+			else if (x.timing > y.timing) {
+
+				return 1;
+			}
+
+			return 0;
+		});
+	}
+
+	get container() {
+
+		if (this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		const weeks = [];
+		let week = Array(7).fill(null);
+
+		for (const date of this.dates) {
+
+			this.data ? this.data += date.data : this.data = date.data;
+
+			if (date.timing.getDay() == 0) {
+
+				week.filter(x => x).length && weeks.push(week);
+				week = Array(7).fill(null);
+			}
+
+			week[date.timing.getDay()] = date;
+		}
+
+		week.filter(x => x).length && weeks.push(week);
+
+		const container = document.createElement('section');
+
+		container.innerHTML = `
+			<div>
+				<h1 class="month-name">${this.name}</h1>
+				<div class="calendar-grid calendar-container"></div>
+			</div>
+		`;
+
+		container.classList.add('calendar-month');
+
+		const calendarDaysContainer = container.querySelector('.calendar-container');
+
+		const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'];
+
+		for (const week of weekDays) {
+
+			calendarDaysContainer.insertAdjacentHTML('beforeend', `<div class="calendar-day weekday">${week}</div>`);
+		}
+
+		for (const week of weeks) {
+
+			for (const day of week) {
+
+				if (!day) {
+
+					calendarDaysContainer.insertAdjacentHTML('beforeend', `<div class="blank"></div>`);
+					continue;
+				}
+
+				calendarDaysContainer.appendChild(day.container);
+			}
+		}
+
+		this.containerElement = container;
+
+		return this.containerElement;
+	}
+
+	get collapsedContainer() {
+
+		const div = document.createElement('div');
+		div.classList.add('calendar-day');
+
+		const maxYear = (([...this.visualization.hierarchy.keys()].map(x => x.split('-')[0])).sort()).pop();
+
+		if (
+			(this.name.includes(maxYear)
+				&& !(this.visualization.options.orientation == 'vertical-stretched')
+			) ||
+			(this.visualization.options.orientation == 'vertical-stretched'
+				&& new Date(this.dates[0].timing).getMonth() === 0
+			)
+		) {
+
+			div.setAttribute('data-tooltip-position', 'bottom');
+		}
+
+		if(!['value', 'both'].includes(this.visualization.options.cellValue)) {
+
+			div.setAttribute('data-tooltip', this.typedValue);
+		}
+
+		div.textContent = this.name;
+
+		const alphaValue = this.visualization.alphaValue(
+			this.visualization.constraints.monthMin,
+			this.visualization.constraints.monthMax,
+			this.value,
+			this.empty,
+			this.visualization.options.invertValues
+		);
+
+		div.style.backgroundColor = this.visualization.source.columns.get('timing').color + alphaValue;
+		div.style.height = '100px';
+
+		if (this.visualization.luma(this.source.columns.get(this.visualization.options.timingColumn).color) <= 40
+			&& parseInt(alphaValue, 16) > 170) {
+
+			div.classList.add('dark');
+			this.dark = true
+		}
+
+		else {
+
+			div.classList.add('light');
+			this.light = true;
+		}
+
+		this.visualization.fillDiv(div, Object.assign({}, this));
+
+		return div;
+	}
+}
+
+class CalendarYear {
+
+	constructor(months, source) {
+
+		this.source = source;
+		this.visualization = this.source.visualizations.selected;
+
+		this.monthMapping = new Map;
+
+		if (this.visualization.collapsed == 'weekly') {
+
+			return;
+		}
+
+		for (const month of months.keys()) {
+
+			this.monthMapping.set(month, new CalendarMonth(months.get(month), this.source));
+		}
+	}
+
+	get container() {
+
+		if (this.containerElement) {
+
+			return this.containerElement;
+		}
+
+		if (this.visualization.collapsed == 'weekly') {
+
+			return this.containerCollapsed;
+		}
+
+		const yearContainer = document.createElement('div');
+
+		if (this.visualization.options.orientation == 'vertical') {
+
+			if(this.visualization.collapsed == 'monthly') {
+
+				yearContainer.classList.add('vertical-month-grid');
+			}
+
+			else {
+
+				yearContainer.classList.add('vertical');
+			}
+		}
+
+		else if (this.visualization.options.orientation == 'horizontal') {
+
+			yearContainer.classList.add('horizontal');
+		}
+
+		else if (this.visualization.options.orientation == 'verticalStretched') {
+
+			yearContainer.classList.add('vertical-stretched');
+		}
+
+		for (const month of [...this.monthMapping.keys()].sort()) {
+
+			if (this.visualization.collapsed == 'monthly') {
+
+				yearContainer.appendChild(this.monthMapping.get(month).collapsedContainer);
+			}
+
+			else {
+
+				yearContainer.appendChild(this.monthMapping.get(month).container);
+			}
+		}
+
+		this.containerElement = yearContainer;
+
+		return this.containerElement;
+	}
+
+	get containerCollapsed() {
+
+		if (this.containerElementCollapsed) {
+
+			return this.containerElementCollapsed;
+		}
+
+		const container = document.createElement('div');
+
+		container.classList.add('calendar-grid', 'calendar-container');
+
+		let firstRow = 0;
+
+		for (const months of this.visualization.hierarchy.values()) {
+
+			for (const month of months.values()) {
+
+				for (const day of month) {
+
+					day.bottomTooltip = ++firstRow <= 7;
+					container.appendChild(day.container);
+				}
+			}
+		}
+
+		this.containerElementCollapsed = container;
+
+		return this.containerElementCollapsed;
+	}
+}
+
 class SpatialMapThemes extends Map {
 
 	constructor(visualization) {
@@ -11157,7 +11918,7 @@ class SpatialMapThemes extends Map {
 
 		this.visualization = visualization;
 
-		for(const theme of MetaData.spatialMapThemes.keys()) {
+		for (const theme of MetaData.spatialMapThemes.keys()) {
 
 			this.set(theme, new SpatialMapTheme({name: theme, config: MetaData.spatialMapThemes.get(theme)}, this))
 		}
@@ -11167,14 +11928,14 @@ class SpatialMapThemes extends Map {
 
 	get container() {
 
-		if(this.containerElement)
+		if (this.containerElement)
 			return this.containerElement;
 
 		const container = this.containerElement = document.createElement('div');
 
 		container.classList.add('theme-list');
 
-		for(const theme of this.values()) {
+		for (const theme of this.values()) {
 
 			container.appendChild(theme.container);
 		}

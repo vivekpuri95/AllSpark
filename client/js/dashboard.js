@@ -166,7 +166,7 @@ Page.class = class Dashboards extends Page {
 		return parents;
 	}
 
-	render({dashboardId = 0, renderNav = false, updateNav = true, reloadDashboard = true} = {}) {
+	render({dashboardId = 0, renderNav = false, updateNav = true, reloadDashboard = true, searchParam = ''} = {}) {
 
 		if (dashboardId && reloadDashboard) {
 
@@ -178,7 +178,7 @@ Page.class = class Dashboards extends Page {
 				history.pushState({
 					filter: dashboardId,
 					type: 'dashboard'
-				}, '', `/dashboard/${dashboardId}`);
+				}, '', `/dashboard/${dashboardId}${searchParam}`);
 				await this.list.get(dashboardId).load();
 				await this.list.get(dashboardId).render();
 			})()
@@ -468,7 +468,6 @@ Page.class = class Dashboards extends Page {
 
 		const emptyDashboards = [];
 
-
 		for (const dashboard of this.list.values()) {
 
 			if (dashboard.visibleVisuliaztions.size === 0) {
@@ -519,7 +518,6 @@ Page.class = class Dashboards extends Page {
 			return dashboardReference.querySelector('.label').click();
 		}
 
-
 		this.render({dashboardId: 0});
 
 		if (!currentId) {
@@ -535,7 +533,7 @@ Page.class = class Dashboards extends Page {
 
 		else {
 
-			return this.render({dashboardId: currentId, renderNav: true, updateNav: false});
+			return this.render({dashboardId: currentId, renderNav: true, updateNav: false, searchParam: location.search});
 		}
 	}
 
@@ -612,6 +610,8 @@ class Dashboard {
 		}
 
 		Object.assign(this, dashboardObject);
+
+		this.globalFiltersFromURL = new URLSearchParams(location.search);
 
 		Dashboard.grid = {
 			columns: 32,
@@ -748,6 +748,32 @@ class Dashboard {
 
 			else
 				fullScreenButton.innerHTML = `<i class="fas fa-expand"></i> Full Screen`;
+		});
+
+		const share = page.container.querySelector('#share');
+
+		share.on('click', () => {
+
+			const
+				parameters = new URLSearchParams(),
+				dialougeBox = new DialogBox();
+
+			for(const [key, value] of Dashboard.selectedValues)
+				parameters.set(key, value);
+
+			const shareURL = `${location.href}?${parameters}`;
+
+			dialougeBox.heading = `Share this URL`;
+
+			dialougeBox.body.innerHTML = `
+				<div class="share-url">
+					<input value="${shareURL}" readonly>
+				</div>
+			`;
+
+			dialougeBox.show();
+
+			dialougeBox.body.querySelector('.share-url input').select();
 		});
 	}
 
@@ -1071,6 +1097,13 @@ class Dashboard {
 			this.globalFilters = new DashboardGlobalFilters(this);
 
 			await this.globalFilters.load();
+
+			for(const [key, filter] of this.globalFilters) {
+
+				if(this.globalFiltersFromURL.has(key))
+					filter.value = this.globalFiltersFromURL.get(key)
+			}
+
 		}
 		catch (e) {
 			console.log(e);
@@ -1083,7 +1116,6 @@ class Dashboard {
 	async render(resize) {
 
 		if (this.format && this.format.category_id) {
-
 			return;
 		}
 
@@ -1199,8 +1231,10 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if (Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size)
+		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || [...this.globalFiltersFromURL.keys()].length) {
+
 			this.globalFilters.apply();
+		}
 	}
 
 	async save(format, id) {

@@ -1398,7 +1398,78 @@ main .dataset {
 		fill: var(--color-grey);
 		font-size: 12px !important;
 	}
-
+.visualization.calendar {
+	flex-direction: column;
+	overflow-y: auto;
+	align-content: flex-start;
+	flex: 1;
+}
+	.visualization.calendar .month-name {
+		text-align: center;
+	}
+	.visualization.calendar .calendar-grid {
+		display: grid;
+		grid-template-columns: repeat(7, calc(14.28% - 2px));
+		grid-gap: 2px 2px;
+		align-items: flex-start;
+		justify-content: center;
+		padding: 5px;
+	}
+	.visualization.calendar .calendar-day {
+		text-align: center;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		padding: 10px;
+		font-weight: bold;
+		min-width: 45px;
+		min-height: 45px;
+		justify-content: center;
+		align-items: center;
+		white-space: initial;
+	}
+	.visualization.calendar .calendar-month {
+		display: flex;
+		flex-direction: column;
+	}
+	.visualization.calendar section {
+		margin: 15px 0px;
+	}
+		.visualization.calendar section .blank {
+			height: 100%;
+			background: var(--color-hover);
+			color: var(--color-hover-text);
+		}
+	.visualization.calendar .dark {
+		color: #eee !important;
+		text-shadow: none;
+	}
+	.visualization.calendar .light {
+		color: #000 !important;
+		text-shadow: none;
+	}
+	.visualization.calendar .horizontal {
+		display: flex;
+		flex-direction: row;
+}
+	.visualization.calendar .vertical {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	.visualization.calendar .vertical-stretched {
+		display: flex;
+		flex-direction: column;
+	}
+	.visualization.calendar .value-subtitle {
+		font-size: 90%;
+	}
+	.visualization.calendar .vertical-month-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr 1fr;
+	}
+		.visualization.calendar section h1 {
+			margin-bottom: 0;
+		}
 .data-source-column form .parameter-list {
 	display: grid;
 	grid-gap: calc(var(--gap) * 2);
