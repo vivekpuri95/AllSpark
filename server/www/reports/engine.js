@@ -696,6 +696,15 @@ class APIRequest {
 					default_value: requestBody[filter]
 				})
 			}
+
+			else {
+
+				this.filters.push({
+					placeholder: `allspark_${filter}`,
+					value: requestBody[filter],
+					default_value: requestBody[filter]
+				})
+			}
 		}
 	}
 
