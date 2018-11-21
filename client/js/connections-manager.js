@@ -778,9 +778,8 @@ DataConnection.types.set('oracle', class {
 DataConnection.types.set('api', class {
 
 	static render(connections = {}) {
-		connections.form =  connections.container.querySelector('#connections-form');
 
-		connections.form.querySelector('#details').innerHTML = null;
+		connections.container.querySelector('#connections-form #details').remove();
 	}
 
 	static get details() {
@@ -791,9 +790,8 @@ DataConnection.types.set('api', class {
 DataConnection.types.set('bigquery', class {
 
 	static render(connections = {}) {
-		connections.form =  connections.container.querySelector('#connections-form');
 
-		connections.form.querySelector('#details').innerHTML = null;
+		connections.container.querySelector('#connections-form #details').remove();
 	}
 
 	static get details() {
@@ -804,9 +802,8 @@ DataConnection.types.set('bigquery', class {
 DataConnection.types.set('file', class {
 
 	static render(connections = {}) {
-		connections.form =  connections.container.querySelector('#connections-form');
 
-		connections.form.querySelector('#details').innerHTML = null;
+		connections.container.querySelector('#connections-form #details').remove();
 	}
 
 	static get details() {
