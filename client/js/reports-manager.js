@@ -1477,6 +1477,9 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 	initializeFork() {
 
+		if(!this.saveReportConfirm())
+			return;
+
 		let dialogBox = this.forkDialogBox;
 
 		if(!dialogBox) {

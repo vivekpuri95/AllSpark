@@ -31,5 +31,5 @@ button,
 textarea {
 	background: #666666;
 	color: var(--color-hover-text);
-	border: 0;
+	border: 1px solid transparent;
 }
