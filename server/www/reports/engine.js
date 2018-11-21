@@ -435,7 +435,7 @@ class report extends API {
 				preparedRequest = new MSSQL(this.reportObj, this.filters, this.request.body.token);
 				break;
 			case "api":
-				preparedRequest = new APIRequest(this.reportObj, this.filters, this.request.body.token);
+				preparedRequest = new APIRequest(this.reportObj, this.filters, this.request.body);
 				break;
 			case "pgsql":
 				preparedRequest = new Postgres(this.reportObj, this.filters, this.request.body.token);
@@ -677,11 +677,26 @@ class MSSQL extends SQL {
 
 class APIRequest {
 
-	constructor(reportObj, filters = [], token) {
+	constructor(reportObj, filters = [], requestBody) {
 
 		this.reportObj = reportObj;
 		this.filters = filters;
-		this.token = token;
+
+		const filterSet = new Set;
+
+		this.filters.forEach(x => filterSet.add(x.placeholder));
+
+		for(const filter in requestBody) {
+
+			if(!filterSet.has(filter)) {
+
+				this.filters.push({
+					placeholder: filter,
+					value: requestBody[filter],
+					default_value: requestBody[filter]
+				})
+			}
+		}
 	}
 
 	get finalQuery() {
@@ -722,7 +737,6 @@ class APIRequest {
 			}
 		}
 
-
 		try {
 
 			this.definition = JSON.parse(this.reportObj.definition);
@@ -733,11 +747,6 @@ class APIRequest {
 			const err = Error("url options is not JSON");
 			err.status = 400;
 			return err;
-		}
-
-		if (!this.filters.filter(f => f.placeholder === 'token').length) {
-
-			parameters.append("token", this.token);
 		}
 
 		this.url = this.definition.url;
