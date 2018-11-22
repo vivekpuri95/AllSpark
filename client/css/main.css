@@ -1322,7 +1322,7 @@ body {
 }
 	.dialog-box-blanket.keyboard-shortcuts .shortcut {
 		display: grid;
-		grid-template-columns: 100px 1fr;
+		grid-template-columns: 110px 1fr;
 		align-items: center;
 		grid-row-gap: var(--gap);
 		grid-column-gap: 20px;
