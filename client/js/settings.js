@@ -533,26 +533,107 @@ Settings.list.set('about', class About extends SettingPage {
 			<span class="key">Account Id</span>
 			<span class="value">${account.account_id}</span>
 
-			<span class="key">environment</span>
+			<span class="key">Environment</span>
 			<span class="value">${this.environment.name}</span>
 
-			<span class="key">Deployed On</span>
-			<span class="value">
-				${Format.ago(this.environment.deployed_on)}<br>
-				<span class="NA">${Format.dateTime(this.environment.deployed_on)}</span>
-			</span>
+			<span class="key">Last Deployed</span>
+			<span class="value" id="deployed-on"></span>
 
 			<span class="key">Service Worker Deployed On</span>
 			<span class="value">${serviceWorkerLoadTime}</span>
 
 			<span class="key">Git Checksum</span>
-			<span class="value">${this.environment.gitChecksum}</span>
+			<span class="value">
+				<a href="https://github.com/Jungle-Works/AllSpark/commit/${this.environment.gitChecksum}" target="_blank">
+					${this.environment.gitChecksum}
+				</a>
+			</span>
 
 			<span class="key">Branch</span>
-			<span class="value">${this.environment.branch}</span>
+			<span class="value">
+				<a href="https://github.com/Jungle-Works/AllSpark/tree/${this.environment.branch}" target="_blank">
+					${this.environment.branch}
+				</a>
+			</span>
+
+			<span class="key">Login</span>
+			<span class="value" id="login-time"></span>
+
+			<span class="key">Last Token Refresh</span>
+			<span class="value" id="last-token-refresh"></span>
 		`;
 
+		setInterval(() => this.updateTimestamps(), 1000);
+
+		this.updateTimestamps();
+
 		return container;
+	}
+
+	async updateTimestamps() {
+
+		const
+			refreshToken = await Storage.get('refresh_token'),
+			refreshTokenInfo = JSON.parse(atob(refreshToken.split('.')[1])),
+
+			loginExpiry = this.timeFormat(refreshTokenInfo.exp * 1000),
+			loginExpiryText = loginExpiry.direction >= 0 ? `Expires in ${loginExpiry.value}` : `Expired ${loginExpiry.value} ago`,
+
+			tokenExpiry = this.timeFormat(page.user.exp * 1000),
+			tokenExpiryText = tokenExpiry.direction >= 0 ? `Expires in ${tokenExpiry.value}` : `Expired ${tokenExpiry.value} ago`;
+
+		this.infoContainer.querySelector('#deployed-on').innerHTML = `
+			${Format.ago(this.environment.deployed_on)}<br>
+			<span class="NA">${Format.dateTime(this.environment.deployed_on)}</span>
+		`;
+
+		this.infoContainer.querySelector('#login-time').innerHTML = `
+			${Format.ago(refreshTokenInfo.iat * 1000)}  &nbsp; &middot; &nbsp;
+			${loginExpiryText}<br>
+			<span class="NA">
+				${Format.dateTime(refreshTokenInfo.iat * 1000)} &nbsp; &middot; &nbsp;
+				${Format.dateTime(refreshTokenInfo.exp * 1000)}
+			</span>
+		`;
+
+		this.infoContainer.querySelector('#last-token-refresh').innerHTML = `
+			${Format.ago(page.user.iat * 1000)}  &nbsp; &middot; &nbsp;
+			${tokenExpiryText}<br>
+			<span class="NA">
+				${Format.dateTime(page.user.iat * 1000)} &nbsp; &middot; &nbsp;
+				${Format.dateTime(page.user.exp * 1000)}
+			</span>
+		`;
+	}
+
+	timeFormat(time) {
+
+		let
+			values = [
+				{value: Math.floor(Math.abs(time - Date.now()) / 1000 / 60 / 60 / 24), unit: 'day'},
+				{value: Math.floor(Math.abs(time - Date.now()) / 1000 / 60 / 60) % 24, unit: 'hour'},
+				{value: Math.floor(Math.abs(time - Date.now()) / 1000 / 60) % 60, unit: 'minute'},
+				{value: Math.floor(Math.abs(time - Date.now()) / 1000) % 60, unit: 'second'},
+			],
+			zeroSinceBegining = true;
+
+		values = values.filter(value => {
+
+			if(value.value > 1)
+				value.unit += 's';
+
+			if(!value.value && zeroSinceBegining)
+				return false;
+
+			zeroSinceBegining = false;
+
+			return true;
+		});
+
+		return {
+			direction: time - Date.now() > 0 ? 1 : time - Date.now() < 0 ? -1 : 0,
+			value: values.map(t => t.value + ' ' + t.unit).join(', '),
+		};
 	}
 });
 
