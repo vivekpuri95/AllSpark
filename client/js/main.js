@@ -110,6 +110,7 @@ class Page {
 		this.indexedDb = IndexedDb.instance;
 		this.cookies = Cookies;
 		this.keyboardShortcuts = new Map;
+		this.urlSearchParameters = new URLSearchParams(location.search);
 
 		this.serviceWorker = new Page.serviceWorker(this);
 		this.webWorker = new Page.webWorker(this);

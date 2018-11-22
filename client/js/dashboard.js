@@ -611,8 +611,6 @@ class Dashboard {
 
 		Object.assign(this, dashboardObject);
 
-		this.globalFiltersFromURL = new URLSearchParams(location.search);
-
 		Dashboard.grid = {
 			columns: 32,
 			rows: 10,
@@ -1097,17 +1095,6 @@ class Dashboard {
 			this.globalFilters = new DashboardGlobalFilters(this);
 
 			await this.globalFilters.load();
-
-			this.validGlobalFiltersFromUrl = false;
-
-			for(const [key, filter] of this.globalFilters) {
-
-				if(this.globalFiltersFromURL.has(key)) {
-					this.validGlobalFiltersFromUrl = true;
-					filter.value = this.globalFiltersFromURL.get(key)
-				}
-			}
-
 		}
 		catch (e) {
 			console.log(e);
@@ -1235,7 +1222,7 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || this.validGlobalFiltersFromUrl) {
+		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || this.globalFilters.validGlobalFilters) {
 
 			this.globalFilters.apply();
 		}
@@ -1528,6 +1515,17 @@ class DashboardGlobalFilters extends DataSourceFilters {
 		await this.fetch();
 
 		await this.render();
+
+		this.validGlobalFilters = false;
+
+		for(const [key, filter] of this) {
+
+			if(this.page.urlSearchParameters.has(key)) {
+
+				this.validGlobalFilters = true;
+				filter.value = this.page.urlSearchParameters.get(key)
+			}
+		}
 	}
 
 	async fetch() {
