@@ -166,7 +166,7 @@ class Page {
 
 			const
 				time = Math.floor(user.exp - Date.now() / 1000),
-				text = time > 0 ? `expires in ${time} seconds` : `expired ${Math.abs(time)} seconds ago`;
+				text = time > 0 ? `expires in ${Format.number(time)} seconds` : `expired ${Format.number(Math.abs(time))} seconds ago`;
 
 			bar = new NotificationBar({
 				message: `Token ${text}, was refreshed ${Format.number(Math.floor(Date.now() / 1000 - user.iat))} seconds ago.`,
