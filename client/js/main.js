@@ -188,7 +188,7 @@ class Page {
 
 		});
 
-		this.keyboardShortcuts.set('Hold Alt', {
+		this.keyboardShortcuts.set('Alt Twice', {
 			title: 'See Available Keyboard Shortcuts',
 		});
 
@@ -211,13 +211,13 @@ class Page {
 			description: 'Clear all local caches like metadata, filter datasets, offline data, etc',
 		});
 
-		document.on('keydown', e => {
+		document.on('keyup', e => {
 
-			if(!e.altKey || !e.keyCode == 18)
+			if(!e.altKey && e.keyCode != 18)
 				return;
 
-			if(this.keyboardShortcutsDialogBox && this.keyboardShortcutsDialogBox.status)
-				return;
+			if(!this.keyboardShortcutsLastTap || Date.now() - this.keyboardShortcutsLastTap > 500)
+				return this.keyboardShortcutsLastTap = Date.now();
 
 			if(!this.keyboardShortcutsDialogBox) {
 
@@ -240,25 +240,10 @@ class Page {
 				}
 			}
 
-			if(this.keyboardShortcutsTimeout)
-				return;
-
-			this.keyboardShortcutsTimeout = setTimeout(() => {
-				this.keyboardShortcutsDialogBox.show();
-				this.keyboardShortcutsTimeout = null;
-			}, 1000);
-		});
-
-		document.on('keyup', e => {
-
-			if(!e.keyCode == 18)
-				return;
-
-			clearTimeout(this.keyboardShortcutsTimeout);
-			this.keyboardShortcutsTimeout = null;
-
-			if(this.keyboardShortcutsDialogBox && this.keyboardShortcutsDialogBox.status)
+			if(this.keyboardShortcutsDialogBox.status)
 				this.keyboardShortcutsDialogBox.hide();
+
+			else this.keyboardShortcutsDialogBox.show();
 		});
 	}
 
