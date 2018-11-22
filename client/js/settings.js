@@ -69,13 +69,14 @@ class Settings extends Page {
 		else
 			byDefault = this.container.querySelector('nav a');
 
-		byDefault.classList.add('selected');
+		if(byDefault)
+			byDefault.classList.add('selected');
 
 		for (const [key, settings] of Settings.list) {
 
 			const setting = new settings(this.container);
 
-			if (byDefault.textContent == setting.name) {
+			if (byDefault && byDefault.textContent == setting.name) {
 
 				await setting.setup();
 
@@ -572,8 +573,12 @@ Settings.list.set('about', class About extends SettingPage {
 
 	async updateTimestamps() {
 
+		const refreshToken = await Storage.get('refresh_token');
+
+		if(!refreshToken)
+			return;
+
 		const
-			refreshToken = await Storage.get('refresh_token'),
 			refreshTokenInfo = JSON.parse(atob(refreshToken.split('.')[1])),
 
 			loginExpiry = this.timeFormat(refreshTokenInfo.exp * 1000),
