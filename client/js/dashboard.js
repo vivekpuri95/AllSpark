@@ -759,7 +759,7 @@ class Dashboard {
 			for(const [key, value] of Dashboard.selectedValues)
 				parameters.set(key, value);
 
-			const shareURL = `${location.href}?${parameters}`;
+			const shareURL = `${location.origin}${location.pathname}?${parameters}`;
 
 			dialougeBox.heading = `Share this URL`;
 
