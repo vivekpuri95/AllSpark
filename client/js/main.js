@@ -92,6 +92,7 @@ class Page {
 
 		await API.refreshToken();
 		await MetaData.load();
+		await User.load();
 
 		new SnackBar({
 			message: 'Cache Cleared',
@@ -1147,7 +1148,12 @@ class User {
 			user = JSON.parse(atob(token.body.split('.')[1]));
 		} catch(e) {}
 
-		return window.user = new User(user);
+		window.user = new User(user);
+
+		if(window.page)
+			window.page.user = window.user;
+
+		return;
 	}
 
 	static async logout({next, callback, redirect = true, message = ''} = {}) {
