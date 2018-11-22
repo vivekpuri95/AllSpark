@@ -549,6 +549,7 @@ DataConnection.types.set('mysql', class {
 	static async render(connections = {}) {
 
 		connections.form =  connections.container.querySelector('#connections-form');
+		connections.form.querySelector('#details').classList.remove('hidden');
 
 		connections.form.querySelector('#details').innerHTML = `
 
@@ -608,6 +609,7 @@ DataConnection.types.set('mssql', class {
 	static render(connections = {}) {
 
 		connections.form =  connections.container.querySelector('#connections-form');
+		connections.form.querySelector('#details').classList.remove('hidden');
 
 		connections.form.querySelector('#details').innerHTML = `
 
@@ -667,6 +669,7 @@ DataConnection.types.set('pgsql', class {
 	static render(connections = {}) {
 
 		connections.form =  connections.container.querySelector('#connections-form');
+		connections.form.querySelector('#details').classList.remove('hidden');
 
 		connections.form.querySelector('#details').innerHTML = `
 
@@ -726,6 +729,7 @@ DataConnection.types.set('oracle', class {
 	static render(connections = {}) {
 
 		connections.form =  connections.container.querySelector('#connections-form');
+		connections.form.querySelector('#details').classList.remove('hidden');
 
 		connections.form.querySelector('#details').innerHTML = `
 
@@ -779,7 +783,11 @@ DataConnection.types.set('api', class {
 
 	static render(connections = {}) {
 
-		connections.container.querySelector('#connections-form #details').remove();
+		const connectionDetails = connections.container.querySelector('#connections-form #details');
+
+		connectionDetails.innerHTML = null;
+		connectionDetails.classList.add('hidden');
+
 	}
 
 	static get details() {
@@ -791,7 +799,10 @@ DataConnection.types.set('bigquery', class {
 
 	static render(connections = {}) {
 
-		connections.container.querySelector('#connections-form #details').remove();
+		const connectionDetails = connections.container.querySelector('#connections-form #details');
+
+		connectionDetails.innerHTML = null;
+		connectionDetails.classList.add('hidden');
 	}
 
 	static get details() {
@@ -803,7 +814,10 @@ DataConnection.types.set('file', class {
 
 	static render(connections = {}) {
 
-		connections.container.querySelector('#connections-form #details').remove();
+		const connectionDetails = connections.container.querySelector('#connections-form #details');
+
+		connectionDetails.innerHTML = null;
+		connectionDetails.classList.add('hidden');
 	}
 
 	static get details() {
@@ -816,6 +830,7 @@ DataConnection.types.set('mongo', class {
 	static render(connections = {}) {
 
 		connections.form =  connections.container.querySelector('#connections-form');
+		connections.form.querySelector('#details').classList.remove('hidden');
 
 		connections.form.querySelector('#details').innerHTML = `
 
@@ -825,7 +840,7 @@ DataConnection.types.set('mongo', class {
 			</label>
 
 			<label>
-			<span class="password">Password <a class="NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
+			<span class="password">Password <a class="right NA show-password" id="showpassword" data-tooltip="Show Password">Show</a></span></input>
 				<input autocomplete="off" type="password" name="password" value="${connections.password || ''}">
 			</label>
 
