@@ -1098,10 +1098,14 @@ class Dashboard {
 
 			await this.globalFilters.load();
 
+			this.validGlobalFiltersFromUrl = false;
+
 			for(const [key, filter] of this.globalFilters) {
 
-				if(this.globalFiltersFromURL.has(key))
+				if(this.globalFiltersFromURL.has(key)) {
+					this.validGlobalFiltersFromUrl = true;
 					filter.value = this.globalFiltersFromURL.get(key)
+				}
 			}
 
 		}
@@ -1231,7 +1235,7 @@ class Dashboard {
 			this.mailto();
 		});
 
-		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || [...this.globalFiltersFromURL.keys()].length) {
+		if((Dashboard.selectedValues && Dashboard.selectedValues.size && this.globalFilters.size) || this.validGlobalFiltersFromUrl) {
 
 			this.globalFilters.apply();
 		}
