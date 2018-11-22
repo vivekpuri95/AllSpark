@@ -92,6 +92,7 @@ class Page {
 
 		await API.refreshToken();
 		await MetaData.load();
+		await User.load();
 
 		new SnackBar({
 			message: 'Cache Cleared',
@@ -187,7 +188,7 @@ class Page {
 
 		});
 
-		this.keyboardShortcuts.set('Hold Alt', {
+		this.keyboardShortcuts.set('Alt Twice', {
 			title: 'See Available Keyboard Shortcuts',
 		});
 
@@ -210,13 +211,13 @@ class Page {
 			description: 'Clear all local caches like metadata, filter datasets, offline data, etc',
 		});
 
-		document.on('keydown', e => {
+		document.on('keyup', e => {
 
-			if(!e.altKey || !e.keyCode == 18)
+			if(!e.altKey && e.keyCode != 18)
 				return;
 
-			if(this.keyboardShortcutsDialogBox && this.keyboardShortcutsDialogBox.status)
-				return;
+			if(!this.keyboardShortcutsLastTap || Date.now() - this.keyboardShortcutsLastTap > 500)
+				return this.keyboardShortcutsLastTap = Date.now();
 
 			if(!this.keyboardShortcutsDialogBox) {
 
@@ -239,25 +240,10 @@ class Page {
 				}
 			}
 
-			if(this.keyboardShortcutsTimeout)
-				return;
-
-			this.keyboardShortcutsTimeout = setTimeout(() => {
-				this.keyboardShortcutsDialogBox.show();
-				this.keyboardShortcutsTimeout = null;
-			}, 1000);
-		});
-
-		document.on('keyup', e => {
-
-			if(!e.keyCode == 18)
-				return;
-
-			clearTimeout(this.keyboardShortcutsTimeout);
-			this.keyboardShortcutsTimeout = null;
-
-			if(this.keyboardShortcutsDialogBox && this.keyboardShortcutsDialogBox.status)
+			if(this.keyboardShortcutsDialogBox.status)
 				this.keyboardShortcutsDialogBox.hide();
+
+			else this.keyboardShortcutsDialogBox.show();
 		});
 	}
 
@@ -1147,7 +1133,12 @@ class User {
 			user = JSON.parse(atob(token.body.split('.')[1]));
 		} catch(e) {}
 
-		return window.user = new User(user);
+		window.user = new User(user);
+
+		if(window.page)
+			window.page.user = window.user;
+
+		return;
 	}
 
 	static async logout({next, callback, redirect = true, message = ''} = {}) {
@@ -1493,7 +1484,7 @@ class API extends AJAX {
 				// If the token is about to expire in next few seconds then let it refresh.
 				// We're using the difference of expiry and creation here to support casses
 				// where users manually change system time and local UTC time gets out of sync with remote UTC time.
-				if(Date.now() - token.timestamp + 10000 < (user.exp - user.iat) * 1000)
+				if(Date.now() - token.timestamp + 60 * 1000 < (user.exp - user.iat) * 1000)
 					getToken = false;
 
 			} catch(e) {}
