@@ -101,10 +101,11 @@ Page.class = class Login extends Page {
 		Sections.show('loading');
 
 		const
-			parameters = {},
+			parameters = {
+				email: this.container.querySelector('#accept-email form').email.value,
+			},
 			options = {
 				method: 'POST',
-				form: new FormData(this.container.querySelector('#accept-email form')),
 				redirectOnLogout: false,
 			};
 
