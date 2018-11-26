@@ -207,8 +207,26 @@ class Dashboard extends API {
 				dashboard.deletable = dashboard.deletable || constants.adminCategory.some(x => userCategories.includes(x)) || deleteFlag;
 			}
 
-			dashboard.editable = dashboard.editable || dashboard.added_by == this.user.user_id || this.user.privilege.has('superadmin');
-			dashboard.deletable = dashboard.deletable || dashboard.added_by == this.user.user_id || this.user.privilege.has('superadmin');
+			dashboard.editable =
+				dashboard.editable
+				|| dashboard.added_by == this.user.user_id
+				|| this.user.privilege.has('superadmin')
+				|| (
+					dashboardUpdateCategories.length
+					&& dashboardUsersMapping[dashboard.id]
+					&& dashboardUsersMapping[dashboard.id].some(x => x.target_id == this.user.user_id)
+				);
+
+			dashboard.deletable =
+				dashboard.deletable
+				|| dashboard.added_by == this.user.user_id
+				|| this.user.privilege.has('superadmin')
+				|| (
+					dashboardDeleteCategories.length
+					&& dashboardUsersMapping[dashboard.id]
+					&& dashboardUsersMapping[dashboard.id].some(x => x.target_id == this.user.user_id)
+				);
+
 
 			result.push(dashboard);
 		}
