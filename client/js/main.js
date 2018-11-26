@@ -171,7 +171,7 @@ class Page {
 			bar = new NotificationBar({
 				message: `Token ${text}, was refreshed ${Format.number(Math.floor(Date.now() / 1000 - user.iat))} seconds ago.`,
 			});
-		}, 1000);
+		}, 300);
 	}
 
 	setupShortcuts() {

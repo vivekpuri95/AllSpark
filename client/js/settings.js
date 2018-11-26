@@ -564,7 +564,7 @@ Settings.list.set('about', class About extends SettingPage {
 			<span class="value" id="last-token-refresh"></span>
 		`;
 
-		setInterval(() => this.updateTimestamps(), 1000);
+		setInterval(() => this.updateTimestamps(), 300);
 
 		this.updateTimestamps();
 
