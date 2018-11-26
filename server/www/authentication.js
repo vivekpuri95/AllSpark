@@ -198,7 +198,9 @@ exports.login = class extends API {
 		}
 		catch (e) {
 
-			this.assert(false, e.message, e.status);
+			console.error(e);
+
+			this.assert(false, e.message, 401);
 		}
 	}
 
