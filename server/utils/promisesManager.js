@@ -22,7 +22,7 @@ class PromiseManager {
 
 	store(promise, metadata, hash) {
 
-		metadata["execute"] = promise;
+		metadata.set("execute", promise);
 
 		global[this.key].set(hash, metadata);
 	}
