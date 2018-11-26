@@ -4216,7 +4216,7 @@ class Axis {
 
 		this.position = this.position || 'top';
 
-		container.multiSelectColumns = new MultiSelect({datalist, expand: true, multiple: this.position == 'bottom' || !this.axes.checkMultiple ? false : true});
+		container.multiSelectColumns = new MultiSelect({datalist, expand: true, multiple: this.position != 'bottom' && this.axes.checkMultiple});
 
 		const axisColumn = container.multiSelectColumns.container;
 
