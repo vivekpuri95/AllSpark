@@ -7,16 +7,16 @@ class PromiseManager {
 			global[key] = new Map()
 		}
 
-		this.key = key
+		this.key = key;
 
 		this.map = global[key];
 	}
 
 	async fetchAndExecute(hash) {
 
-		if (this.map.has(hash)) {
+		if (global[this.key].has(hash)) {
 
-			return await this.map.get(hash).get("execute");
+			return await global[this.key].get(hash).get("execute");
 		}
 	}
 
