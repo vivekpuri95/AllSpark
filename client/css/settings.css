@@ -113,10 +113,14 @@ main .about-list {
 		main .about-list .info .key {
 			color: var(--color-grey);
 		}
-		main .about-list .info .value .NA {
-			margin-top: var(--gap);
-			display: inline-block;
+		main .about-list .info .value {
+			display: grid;
+			grid-gap: var(--gap);
 		}
+			main .about-list .info .value progress {
+				height: 5px;
+				width: 100%;
+			}
 	main .about-list button.clear-cache {
 		width: max-content;
 		background: var(--color-secondary);

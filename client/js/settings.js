@@ -594,7 +594,8 @@ Settings.list.set('about', class About extends SettingPage {
 
 		this.infoContainer.querySelector('#login-time').innerHTML = `
 			${Format.ago(refreshTokenInfo.iat * 1000)}  &nbsp; &middot; &nbsp;
-			${loginExpiryText}<br>
+			${loginExpiryText}
+			<progress min="0" max="${refreshTokenInfo.exp - refreshTokenInfo.iat}" value="${Math.min(Date.now() / 1000 - refreshTokenInfo.iat, refreshTokenInfo.exp - refreshTokenInfo.iat)}"></progress>
 			<span class="NA">
 				${Format.dateTime(refreshTokenInfo.iat * 1000)} &nbsp; &middot; &nbsp;
 				${Format.dateTime(refreshTokenInfo.exp * 1000)}
@@ -603,7 +604,8 @@ Settings.list.set('about', class About extends SettingPage {
 
 		this.infoContainer.querySelector('#last-token-refresh').innerHTML = `
 			${Format.ago(page.user.iat * 1000)}  &nbsp; &middot; &nbsp;
-			${tokenExpiryText}<br>
+			${tokenExpiryText}
+			<progress min="0" max="${page.user.exp - page.user.iat}" value="${Math.min(Date.now() / 1000 - page.user.iat, page.user.exp - page.user.iat)}"></progress>
 			<span class="NA">
 				${Format.dateTime(page.user.iat * 1000)} &nbsp; &middot; &nbsp;
 				${Format.dateTime(page.user.exp * 1000)}

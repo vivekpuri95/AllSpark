@@ -213,7 +213,7 @@ class Page {
 
 		document.on('keyup', e => {
 
-			if(!e.altKey && e.keyCode != 18)
+			if(e.keyCode != 18)
 				return;
 
 			if(!this.keyboardShortcutsLastTap || Date.now() - this.keyboardShortcutsLastTap > 500)
