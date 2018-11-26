@@ -19,6 +19,8 @@ const userQueryLogs = require("../accounts").userQueryLogs;
 const getRole = require("../object_roles").get;
 const ObjectId = require('mongodb').ObjectID;
 const oracle = require('../../utils/oracle').Oracle;
+const PromiseManager = require("../../utils/promisesManager").promiseManager;
+const promiseManager = new PromiseManager("executingReports");
 
 // prepare the raw data
 class report extends API {
@@ -500,9 +502,9 @@ class report extends API {
 			}
 		}
 
-		if (global.executingReports.has(engine.hash)) {
+		if (promiseManager.has(engine.hash)) {
 
-			return await global.executingReports.get(engine.hash).get("execute");
+			return await promiseManager.fetchAndExecute(engine.hash);
 		}
 
 		const engineExecution = engine.execute();
@@ -514,9 +516,8 @@ class report extends API {
 		queryDetails.set("user", {id: this.user.user_id, name: this.user.name});
 		queryDetails.set("execution_timestamp", new Date());
 		queryDetails.set("params", engine.parameters);
-		queryDetails.set("execute", engineExecution);
 
-		global.executingReports.set(engine.hash, queryDetails);
+		promiseManager.store(engineExecution, queryDetails, engine.hash);
 
 		try {
 
@@ -538,7 +539,7 @@ class report extends API {
 
 		finally {
 
-			global.executingReports.delete(engine.hash);
+			promiseManager.remove(engine.hash);
 		}
 
 		await engine.log(this.reportObj.query_id, result.query, result.runtime,
@@ -1315,7 +1316,7 @@ class executingReports extends API {
 		const superadmin = this.user.privilege.has("superadmin");
 		const admin = this.user.privilege.has("admin");
 
-		for (const [_, value] of global.executingReports.entries()) {
+		for (const value of promiseManager.list()) {
 
 			let obj = {};
 
