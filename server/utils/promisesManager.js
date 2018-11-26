@@ -34,12 +34,12 @@ class PromiseManager {
 
 	list() {
 
-		return [...this.map.values()];
+		return [...global[this.key].values()];
 	}
 
 	has(hash) {
 
-		return this.map.has(hash);
+		return global[this.key].has(hash);
 	}
 }
 
