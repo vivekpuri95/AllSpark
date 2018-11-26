@@ -296,7 +296,7 @@ exports.login = class extends API {
 
 		let session = {};
 
-		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 30) * 0.5);
+		const expiryTime = Math.floor(Date.now() / 1000) + (parseInt(this.userDetails.ttl || 30) * 1);
 
 		try {
 			sessionLogs.request = {};
