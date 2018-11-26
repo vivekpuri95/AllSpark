@@ -7,6 +7,8 @@ class PromiseManager {
 			global[key] = new Map()
 		}
 
+		this.key = key
+
 		this.map = global[key];
 	}
 
@@ -22,12 +24,12 @@ class PromiseManager {
 
 		metadata["execute"] = promise;
 
-		this.map.set(hash, metadata);
+		global[this.key].set(hash, metadata);
 	}
 
 	remove(hash) {
 
-		this.map.delete(hash);
+		global[this.key].delete(hash);
 	}
 
 	list() {
