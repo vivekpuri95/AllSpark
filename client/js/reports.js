@@ -11782,7 +11782,7 @@ class CalendarMonth {
 			this.visualization.options.invertValues
 		);
 
-		div.style.backgroundColor = this.visualization.source.columns.get('timing').color + alphaValue;
+		div.style.backgroundColor = this.visualization.source.columns.get(this.visualization.options.timingColumn).color + alphaValue;
 		div.style.height = '100px';
 
 		if (this.visualization.luma(this.source.columns.get(this.visualization.options.timingColumn).color) <= 40
