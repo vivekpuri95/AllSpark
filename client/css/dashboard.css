@@ -218,6 +218,17 @@ main #reports > .toolbar {
 	main #reports > .toolbar label select {
 		max-width: 200px;
 	}
+	main #reports > .toolbar .download {
+		position: relative;
+	}
+		main #reports > .toolbar .download .options {
+			position: absolute;
+			width: 100%;
+			z-index: 8;
+		}
+			main #reports > .toolbar .download .options button {
+				width: 100%;
+			}
 
 main #mailto.selected {
 	background: var(--color-accent);

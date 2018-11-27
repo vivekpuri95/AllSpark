@@ -45,6 +45,14 @@ Page.class = class Dashboards extends Page {
 			this.container.querySelector('.nav-blanket').classList.toggle('hidden', !this.nav.classList.contains('show'));
 		});
 
+		const urlsearchparam = new URLSearchParams(location.search);
+
+		if(urlsearchparam.has('pdf') && urlsearchparam.get('pdf')) {
+			(async () => {
+				await Storage.set('menu-collapsed','1');
+			})();
+		}
+
 		this.reports.querySelector('.toolbar #back').on('click', async () => {
 
 			this.renderList();
@@ -750,14 +758,8 @@ class Dashboard {
 		share.on('click', () => {
 
 			const
-				parameters = new URLSearchParams(),
-				dialougeBox = new DialogBox();
-
-			for(const [key, value] of Dashboard.selectedValues) {
-				parameters.set(key, value);
-			}
-
-			const shareURL = `${location.origin}${location.pathname}?${parameters}`;
+				dialougeBox = new DialogBox(),
+				shareURL = `${location.href}?${Dashboard.urlSearchString()}`;
 
 			dialougeBox.heading = `Share this URL`;
 
@@ -771,6 +773,70 @@ class Dashboard {
 
 			dialougeBox.body.querySelector('.share-url input').select();
 		});
+
+		const
+			download = page.container.querySelector('.download'),
+			downloadOptions = download.querySelector('.options')
+
+		download.querySelector('button').on('click', (e) => {
+
+			e.stopPropagation();
+
+			downloadOptions.classList.toggle('hidden');
+		});
+
+		document.querySelector('body').on('click', () => {
+			downloadOptions.classList.add('hidden');
+		});
+
+		downloadOptions.querySelector('#pdf').on('click', async (e) => await Dashboard.pdfDownload(e));
+	}
+
+	static urlSearchString() {
+
+		const parameters = new URLSearchParams();
+
+		for(const [key, value] of Dashboard.selectedValues)
+			parameters.set(key, value);
+
+		return parameters;
+	}
+
+	static async pdfDownload(e) {
+
+		e.stopPropagation();
+
+		await API.refreshToken();
+
+		const xx = new URLSearchParams(location.search);
+
+		xx.set('pdf', true);
+		xx.set('external_parameters', "1");
+		xx.set('refresh_token', (await Storage.get('refresh_token')));
+
+		for(const [key, value] of Dashboard.urlSearchString()) {
+			xx.set(key, value);
+		}
+
+		const urlToDownload = `${location.origin}${location.pathname}?${xx}`;
+
+		const body = {
+			url: urlToDownload,
+			token : (await Storage.get('token')).body,
+		}
+
+		const x = await (await (fetch("/api/v2/pdf/a", {
+			body: JSON.stringify(body),
+			headers: {
+				'content-type': 'application/json'
+			},
+			method: 'POST',}))
+		).blob();
+
+		const link = document.createElement('a');
+		link.href = window.URL.createObjectURL(x);
+		link.download = 'ravi' +  ".pdf";
+		link.click();
 	}
 
 	static sortVisualizations(visibleVisuliaztions) {

@@ -660,6 +660,16 @@ router.get('/:type(dashboard|report|visualization)/:id?', API.serve(class extend
 						Share
 					</button>
 
+					<div class="download">
+						<button>
+							<i class="fas fa-save"></i>
+							Download
+						</button>
+						<div class="options hidden">
+							<button id="pdf">PDF</button>
+						</div>
+					</div>
+
 					<button id="full-screen">
 						<i class="fas fa-expand"></i>
 						Full Screen

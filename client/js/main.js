@@ -264,7 +264,16 @@ class Page {
 		await Storage.set('external_parameters', JSON.parse(parameters.get('external_parameters')));
 		await Storage.set('refresh_token', parameters.get('refresh_token'));
 
-		window.history.replaceState({}, '', window.location.pathname);
+		const searchParams = new URLSearchParams(window.location.search);
+		const _searchParams = new URLSearchParams();
+
+		for(const [key, value] of searchParams) {
+
+			if(!['external_parameters', 'refresh_token', 'token'].includes(key))
+				_searchParams.set(key, value);
+		}
+
+		window.history.replaceState({}, '', `${window.location.pathname}?${_searchParams}`);
 	}
 
 	static async loadOnboardScripts() {
