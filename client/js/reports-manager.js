@@ -1853,22 +1853,32 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		const filterForm = this.container.querySelector('#filter-form');
 
+		this.filterForm.reset();
+
 		filterForm.classList.remove('hidden');
 		this.container.querySelector('#filter-list').classList.add('hidden');
 
-		const select = filterForm.querySelector('select[name="type"]');
-
-		select.textContent = null;
+		this.filterForm.type.textContent = null;
 
 		for (const type of MetaData.filterTypes.values()) {
 
 			if(!type.input_type)
 				continue;
 
-			select.insertAdjacentHTML('beforeend', `
+			this.filterForm.type.insertAdjacentHTML('beforeend', `
 				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
 		}
+
+		this.filterForm.default_value.type = this.filterForm.type.value;
+
+		this.updateDefaultType();
+
+		this.filterForm.type.removeEventListener('change', this.typeChangeListener);
+
+		this.filterForm.type.on('change', this.typeChangeListener = () => this.changeFilterType());
+
+		this.filterForm.default_type.on('change', () => this.updateDefaultType());
 
 		this.filterForm.removeEventListener('submit', this.filterForm.listener);
 		this.filterForm.on('submit', this.filterForm.listener = e => {
@@ -1890,6 +1900,19 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		if(e)
 			e.preventDefault();
+
+		if(this.filterForm.default_type.value == 'default_value') {
+			this.filterForm.offset.value = '';
+		}
+
+		else if(this.filterForm.default_type.value == 'offset') {
+			this.filterForm.default_value.value = '';
+		}
+
+		else {
+			this.filterForm.offset.value = '';
+			this.filterForm.default_value.value = '';
+		}
 
 		const
 			parameters = {
@@ -1945,16 +1968,14 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 
 		this.filterForm.reset();
 
-		const select = this.filterForm.querySelector('select[name="type"]');
-
-		select.textContent = null;
+		this.filterForm.type.textContent = null;
 
 		for(const type of MetaData.filterTypes.values()) {
 
 			if(!type.input_type)
 				continue;
 
-			select.insertAdjacentHTML('beforeend', `
+			this.filterForm.type.insertAdjacentHTML('beforeend', `
 				<option value="${type.name.toLowerCase()}">${type.name}</option>
 			`);
 		}
@@ -1964,15 +1985,79 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 				this.filterForm[key].value = filter[key];
 		}
 
+		const
+			default_value = this.filterForm.default_value.value,
+			default_value_offset = this.filterForm.offset.value;
+
+		if(this.filterForm.default_value.value)
+			this.filterForm.default_type.value = 'default_value';
+
+		else if(this.filterForm.offset.value)
+			this.filterForm.default_type.value = 'offset';
+
+		else
+			this.filterForm.default_type.value = 'none';
+
+		this.changeFilterType();
+
+		this.filterForm.type.removeEventListener('change', this.typeChangeListener);
+
+		this.filterForm.type.on('change', this.typeChangeListener = () => {
+
+			this.changeFilterType();
+
+			this.filterForm.default_value.value = default_value;
+			this.filterForm.offset.value = default_value_offset;
+		});
+
+		this.updateDefaultType();
+
+		this.filterForm.default_type.on('change', () => this.updateDefaultType());
+
 		this.filterForm.datasetMultiSelect.value = filter.dataset;
 
 		this.filterForm.name.focus();
+	}
+
+	changeFilterType() {
+
+		const types = ['hidden', 'column', 'literal'];
+
+		if(this.filterForm.type.value == 'datetime')
+			this.filterForm.default_value.type = 'datetime-local';
+
+		else if(types.includes(this.filterForm.type.value))
+			this.filterForm.default_value.type = 'text';
+
+		else
+			this.filterForm.default_value.type = this.filterForm.type.value;
+	}
+
+	updateDefaultType() {
+
+		const default_type = this.filterForm.default_type;
+
+		this.filterForm.default_value.classList.toggle('hidden', default_type.value != 'default_value');
+		this.filterForm.offset.classList.toggle('hidden', default_type.value != 'offset');
 	}
 
 	async updateFilter(e, filter) {
 
 		if(e)
 			e.preventDefault();
+
+		if(this.filterForm.default_type.value == 'default_value') {
+			this.filterForm.offset.value = '';
+		}
+
+		else if(this.filterForm.default_type.value == 'offset') {
+			this.filterForm.default_value.value = '';
+		}
+
+		else {
+			this.filterForm.offset.value = '';
+			this.filterForm.default_value.value = '';
+		}
 
 		const
 			parameters = {
@@ -5489,17 +5574,17 @@ ConfigureVisualization.types.set('calendar', class calendarOptions extends Repor
 				<h3><i class="fas fa-angle-right"></i> Options</h3>
 				<div class="body">
 					<div class="form subform">
-					
+
 						<label>
 							<span>Timing Column</span>
 							<select name="timingColumn"></select>
 						</label>
-						
+
 						<label>
 							<span>Value Column</span>
 							<select name="valueColumn"></select>
 						</label>
-						
+
 						<label>
 							<span>
 								<input type="checkbox" name="invertValues"> Invert Values
@@ -5511,7 +5596,7 @@ ConfigureVisualization.types.set('calendar', class calendarOptions extends Repor
 								<input type="checkbox" name="hideLegend"> Hide Legend
 							</span>
 						</label>
-						
+
 						<label>
 							<span> Orientation</span>
 							<select name="orientation">
@@ -5520,7 +5605,7 @@ ConfigureVisualization.types.set('calendar', class calendarOptions extends Repor
 								<option value="horizontal"> Horizontal</option>
 							</select>
 						</label>
-						
+
 						<label>
 							<span> Cell Value</span>
 							<select name="cellValue">
@@ -7411,22 +7496,53 @@ class ReportVisualizationFilter {
 
 		const container = this.containerElement = document.createElement('fieldset');
 
+		const types = ['hidden', 'column', 'literal'];
+
+		if(this.reportFilter.type == 'datetime')
+			this.reportFilter.type = 'datetime-local';
+
+		else if(types.includes(this.reportFilter.type))
+			this.reportFilter.type = 'text';
+
 		container.innerHTML = `
 			<legend>${this.reportFilter.name}</legend>
 
 			<div class="form">
+
 				<label>
-					<span>Default Value</span>
-					<input type="text" placeholder="${this.reportFilter.default_value}" value="${this.default_value || ''}">
+					<span>Default</span>
+					<select name="default_type">
+						<option value="none">None</option>
+						<option value="default_value">Default Value</option>
+						<option value="offset">Default Value Offset</option>
+					</select>
+
+					<input type="${this.reportFilter.type}" placeholder="${this.reportFilter.default_value}" title="${this.reportFilter.default_value}" value="${this.default_value || ''}" name="default_value">
+
+					<input type="text" placeholder="${this.reportFilter.offset || ''}" value="${this.offset || ''}" name="offset">
 				</label>
 
 				<label>
-
 					<span>&nbsp;</span>
 					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 				</label>
 			</div>
 		`;
+
+		const default_type = container.querySelector('select[name="default_type"]');
+
+		if(this.default_value || this.reportFilter.default_value)
+			default_type.value = 'default_value';
+
+		else if(this.offset || this.reportFilter.offset)
+			default_type.value = 'offset';
+
+		else
+			default_type.value = 'none';
+
+		this.updateDefaultType();
+
+		container.querySelector('select[name="default_type"]').on('change', () => this.updateDefaultType());
 
 		container.querySelector('.delete').on('click', () => {
 
@@ -7439,11 +7555,25 @@ class ReportVisualizationFilter {
 		return container;
 	}
 
+	updateDefaultType() {
+
+		const default_type = this.container.querySelector('select[name="default_type"]');
+
+		this.container.querySelector('input[name="default_value"]').classList.toggle('hidden', default_type.value != 'default_value');
+		this.container.querySelector('input[name="offset"]').classList.toggle('hidden', default_type.value != 'offset');
+	}
+
 	get json() {
 
+		if(this.container.querySelector('select[name="default_type"]').value == 'default_value')
+			this.container.querySelector('input[name="offset"]').value = '';
+		else
+			this.container.querySelector('input[name="default_value"]').value = '';
+
 		return {
-			default_value: this.container.querySelector('input').value,
-			filter_id: this.filter_id
+			default_value: this.container.querySelector('input[name="default_value"]').value,
+			filter_id: this.filter_id,
+			offset: this.container.querySelector('input[name="offset"]').value,
 		};
 	}
 }

@@ -975,12 +975,15 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 									</label>
 
 									<label>
-										<span>Default Value</span>
-										<input type="text" name="default_value">
-									</label>
+										<span>Default</span>
+										<select name="default_type">
+											<option value="none">None</option>
+											<option value="default_value">Default Value</option>
+											<option value="offset">Default Value Offset</option>
+										</select>
 
-									<label>
-										<span>Offset</span>
+										<input type="text" name="default_value">
+
 										<input type="text" name="offset">
 									</label>
 
