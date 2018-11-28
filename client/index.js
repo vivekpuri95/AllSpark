@@ -984,7 +984,7 @@ router.get('/reports/:stage?/:id?', API.serve(class extends HTMLAPI {
 
 										<input type="text" name="default_value">
 
-										<input type="text" name="offset">
+										<input type="number" name="offset">
 									</label>
 
 									<label class="dataset">

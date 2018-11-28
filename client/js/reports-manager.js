@@ -1901,18 +1901,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(e)
 			e.preventDefault();
 
-		if(this.filterForm.default_type.value == 'default_value') {
+		if(this.filterForm.default_type.value != 'offset')
 			this.filterForm.offset.value = '';
-		}
 
-		else if(this.filterForm.default_type.value == 'offset') {
+		if(this.filterForm.default_type.value != 'default_value')
 			this.filterForm.default_value.value = '';
-		}
-
-		else {
-			this.filterForm.offset.value = '';
-			this.filterForm.default_value.value = '';
-		}
 
 		const
 			parameters = {
@@ -2046,18 +2039,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(e)
 			e.preventDefault();
 
-		if(this.filterForm.default_type.value == 'default_value') {
+		if(this.filterForm.default_type.value != 'offset')
 			this.filterForm.offset.value = '';
-		}
 
-		else if(this.filterForm.default_type.value == 'offset') {
+		if(this.filterForm.default_type.value != 'default_value')
 			this.filterForm.default_value.value = '';
-		}
-
-		else {
-			this.filterForm.offset.value = '';
-			this.filterForm.default_value.value = '';
-		}
 
 		const
 			parameters = {
@@ -7510,31 +7496,49 @@ class ReportVisualizationFilter {
 			<div class="form">
 
 				<label>
-					<span>Default</span>
+					<span class="default">Default</span>
 					<select name="default_type">
 						<option value="none">None</option>
 						<option value="default_value">Default Value</option>
 						<option value="offset">Default Value Offset</option>
 					</select>
 
-					<input type="${this.reportFilter.type}" placeholder="${this.reportFilter.default_value}" title="${this.reportFilter.default_value}" value="${this.default_value || ''}" name="default_value">
+					<input
+						type="${this.reportFilter.type}"
+						placeholder="${this.reportFilter.default_value != null ? this.reportFilter.default_value : ''}"
+						title="${this.reportFilter.default_value}" value="${this.default_value || ''}"
+						name="default_value">
 
-					<input type="text" placeholder="${this.reportFilter.offset || ''}" value="${this.offset || ''}" name="offset">
+					<input
+						type="number"
+						placeholder="${this.reportFilter.offset != null ? this.reportFilter.offset : '' }"
+						value="${this.offset || ''}"
+						name="offset">
 				</label>
 
 				<label>
-					<span>&nbsp;</span>
 					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 				</label>
 			</div>
 		`;
 
+		let default_data;
+
+		if(this.reportFilter.default_value)
+			default_data = `Default Value = ${this.reportFilter.default_value}`;
+
+		else if(!isNaN(parseFloat(this.reportFilter.offset)))
+			default_data = `Default Value Offset = ${this.reportFilter.offset}`;
+
+		if(default_data)
+			container.querySelector('.default').insertAdjacentHTML('afterend', `<small>${default_data}</small>`);
+
 		const default_type = container.querySelector('select[name="default_type"]');
 
-		if(this.default_value || this.reportFilter.default_value)
+		if(this.default_value)
 			default_type.value = 'default_value';
 
-		else if(this.offset || this.reportFilter.offset)
+		else if(this.offset)
 			default_type.value = 'offset';
 
 		else
@@ -7542,7 +7546,7 @@ class ReportVisualizationFilter {
 
 		this.updateDefaultType();
 
-		container.querySelector('select[name="default_type"]').on('change', () => this.updateDefaultType());
+		default_type.on('change', () => this.updateDefaultType());
 
 		container.querySelector('.delete').on('click', () => {
 
@@ -7565,15 +7569,21 @@ class ReportVisualizationFilter {
 
 	get json() {
 
-		if(this.container.querySelector('select[name="default_type"]').value == 'default_value')
-			this.container.querySelector('input[name="offset"]').value = '';
-		else
-			this.container.querySelector('input[name="default_value"]').value = '';
+		let
+			offset_value = this.container.querySelector('input[name="offset"]').value,
+			default_value = this.container.querySelector('input[name="default_value"]').value,
+			default_type = this.container.querySelector('select[name="default_type"]').value;
+
+		if(default_type != 'offset')
+			offset_value = '';
+
+ 		if(default_type != 'default_value')
+			default_value = '';
 
 		return {
-			default_value: this.container.querySelector('input[name="default_value"]').value,
+			default_value: default_value,
 			filter_id: this.filter_id,
-			offset: this.container.querySelector('input[name="offset"]').value,
+			offset: offset_value,
 		};
 	}
 }

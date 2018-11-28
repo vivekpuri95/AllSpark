@@ -840,7 +840,6 @@ main.preview-left #stages {
 				color: var(--color-hover-text);
 				opacity: 0.5;
 			}
-
 	.visualization-form .filters {
 	}
 		.visualization-form .transformations .add-transformation .form,
@@ -877,12 +876,20 @@ main.preview-left #stages {
 			grid-gap: 15px;
 			padding: 0 var(--gap) calc(var(--gap) * 2) 0;
 		}
+			.visualization-form .configuration-section .body .list .default small{
+				color: var(--color-grey);
+				font-size: 90%;
+			}
 			.visualization-form .configuration-section .body .list .NA {
 				background: var(--color-surface);
 				color: var(--color-surface-text);
 				padding: calc(var(--gap) * 2);
 				box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 				border-radius: 3px;
+			}
+			.visualization-form .configuration-section .body .list .form {
+				grid-gap: calc(var(--gap) * 2);
+				padding: 0;
 			}
 	.visualization-form .configuration-section .theme-list {
 		padding: 10px;
@@ -1035,4 +1042,3 @@ main.preview-left #preview {
 	#preview .data-source {
 		max-height: 600px;
 	}
-
