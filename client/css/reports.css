@@ -474,6 +474,9 @@ main .dataset {
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 		border-top: 15px solid var(--color-surface);
 		background: var(--color-surface);
+		border-radius: 6px 6px 0 0;
+		margin-bottom: -5px;
+		padding-bottom: 16px;
 	}
 		.data-source > .drilldown a {
 			padding: var(--gap) calc(var(--gap) * 2);
