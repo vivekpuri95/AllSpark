@@ -7529,17 +7529,6 @@ class ReportVisualizationFilter {
 			</div>
 		`;
 
-		const default_type = container.querySelector('select[name="default_type"]');
-
-		if(this.default_value || this.reportFilter.default_value)
-			default_type.value = 'default_value';
-
-		else if(this.offset || this.reportFilter.offset)
-			default_type.value = 'offset';
-
-		else
-			default_type.value = 'none';
-
 		this.updateDefaultType();
 
 		container.querySelector('select[name="default_type"]').on('change', () => this.updateDefaultType());
