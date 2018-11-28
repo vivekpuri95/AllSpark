@@ -7567,8 +7567,15 @@ class ReportVisualizationFilter {
 
 		if(this.container.querySelector('select[name="default_type"]').value == 'default_value')
 			this.container.querySelector('input[name="offset"]').value = '';
-		else
+
+ 		else if(this.container.querySelector('select[name="default_type"]').value == 'offset')
 			this.container.querySelector('input[name="default_value"]').value = '';
+
+ 		else {
+
+			this.container.querySelector('input[name="offset"]').value = '';
+			this.container.querySelector('input[name="default_value"]').value = '';
+		}
 
 		return {
 			default_value: this.container.querySelector('input[name="default_value"]').value,
