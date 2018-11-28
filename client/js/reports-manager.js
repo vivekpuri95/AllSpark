@@ -7510,24 +7510,45 @@ class ReportVisualizationFilter {
 			<div class="form">
 
 				<label>
-					<span>Default</span>
+					<span class="default">Default</span>
 					<select name="default_type">
 						<option value="none">None</option>
 						<option value="default_value">Default Value</option>
 						<option value="offset">Default Value Offset</option>
 					</select>
 
-					<input type="${this.reportFilter.type}" placeholder="${this.reportFilter.default_value}" title="${this.reportFilter.default_value}" value="${this.default_value || ''}" name="default_value">
+					<input type="${this.reportFilter.type}" placeholder="${this.reportFilter.default_value != null ? this.reportFilter.default_value : ''}" title="${this.reportFilter.default_value}" value="${this.default_value || ''}" name="default_value">
 
-					<input type="text" placeholder="${this.reportFilter.offset || ''}" value="${this.offset || ''}" name="offset">
+					<input type="text" placeholder="${this.reportFilter.offset != null ? this.reportFilter.offset : '' }" value="${this.offset || ''}" name="offset">
 				</label>
 
 				<label>
-					<span>&nbsp;</span>
 					<button class="delete" title="Delete"><i class="far fa-trash-alt"></i></button>
 				</label>
 			</div>
 		`;
+
+		let default_data;
+
+		if(this.reportFilter.default_value)
+			default_data = `<small class="default">Default Value = ${this.reportFilter.default_value}</small>`;
+
+		else if(!isNaN(parseFloat(this.reportFilter.offset)))
+			default_data = `<small class="default">Default Value Offset = ${this.reportFilter.offset}</small>`;
+
+		if(default_data)
+			container.querySelector('.default').insertAdjacentHTML('afterend', default_data);
+
+		const default_type = container.querySelector('select[name="default_type"]');
+
+		if(this.default_value)
+			default_type.value = 'default_value';
+
+		else if(this.offset)
+			default_type.value = 'offset';
+
+		else
+			default_type.value = 'none';
 
 		this.updateDefaultType();
 
