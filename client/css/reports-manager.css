@@ -840,7 +840,8 @@ main.preview-left #stages {
 				color: var(--color-hover-text);
 				opacity: 0.5;
 			}
-
+	.visualization-form .filters {
+	}
 		.visualization-form .transformations .add-transformation .form,
 		.visualization-form .filters .add-filter .form {
 			grid-template-columns: minmax(max-content, 200px) max-content;
@@ -875,9 +876,9 @@ main.preview-left #stages {
 			grid-gap: 15px;
 			padding: 0 var(--gap) calc(var(--gap) * 2) 0;
 		}
-			.visualization-form .configuration-section .body .list small.default {
+			.visualization-form .configuration-section .body .list .default small{
 				color: var(--color-grey);
-    			font-size: 90%;
+				font-size: 90%;
 			}
 			.visualization-form .configuration-section .body .list .NA {
 				background: var(--color-surface);

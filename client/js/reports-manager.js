@@ -7531,13 +7531,13 @@ class ReportVisualizationFilter {
 		let default_data;
 
 		if(this.reportFilter.default_value)
-			default_data = `<small class="default">Default Value = ${this.reportFilter.default_value}</small>`;
+			default_data = `Default Value = ${this.reportFilter.default_value}`;
 
 		else if(!isNaN(parseFloat(this.reportFilter.offset)))
-			default_data = `<small class="default">Default Value Offset = ${this.reportFilter.offset}</small>`;
+			default_data = `Default Value Offset = ${this.reportFilter.offset}`;
 
 		if(default_data)
-			container.querySelector('.default').insertAdjacentHTML('afterend', default_data);
+			container.querySelector('.default').insertAdjacentHTML('afterend', `<small>${default_data}</small>`);
 
 		const default_type = container.querySelector('select[name="default_type"]');
 
@@ -7552,7 +7552,7 @@ class ReportVisualizationFilter {
 
 		this.updateDefaultType();
 
-		container.querySelector('select[name="default_type"]').on('change', () => this.updateDefaultType());
+		default_type.on('change', () => this.updateDefaultType());
 
 		container.querySelector('.delete').on('click', () => {
 
@@ -7575,22 +7575,26 @@ class ReportVisualizationFilter {
 
 	get json() {
 
+		const
+			offset_value = this.container.querySelector('input[name="offset"]').value,
+			default_value = this.container.querySelector('input[name="default_value"]').value;
+
 		if(this.container.querySelector('select[name="default_type"]').value == 'default_value')
-			this.container.querySelector('input[name="offset"]').value = '';
+			offset_value = '';
 
  		else if(this.container.querySelector('select[name="default_type"]').value == 'offset')
-			this.container.querySelector('input[name="default_value"]').value = '';
+			default_value = '';
 
  		else {
 
-			this.container.querySelector('input[name="offset"]').value = '';
-			this.container.querySelector('input[name="default_value"]').value = '';
+			offset_value = '';
+			default_value = '';
 		}
 
 		return {
-			default_value: this.container.querySelector('input[name="default_value"]').value,
+			default_value: default_value,
 			filter_id: this.filter_id,
-			offset: this.container.querySelector('input[name="offset"]').value,
+			offset: offset_value,
 		};
 	}
 }
