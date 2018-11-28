@@ -1901,18 +1901,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(e)
 			e.preventDefault();
 
-		if(this.filterForm.default_type.value == 'default_value') {
+		if(this.filterForm.default_type.value != 'offset')
 			this.filterForm.offset.value = '';
-		}
 
-		else if(this.filterForm.default_type.value == 'offset') {
+		if(this.filterForm.default_type.value != 'default_value')
 			this.filterForm.default_value.value = '';
-		}
-
-		else {
-			this.filterForm.offset.value = '';
-			this.filterForm.default_value.value = '';
-		}
 
 		const
 			parameters = {
@@ -2046,18 +2039,11 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(e)
 			e.preventDefault();
 
-		if(this.filterForm.default_type.value == 'default_value') {
+		if(this.filterForm.default_type.value != 'offset')
 			this.filterForm.offset.value = '';
-		}
 
-		else if(this.filterForm.default_type.value == 'offset') {
+		if(this.filterForm.default_type.value != 'default_value')
 			this.filterForm.default_value.value = '';
-		}
-
-		else {
-			this.filterForm.offset.value = '';
-			this.filterForm.default_value.value = '';
-		}
 
 		const
 			parameters = {
@@ -7517,9 +7503,17 @@ class ReportVisualizationFilter {
 						<option value="offset">Default Value Offset</option>
 					</select>
 
-					<input type="${this.reportFilter.type}" placeholder="${this.reportFilter.default_value != null ? this.reportFilter.default_value : ''}" title="${this.reportFilter.default_value}" value="${this.default_value || ''}" name="default_value">
+					<input
+						type="${this.reportFilter.type}"
+						placeholder="${this.reportFilter.default_value != null ? this.reportFilter.default_value : ''}"
+						title="${this.reportFilter.default_value}" value="${this.default_value || ''}"
+						name="default_value">
 
-					<input type="text" placeholder="${this.reportFilter.offset != null ? this.reportFilter.offset : '' }" value="${this.offset || ''}" name="offset">
+					<input
+						type="number"
+						placeholder="${this.reportFilter.offset != null ? this.reportFilter.offset : '' }"
+						value="${this.offset || ''}"
+						name="offset">
 				</label>
 
 				<label>
@@ -7575,21 +7569,16 @@ class ReportVisualizationFilter {
 
 	get json() {
 
-		const
+		let
 			offset_value = this.container.querySelector('input[name="offset"]').value,
-			default_value = this.container.querySelector('input[name="default_value"]').value;
+			default_value = this.container.querySelector('input[name="default_value"]').value,
+			default_type = this.container.querySelector('select[name="default_type"]').value;
 
-		if(this.container.querySelector('select[name="default_type"]').value == 'default_value')
+		if(default_type != 'offset')
 			offset_value = '';
 
- 		else if(this.container.querySelector('select[name="default_type"]').value == 'offset')
+ 		if(default_type != 'default_value')
 			default_value = '';
-
- 		else {
-
-			offset_value = '';
-			default_value = '';
-		}
 
 		return {
 			default_value: default_value,
