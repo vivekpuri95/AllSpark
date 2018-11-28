@@ -475,7 +475,7 @@ main .dataset {
 		border-top: 15px solid var(--color-surface);
 		background: var(--color-surface);
 		border-radius: 6px 6px 0 0;
-		margin-bottom: -5px;
+		margin-bottom: -6px;
 		padding-bottom: 16px;
 	}
 		.data-source > .drilldown a {
