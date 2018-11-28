@@ -5450,8 +5450,8 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 
 		optionsForm.insertAdjacentHTML('afterbegin', bubbleOptions);
 
-		optionsForm.querySelector('select[name=radius]').value = this.visualization.options.bubbleRadius || "none";
-		optionsForm.querySelector('select[name=showValues]').value = this.visualization.options.showValues || "empty";
+		optionsForm.querySelector('select[name=radius]').value = this.visualization.options.bubbleRadiusColumn || 'none';
+		optionsForm.querySelector('select[name=showValues]').value = this.visualization.options.showValues || 'empty';
 
 		return container;
 	}
@@ -5462,7 +5462,7 @@ ConfigureVisualization.types.set('bubble', class BubbleOptions extends ReportVis
 			axes: this.axes.json,
 			hideHeader: this.form.querySelector('input[name=hideHeader]').checked,
 			hideLegend: this.form.querySelector('input[name=hideLegend]').checked,
-			bubbleRadius: this.form.querySelector('.configuration-section .body .form.subform select[name=radius]').value,
+			bubbleRadiusColumn: this.form.querySelector('.configuration-section .body .form.subform select[name=radius]').value,
 			showValues: this.form.querySelector('.configuration-section .body .form.subform select[name=showValues]').value
 		}
 	}

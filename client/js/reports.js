@@ -6554,7 +6554,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					this.y.min = Math.min(this.y.min, Math.ceil(value) || 0);
 				}
 
-				if(this.options.bubbleRadius == key) {
+				if(this.options.bubbleRadiusColumn == key) {
 					this.bubble.max = Math.max(this.bubble.max, Math.ceil(value) || 0);
 					this.bubble.min = Math.min(this.bubble.min, Math.ceil(value) || 0);
 				}
@@ -6663,7 +6663,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					that.svg.selectAll('text')
 						.filter(x => x && x.y1 && x.y1 != d.y1)
 						.attr('fill', 'grey')
-						.attr("opacity", 0.2);
+						.attr('opacity', 0.2);
 
 					Tooltip.show(that.container, mouse, content);
 				})
@@ -6672,15 +6672,15 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					Tooltip.hide(that.container);
 
 					that.svg.selectAll('circle')
-						.style("opacity", 0.8);
+						.style('opacity', 0.8);
 
 					that.svg.selectAll('text')
 						.attr('fill', 'black')
-						.attr("opacity", 1);
+						.attr('opacity', 1);
 				})
 			;
 
-			if(this.options.showValues != "empty") {
+			if(this.options.showValues != 'empty') {
 				this.svg
 					.selectAll('dot')
 					.data(column)
@@ -6688,8 +6688,8 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 					.append('text')
 					.attr('x', d => this.x(d.x) + this.axes.left.width)
 					.attr('y', d => this.y(d.y) + 6)
-					.attr("text-anchor", "middle")
-					.attr("font-size", "12px")
+					.attr('text-anchor', 'middle')
+					.attr('font-size', '12px')
 					.text(d => d.row.get(this.options.showValues));
 			}
 
@@ -6703,7 +6703,7 @@ Visualization.list.set('bubble', class Bubble extends LinearVisualization {
 			}
 
 			dots
-				.attr('r', d => this.bubble(d.row.get(that.options.bubbleRadius)) - 2);
+				.attr('r', d => this.bubble(d.row.get(that.options.bubbleRadiusColumn)) - 2);
 		}
 	}
 });
