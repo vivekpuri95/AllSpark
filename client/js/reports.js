@@ -64,24 +64,6 @@ class DataSource {
 
 		for(const filter of this.filters.values()) {
 
-			if(this.visualizations.selected && this.visualizations.selected.options && this.visualizations.selected.options.filters && !this.filters.containerElement) {
-
-				const [visualization_filter] = this.visualizations.selected.options.filters.filter(x => x.filter_id == filter.filter_id);
-
-				if(visualization_filter) {
-
-					if(filter.dataset) {
-
-						await filter.fetch();
-						filter.value = visualization_filter.default_value || '';
-					}
-
-					parameters.set(DataSourceFilter.placeholderPrefix + filter.placeholder, visualization_filter.default_value);
-
-					continue;
-				}
-			}
-
 			if(filter.multiSelect) {
 
 				await filter.fetch();
@@ -1510,12 +1492,26 @@ class DataSourceFilter {
 
 		let value = this.default_value;
 
+		if(
+			this.filters.source &&
+			this.filters.source.visualizations.selected &&
+			this.filters.source.visualizations.selected.options &&
+			this.filters.source.visualizations.selected.options.filters
+		) {
+
+			const [visualization_filter] = this.filters.source.visualizations.selected.options.filters.filter(x => x.filter_id == this.filter_id);
+
+			if(visualization_filter && visualization_filter.default_value)
+			   return visualization_filter.default_value;
+
+			else if(visualization_filter && visualization_filter.offset)
+			   this.offset = visualization_filter.offset;
+	   }
+
 		if(!isNaN(parseFloat(this.offset))) {
 
-			if(this.type.includes('date')) {
-				const today = new Date();
+			if(this.type.includes('date'))
 				value = new Date(Date.nowUTC() + (this.offset * 24 * 60 * 60 * 1000)).toISOString().substring(0, 10);
-			}
 
 			if(this.type == 'month') {
 				const date = new Date();
@@ -11440,7 +11436,7 @@ Visualization.list.set('calendar', class CalendarVisualization extends Visualiza
 					<span>
 						${obj.name}
 					</span>
-					
+
 					<span class="${obj.dark ? 'dark' : 'light'} value-subtitle">
 						${obj.typedValue ? obj.typedValue : ''}
 					</span>`;
@@ -11782,7 +11778,7 @@ class CalendarMonth {
 			this.visualization.options.invertValues
 		);
 
-		div.style.backgroundColor = this.visualization.source.columns.get('timing').color + alphaValue;
+		div.style.backgroundColor = this.visualization.source.columns.get(this.visualization.options.timingColumn).color + alphaValue;
 		div.style.height = '100px';
 
 		if (this.visualization.luma(this.source.columns.get(this.visualization.options.timingColumn).color) <= 40
