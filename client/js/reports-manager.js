@@ -2019,6 +2019,15 @@ ReportsManger.stages.set('define-report', class DefineReport extends ReportsMang
 		if(this.filterForm.type.value == 'datetime')
 			this.filterForm.default_value.type = 'datetime-local';
 
+		else if(this.filterForm.type.value == 'year')
+			this.filterForm.default_value.type = 'number';
+
+		else if(this.filterForm.type.value == 'time') {
+
+			this.filterForm.default_value.type = 'time';
+			this.filterForm.default_value.step = '1';
+		}
+
 		else if(types.includes(this.filterForm.type.value))
 			this.filterForm.default_value.type = 'text';
 
@@ -7616,6 +7625,15 @@ class ReportVisualizationFilter {
 
 		if(this.reportFilter.type == 'datetime')
 			this.reportFilter.type = 'datetime-local';
+
+		else if(this.reportFilter.type == 'year')
+			this.reportFilter.type = 'number';
+
+		else if(this.reportFilter.type == 'time') {
+
+			this.reportFilter.type = 'time';
+			this.reportFilter.step = '1';
+		}
 
 		else if(types.includes(this.reportFilter.type))
 			this.reportFilter.type = 'text';

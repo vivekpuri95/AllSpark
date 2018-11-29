@@ -246,10 +246,13 @@ class report extends API {
 
 		for (const filter of this.filters) {
 
+			const date = new Date();
+
 			if (isNaN(parseFloat(filter.offset))) {
 
 				continue;
 			}
+			console.log(filter.type,'typeee');
 
 			if (filter.type == 'date') {
 
@@ -263,8 +266,6 @@ class report extends API {
 			}
 
 			if (filter.type == 'month') {
-
-				const date = new Date();
 
 				filter.default_value = new Date(Date.UTC(date.getFullYear(), date.getMonth() + filter.offset, 1)).toISOString().substring(0, 7);
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
@@ -281,6 +282,28 @@ class report extends API {
 				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
 
 				if (filter.value >= new Date().toISOString().slice(0, 10)) {
+
+					this.has_today = true;
+				}
+			}
+
+			if (filter.type == 'year') {
+
+				filter.default_value = date.getFullYear() + parseFloat(filter.offset);
+				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				if (filter.value >= new Date().toISOString().slice(0, 4)) {
+
+					this.has_today = true;
+				}
+			}
+
+			if(filter.type == 'time') {
+
+				filter.default_value = date.getHours() + ':' + date.getMinutes() + ':' + (date.getSeconds() + parseFloat(this.offset));
+				filter.value = this.request.body[constants.filterPrefix + filter.placeholder] || filter.default_value;
+
+				if (filter.value >= new Date().toISOString().slice(11, 19)) {
 
 					this.has_today = true;
 				}
